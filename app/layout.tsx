@@ -1,10 +1,8 @@
 import './globals.css';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import { ThemeProvider } from '@/components/theme/theme-provider';
-import { Toaster } from '@/components/ui/toaster';
-import Navigation from '@/components/navigation/navigation';
-
+import { Toaster } from '@/app/components/ui/toaster';
+import Navigation from '@/app/components/navigation/navigation';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
@@ -19,20 +17,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          themes={['light', 'dark', 'experimental-dark']}
-        >
-          <div className="min-h-screen flex flex-col">
+        <body className={inter.className}>
+          <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800/95 text-gray-100 w-full flex flex-col">
             <Navigation />
-            <main className="flex-1">{children}</main>
+            <main className="gradient-to-b ">{children}</main>
           </div>
           <Toaster />
-        </ThemeProvider>
-      </body>
+        </body>
     </html>
   );
 }
