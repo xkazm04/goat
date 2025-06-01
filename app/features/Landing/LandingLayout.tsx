@@ -1,12 +1,10 @@
-import { LandingHero } from './LandingHero';
-import { LandingCategories } from './LandingCategories';
+import { LandingMain } from './LandingMain';
 
 
 const LandingLayout = () => {
     return (
             <div className="min-h-screen">
-                <LandingHero />
-                <LandingCategories />
+                <LandingMain />
             </div>
     );
 }

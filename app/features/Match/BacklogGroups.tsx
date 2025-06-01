@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import BacklogGroupsHeader from "../Backlog/BacklogGroupsHeader";
-import { BorderGradient, PatternOverlay } from "@/app/components/ui/decorations/cardDecor";
+import { BorderGradient, PatternOverlay } from "@/app/components/decorations/cardDecor";
 
 export function BacklogGroups() {
   const { backlogGroups } = useMatchStore();

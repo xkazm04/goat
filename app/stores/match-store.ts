@@ -1,276 +1,234 @@
-"use client";
+import { create } from 'zustand';
+import { GridItemType, BacklogItemType, BacklogGroupType } from '@/app/types/match';
+import { DragEndEvent } from '@dnd-kit/core';
 
-import { BacklogGroupType, BacklogItemType, GridItemType } from "@/app/types/match";
-import { create } from "zustand";
-import { mockBacklogGroups, mockGridItems } from "@/app/data/match-data";
-import { DragEndEvent } from "@dnd-kit/core";
-
-interface MatchState {
-  // Data
+interface MatchStore {
   gridItems: GridItemType[];
   backlogGroups: BacklogGroupType[];
-  
-  // UI State
-  activeItem: string | null;
   selectedBacklogItem: string | null;
   selectedGridItem: string | null;
+  activeItem: string | null;
+  maxItems: number;
+  compareList: BacklogItemType[];
   
-  // Actions
-  setActiveItem: (id: string | null) => void;
   setSelectedBacklogItem: (id: string | null) => void;
   setSelectedGridItem: (id: string | null) => void;
-  toggleBacklogGroup: (id: string) => void;
-  
-  // Match Logic
+  setActiveItem: (id: string) => void;
+  toggleBacklogGroup: (groupId: string) => void;
+  assignItemToGrid: (item: BacklogItemType, position: number) => void;
+  removeItemFromGrid: (position: number) => void;
+  moveGridItem: (fromIndex: number, toIndex: number) => void;
+  addItemToGroup: (groupId: string, title: string) => Promise<void>;
+  removeItemFromGroup: (itemId: string) => void;
+  toggleCompareItem: (item: BacklogItemType) => void;
+  clearCompareList: () => void;
   handleDragEnd: (event: DragEndEvent) => void;
-  sortGridItems: (newOrder: string[]) => void;
-  matchItems: (backlogItemId: string, gridItemId: string) => void;
-  unassignGridItem: (gridItemId: string) => void;
 }
 
-export const useMatchStore = create<MatchState>((set, get) => ({
-  // Initial Data
-  gridItems: mockGridItems,
-  backlogGroups: mockBacklogGroups,
+export const useMatchStore = create<MatchStore>((set, get) => ({
+  gridItems: Array.from({ length: 50 }, (_, index) => ({
+    id: `grid-${index}`,
+    title: '',
+    tags: [],
+    matched: false,
+  })),
   
-  // UI State
-  activeItem: null,
+  backlogGroups: [
+    // Sample data - replace with your actual data
+    {
+      id: 'group-1',
+      title: 'Video Games',
+      isOpen: true,
+      items: [
+        { id: 'item-1', title: 'Super Mario Bros', matched: false, tags: ['nintendo'] },
+        { id: 'item-2', title: 'The Legend of Zelda', matched: false, tags: ['nintendo'] },
+        { id: 'item-3', title: 'Grand Theft Auto V', matched: false, tags: ['rockstar'] },
+      ]
+    },
+    {
+      id: 'group-2', 
+      title: 'Sports Legends',
+      isOpen: false,
+      items: [
+        { id: 'item-4', title: 'Michael Jordan', matched: false, tags: ['basketball'] },
+        { id: 'item-5', title: 'LeBron James', matched: false, tags: ['basketball'] },
+        { id: 'item-6', title: 'Tom Brady', matched: false, tags: ['football'] },
+      ]
+    }
+  ],
+  
   selectedBacklogItem: null,
   selectedGridItem: null,
-  
-  // Actions
+  activeItem: null,
+  maxItems: 50,
+  compareList: [],
+
+  setSelectedBacklogItem: (id) => set({ selectedBacklogItem: id }),
+  setSelectedGridItem: (id) => set({ selectedGridItem: id }),
   setActiveItem: (id) => set({ activeItem: id }),
   
-  setSelectedBacklogItem: (id) => {
-    set((state) => ({
-      selectedBacklogItem: id,
-      // Clear grid selection when changing backlog selection
-      selectedGridItem: id ? state.selectedGridItem : null
+  toggleBacklogGroup: (groupId) => set((state) => ({
+    backlogGroups: state.backlogGroups.map(group =>
+      group.id === groupId ? { ...group, isOpen: !group.isOpen } : group
+    )
+  })),
+
+  assignItemToGrid: (item, position) => set((state) => {
+    // Mark the backlog item as matched
+    const updatedBacklogGroups = state.backlogGroups.map(group => ({
+      ...group,
+      items: group.items.map(backlogItem =>
+        backlogItem.id === item.id 
+          ? { ...backlogItem, matched: true, matchedWith: `grid-${position}` }
+          : backlogItem
+      )
     }));
-  },
-  
-  setSelectedGridItem: (id) => {
-    const state = get();
-    const gridItem = state.gridItems.find(item => item.id === id);
+
+    // Update the grid item
+    const updatedGridItems = [...state.gridItems];
+    updatedGridItems[position] = {
+      ...updatedGridItems[position],
+      title: item.title,
+      tags: item.tags || [],
+      matched: true,
+      matchedWith: item.id
+    };
+
+    return {
+      backlogGroups: updatedBacklogGroups,
+      gridItems: updatedGridItems,
+      selectedBacklogItem: null // Clear selection after assignment
+    };
+  }),
+
+  removeItemFromGrid: (position) => set((state) => {
+    const gridItem = state.gridItems[position];
+    if (!gridItem?.matched || !gridItem.matchedWith) return state;
+
+    // Unmark the backlog item
+    const updatedBacklogGroups = state.backlogGroups.map(group => ({
+      ...group,
+      items: group.items.map(backlogItem =>
+        backlogItem.id === gridItem.matchedWith
+          ? { ...backlogItem, matched: false, matchedWith: undefined }
+          : backlogItem
+      )
+    }));
+
+    // Clear the grid item
+    const updatedGridItems = [...state.gridItems];
+    updatedGridItems[position] = {
+      id: `grid-${position}`,
+      title: '',
+      tags: [],
+      matched: false,
+      matchedWith: undefined
+    };
+
+    return {
+      backlogGroups: updatedBacklogGroups,
+      gridItems: updatedGridItems
+    };
+  }),
+
+  moveGridItem: (fromIndex, toIndex) => set((state) => {
+    const updatedGridItems = [...state.gridItems];
+    const [movedItem] = updatedGridItems.splice(fromIndex, 1);
+    updatedGridItems.splice(toIndex, 0, movedItem);
     
-    // If clicking on a matched grid item, unassign it
-    if (gridItem?.matched) {
-      state.unassignGridItem(id);
-      return;
-    }
+    // Update IDs to match new positions
+    updatedGridItems.forEach((item, index) => {
+      item.id = `grid-${index}`;
+    });
+
+    return { gridItems: updatedGridItems };
+  }),
+
+  addItemToGroup: async (groupId, title) => {
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 300));
     
-    // If we have both a backlog item and grid item selected, match them
-    if (state.selectedBacklogItem && id) {
-      state.matchItems(state.selectedBacklogItem, id);
-      // Clear selections after matching
-      set({ 
-        selectedBacklogItem: null, 
-        selectedGridItem: null 
-      });
-    } else {
-      set({ selectedGridItem: id });
-    }
-  },
-  
-  toggleBacklogGroup: (id) => {
     set((state) => ({
-      backlogGroups: state.backlogGroups.map((group) => 
-        group.id === id 
-          ? { ...group, isOpen: !group.isOpen } 
+      backlogGroups: state.backlogGroups.map(group =>
+        group.id === groupId 
+          ? {
+              ...group,
+              items: [
+                ...group.items,
+                {
+                  id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                  title,
+                  matched: false,
+                  tags: []
+                }
+              ]
+            }
           : group
       )
     }));
   },
-  
-  // Unassign a grid item and restore backlog item
-  unassignGridItem: (gridItemId) => {
-    const state = get();
-    const gridItem = state.gridItems.find(item => item.id === gridItemId);
-    
-    if (!gridItem || !gridItem.matched) return;
-    
-    // Update grid item to be unmatched
-    const updatedGridItems = state.gridItems.map(item => {
-      if (item.id === gridItemId) {
-        return {
-          ...item,
-          matched: false,
-          matchedWith: undefined
-        };
-      }
-      return item;
-    });
-    
-    // Find and update the corresponding backlog item
-    const updatedBacklogGroups = state.backlogGroups.map(group => ({
+
+  removeItemFromGroup: (itemId) => set((state) => ({
+    backlogGroups: state.backlogGroups.map(group => ({
       ...group,
-      items: group.items.map(item => {
-        if (item.matched && item.matchedWith === gridItem.title) {
-          return {
-            ...item,
-            matched: false,
-            matchedWith: undefined
-          };
-        }
-        return item;
-      })
-    }));
+      items: group.items.filter(item => item.id !== itemId)
+    })),
+    // Also remove from compare list if it exists there
+    compareList: state.compareList.filter(item => item.id !== itemId),
+    // Clear selection if this item was selected
+    selectedBacklogItem: state.selectedBacklogItem === itemId ? null : state.selectedBacklogItem
+  })),
+
+  toggleCompareItem: (item) => set((state) => {
+    const isInList = state.compareList.some(compareItem => compareItem.id === item.id);
     
-    set({
-      gridItems: updatedGridItems,
-      backlogGroups: updatedBacklogGroups
-    });
-  },
-  
-  // Match Logic
+    if (isInList) {
+      // Remove from compare list
+      return {
+        compareList: state.compareList.filter(compareItem => compareItem.id !== item.id)
+      };
+    } else {
+      // Add to compare list
+      return {
+        compareList: [...state.compareList, item]
+      };
+    }
+  }),
+
+  clearCompareList: () => set({ compareList: [] }),
+
   handleDragEnd: (event) => {
     const { active, over } = event;
     
     if (!over) return;
+
+    const state = get();
     
-    // Dragging within the grid (sorting)
+    // Handle dragging from backlog to grid
+    if (active.id.toString().startsWith('item-') && over.id.toString().startsWith('grid-')) {
+      const draggedItem = state.backlogGroups
+        .flatMap(group => group.items)
+        .find(item => item.id === active.id);
+      
+      if (!draggedItem || draggedItem.matched) return;
+      
+      const targetPosition = parseInt(over.id.toString().replace('grid-', ''));
+      const targetGridItem = state.gridItems[targetPosition];
+      
+      // Only assign if target position is empty
+      if (!targetGridItem?.matched) {
+        state.assignItemToGrid(draggedItem, targetPosition);
+      }
+    }
+    
+    // Handle reordering within grid
     if (active.id.toString().startsWith('grid-') && over.id.toString().startsWith('grid-')) {
-      // Get current grid items
-      const items = get().gridItems;
-      // Find the indices of the items
-      const oldIndex = items.findIndex(item => item.id === active.id.toString());
-      const newIndex = items.findIndex(item => item.id === over.id.toString());
+      const fromIndex = parseInt(active.id.toString().replace('grid-', ''));
+      const toIndex = parseInt(over.id.toString().replace('grid-', ''));
       
-      // Reorder the items
-      const newItems = [...items];
-      const [removed] = newItems.splice(oldIndex, 1);
-      newItems.splice(newIndex, 0, removed);
-      
-      // Update the store
-      set({ gridItems: newItems });
-    }
-    
-    // Dragging from backlog to grid
-    if (active.id.toString().startsWith('backlog-') && over.id === 'grid-droppable') {
-      const backlogItemId = active.id.toString();
-      
-      // Find the backlog item
-      let backlogItem: BacklogItemType | null = null;
-      let groupId: string | null = null;
-      
-      // Find the backlog item and its group
-      get().backlogGroups.forEach(group => {
-        const foundItem = group.items.find(item => item.id === backlogItemId);
-        if (foundItem && !foundItem.matched) {
-          backlogItem = foundItem;
-          groupId = group.id;
-        }
-      });
-      
-      if (backlogItem && groupId) {
-        // Create a new grid item
-        const newGridItem: GridItemType = {
-          id: `grid-${Date.now()}`,
-          title: backlogItem.title,
-          tags: backlogItem.tags || [],
-          matched: true,
-          matchedWith: backlogItem.title
-        };
-        
-        // Update the backlog item to be matched
-        const updatedBacklogGroups = get().backlogGroups.map(group => {
-          if (group.id === groupId) {
-            return {
-              ...group,
-              items: group.items.map(item => {
-                if (item.id === backlogItemId) {
-                  return {
-                    ...item,
-                    matched: true,
-                    matchedWith: newGridItem.title
-                  };
-                }
-                return item;
-              })
-            };
-          }
-          return group;
-        });
-        
-        // Add the new grid item and update the backlog
-        set({
-          gridItems: [...get().gridItems, newGridItem],
-          backlogGroups: updatedBacklogGroups
-        });
+      if (fromIndex !== toIndex) {
+        state.moveGridItem(fromIndex, toIndex);
       }
-    }
-    
-    // Clear active item
-    set({ activeItem: null });
-  },
-  
-  sortGridItems: (newOrder) => {
-    const currentItems = get().gridItems;
-    const newItems = newOrder.map(id => 
-      currentItems.find(item => item.id === id)
-    ).filter((item): item is GridItemType => item !== undefined);
-    
-    set({ gridItems: newItems });
-  },
-  
-  matchItems: (backlogItemId, gridItemId) => {
-    // Find the backlog item
-    let backlogItem: BacklogItemType | null = null;
-    let groupId: string | null = null;
-    
-    // Find the grid item
-    const gridItem = get().gridItems.find(item => item.id === gridItemId);
-    
-    if (!gridItem) return;
-    
-    // Find the backlog item and its group
-    get().backlogGroups.forEach(group => {
-      const foundItem = group.items.find(item => item.id === backlogItemId);
-      if (foundItem && !foundItem.matched) {
-        backlogItem = foundItem;
-        groupId = group.id;
-      }
-    });
-    
-    if (backlogItem && groupId) {
-      // Update the grid item
-      const updatedGridItems = get().gridItems.map(item => {
-        if (item.id === gridItemId) {
-          return {
-            ...item,
-            title: backlogItem!.title,
-            matched: true,
-            matchedWith: backlogItem!.title
-          };
-        }
-        return item;
-      });
-      
-      // Update the backlog item
-      const updatedBacklogGroups = get().backlogGroups.map(group => {
-        if (group.id === groupId) {
-          return {
-            ...group,
-            items: group.items.map(item => {
-              if (item.id === backlogItemId) {
-                return {
-                  ...item,
-                  matched: true,
-                  matchedWith: gridItem.title
-                };
-              }
-              return item;
-            })
-          };
-        }
-        return group;
-      });
-      
-      // Update the store
-      set({
-        gridItems: updatedGridItems,
-        backlogGroups: updatedBacklogGroups
-      });
     }
   }
 }));

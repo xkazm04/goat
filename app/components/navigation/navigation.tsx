@@ -5,15 +5,6 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/app/lib/utils';
 import { motion } from 'framer-motion';
 import { Settings, Home, GitCompare } from 'lucide-react';
-import { Button } from '@/app/components/ui/button';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/app/components/ui/sheet";
 import { useState } from 'react';
 
 const mainNav = [
@@ -70,45 +61,7 @@ export default function Navigation() {
         <div className="flex-1" />
         
         <div className="flex items-center space-x-2">
-          <Sheet open={isOpen} onOpenChange={setIsOpen}>
-            <SheetTrigger asChild>
-              <Button variant="outline" size="icon" className="md:hidden">
-                <Settings className="h-4 w-4" />
-                <span className="sr-only">Settings</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent>
-              <SheetHeader>
-                <SheetTitle>Settings</SheetTitle>
-                <SheetDescription>Customize your experience</SheetDescription>
-              </SheetHeader>
-              <div className="py-4">
-                <div className="space-y-4 py-4">
-                  <div className="px-3 py-2">
-                    <h3 className="mb-2 text-sm font-medium">Navigation</h3>
-                    <nav className="space-y-2">
-                      {mainNav.map((item) => (
-                        <Link
-                          key={item.href}
-                          href={item.href}
-                          onClick={() => setIsOpen(false)}
-                          className={cn(
-                            "flex items-center rounded-md px-3 py-2 text-sm font-medium",
-                            pathname === item.href
-                              ? "bg-primary text-primary-foreground"
-                              : "hover:bg-muted"
-                          )}
-                        >
-                          {item.icon}
-                          {item.name}
-                        </Link>
-                      ))}
-                    </nav>
-                  </div>
-                </div>
-              </div>
-            </SheetContent>
-          </Sheet>
+
         </div>
       </div>
     </header>

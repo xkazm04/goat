@@ -4,10 +4,10 @@ import { GridItemType } from "@/app/types/match";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { motion } from "framer-motion";
-import { Star, Gamepad2, Trophy, X } from "lucide-react";
+import { Star, Gamepad2, Trophy } from "lucide-react";
 
 interface GridItemProps {
-  item: GridItemType;
+  item: GridItemType & { isDragPlaceholder?: boolean };
   index: number;
   onClick: () => void;
   isSelected: boolean;
@@ -28,6 +28,7 @@ const getItemIcon = (title: string) => {
 export function GridItem({ item, index, onClick, isSelected, size = 'small' }: GridItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
+    disabled: item.isDragPlaceholder
   });
 
   const IconComponent = getItemIcon(item.title);
@@ -42,7 +43,7 @@ export function GridItem({ item, index, onClick, isSelected, size = 'small' }: G
     if (rank === 0) return '#FFD700'; // Gold
     if (rank === 1) return '#C0C0C0'; // Silver  
     if (rank === 2) return '#CD7F32'; // Bronze
-    return 'transparent'; // Default for other ranks
+    return '#94a3b8'; // Default slate color for dark theme
   };
 
   const rankColor = getRankNumberColor(index);
@@ -88,6 +89,30 @@ export function GridItem({ item, index, onClick, isSelected, size = 'small' }: G
 
   const sizeClasses = getSizeClasses();
 
+  // If this is a drag placeholder, show a ghosted version
+  if (item.isDragPlaceholder) {
+    return (
+      <motion.div 
+        ref={setNodeRef}
+        className="touch-manipulation"
+      >
+        <div
+          className={`relative ${sizeClasses.container} rounded-xl border-2 border-dashed overflow-hidden transition-all duration-300 flex flex-col opacity-40`}
+          style={{
+            background: 'rgba(71, 85, 105, 0.2)',
+            border: '2px dashed rgba(71, 85, 105, 0.4)'
+          }}
+        >
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className={`${sizeClasses.emptyNumber} font-black text-slate-600 opacity-50`}>
+              {index + 1}
+            </span>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
   return (
     <motion.div 
       ref={setNodeRef} 
@@ -100,13 +125,31 @@ export function GridItem({ item, index, onClick, isSelected, size = 'small' }: G
       whileTap={{ scale: 0.95 }}
     >
       <div
-        className={`relative ${sizeClasses.container} rounded-xl border-2 overflow-hidden transition-all duration-300 group flex flex-col`}
+        className={`relative ${sizeClasses.container} rounded-xl border-2 overflow-hidden transition-all duration-300 group flex flex-col ${
+          isDragging ? 'opacity-50 scale-105' : ''
+        }`}
+        style={{
+          background: `
+            linear-gradient(135deg, 
+              rgba(30, 41, 59, 0.9) 0%,
+              rgba(51, 65, 85, 0.95) 100%
+            )
+          `,
+          border: isSelected 
+            ? '2px solid rgba(59, 130, 246, 0.6)' 
+            : '2px solid rgba(71, 85, 105, 0.3)',
+          boxShadow: isSelected
+            ? '0 0 20px rgba(59, 130, 246, 0.3)'
+            : isDragging
+            ? '0 10px 30px rgba(0, 0, 0, 0.5)'
+            : '0 2px 8px rgba(0, 0, 0, 0.3)'
+        }}
       >
         {/* Empty State - Full Size Number */}
         {!item.matched && (
           <div className="absolute inset-0 flex items-center justify-center">
             <span 
-              className={`${sizeClasses.emptyNumber} font-black select-none`}
+              className={`${sizeClasses.emptyNumber} font-black select-none text-slate-600`}
             >
               {index + 1}
             </span>
@@ -121,15 +164,25 @@ export function GridItem({ item, index, onClick, isSelected, size = 'small' }: G
               {/* Avatar/Icon */}
               <div 
                 className={`${sizeClasses.avatar} rounded-full flex items-center justify-center mb-2 group-hover:scale-110 transition-transform`}
+                style={{
+                  background: `
+                    linear-gradient(135deg, 
+                      #4c1d95 0%, 
+                      #7c3aed 50%,
+                      #3b82f6 100%
+                    )
+                  `,
+                  boxShadow: '0 2px 8px rgba(124, 58, 237, 0.3)'
+                }}
               >
                 <IconComponent 
-                  className={sizeClasses.icon}
+                  className={`${sizeClasses.icon} text-white`}
                 />
               </div>
               
               {/* Name */}
               <h3 
-                className={`${sizeClasses.title} font-semibold text-center leading-tight line-clamp-2`}
+                className={`${sizeClasses.title} font-semibold text-center leading-tight line-clamp-2 text-slate-200`}
               >
                 {item.title}
               </h3>
@@ -138,6 +191,15 @@ export function GridItem({ item, index, onClick, isSelected, size = 'small' }: G
             {/* Bottom Section - Rank Number */}
             <div 
               className={`${sizeClasses.rankSection} flex items-center justify-center border-t`}
+              style={{
+                borderColor: 'rgba(71, 85, 105, 0.4)',
+                background: `
+                  linear-gradient(135deg, 
+                    rgba(15, 23, 42, 0.8) 0%,
+                    rgba(30, 41, 59, 0.9) 100%
+                  )
+                `
+              }}
             >
               <span 
                 className={`${sizeClasses.rankNumber} font-black`}
@@ -150,28 +212,27 @@ export function GridItem({ item, index, onClick, isSelected, size = 'small' }: G
         )}
 
         {/* Hover Overlay for Assigned Items */}
-        {item.matched && (
+        {item.matched && !isDragging && (
           <div 
-            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center"
+            className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center rounded-xl"
           >
             <div 
-              className="text-xs font-medium px-2 py-1 rounded"
+              className="text-xs font-medium px-3 py-1 rounded-lg text-white"
+              style={{
+                background: 'rgba(59, 130, 246, 0.8)',
+                backdropFilter: 'blur(4px)'
+              }}
             >
-              Remove
+              Drag to Move
             </div>
           </div>
         )}
 
         {/* Hover Overlay for Empty Items */}
-        {!item.matched && (
+        {!item.matched && !isDragging && (
           <div 
-            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center"
+            className="absolute inset-0 bg-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center rounded-xl"
           >
-            <div 
-              className="text-xs font-medium px-2 py-1 rounded"
-            >
-              Assign Here
-            </div>
           </div>
         )}
       </div>
