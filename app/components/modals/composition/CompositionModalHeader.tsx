@@ -51,10 +51,10 @@ export function CompositionModalHeader({ onClose, color }: CompositionModalHeade
               backgroundClip: 'text'
             }}
           >
-            Create Your Ranking
+            Ranking hiearchy
           </h2>
           <p className="text-slate-400 font-medium">
-            Build the ultimate G.O.A.T. list in your chosen category
+            Copy existing compositions or create new ones to rank your G.O.A.T.
           </p>
         </div>
       </div>

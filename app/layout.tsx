@@ -2,6 +2,8 @@ import './globals.css';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import Navigation from '@/app/components/navigation/navigation';
+import { QueryProvider } from '@/app/providers/query-provider';
+
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
@@ -16,12 +18,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-        <body className={inter.className}>
+      <body className={inter.className}>
+        <QueryProvider>
           <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800/95 text-gray-100 w-full flex flex-col">
             <Navigation />
             <main className="gradient-to-b ">{children}</main>
           </div>
-        </body>
+        </QueryProvider>
+      </body>
     </html>
   );
 }

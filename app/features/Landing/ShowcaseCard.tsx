@@ -65,7 +65,7 @@ export function ShowcaseCard({
     >
       {/* Glow effect */}
       <div 
-        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+        className="absolute inset-0 opacity-0 group-hover:opacity-90 transition-opacity duration-300"
         style={{
           background: `linear-gradient(135deg, ${color.primary}10, ${color.secondary}10)`
         }}
@@ -101,12 +101,7 @@ export function ShowcaseCard({
             </div>
           </div>
           
-          <div 
-            className="px-3 py-1 rounded-full text-xs font-bold text-white"
-            style={{
-              background: `linear-gradient(135deg, ${color.primary}80, ${color.secondary}80)`
-            }}
-          >
+          <div className={`px-3 py-1 rounded-full text-lg font-bold text-white border border-opacity-50`}>
             Top 50
           </div>
         </div>
@@ -206,7 +201,7 @@ export function ShowcaseCard({
       <div 
         className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center pointer-events-none"
         style={{
-          background: `linear-gradient(135deg, ${color.primary}20, ${color.secondary}20)`
+          background: `linear-gradient(135deg, ${color.primary}10, ${color.secondary}20)`
         }}
       >
         <div 
@@ -216,7 +211,7 @@ export function ShowcaseCard({
             backdropFilter: 'blur(4px)'
           }}
         >
-          Click to Create Similar
+          Build Your Own
         </div>
       </div>
       

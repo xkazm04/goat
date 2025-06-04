@@ -1,8 +1,18 @@
 "use client";
 
+import { motion, AnimatePresence } from "framer-motion";
+import { Volleyball, Trophy, Users } from "lucide-react";
+import { useState } from "react";
+import SetupListSize from "./SetupListSize";
+import SetupTimePeriod from "./SetupTimePeriod";
+import SetupCategory from "./SetupCategory";
+import SetupHeader from "./SetupHeader";
+
 interface CompositionModalLeftContentProps {
   selectedCategory: string;
   setSelectedCategory: (category: string) => void;
+  selectedSubcategory?: string;
+  setSelectedSubcategory?: (subcategory: string) => void;
   timePeriod: "all-time" | "decade" | "year";
   setTimePeriod: (period: "all-time" | "decade" | "year") => void;
   selectedDecade: number;
@@ -11,6 +21,10 @@ interface CompositionModalLeftContentProps {
   setSelectedYear: (year: number) => void;
   hierarchy: string;
   setHierarchy: (hierarchy: string) => void;
+  isPredefined: boolean;
+  setIsPredefined: (predefined: boolean) => void;
+  customName: string;
+  setCustomName: (name: string) => void;
   color: {
     primary: string;
     secondary: string;
@@ -19,11 +33,26 @@ interface CompositionModalLeftContentProps {
 }
 
 const categories = ["Sports", "Music", "Games", "Stories"];
-const hierarchyOptions = ["Top 10", "Top 20", "Top 50"];
+
+const sportsSubcategories = [
+  { value: "Basketball", label: "Basketball", icon: Volleyball },
+  { value: "Ice-Hockey", label: "Ice Hockey", icon: Trophy },
+  { value: "Soccer", label: "Soccer", icon: Users }
+];
+
+const hierarchyOptions = [
+  { value: "Top 10", label: "Top 10", description: "Curated essentials" },
+  { value: "Top 20", label: "Top 20", description: "Extended favorites" },
+  { value: "Top 50", label: "Top 50", description: "Comprehensive list" }
+];
+
+const decades = [1980, 1990, 2000, 2010, 2020];
 
 export function CompositionModalLeftContent({
   selectedCategory,
   setSelectedCategory,
+  selectedSubcategory = "Basketball",
+  setSelectedSubcategory,
   timePeriod,
   setTimePeriod,
   selectedDecade,
@@ -32,8 +61,27 @@ export function CompositionModalLeftContent({
   setSelectedYear,
   hierarchy,
   setHierarchy,
+  isPredefined,
+  setIsPredefined,
+  customName,
+  setCustomName,
   color
 }: CompositionModalLeftContentProps) {
+  const [activeHierarchy, setActiveHierarchy] = useState(hierarchy);
+
+  const handleHierarchyChange = (newHierarchy: string) => {
+    setActiveHierarchy(newHierarchy);
+    setHierarchy(newHierarchy);
+  };
+
+  const handleCategoryChange = (category: string) => {
+    setSelectedCategory(category);
+    // Reset subcategory when changing main category
+    if (category === "Sports" && setSelectedSubcategory) {
+      setSelectedSubcategory("Basketball");
+    }
+  };
+
   return (
     <div 
       className="p-8 border-r"
@@ -47,154 +95,79 @@ export function CompositionModalLeftContent({
         `
       }}
     >
-      <h3 className="text-xl font-bold text-slate-200 mb-6 flex items-center gap-2">
-        <div 
-          className="w-2 h-2 rounded-full"
-          style={{ background: color.accent }}
+      <SetupHeader
+        isPredefined={isPredefined}
+        setIsPredefined={setIsPredefined}
+        color={color}
         />
-        Configuration
-      </h3>
+
+      {/* Custom Name Input */}
+      <AnimatePresence>
+        {!isPredefined && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mb-8"
+          >
+            <label className="block text-sm font-medium text-slate-300 mb-3">
+              Custom List Name
+            </label>
+            <input
+              type="text"
+              value={customName}
+              onChange={(e) => setCustomName(e.target.value)}
+              placeholder="Enter your custom ranking name..."
+              className="w-full px-4 py-3 rounded-xl text-slate-200 transition-all duration-200 focus:outline-none placeholder-slate-500"
+              style={{
+                background: `
+                  linear-gradient(135deg, 
+                    rgba(30, 41, 59, 0.9) 0%,
+                    rgba(51, 65, 85, 0.95) 100%
+                  )
+                `,
+                border: `2px solid ${color.primary}40`,
+              }}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Category Selection */}
-      <div className="mb-8">
-        <label className="block text-sm font-medium text-slate-300 mb-3">
-          Category
-        </label>
-        <div className="grid grid-cols-2 gap-2">
-          {categories.map((category) => (
-            <button
-              key={category}
-              onClick={() => setSelectedCategory(category)}
-              className={`p-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
-                selectedCategory === category 
-                  ? 'text-white shadow-lg' 
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-              style={selectedCategory === category ? {
-                background: `linear-gradient(135deg, ${color.primary}80, ${color.secondary}80)`,
-                boxShadow: `0 2px 8px ${color.primary}30`
-              } : {
-                background: 'rgba(51, 65, 85, 0.3)',
-                border: '1px solid rgba(71, 85, 105, 0.3)'
-              }}
-            >
-              {category}
-            </button>
-          ))}
-        </div>
-      </div>
+      <SetupCategory  
+        categories={categories}
+        handleCategoryChange={handleCategoryChange}
+        isPredefined={isPredefined}
+        selectedCategory={selectedCategory}
+        sportsSubcategories={sportsSubcategories}
+        selectedSubcategory={selectedSubcategory}
+        setSelectedSubcategory={setSelectedSubcategory}
+        color={color}
+        />
 
       {/* Time Period */}
-      <div className="mb-8">
-        <label className="block text-sm font-medium text-slate-300 mb-3">
-          Time Period
-        </label>
-        <div className="space-y-3">
-          {/* Time Period Toggle */}
-          <div className="flex gap-2">
-            {[
-              { value: "all-time", label: "All Time" },
-              { value: "decade", label: "By Decade" },
-              { value: "year", label: "By Year" }
-            ].map((option) => (
-              <button
-                key={option.value}
-                onClick={() => setTimePeriod(option.value as any)}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
-                  timePeriod === option.value 
-                    ? 'text-white' 
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-                style={timePeriod === option.value ? {
-                  background: `linear-gradient(135deg, ${color.primary}60, ${color.secondary}60)`,
-                } : {
-                  background: 'rgba(51, 65, 85, 0.3)',
-                }}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
+      <SetupTimePeriod
+        timePeriod={timePeriod}
+        setTimePeriod={setTimePeriod}
+        selectedDecade={selectedDecade}
+        setSelectedDecade={setSelectedDecade}
+        selectedYear={selectedYear}
+        setSelectedYear={setSelectedYear}
+        isPredefined={isPredefined}
+        color={color}
+        hierarchyOptions={hierarchyOptions}
+        handleHierarchyChange={handleHierarchyChange}
+        activeHierarchy={activeHierarchy}
+        />
 
-          {/* Decade Slider */}
-          {timePeriod === "decade" && (
-            <div className="mt-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-slate-400">1980s</span>
-                <span 
-                  className="text-sm font-bold"
-                  style={{ color: color.accent }}
-                >
-                  {selectedDecade}s
-                </span>
-                <span className="text-xs text-slate-400">2020s</span>
-              </div>
-              <input
-                type="range"
-                min={1980}
-                max={2020}
-                step={10}
-                value={selectedDecade}
-                onChange={(e) => setSelectedDecade(Number(e.target.value))}
-                className="w-full h-2 rounded-lg appearance-none cursor-pointer"
-                style={{
-                  background: `linear-gradient(to right, ${color.primary}40, ${color.secondary}40)`,
-                }}
-              />
-            </div>
-          )}
-
-          {/* Year Input */}
-          {timePeriod === "year" && (
-            <div className="mt-4">
-              <input
-                type="number"
-                min={2000}
-                max={2025}
-                value={selectedYear}
-                onChange={(e) => setSelectedYear(Number(e.target.value))}
-                className="w-full px-4 py-3 rounded-xl text-slate-200 transition-all duration-200 focus:outline-none"
-                style={{
-                  background: `
-                    linear-gradient(135deg, 
-                      rgba(30, 41, 59, 0.9) 0%,
-                      rgba(51, 65, 85, 0.95) 100%
-                    )
-                  `,
-                  border: `2px solid ${color.primary}40`,
-                }}
-              />
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Hierarchy Selection */}
-      <div className="mb-8">
-        <label className="block text-sm font-medium text-slate-300 mb-3">
-          List Size
-        </label>
-        <div className="flex gap-2">
-          {hierarchyOptions.map((option) => (
-            <button
-              key={option}
-              onClick={() => setHierarchy(option)}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
-                hierarchy === option 
-                  ? 'text-white' 
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-              style={hierarchy === option ? {
-                background: `linear-gradient(135deg, ${color.primary}80, ${color.secondary}80)`,
-              } : {
-                background: 'rgba(51, 65, 85, 0.3)',
-              }}
-            >
-              {option}
-            </button>
-          ))}
-        </div>
-      </div>
+      {/* Enhanced List Size Selection */}
+      <SetupListSize
+        hierarchyOptions={hierarchyOptions}
+        handleHierarchyChange={handleHierarchyChange}
+        activeHierarchy={activeHierarchy}
+        isPredefined={isPredefined}
+        color={color}
+        />
     </div>
   );
 }

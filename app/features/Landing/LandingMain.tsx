@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ShowcaseHeader } from "./ShowcaseHeader";
 import { FloatingShowcase } from "./FloatingShowcase";
 
 export function LandingMain() {
