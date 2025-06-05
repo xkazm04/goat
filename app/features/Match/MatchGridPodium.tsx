@@ -1,219 +1,227 @@
-import { GridItemType } from "@/app/types/match";
 import { GridItem } from "./MatchGridItem";
 import { motion } from "framer-motion";
-import { Plus } from "lucide-react";
+import { useItemStore } from "@/app/stores/item-store";
+import MatchEmptySlot from "@/app/components/match/MatchEmptySlot";
+import MatchDroppable from "@/app/components/match/MatchDroppable";
+import { GridSection, PodiumConfig } from "@/app/config/matchStructure";
 
 type Props = {
-  gridItems: GridItemType[];
-  selectedBacklogItem: GridItemType | null;
-  handleGridItemClick: (id: string) => void;
-  selectedGridItem: string | null;
   maxItems: number;
-  canAddAtPosition: (position: number) => boolean;
 }
 
-const MatchGridPodium = ({
-  gridItems, 
-  selectedBacklogItem, 
-  handleGridItemClick, 
-  selectedGridItem,
-  maxItems,
-  canAddAtPosition
-}: Props) => {
+
+const MatchGridPodium = ({ maxItems }: Props) => {
+  const { 
+    gridItems, 
+    selectedBacklogItem, 
+    selectedGridItem,
+    setSelectedGridItem,
+    assignItemToGrid,
+    removeItemFromGrid,
+    canAddAtPosition,
+    backlogGroups,
+    activeItem
+  } = useItemStore();
   
-  const top3Items = gridItems.slice(0, 3);
-  const next7Items = gridItems.slice(3, 10);
-  const remainingItems = gridItems.slice(10);
-  
-  // Find the first and last available positions for special highlighting
-  const getNextAvailablePosition = () => {
-    for (let i = 0; i < maxItems; i++) {
-      if (!gridItems[i] || !gridItems[i].matched) {
-        return canAddAtPosition(i) ? i : -1;
-      }
+  const isDraggingBacklogItem = activeItem && backlogGroups
+    .flatMap(group => group.items)
+    .some(item => item.id === activeItem);
+
+  const handleGridItemClick = (id: string) => {
+    const clickedItem = gridItems.find(item => item.id === id);
+    if (clickedItem?.matched) {
+      const position = parseInt(id.replace('grid-', ''));
+      removeItemFromGrid(position);
+    } else {
+      setSelectedGridItem(selectedGridItem === id ? null : id);
     }
-    return -1;
   };
 
-  const getLastAvailablePosition = () => {
-    for (let i = maxItems - 1; i >= 0; i--) {
-      if (!gridItems[i] || !gridItems[i].matched) {
-        return canAddAtPosition(i) ? i : -1;
-      }
+  // Podium configuration (Top 3)
+  const podiumConfig: PodiumConfig[] = [
+    {
+      position: 1, // 2nd place
+      label: '#2',
+      labelClass: 'text-lg font-bold text-slate-300 mb-3',
+      containerClass: 'w-36 lg:w-40 xl:w-44 relative',
+      animationDelay: 0.2,
+      size: 'large'
+    },
+    {
+      position: 0, // 1st place
+      label: '#1',
+      labelClass: 'text-2xl font-bold text-yellow-400 mb-3',
+      containerClass: 'w-40 lg:w-44 xl:w-48 relative',
+      animationDelay: 0.1,
+      size: 'large'
+    },
+    {
+      position: 2, // 3rd place
+      label: '#3',
+      labelClass: 'text-lg font-bold text-slate-300 mb-3',
+      containerClass: 'w-32 lg:w-36 xl:w-40 relative',
+      animationDelay: 0.3,
+      size: 'large'
     }
-    return -1;
-  };
+  ];
 
-  const nextAvailablePosition = getNextAvailablePosition();
-  const lastAvailablePosition = getLastAvailablePosition();
-  
-  const renderEmptySlot = (position: number, size: 'large' | 'medium' | 'small' = 'small') => {
-    const canAdd = canAddAtPosition(position);
-    const isNextAvailable = position === nextAvailablePosition;
-    const isLastAvailable = position === lastAvailablePosition;
-    const shouldHighlight = selectedBacklogItem && canAdd && (isNextAvailable || isLastAvailable);
-    
-    const sizeClasses = {
-      large: 'w-8 h-8 text-2xl',
-      medium: 'w-5 h-5 text-lg', 
-      small: 'w-4 h-4 text-sm'
-    };
+  const gridSections: GridSection[] = [
+    {
+      id: 'positions-4-10',
+      positions: Array.from({ length: 7 }, (_, i) => i + 3), 
+      gridCols: 'grid-cols-7',
+      gap: 'gap-6',
+      size: 'medium',
+      containerClass: 'mb-8',
+      showRankLabel: true,
+      rankLabelClass: 'text-sm font-semibold text-slate-400 mb-2',
+      animationDelay: 0.4,
+      animationStagger: 0.05
+    },
+    {
+      id: 'remaining-positions',
+      positions: Array.from({ length: maxItems - 10 }, (_, i) => i + 10),
+      gridCols: 'grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 2xl:grid-cols-12',
+      gap: 'gap-3 lg:gap-4 xl:gap-5',
+      size: 'small',
+      containerClass: 'flex-1',
+      showRankLabel: true,
+      rankLabelClass: 'text-xs font-medium text-slate-500 mb-1',
+      animationDelay: 0.6,
+      animationStagger: 0.02
+    }
+  ];
+
+  // Render podium item
+  const renderPodiumItem = (config: PodiumConfig) => {
+    const item = gridItems[config.position];
     
     return (
-      <div 
-        className={`${size === 'large' ? 'w-full h-full' : 'aspect-[4/5]'} rounded-xl border-2 border-dashed flex items-center justify-center group transition-all duration-300 relative ${
-          shouldHighlight
-            ? 'cursor-pointer hover:scale-105 border-green-400 hover:border-green-300'
-            : canAdd && selectedBacklogItem 
-            ? 'cursor-pointer hover:scale-105 border-slate-600 hover:border-blue-400' 
-            : 'cursor-not-allowed border-slate-700 opacity-50'
-        }`}
-        style={{
-          background: shouldHighlight
-            ? 'rgba(34, 197, 94, 0.08)'
-            : canAdd && selectedBacklogItem 
-            ? 'rgba(59, 130, 246, 0.05)' 
-            : 'rgba(71, 85, 105, 0.1)'
-        }}
-        onClick={() => {
-          if (selectedBacklogItem && canAdd) {
-            const newId = `grid-${Date.now()}-${position}`;
-            handleGridItemClick(newId);
-          }
-        }}
+      <motion.div
+        key={`podium-${config.position}`}
+        initial={{ opacity: 0, y: 50 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: config.animationDelay }}
+        className="flex flex-col items-center"
       >
-        <div className="flex flex-col items-center gap-3">
-          <Plus 
-            className={`${sizeClasses[size].split(' ').slice(0, 2).join(' ')} transition-opacity ${
-              shouldHighlight
-                ? 'opacity-60 group-hover:opacity-80 text-green-400 group-hover:text-green-300'
-                : canAdd && selectedBacklogItem
-                ? 'opacity-40 group-hover:opacity-60 text-slate-400 group-hover:text-blue-400'
-                : 'opacity-20 text-slate-600'
-            }`}
-          />
-          <span 
-            className={`${sizeClasses[size].split(' ')[2]} font-black ${
-              shouldHighlight
-                ? 'opacity-50 group-hover:opacity-70 text-green-400'
-                : canAdd && selectedBacklogItem
-                ? 'opacity-30 group-hover:opacity-50 text-slate-400'
-                : 'opacity-20 text-slate-600'
-            }`}
+        <div className={config.labelClass}>{config.label}</div>
+        <div className={config.containerClass}>
+          <MatchDroppable
+            position={config.position}
+            size={config.size}
+            isDraggingBacklogItem={isDraggingBacklogItem}
+            selectedBacklogItem={selectedBacklogItem}
+            canAddAtPosition={canAddAtPosition}
           >
-            {position + 1}
-          </span>
+            {item?.matched ? (
+              <GridItem 
+                item={item} 
+                index={config.position} 
+                onClick={() => handleGridItemClick(item.id)}
+                isSelected={selectedGridItem === item.id}
+                size={config.size}
+              />
+            ) : (
+              <MatchEmptySlot
+                position={config.position} 
+                size={config.size} 
+                selectedBacklogItem={selectedBacklogItem}
+                backlogGroups={backlogGroups}
+                gridItems={gridItems}
+                assignItemToGrid={assignItemToGrid}
+                canAddAtPosition={canAddAtPosition}
+              />
+            )}
+          </MatchDroppable>
         </div>
-        
-        {/* Visual indicator for restricted positions */}
-        {!canAdd && selectedBacklogItem && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-6 h-6 rounded-full bg-red-500/20 border border-red-500/40 flex items-center justify-center">
-              <span className="text-red-400 text-xs font-bold">✕</span>
-            </div>
-          </div>
+      </motion.div>
+    );
+  };
+
+  // Render grid item for regular sections
+  const renderGridItem = (position: number, config: GridSection, index: number) => {
+    const item = gridItems[position];
+    const emptySlot = !item?.matched;
+    
+    return (
+      <motion.div
+        key={emptySlot ? `empty-${position}` : item.id}
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ 
+          delay: (config.animationDelay || 0) + index * (config.animationStagger || 0.05) 
+        }}
+        className="flex flex-col items-center"
+      >
+        {config.showRankLabel && (
+          <div className={config.rankLabelClass}>#{position + 1}</div>
         )}
+        <div className="w-full relative">
+          <MatchDroppable
+            position={position}
+            size={config.size}
+            isDraggingBacklogItem={isDraggingBacklogItem}
+            selectedBacklogItem={selectedBacklogItem}
+            canAddAtPosition={canAddAtPosition}
+          >
+            {emptySlot ? (
+              <MatchEmptySlot
+                position={position} 
+                size={config.size} 
+                selectedBacklogItem={selectedBacklogItem}
+                backlogGroups={backlogGroups}
+                gridItems={gridItems}
+                assignItemToGrid={assignItemToGrid}
+                canAddAtPosition={canAddAtPosition}
+              />
+            ) : (
+              <GridItem 
+                item={item} 
+                index={position} 
+                onClick={() => handleGridItemClick(item.id)}
+                isSelected={selectedGridItem === item.id}
+                size={config.size}
+              />
+            )}
+          </MatchDroppable>
+        </div>
+      </motion.div>
+    );
+  };
+
+  // Render grid section
+  const renderGridSection = (config: GridSection) => {
+    // Filter positions that exist within maxItems
+    const validPositions = config.positions.filter(pos => pos < maxItems);
+    
+    if (validPositions.length === 0) return null;
+
+    return (
+      <div key={config.id} className={config.containerClass}>
+        <div className={`grid ${config.gridCols} ${config.gap}`}>
+          {validPositions.map((position, index) => 
+            renderGridItem(position, config, index)
+          )}
+        </div>
       </div>
     );
   };
-  
+
   return (
-    <div className="space-y-6">
-      {/* Top 3 - Podium Row (only show if maxItems >= 3) */}
-      {maxItems >= 3 && (
-        <div className="grid grid-cols-3 gap-4 lg:gap-6">
-          {[0, 1, 2].map((position) => {
-            const item = top3Items[position];
-            const emptySlot = !item;
-            
-            return (
-              <motion.div
-                key={emptySlot ? `empty-top3-${position}` : item.id}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3, delay: position * 0.1 }}
-                className="aspect-[3/4]"
-              >
-                {emptySlot ? (
-                  renderEmptySlot(position, 'large')
-                ) : (
-                  <GridItem 
-                    item={item} 
-                    index={position} 
-                    onClick={() => handleGridItemClick(item.id)}
-                    isSelected={selectedGridItem === item.id}
-                    size="large"
-                  />
-                )}
-              </motion.div>
-            );
-          })}
-        </div>
-      )}
+    <div className="w-full space-y-8 flex-1 flex flex-col">
+      {/* Top 3 - Podium Style */}
+      <div className="flex items-end justify-center gap-8 mb-12">
+        {podiumConfig.map(renderPodiumItem)}
+      </div>
 
-      {/* Next 7 - Second Row (only show if maxItems > 3) */}
-      {maxItems > 3 && (
-        <div className="grid grid-cols-4 lg:grid-cols-7 gap-3 lg:gap-4">
-          {[3, 4, 5, 6, 7, 8, 9].filter(pos => pos < maxItems).map((position) => {
-            const item = next7Items[position - 3];
-            const emptySlot = !item;
-            
-            return (
-              <motion.div
-                key={emptySlot ? `empty-next7-${position}` : item.id}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3, delay: position * 0.05 }}
-              >
-                {emptySlot ? (
-                  renderEmptySlot(position, 'medium')
-                ) : (
-                  <GridItem 
-                    item={item} 
-                    index={position} 
-                    onClick={() => handleGridItemClick(item.id)}
-                    isSelected={selectedGridItem === item.id}
-                    size="medium"
-                  />
-                )}
-              </motion.div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Remaining items - Regular Grid (only show if maxItems > 10) */}
-      {maxItems > 10 && (
-        <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 2xl:grid-cols-12 3xl:grid-cols-10 gap-2 sm:gap-3 lg:gap-4">
-          {[...Array(maxItems - 10)].map((_, idx) => {
-            const position = idx + 10;
-            const item = remainingItems[idx];
-            const emptySlot = !item;
-            
-            return (
-              <motion.div
-                key={emptySlot ? `empty-remaining-${position}` : item.id}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3, delay: position * 0.01 }}
-              >
-                {emptySlot ? (
-                  renderEmptySlot(position, 'small')
-                ) : (
-                  <GridItem 
-                    item={item} 
-                    index={position} 
-                    onClick={() => handleGridItemClick(item.id)}
-                    isSelected={selectedGridItem === item.id}
-                  />
-                )}
-              </motion.div>
-            );
-          })}
-        </div>
-      )}
+      {/* Regular Grid Sections */}
+      {gridSections.map(section => {
+        // Only render if there are items in this range
+        const hasItemsInRange = section.positions.some(pos => pos < maxItems);
+        return hasItemsInRange ? renderGridSection(section) : null;
+      })}
     </div>
   );
 };
 
-export default MatchGridPodium
+export default MatchGridPodium;

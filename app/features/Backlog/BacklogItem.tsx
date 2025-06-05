@@ -3,11 +3,11 @@
 import { BacklogItemType } from "@/app/types/match";
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
-import { useMatchStore } from "@/app/stores/match-store";
 import { motion } from "framer-motion";
 import { Star, Gamepad2, Trophy, GripVertical } from "lucide-react";
 import { ContextMenu } from "./ContextMenu";
 import { useState } from "react";
+import { useItemStore } from "@/app/stores/item-store";
 
 interface BacklogItemProps {
   item: BacklogItemType;
@@ -31,22 +31,32 @@ export function BacklogItem({ item, isDragOverlay = false }: BacklogItemProps) {
     setSelectedBacklogItem,
     removeItemFromGroup,
     toggleCompareItem,
-    compareList
-  } = useMatchStore();
+    compareList,
+    getNextAvailableGridPosition,
+    assignItemToGrid
+  } = useItemStore();
   
   const [contextMenu, setContextMenu] = useState<{
     isOpen: boolean;
     position: { x: number; y: number };
   }>({ isOpen: false, position: { x: 0, y: 0 } });
   
+  // Fixed: Ensure draggable works correctly
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: item.id,
     disabled: item.matched || isDragOverlay,
+    data: {
+      type: 'backlog-item',
+      item: item
+    }
   });
   
-  const style = transform ? {
-    transform: CSS.Translate.toString(transform),
-  } : undefined;
+  // Fixed: Use CSS Transform instead of Translate
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    opacity: isDragging ? 0.5 : item.matched ? 0.4 : 1,
+    zIndex: isDragging ? 1000 : 1,
+  };
 
   const IconComponent = getItemIcon(item.title);
   const isSelected = selectedBacklogItem === item.id;
@@ -58,6 +68,16 @@ export function BacklogItem({ item, isDragOverlay = false }: BacklogItemProps) {
         setSelectedBacklogItem(null);
       } else {
         setSelectedBacklogItem(item.id);
+      }
+    }
+  };
+
+  const handleDoubleClick = () => {
+    if (!item.matched && !isDragOverlay) {
+      // Quick assign to next available position
+      const nextPosition = getNextAvailableGridPosition();
+      if (nextPosition !== null) {
+        assignItemToGrid(item, nextPosition);
       }
     }
   };
@@ -89,21 +109,20 @@ export function BacklogItem({ item, isDragOverlay = false }: BacklogItemProps) {
   return (
     <>
       <motion.div
+        layout
         whileHover={{ scale: item.matched || isDragOverlay ? 1 : 1.05 }}
         whileTap={{ scale: item.matched || isDragOverlay ? 1 : 0.95 }}
       >
         <div
           ref={setNodeRef}
-          style={{
-            ...style,
-            opacity: isDragging ? 0.5 : item.matched ? 0.4 : 1
-          }}
+          style={style}
           {...(item.matched || isDragOverlay ? {} : { ...attributes, ...listeners })}
           onClick={handleClick}
+          onDoubleClick={handleDoubleClick}
           onContextMenu={handleContextMenu}
           className={`relative aspect-square rounded-xl border-2 overflow-hidden transition-all duration-300 group ${
-            item.matched || isDragOverlay ? 'cursor-not-allowed' : 'cursor-pointer'
-          } ${isDragOverlay ? 'pointer-events-none' : ''}`}
+            item.matched || isDragOverlay ? 'cursor-not-allowed' : 'cursor-grab active:cursor-grabbing'
+          } ${isDragOverlay ? 'pointer-events-none' : ''} ${isDragging ? 'z-50' : ''}`}
           style={{
             background: item.matched 
               ? 'rgba(71, 85, 105, 0.3)'
@@ -133,12 +152,15 @@ export function BacklogItem({ item, isDragOverlay = false }: BacklogItemProps) {
               ? '0 0 15px rgba(34, 197, 94, 0.3)'
               : item.matched
               ? 'none'
-              : '0 2px 8px rgba(0, 0, 0, 0.3)'
+              : isDragging
+              ? '0 8px 25px rgba(0, 0, 0, 0.4)'
+              : '0 2px 8px rgba(0, 0, 0, 0.3)',
+            ...style // Apply the transform and other styles
           }}
         >
           {/* Drag Handle Indicator */}
           {!item.matched && !isDragOverlay && (
-            <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-50 transition-opacity z-10">
+            <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-70 transition-opacity z-10">
               <GripVertical 
                 className="w-4 h-4 text-slate-400" 
               />
@@ -199,7 +221,7 @@ export function BacklogItem({ item, isDragOverlay = false }: BacklogItemProps) {
           </div>
 
           {/* Hover Overlay for Available Items */}
-          {!item.matched && !isDragOverlay && (
+          {!item.matched && !isDragOverlay && !isDragging && (
             <div 
               className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center ${
                 isSelected ? 'bg-blue-500/10' : isInCompareList ? 'bg-green-500/10' : 'bg-black/20'
@@ -226,8 +248,8 @@ export function BacklogItem({ item, isDragOverlay = false }: BacklogItemProps) {
                   'In compare list'
                 ) : (
                   <div>
-                    <div>Select to rank</div>
-                    <div className="text-xs opacity-80">Right-click for options</div>
+                    <div>Drag to rank</div>
+                    <div className="text-xs opacity-80">or select first</div>
                   </div>
                 )}
               </div>

@@ -6,6 +6,7 @@ import { LucideIcon, Star, Crown, Award } from "lucide-react";
 interface ShowcaseCardProps {
   id: number;
   category: string;
+  subcategory?: string;
   title: string;
   author: string;
   comment: string;
@@ -15,22 +16,45 @@ interface ShowcaseCardProps {
     secondary: string;
     accent: string;
   };
-  onCardClick?: (category: string, color: any) => void;
+  timePeriod: "all-time" | "decade" | "year";
+  hiearchy: string;
+  onCardClick?: (cardData: {
+    category: string;
+    subcategory?: string;
+    timePeriod: "all-time" | "decade" | "year";
+    hierarchy: string;
+    title: string;
+    author: string;
+    comment: string;
+    color: any;
+  }) => void;
 }
 
 export function ShowcaseCard({ 
-  category, 
+  category,
+  subcategory,
   title, 
   author, 
   comment, 
   icon: IconComponent, 
   color,
+  timePeriod,
+  hiearchy,
   onCardClick
 }: ShowcaseCardProps) {
   
   const handleClick = () => {
     if (onCardClick) {
-      onCardClick(category, color);
+      onCardClick({
+        category,
+        subcategory,
+        timePeriod,
+        hierarchy: hiearchy,
+        title,
+        author,
+        comment,
+        color
+      });
     }
   };
 
@@ -97,12 +121,14 @@ export function ShowcaseCard({
               >
                 {category}
               </h3>
-              <p className="text-xs text-slate-400 font-medium">Greatest of All Time</p>
+              <p className="text-xs text-slate-400 font-medium">
+                {subcategory || "Greatest of All Time"}
+              </p>
             </div>
           </div>
           
           <div className={`px-3 py-1 rounded-full text-lg font-bold text-white border border-opacity-50`}>
-            Top 50
+            {hiearchy}
           </div>
         </div>
       </div>
@@ -195,6 +221,16 @@ export function ShowcaseCard({
         <p className="text-xs text-slate-400 mt-2 italic">
           "{comment}"
         </p>
+        
+        {/* Show time period and hierarchy */}
+        <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-700/50">
+          <span className="text-xs font-medium text-slate-300">
+            {timePeriod === "all-time" ? "All Time" : timePeriod}
+          </span>
+          <span className="text-xs font-medium" style={{ color: color.accent }}>
+            Click to customize
+          </span>
+        </div>
       </div>
 
       {/* Click to create indicator */}

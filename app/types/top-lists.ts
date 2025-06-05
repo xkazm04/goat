@@ -57,9 +57,9 @@ export interface ListAnalytics {
 // Request/Response types
 export interface CreateListRequest {
   title: string;
-  category: CategoryEnum;
+  category: CategoryEnum | string; // Allow string for flexibility
   subcategory?: string;
-  user_id?: string;
+  user_id: string; // Required for new endpoint
   predefined?: boolean;
   size?: number;
   time_period?: string;
@@ -99,4 +99,33 @@ export interface VersionComparison {
   removed_items: string[];
   ranking_changes: Record<string, { old_rank: number; new_rank: number }>;
   total_changes: number;
+}
+
+
+export interface ListCreationResponse {
+  list: {
+    id: string;
+    title: string;
+    category: string;
+    subcategory?: string;
+    user_id: string;
+    predefined: boolean;
+    size: number;
+    time_period: string;
+    parent_list_id?: string;
+    created_at: string;
+    updated_at: string;
+    is_temporary_user?: boolean; // Additional field from backend
+  };
+  user: {
+    id: string;
+    is_temporary: boolean;
+    display_name?: string;
+    email?: string;
+    username?: string;
+    created_at: string;
+    updated_at: string;
+  };
+  is_new_user: boolean;
+  success: boolean;
 }

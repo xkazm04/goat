@@ -1,152 +1,165 @@
 "use client";
 
-import { useMatchStore } from "@/app/stores/match-store";
-import { BacklogGroups } from "./BacklogGroups";
-import { ComparisonModal } from "./ComparisonModal";
-import { useEffect, useState } from "react";
-import {  PanelRightOpen, PanelRightClose } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import MatchContainerContent from "./MatchContainerContent";
+import { useEffect } from 'react';
+import { 
+  DndContext, 
+  DragOverlay, 
+  PointerSensor, 
+  useSensor, 
+  useSensors, 
+  DragEndEvent, 
+  DragStartEvent,
+  DragMoveEvent 
+} from '@dnd-kit/core';
+import MatchContainerContent from './MatchContainerContent';
+import { useItemStore } from '@/app/stores/item-store';
+import { useMatchStore } from '@/app/stores/match-store';
+import { useListStore } from '@/app/stores/use-list-store';
+import { BacklogItem } from '../Backlog/BacklogItem';
 
 export function MatchContainer() {
   const { 
-    setActiveItem, 
+    activeItem, 
     handleDragEnd, 
-    selectedBacklogItem, 
+    setActiveItem,
     backlogGroups,
-    gridItems,
-    assignItemToGrid,
-    maxItems = 50,
-    activeItem,
-    compareList
+    selectedBacklogItem
+  } = useItemStore();
+  
+  const { 
+    initializeMatchSession, 
+    keyboardMode, 
+    setKeyboardMode,
+    quickAssignToPosition 
   } = useMatchStore();
   
+  const { currentList } = useListStore();
+  
+  // Enhanced sensors for better drag experience
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 2, // Even more responsive
+      },
+    })
+  );
 
-  const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-
-
-  // Keyboard shortcuts for quick assignment
+  // Initialize match session when component mounts or list changes
   useEffect(() => {
-    const handleKeyPress = (event: KeyboardEvent) => {
-      const keyNumber = parseInt(event.key);
-      if (isNaN(keyNumber) || keyNumber < 0 || keyNumber > 9) return;
+    if (currentList) {
+      initializeMatchSession();
+    }
+  }, [currentList, initializeMatchSession]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Enable keyboard mode when user starts using numbers
+      if (['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'].includes(event.key)) {
+        if (!keyboardMode) {
+          setKeyboardMode(true);
+        }
+        
+        // Only assign if there's a selected backlog item
+        if (selectedBacklogItem) {
+          event.preventDefault();
+          const position = event.key === '0' ? 10 : parseInt(event.key);
+          quickAssignToPosition(position);
+        }
+      }
       
-      // Convert key to position (1-9 maps to 0-8, 0 maps to 9)
-      const position = keyNumber === 0 ? 9 : keyNumber - 1;
-      if (!selectedBacklogItem || position >= maxItems) return;
-      
-      const selectedItem = backlogGroups
-        .flatMap(group => group.items)
-        .find(item => item.id === selectedBacklogItem);
-      
-      if (!selectedItem || selectedItem.matched) return;
-      
-      const targetGridItem = gridItems[position];
-      if (!targetGridItem || !targetGridItem.matched) {
-        assignItemToGrid(selectedItem, position);
-        event.preventDefault();
+      // Escape to exit keyboard mode
+      if (event.key === 'Escape') {
+        setKeyboardMode(false);
       }
     };
 
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [selectedBacklogItem, backlogGroups, gridItems, assignItemToGrid, maxItems]);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [keyboardMode, setKeyboardMode, selectedBacklogItem, quickAssignToPosition]);
 
-
-  const toggleSidebar = () => {
-    setIsSidebarCollapsed(!isSidebarCollapsed);
+  // Handle drag start
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveItem(event.active.id.toString());
   };
 
-  return (
-    <div className="min-h-screen relative">
-      {/* Fixed Side Panel for XL+ screens */}
-      <div className="hidden xl:block">
-        <AnimatePresence>
-          {!isSidebarCollapsed && (
-            <motion.div
-              initial={{ x: 400, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: 400, opacity: 0 }}
-              transition={{ 
-                type: "spring", 
-                stiffness: 300, 
-                damping: 30 
-              }}
-              className="fixed right-0 top-0 h-full w-96 z-40"
-              style={{
-                background: `
-                  linear-gradient(135deg, 
-                    rgba(15, 23, 42, 0.95) 0%,
-                    rgba(30, 41, 59, 0.98) 100%
-                  )
-                `,
-                borderLeft: '1px solid rgba(71, 85, 105, 0.3)',
-                boxShadow: '-10px 0 30px rgba(0, 0, 0, 0.3)'
-              }}
-            >
-              <div className="h-full overflow-hidden">
-                <BacklogGroups />
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+  // Handle drag move for better feedback
+  const handleDragMove = (event: DragMoveEvent) => {
+    // This ensures smooth dragging outside containers
+  };
 
-        {/* Fixed Toggle Button for XL+ screens */}
-        <motion.button
-          onClick={toggleSidebar}
-          className="fixed right-4 top-4 p-3 rounded-xl transition-all duration-300 group z-50"
-          style={{
-            background: `linear-gradient(135deg, 
-              rgba(30, 41, 59, 0.9) 0%,
-              rgba(51, 65, 85, 0.95) 100%
-            )`,
-            border: '1px solid rgba(71, 85, 105, 0.4)',
-            boxShadow: '0 4px 15px rgba(0, 0, 0, 0.3)',
-            backdropFilter: 'blur(10px)'
-          }}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          title={isSidebarCollapsed ? 'Show Collection' : 'Hide Collection'}
-        >
-          <div className="flex items-center gap-2">
-            {isSidebarCollapsed ? (
-              <PanelRightOpen className="w-5 h-5 text-slate-300 group-hover:text-white transition-colors" />
-            ) : (
-              <PanelRightClose className="w-5 h-5 text-slate-300 group-hover:text-white transition-colors" />
-            )}
-          </div>
-        </motion.button>
-      </div>
+  // Handle drag end
+  const handleDragEndWrapper = (event: DragEndEvent) => {
+    handleDragEnd(event);
+    setActiveItem(null);
+  };
 
-      {/* Main Content */}
-      <div 
-        className={`transition-all duration-300 ${
-          isSidebarCollapsed  
-            ? 'mr-0' 
-            : 'xl:mr-96'
-        }`}
-      >
-        <div className="">
-          <MatchContainerContent
-            setActiveItem={setActiveItem}
-            handleDragEnd={handleDragEnd}
-            selectedBacklogItem={selectedBacklogItem}
-            backlogGroups={backlogGroups}
-            compareList={compareList}
-            toggleSidebar={toggleSidebar}
-            isSidebarCollapsed={isSidebarCollapsed}
-            setIsComparisonModalOpen={setIsComparisonModalOpen}
-          />
+  // Get the active dragged item for overlay
+  const activeBacklogItem = activeItem 
+    ? backlogGroups
+        .flatMap(group => group.items)
+        .find(item => item.id === activeItem)
+    : null;
 
-          {/* Comparison Modal */}
-          <ComparisonModal
-            isOpen={isComparisonModalOpen}
-            onClose={() => setIsComparisonModalOpen(false)}
-            items={compareList}
-          />
+  if (!currentList) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-slate-200 mb-4">No List Selected</h2>
+          <p className="text-slate-400">Please create or select a list to start ranking.</p>
         </div>
       </div>
-    </div>
+    );
+  }
+
+  return (
+    <DndContext
+      sensors={sensors}
+      onDragStart={handleDragStart}
+      onDragMove={handleDragMove}
+      onDragEnd={handleDragEndWrapper}
+    >
+      <div className="min-h-screen relative"> {/* Add relative positioning */}
+        {/* Keyboard Mode Indicator */}
+        {keyboardMode && (
+          <div className="fixed top-4 right-4 z-50 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg">
+            <div className="text-sm font-semibold">Keyboard Mode Active</div>
+            <div className="text-xs opacity-90">
+              Press 1-9 or 0 to assign to positions 1-10
+            </div>
+          </div>
+        )}
+        
+        <MatchContainerContent />
+      </div>
+      
+      {/* Enhanced Drag Overlay with Fixed Positioning */}
+      <DragOverlay
+        dropAnimation={{
+          duration: 250,
+          easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)',
+        }}
+        style={{
+          cursor: 'grabbing',
+          zIndex: 1000, // Ensure it's on top
+        }}
+      >
+        {activeBacklogItem && (
+          <div 
+            className="rotate-6 scale-110"
+            style={{
+              filter: 'drop-shadow(0 15px 35px rgba(0, 0, 0, 0.6))',
+              transformOrigin: 'center',
+              pointerEvents: 'none', // Prevent interference
+            }}
+          >
+            <BacklogItem 
+              item={activeBacklogItem} 
+              isDragOverlay={true} 
+            />
+          </div>
+        )}
+      </DragOverlay>
+    </DndContext>
   );
 }

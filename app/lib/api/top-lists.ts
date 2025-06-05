@@ -8,6 +8,7 @@ import {
   CloneListRequest,
   SearchListsParams,
   VersionComparison,
+  ListCreationResponse, // Import the new type
 } from '@/app/types/top-lists';
 
 const LISTS_ENDPOINT = '/top/lists';
@@ -25,9 +26,14 @@ export const topListsApi = {
     });
   },
 
-  // Create new list
+  // Create new list (legacy endpoint)
   createList: async (data: CreateListRequest): Promise<TopList> => {
     return apiClient.post<TopList>(LISTS_ENDPOINT, data);
+  },
+
+  // NEW: Create list with automatic user handling
+  createListWithUser: async (data: CreateListRequest): Promise<ListCreationResponse> => {
+    return apiClient.post<ListCreationResponse>(`${LISTS_ENDPOINT}/create-with-user`, data);
   },
 
   // Update existing list

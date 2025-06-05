@@ -4,6 +4,7 @@ export const showcaseData = [
     {
         id: 1,
         category: "Sports",
+        subcategory: "basketball",
         title: "Top 50 NBA Players",
         author: "@mbj",
         comment: "never lost in finals",
@@ -13,6 +14,8 @@ export const showcaseData = [
             secondary: "#d97706",
             accent: "#fbbf24",
         },
+        timePeriod: "all-time" as const,
+        hiearchy: "Top 50",
         position: { x: 10, y: 20 },
         rotation: -5,
         scale: 1.0,
@@ -20,9 +23,12 @@ export const showcaseData = [
     {
         id: 2,
         category: "Games",
+        subcategory: "video-games",
         title: "Greatest Video Games",
         author: "@gamer_pro",
         comment: "timeless classics that changed everything",
+        timePeriod: "all-time" as const,
+        hiearchy: "Top 50",
         icon: Gamepad2,
         color: {
             primary: "#8b5cf6",
@@ -36,8 +42,11 @@ export const showcaseData = [
     {
         id: 3,
         category: "Music",
+        subcategory: "hip-hop",
         title: "Top Hip-Hop Tracks",
         author: "@music_head",
+        timePeriod: "all-time" as const,
+        hiearchy: "Top 50",
         comment: "beats that defined generations",
         icon: Music,
         color: {
@@ -53,8 +62,11 @@ export const showcaseData = [
     {
         id: 4,
         category: "Stories",
+        subcategory: "sci-fi",
         title: "Sci-Fi Masterpieces",
         author: "@film_buff",
+        timePeriod: "all-time" as const,
+        hiearchy: "Top 50",
         comment: "mind-bending cinema at its finest",
         icon: Film,
         color: {
@@ -69,8 +81,11 @@ export const showcaseData = [
     {
         id: 5,
         category: "Stories",
+        subcategory: "fantasy",
         title: "Fantasy Novels",
         author: "@book_worm",
+        timePeriod: "all-time" as const,
+        hiearchy: "Top 50",
         comment: "worlds beyond imagination",
         icon: Book,
         color: {

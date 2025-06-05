@@ -112,7 +112,7 @@ const SetupPreview = ({ color, selectedCategory, selectedSubcategory, timePeriod
                 {/* Subcategory Header */}
                 <div className="flex items-center gap-3 mb-3">
                     <div
-                        className="w-8 h-8 rounded-lg flex items-center justify-center"
+                        className="w-10 h-10 rounded-lg flex items-center justify-center"
                         style={{
                             background: `linear-gradient(135deg, ${color.primary}30, ${color.secondary}30)`
                         }}

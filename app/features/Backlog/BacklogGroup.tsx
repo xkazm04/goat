@@ -4,9 +4,10 @@ import { BacklogGroupType } from "@/app/types/match";
 import { BacklogItem } from "./BacklogItem";
 import { AddItemPlaceholder } from "./AddItemPlaceholder";
 import { AddItemModal } from "./AddItemModal";
+import { useItemStore } from "@/app/stores/item-store"; // Changed from match-store to item-store
 import { useMatchStore } from "@/app/stores/match-store";
 import { motion, AnimatePresence } from "framer-motion";
-import { Users, Gamepad2 } from "lucide-react";
+import { Users, Gamepad2, ChevronDown, ChevronRight } from "lucide-react";
 import { useMemo, useState } from "react";
 
 interface BacklogGroupProps {
@@ -22,7 +23,8 @@ const getGroupIcon = (title: string) => {
 };
 
 export function BacklogGroup({ group }: BacklogGroupProps) {
-  const { toggleBacklogGroup, addItemToGroup } = useMatchStore();
+  const { toggleBacklogGroup } = useItemStore(); // Moved to item store
+  const { addItemToGroup } = useMatchStore(); // Keep this in match store for business logic
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   
   const availableItems = useMemo(() => 
@@ -92,6 +94,15 @@ export function BacklogGroup({ group }: BacklogGroupProps) {
               }}
             >
               {availableItems.length}
+            </div>
+            
+            {/* Expand/Collapse Indicator */}
+            <div className="text-slate-400 group-hover:text-slate-300 transition-colors">
+              {group.isOpen ? (
+                <ChevronDown className="w-4 h-4" />
+              ) : (
+                <ChevronRight className="w-4 h-4" />
+              )}
             </div>
           </div>
         </button>

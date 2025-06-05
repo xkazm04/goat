@@ -1,111 +1,125 @@
-import { Search } from "lucide-react";
+"use client";
 
-type Props = {
-    matchedItems: number;
-    totalItems: number;
-    searchTerm: string;
-    setSearchTerm: (term: string) => void;
+import { Search, Maximize2, X } from "lucide-react";
+import { motion } from "framer-motion";
+
+interface BacklogGroupsHeaderProps {
+  totalItems: number;
+  matchedItems: number;
+  searchTerm: string;
+  setSearchTerm: (term: string) => void;
+  isExpanded?: boolean;
+  onToggleExpanded?: () => void;
+  onClose?: () => void;
 }
 
-const BacklogGroupsHeader = ({matchedItems, totalItems, searchTerm, setSearchTerm}: Props) => {
-    return       <div 
-        className="relative px-8 py-6 border-b"
-        style={{
-          borderImage: 'linear-gradient(90deg, transparent, rgba(71, 85, 105, 0.5), transparent) 1',
-          background: `
-            linear-gradient(135deg, 
-              rgba(30, 41, 59, 0.8) 0%,
-              rgba(51, 65, 85, 0.9) 100%
-            )
-          `
-        }}
-      >
-        <div className="flex items-center justify-between mb-6">
-          <div 
-            className="relative px-4 py-2 rounded-full text-sm font-bold tracking-wide"
-            style={{
-              background: `
-                linear-gradient(135deg, 
-                  rgba(59, 130, 246, 0.2) 0%,
-                  rgba(147, 51, 234, 0.2) 100%
-                )
-              `,
-              border: '1px solid rgba(59, 130, 246, 0.4)',
-              backdropFilter: 'blur(8px)',
-              color: '#93c5fd'
-            }}
+const BacklogGroupsHeader = ({
+  totalItems,
+  matchedItems,
+  searchTerm,
+  setSearchTerm,
+  isExpanded = false,
+  onToggleExpanded,
+  onClose
+}: BacklogGroupsHeaderProps) => {
+  return (
+    <div 
+      className="p-6 border-b relative"
+      style={{
+        borderColor: 'rgba(71, 85, 105, 0.3)',
+        background: `
+          linear-gradient(135deg, 
+            rgba(30, 41, 59, 0.9) 0%,
+            rgba(51, 65, 85, 0.95) 100%
+          )
+        `
+      }}
+    >
+      {/* Header Row */}
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 
+            className={`font-black tracking-tight text-white ${
+              isExpanded ? 'text-2xl' : 'text-xl'
+            }`}
           >
-            <span className="relative z-10">{matchedItems}</span>
-            <span className="opacity-60 mx-1">/</span>
-            <span className="opacity-80">{totalItems}</span>
-            <div 
-              className="absolute inset-0 rounded-full opacity-20"
-              style={{
-                background: `
-                  radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.5) 0%, transparent 50%)
-                `
-              }}
-            />
-          </div>
+            Collection
+          </h2>
+          <p 
+            className="text-xs font-medium text-slate-400 mt-0.5"
+          >
+            {matchedItems} of {totalItems} used
+          </p>
         </div>
 
-        {/* Search */}
-        <div className="relative group">
-          <div 
-            className="absolute inset-0 rounded-xl opacity-0 group-focus-within:opacity-100 transition-all duration-300"
-            style={{
-              background: `
-                linear-gradient(135deg, 
-                  rgba(59, 130, 246, 0.1) 0%,
-                  rgba(147, 51, 234, 0.1) 100%
-                )
-              `,
-              transform: 'scale(1.02)'
-            }}
-          />
-          <div className="relative">
-            <Search 
-              className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-blue-400 transition-colors duration-200"
-            />
-            <input
-              type="text"
-              placeholder="Search legends..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 focus:outline-none relative z-10 text-slate-200 placeholder:text-slate-500"
+        {/* Controls */}
+        <div className="flex items-center gap-2">
+          {/* Expand Button (only in normal view) */}
+          {!isExpanded && onToggleExpanded && (
+            <motion.button
+              onClick={onToggleExpanded}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="p-2 rounded-xl transition-all duration-200 group"
               style={{
-                background: `
-                  linear-gradient(135deg, 
-                    rgba(30, 41, 59, 0.9) 0%,
-                    rgba(51, 65, 85, 0.95) 100%
-                  )
-                `,
-                border: '1.5px solid rgba(71, 85, 105, 0.4)',
-                backdropFilter: 'blur(8px)',
-                boxShadow: `
-                  0 1px 3px 0 rgba(0, 0, 0, 0.3),
-                  inset 0 1px 0 rgba(148, 163, 184, 0.1)
-                `
+                background: 'rgba(59, 130, 246, 0.1)',
+                border: '1px solid rgba(59, 130, 246, 0.2)'
               }}
-              onFocus={(e) => {
-                e.target.style.borderColor = 'rgba(59, 130, 246, 0.6)';
-                e.target.style.boxShadow = `
-                  0 0 0 3px rgba(59, 130, 246, 0.2),
-                  0 4px 6px -1px rgba(0, 0, 0, 0.3),
-                  inset 0 1px 0 rgba(148, 163, 184, 0.1)
-                `;
+              title="Expand collection view"
+            >
+              <Maximize2 className="w-4 h-4 text-blue-400 group-hover:text-blue-300 transition-colors" />
+            </motion.button>
+          )}
+
+          {/* Close Button (only in expanded view) */}
+          {isExpanded && onClose && (
+            <motion.button
+              onClick={onClose}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="p-2 rounded-xl transition-all duration-200 group"
+              style={{
+                background: 'rgba(239, 68, 68, 0.1)',
+                border: '1px solid rgba(239, 68, 68, 0.2)'
               }}
-              onBlur={(e) => {
-                e.target.style.borderColor = 'rgba(71, 85, 105, 0.4)';
-                e.target.style.boxShadow = `
-                  0 1px 3px 0 rgba(0, 0, 0, 0.3),
-                  inset 0 1px 0 rgba(148, 163, 184, 0.1)
-                `;
-              }}
-            />
-          </div>
+              title="Close expanded view"
+            >
+              <X className="w-4 h-4 text-red-400 group-hover:text-red-300 transition-colors" />
+            </motion.button>
+          )}
         </div>
       </div>
-}
+
+      {/* Search Bar */}
+      <div className="relative">
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <Search className="w-4 h-4 text-slate-400" />
+        </div>
+        <input
+          type="text"
+          placeholder={`Search item...`}
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className={`w-full pl-10 pr-4 py-3 outline-none rounded-xl text-sm transition-all duration-200 ${
+            isExpanded ? 'text-base py-4' : ''
+          }`}
+          style={{
+            background: 'rgba(15, 23, 42, 0.7)',
+            border: '1px solid rgba(71, 85, 105, 0.4)',
+            color: 'white'
+          }}
+        />
+        {searchTerm && (
+          <button
+            onClick={() => setSearchTerm('')}
+            className="absolute inset-y-0 right-0 pr-3 flex items-center"
+          >
+            <X className="w-4 h-4 text-slate-400 hover:text-slate-300 transition-colors" />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
 
 export default BacklogGroupsHeader;

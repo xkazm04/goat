@@ -17,6 +17,7 @@ import {
   CloneListRequest,
   SearchListsParams,
   VersionComparison,
+  ListCreationResponse, // Import new type
 } from '@/app/types/top-lists';
 
 // Query Hooks
@@ -102,6 +103,59 @@ export const useVersionComparison = (
 };
 
 // Mutation Hooks
+export const useCreateListWithUser = (
+  options?: UseMutationOptions<ListCreationResponse, Error, CreateListRequest>
+) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: topListsApi.createListWithUser,
+    onSuccess: (data, variables) => {
+      // Invalidate and refetch lists
+      queryClient.invalidateQueries({ queryKey: topListsKeys.lists() });
+      
+      // Invalidate user lists for the created user
+      queryClient.invalidateQueries({ 
+        queryKey: topListsKeys.userLists(data.user.id) 
+      });
+
+      // Pre-populate the cache with the new list data
+      queryClient.setQueryData(
+        topListsKeys.list(data.list.id, true),
+        {
+          ...data.list,
+          items: [],
+          total_items: 0
+        }
+      );
+
+      // Show success toast
+      toast({
+        title: "List Created! 🎉",
+        description: `"${data.list.title}" is ready for ranking!`,
+      });
+
+      // Log for debugging
+      console.log('List created with user:', {
+        listId: data.list.id,
+        userId: data.user.id,
+        isNewUser: data.is_new_user,
+        isTemporaryUser: data.user.is_temporary
+      });
+    },
+    onError: (error, variables) => {
+      console.error('Failed to create list with user:', error);
+      
+      toast({
+        title: "Creation Failed",
+        description: `Failed to create list: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+    ...options,
+  });
+};
+
 export const useCreateList = (
   options?: UseMutationOptions<TopList, Error, CreateListRequest>
 ) => {
@@ -252,5 +306,38 @@ export const useInvalidateListsCache = () => {
       queryClient.invalidateQueries({ queryKey: topListsKeys.userLists(userId) }),
     invalidateList: (listId: string) => 
       queryClient.invalidateQueries({ queryKey: topListsKeys.list(listId) }),
+    invalidateCreation: () => 
+      queryClient.invalidateQueries({ queryKey: topListsKeys.creation() }),
+  };
+};
+
+// NEW: Specialized hook for list creation flow
+export const useListCreationFlow = () => {
+  const createListWithUser = useCreateListWithUser();
+  const queryClient = useQueryClient();
+
+  const createAndPrepareForMatching = async (
+    listData: CreateListRequest,
+    onSuccess?: (response: ListCreationResponse) => void
+  ) => {
+    try {
+      const result = await createListWithUser.mutateAsync(listData);
+      
+      // Pre-load any additional data needed for matching
+      // This could include fetching initial items, etc.
+      
+      onSuccess?.(result);
+      return result;
+    } catch (error) {
+      console.error('List creation flow failed:', error);
+      throw error;
+    }
+  };
+
+  return {
+    createAndPrepareForMatching,
+    isCreating: createListWithUser.isPending,
+    error: createListWithUser.error,
+    reset: createListWithUser.reset,
   };
 };

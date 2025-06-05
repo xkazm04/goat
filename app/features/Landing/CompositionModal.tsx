@@ -1,21 +1,25 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CompositionModalHeader } from "../../components/modals/composition/CompositionModalHeader";
 import { CompositionModalLeftContent } from "../../components/modals/composition/CompositionModalLeftContent";
 import { CompositionModalRightContent } from "../../components/modals/composition/CompositionModalRightContent";
-import { ShimmerBtn } from "@/app/components/button/AnimButtons";
-import { useCreateList } from "@/app/hooks/use-top-lists";
+import { useCreateListWithUser } from "@/app/hooks/use-top-lists";
 import { useTempUser } from "@/app/hooks/use-temp-user";
-import { mapCompositionToCreateListRequest, CompositionResult } from "@/app/types/composition-to-api";
-import { toast } from "@/app/hooks/use-toast";
+import { CompositionResult } from "@/app/types/composition-to-api";
+import ListCreateButton from "./ListCreateButton";
 
 interface CompositionModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialCategory?: string;
+  initialSubcategory?: string;
+  initialTimePeriod?: "all-time" | "decade" | "year";
+  initialHierarchy?: string;
+  initialTitle?: string;
+  initialAuthor?: string;
+  initialComment?: string;
   initialColor?: {
     primary: string;
     secondary: string;
@@ -44,6 +48,12 @@ export function CompositionModal({
   isOpen, 
   onClose, 
   initialCategory = "Sports",
+  initialSubcategory = "Basketball",
+  initialTimePeriod = "all-time",
+  initialHierarchy = "Top 50",
+  initialTitle = "Create Your Ranking",
+  initialAuthor = "You",
+  initialComment = "Build your ultimate ranking",
   initialColor = {
     primary: "#f59e0b",
     secondary: "#d97706", 
@@ -51,62 +61,37 @@ export function CompositionModal({
   },
   onSuccess
 }: CompositionModalProps) {
-  const router = useRouter();
-  const { tempUserId, isLoaded } = useTempUser();
-  const [isCreating, setIsCreating] = useState(false);
-  
+ 
+  const { tempUserId } = useTempUser();  
   const [compositionData, setCompositionData] = useState<CompositionData>({
     selectedCategory: initialCategory,
-    selectedSubcategory: "Basketball",
-    timePeriod: "all-time",
+    selectedSubcategory: initialSubcategory,
+    timePeriod: initialTimePeriod,
     selectedDecade: 2020,
     selectedYear: 2024,
-    hierarchy: "Top 50",
+    hierarchy: initialHierarchy,
     isPredefined: true,
     title: "",
     color: initialColor
   });
 
-  const createListMutation = useCreateList({
-    onSuccess: (data) => {
-      setIsCreating(false);
-      const result: CompositionResult = {
-        success: true,
-        listId: data.id,
-        message: `Successfully created "${data.title}"!`,
-        redirectUrl: `/lists/${data.id}`
-      };
-      
-      toast({
-        title: "List Created! 🎉",
-        description: `"${data.title}" is ready for ranking!`,
-      });
+  // Update composition data when props change (when different cards are clicked)
+  useEffect(() => {
+    setCompositionData(prev => ({
+      ...prev,
+      selectedCategory: initialCategory,
+      selectedSubcategory: initialSubcategory,
+      timePeriod: initialTimePeriod,
+      hierarchy: initialHierarchy,
+      color: initialColor,
+      // Reset custom title when switching to a new predefined list
+      title: "",
+      isPredefined: true
+    }));
+  }, [initialCategory, initialSubcategory, initialTimePeriod, initialHierarchy, initialColor, isOpen]);
 
-      // Call success callback if provided
-      onSuccess?.(result);
-      
-      // Navigate to the new list
-      router.push(`/lists/${data.id}`);
-      
-      // Close modal
-      onClose();
-    },
-    onError: (error) => {
-      setIsCreating(false);
-      const result: CompositionResult = {
-        success: false,
-        message: `Failed to create list: ${error.message}`
-      };
-      
-      toast({
-        title: "Creation Failed",
-        description: result.message,
-        variant: "destructive",
-      });
-
-      onSuccess?.(result);
-    }
-  });
+  const [isExpanded, setIsExpanded] = useState(false);
+  const createListMutation = useCreateListWithUser();
 
   // State update helpers
   const updateCompositionData = (updates: Partial<CompositionData>) => {
@@ -114,96 +99,10 @@ export function CompositionModal({
   };
 
   const handleClose = () => {
-    if (!isCreating) {
+    if (!createListMutation.isPending) {
       onClose();
     }
   };
-
-  // Validation function
-  const validateComposition = (): { isValid: boolean; errors: string[] } => {
-    const errors: string[] = [];
-
-    if (!compositionData.selectedCategory) {
-      errors.push("Please select a category");
-    }
-
-    if (!compositionData.isPredefined && !compositionData.title.trim()) {
-      errors.push("Please provide a title for your custom list");
-    }
-
-    if (compositionData.timePeriod === "decade" && !compositionData.selectedDecade) {
-      errors.push("Please select a decade");
-    }
-
-    if (compositionData.timePeriod === "year" && !compositionData.selectedYear) {
-      errors.push("Please select a year");
-    }
-
-    return {
-      isValid: errors.length === 0,
-      errors
-    };
-  };
-
-  // Main creation handler
-  const handleCreate = async () => {
-    if (!isLoaded || !tempUserId) {
-      toast({
-        title: "Not Ready",
-        description: "Please wait while we prepare your session...",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Validate composition data
-    const validation = validateComposition();
-    if (!validation.isValid) {
-      toast({
-        title: "Validation Error",
-        description: validation.errors.join(", "),
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsCreating(true);
-
-    try {
-      // Map composition data to API format
-      const createListRequest = mapCompositionToCreateListRequest(compositionData, tempUserId);
-      
-      console.log("Creating list with data:", createListRequest);
-      
-      // Create the list
-      createListMutation.mutate(createListRequest);
-      
-    } catch (error) {
-      setIsCreating(false);
-      console.error("Error preparing list creation:", error);
-      toast({
-        title: "Preparation Error",
-        description: "Failed to prepare list data. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Function to prepare data for API integration (for debugging)
-  const prepareApiData = () => {
-    if (!tempUserId) return null;
-    
-    return mapCompositionToCreateListRequest(compositionData, tempUserId);
-  };
-
-  // Generate dynamic button text
-  const getButtonText = () => {
-    if (isCreating) return "CREATING...";
-    if (!isLoaded) return "LOADING...";
-    return "CREATE LIST";
-  };
-
-  const isButtonDisabled = isCreating || !isLoaded || !tempUserId;
 
   return (
     <AnimatePresence>
@@ -246,13 +145,18 @@ export function CompositionModal({
                   `
                 }}
               >
-                {/* Header */}
-                <CompositionModalHeader 
+                {/* Header with dynamic content */}
+                <CompositionModalHeader
+                  setIsExpanded={setIsExpanded} 
                   onClose={handleClose}
-                  color={compositionData.color}
+                  compositionData={compositionData}
+                  title={initialTitle}
+                  author={initialAuthor}
+                  comment={initialComment}
                 />
 
                 {/* Content */}
+                {isExpanded && <>
                 <div className="relative grid grid-cols-1 lg:grid-cols-2 min-h-[600px]">
                   {/* Left Half - Configuration */}
                   <CompositionModalLeftContent
@@ -277,15 +181,12 @@ export function CompositionModal({
                   
                   {/* Create Button */}
                   <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
-                    <div 
-                      onClick={isButtonDisabled ? undefined : handleCreate}
-                      className={`cursor-pointer ${isButtonDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    >
-                      <ShimmerBtn 
-                        label={getButtonText()}
-                        disabled={isButtonDisabled}
+                    <ListCreateButton
+                      compositionData={compositionData}
+                      createListMutation={createListMutation}
+                      onClose={handleClose}
+                      onSuccess={onSuccess}
                       />
-                    </div>
                   </div>
 
                   {/* Right Half - Preview & Actions */}
@@ -300,28 +201,19 @@ export function CompositionModal({
                     color={compositionData.color}
                   />
                 </div>
+                </>}
 
                 {/* Loading Overlay */}
-                {isCreating && (
+                {createListMutation.isPending && (
                   <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-20">
                     <div className="text-center">
                       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
                       <p className="text-white text-lg">Creating your list...</p>
+                      <p className="text-white/70 text-sm mt-2">Setting up your ranking session</p>
                     </div>
                   </div>
                 )}
 
-                {/* Debug Info (remove in production) */}
-                {process.env.NODE_ENV === 'development' && (
-                  <div className="absolute bottom-4 left-4 text-xs text-gray-400 max-w-xs">
-                    <details>
-                      <summary>Debug Info</summary>
-                      <pre className="mt-2 text-xs overflow-auto max-h-32">
-                        {JSON.stringify(prepareApiData(), null, 2)}
-                      </pre>
-                    </details>
-                  </div>
-                )}
               </div>
             </motion.div>
           </motion.div>

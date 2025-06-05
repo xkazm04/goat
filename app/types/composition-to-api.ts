@@ -1,49 +1,13 @@
 import { CompositionData } from '@/app/features/Landing/CompositionModal';
-import { CreateListRequest, CategoryEnum } from '@/app/types/top-lists';
 
-export function mapCompositionToCreateListRequest(
-  compositionData: CompositionData,
-  userId: string
-): CreateListRequest {
-  // Map category string to enum
-  const categoryMap: Record<string, CategoryEnum> = {
-    'Sports': CategoryEnum.SPORTS,
-    'Music': CategoryEnum.MUSIC,
-    'Games': CategoryEnum.GAMES,
-  };
-
-  // Calculate time_period string based on composition data
-  let timePeriodString = 'all';
-  if (compositionData.timePeriod === 'decade') {
-    timePeriodString = `${compositionData.selectedDecade}s`;
-  } else if (compositionData.timePeriod === 'year') {
-    timePeriodString = compositionData.selectedYear.toString();
-  }
-
-  // Generate title if not provided
-  let generatedTitle = compositionData.title;
-  if (!generatedTitle) {
-    const categoryName = compositionData.selectedCategory;
-    const subcategoryName = compositionData.selectedSubcategory;
-    const hierarchySize = compositionData.hierarchy;
-    const timePart = compositionData.timePeriod === 'all-time' 
-      ? 'All Time' 
-      : compositionData.timePeriod === 'decade' 
-        ? `${compositionData.selectedDecade}s`
-        : compositionData.selectedYear.toString();
-    
-    generatedTitle = `${hierarchySize} ${subcategoryName || categoryName} - ${timePart}`;
-  }
-
-  return {
-    title: generatedTitle,
-    category: categoryMap[compositionData.selectedCategory] || CategoryEnum.SPORTS,
-    subcategory: compositionData.selectedSubcategory?.toLowerCase(),
-    user_id: userId,
-    predefined: compositionData.isPredefined,
-    size: parseInt(compositionData.hierarchy.replace('Top ', '')),
-    time_period: timePeriodString,
-  };
+export interface CreateListRequest {
+  title: string;
+  category: string;
+  subcategory?: string;
+  user_id: string; // Make sure this is exactly what the backend expects
+  predefined: boolean;
+  size: number;
+  time_period: string;
 }
 
 export interface CompositionResult {
@@ -51,4 +15,42 @@ export interface CompositionResult {
   listId?: string;
   message: string;
   redirectUrl?: string;
+}
+
+export function mapCompositionToCreateListRequest(
+  composition: CompositionData, 
+  userId: string
+): CreateListRequest {
+  
+  // DEBUG: Log the inputs
+  console.log("Mapping composition:", composition);
+  console.log("User ID input:", userId);
+  
+  // Generate title based on composition
+  let title = composition.title;
+  if (composition.isPredefined) {
+    const categoryPart = composition.selectedSubcategory || composition.selectedCategory;
+    const timePart = composition.timePeriod === 'all-time' ? 'All Time' :
+                    composition.timePeriod === 'decade' ? `${composition.selectedDecade}s` :
+                    composition.selectedYear.toString();
+    
+    title = `${composition.hierarchy} ${categoryPart} - ${timePart}`;
+  }
+
+  const result = {
+    title,
+    category: composition.selectedCategory.toLowerCase(),
+    subcategory: composition.selectedSubcategory?.toLowerCase(),
+    user_id: userId, // Pass the user ID exactly as received
+    predefined: composition.isPredefined,
+    size: parseInt(composition.hierarchy.replace(/\D/g, '')) || 50,
+    time_period: composition.timePeriod === 'all-time' ? 'all' : 
+                composition.timePeriod === 'decade' ? composition.selectedDecade.toString() :
+                composition.selectedYear.toString()
+  };
+  
+  // DEBUG: Log the result
+  console.log("Mapped result:", result);
+  
+  return result;
 }

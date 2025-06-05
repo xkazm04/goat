@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { LucideIcon, Star, Crown, Award, Ban, AlertTriangle } from "lucide-react";
+import { LucideIcon, Star, Ban, AlertTriangle } from "lucide-react";
 
 interface BannedShowcaseCardProps {
   id: number;
@@ -15,7 +15,18 @@ interface BannedShowcaseCardProps {
     secondary: string;
     accent: string;
   };
-  onCardClick?: (category: string, color: any) => void;
+  timePeriod: "all-time" | "decade" | "year";
+  hiearchy: string;
+  onCardClick?: (cardData: {
+    category: string;
+    subcategory?: string;
+    timePeriod: "all-time" | "decade" | "year";
+    hierarchy: string;
+    title: string;
+    author: string;
+    comment: string;
+    color: any;
+  }) => void;
 }
 
 export function BannedShowcaseCard({ 
@@ -25,12 +36,23 @@ export function BannedShowcaseCard({
   comment, 
   icon: IconComponent, 
   color,
+  timePeriod,
+  hiearchy,
   onCardClick
 }: BannedShowcaseCardProps) {
   
   const handleClick = () => {
     if (onCardClick) {
-      onCardClick(category, color);
+      onCardClick({
+        category,
+        subcategory,
+        timePeriod,
+        hierarchy: hiearchy,
+        title,
+        author,
+        comment,
+        color
+      });
     }
   };
 
@@ -133,41 +155,18 @@ export function BannedShowcaseCard({
               whileHover={{ scale: 1.05 }}
               transition={{ duration: 0.2 }}
             >
-              {/* Placeholder for future images */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div 
-                  className="w-8 h-8 rounded-full flex items-center justify-center"
-                  style={{
-                    background: `linear-gradient(135deg, ${color.primary}60, ${color.secondary}60)`
-                  }}
-                >
-                  {index === 1 && <Crown className="w-4 h-4 text-white" />}
-                  {index === 2 && <Award className="w-4 h-4 text-white" />}
-                  {index === 3 && <Star className="w-4 h-4 text-white" />}
-                </div>
-              </div>
-
               {/* X mark overlay */}
               <div className="absolute inset-0 flex items-center justify-center">
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ delay: 2 + index * 0.1, duration: 0.3 }}
-                  className="w-full h-full bg-red-500/80 flex items-center justify-center"
+                  className="w-full h-full border border-red-500/80 flex items-center justify-center"
                 >
                   <Ban className="w-6 h-6 text-white" />
                 </motion.div>
               </div>
               
-              {/* Rank number */}
-              <div 
-                className="absolute top-1 left-1 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white z-10"
-                style={{
-                  background: `linear-gradient(135deg, ${color.primary}, ${color.secondary})`
-                }}
-              >
-                {index}
-              </div>
             </motion.div>
           ))}
         </div>
@@ -269,7 +268,7 @@ export function BannedShowcaseCard({
             backdropFilter: 'blur(4px)'
           }}
         >
-          Click to Create Similar
+          Build your own
         </div>
       </div>
       

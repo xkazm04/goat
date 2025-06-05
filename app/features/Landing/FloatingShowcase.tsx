@@ -8,20 +8,43 @@ import { CompositionModal } from "./CompositionModal";
 import { ShowcaseHeader } from "./ShowcaseHeader";
 import { showcaseData } from "@/app/constants/showCaseExamples";
 import { FloatingParticles } from "@/app/components/decorations/particles";
-import ShowcaseDecor from "@/app/components/decorations/ShowCaseDecor";
+import ShowcaseDecor from "@/app/components/decorations/ShowcaseDecor";
+
+interface SelectedCardData {
+    category: string;
+    subcategory?: string;
+    timePeriod: "all-time" | "decade" | "year";
+    hierarchy: string;
+    title: string;
+    author: string;
+    comment: string;
+    color: {
+        primary: string;
+        secondary: string;
+        accent: string;
+    };
+}
 
 export function FloatingShowcase() {
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [selectedCategory, setSelectedCategory] = useState("Sports");
-    const [selectedColor, setSelectedColor] = useState({
-        primary: "#f59e0b",
-        secondary: "#d97706",
-        accent: "#fbbf24",
+    const [selectedCardData, setSelectedCardData] = useState<SelectedCardData>({
+        category: "Sports",
+        subcategory: "Basketball",
+        timePeriod: "all-time",
+        hierarchy: "Top 50",
+        title: "Create Your Ranking",
+        author: "You",
+        comment: "Build your ultimate ranking",
+        color: {
+            primary: "#f59e0b",
+            secondary: "#d97706",
+            accent: "#fbbf24",
+        }
     });
 
-    const handleCardClick = (category: string, color: any) => {
-        setSelectedCategory(category);
-        setSelectedColor(color);
+    const handleCardClick = (cardData: SelectedCardData) => {
+        console.log("Card clicked with data:", cardData);
+        setSelectedCardData(cardData);
         setIsModalOpen(true);
     };
 
@@ -50,7 +73,7 @@ export function FloatingShowcase() {
                         }}
                         transition={{
                             duration: 0.8,
-                            delay: index * 0.2 + 1, // Delay to let goat animate first
+                            delay: index * 0.2 + 1,
                             type: "spring",
                             stiffness: 100,
                         }}
@@ -72,12 +95,24 @@ export function FloatingShowcase() {
                 <FloatingParticles />
             </div>
 
-            {/* Composition Modal */}
+            {/* Composition Modal with Dynamic Data */}
             <CompositionModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
-                initialCategory={selectedCategory}
-                initialColor={selectedColor}
+                initialCategory={selectedCardData.category}
+                initialSubcategory={selectedCardData.subcategory}
+                initialTimePeriod={selectedCardData.timePeriod}
+                initialHierarchy={selectedCardData.hierarchy}
+                initialTitle={selectedCardData.title}
+                initialAuthor={selectedCardData.author}
+                initialComment={selectedCardData.comment}
+                initialColor={selectedCardData.color}
+                onSuccess={(result) => {
+                    console.log("List creation result:", result);
+                    if (result.success) {
+                        console.log(`Successfully created list: ${result.listId}`);
+                    }
+                }}
             />
         </>
     );
