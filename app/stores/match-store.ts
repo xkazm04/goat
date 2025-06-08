@@ -57,12 +57,12 @@ export const useMatchStore = create<MatchStoreState>((set, get) => ({
     const currentList = listStore.currentList;
     
     if (currentList) {
-      // Initialize the item store with current list data
-      itemStore.syncWithList(currentList.id);
+      // Fixed: Use syncWithList instead of syncWithList
+      itemStore.syncWithList(currentList.id, currentList.category);
       
       // Initialize grid if needed
-      if (itemStore.gridItems.length === 0) {
-        itemStore.initializeGrid(currentList.size, currentList.id);
+      if (itemStore.gridItems.length === 0 || itemStore.gridItems.length !== currentList.size) {
+        itemStore.initializeGrid(currentList.size, currentList.id, currentList.category);
       }
       
       set({ isLoading: false });

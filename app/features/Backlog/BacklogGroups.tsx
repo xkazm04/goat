@@ -2,28 +2,55 @@
 
 import { BacklogGroup } from "./BacklogGroup";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Maximize2, Minimize2, X } from "lucide-react";
+import { Search, Maximize2, Minimize2, X, Loader2, AlertCircle, RefreshCw } from "lucide-react";
 import { useMemo, useState } from "react";
 import BacklogGroupsHeader from "../Backlog/BacklogGroupsHeader";
 import { BorderGradient, PatternOverlay } from "@/app/components/decorations/cardDecor";
 import { useItemStore } from "@/app/stores/item-store";
+import { useBacklogGroups } from "@/app/hooks/use-top-items";
+import { useCurrentList } from "@/app/stores/use-list-store";
+import React from "react";
 
 interface BacklogGroupsProps {
   className?: string;
 }
 
 export function BacklogGroups({ className }: BacklogGroupsProps) {
-  const { backlogGroups } = useItemStore();
+  const { backlogGroups: storeGroups, setBacklogGroups } = useItemStore();
+  const currentList = useCurrentList();
   const [searchTerm, setSearchTerm] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
   
+  // Fetch dynamic groups from API
+  const {
+    backlogGroups: apiGroups,
+    isLoading,
+    error,
+    totalItems: apiTotalItems,
+  } = useBacklogGroups(
+    currentList?.category || 'sports',
+    currentList?.subcategory,
+    searchTerm
+  );
+
+  // Use API groups if available, fallback to store groups
+  const backlogGroups = apiGroups.length > 0 ? apiGroups : storeGroups;
+  
+  // Update store when API groups change
+  React.useEffect(() => {
+    if (apiGroups.length > 0 && JSON.stringify(apiGroups) !== JSON.stringify(storeGroups)) {
+      setBacklogGroups(apiGroups);
+    }
+  }, [apiGroups, storeGroups, setBacklogGroups]);
+
   const filteredGroups = useMemo(() => {
     if (!searchTerm) return backlogGroups;
     
     return backlogGroups.map(group => ({
       ...group,
       items: group.items.filter(item => 
-        item.title.toLowerCase().includes(searchTerm.toLowerCase())
+        item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.description?.toLowerCase().includes(searchTerm.toLowerCase())
       )
     })).filter(group => group.items.length > 0);
   }, [backlogGroups, searchTerm]);
@@ -41,6 +68,75 @@ export function BacklogGroups({ className }: BacklogGroupsProps) {
       setIsExpanded(false);
     }
   };
+
+  // Loading state
+  if (isLoading && backlogGroups.length === 0) {
+    return (
+      <div className={className}>
+        <div 
+          className="relative rounded-3xl overflow-hidden h-fit flex flex-col items-center justify-center p-12"
+          style={{
+            background: `
+              linear-gradient(135deg, 
+                rgba(15, 23, 42, 0.95) 0%,
+                rgba(30, 41, 59, 0.98) 50%,
+                rgba(51, 65, 85, 0.95) 100%
+              )
+            `,
+            border: '2px solid rgba(71, 85, 105, 0.3)',
+            boxShadow: `
+              0 4px 6px -1px rgba(0, 0, 0, 0.3),
+              0 20px 25px -5px rgba(0, 0, 0, 0.4)
+            `
+          }}
+        >
+          <Loader2 className="w-8 h-8 text-blue-400 animate-spin mb-4" />
+          <h3 className="text-lg font-semibold text-white mb-2">Loading Collection</h3>
+          <p className="text-sm text-slate-400 text-center">
+            Fetching {currentList?.category} items from the database...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error && backlogGroups.length === 0) {
+    return (
+      <div className={className}>
+        <div 
+          className="relative rounded-3xl overflow-hidden h-fit flex flex-col items-center justify-center p-12"
+          style={{
+            background: `
+              linear-gradient(135deg, 
+                rgba(15, 23, 42, 0.95) 0%,
+                rgba(30, 41, 59, 0.98) 50%,
+                rgba(51, 65, 85, 0.95) 100%
+              )
+            `,
+            border: '2px solid rgba(239, 68, 68, 0.3)',
+            boxShadow: `
+              0 4px 6px -1px rgba(0, 0, 0, 0.3),
+              0 20px 25px -5px rgba(0, 0, 0, 0.4)
+            `
+          }}
+        >
+          <AlertCircle className="w-8 h-8 text-red-400 mb-4" />
+          <h3 className="text-lg font-semibold text-white mb-2">Failed to Load</h3>
+          <p className="text-sm text-slate-400 text-center mb-4">
+            {error.message || 'Could not fetch items from the database'}
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="flex items-center gap-2 px-4 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg border border-red-500/30 transition-colors"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // Normal sidebar component
   const SidebarContent = ({ isExpandedView = false }: { isExpandedView?: boolean }) => (
@@ -105,6 +201,16 @@ export function BacklogGroups({ className }: BacklogGroupsProps) {
           `
         }}
       >
+        {/* Loading Indicator for Background Updates */}
+        {isLoading && backlogGroups.length > 0 && (
+          <div className="absolute top-4 right-4 z-20">
+            <div className="flex items-center gap-2 px-3 py-2 bg-blue-600/20 border border-blue-500/30 rounded-lg">
+              <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />
+              <span className="text-xs text-blue-400">Updating...</span>
+            </div>
+          </div>
+        )}
+
         {/* Scroll Fade Effects */}
         <div 
           className="absolute top-0 left-0 right-0 h-6 pointer-events-none z-10"
@@ -147,12 +253,13 @@ export function BacklogGroups({ className }: BacklogGroupsProps) {
               }}
               layout
             >
-              <BacklogGroup group={group} isExpandedView={isExpandedView} />
+              <BacklogGroup group={group} />
             </motion.div>
           ))}
         </div>
         
-        {filteredGroups.length === 0 && searchTerm && (
+        {/* Empty State */}
+        {filteredGroups.length === 0 && searchTerm && !isLoading && (
           <motion.div 
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -173,12 +280,25 @@ export function BacklogGroups({ className }: BacklogGroupsProps) {
             >
               <Search className="w-8 h-8 text-slate-500" />
             </div>
-            <p 
-              className="text-sm font-medium text-slate-400"
-            >
-              No legends found for "{searchTerm}"
+            <p className="text-sm font-medium text-slate-400">
+              No items found for "{searchTerm}"
+            </p>
+            <p className="text-xs text-slate-500 mt-1">
+              Try adjusting your search term
             </p>
           </motion.div>
+        )}
+
+        {/* Category Info */}
+        {currentList && (
+          <div className="text-center py-4 border-t border-slate-600/30">
+            <p className="text-xs text-slate-500">
+              Showing {currentList.category} {currentList.subcategory && `• ${currentList.subcategory}`}
+            </p>
+            <p className="text-xs text-slate-600 mt-1">
+              {totalItems} total items • {apiTotalItems > totalItems ? `${apiTotalItems} in database` : 'All loaded'}
+            </p>
+          </div>
         )}
       </div>
 
