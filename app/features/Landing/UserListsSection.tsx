@@ -9,11 +9,11 @@ import { useListStore } from '@/app/stores/use-list-store';
 import { TopList } from '@/app/types/top-lists';
 import { toast } from '@/app/hooks/use-toast';
 import UserListItem from './UserListItem';
+import Subtitle from '@/app/components/Subtitle';
 
 interface UserListsSectionProps {
   className?: string;
 }
-
 
 export function UserListsSection({ className }: UserListsSectionProps) {
   const router = useRouter();
@@ -78,18 +78,7 @@ export function UserListsSection({ className }: UserListsSectionProps) {
   return (
     <section className={`py-16 px-6 ${className}`}>
       <div className="max-w-6xl mx-auto">
-        {/* Section Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
-        >
-          <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
-            <span className="block mt-2 text-primary">
-              made by a legend
-            </span>
-          </h2>
-        </motion.div>
+        <Subtitle text="Made by a legend" />
 
         {/* Loading State */}
         {isLoading && (

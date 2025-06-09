@@ -1,107 +1,122 @@
-import { useMatchStore } from "@/app/stores/match-store";
+import ProgressMain from "@/app/components/ProgressMain";
+import { useCurrentList } from "@/app/stores/use-list-store";
+import { useComparisonStore } from "@/app/stores/comparison-store";
 import { motion } from "framer-motion";
-import { Keyboard, Target, Zap } from "lucide-react";
+import { useMemo } from "react";
 
 type Props = {
-    selectedBacklogItem: string | null | undefined;
     setIsComparisonModalOpen: (isOpen: boolean) => void;
-    compareList: { id: string; title: string }[];
-    getSelectedItemName: () => string | null | undefined;
 }
 
-const MatchContainerHeader = ({ selectedBacklogItem, setIsComparisonModalOpen, compareList, getSelectedItemName }: Props) => {
-    const { keyboardMode } = useMatchStore();
-    return <>
+const MatchContainerHeader = ({ setIsComparisonModalOpen }: Props) => {
+    const currentList = useCurrentList();
+    const { items: compareList, openComparison } = useComparisonStore();
+    
+    // Generate dynamic subtitle and description based on current list
+    const { subtitle, description } = useMemo(() => {
+        if (!currentList) {
+            return {
+                subtitle: "Greatest of All Time",
+                description: "Build your ultimate top 50 greatest of all time"
+            };
+        }
+        
+        const { metadata, title } = currentList;
+        const size = metadata?.size || currentList.size || 50;
+        const timePeriod = metadata?.timePeriod || "all-time";
+        
+        const formatTimePeriod = (period: string) => {
+            switch (period) {
+                case "all-time":
+                    return "All Time";
+                case "decade":
+                    return metadata?.selectedDecade ? `${metadata.selectedDecade}s` : "Decade";
+                case "year":
+                    return metadata?.selectedYear ? `${metadata.selectedYear}` : "Year";
+                default:
+                    return "All Time";
+            }
+        };
+        
+        const formattedTimePeriod = formatTimePeriod(timePeriod);
+        
+        return {
+            subtitle: `Top ${size} of ${formattedTimePeriod}`,
+            description: title
+        };
+    }, [currentList]);
+    
+    const contextInfo = useMemo(() => {
+        if (!currentList) return null;
+        
+        const selectedCategory = currentList.metadata?.selectedCategory || currentList.category;
+        const selectedSubcategory = currentList.metadata?.selectedSubcategory || currentList.subcategory;
+        
+        if (selectedSubcategory) {
+            return `${selectedCategory} • ${selectedSubcategory}`;
+        }
+        
+        return selectedCategory;
+    }, [currentList]);
+
+    const handleOpenComparison = () => {
+        openComparison();
+        setIsComparisonModalOpen(true);
+    };
+    
+    return (
         <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             className="mb-8"
         >
-            <div className="flex flex-row justify-between items-center gap-4 mb-2">
-                <div>
-                    <h1 className="text-4xl font-black tracking-tight text-white">
-                        G.O.A.T. Ranking
-                    </h1>
-                    <p className="text-lg text-yellow-100">
-                        Build your ultimate top 50 greatest of all time
-                    </p>
+            <div className="flex flex-row justify-between items-start gap-4 mb-4">
+                <div className="flex-1">
+                    <div className="space-y-2">
+                        <p className="text-lg text-yellow-100 font-medium">
+                            {description}
+                        </p>
+                        {contextInfo && (
+                            <p className="text-sm text-yellow-200/70 capitalize">
+                                {contextInfo}
+                            </p>
+                        )}
+                    </div>
                 </div>
 
-                {/* Center - VS Button */}
                 <div className="flex justify-center">
                     <motion.button
-                        onClick={() => setIsComparisonModalOpen(true)}
+                        onClick={handleOpenComparison}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        className="flex items-center gap-3 px-8 py-4 rounded-2xl font-bold text-white transition-all duration-300"
+                        className="bg-gray-700/50 flex items-center gap-3 px-4 py-2 rounded-2xl font-bold text-white transition-all duration-300 relative"
                         style={{
-                            background: `linear-gradient(135deg, 
-                  rgba(59, 130, 246, 0.8) 0%,
-                  rgba(147, 51, 234, 0.8) 100%
-                )`,
                             boxShadow: compareList.length > 0
                                 ? '0 4px 15px rgba(59, 130, 246, 0.3)'
                                 : 'none'
                         }}
                     >
-                        <Zap className="w-5 h-5" />
-                        <span className="text-lg">VS</span>
+                        <span className="text-sm">Bench</span>
                         {compareList.length > 0 && (
-                            <div className="w-6 h-6 rounded-full bg-white text-blue-600 text-xs font-bold flex items-center justify-center">
+                            <motion.div
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold"
+                            >
                                 {compareList.length}
-                            </div>
+                            </motion.div>
                         )}
                     </motion.button>
                 </div>
-
-                {/* Instructions */}
-                <div className="flex flex-col gap-2">
-                    <div
-                        className="flex items-center text-gray-400 gap-2 text-sm px-4 py-2 rounded-lg w-fit"
-                        style={{
-                            background: 'rgba(30, 41, 59, 0.5)',
-                            border: '1px solid rgba(71, 85, 105, 0.3)'
-                        }}
-                    >
-                        <Target className="w-4 h-4" />
-                        <span>Drag items to the ranking grid or select and use keyboard shortcuts</span>
-                    </div>
-
-                    {selectedBacklogItem && (
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="flex items-center text-blue-300 gap-2 text-sm px-4 py-2 rounded-lg w-fit"
-                            style={{
-                                background: 'rgba(59, 130, 246, 0.1)',
-                                border: '1px solid rgba(59, 130, 246, 0.3)'
-                            }}
-                        >
-                            <Keyboard className="w-4 h-4" />
-                            <span>
-                                Press <strong>1-9</strong> or <strong>0</strong> to assign "{getSelectedItemName()}" to positions 1-10
-                            </span>
-                        </motion.div>
-                    )}
-
-                    {keyboardMode && (
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="flex items-center text-green-300 gap-2 text-sm px-4 py-2 rounded-lg w-fit"
-                            style={{
-                                background: 'rgba(34, 197, 94, 0.1)',
-                                border: '1px solid rgba(34, 197, 94, 0.3)'
-                            }}
-                        >
-                            <Keyboard className="w-4 h-4" />
-                            <span>Keyboard mode active - Press ESC to exit</span>
-                        </motion.div>
-                    )}
-                </div>
             </div>
+
+            <ProgressMain 
+                text={subtitle} 
+                showPercentage={true}
+                className="mb-2"
+            />
         </motion.div>
-    </>
-}
+    );
+};
 
 export default MatchContainerHeader;

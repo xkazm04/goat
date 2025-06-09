@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trash2, Play, Clock, Users, Calendar } from 'lucide-react';
 import { TopList } from '@/app/types/top-lists';
+import { getCategoryColor } from '@/app/helpers/getColors';
+import { getSubcategoryBackground } from '@/app/helpers/getIcons';
 
 interface ListItemProps {
   list: TopList;
@@ -22,19 +24,6 @@ const UserListItem = ({ list, onDelete, onPlay }: ListItemProps) => {
       console.error('Failed to delete list:', error);
     } finally {
       setIsDeleting(false);
-    }
-  };
-
-  const getCategoryColor = (category: string) => {
-    switch (category.toLowerCase()) {
-      case 'sports':
-        return { primary: '#f59e0b', secondary: '#d97706', accent: '#fbbf24' };
-      case 'music':
-        return { primary: '#ef4444', secondary: '#dc2626', accent: '#f87171' };
-      case 'games':
-        return { primary: '#8b5cf6', secondary: '#7c3aed', accent: '#a78bfa' };
-      default:
-        return { primary: '#6b7280', secondary: '#4b5563', accent: '#9ca3af' };
     }
   };
 
@@ -59,11 +48,14 @@ const UserListItem = ({ list, onDelete, onPlay }: ListItemProps) => {
     >
       {/* Background Gradient Effect */}
       <div 
-        className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-300"
+        className="absolute inset-0 opacity-0  transition-opacity duration-300"
         style={{
           background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`
         }}
       />
+      <div className="absolute inset-0 z-10 flex items-center justify-center">
+        {getSubcategoryBackground(list.subcategory || '')}
+      </div>
 
       <div className="relative p-6">
         <div className="flex items-center justify-between">
@@ -119,7 +111,7 @@ const UserListItem = ({ list, onDelete, onPlay }: ListItemProps) => {
               onClick={() => onPlay(list)}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-white transition-all duration-300"
+              className="flex items-center z-30 gap-2 px-4 py-2 rounded-xl font-semibold text-white transition-all duration-300"
               style={{
                 background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`,
                 boxShadow: `0 4px 15px ${colors.primary}30`
@@ -134,7 +126,7 @@ const UserListItem = ({ list, onDelete, onPlay }: ListItemProps) => {
               onClick={() => setShowDeleteConfirm(true)}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="p-2 rounded-xl bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 hover:text-red-300 transition-all duration-300"
+              className="p-2 rounded-xl z-30 bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 hover:text-red-300 transition-all duration-300"
               disabled={isDeleting}
             >
               <Trash2 className="w-4 h-4" />

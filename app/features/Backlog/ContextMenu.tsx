@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trash2, Eye, EyeOff } from "lucide-react";
+import { Users, Trash2, X } from "lucide-react";
+import { useEffect, useRef } from "react";
 
 interface ContextMenuProps {
   isOpen: boolean;
@@ -13,13 +13,13 @@ interface ContextMenuProps {
   isInCompareList: boolean;
 }
 
-export function ContextMenu({ 
-  isOpen, 
-  position, 
-  onClose, 
-  onRemove, 
-  onToggleCompare, 
-  isInCompareList 
+export function ContextMenu({
+  isOpen,
+  position,
+  onClose,
+  onRemove,
+  onToggleCompare,
+  isInCompareList
 }: ContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -57,74 +57,84 @@ export function ContextMenu({
     onClose();
   };
 
+  const menuItems = [
+    {
+      label: isInCompareList ? 'Remove from Bench' : 'Add to Bench',
+      icon: Users,
+      onClick: handleToggleCompare,
+      color: isInCompareList ? '#ef4444' : '#3b82f6'
+    },
+    {
+      label: 'Remove Item',
+      icon: Trash2,
+      onClick: handleRemove,
+      color: '#ef4444'
+    }
+  ];
+
+  if (!isOpen) return null;
+
   return (
     <AnimatePresence>
-      {isOpen && (
-        <div className="fixed inset-0 z-50 pointer-events-none">
-          <motion.div
-            ref={menuRef}
-            initial={{ opacity: 0, scale: 0.9, y: -10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: -10 }}
-            transition={{ duration: 0.15 }}
-            className="absolute pointer-events-auto"
-            style={{
-              left: position.x,
-              top: position.y,
-              transform: 'translate(-50%, -100%)'
-            }}
-          >
-            <div
-              className="rounded-xl border overflow-hidden shadow-xl min-w-[180px]"
-              style={{
-                background: `
-                  linear-gradient(135deg, 
-                    rgba(15, 23, 42, 0.98) 0%,
-                    rgba(30, 41, 59, 0.98) 100%
-                  )
-                `,
-                border: '1px solid rgba(71, 85, 105, 0.4)',
-                boxShadow: `
-                  0 10px 25px -5px rgba(0, 0, 0, 0.6),
-                  0 0 0 1px rgba(148, 163, 184, 0.1)
-                `
-              }}
+      <motion.div
+        ref={menuRef}
+        initial={{ opacity: 0, scale: 0.8, y: -10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.8, y: -10 }}
+        className="fixed z-50 min-w-[180px] rounded-xl overflow-hidden"
+        style={{
+          left: position.x,
+          top: position.y,
+          background: `
+            linear-gradient(135deg, 
+              rgba(15, 23, 42, 0.95) 0%,
+              rgba(30, 41, 59, 0.98) 100%
+            )
+          `,
+          border: '1px solid rgba(71, 85, 105, 0.4)',
+          boxShadow: `
+            0 20px 25px -5px rgba(0, 0, 0, 0.4),
+            0 10px 10px -5px rgba(0, 0, 0, 0.2)
+          `,
+          backdropFilter: 'blur(8px)'
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="px-4 py-2 border-b border-slate-600/30">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-400">Actions</span>
+            <button
+              onClick={onClose}
+              className="p-1 rounded hover:bg-slate-700/50 transition-colors"
             >
-              {/* Compare List Option */}
-              <button
-                onClick={handleToggleCompare}
-                className="w-full px-4 py-3 text-left flex items-center gap-3 transition-colors hover:bg-slate-700/30 first:rounded-t-xl"
-              >
-                {isInCompareList ? (
-                  <EyeOff className="w-4 h-4 text-red-400" />
-                ) : (
-                  <Eye className="w-4 h-4 text-green-400" />
-                )}
-                <span className="text-sm font-medium text-slate-200">
-                  {isInCompareList ? 'Remove from compare' : 'Add to compare'}
-                </span>
-              </button>
-
-              {/* Divider */}
-              <div 
-                className="h-px"
-                style={{ background: 'rgba(71, 85, 105, 0.4)' }}
-              />
-
-              {/* Remove Option */}
-              <button
-                onClick={handleRemove}
-                className="w-full px-4 py-3 text-left flex items-center gap-3 transition-colors hover:bg-red-500/10 last:rounded-b-xl"
-              >
-                <Trash2 className="w-4 h-4 text-red-400" />
-                <span className="text-sm font-medium text-red-300">
-                  Remove item
-                </span>
-              </button>
-            </div>
-          </motion.div>
+              <X className="w-3 h-3 text-slate-500" />
+            </button>
+          </div>
         </div>
-      )}
+
+        {/* Menu Items */}
+        <div className="py-1">
+          {menuItems.map((item, index) => (
+            <button
+              key={index}
+              onClick={() => {
+                item.onClick();
+                onClose();
+              }}
+              className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm transition-all duration-200 hover:bg-slate-700/30"
+            >
+              <item.icon 
+                className="w-4 h-4" 
+                style={{ color: item.color }}
+              />
+              <span className="text-slate-200 font-medium">
+                {item.label}
+              </span>
+            </button>
+          ))}
+        </div>
+      </motion.div>
     </AnimatePresence>
   );
 }

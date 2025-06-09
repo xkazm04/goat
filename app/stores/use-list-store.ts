@@ -33,6 +33,14 @@ export interface ListCreationResult {
   success: boolean;
 }
 
+export interface MatchingContext {
+  listId: string;
+  title: string;
+  category: string;
+  subcategory?: string;
+  metadata?: ListConfiguration['metadata'];
+}
+
 export interface ListStoreState {
   // Multi-list support
   availableLists: TopList[];
@@ -46,6 +54,9 @@ export interface ListStoreState {
   
   // Navigation state
   shouldRedirectToMatch: boolean;
+  
+  // Cached matching context
+  _matchingContext: MatchingContext | null;
   
   // Actions - List Management
   setAvailableLists: (lists: TopList[]) => void;
@@ -71,17 +82,13 @@ export interface ListStoreState {
   clearCurrentList: () => void;
   reset: () => void;
   
+  // Internal action to update cached context
+  _updateMatchingContext: () => void;
+  
   // Computed values
   hasActiveList: () => boolean;
   getListById: (listId: string) => TopList | null;
   getUserLists: () => TopList[];
-  getMatchingContext: () => {
-    listId: string;
-    title: string;
-    category: string;
-    subcategory?: string;
-    metadata?: ListConfiguration['metadata'];
-  } | null;
 }
 
 export const useListStore = create<ListStoreState>()(
@@ -95,6 +102,24 @@ export const useListStore = create<ListStoreState>()(
       isLoading: false,
       creationError: null,
       shouldRedirectToMatch: false,
+      _matchingContext: null,
+      
+      // Internal helper to update cached matching context
+      _updateMatchingContext: () => {
+        const state = get();
+        const newContext = state.currentList ? {
+          listId: state.currentList.id,
+          title: state.currentList.title,
+          category: state.currentList.category,
+          subcategory: state.currentList.subcategory,
+          metadata: state.currentList.metadata
+        } : null;
+        
+        // Only update if changed
+        if (JSON.stringify(state._matchingContext) !== JSON.stringify(newContext)) {
+          set({ _matchingContext: newContext });
+        }
+      },
       
       // List Management Actions
       setAvailableLists: (lists) => set({ availableLists: lists }),
@@ -108,10 +133,14 @@ export const useListStore = create<ListStoreState>()(
       })),
       
       // Current List Actions
-      setCurrentList: (list) => set({ 
-        currentList: list,
-        isLoading: false 
-      }),
+      setCurrentList: (list) => {
+        set({ 
+          currentList: list,
+          isLoading: false 
+        });
+        // Update cached context after setting current list
+        setTimeout(() => get()._updateMatchingContext(), 0);
+      },
       
       loadListById: async (listId: string) => {
         set({ isLoading: true });
@@ -160,6 +189,9 @@ export const useListStore = create<ListStoreState>()(
             shouldRedirectToMatch: true,
             isLoading: false 
           });
+          
+          // Update cached context
+          setTimeout(() => get()._updateMatchingContext(), 0);
         } else {
           // Load from backend
           await get().loadListById(listId);
@@ -170,13 +202,17 @@ export const useListStore = create<ListStoreState>()(
       setCurrentUser: (user) => set({ currentUser: user }),
       
       // Creation Flow
-      setCreationResult: (result) => set({
-        currentList: result.list,
-        currentUser: result.user,
-        isCreating: false,
-        creationError: null,
-        shouldRedirectToMatch: true
-      }),
+      setCreationResult: (result) => {
+        set({
+          currentList: result.list,
+          currentUser: result.user,
+          isCreating: false,
+          creationError: null,
+          shouldRedirectToMatch: true
+        });
+        // Update cached context
+        setTimeout(() => get()._updateMatchingContext(), 0);
+      },
       
       setIsCreating: (creating) => set({ isCreating: creating }),
       setIsLoading: (loading) => set({ isLoading: loading }),
@@ -184,10 +220,13 @@ export const useListStore = create<ListStoreState>()(
       setShouldRedirectToMatch: (redirect) => set({ shouldRedirectToMatch: redirect }),
       
       // Cleanup
-      clearCurrentList: () => set({ 
-        currentList: null, 
-        shouldRedirectToMatch: false 
-      }),
+      clearCurrentList: () => {
+        set({ 
+          currentList: null, 
+          shouldRedirectToMatch: false,
+          _matchingContext: null
+        });
+      },
       
       reset: () => set({
         currentList: null,
@@ -195,7 +234,8 @@ export const useListStore = create<ListStoreState>()(
         isCreating: false,
         isLoading: false,
         creationError: null,
-        shouldRedirectToMatch: false
+        shouldRedirectToMatch: false,
+        _matchingContext: null
       }),
       
       // Computed values
@@ -213,19 +253,6 @@ export const useListStore = create<ListStoreState>()(
         const state = get();
         if (!state.currentUser) return [];
         return state.availableLists.filter(l => l.user_id === state.currentUser?.id);
-      },
-      
-      getMatchingContext: () => {
-        const state = get();
-        if (!state.currentList) return null;
-        
-        return {
-          listId: state.currentList.id,
-          title: state.currentList.title,
-          category: state.currentList.category,
-          subcategory: state.currentList.subcategory,
-          metadata: state.currentList.metadata
-        };
       }
     }),
     {
@@ -240,15 +267,28 @@ export const useListStore = create<ListStoreState>()(
   )
 );
 
-// Enhanced selector hooks
+// Enhanced selector hooks with proper caching
 export const useCurrentList = () => useListStore((state) => state.currentList);
 export const useCurrentUser = () => useListStore((state) => state.currentUser);
 export const useAvailableLists = () => useListStore((state) => state.availableLists);
 export const useUserLists = () => useListStore((state) => state.getUserLists());
+
 export const useListCreationState = () => useListStore((state) => ({
   isCreating: state.isCreating,
   isLoading: state.isLoading,
   creationError: state.creationError,
   shouldRedirectToMatch: state.shouldRedirectToMatch
 }));
-export const useMatchingContext = () => useListStore((state) => state.getMatchingContext());
+
+// Fixed: Use cached matching context to prevent infinite loops
+export const useMatchingContext = () => useListStore((state) => state._matchingContext);
+
+// Additional selector hooks for specific data
+export const useCurrentListMetadata = () => useListStore((state) => state.currentList?.metadata);
+export const useCurrentListInfo = () => useListStore((state) => state.currentList ? {
+  id: state.currentList.id,
+  title: state.currentList.title,
+  category: state.currentList.category,
+  subcategory: state.currentList.subcategory,
+  size: state.currentList.size
+} : null);

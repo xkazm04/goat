@@ -1,8 +1,6 @@
 "use client";
 
 import { categoryPreviews } from "@/app/constants/catPreview";
-import { motion } from "framer-motion";
-import { Twitter, Zap} from "lucide-react";
 import Image from "next/image";
 import SetupPreview from "./SetupPreview";
 

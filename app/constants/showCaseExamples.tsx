@@ -24,7 +24,7 @@ export const showcaseData = [
         id: 2,
         category: "Games",
         subcategory: "video-games",
-        title: "Greatest Video Games",
+        title: "Best PC Games to play",
         author: "@gamer_pro",
         comment: "timeless classics that changed everything",
         timePeriod: "all-time" as const,
