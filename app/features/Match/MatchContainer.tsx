@@ -141,7 +141,7 @@ export function MatchContainer() {
         }}
         style={{
           cursor: 'grabbing',
-          zIndex: 1000, // Ensure it's on top
+          zIndex: 1000,
         }}
       >
         {activeBacklogItem && (
@@ -150,7 +150,7 @@ export function MatchContainer() {
             style={{
               filter: 'drop-shadow(0 15px 35px rgba(0, 0, 0, 0.6))',
               transformOrigin: 'center',
-              pointerEvents: 'none', // Prevent interference
+              pointerEvents: 'none', 
             }}
           >
             <BacklogItem 

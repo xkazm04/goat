@@ -1,133 +1,274 @@
-import { Plus } from "lucide-react";
+"use client";
 
-interface MatchEmptySlotProps {
-  position: number;
+import { GridItemType } from "@/app/types/match";
+import { useDraggable, useDroppable } from "@dnd-kit/core";
+import { CSS } from "@dnd-kit/utilities";
+import { motion } from "framer-motion";
+import { Star, Gamepad2, Trophy } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useItemStore } from "@/app/stores/item-store";
+import MatchGridItemControls from "@/app/features/Match/MatchGridItemControls";
+import MatchGridSlot from "./MatchGridSlot";
+import { useSizeClasses } from "@/app/config/matchStructure";
+
+
+interface GridItemProps {
+  item: GridItemType;
+  index: number;
+  onClick?: () => void;
+  isSelected?: boolean;
   size?: 'small' | 'medium' | 'large';
-  selectedBacklogItem: string | null;
-  backlogGroups: any[]; // Replace with proper type
-  gridItems: any[]; // Replace with proper type
-  assignItemToGrid: (item: any, position: number) => void;
-  canAddAtPosition: (position: number) => boolean;
 }
 
-const MatchEmptySlot = ({ 
-  position, 
-  size = 'medium',
-  selectedBacklogItem,
-  backlogGroups,
-  gridItems,
-  assignItemToGrid,
-  canAddAtPosition
-}: MatchEmptySlotProps) => {
-
-    const selectedBacklogItemObj = selectedBacklogItem
-        ? backlogGroups
-            .flatMap(group => group.items)
-            .find(item => item.id === selectedBacklogItem)
-        : null;
-    const getNextAvailablePosition = () => {
-        return gridItems.findIndex(item => !item.matched);
-    };
-
-    const getLastAvailablePosition = () => {
-        const lastIndex = gridItems.map(item => item.matched).lastIndexOf(false);
-        return lastIndex !== -1 ? lastIndex : null;
-    };
-
-    const nextAvailable = getNextAvailablePosition();
-    const lastAvailable = getLastAvailablePosition();
-    const canAdd = canAddAtPosition(position);
-    const isNextAvailable = nextAvailable === position;
-    const isLastAvailable = lastAvailable === position;
-    const shouldHighlight = selectedBacklogItemObj && canAdd && (isNextAvailable || isLastAvailable);
-
-    const sizeClasses = {
-        large: 'w-10 h-10 text-3xl',
-        medium: 'w-8 h-8 text-2xl',
-        small: 'w-6 h-6 text-lg'
-    };
-
-    const getFixedHeight = () => {
-        switch (size) {
-            case 'large': return 'h-44 lg:h-48 xl:h-52'; 
-            case 'medium': return 'h-36 lg:h-40 xl:h-44'; 
-            default: return 'h-28 sm:h-32 lg:h-36 xl:h-40'; 
-        }
-    };
-
-    return (
-        <div
-            className={`relative w-full ${getFixedHeight()} rounded-xl border-2 border-dashed flex items-center justify-center group transition-all duration-300 ${shouldHighlight
-                ? 'cursor-pointer hover:scale-105 border-green-400 hover:border-green-300'
-                : canAdd && selectedBacklogItemObj
-                    ? 'cursor-pointer hover:scale-105 border-slate-600 hover:border-blue-400'
-                    : 'cursor-not-allowed border-slate-700 opacity-50'
-                }`}
-            style={{
-                background: shouldHighlight
-                    ? 'rgba(34, 197, 94, 0.12)'
-                    : canAdd && selectedBacklogItemObj
-                        ? 'rgba(59, 130, 246, 0.08)'
-                        : 'rgba(71, 85, 105, 0.15)',
-                border: shouldHighlight
-                    ? '2px dashed rgba(34, 197, 94, 0.6)'
-                    : canAdd && selectedBacklogItemObj
-                        ? '2px dashed rgba(59, 130, 246, 0.5)'
-                        : '2px dashed rgba(71, 85, 105, 0.6)'
-            }}
-            onClick={() => {
-                if (selectedBacklogItemObj && canAdd) {
-                    assignItemToGrid(selectedBacklogItemObj, position);
-                }
-            }}
-        >
-            <div className="flex flex-col items-center gap-3">
-                <Plus
-                    className={`${sizeClasses[size].split(' ').slice(0, 2).join(' ')} transition-all duration-300 ${shouldHighlight
-                        ? 'opacity-80 group-hover:opacity-100 text-green-400 group-hover:text-green-300 scale-110'
-                        : canAdd && selectedBacklogItemObj
-                            ? 'opacity-60 group-hover:opacity-80 text-slate-400 group-hover:text-blue-400 group-hover:scale-110'
-                            : 'opacity-30 text-slate-600'
-                        }`}
-                />
-                <span
-                    className={`text-sm font-bold ${shouldHighlight
-                        ? 'text-green-400 group-hover:text-green-300'
-                        : canAdd && selectedBacklogItemObj
-                            ? 'text-slate-400 group-hover:text-blue-400'
-                            : 'text-slate-600'
-                        }`}
-                >
-                    {position + 1}
-                </span>
-
-                {/* Position indicator for top positions */}
-                {position < 3 && (
-                    <div className="absolute -top-3 -right-3">
-                        <div
-                            className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shadow-lg"
-                            style={{
-                                background: position === 0 ? '#ffd700' : position === 1 ? '#c0c0c0' : '#cd7f32',
-                                color: '#000'
-                            }}
-                        >
-                            {position + 1}
-                        </div>
-                    </div>
-                )}
-
-                {/* Enhanced hint text */}
-                <div className="absolute bottom-3 left-0 right-0 text-center">
-                    <span className="text-xs text-slate-500 opacity-80">
-                        {selectedBacklogItemObj && canAdd && position < 10
-                            ? `Press ${position === 9 ? '0' : (position + 1).toString()}`
-                            : 'Drop here'
-                        }
-                    </span>
-                </div>
-            </div>
-        </div>
-    );
+const getItemIcon = (title: string) => {
+  const lower = title.toLowerCase();
+  if (lower.includes('game') || lower.includes('gta') || lower.includes('mario')) {
+    return Gamepad2;
+  }
+  if (lower.includes('jordan') || lower.includes('lebron') || lower.includes('sport')) {
+    return Trophy;
+  }
+  return Star;
 };
 
-export default MatchEmptySlot;
+// Enhanced GridItem component with drop capabilities
+export function GridItem({ item, index, onClick, isSelected, size = 'small' }: GridItemProps) {
+  const { activeItem, gridItems } = useItemStore();
+  const [isBeingDraggedOver, setIsBeingDraggedOver] = useState(false);
+  
+  // Check if this is a grid-to-grid drag operation
+  const isDraggingGridItem = activeItem && activeItem.startsWith('grid-');
+  const isDraggingThisItem = activeItem === item.id;
+  
+  const { attributes, listeners, setNodeRef: setDragNodeRef, transform, transition, isDragging } = useDraggable({
+    id: item.id,
+    disabled: item.isDragPlaceholder || !item.matched,
+    data: {
+      type: 'grid-item',
+      item: item,
+      index: index
+    }
+  });
+
+  // FIXED: Use grid-{index} format to match the drag handler expectations  
+  const { isOver, setNodeRef: setDropNodeRef } = useDroppable({
+    id: `grid-${index}`, // Changed from item.id to grid-{index} format
+    disabled: !item.matched || isDraggingThisItem,
+    data: {
+      type: 'grid-slot',
+      index: index,
+      position: index, // Add position for consistency
+      accepts: ['grid-item', 'backlog-item']
+    }
+  });
+
+  // Combine refs
+  const setNodeRef = (node: HTMLElement | null) => {
+    setDragNodeRef(node);
+    setDropNodeRef(node);
+  };
+
+  const sizeClasses = useSizeClasses(size);
+  
+  // Enhanced visual feedback during drag operations
+  useEffect(() => {
+    if (isOver && ((isDraggingGridItem && !isDraggingThisItem) || (activeItem && !activeItem.startsWith('grid-')))) {
+      setIsBeingDraggedOver(true);
+    } else {
+      setIsBeingDraggedOver(false);
+    }
+  }, [isOver, isDraggingGridItem, isDraggingThisItem, activeItem]);
+  
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition: isDragging ? 'none' : transition || 'transform 0.2s ease-out',
+    zIndex: isDragging ? 50 : isBeingDraggedOver ? 40 : 1,
+    opacity: isDragging ? 0.7 : 1,
+  };
+
+  const getRankNumberColor = (rank: number) => {
+    if (rank === 0) return '#FFD700'; // Gold
+    if (rank === 1) return '#C0C0C0'; // Silver  
+    if (rank === 2) return '#CD7F32'; // Bronze
+    return '#94a3b8'; // Default slate color
+  };
+
+  const rankColor = getRankNumberColor(index);
+
+  // Empty placeholder with enhanced drop feedback
+  if (item.isDragPlaceholder || !item.matched) {
+    return (
+      <MatchGridSlot 
+        index={index} 
+        sizeClasses={sizeClasses} 
+        style={style}
+        isDropTarget={isDraggingGridItem}
+        isDraggedOver={isBeingDraggedOver}
+        canReceiveDrop={isDraggingGridItem && !isDraggingThisItem}
+      />
+    );
+  }
+
+  return (
+    <motion.div 
+      ref={setNodeRef} 
+      style={style} 
+      {...attributes} 
+      {...listeners}
+      className="touch-manipulation cursor-grab active:cursor-grabbing relative group"
+      whileHover={{ scale: isDragging ? 1 : 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      layout
+      layoutId={`grid-item-${item.id}`}
+      animate={{
+        scale: isBeingDraggedOver ? 1.05 : 1,
+        rotateY: isBeingDraggedOver ? 5 : 0,
+      }}
+      transition={{
+        scale: { duration: 0.2 },
+        rotateY: { duration: 0.3 }
+      }}
+    >
+      <div
+        className={`relative ${sizeClasses.container} ${sizeClasses.fixedHeight} rounded-xl border-2 overflow-hidden transition-all duration-300 flex flex-col ${
+          isSelected ? 'ring-2 ring-blue-400 ring-offset-2 ring-offset-slate-800' : ''
+        }`}
+        style={{
+          background: isBeingDraggedOver
+            ? `linear-gradient(135deg, 
+                rgba(59, 130, 246, 0.2) 0%,
+                rgba(147, 51, 234, 0.2) 100%
+              )`
+            : `linear-gradient(135deg, 
+                rgba(30, 41, 59, 0.9) 0%,
+                rgba(51, 65, 85, 0.95) 100%
+              )`,
+          border: isBeingDraggedOver
+            ? '2px solid rgba(59, 130, 246, 0.8)'
+            : isSelected 
+            ? '2px solid rgba(59, 130, 246, 0.6)'
+            : '2px solid rgba(71, 85, 105, 0.4)',
+          boxShadow: isBeingDraggedOver
+            ? '0 0 25px rgba(59, 130, 246, 0.5)'
+            : isSelected
+            ? '0 8px 30px rgba(59, 130, 246, 0.3)'
+            : isDragging
+            ? '0 12px 40px rgba(0, 0, 0, 0.4)'
+            : '0 4px 15px rgba(0, 0, 0, 0.2)'
+        }}
+      >
+        <MatchGridItemControls 
+          sizeClasses={sizeClasses} 
+          onClick={onClick}
+          isDragging={isDragging}
+          isBeingDraggedOver={isBeingDraggedOver}
+        />
+
+        {/* Background rank number with enhanced visibility during interactions */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-5">
+          <span 
+            className={`${sizeClasses.emptyNumber} font-black select-none transition-colors`}
+            style={{ 
+              color: isBeingDraggedOver ? '#3b82f6' : rankColor,
+              opacity: isBeingDraggedOver ? 0.2 : 0.5
+            }}
+          >
+            {index + 1}
+          </span>
+        </div>
+
+        {/* Main Content with enhanced animations and portrait layout */}
+        <motion.div 
+          className={`flex-1 relative ${sizeClasses.padding} flex flex-col items-center justify-center z-10 min-h-0`}
+          animate={{
+            scale: isDragging ? 0.95 : 1,
+            rotateX: isBeingDraggedOver ? 10 : 0
+          }}
+          transition={{ duration: 0.2 }}
+        >
+          {/* Enhanced Avatar with portrait ratio */}
+          <motion.div 
+            className={`${sizeClasses.avatar} rounded-lg flex items-center justify-center mb-2 flex-shrink-0`}
+            style={{
+              background: isBeingDraggedOver
+                ? `linear-gradient(135deg, 
+                    #3b82f6 0%, 
+                    #8b5cf6 50%,
+                    #06b6d4 100%
+                  )`
+                : `linear-gradient(135deg, 
+                    #4c1d95 0%, 
+                    #7c3aed 50%,
+                    #3b82f6 100%
+                  )`,
+              boxShadow: isBeingDraggedOver
+                ? '0 6px 20px rgba(59, 130, 246, 0.6)'
+                : '0 4px 12px rgba(124, 58, 237, 0.4)',
+              borderRadius: '8px' // Slightly rounded for portrait look
+            }}
+            animate={{
+              scale: isDragging ? 0.9 : isBeingDraggedOver ? 1.1 : 1,
+              rotate: isDragging ? 5 : 0
+            }}
+            transition={{ duration: 0.2 }}
+          >
+            {(() => {
+              const IconComponent = getItemIcon(item.title);
+              return <IconComponent className={`${sizeClasses.icon} text-white`} />;
+            })()}
+          </motion.div>
+          
+          {/* Enhanced Title with fixed height for consistent layout */}
+          <div className={`w-full text-center ${sizeClasses.titleHeight} flex items-center justify-center`}>
+            <h3 
+              className={`${sizeClasses.title} text-slate-200 max-w-full px-1 transition-colors`}
+              style={{
+                display: '-webkit-box',
+                WebkitLineClamp: size === 'large' ? 3 : 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                wordBreak: 'break-word',
+                hyphens: 'auto',
+                color: isBeingDraggedOver ? '#3b82f6' : '#e2e8f0'
+              }}
+              title={item.title}
+            >
+              {item.title}
+            </h3>
+          </div>
+        </motion.div>
+
+        {/* Enhanced Rank Section */}
+        <div 
+          className={`${sizeClasses.rankSection} flex items-center justify-center border-t relative z-10 flex-shrink-0 transition-all duration-300`}
+          style={{
+            borderColor: isBeingDraggedOver ? 'rgba(59, 130, 246, 0.6)' : 'rgba(71, 85, 105, 0.4)',
+            background: isBeingDraggedOver
+              ? `linear-gradient(135deg, 
+                  rgba(59, 130, 246, 0.2) 0%,
+                  rgba(30, 41, 59, 0.9) 100%
+                )`
+              : `linear-gradient(135deg, 
+                  rgba(15, 23, 42, 0.8) 0%,
+                  rgba(30, 41, 59, 0.9) 100%
+                )`
+          }}
+        >
+          <motion.span 
+            className={`${sizeClasses.rankNumber} font-black transition-colors`}
+            style={{ 
+              color: isBeingDraggedOver ? '#3b82f6' : rankColor 
+            }}
+            animate={{
+              scale: isBeingDraggedOver ? 1.1 : 1
+            }}
+            transition={{ duration: 0.2 }}
+          >
+            #{index + 1}
+          </motion.span>
+        </div>
+      </div>
+    </motion.div>
+  );
+}

@@ -2,12 +2,21 @@
 
 import { useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
+
+// Components
 import { MatchContainer } from '@/app/features/Match/MatchContainer';
+import { 
+  MatchLoadingState, 
+  MatchErrorState, 
+  MatchNoListState,
+  MatchHomeNavigation 
+} from '@/app/features/Match/MatchStates';
+
+// Stores and hooks
 import { useListStore } from '@/app/stores/use-list-store';
 import { useItemStore } from '@/app/stores/item-store';
 import { useTopList } from '@/app/hooks/use-top-lists';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, AlertCircle } from 'lucide-react';
 
 export default function MatchPage() {
   const searchParams = useSearchParams();
@@ -31,7 +40,8 @@ export default function MatchPage() {
   const { 
     data: listData, 
     isLoading: fetchLoading, 
-    error: fetchError 
+    error: fetchError,
+    refetch
   } = useTopList(
     listId || '', 
     true, 
@@ -44,7 +54,6 @@ export default function MatchPage() {
   // Handle list loading and session switching
   useEffect(() => {
     if (!listId) {
-      // No list specified, redirect to home or show empty state
       return;
     }
 
@@ -95,73 +104,64 @@ export default function MatchPage() {
     loadList();
   }, [listId, listData, currentList?.id, activeSessionId, setCurrentList, switchToSession, syncWithBackend, setIsLoading]);
 
-  // Loading state
+  // Handle retry for error state
+  const handleRetry = () => {
+    if (listId) {
+      setIsLoading(true);
+      refetch();
+    }
+  };
+
+  // Handle navigation
+  const handleGoHome = () => {
+    router.push('/');
+  };
+
+  const handleCreateList = () => {
+    router.push('/create');
+  };
+
+  // Render loading state
   if (listLoading || fetchLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-center"
-        >
-          <Loader2 className="w-8 h-8 text-blue-400 animate-spin mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-white mb-2">Loading List</h2>
-          <p className="text-slate-400">Preparing your ranking session...</p>
-        </motion.div>
-      </div>
+      <>
+        <MatchHomeNavigation />
+        <MatchLoadingState />
+      </>
     );
   }
 
-  // Error state
+  // Render error state
   if (fetchError) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-center max-w-md"
-        >
-          <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-white mb-2">List Not Found</h2>
-          <p className="text-slate-400 mb-6">
-            The list you're looking for doesn't exist or you don't have access to it.
-          </p>
-          <button
-            onClick={() => router.push('/')}
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
-          >
-            Go to Home
-          </button>
-        </motion.div>
-      </div>
+      <>
+        <MatchHomeNavigation />
+        <MatchErrorState 
+          onRetry={handleRetry}
+          showRetryButton={true}
+        />
+      </>
     );
   }
 
-  // No list specified
+  // Render no list state
   if (!listId) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-center"
-        >
-          <h2 className="text-2xl font-bold text-slate-200 mb-4">No List Selected</h2>
-          <p className="text-slate-400 mb-6">Please create or select a list to start ranking.</p>
-          <button
-            onClick={() => router.push('/')}
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
-          >
-            Browse Lists
-          </button>
-        </motion.div>
-      </div>
+      <>
+        <MatchHomeNavigation />
+        <MatchNoListState 
+          onPrimaryClick={handleGoHome}
+          onSecondaryClick={handleCreateList}
+        />
+      </>
     );
   }
 
-  // Main content
+  // Render main content
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      <MatchHomeNavigation />
+      
       <AnimatePresence mode="wait">
         {currentList && (
           <motion.div

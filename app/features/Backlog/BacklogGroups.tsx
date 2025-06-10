@@ -7,6 +7,7 @@ import { useCurrentList } from "@/app/stores/use-list-store";
 import React from "react";
 import SidebarContent from "./BacklogGroups/SidebarContent";
 import { ErrorState, LoadingState } from "./BacklogGroups/BacklogGroupStates";
+import { BookOpenIcon } from "lucide-react";
 
 interface BacklogGroupsProps {
   className?: string;
@@ -15,15 +16,40 @@ interface BacklogGroupsProps {
 export function BacklogGroups({ className }: BacklogGroupsProps) {
   const { backlogGroups: storeGroups, setBacklogGroups } = useItemStore();
   const currentList = useCurrentList();
+  
+  // Separate immediate and debounced search terms
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const [clientSearchTerm, setClientSearchTerm] = useState("");
+  
   const [isExpanded, setIsExpanded] = useState(false);
   const [expandedViewMode, setExpandedViewMode] = useState<'grid' | 'list'>('list');
   const [isMobile, setIsMobile] = useState(false);
 
+  // Multi-level debouncing for optimal performance
+  
+  // 1. Client-side search debounce (fast, for immediate UI feedback)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setClientSearchTerm(searchTerm);
+    }, 150); // Fast client-side filtering
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // 2. API search debounce (slower, for server requests)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500); // Slower API calls
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
   // Detect mobile/tablet
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024); // lg breakpoint
+      setIsMobile(window.innerWidth < 1024);
     };
 
     checkMobile();
@@ -31,7 +57,7 @@ export function BacklogGroups({ className }: BacklogGroupsProps) {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Fetch dynamic groups from API
+  // Fetch dynamic groups from API with debounced search
   const {
     backlogGroups: apiGroups,
     isLoading,
@@ -40,7 +66,7 @@ export function BacklogGroups({ className }: BacklogGroupsProps) {
   } = useBacklogGroups(
     currentList?.category || 'sports',
     currentList?.subcategory,
-    searchTerm
+    debouncedSearchTerm // Use longer debounce for API
   );
 
   // Use API groups if available, fallback to store groups
@@ -53,17 +79,19 @@ export function BacklogGroups({ className }: BacklogGroupsProps) {
     }
   }, [apiGroups, storeGroups, setBacklogGroups]);
 
+  // Client-side filtering with immediate search term for responsive UI
   const filteredGroups = useMemo(() => {
-    if (!searchTerm) return backlogGroups;
+    if (!clientSearchTerm) return backlogGroups;
 
     return backlogGroups.map(group => ({
       ...group,
       items: group.items.filter(item =>
-        item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.description?.toLowerCase().includes(searchTerm.toLowerCase())
+        item.title.toLowerCase().includes(clientSearchTerm.toLowerCase()) ||
+        item.description?.toLowerCase().includes(clientSearchTerm.toLowerCase()) ||
+        item.tags?.some(tag => tag.toLowerCase().includes(clientSearchTerm.toLowerCase()))
       )
     })).filter(group => group.items.length > 0);
-  }, [backlogGroups, searchTerm]);
+  }, [backlogGroups, clientSearchTerm]);
 
   const totalItems = backlogGroups.reduce((acc, group) => acc + group.items.length, 0);
 
@@ -98,7 +126,7 @@ export function BacklogGroups({ className }: BacklogGroupsProps) {
       <LoadingState 
         currentList={currentList}
         className={className}
-        />
+      />
     );
   }
 
@@ -111,12 +139,21 @@ export function BacklogGroups({ className }: BacklogGroupsProps) {
 
   return (
     <>
+      <button 
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="p-2 rounded-xl transition-all duration-200 hover:bg-slate-700/50"
+        title="Open backlog collection"
+      >
+        <BookOpenIcon className="w-5 h-5 text-slate-400 hover:text-slate-300" />
+      </button>
+      
       {/* Normal Sidebar View */}
       <div className={className}>
         <SidebarContent
           isExpandedView={false}
           filteredGroups={filteredGroups}
           searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
           isLoading={isLoading}
           backlogGroups={backlogGroups}
           currentList={currentList}
@@ -124,6 +161,7 @@ export function BacklogGroups({ className }: BacklogGroupsProps) {
           apiTotalItems={apiTotalItems}
           expandedViewMode={expandedViewMode}
           isMobile={isMobile}
+          setIsExpanded={setIsExpanded}
         />
       </div>
 
@@ -135,8 +173,7 @@ export function BacklogGroups({ className }: BacklogGroupsProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center ${isMobile ? 'p-2' : 'p-6'
-              }`}
+            className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center ${isMobile ? 'p-2' : 'p-6'}`}
             onClick={handleExpandedBackdropClick}
           >
             <motion.div
@@ -148,16 +185,14 @@ export function BacklogGroups({ className }: BacklogGroupsProps) {
                 stiffness: 300,
                 damping: 30
               }}
-              className={`w-full h-full ${isMobile
-                  ? 'max-w-full max-h-full'
-                  : 'max-w-7xl max-h-[95vh]'
-                } overflow-hidden`}
+              className={`w-full h-full ${isMobile ? 'max-w-full max-h-full' : 'max-w-7xl max-h-[95vh]'} overflow-hidden`}
               onClick={(e) => e.stopPropagation()}
             >
               <SidebarContent
                 isExpandedView={true}
                 filteredGroups={filteredGroups}
                 searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
                 isLoading={isLoading}
                 backlogGroups={backlogGroups}
                 currentList={currentList}
@@ -165,6 +200,7 @@ export function BacklogGroups({ className }: BacklogGroupsProps) {
                 apiTotalItems={apiTotalItems}
                 expandedViewMode={expandedViewMode}
                 isMobile={isMobile}
+                setIsExpanded={setIsExpanded}
               />
             </motion.div>
           </motion.div>

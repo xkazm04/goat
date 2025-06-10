@@ -6,8 +6,8 @@ import { QueryProvider } from '@/app/providers/query-provider';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Tech Startup Boilerplate',
-  description: 'A scalable project boilerplate for tech startups',
+  title: 'G.O.A.T.',
+  description: 'Greatest Of All Time',
 };
 
 export default function RootLayout({

@@ -1,14 +1,11 @@
-import { GridItem } from "./MatchGridItem";
 import { motion } from "framer-motion";
 import { useItemStore } from "@/app/stores/item-store";
-import MatchEmptySlot from "@/app/components/match/MatchEmptySlot";
-import MatchDroppable from "@/app/components/match/MatchDroppable";
+import MatchGridSlot from "@/app/components/match/MatchGridSlot";
 import { GridSection, PodiumConfig } from "@/app/config/matchStructure";
 
 type Props = {
   maxItems: number;
 }
-
 
 const MatchGridPodium = ({ maxItems }: Props) => {
   const { 
@@ -16,9 +13,7 @@ const MatchGridPodium = ({ maxItems }: Props) => {
     selectedBacklogItem, 
     selectedGridItem,
     setSelectedGridItem,
-    assignItemToGrid,
     removeItemFromGrid,
-    canAddAtPosition,
     backlogGroups,
     activeItem
   } = useItemStore();
@@ -49,7 +44,7 @@ const MatchGridPodium = ({ maxItems }: Props) => {
     },
     {
       position: 0, // 1st place
-      label: '#1',
+      label: '#1', 
       labelClass: 'text-2xl font-bold text-yellow-400 mb-3',
       containerClass: 'w-40 lg:w-44 xl:w-48 relative',
       animationDelay: 0.1,
@@ -70,9 +65,9 @@ const MatchGridPodium = ({ maxItems }: Props) => {
       id: 'positions-4-10',
       positions: Array.from({ length: 7 }, (_, i) => i + 3), 
       gridCols: 'grid-cols-7',
-      gap: 'gap-6',
+      gap: 'gap-4 lg:gap-6',
       size: 'medium',
-      containerClass: 'mb-8',
+      containerClass: 'mb-8', // Ensure proper spacing
       showRankLabel: true,
       rankLabelClass: 'text-sm font-semibold text-slate-400 mb-2',
       animationDelay: 0.4,
@@ -92,98 +87,85 @@ const MatchGridPodium = ({ maxItems }: Props) => {
     }
   ];
 
-  // Render podium item
+  // Render podium item with enhanced transitions
   const renderPodiumItem = (config: PodiumConfig) => {
     const item = gridItems[config.position];
     
     return (
       <motion.div
         key={`podium-${config.position}`}
-        initial={{ opacity: 0, y: 50 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: config.animationDelay }}
+        initial={{ opacity: 0, y: 50, scale: 0.9 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ 
+          delay: config.animationDelay,
+          type: "spring",
+          stiffness: 300,
+          damping: 20
+        }}
         className="flex flex-col items-center"
       >
-        <div className={config.labelClass}>{config.label}</div>
+        <motion.div 
+          className={config.labelClass}
+          animate={{ 
+            scale: item?.matched ? 1.1 : 1,
+            color: item?.matched ? '#fbbf24' : undefined
+          }}
+          transition={{ duration: 0.3 }}
+        >
+          {config.label}
+        </motion.div>
         <div className={config.containerClass}>
-          <MatchDroppable
+          <MatchGridSlot
             position={config.position}
             size={config.size}
-            isDraggingBacklogItem={isDraggingBacklogItem}
+            gridItem={item}
             selectedBacklogItem={selectedBacklogItem}
-            canAddAtPosition={canAddAtPosition}
-          >
-            {item?.matched ? (
-              <GridItem 
-                item={item} 
-                index={config.position} 
-                onClick={() => handleGridItemClick(item.id)}
-                isSelected={selectedGridItem === item.id}
-                size={config.size}
-              />
-            ) : (
-              <MatchEmptySlot
-                position={config.position} 
-                size={config.size} 
-                selectedBacklogItem={selectedBacklogItem}
-                backlogGroups={backlogGroups}
-                gridItems={gridItems}
-                assignItemToGrid={assignItemToGrid}
-                canAddAtPosition={canAddAtPosition}
-              />
-            )}
-          </MatchDroppable>
+            selectedGridItem={selectedGridItem}
+            onGridItemClick={handleGridItemClick}
+          />
         </div>
       </motion.div>
     );
   };
 
-  // Render grid item for regular sections
+  // Render grid item for regular sections with enhanced animations
   const renderGridItem = (position: number, config: GridSection, index: number) => {
     const item = gridItems[position];
-    const emptySlot = !item?.matched;
     
     return (
       <motion.div
-        key={emptySlot ? `empty-${position}` : item.id}
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
+        key={`grid-slot-${position}`}
+        initial={{ opacity: 0, scale: 0.8, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ 
-          delay: (config.animationDelay || 0) + index * (config.animationStagger || 0.05) 
+          delay: (config.animationDelay || 0) + index * (config.animationStagger || 0.05),
+          type: "spring",
+          stiffness: 300,
+          damping: 20
         }}
         className="flex flex-col items-center"
       >
         {config.showRankLabel && (
-          <div className={config.rankLabelClass}>#{position + 1}</div>
+          <motion.div 
+            className={config.rankLabelClass}
+            animate={{
+              color: item?.matched ? '#60a5fa' : undefined,
+              scale: item?.matched ? 1.05 : 1
+            }}
+            transition={{ duration: 0.3 }}
+          >
+            #{position + 1}
+          </motion.div>
         )}
         <div className="w-full relative">
-          <MatchDroppable
+          <MatchGridSlot
             position={position}
             size={config.size}
-            isDraggingBacklogItem={isDraggingBacklogItem}
+            gridItem={item}
             selectedBacklogItem={selectedBacklogItem}
-            canAddAtPosition={canAddAtPosition}
-          >
-            {emptySlot ? (
-              <MatchEmptySlot
-                position={position} 
-                size={config.size} 
-                selectedBacklogItem={selectedBacklogItem}
-                backlogGroups={backlogGroups}
-                gridItems={gridItems}
-                assignItemToGrid={assignItemToGrid}
-                canAddAtPosition={canAddAtPosition}
-              />
-            ) : (
-              <GridItem 
-                item={item} 
-                index={position} 
-                onClick={() => handleGridItemClick(item.id)}
-                isSelected={selectedGridItem === item.id}
-                size={config.size}
-              />
-            )}
-          </MatchDroppable>
+            selectedGridItem={selectedGridItem}
+            onGridItemClick={handleGridItemClick}
+          />
         </div>
       </motion.div>
     );
@@ -191,35 +173,49 @@ const MatchGridPodium = ({ maxItems }: Props) => {
 
   // Render grid section
   const renderGridSection = (config: GridSection) => {
-    // Filter positions that exist within maxItems
     const validPositions = config.positions.filter(pos => pos < maxItems);
     
     if (validPositions.length === 0) return null;
 
     return (
-      <div key={config.id} className={config.containerClass}>
+      <motion.div 
+        key={config.id} 
+        className={config.containerClass}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ 
+          delay: config.animationDelay,
+          duration: 0.5
+        }}
+      >
         <div className={`grid ${config.gridCols} ${config.gap}`}>
           {validPositions.map((position, index) => 
             renderGridItem(position, config, index)
           )}
         </div>
-      </div>
+      </motion.div>
     );
   };
 
   return (
     <div className="w-full space-y-8 flex-1 flex flex-col">
-      {/* Top 3 - Podium Style */}
-      <div className="flex items-end justify-center gap-8 mb-12">
+      {/* Top 3 - Enhanced Podium Style with proper spacing */}
+      <motion.div 
+        className="flex items-end justify-center gap-8 mb-16" // Increased margin bottom
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5 }}
+      >
         {podiumConfig.map(renderPodiumItem)}
-      </div>
+      </motion.div>
 
-      {/* Regular Grid Sections */}
-      {gridSections.map(section => {
-        // Only render if there are items in this range
-        const hasItemsInRange = section.positions.some(pos => pos < maxItems);
-        return hasItemsInRange ? renderGridSection(section) : null;
-      })}
+      {/* Regular Grid Sections with Enhanced Animations */}
+      <div className="space-y-12"> {/* Added wrapper with spacing */}
+        {gridSections.map(section => {
+          const hasItemsInRange = section.positions.some(pos => pos < maxItems);
+          return hasItemsInRange ? renderGridSection(section) : null;
+        })}
+      </div>
     </div>
   );
 };

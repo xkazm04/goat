@@ -162,35 +162,64 @@ export const useGridStore = create<GridStoreState>()((set, get) => ({
   setSelectedGridItem: (id) => set({ selectedGridItem: id }),
   setActiveItem: (id) => set({ activeItem: id }),
 
-  // Drag & Drop Handler
+  // ENHANCED Drag & Drop Handler
   handleDragEnd: (event) => {
     const { active, over } = event;
     
-    if (!over) return;
+    if (!over) {
+      console.log('No drop target');
+      return;
+    }
 
     const state = get();
     const sessionState = useSessionStore.getState();
     const activeId = active.id.toString();
     const overId = over.id.toString();
     
+    console.log('Drag end:', { activeId, overId });
+    
+    // Handle backlog item to grid assignment
     if (overId.startsWith('grid-')) {
       const position = parseInt(overId.replace('grid-', ''));
       
+      // Find the backlog item being dragged
       const backlogItem = sessionState.backlogGroups
         .flatMap(group => group.items)
         .find(item => item.id === activeId);
       
       if (backlogItem && state.canAddAtPosition(position)) {
+        console.log('Assigning backlog item to grid:', { item: backlogItem.title, position });
         get().assignItemToGrid(backlogItem, position);
+        return;
       }
     }
     
-    if (active.id.toString().startsWith('grid-') && over.id.toString().startsWith('grid-')) {
-      const fromIndex = parseInt(active.id.toString().replace('grid-', ''));
-      const toIndex = parseInt(over.id.toString().replace('grid-', ''));
+    // Handle grid-to-grid movement (swapping)
+    if (activeId.startsWith('grid-') && overId.startsWith('grid-')) {
+      const fromIndex = parseInt(activeId.replace('grid-', ''));
+      const toIndex = parseInt(overId.replace('grid-', ''));
       
-      if (fromIndex !== toIndex && state.gridItems[fromIndex].matched) {
-        get().moveGridItem(fromIndex, toIndex);
+      const fromItem = state.gridItems[fromIndex];
+      const toItem = state.gridItems[toIndex];
+      
+      console.log('Grid to grid movement:', { fromIndex, toIndex, fromMatched: fromItem?.matched, toMatched: toItem?.matched });
+      
+      if (fromIndex !== toIndex && fromItem?.matched) {
+        // If target position has an item, swap them
+        if (toItem?.matched) {
+          console.log('Swapping grid items');
+          // Implement swapping logic
+          const newGridItems = [...state.gridItems];
+          newGridItems[fromIndex] = { ...toItem };
+          newGridItems[toIndex] = { ...fromItem };
+          
+          set({ gridItems: newGridItems });
+          sessionState.updateSessionGridItems(newGridItems);
+        } else {
+          // Move to empty position
+          console.log('Moving to empty position');
+          get().moveGridItem(fromIndex, toIndex);
+        }
       }
     }
   },
