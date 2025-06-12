@@ -2,7 +2,7 @@
 
 import { getSubcategoryBackground, getSubcategoryIcon } from "@/app/helpers/getIcons";
 import { motion } from "framer-motion";
-import { LucideIcon, Star, Crown, Award } from "lucide-react";
+import { Star  } from "lucide-react";
 
 interface ShowcaseCardProps {
   id: number;
@@ -11,7 +11,6 @@ interface ShowcaseCardProps {
   title: string;
   author: string;
   comment: string;
-  icon: LucideIcon;
   color: {
     primary: string;
     secondary: string;
@@ -37,7 +36,6 @@ export function ShowcaseCard({
   title,
   author,
   comment,
-  icon: IconComponent,
   color,
   timePeriod,
   hiearchy,
@@ -125,52 +123,9 @@ export function ShowcaseCard({
           </div>
         </div>
       </div>
-
-      {/* Title */}
-      <div className="px-6 py-4">
-        <div className="absolute inset-0 z-10 flex items-center justify-center opacity-30">
+        <div className="absolute -right-28 inset-0 z-10 flex items-center justify-center opacity-30">
           {getSubcategoryBackground('basketball')}
         </div>
-        {/* Preview boxes */}
-        <div className="flex gap-2 mb-4">
-          {[1, 2, 3].map((index) => (
-            <motion.div
-              key={index}
-              className="relative flex-1 aspect-square rounded-lg overflow-hidden border"
-              style={{
-                background: `linear-gradient(135deg, ${color.primary}10, ${color.secondary}10)`,
-                border: `1px solid ${color.primary}30`
-              }}
-              whileHover={{ scale: 1.05 }}
-              transition={{ duration: 0.2 }}
-            >
-              {/* Placeholder for future images */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center"
-                  style={{
-                    background: `linear-gradient(135deg, ${color.primary}60, ${color.secondary}60)`
-                  }}
-                >
-                  {index === 1 && <Crown className="w-4 h-4 text-white" />}
-                  {index === 2 && <Award className="w-4 h-4 text-white" />}
-                  {index === 3 && <Star className="w-4 h-4 text-white" />}
-                </div>
-              </div>
-
-              {/* Rank number */}
-              <div
-                className="absolute top-1 left-1 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white"
-                style={{
-                  background: `linear-gradient(135deg, ${color.primary}, ${color.secondary})`
-                }}
-              >
-                {index}
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </div>
 
       {/* Footer */}
       <div
@@ -213,16 +168,6 @@ export function ShowcaseCard({
         <p className="text-xs text-slate-400 mt-2 italic">
           "{comment}"
         </p>
-
-        {/* Show time period and hierarchy */}
-        <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-700/50">
-          <span className="text-xs font-medium text-slate-300">
-            {timePeriod === "all-time" ? "All Time" : timePeriod}
-          </span>
-          <span className="text-xs font-medium" style={{ color: color.accent }}>
-            Click to build your own
-          </span>
-        </div>
       </div>
 
       {/* Hover gradient overlay */}

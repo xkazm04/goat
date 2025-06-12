@@ -4,7 +4,6 @@ import { GridItemType, BacklogItemType } from '@/app/types/match';
 import { ListSession, SessionProgress } from './item-store/types';
 import { SessionManager } from './item-store/session-manager';
 import { BacklogGroup, BacklogItem } from '@/app/types/backlog-groups';
-import { itemGroupsApi } from '@/app/lib/api/item-groups';
 
 interface SessionStoreState {
   // Multi-list sessions
@@ -25,12 +24,16 @@ interface SessionStoreState {
   syncWithList: (listId: string, category?: string) => void;
   
   // Actions - Enhanced Backlog Management
-  setBacklogGroups: (groups: BacklogGroup[]) => void; // Updated type
+  setBacklogGroups: (groups: BacklogGroup[]) => void;
   toggleBacklogGroup: (groupId: string) => void;
-  addItemToGroup: (groupId: string, item: BacklogItem) => void; // Enhanced signature
-  removeItemFromGroup: (groupId: string, itemId: string) => void; // Enhanced signature
-  loadGroupItems: (groupId: string) => Promise<void>; // New method
-  getGroupItems: (groupId: string) => BacklogItem[]; // New method
+  addItemToGroup: (groupId: string, item: BacklogItem) => void;
+  removeItemFromGroup: (groupId: string, itemId: string) => void;
+  updateGroupItems: (groupId: string, items: BacklogItem[]) => void; // NEW
+  getGroupItems: (groupId: string) => BacklogItem[];
+  
+  // NEW: Local search and filtering functions
+  searchGroups: (searchTerm: string) => BacklogGroup[];
+  getGroupsByCategory: (category: string, subcategory?: string) => BacklogGroup[];
   
   // Actions - Selection
   setSelectedBacklogItem: (id: string | null) => void;
@@ -40,7 +43,7 @@ interface SessionStoreState {
   clearCompareList: () => void;
   
   // Utilities
-  getAvailableBacklogItems: () => BacklogItem[]; // Updated return type
+  getAvailableBacklogItems: () => BacklogItem[];
   getSessionProgress: (listId?: string) => SessionProgress;
   getAllSessions: () => ListSession[];
   hasUnsavedChanges: (listId?: string) => boolean;
@@ -77,7 +80,7 @@ export const useSessionStore = create<SessionStoreState>()(
             [listId]: session
           },
           activeSessionId: listId,
-          backlogGroups: [], // Start with empty groups, will be loaded via API
+          backlogGroups: [], // Ensure this is always an array
           selectedBacklogItem: null,
           compareList: []
         }));
@@ -103,10 +106,11 @@ export const useSessionStore = create<SessionStoreState>()(
         const updatedSession = SessionManager.updateSessionTimestamp({
           ...currentSession,
           // Convert BacklogGroup[] to BacklogGroupType[] for session storage
-          backlogGroups: state.backlogGroups.map(group => ({
+          // Add null check here
+          backlogGroups: (state.backlogGroups || []).map(group => ({
             id: group.id,
             name: group.name,
-            items: group.items.map(item => ({
+            items: (group.items || []).map(item => ({
               id: item.id,
               title: item.name || item.title || '',
               description: item.description || '',
@@ -133,19 +137,20 @@ export const useSessionStore = create<SessionStoreState>()(
         
         if (session && SessionManager.validateSession(session)) {
           // Convert stored BacklogGroupType[] back to BacklogGroup[]
-          const convertedGroups: BacklogGroup[] = session.backlogGroups.map(group => ({
+          // Add null check here too
+          const convertedGroups: BacklogGroup[] = (session.backlogGroups || []).map(group => ({
             id: group.id,
-            name: group.title,
+            name: group.title || group.name || '',
             description: undefined,
             category: 'sports', // Default, will be updated from API
             subcategory: undefined,
             image_url: undefined,
-            item_count: group.items.length,
-            items: group.items.map(item => ({
+            item_count: (group.items || []).length,
+            items: (group.items || []).map(item => ({
               id: item.id,
-              name: item.title,
-              title: item.title,
-              description: item.description,
+              name: item.title || '',
+              title: item.title || '',
+              description: item.description || '',
               category: 'sports', // Default
               subcategory: undefined,
               item_year: undefined,
@@ -162,7 +167,7 @@ export const useSessionStore = create<SessionStoreState>()(
             activeSessionId: listId,
             backlogGroups: convertedGroups,
             selectedBacklogItem: session.selectedBacklogItem,
-            compareList: session.compareList
+            compareList: session.compareList || []
           });
         } else {
           console.warn(`Session for list ${listId} not found, creating new session`);
@@ -293,42 +298,72 @@ export const useSessionStore = create<SessionStoreState>()(
         setTimeout(() => get().saveCurrentSession(), 100);
       },
 
-      loadGroupItems: async (groupId: string): Promise<void> => {
-        try {
-          const response = await itemGroupsApi.getGroupItems(groupId);
-          const items: BacklogItem[] = response.items.map(item => ({
-            id: item.id,
-            name: item.name,
-            title: item.name,
-            description: item.description,
-            category: item.category,
-            subcategory: item.subcategory,
-            item_year: item.item_year,
-            item_year_to: item.item_year_to,
-            image_url: item.image_url,
-            created_at: item.created_at,
-            tags: []
-          }));
+      // NEW: Update items for a specific group
+      updateGroupItems: (groupId: string, items: BacklogItem[]) => {
+        set((state) => {
+          console.log(`🔄 SessionStore: Updating ${items.length} items for group ${groupId}`);
+          
+          const updatedGroups = state.backlogGroups.map(group => {
+            if (group.id === groupId) {
+              return {
+                ...group,
+                items: items,
+                item_count: items.length
+              };
+            }
+            return group;
+          });
+          
+          return { backlogGroups: updatedGroups };
+        });
 
-          set((state) => ({
-            backlogGroups: state.backlogGroups.map(group => 
-              group.id === groupId 
-                ? { ...group, items, item_count: items.length }
-                : group
-            )
-          }));
-
-          setTimeout(() => get().saveCurrentSession(), 100);
-        } catch (error) {
-          console.error(`Failed to load items for group ${groupId}:`, error);
-          throw error;
-        }
+        // Auto-save after update
+        setTimeout(() => get().saveCurrentSession(), 100);
       },
 
       getGroupItems: (groupId: string): BacklogItem[] => {
         const state = get();
         const group = state.backlogGroups.find(g => g.id === groupId);
         return group?.items || [];
+      },
+
+      // NEW: Local search function
+      searchGroups: (searchTerm: string): BacklogGroup[] => {
+        const state = get();
+        if (!searchTerm.trim()) {
+          return state.backlogGroups;
+        }
+
+        const lowerSearchTerm = searchTerm.toLowerCase().trim();
+        
+        return state.backlogGroups.filter(group => {
+          // Search in group name
+          const nameMatch = group.name.toLowerCase().includes(lowerSearchTerm);
+          
+          // Search in group description
+          const descriptionMatch = group.description?.toLowerCase().includes(lowerSearchTerm);
+          
+          // Search in items within the group
+          const itemsMatch = group.items.some(item => 
+            item.name.toLowerCase().includes(lowerSearchTerm) ||
+            item.description?.toLowerCase().includes(lowerSearchTerm) ||
+            item.tags?.some(tag => tag.toLowerCase().includes(lowerSearchTerm))
+          );
+          
+          return nameMatch || descriptionMatch || itemsMatch;
+        });
+      },
+
+      // NEW: Local category filtering function
+      getGroupsByCategory: (category: string, subcategory?: string): BacklogGroup[] => {
+        const state = get();
+        
+        return state.backlogGroups.filter(group => {
+          const categoryMatch = group.category === category;
+          const subcategoryMatch = !subcategory || group.subcategory === subcategory;
+          
+          return categoryMatch && subcategoryMatch;
+        });
       },
 
       // Selection Management

@@ -118,13 +118,11 @@ export function useCreateItemGroup() {
   return useMutation({
     mutationFn: (data: ItemGroupCreate) => itemGroupsApi.createGroup(data),
     onSuccess: (newGroup) => {
-      // Invalidate and refetch groups
-      queryClient.invalidateQueries({ queryKey: itemGroupsKeys.all });
-      
       toast({
         title: "Group Created",
         description: `"${newGroup.name}" has been created successfully.`,
       });
+
     },
     onError: (error: Error) => {
       toast({
@@ -136,15 +134,11 @@ export function useCreateItemGroup() {
   });
 }
 
-// Hook to prefetch group items using the single endpoint
-export function usePrefetchGroupItems() {
-  const queryClient = useQueryClient();
-
-  return (groupId: string) => {
-    queryClient.prefetchQuery({
-      queryKey: itemGroupsKeys.detail(groupId, true),
-      queryFn: () => itemGroupsApi.getGroup(groupId, true),
-      staleTime: 2 * 60 * 1000, // 2 minutes
-    });
+// Future: Add sync operations here
+export function useSyncBacklogData() {
+  // TODO: Implement sync functionality later
+  return {
+    syncGroups: async () => console.log('Sync groups - to be implemented'),
+    syncItems: async () => console.log('Sync items - to be implemented'),
   };
 }

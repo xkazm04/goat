@@ -3,10 +3,9 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
 import { GridItemType } from "@/app/types/match";
-
 import { useItemStore } from "@/app/stores/item-store";
-import MatchEmptySlot from "@/app/features/Match/MatchGridItemEmpty";
-import { GridItem } from "./MatchEmptySlot";
+import MatchEmptySlot from "./MatchEmptySlot";
+import { MatchGridItem } from "./MatchGridItem";
 
 interface MatchGridSlotProps {
   position: number;
@@ -67,7 +66,7 @@ const MatchGridSlot = ({
     }
   };
 
-  // Don't wrap in extra div - return the component directly
+  // Return empty slot if no item assigned
   if (isEmpty) {
     return (
       <div className="relative w-full h-full">
@@ -75,12 +74,8 @@ const MatchGridSlot = ({
           position={position}
           size={size}
           selectedBacklogItem={selectedBacklogItem || null}
-          backlogGroups={backlogGroups}
-          gridItems={gridItems}
-          assignItemToGrid={assignItemToGrid}
-          canAddAtPosition={canAddAtPosition}
           isDraggingBacklogItem={isDraggingBacklogItem}
-          activeItem={activeItem}
+          canAddAtPosition={canAddAtPosition}
         />
         
         {/* Celebration effect overlay */}
@@ -126,7 +121,7 @@ const MatchGridSlot = ({
     );
   }
 
-  // Return GridItem directly without extra wrapper
+  // Return assigned grid item
   return (
     <motion.div
       key={`item-${gridItem.id}`}
@@ -147,7 +142,7 @@ const MatchGridSlot = ({
       }}
       className="w-full h-full"
     >
-      <GridItem
+      <MatchGridItem
         item={gridItem}
         index={position}
         onClick={() => handleGridItemClick(gridItem.id)}

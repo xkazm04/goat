@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { TopList, ListWithItems } from '@/app/types/top-lists';
+import { TopList } from '@/app/types/top-lists';
 
 export interface ListConfiguration extends TopList {
   metadata?: {

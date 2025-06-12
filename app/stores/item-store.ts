@@ -4,24 +4,77 @@ import { useComparisonStore } from './comparison-store';
 import { BacklogGroup, BacklogItem } from '@/app/types/backlog-groups';
 import { itemGroupsApi } from '@/app/lib/api/item-groups';
 
-
 export const useItemStore = () => {
   const sessionStore = useSessionStore();
   const gridStore = useGridStore();
   const comparisonStore = useComparisonStore();
 
-  // Enhanced backlog group management methods
+  // Initial data loading - fetch once and store locally
+  const initializeBacklogData = async (category: string, subcategory?: string): Promise<void> => {
+    try {
+      console.log(`🚀 ItemStore: Initializing backlog data for ${category}${subcategory ? `/${subcategory}` : ''}`);
+      
+      // Check if we already have data for this category
+      const existingGroups = sessionStore.getGroupsByCategory(category, subcategory);
+      if (existingGroups.length > 0) {
+        console.log(`✅ ItemStore: Using cached data (${existingGroups.length} groups)`);
+        return;
+      }
+
+      // Fetch all groups for the category with basic info
+      console.log(`🔄 ItemStore: Fetching groups from API...`);
+      const groups = await itemGroupsApi.getGroupsByCategory(category, subcategory);
+      
+      console.log(`📦 ItemStore: Received ${groups.length} groups, storing locally...`);
+      
+      // Store groups in session store
+      sessionStore.setBacklogGroups(groups);
+      
+      // Prefetch items for first few groups (top 5 most important)
+      const topGroups = groups
+        .filter(group => group.item_count > 0)
+        .sort((a, b) => b.item_count - a.item_count)
+        .slice(0, 5);
+
+      console.log(`🎯 ItemStore: Prefetching items for top ${topGroups.length} groups...`);
+      
+      // Load items for top groups in parallel
+      await Promise.allSettled(
+        topGroups.map(async (group) => {
+          try {
+            const groupWithItems = await itemGroupsApi.getGroup(group.id, true);
+            sessionStore.updateGroupItems(group.id, groupWithItems.items);
+            console.log(`✅ Prefetched ${groupWithItems.items.length} items for ${group.name}`);
+          } catch (error) {
+            console.warn(`⚠️ Failed to prefetch items for ${group.name}:`, error);
+          }
+        })
+      );
+
+      console.log(`🎉 ItemStore: Initialization complete!`);
+      
+    } catch (error) {
+      console.error(`❌ ItemStore: Failed to initialize backlog data:`, error);
+      throw error;
+    }
+  };
+
+  // Load items for a specific group (lazy loading)
   const loadGroupItems = async (groupId: string): Promise<void> => {
     try {
+      // Check if items are already loaded
+      const existingItems = sessionStore.getGroupItems(groupId);
+      if (existingItems.length > 0) {
+        console.log(`✅ ItemStore: Group ${groupId} items already loaded`);
+        return;
+      }
+
       console.log(`🔄 ItemStore: Loading items for group ${groupId}...`);
       
-      // Get group with items from API using the single endpoint
       const groupWithItems = await itemGroupsApi.getGroup(groupId, true);
+      sessionStore.updateGroupItems(groupId, groupWithItems.items);
       
-      console.log(`✅ ItemStore: Loaded group ${groupId} with ${groupWithItems.items.length} items`);
-      
-      // Update session store directly with API data
-      await sessionStore.loadGroupItems(groupId);
+      console.log(`✅ ItemStore: Loaded ${groupWithItems.items.length} items for group ${groupId}`);
       
     } catch (error) {
       console.error(`❌ ItemStore: Failed to load items for group ${groupId}:`, error);
@@ -35,8 +88,6 @@ export const useItemStore = () => {
 
   const setBacklogGroups = (groups: BacklogGroup[]): void => {
     console.log('🔄 ItemStore: Setting backlog groups:', groups.length);
-    
-    // Use session store's setBacklogGroups which handles the new format
     sessionStore.setBacklogGroups(groups);
   };
 
@@ -44,17 +95,12 @@ export const useItemStore = () => {
     sessionStore.addItemToGroup(groupId, item);
   };
 
-  // Update the removeItemFromGroup method
   const removeItemFromGroup = (groupId: string, itemId: string): void => {
     console.log(`🔄 ItemStore: Coordinating removal of item ${itemId} from group ${groupId}`);
     
-    // Step 1: Remove from session store (backlog groups)
     sessionStore.removeItemFromGroup(groupId, itemId);
-    
-    // Step 2: Clean up grid if the item was assigned there
     gridStore.removeItemByItemId(itemId);
     
-    // Step 3: Clear selection if this item was selected
     if (sessionStore.selectedBacklogItem === itemId) {
       sessionStore.setSelectedBacklogItem(null);
     }
@@ -70,14 +116,23 @@ export const useItemStore = () => {
     return sessionStore.getAvailableBacklogItems();
   };
 
-  // Get backlog groups in new format for components - directly from session store
+  // Local search/filter without API calls
+  const searchGroups = (searchTerm: string): BacklogGroup[] => {
+    return sessionStore.searchGroups(searchTerm);
+  };
+
+  const filterGroupsByCategory = (category: string, subcategory?: string): BacklogGroup[] => {
+    return sessionStore.getGroupsByCategory(category, subcategory);
+  };
+
+  // Get backlog groups from local store
   const backlogGroups: BacklogGroup[] = sessionStore.backlogGroups;
 
   return {
     // Session data
     listSessions: sessionStore.listSessions,
     activeSessionId: sessionStore.activeSessionId,
-    backlogGroups, // Return in new format
+    backlogGroups,
     selectedBacklogItem: sessionStore.selectedBacklogItem,
     compareList: sessionStore.compareList,
     
@@ -103,13 +158,16 @@ export const useItemStore = () => {
     deleteSession: sessionStore.deleteSession,
     syncWithList: sessionStore.syncWithList,
     
-    // Enhanced backlog actions
+    // Enhanced backlog actions - LOCAL ONLY
+    initializeBacklogData, // NEW: Single initialization call
     setBacklogGroups,
     toggleBacklogGroup,
     addItemToGroup,
     removeItemFromGroup,
-    loadGroupItems,
+    loadGroupItems, // Lazy loading for individual groups
     getGroupItems,
+    searchGroups: sessionStore.searchGroups,
+    filterGroupsByCategory: sessionStore.getGroupsByCategory,
     
     // Grid actions
     initializeGrid: gridStore.initializeGrid,
@@ -123,7 +181,7 @@ export const useItemStore = () => {
     setSelectedGridItem: gridStore.setSelectedGridItem,
     setActiveItem: gridStore.setActiveItem,
     
-    // Compare actions (legacy)
+    // Compare actions
     toggleCompareItem: sessionStore.toggleCompareItem,
     clearCompareList: sessionStore.clearCompareList,
     

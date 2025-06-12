@@ -28,6 +28,7 @@
     "eslint-config-next": "15.3.3",
     "framer-motion": "^12.15.0",
     "html2canvas": "^1.4.1",
+    "immer": "^10.1.1",
     "lucide-react": "^0.511.0",
     "next": "15.3.3",
     "postcss": "8.5.4",
