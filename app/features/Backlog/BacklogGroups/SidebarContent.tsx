@@ -11,21 +11,30 @@ import { LoadingIndicator } from "./LoadingIndicator";
 
 type Props = {
   isExpandedView: boolean;
-  filteredGroups: BacklogGroup[]; // Updated type
+  filteredGroups: BacklogGroup[];
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   isLoading: boolean;
-  backlogGroups: BacklogGroup[]; // Updated type
-  currentList: { category: string; subcategory?: string } | null;
+  backlogGroups: BacklogGroup[];
+  showEditorsPickOnly: boolean;
+  onToggleEditorsPick: () => void;
+  filteredItemsCount: number;
+  hasActiveFilters: boolean;
+  onClearFilters: () => void;
   totalItems: number;
   apiTotalItems: number;
+  currentList: { category: string; subcategory?: string } | null;
   expandedViewMode: 'grid' | 'list';
-  isMobile: boolean;
+  setExpandedViewMode: (mode: 'grid' | 'list') => void;
   setIsExpanded: (value: boolean) => void;
-  onGroupHover?: (groupId: string) => void;
-  onGroupExpand?: (groupId: string) => void;
-  loadingGroups?: Set<string>;
-  loadedGroups?: Set<string>;
+  isMobile: boolean;
+  error?: any;
+  onRefresh: () => void;
+  onRemoveItem: (groupId: string, itemId: string) => void;
+  onGroupExpand?: (groupId: string) => void; // Added prop
+  onOpenModal?: () => void; // ADD THIS
+  onCloseModal?: () => void;
+  isModal?: boolean;
 }
 
 const SidebarContent = ({ 
@@ -35,31 +44,41 @@ const SidebarContent = ({
   setSearchTerm, 
   isLoading, 
   backlogGroups, 
+  showEditorsPickOnly,
+  onToggleEditorsPick,
+  filteredItemsCount,
+  hasActiveFilters,
+  onClearFilters,
+  totalItems,
+  apiTotalItems,
   currentList, 
-  totalItems, 
-  apiTotalItems, 
   expandedViewMode, 
-  isMobile, 
+  setExpandedViewMode,
   setIsExpanded,
-  onGroupHover,
+  isMobile,
+  error,
+  onRefresh,
+  onRemoveItem,
   onGroupExpand,
-  loadingGroups = new Set(),
-  loadedGroups = new Set()
+  onOpenModal, // ADD THIS
+  onCloseModal,
+  isModal = false
 }: Props) => {
-  const [showEditorsPickOnly, setShowEditorsPickOnly] = useState(false);
 
-  // Use the new filtering hook
-  const {
-    processedGroups,
-    filterStats,
-    handleToggleEditorsPick,
-    handleClearFilters
-  } = useBacklogFiltering(
-    backlogGroups,
-    searchTerm,
-    showEditorsPickOnly,
-    setShowEditorsPickOnly
-  );
+  // Create filter stats object for compatibility
+  const filterStats = {
+    filteredItemsCount,
+    hasActiveFilters,
+    totalGroups: filteredGroups.length
+  };
+
+  // Debugging information
+  console.log('🎨 SidebarContent render:', {
+    filteredGroupsCount: filteredGroups.length,
+    groupNames: filteredGroups.map(g => g.name),
+    isExpandedView,
+    expandedViewMode
+  });
 
   return (
     <div 
@@ -98,20 +117,23 @@ const SidebarContent = ({
 
       {/* Enhanced Header with Search and Filters */}
       <div className="relative flex-shrink-0">
+        {/* Header - UPDATE TO PASS MODAL HANDLER */}
         <BacklogGroupsHeader
           totalItems={totalItems}
-          matchedItems={processedGroups.length}
+          matchedItems={0}
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
           isExpanded={isExpandedView}
           onToggleExpanded={() => setIsExpanded(!isExpandedView)}
-          onClose={() => setIsExpanded(false)}
-          error={null}
           showEditorsPickOnly={showEditorsPickOnly}
-          onToggleEditorsPick={handleToggleEditorsPick}
-          filteredItemsCount={filterStats.filteredItemsCount}
-          hasActiveFilters={filterStats.hasActiveFilters}
-          onClearFilters={handleClearFilters}
+          onToggleEditorsPick={onToggleEditorsPick}
+          filteredItemsCount={filteredItemsCount}
+          hasActiveFilters={hasActiveFilters}
+          onClearFilters={onClearFilters}
+          error={error}
+          onOpenModal={onOpenModal} // ADD THIS
+          onCloseModal={onCloseModal}
+          isModal={isModal}
         />
         
         {/* View Mode Toggle - Only in expanded view */}
@@ -119,6 +141,31 @@ const SidebarContent = ({
           <div className="px-6 pb-4">
             <div className="flex items-center gap-2">
               <div className="flex-1" />
+              
+              {/* View Mode Toggle */}
+              <div className="flex bg-slate-800/50 rounded-lg p-1">
+                <button
+                  onClick={() => setExpandedViewMode('list')}
+                  className={`px-2 py-1 text-xs rounded transition-colors ${
+                    expandedViewMode === 'list'
+                      ? 'bg-blue-600 text-white'
+                      : 'text-slate-400 hover:text-slate-300'
+                  }`}
+                >
+                  List
+                </button>
+                <button
+                  onClick={() => setExpandedViewMode('grid')}
+                  className={`px-2 py-1 text-xs rounded transition-colors ${
+                    expandedViewMode === 'grid'
+                      ? 'bg-blue-600 text-white'
+                      : 'text-slate-400 hover:text-slate-300'
+                  }`}
+                >
+                  Grid
+                </button>
+              </div>
+              
               <motion.div 
                 className="text-xs text-slate-400"
                 key={`groups-count-${filterStats.totalGroups}`}
@@ -150,7 +197,18 @@ const SidebarContent = ({
         }}
       >
         {/* Loading Indicator */}
-        <LoadingIndicator isLoading={isLoading} hasData={backlogGroups.length > 0} />
+        {isLoading && backlogGroups.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center justify-center py-12"
+          >
+            <div className="flex items-center gap-3 text-slate-400">
+              <div className="w-5 h-5 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
+              <span className="text-sm">Loading groups...</span>
+            </div>
+          </motion.div>
+        )}
 
         {/* Scroll Fade Effects */}
         <div 
@@ -178,27 +236,42 @@ const SidebarContent = ({
 
         {/* Groups Grid */}
         <BacklogGroupsGrid
-          groups={processedGroups}
+          groups={filteredGroups} // This should have the groups
           isExpandedView={isExpandedView}
           expandedViewMode={expandedViewMode}
           isMobile={isMobile}
-          onGroupHover={onGroupHover}
+          onRemoveItem={onRemoveItem}
           onGroupExpand={onGroupExpand}
-          loadingGroups={loadingGroups}
-          loadedGroups={loadedGroups}
         />
         
         {/* Empty State */}
         <AnimatePresence>
-          {processedGroups.length === 0 && !isLoading && (
+          {filteredGroups.length === 0 && !isLoading && (
             <EmptyState
               filterStats={filterStats}
               searchTerm={searchTerm}
               showEditorsPickOnly={showEditorsPickOnly}
-              onClearFilters={handleClearFilters}
+              onClearFilters={onClearFilters}
             />
           )}
         </AnimatePresence>
+
+        {/* Error State */}
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-red-900/20 border border-red-700/30 rounded-lg p-4 text-center"
+          >
+            <p className="text-red-300 text-sm mb-2">Failed to load groups</p>
+            <button
+              onClick={onRefresh}
+              className="px-3 py-1 bg-red-600/20 hover:bg-red-600/30 text-red-300 rounded text-xs transition-colors"
+            >
+              Retry
+            </button>
+          </motion.div>
+        )}
 
         {/* Category Info */}
         <BacklogCategoryInfo
@@ -206,7 +279,7 @@ const SidebarContent = ({
           filterStats={filterStats}
           totalItems={totalItems}
           apiTotalItems={apiTotalItems}
-          groupsCount={processedGroups.length}
+          groupsCount={filteredGroups.length}
         />
       </div>
 

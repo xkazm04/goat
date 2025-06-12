@@ -20,25 +20,23 @@ export class BacklogDataProcessor {
    * Convert API groups to BacklogGroup format with store item merging
    */
   static processApiGroups(
-    apiGroups: any[], 
-    storeGroups: BacklogGroup[]
+    apiGroups: any[],
+    storeGroups: any[]
   ): BacklogGroup[] {
-    console.log('🔄 Processing API groups:', {
-      apiGroups: apiGroups.length,
-      storeGroups: storeGroups.length
+    console.log('🔧 Processing API groups:', {
+      apiGroupsCount: apiGroups.length,
+      storeGroupsCount: storeGroups.length,
+      apiGroups: apiGroups.map(g => ({ id: g.id, name: g.name, item_count: g.item_count }))
     });
 
     if (!apiGroups || apiGroups.length === 0) {
-      console.log('📭 No API groups to process, returning store groups');
-      return storeGroups;
+      console.log('📭 No API groups to process');
+      return [];
     }
 
-    const processedGroups = apiGroups.map(apiGroup => {
-      // Find existing store group to preserve loaded items
-      const existingStoreGroup = storeGroups.find(sg => sg.id === apiGroup.id);
-      
-      // Check if store group has items loaded
-      const hasLoadedItems = existingStoreGroup && existingStoreGroup.items && existingStoreGroup.items.length > 0;
+    const processedGroups: BacklogGroup[] = apiGroups.map(apiGroup => {
+      // Find corresponding store group for items
+      const storeGroup = storeGroups.find(sg => sg.id === apiGroup.id);
       
       const processedGroup: BacklogGroup = {
         id: apiGroup.id,
@@ -48,18 +46,28 @@ export class BacklogDataProcessor {
         subcategory: apiGroup.subcategory,
         image_url: apiGroup.image_url,
         item_count: apiGroup.item_count || 0,
-        // Use existing items if available, otherwise empty array
-        items: hasLoadedItems ? existingStoreGroup.items : [],
+        items: storeGroup?.items || [], // Use store items if available
         created_at: apiGroup.created_at,
-        updated_at: apiGroup.updated_at,
+        updated_at: apiGroup.updated_at
       };
-      
-      console.log(`📦 Processed group "${apiGroup.name}": ${processedGroup.items.length}/${processedGroup.item_count} items loaded`);
-      
+
+      console.log(`📋 Processed group: ${processedGroup.name}`, {
+        id: processedGroup.id,
+        item_count: processedGroup.item_count,
+        loaded_items: processedGroup.items.length,
+        has_store_data: !!storeGroup
+      });
+
       return processedGroup;
     });
 
-    console.log('✅ API groups processing complete:', processedGroups.length);
+    console.log('✅ Finished processing groups:', {
+      totalProcessed: processedGroups.length,
+      withItems: processedGroups.filter(g => g.items.length > 0).length,
+      totalItemCount: processedGroups.reduce((acc, g) => acc + g.item_count, 0),
+      totalLoadedItems: processedGroups.reduce((acc, g) => acc + g.items.length, 0)
+    });
+
     return processedGroups;
   }
 

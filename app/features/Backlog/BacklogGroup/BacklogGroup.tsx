@@ -7,20 +7,24 @@ import BacklogGroupGrid from "./BacklogGroupGrid";
 import BackloGroupHeader from "./BacklogGroupHeader";
 import { useCurrentList } from "@/app/stores/use-list-store";
 import { ResearchItemModal } from "./ResearchItemModal";
+import { useGroupItemLoading } from "@/app/hooks/use-group-item-loading";
+import { useSessionStore } from "@/app/stores/session-store";
 
 interface BacklogGroupProps {
   group: {
     id: string;
     name: string;
+    description?: string;
     items: any[];
-    isOpen?: boolean;
+    item_count: number;
   };
   isExpandedView?: boolean;
   defaultExpanded?: boolean;
   isLoading?: boolean;
   isLoaded?: boolean;
-  onExpand?: () => void;
+  onExpand?: (groupId: string) => void;
   itemCount?: number;
+  onRemoveItem?: (groupId: string, itemId: string) => void;
 }
 
 export function BacklogGroup({
@@ -30,25 +34,47 @@ export function BacklogGroup({
   isLoading = false,
   isLoaded = false,
   onExpand,
-  itemCount
+  itemCount,
+  onRemoveItem
 }: BacklogGroupProps) {
-  const {
-    addItemToGroup,
-    gridItems,
-    getGroupItems
-  } = useItemStore();
-
+  const { addItemToGroup, gridItems } = useItemStore();
+  const { getGroupItems } = useSessionStore(); // Use session store instead
   const currentList = useCurrentList();
+  const { loadGroupItems, isGroupLoaded, isGroupLoading } = useGroupItemLoading();
 
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isResearchModalOpen, setIsResearchModalOpen] = useState(false); // New state
+  const [isResearchModalOpen, setIsResearchModalOpen] = useState(false);
   const [showMatched, setShowMatched] = useState(false);
 
+  // FIXED: Use session store data as primary source with better fallback
   const groupItems = useMemo(() => {
-    const storeItems = getGroupItems(group.id);
-    return storeItems.length > 0 ? storeItems : group.items;
-  }, [getGroupItems, group.id, group.items]);
+    try {
+      // Get items from session store (this is where loaded items are stored)
+      const sessionItems = getGroupItems(group.id);
+      const hasSessionItems = Array.isArray(sessionItems) && sessionItems.length > 0;
+      
+      // Fallback to group.items if no session items (but session should be primary)
+      const hasGroupItems = Array.isArray(group.items) && group.items.length > 0;
+      
+      const finalItems = hasSessionItems ? sessionItems : (hasGroupItems ? group.items : []);
+      
+      console.log(`🔍 Group ${group.name} items source:`, {
+        groupId: group.id,
+        sessionItemsCount: hasSessionItems ? sessionItems.length : 0,
+        groupItemsCount: hasGroupItems ? group.items.length : 0,
+        finalItemsCount: finalItems.length,
+        usingSession: hasSessionItems,
+        isLoaded: isGroupLoaded(group.id),
+        groupItemCount: group.item_count || 0
+      });
+      
+      return finalItems;
+    } catch (error) {
+      console.error(`❌ Error getting items for group ${group.name}:`, error);
+      return Array.isArray(group.items) ? group.items : [];
+    }
+  }, [getGroupItems, group.id, group.items, group.name, group.item_count, isGroupLoaded]);
 
   const assignedItemIds = useMemo(() => {
     return new Set(
@@ -74,45 +100,25 @@ export function BacklogGroup({
     [showMatched, groupItems, availableItems, assignedItemIds]
   );
 
-  const isDatabaseGroup = useMemo(() =>
-    groupItems.some(item =>
-      item.id && item.id.length > 10 && !item.id.startsWith('item-')
-    ),
-    [groupItems]
-  );
+  const displayCount = useMemo(() => {
+    if (itemCount !== undefined) return itemCount;
+    return showMatched 
+      ? groupItems.filter(item => item.matched || assignedItemIds.has(item.id)).length
+      : availableItems.length;
+  }, [itemCount, showMatched, groupItems, availableItems, assignedItemIds]);
 
-  const handleToggle = useCallback(async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
+  const handleToggle = useCallback(async () => {
     const newExpanded = !isExpanded;
     setIsExpanded(newExpanded);
-
-    if (newExpanded && !isLoaded && groupItems.length === 0 && onExpand) {
-      onExpand();
+    
+    // Only trigger loading if expanding and parent wants to handle it
+    if (newExpanded && onExpand) {
+      console.log(`🔄 BacklogGroup: Expanding group ${group.name}, triggering onExpand`);
+      onExpand(group.id);
     }
-  }, [isExpanded, isLoaded, groupItems.length, onExpand]);
+  }, [isExpanded, onExpand, group.id, group.name]);
 
-  // Quick add for custom groups
-  const handleAddItem = useCallback(async (itemData: any) => {
-    const backlogItem = {
-      id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      name: typeof itemData === 'string' ? itemData : itemData.title || itemData.name,
-      title: typeof itemData === 'string' ? itemData : itemData.title || itemData.name,
-      description: typeof itemData === 'object' ? itemData.description : '',
-      category: currentList?.category || 'sports',
-      subcategory: currentList?.subcategory,
-      item_year: undefined,
-      item_year_to: undefined,
-      image_url: undefined,
-      created_at: new Date().toISOString(),
-      tags: typeof itemData === 'object' ? itemData.tags || [] : []
-    };
 
-    await addItemToGroup(group.id, backlogItem);
-  }, [addItemToGroup, group.id, currentList]);
-
-  // Research-based add for both group types
   const handleResearchAdd = useCallback(async (researchedItem: any) => {
     const backlogItem = {
       id: researchedItem.item_id || `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -143,34 +149,27 @@ export function BacklogGroup({
     setIsResearchModalOpen(true);
   }, []);
 
-  const displayCount = useMemo(() => {
-    if (itemCount !== undefined) return itemCount;
-    return displayItems.length;
-  }, [itemCount, displayItems.length]);
+  const isDatabaseGroup = group.id.startsWith('group-') || group.id.includes('-');
+  
+  // Use actual loading state from the hook, not derived state
+  const shouldShowLoading = isGroupLoading(group.id);
+  const hasLoadedItems = isGroupLoaded(group.id) && groupItems.length > 0;
 
-  const shouldShowLoading = isLoading && groupItems.length === 0;
+  console.log(`🎯 Group ${group.name} render state:`, {
+    groupId: group.id,
+    itemsCount: groupItems.length,
+    isExpanded,
+    shouldShowLoading,
+    hasLoadedItems,
+    isDatabaseGroup,
+    displayItemsCount: displayItems.length
+  });
 
   return (
     <>
       <motion.div
-        className="rounded-xl border overflow-hidden transition-all duration-200 hover:shadow-lg"
-        style={{
-          background: `
-            linear-gradient(135deg, 
-              rgba(30, 41, 59, 0.8) 0%,
-              rgba(51, 65, 85, 0.9) 100%
-            )
-          `,
-          border: '1px solid rgba(71, 85, 105, 0.4)',
-          boxShadow: isExpanded
-            ? '0 8px 25px rgba(0, 0, 0, 0.3)'
-            : '0 4px 6px rgba(0, 0, 0, 0.1)'
-        }}
-        animate={{
-          boxShadow: isExpanded
-            ? '0 8px 25px rgba(0, 0, 0, 0.3)'
-            : '0 4px 6px rgba(0, 0, 0, 0.1)'
-        }}
+        className="group cursor-pointer relative"
+        layout
         transition={{ duration: 0.2 }}
       >
         {/* Header */}
@@ -178,8 +177,8 @@ export function BacklogGroup({
           handleToggle={handleToggle}
           group={group}
           isExpanded={isExpanded}
-          isLoading={isLoading}
-          isLoaded={isLoaded}
+          isLoading={shouldShowLoading}
+          isLoaded={hasLoadedItems}
           displayCount={displayCount}
           groupItems={groupItems}
           shouldShowLoading={shouldShowLoading}
@@ -203,12 +202,13 @@ export function BacklogGroup({
           setIsAddModalOpen={setIsAddModalOpen}
           assignedItemIds={assignedItemIds}
           isLoading={shouldShowLoading}
-          hasLoadedItems={isLoaded && groupItems.length > 0}
+          hasLoadedItems={hasLoadedItems}
           onAddNewItem={handleOpenResearchModal}
         />
       </motion.div>
 
-      {/* Add Item Modal */}
+      {/* Research Modal */}
+      {isResearchModalOpen && (
         <ResearchItemModal
           isOpen={isResearchModalOpen}
           onClose={handleCloseResearchModal}
@@ -217,6 +217,7 @@ export function BacklogGroup({
           category={currentList?.category || 'sports'}
           subcategory={currentList?.subcategory || ''}
         />
+      )}
     </>
   );
 }

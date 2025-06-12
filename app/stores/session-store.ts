@@ -1,18 +1,29 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { GridItemType, BacklogItemType } from '@/app/types/match';
-import { ListSession, SessionProgress } from './item-store/types';
-import { SessionManager } from './item-store/session-manager';
 import { BacklogGroup, BacklogItem } from '@/app/types/backlog-groups';
+import { BacklogGroupType, BacklogItemType, GridItemType } from '@/app/types/match';
 import { itemGroupsApi } from '@/app/lib/api/item-groups';
+
+// Simple session manager for now
+const SessionManager = {
+  updateSession: (session: any, updates: any) => ({
+    ...session,
+    ...updates,
+    updatedAt: new Date().toISOString()
+  }),
+  
+  validateSession: (session: any) => {
+    return !!(session && session.id && session.listId);
+  }
+};
 
 interface SessionStoreState {
   // Multi-list sessions
-  listSessions: Record<string, ListSession>;
+  listSessions: Record<string, any>;
   activeSessionId: string | null;
   
-  // Current session state - Updated to support both old and new types
-  backlogGroups: BacklogGroup[]; // Changed from BacklogGroupType[] to BacklogGroup[]
+  // Current session state - Enhanced to support new types
+  backlogGroups: BacklogGroup[]; // Runtime format (from API)
   selectedBacklogItem: string | null;
   compareList: BacklogItemType[]; // Legacy support
   
@@ -25,12 +36,11 @@ interface SessionStoreState {
   syncWithList: (listId: string, category?: string) => void;
   
   // Actions - Enhanced Backlog Management
-  setBacklogGroups: (groups: BacklogGroup[]) => void; // Updated type
-  toggleBacklogGroup: (groupId: string) => void;
-  addItemToGroup: (groupId: string, item: BacklogItem) => void; // Enhanced signature
-  removeItemFromGroup: (groupId: string, itemId: string) => void; // Enhanced signature
-  loadGroupItems: (groupId: string) => Promise<void>; // New method
-  getGroupItems: (groupId: string) => BacklogItem[]; // New method
+  setBacklogGroups: (groups: BacklogGroup[] | ((prev: BacklogGroup[]) => BacklogGroup[])) => void;
+  addItemToGroup: (groupId: string, item: BacklogItem) => void;
+  removeItemFromGroup: (groupId: string, itemId: string) => void;
+  loadGroupItems: (groupId: string) => Promise<void>;
+  getGroupItems: (groupId: string) => BacklogItem[];
   
   // Actions - Selection
   setSelectedBacklogItem: (id: string | null) => void;
@@ -38,21 +48,6 @@ interface SessionStoreState {
   // Actions - Compare List (Legacy)
   toggleCompareItem: (item: BacklogItemType) => void;
   clearCompareList: () => void;
-  
-  // Utilities
-  getAvailableBacklogItems: () => BacklogItem[]; // Updated return type
-  getSessionProgress: (listId?: string) => SessionProgress;
-  getAllSessions: () => ListSession[];
-  hasUnsavedChanges: (listId?: string) => boolean;
-  getSessionMetadata: (listId?: string) => any;
-  
-  // Integration hooks for other stores
-  updateSessionGridItems: (gridItems: GridItemType[]) => void;
-  getActiveSession: () => ListSession | null;
-  
-  // Reset and sync
-  resetStore: () => void;
-  syncWithBackend: (listId: string) => Promise<void>;
 }
 
 export const useSessionStore = create<SessionStoreState>()(
@@ -61,7 +56,7 @@ export const useSessionStore = create<SessionStoreState>()(
       // Initial state
       listSessions: {},
       activeSessionId: null,
-      backlogGroups: [],
+      backlogGroups: [], // Always initialize as array
       selectedBacklogItem: null,
       compareList: [],
 
@@ -69,7 +64,24 @@ export const useSessionStore = create<SessionStoreState>()(
       createSession: (listId: string, size: number = 50) => {
         console.log(`Creating session for list ${listId} with size ${size}`);
         
-        const session = SessionManager.createEmptySession(listId, size);
+        const session = {
+          id: `session-${listId}`,
+          listId,
+          listSize: size,
+          gridItems: Array.from({ length: size }, (_, index) => ({
+            id: `grid-${index}`,
+            title: '',
+            tags: [],
+            matched: false,
+          })),
+          backlogGroups: [],
+          selectedBacklogItem: null,
+          selectedGridItem: null,
+          compareList: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          synced: false
+        };
         
         set((state) => ({
           listSessions: {
@@ -95,25 +107,38 @@ export const useSessionStore = create<SessionStoreState>()(
 
       saveCurrentSession: () => {
         const state = get();
-        if (!state.activeSessionId) return;
         
-        const currentSession = state.listSessions[state.activeSessionId];
-        if (!currentSession) return;
+        if (!state.activeSessionId) {
+          console.log('⚠️ No active session to save');
+          return;
+        }
+        
+        // Ensure backlogGroups is an array before processing
+        if (!Array.isArray(state.backlogGroups)) {
+          console.error('❌ Cannot save session: backlogGroups is not an array', typeof state.backlogGroups);
+          return;
+        }
 
-        const updatedSession = SessionManager.updateSessionTimestamp({
-          ...currentSession,
+        const currentSession = state.listSessions[state.activeSessionId];
+        if (!currentSession) {
+          console.warn('⚠️ No current session found to save');
+          return;
+        }
+
+        const updatedSession = SessionManager.updateSession(currentSession, {
           // Convert BacklogGroup[] to BacklogGroupType[] for session storage
           backlogGroups: state.backlogGroups.map(group => ({
             id: group.id,
             name: group.name,
-            items: group.items.map(item => ({
+            title: group.name,
+            items: (group.items || []).map(item => ({
               id: item.id,
               title: item.name || item.title || '',
               description: item.description || '',
               matched: false,
               tags: item.tags || []
             })),
-            isOpen: true // Default to open
+            isOpen: true
           })),
           selectedBacklogItem: state.selectedBacklogItem,
           compareList: state.compareList,
@@ -133,15 +158,15 @@ export const useSessionStore = create<SessionStoreState>()(
         
         if (session && SessionManager.validateSession(session)) {
           // Convert stored BacklogGroupType[] back to BacklogGroup[]
-          const convertedGroups: BacklogGroup[] = session.backlogGroups.map(group => ({
+          const convertedGroups: BacklogGroup[] = (session.backlogGroups || []).map((group: any) => ({
             id: group.id,
-            name: group.title,
+            name: group.title || group.name,
             description: undefined,
             category: 'sports', // Default, will be updated from API
             subcategory: undefined,
             image_url: undefined,
-            item_count: group.items.length,
-            items: group.items.map(item => ({
+            item_count: (group.items || []).length,
+            items: (group.items || []).map((item: any) => ({
               id: item.id,
               name: item.title,
               title: item.title,
@@ -162,11 +187,20 @@ export const useSessionStore = create<SessionStoreState>()(
             activeSessionId: listId,
             backlogGroups: convertedGroups,
             selectedBacklogItem: session.selectedBacklogItem,
-            compareList: session.compareList
+            compareList: session.compareList || []
           });
+          
+          console.log(`✅ SessionStore: Loaded session ${listId} with ${convertedGroups.length} groups`);
         } else {
-          console.warn(`Session for list ${listId} not found, creating new session`);
-          get().createSession(listId, 50);
+          // Initialize new session with empty groups
+          set({
+            activeSessionId: listId,
+            backlogGroups: [], // Always start with empty array
+            selectedBacklogItem: null,
+            compareList: []
+          });
+          
+          console.log(`🆕 SessionStore: Initialized new session ${listId}`);
         }
       },
 
@@ -191,48 +225,58 @@ export const useSessionStore = create<SessionStoreState>()(
         if (state.activeSessionId !== listId) {
           get().switchToSession(listId);
         }
-        
-        const currentSession = state.listSessions[listId];
-        if (currentSession && currentSession.backlogGroups.length === 0) {
-          // Don't set default groups here anymore, let BacklogGroups component handle it via API
-          console.log(`Session ${listId} ready, groups will be loaded via API`);
-        }
       },
 
-      // Enhanced Backlog Management
-      setBacklogGroups: (groups: BacklogGroup[]) => {
-        set({ backlogGroups: groups });
-        // Auto-save after a short delay
-        setTimeout(() => get().saveCurrentSession(), 100);
-      },
-
-      toggleBacklogGroup: (groupId: string) => {
+      // Backlog Management
+      setBacklogGroups: (groups) => {
         set((state) => {
-          const updatedGroups = state.backlogGroups.map(group => {
-            if (group.id === groupId) {
-              // For BacklogGroup, we don't have isOpen property, but we can track it in session
-              return group; // Keep the group as-is for now
-            }
-            return group;
-          });
+          let newGroups: BacklogGroup[];
           
-          return { backlogGroups: updatedGroups };
+          if (typeof groups === 'function') {
+            // If it's a function, call it with current state
+            const currentGroups = Array.isArray(state.backlogGroups) ? state.backlogGroups : [];
+            newGroups = groups(currentGroups);
+          } else {
+            // If it's a direct value, use it
+            newGroups = groups;
+          }
+          
+          // Ensure the result is an array
+          if (!Array.isArray(newGroups)) {
+            console.error('❌ setBacklogGroups received non-array result:', typeof newGroups, newGroups);
+            return state; // Don't update if invalid
+          }
+          
+          console.log(`✅ SessionStore: Setting ${newGroups.length} backlog groups`);
+          return { backlogGroups: newGroups };
         });
         
-        setTimeout(() => get().saveCurrentSession(), 100);
+        // Auto-save after setting groups
+        setTimeout(() => {
+          const currentState = get();
+          if (Array.isArray(currentState.backlogGroups)) {
+            currentState.saveCurrentSession();
+          }
+        }, 100);
       },
 
       addItemToGroup: (groupId: string, item: BacklogItem) => {
         set((state) => {
+          // Ensure backlogGroups is an array
+          if (!Array.isArray(state.backlogGroups)) {
+            console.error('❌ addItemToGroup: backlogGroups is not an array');
+            return state;
+          }
+          
           const updatedGroups = state.backlogGroups.map(group => {
             if (group.id === groupId) {
               // Check if item already exists
-              const itemExists = group.items.some(existingItem => existingItem.id === item.id);
+              const itemExists = (group.items || []).some(existingItem => existingItem.id === item.id);
               if (!itemExists) {
                 return {
                   ...group,
-                  items: [...group.items, item],
-                  item_count: group.item_count + 1
+                  items: [...(group.items || []), item],
+                  item_count: (group.item_count || 0) + 1
                 };
               }
             }
@@ -247,25 +291,18 @@ export const useSessionStore = create<SessionStoreState>()(
 
       removeItemFromGroup: (groupId: string, itemId: string) => {
         set((state) => {
+          // Ensure backlogGroups is an array
+          if (!Array.isArray(state.backlogGroups)) {
+            console.error('❌ removeItemFromGroup: backlogGroups is not an array');
+            return state;
+          }
+          
           console.log(`🗑️ SessionStore: Removing item ${itemId} from group ${groupId}`);
-          
-          // Find the group and item
-          const targetGroup = state.backlogGroups.find(group => group.id === groupId);
-          if (!targetGroup) {
-            console.warn(`⚠️ Group ${groupId} not found`);
-            return state;
-          }
-          
-          const itemExists = targetGroup.items.some(item => item.id === itemId);
-          if (!itemExists) {
-            console.warn(`⚠️ Item ${itemId} not found in group ${groupId}`);
-            return state;
-          }
           
           const updatedGroups = state.backlogGroups.map(group => {
             if (group.id === groupId) {
-              const updatedItems = group.items.filter(item => item.id !== itemId);
-              console.log(`📉 Group ${group.name}: ${group.items.length} → ${updatedItems.length} items`);
+              const updatedItems = (group.items || []).filter(item => item.id !== itemId);
+              console.log(`📉 Group ${group.name}: ${(group.items || []).length} → ${updatedItems.length} items`);
               
               return {
                 ...group,
@@ -278,7 +315,7 @@ export const useSessionStore = create<SessionStoreState>()(
           
           // Clear selection and compare list
           const updatedSelectedBacklogItem = state.selectedBacklogItem === itemId ? null : state.selectedBacklogItem;
-          const updatedCompareList = state.compareList.filter(item => item.id !== itemId);
+          const updatedCompareList = (state.compareList || []).filter(item => item.id !== itemId);
           
           console.log(`✅ SessionStore: Item ${itemId} removed successfully`);
           
@@ -293,48 +330,94 @@ export const useSessionStore = create<SessionStoreState>()(
         setTimeout(() => get().saveCurrentSession(), 100);
       },
 
+      // FIXED loadGroupItems method
       loadGroupItems: async (groupId: string): Promise<void> => {
         try {
-          const response = await itemGroupsApi.getGroupItems(groupId);
-          const items: BacklogItem[] = response.items.map(item => ({
+          console.log(`🔄 SessionStore: Loading items for group ${groupId}...`);
+          
+          // Use the single group endpoint that includes items
+          const groupWithItems = await itemGroupsApi.getGroup(groupId, true);
+          
+          if (!groupWithItems || !Array.isArray(groupWithItems.items)) {
+            console.error('❌ Invalid response from getGroup API:', groupWithItems);
+            return;
+          }
+
+          // Convert API items to BacklogItem format
+          const items: BacklogItem[] = groupWithItems.items.map(item => ({
             id: item.id,
             name: item.name,
-            title: item.name,
-            description: item.description,
+            title: item.name, // Legacy compatibility
+            description: item.description || '',
             category: item.category,
             subcategory: item.subcategory,
             item_year: item.item_year,
             item_year_to: item.item_year_to,
             image_url: item.image_url,
             created_at: item.created_at,
-            tags: []
+            tags: [] // Default empty tags
           }));
 
-          set((state) => ({
-            backlogGroups: state.backlogGroups.map(group => 
-              group.id === groupId 
-                ? { ...group, items, item_count: items.length }
-                : group
-            )
-          }));
+          console.log(`📦 SessionStore: Converting ${groupWithItems.items.length} API items to BacklogItems`);
 
+          // Update the store with loaded items
+          set((state) => {
+            if (!Array.isArray(state.backlogGroups)) {
+              console.error('❌ backlogGroups is not an array in loadGroupItems');
+              return state;
+            }
+
+            const updatedGroups = state.backlogGroups.map(group => {
+              if (group.id === groupId) {
+                console.log(`✅ SessionStore: Updating group ${group.name} with ${items.length} items`);
+                return { 
+                  ...group, 
+                  items, 
+                  item_count: items.length 
+                };
+              }
+              return group;
+            });
+
+            return { backlogGroups: updatedGroups };
+          });
+
+          console.log(`✅ SessionStore: Successfully loaded ${items.length} items for group ${groupId}`);
+          
+          // Auto-save after loading items
           setTimeout(() => get().saveCurrentSession(), 100);
+          
         } catch (error) {
-          console.error(`Failed to load items for group ${groupId}:`, error);
+          console.error(`❌ SessionStore: Failed to load items for group ${groupId}:`, error);
           throw error;
         }
       },
 
       getGroupItems: (groupId: string): BacklogItem[] => {
         const state = get();
-        const group = state.backlogGroups.find(g => g.id === groupId);
-        return group?.items || [];
+        
+        // Ensure backlogGroups is an array
+        if (!Array.isArray(state.backlogGroups)) {
+          console.warn('⚠️ getGroupItems: backlogGroups is not an array:', typeof state.backlogGroups);
+          return [];
+        }
+        
+        const group = state.backlogGroups.find(g => g && g.id === groupId);
+        const items = group?.items || [];
+        
+        console.log(`🔍 SessionStore.getGroupItems(${groupId}):`, {
+          groupFound: !!group,
+          groupName: group?.name,
+          itemCount: items.length
+        });
+        
+        return items;
       },
 
-      // Selection Management
+      // Selection
       setSelectedBacklogItem: (id) => set({ selectedBacklogItem: id }),
 
-      // Legacy Compare List
+      // Compare List
       toggleCompareItem: (item) => set((state) => {
         const isInList = state.compareList.some(compareItem => compareItem.id === item.id);
         
@@ -350,128 +433,19 @@ export const useSessionStore = create<SessionStoreState>()(
       }),
 
       clearCompareList: () => set({ compareList: [] }),
-
-      // Utilities
-      getAvailableBacklogItems: (): BacklogItem[] => {
-        const state = get();
-        return state.backlogGroups.flatMap(group => 
-          group.items.filter(item => {
-            // For BacklogItem, we don't have matched property, so return all items
-            // You might want to check against gridItems to see what's already placed
-            return true;
-          })
-        );
-      },
-
-      getSessionProgress: (listId) => {
-        const state = get();
-        const targetSession = listId ? state.listSessions[listId] : null;
-        const gridItems = targetSession ? targetSession.gridItems : [];
-        
-        return SessionManager.calculateProgress(gridItems);
-      },
-
-      getAllSessions: () => {
-        const state = get();
-        return Object.values(state.listSessions);
-      },
-
-      hasUnsavedChanges: (listId) => {
-        const state = get();
-        const sessionId = listId || state.activeSessionId;
-        if (!sessionId) return false;
-        
-        const session = state.listSessions[sessionId];
-        if (!session) return false;
-        
-        return SessionManager.hasUnsavedChanges(session);
-      },
-
-      getSessionMetadata: (listId) => {
-        const state = get();
-        const sessionId = listId || state.activeSessionId;
-        if (!sessionId) return null;
-        
-        const session = state.listSessions[sessionId];
-        if (!session) return null;
-        
-        return SessionManager.getSessionMetadata(session);
-      },
-
-      // Integration hooks
-      updateSessionGridItems: (gridItems) => {
-        const state = get();
-        if (!state.activeSessionId) return;
-        
-        const currentSession = state.listSessions[state.activeSessionId];
-        if (!currentSession) return;
-
-        const updatedSession = {
-          ...currentSession,
-          gridItems
-        };
-        
-        set((state) => ({
-          listSessions: {
-            ...state.listSessions,
-            [state.activeSessionId!]: updatedSession
-          }
-        }));
-      },
-
-      getActiveSession: () => {
-        const state = get();
-        if (!state.activeSessionId) return null;
-        return state.listSessions[state.activeSessionId] || null;
-      },
-
-      // Reset and Sync
-      resetStore: () => set({
-        listSessions: {},
-        activeSessionId: null,
-        backlogGroups: [],
-        selectedBacklogItem: null,
-        compareList: []
-      }),
-
-      syncWithBackend: async (listId) => {
-        console.log(`Syncing session ${listId} with backend...`);
-        
-        try {
-          const state = get();
-          
-          if (!state.listSessions[listId]) {
-            get().createSession(listId, 50);
-          }
-          
-          const session = state.listSessions[listId];
-          if (session) {
-            const syncedSession = SessionManager.markSessionSynced(session);
-            
-            set((state) => ({
-              listSessions: {
-                ...state.listSessions,
-                [listId]: syncedSession
-              }
-            }));
-          }
-          
-        } catch (error) {
-          console.error('Failed to sync with backend:', error);
-        }
-      }
     }),
     {
       name: 'session-store',
       partialize: (state) => ({
         listSessions: state.listSessions,
-        activeSessionId: state.activeSessionId
+        activeSessionId: state.activeSessionId,
+        // Don't persist backlogGroups directly, they're stored in listSessions
       })
     }
   )
 );
 
-// Enhanced Selector hooks with new types
+// Enhanced Selector hooks
 export const useBacklogGroups = () => useSessionStore((state) => state.backlogGroups);
 export const useActiveSession = () => useSessionStore((state) => ({
   activeSessionId: state.activeSessionId,
@@ -481,9 +455,10 @@ export const useSessionSelection = () => useSessionStore((state) => ({
   selectedBacklogItem: state.selectedBacklogItem
 }));
 export const useCompareList = () => useSessionStore((state) => state.compareList);
-export const useSessionProgress = () => useSessionStore((state) => state.getSessionProgress());
-export const useSessionMetadata = () => useSessionStore((state) => state.getSessionMetadata());
 
 // New selectors for group management
 export const useGroupItems = (groupId: string) => useSessionStore((state) => state.getGroupItems(groupId));
-export const useAvailableBacklogItems = () => useSessionStore((state) => state.getAvailableBacklogItems());
+export const useAvailableBacklogItems = () => useSessionStore((state) => {
+  if (!Array.isArray(state.backlogGroups)) return [];
+  return state.backlogGroups.flatMap(group => group.items || []);
+});

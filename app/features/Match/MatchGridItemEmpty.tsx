@@ -15,7 +15,7 @@ interface MatchEmptySlotProps {
   activeItem?: string | null;
 }
 
-const MatchEmptySlot = ({ 
+export default function MatchEmptySlot({ 
   position, 
   size = 'medium',
   selectedBacklogItem,
@@ -25,11 +25,11 @@ const MatchEmptySlot = ({
   canAddAtPosition,
   isDraggingBacklogItem = false,
   activeItem = null
-}: MatchEmptySlotProps) => {
+}: MatchEmptySlotProps) {
   const [isBeingDraggedOver, setIsBeingDraggedOver] = useState(false);
   const [dragPreviewItem, setDragPreviewItem] = useState<any>(null);
 
-  // Enhanced droppable with better feedback
+  // FIXED: Enhanced droppable with proper data
   const { isOver, setNodeRef } = useDroppable({
     id: `empty-slot-${position}`,
     data: {
@@ -39,9 +39,10 @@ const MatchEmptySlot = ({
     }
   });
 
+  // FIXED: Find selected item properly
   const selectedBacklogItemObj = selectedBacklogItem
     ? backlogGroups
-        .flatMap(group => group.items)
+        .flatMap(group => Array.isArray(group.items) ? group.items : [])
         .find(item => item.id === selectedBacklogItem)
     : null;
 
@@ -49,7 +50,7 @@ const MatchEmptySlot = ({
   useEffect(() => {
     if (activeItem && isDraggingBacklogItem) {
       const draggedItem = backlogGroups
-        .flatMap(group => group.items)
+        .flatMap(group => Array.isArray(group.items) ? group.items : [])
         .find(item => item.id === activeItem);
       setDragPreviewItem(draggedItem);
     } else {
@@ -77,9 +78,13 @@ const MatchEmptySlot = ({
 
   const nextAvailable = getNextAvailablePosition();
   const lastAvailable = getLastAvailablePosition();
-  const canAdd = canAddAtPosition(position);
+  
+  // FIXED: Proper canAdd check
+  const canAdd = canAddAtPosition ? canAddAtPosition(position) : false;
   const isNextAvailable = nextAvailable === position;
   const isLastAvailable = lastAvailable === position;
+
+  // Enhanced highlighting logic
   const shouldHighlight = (selectedBacklogItemObj || dragPreviewItem) && canAdd && (isNextAvailable || isLastAvailable);
 
   const sizeClasses = {
@@ -161,9 +166,34 @@ const MatchEmptySlot = ({
 
   const slotState = getSlotState();
 
+  // FIXED: Click handler to assign selected item
   const handleClick = () => {
+    console.log(`🎯 MatchEmptySlot click:`, {
+      position,
+      hasSelectedItem: !!selectedBacklogItemObj,
+      canAdd,
+      selectedItemId: selectedBacklogItemObj?.id
+    });
+
     if (selectedBacklogItemObj && canAdd) {
-      assignItemToGrid(selectedBacklogItemObj, position);
+      console.log(`📍 Assigning selected item to position ${position}`);
+      
+      // Convert to proper format for assignment
+      const itemToAssign = {
+        id: selectedBacklogItemObj.id,
+        title: selectedBacklogItemObj.name || selectedBacklogItemObj.title || '',
+        description: selectedBacklogItemObj.description || '',
+        matched: false,
+        tags: selectedBacklogItemObj.tags || []
+      };
+      
+      assignItemToGrid(itemToAssign, position);
+    } else {
+      console.log(`⚠️ Cannot assign:`, {
+        hasSelectedItem: !!selectedBacklogItemObj,
+        canAdd,
+        reason: !selectedBacklogItemObj ? 'No item selected' : !canAdd ? 'Position not available' : 'Unknown'
+      });
     }
   };
 
@@ -189,7 +219,7 @@ const MatchEmptySlot = ({
         ease: "easeOut"
       }}
     >
-      {/* Background rank number with enhanced visibility */}
+      {/* Background rank number */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-5">
         <motion.span 
           className={`font-black select-none transition-all duration-300 ${
@@ -211,7 +241,7 @@ const MatchEmptySlot = ({
       </div>
 
       <div className="flex flex-col items-center gap-3 relative z-10">
-        {/* Enhanced Plus Icon with drag preview */}
+        {/* Enhanced Plus Icon */}
         <motion.div
           className="relative"
           animate={{
@@ -252,7 +282,7 @@ const MatchEmptySlot = ({
           </AnimatePresence>
         </motion.div>
 
-        {/* Enhanced Position Number */}
+        {/* Position Number */}
         <motion.span
           className={`${classes.number} font-bold transition-all duration-300 ${slotState.textColor}`}
           animate={{
@@ -263,31 +293,7 @@ const MatchEmptySlot = ({
           {position + 1}
         </motion.span>
 
-        {/* Position indicator badges for top positions */}
-        {position < 3 && (
-          <motion.div 
-            className="absolute -top-3 -right-3"
-            animate={{
-              scale: isBeingDraggedOver ? 1.1 : 1,
-              rotate: isBeingDraggedOver ? 10 : 0
-            }}
-          >
-            <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shadow-lg transition-all duration-300 ${classes.badge}`}
-              style={{
-                background: position === 0 ? '#FFD700' : position === 1 ? '#C0C0C0' : '#CD7F32',
-                color: '#000',
-                boxShadow: isBeingDraggedOver 
-                  ? `0 4px 15px ${position === 0 ? 'rgba(255, 215, 0, 0.6)' : position === 1 ? 'rgba(192, 192, 192, 0.6)' : 'rgba(205, 127, 50, 0.6)'}`
-                  : '0 2px 8px rgba(0, 0, 0, 0.3)'
-              }}
-            >
-              {position + 1}
-            </div>
-          </motion.div>
-        )}
-
-        {/* Enhanced hint text with dynamic content */}
+        {/* Enhanced hint text */}
         <div className="absolute bottom-3 left-0 right-0 text-center">
           <motion.span 
             className={`text-xs transition-all duration-300 ${
@@ -331,6 +337,4 @@ const MatchEmptySlot = ({
       </AnimatePresence>
     </motion.div>
   );
-};
-
-export default MatchEmptySlot;
+}

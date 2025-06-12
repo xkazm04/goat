@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { 
   DndContext, 
   DragOverlay, 
@@ -16,6 +16,7 @@ import { useItemStore } from '@/app/stores/item-store';
 import { useMatchStore } from '@/app/stores/match-store';
 import { useListStore } from '@/app/stores/use-list-store';
 import { BacklogItem } from '../Backlog/BacklogItem';
+import { BacklogModal } from '../Backlog/BacklogModal'; // ADD THIS
 
 export function MatchContainer() {
   const { 
@@ -35,11 +36,14 @@ export function MatchContainer() {
   
   const { currentList } = useListStore();
   
+  // ADD MODAL STATE
+  const [isBacklogModalOpen, setIsBacklogModalOpen] = useState(false);
+  
   // Enhanced sensors for better drag experience
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 2, // Even more responsive
+        distance: 2,
       },
     })
   );
@@ -113,53 +117,46 @@ export function MatchContainer() {
   }
 
   return (
-    <DndContext
-      sensors={sensors}
-      onDragStart={handleDragStart}
-      onDragMove={handleDragMove}
-      onDragEnd={handleDragEndWrapper}
-    >
-      <div className="min-h-screen relative"> {/* Add relative positioning */}
-        {/* Keyboard Mode Indicator */}
-        {keyboardMode && (
-          <div className="fixed top-4 right-4 z-50 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg">
-            <div className="text-sm font-semibold">Keyboard Mode Active</div>
-            <div className="text-xs opacity-90">
-              Press 1-9 or 0 to assign to positions 1-10
-            </div>
-          </div>
-        )}
-        
-        <MatchContainerContent />
-      </div>
-      
-      {/* Enhanced Drag Overlay with Fixed Positioning */}
-      <DragOverlay
-        dropAnimation={{
-          duration: 250,
-          easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)',
-        }}
-        style={{
-          cursor: 'grabbing',
-          zIndex: 1000,
-        }}
+    <>
+      <DndContext
+        sensors={sensors}
+        onDragStart={handleDragStart}
+        onDragMove={handleDragMove}
+        onDragEnd={handleDragEndWrapper}
       >
-        {activeBacklogItem && (
-          <div 
-            className="rotate-6 scale-110"
-            style={{
-              filter: 'drop-shadow(0 15px 35px rgba(0, 0, 0, 0.6))',
-              transformOrigin: 'center',
-              pointerEvents: 'none', 
-            }}
-          >
-            <BacklogItem 
-              item={activeBacklogItem} 
-              isDragOverlay={true} 
-            />
-          </div>
-        )}
-      </DragOverlay>
-    </DndContext>
+        {/* UPDATED: Pass modal handler to content */}
+        <MatchContainerContent onOpenBacklogModal={() => setIsBacklogModalOpen(true)} />
+
+        {/* Drag Overlay */}
+        <DragOverlay
+          style={{
+            zIndex: 1000,
+          }}
+        >
+          {activeBacklogItem && (
+            <div 
+              className="rotate-6 scale-110"
+              style={{
+                filter: 'drop-shadow(0 15px 35px rgba(0, 0, 0, 0.6))',
+                transformOrigin: 'center',
+                pointerEvents: 'none', 
+              }}
+            >
+              <BacklogItem 
+                item={activeBacklogItem} 
+                groupId="drag-overlay"
+                isDragOverlay={true} 
+              />
+            </div>
+          )}
+        </DragOverlay>
+      </DndContext>
+
+      {/* ADD BACKLOG MODAL */}
+      <BacklogModal 
+        isOpen={isBacklogModalOpen}
+        onClose={() => setIsBacklogModalOpen(false)}
+      />
+    </>
   );
 }

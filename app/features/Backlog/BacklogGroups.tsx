@@ -1,394 +1,236 @@
 "use client";
-import { motion, AnimatePresence } from "framer-motion";
-import { useMemo, useState, useEffect, useCallback, useRef } from "react";
-import { useItemStore } from "@/app/stores/item-store";
-import { useGroupsByCategory, usePrefetchGroupItems } from "@/app/hooks/use-item-groups";
+
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useCurrentList } from "@/app/stores/use-list-store";
-import React from "react";
+import { useItemGroups } from "@/app/hooks/use-item-groups";
+import { useSessionStore } from "@/app/stores/session-store";
+import { useBacklogFiltering } from "@/app/hooks/use-backlog-filtering";
+import { useGroupItemLoading } from "@/app/hooks/use-group-item-loading";
+import { BacklogDataProcessor } from "./BacklogGroups/backlog-data-processor";
 import SidebarContent from "./BacklogGroups/SidebarContent";
-import { ErrorState, LoadingState } from "./BacklogGroupStates";
-import { BookOpenIcon } from "lucide-react";
-import { 
-  BacklogDataProcessor, 
-  BacklogPerformanceTracker,
-  GroupLoadingState 
-} from "./BacklogGroups/backlog-data-processor";
 
 interface BacklogGroupsProps {
   className?: string;
+  isModal?: boolean;
+  expandedViewMode?: 'grid' | 'list';
+  onCloseModal?: () => void;
+  onOpenModal?: () => void; // ADD THIS
 }
 
-export function BacklogGroups({ className }: BacklogGroupsProps) {
-  const { backlogGroups: storeGroups, setBacklogGroups, loadGroupItems } = useItemStore();
+export function BacklogGroups({ 
+  className, 
+  isModal = false, 
+  expandedViewMode: propExpandedViewMode, 
+  onCloseModal,
+  onOpenModal // ADD THIS
+}: BacklogGroupsProps) {
   const currentList = useCurrentList();
-  const prefetchGroupItems = usePrefetchGroupItems();
-  
-  // Search and UI state
+  const { 
+    backlogGroups: storeGroups, 
+    removeItemFromGroup,
+    setBacklogGroups 
+  } = useSessionStore();
+
+  // Local state for UI
   const [searchTerm, setSearchTerm] = useState("");
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
-  const [clientSearchTerm, setClientSearchTerm] = useState("");
-  
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [expandedViewMode, setExpandedViewMode] = useState<'grid' | 'list'>('list');
-  const [isMobile, setIsMobile] = useState(false);
+  const [showEditorsPickOnly, setShowEditorsPickOnly] = useState(false);
+  const [localIsExpandedView, setIsExpandedView] = useState(false);
+  const [localExpandedViewMode, setLocalExpandedViewMode] = useState<'grid' | 'list'>('list');
 
-  // Enhanced loading state management
-  const [loadingState, setLoadingState] = useState<GroupLoadingState>({
-    loadedGroups: new Set(),
-    loadingGroups: new Set()
-  });
+  // Group item loading
+  const { loadGroupItems, isGroupLoaded, isGroupLoading } = useGroupItemLoading();
 
-  const isAutoLoadingRef = useRef(false);
-  const hasTriggeredAutoLoadRef = useRef(false);
-  const lastProcessedGroupsRef = useRef<string>('');
+  // STABLE REFS - Don't change on re-renders
+  const autoLoadedGroupsRef = useRef(new Set<string>());
+  const initialAutoLoadDoneRef = useRef(false);
+  const currentListIdRef = useRef<string | null>(null);
 
-  // Multi-level debouncing for optimal performance
-  useEffect(() => {
-    const timer = setTimeout(() => setClientSearchTerm(searchTerm), 150);
-    return () => clearTimeout(timer);
-  }, [searchTerm]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearchTerm(searchTerm), 500);
-    return () => clearTimeout(timer);
-  }, [searchTerm]);
-
-  // Detect mobile/tablet
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 1024);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  // Determine query parameters
-  const queryCategory = currentList?.category || 'sports';
-  const querySubcategory = useMemo(() => {
-    return queryCategory.toLowerCase() === 'sports' ? currentList?.subcategory : undefined;
-  }, [queryCategory, currentList?.subcategory]);
-
-  // Fetch groups using the hook
-  const {
-    data: apiGroups = [],
-    isLoading: groupsLoading,
-    error: groupsError,
-    refetch: refetchGroups
-  } = useGroupsByCategory(
-    queryCategory,
-    querySubcategory,
-    debouncedSearchTerm,
-    {
-      enabled: !!queryCategory,
-      refetchOnWindowFocus: false,
-      staleTime: 3 * 60 * 1000,
-    }
+  // Fetch API groups with proper error handling
+  const { 
+    data: apiGroups = [], 
+    isLoading: apiLoading, 
+    error: apiError,
+    refetch: refetchGroups 
+  } = useItemGroups(
+    currentList?.category || 'sports',
+    currentList?.subcategory,
+    { enabled: !!currentList }
   );
 
-  // Process API groups with performance tracking
+  // SAFE TYPE GUARD for store groups
+  const safeStoreGroups = useMemo(() => {
+    if (!Array.isArray(storeGroups)) {
+      console.warn('⚠️ storeGroups is not an array:', typeof storeGroups, storeGroups);
+      return [];
+    }
+    return storeGroups;
+  }, [storeGroups]);
+
+  // Process groups: merge API structure with store data
   const processedGroups = useMemo(() => {
-    BacklogPerformanceTracker.startTimer('processApiGroups');
+    if (!apiGroups?.length) {
+      return BacklogDataProcessor.convertLegacyGroups(safeStoreGroups);
+    }
     
-    const result = BacklogDataProcessor.processApiGroups(apiGroups, storeGroups);
-    
-    BacklogPerformanceTracker.endTimer('processApiGroups');
-    BacklogPerformanceTracker.logState('processedGroups', {
-      input: { api: apiGroups.length, store: storeGroups.length },
-      output: result.length
+    const processed = BacklogDataProcessor.processApiGroups(apiGroups, safeStoreGroups);
+    console.log('🔧 Processed groups:', {
+      total: processed.length,
+      withItems: processed.filter(g => g.items.length > 0).length,
+      apiGroupsCount: apiGroups.length,
+      storeGroupsCount: safeStoreGroups.length
     });
     
-    return result;
-  }, [apiGroups, storeGroups]);
+    return processed;
+  }, [apiGroups, safeStoreGroups]);
 
-  // Merge with store and determine main data source
-  const { groups: backlogGroups, hasChanges } = useMemo(() => {
-    BacklogPerformanceTracker.startTimer('mergeWithStore');
-    
-    const result = BacklogDataProcessor.mergeWithStore(processedGroups, storeGroups);
-    
-    BacklogPerformanceTracker.endTimer('mergeWithStore');
-    
-    return result;
-  }, [processedGroups, storeGroups]);
-
-  // Update store when groups change
+  // Update session store when API groups are loaded (one-time sync)
   useEffect(() => {
-    if (hasChanges && processedGroups.length > 0) {
-      console.log('🔄 Updating store with new groups:', processedGroups.length);
+    if (processedGroups.length > 0 && safeStoreGroups.length === 0) {
+      console.log('🔄 Syncing API groups to session store...');
       setBacklogGroups(processedGroups);
-      
-      // Reset loading states when groups change and reset auto-load trigger
-      setLoadingState({
-        loadedGroups: new Set(),
-        loadingGroups: new Set()
-      });
-      hasTriggeredAutoLoadRef.current = false;
     }
-  }, [hasChanges, processedGroups, setBacklogGroups]);
+  }, [processedGroups.length, safeStoreGroups.length, setBacklogGroups]);
 
-  // Individual group item loading
-  const handleLoadGroupItems = useCallback(async (groupId: string): Promise<void> => {
-    // Simple check - if already loading or loaded, skip
-    if (loadingState.loadingGroups.has(groupId) || loadingState.loadedGroups.has(groupId)) {
-      return;
-    }
-
-    const group = backlogGroups.find(g => g.id === groupId);
-    if (!group || group.item_count === 0) {
-      return;
-    }
-
-    console.log(`🔄 Loading items for: ${group.name}`);
-    
-    setLoadingState(prev => BacklogDataProcessor.updateLoadingState(prev, groupId, 'start'));
-    
-    try {
-      await loadGroupItems(groupId); // This will call the fixed session store method
-      setLoadingState(prev => BacklogDataProcessor.updateLoadingState(prev, groupId, 'complete'));
-      console.log(`✅ Loaded items for: ${group.name}`);
-    } catch (error) {
-      console.error(`❌ Failed to load ${group.name}:`, error);
-      setLoadingState(prev => BacklogDataProcessor.updateLoadingState(prev, groupId, 'error'));
-    }
-  }, [backlogGroups, loadGroupItems, loadingState]);
-
-  // Simple auto-load first 3 groups
+  // FIXED: Reset tracking only when list actually changes
   useEffect(() => {
-    if (backlogGroups.length === 0) return;
+    if (currentList?.id !== currentListIdRef.current) {
+      console.log(`🔄 List changed from ${currentListIdRef.current} to ${currentList?.id} - resetting auto-load tracking`);
+      autoLoadedGroupsRef.current.clear();
+      initialAutoLoadDoneRef.current = false;
+      currentListIdRef.current = currentList?.id || null;
+    }
+  }, [currentList?.id]);
 
-    const timer = setTimeout(async () => {
-      console.log(`🚀 Auto-loading first 3 groups from ${backlogGroups.length} total groups`);
-      
-      // Load first 3 groups that have items but no loaded items
-      const groupsToLoad = backlogGroups
-        .slice(0, 3)
+  // FIXED: Initial auto-load with stable dependencies
+  useEffect(() => {
+    // Only run if we have groups, not loading, have a list, and haven't done initial load
+    if (
+      processedGroups.length > 0 && 
+      !apiLoading && 
+      currentList?.id && 
+      !initialAutoLoadDoneRef.current &&
+      currentList.id === currentListIdRef.current 
+    ) {
+      const unloadedGroups = processedGroups
         .filter(group => 
           group.item_count > 0 && 
-          group.items.length === 0 &&
-          !loadingState.loadingGroups.has(group.id) &&
-          !loadingState.loadedGroups.has(group.id)
-        );
+          !isGroupLoaded(group.id) && 
+          !autoLoadedGroupsRef.current.has(group.id)
+        )
+        .slice(0, 3);
 
-      if (groupsToLoad.length === 0) {
-        console.log('📭 No groups need auto-loading');
-        return;
+      if (unloadedGroups.length > 0) {
+        console.log(`🎯 ONE-TIME auto-loading for ${unloadedGroups.length} groups...`);
+        initialAutoLoadDoneRef.current = true;
+
+        unloadedGroups.forEach(async (group, index) => {
+          autoLoadedGroupsRef.current.add(group.id);
+          
+          setTimeout(async () => {
+            try {
+              console.log(`📦 Auto-loading: ${group.name} (${group.item_count} items)`);
+              await loadGroupItems(group.id);
+            } catch (error) {
+              console.warn(`Failed to auto-load ${group.name}:`, error);
+              autoLoadedGroupsRef.current.delete(group.id);
+            }
+          }, index * 200);
+        });
+      } else {
+        initialAutoLoadDoneRef.current = true;
       }
-
-      for (const group of groupsToLoad) {
-        try {
-          console.log(`📥 Auto-loading: ${group.name} (${group.item_count} items)`);
-          await handleLoadGroupItems(group.id);
-          // Small delay between groups
-          await new Promise(resolve => setTimeout(resolve, 200));
-        } catch (error) {
-          console.error(`❌ Failed to auto-load ${group.name}:`, error);
-        }
-      }
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [backlogGroups.length]); // Only depend on groups count, not the complex state
-
-  // Reset auto-load trigger when categories change
-  useEffect(() => {
-    hasTriggeredAutoLoadRef.current = false;
-    lastProcessedGroupsRef.current = '';
-    isAutoLoadingRef.current = false;
-  }, [queryCategory, querySubcategory]);
-
-  // Filter groups with performance optimization
-  const filteredGroups = useMemo(() => {
-    BacklogPerformanceTracker.startTimer('filterGroups');
-    
-    const result = BacklogDataProcessor.filterGroups(backlogGroups, clientSearchTerm);
-    
-    BacklogPerformanceTracker.endTimer('filterGroups');
-    
-    return result;
-  }, [backlogGroups, clientSearchTerm]);
-
-  // Calculate total items
-  const totalItems = useMemo(() => {
-    return BacklogDataProcessor.calculateTotalItems(backlogGroups);
-  }, [backlogGroups]);
-
-  // Enhanced interaction handlers
-  const handleGroupHover = useCallback(async (groupId: string) => {
-    prefetchGroupItems(groupId);
-    await handleLoadGroupItems(groupId);
-  }, [prefetchGroupItems, handleLoadGroupItems]);
-
-  const handleGroupExpand = useCallback(async (groupId: string) => {
-    await handleLoadGroupItems(groupId);
-  }, [handleLoadGroupItems]);
-
-  // Modal handlers
-  const handleExpandedBackdropClick = useCallback((e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
-      setIsExpanded(false);
     }
-  }, []);
-
-  // Escape key handler
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isExpanded) {
-        setIsExpanded(false);
-      }
-    };
-
-    if (isExpanded) {
-      document.addEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'hidden';
-    }
-
-    return () => {
-      document.removeEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'unset';
-    };
-  }, [isExpanded]);
-
-  // Enhanced debug logging
-  useEffect(() => {
-    BacklogPerformanceTracker.logState('BacklogGroups State', {
-      category: queryCategory,
-      subcategory: querySubcategory,
-      searchTerm: debouncedSearchTerm,
-      counts: {
-        api: apiGroups.length,
-        processed: processedGroups.length,
-        backlog: backlogGroups.length,
-        filtered: filteredGroups.length,
-        store: storeGroups.length
-      },
-      loading: {
-        loaded: Array.from(loadingState.loadedGroups),
-        loading: Array.from(loadingState.loadingGroups),
-        isGroupsLoading: groupsLoading,
-        isAutoLoading: isAutoLoadingRef.current,
-        hasTriggeredAutoLoad: hasTriggeredAutoLoadRef.current
-      },
-      validation: BacklogDataProcessor.validateGroupsData(backlogGroups)
-    });
   }, [
-    queryCategory, querySubcategory, debouncedSearchTerm,
-    apiGroups.length, processedGroups.length, backlogGroups.length, 
-    filteredGroups.length, storeGroups.length,
-    loadingState, groupsLoading
+    // STABLE dependencies only
+    processedGroups.length,
+    apiLoading,
+    currentList?.id
+    // REMOVED: any hook functions or changing values
   ]);
 
-  // Loading states
-  const isLoading = groupsLoading || (backlogGroups.length === 0);
-  const error = groupsError;
+  // Use prop or local state for expanded view mode
+  const expandedViewMode = propExpandedViewMode || localExpandedViewMode;
+  const setExpandedViewMode = propExpandedViewMode ? () => {} : setLocalExpandedViewMode;
 
-  // Validate data before rendering
-  if (!BacklogDataProcessor.validateGroupsData(backlogGroups)) {
-    return (
-      <ErrorState 
-        className={className}
-        onRetry={() => window.location.reload()}
-        error={new Error('Invalid groups data structure')}
-      />
-    );
-  }
+  // Force expanded view if modal
+  const isExpandedView = isModal || localIsExpandedView;
 
-  // Loading state
-  if (isLoading && backlogGroups.length === 0) {
-    return (
-      <LoadingState 
-        currentList={currentList}
-        className={className}
-      />
-    );
-  }
+  // Apply filtering with better performance
+  const { processedGroups: filteredGroups, filterStats } = useBacklogFiltering(
+    processedGroups,
+    searchTerm,
+    showEditorsPickOnly,
+    setShowEditorsPickOnly
+  );
 
-  // Error state
-  if (error && backlogGroups.length === 0) {
+  // Handle item removal
+  const handleRemoveItem = useCallback((groupId: string, itemId: string) => {
+    console.log(`🗑️ Removing item ${itemId} from group ${groupId}`);
+    removeItemFromGroup(groupId, itemId);
+  }, [removeItemFromGroup]);
+
+  // FIXED: Handle group expansion - no side effects
+  const handleGroupExpand = useCallback(async (groupId: string) => {
+    const group = processedGroups.find(g => g.id === groupId);
+    if (!group) {
+      console.warn(`⚠️ Group ${groupId} not found`);
+      return;
+    }
+
+    if (group.item_count > 0 && !isGroupLoaded(groupId) && !isGroupLoading(groupId)) {
+      try {
+        console.log(`🔄 Loading items for expanded group: ${group.name}`);
+        await loadGroupItems(groupId);
+      } catch (error) {
+        console.error(`❌ Failed to load items for group ${group.name}:`, error);
+      }
+    }
+  }, [processedGroups, isGroupLoaded, isGroupLoading, loadGroupItems]);
+
+  if (!currentList) {
     return (
-      <ErrorState 
-        className={className}
-        onRetry={() => refetchGroups()}
-        error={error}
-      />
+      <div className="flex items-center justify-center h-64">
+        <p className="text-slate-400">No list selected</p>
+      </div>
     );
   }
 
   return (
-    <>
-      <button 
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="p-2 rounded-xl transition-all duration-200 hover:bg-slate-700/50"
-        title="Open backlog collection"
-      >
-        <BookOpenIcon className="w-5 h-5 text-slate-400 hover:text-slate-300" />
-      </button>
-      
-      {/* Normal Sidebar View */}
-      <div className={className}>
-        <SidebarContent
-          isExpandedView={false}
-          filteredGroups={filteredGroups}
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          isLoading={isLoading}
-          backlogGroups={backlogGroups}
-          currentList={currentList}
-          totalItems={totalItems}
-          apiTotalItems={totalItems}
-          expandedViewMode={expandedViewMode}
-          isMobile={isMobile}
-          setIsExpanded={setIsExpanded}
-          onGroupHover={handleGroupHover}
-          onGroupExpand={handleGroupExpand}
-          loadingGroups={loadingState.loadingGroups}
-          loadedGroups={loadingState.loadedGroups}
-        />
-      </div>
-
-      {/* Expanded Modal View */}
-      <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center ${isMobile ? 'p-2' : 'p-6'}`}
-            onClick={handleExpandedBackdropClick}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              transition={{
-                type: "spring",
-                stiffness: 300,
-                damping: 30
-              }}
-              className={`w-full h-full ${isMobile ? 'max-w-full max-h-full' : 'max-w-7xl max-h-[95vh]'} overflow-hidden`}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <SidebarContent
-                isExpandedView={true}
-                filteredGroups={filteredGroups}
-                searchTerm={searchTerm}
-                setSearchTerm={setSearchTerm}
-                isLoading={isLoading}
-                backlogGroups={backlogGroups}
-                currentList={currentList}
-                totalItems={totalItems}
-                apiTotalItems={totalItems}
-                expandedViewMode={expandedViewMode}
-                isMobile={isMobile}
-                setIsExpanded={setIsExpanded}
-                onGroupHover={handleGroupHover}
-                onGroupExpand={handleGroupExpand}
-                loadingGroups={loadingState.loadingGroups}
-                loadedGroups={loadingState.loadedGroups}
-              />
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </>
+    <div className={`w-full ${className}`}>
+      <SidebarContent
+        isExpandedView={isExpandedView}
+        isModal={isModal}
+        filteredGroups={filteredGroups}
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        isLoading={apiLoading}
+        backlogGroups={processedGroups}
+        showEditorsPickOnly={showEditorsPickOnly}
+        onToggleEditorsPick={() => setShowEditorsPickOnly(!showEditorsPickOnly)}
+        filteredItemsCount={filterStats.filteredItemsCount}
+        hasActiveFilters={filterStats.hasActiveFilters}
+        onClearFilters={() => {
+          setSearchTerm("");
+          setShowEditorsPickOnly(false);
+        }}
+        totalItems={processedGroups.reduce((acc, group) => acc + group.items.length, 0)}
+        apiTotalItems={apiGroups.reduce((acc, group) => acc + (group.item_count || 0), 0)}
+        setIsExpanded={setIsExpandedView}
+        expandedViewMode={expandedViewMode}
+        setExpandedViewMode={setExpandedViewMode}
+        currentList={currentList}
+        isMobile={false}
+        error={apiError}
+        onRefresh={() => {
+          autoLoadedGroupsRef.current.clear();
+          initialAutoLoadDoneRef.current = false;
+          refetchGroups();
+        }}
+        onRemoveItem={handleRemoveItem}
+        onGroupExpand={handleGroupExpand}
+        onOpenModal={onOpenModal} // ADD THIS
+        onCloseModal={onCloseModal}
+      />
+    </div>
   );
 }

@@ -9,8 +9,8 @@ import { BacklogItemContent } from "./BacklogItemContent";
 import { ContextMenu } from "./ContextMenu";
 
 interface BacklogItemProps {
-  item: BacklogItemType | BacklogItemNew; // Support both old and new types
-  groupId: string; // Make groupId required
+  item: BacklogItemType | BacklogItemNew;
+  groupId: string;
   isDragOverlay?: boolean;
   size?: 'small' | 'medium' | 'large';
   isAssignedToGrid?: boolean;
@@ -21,7 +21,7 @@ export function BacklogItem({
   groupId,
   isDragOverlay = false, 
   size = 'medium', 
-  isAssignedToGrid = false 
+  isAssignedToGrid = false
 }: BacklogItemProps) {
   const { 
     selectedBacklogItem, 
@@ -53,9 +53,12 @@ export function BacklogItem({
   const isSelected = selectedBacklogItem === normalizedItem.id;
   const isInCompareList = compareList.some(compareItem => compareItem.id === normalizedItem.id);
 
-  // Event handlers
-  const handleClick = () => {
+  // FIXED: Event handlers - prevent bubbling but don't prevent drag
+  const handleClick = (e: React.MouseEvent) => {
+    // Only stop propagation if we're handling the click
     if (!isEffectivelyMatched && !isDragOverlay) {
+      e.stopPropagation();
+      
       if (isSelected) {
         setSelectedBacklogItem(null);
       } else {
@@ -64,11 +67,18 @@ export function BacklogItem({
     }
   };
 
-  const handleDoubleClick = () => {
+  // FIXED: Double-click assignment
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    console.log(`🎯 Double-click assignment for item: ${normalizedItem.title}`);
+    
     if (!isEffectivelyMatched && !isDragOverlay) {
       const nextPosition = getNextAvailableGridPosition();
+      
       if (nextPosition !== null) {
-        // Convert to BacklogItemType for grid assignment
+        console.log(`📍 Assigning item to grid position: ${nextPosition}`);
+        
         const gridItem: BacklogItemType = {
           id: normalizedItem.id,
           title: normalizedItem.title,
@@ -76,7 +86,15 @@ export function BacklogItem({
           matched: false,
           tags: normalizedItem.tags
         };
-        assignItemToGrid(gridItem, nextPosition);
+        
+        try {
+          assignItemToGrid(gridItem, nextPosition);
+          console.log(`✅ Successfully assigned item ${normalizedItem.title} to position ${nextPosition}`);
+        } catch (error) {
+          console.error(`❌ Failed to assign item to grid:`, error);
+        }
+      } else {
+        console.warn(`⚠️ No available grid positions for item: ${normalizedItem.title}`);
       }
     }
   };
@@ -100,7 +118,6 @@ export function BacklogItem({
   };
 
   const handleToggleCompare = () => {
-    // Convert to BacklogItemType for compare list
     const compareItem: BacklogItemType = {
       id: normalizedItem.id,
       title: normalizedItem.title,

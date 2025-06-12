@@ -9,7 +9,11 @@ import { ComparisonModal } from "@/app/components/modals/comparison/ComparisonMo
 import MatchContainerHeader from "./MatchContainerHeader";
 import MatchContainerMobile from "./MatchContainerMobile";
 
-const MatchContainerContent = () => {
+interface MatchContainerContentProps {
+  onOpenBacklogModal: () => void; // ADD THIS
+}
+
+const MatchContainerContent = ({ onOpenBacklogModal }: MatchContainerContentProps) => {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false);
 
@@ -45,7 +49,10 @@ const MatchContainerContent = () => {
             transition={{ delay: 0.2 }}
             className="w-96"
           >
-            <BacklogGroups />
+            <BacklogGroups 
+              className="h-full" 
+              onOpenModal={onOpenBacklogModal}
+            />
           </motion.div>
         </div>
 

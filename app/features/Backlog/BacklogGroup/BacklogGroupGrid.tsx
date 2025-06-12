@@ -25,7 +25,7 @@ type Props = {
     isExpandedView?: boolean;
     isLoading?: boolean;
     hasLoadedItems?: boolean;
-    onAddNewItem?: () => void; // New prop for research-based item addition
+    onAddNewItem?: () => void;
 }
 
 const BacklogGroupGrid = ({ 
@@ -147,13 +147,15 @@ const BacklogGroupGrid = ({
                           matched: item.matched || assignedItemIds.has(item.id),
                           tags: item.tags || []
                         }}
+                        groupId={group.id}
                         isAssignedToGrid={assignedItemIds.has(item.id)}
+                        size="medium"
                       />
                     </motion.div>
                   ))}
                 </AnimatePresence>
 
-                {/* Add Item Placeholders - Enhanced for both custom and DB groups */}
+                {/* Add Item Placeholders */}
                 {!showMatched && (
                   <>
                     {/* Custom Group: Original Add Item Placeholder */}
@@ -174,21 +176,23 @@ const BacklogGroupGrid = ({
                       </motion.div>
                     )}
 
-                    {/* New Research-Based Add Item (for both group types) */}
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.8, y: 20 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.8, y: -20 }}
-                      transition={{
-                        duration: 0.4,
-                        delay: 0.15 + (debouncedDisplayItems.length + (isDatabaseGroup ? 0 : 1)) * 0.08,
-                        ease: [0.04, 0.62, 0.23, 0.98]
-                      }}
-                      layout
-                      layoutId={`add-research-${group.id}`}
-                    >
-                      <AddItemButton onAddNewItem={onAddNewItem} />
-                    </motion.div>
+                    {/* Research-Based Add Item */}
+                    {onAddNewItem && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.8, y: -20 }}
+                        transition={{
+                          duration: 0.4,
+                          delay: 0.15 + (debouncedDisplayItems.length + (isDatabaseGroup ? 0 : 1)) * 0.08,
+                          ease: [0.04, 0.62, 0.23, 0.98]
+                        }}
+                        layout
+                        layoutId={`add-research-${group.id}`}
+                      >
+                        <AddItemButton onAddNewItem={onAddNewItem} />
+                      </motion.div>
+                    )}
                   </>
                 )}
               </motion.div>

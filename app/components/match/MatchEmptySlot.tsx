@@ -42,7 +42,7 @@ export function GridItem({ item, index, onClick, isSelected, size = 'small' }: G
   
   const { attributes, listeners, setNodeRef: setDragNodeRef, transform, transition, isDragging } = useDraggable({
     id: item.id,
-    disabled: item.isDragPlaceholder || !item.matched,
+    disabled: !item.matched,
     data: {
       type: 'grid-item',
       item: item,

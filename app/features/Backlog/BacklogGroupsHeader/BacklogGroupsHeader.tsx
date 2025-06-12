@@ -12,12 +12,16 @@ interface BacklogGroupsHeaderProps {
   isExpanded?: boolean;
   onToggleExpanded?: () => void;
   onClose?: () => void;
-  error?: Error | null;
+  error?: any;
   showEditorsPickOnly: boolean;
   onToggleEditorsPick: () => void;
   filteredItemsCount: number;
   hasActiveFilters: boolean;
   onClearFilters: () => void;
+  // Modal handlers
+  onOpenModal?: () => void;
+  onCloseModal?: () => void;
+  isModal?: boolean;
 }
 
 const BacklogGroupsHeader = ({
@@ -33,7 +37,10 @@ const BacklogGroupsHeader = ({
   onToggleEditorsPick,
   filteredItemsCount,
   hasActiveFilters,
-  onClearFilters
+  onClearFilters,
+  onOpenModal,
+  onCloseModal,
+  isModal = false
 }: BacklogGroupsHeaderProps) => {
   const currentList = useCurrentList();
 
@@ -58,7 +65,7 @@ const BacklogGroupsHeader = ({
       {/* Header Row */}
       <div className="flex items-center justify-between mb-4">
         <div>
-          <div className="flex items-center gap-4 ">
+          <div className="flex items-center gap-4">
             {/* Filter Buttons */}
             <BacklogHeaderFilters
               showEditorsPickOnly={showEditorsPickOnly}
@@ -69,10 +76,10 @@ const BacklogGroupsHeader = ({
 
         {/* Controls */}
         <div className="flex items-center gap-2">
-          {/* Expand Button (only in normal view) */}
-          {!isExpanded && onToggleExpanded && (
+          {/* FIXED: Show expand button when not in modal and handler exists */}
+          {!isModal && onOpenModal && (
             <motion.button
-              onClick={onToggleExpanded}
+              onClick={onOpenModal}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="p-2 rounded-xl transition-all duration-200 group"
@@ -80,16 +87,16 @@ const BacklogGroupsHeader = ({
                 background: 'rgba(59, 130, 246, 0.1)',
                 border: '1px solid rgba(59, 130, 246, 0.2)'
               }}
-              title="Expand collection view"
+              title="Open collection modal"
             >
               <Maximize2 className="w-4 h-4 text-blue-400 group-hover:text-blue-300 transition-colors" />
             </motion.button>
           )}
 
-          {/* Close Button (only in expanded view) */}
-          {isExpanded && onClose && (
+          {/* Close Button (only in modal view) */}
+          {isModal && onCloseModal && (
             <motion.button
-              onClick={onClose}
+              onClick={onCloseModal}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="p-2 rounded-xl transition-all duration-200 group"
@@ -97,7 +104,7 @@ const BacklogGroupsHeader = ({
                 background: 'rgba(239, 68, 68, 0.1)',
                 border: '1px solid rgba(239, 68, 68, 0.2)'
               }}
-              title="Close expanded view"
+              title="Close modal"
             >
               <X className="w-4 h-4 text-red-400 group-hover:text-red-300 transition-colors" />
             </motion.button>
@@ -107,13 +114,12 @@ const BacklogGroupsHeader = ({
 
       {/* Search and Filter Row */}
       <div className="space-y-3">
-        {/* Search Bar */}
         <BacklogHeaderSearch
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
           placeholder={`Search ${currentList?.category || 'items'}...`}
-          isExpanded={isExpanded}
-          debounceMs={400} // Slightly longer debounce for smoother UX
+          isExpanded={isExpanded || isModal}
+          debounceMs={400}
         />
       </div>
 
@@ -122,13 +128,42 @@ const BacklogGroupsHeader = ({
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg"
+          className="mt-4 p-3 rounded-lg"
+          style={{
+            background: 'rgba(239, 68, 68, 0.1)',
+            border: '1px solid rgba(239, 68, 68, 0.2)'
+          }}
         >
-          <p className="text-sm text-red-400">
-            {error.message || 'Failed to load items from database'}
+          <p className="text-red-300 text-sm">
+            Failed to load groups. Please try again.
           </p>
         </motion.div>
       )}
+
+      {/* Stats Row */}
+      <div className="flex items-center justify-between mt-4 text-xs">
+        <div className="flex items-center gap-4 text-slate-400">
+          <span>{totalItems} total items</span>
+          {hasActiveFilters && (
+            <span className="text-blue-400">{filteredItemsCount} filtered</span>
+          )}
+        </div>
+
+        {hasActiveFilters && (
+          <motion.button
+            onClick={handleClearAllFilters}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="px-2 py-1 rounded text-xs transition-colors"
+            style={{
+              background: 'rgba(59, 130, 246, 0.1)',
+              color: '#60a5fa'
+            }}
+          >
+            Clear filters
+          </motion.button>
+        )}
+      </div>
     </div>
   );
 };
