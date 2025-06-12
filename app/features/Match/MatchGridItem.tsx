@@ -6,7 +6,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { motion } from "framer-motion";
 import { Star, Gamepad2, Trophy } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useItemStore } from "@/app/stores/item-store";
+import { useHierarchyStore, useActiveSession } from "@/app/stores/hierarchy-store";
 import EmptyGridSlot from "./MatchGridItemEmpty";
 import MatchGridItemControls from "./MatchGridItemControls";
 
@@ -84,7 +84,8 @@ const useSizeClasses = (size: 'small' | 'medium' | 'large') => {
 };
 
 export function MatchGridItem({ item, index, onClick, isSelected, size = 'small' }: GridItemProps) {
-  const { activeItem, gridItems } = useItemStore();
+  const { activeItem } = useHierarchyStore();
+  const activeSession = useActiveSession();
   const [isBeingDraggedOver, setIsBeingDraggedOver] = useState(false);
   
   // Check if this is a grid-to-grid drag operation
@@ -101,14 +102,14 @@ export function MatchGridItem({ item, index, onClick, isSelected, size = 'small'
     }
   });
 
-  // FIXED: Use grid-{index} format to match the drag handler expectations  
+  // Use grid-{index} format to match the drag handler expectations  
   const { isOver, setNodeRef: setDropNodeRef } = useDroppable({
-    id: `grid-${index}`, // Changed from item.id to grid-{index} format
-    disabled: !item.matched || isDraggingThisItem,
+    id: `grid-${index}`,
+    disabled: isDraggingThisItem, // Simplified condition
     data: {
       type: 'grid-slot',
       index: index,
-      position: index, // Add position for consistency
+      position: index,
       accepts: ['grid-item', 'backlog-item']
     }
   });

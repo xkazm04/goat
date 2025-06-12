@@ -23,14 +23,7 @@ export class BacklogDataProcessor {
     apiGroups: any[],
     storeGroups: any[]
   ): BacklogGroup[] {
-    console.log('🔧 Processing API groups:', {
-      apiGroupsCount: apiGroups.length,
-      storeGroupsCount: storeGroups.length,
-      apiGroups: apiGroups.map(g => ({ id: g.id, name: g.name, item_count: g.item_count }))
-    });
-
     if (!apiGroups || apiGroups.length === 0) {
-      console.log('📭 No API groups to process');
       return [];
     }
 
@@ -51,21 +44,7 @@ export class BacklogDataProcessor {
         updated_at: apiGroup.updated_at
       };
 
-      console.log(`📋 Processed group: ${processedGroup.name}`, {
-        id: processedGroup.id,
-        item_count: processedGroup.item_count,
-        loaded_items: processedGroup.items.length,
-        has_store_data: !!storeGroup
-      });
-
       return processedGroup;
-    });
-
-    console.log('✅ Finished processing groups:', {
-      totalProcessed: processedGroups.length,
-      withItems: processedGroups.filter(g => g.items.length > 0).length,
-      totalItemCount: processedGroups.reduce((acc, g) => acc + g.item_count, 0),
-      totalLoadedItems: processedGroups.reduce((acc, g) => acc + g.items.length, 0)
     });
 
     return processedGroups;
@@ -89,7 +68,6 @@ export class BacklogDataProcessor {
     const hasIdChanges = JSON.stringify(processedIds) !== JSON.stringify(storeIds);
     
     if (hasIdChanges) {
-      console.log('🔄 Group IDs changed, using processed groups');
       return { groups: processedGroups, hasChanges: true };
     }
 

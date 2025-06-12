@@ -68,13 +68,14 @@ export function BacklogItemWrapper({
     }
   }, [isEffectivelyMatched, isBeingDragged]);
   
-  // FIXED: Configure draggable properly with data type
+  // Configure draggable with proper data structure
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: item.id,
     disabled: isEffectivelyMatched || isDragOverlay,
     data: {
-      type: 'backlog-item', // This ensures proper identification in drag handlers
-      item: item
+      type: 'backlog-item',
+      item: item,
+      groupId: item.groupId || 'unknown'
     }
   });
   
@@ -160,15 +161,20 @@ export function BacklogItemWrapper({
                  ${isDragOverlay ? 'pointer-events-none' : ''} ${isDragging ? 'z-50' : ''}`}
             style={{
               background: isEffectivelyMatched 
-                ? 'rgba(71, 85, 105, 0.3)'
+                ? `linear-gradient(135deg, 
+                    rgba(71, 85, 105, 0.4) 0%,
+                    rgba(51, 65, 85, 0.5) 100%
+                  )`
                 : isSelected
                 ? `linear-gradient(135deg, 
-                    rgba(59, 130, 246, 0.2) 0%,
-                    rgba(147, 51, 234, 0.2) 100%
+                    rgba(59, 130, 246, 0.25) 0%,
+                    rgba(147, 51, 234, 0.25) 50%,
+                    rgba(59, 130, 246, 0.25) 100%
                   )`
                 : `linear-gradient(135deg, 
-                    rgba(30, 41, 59, 0.9) 0%,
-                    rgba(51, 65, 85, 0.95) 100%
+                    rgba(30, 41, 59, 0.95) 0%,
+                    rgba(51, 65, 85, 0.98) 50%,
+                    rgba(30, 41, 59, 0.95) 100%
                   )`,
               border: isDragOverlay
                 ? '2px solid rgba(59, 130, 246, 0.8)'
@@ -182,18 +188,25 @@ export function BacklogItemWrapper({
                 ? '2px solid rgba(34, 197, 94, 0.4)'
                 : '2px solid rgba(71, 85, 105, 0.3)',
               boxShadow: isDragOverlay
-                ? '0 0 30px rgba(59, 130, 246, 0.5)'
+                ? `0 0 35px rgba(59, 130, 246, 0.6),
+                   inset 0 0 20px rgba(147, 51, 234, 0.2)`
                 : isSelected
-                ? '0 0 20px rgba(59, 130, 246, 0.3)'
+                ? `0 0 25px rgba(59, 130, 246, 0.4),
+                   inset 0 0 15px rgba(147, 51, 234, 0.1)`
                 : isInCompareList
-                ? '0 0 15px rgba(34, 197, 94, 0.3)'
+                ? `0 0 18px rgba(34, 197, 94, 0.4),
+                   inset 0 0 10px rgba(34, 197, 94, 0.1)`
                 : isEffectivelyMatched
                 ? isAssignedToGrid
-                  ? '0 0 10px rgba(147, 51, 234, 0.2)'
-                  : '0 0 10px rgba(34, 197, 94, 0.2)'
+                  ? `0 0 12px rgba(147, 51, 234, 0.3),
+                     inset 0 0 8px rgba(147, 51, 234, 0.1)`
+                  : `0 0 12px rgba(34, 197, 94, 0.3),
+                     inset 0 0 8px rgba(34, 197, 94, 0.1)`
                 : isDragging
-                ? '0 8px 25px rgba(0, 0, 0, 0.4)'
-                : '0 2px 8px rgba(0, 0, 0, 0.3)',
+                ? `0 10px 30px rgba(0, 0, 0, 0.5),
+                   0 0 20px rgba(59, 130, 246, 0.3)`
+                : `0 3px 12px rgba(0, 0, 0, 0.4),
+                   inset 0 1px 0 rgba(255, 255, 255, 0.05)`,
               ...style
             }}
           >

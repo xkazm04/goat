@@ -1,7 +1,5 @@
 import { create } from 'zustand';
-import { useSessionStore } from './session-store';
-import { useGridStore } from './grid-store';
-import { useComparisonStore } from './comparison-store';
+import { useHierarchyStore } from './hierarchy-store';
 import { useListStore } from './use-list-store';
 
 interface MatchStoreState {
@@ -121,20 +119,19 @@ export const useMatchStore = create<MatchStoreState>((set, get) => ({
   // Quick Assign Functions
   quickAssignToPosition: (position) => {
     const state = get();
-    const sessionStore = useSessionStore.getState();
-    const gridStore = useGridStore.getState();
+    const hierarchyStore = useHierarchyStore.getState();
+    const activeSession = hierarchyStore.getActiveSession();
     
-    const selectedItemId = sessionStore.selectedBacklogItem;
-    if (!selectedItemId) return;
+    if (!activeSession?.selectedBacklogItem) return;
     
     // Find the selected backlog item
-    const backlogItem = sessionStore.getAvailableBacklogItems()
-      .find(item => item.id === selectedItemId);
+    const backlogItem = hierarchyStore.getAvailableBacklogItems()
+      .find(item => item.id === activeSession.selectedBacklogItem);
     
     const gridPosition = position - 1; // Convert 1-10 to 0-9
     
-    if (backlogItem && gridStore.canAddAtPosition(gridPosition)) {
-      gridStore.assignItemToGrid(backlogItem, gridPosition);
+    if (backlogItem && hierarchyStore.canAddAtPosition(gridPosition)) {
+      hierarchyStore.assignItemToGrid(backlogItem, gridPosition);
       
       // In keyboard mode, automatically select next available item
       if (state.keyboardMode) {

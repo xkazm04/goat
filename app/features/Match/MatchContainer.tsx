@@ -12,23 +12,25 @@ import {
   DragMoveEvent 
 } from '@dnd-kit/core';
 import MatchContainerContent from './MatchContainerContent';
-import { useItemStore } from '@/app/stores/item-store';
+import { useHierarchyStore, useBacklogGroups, useActiveSession } from '@/app/stores/hierarchy-store';
 import { useMatchStore } from '@/app/stores/match-store';
 import { useListStore } from '@/app/stores/use-list-store';
 import { BacklogItem } from '../Backlog/BacklogItem';
-import { BacklogModal } from '../Backlog/BacklogModal'; // ADD THIS
+import { BacklogModal } from '../Backlog/BacklogModal';
 
 export function MatchContainer() {
   const { 
-    activeItem, 
-    handleDragEnd, 
+    activeItem,
     setActiveItem,
-    backlogGroups,
-    selectedBacklogItem
-  } = useItemStore();
+    handleDragEnd,
+    initializeGrid,
+    switchToSession
+  } = useHierarchyStore();
+  
+  const activeSession = useActiveSession();
+  const backlogGroups = useBacklogGroups();
   
   const { 
-    initializeMatchSession, 
     keyboardMode, 
     setKeyboardMode,
     quickAssignToPosition 
@@ -51,9 +53,12 @@ export function MatchContainer() {
   // Initialize match session when component mounts or list changes
   useEffect(() => {
     if (currentList) {
-      initializeMatchSession();
+      if (!activeSession || activeSession.listId !== currentList.id) {
+        switchToSession(currentList.id);
+        initializeGrid(currentList.size, currentList.id, currentList.category);
+      }
     }
-  }, [currentList, initializeMatchSession]);
+  }, [currentList, activeSession, switchToSession, initializeGrid]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -65,7 +70,7 @@ export function MatchContainer() {
         }
         
         // Only assign if there's a selected backlog item
-        if (selectedBacklogItem) {
+        if (activeSession?.selectedBacklogItem) {
           event.preventDefault();
           const position = event.key === '0' ? 10 : parseInt(event.key);
           quickAssignToPosition(position);
@@ -80,7 +85,7 @@ export function MatchContainer() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [keyboardMode, setKeyboardMode, selectedBacklogItem, quickAssignToPosition]);
+  }, [keyboardMode, setKeyboardMode, activeSession?.selectedBacklogItem, quickAssignToPosition]);
 
   // Handle drag start
   const handleDragStart = (event: DragStartEvent) => {

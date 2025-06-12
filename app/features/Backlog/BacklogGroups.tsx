@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useCurrentList } from "@/app/stores/use-list-store";
 import { useItemGroups } from "@/app/hooks/use-item-groups";
-import { useSessionStore } from "@/app/stores/session-store";
+import { useHierarchyStore, useBacklogGroups, useActiveSession } from "@/app/stores/hierarchy-store";
 import { useBacklogFiltering } from "@/app/hooks/use-backlog-filtering";
 import { useGroupItemLoading } from "@/app/hooks/use-group-item-loading";
 import { BacklogDataProcessor } from "./BacklogGroups/backlog-data-processor";
@@ -22,14 +22,19 @@ export function BacklogGroups({
   isModal = false, 
   expandedViewMode: propExpandedViewMode, 
   onCloseModal,
-  onOpenModal // ADD THIS
+  onOpenModal
 }: BacklogGroupsProps) {
   const currentList = useCurrentList();
   const { 
-    backlogGroups: storeGroups, 
+    setGroups,
     removeItemFromGroup,
-    setBacklogGroups 
-  } = useSessionStore();
+    switchToSession,
+    getCache,
+    setCache
+  } = useHierarchyStore();
+  
+  const activeSession = useActiveSession();
+  const storeGroups = useBacklogGroups();
 
   // Local state for UI
   const [searchTerm, setSearchTerm] = useState("");
@@ -66,35 +71,51 @@ export function BacklogGroups({
     return storeGroups;
   }, [storeGroups]);
 
-  // Process groups: merge API structure with store data
+  // Process groups: merge API structure with store data with caching
   const processedGroups = useMemo(() => {
-    if (!apiGroups?.length) {
-      return BacklogDataProcessor.convertLegacyGroups(safeStoreGroups);
+    if (!currentList) return [];
+    
+    const cacheKey = `groups_${currentList.id}_${apiGroups?.length || 0}`;
+    const cached = getCache(cacheKey);
+    
+    if (cached && cached.length > 0) {
+      return cached;
     }
     
-    const processed = BacklogDataProcessor.processApiGroups(apiGroups, safeStoreGroups);
-    console.log('🔧 Processed groups:', {
-      total: processed.length,
-      withItems: processed.filter(g => g.items.length > 0).length,
-      apiGroupsCount: apiGroups.length,
-      storeGroupsCount: safeStoreGroups.length
-    });
+    let processed;
+    if (!apiGroups?.length) {
+      processed = BacklogDataProcessor.convertLegacyGroups(safeStoreGroups);
+    } else {
+      processed = BacklogDataProcessor.processApiGroups(apiGroups, safeStoreGroups);
+    }
+    
+    // Cache for 5 minutes
+    if (processed.length > 0) {
+      setCache(cacheKey, processed, 5 * 60 * 1000);
+    }
     
     return processed;
-  }, [apiGroups, safeStoreGroups]);
+  }, [apiGroups, safeStoreGroups, currentList, getCache, setCache]);
 
   // Update session store when API groups are loaded (one-time sync)
   useEffect(() => {
-    if (processedGroups.length > 0 && safeStoreGroups.length === 0) {
-      console.log('🔄 Syncing API groups to session store...');
-      setBacklogGroups(processedGroups);
+    if (processedGroups.length > 0 && safeStoreGroups.length === 0 && currentList) {
+      // Switch to session if needed and sync groups
+      if (!activeSession || activeSession.listId !== currentList.id) {
+        switchToSession(currentList.id);
+      }
+      setGroups(processedGroups.map(group => ({
+        ...group,
+        level: 2,
+        expanded: false,
+        isLoaded: group.items.length > 0
+      })));
     }
-  }, [processedGroups.length, safeStoreGroups.length, setBacklogGroups]);
+  }, [processedGroups.length, safeStoreGroups.length, currentList, activeSession, switchToSession, setGroups]);
 
-  // FIXED: Reset tracking only when list actually changes
+  // Reset tracking only when list actually changes
   useEffect(() => {
     if (currentList?.id !== currentListIdRef.current) {
-      console.log(`🔄 List changed from ${currentListIdRef.current} to ${currentList?.id} - resetting auto-load tracking`);
       autoLoadedGroupsRef.current.clear();
       initialAutoLoadDoneRef.current = false;
       currentListIdRef.current = currentList?.id || null;
