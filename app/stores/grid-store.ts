@@ -33,6 +33,9 @@ interface GridStoreState {
   // Sync with session store
   syncWithSession: () => void;
   loadFromSession: (sessionGridItems: GridItemType[], size: number) => void;
+
+  // Remove item by ID
+  removeItemByItemId: (itemId: string) => void;
 }
 
 export const useGridStore = create<GridStoreState>()((set, get) => ({
@@ -254,7 +257,41 @@ export const useGridStore = create<GridStoreState>()((set, get) => ({
       selectedGridItem: null,
       activeItem: null
     });
-  }
+  },
+
+  // Add this method to the store actions
+  removeItemByItemId: (itemId: string) => {
+    const state = get();
+    const sessionState = useSessionStore.getState();
+    
+    console.log(`🧹 GridStore: Cleaning up removed item ${itemId} from grid`);
+    
+    // Find and clear any grid positions that contain this item
+    const updatedGridItems = state.gridItems.map(gridItem => {
+      if (gridItem.matched && gridItem.matchedWith === itemId) {
+        console.log(`🧹 Cleared grid position ${gridItem.id} (contained ${itemId})`);
+        return {
+          id: gridItem.id,
+          title: '',
+          tags: [],
+          matched: false,
+          matchedWith: undefined
+        };
+      }
+      return gridItem;
+    });
+    
+    // Only update if changes were made
+    const hasChanges = updatedGridItems.some((item, index) => 
+      item.matched !== state.gridItems[index].matched
+    );
+    
+    if (hasChanges) {
+      set({ gridItems: updatedGridItems });
+      sessionState.updateSessionGridItems(updatedGridItems);
+      console.log(`✅ GridStore: Cleaned up grid after removing item ${itemId}`);
+    }
+  },
 }));
 
 // Selector hooks

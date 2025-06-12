@@ -49,7 +49,7 @@ export function BacklogItemContent({
     return (
         <>
             <Image
-                src={item.image || '/avatars/basket_michael_jordan.jpg'}
+                src={item.image_url || '/avatars/basket_michael_jordan.jpg'}
                 alt={item.title}
                 fill
                 style={{ objectFit: 'cover' }}

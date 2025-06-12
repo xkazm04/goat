@@ -1,6 +1,7 @@
 "use client";
 
 import { BacklogItemType } from "@/app/types/match";
+import { BacklogItem as BacklogItemNew } from "@/app/types/backlog-groups";
 import { useState } from "react";
 import { useItemStore } from "@/app/stores/item-store";
 import { BacklogItemWrapper } from "./BacklogItemWrapper";
@@ -8,7 +9,8 @@ import { BacklogItemContent } from "./BacklogItemContent";
 import { ContextMenu } from "./ContextMenu";
 
 interface BacklogItemProps {
-  item: BacklogItemType;
+  item: BacklogItemType | BacklogItemNew; // Support both old and new types
+  groupId: string; // Make groupId required
   isDragOverlay?: boolean;
   size?: 'small' | 'medium' | 'large';
   isAssignedToGrid?: boolean;
@@ -16,6 +18,7 @@ interface BacklogItemProps {
 
 export function BacklogItem({ 
   item, 
+  groupId,
   isDragOverlay = false, 
   size = 'medium', 
   isAssignedToGrid = false 
@@ -36,10 +39,19 @@ export function BacklogItem({
     position: { x: number; y: number };
   }>({ isOpen: false, position: { x: 0, y: 0 } });
   
+  // Normalize item data for compatibility
+  const normalizedItem = {
+    id: item.id,
+    title: 'title' in item ? item.title : item.name || '',
+    description: item.description || '',
+    matched: 'matched' in item ? item.matched : false,
+    tags: item.tags || []
+  };
+  
   // Computed states
-  const isEffectivelyMatched = item.matched || isAssignedToGrid;
-  const isSelected = selectedBacklogItem === item.id;
-  const isInCompareList = compareList.some(compareItem => compareItem.id === item.id);
+  const isEffectivelyMatched = normalizedItem.matched || isAssignedToGrid;
+  const isSelected = selectedBacklogItem === normalizedItem.id;
+  const isInCompareList = compareList.some(compareItem => compareItem.id === normalizedItem.id);
 
   // Event handlers
   const handleClick = () => {
@@ -47,7 +59,7 @@ export function BacklogItem({
       if (isSelected) {
         setSelectedBacklogItem(null);
       } else {
-        setSelectedBacklogItem(item.id);
+        setSelectedBacklogItem(normalizedItem.id);
       }
     }
   };
@@ -56,7 +68,15 @@ export function BacklogItem({
     if (!isEffectivelyMatched && !isDragOverlay) {
       const nextPosition = getNextAvailableGridPosition();
       if (nextPosition !== null) {
-        assignItemToGrid(item, nextPosition);
+        // Convert to BacklogItemType for grid assignment
+        const gridItem: BacklogItemType = {
+          id: normalizedItem.id,
+          title: normalizedItem.title,
+          description: normalizedItem.description,
+          matched: false,
+          tags: normalizedItem.tags
+        };
+        assignItemToGrid(gridItem, nextPosition);
       }
     }
   };
@@ -74,11 +94,22 @@ export function BacklogItem({
   };
 
   const handleRemoveItem = () => {
-    removeItemFromGroup(item.id);
+    console.log(`🗑️ Removing item ${normalizedItem.id} from group ${groupId}`);
+    removeItemFromGroup(groupId, normalizedItem.id);
+    closeContextMenu();
   };
 
   const handleToggleCompare = () => {
-    toggleCompareItem(item);
+    // Convert to BacklogItemType for compare list
+    const compareItem: BacklogItemType = {
+      id: normalizedItem.id,
+      title: normalizedItem.title,
+      description: normalizedItem.description,
+      matched: normalizedItem.matched,
+      tags: normalizedItem.tags
+    };
+    toggleCompareItem(compareItem);
+    closeContextMenu();
   };
 
   const closeContextMenu = () => {
@@ -88,7 +119,7 @@ export function BacklogItem({
   return (
     <>
       <BacklogItemWrapper
-        item={item}
+        item={normalizedItem}
         isDragOverlay={isDragOverlay}
         size={size}
         isAssignedToGrid={isAssignedToGrid}
@@ -101,25 +132,27 @@ export function BacklogItem({
         onContextMenu={handleContextMenu}
       >
         <BacklogItemContent
-          item={item}
+          item={normalizedItem}
           size={size}
           isEffectivelyMatched={isEffectivelyMatched}
           isSelected={isSelected}
           isInCompareList={isInCompareList}
           isDragOverlay={isDragOverlay}
-          isDragging={activeItem === item.id}
+          isDragging={activeItem === normalizedItem.id}
         />
       </BacklogItemWrapper>
 
       {/* Context Menu */}
-      <ContextMenu
-        isOpen={contextMenu.isOpen}
-        position={contextMenu.position}
-        onClose={closeContextMenu}
-        onRemove={handleRemoveItem}
-        onToggleCompare={handleToggleCompare}
-        isInCompareList={isInCompareList}
-      />
+      {contextMenu.isOpen && (
+        <ContextMenu
+          isOpen={contextMenu.isOpen}
+          position={contextMenu.position}
+          onClose={closeContextMenu}
+          onRemove={handleRemoveItem}
+          onToggleCompare={handleToggleCompare}
+          isInCompareList={isInCompareList}
+        />
+      )}
     </>
   );
 }

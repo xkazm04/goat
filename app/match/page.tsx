@@ -36,7 +36,10 @@ export default function MatchPage() {
     syncWithBackend 
   } = useItemStore();
 
-  // Fetch list data if we have a listId but no current list
+  // Only fetch if we don't have the list in local state AND it's not a newly created list
+  const shouldFetch = !!listId && (!currentList || currentList.id !== listId);
+  
+  // Add delay for newly created lists to prevent race condition
   const { 
     data: listData, 
     isLoading: fetchLoading, 
@@ -46,8 +49,19 @@ export default function MatchPage() {
     listId || '', 
     true, 
     { 
-      enabled: !!listId && (!currentList || currentList.id !== listId),
-      refetchOnWindowFocus: false
+      enabled: shouldFetch,
+      refetchOnWindowFocus: false,
+      // Increase retry attempts and delay for new lists
+      retry: (failureCount, error) => {
+        if (failureCount < 5 && shouldFetch) {
+          return true;
+        }
+        return false;
+      },
+      retryDelay: (attemptIndex) => {
+        // Progressive delay: 1s, 2s, 4s, 8s, 16s
+        return Math.min(1000 * Math.pow(2, attemptIndex), 16000);
+      },
     }
   );
 
@@ -60,9 +74,8 @@ export default function MatchPage() {
     const loadList = async () => {
       try {
         setIsLoading(true);
-
-        // If we already have this list loaded, just switch to it
         if (currentList?.id === listId) {
+          console.log('Using cached list from local state:', currentList.id);
           if (activeSessionId !== listId) {
             switchToSession(listId);
           }
@@ -70,8 +83,8 @@ export default function MatchPage() {
           return;
         }
 
-        // If we have list data from the query, use it
-        if (listData) {
+        if (listData && listData.id === listId) {
+          console.log('Using fresh list data from backend:', listData.id);
           const listConfig = {
             ...listData,
             metadata: {
@@ -121,8 +134,29 @@ export default function MatchPage() {
     router.push('/create');
   };
 
-  // Render loading state
-  if (listLoading || fetchLoading) {
+  // PRIORITY: If we have a list in local state, show it immediately (no backend dependency)
+  if (listId && currentList?.id === listId) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+        <MatchHomeNavigation />
+        
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentList.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <MatchContainer />
+          </motion.div>
+        </AnimatePresence>
+      </div>
+    );
+  }
+
+  // Render loading state (only show if we're actually fetching)
+  if ((listLoading || fetchLoading) && shouldFetch) {
     return (
       <>
         <MatchHomeNavigation />
@@ -131,8 +165,8 @@ export default function MatchPage() {
     );
   }
 
-  // Render error state
-  if (fetchError) {
+  // Render error state (only if we tried to fetch and failed)
+  if (fetchError && shouldFetch) {
     return (
       <>
         <MatchHomeNavigation />
@@ -157,24 +191,11 @@ export default function MatchPage() {
     );
   }
 
-  // Render main content
+  // Final fallback - show loading while waiting
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <>
       <MatchHomeNavigation />
-      
-      <AnimatePresence mode="wait">
-        {currentList && (
-          <motion.div
-            key={currentList.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-          >
-            <MatchContainer />
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+      <MatchLoadingState />
+    </>
   );
 }

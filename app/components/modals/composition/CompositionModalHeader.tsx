@@ -1,7 +1,8 @@
 "use client";
 
 import { CompositionData } from "@/app/features/Landing/CompositionModal";
-import { X, Sparkles, User, MessageCircle } from "lucide-react";
+import { X, Sparkles, User, MessageCircle, Settings } from "lucide-react";
+import { ShimmerBtn } from "../../button/AnimButtons";
 
 interface CompositionModalHeaderProps {
   onClose: () => void;
@@ -16,6 +17,9 @@ interface CompositionModalHeaderProps {
     accent: string;
   };
   setIsExpanded: (isExpanded: boolean) => void;
+  isExpanded: boolean; // Add this prop
+  onCreatePredefined: () => void;
+  isCreating: boolean;
 }
 
 export function CompositionModalHeader({ 
@@ -25,6 +29,9 @@ export function CompositionModalHeader({
   comment, 
   compositionData, 
   setIsExpanded,
+  isExpanded, 
+  onCreatePredefined,
+  isCreating
 }: CompositionModalHeaderProps) {
   return (
     <div 
@@ -76,13 +83,10 @@ export function CompositionModalHeader({
               {compositionData.hierarchy} ranking
             </span>
             <span className="text-slate-600">•</span>
-            <button 
-              className="text-sm italic font-semibold hover:opacity-80 transition-opacity duration-200"
-              style={{ color: compositionData.color.accent }}
-              onClick={()=> {setIsExpanded(true)}}
-            >
-              Change parameters
-            </button>
+            <span className="text-slate-500 text-sm">
+              {compositionData.selectedCategory}
+              {compositionData.selectedSubcategory && ` • ${compositionData.selectedSubcategory}`}
+            </span>
           </div>
           
           {/* Author and Comment Section */}
@@ -116,13 +120,47 @@ export function CompositionModalHeader({
         </div>
       </div>
       
-      {/* Close Button */}
-      <button
-        onClick={onClose}
-        className="p-3 rounded-xl transition-colors hover:bg-slate-700/50 ml-4"
-      >
-        <X className="w-6 h-6 text-slate-400" />
-      </button>
+      {/* Action Buttons - Only show when NOT expanded */}
+      <div className="flex items-center gap-3">
+        {!isExpanded && compositionData.isPredefined && (
+          <>
+            {/* Customize Button */}
+            <button
+              onClick={() => setIsExpanded(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-200 hover:scale-105 text-sm font-medium backdrop-blur-sm"
+              style={{
+                background: `linear-gradient(135deg, ${compositionData.color.primary}20, ${compositionData.color.secondary}20)`,
+                border: `1px solid ${compositionData.color.primary}40`,
+                color: compositionData.color.accent,
+                boxShadow: `0 4px 15px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1)`
+              }}
+            >
+              <Settings className="w-4 h-4" />
+              Customize
+            </button>
+
+            {/* ShimmerBtn for Start Ranking */}
+            <div className="scale-75">
+              <ShimmerBtn 
+                label="START"
+                onClick={isCreating ? undefined : onCreatePredefined}
+              />
+            </div>
+          </>
+        )}
+
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          className="p-3 rounded-xl transition-all duration-200 hover:bg-slate-700/50 backdrop-blur-sm"
+          disabled={isCreating}
+          style={{
+            boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+          }}
+        >
+          <X className="w-6 h-6 text-slate-400" />
+        </button>
+      </div>
     </div>
   );
 }

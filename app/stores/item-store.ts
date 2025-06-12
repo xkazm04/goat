@@ -1,18 +1,83 @@
 import { useSessionStore } from './session-store';
 import { useGridStore } from './grid-store';
 import { useComparisonStore } from './comparison-store';
+import { BacklogGroup, BacklogItem } from '@/app/types/backlog-groups';
+import { itemGroupsApi } from '@/app/lib/api/item-groups';
 
-// Unified hook that provides the same interface as the old useItemStore
+
 export const useItemStore = () => {
   const sessionStore = useSessionStore();
   const gridStore = useGridStore();
   const comparisonStore = useComparisonStore();
 
+  // Enhanced backlog group management methods
+  const loadGroupItems = async (groupId: string): Promise<void> => {
+    try {
+      console.log(`🔄 ItemStore: Loading items for group ${groupId}...`);
+      
+      // Get group with items from API using the single endpoint
+      const groupWithItems = await itemGroupsApi.getGroup(groupId, true);
+      
+      console.log(`✅ ItemStore: Loaded group ${groupId} with ${groupWithItems.items.length} items`);
+      
+      // Update session store directly with API data
+      await sessionStore.loadGroupItems(groupId);
+      
+    } catch (error) {
+      console.error(`❌ ItemStore: Failed to load items for group ${groupId}:`, error);
+      throw error;
+    }
+  };
+
+  const getGroupItems = (groupId: string): BacklogItem[] => {
+    return sessionStore.getGroupItems(groupId);
+  };
+
+  const setBacklogGroups = (groups: BacklogGroup[]): void => {
+    console.log('🔄 ItemStore: Setting backlog groups:', groups.length);
+    
+    // Use session store's setBacklogGroups which handles the new format
+    sessionStore.setBacklogGroups(groups);
+  };
+
+  const addItemToGroup = (groupId: string, item: BacklogItem): void => {
+    sessionStore.addItemToGroup(groupId, item);
+  };
+
+  // Update the removeItemFromGroup method
+  const removeItemFromGroup = (groupId: string, itemId: string): void => {
+    console.log(`🔄 ItemStore: Coordinating removal of item ${itemId} from group ${groupId}`);
+    
+    // Step 1: Remove from session store (backlog groups)
+    sessionStore.removeItemFromGroup(groupId, itemId);
+    
+    // Step 2: Clean up grid if the item was assigned there
+    gridStore.removeItemByItemId(itemId);
+    
+    // Step 3: Clear selection if this item was selected
+    if (sessionStore.selectedBacklogItem === itemId) {
+      sessionStore.setSelectedBacklogItem(null);
+    }
+    
+    console.log(`✅ ItemStore: Successfully removed item ${itemId}`);
+  };
+
+  const toggleBacklogGroup = (groupId: string): void => {
+    sessionStore.toggleBacklogGroup(groupId);
+  };
+
+  const getAvailableBacklogItems = (): BacklogItem[] => {
+    return sessionStore.getAvailableBacklogItems();
+  };
+
+  // Get backlog groups in new format for components - directly from session store
+  const backlogGroups: BacklogGroup[] = sessionStore.backlogGroups;
+
   return {
     // Session data
     listSessions: sessionStore.listSessions,
     activeSessionId: sessionStore.activeSessionId,
-    backlogGroups: sessionStore.backlogGroups,
+    backlogGroups, // Return in new format
     selectedBacklogItem: sessionStore.selectedBacklogItem,
     compareList: sessionStore.compareList,
     
@@ -38,11 +103,13 @@ export const useItemStore = () => {
     deleteSession: sessionStore.deleteSession,
     syncWithList: sessionStore.syncWithList,
     
-    // Backlog actions
-    setBacklogGroups: sessionStore.setBacklogGroups,
-    toggleBacklogGroup: sessionStore.toggleBacklogGroup,
-    addItemToGroup: sessionStore.addItemToGroup,
-    removeItemFromGroup: sessionStore.removeItemFromGroup,
+    // Enhanced backlog actions
+    setBacklogGroups,
+    toggleBacklogGroup,
+    addItemToGroup,
+    removeItemFromGroup,
+    loadGroupItems,
+    getGroupItems,
     
     // Grid actions
     initializeGrid: gridStore.initializeGrid,
@@ -73,7 +140,7 @@ export const useItemStore = () => {
     handleDragEnd: gridStore.handleDragEnd,
     
     // Utilities
-    getAvailableBacklogItems: sessionStore.getAvailableBacklogItems,
+    getAvailableBacklogItems,
     getMatchedItems: gridStore.getMatchedItems,
     getNextAvailableGridPosition: gridStore.getNextAvailableGridPosition,
     canAddAtPosition: gridStore.canAddAtPosition,

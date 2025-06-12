@@ -2,12 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useRouter } from "next/navigation";
 import { CompositionModalHeader } from "../../components/modals/composition/CompositionModalHeader";
 import { CompositionModalLeftContent } from "../../components/modals/composition/CompositionModalLeftContent";
 import { CompositionModalRightContent } from "../../components/modals/composition/CompositionModalRightContent";
 import { useCreateListWithUser } from "@/app/hooks/use-top-lists";
 import { useTempUser } from "@/app/hooks/use-temp-user";
-import { CompositionResult } from "@/app/types/composition-to-api";
+import { useListStore } from "@/app/stores/use-list-store";
+import { CompositionResult, mapCompositionToCreateListRequest } from "@/app/types/composition-to-api";
+import { toast } from "@/app/hooks/use-toast";
 import ListCreateButton from "./ListCreateButton";
 
 interface CompositionModalProps {
@@ -44,6 +47,20 @@ export interface CompositionData {
   };
 }
 
+// Helper function to determine if category has subcategories
+const getInitialSubcategory = (category: string, providedSubcategory?: string): string | undefined => {
+  switch (category.toLowerCase()) {
+    case 'sports':
+      return providedSubcategory || 'Basketball'; // Sports has subcategories
+    case 'music':
+    case 'games':
+    case 'stories':
+      return undefined; // These categories don't use subcategories
+    default:
+      return providedSubcategory;
+  }
+};
+
 export function CompositionModal({ 
   isOpen, 
   onClose, 
@@ -61,11 +78,14 @@ export function CompositionModal({
   },
   onSuccess
 }: CompositionModalProps) {
- 
-  const { tempUserId } = useTempUser();  
+  const router = useRouter();
+  const { tempUserId, isLoaded } = useTempUser();
+  const { setCurrentList } = useListStore();
+  const createListMutation = useCreateListWithUser();
+  
   const [compositionData, setCompositionData] = useState<CompositionData>({
     selectedCategory: initialCategory,
-    selectedSubcategory: initialSubcategory,
+    selectedSubcategory: getInitialSubcategory(initialCategory, initialSubcategory),
     timePeriod: initialTimePeriod,
     selectedDecade: 2020,
     selectedYear: 2024,
@@ -75,32 +95,106 @@ export function CompositionModal({
     color: initialColor
   });
 
+  const [isExpanded, setIsExpanded] = useState(false);
+
   // Update composition data when props change (when different cards are clicked)
   useEffect(() => {
     setCompositionData(prev => ({
       ...prev,
       selectedCategory: initialCategory,
-      selectedSubcategory: initialSubcategory,
+      selectedSubcategory: getInitialSubcategory(initialCategory, initialSubcategory),
       timePeriod: initialTimePeriod,
       hierarchy: initialHierarchy,
       color: initialColor,
-      // Reset custom title when switching to a new predefined list
       title: "",
-      isPredefined: true
+      isPredefined: true,
     }));
+    setIsExpanded(false);
   }, [initialCategory, initialSubcategory, initialTimePeriod, initialHierarchy, initialColor, isOpen]);
-
-  const [isExpanded, setIsExpanded] = useState(false);
-  const createListMutation = useCreateListWithUser();
 
   // State update helpers
   const updateCompositionData = (updates: Partial<CompositionData>) => {
     setCompositionData(prev => ({ ...prev, ...updates }));
   };
 
+  // Enhanced category change handler that clears subcategory appropriately
+  const handleCategoryChange = (category: string) => {
+    const subcategory = getInitialSubcategory(category);
+    updateCompositionData({ 
+      selectedCategory: category,
+      selectedSubcategory: subcategory,
+      isPredefined: false 
+    });
+  };
+
   const handleClose = () => {
     if (!createListMutation.isPending) {
       onClose();
+      setIsExpanded(false);
+    }
+  };
+
+  // Handle predefined list creation (quick path)
+  const handleCreatePredefined = async () => {
+    if (!isLoaded || !tempUserId) {
+      toast({
+        title: "Not Ready",
+        description: "Please wait while we prepare your session...",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const createListRequest = mapCompositionToCreateListRequest(compositionData, tempUserId);
+      console.log("Creating predefined list:", createListRequest);
+      
+      const result = await createListMutation.mutateAsync(createListRequest);
+      
+      // Create enhanced list data with metadata
+      const enhancedListData = {
+        ...result.list,
+        metadata: {
+          size: compositionData.hierarchy,
+          selectedCategory: compositionData.selectedCategory,
+          selectedSubcategory: compositionData.selectedSubcategory, // This will be undefined for Games/Music
+          timePeriod: compositionData.timePeriod,
+          selectedDecade: compositionData.selectedDecade,
+          selectedYear: compositionData.selectedYear,
+          color: compositionData.color
+        }
+      };
+
+      // Set the list in local state immediately to prevent race condition
+      setCurrentList(enhancedListData);
+
+      toast({
+        title: "List Created! 🎉",
+        description: `"${result.list.title}" is ready for ranking!`,
+      });
+
+      const compositionResult: CompositionResult = {
+        success: true,
+        listId: result.list.id,
+        message: `Successfully created "${result.list.title}"!`,
+        redirectUrl: `/match?list=${result.list.id}`
+      };
+      
+      onSuccess?.(compositionResult);
+      onClose();
+
+      // Navigate to match page with the list
+      router.push(`/match?list=${result.list.id}`);
+
+    } catch (error) {
+      console.error("Error creating predefined list:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to create list";
+      
+      toast({
+        title: "Creation Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
     }
   };
 
@@ -122,7 +216,9 @@ export function CompositionModal({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               transition={{ type: "spring", duration: 0.3 }}
-              className="w-full max-w-6xl max-h-[90vh] overflow-hidden"
+              className={`w-full max-h-[90vh] overflow-hidden ${
+                isExpanded ? 'max-w-6xl' : 'max-w-4xl'
+              }`}
               onClick={(e) => e.stopPropagation()}
             >
               <div
@@ -145,7 +241,7 @@ export function CompositionModal({
                   `
                 }}
               >
-                {/* Header with dynamic content */}
+                {/* Header */}
                 <CompositionModalHeader
                   setIsExpanded={setIsExpanded} 
                   onClose={handleClose}
@@ -153,67 +249,82 @@ export function CompositionModal({
                   title={initialTitle}
                   author={initialAuthor}
                   comment={initialComment}
+                  onCreatePredefined={handleCreatePredefined}
+                  isCreating={createListMutation.isPending}
                 />
 
-                {/* Content */}
-                {isExpanded && <>
-                <div className="relative grid grid-cols-1 lg:grid-cols-2 min-h-[600px]">
-                  {/* Left Half - Configuration */}
-                  <CompositionModalLeftContent
-                    selectedCategory={compositionData.selectedCategory}
-                    setSelectedCategory={(category) => updateCompositionData({ selectedCategory: category })}
-                    selectedSubcategory={compositionData.selectedSubcategory}
-                    setSelectedSubcategory={(subcategory) => updateCompositionData({ selectedSubcategory: subcategory })}
-                    timePeriod={compositionData.timePeriod}
-                    setTimePeriod={(period) => updateCompositionData({ timePeriod: period })}
-                    selectedDecade={compositionData.selectedDecade}
-                    setSelectedDecade={(decade) => updateCompositionData({ selectedDecade: decade })}
-                    selectedYear={compositionData.selectedYear}
-                    setSelectedYear={(year) => updateCompositionData({ selectedYear: year })}
-                    hierarchy={compositionData.hierarchy}
-                    setHierarchy={(hierarchy) => updateCompositionData({ hierarchy })}
-                    isPredefined={compositionData.isPredefined}
-                    setIsPredefined={(predefined) => updateCompositionData({ isPredefined: predefined })}
-                    customName={compositionData.title}
-                    setCustomName={(name) => updateCompositionData({ title: name })}
-                    color={compositionData.color}
-                  />
-                  
-                  {/* Create Button */}
-                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
-                    <ListCreateButton
-                      compositionData={compositionData}
-                      createListMutation={createListMutation}
-                      onClose={handleClose}
-                      onSuccess={onSuccess}
+                {/* Content - Only show when expanded (custom mode) */}
+                <AnimatePresence>
+                  {isExpanded && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="relative grid grid-cols-1 lg:grid-cols-2 min-h-[600px]"
+                    >
+                      {/* Left Half - Configuration */}
+                      <CompositionModalLeftContent
+                        selectedCategory={compositionData.selectedCategory}
+                        setSelectedCategory={handleCategoryChange} // Use enhanced handler
+                        selectedSubcategory={compositionData.selectedSubcategory}
+                        setSelectedSubcategory={(subcategory) => {
+                          updateCompositionData({ selectedSubcategory: subcategory });
+                          updateCompositionData({ isPredefined: false });
+                        }}
+                        timePeriod={compositionData.timePeriod}
+                        setTimePeriod={(period) => {
+                          updateCompositionData({ timePeriod: period });
+                          updateCompositionData({ isPredefined: false });
+                        }}
+                        selectedDecade={compositionData.selectedDecade}
+                        setSelectedDecade={(decade) => {
+                          updateCompositionData({ selectedDecade: decade });
+                          updateCompositionData({ isPredefined: false });
+                        }}
+                        selectedYear={compositionData.selectedYear}
+                        setSelectedYear={(year) => {
+                          updateCompositionData({ selectedYear: year });
+                          updateCompositionData({ isPredefined: false });
+                        }}
+                        hierarchy={compositionData.hierarchy}
+                        setHierarchy={(hierarchy) => {
+                          updateCompositionData({ hierarchy });
+                          updateCompositionData({ isPredefined: false });
+                        }}
+                        isPredefined={compositionData.isPredefined}
+                        setIsPredefined={(predefined) => updateCompositionData({ isPredefined: predefined })}
+                        customName={compositionData.title}
+                        setCustomName={(name) => {
+                          updateCompositionData({ title: name });
+                          updateCompositionData({ isPredefined: false });
+                        }}
+                        color={compositionData.color}
                       />
-                  </div>
+                      
+                      {/* Create Button - For custom mode */}
+                      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
+                        <ListCreateButton
+                          compositionData={compositionData}
+                          createListMutation={createListMutation}
+                          onClose={handleClose}
+                          onSuccess={onSuccess}
+                        />
+                      </div>
 
-                  {/* Right Half - Preview & Actions */}
-                  <CompositionModalRightContent
-                    selectedCategory={compositionData.selectedCategory}
-                    selectedSubcategory={compositionData.selectedSubcategory}
-                    timePeriod={compositionData.timePeriod}
-                    selectedDecade={compositionData.selectedDecade}
-                    selectedYear={compositionData.selectedYear}
-                    hierarchy={compositionData.hierarchy}
-                    customName={compositionData.title}
-                    color={compositionData.color}
-                  />
-                </div>
-                </>}
-
-                {/* Loading Overlay */}
-                {createListMutation.isPending && (
-                  <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-20">
-                    <div className="text-center">
-                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-                      <p className="text-white text-lg">Creating your list...</p>
-                      <p className="text-white/70 text-sm mt-2">Setting up your ranking session</p>
-                    </div>
-                  </div>
-                )}
-
+                      {/* Right Half - Preview & Actions */}
+                      <CompositionModalRightContent
+                        selectedCategory={compositionData.selectedCategory}
+                        selectedSubcategory={compositionData.selectedSubcategory}
+                        timePeriod={compositionData.timePeriod}
+                        selectedDecade={compositionData.selectedDecade}
+                        selectedYear={compositionData.selectedYear}
+                        hierarchy={compositionData.hierarchy}
+                        customName={compositionData.title}
+                        color={compositionData.color}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </motion.div>
           </motion.div>

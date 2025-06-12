@@ -15,6 +15,18 @@ export interface TopItem {
   updated_at: string;
 }
 
+export interface TopItemCreate {
+  name: string;
+  description?: string;
+  category: string;
+  subcategory?: string;
+  group?: string;
+  item_year?: number;
+  item_year_to?: number;
+  image_url?: string;
+  tags?: string[];
+}
+
 export interface ItemSearchParams {
   category?: string;
   subcategory?: string;
@@ -46,23 +58,26 @@ export interface GroupedItemsResponse {
   total_groups: number;
 }
 
-const ITEMS_ENDPOINT = '/top/items';
+const ITEMS_ENDPOINT = '/top';
 
 export const topItemsApi = {
+  // Create a new item
+  createItem: async (item: TopItemCreate): Promise<TopItem> => {
+    return apiClient.post<TopItem>(ITEMS_ENDPOINT, item);
+  },
+
   // Get items with search/filter
   searchItems: async (params?: ItemSearchParams): Promise<TopItem[]> => {
-    return apiClient.get<TopItem[]>(ITEMS_ENDPOINT, params);
+    return apiClient.get<TopItem[]>(`${ITEMS_ENDPOINT}/items`, params);
   },
 
   // Get items grouped by their group field
   getItemsGrouped: async (params?: ItemSearchParams): Promise<GroupedItemsResponse> => {
-    // This will require backend modification, but for now we'll fetch and group client-side
-    const items = await apiClient.get<TopItem[]>(ITEMS_ENDPOINT, {
+    const items = await apiClient.get<TopItem[]>(`${ITEMS_ENDPOINT}/items`, {
       ...params,
-      limit: params?.limit || 1000, // Get more items for grouping
+      limit: params?.limit || 1000,
     });
 
-    // Group items by their group field
     const grouped = items.reduce((acc, item) => {
       const groupName = item.group || 'Ungrouped';
       if (!acc[groupName]) {
@@ -72,7 +87,6 @@ export const topItemsApi = {
       return acc;
     }, {} as Record<string, TopItem[]>);
 
-    // Convert to response format
     const groups: ItemGroup[] = Object.entries(grouped).map(([groupName, items]) => ({
       group_name: groupName,
       items,
@@ -96,9 +110,8 @@ export const topItemsApi = {
     const limit = params?.limit || 50;
     const offset = params?.offset || 0;
     
-    const items = await apiClient.get<TopItem[]>(ITEMS_ENDPOINT, params);
+    const items = await apiClient.get<TopItem[]>(`${ITEMS_ENDPOINT}/items`, params);
     
-    // Since the backend returns all items, we simulate pagination
     const total = items.length;
     const paginatedItems = items.slice(offset, offset + limit);
     const has_more = offset + limit < total;
@@ -114,7 +127,7 @@ export const topItemsApi = {
 
   // Get trending items
   getTrendingItems: async (category?: string, limit: number = 20): Promise<TopItem[]> => {
-    return apiClient.get<TopItem[]>(`${ITEMS_ENDPOINT}/trending`, {
+    return apiClient.get<TopItem[]>(`${ITEMS_ENDPOINT}/items/trending`, {
       category,
       limit,
     });
@@ -122,6 +135,6 @@ export const topItemsApi = {
 
   // Get single item by ID
   getItem: async (itemId: string): Promise<TopItem> => {
-    return apiClient.get<TopItem>(`${ITEMS_ENDPOINT}/${itemId}`);
+    return apiClient.get<TopItem>(`${ITEMS_ENDPOINT}/items/${itemId}`);
   },
 };
