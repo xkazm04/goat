@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import { Star, Gamepad2, Trophy } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useHierarchyStore, useActiveSession } from "@/app/stores/hierarchy-store";
-import EmptyGridSlot from "./MatchGridItemEmpty";
+// EmptyGridSlot functionality will be handled inline
 import MatchGridItemControls from "./MatchGridItemControls";
 
 interface GridItemProps {
@@ -150,14 +150,81 @@ export function MatchGridItem({ item, index, onClick, isSelected, size = 'small'
   // Empty placeholder with enhanced drop feedback
   if (item.isDragPlaceholder || !item.matched) {
     return (
-      <EmptyGridSlot 
-        index={index} 
-        sizeClasses={sizeClasses} 
-        style={style}
-        isDropTarget={isDraggingGridItem}
-        isDraggedOver={isBeingDraggedOver}
-        canReceiveDrop={isDraggingGridItem && !isDraggingThisItem}
-      />
+      <motion.div
+        ref={setDropNodeRef}
+        className={`relative ${sizeClasses.container} ${sizeClasses.fixedHeight} rounded-xl border-2 border-dashed overflow-hidden transition-all duration-300 flex flex-col items-center justify-center group`}
+        animate={{
+          scale: isBeingDraggedOver ? 1.05 : 1,
+          rotateY: isBeingDraggedOver ? 5 : 0,
+        }}
+        transition={{
+          scale: { duration: 0.2 },
+          rotateY: { duration: 0.3 }
+        }}
+        style={{
+          ...style,
+          background: isBeingDraggedOver
+            ? `linear-gradient(135deg, 
+                rgba(59, 130, 246, 0.2) 0%,
+                rgba(147, 51, 234, 0.2) 100%
+              )`
+            : `linear-gradient(135deg, 
+                rgba(30, 41, 59, 0.3) 0%,
+                rgba(51, 65, 85, 0.4) 100%
+              )`,
+          border: isBeingDraggedOver
+            ? '2px dashed rgba(59, 130, 246, 0.8)'
+            : '2px dashed rgba(71, 85, 105, 0.5)',
+          boxShadow: isBeingDraggedOver
+            ? '0 0 25px rgba(59, 130, 246, 0.5)'
+            : '0 2px 8px rgba(0, 0, 0, 0.2)'
+        }}
+      >
+        {/* Background rank number */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-10">
+          <span 
+            className={`${sizeClasses.emptyNumber} font-black select-none transition-colors`}
+            style={{ 
+              color: isBeingDraggedOver ? '#3b82f6' : rankColor
+            }}
+          >
+            {index + 1}
+          </span>
+        </div>
+
+        {/* Drop zone content */}
+        <div className="flex flex-col items-center gap-2 relative z-10">
+          <motion.div
+            animate={{
+              scale: isBeingDraggedOver ? 1.2 : 1,
+              rotate: isBeingDraggedOver ? 45 : 0
+            }}
+            transition={{ duration: 0.2 }}
+          >
+            <div className={`${sizeClasses.icon} rounded-full bg-slate-600/50 flex items-center justify-center transition-colors ${
+              isBeingDraggedOver ? 'bg-blue-500/70' : ''
+            }`}>
+              <span className={`text-slate-400 ${isBeingDraggedOver ? 'text-blue-200' : ''} font-bold`}>+</span>
+            </div>
+          </motion.div>
+          
+          <span className={`${sizeClasses.rankNumber} font-bold transition-colors ${
+            isBeingDraggedOver ? 'text-blue-300' : 'text-slate-500'
+          }`}>
+            #{index + 1}
+          </span>
+          
+          {isBeingDraggedOver && (
+            <motion.span 
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-xs text-blue-300 font-medium"
+            >
+              Drop to place
+            </motion.span>
+          )}
+        </div>
+      </motion.div>
     );
   }
 

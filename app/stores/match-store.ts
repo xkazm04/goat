@@ -79,11 +79,11 @@ export const useMatchStore = create<MatchStoreState>((set, get) => ({
   // Keyboard Navigation
   navigateBacklogItems: (direction) => {
     const state = get();
-    const sessionStore = useSessionStore.getState();
+    const hierarchyStore = useHierarchyStore.getState();
     
     if (!state.keyboardMode) return;
     
-    const availableItems = sessionStore.getAvailableBacklogItems();
+    const availableItems = hierarchyStore.getAvailableBacklogItems();
     if (availableItems.length === 0) return;
     
     let newIndex = state.selectedItemIndex;
@@ -98,20 +98,20 @@ export const useMatchStore = create<MatchStoreState>((set, get) => ({
     
     set({ selectedItemIndex: newIndex });
     
-    // Update selected item in session store
+    // Update selected item in hierarchy store
     const selectedItem = availableItems[newIndex];
     if (selectedItem) {
-      sessionStore.setSelectedBacklogItem(selectedItem.id);
+      hierarchyStore.setSelectedBacklogItem(selectedItem.id);
     }
   },
   
   selectNextAvailableItem: () => {
-    const sessionStore = useSessionStore.getState();
-    const availableItems = sessionStore.getAvailableBacklogItems();
+    const hierarchyStore = useHierarchyStore.getState();
+    const availableItems = hierarchyStore.getAvailableBacklogItems();
     
     if (availableItems.length > 0) {
       const firstItem = availableItems[0];
-      sessionStore.setSelectedBacklogItem(firstItem.id);
+      hierarchyStore.setSelectedBacklogItem(firstItem.id);
       set({ selectedItemIndex: 0 });
     }
   },
@@ -143,8 +143,8 @@ export const useMatchStore = create<MatchStoreState>((set, get) => ({
   },
   
   quickAssignSelected: () => {
-    const gridStore = useGridStore.getState();
-    const nextPosition = gridStore.getNextAvailableGridPosition();
+    const hierarchyStore = useHierarchyStore.getState();
+    const nextPosition = hierarchyStore.getNextAvailableGridPosition();
     
     if (nextPosition !== null) {
       get().quickAssignToPosition(nextPosition + 1); // Convert 0-based to 1-based
