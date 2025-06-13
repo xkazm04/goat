@@ -78,20 +78,34 @@ export const itemGroupsApi = {
     return apiClient.get<ItemGroup[]>(ITEM_GROUPS_ENDPOINT, cleanedParams);
   },
 
-  // Get groups by category
   getGroupsByCategory: async (
     category: string,
     subcategory?: string,
     search?: string,
-    limit: number = 50
+    limit: number = 100, 
+    minItemCount: number = 1
   ): Promise<ItemGroup[]> => {
     const params = cleanParams({
       subcategory,
       search,
       limit,
+      min_item_count: minItemCount, 
     });
     
-    return apiClient.get<ItemGroup[]>(`${ITEM_GROUPS_ENDPOINT}/categories/${category}`, params);
+    console.log(`🔍 API: Fetching groups for category=${category}, subcategory=${subcategory}, minItemCount=${minItemCount}`);
+    
+    try {
+      const groups = await apiClient.get<ItemGroup[]>(`${ITEM_GROUPS_ENDPOINT}/categories/${category}`, params);
+      
+      console.log(`✅ API: Received ${groups.length} groups for category=${category}`);
+      
+      // Backend now handles all filtering, so we can trust the results
+      return groups;
+      
+    } catch (error) {
+      console.error(`❌ API: Failed to fetch groups for category ${category}:`, error);
+      throw error;
+    }
   },
 
   // Get single group by ID - NOW INCLUDES ITEMS BY DEFAULT!

@@ -23,6 +23,7 @@ export interface BacklogGroup {
   items: BacklogItem[];
   created_at: string;
   updated_at: string;
+  title?: string;
 }
 
 export interface BacklogGroupsState {

@@ -15,11 +15,8 @@ type Props = {
     isLoaded: boolean;
     displayCount: number | string;
     groupItems?: any[] | null;
-    totalCount?: number;
     shouldShowLoading?: boolean;
     isDatabaseGroup?: boolean;
-    showMatched?: boolean;
-    setShowMatched?: (show: boolean) => void;
 }
 
 const BackloGroupHeader = ({
@@ -29,12 +26,9 @@ const BackloGroupHeader = ({
     isLoading, 
     isLoaded, 
     displayCount,
-    totalCount,
     groupItems,
     shouldShowLoading, 
     isDatabaseGroup,
-    showMatched,
-    setShowMatched
 }: Props) => {
     // Safely determine the number of loaded items
     const loadedItemsCount = Array.isArray(groupItems) ? groupItems.length : 0;
@@ -66,13 +60,6 @@ const BackloGroupHeader = ({
                         <Loader2 className="w-3 h-3 text-blue-400 animate-spin" />
                     )}
                 </div>
-
-                {/* Group metadata - with safe checks */}
-                <div className="flex items-center gap-2 text-xs text-slate-400">
-                    {isLoaded && loadedItemsCount > 0 && (
-                        <span>• {loadedItemsCount} items loaded</span>
-                    )}
-                </div>
             </div>
 
             <div className="flex items-center gap-2 relative z-10">
@@ -101,24 +88,6 @@ const BackloGroupHeader = ({
                     </motion.div>
                 )}
 
-                {/* Filter Toggle - only show if we have the function */}
-                {setShowMatched && (
-                    <motion.div
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setShowMatched(!showMatched);
-                        }}
-                        className={`px-2 py-1 rounded text-xs font-medium cursor-pointer ${
-                            showMatched 
-                                ? 'bg-indigo-500/20 text-indigo-400' 
-                                : 'bg-slate-700/30 text-slate-400'
-                        }`}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                    >
-                        {showMatched ? 'Matched' : 'Available'}
-                    </motion.div>
-                )}
 
                 {/* Expand/Collapse Indicator */}
                 <div className="text-slate-400 group-hover:text-slate-300 transition-all duration-200">

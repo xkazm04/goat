@@ -1,5 +1,4 @@
-import { BacklogState } from './types';
-import { BacklogItem } from '@/app/types/backlog-groups';
+import { BacklogState } from "./types";
 
 export const createUtilActions = (
   set: (partial: BacklogState | Partial<BacklogState> | ((state: BacklogState) => BacklogState | Partial<BacklogState>), replace?: boolean) => void,
@@ -40,7 +39,7 @@ export const createUtilActions = (
   },
 
   // NEW: Get item by ID across all groups
-  getItemById: (itemId: string): BacklogItem | null => {
+  getItemById: (itemId: string) => {
     const state = get();
     console.log(`🔍 BacklogStore: Looking for item ${itemId} across ${state.groups.length} groups`);
     
@@ -90,28 +89,14 @@ export const createUtilActions = (
       state.groups = updatedGroups;
       
       // Update cache as well
-      Object.keys(state.cache).forEach(cacheKey => {
-        if (state.cache[cacheKey] && state.cache[cacheKey].groups) {
-          const updatedCachedGroups = state.cache[cacheKey].groups.map(group => {
-            if (group.items && Array.isArray(group.items)) {
-              const updatedItems = group.items.map(item => {
-                if (item.id === itemId) {
-                  return { ...item, used };
-                }
-                return item;
-              });
-              
-              if (updatedItems !== group.items) {
-                return { ...group, items: updatedItems };
-              }
-            }
-            return group;
-          });
-          
-          state.cache[cacheKey].groups = updatedCachedGroups;
-          state.cache[cacheKey].lastUpdated = Date.now();
-        }
-      });
+      const currentCategory = state.groups[0]?.category;
+      const currentSubcategory = state.groups[0]?.subcategory;
+      const cacheKey = `${currentCategory}-${currentSubcategory || ''}`;
+      
+      if (state.cache[cacheKey]) {
+        state.cache[cacheKey].groups = updatedGroups;
+        state.cache[cacheKey].lastUpdated = Date.now();
+      }
     });
   },
 
@@ -141,14 +126,6 @@ export const createUtilActions = (
     });
   },
 
-  // Clear cache
-  clearCache: () => {
-    set(state => {
-      state.cache = {};
-      state.lastSyncTimestamp = 0;
-    });
-  },
-
   // Get stats
   getStats: () => {
     const state = get();
@@ -166,5 +143,3 @@ export const createUtilActions = (
     };
   }
 });
-
-export type UtilActions = ReturnType<typeof createUtilActions>;

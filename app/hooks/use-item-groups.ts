@@ -95,7 +95,7 @@ export function useItemGroups(params?: ItemGroupSearchParams, options?: {
   });
 }
 
-// Hook to get groups by category
+// OPTIMIZED: Hook to get groups by category with better caching
 export function useGroupsByCategory(
   category: string,
   subcategory?: string,
@@ -104,38 +104,76 @@ export function useGroupsByCategory(
     enabled?: boolean;
     refetchOnWindowFocus?: boolean;
     staleTime?: number;
+    sortByItemCount?: boolean;
+    minItemCount?: number;
   }
 ) {
   const cleanSearch = search && search.trim() ? search.trim() : undefined;
+  const minItemCount = options?.minItemCount ?? 1;
   
   return useQuery({
     queryKey: itemGroupsKeys.category(category, subcategory, cleanSearch),
-    queryFn: () => itemGroupsApi.getGroupsByCategory(category, subcategory, cleanSearch),
-    staleTime: options?.staleTime || 3 * 60 * 1000, // 3 minutes
+    queryFn: async () => {
+      console.log(`🔄 API: Fetching groups for ${category}/${subcategory || 'none'}`);
+      const startTime = Date.now();
+      
+      const groups = await itemGroupsApi.getGroupsByCategory(
+        category, 
+        subcategory, 
+        cleanSearch,
+        100, // Higher limit
+        minItemCount // Filter empty groups at API level
+      );
+      
+      const endTime = Date.now();
+      console.log(`✅ API: Fetched ${groups.length} groups in ${endTime - startTime}ms`);
+      
+      if (options?.sortByItemCount !== false) {
+        return groups.sort((a, b) => (b.item_count || 0) - (a.item_count || 0));
+      }
+      
+      return groups;
+    },
+    staleTime: options?.staleTime || 5 * 60 * 1000, // 5 minutes - longer cache
     refetchOnWindowFocus: options?.refetchOnWindowFocus ?? false,
     enabled: options?.enabled ?? true,
+    // CRITICAL: Add retry configuration to avoid hanging
+    retry: 2,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 }
 
-// Hook to get single group details WITH ITEMS - This is the key fix!
+// OPTIMIZED: Single group hook with better error handling
 export function useItemGroup(groupId: string, options?: {
   enabled?: boolean;
   includeItems?: boolean;
 }) {
-  const includeItems = options?.includeItems ?? true; // Default to true
+  const includeItems = options?.includeItems ?? true; 
   
   return useQuery({
     queryKey: itemGroupsKeys.detail(groupId, includeItems),
-    queryFn: () => itemGroupsApi.getGroup(groupId, includeItems),
+    queryFn: async () => {
+      console.log(`🔄 API: Fetching group ${groupId} with items=${includeItems}`);
+      const startTime = Date.now();
+      
+      const group = await itemGroupsApi.getGroup(groupId, includeItems);
+      
+      const endTime = Date.now();
+      console.log(`✅ API: Fetched group ${groupId} with ${group.items?.length || 0} items in ${endTime - startTime}ms`);
+      
+      return group;
+    },
     enabled: options?.enabled ?? !!groupId,
     staleTime: 2 * 60 * 1000, // 2 minutes for detailed group data
+    retry: 2,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 }
 
 // Hook to get items in a specific group - now can use single group endpoint instead
 export function useGroupItems(
   groupId: string,
-  limit: number = 50,
+  limit: number = 150,
   offset: number = 0,
   options?: {
     enabled?: boolean;
@@ -148,7 +186,6 @@ export function useGroupItems(
     queryKey: itemGroupsKeys.groupItems(groupId, limit, offset),
     queryFn: () => {
       if (preferSingleEndpoint && offset === 0) {
-        // Use single group endpoint for better performance
         return itemGroupsApi.getGroup(groupId, true).then(group => ({
           group_id: groupId,
           items: group.items.slice(0, limit),

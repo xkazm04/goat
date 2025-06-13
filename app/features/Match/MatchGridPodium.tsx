@@ -4,38 +4,23 @@ import MatchGridSlot from "@/app/components/match/MatchGridSlot";
 import { GridSection, PodiumConfig } from "@/app/config/matchStructure";
 import { useMemo } from "react";
 import { useBacklogStore } from "@/app/stores/backlog-store";
+import MatchPodiumItem from "@/app/components/match/MatchPodiumItem";
+
 
 type Props = {
   maxItems: number;
 }
 
 const MatchGridPodium = ({ maxItems }: Props) => {
-  const { 
-    gridItems, 
-    selectedBacklogItem, 
+  const {
+    gridItems,
+    selectedBacklogItem,
     selectedGridItem,
     setSelectedGridItem,
     removeItemFromGrid,
     activeItem
   } = useItemStore();
-  
-  // Get backlog groups directly to avoid recreation
-  const backlogGroups = useBacklogStore(state => state.groups);
-  
-  // Safely determine if we're dragging a backlog item with proper null checks
-  const isDraggingBacklogItem = useMemo(() => {
-    if (!activeItem || !backlogGroups || !Array.isArray(backlogGroups)) {
-      return false;
-    }
-    
-    // Safely flatten and filter the array
-    const allItems = backlogGroups
-      .flatMap(group => Array.isArray(group.items) ? group.items : [])
-      .filter(item => item && typeof item === 'object');
-    
-    // Safely check if the active item is in the backlog
-    return allItems.some(item => item && item.id === activeItem);
-  }, [activeItem, backlogGroups]);
+
 
   const handleGridItemClick = (id: string) => {
     const clickedItem = gridItems.find(item => item.id === id);
@@ -46,6 +31,23 @@ const MatchGridPodium = ({ maxItems }: Props) => {
       setSelectedGridItem(selectedGridItem === id ? null : id);
     }
   };
+
+  const backlogGroups = useBacklogStore(state => state.groups);
+
+  const isDraggingBacklogItem = useMemo(() => {
+    if (!activeItem || !backlogGroups || !Array.isArray(backlogGroups)) {
+      return false;
+    }
+
+    // Safely flatten and filter the array
+    const allItems = backlogGroups
+      .flatMap(group => Array.isArray(group.items) ? group.items : [])
+      .filter(item => item && typeof item === 'object');
+
+    // Safely check if the active item is in the backlog
+    return allItems.some(item => item && item.id === activeItem);
+  }, [activeItem, backlogGroups]);
+
 
   // Podium configuration (Top 3)
   const podiumConfig: PodiumConfig[] = [
@@ -59,7 +61,7 @@ const MatchGridPodium = ({ maxItems }: Props) => {
     },
     {
       position: 0, // 1st place
-      label: '#1', 
+      label: '#1',
       labelClass: 'text-2xl font-bold text-yellow-400 mb-3',
       containerClass: 'w-40 lg:w-44 xl:w-48 relative',
       animationDelay: 0.1,
@@ -78,7 +80,7 @@ const MatchGridPodium = ({ maxItems }: Props) => {
   const gridSections: GridSection[] = [
     {
       id: 'positions-4-10',
-      positions: Array.from({ length: 7 }, (_, i) => i + 3), 
+      positions: Array.from({ length: 7 }, (_, i) => i + 3),
       gridCols: 'grid-cols-7',
       gap: 'gap-4 lg:gap-6',
       size: 'medium',
@@ -102,57 +104,16 @@ const MatchGridPodium = ({ maxItems }: Props) => {
     }
   ];
 
-  // Render podium item with enhanced transitions
-  const renderPodiumItem = (config: PodiumConfig) => {
-    const item = gridItems[config.position];
-    
-    return (
-      <motion.div
-        key={`podium-${config.position}`}
-        initial={{ opacity: 0, y: 50, scale: 0.9 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ 
-          delay: config.animationDelay,
-          type: "spring",
-          stiffness: 300,
-          damping: 20
-        }}
-        className="flex flex-col items-center"
-      >
-        <motion.div 
-          className={config.labelClass}
-          animate={{ 
-            scale: item?.matched ? 1.1 : 1,
-            color: item?.matched ? '#fbbf24' : undefined
-          }}
-          transition={{ duration: 0.3 }}
-        >
-          {config.label}
-        </motion.div>
-        <div className={config.containerClass}>
-          <MatchGridSlot
-            position={config.position}
-            size={config.size}
-            gridItem={item}
-            selectedBacklogItem={selectedBacklogItem}
-            selectedGridItem={selectedGridItem}
-            onGridItemClick={handleGridItemClick}
-          />
-        </div>
-      </motion.div>
-    );
-  };
-
   // Render grid item for regular sections with enhanced animations
   const renderGridItem = (position: number, config: GridSection, index: number) => {
     const item = gridItems[position];
-    
+
     return (
       <motion.div
         key={`grid-slot-${position}`}
         initial={{ opacity: 0, scale: 0.8, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ 
+        transition={{
           delay: (config.animationDelay || 0) + index * (config.animationStagger || 0.05),
           type: "spring",
           stiffness: 300,
@@ -161,7 +122,7 @@ const MatchGridPodium = ({ maxItems }: Props) => {
         className="flex flex-col items-center"
       >
         {config.showRankLabel && (
-          <motion.div 
+          <motion.div
             className={config.rankLabelClass}
             animate={{
               color: item?.matched ? '#60a5fa' : undefined,
@@ -172,7 +133,7 @@ const MatchGridPodium = ({ maxItems }: Props) => {
             #{position + 1}
           </motion.div>
         )}
-        <div className="w-full relative">
+        <div className="w-full">
           <MatchGridSlot
             position={position}
             size={config.size}
@@ -189,22 +150,22 @@ const MatchGridPodium = ({ maxItems }: Props) => {
   // Render grid section
   const renderGridSection = (config: GridSection) => {
     const validPositions = config.positions.filter(pos => pos < maxItems);
-    
+
     if (validPositions.length === 0) return null;
 
     return (
-      <motion.div 
-        key={config.id} 
+      <motion.div
+        key={config.id}
         className={config.containerClass}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ 
+        transition={{
           delay: config.animationDelay,
           duration: 0.5
         }}
       >
         <div className={`grid ${config.gridCols} ${config.gap}`}>
-          {validPositions.map((position, index) => 
+          {validPositions.map((position, index) =>
             renderGridItem(position, config, index)
           )}
         </div>
@@ -215,13 +176,22 @@ const MatchGridPodium = ({ maxItems }: Props) => {
   return (
     <div className="w-full space-y-8 flex-1 flex flex-col">
       {/* Top 3 - Enhanced Podium Style with proper spacing */}
-      <motion.div 
+      <motion.div
         className="flex items-end justify-center gap-8 mb-16" // Increased margin bottom
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5 }}
       >
-        {podiumConfig.map(renderPodiumItem)}
+        {podiumConfig.map((config, index) => (
+          <MatchPodiumItem
+            key={`podium-${config.position}`}
+            gridItems={gridItems}
+            config={config}
+            selectedBacklogItem={selectedBacklogItem}
+            selectedGridItem={selectedGridItem}
+            handleGridItemClick={handleGridItemClick}
+          />
+        ))}
       </motion.div>
 
       {/* Regular Grid Sections with Enhanced Animations */}

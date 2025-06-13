@@ -43,6 +43,13 @@ export const useBacklogStore = create<BacklogState>()(
       pendingChanges: [],
       cache: {},
       lastSyncTimestamp: 0,
+      
+      loadingProgress: {
+        totalGroups: 0,
+        loadedGroups: 0,
+        isLoading: false,
+        percentage: 0
+      },
 
       // Import actions
       ...createDataActions(set, get),

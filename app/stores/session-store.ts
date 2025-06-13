@@ -69,7 +69,7 @@ export const useSessionStore = create<SessionStoreState>()(
       compareList: [],
 
       // Session Management
-      createSession: (listId: string, size: number = 50) => {
+      createSession: (listId: string, size: number = 150) => {
         console.log(`Creating session for list ${listId} with size ${size}`);
         
         const session = SessionManager.createEmptySession(listId, size);
@@ -171,7 +171,7 @@ export const useSessionStore = create<SessionStoreState>()(
           });
         } else {
           console.warn(`Session for list ${listId} not found, creating new session`);
-          get().createSession(listId, 50);
+          get().createSession(listId, 150);
         }
       },
 

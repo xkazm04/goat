@@ -3,7 +3,7 @@
 import { useBacklogStore } from "@/app/stores/backlog-store";
 import { useGridStore } from "@/app/stores/grid-store";
 import { motion } from "framer-motion";
-import React, { useMemo, useState, useCallback, useEffect } from "react";
+import React, { useMemo, useState, useCallback } from "react";
 import BacklogGroupGrid from "./BacklogGroupGrid";
 import BackloGroupHeader from "./BacklogGroupHeader";
 import { useCurrentList } from "@/app/stores/use-list-store";
@@ -29,28 +29,27 @@ export const BacklogGroup = React.memo(function BacklogGroup({
 }: BacklogGroupProps) {
   const {
     addItemToGroup,
-    removeItemFromGroup,
-    getGroupItems
+    removeItemFromGroup
+    // REMOVED: getGroupItems - this was causing conflicts
   } = useBacklogStore();
   
-  const {
-    gridItems,
-  } = useGridStore();
-
+  const { gridItems } = useGridStore();
   const currentList = useCurrentList();
 
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [isResearchModalOpen, setIsResearchModalOpen] = useState(false);
-  const [showMatched, setShowMatched] = useState(false);
 
-  // Get group items - either from the group or from the store
-  // Ensure this always returns an array
+  // FIXED: Use only group.items directly - no store conflicts
   const memoizedGroupItems = useMemo(() => {
-    const items = getGroupItems(group.id);
+    // Use only the items from the group prop - single source of truth
+    const items = group.items || [];
+    
+    console.log(`📋 Group ${group.id} (${group.name}): ${items.length} items from prop`);
+    
     return Array.isArray(items) ? items : [];
-  }, [getGroupItems, group.id]);
+  }, [group.items, group.id]); // Simplified dependencies
 
-  // Get IDs of items used in the grid
+  // Get IDs of items used in the grid - stable reference
   const assignedItemIds = useMemo(() => {
     return new Set(
       gridItems
@@ -59,21 +58,13 @@ export const BacklogGroup = React.memo(function BacklogGroup({
     );
   }, [gridItems]);
 
-  // Filter available items (not in grid)
+  // Filter available items (not in grid) - stable reference
   const availableItems = useMemo(() =>
     memoizedGroupItems.filter(item => !assignedItemIds.has(item.id)),
     [memoizedGroupItems, assignedItemIds]
   );
 
-  // Display items based on filter
-  const displayItems = useMemo(() =>
-    showMatched ? 
-      memoizedGroupItems.filter(item => assignedItemIds.has(item.id)) : 
-      availableItems,
-    [showMatched, memoizedGroupItems, availableItems, assignedItemIds]
-  );
-
-  // Check if this is a database group (not custom)
+  // Check if this is a database group (not custom) - stable reference
   const isDatabaseGroup = useMemo(() =>
     memoizedGroupItems.some(item =>
       item.id && item.id.length > 10 && !item.id.startsWith('item-')
@@ -121,34 +112,6 @@ export const BacklogGroup = React.memo(function BacklogGroup({
     setIsResearchModalOpen(true);
   }, []);
 
-  // Safely compute display count for matched vs unmatched items
-  const displayCount = useMemo(() => {
-    if (showMatched) {
-      return memoizedGroupItems.filter(item => assignedItemIds.has(item.id)).length;
-    }
-    return availableItems.length;
-  }, [memoizedGroupItems, availableItems, showMatched, assignedItemIds]);
-
-  const shouldShowLoading = isLoading && !isLoaded && memoizedGroupItems.length === 0;
-
-  // Add debug logging and fix the item mapping:
-  // Inside the component, after getGroupItems but before rendering the items:
-  useEffect(() => {
-    const items = memoizedGroupItems;
-    if (items && items.length > 0) {
-      const sampleItems = items.slice(0, 2);
-      console.log(`📋 Group ${group.id} items:`, {
-        count: items.length,
-        samples: sampleItems.map(item => ({
-          id: item.id,
-          title: item.title || item.name,
-          hasImageUrl: !!item.image_url,
-          imageUrl: item.image_url || 'NONE'
-        }))
-      });
-    }
-  }, [memoizedGroupItems, group.id]);
-
   return (
     <>
       <motion.div
@@ -160,6 +123,7 @@ export const BacklogGroup = React.memo(function BacklogGroup({
             ? '0 8px 25px rgba(0, 0, 0, 0.3)'
             : '0 4px 6px rgba(0, 0, 0, 0.1)'
         }}
+        // FIXED: Remove layout animation that was causing issues
         animate={{
           boxShadow: isExpanded
             ? '0 8px 25px rgba(0, 0, 0, 0.3)'
@@ -174,18 +138,15 @@ export const BacklogGroup = React.memo(function BacklogGroup({
           isExpanded={isExpanded}
           isLoading={isLoading}
           isLoaded={isLoaded}
-          displayCount={displayCount}
-          totalCount={memoizedGroupItems.length}
+          displayCount={availableItems.length}
           groupItems={memoizedGroupItems}
-          shouldShowLoading={shouldShowLoading}
+          shouldShowLoading={isLoading && memoizedGroupItems.length === 0}
           isDatabaseGroup={isDatabaseGroup}
-          showMatched={showMatched}
-          setShowMatched={setShowMatched}
         />
 
         {/* Items Grid */}
         <BacklogGroupGrid
-          displayItems={displayItems}
+          displayItems={availableItems}
           group={{
             id: group.id,
             name: group.name,
@@ -193,13 +154,11 @@ export const BacklogGroup = React.memo(function BacklogGroup({
           }}
           isExpanded={isExpanded}
           isDatabaseGroup={isDatabaseGroup}
-          showMatched={showMatched}
-          setShowMatched={setShowMatched}
           isExpandedView={isExpandedView}
           availableItems={availableItems}
           assignedItemIds={assignedItemIds}
-          isLoading={shouldShowLoading}
-          hasLoadedItems={isLoaded && memoizedGroupItems.length > 0}
+          isLoading={isLoading && memoizedGroupItems.length === 0}
+          hasLoadedItems={memoizedGroupItems.length > 0}
           onAddNewItem={handleOpenResearchModal}
           onRemoveItem={(itemId) => removeItemFromGroup(group.id, itemId)}
         />
@@ -217,15 +176,20 @@ export const BacklogGroup = React.memo(function BacklogGroup({
     </>
   );
 }, (prevProps, nextProps) => {
-  // Custom comparison function to prevent unnecessary renders
-  // Only re-render if important props change
+  // IMPROVED: More specific comparison to prevent unnecessary re-renders
+  const hasItemsChanged = 
+    (prevProps.group.items?.length || 0) !== (nextProps.group.items?.length || 0) ||
+    prevProps.group.item_count !== nextProps.group.item_count ||
+    // Check if the actual items array changed
+    JSON.stringify(prevProps.group.items?.map(i => i.id) || []) !== 
+    JSON.stringify(nextProps.group.items?.map(i => i.id) || []);
+    
   return (
     prevProps.group.id === nextProps.group.id &&
     prevProps.isLoading === nextProps.isLoading &&
     prevProps.isLoaded === nextProps.isLoaded &&
     prevProps.isExpandedView === nextProps.isExpandedView &&
     prevProps.defaultExpanded === nextProps.defaultExpanded &&
-    // Don't compare the entire group object, just the important parts
-    prevProps.group.item_count === nextProps.group.item_count
+    !hasItemsChanged
   );
 });

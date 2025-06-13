@@ -1,8 +1,7 @@
 import { BacklogState } from './types';
-import { StateCreator } from 'zustand';
 
 export const createOfflineActions = (
-  set: StateCreator<BacklogState>['set'],
+  set: (partial: BacklogState | Partial<BacklogState> | ((state: BacklogState) => BacklogState | Partial<BacklogState>), replace?: boolean) => void,
   get: () => BacklogState
 ) => ({
   // Offline mode management
@@ -28,10 +27,11 @@ export const createOfflineActions = (
     const state = get();
     
     if (state.isOfflineMode || state.pendingChanges.length === 0) {
-      return; // Skip if offline or no changes
+      console.log(`📤 BacklogStore: No pending changes to process`);
+      return;
     }
     
-    console.log(`🔄 BacklogStore: Processing ${state.pendingChanges.length} pending changes`);
+    console.log(`📤 BacklogStore: Processing ${state.pendingChanges.length} pending changes`);
     
     // Sort changes by timestamp (oldest first)
     const sortedChanges = [...state.pendingChanges].sort((a, b) => a.timestamp - b.timestamp);
@@ -42,24 +42,24 @@ export const createOfflineActions = (
         switch (change.type) {
           case 'add':
             if (change.item) {
-              // API call to add item
-              console.log(`🔄 BacklogStore: Adding item ${change.item.id} to group ${change.groupId}`);
+              console.log(`📤 BacklogStore: Processing addition of item ${change.item.id} to group ${change.groupId}`);
+              // Here you could add API call to persist to backend
               // await itemGroupsApi.addItemToGroup(change.groupId, change.item);
             }
             break;
             
           case 'remove':
             if (change.itemId) {
-              // API call to remove item
-              console.log(`🔄 BacklogStore: Removing item ${change.itemId} from group ${change.groupId}`);
+              console.log(`📤 BacklogStore: Processing removal of item ${change.itemId} from group ${change.groupId}`);
+              // Here you could add API call to persist to backend
               // await itemGroupsApi.removeItemFromGroup(change.groupId, change.itemId);
             }
             break;
             
           case 'update':
             if (change.itemId && change.item) {
-              // API call to update item
-              console.log(`🔄 BacklogStore: Updating item ${change.itemId} in group ${change.groupId}`);
+              console.log(`📤 BacklogStore: Processing update of item ${change.itemId} in group ${change.groupId}`);
+              // Here you could add API call to persist to backend
               // await itemGroupsApi.updateItemInGroup(change.groupId, change.itemId, change.item);
             }
             break;
@@ -74,7 +74,7 @@ export const createOfflineActions = (
       state.pendingChanges = [];
     });
     
-    console.log(`✅ BacklogStore: Completed processing pending changes`);
+    console.log(`✅ BacklogStore: All pending changes processed`);
   },
 });
 

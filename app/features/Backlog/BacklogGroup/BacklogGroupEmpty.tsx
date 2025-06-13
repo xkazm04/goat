@@ -2,7 +2,6 @@ import { motion } from "framer-motion";
 import { PlusIcon } from "lucide-react";
 
 type Props = {
-    showMatched: boolean;
     isDatabaseGroup?: boolean;
     hasLoadedItems?: boolean;
     availableItems: any[];
@@ -10,7 +9,7 @@ type Props = {
     onAddNewItem?: () => void; 
 }
 
-const BacklogGroupEmpty = ({showMatched, isDatabaseGroup, hasLoadedItems, availableItems,setIsAddModalOpen, onAddNewItem }: Props) => {
+const BacklogGroupEmpty = ({isDatabaseGroup, hasLoadedItems, availableItems,setIsAddModalOpen, onAddNewItem }: Props) => {
     return <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -24,9 +23,7 @@ const BacklogGroupEmpty = ({showMatched, isDatabaseGroup, hasLoadedItems, availa
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5, duration: 0.3 }}
         >
-            {showMatched
-                ? "No ranked items yet"
-                : isDatabaseGroup
+            {isDatabaseGroup
                     ? hasLoadedItems
                         ? "No items available"
                         : "Items will load automatically"
@@ -41,7 +38,7 @@ const BacklogGroupEmpty = ({showMatched, isDatabaseGroup, hasLoadedItems, availa
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.6, duration: 0.3 }}
         >
-            {!showMatched && !isDatabaseGroup && (
+            {!isDatabaseGroup && (
                 <motion.button
                     onClick={(e) => {
                         e.stopPropagation();
@@ -56,7 +53,7 @@ const BacklogGroupEmpty = ({showMatched, isDatabaseGroup, hasLoadedItems, availa
                 </motion.button>
             )}
 
-            {!showMatched && onAddNewItem && (
+            {onAddNewItem && (
                 <motion.button
                     onClick={(e) => {
                         e.stopPropagation();

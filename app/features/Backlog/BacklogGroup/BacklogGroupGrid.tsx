@@ -11,7 +11,6 @@ import BacklogGroupEmpty from "./BacklogGroupEmpty";
 type Props = {
     isExpanded: boolean;
     isDatabaseGroup: boolean;
-    showMatched: boolean;
     group: {
         id: string;
         name: string;
@@ -21,7 +20,6 @@ type Props = {
     displayItems: BacklogItemType[];
     assignedItemIds: Set<string>;
     setIsAddModalOpen: (open: boolean) => void;
-    setShowMatched: (show: boolean) => void;
     isExpandedView?: boolean;
     isLoading?: boolean;
     hasLoadedItems?: boolean;
@@ -31,13 +29,11 @@ type Props = {
 const BacklogGroupGrid = ({ 
   isExpanded, 
   isDatabaseGroup, 
-  showMatched, 
   group, 
   availableItems, 
   displayItems,
   assignedItemIds, 
   setIsAddModalOpen, 
-  setShowMatched, 
   isExpandedView,
   isLoading = false,
   hasLoadedItems = false,
@@ -126,7 +122,7 @@ const BacklogGroupGrid = ({
                 <AnimatePresence mode="popLayout">
                   {debouncedDisplayItems.map((item, index) => (
                     <motion.div
-                      key={`${item.id}-${showMatched ? 'matched' : 'available'}`}
+                      key={`${item.id}-'available'`}
                       initial={{ opacity: 0, scale: 0.85, y: 30, rotateX: -20 }}
                       animate={{ opacity: 1, scale: 1, y: 0, rotateX: 0 }}
                       exit={{ opacity: 0, scale: 0.85, y: -30, rotateX: 20 }}
@@ -145,16 +141,18 @@ const BacklogGroupGrid = ({
                           title: item.name || item.title || '',
                           description: item.description || '',
                           matched: item.matched || assignedItemIds.has(item.id),
-                          tags: item.tags || []
+                          tags: item.tags || [],
+                          image_url: item.image_url || null 
                         }}
+                        groupId={group.id} 
                         isAssignedToGrid={assignedItemIds.has(item.id)}
+                        size={isExpandedView ? 'medium' : 'small'}
                       />
                     </motion.div>
                   ))}
                 </AnimatePresence>
 
                 {/* Add Item Placeholders - Enhanced for both custom and DB groups */}
-                {!showMatched && (
                   <>
                     {/* Custom Group: Original Add Item Placeholder */}
                     {!isDatabaseGroup && (
@@ -190,14 +188,12 @@ const BacklogGroupGrid = ({
                       <AddItemButton onAddNewItem={onAddNewItem} />
                     </motion.div>
                   </>
-                )}
               </motion.div>
             )}
 
             {/* Empty States */}
             {!shouldShowLoadingState && debouncedDisplayItems.length === 0 && !isTransitioning && (
                 <BacklogGroupEmpty
-                  showMatched={showMatched}
                   isDatabaseGroup={isDatabaseGroup}
                   hasLoadedItems={hasLoadedItems}
                   availableItems={availableItems}
@@ -209,12 +205,10 @@ const BacklogGroupGrid = ({
             {/* Enhanced Group Stats Footer */}
             {!shouldShowLoadingState && (
               <BacklogGroupFooter
-                showMatched={showMatched}
                 assignedItems={assignedItems}
                 availableItems={availableItems}
                 debouncedDisplayItems={debouncedDisplayItems}
                 group={group}
-                setShowMatched={setShowMatched}
                 />
             )}
           </motion.div>

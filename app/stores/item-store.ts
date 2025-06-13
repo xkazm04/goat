@@ -2,7 +2,7 @@ import { useSessionStore } from './session-store';
 import { useGridStore } from './grid-store';
 import { useComparisonStore } from './comparison-store';
 import { useBacklogStore } from './backlog-store';
-import { BacklogGroup, BacklogItem } from '@/app/types/backlog-groups';
+import { BacklogItem } from '@/app/types/backlog-groups';
 import { GridItemType } from '@/app/types/match';
 
 export const useItemStore = () => {
@@ -22,7 +22,7 @@ export const useItemStore = () => {
       backlogItemId: item.id,
       tags: item.tags || [],
       isDragPlaceholder: false,
-      image_url: item.image_url || null // Make sure image_url is included
+      image_url: item.image_url || null
     };
   };
 
@@ -177,7 +177,7 @@ export const useItemStore = () => {
     clearComparison: comparisonStore.clearComparison,
     setComparisonMode: comparisonStore.setComparisonMode,
 
-    // Drag & Drop - FIXED
+    // FIXED: Drag & Drop with proper error handling
     handleDragEnd: (event: any) => {
       const { active, over } = event;
 
@@ -207,11 +207,15 @@ export const useItemStore = () => {
 
         // Verify the target position is valid and empty
         if (gridStore.canAddAtPosition(toPosition)) {
-          // Find the backlog item safely - use getState() to avoid hooks in callbacks
+          // FIXED: Use backlog store's getItemById method
           const item = backlogStore.getItemById(activeId);
 
           if (item) {
-            console.log(`🔄 ItemStore: Assigning backlog item ${activeId} to position ${toPosition}`, item);
+            console.log(`🔄 ItemStore: Assigning backlog item ${activeId} to position ${toPosition}`, {
+              id: item.id,
+              title: item.name || item.title,
+              hasImageUrl: !!item.image_url
+            });
 
             // Use our assignItemToGrid method with proper tracking
             assignItemToGrid(item, toPosition);
@@ -221,21 +225,40 @@ export const useItemStore = () => {
             backlogStore.setActiveItem(null);
             backlogStore.selectItem(null);
           } else {
-            console.error(`Could not find backlog item with ID ${activeId}`);
+            console.error(`❌ ItemStore: Could not find backlog item with ID ${activeId}`);
+            
+            // Try alternative approach - look through all available items
+            const availableItems = getAvailableBacklogItems();
+            const fallbackItem = availableItems.find(item => item.id === activeId);
+            
+            if (fallbackItem) {
+              console.log(`🔄 ItemStore: Found item via fallback search, assigning to grid`);
+              assignItemToGrid(fallbackItem, toPosition);
+              
+              // Clear active states
+              gridStore.setActiveItem(null);
+              backlogStore.setActiveItem(null);
+              backlogStore.selectItem(null);
+            } else {
+              console.error(`❌ ItemStore: Item ${activeId} not found in available items either`);
+            }
           }
         } else {
-          console.log(`Cannot add at position ${toPosition}`);
+          console.log(`❌ ItemStore: Cannot add at position ${toPosition} - position not available`);
         }
       }
     },
 
-    // Utilities
-    getAvailableBacklogItems: () => {
-      // Get all items from all groups that are not used
-      return backlogStore.groups
+    getAvailableBacklogItems: (): BacklogItem[] => {
+      const allItems = backlogStore.groups
         .flatMap(group => Array.isArray(group.items) ? group.items : [])
-        .filter(item => item && !item.used); // Only include unused items
+        .filter(item => item && !item.used);
+      
+      console.log(`📋 ItemStore: Found ${allItems.length} available backlog items`);
+      return allItems;
     },
+
+    // Utilities
     getMatchedItems: gridStore.getMatchedItems,
     getNextAvailableGridPosition: gridStore.getNextAvailableGridPosition,
     canAddAtPosition: gridStore.canAddAtPosition,

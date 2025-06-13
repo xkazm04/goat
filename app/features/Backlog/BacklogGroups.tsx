@@ -1,287 +1,183 @@
 "use client";
 import { motion, AnimatePresence } from "framer-motion";
-import { useMemo, useState, useEffect, useCallback, useRef } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import { useBacklogStore } from "@/app/stores/backlog-store";
 import { useCurrentList } from "@/app/stores/use-list-store";
 import React from "react";
 import SidebarContent from "./BacklogGroups/SidebarContent";
 import { ErrorState, LoadingState } from "./BacklogGroupStates";
-import { BookOpenIcon } from "lucide-react";
+import { Eye } from "lucide-react";
 
 interface BacklogGroupsProps {
   className?: string;
 }
 
 export function BacklogGroups({ className }: BacklogGroupsProps) {
-  // Get data and actions from the backlog store - avoid using hooks directly in effects
-  const storeRef = useRef(useBacklogStore.getState());
+  const groups = useBacklogStore(state => state.groups);
+  const isLoading = useBacklogStore(state => state.isLoading);
+  const error = useBacklogStore(state => state.error);
+  const searchTerm = useBacklogStore(state => state.searchTerm);
+  const loadingGroupIds = useBacklogStore(state => state.loadingGroupIds);
+  const loadingProgress = useBacklogStore(state => state.loadingProgress);
+  const cache = useBacklogStore(state => state.cache);
 
-  // Set up local state
-  const [groups, setGroups] = useState(storeRef.current.groups);
-  const [isLoading, setIsLoading] = useState(storeRef.current.isLoading);
-  const [error, setError] = useState(storeRef.current.error);
-  const [searchTerm, setLocalSearchTerm] = useState(storeRef.current.searchTerm);
-  const [loadingGroupIds, setLoadingGroupIds] = useState<Set<string>>(storeRef.current.loadingGroupIds);
-  const [cache, setCache] = useState(storeRef.current.cache);
-  const [networkStatus, setNetworkStatus] = useState(true);
-
-  // Subscribe to store changes
-  useEffect(() => {
-    const unsubscribe = useBacklogStore.subscribe((state) => {
-      storeRef.current = state;
-      setGroups(state.groups);
-      setIsLoading(state.isLoading);
-      setError(state.error);
-      setLocalSearchTerm(state.searchTerm);
-      setLoadingGroupIds(state.loadingGroupIds);
-      setCache(state.cache);
-    });
-
-    return unsubscribe;
-  }, []);
-
-  // Access store actions directly
+  // Store actions
   const {
     initializeGroups,
     loadGroupItems,
     searchGroups,
     filterGroupsByCategory,
-    setSearchTerm,
-    setOfflineMode
-  } = useBacklogStore.getState();
+    setSearchTerm
+  } = useBacklogStore();
 
   const currentList = useCurrentList();
 
-  // UI state
+  // UI state only - no data state management
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isVisible, setIsVisible] = useState(true); 
   const [expandedViewMode, setExpandedViewMode] = useState<'grid' | 'list'>('list');
-  const [isMobile, setIsMobile] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Track loaded groups for UI
-  const [loadedGroupIds, setLoadedGroupIds] = useState<Set<string>>(new Set());
-
-  // Detect mobile/tablet
+  // Debug logging for groups
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 1024);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+    if (groups && groups.length > 0) {
+      const firstGroup = groups[0];
+      const groupWithItems = groups.find(g => g.items && g.items.length > 0);
 
-  // Debug function to log group items structure
-  const debugLogItemStructure = useCallback((groupsToLog) => {
-    if (!groupsToLog || groupsToLog.length === 0) {
-      console.log('No groups to analyze');
+      console.log(`🔍 Groups state:`, {
+        totalGroups: groups.length,
+        groupsWithItems: groups.filter(g => g.items && g.items.length > 0).length,
+        loadingProgress: loadingProgress,
+        sampleGroup: firstGroup ? {
+          id: firstGroup.id,
+          name: firstGroup.name,
+          itemCount: firstGroup.item_count || 0,
+          hasItems: !!(firstGroup.items && firstGroup.items.length > 0),
+        } : null,
+        sampleItem: groupWithItems?.items?.[0] ? {
+          id: groupWithItems.items[0].id,
+          title: groupWithItems.items[0].title || groupWithItems.items[0].name,
+          hasImageUrl: !!groupWithItems.items[0].image_url,
+        } : null
+      });
+    }
+  }, [groups, loadingProgress]);
+
+  const initializeBacklogData = useCallback(async (forceRefresh = false) => {
+    if (!currentList?.category) {
+      console.log('❌ No current list category, skipping initialization');
       return;
     }
 
-    const firstGroup = groupsToLog[0];
-    const sampleItems = firstGroup.items?.slice(0, 2) || [];
-
-    console.log('Group structure:', {
-      totalGroups: groupsToLog.length,
-      firstGroupId: firstGroup.id,
-      firstGroupName: firstGroup.name,
-      hasItems: !!firstGroup.items,
-      itemsCount: firstGroup.items?.length || 0,
-      sampleItem: sampleItems.length > 0 ? {
-        id: sampleItems[0].id,
-        title: sampleItems[0].title || sampleItems[0].name,
-        hasImageUrl: !!sampleItems[0].image_url,
-        tags: sampleItems[0].tags
-      } : 'No items'
-    });
-  }, []);
-
-  // New function to help debug image URL issues
-  const inspectGroups = useCallback((groups) => {
-    if (!groups || groups.length === 0) return;
-
-    const firstGroup = groups[0];
-    const groupWithItems = groups.find(g => g.items && g.items.length > 0);
-
-    console.log(`🔍 Groups inspection:`, {
-      totalGroups: groups.length,
-      groupsWithItems: groups.filter(g => g.items && g.items.length > 0).length,
-      sampleGroup: firstGroup ? {
-        id: firstGroup.id,
-        name: firstGroup.name,
-        itemCount: firstGroup.item_count || 0,
-        hasItems: !!(firstGroup.items && firstGroup.items.length > 0),
-        itemsLength: firstGroup.items ? firstGroup.items.length : 0
-      } : 'No groups',
-      sampleItemWithImage: groupWithItems && groupWithItems.items && groupWithItems.items.length > 0 ? {
-        id: groupWithItems.items[0].id,
-        title: groupWithItems.items[0].title || groupWithItems.items[0].name,
-        hasImageUrl: !!groupWithItems.items[0].image_url,
-        imageUrl: groupWithItems.items[0].image_url || 'NONE'
-      } : 'No items with images'
-    });
-  }, []);
-
-  // Improved initialization function with forced refresh capability
-  const fetchBacklogData = useCallback(async (forceRefresh = false) => {
-    if (!currentList?.category) return;
-
     try {
-      console.log(`🔄 BacklogGroups: Initializing groups with${forceRefresh ? ' forced' : ''} refresh for category: ${currentList.category}`);
       await initializeGroups(currentList.category, currentList.subcategory, forceRefresh);
-
-      // Reset loaded groups tracking
-      setLoadedGroupIds(new Set());
-      setIsInitialized(true);
-
-      // Debug log after data is loaded - REMOVED useEffect from here
-      debugLogItemStructure(storeRef.current.groups);
     } catch (error) {
-      console.error('Failed to initialize groups:', error);
+      console.error('❌ Failed to initialize backlog:', error);
     }
-  }, [currentList?.category, currentList?.subcategory, initializeGroups, debugLogItemStructure]);
+  }, [currentList?.category, currentList?.subcategory, initializeGroups]);
 
-  // Add this separate useEffect for groups inspection
+  // SIMPLIFIED: Category change handler
   useEffect(() => {
-    if (groups && groups.length > 0) {
-      inspectGroups(groups);
-    }
-  }, [groups, inspectGroups]);
-
-  // Initialize data when category changes or on component mount
-  useEffect(() => {
-    if (!currentList?.category || isInitialized) return;
+    if (!currentList?.category) return;
 
     const cacheKey = `${currentList.category}-${currentList.subcategory || ''}`;
     const cachedData = cache[cacheKey];
+    
+    // Determine if we need to initialize
+    const needsInitialization = 
+      !isInitialized || 
+      !cachedData || 
+      !cachedData.groups || 
+      cachedData.groups.length === 0;
 
-    // Check if we need to force refresh (no cache or empty groups)
-    const shouldForceRefresh =
-      !cachedData ||
-      !cachedData.groups ||
-      cachedData.groups.length === 0 ||
-      groups.length === 0;
-
-    if (shouldForceRefresh) {
-      console.log('No cached data found or empty groups, forcing refresh');
-      fetchBacklogData(true);
+    if (needsInitialization) {
+      console.log(`🔄 Category changed or needs initialization: ${cacheKey}`);
+      initializeBacklogData(true);
+      setIsInitialized(true);
     } else {
-      // Regular initialization
-      fetchBacklogData(false);
+      console.log(`✅ Using cached data for: ${cacheKey}`);
+      setIsInitialized(true);
     }
+  }, [currentList?.category, currentList?.subcategory, isInitialized, cache, initializeBacklogData]);
 
-    setIsInitialized(true);
-  }, [currentList?.category, currentList?.subcategory, isInitialized, cache, groups.length, fetchBacklogData]);
-
-  // Additional initialization check when groups are empty but not loading
-  useEffect(() => {
-    if (isInitialized && !isLoading && groups.length === 0 && currentList?.category && !error) {
-      console.log('Groups are empty but not loading, triggering fetch');
-      fetchBacklogData(true);
-    }
-  }, [isInitialized, isLoading, groups.length, currentList?.category, error, fetchBacklogData]);
-
-  // Update loaded groups tracking
-  useEffect(() => {
-    if (groups && groups.length > 0) {
-      const newLoadedGroupIds = new Set<string>();
-
-      groups.forEach(group => {
-        if (group.items && group.items.length > 0) {
-          newLoadedGroupIds.add(group.id);
-        }
-      });
-
-      setLoadedGroupIds(newLoadedGroupIds);
-    }
-  }, [groups]);
-
-  // Filter groups based on search term and category
   const filteredGroups = useMemo(() => {
-    if (!currentList?.category) return [];
+    if (!currentList?.category) {
+      console.log('No current list category for filtering');
+      return [];
+    }
 
     let result = [];
 
-    if (searchTerm) {
-      // Search across all groups and then filter by category
-      result = searchGroups(searchTerm).filter(group => {
+    if (searchTerm?.trim()) {
+      // Search and filter by category
+      const searchResults = searchGroups(searchTerm);
+      result = searchResults.filter(group => {
         const matchesCategory = group.category === currentList.category;
         const matchesSubcategory = !currentList.subcategory || group.subcategory === currentList.subcategory;
         return matchesCategory && matchesSubcategory;
       });
     } else {
-      // Just filter by category
       result = filterGroupsByCategory(currentList.category, currentList.subcategory);
+      console.log(`📂 Category filter results: ${result.length} groups`);
     }
-
-    // Log for debugging
-    console.log(`Filtered groups: ${result.length} for category ${currentList.category}`);
 
     return result;
   }, [
     currentList?.category,
     currentList?.subcategory,
     searchTerm,
+    groups.length, // Trigger when groups change
     searchGroups,
     filterGroupsByCategory
   ]);
 
-  // Calculate total items
+  // SIMPLIFIED: Total items calculation
   const totalItems = useMemo(() => {
     return filteredGroups.reduce((sum, group) => sum + (group.item_count || 0), 0);
   }, [filteredGroups]);
 
-  const loadedItems = useMemo(() => {
-    return filteredGroups.reduce((sum, group) => {
+  const loadedGroupIds = useMemo(() => {
+    const loaded = new Set<string>();
+    filteredGroups.forEach(group => {
       if (group.items && group.items.length > 0) {
-        return sum + group.items.length;
+        loaded.add(group.id);
       }
-      return sum;
-    }, 0);
+    });
+    return loaded;
   }, [filteredGroups]);
 
-  // Handle group interactions
-  const handleGroupHover = async (groupId: string) => {
-    // Check if this group already has items loaded
-    if (loadedGroupIds.has(groupId)) {
-      console.log(`Group ${groupId} already has items loaded, skipping`);
+  const handleGroupHover = useCallback(async (groupId: string) => {
+    if (isExpanded) return;
+    if (loadedGroupIds.has(groupId) || loadingGroupIds.has(groupId)) {
       return;
     }
-
-    // Check if this group is already loading
-    if (loadingGroupIds.has(groupId)) {
-      console.log(`Group ${groupId} is already loading, skipping`);
-      return;
-    }
-
-    console.log(`Loading items for group ${groupId} on hover`);
     await loadGroupItems(groupId);
-  };
+  }, [isExpanded, loadedGroupIds, loadingGroupIds, loadGroupItems]);
 
-  const handleGroupExpand = async (groupId: string) => {
+  const handleGroupExpand = useCallback(async (groupId: string) => {
     if (!loadedGroupIds.has(groupId) && !loadingGroupIds.has(groupId)) {
-      console.log(`Loading items for group ${groupId} on expand`);
+      console.log(`📖 Loading items for group ${groupId} on expand`);
       await loadGroupItems(groupId);
     }
-  };
+  }, [loadedGroupIds, loadingGroupIds, loadGroupItems]);
 
-  // Modal backdrop click
-  const handleExpandedBackdropClick = (e: React.MouseEvent) => {
+  const handleExpandedBackdropClick = useCallback((e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
       setIsExpanded(false);
     }
-  };
+  }, []);
 
-  // Escape key handler
   useEffect(() => {
+    if (!isExpanded) return;
+
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isExpanded) {
+      if (e.key === 'Escape') {
         setIsExpanded(false);
       }
     };
 
-    if (isExpanded) {
-      document.addEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'hidden';
-    }
+    document.addEventListener('keydown', handleEscape);
+    document.body.style.overflow = 'hidden';
 
     return () => {
       document.removeEventListener('keydown', handleEscape);
@@ -289,13 +185,20 @@ export function BacklogGroups({ className }: BacklogGroupsProps) {
     };
   }, [isExpanded]);
 
-  // Retry handler with forced refresh
-  const handleRetry = () => {
-    fetchBacklogData(true);
-  };
+  const handleRetry = useCallback(() => {
+    initializeBacklogData(true);
+  }, [initializeBacklogData]);
 
-  // Error state
-  if (error && filteredGroups.length === 0) {
+  const handleToggleVisibility = useCallback(() => {
+    setIsVisible(!isVisible);
+  }, [isVisible]);
+
+  const handleToggleExpansion = useCallback(() => {
+      setIsExpanded(!isExpanded);
+  }, [isExpanded]);
+
+  
+  if (error && filteredGroups.length === 0 && !isLoading) {
     return (
       <ErrorState
         className={className}
@@ -305,7 +208,7 @@ export function BacklogGroups({ className }: BacklogGroupsProps) {
     );
   }
 
-  // Loading state - initial load only
+  // Loading state - only show if loading and no groups
   if (isLoading && filteredGroups.length === 0) {
     return (
       <LoadingState
@@ -317,37 +220,63 @@ export function BacklogGroups({ className }: BacklogGroupsProps) {
 
   return (
     <>
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="p-2 rounded-xl transition-all duration-200 hover:bg-slate-700/50"
-        title="Open backlog collection"
+      {/* Toggle Button  */}
+      <motion.button
+        onClick={handleToggleVisibility}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        className="p-2 rounded-xl transition-all duration-200 hover:bg-slate-700/50 absolute -top-12 right-0"
+        title={isVisible ? "Hide backlog collection" : "Show backlog collection"}
+        style={{
+          background: isVisible ? 'rgba(59, 130, 246, 0.1)' : 'rgba(71, 85, 105, 0.2)',
+          border: `1px solid ${isVisible ? 'rgba(59, 130, 246, 0.3)' : 'rgba(71, 85, 105, 0.3)'}`
+        }}
       >
-        <BookOpenIcon className="w-5 h-5 text-slate-400 hover:text-slate-300" />
-      </button>
+        <Eye className={`w-5 h-5 transition-colors ${
+          isVisible ? 'text-blue-400' : 'text-slate-500'
+        }`} />
+        
+        {/* Notification dot for hidden state with data */}
+        {!isVisible && groups.length > 0 && (
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-slate-800"
+          />
+        )}
+      </motion.button>
 
-      {/* Normal Sidebar View */}
-      <div className={className}>
-        <SidebarContent
-          isExpandedView={false}
-          filteredGroups={filteredGroups}
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          isLoading={isLoading}
-          backlogGroups={groups}
-          currentList={currentList}
-          totalItems={totalItems}
-          apiTotalItems={totalItems}
-          expandedViewMode={expandedViewMode}
-          isMobile={isMobile}
-          setIsExpanded={setIsExpanded}
-          onGroupHover={handleGroupHover}
-          onGroupExpand={handleGroupExpand}
-          loadingGroups={loadingGroupIds}
-          loadedGroups={loadedGroupIds}
-        />
-      </div>
+      <AnimatePresence mode="wait">
+        {isVisible && (
+          <motion.div 
+            className={className}
+            initial={{ opacity: 0, x: -20, scale: 0.95 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: -20, scale: 0.95 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+          >
+            <SidebarContent
+              isExpandedView={false}
+              filteredGroups={filteredGroups}
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              isLoading={isLoading}
+              backlogGroups={groups}
+              currentList={currentList}
+              totalItems={totalItems}
+              apiTotalItems={totalItems}
+              expandedViewMode={expandedViewMode}
+              setIsExpanded={handleToggleExpansion}
+              onGroupHover={handleGroupHover}
+              onGroupExpand={handleGroupExpand}
+              loadingGroups={loadingGroupIds}
+              loadedGroups={loadedGroupIds}
+              loadingProgress={loadingProgress}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* Expanded Modal View */}
       <AnimatePresence>
         {isExpanded && (
           <motion.div
@@ -355,7 +284,8 @@ export function BacklogGroups({ className }: BacklogGroupsProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center ${isMobile ? 'p-2' : 'p-6'}`}
+            className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6
+            `}
             onClick={handleExpandedBackdropClick}
           >
             <motion.div
@@ -367,7 +297,7 @@ export function BacklogGroups({ className }: BacklogGroupsProps) {
                 stiffness: 300,
                 damping: 30
               }}
-              className={`w-full h-full ${isMobile ? 'max-w-full max-h-full' : 'max-w-7xl max-h-[95vh]'} overflow-hidden`}
+              className={`w-full max-w-7xl h-[95vh] rounded-3xl overflow-hidden`}
               onClick={(e) => e.stopPropagation()}
             >
               <SidebarContent
@@ -381,12 +311,12 @@ export function BacklogGroups({ className }: BacklogGroupsProps) {
                 totalItems={totalItems}
                 apiTotalItems={totalItems}
                 expandedViewMode={expandedViewMode}
-                isMobile={isMobile}
                 setIsExpanded={setIsExpanded}
                 onGroupHover={handleGroupHover}
                 onGroupExpand={handleGroupExpand}
                 loadingGroups={loadingGroupIds}
                 loadedGroups={loadedGroupIds}
+                loadingProgress={loadingProgress}
               />
             </motion.div>
           </motion.div>

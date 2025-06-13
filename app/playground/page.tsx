@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from 'react';
-import { YouTubeMediaItem } from './components/YouTubeMediaItem';
+import { YouTubeMediaItem } from '../components/match/YouTubeMediaItem';
 
 // Sample YouTube data for testing
 const sampleYouTubeItems = [

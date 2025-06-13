@@ -1,17 +1,15 @@
 import { motion } from "framer-motion";
 
 type Props = {
-    showMatched: boolean;
     assignedItems: any[]; // Replace with actual type
     availableItems: any[]; // Replace with actual type
     debouncedDisplayItems: any[]; // Replace with actual type
     group: {
         items: any[];
     };
-    setShowMatched: (value: boolean) => void;
 }
 
-const BacklogGroupFooter = ({showMatched, assignedItems, availableItems, debouncedDisplayItems, group, setShowMatched}: Props) => {
+const BacklogGroupFooter = ({assignedItems, availableItems, debouncedDisplayItems, group}: Props) => {
     return <motion.div
         className="mt-4 pt-3 border-t border-slate-600/30"
         initial={{ opacity: 0, y: 10 }}
@@ -46,24 +44,6 @@ const BacklogGroupFooter = ({showMatched, assignedItems, availableItems, debounc
                     {group.items.length} total
                 </motion.span>
             </div>
-
-            {/* Toggle matched items view */}
-            {assignedItems.length > 0 && (
-                <motion.button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        setShowMatched(!showMatched);
-                    }}
-                    className="text-xs text-slate-400 hover:text-slate-300 transition-colors px-2 py-1 rounded bg-slate-700/30 hover:bg-slate-700/50"
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.9, duration: 0.3 }}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                >
-                    {showMatched ? 'Show available' : 'Show ranked'}
-                </motion.button>
-            )}
         </div>
     </motion.div>
 }

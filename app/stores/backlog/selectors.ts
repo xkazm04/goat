@@ -32,6 +32,7 @@ export const useBacklogLoading = () =>
     state => ({
       isLoading: state.isLoading,
       loadingGroupIds: state.loadingGroupIds,
+      loadingProgress: state.loadingProgress,
       error: state.error
     }),
     shallow
@@ -50,5 +51,11 @@ export const useBacklogOfflineStatus = () =>
       setOfflineMode: state.setOfflineMode,
       pendingChangesCount: state.pendingChanges.length
     }),
+    shallow
+  );
+
+export const useBacklogStats = () => 
+  useBacklogStore(
+    state => state.getStats(),
     shallow
   );

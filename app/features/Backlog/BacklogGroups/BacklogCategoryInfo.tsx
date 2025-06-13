@@ -46,7 +46,7 @@ export function BacklogCategoryInfo({
           </>
         ) : (
           <>
-            {totalItems} total items • {apiTotalItems > totalItems ? `${apiTotalItems} in database` : 'All loaded'}
+            {totalItems} total items
           </>
         )}
       </motion.p>

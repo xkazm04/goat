@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Pause, Volume2, VolumeX, Clock, X } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX  } from 'lucide-react';
 import Image from 'next/image';
-import { getYouTubeThumbnail, formatDuration } from '../utils/youtube';
+import { getYouTubeThumbnail, formatDuration } from '../../lib/utils/youtube';
 
 interface YouTubeItem {
   id: string;
@@ -204,11 +204,6 @@ export function YouTubeMediaItem({
     }
   }, [item.duration, onTimestampChange, playerReady]);
 
-  const closePlayer = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    onSelect(item.id); // This will deactivate the player
-  }, [onSelect, item.id]);
-
   // Progress percentage
   const progressPercentage = Math.min((currentTimestamp / item.duration) * 100, 100);
 
@@ -234,25 +229,6 @@ export function YouTubeMediaItem({
       <div className="absolute top-3 left-3 z-20 bg-blue-600 text-white text-sm font-bold px-2 py-1 rounded">
         #{item.position}
       </div>
-
-      {/* Close Button - only show when active */}
-      {isActive && (
-        <button
-          onClick={closePlayer}
-          className="absolute top-3 right-3 z-20 bg-red-600 hover:bg-red-700 text-white p-1 rounded-full transition-colors"
-          title="Close player"
-        >
-          <X className="w-4 h-4" />
-        </button>
-      )}
-
-      {/* Duration Badge */}
-      {!isActive && (
-        <div className="absolute top-3 right-3 z-20 bg-black/70 text-white text-sm px-2 py-1 rounded flex items-center gap-1">
-          <Clock className="w-3 h-3" />
-          {formatDuration(item.duration)}
-        </div>
-      )}
 
       {/* Main Content Area */}
       <div className="relative aspect-video bg-slate-700">
@@ -349,21 +325,6 @@ export function YouTubeMediaItem({
         <h3 className="text-white font-semibold text-lg mb-1 line-clamp-2">
           {item.title}
         </h3>
-        <p className="text-slate-400 text-sm mb-3 line-clamp-2">
-          {item.description}
-        </p>
-        
-        {/* Tags */}
-        <div className="flex flex-wrap gap-1">
-          {item.tags.slice(0, 3).map((tag, index) => (
-            <span 
-              key={index}
-              className="bg-slate-700 text-slate-300 text-xs px-2 py-1 rounded"
-            >
-              {tag}
-            </span>
-          ))}
-        </div>
       </div>
     </motion.div>
   );

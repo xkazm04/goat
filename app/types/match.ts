@@ -4,6 +4,7 @@ export interface GridItemType {
   tags: string[];
   matched: boolean;
   matchedWith?: string;
+  description?: string;
 }
 
 export interface BacklogItemType {

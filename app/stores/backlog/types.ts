@@ -34,16 +34,23 @@ export interface BacklogState {
   selectedItemId: string | null;
   activeItemId: string | null;
   searchTerm: string;
-  
+
   // UI State
   isLoading: boolean;
   loadingGroupIds: Set<string>;
   error: Error | null;
-  
+
   // Offline mode
   isOfflineMode: boolean;
   pendingChanges: PendingChange[];
-  
+
+  loadingProgress: {
+    totalGroups: number;
+    loadedGroups: number;
+    isLoading: boolean;
+    percentage: number;
+  };
+
   // Cache system - stores by category
   cache: BacklogCache;
   lastSyncTimestamp: number;
@@ -53,27 +60,27 @@ export interface BacklogState {
   loadGroupItems: (groupId: string, forceRefresh?: boolean) => Promise<void>;
   loadAllGroupItems: (categoryFilter?: string) => Promise<void>;
   syncWithBackend: () => Promise<void>;
-  
+
   // Actions - Selection
   selectGroup: (groupId: string | null) => void;
   selectItem: (itemId: string | null) => void;
   setActiveItem: (itemId: string | null) => void;
-  
+
   // Actions - Search & Filter
   setSearchTerm: (term: string) => void;
   searchGroups: (term: string) => BacklogGroup[];
   filterGroupsByCategory: (category: string, subcategory?: string) => BacklogGroup[];
-  
+
   // Actions - Item management
   addItemToGroup: (groupId: string, item: BacklogItem) => void;
   removeItemFromGroup: (groupId: string, itemId: string) => void;
   updateItemInGroup: (groupId: string, itemId: string, updates: Partial<BacklogItem>) => void;
   markItemAsUsed: (itemId: string, isUsed: boolean) => void;
-  
+
   // Offline mode management
   setOfflineMode: (isOffline: boolean) => void;
   processPendingChanges: () => Promise<void>;
-  
+
   // Utilities
   clearCache: (category?: string) => void;
   getGroupItems: (groupId: string) => BacklogItem[];
