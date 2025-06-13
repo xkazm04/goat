@@ -19,7 +19,9 @@ interface MatchGridItemProps {
   size?: 'small' | 'medium' | 'large';
 }
 
-const getItemIcon = (title: string) => {
+const getItemIcon = (title: string | undefined) => {
+  if (!title) return Star; // Default icon if title is undefined
+  
   const lower = title.toLowerCase();
   if (lower.includes('game') || lower.includes('gta') || lower.includes('mario')) {
     return Gamepad2;
@@ -147,22 +149,100 @@ export function MatchGridItem({ item, index, onClick, isSelected, size = 'small'
           isBeingDraggedOver={isBeingDraggedOver}
         />
 
+        {/* Background rank number with enhanced visibility during interactions */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-5">
+          <span 
+            className={`${sizeClasses.emptyNumber} font-black select-none transition-colors`}
+            style={{ 
+              color: isBeingDraggedOver ? '#3b82f6' : rankColor,
+              opacity: isBeingDraggedOver ? 0.2 : 0.5
+            }}
+          >
+            {index + 1}
+          </span>
+        </div>
+
         {/* Main Content with enhanced animations and portrait layout */}
         <motion.div 
-          className={`flex-1 relative ${sizeClasses.padding} flex flex-col items-center justify-center z-10 min-h-[150px]`}
+          className={`flex-1 relative ${sizeClasses.padding} flex flex-col items-center justify-center z-10 min-h-0`}
           animate={{
             scale: isDragging ? 0.95 : 1,
             rotateX: isBeingDraggedOver ? 10 : 0
           }}
           transition={{ duration: 0.2 }}
         >
-          <Image
-            src={item.image || '/avatars/basket_michael_jordan.jpg'}
-            alt={item.title}
-            fill
-            className={`object-cover rounded-t-xl ${sizeClasses.avatar}`}
-            />
-
+          {/* Enhanced Avatar with portrait ratio */}
+          <motion.div 
+            className={`${sizeClasses.avatar} rounded-lg flex items-center justify-center mb-2 flex-shrink-0 overflow-hidden`}
+            style={{
+              background: isBeingDraggedOver
+                ? `linear-gradient(135deg, 
+                    #3b82f6 0%, 
+                    #8b5cf6 50%,
+                    #06b6d4 100%
+                  )`
+                : `linear-gradient(135deg, 
+                    #4c1d95 0%, 
+                    #7c3aed 50%,
+                    #3b82f6 100%
+                  )`,
+              boxShadow: isBeingDraggedOver
+                ? '0 6px 20px rgba(59, 130, 246, 0.6)'
+                : '0 4px 12px rgba(124, 58, 237, 0.4)',
+              borderRadius: '8px',
+              position: 'relative'
+            }}
+            animate={{
+              scale: isDragging ? 0.9 : isBeingDraggedOver ? 1.1 : 1,
+              rotate: isDragging ? 5 : 0
+            }}
+            transition={{ duration: 0.2 }}
+          >
+            {item.image_url ? (
+              <Image 
+                src={item.image_url}
+                alt={item.title || ''}
+                fill
+                className="object-cover"
+                sizes={`(max-width: 768px) 32px, 48px`}
+                onError={(e) => {
+                  // Fallback to icon if image fails to load
+                  e.currentTarget.style.display = 'none';
+                  
+                  const IconComponent = getItemIcon(item.title);
+                  const icon = document.createElement('div');
+                  icon.className = `${sizeClasses.icon} text-white flex items-center justify-center`;
+                  icon.innerHTML = IconComponent.toString();
+                  e.currentTarget.parentElement?.appendChild(icon);
+                }}
+              />
+            ) : (
+              (() => {
+                const IconComponent = getItemIcon(item.title);
+                return <IconComponent className={`${sizeClasses.icon} text-white`} />;
+              })()
+            )}
+          </motion.div>
+          
+          {/* Enhanced Title with fixed height for consistent layout */}
+          <div className={`w-full text-center ${sizeClasses.titleHeight} flex items-center justify-center`}>
+            <h3 
+              className={`${sizeClasses.title} text-slate-200 max-w-full px-1 transition-colors`}
+              style={{
+                display: '-webkit-box',
+                WebkitLineClamp: size === 'large' ? 3 : 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                wordBreak: 'break-word',
+                hyphens: 'auto',
+                color: isBeingDraggedOver ? '#3b82f6' : '#e2e8f0'
+              }}
+              title={item.title}
+            >
+              {item.title}
+            </h3>
+          </div>
         </motion.div>
 
         {/* Enhanced Rank Section */}
@@ -181,8 +261,8 @@ export function MatchGridItem({ item, index, onClick, isSelected, size = 'small'
                 )`
           }}
         >
-          <motion.div 
-            className={`${sizeClasses.rankNumber} flex flex-row justify-center text-sm font-black transition-colors`}
+          <motion.span 
+            className={`${sizeClasses.rankNumber} font-black transition-colors`}
             style={{ 
               color: isBeingDraggedOver ? '#3b82f6' : rankColor 
             }}
@@ -191,8 +271,8 @@ export function MatchGridItem({ item, index, onClick, isSelected, size = 'small'
             }}
             transition={{ duration: 0.2 }}
           >
-            {item.title}
-          </motion.div>
+            #{index + 1}
+          </motion.span>
         </div>
       </div>
     </motion.div>

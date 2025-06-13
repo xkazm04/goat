@@ -2,6 +2,8 @@ import { motion } from "framer-motion";
 import { useItemStore } from "@/app/stores/item-store";
 import MatchGridSlot from "@/app/components/match/MatchGridSlot";
 import { GridSection, PodiumConfig } from "@/app/config/matchStructure";
+import { useMemo } from "react";
+import { useBacklogStore } from "@/app/stores/backlog-store";
 
 type Props = {
   maxItems: number;
@@ -14,13 +16,26 @@ const MatchGridPodium = ({ maxItems }: Props) => {
     selectedGridItem,
     setSelectedGridItem,
     removeItemFromGrid,
-    backlogGroups,
     activeItem
   } = useItemStore();
   
-  const isDraggingBacklogItem = activeItem && backlogGroups
-    .flatMap(group => group.items)
-    .some(item => item.id === activeItem);
+  // Get backlog groups directly to avoid recreation
+  const backlogGroups = useBacklogStore(state => state.groups);
+  
+  // Safely determine if we're dragging a backlog item with proper null checks
+  const isDraggingBacklogItem = useMemo(() => {
+    if (!activeItem || !backlogGroups || !Array.isArray(backlogGroups)) {
+      return false;
+    }
+    
+    // Safely flatten and filter the array
+    const allItems = backlogGroups
+      .flatMap(group => Array.isArray(group.items) ? group.items : [])
+      .filter(item => item && typeof item === 'object');
+    
+    // Safely check if the active item is in the backlog
+    return allItems.some(item => item && item.id === activeItem);
+  }, [activeItem, backlogGroups]);
 
   const handleGridItemClick = (id: string) => {
     const clickedItem = gridItems.find(item => item.id === id);

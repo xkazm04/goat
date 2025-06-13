@@ -1,84 +1,128 @@
+"use client";
+
 import { useDroppable } from "@dnd-kit/core";
 import { motion } from "framer-motion";
-import { Plus } from "lucide-react";
+import { useItemStore } from "@/app/stores/item-store";
+import { useBacklogStore } from "@/app/stores/backlog-store";
+import { useState, useEffect, useMemo } from "react";
 
-type Props = {
+interface MatchDroppableProps {
   position: number;
   size?: 'small' | 'medium' | 'large';
-  children?: React.ReactNode;
-  isDraggingBacklogItem: boolean;
+  children: React.ReactNode;
   selectedBacklogItem: string | null;
+  isDraggingBacklogItem: boolean;
   canAddAtPosition: (position: number) => boolean;
 }
 
-const MatchDroppable = ({ 
-  position, 
-  size = 'medium',
+const MatchDroppable = ({
+  position,
   children,
-  isDraggingBacklogItem,
   selectedBacklogItem,
+  isDraggingBacklogItem,
   canAddAtPosition
-}: Props) => {
+}: MatchDroppableProps) => {
+  const { 
+    assignItemToGrid, 
+    getAvailableBacklogItems
+  } = useItemStore();
+
+  const [isHovered, setIsHovered] = useState(false);
+  const [isPulsingActive, setIsPulsingActive] = useState(false);
+
+  // Get the available backlog items
+  const availableItems = useMemo(() => 
+    getAvailableBacklogItems(), 
+    [getAvailableBacklogItems]
+  );
+
+  // Find the selected backlog item if it exists
+  const selectedItem = useMemo(() => {
+    if (!selectedBacklogItem) return null;
+    return availableItems.find(item => item.id === selectedBacklogItem);
+  }, [selectedBacklogItem, availableItems]);
+
+  // Check if we can drop into this position
+  const canDropHere = canAddAtPosition(position);
+
+  // Set up droppable
   const { isOver, setNodeRef } = useDroppable({
     id: `grid-${position}`,
     data: {
       type: 'grid-slot',
-      position: position
-    }
+      position,
+      accepts: ['backlog-item']
+    },
+    disabled: !canDropHere
   });
 
-  const canAdd = canAddAtPosition(position);
-  const isHoveringWithBacklogDrag = isOver && isDraggingBacklogItem && canAdd;
-  const isValidDropTarget = isOver && canAdd;
-  
+  // Compute visual state based on drag status and selection
+  const isHighlighted = useMemo(() => {
+    if (isOver) return true;
+    if (selectedBacklogItem && canDropHere) return isHovered;
+    return false;
+  }, [isOver, selectedBacklogItem, canDropHere, isHovered]);
+
+  // Start pulsing animation when a backlog item is being dragged
+  useEffect(() => {
+    if (isDraggingBacklogItem && canDropHere) {
+      setIsPulsingActive(true);
+    } else {
+      setIsPulsingActive(false);
+    }
+  }, [isDraggingBacklogItem, canDropHere]);
+
+  // Handle click to assign selected backlog item to this slot
+  const handleClick = () => {
+    if (selectedItem && canDropHere) {
+      assignItemToGrid(selectedItem, position);
+    }
+  };
+
   return (
     <div
       ref={setNodeRef}
-      className={`w-full h-full transition-all duration-300 relative ${
-        isHoveringWithBacklogDrag ? 'scale-110 z-30' : isValidDropTarget ? 'scale-105 z-20' : ''
-      }`}
-      style={{
-        filter: isHoveringWithBacklogDrag ? 'drop-shadow(0 12px 30px rgba(59, 130, 246, 0.6))' : 'none'
-      }}
+      className="w-full h-full relative"
+      onClick={handleClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Enhanced hover overlay for backlog item drops */}
-      {isHoveringWithBacklogDrag && (
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="absolute inset-0 rounded-xl border-3 border-blue-400 bg-blue-400/25 z-10 pointer-events-none flex items-center justify-center"
-          style={{
-            boxShadow: '0 0 25px rgba(59, 130, 246, 0.6)'
-          }}
-        >
-          <div className="text-center">
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-            >
-              <Plus className="w-8 h-8 text-blue-400 mx-auto mb-1" />
-            </motion.div>
-            <span className="text-sm text-blue-400 font-bold">Drop to add</span>
-          </div>
-        </motion.div>
-      )}
-
-      {/* Pulse animation for empty slots when backlog item is being dragged */}
-      {isDraggingBacklogItem && canAdd && !isOver && (
+      {/* Highlight overlay for drop target */}
+      {canDropHere && (
         <motion.div
+          className="absolute inset-0 rounded-xl pointer-events-none z-10"
+          initial={{ opacity: 0 }}
           animate={{ 
-            scale: [1, 1.02, 1],
-            opacity: [0.3, 0.6, 0.3]
+            opacity: isHighlighted ? 0.3 : isPulsingActive ? [0, 0.2, 0] : 0,
+            boxShadow: isHighlighted 
+              ? '0 0 0 2px rgba(59, 130, 246, 0.8), 0 0 20px rgba(59, 130, 246, 0.5)' 
+              : '0 0 0 0 rgba(59, 130, 246, 0)'
           }}
-          transition={{ 
-            duration: 2, 
-            repeat: Infinity,
-            ease: "easeInOut"
+          transition={isPulsingActive && !isHighlighted 
+            ? { opacity: { repeat: Infinity, duration: 1.5 } }
+            : { duration: 0.2 }
+          }
+          style={{
+            background: isOver 
+              ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(147, 51, 234, 0.3))' 
+              : 'rgba(59, 130, 246, 0.2)'
           }}
-          className="absolute inset-0 rounded-xl border-2 border-dashed border-blue-400/40 bg-blue-400/5 pointer-events-none"
         />
       )}
-
+      
+      {/* Selected indicator */}
+      {selectedBacklogItem && canDropHere && (
+        <motion.div 
+          className="absolute top-2 right-2 w-4 h-4 bg-blue-500 rounded-full z-20 pointer-events-none"
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ 
+            scale: isHovered ? 1.2 : 1, 
+            opacity: 1 
+          }}
+          transition={{ duration: 0.2 }}
+        />
+      )}
+      
       {children}
     </div>
   );

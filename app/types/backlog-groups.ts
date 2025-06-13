@@ -1,18 +1,17 @@
 export interface BacklogItem {
   id: string;
   name: string;
+  title?: string;
   description?: string;
-  category: string;
+  category?: string;
   subcategory?: string;
   item_year?: number;
   item_year_to?: number;
-  image_url?: string;
-  created_at: string;
-  // Legacy fields for compatibility
-  title?: string;
+  image_url?: string | null;
+  created_at?: string;
   tags?: string[];
+  used?: boolean;
 }
-
 export interface BacklogGroup {
   id: string;
   name: string;

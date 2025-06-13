@@ -1,9 +1,10 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { GridItemType } from "@/app/types/match";
 import { useItemStore } from "@/app/stores/item-store";
+import { useBacklogStore } from "@/app/stores/backlog-store";
 import MatchEmptySlot from "./MatchEmptySlot";
 import { MatchGridItem } from "./MatchGridItem";
 
@@ -25,8 +26,10 @@ const MatchGridSlot = ({
   selectedGridItem,
   onGridItemClick 
 }: MatchGridSlotProps) => {
+  // Get backlog groups directly to avoid recreation
+  const backlogGroups = useBacklogStore(state => state.groups);
+  
   const {
-    backlogGroups,
     gridItems,
     assignItemToGrid,
     removeItemFromGrid,
@@ -47,10 +50,20 @@ const MatchGridSlot = ({
     setPreviouslyEmpty(!gridItem?.matched);
   }, [gridItem?.matched, previouslyEmpty]);
 
-  // Check if we're dragging a backlog item
-  const isDraggingBacklogItem = activeItem && backlogGroups
-    .flatMap(group => group.items)
-    .some(item => item.id === activeItem);
+  // Safely check if we're dragging a backlog item
+  const isDraggingBacklogItem = useMemo(() => {
+    if (!activeItem || !backlogGroups || !Array.isArray(backlogGroups)) {
+      return false;
+    }
+    
+    // Safely flatten and filter the array
+    const allItems = backlogGroups
+      .flatMap(group => Array.isArray(group.items) ? group.items : [])
+      .filter(item => item && typeof item === 'object');
+    
+    // Safely check if the active item is in the backlog
+    return allItems.some(item => item && item.id === activeItem);
+  }, [activeItem, backlogGroups]);
 
   const isEmpty = !gridItem?.matched;
 

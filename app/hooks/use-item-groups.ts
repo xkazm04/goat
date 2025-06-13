@@ -1,6 +1,58 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { itemGroupsApi, ItemGroupSearchParams, ItemGroupCreate } from '@/app/lib/api/item-groups';
 import { toast } from '@/app/hooks/use-toast';
+import { GridItemType as OriginalGridItemType, BacklogItemType as OriginalBacklogItemType, BacklogGroupType as OriginalBacklogGroupType } from '@/app/types/match';
+import { BacklogGroup as ApiBacklogGroup, BacklogItem as ApiBacklogItem } from '@/app/types/backlog-groups';
+
+// Enriched types for store usage, combining API structure with UI state
+export interface StoredBacklogItem extends ApiBacklogItem {
+  // API fields: id, name, title, description, category, subcategory, item_year, image_url, created_at, tags
+  matched?: boolean;      // UI state: is this item matched to a grid slot?
+  matchedWith?: string; // UI state: ID of the grid slot it's matched with (e.g., 'grid-0')
+}
+
+export interface StoredBacklogGroup extends ApiBacklogGroup {
+  // API fields: id, name, description, category, subcategory, image_url, item_count, created_at, updated_at
+  items: StoredBacklogItem[]; // Items are now directly part of the group in the store
+  isOpen?: boolean;           // UI state: is this group expanded in the UI?
+}
+
+// Use original GridItemType for grid display, it's mostly UI-specific
+export type GridItem = OriginalGridItemType;
+
+export interface ListSession {
+  id: string; // session-listId
+  listId: string; // original listId
+  listSize: number;
+  gridItems: GridItem[];
+  backlogGroups: StoredBacklogGroup[]; // Use the new self-contained group type
+  selectedBacklogItem: string | null;  // ID of StoredBacklogItem
+  selectedGridItem: string | null;     // ID of GridItem
+  // compareList can use StoredBacklogItem if comparison involves full item details
+  compareList: StoredBacklogItem[]; 
+  createdAt: string;
+  updatedAt: string;
+  synced: boolean;
+  // Store category/subcategory context for which these backlogGroups were loaded
+  loadedContext?: {
+    category: string;
+    subcategory?: string;
+  };
+}
+
+export interface SessionProgress {
+  matchedCount: number;
+  totalSize: number;
+  percentage: number;
+  isComplete: boolean;
+}
+
+export interface ComparisonState {
+  isOpen: boolean;
+  items: StoredBacklogItem[]; // Use StoredBacklogItem for comparison
+  selectedForComparison: string[];
+  comparisonMode: 'side-by-side' | 'grid' | 'list';
+}
 
 // Query Keys
 export const itemGroupsKeys = {

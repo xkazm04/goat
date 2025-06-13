@@ -1,147 +1,73 @@
 import { useSessionStore } from './session-store';
 import { useGridStore } from './grid-store';
 import { useComparisonStore } from './comparison-store';
+import { useBacklogStore } from './backlog-store';
 import { BacklogGroup, BacklogItem } from '@/app/types/backlog-groups';
-import { itemGroupsApi } from '@/app/lib/api/item-groups';
+import { GridItemType } from '@/app/types/match';
 
 export const useItemStore = () => {
   const sessionStore = useSessionStore();
   const gridStore = useGridStore();
   const comparisonStore = useComparisonStore();
+  const backlogStore = useBacklogStore();
 
-  // Initial data loading - fetch once and store locally
-  const initializeBacklogData = async (category: string, subcategory?: string): Promise<void> => {
+  // Function to convert BacklogItem to GridItemType
+  const convertToGridItem = (item: BacklogItem | any, position: number): GridItemType => {
+    return {
+      id: `grid-${position}`,
+      title: item.name || item.title || '',
+      description: item.description || '',
+      position: position,
+      matched: true,
+      backlogItemId: item.id,
+      tags: item.tags || [],
+      isDragPlaceholder: false,
+      image_url: item.image_url || null // Make sure image_url is included
+    };
+  };
+
+  // Function to safely assign item to grid with proper error handling
+  const assignItemToGrid = (item: BacklogItem | any, position: number) => {
     try {
-      console.log(`🚀 ItemStore: Initializing backlog data for ${category}${subcategory ? `/${subcategory}` : ''}`);
-      
-      // Check if we already have data for this category
-      const existingGroups = sessionStore.getGroupsByCategory(category, subcategory);
-      if (existingGroups.length > 0) {
-        console.log(`✅ ItemStore: Using cached data (${existingGroups.length} groups)`);
+      // First check if the position is valid
+      if (!gridStore.canAddAtPosition(position)) {
+        console.error(`Cannot add item to position ${position} - position not available`);
         return;
       }
 
-      // Fetch all groups for the category with basic info
-      console.log(`🔄 ItemStore: Fetching groups from API...`);
-      const groups = await itemGroupsApi.getGroupsByCategory(category, subcategory);
+      // Convert item to grid format
+      const gridItem = convertToGridItem(item, position);
       
-      console.log(`📦 ItemStore: Received ${groups.length} groups, storing locally...`);
-      
-      // Store groups in session store
-      sessionStore.setBacklogGroups(groups);
-      
-      // Prefetch items for first few groups (top 5 most important)
-      const topGroups = groups
-        .filter(group => group.item_count > 0)
-        .sort((a, b) => b.item_count - a.item_count)
-        .slice(0, 5);
+      console.log(`🔄 ItemStore: Assigning item to grid`, {
+        itemId: item.id,
+        position,
+        hasImageUrl: !!item.image_url
+      });
 
-      console.log(`🎯 ItemStore: Prefetching items for top ${topGroups.length} groups...`);
+      // Assign to grid
+      gridStore.assignItemToGrid(gridItem, position);
       
-      // Load items for top groups in parallel
-      await Promise.allSettled(
-        topGroups.map(async (group) => {
-          try {
-            const groupWithItems = await itemGroupsApi.getGroup(group.id, true);
-            sessionStore.updateGroupItems(group.id, groupWithItems.items);
-            console.log(`✅ Prefetched ${groupWithItems.items.length} items for ${group.name}`);
-          } catch (error) {
-            console.warn(`⚠️ Failed to prefetch items for ${group.name}:`, error);
-          }
-        })
-      );
-
-      console.log(`🎉 ItemStore: Initialization complete!`);
+      // Mark the item as used in backlog
+      backlogStore.markItemAsUsed(item.id, true);
       
+      // Clear selection after assignment
+      backlogStore.selectItem(null);
     } catch (error) {
-      console.error(`❌ ItemStore: Failed to initialize backlog data:`, error);
-      throw error;
+      console.error('Error assigning item to grid:', error);
     }
   };
-
-  // Load items for a specific group (lazy loading)
-  const loadGroupItems = async (groupId: string): Promise<void> => {
-    try {
-      // Check if items are already loaded
-      const existingItems = sessionStore.getGroupItems(groupId);
-      if (existingItems.length > 0) {
-        console.log(`✅ ItemStore: Group ${groupId} items already loaded`);
-        return;
-      }
-
-      console.log(`🔄 ItemStore: Loading items for group ${groupId}...`);
-      
-      const groupWithItems = await itemGroupsApi.getGroup(groupId, true);
-      sessionStore.updateGroupItems(groupId, groupWithItems.items);
-      
-      console.log(`✅ ItemStore: Loaded ${groupWithItems.items.length} items for group ${groupId}`);
-      
-    } catch (error) {
-      console.error(`❌ ItemStore: Failed to load items for group ${groupId}:`, error);
-      throw error;
-    }
-  };
-
-  const getGroupItems = (groupId: string): BacklogItem[] => {
-    return sessionStore.getGroupItems(groupId);
-  };
-
-  const setBacklogGroups = (groups: BacklogGroup[]): void => {
-    console.log('🔄 ItemStore: Setting backlog groups:', groups.length);
-    sessionStore.setBacklogGroups(groups);
-  };
-
-  const addItemToGroup = (groupId: string, item: BacklogItem): void => {
-    sessionStore.addItemToGroup(groupId, item);
-  };
-
-  const removeItemFromGroup = (groupId: string, itemId: string): void => {
-    console.log(`🔄 ItemStore: Coordinating removal of item ${itemId} from group ${groupId}`);
-    
-    sessionStore.removeItemFromGroup(groupId, itemId);
-    gridStore.removeItemByItemId(itemId);
-    
-    if (sessionStore.selectedBacklogItem === itemId) {
-      sessionStore.setSelectedBacklogItem(null);
-    }
-    
-    console.log(`✅ ItemStore: Successfully removed item ${itemId}`);
-  };
-
-  const toggleBacklogGroup = (groupId: string): void => {
-    sessionStore.toggleBacklogGroup(groupId);
-  };
-
-  const getAvailableBacklogItems = (): BacklogItem[] => {
-    return sessionStore.getAvailableBacklogItems();
-  };
-
-  // Local search/filter without API calls
-  const searchGroups = (searchTerm: string): BacklogGroup[] => {
-    return sessionStore.searchGroups(searchTerm);
-  };
-
-  const filterGroupsByCategory = (category: string, subcategory?: string): BacklogGroup[] => {
-    return sessionStore.getGroupsByCategory(category, subcategory);
-  };
-
-  // Get backlog groups from local store
-  const backlogGroups: BacklogGroup[] = sessionStore.backlogGroups;
 
   return {
-    // Session data
-    listSessions: sessionStore.listSessions,
-    activeSessionId: sessionStore.activeSessionId,
-    backlogGroups,
-    selectedBacklogItem: sessionStore.selectedBacklogItem,
-    compareList: sessionStore.compareList,
-    
+    // Backlog data (now from backlog store)
+    backlogGroups: backlogStore.groups,
+    selectedBacklogItem: backlogStore.selectedItemId,
+
     // Grid data
     gridItems: gridStore.gridItems,
     maxGridSize: gridStore.maxGridSize,
     selectedGridItem: gridStore.selectedGridItem,
-    activeItem: gridStore.activeItem,
-    
+    activeItem: gridStore.activeItem || backlogStore.activeItemId,
+
     // Comparison data
     comparison: {
       isOpen: comparisonStore.isComparisonOpen,
@@ -149,7 +75,7 @@ export const useItemStore = () => {
       selectedForComparison: comparisonStore.selectedForComparison,
       comparisonMode: comparisonStore.comparisonMode
     },
-    
+
     // Session actions
     createSession: sessionStore.createSession,
     switchToSession: sessionStore.switchToSession,
@@ -157,34 +83,91 @@ export const useItemStore = () => {
     loadSession: sessionStore.loadSession,
     deleteSession: sessionStore.deleteSession,
     syncWithList: sessionStore.syncWithList,
-    
-    // Enhanced backlog actions - LOCAL ONLY
-    initializeBacklogData, // NEW: Single initialization call
-    setBacklogGroups,
-    toggleBacklogGroup,
-    addItemToGroup,
-    removeItemFromGroup,
-    loadGroupItems, // Lazy loading for individual groups
-    getGroupItems,
-    searchGroups: sessionStore.searchGroups,
-    filterGroupsByCategory: sessionStore.getGroupsByCategory,
-    
+
+    // Enhanced backlog actions - use backlog store
+    initializeBacklogData: (category: string, subcategory?: string) =>
+      backlogStore.initializeGroups(category, subcategory),
+    toggleBacklogGroup: (groupId: string) => backlogStore.selectGroup(
+      backlogStore.selectedGroupId === groupId ? null : groupId
+    ),
+    addItemToGroup: backlogStore.addItemToGroup,
+    removeItemFromGroup: (groupId: string, itemId: string) => {
+      try {
+        // Log item ID for debugging
+        console.log(`🗑️ ItemStore: Removing item ${itemId} from group ${groupId}`);
+        
+        // First check if this item is in the grid
+        const gridItems = gridStore.gridItems;
+        const gridItemIndex = gridItems.findIndex(item => item.backlogItemId === itemId);
+        
+        // If found in grid, remove it from there first
+        if (gridItemIndex !== -1) {
+          console.log(`🗑️ ItemStore: Item ${itemId} found in grid at position ${gridItemIndex}, removing...`);
+          gridStore.removeItemFromGrid(gridItemIndex);
+        } else {
+          console.log(`🗑️ ItemStore: Item ${itemId} not found in grid`);
+        }
+        
+        // Now remove from backlog
+        backlogStore.removeItemFromGroup(groupId, itemId);
+      } catch (error) {
+        console.error(`Error removing item ${itemId} from group ${groupId}:`, error);
+      }
+    },
+    loadGroupItems: backlogStore.loadGroupItems,
+    getGroupItems: backlogStore.getGroupItems,
+    searchGroups: backlogStore.searchGroups,
+    filterGroupsByCategory: backlogStore.filterGroupsByCategory,
+
     // Grid actions
     initializeGrid: gridStore.initializeGrid,
-    assignItemToGrid: gridStore.assignItemToGrid,
-    removeItemFromGrid: gridStore.removeItemFromGrid,
+    assignItemToGrid,
+    removeItemFromGrid: (position: number) => {
+      // Get the item before removing it
+      const item = gridStore.gridItems[position];
+      if (item && item.backlogItemId) {
+        // First remove from grid
+        gridStore.removeItemFromGrid(position);
+        
+        // Then mark as unused in backlog
+        backlogStore.markItemAsUsed(item.backlogItemId, false);
+      } else {
+        gridStore.removeItemFromGrid(position);
+      }
+    },
     moveGridItem: gridStore.moveGridItem,
-    clearGrid: gridStore.clearGrid,
-    
+    clearGrid: () => {
+      // Get all matched items before clearing
+      const matchedItems = gridStore.getMatchedItems();
+      
+      // Clear the grid
+      gridStore.clearGrid();
+      
+      // Mark all items as unused in backlog
+      matchedItems.forEach(item => {
+        if (item.backlogItemId) {
+          backlogStore.markItemAsUsed(item.backlogItemId, false);
+        }
+      });
+    },
+
     // Selection actions
-    setSelectedBacklogItem: sessionStore.setSelectedBacklogItem,
+    setSelectedBacklogItem: (id: string | null) => backlogStore.selectItem(id),
     setSelectedGridItem: gridStore.setSelectedGridItem,
-    setActiveItem: gridStore.setActiveItem,
-    
+    setActiveItem: (id: string | null) => {
+      if (id && id.startsWith('grid-')) {
+        gridStore.setActiveItem(id);
+        backlogStore.setActiveItem(null);
+      } else {
+        gridStore.setActiveItem(null);
+        backlogStore.setActiveItem(id);
+      }
+    },
+
     // Compare actions
-    toggleCompareItem: sessionStore.toggleCompareItem,
-    clearCompareList: sessionStore.clearCompareList,
-    
+    toggleCompareItem: comparisonStore.toggleComparisonSelection,
+    clearCompareList: comparisonStore.clearComparison,
+
     // Comparison actions
     openComparison: comparisonStore.openComparison,
     closeComparison: comparisonStore.closeComparison,
@@ -193,29 +176,84 @@ export const useItemStore = () => {
     toggleComparisonSelection: comparisonStore.toggleComparisonSelection,
     clearComparison: comparisonStore.clearComparison,
     setComparisonMode: comparisonStore.setComparisonMode,
-    
-    // Drag & Drop
-    handleDragEnd: gridStore.handleDragEnd,
-    
+
+    // Drag & Drop - FIXED
+    handleDragEnd: (event: any) => {
+      const { active, over } = event;
+
+      if (!active || !over) {
+        return;
+      }
+
+      const activeId = String(active.id);
+      const overId = String(over.id);
+
+      console.log(`🔄 DragEnd: ${activeId} -> ${overId}`);
+
+      // Grid item to grid position
+      if (activeId.startsWith('grid-') && overId.startsWith('grid-')) {
+        const fromPosition = parseInt(activeId.replace('grid-', ''));
+        const toPosition = parseInt(overId.replace('grid-', ''));
+
+        if (fromPosition !== toPosition) {
+          gridStore.moveGridItem(fromPosition, toPosition);
+        }
+        return;
+      }
+
+      // Backlog item to grid position
+      if (!activeId.startsWith('grid-') && overId.startsWith('grid-')) {
+        const toPosition = parseInt(overId.replace('grid-', ''));
+
+        // Verify the target position is valid and empty
+        if (gridStore.canAddAtPosition(toPosition)) {
+          // Find the backlog item safely - use getState() to avoid hooks in callbacks
+          const item = backlogStore.getItemById(activeId);
+
+          if (item) {
+            console.log(`🔄 ItemStore: Assigning backlog item ${activeId} to position ${toPosition}`, item);
+
+            // Use our assignItemToGrid method with proper tracking
+            assignItemToGrid(item, toPosition);
+            
+            // Clear active item and selection
+            gridStore.setActiveItem(null);
+            backlogStore.setActiveItem(null);
+            backlogStore.selectItem(null);
+          } else {
+            console.error(`Could not find backlog item with ID ${activeId}`);
+          }
+        } else {
+          console.log(`Cannot add at position ${toPosition}`);
+        }
+      }
+    },
+
     // Utilities
-    getAvailableBacklogItems,
+    getAvailableBacklogItems: () => {
+      // Get all items from all groups that are not used
+      return backlogStore.groups
+        .flatMap(group => Array.isArray(group.items) ? group.items : [])
+        .filter(item => item && !item.used); // Only include unused items
+    },
     getMatchedItems: gridStore.getMatchedItems,
     getNextAvailableGridPosition: gridStore.getNextAvailableGridPosition,
     canAddAtPosition: gridStore.canAddAtPosition,
-    
+
     // Session utilities
     getSessionProgress: sessionStore.getSessionProgress,
     getAllSessions: sessionStore.getAllSessions,
     hasUnsavedChanges: sessionStore.hasUnsavedChanges,
     getSessionMetadata: sessionStore.getSessionMetadata,
-    
+
     // Reset
     resetStore: () => {
       sessionStore.resetStore();
       gridStore.syncWithSession();
       comparisonStore.clearComparison();
+      backlogStore.clearCache();
     },
-    
+
     syncWithBackend: sessionStore.syncWithBackend
   };
 };

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { 
   DndContext, 
   DragOverlay, 
@@ -16,15 +16,16 @@ import { useItemStore } from '@/app/stores/item-store';
 import { useMatchStore } from '@/app/stores/match-store';
 import { useListStore } from '@/app/stores/use-list-store';
 import { BacklogItem } from '../Backlog/BacklogItem';
+import { useBacklogStore } from '@/app/stores/backlog-store';
 
 export function MatchContainer() {
-  const { 
-    activeItem, 
-    handleDragEnd, 
-    setActiveItem,
-    backlogGroups,
-    selectedBacklogItem
-  } = useItemStore();
+  // Use the store directly for activeItem to avoid recreating the object
+  const activeItem = useItemStore(state => state.activeItem);
+  const { handleDragEnd, setActiveItem } = useItemStore();
+  const selectedBacklogItem = useBacklogStore(state => state.selectedItemId);
+  
+  // Get backlog groups directly from the backlog store
+  const backlogGroups = useBacklogStore(state => state.groups);
   
   const { 
     initializeMatchSession, 
@@ -94,12 +95,63 @@ export function MatchContainer() {
     setActiveItem(null);
   };
 
-  // Get the active dragged item for overlay
-  const activeBacklogItem = activeItem 
-    ? backlogGroups
-        .flatMap(group => group.items)
-        .find(item => item.id === activeItem)
-    : null;
+  // Safely find the active dragged item for overlay
+  const activeBacklogItem = useMemo(() => {
+    if (!activeItem) return null;
+    
+    // First verify we have valid groups
+    if (!backlogGroups || !Array.isArray(backlogGroups) || backlogGroups.length === 0) {
+      return null;
+    }
+    
+    // More robust flattening approach
+    let allItems = [];
+    
+    // First try to collect items from all groups
+    for (const group of backlogGroups) {
+      if (Array.isArray(group.items)) {
+        allItems.push(...group.items);
+      }
+    }
+    
+    // Filter out invalid items
+    allItems = allItems.filter(item => item && item.id);
+    
+    // Find the active item
+    const foundItem = allItems.find(item => item.id === activeItem);
+    
+    // Debug log for drag overlay
+    if (foundItem) {
+      console.log(`🔄 Found active item for drag overlay:`, {
+        id: foundItem.id,
+        title: foundItem.title || foundItem.name,
+        hasImageUrl: !!foundItem.image_url,
+        imageUrl: foundItem.image_url || 'NONE'
+      });
+      
+      // Force image_url property if missing but found in item properties
+      if (!foundItem.image_url && 'image_url' in foundItem) {
+        console.log(`⚠️ image_url property exists but is null/undefined - item properties:`, 
+          Object.keys(foundItem));
+      }
+    } else if (activeItem) {
+      console.warn(`⚠️ Active item ${activeItem} not found in any group`);
+    }
+    
+    return foundItem;
+  }, [activeItem, backlogGroups]);
+
+  // Find the backlog group ID for the active item (needed for BacklogItem component)
+  const activeItemGroupId = useMemo(() => {
+    if (!activeItem || !activeBacklogItem) return '';
+    
+    for (const group of backlogGroups || []) {
+      if (Array.isArray(group.items) && group.items.some(item => item && item.id === activeItem)) {
+        return group.id || '';
+      }
+    }
+    return '';
+  }, [activeItem, activeBacklogItem, backlogGroups]);
 
   if (!currentList) {
     return (
@@ -153,9 +205,24 @@ export function MatchContainer() {
               pointerEvents: 'none', 
             }}
           >
+            
             <BacklogItem 
-              item={activeBacklogItem} 
+              item={{
+                ...activeBacklogItem,
+                // Ensure we have normalized properties for the BacklogItem
+                id: activeBacklogItem.id,
+                title: activeBacklogItem.title || activeBacklogItem.name || '',
+                description: activeBacklogItem.description || '',
+                matched: 'matched' in activeBacklogItem 
+                  ? activeBacklogItem.matched 
+                  : ('used' in activeBacklogItem ? activeBacklogItem.used : false),
+                tags: activeBacklogItem.tags || [],
+                // Force image_url to be passed properly
+                image_url: activeBacklogItem.image_url || null
+              }}
+              groupId={activeItemGroupId}
               isDragOverlay={true} 
+              size="medium"
             />
           </div>
         )}

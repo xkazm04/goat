@@ -1,5 +1,4 @@
 import { BacklogGroupType } from '@/app/types/match';
-import { Users, Gamepad2, Trophy, Music, Film, Book } from 'lucide-react';
 
 export class DefaultDataProvider {
   static getDefaultBacklogGroups(category: string = 'general'): BacklogGroupType[] {

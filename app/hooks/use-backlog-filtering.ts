@@ -43,8 +43,9 @@ export function useBacklogFiltering(
     let groups = backlogGroups.map(group => ({
       ...group,
       // Pre-filter items to avoid repeated processing
-      _allItems: group.items,
-      items: group.items
+      // Ensure items is always an array even if undefined
+      _allItems: group.items || [],
+      items: group.items || []
     }));
     
     // Apply search filter only if search term exists
@@ -52,11 +53,12 @@ export function useBacklogFiltering(
       const searchLower = searchTerm.toLowerCase().trim();
       groups = groups.map(group => ({
         ...group,
-        items: group._allItems.filter(item =>
-          item.name.toLowerCase().includes(searchLower) ||
-          item.title?.toLowerCase().includes(searchLower) ||
-          item.description?.toLowerCase().includes(searchLower) ||
-          item.tags?.some(tag => tag.toLowerCase().includes(searchLower))
+        items: (group._allItems || []).filter(item =>
+          // Ensure item properties exist before accessing
+          (item.name || '').toLowerCase().includes(searchLower) ||
+          (item.title || '').toLowerCase().includes(searchLower) ||
+          (item.description || '').toLowerCase().includes(searchLower) ||
+          (item.tags || []).some(tag => (tag || '').toLowerCase().includes(searchLower))
         )
       }));
     }
@@ -65,20 +67,24 @@ export function useBacklogFiltering(
     if (showEditorsPickOnly) {
       groups = groups.map(group => ({
         ...group,
-        items: group.items.filter(item =>
+        items: (group.items || []).filter(item =>
           EDITORS_PICK_ITEMS.some(pickItem => 
-            item.name.toLowerCase().includes(pickItem.toLowerCase()) ||
-            item.title?.toLowerCase().includes(pickItem.toLowerCase())
+            (item.name || '').toLowerCase().includes(pickItem.toLowerCase()) ||
+            (item.title || '').toLowerCase().includes(pickItem.toLowerCase())
           )
         )
       }));
     }
 
     // Filter out empty groups
-    const nonEmptyGroups = groups.filter(group => group.items.length > 0);
+    const nonEmptyGroups = groups.filter(group => 
+      Array.isArray(group.items) && group.items.length > 0
+    );
 
     // Calculate stats
-    const filteredItemsCount = nonEmptyGroups.reduce((acc, group) => acc + group.items.length, 0);
+    const filteredItemsCount = nonEmptyGroups.reduce((acc, group) => 
+      acc + (Array.isArray(group.items) ? group.items.length : 0), 0
+    );
     const hasActiveFilters = Boolean((searchTerm && searchTerm.trim()) || showEditorsPickOnly);
 
     return {
