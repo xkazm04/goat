@@ -105,65 +105,13 @@ export function SimpleMatchGrid() {
     return item.title || item.name || '';
   };
 
-  // Render grid in sections
-  const renderTopPodium = () => {
-    const positions = [1, 0, 2]; // 2nd, 1st, 3rd place
-    return (
-      <div className="mb-8">
-        <h3 className="text-sm font-semibold text-gray-400 mb-3">Top 3</h3>
-        <div className="flex justify-center gap-4">
-          {positions.map(pos => {
-            const item = gridItems[pos];
-            const isOccupied = item && item.matched;
-            return (
-              <div key={pos} className="w-32">
-                <SimpleDropZone
-                  position={pos}
-                  isOccupied={!!isOccupied}
-                  occupiedBy={isOccupied ? getItemTitle(item) : undefined}
-                  imageUrl={isOccupied ? item.image_url : undefined}
-                  onRemove={() => handleRemove(pos)}
-                />
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
-
-  const renderGrid = (startPos: number, endPos: number, cols: number, title: string) => {
-    const items = gridItems.slice(startPos, endPos);
-    return (
-      <div className="mb-6">
-        <h3 className="text-sm font-semibold text-gray-400 mb-3">{title}</h3>
-        <div className={`grid grid-cols-${cols} gap-3`}>
-          {items.map((item, idx) => {
-            const position = startPos + idx;
-            const isOccupied = item && item.matched;
-            return (
-              <SimpleDropZone
-                key={position}
-                position={position}
-                isOccupied={!!isOccupied}
-                occupiedBy={isOccupied ? getItemTitle(item) : undefined}
-                imageUrl={isOccupied ? item.image_url : undefined}
-                onRemove={() => handleRemove(position)}
-              />
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
-
   return (
     <DndContext
       sensors={sensors}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 pb-72">
         {/* Grid Area */}
         <div className="p-8">
           <h2 className="text-2xl font-bold text-white mb-6">
@@ -171,19 +119,96 @@ export function SimpleMatchGrid() {
           </h2>
 
           {/* Top 3 Podium */}
-          {renderTopPodium()}
+          <div className="mb-8">
+            <h3 className="text-sm font-semibold text-gray-400 mb-3">Top 3</h3>
+            <div className="flex justify-center gap-4">
+              {[1, 0, 2].map(pos => {
+                const item = gridItems[pos];
+                const isOccupied = item && item.matched;
+                return (
+                  <div key={pos} className="w-32">
+                    <SimpleDropZone
+                      position={pos}
+                      isOccupied={!!isOccupied}
+                      occupiedBy={isOccupied ? getItemTitle(item) : undefined}
+                      imageUrl={isOccupied ? item.image_url : undefined}
+                      onRemove={() => handleRemove(pos)}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
 
           {/* Positions 4-10 */}
-          {renderGrid(3, 10, 7, 'Positions 4-10')}
+          <div className="mb-6">
+            <h3 className="text-sm font-semibold text-gray-400 mb-3">Positions 4-10</h3>
+            <div className="grid grid-cols-7 gap-3">
+              {gridItems.slice(3, 10).map((item, idx) => {
+                const position = 3 + idx;
+                const isOccupied = item && item.matched;
+                return (
+                  <SimpleDropZone
+                    key={position}
+                    position={position}
+                    isOccupied={!!isOccupied}
+                    occupiedBy={isOccupied ? getItemTitle(item) : undefined}
+                    imageUrl={isOccupied ? item.image_url : undefined}
+                    onRemove={() => handleRemove(position)}
+                  />
+                );
+              })}
+            </div>
+          </div>
 
           {/* Positions 11-20 */}
-          {gridItems.length > 10 && renderGrid(10, 20, 10, 'Positions 11-20')}
+          {gridItems.length > 10 && (
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold text-gray-400 mb-3">Positions 11-20</h3>
+              <div className="grid grid-cols-10 gap-3">
+                {gridItems.slice(10, 20).map((item, idx) => {
+                  const position = 10 + idx;
+                  const isOccupied = item && item.matched;
+                  return (
+                    <SimpleDropZone
+                      key={position}
+                      position={position}
+                      isOccupied={!!isOccupied}
+                      occupiedBy={isOccupied ? getItemTitle(item) : undefined}
+                      imageUrl={isOccupied ? item.image_url : undefined}
+                      onRemove={() => handleRemove(position)}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
-          {/* Positions 21+ */}
-          {gridItems.length > 20 && renderGrid(20, Math.min(gridItems.length, 50), 10, 'Positions 21+')}
+          {/* Positions 21-50 */}
+          {gridItems.length > 20 && (
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold text-gray-400 mb-3">Positions 21-50</h3>
+              <div className="grid grid-cols-10 gap-3">
+                {gridItems.slice(20, Math.min(gridItems.length, 50)).map((item, idx) => {
+                  const position = 20 + idx;
+                  const isOccupied = item && item.matched;
+                  return (
+                    <SimpleDropZone
+                      key={position}
+                      position={position}
+                      isOccupied={!!isOccupied}
+                      occupiedBy={isOccupied ? getItemTitle(item) : undefined}
+                      imageUrl={isOccupied ? item.image_url : undefined}
+                      onRemove={() => handleRemove(position)}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Collection Panel - Directly below grid */}
+        {/* Collection Panel - Fixed at bottom */}
         <SimpleCollectionPanel groups={groups} />
       </div>
 

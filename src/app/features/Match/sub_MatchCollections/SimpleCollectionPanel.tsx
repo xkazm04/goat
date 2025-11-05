@@ -21,6 +21,7 @@ export function SimpleCollectionPanel({ groups }: SimpleCollectionPanelProps) {
   );
   const [searchTerm, setSearchTerm] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
 
   const currentList = useCurrentList();
   const isLoading = useBacklogStore(state => state.isLoading);
@@ -81,7 +82,27 @@ export function SimpleCollectionPanel({ groups }: SimpleCollectionPanelProps) {
   const panelHeight = isExpanded ? 'h-[60vh]' : 'h-64';
 
   return (
-    <div className="w-full bg-gray-900 border-t border-gray-700">
+    <div className={`fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-700 z-40 transition-transform duration-300 ${
+      isVisible ? 'translate-y-0' : 'translate-y-full'
+    }`}>
+      {/* Hide/Show Toggle Button */}
+      <button
+        onClick={() => setIsVisible(!isVisible)}
+        className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white px-4 py-1 rounded-t-lg border border-b-0 border-gray-700 transition-colors flex items-center gap-2 text-xs"
+      >
+        {isVisible ? (
+          <>
+            <ChevronDown className="w-3 h-3" />
+            Hide Collection
+          </>
+        ) : (
+          <>
+            <ChevronUp className="w-3 h-3" />
+            Show Collection
+          </>
+        )}
+      </button>
+
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700">
         <div className="flex items-center gap-3">
