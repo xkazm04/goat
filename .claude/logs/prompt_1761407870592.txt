@@ -1,0 +1,55 @@
+You are an expert software engineer. Execute the following requirement immediately. Do not ask questions, do not wait for confirmation. Read the requirement carefully and implement all changes to the codebase as specified.
+
+REQUIREMENT TO EXECUTE NOW:
+
+# generate-supabase-sql-migration-scripts
+
+## Description
+
+Create SQL migration scripts in src/api/migrations/ that define Supabase table schemas based on the existing TypeScript interfaces in the API layer. These scripts will enable developers to recreate the database structure in Supabase using the Supabase dashboard or CLI. Include tables for top_lists, top_items, item_groups, and supporting tables for relationships, with proper indexes and constraints matching the current data model.
+
+## Implementation Steps
+
+1. Create src/api/migrations/ directory to store SQL scripts following Supabase migration naming convention (timestamp_description.sql)
+2. Analyze existing interfaces in src/lib/api/top-lists.ts, src/lib/api/top-items.ts, and src/lib/api/item-groups.ts to extract field names, types, and relationships
+3. Create src/api/migrations/001_create_top_lists_table.sql with columns: id (uuid), name (text), description (text), user_id (uuid), team_id (uuid), created_at (timestamp), updated_at (timestamp), version (integer), is_public (boolean) with proper constraints and indexes
+4. Create src/api/migrations/002_create_top_items_table.sql with columns: id (uuid), name (text), description (text), category (text), subcategory (text), group (text), item_year (integer), item_year_to (integer), image_url (text), tags (text[]), created_at (timestamp), updated_at (timestamp), with foreign key to top_lists
+5. Create src/api/migrations/003_create_item_groups_table.sql with columns: id (uuid), name (text), category (text), subcategory (text), description (text), image_url (text), item_count (integer), created_at (timestamp), updated_at (timestamp)
+6. Create src/api/migrations/004_create_research_requests_table.sql for storing item research data with fields matching ItemResearchResponse interface
+7. Add README.md in src/api/migrations/ with instructions for applying migrations in Supabase dashboard
+
+## Files to Modify
+
+- src/api/migrations/001_create_top_lists_table.sql
+- src/api/migrations/002_create_top_items_table.sql
+- src/api/migrations/003_create_item_groups_table.sql
+- src/api/migrations/004_create_research_requests_table.sql
+- src/api/migrations/README.md
+
+## Update FILE_STRUCTURE.MD
+
+IMPORTANT: After implementing the changes, update the FILE_STRUCTURE.MD file in the context directory to reflect the latest changes.
+
+Include:
+1. New files created or modified
+2. Updated component relationships
+3. New patterns or architectural decisions
+
+At the end of FILE_STRUCTURE.MD, add a "## Next Steps" section with your recommendation for the next goal or feature to implement based on the current progress.
+
+## Recommended Next Goal
+
+Migrate API modules (top-lists.ts, top-items.ts, item-groups.ts, item-research.ts) to use Supabase queries instead of HTTP calls, updating them to use the new src/api structure
+
+
+
+IMPORTANT INSTRUCTIONS:
+- Analyze the requirement thoroughly
+- Identify all files that need to be modified or created
+- Implement all changes specified in the requirement
+- Follow the implementation steps precisely
+- Create/modify files as needed
+- Run any tests if specified
+- Ensure all changes are complete before finishing
+
+Begin implementation now.

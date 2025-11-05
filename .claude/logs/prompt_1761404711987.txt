@@ -1,0 +1,62 @@
+You are an expert software engineer. Execute the following requirement immediately. Do not ask questions, do not wait for confirmation. Read the requirement carefully and implement all changes to the codebase as specified.
+
+REQUIREMENT TO EXECUTE NOW:
+
+# implement-match-results-social-share-generation
+
+## Description
+
+Implement a feature to generate shareable result images from completed Match Grid rankings using Gemini Flash Image 2.5 API. This enables users to share their top 50 results on Twitter/social media with a visually appealing, AI-generated image. Create a results generation pipeline that captures grid state, generates an optimized image, and provides share buttons with pre-filled social media text.
+
+## Implementation Steps
+
+1. Create `app/api/match/generate-result-image/route.ts` POST endpoint that accepts grid items array and list metadata, calls Gemini Flash Image 2.5 API with a carefully crafted prompt to generate a visually striking ranking image
+2. Create `app/features/Match/components/ResultImageGenerator.tsx` component that manages the image generation state (loading, preview, download, share) with visual feedback and error handling
+3. Create `app/features/Match/lib/resultImagePrompt.ts` utility that constructs optimized Gemini prompts based on grid items, incorporating item names, rankings, and list theme to guide image generation
+4. Add 'Share Results' button to `app/features/Match/MatchContainerHeader.tsx` that opens a ResultImageGenerator modal with preview of generated image and social sharing options
+5. Implement image caching in `app/features/Match/lib/resultCache.ts` to store generated images locally (IndexedDB) keyed by grid state hash to avoid regenerating identical results
+6. Create `app/features/Match/lib/socialShareIntegration.ts` utility that generates Twitter/X share URLs with pre-filled text (e.g., 'My Top 50 [List Name]') and includes image upload or link
+7. Add download functionality allowing users to save generated images as PNG/JPG with metadata embedded, implementing in `app/features/Match/components/ResultImageDownload.tsx`
+
+## Files to Modify
+
+- app/api/match/generate-result-image/route.ts
+- app/features/Match/components/ResultImageGenerator.tsx
+- app/features/Match/components/ResultImageDownload.tsx
+- app/features/Match/lib/resultImagePrompt.ts
+- app/features/Match/lib/resultCache.ts
+- app/features/Match/lib/socialShareIntegration.ts
+- app/features/Match/MatchContainerHeader.tsx
+- app/stores/match-store.ts
+
+## UI/UX Innovation Experiment
+
+Create an animated 'image generation' experience with a particle effect that flows from grid items into a central canvas, revealing the final generated image with a smooth scale-in animation. Add a live preview that updates in real-time as the image is being generated, showing the Gemini API's progressive rendering. Include a 'remix' button that regenerates with different artistic styles (minimalist, detailed, abstract, retro).
+
+## Update FILE_STRUCTURE.MD
+
+IMPORTANT: After implementing the changes, update the FILE_STRUCTURE.MD file in the context directory to reflect the latest changes.
+
+Include:
+1. New files created or modified
+2. Updated component relationships
+3. New patterns or architectural decisions
+
+At the end of FILE_STRUCTURE.MD, add a "## Next Steps" section with your recommendation for the next goal or feature to implement based on the current progress.
+
+## Recommended Next Goal
+
+After social sharing is implemented, create a public results gallery feature that displays shared results from other users with view counts and engagement metrics, stored in Supabase (Goal 4), to encourage social sharing and community engagement.
+
+
+
+IMPORTANT INSTRUCTIONS:
+- Analyze the requirement thoroughly
+- Identify all files that need to be modified or created
+- Implement all changes specified in the requirement
+- Follow the implementation steps precisely
+- Create/modify files as needed
+- Run any tests if specified
+- Ensure all changes are complete before finishing
+
+Begin implementation now.

@@ -1,0 +1,46 @@
+You are an expert software engineer. Execute the following requirement immediately. Do not ask questions, do not wait for confirmation. Read the requirement carefully and implement all changes to the codebase as specified.
+
+REQUIREMENT TO EXECUTE NOW:
+
+# implement-loading-state-machine-reducer
+
+## Description
+
+Replace the three separate loading state booleans (listLoading, fetchLoading, isBacklogLoading) in match/page.tsx with a unified state machine using useReducer pattern. This eliminates impossible state combinations and provides explicit state transition modeling. The state machine should have defined states: IDLE, LOADING_LIST, LOADING_FETCH, LOADING_BACKLOG, ERROR, and SUCCESS, with typed actions that only allow valid transitions.
+
+## Implementation Steps
+
+1. Create a new file src/lib/hooks/useLoadingStateMachine.ts that exports a reducer function and LoadingState type with states: IDLE | LOADING_LIST | LOADING_FETCH | LOADING_BACKLOG | ERROR | SUCCESS, each with associated metadata (error message, timestamp)
+2. Define LoadingAction union type with actions: { type: 'START_LIST_LOAD' } | { type: 'START_FETCH_LOAD' } | { type: 'START_BACKLOG_LOAD' } | { type: 'SET_ERROR'; payload: string } | { type: 'SET_SUCCESS' } | { type: 'RESET' }
+3. Implement the reducer function in useLoadingStateMachine.ts with explicit state transition logic - ensure only valid transitions are allowed (e.g., can only transition to ERROR or SUCCESS from a LOADING state)
+4. In src/app/match/page.tsx, replace useState calls for listLoading, fetchLoading, isBacklogLoading with useReducer(loadingReducer, initialState) where initialState is { state: 'IDLE', error: null }
+5. Update all state setter calls: replace setListLoading(true) with dispatch({ type: 'START_LIST_LOAD' }), replace error setters with dispatch({ type: 'SET_ERROR', payload: errorMessage })
+6. Add a helper function isLoading() in the page component that returns true if state is any LOADING_* variant, replacing the multiple boolean checks throughout the component
+7. Update loading state conditionals in JSX from {listLoading || fetchLoading || isBacklogLoading && ()} to {state.state.includes('LOADING') && ()} or use the isLoading() helper
+8. Add TypeScript type guards in useLoadingStateMachine.ts: isLoadingState(state), isErrorState(state), isSuccessState(state) for cleaner conditional rendering
+
+## Files to Modify
+
+- src/lib/hooks/useLoadingStateMachine.ts
+- src/app/match/page.tsx
+
+## UI/UX Innovation Experiment
+
+Add a micro-interaction loading indicator that visually represents the state machine transitions - use a multi-stage progress bar or animated state diagram that shows which loading phase is active (list → fetch → backlog), with smooth transitions between states and a subtle pulse effect on the active phase
+
+## Recommended Next Goal
+
+After implementing the state machine, consider extracting common loading patterns into a reusable useAsyncOperation hook that combines the state machine with automatic error recovery and retry logic for API calls
+
+
+
+IMPORTANT INSTRUCTIONS:
+- Analyze the requirement thoroughly
+- Identify all files that need to be modified or created
+- Implement all changes specified in the requirement
+- Follow the implementation steps precisely
+- Create/modify files as needed
+- Run any tests if specified
+- Ensure all changes are complete before finishing
+
+Begin implementation now.

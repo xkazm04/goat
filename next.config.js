@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',
+  // Removed 'output: export' to enable API routes and server-side features
+  // Static export is incompatible with API routes, cookies, and Supabase server client
   eslint: {
     ignoreDuringBuilds: true,
   },

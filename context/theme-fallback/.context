@@ -1,0 +1,147 @@
+# Theme Fallback System
+
+## Overview
+Comprehensive fallback mechanism for the experimental-dark theme ("Neon Truth") that ensures graceful degradation on browsers that don't support advanced CSS features.
+
+## Files Created
+
+### Core Implementation
+- **src/app/globals.css** - Theme CSS definitions with @supports rules
+- **src/lib/theme-support.ts** - CSS feature detection utilities
+- **src/hooks/use-theme-fallback.ts** - React hook for theme fallback management
+- **src/components/theme/theme-provider.tsx** - Enhanced ThemeProvider with logging
+- **src/components/theme/theme-aware-icon.tsx** - Single-element icon component with CSS transitions (standardized Oct 2025)
+
+### Scripts
+- **scripts/add-theme-log.js** - Database log insertion script
+
+## How It Works
+
+### 1. CSS Level (@supports)
+The experimental-dark theme uses two CSS blocks in `globals.css`:
+
+```css
+/* Modern browsers with full support */
+@supports (color: oklch(0.5 0.2 180)) and (backdrop-filter: blur(10px)) {
+  .experimental-dark {
+    /* Neon colors using OKLCH color space */
+  }
+}
+
+/* Fallback for older browsers */
+@supports not ((color: oklch(0.5 0.2 180)) and (backdrop-filter: blur(10px))) {
+  .experimental-dark {
+    /* Standard dark theme colors */
+  }
+}
+```
+
+Required features:
+- OKLCH color space for vibrant neon colors
+- backdrop-filter for glassmorphism effects
+
+### 2. JavaScript Level (Runtime Detection)
+**theme-support.ts** provides utilities:
+- `checkExperimentalDarkSupport()` - Detects CSS feature support
+- `getSafeTheme()` - Returns safe theme with fallback
+- `isExperimentalDarkAvailable()` - Simple availability check
+
+**use-theme-fallback.ts** hook:
+- Automatically detects support on mount
+- Falls back to 'dark' theme if features missing
+- Provides support details and fallback status
+- Logs warnings when fallback occurs
+
+### 3. Provider Level (Logging)
+**ThemeProvider** enhancement:
+- Checks support on mount
+- Logs support status to console
+- Informs developers about missing features
+- Wraps next-themes provider seamlessly
+
+## Usage
+
+### Basic Usage (Already Configured)
+The theme is already integrated in the root layout. Users can select it from the theme toggle menu.
+
+### Using the Hook (Optional)
+```tsx
+import { useThemeFallback } from '@/hooks/use-theme-fallback';
+
+function MyComponent() {
+  const { effectiveTheme, isFallbackActive, support } = useThemeFallback();
+
+  if (isFallbackActive) {
+    console.log('Fallback active due to:', support?.features);
+  }
+
+  return <div>Current theme: {effectiveTheme}</div>;
+}
+```
+
+### Checking Support Programmatically
+```tsx
+import { isExperimentalDarkAvailable } from '@/lib/theme-support';
+
+if (isExperimentalDarkAvailable()) {
+  console.log('Full experimental theme support available!');
+}
+```
+
+## Browser Support
+
+### Full Support (Modern Browsers)
+- Chrome 111+
+- Edge 111+
+- Safari 15.4+
+- Firefox 113+
+
+### Fallback Mode (Older Browsers)
+- Automatically falls back to standard dark theme
+- No broken styles or visual glitches
+- Consistent user experience maintained
+
+## Testing
+
+### Test Full Support
+Open DevTools console on a modern browser - should see:
+```
+[ThemeProvider] All experimental dark theme features supported.
+```
+
+### Test Fallback
+Simulate older browser by disabling features in DevTools or testing on older browser versions - should see:
+```
+[ThemeProvider] Experimental dark theme features not fully supported.
+Missing features: oklch, backdropFilter
+Fallback mechanism active.
+```
+
+## Benefits
+
+1. **Reliability** - No broken styles on unsupported browsers
+2. **Progressive Enhancement** - Modern browsers get enhanced experience
+3. **Transparency** - Clear logging of support status
+4. **Flexibility** - Can be extended to other experimental themes
+5. **User Experience** - Seamless degradation without user intervention
+
+## Recent Updates
+
+### October 2025 - Icon Standardization
+Refactored ThemeAwareIcon to use a single DOM element instead of three overlapping icons with absolute positioning:
+- **Before**: Three icons (Sun, Moon, Palette) rendered simultaneously with absolute positioning
+- **After**: Single icon element that changes based on theme via React.useMemo and data-theme-state attribute
+- **Benefits**:
+  - Reduced DOM nodes (67% fewer elements)
+  - Eliminated hydration flicker
+  - Simplified CSS maintenance
+  - Better performance and predictability
+  - No layout shifts or z-index issues
+
+## Future Enhancements
+
+Potential improvements:
+- User notification when fallback is active
+- UI indicator showing "lite" vs "full" theme mode
+- More granular feature detection for partial support
+- Additional experimental themes with different requirements

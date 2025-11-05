@@ -1,0 +1,202 @@
+You are an expert software engineer. Execute the following requirement immediately. Do not ask questions, do not wait for confirmation. Read the requirement carefully and implement all changes to the codebase as specified.
+
+REQUIREMENT TO EXECUTE NOW:
+
+# Fix Build Errors - src/app/features/Backlog/ (3 files)
+
+This requirement contains 12 build errors across 3 files in the `src/app/features/Backlog/` directory.
+
+## Errors
+
+### src/app/features/Backlog/BacklogGroups.tsx (2 errors)
+
+1. **Line 205**: Type '{ className: string | undefined; onRetry: () => void; error: Error; }' is not assignable to type 'IntrinsicAttributes & Props'. **[TS2322]**
+2. **Line 215**: Type '{ currentList: ListConfiguration | null; className: string | undefined; }' is not assignable to type 'IntrinsicAttributes & Props'. **[TS2322]**
+
+### src/app/features/Backlog/BacklogGroupStates.tsx (1 errors)
+
+3. **Line 7**: Property 'currentList' does not exist on type 'Props'. **[TS2339]**
+
+### src/app/features/Backlog/BacklogItem.tsx (9 errors)
+
+4. **Line 32**: Property 'name' does not exist on type 'never'. **[TS2339]**
+5. **Line 42**: Parameter 'state' implicitly has an 'any' type. **[TS7006]**
+6. **Line 42**: Expected 0 arguments, but got 1. **[TS2554]**
+7. **Line 72**: Property 'name' does not exist on type 'never'. **[TS2339]**
+8. **Line 181**: Argument of type '{ id: string; title: any; description: string; matched: boolean | undefined; tags: string[]; image_url: string | null; }' is not assignable to parameter of type 'BacklogItemType'. **[TS2345]**
+9. **Line 198**: This comparison appears to be unintentional because the types '{ backlogGroups: BacklogGroup[]; selectedBacklogItem: string | null; gridItems: GridItemType[]; maxGridSize: number; selectedGridItem: string | null; activeItem: string | null; ... 42 more ...; syncWithBackend: (listId: string) => Promise<void>; }' and 'string' have no overlap. **[TS2367]**
+10. **Line 205**: Type '{ id: string; title: any; description: string; matched: boolean | undefined; tags: string[]; image_url: string | null; }' is missing the following properties from type 'BacklogItemType': category, created_at **[TS2739]**
+11. **Line 212**: Type '{ backlogGroups: BacklogGroup[]; selectedBacklogItem: string | null; gridItems: GridItemType[]; maxGridSize: number; selectedGridItem: string | null; activeItem: string | null; ... 42 more ...; syncWithBackend: (listId: string) => Promise<void>; }' is not assignable to type 'string'. **[TS2322]**
+12. **Line 218**: Type '{ id: string; title: any; description: string; matched: boolean | undefined; tags: string[]; image_url: string | null; }' is missing the following properties from type 'BacklogItemType': category, created_at **[TS2739]**
+
+## Instructions
+
+This requirement groups related errors in the `src/app/features/Backlog/` directory. Please fix all errors systematically:
+
+1. Work through each file listed above
+2. For each error, navigate to the specified line number
+3. Understand the error message and apply the appropriate fix
+4. Ensure fixes are consistent across related files
+5. Run the type checker after fixing to verify
+
+**Tip**: Many errors in the same directory may share common causes (e.g., missing imports, type definitions). Look for patterns to fix multiple errors efficiently.
+
+
+## Error Details
+
+```
+src/app/features/Backlog/BacklogGroups.tsx:205:9 - error [TS2322]: Type '{ className: string | undefined; onRetry: () => void; error: Error; }' is not assignable to type 'IntrinsicAttributes & Props'.
+src/app/features/Backlog/BacklogGroups.tsx:215:9 - error [TS2322]: Type '{ currentList: ListConfiguration | null; className: string | undefined; }' is not assignable to type 'IntrinsicAttributes & Props'.
+src/app/features/Backlog/BacklogGroupStates.tsx:7:32 - error [TS2339]: Property 'currentList' does not exist on type 'Props'.
+src/app/features/Backlog/BacklogItem.tsx:32:50 - error [TS2339]: Property 'name' does not exist on type 'never'.
+src/app/features/Backlog/BacklogItem.tsx:42:35 - error [TS7006]: Parameter 'state' implicitly has an 'any' type.
+src/app/features/Backlog/BacklogItem.tsx:42:35 - error [TS2554]: Expected 0 arguments, but got 1.
+src/app/features/Backlog/BacklogItem.tsx:72:50 - error [TS2339]: Property 'name' does not exist on type 'never'.
+src/app/features/Backlog/BacklogItem.tsx:181:23 - error [TS2345]: Argument of type '{ id: string; title: any; description: string; matched: boolean | undefined; tags: string[]; image_url: string | null; }' is not assignable to parameter of type 'BacklogItemType'.
+src/app/features/Backlog/BacklogItem.tsx:198:5 - error [TS2367]: This comparison appears to be unintentional because the types '{ backlogGroups: BacklogGroup[]; selectedBacklogItem: string | null; gridItems: GridItemType[]; maxGridSize: number; selectedGridItem: string | null; activeItem: string | null; ... 42 more ...; syncWithBackend: (listId: string) => Promise<void>; }' and 'string' have no overlap.
+src/app/features/Backlog/BacklogItem.tsx:205:9 - error [TS2739]: Type '{ id: string; title: any; description: string; matched: boolean | undefined; tags: string[]; image_url: string | null; }' is missing the following properties from type 'BacklogItemType': category, created_at
+src/app/features/Backlog/BacklogItem.tsx:212:9 - error [TS2322]: Type '{ backlogGroups: BacklogGroup[]; selectedBacklogItem: string | null; gridItems: GridItemType[]; maxGridSize: number; selectedGridItem: string | null; activeItem: string | null; ... 42 more ...; syncWithBackend: (listId: string) => Promise<void>; }' is not assignable to type 'string'.
+src/app/features/Backlog/BacklogItem.tsx:218:11 - error [TS2739]: Type '{ id: string; title: any; description: string; matched: boolean | undefined; tags: string[]; image_url: string | null; }' is missing the following properties from type 'BacklogItemType': category, created_at
+```
+
+
+IMPORTANT INSTRUCTIONS:
+- Analyze the requirement thoroughly
+- Identify all files that need to be modified or created
+- Implement all changes specified in the requirement
+- Follow the implementation steps precisely
+- Create/modify files as needed
+- Run any tests if specified
+- Ensure all changes are complete before finishing
+
+## Context Reference Updates
+
+After implementing changes, if the requirement references a specific CONTEXT (feature group), update the context documentation:
+
+1. Look for `.context` files in the project that match the feature being implemented
+2. Update the context file with:
+   - New files created
+   - Modified components
+   - Updated functionality
+   - New patterns introduced
+
+Example: If working on "authentication" feature, update `contexts/authentication/.context` with the changes.
+
+## File Structure Guidelines (Next.js/React Projects)
+
+When creating new files in Next.js/React projects, follow this structure:
+
+**Feature-Specific Files** (use `app/features/<feature>` structure):
+- `app/features/<feature>/components/` - Feature-specific components and UI sections
+- `app/features/<feature>/lib/` - Feature-specific functions, utilities, and logical helpers
+- `app/features/<feature>/` - Main wrapper, index, or page file for the feature
+
+**Reusable UI Components** (use `app/components/ui` structure):
+- `app/components/ui/` - Shared, reusable UI elements used across multiple features
+
+**Theming and Styling**:
+- Before creating new UI components, examine existing components in the project
+- Match the color scheme, spacing, and visual patterns of existing components
+- Use consistent className patterns (Tailwind CSS classes)
+- Follow the app's design language (glassmorphism, gradients, shadows, etc.)
+- Pay attention to dark mode support if the app uses it
+
+Examples:
+- Feature component: `app/features/tasks/components/TaskCard.tsx`
+- Feature helper: `app/features/tasks/lib/taskValidation.ts`
+- Reusable UI: `app/components/ui/Button.tsx`
+
+## Implementation Logging
+
+**CRITICAL**: After completing the implementation, create a log entry in the SQLite database to track what was implemented.
+
+Database Path: `C:\Users\kazda\kiro\goat\database\goals.db`
+Table: `implementation_log`
+Project ID: `4ee93a8c-9318-4497-b7cf-05027e48f12b`
+
+Execute this SQL command after implementation (replace placeholders with actual values):
+
+```sql
+INSERT INTO implementation_log (
+  id,
+  project_id,
+  requirement_name,
+  title,
+  overview,
+  tested,
+  created_at
+) VALUES (
+  '<generate-unique-uuid>',
+  '4ee93a8c-9318-4497-b7cf-05027e48f12b',
+  '<requirement-name>',
+  '<short-descriptive-title>',
+  '<detailed-overview-of-changes>',
+  0,
+  datetime('now')
+);
+```
+
+**Log Entry Guidelines**:
+- `id`: Generate a unique UUID (e.g., using `crypto.randomUUID()` or similar)
+- `project_id`: The project identifier (use: "4ee93a8c-9318-4497-b7cf-05027e48f12b")
+- `requirement_name`: Name of the requirement file being executed
+- `title`: Short, descriptive title (2-6 words, e.g., "Add User Authentication")
+- `overview`: Detailed paragraph describing:
+  - What was implemented
+  - Key files created or modified
+  - Major functionality added
+  - Any important patterns or decisions made
+- `tested`: Always set to 0 (false) initially
+- `created_at`: Use `datetime('now')` for current timestamp
+
+**Example Log Entry**:
+
+```sql
+INSERT INTO implementation_log (
+  id,
+  project_id,
+  requirement_name,
+  title,
+  overview,
+  tested,
+  created_at
+) VALUES (
+  '550e8400-e29b-41d4-a716-446655440000',
+  'project-abc-123',
+  'implement-user-login',
+  'User Login System',
+  'Implemented complete user authentication system with login form, JWT token management, and session persistence. Created LoginForm.tsx component, authService.ts for API calls, and useAuth hook for state management. Added protected route wrapper and login/logout functionality. Integrated with existing theme using glassmorphism design.',
+  0,
+  datetime('now')
+);
+```
+
+**How to Execute the SQL**:
+Use the sqlite3 command-line tool or Node.js better-sqlite3 library:
+
+```bash
+sqlite3 "C:\Users\kazda\kiro\goat\database\goals.db" "INSERT INTO implementation_log (...) VALUES (...);"
+```
+
+Or in Node.js/TypeScript:
+```typescript
+import Database from 'better-sqlite3';
+const db = new Database('C:\Users\kazda\kiro\goat\database\goals.db');
+db.prepare(`
+  INSERT INTO implementation_log (id, project_id, requirement_name, title, overview, tested, created_at)
+  VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+`).run(id, projectId, requirementName, title, overview, 0);
+db.close();
+```
+
+## Final Checklist
+
+Before finishing:
+- [ ] All code changes implemented
+- [ ] Context documentation updated (if applicable)
+- [ ] File structure follows guidelines
+- [ ] UI components match existing theme
+- [ ] Implementation log entry created in database
+- [ ] Tests run successfully (if specified)
+
+Begin implementation now.
