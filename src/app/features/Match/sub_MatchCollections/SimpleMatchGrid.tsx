@@ -1,12 +1,10 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState } from "react";
 import { DndContext, DragOverlay, DragEndEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { SimpleCollectionPanel } from "./SimpleCollectionPanel";
 import { SimpleDropZone } from "./SimpleDropZone";
-import { useGridStore } from "@/stores/grid-store";
-import { useBacklogStore } from "@/stores/backlog-store";
-import { useCurrentList } from "@/stores/use-list-store";
+import { MOCK_COLLECTIONS } from "./mockData";
 import { CollectionItem } from "./types";
 import { BacklogItem } from "@/types/backlog-groups";
 import { GridItemType } from "@/types/match";
@@ -33,19 +31,6 @@ export function SimpleMatchGrid() {
   const [activeItem, setActiveItem] = useState<CollectionItem | GridItemType | null>(null);
   const [activeType, setActiveType] = useState<'collection' | 'grid' | null>(null);
 
-  // Initialize grid and backlog on mount
-  useEffect(() => {
-    if (currentList?.category) {
-      // Initialize grid with 50 slots (or use existing size)
-      if (gridItems.length === 0) {
-        initializeGrid(50, currentList.id, currentList.category);
-      }
-
-      // Initialize backlog groups
-      initializeGroups(currentList.category, currentList.subcategory);
-    }
-  }, [currentList?.category, currentList?.subcategory, currentList?.id]);
-
   // Simple sensor - just pointer
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -58,7 +43,7 @@ export function SimpleMatchGrid() {
   const handleDragStart = (event: any) => {
     const { active } = event;
     const itemData = active.data.current;
-
+    
     if (itemData?.type === 'collection-item') {
       setActiveItem(itemData.item);
       setActiveType('collection');
@@ -68,9 +53,9 @@ export function SimpleMatchGrid() {
     }
   };
 
-  const handleDragEnd = useCallback((event: DragEndEvent) => {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-
+    
     setActiveItem(null);
     setActiveType(null);
 
@@ -136,10 +121,8 @@ export function SimpleMatchGrid() {
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 pb-72">
         {/* Grid Area */}
         <div className="p-8">
-          <h2 className="text-2xl font-bold text-white mb-6">
-            {currentList?.name || 'Match Grid'}
-          </h2>
-
+          <h2 className="text-2xl font-bold text-white mb-6">Match Grid (Simple Test)</h2>
+          
           {/* Top 3 Podium */}
           <div className="mb-8">
             <h3 className="text-sm font-semibold text-gray-400 mb-3">Top 3</h3>
@@ -293,12 +276,12 @@ export function SimpleMatchGrid() {
             {activeItem.image_url ? (
               <img
                 src={activeItem.image_url}
-                alt={activeItem.title || activeItem.name}
+                alt={activeItem.title}
                 className="w-full h-full object-cover"
               />
             ) : (
               <div className="w-full h-full bg-gray-800 flex items-center justify-center">
-                <span className="text-xs text-gray-400">{activeItem.title || activeItem.name}</span>
+                <span className="text-xs text-gray-400">{activeItem.title}</span>
               </div>
             )}
           </div>
