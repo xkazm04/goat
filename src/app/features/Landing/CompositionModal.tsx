@@ -186,14 +186,14 @@ export function CompositionModal({
         success: true,
         listId: result.list.id,
         message: `Successfully created "${result.list.title}"!`,
-        redirectUrl: `/match?list=${result.list.id}`
+        redirectUrl: `/match-test?list=${result.list.id}`
       };
       
       onSuccess?.(compositionResult);
       onClose();
 
-      // Navigate to match page with the list
-      router.push(`/match?list=${result.list.id}`);
+      // Navigate to match-test page with the list
+      router.push(`/match-test?list=${result.list.id}`);
 
     } catch (error) {
       console.error("Error creating predefined list:", error);

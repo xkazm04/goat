@@ -63,7 +63,7 @@ const ITEMS_ENDPOINT = '/top';
 export const topItemsApi = {
   // Create a new item
   createItem: async (item: TopItemCreate): Promise<TopItem> => {
-    return apiClient.post<TopItem>(ITEMS_ENDPOINT, item);
+    return apiClient.post<TopItem>(`${ITEMS_ENDPOINT}/items`, item);
   },
 
   // Get items with search/filter

@@ -92,7 +92,7 @@ export function FeaturedListsSection({ className }: FeaturedListsSectionProps) {
       time_period: list.time_period,
       created_at: list.created_at
     });
-    router.push(`/match?list=${list.id}`);
+    router.push(`/match-test?list=${list.id}`);
   };
 
   return (

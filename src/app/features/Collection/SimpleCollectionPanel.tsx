@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { CollectionGroup } from "./types";
+
 import { SimpleCollectionItem } from "./SimpleCollectionItem";
 import { useCurrentList } from "@/stores/use-list-store";
 import { useBacklogStore } from "@/stores/backlog-store";
+import { CollectionGroup } from "./types";
 
 interface SimpleCollectionPanelProps {
   groups: CollectionGroup[];

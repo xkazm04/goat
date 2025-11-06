@@ -71,7 +71,7 @@ export function ListSelectionModal({ isOpen, onClose }: ListSelectionModalProps)
     try {
       await switchToList(list.id);
       onClose();
-      router.push(`/match?list=${list.id}`);
+      router.push(`/match-test?list=${list.id}`);
     } catch (error) {
       console.error('Error selecting list:', error);
     }

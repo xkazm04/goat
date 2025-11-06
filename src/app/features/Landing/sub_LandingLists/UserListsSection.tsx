@@ -67,8 +67,8 @@ export function UserListsSection({ className }: UserListsSectionProps) {
       created_at: list.created_at
     });
 
-    // Navigate to match page
-    router.push(`/match?list=${list.id}`);
+    // Navigate to match-test page
+    router.push(`/match-test?list=${list.id}`);
   };
 
   const handleCreateList = () => {

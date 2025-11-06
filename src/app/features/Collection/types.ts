@@ -1,31 +1,38 @@
 /**
  * Collection Feature Types
- *
- * Type definitions for the bottom drawer collection feature
- * that replaces the sidebar backlog design.
  */
 
-import { BacklogItemNew, ItemGroup } from "@/types/backlog-groups";
-
-export interface CollectionDrawerState {
-  isOpen: boolean;
-  height: number; // Drawer height in pixels
-  selectedGroupIds: Set<string>; // Multi-select group IDs
-  viewMode: 'grid' | 'list';
+export interface CollectionItem {
+  id: string;
+  title: string;
+  image_url?: string | null;
+  description?: string;
+  category?: string;
+  subcategory?: string;
+  tags?: string[];
+  metadata?: Record<string, any>;
 }
 
-export interface CollectionGroup extends ItemGroup {
-  isExpanded: boolean;
-  isLoading: boolean;
+export interface CollectionGroup {
+  id: string;
+  name: string;
+  items: CollectionItem[];
+  category?: string;
+  subcategory?: string;
+  count?: number;
 }
 
-export interface CollectionItem extends BacklogItemNew {
-  groupId: string;
+export interface CollectionFilter {
+  searchTerm: string;
+  selectedGroupIds: Set<string>;
+  selectedCategory?: string;
+  sortBy?: 'name' | 'date' | 'popularity';
+  sortOrder?: 'asc' | 'desc';
 }
 
-export interface GroupDivider {
-  groupId: string;
-  groupName: string;
-  itemCount: number;
-  color?: string;
+export interface CollectionStats {
+  totalItems: number;
+  selectedItems: number;
+  visibleGroups: number;
+  totalGroups: number;
 }

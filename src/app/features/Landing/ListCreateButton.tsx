@@ -101,12 +101,12 @@ const ListCreateButton = ({compositionData, createListMutation, onSuccess, onClo
                 success: true,
                 listId: result.list.id,
                 message: `Successfully created "${result.list.title}"!`,
-                redirectUrl: `/match?list=${result.list.id}`
+                redirectUrl: `/match-test?list=${result.list.id}`
             };
             onSuccess?.(compositionResult);
             onClose();
 
-            router.push(`/match`);
+            router.push(`/match-test?list=${result.list.id}`);
 
         } catch (error) {
             console.error("Error creating list:", error);

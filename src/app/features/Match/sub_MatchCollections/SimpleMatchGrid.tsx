@@ -1,13 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { DndContext, DragOverlay, DragEndEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
-import { SimpleCollectionPanel } from "./SimpleCollectionPanel";
+import { CollectionPanel, backlogGroupsToCollectionGroups } from "../../Collection";
 import { SimpleDropZone } from "./SimpleDropZone";
 import { MOCK_COLLECTIONS } from "./mockData";
-import { CollectionItem } from "./types";
+import { CollectionItem } from "../../Collection/types";
 import { BacklogItem } from "@/types/backlog-groups";
 import { GridItemType } from "@/types/match";
+import { useGridStore } from "@/stores/grid-store";
+import { useBacklogStore } from "@/stores/backlog-store";
+import { useCurrentList } from "@/stores/use-list-store";
 
 /**
  * Integrated Match Grid + Collection with real data
@@ -53,7 +56,7 @@ export function SimpleMatchGrid() {
     }
   };
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
     
     setActiveItem(null);
@@ -266,7 +269,7 @@ export function SimpleMatchGrid() {
         </div>
 
         {/* Collection Panel - Fixed at bottom */}
-        <SimpleCollectionPanel groups={groups} />
+        <CollectionPanel groups={backlogGroupsToCollectionGroups(groups)} />
       </div>
 
       {/* Drag Overlay - Minimal */}
