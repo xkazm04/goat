@@ -3,7 +3,7 @@
  */
 
 import { BacklogGroup, BacklogItem } from '@/types/backlog-groups';
-import { CollectionGroup, CollectionItem } from './types';
+import { CollectionGroup, CollectionItem } from '@/app/features/Collection/types';
 
 /**
  * Convert BacklogItem to CollectionItem
@@ -46,4 +46,6 @@ export function backlogGroupToCollectionGroup(group: BacklogGroup): CollectionGr
 export function backlogGroupsToCollectionGroups(groups: BacklogGroup[]): CollectionGroup[] {
   return groups.map(backlogGroupToCollectionGroup);
 }
+
+
 

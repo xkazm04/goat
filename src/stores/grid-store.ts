@@ -11,11 +11,14 @@ interface GridStoreState {
   maxGridSize: number;
   selectedGridItem: string | null;
   activeItem: string | null;
+  isTutorialMode: boolean;
 
   // Actions - Grid setup
   initializeGrid: (size: number, listId?: string, category?: string) => void;
   syncWithSession: () => void;
   loadFromSession: (items: GridItemType[], size: number) => void;
+  setTutorialMode: (enabled: boolean) => void;
+  loadTutorialData: (items: GridItemType[]) => void;
 
   // Actions - Item placement
   assignItemToGrid: (item: BacklogItem | GridItemType, position: number) => void;
@@ -45,6 +48,7 @@ export const useGridStore = create<GridStoreState>()(
       maxGridSize: 50,
       selectedGridItem: null,
       activeItem: null,
+      isTutorialMode: false,
 
       // Initialize a new grid
       initializeGrid: (size, listId, category) => {
@@ -469,6 +473,40 @@ export const useGridStore = create<GridStoreState>()(
           position < gridItems.length &&
           !gridItems[position].matched
         );
+      },
+
+      // Tutorial mode management
+      setTutorialMode: (enabled) => {
+        console.log(`🎓 GridStore: Tutorial mode ${enabled ? 'enabled' : 'disabled'}`);
+        set({ isTutorialMode: enabled });
+      },
+
+      // Load tutorial demo data into grid
+      loadTutorialData: (items) => {
+        console.log(`🎓 GridStore: Loading ${items.length} tutorial items`);
+
+        // Create a full grid with tutorial items at the start
+        const tutorialGrid: GridItemType[] = Array.from({ length: 10 }, (_, i) => {
+          const tutorialItem = items.find(item => item.position === i);
+          if (tutorialItem) {
+            return tutorialItem;
+          }
+          return {
+            id: `grid-${i}`,
+            title: '',
+            description: '',
+            position: i,
+            matched: false,
+            isDragPlaceholder: false,
+            tags: []
+          };
+        });
+
+        set({
+          gridItems: tutorialGrid,
+          maxGridSize: 10,
+          isTutorialMode: true
+        });
       }
     }),
     {

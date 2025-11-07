@@ -2,24 +2,34 @@
 
 import { motion } from "framer-motion";
 import { CollectionGroup } from "../types";
+import { useCollectionFiltersContext } from "../context/CollectionFiltersContext";
 
 interface CategoryBarProps {
-  groups: CollectionGroup[];
-  selectedGroupIds: Set<string>;
-  onToggleGroup: (groupId: string) => void;
+  groups?: CollectionGroup[];
+  selectedGroupIds?: Set<string>;
+  onToggleGroup?: (groupId: string) => void;
   className?: string;
 }
 
 /**
  * Thin horizontal category bar - replaces sidebar
  * Shows groups as compact pills/chips
+ *
+ * Can consume filter state from context or use explicit props.
+ * When used within CollectionFiltersProvider, props are optional.
  */
 export function CategoryBar({
-  groups,
-  selectedGroupIds,
-  onToggleGroup,
+  groups: propGroups,
+  selectedGroupIds: propSelectedGroupIds,
+  onToggleGroup: propOnToggleGroup,
   className = ""
 }: CategoryBarProps) {
+  // Use context if available, otherwise fall back to props
+  const context = useCollectionFiltersContext();
+
+  const groups = propGroups ?? context.groups;
+  const selectedGroupIds = propSelectedGroupIds ?? context.filter.selectedGroupIds;
+  const onToggleGroup = propOnToggleGroup ?? context.toggleGroup;
   return (
     <div className={`w-full overflow-x-auto ${className}`}>
       <div className="flex items-center gap-2 px-3 py-2 min-h-[48px]">
@@ -33,6 +43,8 @@ export function CategoryBar({
               onClick={() => onToggleGroup(group.id)}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              data-testid={`category-${group.id}-btn`}
+              aria-pressed={isSelected}
               className={`
                 flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium
                 transition-all duration-200 whitespace-nowrap
@@ -45,8 +57,8 @@ export function CategoryBar({
               <span className="font-semibold">{group.name}</span>
               {itemCount > 0 && (
                 <span className={`ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] ${
-                  isSelected 
-                    ? 'bg-cyan-500/30 text-cyan-300' 
+                  isSelected
+                    ? 'bg-cyan-500/30 text-cyan-300'
                     : 'bg-gray-700/50 text-gray-500'
                 }`}>
                   {itemCount}
@@ -59,4 +71,6 @@ export function CategoryBar({
     </div>
   );
 }
+
+
 

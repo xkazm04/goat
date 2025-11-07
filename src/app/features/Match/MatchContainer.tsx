@@ -12,8 +12,7 @@ import {
   closestCenter
 } from '@dnd-kit/core';
 import MatchContainerContent from './components/MatchContainerContent';
-import { BacklogItem } from '../Backlog/BacklogItem';
-import { CollectionDrawer } from '../Collection';
+import { SimpleCollectionItem } from '../Collection/SimpleCollectionItem';
 import { useMatchGridState } from './lib/useMatchGridState';
 import {
   createDragStartHandler,
@@ -184,9 +183,6 @@ export function MatchContainer() {
         )}
 
         <MatchContainerContent />
-
-        {/* Collection Drawer - Bottom drawer for item selection */}
-        <CollectionDrawer />
       </div>
 
       {/* Enhanced Drag Overlay with Fixed Positioning */}
@@ -210,23 +206,16 @@ export function MatchContainer() {
             }}
           >
 
-            <BacklogItem
+            <SimpleCollectionItem
               item={{
                 ...activeBacklogItem,
-                // Ensure we have normalized properties for the BacklogItem
+                // Ensure we have normalized properties for the CollectionItem
                 id: activeBacklogItem.id,
                 title: activeBacklogItem.title || activeBacklogItem.name || '',
                 description: activeBacklogItem.description || '',
-                matched: 'matched' in activeBacklogItem
-                  ? activeBacklogItem.matched
-                  : ('used' in activeBacklogItem ? activeBacklogItem.used : false),
-                tags: activeBacklogItem.tags || [],
-                // Force image_url to be passed properly
                 image_url: activeBacklogItem.image_url || null
               }}
               groupId={activeItemGroupId}
-              isDragOverlay={true}
-              size="medium"
             />
           </div>
         )}

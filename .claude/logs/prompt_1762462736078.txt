@@ -1,0 +1,344 @@
+You are an expert software engineer. Execute the following requirement immediately. Do not ask questions, do not wait for confirmation. Read the requirement carefully and implement all changes to the codebase as specified.
+
+REQUIREMENT TO EXECUTE NOW:
+
+# Reusable ItemCard component for collections and lists
+
+## Metadata
+- **Category**: ui
+- **Effort**: Medium (2/3)
+- **Impact**: High (3/3)
+- **Scan Type**: ui_perfectionist
+- **Generated**: 11/6/2025, 9:35:30 PM
+
+## Description
+Extract the current CollectionItem into a generic ItemCard component placed in src/components. Provide props for title, subtitle, image, actions, loading skeleton, and ARIA attributes. Add Tailwind-based styling, responsive grid support, and optional hover/focus states for accessibility.
+
+## Reasoning
+Standardizes card UI across features, removes duplicated markup, and enables consistent theming and accessibility. Future lists such as backlog items or product catalogs can import this single component instead of reinventing the layout.
+
+## Context
+
+**Note**: This section provides supporting architectural documentation and is NOT a hard requirement. Use it as guidance to understand existing code structure and maintain consistency.
+
+### Context: Collection
+
+**Description**: # Collection Feature
+
+## Overview
+
+The **Collection** feature provides a modular UI for browsing, filtering, and managing a set of items (e.g., products, documents, or media). It is built as a self‑contained React module that can be dropped into any application needing a dynamic collection view. The feature solves the problem of presenting large, categorized data sets in a user‑friendly way, with support for searching, filtering by category, viewing statistics, and adding new items via a modal dialog. Developers, designers, and product owners use this module to quickly prototype catalog pages, dashboards, or inventory systems.
+
+### Key problems addressed
+- **Discoverability** – users can search and filter items by category.
+- **State management** – encapsulates filter state, search queries, and selected items.
+- **Extensibility** – offers a clear API for adding new item types or custom stats.
+- **Reusability** – component‑based architecture allows independent use of the panel, header, or item list.
+
+## Architecture
+
+The collection is organized around three core concepts: **Presentation**, **State**, and **Transformation**.
+
+| Layer | Responsibility | Implementation |
+|-------|----------------|----------------|
+| **Presentation** | UI components that render the collection UI | React functional components (tsx) using TypeScript and CSS modules |
+| **State** | Encapsulates filters, search terms, and computed stats | Custom hooks (`useCollectionFilters`, `useCollectionStats`) that return state objects and updater functions |
+| **Transformation** | Normalizes raw data into the shape required by UI components | `transformers.ts` utilities that convert API responses into `Item` and `Category` objects |
+
+### Design Patterns
+1. **Composition over Inheritance** – Components like `CollectionPanel` compose smaller pieces (`CollectionHeader`, `CategoryBar`, `CollectionSearch`, `CollectionStats`, `CollectionItem`).
+2. **Hook‑based State** – Custom hooks abstract complex logic, keeping components declarative.
+3. **Separation of Concerns** – Types, hooks, components, and utilities live in dedicated folders.
+4. **Single‑Responsibility** – Each file focuses on a single concept (e.g., `SimpleCollectionItem` only renders an item, not filter logic).
+5. **Type Safety** – `types.ts` defines `Item`, `Category`, `FilterState`, ensuring consistent data shapes across the module.
+
+## File Structure
+
+```
+src/
+└─ app/
+   └─ features/
+      └─ Collection/
+         ├─ components/
+         │  ├─ AddItemModal.tsx      # Modal dialog for adding new items
+         │  ├─ CategoryBar.tsx       # Horizontal list of categories for filtering
+         │  ├─ CollectionHeader.tsx  # Title, controls, and optional actions
+         │  ├─ CollectionItem.tsx    # Individual item representation in the grid/list
+         │  ├─ CollectionPanel.tsx   # Wrapper that orchestrates header, search, stats, and items
+         │  ├─ CollectionSearch.tsx  # Search input tied to `useCollectionFilters`
+         │  └─ CollectionStats.tsx   # Displays summary numbers (total items, per category, etc.)
+         ├─ hooks/
+         │  ├─ useCollectionFilters.ts   # Manages filter state and exposes helpers
+         │  └─ useCollectionStats.ts     # Computes statistics based on current filters
+         ├─ utils/
+         │  └─ transformers.ts          # Functions converting raw data to UI models
+         ├─ types.ts                      # TypeScript interfaces for items, categories, filters
+         ├─ SimpleCollectionPanel.tsx    # Lightweight wrapper exposing the core panel without added logic
+         └─ SimpleCollectionItem.tsx     # Simplified item component for external reuse
+```
+
+### How Files Interact
+1. **`SimpleCollectionPanel`** imports `CollectionPanel` and exposes a minimal API: it passes `items` and `categories` as props.
+2. **`CollectionPanel`** composes `CollectionHeader`, `CategoryBar`, `CollectionSearch`, `CollectionStats`, and a list of `CollectionItem` components.
+3. **`CollectionHeader`** may render the `AddItemModal` when a button is clicked.
+4. **`useCollectionFilters`** supplies the current filter state and update functions to `CollectionSearch` and `CategoryBar`.
+5. **`useCollectionStats`** consumes the filtered item list and calculates aggregate data for `CollectionStats`.
+6. **`transformers`** are used in the parent container (not shown here) to convert API data into `Item` and `Category` objects before passing them to the panel.
+
+### Entry Points and Exports
+- `src/app/features/Collection/SimpleCollectionPanel.tsx` is the primary public component for external modules.
+- `src/app/features/Collection/types.ts` re‑exports interfaces so other parts of the app can type their data.
+- The `components`, `hooks`, and `utils` folders are internal and not exported from the root package.
+
+## Usage Example
+```tsx
+import { SimpleCollectionPanel } from 'app/features/Collection';
+import { fetchItems, fetchCategories } from 'api/collection';
+
+const MyPage = () => {
+  const [items, setItems] = useState<Item[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  useEffect(() => {
+    fetchItems().then(setItems);
+    fetchCategories().then(setCategories);
+  }, []);
+
+  return (
+    <SimpleCollectionPanel
+      items={items}
+      categories={categories}
+      onAddItem={(newItem) => setItems((prev) => [...prev, newItem])}
+    />
+  );
+};
+```
+
+The component automatically handles searching, filtering, displaying statistics, and showing the add‑item modal.
+
+---
+
+## Visual Representation of File Relationships
+```
+Collection
+├─ types.ts
+├─ utils/transformers.ts
+├─ hooks/
+│  ├─ useCollectionFilters.ts
+│  └─ useCollectionStats.ts
+├─ components/
+│  ├─ CollectionPanel.tsx (main orchestrator)
+│  │  ├─ CollectionHeader.tsx
+│  │  │  └─ AddItemModal.tsx
+│  │  ├─ CategoryBar.tsx
+│  │  ├─ CollectionSearch.tsx
+│  │  ├─ CollectionStats.tsx
+│  │  └─ CollectionItem.tsx
+│  └─ SimpleCollectionItem.tsx
+├─ SimpleCollectionPanel.tsx
+└─ SimpleCollectionItem.tsx
+```"
+}
+**Related Files**:
+- `src/app/features/Collection/SimpleCollectionPanel.tsx`
+- `src/app/features/Collection/SimpleCollectionItem.tsx`
+- `src/app/features/Collection/types.ts`
+- `src/app/features/Collection/components/AddItemModal.tsx`
+- `src/app/features/Collection/components/CategoryBar.tsx`
+- `src/app/features/Collection/components/CollectionHeader.tsx`
+- `src/app/features/Collection/components/CollectionItem.tsx`
+- `src/app/features/Collection/components/CollectionPanel.tsx`
+- `src/app/features/Collection/components/CollectionSearch.tsx`
+- `src/app/features/Collection/components/CollectionStats.tsx`
+- `src/app/features/Collection/hooks/useCollectionFilters.ts`
+- `src/app/features/Collection/hooks/useCollectionStats.ts`
+- `src/app/features/Collection/utils/transformers.ts`
+
+**Post-Implementation**: After completing this requirement, evaluate if the context description or file paths need updates. Use the appropriate API/DB query to update the context if architectural changes were made.
+
+## Recommended Skills
+
+- **compact-ui-design**: Use `.claude/skills/compact-ui-design.md` for high-quality UI design references and patterns.Any ideas for further UI/UX improvements are welcomed.
+
+## Notes
+
+This requirement was generated from an AI-evaluated project idea. No specific goal is associated with this idea.
+
+IMPORTANT INSTRUCTIONS:
+- Analyze the requirement thoroughly
+- Identify all files that need to be modified or created
+- Implement all changes specified in the requirement
+- Follow the implementation steps precisely
+- Create/modify files as needed
+- Run any tests if specified
+- Ensure all changes are complete before finishing
+
+## Context Updates
+
+**CRITICAL**: If this requirement references a specific CONTEXT name or feature area, you MUST update the context documentation using the context update skill.
+
+To update a context:
+1. Invoke the `update-context` skill by running: `/skill update-context`
+2. The skill will guide you through:
+   - Identifying the correct context to update
+   - Analyzing the files you've changed
+   - Updating the context's file paths to include new/modified files
+   - Refreshing the context description to reflect your changes
+
+**When to use the context update skill:**
+- The requirement explicitly mentions a context name (e.g., "Update the Goals Management context")
+- You've created, modified, or deleted files within a feature area that has an existing context
+- Your changes significantly impact the architecture or capabilities of a feature
+
+**Important:** Always invoke the skill AFTER completing your implementation, as it needs to analyze your changes.
+
+## File Structure Guidelines (Next.js/React Projects)
+
+When creating new files in Next.js/React projects, follow this structure:
+
+**Feature-Specific Files** (use `app/features/<feature>` structure):
+- `app/features/<feature>/components/` - Feature-specific components and UI sections
+- `app/features/<feature>/lib/` - Feature-specific functions, utilities, and logical helpers
+- `app/features/<feature>/` - Main wrapper, index, or page file for the feature
+
+**Reusable UI Components** (use `app/components/ui` structure):
+- `app/components/ui/` - Shared, reusable UI elements used across multiple features
+
+**Theming and Styling**:
+- Before creating new UI components, examine existing components in the project
+- Match the color scheme, spacing, and visual patterns of existing components
+- Use consistent className patterns (Tailwind CSS classes)
+- Follow the app's design language (glassmorphism, gradients, shadows, etc.)
+- Pay attention to dark mode support if the app uses it
+
+Examples:
+- Feature component: `app/features/tasks/components/TaskCard.tsx`
+- Feature helper: `app/features/tasks/lib/taskValidation.ts`
+- Reusable UI: `app/components/ui/Button.tsx`
+
+## Test Coverage Preparation
+
+**IMPORTANT**: For all interactive UI components (buttons, inputs, forms, modals, etc.), add `data-testid` attributes to enable automated testing.
+
+**Guidelines**:
+- Add `data-testid` to all clickable elements (buttons, links, icons)
+- Use descriptive, kebab-case naming: `data-testid="submit-form-btn"`
+- Include component context in the ID: `data-testid="goal-delete-btn"`, `data-testid="project-settings-modal"`
+- Add to form inputs: `data-testid="email-input"`, `data-testid="password-input"`
+- Add to list items for testing selection: `data-testid="task-item-123"`
+
+**Examples**:
+```tsx
+<button onClick={handleSubmit} data-testid="create-goal-btn">
+  Create Goal
+</button>
+
+<input
+  type="text"
+  value={title}
+  onChange={handleChange}
+  data-testid="goal-title-input"
+/>
+
+<div className="modal" data-testid="delete-confirmation-modal">
+  ...
+</div>
+```
+
+## Implementation Logging
+
+**CRITICAL**: After completing the implementation, create a log entry in the SQLite database to track what was implemented.
+
+Database Path: `C:\Users\kazda\kiro\goat\database\goals.db`
+Table: `implementation_log`
+Project ID: `4ee93a8c-9318-4497-b7cf-05027e48f12b`
+
+Execute this SQL command after implementation (replace placeholders with actual values):
+
+```sql
+INSERT INTO implementation_log (
+  id,
+  project_id,
+  requirement_name,
+  title,
+  overview,
+  tested,
+  created_at
+) VALUES (
+  '<generate-unique-uuid>',
+  '4ee93a8c-9318-4497-b7cf-05027e48f12b',
+  '<requirement-name>',
+  '<short-descriptive-title>',
+  '<detailed-overview-of-changes>',
+  0,
+  datetime('now')
+);
+```
+
+**Log Entry Guidelines**:
+- `id`: Generate a unique UUID (e.g., using `crypto.randomUUID()` or similar)
+- `project_id`: The project identifier (use: "4ee93a8c-9318-4497-b7cf-05027e48f12b")
+- `requirement_name`: Name of the requirement file being executed
+- `title`: Short, descriptive title (2-6 words, e.g., "Add User Authentication")
+- `overview`: Detailed paragraph describing:
+  - What was implemented
+  - Key files created or modified
+  - Major functionality added
+  - Any important patterns or decisions made
+- `tested`: Always set to 0 (false) initially
+- `created_at`: Use `datetime('now')` for current timestamp
+
+**Example Log Entry**:
+
+```sql
+INSERT INTO implementation_log (
+  id,
+  project_id,
+  requirement_name,
+  title,
+  overview,
+  tested,
+  created_at
+) VALUES (
+  '550e8400-e29b-41d4-a716-446655440000',
+  'project-abc-123',
+  'implement-user-login',
+  'User Login System',
+  'Implemented complete user authentication system with login form, JWT token management, and session persistence. Created LoginForm.tsx component, authService.ts for API calls, and useAuth hook for state management. Added protected route wrapper and login/logout functionality. Integrated with existing theme using glassmorphism design.',
+  0,
+  datetime('now')
+);
+```
+
+**How to Execute the SQL**:
+Use the sqlite3 command-line tool or Node.js better-sqlite3 library:
+
+```bash
+sqlite3 "C:\Users\kazda\kiro\goat\database\goals.db" "INSERT INTO implementation_log (...) VALUES (...);"
+```
+
+Or in Node.js/TypeScript:
+```typescript
+import Database from 'better-sqlite3';
+const db = new Database('C:\Users\kazda\kiro\goat\database\goals.db');
+db.prepare(`
+  INSERT INTO implementation_log (id, project_id, requirement_name, title, overview, tested, created_at)
+  VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+`).run(id, projectId, requirementName, title, overview, 0);
+db.close();
+```
+
+
+
+## Final Checklist
+
+Before finishing:
+- [ ] All code changes implemented
+- [ ] Test IDs added to interactive components
+- [ ] Context documentation updated (if applicable)
+- [ ] File structure follows guidelines
+- [ ] UI components match existing theme
+- [ ] Implementation log entry created in database
+- [ ] Tests run successfully (if specified)
+
+Begin implementation now.

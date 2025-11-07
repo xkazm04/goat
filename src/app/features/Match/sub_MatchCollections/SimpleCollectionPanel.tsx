@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { CollectionGroup } from "./types";
-import { SimpleCollectionItem } from "./SimpleCollectionItem";
+import { CollectionGroup, CollectionItem } from "@/app/features/Collection/types";
+import { SimpleCollectionItem } from "@/app/features/Collection/SimpleCollectionItem";
 import { useCurrentList } from "@/stores/use-list-store";
 import { useBacklogStore } from "@/stores/backlog-store";
 
@@ -136,7 +136,7 @@ export function SimpleCollectionPanel({ groups }: SimpleCollectionPanelProps) {
                   
                   {/* Items grid */}
                   <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-2">
-                    {(group.items || []).map(item => (
+                    {(group.items || []).map((item: CollectionItem) => (
                       <SimpleCollectionItem
                         key={item.id}
                         item={item}

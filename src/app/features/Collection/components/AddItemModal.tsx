@@ -100,7 +100,6 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
       toast({
         title: "AI Completion Failed",
         description: error instanceof Error ? error.message : "Could not retrieve information",
-        variant: "destructive",
       });
     } finally {
       setIsLoadingAI(false);
@@ -166,7 +165,6 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
       toast({
         title: "Creation Failed",
         description: errorMessage,
-        variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
@@ -397,4 +395,6 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
     </AnimatePresence>
   );
 }
+
+
 

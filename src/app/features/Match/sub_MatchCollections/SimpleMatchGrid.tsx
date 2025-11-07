@@ -1,16 +1,16 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { DndContext, DragOverlay, DragEndEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { CollectionPanel, backlogGroupsToCollectionGroups } from "../../Collection";
 import { SimpleDropZone } from "./SimpleDropZone";
-import { MOCK_COLLECTIONS } from "./mockData";
 import { CollectionItem } from "../../Collection/types";
 import { BacklogItem } from "@/types/backlog-groups";
 import { GridItemType } from "@/types/match";
 import { useGridStore } from "@/stores/grid-store";
 import { useBacklogStore } from "@/stores/backlog-store";
 import { useCurrentList } from "@/stores/use-list-store";
+import { MatchGridTutorial, useTutorialState } from "./MatchGridTutorial";
 
 /**
  * Integrated Match Grid + Collection with real data
@@ -24,6 +24,7 @@ export function SimpleMatchGrid() {
   const removeItemFromGrid = useGridStore(state => state.removeItemFromGrid);
   const moveGridItem = useGridStore(state => state.moveGridItem);
   const initializeGrid = useGridStore(state => state.initializeGrid);
+  const loadTutorialData = useGridStore(state => state.loadTutorialData);
 
   const groups = useBacklogStore(state => state.groups);
   const initializeGroups = useBacklogStore(state => state.initializeGroups);
@@ -33,6 +34,15 @@ export function SimpleMatchGrid() {
 
   const [activeItem, setActiveItem] = useState<CollectionItem | GridItemType | null>(null);
   const [activeType, setActiveType] = useState<'collection' | 'grid' | null>(null);
+
+  // Tutorial state
+  const { showTutorial, completeTutorial } = useTutorialState();
+
+  // Handle demo data from tutorial
+  const handleDemoDataReady = useCallback((demoBacklog: BacklogItem[], demoGrid: GridItemType[]) => {
+    console.log("🎓 Loading tutorial demo data", { demoBacklog, demoGrid });
+    loadTutorialData(demoGrid);
+  }, [loadTutorialData]);
 
   // Simple sensor - just pointer
   const sensors = useSensors(
@@ -116,12 +126,20 @@ export function SimpleMatchGrid() {
   };
 
   return (
-    <DndContext
-      sensors={sensors}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-    >
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 pb-72">
+    <>
+      {/* Tutorial Modal */}
+      <MatchGridTutorial
+        isOpen={showTutorial}
+        onComplete={completeTutorial}
+        onDemoDataReady={handleDemoDataReady}
+      />
+
+      <DndContext
+        sensors={sensors}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 pb-72" data-testid="match-grid-container">
         {/* Grid Area */}
         <div className="p-8">
           <h2 className="text-2xl font-bold text-white mb-6">Match Grid (Simple Test)</h2>
@@ -291,5 +309,6 @@ export function SimpleMatchGrid() {
         )}
       </DragOverlay>
     </DndContext>
+    </>
   );
 }

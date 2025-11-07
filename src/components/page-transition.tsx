@@ -1,6 +1,6 @@
 'use client';
 
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 import { ReactNode } from 'react';
 
@@ -8,7 +8,7 @@ import { ReactNode } from 'react';
  * Shared transition configuration for page animations
  * Creates a subtle fade + slide effect that masks load times
  */
-const pageTransition = {
+const pageTransition: Variants = {
   initial: {
     opacity: 0,
     y: 8,

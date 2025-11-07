@@ -1,6 +1,7 @@
 "use client";
 
 import { CollectionStats as StatsType } from "../types";
+import { StatsCard, Metric } from "@/components/ui";
 
 interface CollectionStatsProps {
   stats: StatsType;
@@ -8,28 +9,45 @@ interface CollectionStatsProps {
 }
 
 /**
- * Display collection statistics
+ * Display collection statistics using the reusable StatsCard component
  */
 export function CollectionStats({ stats, className = "" }: CollectionStatsProps) {
+  // Transform stats into metrics array
+  const metrics: Metric[] = [
+    {
+      id: "total-items",
+      label: "Total",
+      value: stats.totalItems,
+      color: "text-gray-300",
+    },
+    {
+      id: "selected-items",
+      label: "Selected",
+      value: stats.selectedItems,
+      color: "text-cyan-400",
+    },
+  ];
+
+  // Conditionally add groups metric if there are visible groups
+  if (stats.visibleGroups > 0) {
+    metrics.push({
+      id: "visible-groups",
+      label: "Groups",
+      value: `${stats.visibleGroups}/${stats.totalGroups}`,
+      color: "text-gray-300",
+    });
+  }
+
   return (
-    <div className={`flex items-center gap-4 text-xs ${className}`}>
-      <div className="flex items-center gap-1">
-        <span className="text-gray-500">Total:</span>
-        <span className="text-gray-300 font-semibold">{stats.totalItems}</span>
-      </div>
-      <div className="flex items-center gap-1">
-        <span className="text-gray-500">Selected:</span>
-        <span className="text-cyan-400 font-semibold">{stats.selectedItems}</span>
-      </div>
-      {stats.visibleGroups > 0 && (
-        <div className="flex items-center gap-1">
-          <span className="text-gray-500">Groups:</span>
-          <span className="text-gray-300 font-semibold">
-            {stats.visibleGroups}/{stats.totalGroups}
-          </span>
-        </div>
-      )}
-    </div>
+    <StatsCard
+      metrics={metrics}
+      layout="inline"
+      size="sm"
+      className={className}
+      testId="collection-stats"
+    />
   );
 }
+
+
 

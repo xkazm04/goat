@@ -1,0 +1,13 @@
+[2025-11-06T21:16:54.383Z] === Claude Code Execution Started ===
+[2025-11-06T21:16:54.383Z] Requirement: build-fix-src-app-features-match-components
+[2025-11-06T21:16:54.383Z] Project Path: C:\Users\kazda\kiro\goat
+[2025-11-06T21:16:54.383Z] Log File: C:\Users\kazda\kiro\goat\.claude\logs\build-fix-src-app-features-match-components_2025-11-06T21-16-54-383Z.log
+[2025-11-06T21:16:54.383Z] Project ID: 4ee93a8c-9318-4497-b7cf-05027e48f12b
+[2025-11-06T21:16:54.383Z] 
+[2025-11-06T21:16:54.383Z] Executing command: cat prompt | claude -p - --output-format stream-json
+[2025-11-06T21:16:54.384Z] Requirement length: 1520 characters
+[2025-11-06T21:16:54.384Z] Full prompt length: 8085 characters
+[2025-11-06T21:16:54.384Z] Temp prompt file: C:\Users\kazda\kiro\goat\.claude\logs\prompt_1762463814383.txt
+[2025-11-06T21:16:54.384Z] Database path: C:\Users\kazda\kiro\goat\database\goals.db
+[2025-11-06T21:16:54.384Z] Authentication mode: Web subscription (ANTHROPIC_API_KEY removed from environment)
+[2025-11-06T21:16:54.384Z] 

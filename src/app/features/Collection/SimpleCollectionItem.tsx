@@ -1,8 +1,8 @@
 "use client";
 
 import { useDraggable } from "@dnd-kit/core";
+import { ItemCard } from "@/components/ui/item-card";
 import { CollectionItem } from "./types";
-
 
 interface SimpleCollectionItemProps {
   item: CollectionItem;
@@ -12,6 +12,7 @@ interface SimpleCollectionItemProps {
 /**
  * Minimal draggable item - no animations, no complexity
  * Just pure drag and drop functionality
+ * Now uses the reusable ItemCard component
  */
 export function SimpleCollectionItem({ item, groupId }: SimpleCollectionItemProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
@@ -33,34 +34,19 @@ export function SimpleCollectionItem({ item, groupId }: SimpleCollectionItemProp
       style={style}
       {...attributes}
       {...listeners}
-      className={`
-        relative aspect-square rounded-lg overflow-hidden
-        bg-gray-800 border border-gray-700
-        cursor-grab active:cursor-grabbing
-        transition-opacity
-        ${isDragging ? 'opacity-50' : 'opacity-100 hover:border-cyan-500'}
-      `}
     >
-      {/* Image */}
-      {item.image_url ? (
-        <img
-          src={item.image_url}
-          alt={item.title}
-          className="w-full h-full object-cover"
-          draggable={false}
-        />
-      ) : (
-        <div className="w-full h-full flex items-center justify-center bg-gray-900">
-          <span className="text-xs text-gray-500">No Image</span>
-        </div>
-      )}
-
-      {/* Title overlay */}
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-1.5">
-        <p className="text-[10px] font-semibold text-white truncate">
-          {item.title}
-        </p>
-      </div>
+      <ItemCard
+        title={item.title}
+        image={item.image_url}
+        layout="grid"
+        interactive="draggable"
+        state={isDragging ? "dragging" : "default"}
+        animated={false}
+        ariaLabel={`Draggable item: ${item.title}`}
+        testId={`simple-collection-item-${item.id}`}
+        hoverEffect="subtle"
+        focusRing={false}
+      />
     </div>
   );
 }

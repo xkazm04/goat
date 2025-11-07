@@ -6,7 +6,7 @@
  */
 
 import { useRef, useState, useCallback } from 'react';
-import { motion, useMotionValue, useTransform, AnimatePresence } from 'framer-motion';
+import { motion, useMotionValue, useTransform, AnimatePresence, animate } from 'framer-motion';
 import { useSwipeGesture } from '@/hooks';
 import type { SwipeEvent, SwipeDirection } from '@/hooks';
 
@@ -95,7 +95,7 @@ export function SwipeableCard({
 
       // Animate card off screen with spring physics
       const targetX = direction === 'right' ? 400 : -400;
-      x.set(targetX, { duration: 300, ease: [0.32, 0.72, 0, 1] } as any);
+      animate(x, targetX, { duration: 0.3, ease: [0.32, 0.72, 0, 1] });
 
       // Reset after animation
       setTimeout(() => {
@@ -138,8 +138,8 @@ export function SwipeableCard({
     if (disabled) return;
 
     // Spring back to center if not swiped far enough
-    x.set(0, { duration: 300, ease: [0.32, 0.72, 0, 1] } as any);
-    y.set(0, { duration: 300, ease: [0.32, 0.72, 0, 1] } as any);
+    animate(x, 0, { duration: 0.3, ease: [0.32, 0.72, 0, 1] });
+    animate(y, 0, { duration: 0.3, ease: [0.32, 0.72, 0, 1] });
     setIsSwiping(false);
     setSwipeDirection(null);
   }, [disabled, x, y]);

@@ -27,7 +27,7 @@ export default function MatchTestPage() {
 
   const { currentList, setCurrentList } = useListStore();
   const itemStore = useItemStore();
-  const { switchToSession, syncWithBackend, initializeGrid } = itemStore;
+  const { switchToSession, syncWithBackend, initializeGrid, gridItems } = itemStore;
   const activeSessionId = useSessionStore(state => state.activeSessionId);
   const initializeGroups = useBacklogStore(state => state.initializeGroups);
 
@@ -44,7 +44,7 @@ export default function MatchTestPage() {
     {
       enabled: shouldFetch,
       refetchOnWindowFocus: false,
-      retry: failureCount => failureCount < 3,
+      retry: (failureCount: number) => failureCount < 3,
     } as any
   );
 
@@ -64,10 +64,9 @@ export default function MatchTestPage() {
           if (activeSessionId !== listId) {
             switchToSession(listId);
           }
-          
+
           // Initialize grid if needed
-          const currentState = useItemStore.getState();
-          if (!currentState.gridItems || currentState.gridItems.length === 0) {
+          if (!gridItems || gridItems.length === 0) {
             initializeGrid(currentList.size, currentList.id, currentList.category);
           }
           

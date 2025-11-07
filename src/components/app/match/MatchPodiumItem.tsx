@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { MatchGridSlot } from "@/app/features/Match/MatchControls";
+import { MatchGridSlot } from "@/app/features/Match/MatchGridSlot";
 
 type Props = {
     gridItems: any[];

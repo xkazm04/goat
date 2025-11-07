@@ -88,6 +88,7 @@ export function SimpleDropZone({
         }
         ${isOccupied ? 'cursor-grab active:cursor-grabbing' : ''}
       `}
+      data-testid={`grid-drop-zone-${position}`}
     >
       {/* Background rank number (large, low opacity) */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -137,6 +138,7 @@ export function SimpleDropZone({
                   onRemove();
                 }}
                 className="px-2 py-1 text-[10px] bg-red-500/30 text-red-400 rounded hover:bg-red-500/50 transition-colors backdrop-blur-sm border border-red-500/30"
+                data-testid={`remove-item-btn-${position}`}
               >
                 Remove
               </button>

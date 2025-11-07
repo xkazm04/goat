@@ -7,6 +7,7 @@ import { SimpleCollectionItem } from "./SimpleCollectionItem";
 import { useCurrentList } from "@/stores/use-list-store";
 import { useBacklogStore } from "@/stores/backlog-store";
 import { CollectionGroup } from "./types";
+import { CollectionErrorBoundary } from "./components/CollectionErrorBoundary";
 
 interface SimpleCollectionPanelProps {
   groups: CollectionGroup[];
@@ -50,9 +51,10 @@ export function SimpleCollectionPanel({ groups }: SimpleCollectionPanelProps) {
   const totalItems = selectedGroups.reduce((sum, g) => sum + (g.items?.length || 0), 0);
 
   return (
-    <div className={`fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-700 z-40 transition-transform duration-300 ${
-      isVisible ? 'translate-y-0' : 'translate-y-full'
-    }`}>
+    <CollectionErrorBoundary>
+      <div className={`fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-700 z-40 transition-transform duration-300 ${
+        isVisible ? 'translate-y-0' : 'translate-y-full'
+      }`} data-testid="simple-collection-panel">
       {/* Hide/Show Toggle Button */}
       <button
         onClick={() => setIsVisible(!isVisible)}
@@ -152,5 +154,6 @@ export function SimpleCollectionPanel({ groups }: SimpleCollectionPanelProps) {
         </div>
       </div>
     </div>
+    </CollectionErrorBoundary>
   );
 }

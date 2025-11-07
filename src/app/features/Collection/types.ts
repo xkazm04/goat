@@ -36,3 +36,17 @@ export interface CollectionStats {
   visibleGroups: number;
   totalGroups: number;
 }
+
+export interface CollectionPaginationState {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+  hasMore: boolean;
+}
+
+export interface CollectionMutationHelpers {
+  addItem: (item: Partial<CollectionItem>) => Promise<CollectionItem>;
+  updateItem: (id: string, updates: Partial<CollectionItem>) => Promise<CollectionItem>;
+  deleteItem: (id: string) => Promise<void>;
+}
