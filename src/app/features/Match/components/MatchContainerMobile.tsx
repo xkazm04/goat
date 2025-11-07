@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
-import { BacklogGroups } from "../../Backlog/BacklogGroups";
+import { CollectionPanel } from "../../Collection/components/CollectionPanel";
 
 type Props = {
     toggleMobileSidebar: () => void;
@@ -41,7 +41,7 @@ const MatchContainerMobile = ({toggleMobileSidebar}: Props) => {
 
                 {/* Mobile Content */}
                 <div className="flex-1 overflow-hidden">
-                    <BacklogGroups />
+                    <CollectionPanel />
                 </div>
             </div>
         </motion.div>

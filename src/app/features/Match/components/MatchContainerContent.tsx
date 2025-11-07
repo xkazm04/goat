@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { MatchGrid } from "../MatchGrid";
-import { BacklogGroups } from "../../Backlog/BacklogGroups";
+import { CollectionPanel } from "../../Collection/components/CollectionPanel";
 import { ComparisonModal } from "@/components/app/modals/comparison/ComparisonModal";
 import MatchContainerHeader from "./MatchContainerHeader";
 
@@ -37,7 +37,7 @@ const MatchContainerContent = () => {
             transition={{ delay: 0.2 }}
             className="w-96 fixed right-0 2xl:relative"
           >
-            <BacklogGroups />
+            <CollectionPanel />
           </motion.div>
 
       {/* Comparison Modal */}
