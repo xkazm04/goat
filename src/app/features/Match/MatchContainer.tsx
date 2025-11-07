@@ -8,8 +8,7 @@ import {
   MouseSensor,
   TouchSensor,
   useSensor,
-  useSensors,
-  closestCenter
+  useSensors
 } from '@dnd-kit/core';
 import MatchContainerContent from './components/MatchContainerContent';
 import { SimpleCollectionItem } from '../Collection/SimpleCollectionItem';
@@ -21,7 +20,10 @@ import {
   findActiveBacklogItem,
   findActiveItemGroupId
 } from './MatchGrid/lib';
+import { magneticCollision } from './MatchGrid/lib/magneticCollision';
 import { FeatureModuleIndicator } from './components/FeatureModuleIndicator';
+import { DragDistanceIndicator } from './components/DragDistanceIndicator';
+import { QuickAssignModal } from './components/QuickAssignModal';
 
 export function MatchContainer() {
   // Use centralized state management hook
@@ -36,11 +38,20 @@ export function MatchContainer() {
     setKeyboardMode,
     quickAssignToPosition,
     currentList,
-    isDraggingBacklogItem
+    isDraggingBacklogItem,
+    gridItems
   } = useMatchGridState();
 
   // Track active modules for the feature indicator
   const [activeModules, setActiveModules] = useState<string[]>([]);
+
+  // State for drag distance tracking
+  const [dragDistance, setDragDistance] = useState(0);
+  const [dragTarget, setDragTarget] = useState<number | null>(null);
+  const [dragOverTarget, setDragOverTarget] = useState<string | null>(null);
+
+  // State for quick assign modal
+  const [showQuickAssignModal, setShowQuickAssignModal] = useState(false);
 
   // Update active modules based on current operations
   useEffect(() => {
@@ -98,6 +109,13 @@ export function MatchContainer() {
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      // Shift + Number opens quick assign modal
+      if (event.shiftKey && ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'].includes(event.key)) {
+        event.preventDefault();
+        setShowQuickAssignModal(true);
+        return;
+      }
+
       // Enable keyboard mode when user starts using numbers
       if (['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'].includes(event.key)) {
         if (!keyboardMode) {
@@ -116,11 +134,17 @@ export function MatchContainer() {
       if (event.key === 'Escape') {
         setKeyboardMode(false);
       }
+
+      // 'q' to toggle quick assign modal
+      if (event.key === 'q' && !event.shiftKey && !event.ctrlKey && !event.metaKey) {
+        event.preventDefault();
+        setShowQuickAssignModal(!showQuickAssignModal);
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [keyboardMode, setKeyboardMode, selectedItemId, quickAssignToPosition]);
+  }, [keyboardMode, setKeyboardMode, selectedItemId, quickAssignToPosition, showQuickAssignModal]);
 
   // Create drag handlers using utilities
   const handleDragStart = useMemo(
@@ -129,14 +153,39 @@ export function MatchContainer() {
   );
 
   const handleDragMove = useMemo(
-    () => createDragMoveHandler(),
+    () => createDragMoveHandler((distance, delta) => {
+      setDragDistance(distance);
+    }),
     []
   );
 
   const handleDragEndWrapper = useMemo(
-    () => createDragEndHandler(handleDragEnd, setActiveItem),
+    () => createDragEndHandler((event) => {
+      handleDragEnd(event);
+      // Reset distance tracking
+      setDragDistance(0);
+      setDragTarget(null);
+      setDragOverTarget(null);
+    }, setActiveItem),
     [handleDragEnd, setActiveItem]
   );
+
+  // Track which position is being hovered over
+  const handleDragOver = (event: any) => {
+    if (event.over && event.over.id) {
+      setDragOverTarget(String(event.over.id));
+
+      // Extract position number if it's a grid position
+      const overId = String(event.over.id);
+      if (overId.startsWith('grid-')) {
+        const position = parseInt(overId.replace('grid-', ''));
+        setDragTarget(position);
+      }
+    } else {
+      setDragOverTarget(null);
+      setDragTarget(null);
+    }
+  };
 
   // Use utility functions for finding active items
   const activeBacklogItem = useMemo(
@@ -163,14 +212,22 @@ export function MatchContainer() {
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCenter} // Use closestCenter for better accuracy
+      collisionDetection={magneticCollision} // Use magnetic collision for snap behavior
       onDragStart={handleDragStart}
       onDragMove={handleDragMove}
+      onDragOver={handleDragOver}
       onDragEnd={handleDragEndWrapper}
     >
       <div className="min-h-screen relative"> {/* Add relative positioning */}
         {/* Feature Module Indicator - Shows active components during operations */}
         <FeatureModuleIndicator activeModules={activeModules} />
+
+        {/* Drag Distance Indicator */}
+        <DragDistanceIndicator
+          distance={dragDistance}
+          isActive={!!activeItem}
+          targetPosition={dragTarget}
+        />
 
         {/* Keyboard Mode Indicator */}
         {keyboardMode && (
@@ -183,9 +240,26 @@ export function MatchContainer() {
         )}
 
         <MatchContainerContent />
+
+        {/* Quick Assign Modal */}
+        <QuickAssignModal
+          isOpen={showQuickAssignModal}
+          onClose={() => setShowQuickAssignModal(false)}
+          onAssign={(position) => {
+            if (selectedItemId) {
+              quickAssignToPosition(position + 1); // Convert 0-based to 1-based
+            }
+          }}
+          maxPosition={currentList?.size || 50}
+          currentFilledPositions={new Set(
+            gridItems
+              .map((item, index) => item.matched ? index : -1)
+              .filter(index => index !== -1)
+          )}
+        />
       </div>
 
-      {/* Enhanced Drag Overlay with Fixed Positioning */}
+      {/* Enhanced Drag Overlay with Action Preview */}
       <DragOverlay
         dropAnimation={{
           duration: 250,
@@ -197,26 +271,94 @@ export function MatchContainer() {
         }}
       >
         {activeBacklogItem && (
-          <div
-            className="rotate-6 scale-110"
-            style={{
-              filter: 'drop-shadow(0 15px 35px rgba(0, 0, 0, 0.6))',
-              transformOrigin: 'center',
-              pointerEvents: 'none',
-            }}
-          >
-
-            <SimpleCollectionItem
-              item={{
-                ...activeBacklogItem,
-                // Ensure we have normalized properties for the CollectionItem
-                id: activeBacklogItem.id,
-                title: activeBacklogItem.title || activeBacklogItem.name || '',
-                description: activeBacklogItem.description || '',
-                image_url: activeBacklogItem.image_url || null
+          <div className="relative">
+            <div
+              className="rotate-6 scale-110"
+              style={{
+                filter: 'drop-shadow(0 15px 35px rgba(0, 0, 0, 0.6))',
+                transformOrigin: 'center',
+                pointerEvents: 'none',
               }}
-              groupId={activeItemGroupId}
-            />
+            >
+              <SimpleCollectionItem
+                item={{
+                  ...activeBacklogItem,
+                  // Ensure we have normalized properties for the CollectionItem
+                  id: activeBacklogItem.id,
+                  title: activeBacklogItem.title || activeBacklogItem.name || '',
+                  description: activeBacklogItem.description || '',
+                  image_url: activeBacklogItem.image_url || null
+                }}
+                groupId={activeItemGroupId}
+              />
+            </div>
+
+            {/* Action Preview Badge - PR#5 enhancement */}
+            {dragTarget !== null && dragOverTarget && (
+              <div
+                className="absolute -bottom-2 -right-2 px-3 py-1.5 rounded-full shadow-lg"
+                style={{
+                  background: (() => {
+                    // Determine action type and color
+                    const targetItem = gridItems[dragTarget];
+                    if (activeItem && typeof activeItem === 'string' && activeItem.startsWith('grid-')) {
+                      // Grid to grid - moving or swapping
+                      return targetItem?.matched
+                        ? 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)' // Orange - swap
+                        : 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)'; // Blue - move
+                    } else {
+                      // Backlog to grid - adding
+                      return targetItem?.matched
+                        ? 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)' // Orange - swap
+                        : 'linear-gradient(135deg, #10b981 0%, #059669 100%)'; // Green - add
+                    }
+                  })(),
+                  pointerEvents: 'none',
+                }}
+              >
+                <div className="flex items-center gap-1.5 text-white">
+                  {/* Icon */}
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {(() => {
+                      const targetItem = gridItems[dragTarget];
+                      const isSwap = targetItem?.matched;
+
+                      if (activeItem && typeof activeItem === 'string' && activeItem.startsWith('grid-')) {
+                        return isSwap ? (
+                          // Swap icon
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                        ) : (
+                          // Move icon
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                        );
+                      } else {
+                        return isSwap ? (
+                          // Swap icon
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                        ) : (
+                          // Add icon
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        );
+                      }
+                    })()}
+                  </svg>
+
+                  {/* Text */}
+                  <span className="text-xs font-bold">
+                    {(() => {
+                      const targetItem = gridItems[dragTarget];
+                      const isSwap = targetItem?.matched;
+
+                      if (activeItem && typeof activeItem === 'string' && activeItem.startsWith('grid-')) {
+                        return isSwap ? `Swap → #${dragTarget + 1}` : `Move → #${dragTarget + 1}`;
+                      } else {
+                        return isSwap ? `Swap → #${dragTarget + 1}` : `Add → #${dragTarget + 1}`;
+                      }
+                    })()}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </DragOverlay>

@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { CollectionGroup } from "../types";
 import { CollectionToolbar } from "./CollectionToolbar";
 import { CollectionItem } from "./CollectionItem";
 import { CollectionStats } from "./CollectionStats";
 import { AddItemModal } from "./AddItemModal";
+import { StickyContext } from "./StickyContext";
 import { LazyLoadTrigger } from "./LazyLoadTrigger";
 import { VirtualizedCollectionList } from "./VirtualizedCollectionList";
+import { VirtualizedGrid } from "./VirtualizedGrid";
 import { useCollection } from "../hooks/useCollection";
 import { useCollectionLazyLoad } from "../hooks/useCollectionLazyLoad";
 import { useCurrentList } from "@/stores/use-list-store";
@@ -45,7 +47,10 @@ function CollectionPanelInternal({
   const [isVisible, setIsVisible] = useState(true);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [showStickyContext, setShowStickyContext] = useState(false);
+  const [isDraggingItem, setIsDraggingItem] = useState(false);
 
+  const itemsAreaRef = useRef<HTMLDivElement>(null);
   const currentList = useCurrentList();
 
   // Use unified collection hook for data fetching and mutations
@@ -117,8 +122,52 @@ function CollectionPanelInternal({
     error: collection.error
   };
 
+  // Scroll tracking for sticky context
+  useEffect(() => {
+    const itemsArea = itemsAreaRef.current;
+    if (!itemsArea) return;
+
+    const handleScroll = () => {
+      // Show sticky context when scrolled past category bar (50px threshold)
+      setShowStickyContext(itemsArea.scrollTop > 50);
+    };
+
+    itemsArea.addEventListener('scroll', handleScroll);
+    return () => itemsArea.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Track drag state
+  useEffect(() => {
+    const handleDragStart = () => setIsDraggingItem(true);
+    const handleDragEnd = () => setIsDraggingItem(false);
+
+    window.addEventListener('dragstart', handleDragStart);
+    window.addEventListener('dragend', handleDragEnd);
+
+    return () => {
+      window.removeEventListener('dragstart', handleDragStart);
+      window.removeEventListener('dragend', handleDragEnd);
+    };
+  }, []);
+
   return (
     <CollectionFiltersProvider value={contextValue}>
+      {/* Sticky Context Indicator */}
+      <StickyContext
+        isVisible={showStickyContext && isVisible}
+        categoryName={currentList?.category || "All Categories"}
+        itemCount={filteredItems.length}
+        isDragging={isDraggingItem}
+        selectedGroupName={
+          selectedGroups.length === 1
+            ? selectedGroups[0].name
+            : selectedGroups.length > 1
+            ? `${selectedGroups.length} groups`
+            : undefined
+        }
+      />
+
+
       <div
         className={`
           fixed bottom-0 left-0 right-0
@@ -172,7 +221,7 @@ function CollectionPanelInternal({
 
           {/* Items Area */}
           {!collection.isLoading && !collection.isError && (
-            <div className="flex-1 overflow-y-auto p-4">
+            <div ref={itemsAreaRef} className="flex-1 overflow-y-auto p-4">
               {selectedGroups.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center">
                   <div className="text-center">
@@ -195,19 +244,32 @@ function CollectionPanelInternal({
                     }
                   </p>
                 </div>
-              ) : useVirtualization ? (
-                // Large collections: Use virtualized list
+              ) : useVirtualization && viewMode === 'grid' ? (
+                // Large collections: Use virtualized grid (PR#5 version)
                 <>
                   <div className="mb-2 text-xs text-gray-400 flex items-center justify-between">
                     <span>Virtualized rendering ({filteredItems.length} items)</span>
                     <span className="text-cyan-400">High performance mode</span>
                   </div>
-                  <VirtualizedCollectionList
-                    items={itemsToRender}
-                    viewMode={viewMode}
-                    gridCols={viewMode === 'grid' ? 12 : 1}
-                    containerHeight={500}
-                    testId="virtualized-collection"
+                  <VirtualizedGrid
+                    items={filteredItems}
+                    renderItem={(item, index) => {
+                      const groupId = (item.metadata?.group as string) || '';
+                      return (
+                        <CollectionItem
+                          key={`${groupId}-${item.id}`}
+                          item={item}
+                          groupId={groupId}
+                          viewMode="grid"
+                          index={index}
+                        />
+                      );
+                    }}
+                    itemHeight={120}
+                    columns={12}
+                    gap={8}
+                    className="h-full"
+                    overscan={3}
                   />
                 </>
               ) : (
