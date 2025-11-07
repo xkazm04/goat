@@ -16,11 +16,33 @@ export const createDragStartHandler = (
 /**
  * Create drag move handler
  * Handles drag move events for better feedback during dragging
+ * Now includes distance tracking and callbacks for visual feedback
  */
-export const createDragMoveHandler = () => {
+export const createDragMoveHandler = (
+  onDistanceChange?: (distance: number, delta: { x: number; y: number }) => void
+) => {
+  let startPosition: { x: number; y: number } | null = null;
+
   return (event: DragMoveEvent) => {
     // This ensures smooth dragging outside containers
-    // Can be extended with additional logic for visual feedback
+    // Track distance from start position for visual feedback
+    if (!startPosition && event.delta) {
+      startPosition = { x: 0, y: 0 };
+    }
+
+    if (event.delta && onDistanceChange) {
+      const currentDelta = {
+        x: event.delta.x,
+        y: event.delta.y
+      };
+
+      // Calculate total distance traveled
+      const distance = Math.sqrt(
+        Math.pow(currentDelta.x, 2) + Math.pow(currentDelta.y, 2)
+      );
+
+      onDistanceChange(distance, currentDelta);
+    }
   };
 };
 
