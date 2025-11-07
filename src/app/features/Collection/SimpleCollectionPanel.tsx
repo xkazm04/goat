@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
 import { SimpleCollectionItem } from "./SimpleCollectionItem";
@@ -10,20 +11,69 @@ import { CollectionGroup } from "./types";
 import { CollectionErrorBoundary } from "./components/CollectionErrorBoundary";
 
 interface SimpleCollectionPanelProps {
+  /** Array of collection groups to display. Must be a valid array, empty array will show friendly empty state. */
   groups: CollectionGroup[];
+  enableReordering?: boolean;
+  onOrderChange?: (items: any[]) => void;
 }
 
 /**
  * Minimal collection panel - just groups and items
  * No fancy animations or complex state
  */
-export function SimpleCollectionPanel({ groups }: SimpleCollectionPanelProps) {
+export function SimpleCollectionPanel({ groups: rawGroups }: SimpleCollectionPanelProps) {
+  // Guard: Ensure groups is always a valid array
+  const rawGroupsArray = Array.isArray(rawGroups) ? rawGroups : [];
+
+  // Sort groups alphabetically by name (ascending)
+  const groups = [...rawGroupsArray].sort((a, b) => a.name.localeCompare(b.name));
+
+  // Early return: Show friendly empty state if no valid groups provided
+  const hasValidGroups = groups.length > 0;
+
   const [selectedGroupIds, setSelectedGroupIds] = useState<Set<string>>(
     new Set(groups.map(g => g.id))
   );
   const [searchTerm, setSearchTerm] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
+
+  // Track if this is the initial load to trigger staggered entrance
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+
+  // Track previous group order to detect changes
+  const [prevGroupIds, setPrevGroupIds] = useState<string[]>([]);
+  const [highlightedGroups, setHighlightedGroups] = useState<Set<string>>(new Set());
+
+  // Detect group reordering and trigger highlight effect
+  useEffect(() => {
+    const currentGroupIds = groups.map(g => g.id);
+
+    if (prevGroupIds.length > 0 && prevGroupIds.length === currentGroupIds.length) {
+      // Check if order changed
+      const orderChanged = prevGroupIds.some((id, index) => id !== currentGroupIds[index]);
+
+      if (orderChanged) {
+        // Highlight changed groups briefly
+        setHighlightedGroups(new Set(currentGroupIds));
+
+        // Clear highlights after animation duration
+        setTimeout(() => {
+          setHighlightedGroups(new Set());
+        }, 800);
+      }
+    }
+
+    setPrevGroupIds(currentGroupIds);
+  }, [groups, prevGroupIds]);
+
+  // Clear initial load flag after first render
+  useEffect(() => {
+    if (isInitialLoad && groups.length > 0) {
+      const timer = setTimeout(() => setIsInitialLoad(false), groups.length * 50 + 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isInitialLoad, groups.length]);
 
   const currentList = useCurrentList();
   const isLoading = useBacklogStore(state => state.isLoading);
@@ -49,6 +99,25 @@ export function SimpleCollectionPanel({ groups }: SimpleCollectionPanelProps) {
 
   const selectedGroups = groups.filter(g => selectedGroupIds.has(g.id));
   const totalItems = selectedGroups.reduce((sum, g) => sum + (g.items?.length || 0), 0);
+
+  // Early return: Render friendly empty state if no groups
+  if (!hasValidGroups) {
+    return (
+      <CollectionErrorBoundary>
+        <div
+          className="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-700 z-40"
+          data-testid="simple-collection-panel-empty"
+        >
+          <div className="flex items-center justify-center py-8">
+            <div className="text-center space-y-2">
+              <p className="text-sm text-gray-400">No collection groups available</p>
+              <p className="text-xs text-gray-500">Groups will appear here when data is loaded</p>
+            </div>
+          </div>
+        </div>
+      </CollectionErrorBoundary>
+    );
+  }
 
   return (
     <CollectionErrorBoundary>
@@ -100,25 +169,65 @@ export function SimpleCollectionPanel({ groups }: SimpleCollectionPanelProps) {
       {/* Content */}
       <div className="flex h-64">
         {/* Left: Group Selector */}
-        <div className="w-48 border-r border-gray-700 overflow-y-auto">
+        <div className="w-48 border-r border-gray-700 overflow-y-auto" data-testid="group-selector">
           <div className="p-2 space-y-1">
-            {groups.map(group => (
-              <button
-                key={group.id}
-                onClick={() => toggleGroup(group.id)}
-                className={`
-                  w-full text-left px-3 py-2 rounded text-xs
-                  transition-colors
-                  ${selectedGroupIds.has(group.id)
-                    ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/40'
-                    : 'bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-750'
-                  }
-                `}
-              >
-                <div className="font-medium">{group.name}</div>
-                <div className="text-[10px] opacity-70">{group.items?.length || 0} items</div>
-              </button>
-            ))}
+            <AnimatePresence mode="popLayout">
+              {groups.map((group, index) => {
+                const isSelected = selectedGroupIds.has(group.id);
+                const isHighlighted = highlightedGroups.has(group.id);
+
+                return (
+                  <motion.button
+                    key={group.id}
+                    onClick={() => toggleGroup(group.id)}
+                    // Initial entrance animation (staggered)
+                    initial={isInitialLoad ? {
+                      opacity: 0,
+                      x: -20,
+                      scale: 0.95
+                    } : false}
+                    animate={{
+                      opacity: 1,
+                      x: 0,
+                      scale: 1
+                    }}
+                    exit={{
+                      opacity: 0,
+                      x: -20,
+                      scale: 0.95,
+                      transition: { duration: 0.2 }
+                    }}
+                    transition={{
+                      duration: 0.3,
+                      delay: isInitialLoad ? index * 0.05 : 0,
+                      ease: [0.25, 0.46, 0.45, 0.94] // Custom easing curve
+                    }}
+                    // Layout animation for reordering
+                    layout
+                    layoutId={`group-${group.id}`}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    data-testid={`group-${group.id}-btn`}
+                    className={`
+                      w-full text-left px-3 py-2 rounded text-xs
+                      transition-colors
+                      ${isSelected
+                        ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/40'
+                        : 'bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-750'
+                      }
+                      ${isHighlighted ? 'ring-2 ring-cyan-400/50' : ''}
+                    `}
+                    style={{
+                      // CSS-based highlight animation
+                      animation: isHighlighted ? 'highlight-pulse 0.8s cubic-bezier(0.4, 0, 0.2, 1)' : undefined
+                    }}
+                  >
+                    <div className="font-medium">{group.name}</div>
+                    <div className="text-[10px] opacity-70">{group.items?.length || 0} items</div>
+                  </motion.button>
+                );
+              })}
+            </AnimatePresence>
           </div>
         </div>
 
@@ -130,25 +239,41 @@ export function SimpleCollectionPanel({ groups }: SimpleCollectionPanelProps) {
             </div>
           ) : (
             <div className="space-y-4">
-              {selectedGroups.map(group => (
-                <div key={group.id}>
-                  {/* Group name */}
-                  <div className="mb-2">
-                    <h4 className="text-xs font-semibold text-gray-400">{group.name}</h4>
+              {selectedGroups.map(group => {
+                // Guard: Ensure items is always a valid array
+                const items = Array.isArray(group.items) ? group.items : [];
+
+                return (
+                  <div key={group.id}>
+                    {/* Group name */}
+                    <div className="mb-2">
+                      <h4 className="text-xs font-semibold text-gray-400">
+                        {group.name}
+                        {items.length === 0 && (
+                          <span className="ml-2 text-[10px] text-gray-500">(empty)</span>
+                        )}
+                      </h4>
+                    </div>
+
+                    {/* Items grid */}
+                    {items.length > 0 ? (
+                      <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-2">
+                        {items.map(item => (
+                          <SimpleCollectionItem
+                            key={item.id}
+                            item={item}
+                            groupId={group.id}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-xs text-gray-500 italic py-2">
+                        No items in this group
+                      </div>
+                    )}
                   </div>
-                  
-                  {/* Items grid */}
-                  <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-2">
-                    {(group.items || []).map(item => (
-                      <SimpleCollectionItem
-                        key={item.id}
-                        item={item}
-                        groupId={group.id}
-                      />
-                    ))}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

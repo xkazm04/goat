@@ -5,6 +5,75 @@ import { createClient } from '@/lib/supabase/server';
 export const dynamic = 'force-dynamic';
 
 /**
+ * GET /api/top/items - Get items with filtering, sorting, and pagination
+ */
+export async function GET(request: NextRequest) {
+  try {
+    const supabase = await createClient();
+    const { searchParams } = new URL(request.url);
+
+    // Extract query parameters
+    const category = searchParams.get('category');
+    const subcategory = searchParams.get('subcategory');
+    const search = searchParams.get('search');
+    const sortBy = searchParams.get('sort_by') || 'name';
+    const sortOrder = searchParams.get('sort_order') || 'asc';
+    const limit = parseInt(searchParams.get('limit') || '50');
+    const offset = parseInt(searchParams.get('offset') || '0');
+    const groupId = searchParams.get('group_id');
+
+    // Build query
+    let query = supabase.from('items').select('*', { count: 'exact' });
+
+    // Apply filters
+    if (category) {
+      query = query.eq('category', category);
+    }
+    if (subcategory) {
+      query = query.eq('subcategory', subcategory);
+    }
+    if (groupId) {
+      query = query.eq('group_id', groupId);
+    }
+    if (search) {
+      query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
+    }
+
+    // Apply sorting
+    const validSortFields = ['name', 'created_at', 'updated_at', 'item_year', 'selection_count', 'view_count'];
+    const sortField = validSortFields.includes(sortBy) ? sortBy : 'name';
+    query = query.order(sortField, { ascending: sortOrder === 'asc' });
+
+    // Apply pagination
+    query = query.range(offset, offset + limit - 1);
+
+    const { data, error, count } = await query;
+
+    if (error) {
+      console.error('Error fetching items:', error);
+      return NextResponse.json(
+        { error: error.message },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      items: data || [],
+      total: count || 0,
+      limit,
+      offset,
+      has_more: count ? offset + limit < count : false,
+    });
+  } catch (error) {
+    console.error('Unexpected error in GET /api/top/items:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
  * POST /api/top/items - Create a new item
  */
 export async function POST(request: NextRequest) {
@@ -93,6 +162,7 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
 
 
 

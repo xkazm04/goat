@@ -2,16 +2,17 @@
 
 import { motion } from "framer-motion";
 import { FloatingShowcase } from "./FloatingShowcase";
+import { CompositionModal } from "./CompositionModal";
 
 export function LandingMain() {
   return (
     <section className="relative min-h-screen w-full overflow-hidden">
       {/* Background with subtle animations */}
-      <div 
+      <div
         className="absolute inset-0"
         style={{
           background: `
-            linear-gradient(135deg, 
+            linear-gradient(135deg,
               rgba(15, 23, 42, 0.95) 0%,
               rgba(30, 41, 59, 0.98) 25%,
               rgba(51, 65, 85, 0.95) 50%,
@@ -21,7 +22,7 @@ export function LandingMain() {
           `
         }}
       />
-      
+
       {/* Animated background pattern */}
       <div className="absolute inset-0 opacity-20">
         <motion.div
@@ -43,7 +44,11 @@ export function LandingMain() {
           }}
         />
       </div>
-          <FloatingShowcase />
+
+      <FloatingShowcase />
+
+      {/* Global Composition Modal */}
+      <CompositionModal />
     </section>
   );
 }

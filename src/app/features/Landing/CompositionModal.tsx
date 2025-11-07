@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { CompositionModalHeader } from "@/components/app/modals/composition/CompositionModalHeader";
@@ -12,22 +12,11 @@ import { useListStore } from "@/stores/use-list-store";
 import { CompositionResult, mapCompositionToCreateListRequest } from "@/types/composition-to-api";
 import { toast } from "@/hooks/use-toast";
 import ListCreateButton from "./ListCreateButton";
+import { useComposition } from "@/hooks/use-composition";
 
 interface CompositionModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  initialCategory?: string;
-  initialSubcategory?: string;
-  initialTimePeriod?: "all-time" | "decade" | "year";
-  initialHierarchy?: string;
-  initialTitle?: string;
   initialAuthor?: string;
   initialComment?: string;
-  initialColor?: {
-    primary: string;
-    secondary: string;
-    accent: string;
-  };
   onSuccess?: (result: CompositionResult) => void;
 }
 
@@ -70,77 +59,38 @@ const getInitialSubcategory = (category: string, providedSubcategory?: string): 
 };
 
 export function CompositionModal({
-  isOpen,
-  onClose,
-  initialCategory = "Sports",
-  initialSubcategory = "Basketball",
-  initialTimePeriod = "all-time",
-  initialHierarchy = "Top 50",
-  initialTitle = "Create Your Ranking",
   initialAuthor = "You",
   initialComment = "Build your ultimate ranking",
-  initialColor = DEFAULT_COLOR,
   onSuccess
 }: CompositionModalProps) {
   const router = useRouter();
   const { tempUserId, isLoaded } = useTempUser();
   const { setCurrentList } = useListStore();
   const createListMutation = useCreateListWithUser();
-  
-  const [compositionData, setCompositionData] = useState<CompositionData>({
-    selectedCategory: initialCategory,
-    selectedSubcategory: getInitialSubcategory(initialCategory, initialSubcategory),
-    timePeriod: initialTimePeriod,
-    selectedDecade: "2020",
-    selectedYear: "2024",
-    hierarchy: parseInt(initialHierarchy.replace("Top ", "")),
-    isPredefined: true,
-    title: "",
-    color: initialColor
-  });
 
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  // Memoize color values to prevent infinite loops from object reference changes
-  const colorKey = useMemo(
-    () => `${initialColor.primary}-${initialColor.secondary}-${initialColor.accent}`,
-    [initialColor.primary, initialColor.secondary, initialColor.accent]
-  );
-
-  // Update composition data when props change (when different cards are clicked)
-  useEffect(() => {
-    setCompositionData(prev => ({
-      ...prev,
-      selectedCategory: initialCategory,
-      selectedSubcategory: getInitialSubcategory(initialCategory, initialSubcategory),
-      timePeriod: initialTimePeriod,
-      hierarchy: parseInt(initialHierarchy.replace("Top ", "")),
-      color: initialColor,
-      title: "",
-      isPredefined: true,
-    }));
-    setIsExpanded(false);
-  }, [initialCategory, initialSubcategory, initialTimePeriod, initialHierarchy, colorKey, isOpen]);
-
-  // State update helpers
-  const updateCompositionData = (updates: Partial<CompositionData>) => {
-    setCompositionData(prev => ({ ...prev, ...updates }));
-  };
+  // Use global composition store
+  const {
+    isOpen,
+    isExpanded,
+    formData: compositionData,
+    closeComposition,
+    toggleExpanded,
+    updateFormData
+  } = useComposition();
 
   // Enhanced category change handler that clears subcategory appropriately
   const handleCategoryChange = (category: string) => {
     const subcategory = getInitialSubcategory(category);
-    updateCompositionData({ 
+    updateFormData({
       selectedCategory: category,
       selectedSubcategory: subcategory,
-      isPredefined: false 
+      isPredefined: false
     });
   };
 
   const handleClose = () => {
     if (!createListMutation.isPending) {
-      onClose();
-      setIsExpanded(false);
+      closeComposition();
     }
   };
 
@@ -233,7 +183,7 @@ export function CompositionModal({
                 className="rounded-3xl border-2 overflow-hidden"
                 style={{
                   background: `
-                    linear-gradient(135deg, 
+                    linear-gradient(135deg,
                       rgba(15, 23, 42, 0.98) 0%,
                       rgba(30, 41, 59, 0.98) 25%,
                       rgba(51, 65, 85, 0.98) 50%,
@@ -251,10 +201,10 @@ export function CompositionModal({
               >
                 {/* Header */}
                 <CompositionModalHeader
-                  setIsExpanded={setIsExpanded}
+                  setIsExpanded={(expanded) => toggleExpanded(expanded)}
                   onClose={handleClose}
                   compositionData={compositionData}
-                  title={initialTitle}
+                  title="Create Your Ranking"
                   author={initialAuthor}
                   comment={initialComment}
                   hierarchy={`Top ${compositionData.hierarchy}`}
@@ -276,36 +226,30 @@ export function CompositionModal({
                       {/* Left Half - Configuration */}
                       <CompositionModalLeftContent
                         selectedCategory={compositionData.selectedCategory}
-                        setSelectedCategory={handleCategoryChange} // Use enhanced handler
+                        setSelectedCategory={handleCategoryChange}
                         selectedSubcategory={compositionData.selectedSubcategory}
                         setSelectedSubcategory={(subcategory) => {
-                          updateCompositionData({ selectedSubcategory: subcategory });
-                          updateCompositionData({ isPredefined: false });
+                          updateFormData({ selectedSubcategory: subcategory, isPredefined: false });
                         }}
                         timePeriod={compositionData.timePeriod}
                         setTimePeriod={(period) => {
-                          updateCompositionData({ timePeriod: period });
-                          updateCompositionData({ isPredefined: false });
+                          updateFormData({ timePeriod: period, isPredefined: false });
                         }}
                         selectedDecade={compositionData.selectedDecade ? parseInt(compositionData.selectedDecade) : 2020}
                         setSelectedDecade={(decade: number) => {
-                          updateCompositionData({ selectedDecade: decade.toString() });
-                          updateCompositionData({ isPredefined: false });
+                          updateFormData({ selectedDecade: decade.toString(), isPredefined: false });
                         }}
                         selectedYear={compositionData.selectedYear ? parseInt(compositionData.selectedYear) : 2024}
                         setSelectedYear={(year: number) => {
-                          updateCompositionData({ selectedYear: year.toString() });
-                          updateCompositionData({ isPredefined: false });
+                          updateFormData({ selectedYear: year.toString(), isPredefined: false });
                         }}
                         hierarchy={`Top ${compositionData.hierarchy}`}
                         setHierarchy={(hierarchy: string) => {
-                          updateCompositionData({ hierarchy: parseInt(hierarchy.replace("Top ", "")) });
-                          updateCompositionData({ isPredefined: false });
+                          updateFormData({ hierarchy: parseInt(hierarchy.replace("Top ", "")), isPredefined: false });
                         }}
                         customName={compositionData.title || ""}
                         setCustomName={(name) => {
-                          updateCompositionData({ title: name });
-                          updateCompositionData({ isPredefined: false });
+                          updateFormData({ title: name, isPredefined: false });
                         }}
                         color={compositionData.color}
                       />

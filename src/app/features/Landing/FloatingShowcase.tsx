@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { motion } from "framer-motion";
 import { ShowcaseCard } from "./ShowcaseCard";
 import { BannedShowcaseCard } from "./BannedShowcaseCard";
@@ -8,6 +7,7 @@ import { ShowcaseHeader } from "./ShowcaseHeader";
 import { showcaseData } from "@/lib/constants/showCaseExamples";
 import { FloatingParticles } from "@/components/app/decorations/particles";
 import ShowcaseDecor from "@/components/app/decorations/ShowcaseDecor";
+import { useComposition } from "@/hooks/use-composition";
 
 interface SelectedCardData {
     category: string;
@@ -25,26 +25,19 @@ interface SelectedCardData {
 }
 
 export function FloatingShowcase() {
-    const [selectedCardData, setSelectedCardData] = useState<SelectedCardData>({
-        category: "Sports",
-        subcategory: "Basketball",
-        timePeriod: "all-time",
-        hierarchy: "Top 50",
-        title: "Create Your Ranking",
-        author: "You",
-        comment: "Build your ultimate ranking",
-        color: {
-            primary: "#f59e0b",
-            secondary: "#d97706",
-            accent: "#fbbf24",
-        }
-    });
+    const { openWithPreset } = useComposition();
 
     const handleCardClick = (cardData: SelectedCardData) => {
         console.log("Card clicked with data:", cardData);
-        setSelectedCardData(cardData);
-        // Note: Modal functionality moved to UserListsSection
-        // Users should scroll down to the UserListsSection to create lists
+        // Open composition modal with preset data from the clicked card
+        openWithPreset({
+            category: cardData.category,
+            subcategory: cardData.subcategory,
+            timePeriod: cardData.timePeriod,
+            hierarchy: cardData.hierarchy,
+            title: cardData.title,
+            color: cardData.color
+        });
     };
 
     return (

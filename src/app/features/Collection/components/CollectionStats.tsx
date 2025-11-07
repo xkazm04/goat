@@ -38,6 +38,26 @@ export function CollectionStats({ stats, className = "" }: CollectionStatsProps)
     });
   }
 
+  // Add average ranking metric if available
+  if (stats.averageRanking !== undefined && stats.rankedItems && stats.rankedItems > 0) {
+    metrics.push({
+      id: "average-ranking",
+      label: "Avg Rating",
+      value: `${stats.averageRanking.toFixed(1)}★`,
+      color: "text-yellow-500",
+    });
+  }
+
+  // Add ranked items count if available
+  if (stats.rankedItems !== undefined && stats.rankedItems > 0) {
+    metrics.push({
+      id: "ranked-items",
+      label: "Rated",
+      value: stats.rankedItems,
+      color: "text-yellow-400",
+    });
+  }
+
   return (
     <StatsCard
       metrics={metrics}
@@ -48,6 +68,7 @@ export function CollectionStats({ stats, className = "" }: CollectionStatsProps)
     />
   );
 }
+
 
 
 

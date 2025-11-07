@@ -9,7 +9,9 @@
       "Bash(gh pr view:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(git pull:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []

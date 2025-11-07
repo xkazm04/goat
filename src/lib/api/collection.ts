@@ -11,7 +11,7 @@ export interface CollectionApiParams {
   subcategory?: string;
   searchTerm?: string;
   groupIds?: string[];
-  sortBy?: 'name' | 'date' | 'popularity';
+  sortBy?: 'name' | 'date' | 'popularity' | 'ranking';
   sortOrder?: 'asc' | 'desc';
   page?: number;
   pageSize?: number;
@@ -50,23 +50,23 @@ export interface CollectionStatsResponse {
   itemsByGroup: Record<string, number>;
 }
 
-const COLLECTION_ENDPOINT = '/api/top';
+const COLLECTION_ENDPOINT = '/top';
 
 export const collectionApi = {
   /**
    * Fetch collection groups with optional filtering
    */
   getGroups: async (params?: Pick<CollectionApiParams, 'category' | 'subcategory'>): Promise<CollectionGroup[]> => {
-    const response = await apiClient.get<{ groups: any[] }>(`${COLLECTION_ENDPOINT}/groups`, params);
+    const response = await apiClient.get<any[]>(`${COLLECTION_ENDPOINT}/groups`, params);
 
     // Transform API response to CollectionGroup format
-    return response.groups.map(group => ({
+    return response.map(group => ({
       id: group.id || group.group_name,
       name: group.group_name || group.name,
       items: group.items || [],
       category: group.category || params?.category,
       subcategory: group.subcategory || params?.subcategory,
-      count: group.total_count || group.items?.length || 0
+      count: group.item_count || group.total_count || group.items?.length || 0
     }));
   },
 
@@ -89,10 +89,16 @@ export const collectionApi = {
       limit
     };
 
-    const response = await apiClient.get<any[]>(`${COLLECTION_ENDPOINT}/items`, queryParams);
+    const response = await apiClient.get<{
+      items: any[];
+      total: number;
+      limit: number;
+      offset: number;
+      has_more: boolean;
+    }>(`${COLLECTION_ENDPOINT}/items`, queryParams);
 
     // Transform to CollectionItem format
-    const items: CollectionItem[] = response.map(item => ({
+    const items: CollectionItem[] = response.items.map(item => ({
       id: item.id,
       title: item.name || item.title,
       image_url: item.image_url,
@@ -102,6 +108,7 @@ export const collectionApi = {
       tags: item.tags || [],
       metadata: {
         group: item.group,
+        group_id: item.group_id,
         item_year: item.item_year,
         item_year_to: item.item_year_to,
         created_at: item.created_at,
@@ -109,18 +116,16 @@ export const collectionApi = {
       }
     }));
 
-    const total = items.length; // In production, this should come from API
-    const totalPages = Math.ceil(total / pageSize);
-    const hasMore = offset + limit < total;
+    const totalPages = Math.ceil(response.total / pageSize);
 
     return {
       data: items,
-      total,
+      total: response.total,
       page,
       pageSize,
       totalPages,
-      hasMore,
-      nextOffset: hasMore ? offset + limit : undefined
+      hasMore: response.has_more,
+      nextOffset: response.has_more ? offset + limit : undefined
     };
   },
 
@@ -128,14 +133,20 @@ export const collectionApi = {
    * Search items across groups
    */
   searchItems: async (searchTerm: string, params?: Omit<CollectionApiParams, 'searchTerm'>): Promise<CollectionItem[]> => {
-    const response = await apiClient.get<any[]>(`${COLLECTION_ENDPOINT}/items`, {
+    const response = await apiClient.get<{
+      items: any[];
+      total: number;
+      limit: number;
+      offset: number;
+      has_more: boolean;
+    }>(`${COLLECTION_ENDPOINT}/items`, {
       search: searchTerm,
       category: params?.category,
       subcategory: params?.subcategory,
       limit: params?.limit || 100
     });
 
-    return response.map(item => ({
+    return response.items.map(item => ({
       id: item.id,
       title: item.name || item.title,
       image_url: item.image_url,
@@ -145,6 +156,7 @@ export const collectionApi = {
       tags: item.tags || [],
       metadata: {
         group: item.group,
+        group_id: item.group_id,
         item_year: item.item_year
       }
     }));

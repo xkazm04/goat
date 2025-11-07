@@ -10,6 +10,7 @@ export interface CollectionItem {
   category?: string;
   subcategory?: string;
   tags?: string[];
+  ranking?: number; // Numeric ranking field (0-5 stars)
   metadata?: Record<string, any>;
 }
 
@@ -26,7 +27,7 @@ export interface CollectionFilter {
   searchTerm: string;
   selectedGroupIds: Set<string>;
   selectedCategory?: string;
-  sortBy?: 'name' | 'date' | 'popularity';
+  sortBy?: 'name' | 'date' | 'popularity' | 'ranking';
   sortOrder?: 'asc' | 'desc';
 }
 
@@ -35,6 +36,10 @@ export interface CollectionStats {
   selectedItems: number;
   visibleGroups: number;
   totalGroups: number;
+  averageRanking?: number; // Average ranking across all items
+  rankedItems?: number; // Number of items with a ranking
+  curatorLevel?: number; // Current curator milestone level (1-5)
+  itemsToNextLevel?: number; // Items needed to reach next milestone
 }
 
 export interface CollectionPaginationState {
@@ -49,4 +54,8 @@ export interface CollectionMutationHelpers {
   addItem: (item: Partial<CollectionItem>) => Promise<CollectionItem>;
   updateItem: (id: string, updates: Partial<CollectionItem>) => Promise<CollectionItem>;
   deleteItem: (id: string) => Promise<void>;
+}
+
+export interface CollectionOrderChangeCallback {
+  (items: CollectionItem[]): void;
 }

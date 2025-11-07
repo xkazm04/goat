@@ -17,6 +17,7 @@ export function backlogItemToCollectionItem(item: BacklogItem): CollectionItem {
     category: item.category,
     subcategory: item.subcategory,
     tags: item.tags,
+    ranking: undefined, // Ranking will be set separately if available
     metadata: {
       item_year: item.item_year,
       item_year_to: item.item_year_to,
@@ -46,6 +47,7 @@ export function backlogGroupToCollectionGroup(group: BacklogGroup): CollectionGr
 export function backlogGroupsToCollectionGroups(groups: BacklogGroup[]): CollectionGroup[] {
   return groups.map(backlogGroupToCollectionGroup);
 }
+
 
 
 

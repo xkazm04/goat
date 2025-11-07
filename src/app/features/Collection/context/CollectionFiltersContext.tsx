@@ -25,7 +25,7 @@ export interface CollectionFiltersContextValue {
   filter: {
     searchTerm: string;
     selectedGroupIds: Set<string>;
-    sortBy: 'name' | 'date' | 'popularity';
+    sortBy: 'name' | 'date' | 'popularity' | 'ranking';
     sortOrder: 'asc' | 'desc';
   };
 
@@ -40,13 +40,16 @@ export interface CollectionFiltersContextValue {
   toggleGroup: (groupId: string) => void;
   selectAllGroups: () => void;
   deselectAllGroups: () => void;
-  setSortBy: (sortBy: 'name' | 'date' | 'popularity') => void;
+  setSortBy: (sortBy: 'name' | 'date' | 'popularity' | 'ranking') => void;
   setSortOrder: (order: 'asc' | 'desc') => void;
 
   // Loading states
   isLoading: boolean;
   isError: boolean;
   error: Error | null;
+
+  // Easter egg state
+  spotlightItemId?: string | null;
 }
 
 const CollectionFiltersContext = createContext<CollectionFiltersContextValue | undefined>(undefined);

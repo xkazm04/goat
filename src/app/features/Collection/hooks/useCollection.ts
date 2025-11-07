@@ -12,17 +12,22 @@
  */
 
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
-import { useMemo, useCallback, useState } from 'react';
+import { useMemo, useCallback, useState, useEffect, useRef } from 'react';
 import { collectionApi, CollectionApiParams, CollectionItemCreate, CollectionItemUpdate } from '@/lib/api/collection';
 import { collectionKeys } from '@/lib/query-keys/collection';
 import { CollectionItem, CollectionGroup, CollectionStats } from '../types';
+import { useGridStore } from '@/stores/grid-store';
+
+// Easter egg keywords that trigger the spotlight effect
+const EASTER_EGG_KEYWORDS = ['wizard', 'magic', 'secret', 'hidden'];
+const SPOTLIGHT_DURATION = 5000; // 5 seconds
 
 export interface UseCollectionOptions {
   category?: string;
   subcategory?: string;
   initialSearchTerm?: string;
   initialSelectedGroupIds?: string[];
-  sortBy?: 'name' | 'date' | 'popularity';
+  sortBy?: 'name' | 'date' | 'popularity' | 'ranking';
   sortOrder?: 'asc' | 'desc';
   pageSize?: number;
   enablePagination?: boolean;
@@ -68,7 +73,7 @@ export interface UseCollectionResult {
   filter: {
     searchTerm: string;
     selectedGroupIds: Set<string>;
-    sortBy: 'name' | 'date' | 'popularity';
+    sortBy: 'name' | 'date' | 'popularity' | 'ranking';
     sortOrder: 'asc' | 'desc';
   };
 
@@ -77,8 +82,11 @@ export interface UseCollectionResult {
   toggleGroup: (groupId: string) => void;
   selectAllGroups: () => void;
   deselectAllGroups: () => void;
-  setSortBy: (sortBy: 'name' | 'date' | 'popularity') => void;
+  setSortBy: (sortBy: 'name' | 'date' | 'popularity' | 'ranking') => void;
   setSortOrder: (order: 'asc' | 'desc') => void;
+
+  // Easter egg state
+  spotlightItemId: string | null;
 
   // Mutations
   mutations: {
@@ -113,8 +121,8 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
     subcategory,
     initialSearchTerm = '',
     initialSelectedGroupIds = [],
-    sortBy: initialSortBy = 'name',
-    sortOrder: initialSortOrder = 'asc',
+    sortBy: initialSortBy = 'ranking', // Default to ranking sort
+    sortOrder: initialSortOrder = 'desc', // Descending (highest ranking first)
     pageSize = 50,
     enablePagination = false,
     enableInfiniteScroll = false,
@@ -123,6 +131,12 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
   } = options;
 
   const queryClient = useQueryClient();
+
+  // Get matched items from grid to exclude them from collection
+  const matchedItems = useGridStore(state => state.getMatchedItems());
+  const usedItemIds = useMemo(() => {
+    return new Set(matchedItems.map(item => item.backlogItemId).filter(Boolean) as string[]);
+  }, [matchedItems]);
 
   // Local filter state
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
@@ -133,9 +147,13 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
   const [sortOrder, setSortOrder] = useState(initialSortOrder);
   const [currentPage, setCurrentPage] = useState(1);
 
+  // Easter egg state: tracks which item is currently spotlighted
+  const [spotlightItemId, setSpotlightItemId] = useState<string | null>(null);
+  const spotlightTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   // Fetch groups
   const {
-    data: groupsData = [],
+    data: groupsDataRaw = [],
     isLoading: isLoadingGroups,
     isError: isErrorGroups,
     error: errorGroups,
@@ -146,6 +164,23 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
     staleTime,
     gcTime: cacheTime
   });
+
+  // Filter groups to exclude used items and hide empty groups
+  // Sort groups alphabetically by name (ascending)
+  const groupsData = useMemo(() => {
+    return groupsDataRaw
+      .map(group => {
+        // Filter out items that are already in the grid
+        const availableItems = (group.items || []).filter(item => !usedItemIds.has(item.id));
+        return {
+          ...group,
+          items: availableItems,
+          count: availableItems.length
+        };
+      })
+      .filter(group => group.count > 0) // Hide groups with no available items
+      .sort((a, b) => a.name.localeCompare(b.name)); // Sort groups by name (asc)
+  }, [groupsDataRaw, usedItemIds]);
 
   // Initialize selected groups when groups load
   useMemo(() => {
@@ -193,42 +228,124 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
     gcTime: cacheTime
   });
 
-  // Extract items from query results
+  // Extract items from query results and filter out used items
   const allItems = useMemo(() => {
+    let items: CollectionItem[] = [];
     if (enableInfiniteScroll && infiniteQuery.data) {
-      return infiniteQuery.data.pages.flatMap(page => page.data);
+      items = infiniteQuery.data.pages.flatMap(page => page.data);
+    } else {
+      items = paginatedData?.data || [];
     }
-    return paginatedData?.data || [];
-  }, [enableInfiniteScroll, infiniteQuery.data, paginatedData]);
+    // Filter out items that are already in the grid
+    return items.filter(item => !usedItemIds.has(item.id));
+  }, [enableInfiniteScroll, infiniteQuery.data, paginatedData, usedItemIds]);
 
-  // Client-side filtering by selected groups
+  // Client-side filtering by selected groups and sorting
   const filteredItems = useMemo(() => {
     if (selectedGroupIds.size === 0) return [];
 
-    return allItems.filter(item => {
-      const itemGroup = item.metadata?.group;
-      if (!itemGroup) return true; // Include items without group
-      return selectedGroupIds.has(itemGroup);
+    let items = allItems.filter(item => {
+      const itemGroupId = item.metadata?.group_id;
+      if (!itemGroupId) return true; // Include items without group
+      return selectedGroupIds.has(itemGroupId);
     });
-  }, [allItems, selectedGroupIds]);
+
+    // Apply client-side sorting
+    items = [...items].sort((a, b) => {
+      let comparison = 0;
+
+      switch (sortBy) {
+        case 'ranking':
+          const rankA = a.ranking ?? 0;
+          const rankB = b.ranking ?? 0;
+          comparison = rankB - rankA; // Higher rankings first by default
+          break;
+        case 'name':
+          comparison = a.title.localeCompare(b.title);
+          break;
+        case 'date':
+          const dateA = a.metadata?.created_at ? new Date(a.metadata.created_at as string).getTime() : 0;
+          const dateB = b.metadata?.created_at ? new Date(b.metadata.created_at as string).getTime() : 0;
+          comparison = dateB - dateA;
+          break;
+        case 'popularity':
+          const popA = a.metadata?.popularity ?? 0;
+          const popB = b.metadata?.popularity ?? 0;
+          comparison = popB - popA;
+          break;
+      }
+
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+
+    return items;
+  }, [allItems, selectedGroupIds, sortBy, sortOrder]);
 
   // Get selected groups
   const selectedGroups = useMemo(() => {
     return groupsData.filter(g => selectedGroupIds.has(g.id));
   }, [groupsData, selectedGroupIds]);
 
+  // Easter egg detection: Check if search term matches a keyword
+  useEffect(() => {
+    const searchLower = searchTerm.toLowerCase().trim();
+
+    // Check if the search term matches any easter egg keyword
+    const isEasterEgg = EASTER_EGG_KEYWORDS.some(keyword =>
+      searchLower === keyword
+    );
+
+    if (isEasterEgg && filteredItems.length > 0) {
+      // Clear any existing timeout
+      if (spotlightTimeoutRef.current) {
+        clearTimeout(spotlightTimeoutRef.current);
+      }
+
+      // Select a random item from the filtered items
+      const randomIndex = Math.floor(Math.random() * filteredItems.length);
+      const randomItem = filteredItems[randomIndex];
+      setSpotlightItemId(randomItem.id);
+
+      // Clear the spotlight after the duration
+      spotlightTimeoutRef.current = setTimeout(() => {
+        setSpotlightItemId(null);
+      }, SPOTLIGHT_DURATION);
+    } else if (!isEasterEgg && spotlightItemId) {
+      // Clear spotlight if search term changes away from easter egg
+      if (spotlightTimeoutRef.current) {
+        clearTimeout(spotlightTimeoutRef.current);
+      }
+      setSpotlightItemId(null);
+    }
+
+    // Cleanup on unmount
+    return () => {
+      if (spotlightTimeoutRef.current) {
+        clearTimeout(spotlightTimeoutRef.current);
+      }
+    };
+  }, [searchTerm, filteredItems, spotlightItemId]);
+
   // Calculate statistics
   const stats: CollectionStats = useMemo(() => {
     const totalItems = groupsData.reduce((sum, g) => sum + (g.items?.length || 0), 0);
     const selectedItems = selectedGroups.reduce((sum, g) => sum + (g.items?.length || 0), 0);
 
+    // Calculate average ranking from filtered items
+    const rankedItems = filteredItems.filter(item => item.ranking !== undefined && item.ranking > 0);
+    const averageRanking = rankedItems.length > 0
+      ? rankedItems.reduce((sum, item) => sum + (item.ranking || 0), 0) / rankedItems.length
+      : undefined;
+
     return {
       totalItems,
       selectedItems,
       visibleGroups: selectedGroups.length,
-      totalGroups: groupsData.length
+      totalGroups: groupsData.length,
+      averageRanking,
+      rankedItems: rankedItems.length
     };
-  }, [groupsData, selectedGroups]);
+  }, [groupsData, selectedGroups, filteredItems]);
 
   // Filter actions
   const toggleGroup = useCallback((groupId: string) => {
@@ -443,6 +560,9 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
     deselectAllGroups,
     setSortBy,
     setSortOrder,
+
+    // Easter egg state
+    spotlightItemId,
 
     // Mutations
     mutations: {

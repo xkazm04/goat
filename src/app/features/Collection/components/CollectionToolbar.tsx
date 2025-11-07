@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { CollectionStats, CollectionGroup } from "../types";
 import { useCollectionFiltersContext } from "../context/CollectionFiltersContext";
+import { CuratorBadge } from "./CuratorBadge";
 
 interface CollectionToolbarProps {
   // Header section
@@ -78,6 +79,9 @@ export function CollectionToolbar({
 
   return (
     <>
+      {/* Curator Badge - Celebration on milestones */}
+      <CuratorBadge itemCount={stats.totalItems} />
+
       {/* Hide/Show Toggle Button */}
       <button
         onClick={onToggleVisibility}

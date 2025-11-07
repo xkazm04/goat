@@ -2,8 +2,12 @@
  * Hook for managing collection filters and selections
  */
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { CollectionGroup, CollectionFilter } from '../types';
+
+// Easter egg keywords that trigger the spotlight effect
+const EASTER_EGG_KEYWORDS = ['wizard', 'magic', 'secret', 'hidden'];
+const SPOTLIGHT_DURATION = 5000; // 5 seconds
 
 export function useCollectionFilters(groups: CollectionGroup[]) {
   const [filter, setFilter] = useState<CollectionFilter>({
@@ -12,6 +16,10 @@ export function useCollectionFilters(groups: CollectionGroup[]) {
     sortBy: 'name',
     sortOrder: 'asc'
   });
+
+  // Easter egg state: tracks which item is currently spotlighted
+  const [spotlightItemId, setSpotlightItemId] = useState<string | null>(null);
+  const spotlightTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Filter groups based on search term
   const filteredGroups = useMemo(() => {
@@ -80,6 +88,46 @@ export function useCollectionFilters(groups: CollectionGroup[]) {
     setFilter(prev => ({ ...prev, selectedCategory: category }));
   }, []);
 
+  // Easter egg detection: Check if search term matches a keyword
+  useEffect(() => {
+    const searchLower = filter.searchTerm.toLowerCase().trim();
+
+    // Check if the search term matches any easter egg keyword
+    const isEasterEgg = EASTER_EGG_KEYWORDS.some(keyword =>
+      searchLower === keyword
+    );
+
+    if (isEasterEgg && filteredItems.length > 0) {
+      // Clear any existing timeout
+      if (spotlightTimeoutRef.current) {
+        clearTimeout(spotlightTimeoutRef.current);
+      }
+
+      // Select a random item from the filtered items
+      const randomIndex = Math.floor(Math.random() * filteredItems.length);
+      const randomItem = filteredItems[randomIndex];
+      setSpotlightItemId(randomItem.id);
+
+      // Clear the spotlight after the duration
+      spotlightTimeoutRef.current = setTimeout(() => {
+        setSpotlightItemId(null);
+      }, SPOTLIGHT_DURATION);
+    } else if (!isEasterEgg && spotlightItemId) {
+      // Clear spotlight if search term changes away from easter egg
+      if (spotlightTimeoutRef.current) {
+        clearTimeout(spotlightTimeoutRef.current);
+      }
+      setSpotlightItemId(null);
+    }
+
+    // Cleanup on unmount
+    return () => {
+      if (spotlightTimeoutRef.current) {
+        clearTimeout(spotlightTimeoutRef.current);
+      }
+    };
+  }, [filter.searchTerm, filteredItems, spotlightItemId]);
+
   return {
     filter,
     filteredGroups,
@@ -89,9 +137,11 @@ export function useCollectionFilters(groups: CollectionGroup[]) {
     selectAll,
     deselectAll,
     setSearchTerm,
-    setCategory
+    setCategory,
+    spotlightItemId // Expose the spotlighted item ID
   };
 }
+
 
 
 

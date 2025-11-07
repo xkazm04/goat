@@ -71,10 +71,19 @@ export function SimpleDropZone({
     zIndex: isDragging ? 50 : 1,
   } : undefined;
 
+  // Handle right-click to remove item
+  const handleContextMenu = (e: React.MouseEvent) => {
+    if (isOccupied && onRemove) {
+      e.preventDefault();
+      onRemove();
+    }
+  };
+
   return (
     <div
       ref={setNodeRef}
       style={style}
+      onContextMenu={handleContextMenu}
       {...(isOccupied ? attributes : {})}
       {...(isOccupied ? listeners : {})}
       className={`

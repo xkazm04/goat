@@ -40,6 +40,7 @@ const UserListItem = ({ list, onDelete, onPlay }: ListItemProps) => {
       exit={{ opacity: 0, x: -20 }}
       whileHover={{ scale: 1.01 }}
       className="group relative bg-gray-800/40 border border-gray-700/50 rounded-lg overflow-hidden hover:border-cyan-500/30 transition-all duration-300"
+      data-testid={`user-list-item-${list.id}`}
     >
       {/* Subtle gradient overlay on hover */}
       <div
@@ -57,13 +58,14 @@ const UserListItem = ({ list, onDelete, onPlay }: ListItemProps) => {
             style={{
               background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`
             }}
+            data-testid={`user-list-category-${list.id}`}
           >
             {list.category}
           </div>
 
           {/* Main content (center, flexible) */}
           <div className="flex-1 min-w-0">
-            <h4 className="text-sm font-semibold text-white truncate group-hover:text-cyan-400 transition-colors">
+            <h4 className="text-sm font-semibold text-white truncate group-hover:text-cyan-400 transition-colors" data-testid={`user-list-title-${list.id}`}>
               {list.title}
             </h4>
             <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
@@ -93,6 +95,7 @@ const UserListItem = ({ list, onDelete, onPlay }: ListItemProps) => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="px-4 py-1.5 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white rounded-lg text-xs font-medium transition-all shadow-lg shadow-cyan-500/20 flex items-center gap-1.5"
+              data-testid={`user-list-play-btn-${list.id}`}
             >
               <Play className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Continue</span>
@@ -105,6 +108,7 @@ const UserListItem = ({ list, onDelete, onPlay }: ListItemProps) => {
               whileTap={{ scale: 0.95 }}
               className="p-1.5 hover:bg-red-500/10 rounded transition-colors text-gray-400 hover:text-red-400"
               disabled={isDeleting}
+              data-testid={`user-list-delete-btn-${list.id}`}
             >
               <Trash2 className="w-3.5 h-3.5" />
             </motion.button>
@@ -139,6 +143,7 @@ const UserListItem = ({ list, onDelete, onPlay }: ListItemProps) => {
                   onClick={() => setShowDeleteConfirm(false)}
                   className="flex-1 px-3 py-1.5 text-xs font-medium text-gray-400 hover:text-white transition-colors"
                   disabled={isDeleting}
+                  data-testid={`user-list-delete-cancel-btn-${list.id}`}
                 >
                   Cancel
                 </button>
@@ -148,6 +153,7 @@ const UserListItem = ({ list, onDelete, onPlay }: ListItemProps) => {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   className="flex-1 px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-medium transition-all disabled:opacity-50"
+                  data-testid={`user-list-delete-confirm-btn-${list.id}`}
                 >
                   {isDeleting ? (
                     <span className="flex items-center justify-center gap-1.5">

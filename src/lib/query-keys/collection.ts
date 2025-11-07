@@ -8,7 +8,7 @@ export interface CollectionQueryParams {
   subcategory?: string;
   searchTerm?: string;
   selectedGroupIds?: string[];
-  sortBy?: 'name' | 'date' | 'popularity';
+  sortBy?: 'name' | 'date' | 'popularity' | 'ranking';
   sortOrder?: 'asc' | 'desc';
   page?: number;
   pageSize?: number;
