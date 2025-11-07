@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useTopList } from '@/hooks/use-top-lists';
 import { useListStore } from '@/stores/use-list-store';
@@ -11,16 +11,9 @@ import { BacklogProvider } from '@/providers/BacklogProvider';
 import { SimpleMatchGrid } from '../features/Match/sub_MatchCollections/SimpleMatchGrid';
 
 /**
- * Match Test Page - New simple drag and drop implementation
- * 
- * Handles:
- * - Loading list data from query parameter
- * - Initializing grid and backlog stores
- * - Syncing with backend for existing items
- * 
- * Access at: /match-test?list={listId}
+ * Internal component that uses useSearchParams
  */
-export default function MatchTestPage() {
+function MatchTestContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const listId = searchParams.get('list');
@@ -187,5 +180,30 @@ export default function MatchTestPage() {
     <BacklogProvider>
       <SimpleMatchGrid />
     </BacklogProvider>
+  );
+}
+
+/**
+ * Match Test Page - New simple drag and drop implementation
+ *
+ * Handles:
+ * - Loading list data from query parameter
+ * - Initializing grid and backlog stores
+ * - Syncing with backend for existing items
+ *
+ * Access at: /match-test?list={listId}
+ */
+export default function MatchTestPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading...</p>
+        </div>
+      </div>
+    }>
+      <MatchTestContent />
+    </Suspense>
   );
 }
