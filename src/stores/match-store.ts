@@ -9,6 +9,7 @@ interface MatchStoreState {
   isLoading: boolean;
   showComparisonModal: boolean;
   showResultShareModal: boolean;
+  showQuickAssignModal: boolean;
 
   // Keyboard shortcuts state
   keyboardMode: boolean;
@@ -18,6 +19,7 @@ interface MatchStoreState {
   setIsLoading: (loading: boolean) => void;
   setShowComparisonModal: (show: boolean) => void;
   setShowResultShareModal: (show: boolean) => void;
+  setShowQuickAssignModal: (show: boolean) => void;
   setKeyboardMode: (enabled: boolean) => void;
   
   // Actions - Keyboard Navigation
@@ -50,6 +52,7 @@ export const useMatchStore = create<MatchStoreState>((set, get) => ({
   isLoading: false,
   showComparisonModal: false,
   showResultShareModal: false,
+  showQuickAssignModal: false,
   keyboardMode: false,
   selectedItemIndex: 0,
 
@@ -68,7 +71,9 @@ export const useMatchStore = create<MatchStoreState>((set, get) => ({
   },
 
   setShowResultShareModal: (show) => set({ showResultShareModal: show }),
-  
+
+  setShowQuickAssignModal: (show) => set({ showQuickAssignModal: show }),
+
   setKeyboardMode: (enabled) => {
     set({ keyboardMode: enabled });
     
@@ -325,6 +330,7 @@ export const useMatchUI = () => useMatchStore((state) => ({
   isLoading: state.isLoading,
   showComparisonModal: state.showComparisonModal,
   showResultShareModal: state.showResultShareModal,
+  showQuickAssignModal: state.showQuickAssignModal,
   keyboardMode: state.keyboardMode
 }));
 
@@ -341,5 +347,6 @@ export const useMatchActions = () => useMatchStore((state) => ({
   saveMatchProgress: state.saveMatchProgress,
   handleKeyboardShortcut: state.handleKeyboardShortcut,
   quickAssignToPosition: state.quickAssignToPosition,
-  setKeyboardMode: state.setKeyboardMode
+  setKeyboardMode: state.setKeyboardMode,
+  setShowQuickAssignModal: state.setShowQuickAssignModal
 }));
