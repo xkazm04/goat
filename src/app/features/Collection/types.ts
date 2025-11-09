@@ -17,10 +17,15 @@ export interface CollectionItem {
 export interface CollectionGroup {
   id: string;
   name: string;
-  items: CollectionItem[];
+  items?: CollectionItem[]; // Optional - may not be included in API response
+  item_count?: number; // From API response
   category?: string;
   subcategory?: string;
-  count?: number;
+  description?: string | null;
+  image_url?: string | null;
+  created_at?: string;
+  updated_at?: string;
+  count?: number; // Computed count of available items
 }
 
 export interface CollectionFilter {

@@ -39,19 +39,39 @@ export async function GET(
 
     // If include_items is true, fetch items for this list
     if (includeItems) {
-      const { data: items, error: itemsError } = await supabase
-        .from('top_items')
-        .select('*')
+      const { data: listItems, error: itemsError } = await supabase
+        .from('list_items')
+        .select(`
+          ranking,
+          item_id,
+          items (
+            id,
+            title,
+            description,
+            image_url,
+            category,
+            subcategory,
+            tags,
+            ranking,
+            metadata
+          )
+        `)
         .eq('list_id', id)
-        .order('rank', { ascending: true });
+        .order('ranking', { ascending: true });
 
       if (itemsError) {
         console.error('Error fetching items:', itemsError);
       } else {
+        // Transform the response to flatten the items structure
+        const items = (listItems || []).map((li: any) => ({
+          ...li.items,
+          position: li.ranking,
+        }));
+
         return NextResponse.json({
           ...list,
-          items: items || [],
-          total_items: items?.length || 0,
+          items,
+          total_items: items.length,
         });
       }
     }

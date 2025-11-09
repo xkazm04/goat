@@ -11,7 +11,9 @@
       "Bash(git commit:*)",
       "Bash(rm:*)",
       "Bash(git pull:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(nul)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

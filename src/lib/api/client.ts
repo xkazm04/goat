@@ -79,6 +79,7 @@ export class ApiClient {
       }
     }
 
+    console.log('🌐 API GET:', url);
     return this.request<T>(url);
   }
 

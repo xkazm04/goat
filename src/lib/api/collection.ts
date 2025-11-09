@@ -59,6 +59,8 @@ export const collectionApi = {
   getGroups: async (params?: Pick<CollectionApiParams, 'category' | 'subcategory'>): Promise<CollectionGroup[]> => {
     const response = await apiClient.get<any[]>(`${COLLECTION_ENDPOINT}/groups`, params);
 
+    console.log('🔍 API response sample (first 3 groups):', response.slice(0, 3));
+
     // Transform API response to CollectionGroup format
     return response.map(group => ({
       id: group.id || group.group_name,
@@ -66,7 +68,8 @@ export const collectionApi = {
       items: group.items || [],
       category: group.category || params?.category,
       subcategory: group.subcategory || params?.subcategory,
-      count: group.item_count || group.total_count || group.items?.length || 0
+      item_count: group.item_count || group.total_count || group.items?.length || 0, // Map to item_count for consistency
+      count: group.item_count || group.total_count || group.items?.length || 0 // Keep count for backward compatibility
     }));
   },
 
@@ -106,13 +109,16 @@ export const collectionApi = {
       category: item.category,
       subcategory: item.subcategory,
       tags: item.tags || [],
+      ranking: item.selection_count || item.ranking || undefined, // Map selection_count to ranking
       metadata: {
         group: item.group,
         group_id: item.group_id,
         item_year: item.item_year,
         item_year_to: item.item_year_to,
         created_at: item.created_at,
-        updated_at: item.updated_at
+        updated_at: item.updated_at,
+        selection_count: item.selection_count,
+        view_count: item.view_count
       }
     }));
 
@@ -154,10 +160,13 @@ export const collectionApi = {
       category: item.category,
       subcategory: item.subcategory,
       tags: item.tags || [],
+      ranking: item.selection_count || item.ranking || undefined,
       metadata: {
         group: item.group,
         group_id: item.group_id,
-        item_year: item.item_year
+        item_year: item.item_year,
+        selection_count: item.selection_count,
+        view_count: item.view_count
       }
     }));
   },
@@ -267,11 +276,15 @@ export const collectionApi = {
       category: response.category,
       subcategory: response.subcategory,
       tags: response.tags || [],
+      ranking: response.selection_count || response.ranking || undefined,
       metadata: {
         group: response.group,
+        group_id: response.group_id,
         item_year: response.item_year,
         created_at: response.created_at,
-        updated_at: response.updated_at
+        updated_at: response.updated_at,
+        selection_count: response.selection_count,
+        view_count: response.view_count
       }
     };
   }

@@ -43,7 +43,7 @@ export async function getItemRecommendation(
     model: 'gemini-flash-latest',
     tools: [
       {
-        googleSearchRetrieval: {}
+        googleSearch: {}
       }
     ]
   });

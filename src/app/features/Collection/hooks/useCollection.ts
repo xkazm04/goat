@@ -133,10 +133,34 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
   const queryClient = useQueryClient();
 
   // Get matched items from grid to exclude them from collection
-  const matchedItems = useGridStore(state => state.getMatchedItems());
-  const usedItemIds = useMemo(() => {
-    return new Set(matchedItems.map(item => item.backlogItemId).filter(Boolean) as string[]);
-  }, [matchedItems]);
+  // Track the string of IDs to avoid infinite loops with array/set comparisons
+  const [usedItemIds, setUsedItemIds] = useState<Set<string>>(new Set());
+  const prevIdsStringRef = useRef<string>('');
+
+  // Subscribe to grid store changes and update used IDs only when they actually change
+  useEffect(() => {
+    const unsubscribe = useGridStore.subscribe((state) => {
+      const matchedItems = state.gridItems.filter(item => item.matched);
+      const ids = matchedItems.map(item => item.backlogItemId).filter(Boolean) as string[];
+      const idsString = ids.sort().join(',');
+
+      // Only update if the IDs actually changed
+      if (idsString !== prevIdsStringRef.current) {
+        prevIdsStringRef.current = idsString;
+        setUsedItemIds(new Set(ids));
+      }
+    });
+
+    // Initialize on mount
+    const state = useGridStore.getState();
+    const matchedItems = state.gridItems.filter(item => item.matched);
+    const ids = matchedItems.map(item => item.backlogItemId).filter(Boolean) as string[];
+    const idsString = ids.sort().join(',');
+    prevIdsStringRef.current = idsString;
+    setUsedItemIds(new Set(ids));
+
+    return unsubscribe;
+  }, []);
 
   // Local filter state
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
@@ -150,6 +174,9 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
   // Easter egg state: tracks which item is currently spotlighted
   const [spotlightItemId, setSpotlightItemId] = useState<string | null>(null);
   const spotlightTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Track if we've initialized selected groups to prevent infinite loops
+  const hasInitializedGroupsRef = useRef(false);
 
   // Fetch groups
   const {
@@ -165,26 +192,23 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
     gcTime: cacheTime
   });
 
-  // Filter groups to exclude used items and hide empty groups
+  // Filter groups to exclude empty groups
   // Sort groups alphabetically by name (ascending)
+  // Note: API returns groups with item_count, not items array
   const groupsData = useMemo(() => {
-    return groupsDataRaw
-      .map(group => {
-        // Filter out items that are already in the grid
-        const availableItems = (group.items || []).filter(item => !usedItemIds.has(item.id));
-        return {
-          ...group,
-          items: availableItems,
-          count: availableItems.length
-        };
-      })
-      .filter(group => group.count > 0) // Hide groups with no available items
+    console.log('📦 Raw groups from API:', groupsDataRaw.length);
+    const filtered = groupsDataRaw
+      .filter(group => (group.item_count || 0) > 0) // Hide groups with no items
       .sort((a, b) => a.name.localeCompare(b.name)); // Sort groups by name (asc)
-  }, [groupsDataRaw, usedItemIds]);
+    console.log('📦 Filtered groups (with items):', filtered.length);
+    return filtered;
+  }, [groupsDataRaw]);
 
-  // Initialize selected groups when groups load
-  useMemo(() => {
-    if (groupsData.length > 0 && selectedGroupIds.size === 0) {
+  // Initialize selected groups when groups load (only once)
+  useEffect(() => {
+    if (!hasInitializedGroupsRef.current && groupsData.length > 0 && selectedGroupIds.size === 0) {
+      console.log('🔄 Initializing selected groups:', groupsData.length, 'groups');
+      hasInitializedGroupsRef.current = true;
       setSelectedGroupIds(new Set(groupsData.map(g => g.id)));
     }
   }, [groupsData, selectedGroupIds.size]);
@@ -236,19 +260,32 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
     } else {
       items = paginatedData?.data || [];
     }
+    console.log('📊 Items from API:', items.length, 'used items:', usedItemIds.size);
+    if (items.length > 0) {
+      console.log('📊 Sample item:', items[0]);
+    }
     // Filter out items that are already in the grid
-    return items.filter(item => !usedItemIds.has(item.id));
+    const filtered = items.filter(item => !usedItemIds.has(item.id));
+    console.log('📊 Available items after filtering:', filtered.length);
+    return filtered;
   }, [enableInfiniteScroll, infiniteQuery.data, paginatedData, usedItemIds]);
 
   // Client-side filtering by selected groups and sorting
   const filteredItems = useMemo(() => {
-    if (selectedGroupIds.size === 0) return [];
+    console.log('🔍 Filtering items - selectedGroupIds:', selectedGroupIds.size, 'allItems:', allItems.length);
+
+    if (selectedGroupIds.size === 0) {
+      console.log('⚠️  No groups selected, returning empty array');
+      return [];
+    }
 
     let items = allItems.filter(item => {
       const itemGroupId = item.metadata?.group_id;
       if (!itemGroupId) return true; // Include items without group
       return selectedGroupIds.has(itemGroupId);
     });
+
+    console.log('✅ Filtered to', items.length, 'items');
 
     // Apply client-side sorting
     items = [...items].sort((a, b) => {
@@ -328,8 +365,8 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
 
   // Calculate statistics
   const stats: CollectionStats = useMemo(() => {
-    const totalItems = groupsData.reduce((sum, g) => sum + (g.items?.length || 0), 0);
-    const selectedItems = selectedGroups.reduce((sum, g) => sum + (g.items?.length || 0), 0);
+    const totalItems = groupsData.reduce((sum, g) => sum + (g.item_count || 0), 0);
+    const selectedItems = selectedGroups.reduce((sum, g) => sum + (g.item_count || 0), 0);
 
     // Calculate average ranking from filtered items
     const rankedItems = filteredItems.filter(item => item.ranking !== undefined && item.ranking > 0);

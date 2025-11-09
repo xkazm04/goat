@@ -11,6 +11,7 @@ import { toast } from '@/hooks/use-toast';
 import UserListItem from './UserListItem';
 import { ListGrid, DefaultEmptyState } from '@/components/ui/list-grid';
 import { useComposition } from '@/hooks/use-composition';
+import { CompositionModal } from '@/app/features/Landing/CompositionModal';
 
 interface UserListsSectionProps {
   className?: string;
@@ -21,7 +22,7 @@ export function UserListsSection({ className }: UserListsSectionProps) {
   const { tempUserId, isLoaded } = useTempUser();
   const { setCurrentList } = useListStore();
   const deleteListMutation = useDeleteList();
-  const { openComposition } = useComposition();
+  const { openComposition, isOpen: isModalOpen, closeComposition } = useComposition();
 
   // Fetch user lists
   const {
@@ -84,7 +85,8 @@ export function UserListsSection({ className }: UserListsSectionProps) {
   const hasLists = userLists.length > 0;
 
   return (
-    <section className={`relative py-16 px-6 ${className}`} data-testid="user-lists-section">
+    <>
+      <section className={`relative py-16 px-6 ${className}`} data-testid="user-lists-section">
         {/* Background */}
         <div className="absolute inset-0 -z-10 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900" />
 
@@ -170,7 +172,7 @@ export function UserListsSection({ className }: UserListsSectionProps) {
       {/* Composition Modal */}
       <CompositionModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={closeComposition}
         onSuccess={(result) => {
           console.log("List creation result:", result);
           if (result.success) {

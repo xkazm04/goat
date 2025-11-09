@@ -17,10 +17,13 @@ export async function GET(request: NextRequest) {
     const subcategory = searchParams.get('subcategory');
     const search = searchParams.get('search');
     const sortBy = searchParams.get('sort_by') || 'name';
-    const sortOrder = searchParams.get('sort_order') || 'asc';
+    const sortOrder = (searchParams.get('sort_order') || 'asc').toLowerCase();
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');
     const groupId = searchParams.get('group_id');
+    const missingImage = searchParams.get('missing_image') === 'true';
+
+    console.log('🔍 Items API params:', { category, subcategory, search, sortBy, sortOrder, limit, offset, groupId, missingImage });
 
     // Build query
     let query = supabase.from('items').select('*', { count: 'exact' });
@@ -38,21 +41,36 @@ export async function GET(request: NextRequest) {
     if (search) {
       query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
     }
+    if (missingImage) {
+      query = query.is('image_url', null);
+    }
 
     // Apply sorting
+    // Note: 'ranking' is not a column in items table, default to selection_count for ranking-like behavior
     const validSortFields = ['name', 'created_at', 'updated_at', 'item_year', 'selection_count', 'view_count'];
-    const sortField = validSortFields.includes(sortBy) ? sortBy : 'name';
+    let sortField = sortBy;
+
+    // Map frontend sort fields to actual database columns
+    if (sortBy === 'ranking') {
+      sortField = 'selection_count'; // Use selection_count as a proxy for ranking
+    } else if (!validSortFields.includes(sortBy)) {
+      sortField = 'name'; // Default fallback
+    }
+
     query = query.order(sortField, { ascending: sortOrder === 'asc' });
 
     // Apply pagination
     query = query.range(offset, offset + limit - 1);
 
+    console.log('🔍 Final sort field:', sortField, 'order:', sortOrder);
+
     const { data, error, count } = await query;
 
     if (error) {
       console.error('Error fetching items:', error);
+      console.error('Query details - sortField:', sortField, 'sortOrder:', sortOrder);
       return NextResponse.json(
-        { error: error.message },
+        { error: error.message, details: error },
         { status: 500 }
       );
     }
@@ -162,6 +180,7 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
 
 
 
