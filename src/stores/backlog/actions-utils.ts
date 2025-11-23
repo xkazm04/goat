@@ -145,10 +145,27 @@ export const createUtilActions = (
   },
 
   // Clear cache
-  clearCache: () => {
+  clearCache: async (category?: string) => {
+    // Clear API cache as well
+    try {
+      const { coalescedItemGroupsApi } = await import('@/lib/api/coalesced-item-groups');
+      coalescedItemGroupsApi.invalidateCache(category);
+    } catch (error) {
+      console.warn('Failed to invalidate API cache:', error);
+    }
+
     set(state => {
-      state.cache = {};
-      state.lastSyncTimestamp = 0;
+      if (category) {
+        // Clear only specific category cache
+        const keysToDelete = Object.keys(state.cache).filter(key => key.startsWith(`${category}-`));
+        keysToDelete.forEach(key => {
+          delete state.cache[key];
+        });
+      } else {
+        // Clear all cache
+        state.cache = {};
+        state.lastSyncTimestamp = 0;
+      }
     });
   },
 
@@ -158,7 +175,7 @@ export const createUtilActions = (
     const totalGroups = state.groups.length;
     const groupsWithItems = state.groups.filter(g => g.items && g.items.length > 0).length;
     const totalItems = state.groups.reduce((sum, group) => sum + (group.item_count || 0), 0);
-    
+
     return {
       totalGroups,
       groupsWithItems,
@@ -167,6 +184,30 @@ export const createUtilActions = (
       isLoading: state.isLoading,
       hasError: !!state.error
     };
+  },
+
+  // Get coalescer performance stats
+  getCoalescerStats: async () => {
+    try {
+      const { coalescedItemGroupsApi } = await import('@/lib/api/coalesced-item-groups');
+      return {
+        stats: coalescedItemGroupsApi.getStats(),
+        efficiency: coalescedItemGroupsApi.getEfficiency(),
+      };
+    } catch (error) {
+      console.warn('Failed to get coalescer stats:', error);
+      return null;
+    }
+  },
+
+  // Reset coalescer stats
+  resetCoalescerStats: async () => {
+    try {
+      const { coalescedItemGroupsApi } = await import('@/lib/api/coalesced-item-groups');
+      coalescedItemGroupsApi.resetStats();
+    } catch (error) {
+      console.warn('Failed to reset coalescer stats:', error);
+    }
   }
 });
 

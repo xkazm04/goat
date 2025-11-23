@@ -84,12 +84,14 @@ export interface BacklogState {
   processPendingChanges: () => Promise<void>;
 
   // Utilities
-  clearCache: (category?: string) => void;
+  clearCache: (category?: string) => Promise<void>;
   clearAllData: () => void;
   getGroupItems: (groupId: string) => BacklogItem[];
   getItemById: (itemId: string) => BacklogItem | null;
   getMatchedItemsCount: () => number;
   isItemUsed: (itemId: string) => boolean;
+  getCoalescerStats: () => Promise<any>;
+  resetCoalescerStats: () => Promise<void>;
 
   // Internal utilities
   startFastProgressiveLoading: (groups: any[]) => Promise<void>;

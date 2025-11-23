@@ -3,6 +3,7 @@
 import { useDraggable } from "@dnd-kit/core";
 import { ItemCard } from "@/components/ui/item-card";
 import { CollectionItem } from "./types";
+import { useProgressiveWikiImage } from "@/hooks/use-progressive-wiki-image";
 
 interface SimpleCollectionItemProps {
   item: CollectionItem;
@@ -12,7 +13,8 @@ interface SimpleCollectionItemProps {
 /**
  * Minimal draggable item - no animations, no complexity
  * Just pure drag and drop functionality
- * Now uses the reusable ItemCard component
+ * Now uses the reusable ItemCard component with progressive image loading
+ * and Wikipedia fallback for missing images
  */
 export function SimpleCollectionItem({ item, groupId }: SimpleCollectionItemProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
@@ -22,6 +24,17 @@ export function SimpleCollectionItem({ item, groupId }: SimpleCollectionItemProp
       item,
       groupId
     }
+  });
+
+  // Progressive image loading with wiki fallback
+  const {
+    imageUrl: currentImageUrl,
+    isFetching: isLoadingWiki,
+  } = useProgressiveWikiImage({
+    
+    itemTitle: item.title,
+    existingImage: item.image_url,
+    autoFetch: true,
   });
 
   const style = transform ? {
@@ -37,15 +50,18 @@ export function SimpleCollectionItem({ item, groupId }: SimpleCollectionItemProp
     >
       <ItemCard
         title={item.title}
-        image={item.image_url}
+        image={currentImageUrl}
         layout="grid"
         interactive="draggable"
         state={isDragging ? "dragging" : "default"}
         animated={false}
+        progressive={true}
         ariaLabel={`Draggable item: ${item.title}`}
+        ariaDescription={item.description}
         testId={`simple-collection-item-${item.id}`}
         hoverEffect="subtle"
         focusRing={false}
+        loading={isLoadingWiki}
       />
     </div>
   );

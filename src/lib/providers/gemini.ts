@@ -40,12 +40,7 @@ export async function getItemRecommendation(
   request: ItemRecommendationRequest
 ): Promise<ItemRecommendationResponse> {
   const model = getGeminiClient().getGenerativeModel({
-    model: 'gemini-flash-latest',
-    tools: [
-      {
-        googleSearch: {}
-      }
-    ]
+    model: 'gemini-flash-latest'
   });
 
   const prompt = buildRecommendationPrompt(request);

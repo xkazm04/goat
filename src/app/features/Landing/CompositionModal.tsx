@@ -140,7 +140,7 @@ export function CompositionModal({
       };
       
       onSuccess?.(compositionResult);
-      onClose();
+      closeComposition();
 
       // Navigate to match-test page with the list
       router.push(`/match-test?list=${result.list.id}`);
@@ -167,6 +167,7 @@ export function CompositionModal({
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
             onClick={handleClose}
+            data-testid="composition-modal-backdrop"
           >
             {/* Modal */}
             <motion.div
@@ -178,6 +179,7 @@ export function CompositionModal({
                 isExpanded ? 'max-w-6xl' : 'max-w-4xl'
               }`}
               onClick={(e) => e.stopPropagation()}
+              data-testid="composition-modal-container"
             >
               <div
                 className="rounded-3xl border-2 overflow-hidden"

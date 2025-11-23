@@ -86,16 +86,16 @@ export const createDataActions = (
     
     try {
       console.log(`🔄 BacklogStore: Fetching groups for ${cacheKey}...`);
-      
-      // Import API dynamically to avoid SSR issues
-      const { itemGroupsApi } = await import('@/lib/api/item-groups');
-      
+
+      // Import coalesced API to prevent duplicate requests
+      const { coalescedItemGroupsApi } = await import('@/lib/api/coalesced-item-groups');
+
       let groups;
       try {
-        // IMPROVED: Backend now handles filtering, so we get clean results
-        groups = await itemGroupsApi.getGroupsByCategory(
-          apiCategory, 
-          subcategory, 
+        // IMPROVED: Using coalesced API to de-duplicate simultaneous requests
+        groups = await coalescedItemGroupsApi.getGroupsByCategory(
+          apiCategory,
+          subcategory,
           undefined, // no search
           100, // higher limit
           1 // only groups with at least 1 item (handled by backend)
@@ -347,10 +347,10 @@ export const createDataActions = (
     
     try {
       console.log(`🔄 BacklogStore: Fetching items for group ${groupId}...`);
-      
-      // Import API dynamically to avoid SSR issues
-      const { itemGroupsApi } = await import('@/lib/api/item-groups');
-      const groupWithItems = await itemGroupsApi.getGroup(groupId, true);
+
+      // Import coalesced API to prevent duplicate requests
+      const { coalescedItemGroupsApi } = await import('@/lib/api/coalesced-item-groups');
+      const groupWithItems = await coalescedItemGroupsApi.getGroup(groupId, true);
       
       // Handle case where group is actually empty
       if (!groupWithItems.items || groupWithItems.items.length === 0) {

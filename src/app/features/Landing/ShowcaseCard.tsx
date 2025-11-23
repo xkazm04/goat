@@ -62,7 +62,7 @@ export function ShowcaseCard({
       className="relative w-80 rounded-2xl overflow-hidden cursor-pointer group"
       style={{
         background: `
-          linear-gradient(135deg, 
+          linear-gradient(135deg,
             rgba(15, 23, 42, 0.95) 0%,
             rgba(30, 41, 59, 0.98) 25%,
             rgba(51, 65, 85, 0.95) 50%,
@@ -85,6 +85,7 @@ export function ShowcaseCard({
         `
       }}
       onClick={handleClick}
+      data-testid={`showcase-card-${category.toLowerCase()}`}
     >
       {/* Glow effect */}
       <div

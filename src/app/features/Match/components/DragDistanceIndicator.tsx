@@ -1,13 +1,20 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 interface DragDistanceIndicatorProps {
   distance: number;
   isActive: boolean;
   targetPosition?: number | null;
   cursorPosition?: { x: number; y: number };
+}
+
+interface Sparkle {
+  id: number;
+  x: number;
+  y: number;
+  timestamp: number;
 }
 
 /**
@@ -21,10 +28,47 @@ export function DragDistanceIndicator({
   cursorPosition
 }: DragDistanceIndicatorProps) {
   const [showWarning, setShowWarning] = useState(false);
+  const [sparkles, setSparkles] = useState<Sparkle[]>([]);
+  const sparkleIdRef = useRef(0);
+  const lastSparkleTimeRef = useRef(0);
 
   useEffect(() => {
     setShowWarning(distance > 500);
   }, [distance]);
+
+  // Generate sparkles at 60fps (every ~16ms) when dragging
+  useEffect(() => {
+    if (!isActive || !cursorPosition) {
+      setSparkles([]);
+      return;
+    }
+
+    const sparkleInterval = 1000 / 60; // 60fps
+    const now = Date.now();
+
+    // Only create sparkle if enough time has passed
+    if (now - lastSparkleTimeRef.current >= sparkleInterval) {
+      const newSparkle: Sparkle = {
+        id: sparkleIdRef.current++,
+        x: cursorPosition.x,
+        y: cursorPosition.y,
+        timestamp: now
+      };
+
+      setSparkles(prev => [...prev, newSparkle]);
+      lastSparkleTimeRef.current = now;
+    }
+
+    // Clean up old sparkles (older than 300ms)
+    const cleanupTimer = setInterval(() => {
+      const currentTime = Date.now();
+      setSparkles(prev =>
+        prev.filter(sparkle => currentTime - sparkle.timestamp < 300)
+      );
+    }, 50);
+
+    return () => clearInterval(cleanupTimer);
+  }, [isActive, cursorPosition]);
 
   if (!isActive) return null;
 
@@ -32,14 +76,74 @@ export function DragDistanceIndicator({
   const percentage = Math.min((distance / warningThreshold) * 100, 100);
 
   return (
-    <AnimatePresence>
-      {isActive && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.8 }}
-          className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] pointer-events-none"
-        >
+    <>
+      {/* Sparkle Trail */}
+      <div className="fixed inset-0 z-[99] pointer-events-none" data-testid="drag-sparkle-trail">
+        <AnimatePresence>
+          {sparkles.map((sparkle) => (
+            <motion.div
+              key={sparkle.id}
+              initial={{
+                opacity: 1,
+                scale: 1,
+                x: sparkle.x,
+                y: sparkle.y
+              }}
+              animate={{
+                opacity: 0,
+                scale: 0,
+                x: sparkle.x + (Math.random() - 0.5) * 20,
+                y: sparkle.y + (Math.random() - 0.5) * 20
+              }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              className="absolute -translate-x-1/2 -translate-y-1/2"
+              style={{
+                left: 0,
+                top: 0
+              }}
+            >
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 12 12"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M6 0L7.5 4.5L12 6L7.5 7.5L6 12L4.5 7.5L0 6L4.5 4.5L6 0Z"
+                  fill="url(#sparkle-gradient)"
+                />
+                <defs>
+                  <linearGradient
+                    id="sparkle-gradient"
+                    x1="0"
+                    y1="0"
+                    x2="12"
+                    y2="12"
+                    gradientUnits="userSpaceOnUse"
+                  >
+                    <stop offset="0%" stopColor="#06b6d4" />
+                    <stop offset="50%" stopColor="#3b82f6" />
+                    <stop offset="100%" stopColor="#8b5cf6" />
+                  </linearGradient>
+                </defs>
+              </svg>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
+
+      {/* Distance Indicator */}
+      <AnimatePresence>
+        {isActive && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] pointer-events-none"
+            data-testid="drag-distance-indicator"
+          >
           <div className="bg-gray-900/95 backdrop-blur-md border border-gray-700 rounded-lg px-4 py-3 shadow-2xl">
             <div className="flex items-center gap-3">
               {/* Distance meter */}
@@ -109,5 +213,6 @@ export function DragDistanceIndicator({
         </motion.div>
       )}
     </AnimatePresence>
+    </>
   );
 }

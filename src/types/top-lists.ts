@@ -13,6 +13,8 @@ export interface TopList {
   updated_at?: string;
   description?: string;
   items?: TopListItem[];
+  type?: 'top' | 'award';
+  parent_list_id?: string;
 }
 
 export interface TopListItem {
@@ -37,6 +39,9 @@ export interface SearchListsParams {
   search?: string;
   limit?: number;
   offset?: number;
+  sort?: 'popular' | 'trending' | 'latest';
+  type?: 'top' | 'award';
+  parent_list_id?: string;
 }
 
 export interface CreateListRequest {
@@ -48,6 +53,8 @@ export interface CreateListRequest {
   time_period?: string;
   description?: string;
   predefined?: boolean;
+  type?: 'top' | 'award';
+  parent_list_id?: string;
 }
 
 export interface UpdateListRequest {
@@ -57,6 +64,8 @@ export interface UpdateListRequest {
   description?: string;
   size?: number;
   time_period?: string;
+  type?: 'top' | 'award';
+  parent_list_id?: string;
 }
 
 export interface CreateListWithUserRequest {
@@ -66,6 +75,8 @@ export interface CreateListWithUserRequest {
   size: number;
   time_period?: string;
   description?: string;
+  type?: 'top' | 'award';
+  parent_list_id?: string;
   user: {
     email: string;
     name?: string;

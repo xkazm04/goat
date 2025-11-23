@@ -214,6 +214,7 @@ export {
 /**
  * Swipe Gesture Hook
  * Mobile-optimized swipe gesture detection with velocity and distance tracking
+ * Supports two-stage drag-to-reorder: short swipe lifts card, then drag to reorder
  */
 export {
   useSwipeGesture,
@@ -225,6 +226,8 @@ export type {
   TouchPosition,
   SwipeConfig,
   SwipeCallbacks,
+  GridPosition,
+  ReorderEvent,
 } from './useSwipeGesture.types';
 
 // ========================================

@@ -5,6 +5,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { motion, MotionProps } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "./skeleton";
+import { ProgressiveImage } from "./progressive-image";
 
 /**
  * ItemCard Variants
@@ -107,6 +108,18 @@ export interface ItemCardProps
 
   /** Focus ring style */
   focusRing?: boolean;
+
+  /** Enable progressive image loading */
+  progressive?: boolean;
+
+  /** Low-res placeholder for progressive loading */
+  imagePlaceholder?: string;
+
+  /** Callback when image fails to load */
+  onImageError?: () => void;
+
+  /** Callback when image loads successfully */
+  onImageLoad?: () => void;
 }
 
 /**
@@ -182,6 +195,10 @@ export const ItemCard = React.forwardRef<HTMLDivElement, ItemCardProps>(
       testId,
       hoverEffect = "subtle",
       focusRing = true,
+      progressive = false,
+      imagePlaceholder,
+      onImageError,
+      onImageLoad,
       variant,
       layout = "grid",
       interactive = "default",
@@ -258,7 +275,21 @@ export const ItemCard = React.forwardRef<HTMLDivElement, ItemCardProps>(
         {layout === "list" && (
           <>
             {/* Image thumbnail */}
-            {imageComponent || (image ? (
+            {imageComponent || (progressive ? (
+              <div className="w-12 h-12 rounded overflow-hidden flex-shrink-0 bg-gray-900">
+                <ProgressiveImage
+                  src={image}
+                  placeholder={imagePlaceholder}
+                  alt={imageAlt || title}
+                  onError={onImageError}
+                  onLoad={onImageLoad}
+                  testId={`${testId}-image`}
+                  ariaDescription={`Image of ${title}`}
+                  autoFetchWiki={true}
+                  itemTitle={title}
+                />
+              </div>
+            ) : image ? (
               <div className="w-12 h-12 rounded overflow-hidden flex-shrink-0 bg-gray-900">
                 <img
                   src={image}
@@ -299,7 +330,19 @@ export const ItemCard = React.forwardRef<HTMLDivElement, ItemCardProps>(
         {(layout === "grid" || layout === "compact") && (
           <>
             {/* Image */}
-            {imageComponent || (image ? (
+            {imageComponent || (progressive ? (
+              <ProgressiveImage
+                src={image}
+                placeholder={imagePlaceholder}
+                alt={imageAlt || title}
+                onError={onImageError}
+                onLoad={onImageLoad}
+                testId={`${testId}-image`}
+                ariaDescription={`Image of ${title}`}
+                autoFetchWiki={true}
+                itemTitle={title}
+              />
+            ) : image ? (
               <img
                 src={image}
                 alt={imageAlt || title}

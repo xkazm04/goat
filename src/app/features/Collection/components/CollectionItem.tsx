@@ -6,6 +6,7 @@ import { StarRating } from "@/components/ui/star-rating";
 import { CollectionItem as CollectionItemType } from "../types";
 import { useState } from "react";
 import { Sparkles } from "lucide-react";
+import { AverageRankingBadge } from "./AverageRankingBadge";
 
 interface CollectionItemProps {
   item: CollectionItemType;
@@ -66,6 +67,15 @@ export function CollectionItem({
         </div>
       )}
 
+      {/* Average Ranking Badge - shows live ranking data */}
+      {!isDragging && (
+        <AverageRankingBadge
+          itemId={item.id}
+          position="top-left"
+          variant="compact"
+        />
+      )}
+
       <ItemCard
         title={item.title}
         subtitle={item.description}
@@ -94,6 +104,8 @@ export function CollectionItem({
     </div>
   );
 }
+
+
 
 
 

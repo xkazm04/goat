@@ -171,8 +171,6 @@ export function UserListsSection({ className }: UserListsSectionProps) {
 
       {/* Composition Modal */}
       <CompositionModal
-        isOpen={isModalOpen}
-        onClose={closeComposition}
         onSuccess={(result) => {
           console.log("List creation result:", result);
           if (result.success) {

@@ -32,7 +32,7 @@ interface ItemsResponse {
 async function fetchMissingImageItems(): Promise<ItemsResponse> {
   return apiClient.get<ItemsResponse>('/top/items', {
     missing_image: true,
-    limit: 20,
+    limit: 50,
     offset: 0,
     sort_by: 'created_at',
     sort_order: 'desc'

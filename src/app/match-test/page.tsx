@@ -8,7 +8,7 @@ import { useItemStore } from '@/stores/item-store';
 import { useBacklogStore } from '@/stores/backlog-store';
 import { useSessionStore } from '@/stores/session-store';
 import { BacklogProvider } from '@/providers/BacklogProvider';
-import { SimpleMatchGrid } from '../features/Match/sub_MatchCollections/SimpleMatchGrid';
+import { SimpleMatchGrid } from '../features/Match/sub_MatchGrid/SimpleMatchGrid';
 
 /**
  * Internal component that uses useSearchParams
@@ -26,7 +26,7 @@ function MatchTestContent() {
 
   // Fetch list data if we have a listId and don't have it cached
   const shouldFetch = !!listId && (!currentList || currentList.id !== listId);
-  
+
   const {
     data: listData,
     error: fetchError,
@@ -53,7 +53,7 @@ function MatchTestContent() {
         // Case 1: Use cached list from local state
         if (currentList?.id === listId) {
           console.log('✅ Using cached list from local state:', currentList.id);
-          
+
           if (activeSessionId !== listId) {
             switchToSession(listId);
           }
@@ -62,13 +62,13 @@ function MatchTestContent() {
           if (!gridItems || gridItems.length === 0) {
             initializeGrid(currentList.size, currentList.id, currentList.category);
           }
-          
+
           // Initialize backlog if needed
           const backlogStore = useBacklogStore.getState();
           if (currentList.category && (!backlogStore.groups || backlogStore.groups.length === 0)) {
             await initializeGroups(currentList.category, currentList.subcategory, true);
           }
-          
+
           return;
         }
 

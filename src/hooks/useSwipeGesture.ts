@@ -1,10 +1,11 @@
 /**
  * useSwipeGesture Hook
  * Mobile-optimized swipe gesture detection with velocity and distance tracking
+ * Supports two-stage drag-to-reorder: short swipe lifts card, then drag to reorder
  */
 
 import { useRef, useCallback, useEffect } from 'react';
-import type { SwipeConfig, SwipeCallbacks, TouchPosition, SwipeEvent, SwipeDirection } from './useSwipeGesture.types';
+import type { SwipeConfig, SwipeCallbacks, TouchPosition, SwipeEvent, SwipeDirection, ReorderEvent } from './useSwipeGesture.types';
 
 const DEFAULT_CONFIG: Required<SwipeConfig> = {
   minDistance: 50,
@@ -12,6 +13,9 @@ const DEFAULT_CONFIG: Required<SwipeConfig> = {
   minVelocity: 0.3,
   debounceMs: 300,
   preventScroll: true,
+  enableReorder: false,
+  liftThreshold: 80,
+  liftHoldDuration: 150,
 };
 
 export const useSwipeGesture = (
@@ -25,6 +29,11 @@ export const useSwipeGesture = (
   const touchCurrent = useRef<TouchPosition | null>(null);
   const isDebouncing = useRef(false);
   const isSwiping = useRef(false);
+
+  // Reorder mode state
+  const isLifted = useRef(false);
+  const liftTimer = useRef<NodeJS.Timeout | null>(null);
+  const isReorderMode = useRef(false);
 
   const calculateSwipeData = useCallback((
     start: TouchPosition,
@@ -77,6 +86,12 @@ export const useSwipeGesture = (
     if (e.touches.length > 1) {
       touchStart.current = null;
       isSwiping.current = false;
+      isLifted.current = false;
+      isReorderMode.current = false;
+      if (liftTimer.current) {
+        clearTimeout(liftTimer.current);
+        liftTimer.current = null;
+      }
       return;
     }
 
@@ -92,8 +107,26 @@ export const useSwipeGesture = (
     touchCurrent.current = touchStart.current;
     isSwiping.current = true;
 
+    // Start lift timer for reorder mode
+    if (mergedConfig.enableReorder) {
+      liftTimer.current = setTimeout(() => {
+        if (touchStart.current && !isLifted.current) {
+          // Check if touch hasn't moved much during hold
+          const deltaX = (touchCurrent.current?.x || 0) - touchStart.current.x;
+          const deltaY = (touchCurrent.current?.y || 0) - touchStart.current.y;
+          const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+          if (distance < 20) {
+            isLifted.current = true;
+            isReorderMode.current = true;
+            callbacks.onCardLift?.();
+          }
+        }
+      }, mergedConfig.liftHoldDuration);
+    }
+
     callbacks.onSwipeStart?.(e);
-  }, [callbacks]);
+  }, [callbacks, mergedConfig.enableReorder, mergedConfig.liftHoldDuration]);
 
   const handleTouchMove = useCallback((e: TouchEvent) => {
     if (!touchStart.current || !isSwiping.current) return;
@@ -103,6 +136,12 @@ export const useSwipeGesture = (
       touchStart.current = null;
       touchCurrent.current = null;
       isSwiping.current = false;
+      isLifted.current = false;
+      isReorderMode.current = false;
+      if (liftTimer.current) {
+        clearTimeout(liftTimer.current);
+        liftTimer.current = null;
+      }
       return;
     }
 
@@ -119,19 +158,74 @@ export const useSwipeGesture = (
     const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
     const progress = Math.min(distance / mergedConfig.minDistance, 1);
 
+    // Cancel lift timer if moved too much before timer fires
+    if (liftTimer.current && distance > 20) {
+      clearTimeout(liftTimer.current);
+      liftTimer.current = null;
+    }
+
+    // Handle reorder mode
+    if (mergedConfig.enableReorder && isReorderMode.current) {
+      // In reorder mode, fire reorder events
+      const reorderEvent: ReorderEvent = {
+        position: touchCurrent.current,
+        targetGridPosition: null, // Will be calculated by consumer with grid dimensions
+        isLifted: isLifted.current,
+      };
+
+      callbacks.onReorderMove?.(reorderEvent);
+
+      // Prevent default browser behavior during reorder
+      e.preventDefault();
+      return;
+    }
+
+    // Check if we should trigger lift (swipe past threshold)
+    if (mergedConfig.enableReorder && !isLifted.current && distance >= mergedConfig.liftThreshold) {
+      isLifted.current = true;
+      isReorderMode.current = true;
+      if (liftTimer.current) {
+        clearTimeout(liftTimer.current);
+        liftTimer.current = null;
+      }
+      callbacks.onCardLift?.();
+    }
+
     // Prevent default browser behavior if configured
     if (mergedConfig.preventScroll && Math.abs(deltaX) > Math.abs(deltaY)) {
       e.preventDefault();
     }
 
     callbacks.onSwipeMove?.(e, progress);
-  }, [callbacks, mergedConfig.minDistance, mergedConfig.preventScroll]);
+  }, [callbacks, mergedConfig.minDistance, mergedConfig.preventScroll, mergedConfig.enableReorder, mergedConfig.liftThreshold]);
 
   const handleTouchEnd = useCallback((e: TouchEvent) => {
     if (!touchStart.current || !touchCurrent.current || !isSwiping.current) return;
 
     // Ignore multi-touch
     if (e.touches.length > 0) return;
+
+    // Clear lift timer if still running
+    if (liftTimer.current) {
+      clearTimeout(liftTimer.current);
+      liftTimer.current = null;
+    }
+
+    // Handle reorder completion
+    if (mergedConfig.enableReorder && isReorderMode.current) {
+      // Fire reorder complete callback with final position
+      callbacks.onReorderComplete?.(null); // Consumer will calculate final grid position
+
+      // Reset reorder state
+      isLifted.current = false;
+      isReorderMode.current = false;
+      touchStart.current = null;
+      touchCurrent.current = null;
+      isSwiping.current = false;
+
+      callbacks.onSwipeEnd?.();
+      return;
+    }
 
     const swipeData = calculateSwipeData(touchStart.current, touchCurrent.current);
 
@@ -149,14 +243,22 @@ export const useSwipeGesture = (
     touchStart.current = null;
     touchCurrent.current = null;
     isSwiping.current = false;
+    isLifted.current = false;
+    isReorderMode.current = false;
 
     callbacks.onSwipeEnd?.();
-  }, [callbacks, calculateSwipeData, mergedConfig.debounceMs]);
+  }, [callbacks, calculateSwipeData, mergedConfig.debounceMs, mergedConfig.enableReorder]);
 
   const handleTouchCancel = useCallback(() => {
+    if (liftTimer.current) {
+      clearTimeout(liftTimer.current);
+      liftTimer.current = null;
+    }
     touchStart.current = null;
     touchCurrent.current = null;
     isSwiping.current = false;
+    isLifted.current = false;
+    isReorderMode.current = false;
     callbacks.onSwipeEnd?.();
   }, [callbacks]);
 
@@ -181,5 +283,7 @@ export const useSwipeGesture = (
   return {
     isDebouncing: isDebouncing.current,
     isSwiping: isSwiping.current,
+    isLifted: isLifted.current,
+    isReorderMode: isReorderMode.current,
   };
 };

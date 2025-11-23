@@ -2,6 +2,17 @@
 
 import { useEffect, useCallback, useRef } from 'react';
 import { useBacklogStore } from '@/stores/backlog-store';
+import { createBacklogCoalescer } from '@/lib/utils/request-coalescer';
+
+// Create a singleton coalescer instance for this provider
+let coalescerInstance: ReturnType<typeof createBacklogCoalescer> | null = null;
+
+const getCoalescer = () => {
+  if (!coalescerInstance) {
+    coalescerInstance = createBacklogCoalescer();
+  }
+  return coalescerInstance;
+};
 
 // Helper to check network status
 const checkNetworkStatus = () => {
@@ -15,6 +26,7 @@ export function BacklogProvider({ children }: { children: React.ReactNode }) {
   // Use ref to track if we've checked network status already
   const hasCheckedNetwork = useRef(false);
   const lastSyncRef = useRef<number>(0);
+  const statsLogIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Network status detection
   const updateNetworkStatus = useCallback(() => {
@@ -70,36 +82,68 @@ export function BacklogProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     updateNetworkStatus();
     restorePersistedData();
-    
+
+    // Initialize coalescer and expose it to the store
+    const coalescer = getCoalescer();
+
+    // Store coalescer reference in window for debugging
+    if (typeof window !== 'undefined') {
+      (window as any).__backlogCoalescer = coalescer;
+    }
+
     // Set up network status listeners
     const handleOnline = () => {
       console.log('🌐 App is online - syncing data');
       const { setOfflineMode, syncWithBackend } = useBacklogStore.getState();
       setOfflineMode(false);
-      
+
+      // Clear cache when coming back online to force fresh data
+      coalescer.invalidateCache();
+
       // Sync with backend when coming online
       if (syncWithBackend) {
         syncWithBackend().catch(console.error);
       }
     };
-    
+
     const handleOffline = () => {
       console.log('🌐 App is offline - using cached data');
       const { setOfflineMode } = useBacklogStore.getState();
       setOfflineMode(true);
     };
-    
+
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
-    
+
     // Set up periodic persistence
     const persistInterval = setInterval(persistData, 60000); // Every minute
-    
+
+    // Set up periodic stats logging (every 30 seconds)
+    statsLogIntervalRef.current = setInterval(() => {
+      const stats = coalescer.getStats();
+      const efficiency = coalescer.getEfficiency();
+
+      if (stats.totalRequests > 0) {
+        console.log(`📊 BacklogCoalescer Stats:`, {
+          totalRequests: stats.totalRequests,
+          coalescedRequests: stats.coalescedRequests,
+          cacheHits: stats.cacheHits,
+          activeBatches: stats.activeBatches,
+          coalescingRate: `${efficiency.coalescingRate.toFixed(1)}%`,
+          cacheHitRate: `${efficiency.cacheHitRate.toFixed(1)}%`,
+          networkSavings: efficiency.networkSavings,
+        });
+      }
+    }, 30000);
+
     // Cleanup
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
       clearInterval(persistInterval);
+      if (statsLogIntervalRef.current) {
+        clearInterval(statsLogIntervalRef.current);
+      }
     };
   }, [updateNetworkStatus, persistData, restorePersistedData]);
 
