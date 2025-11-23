@@ -3,4 +3,4 @@
  * Export all matching feature components
  */
 
-export { SwipeableCard } from './SwipeableCard';
+// No components currently exported - SwipeableCard removed as unused

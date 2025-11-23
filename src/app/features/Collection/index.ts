@@ -10,7 +10,6 @@ export { CollectionPanel } from './components/CollectionPanel';
 export { CollectionItem } from './components/CollectionItem';
 export { CollectionToolbar } from './components/CollectionToolbar';
 export { CategoryBar } from './components/CategoryBar';
-export { CollectionHeader } from './components/CollectionHeader';
 export { CollectionSearch } from './components/CollectionSearch';
 export { CollectionStats } from './components/CollectionStats';
 export { AddItemModal } from './components/AddItemModal';

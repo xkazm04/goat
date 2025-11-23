@@ -14,12 +14,6 @@ export type { ItemCardProps } from "./item-card";
 export { StatsCard, StatsCardSkeleton, statsCardVariants, statItemVariants } from "./stats-card";
 export type { StatsCardProps, Metric } from "./stats-card";
 
-export { GridCard, gridCardVariants } from "./grid-card";
-export type { GridCardProps } from "./grid-card";
-
-export { BacklogGroupRow } from "./backlog-group-row";
-export type { BacklogGroupRowProps } from "./backlog-group-row";
-
 export { StarRating } from "./star-rating";
 export type { StarRatingProps } from "./star-rating";
 
