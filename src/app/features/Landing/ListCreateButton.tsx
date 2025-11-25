@@ -4,7 +4,7 @@ import { useListStore } from "@/stores/use-list-store";
 import { useRouter } from "next/navigation";
 import { CompositionResult, mapCompositionToCreateListRequest } from "@/types/composition-to-api";
 import { ShimmerBtn } from "@/components/app/button/AnimButtons";
-import { CompositionData } from "./CompositionModal";
+import { CompositionData } from "./sub_CreateList/CompositionModal";
 
 type Props = {
     compositionData: CompositionData;

@@ -11,7 +11,7 @@ export function DragOverlayContent({ activeItem }: DragOverlayContentProps) {
 
     return (
         <div
-            className="w-24 h-24 rounded-xl overflow-hidden shadow-[0_0_30px_rgba(34,211,238,0.5)] border-2 border-cyan-400 rotate-3 scale-110"
+            className="w-24 h-24 rounded-xl overflow-hidden shadow-[0_0_30px_rgba(34,211,238,0.5)] border-2 border-cyan-400 scale-105"
             data-testid="drag-overlay-item"
         >
             {activeItem.image_url ? (
@@ -32,80 +32,99 @@ export function DragOverlayContent({ activeItem }: DragOverlayContentProps) {
 interface CursorGlowProps {
     glowX: any;
     glowY: any;
+    cursorX?: any;
+    cursorY?: any;
 }
 
-export function CursorGlow({ glowX, glowY }: CursorGlowProps) {
+export function CursorGlow({ glowX, glowY, cursorX, cursorY }: CursorGlowProps) {
+    // Use immediate cursor position if provided, otherwise fall back to glow position
+    const dotX = cursorX ?? glowX;
+    const dotY = cursorY ?? glowY;
+    
     return (
-        <motion.div
-            className="fixed pointer-events-none z-[100]"
-            style={{
-                left: glowX,
-                top: glowY,
-                x: '-50%',
-                y: '-50%',
-            }}
-            data-testid="cursor-glow"
-        >
-            {/* Pulsing outer glow */}
+        <>
+            {/* Trailing glow effects - uses spring animation for smooth trailing */}
             <motion.div
-                className="absolute inset-0 rounded-full"
+                className="fixed pointer-events-none z-[99]"
                 style={{
-                    width: '120px',
-                    height: '120px',
-                    background: 'radial-gradient(circle, rgba(34, 211, 238, 0.3) 0%, rgba(34, 211, 238, 0.1) 40%, transparent 70%)',
-                    filter: 'blur(15px)',
+                    left: glowX,
+                    top: glowY,
                 }}
-                animate={{
-                    scale: [1, 1.2, 1],
-                    opacity: [0.6, 0.8, 0.6],
-                }}
-                transition={{
-                    duration: 1.5,
-                    repeat: Infinity,
-                    ease: 'easeInOut',
-                }}
-            />
+                data-testid="cursor-glow"
+            >
+                {/* Pulsing outer glow - centered on spring position */}
+                <motion.div
+                    className="absolute rounded-full"
+                    style={{
+                        width: '120px',
+                        height: '120px',
+                        left: '-60px',
+                        top: '-60px',
+                        background: 'radial-gradient(circle, rgba(34, 211, 238, 0.3) 0%, rgba(34, 211, 238, 0.1) 40%, transparent 70%)',
+                        filter: 'blur(15px)',
+                    }}
+                    animate={{
+                        scale: [1, 1.2, 1],
+                        opacity: [0.6, 0.8, 0.6],
+                    }}
+                    transition={{
+                        duration: 1.5,
+                        repeat: Infinity,
+                        ease: 'easeInOut',
+                    }}
+                />
 
-            {/* Inner sharp glow */}
-            <motion.div
-                className="absolute inset-0 rounded-full"
-                style={{
-                    width: '80px',
-                    height: '80px',
-                    left: '20px',
-                    top: '20px',
-                    background: 'radial-gradient(circle, rgba(34, 211, 238, 0.5) 0%, rgba(34, 211, 238, 0.2) 50%, transparent 70%)',
-                    filter: 'blur(8px)',
-                }}
-                animate={{
-                    scale: [1, 1.1, 1],
-                }}
-                transition={{
-                    duration: 1,
-                    repeat: Infinity,
-                    ease: 'easeInOut',
-                }}
-            />
+                {/* Inner sharp glow - centered on spring position */}
+                <motion.div
+                    className="absolute rounded-full"
+                    style={{
+                        width: '80px',
+                        height: '80px',
+                        left: '-40px',
+                        top: '-40px',
+                        background: 'radial-gradient(circle, rgba(34, 211, 238, 0.5) 0%, rgba(34, 211, 238, 0.2) 50%, transparent 70%)',
+                        filter: 'blur(8px)',
+                    }}
+                    animate={{
+                        scale: [1, 1.1, 1],
+                    }}
+                    transition={{
+                        duration: 1,
+                        repeat: Infinity,
+                        ease: 'easeInOut',
+                    }}
+                />
+            </motion.div>
 
-            {/* Center dot */}
+            {/* Center dot - positioned below and right of cursor hotspot */}
             <motion.div
-                className="absolute rounded-full bg-cyan-400"
+                className="fixed pointer-events-none z-[101]"
                 style={{
-                    width: '8px',
-                    height: '8px',
-                    left: '56px',
-                    top: '56px',
-                    boxShadow: '0 0 10px rgba(34, 211, 238, 0.8)',
+                    left: dotX,
+                    top: dotY,
                 }}
-                animate={{
-                    opacity: [0.8, 1, 0.8],
-                }}
-                transition={{
-                    duration: 0.8,
-                    repeat: Infinity,
-                    ease: 'easeInOut',
-                }}
-            />
-        </motion.div>
+                data-testid="cursor-dot"
+            >
+                <motion.div
+                    className="absolute rounded-full bg-cyan-400"
+                    style={{
+                        width: '8px',
+                        height: '8px',
+                        left: '8px',
+                        top: '8px',
+                        boxShadow: '0 0 12px rgba(34, 211, 238, 0.9), 0 0 4px rgba(34, 211, 238, 1)',
+                    }}
+                    animate={{
+                        opacity: [0.9, 1, 0.9],
+                        scale: [1, 1.1, 1],
+                    }}
+                    transition={{
+                        duration: 0.6,
+                        repeat: Infinity,
+                        ease: 'easeInOut',
+                    }}
+                />
+            </motion.div>
+        </>
     );
 }

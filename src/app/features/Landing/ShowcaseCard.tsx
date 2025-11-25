@@ -1,8 +1,10 @@
 "use client";
 
-import { getSubcategoryBackground, getSubcategoryIcon } from "@/lib/helpers/getIcons";
 import { motion } from "framer-motion";
-import { Star  } from "lucide-react";
+import { getSubcategoryIcon, getSubcategoryBackground } from "@/lib/helpers/getIcons";
+import { CardHeader } from "./components/CardHeader";
+import { CardFooter } from "./components/CardFooter";
+import { cardVariants } from "./shared/animations";
 
 interface ShowcaseCardProps {
   id: number;
@@ -26,7 +28,11 @@ interface ShowcaseCardProps {
     title: string;
     author: string;
     comment: string;
-    color: any;
+    color: {
+      primary: string;
+      secondary: string;
+      accent: string;
+    };
   }) => void;
 }
 
@@ -39,143 +45,138 @@ export function ShowcaseCard({
   color,
   timePeriod,
   hiearchy,
-  onCardClick
+  onCardClick,
 }: ShowcaseCardProps) {
-
   const handleClick = () => {
-    if (onCardClick) {
-      onCardClick({
-        category,
-        subcategory,
-        timePeriod,
-        hierarchy: hiearchy,
-        title,
-        author,
-        comment,
-        color
-      });
-    }
+    onCardClick?.({
+      category,
+      subcategory,
+      timePeriod,
+      hierarchy: hiearchy,
+      title,
+      author,
+      comment,
+      color,
+    });
   };
 
   return (
     <motion.div
-      className="relative w-80 rounded-2xl overflow-hidden cursor-pointer group"
-      style={{
-        background: `
-          linear-gradient(135deg,
-            rgba(15, 23, 42, 0.95) 0%,
-            rgba(30, 41, 59, 0.98) 25%,
-            rgba(51, 65, 85, 0.95) 50%,
-            rgba(30, 41, 59, 0.98) 75%,
-            rgba(15, 23, 42, 0.95) 100%
-          )
-        `,
-        border: `2px solid ${color.primary}40`,
-        boxShadow: `
-          0 8px 32px rgba(0, 0, 0, 0.4),
-          0 0 0 1px rgba(148, 163, 184, 0.1),
-          0 0 20px ${color.primary}20
-        `
-      }}
-      whileHover={{
-        boxShadow: `
-          0 12px 40px rgba(0, 0, 0, 0.5),
-          0 0 0 1px rgba(148, 163, 184, 0.2),
-          0 0 30px ${color.primary}30
-        `
-      }}
+      className="relative w-80 rounded-3xl overflow-hidden cursor-pointer group"
+      variants={cardVariants}
+      whileHover="hover"
+      whileTap="tap"
       onClick={handleClick}
       data-testid={`showcase-card-${category.toLowerCase()}`}
+      style={{
+        // Glassmorphism base without visible borders
+        background: `
+          linear-gradient(135deg,
+            rgba(15, 20, 35, 0.95) 0%,
+            rgba(20, 28, 48, 0.9) 50%,
+            rgba(15, 20, 35, 0.95) 100%
+          )
+        `,
+        boxShadow: `
+          0 20px 50px rgba(0, 0, 0, 0.5),
+          0 0 80px ${color.primary}10,
+          inset 0 1px 0 rgba(255, 255, 255, 0.05),
+          inset 0 -1px 0 rgba(0, 0, 0, 0.2)
+        `,
+      }}
     >
-      {/* Glow effect */}
-      <div
-        className="absolute inset-0 opacity-0 group-hover:opacity-90 transition-opacity duration-300"
+      {/* Aurora glow effect at top */}
+      <motion.div
+        className="absolute -top-20 left-1/2 -translate-x-1/2 w-64 h-40 pointer-events-none"
         style={{
-          background: `linear-gradient(135deg, ${color.primary}10, ${color.secondary}10)`
+          background: `radial-gradient(ellipse at center, ${color.primary}30, transparent 60%)`,
+          filter: "blur(30px)",
+        }}
+        animate={{
+          opacity: [0.4, 0.7, 0.4],
+          scale: [1, 1.1, 1],
+        }}
+        transition={{
+          duration: 4,
+          repeat: Infinity,
+          ease: "easeInOut",
         }}
       />
 
-      {/* Header */}
+      {/* Subtle mesh gradient background */}
       <div
-        className="relative px-6 py-4 border-b"
+        className="absolute inset-0 opacity-40 pointer-events-none"
         style={{
-          borderColor: `${color.primary}30`,
-          background: `linear-gradient(135deg, ${color.primary}20, ${color.secondary}20)`
+          background: `
+            radial-gradient(at 80% 20%, ${color.primary}15 0px, transparent 50%),
+            radial-gradient(at 20% 80%, ${color.secondary}10 0px, transparent 50%)
+          `,
         }}
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center"
-            >
-              {getSubcategoryIcon(subcategory || 'basketball')}
-            </div>
-            <div>
-              <h3
-                className="font-bold text-sm tracking-wide uppercase"
-                style={{ color: color.accent }}
-              >
-                {title}
-              </h3>
-              <p className="text-xs text-slate-400 font-medium">
-                {subcategory || "Greatest of All Time"}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-        <div className="absolute -right-28 inset-0 z-10 flex items-center justify-center opacity-30">
-          {getSubcategoryBackground('basketball')}
-        </div>
+      />
 
-      {/* Footer */}
-      <div
-        className="px-6 py-4 border-t"
-        style={{
-          borderColor: `${color.primary}20`,
-          background: 'rgba(15, 23, 42, 0.8)'
-        }}
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div
-              className="w-6 h-6 rounded-full"
-              style={{
-                background: `linear-gradient(135deg, ${color.primary}, ${color.secondary})`
-              }}
-            />
-            <span
-              className="text-sm font-semibold"
-              style={{ color: color.accent }}
-            >
-              {author}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-1">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <Star
-                key={star}
-                className="w-3 h-3"
-                style={{
-                  color: star <= 5 ? color.accent : '#64748b',
-                  fill: star <= 5 ? color.accent : 'transparent'
-                }}
-              />
-            ))}
-          </div>
-        </div>
-
-        <p className="text-xs text-slate-400 mt-2 italic">
-          "{comment}"
-        </p>
+      {/* Background icon decoration */}
+      <div className="absolute -right-16 top-1/2 -translate-y-1/2 opacity-[0.06] scale-150 pointer-events-none">
+        {getSubcategoryBackground(subcategory || 'default')}
       </div>
 
-      {/* Hover gradient overlay */}
-      <div
-        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+      {/* Shimmer overlay on hover */}
+      <motion.div
+        className="absolute inset-0 opacity-0 group-hover:opacity-100 pointer-events-none"
         style={{
-          background: `linear-gradient(135deg, ${color.primary}05, ${color.secondary}05)`
+          background: `
+            linear-gradient(
+              105deg,
+              transparent 30%,
+              rgba(255, 255, 255, 0.03) 45%,
+              rgba(255, 255, 255, 0.06) 50%,
+              rgba(255, 255, 255, 0.03) 55%,
+              transparent 70%
+            )
+          `,
+          backgroundSize: "200% 100%",
+        }}
+        animate={{
+          backgroundPosition: ["200% 0", "-200% 0"],
+        }}
+        transition={{
+          duration: 1.5,
+          repeat: Infinity,
+          ease: "linear",
+          repeatDelay: 1,
+        }}
+      />
+
+      {/* Card content */}
+      <div className="relative z-10">
+        <CardHeader
+          title={title}
+          subcategory={subcategory}
+          color={color}
+        />
+
+        {/* Divider with glow */}
+        <div
+          className="mx-5 h-px"
+          style={{
+            background: `linear-gradient(90deg, transparent, ${color.primary}25, transparent)`,
+          }}
+        />
+
+        <CardFooter
+          author={author}
+          comment={comment}
+          color={color}
+        />
+      </div>
+
+      {/* Interactive glow ring on hover */}
+      <motion.div
+        className="absolute inset-0 rounded-3xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+        style={{
+          boxShadow: `
+            inset 0 0 30px ${color.primary}10,
+            0 0 60px ${color.primary}15
+          `,
         }}
       />
     </motion.div>

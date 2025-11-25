@@ -1,17 +1,19 @@
 "use client";
 
-import { motion } from 'framer-motion';
-import { Plus, User } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { useUserLists, useDeleteList } from '@/hooks/use-top-lists';
-import { useTempUser } from '@/hooks/use-temp-user';
-import { useListStore } from '@/stores/use-list-store';
-import { TopList } from '@/types/top-lists';
-import { toast } from '@/hooks/use-toast';
-import UserListItem from './UserListItem';
-import { ListGrid, DefaultEmptyState } from '@/components/ui/list-grid';
-import { useComposition } from '@/hooks/use-composition';
-import { CompositionModal } from '@/app/features/Landing/CompositionModal';
+import { motion } from "framer-motion";
+import { Plus, User, Sparkles } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useUserLists, useDeleteList } from "@/hooks/use-top-lists";
+import { useTempUser } from "@/hooks/use-temp-user";
+import { useListStore } from "@/stores/use-list-store";
+import { TopList } from "@/types/top-lists";
+import { toast } from "@/hooks/use-toast";
+import UserListItem from "./UserListItem";
+import { ListGrid, DefaultEmptyState } from "@/components/ui/list-grid";
+import { useComposition } from "@/hooks/use-composition";
+import { CompositionModal } from "@/app/features/Landing/sub_CreateList/CompositionModal";
+import { fadeInUp, listContainerVariants } from "../shared/animations";
+import { gradients } from "../shared/gradients";
 
 interface UserListsSectionProps {
   className?: string;
@@ -22,18 +24,14 @@ export function UserListsSection({ className }: UserListsSectionProps) {
   const { tempUserId, isLoaded } = useTempUser();
   const { setCurrentList } = useListStore();
   const deleteListMutation = useDeleteList();
-  const { openComposition, isOpen: isModalOpen, closeComposition } = useComposition();
+  const { openComposition, isOpen: isModalOpen } = useComposition();
 
-  // Fetch user lists
   const {
     data: userLists = [],
     isLoading,
     error,
-    refetch
-  } = useUserLists(
-    tempUserId || '',
-    { limit: 10 },
-  );
+    refetch,
+  } = useUserLists(tempUserId || "", { limit: 10 });
 
   const handleDeleteList = async (listId: string) => {
     try {
@@ -42,142 +40,203 @@ export function UserListsSection({ className }: UserListsSectionProps) {
         title: "List Deleted",
         description: "Your list has been successfully deleted.",
       });
-      // Refetch lists to update UI
       refetch();
     } catch (error) {
-      console.error('Failed to delete list:', error);
       toast({
         title: "Delete Failed",
         description: "Failed to delete the list. Please try again.",
       });
-      throw error; // Re-throw to handle in ListItem component
+      throw error;
     }
   };
 
   const handlePlayList = (list: TopList) => {
-    // Set current list in store
     setCurrentList({
       id: list.id,
       title: list.title,
       category: list.category,
       subcategory: list.subcategory,
-      user_id: list.user_id || '',
+      user_id: list.user_id || "",
       predefined: list.predefined,
       size: list.size,
       time_period: list.time_period,
-      created_at: list.created_at
+      created_at: list.created_at,
     });
-
-    // Navigate to match-test page
     router.push(`/match-test?list=${list.id}`);
   };
 
-  const handleCreateList = () => {
-    openComposition();
-  };
-
-  // Don't render if no user ID or no lists
-  if (!isLoaded || !tempUserId) {
-    return null;
-  }
-
-  // Show create button even if no lists exist
-  const hasLists = userLists.length > 0;
+  if (!isLoaded || !tempUserId) return null;
 
   return (
     <>
-      <section className={`relative py-16 px-6 ${className}`} data-testid="user-lists-section">
-        {/* Background */}
-        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900" />
-
-        {/* Fine grid lines */}
+      <section className={`relative py-20 px-6 overflow-hidden ${className}`} data-testid="user-lists-section">
+        {/* Background - matching MatchGrid */}
+        <div className="absolute inset-0 -z-10 bg-[#050505]" />
+        
+        {/* Center radial glow */}
         <div
-          className="absolute inset-0 -z-10 opacity-10"
+          className="absolute inset-0 -z-10"
+          style={{ background: 'radial-gradient(circle at center, rgba(6, 182, 212, 0.08) 0%, transparent 50%)' }}
+        />
+
+        {/* Neon grid pattern */}
+        <div
+          className="absolute inset-0 -z-10 opacity-[0.03]"
           style={{
             backgroundImage: `
-              linear-gradient(rgba(59, 130, 246, 0.1) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(59, 130, 246, 0.1) 1px, transparent 1px)
+              linear-gradient(0deg, transparent 24%, #22d3ee 25%, #22d3ee 26%, transparent 27%, transparent 74%, #22d3ee 75%, #22d3ee 76%, transparent 77%, transparent),
+              linear-gradient(90deg, transparent 24%, #22d3ee 25%, #22d3ee 26%, transparent 27%, transparent 74%, #22d3ee 75%, #22d3ee 76%, transparent 77%, transparent)
             `,
-            backgroundSize: '40px 40px',
+            backgroundSize: "60px 60px",
           }}
         />
 
+        {/* Decorative gradient line at top - cyan */}
+        <div
+          className="absolute top-0 left-0 right-0 h-px"
+          style={{
+            background: "linear-gradient(90deg, transparent, rgba(6, 182, 212, 0.3), rgba(34, 211, 238, 0.2), transparent)",
+          }}
+        />
+
+        {/* Floating orb - cyan */}
+        <motion.div
+          className="absolute top-1/3 right-1/5 w-72 h-72 rounded-full pointer-events-none"
+          style={{
+            background: "radial-gradient(circle, rgba(6, 182, 212, 0.06) 0%, transparent 60%)",
+            filter: "blur(50px)",
+          }}
+          animate={{ x: [0, -30, 0], y: [0, 20, 0] }}
+          transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+        />
+
         <div className="max-w-6xl mx-auto relative">
-          {/* Section Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 rounded-lg border border-cyan-500/30">
-                <User className="w-5 h-5 text-cyan-400" />
-              </div>
+          {/* Section header */}
+          <motion.div
+            className="flex items-center justify-between mb-10"
+            variants={fadeInUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+          >
+            <div className="flex items-center gap-4">
+              <motion.div
+                className="relative p-3 rounded-2xl"
+                style={{
+                  background: `linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(34, 211, 238, 0.1))`,
+                  boxShadow: `
+                    0 8px 32px rgba(6, 182, 212, 0.1),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.1)
+                  `,
+                }}
+                whileHover={{ scale: 1.05, rotate: 5 }}
+              >
+                <User className="w-6 h-6 text-cyan-400" />
+              </motion.div>
               <div>
-                <h2 className="text-2xl font-bold text-white">My Rankings</h2>
-                <p className="text-xs text-gray-400 mt-0.5">Your personal ranking lists</p>
+                <h2 className="text-3xl font-bold text-white tracking-tight">My Rankings</h2>
+                <p className="text-sm text-slate-400 mt-1">Your personal collection of ranking lists</p>
               </div>
             </div>
 
-            {/* Create New List Button */}
+            {/* Create button */}
             <motion.button
-              onClick={handleCreateList}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="px-4 py-1.5 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white rounded-lg text-xs font-medium transition-all shadow-lg shadow-cyan-500/20 flex items-center gap-1.5"
+              onClick={openComposition}
+              className="relative group px-5 py-2.5 rounded-xl font-medium text-sm text-white overflow-hidden"
+              style={{
+                background: `linear-gradient(135deg, rgba(6, 182, 212, 0.9), rgba(34, 211, 238, 0.9))`,
+                boxShadow: `
+                  0 8px 30px rgba(6, 182, 212, 0.3),
+                  inset 0 1px 0 rgba(255, 255, 255, 0.2)
+                `,
+              }}
+              whileHover={{ scale: 1.03, y: -2 }}
+              whileTap={{ scale: 0.98 }}
               data-testid="create-new-list-btn"
             >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Create New</span>
-            </motion.button>
-          </div>
-
-          {/* Lists Grid using ListGrid component */}
-          <ListGrid
-            items={userLists}
-            renderItem={(list) => (
-              <UserListItem
-                list={list}
-                onDelete={handleDeleteList}
-                onPlay={handlePlayList}
+              {/* Shimmer effect */}
+              <motion.div
+                className="absolute inset-0 opacity-0 group-hover:opacity-100"
+                style={{
+                  background: `linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.2) 50%, transparent 60%)`,
+                  backgroundSize: "200% 100%",
+                }}
+                animate={{ backgroundPosition: ["200% 0", "-200% 0"] }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
               />
-            )}
-            isLoading={isLoading}
-            error={error ? new Error('Failed to load your lists') : null}
-            onRetry={refetch}
-            emptyState={
-              <DefaultEmptyState
-                icon={User}
-                title="No Lists Yet"
-                description="Create your first ranking list to get started!"
-                action={
+              <span className="relative flex items-center gap-2">
+                <Plus className="w-4 h-4" />
+                Create New
+              </span>
+            </motion.button>
+          </motion.div>
+
+          {/* List grid */}
+          <motion.div
+            variants={listContainerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+          >
+            <ListGrid
+              items={userLists}
+              renderItem={(list) => (
+                <UserListItem list={list} onDelete={handleDeleteList} onPlay={handlePlayList} />
+              )}
+              isLoading={isLoading}
+              error={error ? new Error("Failed to load your lists") : null}
+              onRetry={refetch}
+              emptyState={
+                <motion.div
+                  className="py-16 text-center"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  <motion.div
+                    className="mx-auto w-20 h-20 rounded-2xl flex items-center justify-center mb-6"
+                    style={{
+                      background: `linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(34, 211, 238, 0.1))`,
+                    }}
+                    animate={{ y: [0, -8, 0] }}
+                    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                  >
+                    <Sparkles className="w-10 h-10 text-cyan-400/60" />
+                  </motion.div>
+                  <h3 className="text-xl font-semibold text-white mb-2">No Lists Yet</h3>
+                  <p className="text-slate-400 mb-8 max-w-sm mx-auto">
+                    Create your first ranking list and start comparing your favorites!
+                  </p>
                   <motion.button
-                    onClick={handleCreateList}
+                    onClick={openComposition}
+                    className="px-6 py-3 rounded-xl font-medium text-white"
+                    style={{
+                      background: `linear-gradient(135deg, rgba(6, 182, 212, 0.9), rgba(34, 211, 238, 0.9))`,
+                      boxShadow: `0 8px 30px rgba(6, 182, 212, 0.25)`,
+                    }}
                     whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="px-4 py-1.5 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white rounded-lg text-xs font-medium transition-all shadow-lg shadow-cyan-500/20 flex items-center gap-1.5 mx-auto"
+                    whileTap={{ scale: 0.98 }}
                     data-testid="create-first-list-btn"
                   >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Create Your First List</span>
+                    <span className="flex items-center gap-2">
+                      <Plus className="w-4 h-4" />
+                      Create Your First List
+                    </span>
                   </motion.button>
-                }
-              />
-            }
-            breakpoints={{ sm: 1 }}
-            gap={3}
-            layout="list"
-            skeletonCount={3}
-            testId="user-lists-grid"
-          />
+                </motion.div>
+              }
+              breakpoints={{ sm: 1 }}
+              gap={3}
+              layout="list"
+              skeletonCount={3}
+              testId="user-lists-grid"
+            />
+          </motion.div>
         </div>
       </section>
 
-      {/* Composition Modal */}
       <CompositionModal
         onSuccess={(result) => {
-          console.log("List creation result:", result);
-          if (result.success) {
-            console.log(`Successfully created list: ${result.listId}`);
-            // Refetch lists to show the new one
-            refetch();
-          }
+          if (result.success) refetch();
         }}
       />
     </>

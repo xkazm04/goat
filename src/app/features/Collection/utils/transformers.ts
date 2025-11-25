@@ -18,11 +18,13 @@ export function backlogItemToCollectionItem(item: BacklogItem): CollectionItem {
     subcategory: item.subcategory,
     tags: item.tags,
     ranking: undefined, // Ranking will be set separately if available
+    used: item.used, // Preserve used state for filtering
     metadata: {
       item_year: item.item_year,
       item_year_to: item.item_year_to,
       created_at: item.created_at,
-      updated_at: item.updated_at
+      updated_at: item.updated_at,
+      group_id: undefined // Will be set by group converter
     }
   };
 }

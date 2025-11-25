@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { DndContext, DragOverlay, DragEndEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { snapCenterToCursor } from "@dnd-kit/modifiers";
 import { backlogGroupsToCollectionGroups } from "../../Collection";
 import { SimpleCollectionPanel } from "../sub_MatchCollections/SimpleCollectionPanel";
 import { CollectionItem } from "../../Collection/types";
@@ -9,6 +10,7 @@ import { BacklogItem } from "@/types/backlog-groups";
 import { GridItemType } from "@/types/match";
 import { useGridStore } from "@/stores/grid-store";
 import { useBacklogStore } from "@/stores/backlog-store";
+import { useCurrentList } from "@/stores/use-list-store";
 import { MatchGridTutorial, useTutorialState } from "../sub_MatchCollections/MatchGridTutorial";
 import { useMotionValue, useSpring } from "framer-motion";
 
@@ -21,7 +23,6 @@ import { GridSection } from "./components/GridSection";
 import { MatchGridHeader } from "./components/MatchGridHeader";
 import { DragOverlayContent, CursorGlow } from "./components/DragComponents";
 import { getItemTitle } from "./lib/helpers";
-import { CoalescerMonitor } from "@/components/dev/CoalescerMonitor";
 
 /**
  * "Neon Arena" Match Grid
@@ -30,6 +31,9 @@ import { CoalescerMonitor } from "@/components/dev/CoalescerMonitor";
 export function SimpleMatchGrid() {
   // View mode state
   const [viewMode, setViewMode] = useState<ViewMode>('podium');
+
+  // Get current list from store (populated from API)
+  const currentList = useCurrentList();
 
   // Connect to stores
   const gridItems = useGridStore(state => state.gridItems);
@@ -149,14 +153,13 @@ export function SimpleMatchGrid() {
         onComplete={completeTutorial}
         onDemoDataReady={handleDemoDataReady}
       />
-      <CoalescerMonitor />
 
       <DndContext
         sensors={sensors}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="min-h-screen bg-[#050505] pb-72 relative overflow-hidden" data-testid="match-grid-container">
+        <div className="min-h-screen bg-[#050505] pb-96 relative overflow-hidden" data-testid="match-grid-container">
 
           {/* Animated Background */}
           <div className="absolute inset-0 pointer-events-none">
@@ -169,14 +172,26 @@ export function SimpleMatchGrid() {
             />
           </div>
 
-          {/* Header */}
-          <MatchGridHeader />
+          {/* Header with ViewSwitcher */}
+          <div className="relative z-10">
+            <div className="max-w-7xl mx-auto px-8">
+              <div className="flex items-start justify-between pt-8">
+                {/* Header content */}
+                <MatchGridHeader 
+                  title={currentList?.title || "Neon Arena"}
+                  subtitle={currentList?.description || "Assemble Your Dream Team"}
+                />
+                
+                {/* View Switcher - Top Right */}
+                <div className="pt-4">
+                  <ViewSwitcher currentView={viewMode} onViewChange={setViewMode} />
+                </div>
+              </div>
+            </div>
+          </div>
 
           {/* Grid Area */}
           <div className="max-w-7xl mx-auto px-8 relative z-10">
-
-            {/* View Switcher */}
-            <ViewSwitcher currentView={viewMode} onViewChange={setViewMode} />
 
             {/* Render the appropriate view */}
             {viewMode === 'podium' && (
@@ -205,16 +220,18 @@ export function SimpleMatchGrid() {
 
             {/* Main Grid Sections */}
             <div className="space-y-12">
-              {/* Positions 4-10 */}
-              <GridSection
-                title="Elite Tier"
-                gridItems={gridItems}
-                startPosition={viewMode === 'rushmore' ? 4 : 3}
-                endPosition={10}
-                columns={7}
-                onRemove={handleRemove}
-                getItemTitle={getItemTitle}
-              />
+              {/* Positions 4-10 (or 5-10 for rushmore) */}
+              {gridItems.length > (viewMode === 'rushmore' ? 4 : 3) && (
+                <GridSection
+                  title="Elite Tier"
+                  gridItems={gridItems}
+                  startPosition={viewMode === 'rushmore' ? 4 : 3}
+                  endPosition={Math.min(10, gridItems.length)}
+                  columns={7}
+                  onRemove={handleRemove}
+                  getItemTitle={getItemTitle}
+                />
+              )}
 
               {/* Positions 11-20 */}
               {gridItems.length > 10 && (
@@ -222,7 +239,7 @@ export function SimpleMatchGrid() {
                   title="Core Roster"
                   gridItems={gridItems}
                   startPosition={10}
-                  endPosition={20}
+                  endPosition={Math.min(20, gridItems.length)}
                   columns={10}
                   gap={3}
                   onRemove={handleRemove}
@@ -230,13 +247,27 @@ export function SimpleMatchGrid() {
                 />
               )}
 
-              {/* Remaining Positions */}
+              {/* Positions 21-35 */}
               {gridItems.length > 20 && (
+                <GridSection
+                  title="Rising Stars"
+                  gridItems={gridItems}
+                  startPosition={20}
+                  endPosition={Math.min(35, gridItems.length)}
+                  columns={10}
+                  gap={3}
+                  onRemove={handleRemove}
+                  getItemTitle={getItemTitle}
+                />
+              )}
+
+              {/* Positions 36-50 */}
+              {gridItems.length > 35 && (
                 <GridSection
                   title="Reserves"
                   gridItems={gridItems}
-                  startPosition={20}
-                  endPosition={50}
+                  startPosition={35}
+                  endPosition={Math.min(50, gridItems.length)}
                   columns={10}
                   gap={3}
                   onRemove={handleRemove}
@@ -250,13 +281,13 @@ export function SimpleMatchGrid() {
           <SimpleCollectionPanel groups={backlogGroupsToCollectionGroups(groups)} />
         </div>
 
-        {/* Drag Overlay */}
-        <DragOverlay>
+        {/* Drag Overlay - snaps center to cursor position */}
+        <DragOverlay modifiers={[snapCenterToCursor]}>
           {activeItem && <DragOverlayContent activeItem={activeItem} />}
         </DragOverlay>
 
-        {/* Cursor-following Glow Effect */}
-        {activeItem && <CursorGlow glowX={glowX} glowY={glowY} />}
+        {/* Cursor-following Glow Effect - dot at cursor, glow trails behind */}
+        {activeItem && <CursorGlow glowX={glowX} glowY={glowY} cursorX={cursorX} cursorY={cursorY} />}
       </DndContext>
     </>
   );

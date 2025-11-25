@@ -12,6 +12,7 @@ export interface CollectionItem {
   tags?: string[];
   ranking?: number; // Numeric ranking field (0-5 stars)
   metadata?: Record<string, any>;
+  used?: boolean; // Track if item is placed in the grid
 }
 
 export interface CollectionGroup {
@@ -45,6 +46,7 @@ export interface CollectionStats {
   rankedItems?: number; // Number of items with a ranking
   curatorLevel?: number; // Current curator milestone level (1-5)
   itemsToNextLevel?: number; // Items needed to reach next milestone
+  hiddenInGridCount?: number; // Number of items hidden because they are in the MatchGrid
 }
 
 export interface CollectionPaginationState {

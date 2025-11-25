@@ -1,0 +1,365 @@
+You are an expert software engineer. Execute the following requirement immediately. Do not ask questions, do not wait for confirmation. Read the requirement carefully and implement all changes to the codebase as specified.
+
+REQUIREMENT TO EXECUTE NOW:
+
+# Unused Component Integration Analysis
+
+## Objective
+Analyze unused components to determine integration opportunities and create Claude Code requirements for implementing them into the codebase.
+
+## Files to Analyze (4 total)
+
+1. `src/app/features/Match/components/DiceLoader.tsx`
+   - Exports: DiceLoader
+   - Current Status: No JSX usage or imports found
+
+2. `src/app/features/Match/components/DragDistanceIndicator.tsx`
+   - Exports: DragDistanceIndicator
+   - Current Status: No JSX usage or imports found
+
+3. `src/app/features/Match/components/FeatureModuleIndicator.tsx`
+   - Exports: FeatureModuleIndicator
+   - Current Status: No JSX usage or imports found
+
+4. `src/app/features/Match/components/QuickAssignModal.tsx`
+   - Exports: QuickAssignModal
+   - Current Status: No JSX usage or imports found
+
+## Task Instructions
+
+### Phase 1: Deep Component Analysis
+
+For each unused component, analyze:
+
+**1. Component Purpose & Functionality**
+- Read the component code thoroughly
+- Identify its primary purpose and capabilities
+- Document its props interface and API
+- Note any dependencies or integration requirements
+- Assess code quality and maintainability
+
+**2. Current Codebase Gaps**
+- Search for similar functionality already implemented
+- Identify areas where this component could add value
+- Look for incomplete features that could use this component
+- Find redundant implementations that could be replaced
+
+**3. Integration Opportunities**
+- Determine specific pages/features that could use this component
+- Identify refactoring opportunities (replacing existing code)
+- Assess potential for reusability across the app
+- Consider whether component needs updates before integration
+
+**4. Technical Feasibility**
+- Check for breaking changes needed to integrate
+- Verify compatibility with current tech stack
+- Identify dependencies that need to be installed
+- Assess impact on bundle size and performance
+
+### Phase 2: Create Integration Requirements
+
+For each component that has integration potential, create a separate Claude Code requirement file:
+
+**Requirement File Naming:**
+`requirements/integrate-[component-name].md`
+
+**Requirement Template:**
+```markdown
+# Integrate [Component Name] into [Feature/Page]
+
+## Component Overview
+**File:** `[relative path]`
+**Exports:** [list exports]
+**Purpose:** [Brief description]
+
+## Why Integrate
+[Explain the value this component adds and the gap it fills]
+
+## Integration Plan
+
+### 1. Pre-Integration Updates
+- [ ] [Any component updates needed before integration]
+- [ ] [Dependency installations]
+- [ ] [Breaking changes to address]
+
+### 2. Integration Points
+**Primary Usage:**
+- File: `[target file path]`
+- Location: [Describe where in the file]
+- Changes needed: [Describe modifications]
+
+**Additional Usage:** (if applicable)
+- [List other integration points]
+
+### 3. Testing Requirements
+- [ ] Unit tests for component
+- [ ] Integration tests for new usage
+- [ ] Manual testing checklist
+
+### 4. Cleanup Tasks
+- [ ] Remove redundant code (if replacing existing functionality)
+- [ ] Update documentation
+- [ ] Add component to component library/catalog
+
+## Success Criteria
+- ✅ Component integrated and working in target location(s)
+- ✅ No regressions in existing functionality
+- ✅ Tests passing
+- ✅ Code reviewed and approved
+
+## Estimated Impact
+- **Code Quality:** [High/Medium/Low]
+- **User Experience:** [High/Medium/Low]
+- **Maintainability:** [High/Medium/Low]
+- **Performance:** [Positive/Neutral/Negative]
+```
+
+### Phase 3: Prioritization Matrix
+
+Create a summary report ranking components by integration value:
+
+**File:** `docs/analysis/unused-components-integration-analysis.md`
+
+```markdown
+# Unused Components Integration Analysis
+
+## Executive Summary
+[High-level overview of findings]
+
+## Integration Priority Matrix
+
+### 🔴 High Priority (Implement Soon)
+[Components with clear value and easy integration]
+
+| Component | Integration Target | Value | Effort | Priority Score |
+|-----------|-------------------|-------|--------|----------------|
+| [Name] | [Where] | High | Low | 10 |
+
+### 🟡 Medium Priority (Consider)
+[Components with moderate value or complexity]
+
+| Component | Integration Target | Value | Effort | Priority Score |
+|-----------|-------------------|-------|--------|----------------|
+| [Name] | [Where] | Medium | Medium | 5 |
+
+### 🟢 Low Priority (Archive)
+[Components with unclear value or high complexity]
+
+| Component | Reason for Low Priority |
+|-----------|------------------------|
+| [Name] | [Explanation] |
+
+## Recommendations
+
+### Quick Wins (High Value, Low Effort)
+[List of easy integrations that provide significant value]
+
+### Strategic Integrations (High Value, High Effort)
+[List of complex integrations worth the investment]
+
+### Candidates for Deletion
+[Components with no clear integration path]
+```
+
+
+## Current Statistics
+
+- Total unused files: 92
+- Total unused exports: 52
+- Total exports in codebase: 186
+
+
+## Analysis Guidelines
+
+### Integration Value Assessment
+
+**High Value Indicators:**
+- ✅ Solves a current pain point or gap
+- ✅ Replaces redundant/lower-quality code
+- ✅ Enables new user-facing features
+- ✅ Improves performance or accessibility
+- ✅ Well-documented and tested
+
+**Low Value Indicators:**
+- ❌ Duplicates existing functionality
+- ❌ Outdated or incompatible with current stack
+- ❌ Poor code quality or lacking tests
+- ❌ No clear use case
+- ❌ Significant technical debt
+
+### Effort Assessment
+
+**Low Effort (1-2 hours):**
+- Simple import and usage
+- Minimal/no modifications needed
+- No breaking changes
+
+**Medium Effort (1-2 days):**
+- Requires component updates
+- Some refactoring of target code
+- Testing infrastructure needed
+
+**High Effort (3+ days):**
+- Major refactoring required
+- Breaking changes to multiple files
+- Extensive testing needed
+- Documentation updates
+
+## Expected Deliverables
+
+1. **Individual requirement files** for each component worth integrating
+2. **Integration analysis report** with prioritization matrix
+3. **Quick wins list** for immediate implementation
+4. **Deletion recommendations** for components with no path forward
+
+## Success Metrics
+
+- Clear action plan for each unused component
+- Prioritized backlog of integration work
+- Informed decision-making on what to keep vs delete
+- Reduced technical debt through strategic integration
+
+🤖 Generated by Blueprint Unused Code Scan
+
+
+IMPORTANT INSTRUCTIONS:
+- Analyze the requirement thoroughly
+- Identify all files that need to be modified or created
+- Implement all changes specified in the requirement
+- Follow the implementation steps precisely
+- Create/modify files as needed
+- Run any tests if specified
+- Ensure all changes are complete before finishing
+
+## File Structure Guidelines (Next.js/React Projects)
+
+When creating new files in Next.js/React projects, follow this structure:
+
+**Feature-Specific Files** (use `app/features/<feature>` structure):
+- `app/features/<feature>/components/` - Feature-specific components and UI sections
+- `app/features/<feature>/lib/` - Feature-specific functions, utilities, and logical helpers
+- `app/features/<feature>/` - Main wrapper, index, or page file for the feature
+
+**Reusable UI Components** (use `app/components/ui` structure):
+- `app/components/ui/` - Shared, reusable UI elements used across multiple features
+
+**Theming and Styling**:
+- Before creating new UI components, examine existing components in the project
+- Match the color scheme, spacing, and visual patterns of existing components
+- Use consistent className patterns (Tailwind CSS classes)
+- Follow the app's design language (glassmorphism, gradients, shadows, etc.)
+- Pay attention to dark mode support if the app uses it
+
+Examples:
+- Feature component: `app/features/tasks/components/TaskCard.tsx`
+- Feature helper: `app/features/tasks/lib/taskValidation.ts`
+- Reusable UI: `app/components/ui/Button.tsx`
+
+## Test Coverage Preparation
+
+**IMPORTANT**: For all interactive UI components (buttons, inputs, forms, modals, etc.), add `data-testid` attributes to enable automated testing.
+
+**Guidelines**:
+- Add `data-testid` to all clickable elements (buttons, links, icons)
+- Use descriptive, kebab-case naming: `data-testid="submit-form-btn"`
+- Include component context in the ID: `data-testid="goal-delete-btn"`, `data-testid="project-settings-modal"`
+- Add to form inputs: `data-testid="email-input"`, `data-testid="password-input"`
+- Add to list items for testing selection: `data-testid="task-item-123"`
+
+**Examples**:
+```tsx
+<button onClick={handleSubmit} data-testid="create-goal-btn">
+  Create Goal
+</button>
+
+<input
+  type="text"
+  value={title}
+  onChange={handleChange}
+  data-testid="goal-title-input"
+/>
+
+<div className="modal" data-testid="delete-confirmation-modal">
+  ...
+</div>
+```
+
+## Implementation Logging
+
+**CRITICAL**: After completing the implementation, create a log entry using the implementation-log repository to track what was implemented.
+
+Project ID: `4ee93a8c-9318-4497-b7cf-05027e48f12b`
+
+
+**Use the Implementation Log Repository** (located at `src/app/db/repositories/implementation-log.repository.ts`):
+
+```typescript
+import { implementationLogRepository } from '@/app/db/repositories/implementation-log.repository';
+import { v4 as uuidv4 } from 'uuid';
+
+// Create log entry
+implementationLogRepository.createLog({
+  id: uuidv4(),
+  project_id: '4ee93a8c-9318-4497-b7cf-05027e48f12b',
+  requirement_name: '<requirement-name>',
+  title: '<short-descriptive-title>',
+  overview: '<detailed-overview-of-changes>',
+  overview_bullets: '<bullet1>\n<bullet2>\n<bullet3>\n<bullet4>',
+  tested: false
+});
+```
+
+**Log Entry Guidelines**:
+- `id`: Generate a unique UUID using `uuidv4()` or `crypto.randomUUID()`
+- `project_id`: The project identifier (use: "4ee93a8c-9318-4497-b7cf-05027e48f12b")
+- `requirement_name`: Name of the requirement file being executed (without .md extension)
+- `title`: Short, descriptive title (2-6 words, e.g., "Add User Authentication")
+- `overview`: Detailed paragraph describing:
+  - What was implemented
+  - Key files created or modified
+  - Major functionality added
+  - Any important patterns or decisions made
+- `overview_bullets`: **REQUIRED** - Newline-separated bullet points (3-5 bullet points) summarizing key changes. Format as plain text with each bullet on a new line:
+  - First bullet point describing main change
+  - Second bullet point describing another key change
+  - Third bullet point describing implementation detail
+  - (Optional) Fourth bullet point for additional context
+  Example: "Implemented OAuth 2.0 with PKCE flow\nAdded session management with refresh tokens\nCreated unified auth context provider\nMigrated from cookies to secure HTTP-only tokens"
+- `tested`: Always set to false initially
+
+**Example Log Entry**:
+
+```typescript
+import { implementationLogRepository } from '@/app/db/repositories/implementation-log.repository';
+import { v4 as uuidv4 } from 'uuid';
+
+implementationLogRepository.createLog({
+  id: uuidv4(),
+  project_id: 'project-abc-123',
+  requirement_name: 'implement-user-login',
+  title: 'User Login System',
+  overview: 'Implemented complete user authentication system with login form, JWT token management, and session persistence. Created LoginForm.tsx component, authService.ts for API calls, and useAuth hook for state management. Added protected route wrapper and login/logout functionality. Integrated with existing theme using glassmorphism design.',
+  overview_bullets: 'Implemented OAuth 2.0 with PKCE flow
+Added session management with refresh tokens
+Created unified auth context provider
+Integrated with existing glassmorphism theme',
+  tested: false
+});
+```
+
+**IMPORTANT**: Do NOT create standalone script files for logging. Use the repository directly in your implementation or create a simple inline script that imports and uses the repository
+
+
+
+
+## Final Checklist
+
+Before finishing:
+- [ ] All code changes implemented
+- [ ] Test IDs added to interactive components
+- [ ] File structure follows guidelines
+- [ ] UI components match existing theme
+- [ ] Implementation log entry created in database
+- [ ] Tests run successfully (if specified)
+
+Begin implementation now.

@@ -3,4 +3,5 @@
  * Export all matching feature components
  */
 
-// No components currently exported - SwipeableCard removed as unused
+export { SwipeableCard } from './SwipeableCard';
+export { ParticleThemeSettings } from './ParticleThemeSettings';

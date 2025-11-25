@@ -15,6 +15,8 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get('category');
     const subcategory = searchParams.get('subcategory');
     const predefined = searchParams.get('predefined');
+    const type = searchParams.get('type');
+    const parentListId = searchParams.get('parent_list_id');
     const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 100;
     const offset = searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : 0;
 
@@ -37,6 +39,12 @@ export async function GET(request: NextRequest) {
     }
     if (predefined !== null) {
       query = query.eq('predefined', predefined === 'true');
+    }
+    if (type) {
+      query = query.eq('type', type);
+    }
+    if (parentListId) {
+      query = query.eq('parent_list_id', parentListId);
     }
 
     const { data, error } = await query;
@@ -88,6 +96,8 @@ export async function POST(request: NextRequest) {
           predefined: body.predefined || false,
           size: body.size,
           time_period: body.time_period,
+          type: body.type || 'top',
+          parent_list_id: body.parent_list_id,
         },
       ])
       .select()

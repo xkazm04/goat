@@ -79,7 +79,7 @@ function MatchTestContent() {
           const listConfig = {
             ...listData,
             metadata: {
-              size: listData.size,
+              size: listData.size, 
               selectedCategory: listData.category,
               selectedSubcategory: listData.subcategory,
               timePeriod: "all-time" as const,

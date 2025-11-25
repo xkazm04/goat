@@ -1,8 +1,9 @@
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, Play, Clock, Hash, Calendar } from 'lucide-react';
-import { TopList } from '@/types/top-lists';
-import { getCategoryColor } from '@/lib/helpers/getColors';
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Trash2, Play, Clock, Hash, Calendar, AlertTriangle } from "lucide-react";
+import { TopList } from "@/types/top-lists";
+import { getCategoryColor } from "@/lib/helpers/getColors";
+import { listItemVariants, modalBackdropVariants, modalContentVariants } from "../shared/animations";
 
 interface ListItemProps {
   list: TopList;
@@ -19,58 +20,90 @@ const UserListItem = ({ list, onDelete, onPlay }: ListItemProps) => {
     try {
       await onDelete(list.id);
       setShowDeleteConfirm(false);
-    } catch (error) {
-      console.error('Failed to delete list:', error);
+    } catch {
+      // Error handled by parent
     } finally {
       setIsDeleting(false);
     }
   };
 
   const colors = getCategoryColor(list.category);
-  const createdDate = new Date(list.created_at).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric'
+  const createdDate = new Date(list.created_at).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
   });
 
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      whileHover={{ scale: 1.01 }}
-      className="group relative bg-gray-800/40 border border-gray-700/50 rounded-lg overflow-hidden hover:border-cyan-500/30 transition-all duration-300"
+      variants={listItemVariants}
+      className="group relative rounded-xl overflow-hidden"
+      style={{
+        background: `
+          linear-gradient(135deg,
+            rgba(20, 28, 48, 0.8) 0%,
+            rgba(30, 40, 60, 0.6) 50%,
+            rgba(20, 28, 48, 0.8) 100%
+          )
+        `,
+        boxShadow: `
+          0 4px 20px rgba(0, 0, 0, 0.25),
+          inset 0 1px 0 rgba(255, 255, 255, 0.05)
+        `,
+      }}
+      whileHover={{
+        y: -2,
+        boxShadow: `
+          0 8px 30px rgba(0, 0, 0, 0.35),
+          0 0 40px ${colors.primary}10,
+          inset 0 1px 0 rgba(255, 255, 255, 0.08)
+        `,
+      }}
       data-testid={`user-list-item-${list.id}`}
     >
-      {/* Subtle gradient overlay on hover */}
-      <div
-        className="absolute inset-0 opacity-0 group-hover:opacity-5 transition-opacity duration-300"
+      {/* Hover glow */}
+      <motion.div
+        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
         style={{
-          background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`
+          background: `linear-gradient(135deg, ${colors.primary}08, ${colors.secondary}05)`,
         }}
       />
 
-      <div className="relative py-3 px-4">
-        <div className="flex items-center gap-3">
-          {/* Category badge (left) */}
-          <div
-            className="flex-shrink-0 px-2.5 py-1 rounded text-xs font-bold text-white"
+      {/* Left accent */}
+      <div
+        className="absolute left-0 top-0 bottom-0 w-1 opacity-70 group-hover:opacity-100 transition-opacity"
+        style={{
+          background: `linear-gradient(to bottom, ${colors.primary}, ${colors.secondary})`,
+          boxShadow: `0 0 15px ${colors.primary}30`,
+        }}
+      />
+
+      <div className="relative py-4 px-5 pl-6">
+        <div className="flex items-center gap-4">
+          {/* Category badge */}
+          <motion.div
+            className="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold text-white"
             style={{
-              background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`
+              background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`,
+              boxShadow: `0 4px 15px ${colors.primary}30`,
             }}
+            whileHover={{ scale: 1.05 }}
             data-testid={`user-list-category-${list.id}`}
           >
             {list.category}
-          </div>
+          </motion.div>
 
-          {/* Main content (center, flexible) */}
+          {/* Main content */}
           <div className="flex-1 min-w-0">
-            <h4 className="text-sm font-semibold text-white truncate group-hover:text-cyan-400 transition-colors" data-testid={`user-list-title-${list.id}`}>
+            <h4
+              className="text-sm font-semibold text-white truncate group-hover:text-white/90 transition-colors"
+              data-testid={`user-list-title-${list.id}`}
+            >
               {list.title}
             </h4>
-            <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+            <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-slate-500">
               {list.subcategory && (
-                <span className="text-gray-400">{list.subcategory}</span>
+                <span className="text-slate-400">{list.subcategory}</span>
               )}
               <div className="flex items-center gap-1">
                 <Hash className="w-3 h-3" />
@@ -78,7 +111,9 @@ const UserListItem = ({ list, onDelete, onPlay }: ListItemProps) => {
               </div>
               <div className="flex items-center gap-1">
                 <Calendar className="w-3 h-3" />
-                <span className="capitalize">{list.time_period?.replace('-', ' ') || 'all time'}</span>
+                <span className="capitalize">
+                  {list.time_period?.replace("-", " ") || "all time"}
+                </span>
               </div>
               <div className="flex items-center gap-1">
                 <Clock className="w-3 h-3" />
@@ -87,81 +122,104 @@ const UserListItem = ({ list, onDelete, onPlay }: ListItemProps) => {
             </div>
           </div>
 
-          {/* Actions (right) */}
+          {/* Actions */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            {/* Play Button */}
+            {/* Play button */}
             <motion.button
               onClick={() => onPlay(list)}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="px-4 py-1.5 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white rounded-lg text-xs font-medium transition-all shadow-lg shadow-cyan-500/20 flex items-center gap-1.5"
+              className="px-4 py-2 rounded-xl text-xs font-medium text-white flex items-center gap-2"
+              style={{
+                background: `linear-gradient(135deg, rgba(59, 130, 246, 0.9), rgba(139, 92, 246, 0.9))`,
+                boxShadow: `0 4px 15px rgba(59, 130, 246, 0.25)`,
+              }}
+              whileHover={{ scale: 1.05, y: -1 }}
+              whileTap={{ scale: 0.98 }}
               data-testid={`user-list-play-btn-${list.id}`}
             >
-              <Play className="w-3.5 h-3.5" />
+              <Play className="w-3.5 h-3.5 fill-current" />
               <span className="hidden sm:inline">Continue</span>
             </motion.button>
 
-            {/* Delete Button */}
+            {/* Delete button */}
             <motion.button
               onClick={() => setShowDeleteConfirm(true)}
-              whileHover={{ scale: 1.05 }}
+              className="p-2 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+              whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
-              className="p-1.5 hover:bg-red-500/10 rounded transition-colors text-gray-400 hover:text-red-400"
               disabled={isDeleting}
               data-testid={`user-list-delete-btn-${list.id}`}
             >
-              <Trash2 className="w-3.5 h-3.5" />
+              <Trash2 className="w-4 h-4" />
             </motion.button>
           </div>
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete confirmation modal */}
       <AnimatePresence>
         {showDeleteConfirm && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            variants={modalBackdropVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
             className="absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-20"
             onClick={() => setShowDeleteConfirm(false)}
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
+              variants={modalContentVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
               onClick={(e) => e.stopPropagation()}
-              className="bg-gray-900 border-2 border-cyan-500/30 rounded-xl p-4 mx-4 max-w-sm w-full shadow-2xl shadow-cyan-500/20"
+              className="mx-4 max-w-sm w-full p-5 rounded-2xl"
+              style={{
+                background: `linear-gradient(135deg, rgba(15, 20, 35, 0.98), rgba(25, 35, 55, 0.98))`,
+                boxShadow: `
+                  0 25px 50px rgba(0, 0, 0, 0.5),
+                  0 0 60px rgba(239, 68, 68, 0.1),
+                  inset 0 1px 0 rgba(255, 255, 255, 0.05)
+                `,
+              }}
             >
-              <h4 className="text-base font-semibold text-white mb-2">Delete List?</h4>
-              <p className="text-gray-400 mb-4 text-xs">
-                "{list.title}" will be permanently deleted. This cannot be undone.
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 rounded-xl bg-red-500/15">
+                  <AlertTriangle className="w-5 h-5 text-red-400" />
+                </div>
+                <h4 className="text-lg font-semibold text-white">Delete List?</h4>
+              </div>
+              <p className="text-slate-400 mb-6 text-sm leading-relaxed">
+                <span className="text-white font-medium">"{list.title}"</span> will be
+                permanently deleted. This action cannot be undone.
               </p>
 
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <button
                   onClick={() => setShowDeleteConfirm(false)}
-                  className="flex-1 px-3 py-1.5 text-xs font-medium text-gray-400 hover:text-white transition-colors"
+                  className="flex-1 px-4 py-2.5 text-sm font-medium text-slate-400 hover:text-white rounded-xl hover:bg-white/5 transition-colors"
                   disabled={isDeleting}
-                  data-testid={`user-list-delete-cancel-btn-${list.id}`}
                 >
                   Cancel
                 </button>
                 <motion.button
                   onClick={handleDelete}
                   disabled={isDeleting}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="flex-1 px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-medium transition-all disabled:opacity-50"
+                  className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium text-white"
+                  style={{
+                    background: `linear-gradient(135deg, rgba(220, 38, 38, 0.9), rgba(185, 28, 28, 0.9))`,
+                    boxShadow: `0 4px 15px rgba(220, 38, 38, 0.25)`,
+                  }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   data-testid={`user-list-delete-confirm-btn-${list.id}`}
                 >
                   {isDeleting ? (
-                    <span className="flex items-center justify-center gap-1.5">
-                      <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Deleting
+                    <span className="flex items-center justify-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Deleting...
                     </span>
                   ) : (
-                    'Delete'
+                    "Delete"
                   )}
                 </motion.button>
               </div>
@@ -172,4 +230,5 @@ const UserListItem = ({ list, onDelete, onPlay }: ListItemProps) => {
     </motion.div>
   );
 };
+
 export default UserListItem;

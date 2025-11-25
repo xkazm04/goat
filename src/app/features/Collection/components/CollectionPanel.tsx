@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect } from "react";
-import { DndContext, DragOverlay, closestCenter } from "@dnd-kit/core";
-import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { DndContext, DragOverlay, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { snapCenterToCursor } from "@dnd-kit/modifiers";
+import { SortableContext, verticalListSortingStrategy, rectSortingStrategy, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { CollectionGroup, CollectionItem as CollectionItemType } from "../types";
 import { CollectionToolbar } from "./CollectionToolbar";
 import { CollectionItem } from "./CollectionItem";
@@ -432,30 +433,45 @@ function CollectionPanelInternal({
 
   // Wrap content with DndContext if reordering is enabled
   if (enableReordering) {
+    // Use the appropriate sorting strategy based on view mode
+    const sortingStrategy = viewMode === 'grid' ? rectSortingStrategy : verticalListSortingStrategy;
+
     return (
       <DndContext
         sensors={reorder.sensors}
         collisionDetection={closestCenter}
         onDragStart={reorder.handleDragStart}
+        onDragOver={reorder.handleDragOver}
         onDragEnd={reorder.handleDragEnd}
         onDragCancel={reorder.handleDragCancel}
+        accessibility={reorder.accessibilityConfig}
       >
+        {/* Screen reader announcement region */}
+        <reorder.AnnouncementRegion liveRegionRef={reorder.liveRegionRef} />
+
         <SortableContext
           items={displayItems.map((item) => item.id)}
-          strategy={verticalListSortingStrategy}
+          strategy={sortingStrategy}
         >
           {renderContent()}
         </SortableContext>
 
-        {/* Drag Overlay for visual feedback */}
+        {/* Drag Overlay for visual feedback (works with both mouse and keyboard) */}
         <DragOverlay
+          modifiers={[snapCenterToCursor]}
           dropAnimation={{
             duration: 200,
             easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)',
           }}
         >
           {reorder.activeId ? (
-            <div className="opacity-80 rotate-3 scale-105" style={{ cursor: 'grabbing' }}>
+            <div
+              className="opacity-90 scale-105 ring-2 ring-cyan-500 ring-offset-2 ring-offset-gray-900 rounded-lg"
+              style={{ cursor: 'grabbing' }}
+              role="status"
+              aria-live="polite"
+              data-testid="drag-overlay-item"
+            >
               {(() => {
                 const activeItem = displayItems.find((item) => item.id === reorder.activeId);
                 if (!activeItem) return null;

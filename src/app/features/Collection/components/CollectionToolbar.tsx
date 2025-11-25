@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, ChevronUp, Grid3x3, List, Plus, Search, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Grid3x3, List, Plus, Search, X, EyeOff } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { CollectionStats, CollectionGroup } from "../types";
@@ -118,6 +118,17 @@ export function CollectionToolbar({
               {stats.visibleGroups > 0 && (
                 <span className="text-xs text-gray-500">
                   • {stats.visibleGroups} groups
+                </span>
+              )}
+              {/* Hidden items badge - shows when items are in grid */}
+              {(stats.hiddenInGridCount ?? 0) > 0 && (
+                <span
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                  title={`${stats.hiddenInGridCount} items are hidden because they are already in your ranking grid`}
+                  data-testid="hidden-items-badge"
+                >
+                  <EyeOff className="w-3 h-3" />
+                  {stats.hiddenInGridCount} in grid
                 </span>
               )}
             </div>

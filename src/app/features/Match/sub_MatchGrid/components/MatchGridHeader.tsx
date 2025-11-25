@@ -13,7 +13,7 @@ export function MatchGridHeader({
     subtitle = "Assemble Your Dream Team"
 }: MatchGridHeaderProps) {
     return (
-        <div className="relative pt-12 pb-8 text-center z-10">
+        <div className="py-4">
             <motion.div
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -21,7 +21,7 @@ export function MatchGridHeader({
             >
                 <Sparkles className="w-6 h-6 text-cyan-400" />
                 <h2
-                    className="text-4xl font-black text-white tracking-tight uppercase"
+                    className="text-3xl font-black text-white tracking-tight uppercase"
                     style={{ textShadow: '0 0 30px rgba(34, 211, 238, 0.3)' }}
                 >
                     {title}

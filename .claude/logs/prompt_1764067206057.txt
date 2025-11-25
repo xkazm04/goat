@@ -1,0 +1,263 @@
+You are an expert software engineer. Execute the following requirement immediately. Do not ask questions, do not wait for confirmation. Read the requirement carefully and implement all changes to the codebase as specified.
+
+REQUIREMENT TO EXECUTE NOW:
+
+# Auto-Hide Collection Items in Active MatchGrid
+
+## Metadata
+- **Category**: functionality
+- **Effort**: Medium (2/3)
+- **Impact**: High (3/3)
+- **Scan Type**: feature_scout
+- **Generated**: 11/23/2025, 11:33:52 AM
+
+## Description
+Add a filter in CollectionPanel that automatically excludes items already present in the active MatchGrid. The panel reads the MatchGrid context (via the existing GridStore) and, on each render, omits those IDs from the items list. A small visual cue (e.g., a badge) can indicate the exclusion. This keeps the collection focused and prevents duplicate selections.
+
+## Reasoning
+Users frequently toggle items between collections and match grids; hiding already used items reduces clutter, prevents accidental re-adding, and streamlines the workflow. It also saves rendering time for large lists.
+
+## Context
+
+**Note**: This section provides supporting architectural documentation and is NOT a hard requirement. Use it as guidance to understand existing code structure and maintain consistency.
+
+### Context: Collection - UI Components & Rendering
+
+**Description**: ## Overview
+Provides the visual layer for the Collection feature, including the fixed bottom panel with category filtering, search, and grid/list display modes. Implements three rendering strategies (normal, lazy loading, virtualization) based on collection size for optimal performance with small to massive collections (1000+ items).
+
+## Key Capabilities
+- **Fixed Bottom Panel**: Always-accessible collection panel with smooth show/hide animation and backdrop blur
+- **Adaptive Rendering**: Automatically selects rendering strategy based on item count (normal <20, lazy 20-100, virtualized >100)
+- **Drag & Drop Support**: Draggable collection items with visual feedback and sortable reordering
+- **Multiple View Modes**: Switch between grid (masonry layout) and list views with consistent item display
+- **Category Navigation**: Horizontal scrollable category bar with selection indicators and item counts
+
+## Architecture
+
+### Component Breakdown
+| Component/File | Purpose | Layer |
+|----------------|---------|-------|
+| `components/CollectionPanel.tsx` | Main orchestrator, manages visibility, layout, rendering strategy | Container |
+| `components/CollectionItem.tsx` | Draggable item card with image, title, ranking display | UI |
+| `components/SortableCollectionItem.tsx` | Wrapper for drag-and-drop reordering support | UI |
+| `components/CollectionToolbar.tsx` | Unified toolbar consolidating header, category bar, search | UI |
+| `components/CollectionHeader.tsx` | Panel header with controls (toggle, view mode, actions) | UI |
+| `components/CategoryBar.tsx` | Horizontal category filter pills with counts | UI |
+| `components/CollectionSearch.tsx` | Search input with clear button and focus states | UI |
+| `components/CollectionStats.tsx` | Statistics display (item counts, rankings, curator level) | UI |
+| `components/VirtualizedCollectionList.tsx` | Virtual scrolling for large collections (>100 items) | Performance |
+| `components/VirtualizedGrid.tsx` | Virtual grid layout for massive collections | Performance |
+| `components/LazyLoadTrigger.tsx` | Intersection observer trigger for progressive loading | Performance |
+| `components/StickyContext.tsx` | Sticky context indicator shown while scrolling | UI |
+| `components/CuratorBadge.tsx` | Badge showing curator milestone level | UI |
+| `components/AddItemModal.tsx` | Modal for adding new items to collection | UI |
+| `components/CollectionErrorBoundary.tsx` | Error boundary wrapper for graceful error handling | Infrastructure |
+
+### Data Flow
+CollectionPanel receives data from useCollection hook � Determines rendering strategy based on item count � Provides context via CollectionFiltersProvider � Child components consume context and render UI � User interactions trigger callbacks to parent
+
+### Key Dependencies
+- **External**: @dnd-kit (drag & drop), Radix UI (primitives), Framer Motion (animations)
+- **Internal**: Collection - Data Management context for data fetching, grid-store for match integration
+
+## Technical Details
+
+### State Management
+- Local UI state (visibility, view mode, modal state) managed in CollectionPanel
+- Filter state provided via CollectionFiltersContext
+- Drag state managed by @dnd-kit DndContext and useCollectionReorder hook
+
+### Rendering Strategies
+1. **Normal (<20 items)**: Render all items immediately
+2. **Lazy Loading (20-100 items)**: Progressive pagination with LazyLoadTrigger
+3. **Virtualization (>100 items)**: Virtual scrolling rendering only visible items
+
+### Easter Eggs
+Search terms `wizard`, `magic`, `secret`, `hidden` trigger spotlight effect on random item for 5 seconds
+**Related Files**:
+- `src/app/features/Collection/components/CollectionPanel.tsx`
+- `src/app/features/Collection/components/CollectionItem.tsx`
+- `src/app/features/Collection/components/SortableCollectionItem.tsx`
+- `src/app/features/Collection/components/CollectionToolbar.tsx`
+- `src/app/features/Collection/components/CollectionHeader.tsx`
+- `src/app/features/Collection/components/CategoryBar.tsx`
+- `src/app/features/Collection/components/CollectionSearch.tsx`
+- `src/app/features/Collection/components/CollectionStats.tsx`
+- `src/app/features/Collection/components/VirtualizedCollectionList.tsx`
+- `src/app/features/Collection/components/VirtualizedGrid.tsx`
+- `src/app/features/Collection/components/LazyLoadTrigger.tsx`
+- `src/app/features/Collection/components/StickyContext.tsx`
+- `src/app/features/Collection/components/CuratorBadge.tsx`
+- `src/app/features/Collection/components/AddItemModal.tsx`
+- `src/app/features/Collection/components/CollectionErrorBoundary.tsx`
+
+**Post-Implementation**: After completing this requirement, evaluate if the context description or file paths need updates. Use the appropriate API/DB query to update the context if architectural changes were made.
+
+## Recommended Skills
+
+Use Claude Code skills as appropriate for implementation guidance. Check `.claude/skills/` directory for available skills.
+
+## Notes
+
+This requirement was generated from an AI-evaluated project idea. No specific goal is associated with this idea.
+
+## Implementation Guidelines
+
+**IMPORTANT**: Execute the requirement immediately without asking for confirmation or approval.
+
+**Steps**:
+1. Analyze the requirement thoroughly
+2. Identify all files that need to be modified or created
+3. Implement all changes specified in the requirement
+4. Follow implementation steps precisely
+5. Run any tests if specified
+6. Ensure all changes are complete before finishing
+
+## File Structure (Next.js/React Projects)
+
+**Feature-Specific Files** (use `app/features/<feature>` structure):
+- `app/features/<feature>/components/` - Feature-specific components and UI
+- `app/features/<feature>/lib/` - Feature-specific functions, utilities, helpers
+- `app/features/<feature>/` - Main wrapper, index, or page file
+
+**Reusable UI Components** (use `app/components/ui` structure):
+- `app/components/ui/` - Shared, reusable UI elements across multiple features
+
+## Test Selectors
+
+**CRITICAL**: Add `data-testid` attributes to ALL interactive UI components for automated testing.
+
+**Guidelines**:
+- Add to all clickable elements (buttons, links, icons)
+- Use descriptive kebab-case: `data-testid="submit-form-btn"`
+- Include component context: `data-testid="goal-delete-btn"`, `data-testid="project-settings-modal"`
+- Add to form inputs: `data-testid="email-input"`
+- Add to list items: `data-testid="task-item-123"`
+
+**Example**:
+```tsx
+<button onClick={handleSubmit} data-testid="create-goal-btn">
+  Create Goal
+</button>
+
+<input
+  type="text"
+  value={title}
+  onChange={handleChange}
+  data-testid="goal-title-input"
+/>
+```
+
+## Theming and Styling
+
+**Before creating new UI components**:
+1. Examine existing components in the project
+2. Match the color scheme, spacing, and visual patterns
+3. Use consistent className patterns (Tailwind CSS)
+4. Follow the app's design language (glassmorphism, gradients, shadows, etc.)
+5. Support dark mode if the app uses it
+
+## Documentation Policy
+
+**CRITICAL RULE**: Do NOT create separate documentation files (.md, README.md, docs/) for routine implementations.
+
+**Only create documentation when**:
+- Implementing a NEW major feature or module (not refactorings)
+- Adding a NEW API or public interface
+- Creating NEW architectural patterns
+- The requirement explicitly asks for documentation
+
+**Do NOT create documentation for**:
+- Bug fixes
+- Refactorings
+- Small adjustments
+- UI changes
+- Database schema changes
+- Performance improvements
+- Code quality improvements
+
+**For all implementations**: Create an implementation log entry (see next section) - this is your primary documentation.
+
+## Implementation Logging
+
+**CRITICAL**: After completing the implementation, create ONE log entry using the implementation-log repository.
+
+**DO NOT**:
+- ❌ Create standalone SQL scripts
+- ❌ Create separate logging files
+- ❌ Insert SQL directly into project databases
+- ❌ Use `sqlite3` commands
+
+**DO**:
+- ✅ Use the repository function directly in a simple Node.js script
+- ✅ Run the script once to create the log entry
+- ✅ Delete the script after execution
+
+**Step 1**: Create a simple logging script
+
+```typescript
+// create-log.ts (or create-log.mjs with import syntax)
+import { implementationLogDb } from '@/app/db';
+import { randomUUID } from 'crypto';
+
+implementationLogDb.createLog({
+  id: randomUUID(),
+  project_id: '4ee93a8c-9318-4497-b7cf-05027e48f12b',
+  requirement_name: '<requirement-file-name-without-.md>',
+  title: '<2-6 words describing what was done>',
+  overview: '<1-2 paragraphs: What was implemented, key files modified/created, major functionality added>',
+  overview_bullets: '<bullet1>\n<bullet2>\n<bullet3>',
+  tested: false,
+});
+
+console.log('✅ Implementation log created');
+```
+
+**Step 2**: Run the script
+
+```bash
+npx tsx create-log.ts
+# or
+node create-log.mjs
+```
+
+**Step 3**: Delete the script
+
+```bash
+rm create-log.ts
+# or del create-log.ts on Windows
+```
+
+**Field Guidelines**:
+- `id`: Use `randomUUID()` or `crypto.randomUUID()`
+- `requirement_name`: Requirement filename WITHOUT .md extension
+- `title`: 2-6 words (e.g., "User Authentication System")
+- `overview`: 1-2 paragraphs describing what was done
+- `overview_bullets`: 3-5 bullets separated by \n (e.g., "Added OAuth flow\nCreated auth context\nUpdated login UI")
+- `tested`: Always `false` initially
+
+**Example**:
+```typescript
+implementationLogDb.createLog({
+  id: randomUUID(),
+  project_id: 'proj-123',
+  requirement_name: 'implement-dark-mode',
+  title: 'Dark Mode Implementation',
+  overview: 'Implemented global dark mode toggle with theme persistence. Added theme context provider, updated all UI components to support dark mode, and created settings panel for theme switching.',
+  overview_bullets: 'Created ThemeProvider context\nUpdated 25+ components with dark mode styles\nAdded theme toggle in settings\nImplemented localStorage persistence',
+  tested: false
+});
+```
+
+## Final Checklist
+
+Before finishing:
+- [ ] All code changes implemented
+- [ ] Test IDs added to interactive components
+- [ ] File structure follows guidelines
+- [ ] UI components match existing theme
+- [ ] Implementation log entry created
+- [ ] NO separate documentation files created (unless new major feature)
+
+Begin implementation now.

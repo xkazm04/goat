@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { DndContext, DragOverlay, DragEndEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { snapCenterToCursor } from "@dnd-kit/modifiers";
 import { useTopLists } from "@/hooks/use-top-lists";
 import { topListsApi } from "@/lib/api/top-lists";
 import { AwardItem } from "./components/AwardItem";
@@ -199,11 +200,11 @@ export function AwardList({ parentListId }: AwardListProps) {
                 <SimpleCollectionPanel groups={backlogGroupsToCollectionGroups(groups)} />
             </div>
 
-            <DragOverlay>
+            <DragOverlay modifiers={[snapCenterToCursor]}>
                 {activeItem && <DragOverlayContent activeItem={activeItem} />}
             </DragOverlay>
 
-            {activeItem && <CursorGlow glowX={glowX} glowY={glowY} />}
+            {activeItem && <CursorGlow glowX={glowX} glowY={glowY} cursorX={cursorX} cursorY={cursorY} />}
         </DndContext>
     );
 }

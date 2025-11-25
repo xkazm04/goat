@@ -1,6 +1,6 @@
 "use client";
 
-import { CompositionData } from "@/app/features/Landing/CompositionModal";
+import { CompositionData } from "@/app/features/Landing/sub_CreateList/CompositionModal";
 import { X, Sparkles, User, MessageCircle, Settings } from "lucide-react";
 import { ShimmerBtn } from "@/components/app/button/AnimButtons";
 

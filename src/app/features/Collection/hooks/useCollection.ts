@@ -374,15 +374,19 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
       ? rankedItems.reduce((sum, item) => sum + (item.ranking || 0), 0) / rankedItems.length
       : undefined;
 
+    // Count of items hidden because they are in the grid
+    const hiddenInGridCount = usedItemIds.size;
+
     return {
       totalItems,
       selectedItems,
       visibleGroups: selectedGroups.length,
       totalGroups: groupsData.length,
       averageRanking,
-      rankedItems: rankedItems.length
+      rankedItems: rankedItems.length,
+      hiddenInGridCount
     };
-  }, [groupsData, selectedGroups, filteredItems]);
+  }, [groupsData, selectedGroups, filteredItems, usedItemIds]);
 
   // Filter actions
   const toggleGroup = useCallback((groupId: string) => {
