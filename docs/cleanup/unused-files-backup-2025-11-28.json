@@ -1,0 +1,76 @@
+{
+  "backupDate": "2025-11-28",
+  "branch": "cleanup/unused-components-2025-11-23",
+  "totalFilesDeleted": 13,
+  "filesDeleted": [
+    {
+      "path": "src/app/features/Match/components/FeatureModuleIndicator.tsx",
+      "reason": "No JSX usage or imports found in codebase",
+      "linesOfCode": 186
+    },
+    {
+      "path": "src/app/features/Match/MatchStates/MatchLoadingState.tsx",
+      "reason": "No JSX usage or imports found in codebase",
+      "linesOfCode": 73
+    },
+    {
+      "path": "src/app/features/Match/components/DiceLoader.tsx",
+      "reason": "Only dependency of MatchLoadingState.tsx (cascade delete)",
+      "linesOfCode": 113
+    },
+    {
+      "path": "src/app/features/matching/components/SwipeableCard.tsx",
+      "reason": "No JSX usage or imports found - only exported from unused barrel file",
+      "linesOfCode": 353
+    },
+    {
+      "path": "src/app/features/matching/components/ParticleShape.tsx",
+      "reason": "Only dependency of SwipeableCard.tsx (cascade delete)",
+      "linesOfCode": 115
+    },
+    {
+      "path": "src/app/features/matching/components/ParticleThemeSettings.tsx",
+      "reason": "No JSX usage - only exported from unused barrel file",
+      "linesOfCode": 269
+    },
+    {
+      "path": "src/app/features/matching/components/index.ts",
+      "reason": "Barrel file for unused components - no imports found",
+      "linesOfCode": 8
+    },
+    {
+      "path": "src/app/features/matching/lib/swipe-constants.ts",
+      "reason": "Only dependency of SwipeableCard.tsx (cascade delete)",
+      "linesOfCode": 39
+    },
+    {
+      "path": "src/app/features/matching/lib/demo-content.tsx",
+      "reason": "Never used anywhere in codebase",
+      "linesOfCode": 98
+    },
+    {
+      "path": "src/stores/particle-theme-store.ts",
+      "reason": "Only used by SwipeableCard and ParticleThemeSettings (cascade delete)",
+      "linesOfCode": 129
+    },
+    {
+      "path": "src/lib/particle-themes/theme-configs.ts",
+      "reason": "Only used by particle-theme-store and ParticleThemeSettings (cascade delete)",
+      "linesOfCode": 304
+    },
+    {
+      "path": "src/components/app/landing/ListSelectionModal.tsx",
+      "reason": "No JSX usage or imports found in codebase",
+      "linesOfCode": 259
+    }
+  ],
+  "filesKept": [],
+  "additionalFilesDeleted": [
+    {
+      "path": "src/types/particle-theme.types.ts",
+      "reason": "Only used by deleted particle theme components (cascade delete)",
+      "linesOfCode": 76
+    }
+  ],
+  "note": "All file contents are preserved in git history. Use 'git show HEAD~1:path/to/file' to recover."
+}
