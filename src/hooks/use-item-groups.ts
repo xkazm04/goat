@@ -4,6 +4,56 @@ import { toast } from '@/hooks/use-toast';
 import { GridItemType as OriginalGridItemType, BacklogItemType as OriginalBacklogItemType, BacklogGroupType as OriginalBacklogGroupType } from '@/types/match';
 import { BacklogGroup as ApiBacklogGroup, BacklogItem as ApiBacklogItem } from '@/types/backlog-groups';
 
+// Cache time constants
+const CACHE_TIMES = {
+  SHORT: 2 * 60 * 1000,   // 2 minutes - for detailed/frequently changing data
+  STANDARD: 5 * 60 * 1000, // 5 minutes - default cache duration
+} as const;
+
+// Retry configuration
+const RETRY_CONFIG = {
+  retry: 2,
+  retryDelay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 30000),
+} as const;
+
+// Common query options type
+interface BaseQueryOptions {
+  enabled?: boolean;
+  refetchOnWindowFocus?: boolean;
+  staleTime?: number;
+}
+
+// Helper to build common query config
+const buildQueryConfig = (options?: BaseQueryOptions, defaultEnabled = true) => ({
+  staleTime: options?.staleTime ?? CACHE_TIMES.STANDARD,
+  refetchOnWindowFocus: options?.refetchOnWindowFocus ?? false,
+  enabled: options?.enabled ?? defaultEnabled,
+});
+
+// Query key parameter types
+interface CategoryParams {
+  category: string;
+  subcategory?: string;
+  search?: string;
+}
+
+interface DetailParams {
+  id: string;
+  includeItems: boolean;
+}
+
+interface GroupItemsParams {
+  groupId: string;
+  limit?: number;
+  offset?: number;
+}
+
+interface SuggestionParams {
+  query: string;
+  category?: string;
+  subcategory?: string;
+}
+
 // Enriched types for store usage, combining API structure with UI state
 export interface StoredBacklogItem extends ApiBacklogItem {
   // API fields: id, name, title, description, category, subcategory, item_year, image_url, created_at, tags
@@ -61,19 +111,20 @@ export const itemGroupsKeys = {
   list: (filters: ItemGroupSearchParams) => [...itemGroupsKeys.lists(), { filters }] as const,
   categories: () => [...itemGroupsKeys.all, 'categories'] as const,
   category: (category: string, subcategory?: string, search?: string) => {
-    const params: any = { category };
+    const params: CategoryParams = { category };
     if (subcategory) params.subcategory = subcategory;
     if (search && search.trim()) params.search = search.trim();
     return [...itemGroupsKeys.categories(), params] as const;
   },
   details: () => [...itemGroupsKeys.all, 'detail'] as const,
-  detail: (id: string, includeItems: boolean = true) => [...itemGroupsKeys.details(), { id, includeItems }] as const,
+  detail: (id: string, includeItems: boolean = true): readonly [...readonly ['item-groups', 'detail'], DetailParams] =>
+    [...itemGroupsKeys.details(), { id, includeItems }] as const,
   items: () => [...itemGroupsKeys.all, 'items'] as const,
-  groupItems: (groupId: string, limit?: number, offset?: number) => 
+  groupItems: (groupId: string, limit?: number, offset?: number): readonly [...readonly ['item-groups', 'items'], GroupItemsParams] =>
     [...itemGroupsKeys.items(), { groupId, limit, offset }] as const,
   suggestions: () => [...itemGroupsKeys.all, 'suggestions'] as const,
   suggestion: (query: string, category?: string, subcategory?: string) => {
-    const params: any = { query: query.trim() };
+    const params: SuggestionParams = { query: query.trim() };
     if (category) params.category = category;
     if (subcategory) params.subcategory = subcategory;
     return [...itemGroupsKeys.suggestions(), params] as const;
@@ -81,17 +132,11 @@ export const itemGroupsKeys = {
 };
 
 // Hook to get item groups with search/filter
-export function useItemGroups(params?: ItemGroupSearchParams, options?: {
-  enabled?: boolean;
-  refetchOnWindowFocus?: boolean;
-  staleTime?: number;
-}) {
+export function useItemGroups(params?: ItemGroupSearchParams, options?: BaseQueryOptions) {
   return useQuery({
     queryKey: itemGroupsKeys.list(params || {}),
     queryFn: () => itemGroupsApi.getItemGroups(params),
-    staleTime: options?.staleTime || 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus: options?.refetchOnWindowFocus ?? false,
-    enabled: options?.enabled ?? true,
+    ...buildQueryConfig(options),
   });
 }
 
@@ -100,46 +145,39 @@ export function useGroupsByCategory(
   category: string,
   subcategory?: string,
   search?: string,
-  options?: {
-    enabled?: boolean;
-    refetchOnWindowFocus?: boolean;
-    staleTime?: number;
+  options?: BaseQueryOptions & {
     sortByItemCount?: boolean;
     minItemCount?: number;
   }
 ) {
   const cleanSearch = search && search.trim() ? search.trim() : undefined;
   const minItemCount = options?.minItemCount ?? 1;
-  
+
   return useQuery({
     queryKey: itemGroupsKeys.category(category, subcategory, cleanSearch),
     queryFn: async () => {
       console.log(`🔄 API: Fetching groups for ${category}/${subcategory || 'none'}`);
       const startTime = Date.now();
-      
+
       const groups = await itemGroupsApi.getGroupsByCategory(
-        category, 
-        subcategory, 
+        category,
+        subcategory,
         cleanSearch,
         100, // Higher limit
         minItemCount // Filter empty groups at API level
       );
-      
+
       const endTime = Date.now();
       console.log(`✅ API: Fetched ${groups.length} groups in ${endTime - startTime}ms`);
-      
+
       if (options?.sortByItemCount !== false) {
         return groups.sort((a, b) => (b.item_count || 0) - (a.item_count || 0));
       }
-      
+
       return groups;
     },
-    staleTime: options?.staleTime || 5 * 60 * 1000, // 5 minutes - longer cache
-    refetchOnWindowFocus: options?.refetchOnWindowFocus ?? false,
-    enabled: options?.enabled ?? true,
-    // CRITICAL: Add retry configuration to avoid hanging
-    retry: 2,
-    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+    ...buildQueryConfig(options),
+    ...RETRY_CONFIG,
   });
 }
 
@@ -148,25 +186,24 @@ export function useItemGroup(groupId: string, options?: {
   enabled?: boolean;
   includeItems?: boolean;
 }) {
-  const includeItems = options?.includeItems ?? true; 
-  
+  const includeItems = options?.includeItems ?? true;
+
   return useQuery({
     queryKey: itemGroupsKeys.detail(groupId, includeItems),
     queryFn: async () => {
       console.log(`🔄 API: Fetching group ${groupId} with items=${includeItems}`);
       const startTime = Date.now();
-      
+
       const group = await itemGroupsApi.getGroup(groupId, includeItems);
-      
+
       const endTime = Date.now();
       console.log(`✅ API: Fetched group ${groupId} with ${group.items?.length || 0} items in ${endTime - startTime}ms`);
-      
+
       return group;
     },
     enabled: options?.enabled ?? !!groupId,
-    staleTime: 2 * 60 * 1000, // 2 minutes for detailed group data
-    retry: 2,
-    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+    staleTime: CACHE_TIMES.SHORT,
+    ...RETRY_CONFIG,
   });
 }
 

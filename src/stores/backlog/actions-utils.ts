@@ -1,8 +1,43 @@
 import { BacklogState } from './types';
-import { BacklogItem } from '@/types/backlog-groups';
+import { BacklogItem, BacklogGroup } from '@/types/backlog-groups';
 
 // Type for immer-compatible set function
 type ImmerSet = (fn: (state: BacklogState) => void) => void;
+
+// Helper to update item in groups array
+const updateItemInGroups = <T extends BacklogGroup>(
+  groups: T[],
+  itemId: string,
+  updater: (item: BacklogItem) => BacklogItem
+): { groups: T[]; found: boolean } => {
+  let found = false;
+  const updatedGroups = groups.map(group => {
+    if (!group.items || !Array.isArray(group.items)) return group;
+
+    const updatedItems = group.items.map(item => {
+      if (item.id === itemId) {
+        found = true;
+        return updater(item);
+      }
+      return item;
+    });
+
+    return updatedItems !== group.items ? { ...group, items: updatedItems } : group;
+  }) as T[];
+
+  return { groups: updatedGroups, found };
+};
+
+// Helper to find item across all groups
+const findItemInGroups = (groups: BacklogGroup[], itemId: string): BacklogItem | null => {
+  for (const group of groups) {
+    if (group.items && Array.isArray(group.items)) {
+      const item = group.items.find(item => item.id === itemId);
+      if (item) return item;
+    }
+  }
+  return null;
+};
 
 export const createUtilActions = (
   set: ImmerSet,
@@ -42,77 +77,50 @@ export const createUtilActions = (
     });
   },
 
-  // NEW: Get item by ID across all groups
+  // Get item by ID across all groups
   getItemById: (itemId: string): BacklogItem | null => {
     const state = get();
     console.log(`🔍 BacklogStore: Looking for item ${itemId} across ${state.groups.length} groups`);
-    
-    for (const group of state.groups) {
-      if (group.items && Array.isArray(group.items)) {
-        const item = group.items.find(item => item.id === itemId);
-        if (item) {
-          console.log(`✅ BacklogStore: Found item ${itemId} in group ${group.name}`);
-          return item;
-        }
-      }
+
+    const item = findItemInGroups(state.groups, itemId);
+    if (item) {
+      console.log(`✅ BacklogStore: Found item ${itemId}`);
+    } else {
+      console.warn(`⚠️ BacklogStore: Item ${itemId} not found in any group`);
     }
-    
-    console.warn(`⚠️ BacklogStore: Item ${itemId} not found in any group`);
-    return null;
+    return item;
   },
 
-  // NEW: Mark item as used/unused
+  // Mark item as used/unused
   markItemAsUsed: (itemId: string, used: boolean) => {
     set(state => {
       console.log(`🔄 BacklogStore: Marking item ${itemId} as ${used ? 'used' : 'unused'}`);
-      
-      let itemFound = false;
-      const updatedGroups = state.groups.map(group => {
-        if (group.items && Array.isArray(group.items)) {
-          const updatedItems = group.items.map(item => {
-            if (item.id === itemId) {
-              itemFound = true;
-              console.log(`✅ BacklogStore: Updated item ${itemId} used status: ${used}`);
-              return { ...item, used };
-            }
-            return item;
-          });
-          
-          if (updatedItems !== group.items) {
-            return { ...group, items: updatedItems };
-          }
-        }
-        return group;
-      });
-      
-      if (!itemFound) {
+
+      const updater = (item: BacklogItem) => ({ ...item, used });
+
+      // Update main groups
+      const { groups: updatedGroups, found } = updateItemInGroups(state.groups, itemId, updater);
+
+      if (!found) {
         console.warn(`⚠️ BacklogStore: Item ${itemId} not found for used status update`);
         return;
       }
-      
+
+      console.log(`✅ BacklogStore: Updated item ${itemId} used status: ${used}`);
       state.groups = updatedGroups;
-      
+
       // Update cache as well
       Object.keys(state.cache).forEach(cacheKey => {
-        if (state.cache[cacheKey] && state.cache[cacheKey].groups) {
-          const updatedCachedGroups = state.cache[cacheKey].groups.map(group => {
-            if (group.items && Array.isArray(group.items)) {
-              const updatedItems = group.items.map(item => {
-                if (item.id === itemId) {
-                  return { ...item, used };
-                }
-                return item;
-              });
-              
-              if (updatedItems !== group.items) {
-                return { ...group, items: updatedItems };
-              }
-            }
-            return group;
-          });
-          
-          state.cache[cacheKey].groups = updatedCachedGroups;
-          state.cache[cacheKey].lastUpdated = Date.now();
+        if (state.cache[cacheKey]?.groups) {
+          const { groups: updatedCacheGroups, found: cacheFound } = updateItemInGroups(
+            state.cache[cacheKey].groups,
+            itemId,
+            updater
+          );
+          if (cacheFound) {
+            state.cache[cacheKey].groups = updatedCacheGroups;
+            state.cache[cacheKey].lastUpdated = Date.now();
+          }
         }
       });
     });
@@ -208,6 +216,62 @@ export const createUtilActions = (
     } catch (error) {
       console.warn('Failed to reset coalescer stats:', error);
     }
+  },
+
+  // Force refresh all data - clears cache and reloads from API
+  forceRefreshAll: async (category?: string) => {
+    console.log('🔄 BacklogStore: Force refreshing all data...');
+    
+    // Clear all caches first
+    await get().clearCache(category);
+    
+    // Clear state
+    set(state => {
+      state.groups = [];
+      state.error = null;
+      state.loadingProgress = {
+        totalGroups: 0,
+        loadedGroups: 0,
+        isLoading: false,
+        percentage: 0
+      };
+    });
+    
+    console.log('✅ BacklogStore: Cache cleared. Data will be refetched on next request.');
+  },
+
+  // Debug helper to check image URLs in current data
+  debugImageUrls: (limit: number = 10) => {
+    const state = get();
+    console.log('🔍 Debug: Checking image URLs in backlog store...');
+    console.log(`Total groups: ${state.groups.length}`);
+    
+    let itemCount = 0;
+    let withImage = 0;
+    let withoutImage = 0;
+    const samples: { name: string; image_url: string | null | undefined }[] = [];
+    
+    for (const group of state.groups) {
+      if (!group.items) continue;
+      for (const item of group.items) {
+        itemCount++;
+        if (item.image_url) {
+          withImage++;
+        } else {
+          withoutImage++;
+        }
+        if (samples.length < limit) {
+          samples.push({ name: item.name || item.title || 'Unknown', image_url: item.image_url });
+        }
+      }
+    }
+    
+    console.log(`Total items: ${itemCount}`);
+    console.log(`With image_url: ${withImage}`);
+    console.log(`Without image_url: ${withoutImage}`);
+    console.log('Sample items:', samples);
+    
+    return { itemCount, withImage, withoutImage, samples };
   }
 });
 

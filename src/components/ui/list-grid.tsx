@@ -3,6 +3,23 @@
 import { ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+// Default values
+const DEFAULT_SKELETON_COUNT = 6;
+const DEFAULT_GAP = 4;
+const DEFAULT_BREAKPOINT_SM = 1;
+const DEFAULT_BREAKPOINT_MD = 2;
+const DEFAULT_BREAKPOINT_LG = 3;
+
+// Animation timing
+const STAGGER_DELAY = 0.05;
+const SLIDE_OFFSET = 10;
+const EXIT_SCALE = 0.95;
+
+// Height classes
+const GRID_SKELETON_HEIGHT = 'h-28';
+const LIST_SKELETON_HEIGHT = 'h-16';
+const LIST_SPACING = 'space-y-3';
+
 /**
  * Responsive breakpoint configuration for grid layouts
  */
@@ -78,10 +95,10 @@ export function ListGrid<T extends { id?: string | number }>({
   error = null,
   emptyState,
   errorState,
-  skeletonCount = 6,
+  skeletonCount = DEFAULT_SKELETON_COUNT,
   breakpoints = {},
   className = '',
-  gap = 4,
+  gap = DEFAULT_GAP,
   layout = 'grid',
   staggerAnimation = true,
   onRetry,
@@ -90,12 +107,12 @@ export function ListGrid<T extends { id?: string | number }>({
   testId = 'list-grid',
 }: ListGridProps<T>) {
   // Default breakpoints
-  const { sm = 1, md = 2, lg = 3, xl = lg } = breakpoints;
+  const { sm = DEFAULT_BREAKPOINT_SM, md = DEFAULT_BREAKPOINT_MD, lg = DEFAULT_BREAKPOINT_LG, xl = lg } = breakpoints;
 
   // Generate grid column classes based on breakpoints
   const gridClasses = layout === 'grid'
     ? `grid grid-cols-${sm} md:grid-cols-${md} lg:grid-cols-${lg} xl:grid-cols-${xl}`
-    : 'space-y-3';
+    : LIST_SPACING;
 
   // Gap classes
   const gapClass = layout === 'grid' ? `gap-${gap}` : '';
@@ -121,9 +138,9 @@ export function ListGrid<T extends { id?: string | number }>({
               key={`skeleton-${i}`}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: i * 0.05 }}
+              transition={{ delay: i * STAGGER_DELAY }}
               className={`${
-                layout === 'grid' ? 'h-28' : 'h-16'
+                layout === 'grid' ? GRID_SKELETON_HEIGHT : LIST_SKELETON_HEIGHT
               } bg-gray-800/40 border border-gray-700/50 rounded-lg animate-pulse`}
               data-testid={`${testId}-skeleton-${i}`}
             />
@@ -168,7 +185,7 @@ export function ListGrid<T extends { id?: string | number }>({
   if (!items || items.length === 0) {
     return (
       <motion.div
-        initial={{ opacity: 0, y: 10 }}
+        initial={{ opacity: 0, y: SLIDE_OFFSET }}
         animate={{ opacity: 1, y: 0 }}
         className="text-center py-16 bg-gray-800/40 border border-gray-700/50 rounded-lg"
         data-testid={`${testId}-empty`}
@@ -201,17 +218,17 @@ export function ListGrid<T extends { id?: string | number }>({
           return (
             <motion.div
               key={key}
-              initial={staggerAnimation ? { opacity: 0, y: 10 } : false}
+              initial={staggerAnimation ? { opacity: 0, y: SLIDE_OFFSET } : false}
               animate={
                 staggerAnimation
                   ? {
                       opacity: 1,
                       y: 0,
-                      transition: { delay: index * 0.05 },
+                      transition: { delay: index * STAGGER_DELAY },
                     }
                   : {}
               }
-              exit={{ opacity: 0, scale: 0.95 }}
+              exit={{ opacity: 0, scale: EXIT_SCALE }}
               layout
               className="focus-within:ring-2 focus-within:ring-cyan-500/50 rounded-lg transition-shadow"
               data-testid={`${testId}-item-${key}`}
@@ -232,7 +249,7 @@ export function ListGrid<T extends { id?: string | number }>({
 export const DefaultGridSkeleton = ({ layout = 'grid' }: { layout?: 'grid' | 'list' }) => (
   <div
     className={`${
-      layout === 'grid' ? 'h-28' : 'h-16'
+      layout === 'grid' ? GRID_SKELETON_HEIGHT : LIST_SKELETON_HEIGHT
     } bg-gray-800/40 border border-gray-700/50 rounded-lg animate-pulse`}
   />
 );

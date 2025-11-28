@@ -1,0 +1,87 @@
+# Implementation Log: Seamless Drag-and-Drop with Snap & Animation
+
+## Metadata
+- **Requirement**: idea-335c4835-seamless-drag-and-drop-with-sn
+- **Title**: Inertia-Driven Drag with Snap-to-Grid
+- **Date**: 2025-11-27
+- **Status**: Completed
+- **Tested**: false
+
+## Overview
+
+Implemented a seamless drag-and-drop experience that integrates dnd-kit with Framer Motion to provide an inertia-driven drag experience that snaps items to grid positions. The implementation includes visual cues (shadows, highlights) during dragging, a server-side preview API for position calculations, and real-time state synchronization with the global composition store.
+
+## Files Modified/Created
+
+### New Files Created:
+1. `src/app/features/Match/sub_MatchGrid/lib/snapToGrid.ts` - Snap-to-grid utilities with 10x10 grid calculations
+2. `src/app/features/Match/sub_MatchGrid/lib/index.ts` - Centralized exports for grid utilities
+3. `src/app/features/Match/sub_MatchGrid/components/InertiaDraggable.tsx` - Enhanced draggable with Framer Motion inertia
+4. `src/app/api/grid/preview/route.ts` - Server-side preview API for position calculations
+5. `src/hooks/use-drag-sync.ts` - Hook for syncing drag state with global stores
+
+### Files Modified:
+1. `src/app/features/Match/sub_MatchGrid/components/DragComponents.tsx` - Enhanced with velocity-based visuals, trail effects, and snap preview
+2. `src/app/features/Match/sub_MatchGrid/SimpleMatchGrid.tsx` - Integrated inertia tracking, velocity calculation, and enhanced drag handling
+
+## Key Features Implemented
+
+### 1. Snap-to-Grid Utilities (`snapToGrid.ts`)
+- GridConfig interface for flexible grid configuration
+- calculateInertiaSnap() for velocity-aware position prediction
+- findNearestGridPosition() for accurate grid cell detection
+- createSnapToGridModifier() for dnd-kit integration
+- Support for 10x10 default grid with customizable dimensions
+
+### 2. Inertia-Driven Drag Component (`InertiaDraggable.tsx`)
+- Spring physics via Framer Motion for smooth animations
+- Real-time velocity tracking for inertia calculations
+- Visual feedback with dynamic shadows and highlights
+- Automatic snap preview during drag operations
+
+### 3. Enhanced Visual Cues (`DragComponents.tsx`)
+- DragOverlayContent with velocity-based rotation and shadow intensity
+- SnapPreviewGrid showing ghost preview of target position
+- DragTrail creating trailing effect behind dragged items
+- Position preview indicator on drag overlay
+
+### 4. Server-Side Preview API (`/api/grid/preview`)
+- POST endpoint for full snap calculations with velocity
+- GET endpoint for quick position lookups
+- Alternate position suggestions when primary is occupied
+- Confidence scoring based on velocity
+
+### 5. State Synchronization (`use-drag-sync.ts`)
+- useDragSync hook for velocity tracking and trail management
+- useGridSync hook for composition store synchronization
+- Real-time position change callbacks
+
+## Technical Details
+
+### Spring Configuration
+- Cursor glow: damping=15, stiffness=150, mass=0.5
+- Drag inertia: damping=25, stiffness=300, mass=0.8
+
+### Visual Effects
+- Dynamic shadow intensity based on drag velocity
+- Rotation effect (max ±15°) based on horizontal movement
+- Trail effect with 200ms lifetime, 20 position history
+- Cyan theme (#22d3ee) matching existing design
+
+### Data Attributes for Testing
+- `data-testid="drag-overlay-item"` - Drag overlay container
+- `data-testid="position-preview"` - Position indicator
+- `data-testid="snap-preview-grid"` - Snap ghost preview
+- `data-testid="drag-trail"` - Trail SVG element
+- `data-testid="cursor-glow"` - Glow effect container
+- `data-testid="cursor-dot"` - Cursor dot element
+- `data-testid="drag-highlight"` - Drag highlight overlay
+- `data-testid="inertia-draggable-{id}"` - Inertia draggable wrapper
+
+## Bullets Summary
+- Created comprehensive snap-to-grid utilities for 10x10 grid layouts
+- Integrated Framer Motion spring physics with dnd-kit drag mechanics
+- Added velocity-driven visual effects (shadows, rotation, trails)
+- Implemented server-side preview API for position calculations
+- Synchronized drag state with global composition store
+- Added comprehensive data-testid attributes for testing

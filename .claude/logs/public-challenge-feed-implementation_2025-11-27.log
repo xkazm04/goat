@@ -1,0 +1,135 @@
+# Implementation Log: Public Challenge Feed & Social Ranking
+
+## Metadata
+- **Requirement**: idea-158a2718-public-challenge-feed-social-ranking
+- **Date**: 2025-11-27
+- **Status**: Completed
+
+## Overview
+
+Implemented a comprehensive Public Challenge Feed & Social Ranking system on the landing page. This feature adds a dynamic leaderboard showcasing popular lists per category, complete with user avatars, live scores, and a badge/reward system. Users can view active challenges, see top performers, and earn badges based on their challenge performance.
+
+## Key Changes
+
+### 1. Types & Data Models
+- Extended `src/types/challenges.ts` with:
+  - `UserProfile` - User profile data synced from Clerk
+  - `ChallengeEntryWithProfile` - Challenge entries with user profile data
+  - `LeaderboardEntryWithProfile` - Leaderboard entries with full user profiles
+
+### 2. API Routes
+- **Updated** `src/app/api/leaderboard/route.ts`:
+  - Fetches and includes user profile data with each leaderboard entry
+  - Added category wins and best finish tracking
+  - Returns user avatars and display names
+
+- **Updated** `src/app/api/challenges/[id]/entries/route.ts`:
+  - Returns challenge entries with user profile data
+  - Fetches user profiles for all entry participants
+
+- **Created** `src/app/api/user-stats/route.ts`:
+  - New endpoint for fetching user challenge statistics
+  - Calculates total challenges, wins, average score, best rank, and streaks
+
+- **Updated** `src/app/api/webhooks/clerk/route.ts`:
+  - Syncs user profile data from Clerk to Supabase `user_profiles` table
+  - Handles user creation, update, and deletion events
+
+### 3. New Components
+
+#### Challenge Feed (`src/app/features/Landing/sub_ChallengeFeed/`)
+- **ChallengeFeed.tsx**: Main feed component with category filters and timeframe selection
+- **ChallengeFeedCard.tsx**: Individual challenge card with live status, stats, and top performers preview
+- **CategoryLeaderboardPreview.tsx**: Compact leaderboard showing top 8 users with avatars and badges
+
+#### User Stats & Badges
+- **UserStatsCard.tsx**: Displays user's challenge statistics (total, wins, streak, average score)
+- **BadgeDisplay.tsx**: Shows earned badges with progress and locked badge indicators
+
+#### Challenge Submission (`src/app/features/Match/sub_ChallengeSubmission/`)
+- **ChallengeSubmissionModal.tsx**: Modal shown after completing a challenge with rank, score, and new badges
+
+### 4. Hooks
+- **Created** `src/hooks/use-challenge-submission.ts`:
+  - `useChallengeSubmission` - Submit challenge entries
+  - `calculateChallengeScore` - Score calculation helper
+  - `useChallengeTimer` - Timer for tracking completion time
+
+- **Created** `src/hooks/use-user-stats.ts`:
+  - `useUserStats` - Fetch stats for any user
+  - `useCurrentUserStats` - Fetch current user's stats
+
+### 5. Store
+- **Created** `src/stores/challenge-session-store.ts`:
+  - Manages active challenge session state
+  - Tracks timing, matched items, and submission status
+
+### 6. Landing Page Integration
+- **Updated** `src/app/features/Landing/LandingLayout.tsx`:
+  - Added ActiveChallenges component
+  - Added ChallengeFeed component
+  - Added ChallengeModal component
+
+- **Updated** `src/app/features/Landing/components/ChallengeModalEntries.tsx`:
+  - Enhanced to show user avatars, names, and premium badges
+  - Added submission timestamps and rank styling
+
+## Test IDs Added
+All interactive components include `data-testid` attributes:
+- `challenge-feed`
+- `challenge-feed-card-{id}`
+- `challenge-join-btn-{id}`
+- `category-leaderboard-preview`
+- `leaderboard-preview-entry-{rank}`
+- `view-all-challenges-btn`
+- `view-full-leaderboard-btn`
+- `user-stats-card`
+- `badge-{type}`
+- `badge-display`
+- `badge-display-compact`
+- `challenge-modal-entries`
+- `challenge-entry-{rank}`
+- `challenge-submission-modal`
+- `challenge-submission-close`
+- `challenge-submission-done`
+- `challenge-submission-share`
+
+## Database Requirements
+This implementation expects a `user_profiles` table in Supabase with the following schema:
+```sql
+CREATE TABLE user_profiles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  clerk_id TEXT UNIQUE NOT NULL,
+  display_name TEXT NOT NULL,
+  email TEXT,
+  avatar_url TEXT,
+  bio TEXT,
+  is_premium BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+## Files Modified/Created
+
+### New Files (15)
+- src/app/features/Landing/sub_ChallengeFeed/ChallengeFeed.tsx
+- src/app/features/Landing/sub_ChallengeFeed/ChallengeFeedCard.tsx
+- src/app/features/Landing/sub_ChallengeFeed/CategoryLeaderboardPreview.tsx
+- src/app/features/Landing/sub_ChallengeFeed/UserStatsCard.tsx
+- src/app/features/Landing/sub_ChallengeFeed/BadgeDisplay.tsx
+- src/app/features/Landing/sub_ChallengeFeed/index.ts
+- src/app/features/Match/sub_ChallengeSubmission/ChallengeSubmissionModal.tsx
+- src/app/features/Match/sub_ChallengeSubmission/index.ts
+- src/hooks/use-challenge-submission.ts
+- src/hooks/use-user-stats.ts
+- src/stores/challenge-session-store.ts
+- src/app/api/user-stats/route.ts
+
+### Modified Files (5)
+- src/types/challenges.ts
+- src/app/api/leaderboard/route.ts
+- src/app/api/challenges/[id]/entries/route.ts
+- src/app/api/webhooks/clerk/route.ts
+- src/app/features/Landing/LandingLayout.tsx
+- src/app/features/Landing/components/ChallengeModalEntries.tsx

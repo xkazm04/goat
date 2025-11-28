@@ -165,6 +165,7 @@ export const useGridStore = create<GridStoreState>()(
               id: `grid-${position}`,
               title: backlogItem.name || backlogItem.title || '',
               description: backlogItem.description || '',
+              image_url: backlogItem.image_url || null,
               position,
               matched: true,
               backlogItemId: backlogItem.id,

@@ -81,17 +81,38 @@ export const useSwipeGesture = (
     };
   }, [mergedConfig.maxDuration, mergedConfig.minDistance, mergedConfig.minVelocity]);
 
+  // Helper to reset touch state for multi-touch
+  const resetTouchState = useCallback(() => {
+    touchStart.current = null;
+    isSwiping.current = false;
+    isLifted.current = false;
+    isReorderMode.current = false;
+    if (liftTimer.current) {
+      clearTimeout(liftTimer.current);
+      liftTimer.current = null;
+    }
+  }, []);
+
+  // Helper to check if touch movement is within threshold for lift
+  const isTouchWithinLiftThreshold = useCallback(() => {
+    if (!touchStart.current) return false;
+    const deltaX = (touchCurrent.current?.x || 0) - touchStart.current.x;
+    const deltaY = (touchCurrent.current?.y || 0) - touchStart.current.y;
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    return distance < 20;
+  }, []);
+
+  // Helper to trigger card lift
+  const triggerCardLift = useCallback(() => {
+    isLifted.current = true;
+    isReorderMode.current = true;
+    callbacks.onCardLift?.();
+  }, [callbacks]);
+
   const handleTouchStart = useCallback((e: TouchEvent) => {
     // Ignore multi-touch
     if (e.touches.length > 1) {
-      touchStart.current = null;
-      isSwiping.current = false;
-      isLifted.current = false;
-      isReorderMode.current = false;
-      if (liftTimer.current) {
-        clearTimeout(liftTimer.current);
-        liftTimer.current = null;
-      }
+      resetTouchState();
       return;
     }
 
@@ -110,38 +131,23 @@ export const useSwipeGesture = (
     // Start lift timer for reorder mode
     if (mergedConfig.enableReorder) {
       liftTimer.current = setTimeout(() => {
-        if (touchStart.current && !isLifted.current) {
-          // Check if touch hasn't moved much during hold
-          const deltaX = (touchCurrent.current?.x || 0) - touchStart.current.x;
-          const deltaY = (touchCurrent.current?.y || 0) - touchStart.current.y;
-          const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-
-          if (distance < 20) {
-            isLifted.current = true;
-            isReorderMode.current = true;
-            callbacks.onCardLift?.();
-          }
+        const shouldLift = touchStart.current && !isLifted.current && isTouchWithinLiftThreshold();
+        if (shouldLift) {
+          triggerCardLift();
         }
       }, mergedConfig.liftHoldDuration);
     }
 
     callbacks.onSwipeStart?.(e);
-  }, [callbacks, mergedConfig.enableReorder, mergedConfig.liftHoldDuration]);
+  }, [callbacks, mergedConfig.enableReorder, mergedConfig.liftHoldDuration, resetTouchState, isTouchWithinLiftThreshold, triggerCardLift]);
 
   const handleTouchMove = useCallback((e: TouchEvent) => {
     if (!touchStart.current || !isSwiping.current) return;
 
     // Ignore multi-touch scenarios
     if (e.touches.length > 1) {
-      touchStart.current = null;
       touchCurrent.current = null;
-      isSwiping.current = false;
-      isLifted.current = false;
-      isReorderMode.current = false;
-      if (liftTimer.current) {
-        clearTimeout(liftTimer.current);
-        liftTimer.current = null;
-      }
+      resetTouchState();
       return;
     }
 
@@ -181,14 +187,13 @@ export const useSwipeGesture = (
     }
 
     // Check if we should trigger lift (swipe past threshold)
-    if (mergedConfig.enableReorder && !isLifted.current && distance >= mergedConfig.liftThreshold) {
-      isLifted.current = true;
-      isReorderMode.current = true;
+    const shouldTriggerLiftByThreshold = mergedConfig.enableReorder && !isLifted.current && distance >= mergedConfig.liftThreshold;
+    if (shouldTriggerLiftByThreshold) {
       if (liftTimer.current) {
         clearTimeout(liftTimer.current);
         liftTimer.current = null;
       }
-      callbacks.onCardLift?.();
+      triggerCardLift();
     }
 
     // Prevent default browser behavior if configured
@@ -197,7 +202,7 @@ export const useSwipeGesture = (
     }
 
     callbacks.onSwipeMove?.(e, progress);
-  }, [callbacks, mergedConfig.minDistance, mergedConfig.preventScroll, mergedConfig.enableReorder, mergedConfig.liftThreshold]);
+  }, [callbacks, mergedConfig.minDistance, mergedConfig.preventScroll, mergedConfig.enableReorder, mergedConfig.liftThreshold, resetTouchState, triggerCardLift]);
 
   const handleTouchEnd = useCallback((e: TouchEvent) => {
     if (!touchStart.current || !touchCurrent.current || !isSwiping.current) return;

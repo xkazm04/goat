@@ -227,6 +227,7 @@ export function AdminItemCard({ item, onUpdate }: AdminItemCardProps) {
         position={contextMenu || { x: 0, y: 0 }}
         items={contextMenuItems}
         onClose={() => setContextMenu(null)}
+        triggerId={`admin-item-${item.id}`}
       />
     </div>
   );

@@ -23,20 +23,20 @@ export interface ErrorMetadata {
 }
 
 // Loading state union type with specific loading phases
-export type LoadingState =
+export type LoadingState<T = unknown> =
   | { type: 'IDLE'; timestamp: number }
   | { type: 'LOADING_LIST'; timestamp: number; progress?: number }
   | { type: 'LOADING_FETCH'; timestamp: number; progress?: number }
   | { type: 'LOADING_BACKLOG'; timestamp: number; progress?: number }
-  | { type: 'SUCCESS'; data?: any; timestamp: number }
+  | { type: 'SUCCESS'; data?: T; timestamp: number }
   | ({ type: 'ERROR'; timestamp: number } & ErrorMetadata);
 
 // Action types for state transitions - specific actions for each loading phase
-export type LoadingAction =
+export type LoadingAction<T = unknown> =
   | { type: 'START_LIST_LOAD'; payload?: { progress?: number } }
   | { type: 'START_FETCH_LOAD'; payload?: { progress?: number } }
   | { type: 'START_BACKLOG_LOAD'; payload?: { progress?: number } }
-  | { type: 'SET_SUCCESS'; payload?: any }
+  | { type: 'SET_SUCCESS'; payload?: T }
   | { type: 'SET_NETWORK_ERROR'; payload: { message: string; recoveryAction?: () => void; details?: string } }
   | { type: 'SET_VALIDATION_ERROR'; payload: { message: string; recoveryAction?: () => void; statusCode?: number; details?: string } }
   | { type: 'SET_SERVER_ERROR'; payload: { message: string; recoveryAction?: () => void; statusCode?: number; details?: string } }
@@ -44,12 +44,25 @@ export type LoadingAction =
   | { type: 'UPDATE_PROGRESS'; payload: number }
   | { type: 'RESET' };
 
+// Helper functions for state transition conditions
+const canTransitionToListLoad = (state: LoadingState): boolean =>
+  state.type === 'IDLE' || state.type === 'SUCCESS' || state.type === 'ERROR';
+
+const canTransitionToFetchLoad = (state: LoadingState): boolean =>
+  state.type === 'IDLE' || state.type === 'SUCCESS' || state.type === 'LOADING_LIST' || state.type === 'ERROR';
+
+const canTransitionToBacklogLoad = (state: LoadingState): boolean =>
+  state.type === 'LOADING_FETCH' || state.type === 'SUCCESS' || state.type === 'IDLE' || state.type === 'ERROR';
+
+const isInLoadingState = (state: LoadingState): boolean =>
+  state.type === 'LOADING_LIST' || state.type === 'LOADING_FETCH' || state.type === 'LOADING_BACKLOG';
+
 // Reducer function for state machine with explicit state transition logic
 function loadingReducer(state: LoadingState, action: LoadingAction): LoadingState {
   switch (action.type) {
     case 'START_LIST_LOAD':
       // Can transition to LOADING_LIST from IDLE or SUCCESS
-      if (state.type === 'IDLE' || state.type === 'SUCCESS' || state.type === 'ERROR') {
+      if (canTransitionToListLoad(state)) {
         return {
           type: 'LOADING_LIST',
           timestamp: Date.now(),
@@ -60,7 +73,7 @@ function loadingReducer(state: LoadingState, action: LoadingAction): LoadingStat
 
     case 'START_FETCH_LOAD':
       // Can transition to LOADING_FETCH from IDLE, SUCCESS, or LOADING_LIST
-      if (state.type === 'IDLE' || state.type === 'SUCCESS' || state.type === 'LOADING_LIST' || state.type === 'ERROR') {
+      if (canTransitionToFetchLoad(state)) {
         return {
           type: 'LOADING_FETCH',
           timestamp: Date.now(),
@@ -71,7 +84,7 @@ function loadingReducer(state: LoadingState, action: LoadingAction): LoadingStat
 
     case 'START_BACKLOG_LOAD':
       // Can transition to LOADING_BACKLOG from LOADING_FETCH or SUCCESS
-      if (state.type === 'LOADING_FETCH' || state.type === 'SUCCESS' || state.type === 'IDLE' || state.type === 'ERROR') {
+      if (canTransitionToBacklogLoad(state)) {
         return {
           type: 'LOADING_BACKLOG',
           timestamp: Date.now(),
@@ -82,7 +95,7 @@ function loadingReducer(state: LoadingState, action: LoadingAction): LoadingStat
 
     case 'SET_SUCCESS':
       // Can only transition to SUCCESS from any LOADING state
-      if (state.type === 'LOADING_LIST' || state.type === 'LOADING_FETCH' || state.type === 'LOADING_BACKLOG') {
+      if (isInLoadingState(state)) {
         return {
           type: 'SUCCESS',
           data: action.payload,
@@ -93,7 +106,7 @@ function loadingReducer(state: LoadingState, action: LoadingAction): LoadingStat
 
     case 'SET_NETWORK_ERROR':
       // Can only transition to ERROR from any LOADING state
-      if (state.type === 'LOADING_LIST' || state.type === 'LOADING_FETCH' || state.type === 'LOADING_BACKLOG') {
+      if (isInLoadingState(state)) {
         return {
           type: 'ERROR',
           errorType: 'NETWORK',
@@ -107,7 +120,7 @@ function loadingReducer(state: LoadingState, action: LoadingAction): LoadingStat
 
     case 'SET_VALIDATION_ERROR':
       // Can only transition to ERROR from any LOADING state
-      if (state.type === 'LOADING_LIST' || state.type === 'LOADING_FETCH' || state.type === 'LOADING_BACKLOG') {
+      if (isInLoadingState(state)) {
         return {
           type: 'ERROR',
           errorType: 'VALIDATION',
@@ -122,7 +135,7 @@ function loadingReducer(state: LoadingState, action: LoadingAction): LoadingStat
 
     case 'SET_SERVER_ERROR':
       // Can only transition to ERROR from any LOADING state
-      if (state.type === 'LOADING_LIST' || state.type === 'LOADING_FETCH' || state.type === 'LOADING_BACKLOG') {
+      if (isInLoadingState(state)) {
         return {
           type: 'ERROR',
           errorType: 'SERVER',
@@ -137,7 +150,7 @@ function loadingReducer(state: LoadingState, action: LoadingAction): LoadingStat
 
     case 'SET_UNKNOWN_ERROR':
       // Can only transition to ERROR from any LOADING state
-      if (state.type === 'LOADING_LIST' || state.type === 'LOADING_FETCH' || state.type === 'LOADING_BACKLOG') {
+      if (isInLoadingState(state)) {
         return {
           type: 'ERROR',
           errorType: 'UNKNOWN',
@@ -151,11 +164,14 @@ function loadingReducer(state: LoadingState, action: LoadingAction): LoadingStat
 
     case 'UPDATE_PROGRESS':
       // Can only update progress in a LOADING state
-      if (state.type === 'LOADING_LIST' || state.type === 'LOADING_FETCH' || state.type === 'LOADING_BACKLOG') {
-        return {
-          ...state,
-          progress: action.payload
-        };
+      if (state.type === 'LOADING_LIST') {
+        return { ...state, progress: action.payload };
+      }
+      if (state.type === 'LOADING_FETCH') {
+        return { ...state, progress: action.payload };
+      }
+      if (state.type === 'LOADING_BACKLOG') {
+        return { ...state, progress: action.payload };
       }
       return state;
 
@@ -168,12 +184,12 @@ function loadingReducer(state: LoadingState, action: LoadingAction): LoadingStat
 }
 
 // Hook interface for better TypeScript support
-export interface UseLoadingStateMachineReturn {
-  state: LoadingState;
+export interface UseLoadingStateMachineReturn<T = unknown> {
+  state: LoadingState<T>;
   startListLoad: (progress?: number) => void;
   startFetchLoad: (progress?: number) => void;
   startBacklogLoad: (progress?: number) => void;
-  setSuccess: (data?: any) => void;
+  setSuccess: (data?: T) => void;
   setNetworkError: (message: string, recoveryAction?: () => void, details?: string) => void;
   setValidationError: (message: string, recoveryAction?: () => void, statusCode?: number, details?: string) => void;
   setServerError: (message: string, recoveryAction?: () => void, statusCode?: number, details?: string) => void;
@@ -193,9 +209,12 @@ export interface UseLoadingStateMachineReturn {
 const DEBUG_STATE_TRANSITIONS = process.env.NODE_ENV === 'development';
 
 // Main hook export
-export function useLoadingStateMachine(initialState?: LoadingState, debugMode?: boolean): UseLoadingStateMachineReturn {
-  const defaultState: LoadingState = { type: 'IDLE', timestamp: Date.now() };
-  const [state, dispatch] = useReducer(loadingReducer, initialState ?? defaultState);
+export function useLoadingStateMachine<T = unknown>(initialState?: LoadingState<T>, debugMode?: boolean): UseLoadingStateMachineReturn<T> {
+  const defaultState: LoadingState<T> = { type: 'IDLE', timestamp: Date.now() };
+  const [state, dispatch] = useReducer(
+    loadingReducer as (state: LoadingState<T>, action: LoadingAction<T>) => LoadingState<T>,
+    initialState ?? defaultState
+  );
 
   const shouldDebug = debugMode ?? DEBUG_STATE_TRANSITIONS;
 
@@ -227,7 +246,7 @@ export function useLoadingStateMachine(initialState?: LoadingState, debugMode?: 
     dispatch({ type: 'START_BACKLOG_LOAD', payload: { progress } });
   }, [logTransition, state.type]);
 
-  const setSuccess = useCallback((data?: any) => {
+  const setSuccess = useCallback((data?: T) => {
     logTransition(state.type, 'SUCCESS', 'SET_SUCCESS');
     dispatch({ type: 'SET_SUCCESS', payload: data });
   }, [logTransition, state.type]);
@@ -329,8 +348,24 @@ export function useLoadingStateMachine(initialState?: LoadingState, debugMode?: 
   };
 }
 
+// HTTP Error structure for categorization
+interface HttpError {
+  name?: string;
+  message?: string;
+  response?: {
+    status?: number;
+    statusText?: string;
+    data?: {
+      detail?: string;
+    };
+  };
+  status?: number;
+  statusText?: string;
+  detail?: string;
+}
+
 // Utility function to categorize HTTP errors
-export function categorizeHttpError(error: any): {
+export function categorizeHttpError(error: HttpError): {
   errorType: ErrorType;
   statusCode?: number;
   message: string;
@@ -355,7 +390,7 @@ export function categorizeHttpError(error: any): {
 
   // HTTP status code errors
   if (error.response?.status || error.status) {
-    const statusCode = error.response?.status ?? error.status;
+    const statusCode = error.response?.status ?? error.status ?? 0;
     const statusMessage = error.response?.statusText ?? error.statusText ?? '';
     const details = error.response?.data?.detail ?? error.detail ?? error.message;
 
@@ -427,7 +462,7 @@ export function isErrorState(state: LoadingState): state is LoadingState & { typ
   return state.type === 'ERROR';
 }
 
-export function isSuccessState(state: LoadingState): state is { type: 'SUCCESS'; data?: any; timestamp: number } {
+export function isSuccessState<T = unknown>(state: LoadingState<T>): state is { type: 'SUCCESS'; data?: T; timestamp: number } {
   return state.type === 'SUCCESS';
 }
 

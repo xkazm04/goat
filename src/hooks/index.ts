@@ -93,6 +93,15 @@ export {
 } from './use-top-lists';
 
 /**
+ * List Preview Hook
+ * Lazy-loads list preview data on hover with caching
+ */
+export {
+  useListPreview,
+  usePrefetchListPreview,
+} from './use-list-preview';
+
+/**
  * Item Research Hooks
  * Handles AI-powered item validation and research
  */
@@ -145,6 +154,17 @@ export {
   useToast,
   toast,
 } from './use-toast';
+
+/**
+ * Consensus Ranking Hooks
+ * Transforms backlog into a living consensus engine where items
+ * show global ranking distributions and peer consensus overlays
+ */
+export {
+  useConsensus,
+  useItemConsensusUI,
+  useConsensusSortedItems,
+} from './use-consensus';
 
 // ========================================
 // Authentication Hooks (Legacy/Clerk)

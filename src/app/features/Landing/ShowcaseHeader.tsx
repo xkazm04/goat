@@ -1,19 +1,18 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Sparkles, Crown, Zap } from "lucide-react";
-import { textRevealVariants, glowPulseVariants } from "./shared/animations";
+import { Crown } from "lucide-react";
 
-// Floating particles configuration
-const particleConfig = [
-  { left: 15, top: 20, delay: 0.5, duration: 3.2, size: 3 },
-  { left: 85, top: 35, delay: 1.8, duration: 4.1, size: 2 },
-  { left: 25, top: 70, delay: 0.2, duration: 3.8, size: 4 },
-  { left: 75, top: 15, delay: 2.3, duration: 3.5, size: 2 },
-  { left: 45, top: 85, delay: 1.1, duration: 4.0, size: 3 },
-  { left: 90, top: 60, delay: 0.8, duration: 3.7, size: 2 },
-  { left: 10, top: 45, delay: 2.0, duration: 3.3, size: 4 },
-  { left: 65, top: 25, delay: 1.5, duration: 3.9, size: 2 },
+// Individual letter configuration for staggered animation
+const letters = [
+  { char: "G", delay: 0 },
+  { char: ".", delay: 0.08 },
+  { char: "O", delay: 0.16 },
+  { char: ".", delay: 0.24 },
+  { char: "A", delay: 0.32 },
+  { char: ".", delay: 0.4 },
+  { char: "T", delay: 0.48 },
+  { char: ".", delay: 0.56 },
 ];
 
 export function ShowcaseHeader() {
@@ -21,203 +20,239 @@ export function ShowcaseHeader() {
     <motion.div
       initial="hidden"
       animate="visible"
-      className="text-center relative z-10 pt-16 pb-8"
+      className="text-center relative z-10 pt-20 pb-12"
     >
       <div className="relative inline-block">
-        {/* Animated decorative icons */}
+        {/* Epic crown above title */}
         <motion.div
-          className="absolute -top-10 -left-12"
-          animate={{
-            y: [-8, 8, -8],
-            rotate: [0, 10, 0],
-            opacity: [0.6, 1, 0.6],
-          }}
-          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute -top-16 left-1/2 -translate-x-1/2"
+          initial={{ y: -50, opacity: 0, scale: 0 }}
+          animate={{ y: 0, opacity: 1, scale: 1 }}
+          transition={{ delay: 0.8, duration: 0.8, type: "spring", stiffness: 100 }}
         >
-          <Sparkles className="w-8 h-8 text-amber-300 drop-shadow-[0_0_10px_rgba(251,191,36,0.5)]" />
+          <motion.div
+            animate={{
+              y: [-4, 4, -4],
+              rotate: [-2, 2, -2],
+            }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <Crown 
+              className="w-16 h-16 text-amber-400" 
+              style={{
+                filter: "drop-shadow(0 0 30px rgba(251, 191, 36, 0.8)) drop-shadow(0 0 60px rgba(251, 191, 36, 0.4))"
+              }}
+            />
+          </motion.div>
+          {/* Crown glow */}
+          <motion.div
+            className="absolute inset-0 -z-10"
+            animate={{ opacity: [0.4, 0.8, 0.4] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            style={{
+              background: "radial-gradient(circle, rgba(251, 191, 36, 0.4) 0%, transparent 70%)",
+              filter: "blur(20px)",
+              transform: "scale(3)",
+            }}
+          />
         </motion.div>
 
+        {/* Massive background glow */}
         <motion.div
-          className="absolute -top-8 -right-16"
+          className="absolute -inset-32 pointer-events-none"
           animate={{
-            y: [8, -8, 8],
-            rotate: [0, -15, 0],
+            opacity: [0.3, 0.6, 0.3],
             scale: [1, 1.1, 1],
           }}
-          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-        >
-          <Crown className="w-10 h-10 text-amber-400 drop-shadow-[0_0_15px_rgba(251,191,36,0.6)]" />
-        </motion.div>
-
-        <motion.div
-          className="absolute -bottom-2 -left-14"
-          animate={{
-            scale: [0.9, 1.2, 0.9],
-            opacity: [0.4, 0.8, 0.4],
-          }}
-          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-        >
-          <Zap className="w-6 h-6 text-amber-500 drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
-        </motion.div>
-
-        {/* Background glow for title */}
-        <motion.div
-          className="absolute -inset-16 rounded-full pointer-events-none"
+          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
           style={{
-            background: "radial-gradient(circle, rgba(251, 191, 36, 0.15) 0%, transparent 60%)",
-            filter: "blur(30px)",
+            background: "radial-gradient(ellipse at center, rgba(251, 191, 36, 0.2) 0%, rgba(245, 158, 11, 0.1) 30%, transparent 60%)",
+            filter: "blur(40px)",
           }}
-          variants={glowPulseVariants}
-          animate="animate"
         />
 
-        {/* Main G.O.A.T. title */}
-        <motion.h1
-          className="text-[8rem] md:text-[10rem] lg:text-[12rem] font-black tracking-tighter leading-none cursor-default select-none"
-          initial={{ scale: 0.5, opacity: 0, filter: "blur(20px)" }}
-          animate={{ scale: 1, opacity: 1, filter: "blur(0px)" }}
-          transition={{ duration: 1, type: "spring", stiffness: 80 }}
-          whileHover={{ scale: 1.03 }}
-          style={{
-            background: `
-              linear-gradient(
-                135deg,
-                #fcd34d 0%,
-                #fbbf24 20%,
-                #f59e0b 40%,
-                #fbbf24 60%,
-                #fcd34d 80%,
-                #f59e0b 100%
-              )
-            `,
-            backgroundSize: "200% 200%",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            backgroundClip: "text",
-            filter: "drop-shadow(0 4px 30px rgba(251, 191, 36, 0.4))",
-          }}
+        {/* Main G.O.A.T. title - Each letter animated separately */}
+        <div className="flex items-center justify-center gap-1 md:gap-2">
+          {letters.map((letter, index) => (
+            <motion.span
+              key={index}
+              className="relative inline-block cursor-default select-none"
+              initial={{ 
+                opacity: 0, 
+                y: 100,
+                rotateX: -90,
+                scale: 0.5,
+              }}
+              animate={{ 
+                opacity: 1, 
+                y: 0,
+                rotateX: 0,
+                scale: 1,
+              }}
+              transition={{
+                delay: letter.delay + 0.3,
+                duration: 0.8,
+                type: "spring",
+                stiffness: 100,
+                damping: 12,
+              }}
+              whileHover={letter.char !== "." ? {
+                scale: 1.15,
+                y: -10,
+                transition: { duration: 0.2 },
+              } : {}}
+              style={{
+                fontSize: letter.char === "." ? "clamp(4rem, 12vw, 10rem)" : "clamp(5rem, 15vw, 14rem)",
+                fontWeight: 900,
+                fontFamily: "'Inter', system-ui, sans-serif",
+                letterSpacing: letter.char === "." ? "-0.05em" : "-0.02em",
+                lineHeight: 0.85,
+                background: letter.char === "."
+                  ? "linear-gradient(180deg, #fcd34d 0%, #f59e0b 100%)"
+                  : `linear-gradient(180deg, 
+                      #fff9e6 0%,
+                      #fcd34d 15%,
+                      #fbbf24 30%,
+                      #f59e0b 50%,
+                      #d97706 70%,
+                      #b45309 85%,
+                      #92400e 100%
+                    )`,
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+                filter: "drop-shadow(0 4px 0 rgba(146, 64, 14, 0.5)) drop-shadow(0 8px 30px rgba(251, 191, 36, 0.5))",
+                textShadow: "none",
+              }}
+            >
+              {letter.char}
+              {/* Individual letter glow */}
+              {letter.char !== "." && (
+                <motion.div
+                  className="absolute inset-0 -z-10 pointer-events-none"
+                  animate={{
+                    opacity: [0.3, 0.6, 0.3],
+                  }}
+                  transition={{
+                    duration: 2 + index * 0.3,
+                    repeat: Infinity,
+                    delay: index * 0.2,
+                  }}
+                  style={{
+                    background: "radial-gradient(circle, rgba(251, 191, 36, 0.4) 0%, transparent 60%)",
+                    filter: "blur(25px)",
+                    transform: "scale(1.5)",
+                  }}
+                />
+              )}
+            </motion.span>
+          ))}
+        </div>
+
+        {/* Elegant underline accent */}
+        <motion.div
+          className="relative mt-6 flex items-center justify-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.2, duration: 0.8 }}
         >
-          <motion.span
-            animate={{
-              backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
-            }}
-            transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+          {/* Left decorative line */}
+          <motion.div
+            className="h-[2px] w-24 md:w-32"
+            initial={{ scaleX: 0, opacity: 0 }}
+            animate={{ scaleX: 1, opacity: 1 }}
+            transition={{ delay: 1.4, duration: 0.6, ease: "easeOut" }}
             style={{
-              background: `
-                linear-gradient(
-                  135deg,
-                  #fcd34d 0%,
-                  #fbbf24 20%,
-                  #f59e0b 40%,
-                  #fbbf24 60%,
-                  #fcd34d 80%,
-                  #f59e0b 100%
-                )
-              `,
-              backgroundSize: "200% 200%",
+              background: "linear-gradient(90deg, transparent, rgba(251, 191, 36, 0.8))",
+              transformOrigin: "right",
+              boxShadow: "0 0 20px rgba(251, 191, 36, 0.5)",
+            }}
+          />
+
+          {/* Center emblem */}
+          <motion.div
+            className="mx-4 relative"
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ delay: 1.5, duration: 0.6, type: "spring" }}
+          >
+            <div
+              className="w-3 h-3 rotate-45"
+              style={{
+                background: "linear-gradient(135deg, #fcd34d 0%, #f59e0b 100%)",
+                boxShadow: "0 0 20px rgba(251, 191, 36, 0.8), 0 0 40px rgba(251, 191, 36, 0.4)",
+              }}
+            />
+          </motion.div>
+
+          {/* Right decorative line */}
+          <motion.div
+            className="h-[2px] w-24 md:w-32"
+            initial={{ scaleX: 0, opacity: 0 }}
+            animate={{ scaleX: 1, opacity: 1 }}
+            transition={{ delay: 1.4, duration: 0.6, ease: "easeOut" }}
+            style={{
+              background: "linear-gradient(90deg, rgba(251, 191, 36, 0.8), transparent)",
+              transformOrigin: "left",
+              boxShadow: "0 0 20px rgba(251, 191, 36, 0.5)",
+            }}
+          />
+        </motion.div>
+
+        {/* Subtitle with premium styling */}
+        <motion.div
+          className="mt-8 relative"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.6, duration: 0.6 }}
+        >
+          <motion.p
+            className="text-xl md:text-2xl font-light tracking-[0.3em] uppercase"
+            style={{
+              background: "linear-gradient(90deg, rgba(251, 191, 36, 0.6), #fbbf24, rgba(251, 191, 36, 0.6))",
+              backgroundSize: "200% 100%",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
               backgroundClip: "text",
             }}
-          >
-            G.O.A.T.
-          </motion.span>
-        </motion.h1>
-
-        {/* Subtitle with elegant styling */}
-        <motion.div
-          className="flex items-center justify-center gap-4 mt-4"
-          variants={textRevealVariants}
-          initial="hidden"
-          animate="visible"
-          transition={{ delay: 0.6 }}
-        >
-          {/* Left line */}
-          <motion.div
-            className="h-px flex-1 max-w-32"
-            initial={{ scaleX: 0 }}
-            animate={{ scaleX: 1 }}
-            transition={{ delay: 1, duration: 0.8 }}
-            style={{
-              background: "linear-gradient(90deg, transparent, rgba(251, 191, 36, 0.6))",
-              boxShadow: "0 0 10px rgba(251, 191, 36, 0.3)",
+            animate={{
+              backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
             }}
-          />
-
-          {/* Subtitle pill */}
-          <motion.div
-            className="relative px-6 py-2.5 rounded-full"
-            whileHover={{ scale: 1.05 }}
-            style={{
-              background: `
-                linear-gradient(135deg, 
-                  rgba(251, 191, 36, 0.1) 0%,
-                  rgba(245, 158, 11, 0.05) 50%,
-                  rgba(217, 119, 6, 0.1) 100%
-                )
-              `,
-              boxShadow: `
-                0 4px 24px rgba(251, 191, 36, 0.15),
-                inset 0 1px 0 rgba(255, 255, 255, 0.1),
-                inset 0 -1px 0 rgba(0, 0, 0, 0.1)
-              `,
-            }}
+            transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
           >
-            {/* Inner glow */}
-            <div
-              className="absolute inset-0 rounded-full opacity-50"
-              style={{
-                background: "radial-gradient(ellipse at center, rgba(251, 191, 36, 0.1), transparent 70%)",
-              }}
-            />
-            <span
-              className="relative text-lg font-semibold tracking-widest"
-              style={{
-                color: "#fbbf24",
-                textShadow: "0 0 20px rgba(251, 191, 36, 0.5)",
-              }}
-            >
-              Greatest Of All Time
-            </span>
-          </motion.div>
-
-          {/* Right line */}
+            Greatest Of All Time
+          </motion.p>
+          
+          {/* Subtle glow under subtitle */}
           <motion.div
-            className="h-px flex-1 max-w-32"
-            initial={{ scaleX: 0 }}
-            animate={{ scaleX: 1 }}
-            transition={{ delay: 1, duration: 0.8 }}
+            className="absolute -inset-4 -z-10"
             style={{
-              background: "linear-gradient(90deg, rgba(251, 191, 36, 0.6), transparent)",
-              boxShadow: "0 0 10px rgba(251, 191, 36, 0.3)",
+              background: "radial-gradient(ellipse at center, rgba(251, 191, 36, 0.1) 0%, transparent 70%)",
+              filter: "blur(15px)",
             }}
           />
         </motion.div>
       </div>
 
-      {/* Floating particle effects */}
+      {/* Ambient light rays */}
       <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
-        {particleConfig.map((particle, i) => (
+        {[...Array(6)].map((_, i) => (
           <motion.div
             key={i}
-            className="absolute rounded-full"
+            className="absolute top-1/2 left-1/2 h-[300px] w-[2px]"
             style={{
-              left: `${particle.left}%`,
-              top: `${particle.top}%`,
-              width: particle.size,
-              height: particle.size,
-              background: "linear-gradient(135deg, #fbbf24, #f59e0b)",
-              boxShadow: "0 0 8px rgba(251, 191, 36, 0.8)",
+              background: "linear-gradient(to bottom, rgba(251, 191, 36, 0.3), transparent)",
+              transformOrigin: "top center",
+              transform: `rotate(${i * 60}deg)`,
             }}
             animate={{
-              y: [0, -25, 0],
-              opacity: [0, 0.8, 0],
-              scale: [0.5, 1, 0.5],
+              opacity: [0.1, 0.4, 0.1],
+              scaleY: [0.8, 1, 0.8],
             }}
             transition={{
-              duration: particle.duration,
+              duration: 3 + i * 0.5,
               repeat: Infinity,
-              delay: particle.delay,
+              delay: i * 0.3,
               ease: "easeInOut",
             }}
           />

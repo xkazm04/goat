@@ -6,6 +6,7 @@ import { motion, MotionProps } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "./skeleton";
 import { ProgressiveImage } from "./progressive-image";
+import { PlaceholderImage } from "./placeholder-image";
 
 /**
  * ItemCard Variants
@@ -289,19 +290,17 @@ export const ItemCard = React.forwardRef<HTMLDivElement, ItemCardProps>(
                   itemTitle={title}
                 />
               </div>
-            ) : image ? (
-              <div className="w-12 h-12 rounded overflow-hidden flex-shrink-0 bg-gray-900">
-                <img
-                  src={image}
-                  alt={imageAlt || title}
-                  className="w-full h-full object-cover"
-                  draggable={false}
-                  loading="lazy"
-                />
-              </div>
             ) : (
-              <div className="w-12 h-12 rounded bg-gray-900 flex items-center justify-center flex-shrink-0">
-                <span className="text-xs text-gray-600">No Image</span>
+              <div className="w-12 h-12 rounded overflow-hidden flex-shrink-0">
+                <PlaceholderImage
+                  src={image}
+                  placeholder={imagePlaceholder}
+                  alt={imageAlt || title}
+                  onError={onImageError}
+                  onLoad={onImageLoad}
+                  testId={`${testId}-list-image`}
+                  seed={title}
+                />
               </div>
             ))}
 
@@ -342,18 +341,16 @@ export const ItemCard = React.forwardRef<HTMLDivElement, ItemCardProps>(
                 autoFetchWiki={true}
                 itemTitle={title}
               />
-            ) : image ? (
-              <img
-                src={image}
-                alt={imageAlt || title}
-                className="w-full h-full object-cover"
-                draggable={false}
-                loading="lazy"
-              />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gray-900">
-                <span className="text-xs text-gray-500">No Image</span>
-              </div>
+              <PlaceholderImage
+                src={image}
+                placeholder={imagePlaceholder}
+                alt={imageAlt || title}
+                onError={onImageError}
+                onLoad={onImageLoad}
+                testId={`${testId}-grid-image`}
+                seed={title}
+              />
             ))}
 
             {/* Title overlay (default for grid/compact) */}

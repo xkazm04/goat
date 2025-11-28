@@ -1,7 +1,67 @@
 import { Webhook } from 'svix';
 import { headers } from 'next/headers';
-import { WebhookEvent } from '@clerk/nextjs/server';
+import { WebhookEvent, UserJSON } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
+
+// Sync user profile from Clerk to Supabase
+async function syncUserProfile(userData: UserJSON) {
+  try {
+    const supabase = await createClient();
+
+    const displayName = userData.first_name && userData.last_name
+      ? `${userData.first_name} ${userData.last_name}`.trim()
+      : userData.username || userData.email_addresses?.[0]?.email_address?.split('@')[0] || 'Anonymous';
+
+    const avatarUrl = userData.image_url || null;
+    const email = userData.email_addresses?.[0]?.email_address || null;
+
+    const { error } = await supabase
+      .from('user_profiles')
+      .upsert({
+        clerk_id: userData.id,
+        display_name: displayName,
+        email: email,
+        avatar_url: avatarUrl,
+        is_premium: false,
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'clerk_id',
+      });
+
+    if (error) {
+      console.error('Error syncing user profile:', error);
+      throw error;
+    }
+
+    console.log(`✅ User profile synced for ${userData.id}`);
+  } catch (err) {
+    console.error('Failed to sync user profile:', err);
+    throw err;
+  }
+}
+
+// Delete user profile from Supabase
+async function deleteUserProfile(clerkId: string) {
+  try {
+    const supabase = await createClient();
+
+    const { error } = await supabase
+      .from('user_profiles')
+      .delete()
+      .eq('clerk_id', clerkId);
+
+    if (error) {
+      console.error('Error deleting user profile:', error);
+      throw error;
+    }
+
+    console.log(`✅ User profile deleted for ${clerkId}`);
+  } catch (err) {
+    console.error('Failed to delete user profile:', err);
+    throw err;
+  }
+}
 
 export async function POST(req: NextRequest) {
   // You can find this in the Clerk Dashboard -> Webhooks -> choose the webhook
@@ -52,34 +112,38 @@ export async function POST(req: NextRequest) {
   const eventType = evt.type;
 
   console.log(`Webhook with an ID of ${id} and type of ${eventType}`);
-  console.log('Webhook body:', body);
 
   // Handle different event types
-  switch (eventType) {
-    case 'user.created':
-      // Handle user creation
-      console.log('User created:', evt.data);
-      // You might want to create a user record in your database here
-      break;
-      
-    case 'user.updated':
-      // Handle user update
-      console.log('User updated:', evt.data);
-      break;
-      
-    case 'user.deleted':
-      // Handle user deletion
-      console.log('User deleted:', evt.data);
-      // You might want to clean up user data here
-      break;
-      
-    case 'session.created':
-      // Handle session creation
-      console.log('Session created:', evt.data);
-      break;
-      
-    default:
-      console.log(`Unhandled webhook event type: ${eventType}`);
+  try {
+    switch (eventType) {
+      case 'user.created':
+        console.log('User created:', id);
+        await syncUserProfile(evt.data as UserJSON);
+        break;
+
+      case 'user.updated':
+        console.log('User updated:', id);
+        await syncUserProfile(evt.data as UserJSON);
+        break;
+
+      case 'user.deleted':
+        console.log('User deleted:', id);
+        if (id) {
+          await deleteUserProfile(id);
+        }
+        break;
+
+      case 'session.created':
+        // Handle session creation - optionally sync user profile
+        console.log('Session created:', id);
+        break;
+
+      default:
+        console.log(`Unhandled webhook event type: ${eventType}`);
+    }
+  } catch (err) {
+    console.error('Error handling webhook:', err);
+    // Return 200 anyway to prevent retries for non-critical errors
   }
 
   return NextResponse.json({ received: true });

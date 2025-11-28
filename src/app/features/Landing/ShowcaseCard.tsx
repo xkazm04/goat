@@ -5,6 +5,7 @@ import { getSubcategoryIcon, getSubcategoryBackground } from "@/lib/helpers/getI
 import { CardHeader } from "./components/CardHeader";
 import { CardFooter } from "./components/CardFooter";
 import { cardVariants } from "./shared/animations";
+import { use3DTilt } from "@/hooks/use-3d-tilt";
 
 interface ShowcaseCardProps {
   id: number;
@@ -47,6 +48,13 @@ export function ShowcaseCard({
   hiearchy,
   onCardClick,
 }: ShowcaseCardProps) {
+  const { ref, style: tiltStyle, handlers } = use3DTilt({
+    maxRotation: 8,
+    stiffness: 350,
+    damping: 25,
+    scale: 1.03,
+  });
+
   const handleClick = () => {
     onCardClick?.({
       category,
@@ -62,13 +70,14 @@ export function ShowcaseCard({
 
   return (
     <motion.div
+      ref={ref}
       className="relative w-80 rounded-3xl overflow-hidden cursor-pointer group"
       variants={cardVariants}
-      whileHover="hover"
       whileTap="tap"
       onClick={handleClick}
       data-testid={`showcase-card-${category.toLowerCase()}`}
       style={{
+        ...tiltStyle,
         // Glassmorphism base without visible borders
         background: `
           linear-gradient(135deg,
@@ -84,6 +93,8 @@ export function ShowcaseCard({
           inset 0 -1px 0 rgba(0, 0, 0, 0.2)
         `,
       }}
+      {...handlers}
+      tabIndex={0}
     >
       {/* Aurora glow effect at top */}
       <motion.div

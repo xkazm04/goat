@@ -38,30 +38,17 @@ export function useTempUser() {
     setIsTempUser(true);
   };
 
-  const migrateTempUserToReal = (realUserId: string) => {
-    // This would be called when user registers/logs in
+  // Shared implementation for converting temp user to registered user
+  // Called when user registers/logs in
+  const upgradeToRegisteredUser = (realUserId: string) => {
     const oldTempId = tempUserId;
-    
-    // Store the real user ID
-    localStorage.setItem(TEMP_USER_KEY, realUserId);
-    localStorage.setItem(TEMP_USER_FLAG_KEY, 'false');
-    
-    setTempUserId(realUserId);
-    setIsTempUser(false);
-    
-    return oldTempId;
-  };
 
-  // Convert temp user to registered user
-  const convertToRegisteredUser = (realUserId: string) => {
-    const oldTempId = tempUserId;
-    
     localStorage.setItem(TEMP_USER_KEY, realUserId);
     localStorage.setItem(TEMP_USER_FLAG_KEY, 'false');
-    
+
     setTempUserId(realUserId);
     setIsTempUser(false);
-    
+
     return oldTempId;
   };
 
@@ -70,7 +57,8 @@ export function useTempUser() {
     isLoaded,
     isTempUser,
     clearTempUser,
-    migrateTempUserToReal,
-    convertToRegisteredUser,
+    // Aliases for backwards compatibility - both call the same implementation
+    migrateTempUserToReal: upgradeToRegisteredUser,
+    convertToRegisteredUser: upgradeToRegisteredUser,
   };
 }

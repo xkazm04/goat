@@ -76,11 +76,12 @@ export function CollectionGrid({
             )}
 
             <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-2">
-              {group.items.map((item: CollectionItem) => (
+              {group.items.map((item: CollectionItem, itemIndex: number) => (
                 <SimpleCollectionItem
                   key={item.id}
                   item={item}
                   groupId={group.id}
+                  itemIndex={itemIndex}
                 />
               ))}
             </div>

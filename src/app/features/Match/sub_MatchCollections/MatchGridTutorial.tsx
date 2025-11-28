@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ArrowDown, Hand, CheckCircle2, Sparkles, MousePointerClick, Crown } from "lucide-react";
+import { X, ArrowDown, Sparkles, CheckCircle2 } from "lucide-react";
 import { BacklogItem } from "@/types/backlog-groups";
 import { GridItemType } from "@/types/match";
+import { DEMO_BACKLOG_ITEMS, createDemoGridItems, getRankColor } from "./tutorial/tutorialData";
+import { TUTORIAL_STEPS } from "./tutorial/tutorialSteps";
 
 interface MatchGridTutorialProps {
   isOpen: boolean;
@@ -12,81 +14,17 @@ interface MatchGridTutorialProps {
   onDemoDataReady: (demoItems: BacklogItem[], demoGridItems: GridItemType[]) => void;
 }
 
-const DEMO_BACKLOG_ITEMS: BacklogItem[] = [
-  {
-    id: "demo-1",
-    name: "The Shawshank Redemption",
-    title: "The Shawshank Redemption",
-    description: "Classic prison drama",
-    category: "movies",
-    item_year: 1994,
-    image_url: undefined,
-    created_at: new Date().toISOString(),
-    tags: ["drama", "classic"],
-    used: false
-  },
-  {
-    id: "demo-2",
-    name: "The Godfather",
-    title: "The Godfather",
-    description: "Mafia masterpiece",
-    category: "movies",
-    item_year: 1972,
-    image_url: undefined,
-    created_at: new Date().toISOString(),
-    tags: ["crime", "classic"],
-    used: false
-  },
-  {
-    id: "demo-3",
-    name: "Pulp Fiction",
-    title: "Pulp Fiction",
-    description: "Tarantino's cult classic",
-    category: "movies",
-    item_year: 1994,
-    image_url: undefined,
-    created_at: new Date().toISOString(),
-    tags: ["crime", "thriller"],
-    used: false
-  }
-];
-
 export function MatchGridTutorial({ isOpen, onComplete, onDemoDataReady }: MatchGridTutorialProps) {
   const [step, setStep] = useState(0);
-  const [hasCompletedDrag, setHasCompletedDrag] = useState(false);
 
   useEffect(() => {
     if (isOpen && step === 0) {
-      // Pre-populate grid with demo data
-      const demoGridItems: GridItemType[] = [
-        {
-          id: "grid-0",
-          title: "The Godfather",
-          description: "Mafia masterpiece",
-          position: 0,
-          matched: true,
-          backlogItemId: "demo-2",
-          tags: ["crime", "classic"],
-          isDragPlaceholder: false
-        },
-        {
-          id: "grid-1",
-          title: "The Shawshank Redemption",
-          description: "Classic prison drama",
-          position: 1,
-          matched: true,
-          backlogItemId: "demo-1",
-          tags: ["drama", "classic"],
-          isDragPlaceholder: false
-        }
-      ];
-
-      onDemoDataReady(DEMO_BACKLOG_ITEMS, demoGridItems);
+      onDemoDataReady(DEMO_BACKLOG_ITEMS, createDemoGridItems());
     }
   }, [isOpen, step, onDemoDataReady]);
 
   const handleNext = () => {
-    if (step < tutorialSteps.length - 1) {
+    if (step < TUTORIAL_STEPS.length - 1) {
       setStep(step + 1);
     } else {
       onComplete();
@@ -97,34 +35,7 @@ export function MatchGridTutorial({ isOpen, onComplete, onDemoDataReady }: Match
     onComplete();
   };
 
-  const tutorialSteps = [
-    {
-      title: "Welcome to Match Grid!",
-      description: "This interactive grid helps you rank your favorite items. Let's learn how it works in just a few seconds.",
-      icon: Sparkles,
-      highlight: "welcome"
-    },
-    {
-      title: "Drag & Drop Items",
-      description: "Simply drag items from the collection panel at the bottom and drop them into any grid position to start ranking.",
-      icon: Hand,
-      highlight: "drag"
-    },
-    {
-      title: "Rearrange Positions",
-      description: "Already placed an item? You can drag it to a different position or swap it with another item anytime.",
-      icon: MousePointerClick,
-      highlight: "swap"
-    },
-    {
-      title: "You're Ready!",
-      description: "That's all you need to know. Start building your personalized rankings now!",
-      icon: CheckCircle2,
-      highlight: "complete"
-    }
-  ];
-
-  const currentStep = tutorialSteps[step];
+  const currentStep = TUTORIAL_STEPS[step];
   const IconComponent = currentStep.icon;
 
   return (
@@ -225,7 +136,7 @@ export function MatchGridTutorial({ isOpen, onComplete, onDemoDataReady }: Match
                         </h2>
                       </div>
                       <p className="text-slate-400 font-medium text-sm">
-                        Step {step + 1} of {tutorialSteps.length}
+                        Step {step + 1} of {TUTORIAL_STEPS.length}
                       </p>
                     </div>
                   </div>
@@ -273,11 +184,6 @@ export function MatchGridTutorial({ isOpen, onComplete, onDemoDataReady }: Match
                             <div className="flex gap-4 justify-center">
                               {[0, 1, 2].map((pos) => {
                                 const demoItem = pos < 2 ? DEMO_BACKLOG_ITEMS[pos] : undefined;
-                                const getRankColor = (p: number) => {
-                                  if (p === 0) return '#FFD700';
-                                  if (p === 1) return '#C0C0C0';
-                                  return '#CD7F32';
-                                };
 
                                 return (
                                   <div
@@ -439,7 +345,7 @@ export function MatchGridTutorial({ isOpen, onComplete, onDemoDataReady }: Match
 
                       {/* Progress indicators */}
                       <div className="flex justify-center gap-2">
-                        {tutorialSteps.map((_, index) => (
+                        {TUTORIAL_STEPS.map((_, index) => (
                           <div
                             key={index}
                             className="h-1.5 rounded-full transition-all duration-300"
@@ -476,16 +382,16 @@ export function MatchGridTutorial({ isOpen, onComplete, onDemoDataReady }: Match
                     onClick={handleNext}
                     className="px-6 py-3 rounded-xl font-semibold text-white transition-all hover:scale-105"
                     style={{
-                      background: step === tutorialSteps.length - 1
+                      background: step === TUTORIAL_STEPS.length - 1
                         ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
                         : 'linear-gradient(135deg, #7c3aed 0%, #3b82f6 100%)',
-                      boxShadow: step === tutorialSteps.length - 1
+                      boxShadow: step === TUTORIAL_STEPS.length - 1
                         ? '0 4px 14px rgba(16, 185, 129, 0.4)'
                         : '0 4px 14px rgba(124, 58, 237, 0.4)'
                     }}
                     data-testid="tutorial-next-btn"
                   >
-                    {step === tutorialSteps.length - 1 ? "Get Started" : "Next"}
+                    {step === TUTORIAL_STEPS.length - 1 ? "Get Started" : "Next"}
                   </button>
                 </div>
               </div>
@@ -531,3 +437,6 @@ export function useTutorialState() {
     resetTutorial
   };
 }
+
+// Re-export tutorial steps for external use
+export { TUTORIAL_STEPS } from "./tutorial/tutorialSteps";

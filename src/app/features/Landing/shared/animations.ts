@@ -50,6 +50,9 @@ export const listContainerVariants: Variants = {
   },
 };
 
+// Alias for staggerContainer (used by FloatingShowcase)
+export const staggerContainer: Variants = listContainerVariants;
+
 export const listItemVariants: Variants = {
   hidden: { 
     opacity: 0, 
@@ -145,6 +148,17 @@ export const floatingVariants: Variants = {
       repeat: Infinity,
       ease: "easeInOut",
     },
+  },
+};
+
+// Float animation settings (used by FloatingShowcase)
+export const floatAnimation = {
+  y: [-10, 10],
+  transition: {
+    duration: 3,
+    repeat: Infinity,
+    repeatType: "reverse" as const,
+    ease: "easeInOut",
   },
 };
 

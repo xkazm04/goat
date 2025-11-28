@@ -146,3 +146,28 @@ export const useBacklogStore = create<BacklogState>()(
     }
   )
 );
+
+// Expose debug helpers to window for troubleshooting
+if (typeof window !== 'undefined') {
+  (window as any).__backlogStore = {
+    getState: () => useBacklogStore.getState(),
+    clearCache: () => useBacklogStore.getState().clearCache(),
+    forceRefresh: () => useBacklogStore.getState().forceRefreshAll(),
+    debugImages: (limit?: number) => useBacklogStore.getState().debugImageUrls(limit),
+    clearIndexedDB: async () => {
+      try {
+        const databases = await indexedDB.databases();
+        for (const db of databases) {
+          if (db.name?.includes('backlog')) {
+            indexedDB.deleteDatabase(db.name);
+            console.log(`🗑️ Deleted IndexedDB: ${db.name}`);
+          }
+        }
+        console.log('✅ IndexedDB cleared. Please refresh the page.');
+      } catch (e) {
+        console.error('Failed to clear IndexedDB:', e);
+      }
+    }
+  };
+  console.log('🔧 Backlog debug helpers available: window.__backlogStore');
+}

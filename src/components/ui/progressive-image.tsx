@@ -6,6 +6,14 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useProgressiveWikiImage } from "@/hooks/use-progressive-wiki-image";
 
+// Animation timing constants
+const PLACEHOLDER_EXIT_DURATION = 0.3;
+const IMAGE_FADE_DURATION = 0.4;
+const WIKI_FETCH_DELAY = 500;
+
+// Shared styles
+const CLIP_PATH_INSET = "inset(0)";
+
 export interface ProgressiveImageProps {
   src?: string | null;
   placeholder?: string;
@@ -50,7 +58,7 @@ export const ProgressiveImage = React.forwardRef<HTMLDivElement, ProgressiveImag
       itemTitle: itemTitle || alt,
       existingImage: src,
       autoFetch: autoFetchWiki,
-      fetchDelay: 500,
+      fetchDelay: WIKI_FETCH_DELAY,
     });
 
     const finalSrc = src || (autoFetchWiki ? wikiImageUrl : null);
@@ -92,14 +100,14 @@ export const ProgressiveImage = React.forwardRef<HTMLDivElement, ProgressiveImag
             <motion.img
               initial={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: PLACEHOLDER_EXIT_DURATION }}
               src={placeholder}
               alt="Loading placeholder"
               className={cn(
                 "absolute inset-0 w-full h-full object-cover blur-md scale-110",
                 className
               )}
-              style={{ clipPath: "inset(0)" }}
+              style={{ clipPath: CLIP_PATH_INSET }}
               draggable={false}
               aria-hidden="true"
             />
@@ -110,14 +118,14 @@ export const ProgressiveImage = React.forwardRef<HTMLDivElement, ProgressiveImag
           <motion.img
             initial={{ opacity: 0 }}
             animate={{ opacity: imageLoaded ? 1 : 0 }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
+            transition={{ duration: IMAGE_FADE_DURATION, ease: "easeOut" }}
             src={currentSrc}
             alt={alt}
             className={cn(
               "absolute inset-0 w-full h-full object-cover",
               className
             )}
-            style={{ clipPath: "inset(0)" }}
+            style={{ clipPath: CLIP_PATH_INSET }}
             onLoad={handleImageLoad}
             onError={handleImageError}
             loading={eager ? "eager" : "lazy"}

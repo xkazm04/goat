@@ -10,6 +10,21 @@ import { useSessionStore } from '@/stores/session-store';
 import { BacklogProvider } from '@/providers/BacklogProvider';
 import { SimpleMatchGrid } from '../features/Match/sub_MatchGrid/SimpleMatchGrid';
 
+// Default list metadata colors
+const DEFAULT_LIST_COLORS = {
+  primary: "#3b82f6",
+  secondary: "#1e40af",
+  accent: "#60a5fa"
+} as const;
+
+// Retry configuration
+const MAX_RETRY_COUNT = 3;
+
+// Page container styles (shared across loading states)
+const PAGE_CONTAINER_CLASS = "min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center";
+const SPINNER_CLASS = "animate-spin w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full mx-auto mb-4";
+const BUTTON_CLASS = "px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-white transition-colors";
+
 /**
  * Internal component that uses useSearchParams
  */
@@ -37,7 +52,7 @@ function MatchTestContent() {
     {
       enabled: shouldFetch,
       refetchOnWindowFocus: false,
-      retry: (failureCount: number) => failureCount < 3,
+      retry: (failureCount: number) => failureCount < MAX_RETRY_COUNT,
     } as any
   );
 
@@ -79,15 +94,11 @@ function MatchTestContent() {
           const listConfig = {
             ...listData,
             metadata: {
-              size: listData.size, 
+              size: listData.size,
               selectedCategory: listData.category,
               selectedSubcategory: listData.subcategory,
               timePeriod: "all-time" as const,
-              color: {
-                primary: "#3b82f6",
-                secondary: "#1e40af",
-                accent: "#60a5fa"
-              }
+              color: DEFAULT_LIST_COLORS
             }
           };
 
@@ -125,6 +136,7 @@ function MatchTestContent() {
     switchToSession,
     syncWithBackend,
     initializeGrid,
+    gridItems,
     setCurrentList,
     initializeGroups
   ]);
@@ -132,9 +144,9 @@ function MatchTestContent() {
   // Show loading state
   if (isLoadingList && shouldFetch) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+      <div className={PAGE_CONTAINER_CLASS}>
         <div className="text-center">
-          <div className="animate-spin w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <div className={SPINNER_CLASS}></div>
           <p className="text-gray-400">Loading list...</p>
         </div>
       </div>
@@ -144,12 +156,12 @@ function MatchTestContent() {
   // Show error state
   if (fetchError && shouldFetch) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+      <div className={PAGE_CONTAINER_CLASS}>
         <div className="text-center">
           <p className="text-red-400 mb-4">Failed to load list</p>
           <button
             onClick={() => router.push('/')}
-            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-white transition-colors"
+            className={BUTTON_CLASS}
           >
             Go Home
           </button>
@@ -161,12 +173,12 @@ function MatchTestContent() {
   // Show message if no list ID
   if (!listId) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+      <div className={PAGE_CONTAINER_CLASS}>
         <div className="text-center">
           <p className="text-gray-400 mb-4">No list selected</p>
           <button
             onClick={() => router.push('/')}
-            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-white transition-colors"
+            className={BUTTON_CLASS}
           >
             Go Home
           </button>
@@ -196,9 +208,9 @@ function MatchTestContent() {
 export default function MatchTestPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+      <div className={PAGE_CONTAINER_CLASS}>
         <div className="text-center">
-          <div className="animate-spin w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <div className={SPINNER_CLASS}></div>
           <p className="text-gray-400">Loading...</p>
         </div>
       </div>

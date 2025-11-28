@@ -4,19 +4,26 @@ import { useDraggable } from "@dnd-kit/core";
 import { ItemCard } from "@/components/ui/item-card";
 import { CollectionItem } from "./types";
 import { useProgressiveWikiImage } from "@/hooks/use-progressive-wiki-image";
+import { ConsensusOverlay } from "@/app/features/Match/sub_MatchCollections/components/ConsensusOverlay";
+import { RankBadge } from "@/app/features/Match/sub_MatchCollections/components/RankBadge";
+import { useConsensusStore } from "@/stores/consensus-store";
 
 interface SimpleCollectionItemProps {
   item: CollectionItem;
   groupId: string;
+  /** Index of the item in the grid for staggered animations */
+  itemIndex?: number;
 }
 
 /**
- * Minimal draggable item - no animations, no complexity
- * Just pure drag and drop functionality
- * Now uses the reusable ItemCard component with progressive image loading
- * and Wikipedia fallback for missing images
+ * Minimal draggable item with consensus ranking overlay
+ * Shows global ranking consensus data based on view mode:
+ * - Median rank across all users
+ * - Volatility (how contested the item is)
+ * - Peer cluster indicators
+ * - Consensus badges
  */
-export function SimpleCollectionItem({ item, groupId }: SimpleCollectionItemProps) {
+export function SimpleCollectionItem({ item, groupId, itemIndex = 0 }: SimpleCollectionItemProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: item.id,
     data: {
@@ -26,12 +33,15 @@ export function SimpleCollectionItem({ item, groupId }: SimpleCollectionItemProp
     }
   });
 
+  const viewMode = useConsensusStore((state) => state.viewMode);
+  const showConsensus = viewMode !== 'off';
+
   // Progressive image loading with wiki fallback
   const {
     imageUrl: currentImageUrl,
     isFetching: isLoadingWiki,
   } = useProgressiveWikiImage({
-    
+
     itemTitle: item.title,
     existingImage: item.image_url,
     autoFetch: true,
@@ -47,6 +57,8 @@ export function SimpleCollectionItem({ item, groupId }: SimpleCollectionItemProp
       style={style}
       {...attributes}
       {...listeners}
+      className="relative"
+      data-testid={`simple-collection-item-wrapper-${item.id}`}
     >
       <ItemCard
         title={item.title}
@@ -63,6 +75,19 @@ export function SimpleCollectionItem({ item, groupId }: SimpleCollectionItemProp
         focusRing={false}
         loading={isLoadingWiki}
       />
+      {/* Rank badge with micro-animation */}
+      {!isDragging && item.ranking !== undefined && (
+        <RankBadge
+          ranking={item.ranking}
+          format="stars"
+          animationIndex={itemIndex}
+          itemId={item.id}
+        />
+      )}
+      {/* Consensus ranking overlay */}
+      {showConsensus && !isDragging && (
+        <ConsensusOverlay itemId={item.id} />
+      )}
     </div>
   );
 }

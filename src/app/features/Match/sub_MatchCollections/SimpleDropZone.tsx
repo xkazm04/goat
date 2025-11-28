@@ -2,9 +2,10 @@
 
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { GridItemType } from "@/types/match";
-import { motion, AnimatePresence, useSpring } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { X, Trophy, Medal } from "lucide-react";
 import { useState, useEffect } from "react";
+import { ProgressiveImage } from "@/components/ui/progressive-image";
 
 interface SimpleDropZoneProps {
   position: number;
@@ -19,6 +20,9 @@ interface SimpleDropZoneProps {
 /**
  * "Holo-slot" Drop Zone
  * A futuristic, glass-morphic drop zone with neon accents and dynamic states.
+ * - Image covers the whole card
+ * - Rank number overlay on top of the image
+ * - Title displayed below the card with animation
  */
 export function SimpleDropZone({
   position,
@@ -88,32 +92,34 @@ export function SimpleDropZone({
   } : undefined;
 
   return (
-    <motion.div
-      ref={setNodeRef}
-      style={style as any}
-      initial={false}
-      animate={{
-        scale: justDropped ? [1, 1.15, 0.95, 1.02, 1] : isOver ? 1.05 : 1,
-        borderColor: isOver ? rankConfig.color : isOccupied ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)',
-      }}
-      transition={{
-        scale: justDropped
-          ? {
-            duration: 0.6,
-            ease: "easeOut",
-          }
-          : { duration: 0.2 },
-      }}
-      className={`
-        relative aspect-square rounded-xl overflow-hidden group
-        border-2 transition-colors duration-300
-        ${isOccupied ? 'bg-gray-900/80' : 'bg-gray-900/20'}
-        ${isOver ? `shadow-[0_0_30px_${rankConfig.color}40]` : ''}
-      `}
-      data-testid={`drop-zone-${position}`}
-      {...(isOccupied ? attributes : {})}
-      {...(isOccupied ? listeners : {})}
-    >
+    <div className="flex flex-col" data-testid={`drop-zone-wrapper-${position}`}>
+      {/* Card Container */}
+      <motion.div
+        ref={setNodeRef}
+        style={style as any}
+        initial={false}
+        animate={{
+          scale: justDropped ? [1, 1.15, 0.95, 1.02, 1] : isOver ? 1.05 : 1,
+          borderColor: isOver ? rankConfig.color : isOccupied ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)',
+        }}
+        transition={{
+          scale: justDropped
+            ? {
+              duration: 0.6,
+              ease: "easeOut",
+            }
+            : { duration: 0.2 },
+        }}
+        className={`
+          relative aspect-square rounded-xl overflow-hidden group
+          border-2 transition-colors duration-300
+          ${isOccupied ? 'bg-gray-900/80' : 'bg-gray-900/20'}
+          ${isOver ? `shadow-[0_0_30px_${rankConfig.color}40]` : ''}
+        `}
+        data-testid={`drop-zone-${position}`}
+        {...(isOccupied ? attributes : {})}
+        {...(isOccupied ? listeners : {})}
+      >
       {/* Background Grid Pattern (Holo Effect) */}
       {!isOccupied && (
         <div className="absolute inset-0 opacity-20"
@@ -143,61 +149,82 @@ export function SimpleDropZone({
         {isOccupied && occupiedBy ? (
           <motion.div
             key="content"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
             className="absolute inset-0"
           >
-            {/* Image */}
-            {imageUrl ? (
-              <div className="absolute inset-0">
-                <img
-                  src={imageUrl}
-                  alt={occupiedBy}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
-              </div>
-            ) : (
-              <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900" />
-            )}
+            {/* Image - Full coverage using ProgressiveImage with wiki fallback */}
+            <motion.div 
+              className="absolute inset-0"
+              initial={{ scale: 1.1 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
+            >
+              <ProgressiveImage
+                src={imageUrl}
+                alt={occupiedBy || 'Item'}
+                itemTitle={occupiedBy}
+                autoFetchWiki={true}
+                testId={`drop-zone-image-${position}`}
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                fallbackComponent={
+                  <div className="w-full h-full bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center">
+                    <span className="text-xs text-gray-500 text-center px-2">{occupiedBy}</span>
+                  </div>
+                }
+              />
+              {/* Subtle gradient overlay for number visibility */}
+              <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/20 pointer-events-none" />
+            </motion.div>
 
-            {/* Rank Badge (Top Left) */}
-            <div className="absolute top-2 left-2 z-20">
+            {/* Rank Number Overlay - Top center, above the image */}
+            <motion.div 
+              className="absolute top-2 left-1/2 -translate-x-1/2 z-20"
+              initial={{ opacity: 0, y: -10, scale: 0.8 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ delay: 0.1, duration: 0.3, type: "spring", stiffness: 300 }}
+            >
               <div
-                className="px-2 py-1 rounded-md backdrop-blur-md border border-white/10 flex items-center gap-1 shadow-lg"
-                style={{ backgroundColor: `${rankConfig.color}20` }}
+                className="px-3 py-1 rounded-lg backdrop-blur-md border flex items-center gap-1.5 shadow-lg"
+                style={{ 
+                  backgroundColor: `${rankConfig.color}25`,
+                  borderColor: `${rankConfig.color}50`,
+                  boxShadow: `0 0 15px ${rankConfig.color}30`
+                }}
               >
-                {isTop3 && rankConfig.icon && <rankConfig.icon className="w-3 h-3" style={{ color: rankConfig.color }} />}
-                <span className="text-[10px] font-bold text-white tracking-wider">
-                  {isTop3 ? rankConfig.label : `#${position + 1}`}
+                {isTop3 && rankConfig.icon && (
+                  <rankConfig.icon 
+                    className="w-4 h-4" 
+                    style={{ color: rankConfig.color }} 
+                  />
+                )}
+                <span 
+                  className="text-sm font-black tracking-wide"
+                  style={{ color: rankConfig.color }}
+                >
+                  {position + 1}
                 </span>
               </div>
-            </div>
+            </motion.div>
 
             {/* Remove Button (Top Right) */}
             {onRemove && (
               <motion.button
                 initial={{ opacity: 0, scale: 0.8 }}
-                whileHover={{ scale: 1.1, backgroundColor: 'rgba(239, 68, 68, 0.2)' }}
+                whileHover={{ scale: 1.1, backgroundColor: 'rgba(239, 68, 68, 0.3)' }}
                 animate={{ opacity: 1, scale: 1 }}
                 onClick={(e) => {
                   e.stopPropagation();
                   onRemove();
                 }}
-                className="absolute top-2 right-2 p-1.5 rounded-full bg-black/40 text-white/70 hover:text-red-400 backdrop-blur-md border border-white/10 z-30 opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute top-2 right-2 p-1.5 rounded-full bg-black/50 text-white/70 hover:text-red-400 backdrop-blur-md border border-white/20 z-30 opacity-0 group-hover:opacity-100 transition-opacity"
                 data-testid={`remove-item-btn-${position}`}
               >
                 <X className="w-3 h-3" />
               </motion.button>
             )}
-
-            {/* Title Overlay */}
-            <div className="absolute bottom-0 left-0 right-0 p-3 z-20">
-              <p className="text-xs font-medium text-white/90 line-clamp-2 text-shadow-sm leading-tight">
-                {occupiedBy}
-              </p>
-            </div>
 
             {/* Active Drag Overlay */}
             {isDragging && (
@@ -268,6 +295,27 @@ export function SimpleDropZone({
         />
       )}
     </motion.div>
+
+    {/* Title Below Card - Outside the card container */}
+    <AnimatePresence>
+      {isOccupied && occupiedBy && (
+        <motion.div 
+          className="mt-2 px-1"
+          initial={{ opacity: 0, y: -5 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -5 }}
+          transition={{ delay: 0.2, duration: 0.3, type: "spring", stiffness: 200 }}
+        >
+          <p 
+            className="text-[11px] font-medium text-white/90 text-center leading-tight line-clamp-2"
+            title={occupiedBy}
+          >
+            {occupiedBy}
+          </p>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  </div>
   );
 }
 

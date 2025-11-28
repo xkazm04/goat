@@ -3,6 +3,19 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
+// Responsive breakpoint thresholds (in pixels)
+const BREAKPOINT_XL = 1280;
+const BREAKPOINT_LG = 1024;
+const BREAKPOINT_MD = 768;
+
+// Default column counts
+const DEFAULT_COLUMNS = 2;
+const DEFAULT_COLUMNS_MD = 3;
+const DEFAULT_COLUMNS_LG = 4;
+
+// Default gap size (in pixels)
+const DEFAULT_GAP = 16;
+
 /**
  * MasonryGrid Props Interface
  */
@@ -50,8 +63,8 @@ export interface MasonryGridProps extends React.HTMLAttributes<HTMLDivElement> {
 export const MasonryGrid = React.forwardRef<HTMLDivElement, MasonryGridProps>(
   (
     {
-      columns = 2,
-      gap = 16,
+      columns = DEFAULT_COLUMNS,
+      gap = DEFAULT_GAP,
       enableTransitions = true,
       itemClassName,
       testId,
@@ -69,7 +82,7 @@ export const MasonryGrid = React.forwardRef<HTMLDivElement, MasonryGridProps>(
         return `grid-cols-${columns}`;
       }
 
-      const { sm = 2, md = 3, lg = 4, xl = 4 } = columns;
+      const { sm = DEFAULT_COLUMNS, md = DEFAULT_COLUMNS_MD, lg = DEFAULT_COLUMNS_LG, xl = DEFAULT_COLUMNS_LG } = columns;
       return cn(
         `grid-cols-${sm}`,
         `sm:grid-cols-${md}`,
@@ -123,7 +136,7 @@ export function useMasonryColumns(
 ): number {
   const [currentColumns, setCurrentColumns] = React.useState(() => {
     if (typeof columns === 'number') return columns;
-    return columns.sm || 2;
+    return columns.sm || DEFAULT_COLUMNS;
   });
 
   React.useEffect(() => {
@@ -132,15 +145,16 @@ export function useMasonryColumns(
       return;
     }
 
+    const { sm = DEFAULT_COLUMNS, md = DEFAULT_COLUMNS_MD, lg = DEFAULT_COLUMNS_LG, xl = DEFAULT_COLUMNS_LG } = columns;
+
     const updateColumns = () => {
       const width = window.innerWidth;
-      const { sm = 2, md = 3, lg = 4, xl = 4 } = columns;
 
-      if (width >= 1280) {
+      if (width >= BREAKPOINT_XL) {
         setCurrentColumns(xl);
-      } else if (width >= 1024) {
+      } else if (width >= BREAKPOINT_LG) {
         setCurrentColumns(lg);
-      } else if (width >= 768) {
+      } else if (width >= BREAKPOINT_MD) {
         setCurrentColumns(md);
       } else {
         setCurrentColumns(sm);

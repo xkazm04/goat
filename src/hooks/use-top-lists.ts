@@ -17,8 +17,31 @@ import {
   CloneListRequest,
   SearchListsParams,
   VersionComparison,
-  ListCreationResponse, // Import new type
+  ListCreationResponse,
 } from '@/types/top-lists';
+
+// Reusable cache times in milliseconds
+const CACHE_TIMES = {
+  SHORT: 1 * 60 * 1000,      // 1 minute - for frequently changing data
+  MEDIUM: 2 * 60 * 1000,     // 2 minutes
+  DEFAULT: 3 * 60 * 1000,    // 3 minutes
+  STANDARD: 5 * 60 * 1000,   // 5 minutes - standard cache
+  LONG: 10 * 60 * 1000,      // 10 minutes - for rarely changing data
+  VERY_LONG: 30 * 60 * 1000, // 30 minutes - for static data
+} as const;
+
+// Helper for success toasts
+const showSuccessToast = (title: string, description: string) => {
+  toast({ title, description });
+};
+
+// Helper for error toasts
+const showErrorToast = (action: string, error: Error) => {
+  toast({
+    title: "Error",
+    description: `Failed to ${action}: ${error.message}`,
+  });
+};
 
 // Query Hooks
 export const useTopLists = (
@@ -28,7 +51,7 @@ export const useTopLists = (
   return useQuery({
     queryKey: topListsKeys.listSearch(params || {}),
     queryFn: () => topListsApi.getLists(params),
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: CACHE_TIMES.STANDARD,
     ...options,
   });
 };
@@ -42,7 +65,7 @@ export const useTopList = (
     queryKey: topListsKeys.list(listId, includeItems),
     queryFn: () => topListsApi.getList(listId, includeItems),
     enabled: !!listId,
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: CACHE_TIMES.MEDIUM,
     ...options,
   });
 };
@@ -56,7 +79,7 @@ export const useUserLists = (
     queryKey: topListsKeys.userLists(userId, params),
     queryFn: () => topListsApi.getUserLists(userId, params),
     enabled: !!userId,
-    staleTime: 3 * 60 * 1000, // 3 minutes
+    staleTime: CACHE_TIMES.DEFAULT,
     ...options,
   });
 };
@@ -69,7 +92,7 @@ export const usePredefinedLists = (
   return useQuery({
     queryKey: topListsKeys.predefinedLists(category, subcategory),
     queryFn: () => topListsApi.getPredefinedLists(category, subcategory),
-    staleTime: 10 * 60 * 1000, // 10 minutes (predefined lists change less frequently)
+    staleTime: CACHE_TIMES.LONG,
     ...options,
   });
 };
@@ -82,7 +105,7 @@ export const useListAnalytics = (
     queryKey: topListsKeys.analytics(listId),
     queryFn: () => topListsApi.getListAnalytics(listId),
     enabled: !!listId,
-    staleTime: 1 * 60 * 1000, // 1 minute (analytics change frequently)
+    staleTime: CACHE_TIMES.SHORT,
     ...options,
   });
 };
@@ -97,7 +120,7 @@ export const useVersionComparison = (
     queryKey: topListsKeys.versions(listId, version1, version2),
     queryFn: () => topListsApi.compareVersions(listId, version1, version2),
     enabled: !!listId && version1 > 0 && version2 > 0,
-    staleTime: 30 * 60 * 1000, // 30 minutes (version comparisons don't change)
+    staleTime: CACHE_TIMES.VERY_LONG,
     ...options,
   });
 };
@@ -162,27 +185,17 @@ export const useCreateList = (
   return useMutation({
     mutationFn: topListsApi.createList,
     onSuccess: (data, variables) => {
-      // Invalidate and refetch lists
       queryClient.invalidateQueries({ queryKey: topListsKeys.lists() });
-      
-      // If user_id is provided, invalidate user lists
+
       if (variables.user_id) {
-        queryClient.invalidateQueries({ 
-          queryKey: topListsKeys.userLists(variables.user_id) 
+        queryClient.invalidateQueries({
+          queryKey: topListsKeys.userLists(variables.user_id)
         });
       }
 
-      toast({
-        title: "Success",
-        description: `List "${data.title}" created successfully!`,
-      });
+      showSuccessToast("Success", `List "${data.title}" created successfully!`);
     },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: `Failed to create list: ${error.message}`,
-      });
-    },
+    onError: (error) => showErrorToast("create list", error),
     ...options,
   });
 };
@@ -195,31 +208,14 @@ export const useUpdateList = (
   return useMutation({
     mutationFn: ({ listId, data }) => topListsApi.updateList(listId, data),
     onSuccess: (data, variables) => {
-      // Update the specific list cache
       queryClient.setQueryData(
         topListsKeys.list(variables.listId),
-        (old: ListWithItems | undefined) => {
-          if (old) {
-            return { ...old, ...data };
-          }
-          return old;
-        }
+        (old: ListWithItems | undefined) => old ? { ...old, ...data } : old
       );
-
-      // Invalidate lists to reflect changes
       queryClient.invalidateQueries({ queryKey: topListsKeys.lists() });
-
-      toast({
-        title: "Success",
-        description: `List "${data.title}" updated successfully!`,
-      });
+      showSuccessToast("Success", `List "${data.title}" updated successfully!`);
     },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: `Failed to update list: ${error.message}`,
-      });
-    },
+    onError: (error) => showErrorToast("update list", error),
     ...options,
   });
 };
@@ -231,60 +227,36 @@ export const useDeleteList = (
 
   return useMutation({
     mutationFn: topListsApi.deleteList,
-    onSuccess: (data, listId) => {
-      // Remove the specific list from cache
+    onSuccess: (_, listId) => {
       queryClient.removeQueries({ queryKey: topListsKeys.list(listId) });
-      
-      // Invalidate all lists queries
       queryClient.invalidateQueries({ queryKey: topListsKeys.lists() });
-
-      toast({
-        title: "Success",
-        description: "List deleted successfully!",
-      });
+      showSuccessToast("Success", "List deleted successfully!");
     },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: `Failed to delete list: ${error.message}`,
-      });
-    },
+    onError: (error) => showErrorToast("delete list", error),
     ...options,
   });
 };
 
 export const useCloneList = (
   options?: UseMutationOptions<
-    { message: string; new_list_id: string }, 
-    Error, 
+    { message: string; new_list_id: string },
+    Error,
     { listId: string; userId: string; modifications: CloneListRequest }
   >
 ) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ listId, userId, modifications }) => 
+    mutationFn: ({ listId, userId, modifications }) =>
       topListsApi.cloneList(listId, userId, modifications),
-    onSuccess: (data, variables) => {
-      // Invalidate lists to show the new cloned list
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: topListsKeys.lists() });
-      
-      // Invalidate user lists
-      queryClient.invalidateQueries({ 
-        queryKey: topListsKeys.userLists(variables.userId) 
+      queryClient.invalidateQueries({
+        queryKey: topListsKeys.userLists(variables.userId)
       });
-
-      toast({
-        title: "Success",
-        description: "List cloned successfully!",
-      });
+      showSuccessToast("Success", "List cloned successfully!");
     },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: `Failed to clone list: ${error.message}`,
-      });
-    },
+    onError: (error) => showErrorToast("clone list", error),
     ...options,
   });
 };

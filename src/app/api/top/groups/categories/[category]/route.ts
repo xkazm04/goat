@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
+// HTTP Status codes
+const HTTP_STATUS_INTERNAL_SERVER_ERROR = 500;
+
 // Force dynamic rendering for this route since it uses cookies
 export const dynamic = 'force-dynamic';
 
@@ -54,7 +57,7 @@ export async function GET(
       console.error('Error fetching item groups:', groupsError);
       return NextResponse.json(
         { error: groupsError.message },
-        { status: 500 }
+        { status: HTTP_STATUS_INTERNAL_SERVER_ERROR }
       );
     }
 
@@ -73,7 +76,7 @@ export async function GET(
         console.error('Error counting items:', countError);
         return NextResponse.json(
           { error: countError.message },
-          { status: 500 }
+          { status: HTTP_STATUS_INTERNAL_SERVER_ERROR }
         );
       }
 
@@ -106,7 +109,7 @@ export async function GET(
     console.error('Unexpected error in GET /api/top/groups/categories/[category]:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
-      { status: 500 }
+      { status: HTTP_STATUS_INTERNAL_SERVER_ERROR }
     );
   }
 }

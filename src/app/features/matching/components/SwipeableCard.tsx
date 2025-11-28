@@ -5,12 +5,26 @@
  * Mobile-optimized swipeable card with themeable particle effects and sound
  */
 
-import { useRef, useState, useCallback, useMemo } from 'react';
+import { useRef, useState, useCallback } from 'react';
 import { motion, useMotionValue, useTransform, AnimatePresence, animate } from 'framer-motion';
 import { useSwipeGesture } from '@/hooks';
 import { useParticleThemeStore } from '@/stores/particle-theme-store';
 import type { SwipeEvent, SwipeDirection } from '@/hooks';
-import type { ParticleShape } from '@/types/particle-theme.types';
+import { ParticleShape } from './ParticleShape';
+import {
+  ROTATION_RANGE,
+  ROTATION_OUTPUT,
+  OPACITY_RANGE,
+  OPACITY_OUTPUT,
+  SWIPE_DIRECTION_THRESHOLD,
+  SWIPE_OFF_SCREEN_DISTANCE,
+  SWIPE_ANIMATION_DURATION,
+  RESET_ANIMATION_DELAY,
+  HAPTIC_VIBRATION_DURATION,
+  SWIPE_GESTURE_CONFIG,
+  SPRING_CONFIG,
+  VERTICAL_MOVEMENT_FACTOR,
+} from '../lib/swipe-constants';
 
 interface SwipeableCardProps {
   id: string | number;
@@ -57,8 +71,8 @@ export function SwipeableCard({
   // Motion values for smooth animations
   const x = useMotionValue(0);
   const y = useMotionValue(0);
-  const rotate = useTransform(x, [-200, 0, 200], [-25, 0, 25]);
-  const opacity = useTransform(x, [-200, -150, 0, 150, 200], [0.5, 1, 1, 1, 0.5]);
+  const rotate = useTransform(x, [...ROTATION_RANGE], [...ROTATION_OUTPUT]);
+  const opacity = useTransform(x, [...OPACITY_RANGE], [...OPACITY_OUTPUT]);
 
   // Play sound effect
   const playSound = useCallback((direction: 'left' | 'right') => {
@@ -83,106 +97,9 @@ export function SwipeableCard({
     if (!hapticEnabled) return;
 
     if ('vibrate' in navigator) {
-      navigator.vibrate(50);
+      navigator.vibrate(HAPTIC_VIBRATION_DURATION);
     }
   }, [hapticEnabled]);
-
-  // Render particle shape based on theme
-  const renderParticleShape = (shape: ParticleShape, color: string, size: number) => {
-    const baseClasses = 'absolute pointer-events-none';
-
-    switch (shape) {
-      case 'circle':
-        return (
-          <div
-            className={`${baseClasses} rounded-full`}
-            style={{
-              width: size,
-              height: size,
-              background: color,
-              boxShadow: `0 0 10px ${color}`,
-            }}
-          />
-        );
-      case 'square':
-        return (
-          <div
-            className={baseClasses}
-            style={{
-              width: size,
-              height: size,
-              background: color,
-              boxShadow: `0 0 10px ${color}`,
-            }}
-          />
-        );
-      case 'triangle':
-        return (
-          <div
-            className={baseClasses}
-            style={{
-              width: 0,
-              height: 0,
-              borderLeft: `${size / 2}px solid transparent`,
-              borderRight: `${size / 2}px solid transparent`,
-              borderBottom: `${size}px solid ${color}`,
-              filter: `drop-shadow(0 0 5px ${color})`,
-            }}
-          />
-        );
-      case 'star':
-        return (
-          <div
-            className={baseClasses}
-            style={{
-              width: size,
-              height: size,
-              background: color,
-              clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)',
-              filter: `drop-shadow(0 0 5px ${color})`,
-            }}
-          />
-        );
-      case 'heart':
-        return (
-          <div
-            className={baseClasses}
-            style={{
-              width: size,
-              height: size,
-              background: color,
-              clipPath: 'path("M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z")',
-              filter: `drop-shadow(0 0 5px ${color})`,
-            }}
-          />
-        );
-      case 'sparkle':
-        return (
-          <div
-            className={baseClasses}
-            style={{
-              width: size,
-              height: size,
-              background: `linear-gradient(45deg, ${color}, transparent)`,
-              clipPath: 'polygon(50% 0%, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0% 50%, 40% 40%)',
-              filter: `drop-shadow(0 0 8px ${color})`,
-            }}
-          />
-        );
-      default:
-        return (
-          <div
-            className={`${baseClasses} rounded-full`}
-            style={{
-              width: size,
-              height: size,
-              background: color,
-              boxShadow: `0 0 10px ${color}`,
-            }}
-          />
-        );
-    }
-  };
 
   // Create particle burst effect with theme configuration
   const createParticleBurst = useCallback((swipeDir: 'left' | 'right') => {
@@ -229,8 +146,8 @@ export function SwipeableCard({
       }
 
       // Animate card off screen with spring physics
-      const targetX = direction === 'right' ? 400 : -400;
-      animate(x, targetX, { duration: 0.3, ease: [0.32, 0.72, 0, 1] });
+      const targetX = direction === 'right' ? SWIPE_OFF_SCREEN_DISTANCE : -SWIPE_OFF_SCREEN_DISTANCE;
+      animate(x, targetX, { duration: SWIPE_ANIMATION_DURATION, ease: [0.32, 0.72, 0, 1] });
 
       // Reset after animation
       setTimeout(() => {
@@ -238,7 +155,7 @@ export function SwipeableCard({
         y.set(0);
         setIsSwiping(false);
         setSwipeDirection(null);
-      }, 350);
+      }, RESET_ANIMATION_DELAY);
     }
   }, [disabled, onSwipe, onSwipeLeft, onSwipeRight, createParticleBurst, playSound, triggerHaptic, x, y]);
 
@@ -254,10 +171,10 @@ export function SwipeableCard({
 
     // Update motion values for smooth tracking
     x.set(deltaX);
-    y.set(deltaY * 0.3); // Less vertical movement
+    y.set(deltaY * VERTICAL_MOVEMENT_FACTOR); // Less vertical movement
 
     // Determine current swipe direction for indicators
-    if (Math.abs(deltaX) > 30) {
+    if (Math.abs(deltaX) > SWIPE_DIRECTION_THRESHOLD) {
       setSwipeDirection(deltaX > 0 ? 'right' : 'left');
     } else {
       setSwipeDirection(null);
@@ -273,8 +190,8 @@ export function SwipeableCard({
     if (disabled) return;
 
     // Spring back to center if not swiped far enough
-    animate(x, 0, { duration: 0.3, ease: [0.32, 0.72, 0, 1] });
-    animate(y, 0, { duration: 0.3, ease: [0.32, 0.72, 0, 1] });
+    animate(x, 0, { duration: SWIPE_ANIMATION_DURATION, ease: [0.32, 0.72, 0, 1] });
+    animate(y, 0, { duration: SWIPE_ANIMATION_DURATION, ease: [0.32, 0.72, 0, 1] });
     setIsSwiping(false);
     setSwipeDirection(null);
   }, [disabled, x, y]);
@@ -288,13 +205,7 @@ export function SwipeableCard({
       onSwipeStart: handleSwipeStart,
       onSwipeEnd: handleSwipeEnd,
     },
-    {
-      minDistance: 50,
-      maxDuration: 500,
-      minVelocity: 0.3,
-      debounceMs: 300,
-      preventScroll: true,
-    }
+    SWIPE_GESTURE_CONFIG
   );
 
   // Indicator colors from theme
@@ -388,8 +299,7 @@ export function SwipeableCard({
         whileTap={!disabled ? { cursor: 'grabbing' } : {}}
         transition={{
           type: 'spring',
-          stiffness: 300,
-          damping: 30,
+          ...SPRING_CONFIG,
         }}
         data-testid="swipeable-card"
       >
@@ -433,7 +343,7 @@ export function SwipeableCard({
             exit={{ opacity: 0 }}
             transition={{ duration: theme.animationDuration / 1000, ease: 'easeOut' }}
           >
-            {renderParticleShape(theme.shape, particle.color, theme.particleSize)}
+            <ParticleShape shape={theme.shape} color={particle.color} size={theme.particleSize} />
           </motion.div>
         ))}
       </AnimatePresence>

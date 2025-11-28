@@ -65,7 +65,9 @@ export function SimpleCollectionPanel({ groups: rawGroups }: SimpleCollectionPan
     }
 
     setPrevGroupIds(currentGroupIds);
-  }, [groups, prevGroupIds]);
+    // Note: prevGroupIds is intentionally excluded to avoid infinite re-renders
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groups]);
 
   // Clear initial load flag after first render
   useEffect(() => {

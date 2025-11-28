@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { ChevronDown, Layers, LayoutGrid, List } from "lucide-react";
+import { ConsensusToggle } from "./ConsensusToggle";
 
 export type GroupViewMode = 'sidebar' | 'horizontal';
 
@@ -11,10 +12,13 @@ interface CollectionHeaderProps {
   onTogglePanel: () => void;
   groupViewMode: GroupViewMode;
   onGroupViewModeChange: (mode: GroupViewMode) => void;
+  category?: string;
 }
 
 /**
- * Collection Panel Header with view mode switcher
+ * Collection Panel Header with view mode switcher and consensus toggle
+ * The consensus toggle transforms the backlog from a static inventory
+ * into a dynamic intelligence layer showing global ranking distributions.
  */
 export function CollectionHeader({
   totalItems,
@@ -43,6 +47,12 @@ export function CollectionHeader({
       </div>
 
       <div className="flex items-center gap-3">
+        {/* Consensus Discovery Toggle */}
+        <ConsensusToggle compact />
+
+        {/* Separator */}
+        <div className="h-5 w-[1px] bg-white/10 dark:bg-white/5" />
+
         {/* Group View Mode Switcher */}
         <div className="flex items-center gap-1 bg-gray-800/50 rounded-lg p-1">
           <motion.button

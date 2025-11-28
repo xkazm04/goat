@@ -4,16 +4,27 @@ import { Trash2, Play, Clock, Hash, Calendar, AlertTriangle } from "lucide-react
 import { TopList } from "@/types/top-lists";
 import { getCategoryColor } from "@/lib/helpers/getColors";
 import { listItemVariants, modalBackdropVariants, modalContentVariants } from "../shared/animations";
+import { use3DTilt } from "@/hooks/use-3d-tilt";
+import { ListPreviewPopover } from "./ListPreviewPopover";
 
 interface ListItemProps {
   list: TopList;
   onDelete: (listId: string) => void;
   onPlay: (list: TopList) => void;
+  /** Enable hover preview popover (default: true) */
+  showPreview?: boolean;
 }
 
-const UserListItem = ({ list, onDelete, onPlay }: ListItemProps) => {
+const UserListItem = ({ list, onDelete, onPlay, showPreview = true }: ListItemProps) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const { ref, style: tiltStyle, handlers } = use3DTilt({
+    maxRotation: 6,
+    stiffness: 400,
+    damping: 30,
+    scale: 1.02,
+  });
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -35,10 +46,12 @@ const UserListItem = ({ list, onDelete, onPlay }: ListItemProps) => {
 
   return (
     <motion.div
+      ref={ref}
       layout
       variants={listItemVariants}
       className="group relative rounded-xl overflow-hidden"
       style={{
+        ...tiltStyle,
         background: `
           linear-gradient(135deg,
             rgba(20, 28, 48, 0.8) 0%,
@@ -51,14 +64,8 @@ const UserListItem = ({ list, onDelete, onPlay }: ListItemProps) => {
           inset 0 1px 0 rgba(255, 255, 255, 0.05)
         `,
       }}
-      whileHover={{
-        y: -2,
-        boxShadow: `
-          0 8px 30px rgba(0, 0, 0, 0.35),
-          0 0 40px ${colors.primary}10,
-          inset 0 1px 0 rgba(255, 255, 255, 0.08)
-        `,
-      }}
+      {...handlers}
+      tabIndex={0}
       data-testid={`user-list-item-${list.id}`}
     >
       {/* Hover glow */}
@@ -93,34 +100,66 @@ const UserListItem = ({ list, onDelete, onPlay }: ListItemProps) => {
             {list.category}
           </motion.div>
 
-          {/* Main content */}
-          <div className="flex-1 min-w-0">
-            <h4
-              className="text-sm font-semibold text-white truncate group-hover:text-white/90 transition-colors"
-              data-testid={`user-list-title-${list.id}`}
-            >
-              {list.title}
-            </h4>
-            <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-slate-500">
-              {list.subcategory && (
-                <span className="text-slate-400">{list.subcategory}</span>
-              )}
-              <div className="flex items-center gap-1">
-                <Hash className="w-3 h-3" />
-                <span>Top {list.size}</span>
+          {/* Main content - wrapped with preview popover */}
+          {showPreview ? (
+            <ListPreviewPopover listId={list.id} side="top" align="start">
+              <div className="flex-1 min-w-0 cursor-pointer">
+                <h4
+                  className="text-sm font-semibold text-white truncate group-hover:text-white/90 transition-colors"
+                  data-testid={`user-list-title-${list.id}`}
+                >
+                  {list.title}
+                </h4>
+                <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-slate-500">
+                  {list.subcategory && (
+                    <span className="text-slate-400">{list.subcategory}</span>
+                  )}
+                  <div className="flex items-center gap-1">
+                    <Hash className="w-3 h-3" />
+                    <span>Top {list.size}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Calendar className="w-3 h-3" />
+                    <span className="capitalize">
+                      {list.time_period?.replace("-", " ") || "all time"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    <span>{createdDate}</span>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-1">
-                <Calendar className="w-3 h-3" />
-                <span className="capitalize">
-                  {list.time_period?.replace("-", " ") || "all time"}
-                </span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Clock className="w-3 h-3" />
-                <span>{createdDate}</span>
+            </ListPreviewPopover>
+          ) : (
+            <div className="flex-1 min-w-0">
+              <h4
+                className="text-sm font-semibold text-white truncate group-hover:text-white/90 transition-colors"
+                data-testid={`user-list-title-${list.id}`}
+              >
+                {list.title}
+              </h4>
+              <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-slate-500">
+                {list.subcategory && (
+                  <span className="text-slate-400">{list.subcategory}</span>
+                )}
+                <div className="flex items-center gap-1">
+                  <Hash className="w-3 h-3" />
+                  <span>Top {list.size}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Calendar className="w-3 h-3" />
+                  <span className="capitalize">
+                    {list.time_period?.replace("-", " ") || "all time"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  <span>{createdDate}</span>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Actions */}
           <div className="flex items-center gap-2 flex-shrink-0">

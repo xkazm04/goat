@@ -92,6 +92,8 @@ export interface BacklogState {
   isItemUsed: (itemId: string) => boolean;
   getCoalescerStats: () => Promise<any>;
   resetCoalescerStats: () => Promise<void>;
+  forceRefreshAll: (category?: string) => Promise<void>;
+  debugImageUrls: (limit?: number) => { itemCount: number; withImage: number; withoutImage: number; samples: any[] };
 
   // Internal utilities
   startFastProgressiveLoading: (groups: any[]) => Promise<void>;

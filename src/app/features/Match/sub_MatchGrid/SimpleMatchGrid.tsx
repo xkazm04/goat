@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
-import { DndContext, DragOverlay, DragEndEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { DndContext, DragOverlay, DragEndEvent, DragMoveEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { snapCenterToCursor } from "@dnd-kit/modifiers";
 import { backlogGroupsToCollectionGroups } from "../../Collection";
 import { SimpleCollectionPanel } from "../sub_MatchCollections/SimpleCollectionPanel";
@@ -12,7 +12,7 @@ import { useGridStore } from "@/stores/grid-store";
 import { useBacklogStore } from "@/stores/backlog-store";
 import { useCurrentList } from "@/stores/use-list-store";
 import { MatchGridTutorial, useTutorialState } from "../sub_MatchCollections/MatchGridTutorial";
-import { useMotionValue, useSpring } from "framer-motion";
+import { useMotionValue, useSpring, AnimatePresence } from "framer-motion";
 
 // Import modular components
 import { ViewSwitcher, ViewMode } from "./components/ViewSwitcher";
@@ -21,8 +21,9 @@ import { GoatView } from "./components/GoatView";
 import { MountRushmoreView } from "./components/MountRushmoreView";
 import { GridSection } from "./components/GridSection";
 import { MatchGridHeader } from "./components/MatchGridHeader";
-import { DragOverlayContent, CursorGlow } from "./components/DragComponents";
+import { DragOverlayContent, CursorGlow, DragTrail } from "./components/DragComponents";
 import { getItemTitle } from "./lib/helpers";
+import { useDragSync } from "@/hooks/use-drag-sync";
 
 /**
  * "Neon Arena" Match Grid
@@ -49,22 +50,67 @@ export function SimpleMatchGrid() {
   const [activeItem, setActiveItem] = useState<CollectionItem | GridItemType | null>(null);
   const [activeType, setActiveType] = useState<'collection' | 'grid' | null>(null);
 
-  // Cursor-following glow effect
+  // Inertia-driven drag state
+  const [previewPosition, setPreviewPosition] = useState<number | null>(null);
+  const [isSnapping, setIsSnapping] = useState(false);
+
+  // Use the drag sync hook for velocity tracking and trail
+  const {
+    velocity,
+    trailPositions,
+    handleDragStart: syncDragStart,
+    handleDragMove: syncDragMove,
+    handleDragEnd: syncDragEnd,
+  } = useDragSync({
+    onPositionChange: setPreviewPosition,
+  });
+
+  // Velocity tracking ref for real-time updates
+  const velocityRef = useRef({ x: 0, y: 0 });
+  const lastPositionRef = useRef({ x: 0, y: 0, time: Date.now() });
+
+  // Cursor-following glow effect with spring physics
   const cursorX = useMotionValue(0);
   const cursorY = useMotionValue(0);
-  const glowX = useSpring(cursorX, { damping: 20, stiffness: 200 });
-  const glowY = useSpring(cursorY, { damping: 20, stiffness: 200 });
+  const glowX = useSpring(cursorX, { damping: 15, stiffness: 150, mass: 0.5 });
+  const glowY = useSpring(cursorY, { damping: 15, stiffness: 150, mass: 0.5 });
+
+  // Trail positions for visual effect
+  const [dragTrail, setDragTrail] = useState<Array<{ x: number; y: number; timestamp: number }>>([]);
 
   // Tutorial state
   const { showTutorial, completeTutorial } = useTutorialState();
 
-  // Track mouse position during drag
+  // Track mouse position during drag with velocity calculation
   useEffect(() => {
-    if (!activeItem) return;
+    if (!activeItem) {
+      setDragTrail([]);
+      return;
+    }
 
     const handleMouseMove = (e: MouseEvent) => {
+      const now = Date.now();
+      const deltaTime = (now - lastPositionRef.current.time) / 1000;
+
+      // Calculate velocity
+      if (deltaTime > 0) {
+        velocityRef.current = {
+          x: (e.clientX - lastPositionRef.current.x) / deltaTime,
+          y: (e.clientY - lastPositionRef.current.y) / deltaTime,
+        };
+      }
+
+      lastPositionRef.current = { x: e.clientX, y: e.clientY, time: now };
+
       cursorX.set(e.clientX);
       cursorY.set(e.clientY);
+
+      // Update trail
+      setDragTrail(prev => {
+        const newTrail = [...prev, { x: e.clientX, y: e.clientY, timestamp: now }];
+        // Keep only last 20 positions
+        return newTrail.slice(-20);
+      });
     };
 
     window.addEventListener('mousemove', handleMouseMove);
@@ -90,6 +136,15 @@ export function SimpleMatchGrid() {
     const { active } = event;
     const itemData = active.data.current;
 
+    // Reset velocity on drag start
+    velocityRef.current = { x: 0, y: 0 };
+    lastPositionRef.current = { x: 0, y: 0, time: Date.now() };
+    setPreviewPosition(null);
+    setIsSnapping(false);
+
+    // Sync with drag sync hook
+    syncDragStart(event);
+
     if (itemData?.type === 'collection-item') {
       setActiveItem(itemData.item);
       setActiveType('collection');
@@ -99,11 +154,33 @@ export function SimpleMatchGrid() {
     }
   };
 
+  // Handle drag move for preview position calculation
+  const handleDragMove = useCallback((event: DragMoveEvent) => {
+    syncDragMove(event);
+
+    // Calculate preview position based on drop target
+    if (event.over?.data?.current?.type === 'grid-slot') {
+      setPreviewPosition(event.over.data.current.position);
+    } else {
+      setPreviewPosition(null);
+    }
+  }, [syncDragMove]);
+
   const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
 
+    // Trigger snap animation
+    if (over?.data?.current?.type === 'grid-slot') {
+      setIsSnapping(true);
+      setTimeout(() => setIsSnapping(false), 300);
+    }
+
     setActiveItem(null);
     setActiveType(null);
+    setPreviewPosition(null);
+
+    // Sync with drag sync hook
+    syncDragEnd(event);
 
     if (!over) return;
 
@@ -115,7 +192,7 @@ export function SimpleMatchGrid() {
       const position = dropData.position;
       const item: BacklogItem = itemData.item;
 
-      console.log(`🎯 Dropping collection item ${item.id} at position ${position}`);
+      console.log(`🎯 Dropping collection item ${item.id} at position ${position} (velocity: ${velocityRef.current.x.toFixed(0)}, ${velocityRef.current.y.toFixed(0)})`);
 
       assignItemToGrid(item, position);
       markItemAsUsed(item.id, true);
@@ -132,7 +209,7 @@ export function SimpleMatchGrid() {
 
       moveGridItem(fromPosition, toPosition);
     }
-  }, [assignItemToGrid, markItemAsUsed, moveGridItem]);
+  }, [assignItemToGrid, markItemAsUsed, moveGridItem, syncDragEnd]);
 
   const handleRemove = useCallback((position: number) => {
     const item = gridItems[position];
@@ -157,9 +234,10 @@ export function SimpleMatchGrid() {
       <DndContext
         sensors={sensors}
         onDragStart={handleDragStart}
+        onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
       >
-        <div className="min-h-screen bg-[#050505] pb-96 relative overflow-hidden" data-testid="match-grid-container">
+        <div className="min-h-screen bg-[#050505] pb-[420px] relative overflow-hidden" data-testid="match-grid-container">
 
           {/* Animated Background */}
           <div className="absolute inset-0 pointer-events-none">
@@ -281,10 +359,24 @@ export function SimpleMatchGrid() {
           <SimpleCollectionPanel groups={backlogGroupsToCollectionGroups(groups)} />
         </div>
 
-        {/* Drag Overlay - snaps center to cursor position */}
+        {/* Drag Overlay - snaps center to cursor position with inertia */}
         <DragOverlay modifiers={[snapCenterToCursor]}>
-          {activeItem && <DragOverlayContent activeItem={activeItem} />}
+          {activeItem && (
+            <DragOverlayContent
+              activeItem={activeItem}
+              velocity={velocityRef.current}
+              isSnapping={isSnapping}
+              previewPosition={previewPosition}
+            />
+          )}
         </DragOverlay>
+
+        {/* Drag Trail Effect */}
+        <AnimatePresence>
+          {activeItem && dragTrail.length > 1 && (
+            <DragTrail positions={dragTrail} />
+          )}
+        </AnimatePresence>
 
         {/* Cursor-following Glow Effect - dot at cursor, glow trails behind */}
         {activeItem && <CursorGlow glowX={glowX} glowY={glowY} cursorX={cursorX} cursorY={cursorY} />}

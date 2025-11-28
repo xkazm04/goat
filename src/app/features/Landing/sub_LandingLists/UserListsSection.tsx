@@ -141,7 +141,7 @@ export function UserListsSection({ className }: UserListsSectionProps) {
 
             {/* Create button */}
             <motion.button
-              onClick={openComposition}
+              onClick={() => openComposition()}
               className="relative group px-5 py-2.5 rounded-xl font-medium text-sm text-white overflow-hidden"
               style={{
                 background: `linear-gradient(135deg, rgba(6, 182, 212, 0.9), rgba(34, 211, 238, 0.9))`,
@@ -207,7 +207,7 @@ export function UserListsSection({ className }: UserListsSectionProps) {
                     Create your first ranking list and start comparing your favorites!
                   </p>
                   <motion.button
-                    onClick={openComposition}
+                    onClick={() => openComposition()}
                     className="px-6 py-3 rounded-xl font-medium text-white"
                     style={{
                       background: `linear-gradient(135deg, rgba(6, 182, 212, 0.9), rgba(34, 211, 238, 0.9))`,

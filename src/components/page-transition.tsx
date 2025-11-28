@@ -4,6 +4,13 @@ import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 import { ReactNode } from 'react';
 
+// Shared animation constants
+const SMOOTH_EASING = [0.25, 0.1, 0.25, 1] as const;
+const SLIDE_OFFSET = 8;
+const BLUR_AMOUNT = '4px';
+const ENTER_DURATION = 0.4;
+const EXIT_DURATION = 0.3;
+
 /**
  * Shared transition configuration for page animations
  * Creates a subtle fade + slide effect that masks load times
@@ -11,25 +18,25 @@ import { ReactNode } from 'react';
 const pageTransition: Variants = {
   initial: {
     opacity: 0,
-    y: 8,
-    filter: 'blur(4px)'
+    y: SLIDE_OFFSET,
+    filter: `blur(${BLUR_AMOUNT})`
   },
   animate: {
     opacity: 1,
     y: 0,
     filter: 'blur(0px)',
     transition: {
-      duration: 0.4,
-      ease: [0.25, 0.1, 0.25, 1], // Smooth cubic-bezier easing
+      duration: ENTER_DURATION,
+      ease: SMOOTH_EASING,
     }
   },
   exit: {
     opacity: 0,
-    y: -8,
-    filter: 'blur(4px)',
+    y: -SLIDE_OFFSET,
+    filter: `blur(${BLUR_AMOUNT})`,
     transition: {
-      duration: 0.3,
-      ease: [0.25, 0.1, 0.25, 1],
+      duration: EXIT_DURATION,
+      ease: SMOOTH_EASING,
     }
   }
 };

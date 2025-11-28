@@ -8,6 +8,9 @@
 import { useEffect, useState } from "react";
 import { useWikiImageStore } from "@/stores/wiki-image-store";
 
+// Default fetch delay to avoid rate limiting
+const DEFAULT_FETCH_DELAY_MS = 500;
+
 export interface UseProgressiveWikiImageOptions {
   /** Item title to search for */
   itemTitle: string;
@@ -52,7 +55,7 @@ export function useProgressiveWikiImage({
   itemTitle,
   existingImage,
   autoFetch = true,
-  fetchDelay = 500,
+  fetchDelay = DEFAULT_FETCH_DELAY_MS,
 }: UseProgressiveWikiImageOptions): UseProgressiveWikiImageResult {
   const wikiStore = useWikiImageStore();
   const [isFetching, setIsFetching] = useState(false);
@@ -64,26 +67,29 @@ export function useProgressiveWikiImage({
   // Final image URL (priority: existing > cached > null)
   const imageUrl = existingImage || cachedImage || null;
 
+  // Helper to check if fetch should be skipped
+  const shouldSkipFetch = (): boolean => {
+    const hasNoAutoFetch = !autoFetch;
+    const hasExistingImage = !!existingImage;
+    const hasCachedImage = !!cachedImage;
+    const hasPreviouslyFailed = hasFailed;
+    const isCurrentlyFetching = wikiStore.isFetching(itemTitle);
+    const hasInvalidTitle = !itemTitle || itemTitle.trim().length === 0;
+
+    return hasNoAutoFetch || hasExistingImage || hasCachedImage ||
+           hasPreviouslyFailed || isCurrentlyFetching || hasInvalidTitle;
+  };
+
   // Auto-fetch if no image exists
   useEffect(() => {
-    if (!autoFetch) return;
-    if (existingImage) return; // Already has image
-    if (cachedImage) return; // Already cached
-    if (hasFailed) return; // Previously failed
-    if (wikiStore.isFetching(itemTitle)) return; // Already fetching
-    if (!itemTitle || itemTitle.trim().length === 0) return; // Invalid title
+    if (shouldSkipFetch()) return;
 
     // Delay fetch to avoid rate limiting on initial render
     const timeoutId = setTimeout(() => {
       setIsFetching(true);
       wikiStore
         .fetchImage(itemTitle)
-        .then(() => {
-          setIsFetching(false);
-        })
-        .catch(() => {
-          setIsFetching(false);
-        });
+        .finally(() => setIsFetching(false));
     }, fetchDelay);
 
     return () => clearTimeout(timeoutId);
