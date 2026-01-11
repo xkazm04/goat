@@ -93,22 +93,23 @@ function CustomCollection() {
 Components still support explicit props for backward compatibility:
 
 ```tsx
-import { CategoryBar, CollectionSearch } from '@/app/features/Collection';
+import { CollectionToolbar } from '@/app/features/Collection';
 
 // Works with explicit props (outside provider)
 function LegacyUsage() {
-  const [searchTerm, setSearchTerm] = useState('');
   const [selectedGroups, setSelectedGroups] = useState(new Set());
 
   return (
-    <>
-      <CollectionSearch value={searchTerm} onChange={setSearchTerm} />
-      <CategoryBar
-        groups={groups}
-        selectedGroupIds={selectedGroups}
-        onToggleGroup={toggleGroup}
-      />
-    </>
+    <CollectionToolbar
+      groups={groups}
+      selectedGroupIds={selectedGroups}
+      onToggleGroup={toggleGroup}
+      stats={{ totalItems: 0, selectedItems: 0, visibleGroups: 0, totalGroups: 0 }}
+      isVisible={true}
+      onToggleVisibility={() => {}}
+      onSelectAll={() => {}}
+      onDeselectAll={() => {}}
+    />
   );
 }
 ```
@@ -231,42 +232,6 @@ test('component uses context', () => {
 });
 ```
 
-## Migration Guide
-
-### From Hook-based to Context-based
-
-**Before:**
-```tsx
-function MyCollection() {
-  const filters = useCollectionFilters(groups);
-
-  return (
-    <>
-      <CollectionSearch value={filters.filter.searchTerm} onChange={filters.setSearchTerm} />
-      <CategoryBar
-        groups={filters.filteredGroups}
-        selectedGroupIds={filters.filter.selectedGroupIds}
-        onToggleGroup={filters.toggleGroup}
-      />
-    </>
-  );
-}
-```
-
-**After:**
-```tsx
-function MyCollection() {
-  const collection = useCollection({ category: 'movies' });
-
-  return (
-    <CollectionFiltersProvider value={collection}>
-      <CollectionSearch />
-      <CategoryBar />
-    </CollectionFiltersProvider>
-  );
-}
-```
-
 ## Performance Considerations
 
 - **Memoization**: Context value should be memoized in provider to prevent unnecessary re-renders
@@ -277,6 +242,5 @@ function MyCollection() {
 
 - `CollectionFiltersContext.tsx` - Context implementation
 - `../components/CollectionPanel.tsx` - Main panel that provides context
-- `../components/CategoryBar.tsx` - Consumer component
-- `../components/CollectionSearch.tsx` - Consumer component
+- `../components/CollectionToolbar.tsx` - Consumer component with integrated category bar
 - `../hooks/useCollection.ts` - Hook that generates context value

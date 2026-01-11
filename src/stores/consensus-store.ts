@@ -5,6 +5,16 @@ import type {
   ItemConsensusWithClusters,
   ConsensusAPIResponse,
 } from '@/types/consensus';
+import type {
+  InventorySortBy,
+  InventorySortOrder,
+  InventorySortConfig,
+} from '@/types/ranked-inventory';
+import {
+  type SortConfig,
+  sortItemIds as unifiedSortItemIds,
+  fromLegacySortBy,
+} from '@/lib/sorting';
 
 interface ConsensusStoreActions {
   /** Set the consensus view mode */
@@ -30,6 +40,15 @@ interface ConsensusStoreActions {
 
   /** Clear all consensus data */
   clearConsensus: () => void;
+
+  /** Set sort configuration for inventory view */
+  setSortConfig: (config: InventorySortConfig) => void;
+
+  /** Get sorted item IDs based on current sort configuration */
+  getSortedItemIds: (itemIds: string[]) => string[];
+
+  /** Get consensus rank for sorting (returns high number if no data) */
+  getConsensusRankForSort: (itemId: string) => number;
 }
 
 type ConsensusStore = ConsensusState & ConsensusStoreActions;
@@ -50,6 +69,7 @@ export const useConsensusStore = create<ConsensusStore>((set, get) => ({
   error: null,
   lastFetched: null,
   currentCategory: null,
+  sortConfig: { sortBy: 'consensus' as InventorySortBy, sortOrder: 'asc' as InventorySortOrder },
 
   // Set view mode
   setViewMode: (mode) => {
@@ -145,6 +165,35 @@ export const useConsensusStore = create<ConsensusStore>((set, get) => ({
       error: null,
     });
   },
+
+  // Set sort configuration for inventory view
+  setSortConfig: (config) => {
+    set({ sortConfig: config });
+  },
+
+  // Get consensus rank for sorting (returns high number if no data)
+  getConsensusRankForSort: (itemId) => {
+    const consensus = get().consensusData[itemId];
+    // Return 999 for items without consensus data to push them to the end
+    return consensus?.averageRank ?? 999;
+  },
+
+  // Get sorted item IDs based on current sort configuration
+  // Delegates to the unified InventorySorter for consistent behavior
+  getSortedItemIds: (itemIds) => {
+    const { consensusData, sortConfig } = get();
+    const { sortBy, sortOrder } = sortConfig;
+
+    // Convert legacy config to unified SortConfig
+    const unifiedConfig = fromLegacySortBy(sortBy, sortOrder);
+
+    // Use unified sorter with consensus lookup
+    return unifiedSortItemIds(
+      itemIds,
+      unifiedConfig,
+      (itemId) => consensusData[itemId] ?? null
+    );
+  },
 }));
 
 // Selectors
@@ -156,3 +205,12 @@ export const useConsensusLoading = () =>
 
 export const useItemConsensus = (itemId: string) =>
   useConsensusStore((state) => state.consensusData[itemId] || null);
+
+export const useConsensusSortConfig = () =>
+  useConsensusStore((state) => state.sortConfig);
+
+export const useConsensusSortBy = () =>
+  useConsensusStore((state) => state.sortConfig.sortBy);
+
+export const useConsensusSortOrder = () =>
+  useConsensusStore((state) => state.sortConfig.sortOrder);

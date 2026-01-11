@@ -1,11 +1,14 @@
 import { useMemo, useCallback } from 'react';
-import { BacklogGroup } from '@/types/backlog-groups';
+import { BacklogGroup, BacklogItem } from '@/types/backlog-groups';
 
 // Editor's Pick configuration
 const EDITORS_PICK_ITEMS = [
   "Michael Jordan",
   "LeBron James"
 ];
+
+// Pre-computed lowercase versions for Editor's Pick matching
+const EDITORS_PICK_ITEMS_LOWER = EDITORS_PICK_ITEMS.map(item => item.toLowerCase());
 
 interface FilterStats {
   filteredItemsCount: number;
@@ -20,16 +23,56 @@ interface UseBacklogFilteringResult {
   handleClearFilters: () => void;
 }
 
+// Search index entry: pre-computed lowercase searchable text for each item
+interface SearchIndexEntry {
+  item: BacklogItem;
+  searchText: string; // Combined lowercase text of name, title, description, tags
+  nameTitleLower: string; // Just name + title for Editor's Pick matching
+}
+
+// Build search index for a single item - combines all searchable fields into one lowercase string
+function buildItemSearchIndex(item: BacklogItem): SearchIndexEntry {
+  const name = (item.name || '').toLowerCase();
+  const title = (item.title || '').toLowerCase();
+  const description = (item.description || '').toLowerCase();
+  const tags = (item.tags || []).map(tag => (tag || '').toLowerCase()).join(' ');
+
+  return {
+    item,
+    searchText: `${name} ${title} ${description} ${tags}`,
+    nameTitleLower: `${name} ${title}`
+  };
+}
+
+// Search index for a group: maps item id to its search entry
+interface GroupSearchIndex {
+  group: BacklogGroup;
+  itemIndexes: SearchIndexEntry[];
+}
+
 export function useBacklogFiltering(
   backlogGroups: BacklogGroup[],
   searchTerm: string,
   showEditorsPickOnly: boolean,
   setShowEditorsPickOnly: (value: boolean) => void
 ): UseBacklogFilteringResult {
-  
+
+  // Pre-build search index when backlogGroups changes
+  // This runs O(n*k) once when data loads, not on every keystroke
+  const searchIndex = useMemo((): GroupSearchIndex[] => {
+    if (!backlogGroups || backlogGroups.length === 0) {
+      return [];
+    }
+
+    return backlogGroups.map(group => ({
+      group,
+      itemIndexes: (group.items || []).map(buildItemSearchIndex)
+    }));
+  }, [backlogGroups]);
+
   const { processedGroups, filterStats } = useMemo(() => {
     // Only process if we have actual data
-    if (!backlogGroups || backlogGroups.length === 0) {
+    if (searchIndex.length === 0) {
       return {
         processedGroups: [],
         filterStats: {
@@ -40,52 +83,45 @@ export function useBacklogFiltering(
       };
     }
 
-    let groups = backlogGroups.map(group => ({
-      ...group,
-      // Pre-filter items to avoid repeated processing
-      // Ensure items is always an array even if undefined
-      _allItems: group.items || [],
-      items: group.items || []
-    }));
-    
-    // Apply search filter only if search term exists
-    if (searchTerm && searchTerm.trim()) {
-      const searchLower = searchTerm.toLowerCase().trim();
-      groups = groups.map(group => ({
-        ...group,
-        items: (group._allItems || []).filter(item =>
-          // Ensure item properties exist before accessing
-          (item.name || '').toLowerCase().includes(searchLower) ||
-          (item.title || '').toLowerCase().includes(searchLower) ||
-          (item.description || '').toLowerCase().includes(searchLower) ||
-          (item.tags || []).some(tag => (tag || '').toLowerCase().includes(searchLower))
-        )
-      }));
-    }
+    const searchLower = searchTerm ? searchTerm.toLowerCase().trim() : '';
+    const hasSearchFilter = searchLower.length > 0;
 
-    // Apply Editor's Pick filter only if active
-    if (showEditorsPickOnly) {
-      groups = groups.map(group => ({
-        ...group,
-        items: (group.items || []).filter(item =>
-          EDITORS_PICK_ITEMS.some(pickItem => 
-            (item.name || '').toLowerCase().includes(pickItem.toLowerCase()) ||
-            (item.title || '').toLowerCase().includes(pickItem.toLowerCase())
+    // Filter using pre-computed search index - O(n) single string comparison per item
+    const filteredGroups = searchIndex.map(({ group, itemIndexes }) => {
+      let filteredIndexes = itemIndexes;
+
+      // Apply search filter using pre-computed searchText
+      if (hasSearchFilter) {
+        filteredIndexes = filteredIndexes.filter(entry =>
+          entry.searchText.includes(searchLower)
+        );
+      }
+
+      // Apply Editor's Pick filter using pre-computed nameTitleLower
+      if (showEditorsPickOnly) {
+        filteredIndexes = filteredIndexes.filter(entry =>
+          EDITORS_PICK_ITEMS_LOWER.some(pickItemLower =>
+            entry.nameTitleLower.includes(pickItemLower)
           )
-        )
-      }));
-    }
+        );
+      }
+
+      return {
+        ...group,
+        items: filteredIndexes.map(entry => entry.item)
+      };
+    });
 
     // Filter out empty groups
-    const nonEmptyGroups = groups.filter(group => 
+    const nonEmptyGroups = filteredGroups.filter(group =>
       Array.isArray(group.items) && group.items.length > 0
     );
 
     // Calculate stats
-    const filteredItemsCount = nonEmptyGroups.reduce((acc, group) => 
+    const filteredItemsCount = nonEmptyGroups.reduce((acc, group) =>
       acc + (Array.isArray(group.items) ? group.items.length : 0), 0
     );
-    const hasActiveFilters = Boolean((searchTerm && searchTerm.trim()) || showEditorsPickOnly);
+    const hasActiveFilters = Boolean(hasSearchFilter || showEditorsPickOnly);
 
     return {
       processedGroups: nonEmptyGroups,
@@ -95,7 +131,7 @@ export function useBacklogFiltering(
         totalGroups: nonEmptyGroups.length
       }
     };
-  }, [backlogGroups, searchTerm, showEditorsPickOnly]);
+  }, [searchIndex, searchTerm, showEditorsPickOnly]);
 
   const handleToggleEditorsPick = useCallback(() => {
     setShowEditorsPickOnly(!showEditorsPickOnly);

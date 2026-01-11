@@ -1,4 +1,5 @@
-import { AwardList } from "@/app/features/Awards/AwardList";
+// Lazy-load the award list to defer loading of @dnd-kit (~25KB gzipped)
+import { LazyAwardList } from "@/app/features/Awards/LazyAwardList";
 import { Suspense } from "react";
 
 interface PageProps {
@@ -22,7 +23,7 @@ export default async function AwardPage({ searchParams }: PageProps) {
 
     return (
         <Suspense fallback={<div className="min-h-screen bg-[#050505]" />}>
-            <AwardList parentListId={listId} />
+            <LazyAwardList parentListId={listId} />
         </Suspense>
     );
 }

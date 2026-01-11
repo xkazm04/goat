@@ -8,7 +8,7 @@
  * - Filter and search capabilities
  * - Statistics computation
  *
- * Replaces: useCollectionFilters, useCollectionStats, and ad-hoc fetch logic
+ * Unified hook for collection data management
  */
 
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
@@ -16,11 +16,39 @@ import { useMemo, useCallback, useState, useEffect, useRef } from 'react';
 import { collectionApi, CollectionApiParams, CollectionItemCreate, CollectionItemUpdate } from '@/lib/api/collection';
 import { collectionKeys } from '@/lib/query-keys/collection';
 import { CollectionItem, CollectionGroup, CollectionStats } from '../types';
-import { useGridStore } from '@/stores/grid-store';
+import { useVisibleCollectionItems, PlacementStats } from './useVisibleCollectionItems';
+import { useEasterEggSpotlight } from '../utils/easterEgg';
 
-// Easter egg keywords that trigger the spotlight effect
-const EASTER_EGG_KEYWORDS = ['wizard', 'magic', 'secret', 'hidden'];
-const SPOTLIGHT_DURATION = 5000; // 5 seconds
+// Curator milestone thresholds - gamification levels based on items ranked
+// Level 1: Novice (10 items), Level 2: Apprentice (25 items), Level 3: Curator (50 items),
+// Level 4: Expert (100 items), Level 5: Master (250 items)
+const CURATOR_MILESTONES = [10, 25, 50, 100, 250];
+
+/**
+ * Calculate curator level and items to next level based on ranked items count
+ */
+function calculateCuratorLevel(rankedItemsCount: number): { curatorLevel: number; itemsToNextLevel: number } {
+  let curatorLevel = 0;
+  let itemsToNextLevel = CURATOR_MILESTONES[0];
+
+  for (let i = 0; i < CURATOR_MILESTONES.length; i++) {
+    if (rankedItemsCount >= CURATOR_MILESTONES[i]) {
+      curatorLevel = i + 1;
+      // Calculate items to next level (if not at max level)
+      if (i < CURATOR_MILESTONES.length - 1) {
+        itemsToNextLevel = CURATOR_MILESTONES[i + 1] - rankedItemsCount;
+      } else {
+        itemsToNextLevel = 0; // At max level
+      }
+    } else {
+      // Haven't reached this milestone yet
+      itemsToNextLevel = CURATOR_MILESTONES[i] - rankedItemsCount;
+      break;
+    }
+  }
+
+  return { curatorLevel, itemsToNextLevel };
+}
 
 export interface UseCollectionOptions {
   category?: string;
@@ -43,6 +71,11 @@ export interface UseCollectionResult {
   filteredItems: CollectionItem[];
   selectedGroups: CollectionGroup[];
   stats: CollectionStats;
+
+  // Derived placement state (first-class relationship with Grid)
+  placementStats: PlacementStats;
+  /** Check if a specific item is placed in the grid */
+  isItemPlaced: (itemId: string) => boolean;
 
   // Loading states
   isLoading: boolean;
@@ -132,36 +165,6 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
 
   const queryClient = useQueryClient();
 
-  // Get matched items from grid to exclude them from collection
-  // Track the string of IDs to avoid infinite loops with array/set comparisons
-  const [usedItemIds, setUsedItemIds] = useState<Set<string>>(new Set());
-  const prevIdsStringRef = useRef<string>('');
-
-  // Subscribe to grid store changes and update used IDs only when they actually change
-  useEffect(() => {
-    const unsubscribe = useGridStore.subscribe((state) => {
-      const matchedItems = state.gridItems.filter(item => item.matched);
-      const ids = matchedItems.map(item => item.backlogItemId).filter(Boolean) as string[];
-      const idsString = ids.sort().join(',');
-
-      // Only update if the IDs actually changed
-      if (idsString !== prevIdsStringRef.current) {
-        prevIdsStringRef.current = idsString;
-        setUsedItemIds(new Set(ids));
-      }
-    });
-
-    // Initialize on mount
-    const state = useGridStore.getState();
-    const matchedItems = state.gridItems.filter(item => item.matched);
-    const ids = matchedItems.map(item => item.backlogItemId).filter(Boolean) as string[];
-    const idsString = ids.sort().join(',');
-    prevIdsStringRef.current = idsString;
-    setUsedItemIds(new Set(ids));
-
-    return unsubscribe;
-  }, []);
-
   // Local filter state
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
   const [selectedGroupIds, setSelectedGroupIds] = useState<Set<string>>(
@@ -170,10 +173,6 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
   const [sortBy, setSortBy] = useState(initialSortBy);
   const [sortOrder, setSortOrder] = useState(initialSortOrder);
   const [currentPage, setCurrentPage] = useState(1);
-
-  // Easter egg state: tracks which item is currently spotlighted
-  const [spotlightItemId, setSpotlightItemId] = useState<string | null>(null);
-  const spotlightTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Track if we've initialized selected groups to prevent infinite loops
   const hasInitializedGroupsRef = useRef(false);
@@ -252,23 +251,34 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
     gcTime: cacheTime
   });
 
-  // Extract items from query results and filter out used items
-  const allItems = useMemo(() => {
+  // Extract raw items from query results (before placement filtering)
+  const rawItems = useMemo(() => {
     let items: CollectionItem[] = [];
     if (enableInfiniteScroll && infiniteQuery.data) {
       items = infiniteQuery.data.pages.flatMap(page => page.data);
     } else {
       items = paginatedData?.data || [];
     }
-    console.log('📊 Items from API:', items.length, 'used items:', usedItemIds.size);
+    console.log('📊 Items from API:', items.length);
     if (items.length > 0) {
       console.log('📊 Sample item:', items[0]);
     }
-    // Filter out items that are already in the grid
-    const filtered = items.filter(item => !usedItemIds.has(item.id));
-    console.log('📊 Available items after filtering:', filtered.length);
-    return filtered;
-  }, [enableInfiniteScroll, infiniteQuery.data, paginatedData, usedItemIds]);
+    return items;
+  }, [enableInfiniteScroll, infiniteQuery.data, paginatedData]);
+
+  // Use the derived-state hook for Collection-Grid relationship
+  // This makes the relationship first-class: VisibleItems = AllItems - GridPlacedItems
+  const {
+    visibleItems: allItems,
+    placedItemIds,
+    placementStats,
+    isItemPlaced,
+  } = useVisibleCollectionItems({
+    items: rawItems,
+    maxGridSize: pageSize, // Use page size as proxy for grid size
+  });
+
+  console.log('📊 Available items after placement filtering:', allItems.length, 'placed:', placementStats.placedCount);
 
   // Client-side filtering by selected groups and sorting
   const filteredItems = useMemo(() => {
@@ -323,47 +333,10 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
     return groupsData.filter(g => selectedGroupIds.has(g.id));
   }, [groupsData, selectedGroupIds]);
 
-  // Easter egg detection: Check if search term matches a keyword
-  useEffect(() => {
-    const searchLower = searchTerm.toLowerCase().trim();
+  // Easter egg spotlight effect - highlights random item when magic keywords are searched
+  const { spotlightItemId } = useEasterEggSpotlight(searchTerm, filteredItems);
 
-    // Check if the search term matches any easter egg keyword
-    const isEasterEgg = EASTER_EGG_KEYWORDS.some(keyword =>
-      searchLower === keyword
-    );
-
-    if (isEasterEgg && filteredItems.length > 0) {
-      // Clear any existing timeout
-      if (spotlightTimeoutRef.current) {
-        clearTimeout(spotlightTimeoutRef.current);
-      }
-
-      // Select a random item from the filtered items
-      const randomIndex = Math.floor(Math.random() * filteredItems.length);
-      const randomItem = filteredItems[randomIndex];
-      setSpotlightItemId(randomItem.id);
-
-      // Clear the spotlight after the duration
-      spotlightTimeoutRef.current = setTimeout(() => {
-        setSpotlightItemId(null);
-      }, SPOTLIGHT_DURATION);
-    } else if (!isEasterEgg && spotlightItemId) {
-      // Clear spotlight if search term changes away from easter egg
-      if (spotlightTimeoutRef.current) {
-        clearTimeout(spotlightTimeoutRef.current);
-      }
-      setSpotlightItemId(null);
-    }
-
-    // Cleanup on unmount
-    return () => {
-      if (spotlightTimeoutRef.current) {
-        clearTimeout(spotlightTimeoutRef.current);
-      }
-    };
-  }, [searchTerm, filteredItems, spotlightItemId]);
-
-  // Calculate statistics
+  // Calculate statistics with first-class placement state
   const stats: CollectionStats = useMemo(() => {
     const totalItems = groupsData.reduce((sum, g) => sum + (g.item_count || 0), 0);
     const selectedItems = selectedGroups.reduce((sum, g) => sum + (g.item_count || 0), 0);
@@ -374,8 +347,11 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
       ? rankedItems.reduce((sum, item) => sum + (item.ranking || 0), 0) / rankedItems.length
       : undefined;
 
-    // Count of items hidden because they are in the grid
-    const hiddenInGridCount = usedItemIds.size;
+    // Derive placement state from the dedicated hook
+    const hiddenInGridCount = placementStats.placedCount;
+
+    // Calculate curator level based on placed items (gamification)
+    const { curatorLevel, itemsToNextLevel } = calculateCuratorLevel(placementStats.placedCount);
 
     return {
       totalItems,
@@ -384,9 +360,15 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
       totalGroups: groupsData.length,
       averageRanking,
       rankedItems: rankedItems.length,
-      hiddenInGridCount
+      curatorLevel,
+      itemsToNextLevel,
+      hiddenInGridCount,
+      // First-class derived placement state
+      placedCount: placementStats.placedCount,
+      remainingToRank: placementStats.remainingCount,
+      completionPercentage: placementStats.completionPercentage,
     };
-  }, [groupsData, selectedGroups, filteredItems, usedItemIds]);
+  }, [groupsData, selectedGroups, filteredItems, placementStats]);
 
   // Filter actions
   const toggleGroup = useCallback((groupId: string) => {
@@ -560,6 +542,10 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
     filteredItems,
     selectedGroups,
     stats,
+
+    // Derived placement state (first-class relationship with Grid)
+    placementStats,
+    isItemPlaced,
 
     // Loading states
     isLoading: isLoadingGroups || isLoadingItems || (enableInfiniteScroll && infiniteQuery.isLoading),

@@ -25,6 +25,9 @@ interface CoalescerStats {
   activeBatches: number;
   averageSubscribers: number;
   cacheHits: number;
+  totalLatency: number;
+  requestCount: number;
+  avgLatency: number;
 }
 
 export interface CoalescerConfig {
@@ -61,6 +64,9 @@ export class RequestCoalescer<T = any> {
     activeBatches: 0,
     averageSubscribers: 0,
     cacheHits: 0,
+    totalLatency: 0,
+    requestCount: 0,
+    avgLatency: 0,
   };
 
   private config: Required<CoalescerConfig>;
@@ -141,6 +147,11 @@ export class RequestCoalescer<T = any> {
           (this.stats.averageSubscribers * (this.stats.totalRequests - totalSubs) + totalSubs * totalSubs) /
           this.stats.totalRequests;
 
+        // Track latency metrics
+        this.stats.totalLatency += duration;
+        this.stats.requestCount++;
+        this.stats.avgLatency = this.stats.totalLatency / this.stats.requestCount;
+
         this.log(
           `✅ Request completed for key: ${key} in ${duration.toFixed(2)}ms ` +
           `(${totalSubs} subscriber${totalSubs > 1 ? 's' : ''})`
@@ -191,6 +202,9 @@ export class RequestCoalescer<T = any> {
       activeBatches: this.pendingRequests.size,
       averageSubscribers: 0,
       cacheHits: 0,
+      totalLatency: 0,
+      requestCount: 0,
+      avgLatency: 0,
     };
     this.log(`📊 Stats reset`);
   }

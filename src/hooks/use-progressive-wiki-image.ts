@@ -5,7 +5,7 @@
  * Integrates with wiki-image-store for caching.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useWikiImageStore } from "@/stores/wiki-image-store";
 
 // Default fetch delay to avoid rate limiting
@@ -57,67 +57,66 @@ export function useProgressiveWikiImage({
   autoFetch = true,
   fetchDelay = DEFAULT_FETCH_DELAY_MS,
 }: UseProgressiveWikiImageOptions): UseProgressiveWikiImageResult {
-  const wikiStore = useWikiImageStore();
+  // Use individual selectors to get stable references
+  const getImage = useWikiImageStore((state) => state.getImage);
+  const isFetchingStore = useWikiImageStore((state) => state.isFetching);
+  const hasFailedStore = useWikiImageStore((state) => state.hasFailed);
+  const fetchImage = useWikiImageStore((state) => state.fetchImage);
+
   const [isFetching, setIsFetching] = useState(false);
+  const hasFetchedRef = useRef(false);
 
   // Get cached image
-  const cachedImage = wikiStore.getImage(itemTitle);
-  const hasFailed = wikiStore.hasFailed(itemTitle);
+  const cachedImage = getImage(itemTitle);
+  const hasFailed = hasFailedStore(itemTitle);
+  const isStoreFetching = isFetchingStore(itemTitle);
 
   // Final image URL (priority: existing > cached > null)
   const imageUrl = existingImage || cachedImage || null;
 
-  // Helper to check if fetch should be skipped
-  const shouldSkipFetch = (): boolean => {
-    const hasNoAutoFetch = !autoFetch;
-    const hasExistingImage = !!existingImage;
-    const hasCachedImage = !!cachedImage;
-    const hasPreviouslyFailed = hasFailed;
-    const isCurrentlyFetching = wikiStore.isFetching(itemTitle);
-    const hasInvalidTitle = !itemTitle || itemTitle.trim().length === 0;
-
-    return hasNoAutoFetch || hasExistingImage || hasCachedImage ||
-           hasPreviouslyFailed || isCurrentlyFetching || hasInvalidTitle;
-  };
-
   // Auto-fetch if no image exists
   useEffect(() => {
-    if (shouldSkipFetch()) return;
+    // Skip conditions
+    if (!autoFetch) return;
+    if (existingImage) return;
+    if (cachedImage) return;
+    if (hasFailed) return;
+    if (isStoreFetching) return;
+    if (!itemTitle || itemTitle.trim().length === 0) return;
+    if (hasFetchedRef.current) return;
+
+    // Mark as fetched to prevent re-triggering
+    hasFetchedRef.current = true;
 
     // Delay fetch to avoid rate limiting on initial render
     const timeoutId = setTimeout(() => {
       setIsFetching(true);
-      wikiStore
-        .fetchImage(itemTitle)
-        .finally(() => setIsFetching(false));
+      fetchImage(itemTitle).finally(() => setIsFetching(false));
     }, fetchDelay);
 
     return () => clearTimeout(timeoutId);
-  }, [
-    autoFetch,
-    itemTitle,
-    existingImage,
-    cachedImage,
-    hasFailed,
-    wikiStore,
-    fetchDelay,
-  ]);
+  }, [autoFetch, itemTitle, existingImage, cachedImage, hasFailed, isStoreFetching, fetchImage, fetchDelay]);
+
+  // Reset hasFetchedRef when itemTitle changes
+  useEffect(() => {
+    hasFetchedRef.current = false;
+  }, [itemTitle]);
 
   // Manual refetch
-  const refetch = async () => {
-    if (wikiStore.isFetching(itemTitle)) return;
+  const refetch = useCallback(async () => {
+    if (isFetchingStore(itemTitle)) return;
 
     setIsFetching(true);
     try {
-      await wikiStore.fetchImage(itemTitle);
+      await fetchImage(itemTitle);
     } finally {
       setIsFetching(false);
     }
-  };
+  }, [itemTitle, isFetchingStore, fetchImage]);
 
   return {
     imageUrl,
-    isFetching: isFetching || wikiStore.isFetching(itemTitle),
+    isFetching: isFetching || isStoreFetching,
     hasFailed,
     refetch,
   };

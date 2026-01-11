@@ -8,7 +8,8 @@ import {
   CloneListRequest,
   SearchListsParams,
   VersionComparison,
-  ListCreationResponse, // Import the new type
+  ListCreationResponse,
+  FeaturedListsResponse,
 } from '@/types/top-lists';
 
 const LISTS_ENDPOINT = '/lists';
@@ -90,5 +91,15 @@ export const topListsApi = {
       category,
       subcategory,
     });
+  },
+
+  // Get featured lists - consolidated endpoint returning popular, trending, latest, and awards
+  getFeaturedLists: async (params?: {
+    popular_limit?: number;
+    trending_limit?: number;
+    latest_limit?: number;
+    awards_limit?: number;
+  }): Promise<FeaturedListsResponse> => {
+    return apiClient.get<FeaturedListsResponse>(`${LISTS_ENDPOINT}/featured`, params);
   },
 };

@@ -23,8 +23,9 @@ export function ComparisonHeader({
   ] as const;
 
   return (
-    <div 
+    <div
       className="px-6 py-4 border-b flex items-center justify-between"
+      data-testid="comparison-header"
       style={{
         borderColor: 'rgba(71, 85, 105, 0.4)',
         background: `
@@ -60,7 +61,7 @@ export function ComparisonHeader({
 
       <div className="flex items-center gap-4">
         {/* View Mode Toggle */}
-        <div className="flex bg-slate-800/50 rounded-lg p-1">
+        <div className="flex bg-slate-800/50 rounded-lg p-1" data-testid="comparison-view-mode-toggle">
           {viewModes.map((mode) => (
             <button
               key={mode.id}
@@ -70,6 +71,7 @@ export function ComparisonHeader({
                   ? 'bg-blue-600 text-white shadow-lg'
                   : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
               }`}
+              data-testid={`comparison-view-mode-${mode.id}-btn`}
             >
               <mode.icon className="w-4 h-4" />
               <span className="hidden sm:inline">{mode.label}</span>
@@ -81,6 +83,7 @@ export function ComparisonHeader({
         <button
           onClick={onClose}
           className="p-2 rounded-lg transition-colors hover:bg-slate-700/50"
+          data-testid="comparison-close-btn"
         >
           <X className="w-5 h-5 text-slate-400" />
         </button>

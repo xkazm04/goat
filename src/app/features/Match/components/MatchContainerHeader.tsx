@@ -1,7 +1,6 @@
 import ProgressMain from "@/components/app/ProgressMain";
 import { useCurrentList } from "@/stores/use-list-store";
 import { useComparisonStore } from "@/stores/comparison-store";
-import { useMatchStore } from "@/stores/match-store";
 import { useGridStore } from "@/stores/grid-store";
 import { motion } from "framer-motion";
 import { useMemo, useState } from "react";
@@ -15,7 +14,6 @@ type Props = {
 const MatchContainerHeader = ({ setIsComparisonModalOpen }: Props) => {
     const currentList = useCurrentList();
     const { items: compareList, openComparison } = useComparisonStore();
-    const { showResultShareModal, setShowResultShareModal } = useMatchStore();
     const { gridItems } = useGridStore();
     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
     
@@ -104,6 +102,7 @@ const MatchContainerHeader = ({ setIsComparisonModalOpen }: Props) => {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             className="mb-8"
+            data-testid="match-container-header"
         >
             <div className="flex flex-row justify-between items-start gap-4 mb-4">
                 <div className="flex-1">
@@ -130,6 +129,7 @@ const MatchContainerHeader = ({ setIsComparisonModalOpen }: Props) => {
                                 ? '0 4px 15px rgba(59, 130, 246, 0.3)'
                                 : 'none'
                         }}
+                        data-testid="bench-btn"
                     >
                         <span className="text-sm">Bench</span>
                         {compareList.length > 0 && (
@@ -137,6 +137,7 @@ const MatchContainerHeader = ({ setIsComparisonModalOpen }: Props) => {
                                 initial={{ scale: 0 }}
                                 animate={{ scale: 1 }}
                                 className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold"
+                                data-testid="bench-count-badge"
                             >
                                 {compareList.length}
                             </motion.div>
@@ -154,6 +155,7 @@ const MatchContainerHeader = ({ setIsComparisonModalOpen }: Props) => {
                             style={{
                                 boxShadow: '0 4px 15px rgba(79, 70, 229, 0.4)'
                             }}
+                            data-testid="share-btn"
                         >
                             <Share2 className="w-4 h-4" />
                             <span className="text-sm">Share</span>
@@ -161,6 +163,7 @@ const MatchContainerHeader = ({ setIsComparisonModalOpen }: Props) => {
                                 initial={{ scale: 0 }}
                                 animate={{ scale: 1 }}
                                 className="absolute -top-2 -right-2 bg-yellow-400 text-gray-900 text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold"
+                                data-testid="share-count-badge"
                             >
                                 {matchedCount}
                             </motion.div>
@@ -176,12 +179,18 @@ const MatchContainerHeader = ({ setIsComparisonModalOpen }: Props) => {
             />
 
             {/* Result Image Generator Modal */}
-            {listMetadata && (
+            {/* Discriminated union: when isOpen=true, gridItems and listMetadata are required */}
+            {isShareModalOpen && listMetadata ? (
                 <ResultImageGenerator
-                    isOpen={isShareModalOpen}
+                    isOpen={true}
                     onClose={handleCloseShareModal}
                     gridItems={gridItems}
                     listMetadata={listMetadata}
+                />
+            ) : (
+                <ResultImageGenerator
+                    isOpen={false}
+                    onClose={handleCloseShareModal}
                 />
             )}
         </motion.div>

@@ -3,6 +3,8 @@
 import { motion } from "framer-motion";
 import { ChevronDown, Layers, LayoutGrid, List } from "lucide-react";
 import { ConsensusToggle } from "./ConsensusToggle";
+import { CollectionSearch } from "./CollectionSearch";
+import { InventorySortControl } from "./InventorySortControl";
 
 export type GroupViewMode = 'sidebar' | 'horizontal';
 
@@ -13,6 +15,9 @@ interface CollectionHeaderProps {
   groupViewMode: GroupViewMode;
   onGroupViewModeChange: (mode: GroupViewMode) => void;
   category?: string;
+  searchQuery?: string;
+  onSearchChange?: (query: string) => void;
+  filteredItemCount?: number;
 }
 
 /**
@@ -26,6 +31,9 @@ export function CollectionHeader({
   onTogglePanel,
   groupViewMode,
   onGroupViewModeChange,
+  searchQuery = "",
+  onSearchChange,
+  filteredItemCount,
 }: CollectionHeaderProps) {
   return (
     <motion.div
@@ -44,9 +52,29 @@ export function CollectionHeader({
         </div>
         <div className="h-4 w-[1px] bg-white/10 dark:bg-white/5" />
         <span className="text-xs text-gray-400 dark:text-gray-500 font-mono">{totalItems} ITEMS AVAILABLE</span>
+
+        {/* Search Filter */}
+        {onSearchChange && (
+          <>
+            <div className="h-4 w-[1px] bg-white/10 dark:bg-white/5" />
+            <CollectionSearch
+              value={searchQuery}
+              onChange={onSearchChange}
+              resultCount={filteredItemCount ?? totalItems}
+              totalCount={totalItems}
+              placeholder="Search items..."
+            />
+          </>
+        )}
       </div>
 
       <div className="flex items-center gap-3">
+        {/* Inventory Sort Control - enables sorting by consensus ranking */}
+        <InventorySortControl />
+
+        {/* Separator */}
+        <div className="h-5 w-[1px] bg-white/10 dark:bg-white/5" />
+
         {/* Consensus Discovery Toggle */}
         <ConsensusToggle compact />
 

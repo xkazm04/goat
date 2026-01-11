@@ -90,3 +90,8 @@ export function useIsSmallScreen() {
 export function useIsMediumScreen() {
   return useMediaQuery('(max-width: 1024px)');
 }
+
+/** Returns true on touch devices (coarse pointer like touchscreens) */
+export function useIsTouchDevice() {
+  return useMediaQuery('(pointer: coarse)');
+}

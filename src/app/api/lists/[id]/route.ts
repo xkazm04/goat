@@ -46,34 +46,39 @@ export async function GET(
           item_id,
           items (
             id,
-            title,
+            name,
             description,
             image_url,
             category,
             subcategory,
-            tags,
-            ranking,
-            metadata
+            group_id,
+            item_year
           )
         `)
         .eq('list_id', id)
         .order('ranking', { ascending: true });
 
       if (itemsError) {
-        console.error('Error fetching items:', itemsError);
-      } else {
-        // Transform the response to flatten the items structure
-        const items = (listItems || []).map((li: any) => ({
-          ...li.items,
-          position: li.ranking,
-        }));
-
-        return NextResponse.json({
-          ...list,
-          items,
-          total_items: items.length,
-        });
+        console.error('Error fetching items for list:', id, itemsError);
+        return NextResponse.json(
+          { error: 'Failed to fetch list items', details: itemsError.message },
+          { status: 500 }
+        );
       }
+
+      // Transform the response to flatten the items structure
+      // Map 'name' to 'title' for backwards compatibility with frontend
+      const items = (listItems || []).map((li: any) => ({
+        ...li.items,
+        title: li.items?.name, // Map name to title for frontend compatibility
+        position: li.ranking,
+      }));
+
+      return NextResponse.json({
+        ...list,
+        items,
+        total_items: items.length,
+      });
     }
 
     return NextResponse.json(list);

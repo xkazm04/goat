@@ -12,18 +12,14 @@ Collection/
 │   ├── CollectionPanel.tsx           # Main panel component (fixed bottom)
 │   ├── CollectionItem.tsx            # Draggable item component
 │   ├── CollectionToolbar.tsx         # Unified toolbar (header + search + categories)
-│   ├── CategoryBar.tsx               # Thin horizontal category bar (standalone)
 │   ├── CollectionHeader.tsx          # Panel header with controls (standalone)
-│   ├── CollectionSearch.tsx          # Search input component (standalone)
 │   ├── CollectionStats.tsx           # Statistics display
 │   ├── LazyLoadTrigger.tsx           # Intersection observer trigger
-│   ├── VirtualizedCollectionList.tsx # Virtual scrolling component
+│   ├── VirtualizedGrid.tsx           # Virtual scrolling grid component
 │   └── AddItemModal.tsx              # Add item modal dialog
 │
 ├── hooks/                            # Custom React hooks
-│   ├── useCollection.ts              # Unified data fetching & mutations
-│   ├── useCollectionFilters.ts       # Filtering and selection logic
-│   ├── useCollectionStats.ts         # Statistics calculation
+│   ├── useCollection.ts              # Unified data fetching, filtering, stats & mutations
 │   ├── useCollectionLazyLoad.ts      # Lazy loading pagination
 │   └── useIntersectionObserver.ts    # Viewport detection
 │
@@ -45,11 +41,13 @@ Collection/
 - Backdrop blur for modern look
 - Proper z-index layering
 
-### 2. Category Bar (Top Bar)
-- Replaces sidebar with thin horizontal bar
-- Scrollable category pills/chips
-- Visual selection indicators
+### 2. Category Bar (Integrated in CollectionToolbar)
+- Thin horizontal bar integrated into CollectionToolbar
+- Scrollable category pills/chips with animated entrance
+- Visual selection indicators with highlight effects
 - Item count badges
+- Staggered entrance animation on initial load
+- Layout animations for reordering
 
 ### 3. Dynamic Lazy Loading System ⚡
 - **Three rendering strategies** based on collection size:
@@ -84,13 +82,11 @@ Collection/
 - Provides consistent spacing and theming
 - Configurable sections (can hide category bar or search)
 - Reduces navigation depth and simplifies styling
-
-### CategoryBar (Standalone)
-- Displays groups as horizontal pills
-- Handles group selection
-- Shows item counts
-- Scrollable for many groups
-- Can be used independently or within CollectionToolbar
+- **Integrated category bar** with:
+  - AnimatePresence for smooth transitions
+  - Staggered entrance animation on initial load
+  - Highlight pulse effect when groups are reordered
+  - Layout animations for position changes
 
 ### CollectionItem
 - Draggable item component
@@ -105,20 +101,13 @@ Collection/
 - Select all/clear buttons
 - Can be used independently or within CollectionToolbar
 
-### CollectionSearch (Standalone)
-- Search input with icon
-- Clear button when typing
-- Focus states
-- Debounced input (can be added)
-- Can be used independently or within CollectionToolbar
-
 ### LazyLoadTrigger
 - Invisible trigger element at list bottom
 - Uses Intersection Observer API
 - Triggers `loadMore` callback when visible
 - Shows loading spinner and progress
 
-### VirtualizedCollectionList
+### VirtualizedGrid
 - Virtual scrolling for large collections
 - Only renders visible items + overscan
 - Calculates viewport and positions items
@@ -144,13 +133,13 @@ CollectionPanel (receives data)
 Determines rendering strategy:
     - Small: Render all items
     - Medium: useCollectionLazyLoad → LazyLoadTrigger
-    - Large: VirtualizedCollectionList
+    - Large: VirtualizedGrid
     ↓
-useCollectionFilters (filters & selects)
+useCollection (unified filtering, stats & data)
     ↓
 CollectionFiltersContext (provides to children)
     ↓
-CategoryBar + CollectionSearch + CollectionItem (consume & display)
+CollectionToolbar + CollectionItem (consume & display)
 ```
 
 ## ⚡ Lazy Loading Flow

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
-import { SimpleCollectionItem } from "./SimpleCollectionItem";
+import { ConfigurableCollectionItem, MATCH_VIEW_CONFIG } from "./components/ConfigurableCollectionItem";
 import { useCurrentList } from "@/stores/use-list-store";
 import { useBacklogStore } from "@/stores/backlog-store";
 import { CollectionGroup } from "./types";
@@ -260,11 +260,14 @@ export function SimpleCollectionPanel({ groups: rawGroups }: SimpleCollectionPan
                     {/* Items grid */}
                     {items.length > 0 ? (
                       <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-2">
-                        {items.map(item => (
-                          <SimpleCollectionItem
+                        {items.map((item, index) => (
+                          <ConfigurableCollectionItem
                             key={item.id}
                             item={item}
                             groupId={group.id}
+                            viewMode="grid"
+                            index={index}
+                            config={MATCH_VIEW_CONFIG}
                           />
                         ))}
                       </div>

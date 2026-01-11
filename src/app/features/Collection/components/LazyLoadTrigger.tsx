@@ -1,13 +1,17 @@
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useIntersectionObserver } from '../hooks/useIntersectionObserver';
 import { LAZY_LOAD_CONFIG } from '../constants/lazyLoadConfig';
 
 interface LazyLoadTriggerProps {
   /**
-   * Callback when trigger becomes visible
+   * Callback when trigger becomes visible.
+   *
+   * Note: This callback is stored in a ref internally to prevent infinite loops
+   * if the parent component passes a non-memoized function. However, for best
+   * performance, it's recommended to wrap this callback in useCallback.
    */
   onVisible: () => void;
 
@@ -66,12 +70,19 @@ export function LazyLoadTrigger({
     enabled: enabled && !isLoading
   });
 
+  // Store callback in ref to prevent infinite loops from non-memoized callbacks
+  // This ensures the useEffect doesn't re-run when parent re-renders with new callback reference
+  const onVisibleRef = useRef(onVisible);
+  useEffect(() => {
+    onVisibleRef.current = onVisible;
+  });
+
   // Trigger load when intersecting
   useEffect(() => {
     if (isIntersecting && enabled && !isLoading) {
-      onVisible();
+      onVisibleRef.current();
     }
-  }, [isIntersecting, enabled, isLoading, onVisible]);
+  }, [isIntersecting, enabled, isLoading]);
 
   if (!enabled) return null;
 

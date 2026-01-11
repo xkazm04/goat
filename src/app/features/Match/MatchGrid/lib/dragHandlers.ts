@@ -1,5 +1,12 @@
 import { DragEndEvent, DragStartEvent, DragMoveEvent } from '@dnd-kit/core';
 import { BacklogItem } from '@/types/backlog-groups';
+import {
+  TransferableItem,
+  TransferSource,
+  toTransferableItem,
+  isGridReceiverId,
+  extractGridPosition,
+} from '@/lib/dnd';
 
 /**
  * Create drag start handler
@@ -59,6 +66,53 @@ export const createDragEndHandler = (
     setActiveItem(null);
   };
 };
+
+/**
+ * Classify drag operation type based on source and target IDs
+ * Uses TransferProtocol utilities for consistent ID parsing
+ */
+export type DragOperationType = 'grid-to-grid' | 'backlog-to-grid' | 'collection-reorder' | 'unknown';
+
+export function classifyDragOperation(activeId: string, overId: string): DragOperationType {
+  const isActiveGrid = isGridReceiverId(activeId);
+  const isOverGrid = isGridReceiverId(overId);
+
+  if (isActiveGrid && isOverGrid) {
+    return 'grid-to-grid';
+  }
+
+  if (!isActiveGrid && isOverGrid) {
+    return 'backlog-to-grid';
+  }
+
+  // Future: Add collection-reorder classification
+  return 'unknown';
+}
+
+/**
+ * Extract transfer metadata from a drag end event
+ */
+export function extractTransferMetadata(event: DragEndEvent): {
+  activeId: string;
+  overId: string | null;
+  operationType: DragOperationType;
+  fromPosition: number | null;
+  toPosition: number | null;
+} {
+  const activeId = String(event.active.id);
+  const overId = event.over ? String(event.over.id) : null;
+  const operationType = overId ? classifyDragOperation(activeId, overId) : 'unknown';
+  const fromPosition = extractGridPosition(activeId);
+  const toPosition = overId ? extractGridPosition(overId) : null;
+
+  return {
+    activeId,
+    overId,
+    operationType,
+    fromPosition,
+    toPosition,
+  };
+}
 
 /**
  * Find active backlog item from groups

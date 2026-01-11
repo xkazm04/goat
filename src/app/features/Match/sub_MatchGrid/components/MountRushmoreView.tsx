@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Mountain } from 'lucide-react';
 import { SimpleDropZone } from '../../sub_MatchCollections/SimpleDropZone';
 import { GridItemType } from '@/types/match';
+import { PositionBadge } from '../../components/PositionBadge';
 
 interface MountRushmoreViewProps {
     gridItems: (GridItemType | null)[];
@@ -45,11 +46,9 @@ export function MountRushmoreView({ gridItems, onRemove, getItemTitle }: MountRu
                             transition={{ delay: idx * 0.1, type: "spring", bounce: 0.3 }}
                             className="relative aspect-square"
                         >
-                            {/* Position label */}
+                            {/* Position label - Tier-based visual hierarchy */}
                             <div className="absolute -top-8 left-1/2 -translate-x-1/2 z-20">
-                                <div className="px-3 py-1 bg-slate-800/80 rounded-full border border-slate-600/50 backdrop-blur-sm">
-                                    <span className="text-xs font-bold text-slate-300">#{position + 1}</span>
-                                </div>
+                                <PositionBadge position={position} />
                             </div>
 
                             {/* Stone frame effect */}

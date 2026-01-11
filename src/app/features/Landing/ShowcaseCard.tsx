@@ -1,43 +1,20 @@
 "use client";
 
+import { memo, useCallback } from "react";
 import { motion } from "framer-motion";
 import { getSubcategoryIcon, getSubcategoryBackground } from "@/lib/helpers/getIcons";
 import { CardHeader } from "./components/CardHeader";
 import { CardFooter } from "./components/CardFooter";
 import { cardVariants } from "./shared/animations";
 import { use3DTilt } from "@/hooks/use-3d-tilt";
+import type { ShowcaseCardData, CardClickHandler } from "./types";
 
-interface ShowcaseCardProps {
+interface ShowcaseCardProps extends ShowcaseCardData {
   id: number;
-  category: string;
-  subcategory?: string;
-  title: string;
-  author: string;
-  comment: string;
-  color: {
-    primary: string;
-    secondary: string;
-    accent: string;
-  };
-  timePeriod: "all-time" | "decade" | "year";
-  hiearchy: string;
-  onCardClick?: (cardData: {
-    category: string;
-    subcategory?: string;
-    timePeriod: "all-time" | "decade" | "year";
-    hierarchy: string;
-    title: string;
-    author: string;
-    comment: string;
-    color: {
-      primary: string;
-      secondary: string;
-      accent: string;
-    };
-  }) => void;
+  onCardClick?: CardClickHandler;
 }
 
-export function ShowcaseCard({
+export const ShowcaseCard = memo(function ShowcaseCard({
   category,
   subcategory,
   title,
@@ -45,7 +22,7 @@ export function ShowcaseCard({
   comment,
   color,
   timePeriod,
-  hiearchy,
+  hierarchy,
   onCardClick,
 }: ShowcaseCardProps) {
   const { ref, style: tiltStyle, handlers } = use3DTilt({
@@ -55,18 +32,18 @@ export function ShowcaseCard({
     scale: 1.03,
   });
 
-  const handleClick = () => {
+  const handleClick = useCallback(() => {
     onCardClick?.({
       category,
       subcategory,
       timePeriod,
-      hierarchy: hiearchy,
+      hierarchy,
       title,
       author,
       comment,
       color,
     });
-  };
+  }, [onCardClick, category, subcategory, timePeriod, hierarchy, title, author, comment, color]);
 
   return (
     <motion.div
@@ -190,6 +167,89 @@ export function ShowcaseCard({
           `,
         }}
       />
+
+      {/* Hover CTA - Click to start indicator */}
+      <motion.div
+        className="absolute bottom-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none z-30"
+        initial={false}
+        data-testid={`showcase-card-cta-${category.toLowerCase()}`}
+      >
+        <motion.div
+          className="px-4 py-2 rounded-xl font-semibold text-white text-sm backdrop-blur-sm flex items-center gap-2"
+          style={{
+            background: `linear-gradient(135deg, ${color.primary}90, ${color.secondary}90)`,
+            boxShadow: `0 4px 20px ${color.primary}40`,
+          }}
+          animate={{
+            scale: [1, 1.02, 1],
+          }}
+          transition={{
+            duration: 1.5,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        >
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"
+            />
+          </svg>
+          Click to start
+        </motion.div>
+      </motion.div>
+
+      {/* Pulsing indicator for first card (prominent card) */}
+      <motion.div
+        className="absolute top-4 right-4 pointer-events-none z-30"
+        data-testid={`showcase-card-pulse-${category.toLowerCase()}`}
+      >
+        <motion.div
+          className="relative"
+          animate={{
+            scale: [1, 1.1, 1],
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        >
+          {/* Outer pulse ring */}
+          <motion.div
+            className="absolute inset-0 rounded-full"
+            style={{
+              background: `${color.primary}40`,
+              width: 12,
+              height: 12,
+            }}
+            animate={{
+              scale: [1, 2, 1],
+              opacity: [0.6, 0, 0.6],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: "easeOut",
+            }}
+          />
+          {/* Inner dot */}
+          <div
+            className="w-3 h-3 rounded-full"
+            style={{
+              background: `linear-gradient(135deg, ${color.primary}, ${color.secondary})`,
+              boxShadow: `0 0 10px ${color.primary}60`,
+            }}
+          />
+        </motion.div>
+      </motion.div>
     </motion.div>
   );
-}
+});

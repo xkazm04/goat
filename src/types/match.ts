@@ -59,7 +59,7 @@ export interface MatchSession {
   backlogGroups: BacklogGroupType[];
   selectedBacklogItem: string | null;
   selectedGridItem: string | null;
-  compareList: BacklogItemType[];
+  compareList: BacklogItemType[]; // Legacy field - kept for session compatibility, always empty
   createdAt: string;
   updatedAt: string;
   progress: {

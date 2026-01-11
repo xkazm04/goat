@@ -4,28 +4,30 @@ import { motion } from "framer-motion";
 import { CollectionGroup } from "@/app/features/Collection/types";
 
 interface CollectionHorizontalBarProps {
+  /** Pre-filtered groups (used items already removed by parent) */
   groups: CollectionGroup[];
+  /** Pre-calculated available counts per group ID (from parent's centralized filtering) */
+  groupAvailableCounts: Record<string, number>;
   activeTab: string | 'all';
   onTabChange: (tabId: string | 'all') => void;
   totalItemCount: number;
 }
 
 /**
- * Horizontal bar view for collection group navigation
- * Groups wrap into multiple rows if needed
- * Shows count of available (non-used) items
+ * Horizontal bar view for collection group navigation.
+ * Groups wrap into multiple rows if needed.
+ * Shows count of available (non-used) items.
+ *
+ * NOTE: Receives pre-filtered groups and pre-calculated counts from SimpleCollectionPanel.
+ * This component does NOT filter items itself - filtering is centralized in the parent.
  */
 export function CollectionHorizontalBar({
   groups,
+  groupAvailableCounts,
   activeTab,
   onTabChange,
   totalItemCount,
 }: CollectionHorizontalBarProps) {
-  // Calculate available items per group (filtering out used items)
-  const getAvailableCount = (group: CollectionGroup) => {
-    return (group.items || []).filter(item => !item.used).length;
-  };
-
   return (
     <motion.div
       initial={{ opacity: 0, y: -10 }}
@@ -59,11 +61,12 @@ export function CollectionHorizontalBar({
 
         {/* Group Chips - only show groups with available items */}
         {groups.map((group, index) => {
-          const availableCount = getAvailableCount(group);
-          
+          // Use pre-calculated count from parent (no re-filtering)
+          const availableCount = groupAvailableCounts[group.id] ?? 0;
+
           // Hide groups with no available items
           if (availableCount === 0) return null;
-          
+
           return (
             <motion.button
               key={group.id}

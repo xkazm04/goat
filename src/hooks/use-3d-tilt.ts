@@ -14,6 +14,8 @@ interface Use3DTiltOptions {
   perspective?: number;
   /** Scale on hover (default: 1.02) */
   scale?: number;
+  /** Disable the tilt effect entirely (default: false) */
+  disabled?: boolean;
 }
 
 interface Use3DTiltReturn {
@@ -47,6 +49,7 @@ export function use3DTilt(options: Use3DTiltOptions = {}): Use3DTiltReturn {
     damping = 30,
     perspective = 1000,
     scale: hoverScale = 1.02,
+    disabled = false,
   } = options;
 
   const ref = useRef<HTMLDivElement>(null);
@@ -56,22 +59,26 @@ export function use3DTilt(options: Use3DTiltOptions = {}): Use3DTiltReturn {
   const mouseY = useMotionValue(0);
   const isHovered = useMotionValue(0);
 
+  // When disabled, use 0 rotation and scale of 1
+  const effectiveMaxRotation = disabled ? 0 : maxRotation;
+  const effectiveHoverScale = disabled ? 1 : hoverScale;
+
   // Spring configuration for smooth micro-ease transitions
   const springConfig = { stiffness, damping, mass: 0.5 };
 
-  // Spring-animated rotation values
+  // Spring-animated rotation values (use effective values that respect disabled state)
   const rotateX = useSpring(
-    useTransform(mouseY, [-1, 1], [maxRotation, -maxRotation]),
+    useTransform(mouseY, [-1, 1], [effectiveMaxRotation, -effectiveMaxRotation]),
     springConfig
   );
   const rotateY = useSpring(
-    useTransform(mouseX, [-1, 1], [-maxRotation, maxRotation]),
+    useTransform(mouseX, [-1, 1], [-effectiveMaxRotation, effectiveMaxRotation]),
     springConfig
   );
 
-  // Scale animation with spring
+  // Scale animation with spring (use effective scale that respects disabled state)
   const scale = useSpring(
-    useTransform(isHovered, [0, 1], [1, hoverScale]),
+    useTransform(isHovered, [0, 1], [1, effectiveHoverScale]),
     springConfig
   );
 

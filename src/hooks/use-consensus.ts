@@ -14,6 +14,7 @@ import {
   getVolatilityBgColor,
   getConsensusBadges,
 } from '@/types/consensus';
+import { sortItemIds, type SortConfig } from '@/lib/sorting';
 
 interface UseConsensusOptions {
   category: string;
@@ -186,6 +187,7 @@ export function useItemConsensusUI(
 
 /**
  * Hook to get consensus-sorted items
+ * Uses the unified InventorySorter for consistent behavior
  */
 export function useConsensusSortedItems(itemIds: string[]): string[] {
   const consensusData = useConsensusStore((state) => state.consensusData);
@@ -196,26 +198,16 @@ export function useConsensusSortedItems(itemIds: string[]): string[] {
       return itemIds;
     }
 
-    const itemsWithConsensus = itemIds.map((id) => ({
-      id,
-      consensus: consensusData[id],
-    }));
+    // Determine sort configuration based on view mode
+    const sortConfig: SortConfig = viewMode === 'volatility'
+      ? { criteria: 'volatility', direction: 'desc', secondaryCriteria: 'alphabetical', secondaryDirection: 'asc' }
+      : { criteria: 'consensus', direction: 'asc', secondaryCriteria: 'alphabetical', secondaryDirection: 'asc' };
 
-    // Sort by median rank if we have consensus data
-    return itemsWithConsensus
-      .sort((a, b) => {
-        if (!a.consensus && !b.consensus) return 0;
-        if (!a.consensus) return 1;
-        if (!b.consensus) return -1;
-
-        if (viewMode === 'volatility') {
-          // Sort by volatility (most contested first)
-          return b.consensus.volatility - a.consensus.volatility;
-        }
-
-        // Default: sort by median rank
-        return a.consensus.medianRank - b.consensus.medianRank;
-      })
-      .map((item) => item.id);
+    // Use unified sorter
+    return sortItemIds(
+      itemIds,
+      sortConfig,
+      (itemId) => consensusData[itemId] ?? null
+    );
   }, [itemIds, consensusData, viewMode]);
 }

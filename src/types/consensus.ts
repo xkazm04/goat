@@ -211,6 +211,15 @@ export interface ConsensusAPIResponse {
 }
 
 /**
+ * Sort configuration for inventory view (inline definition to avoid circular imports)
+ * @deprecated Use SortConfig from '@/lib/sorting' instead.
+ */
+export interface InventorySortConfig {
+  sortBy: 'default' | 'consensus' | 'average' | 'volatility' | 'confidence' | 'alphabetical' | 'recent';
+  sortOrder: 'asc' | 'desc';
+}
+
+/**
  * Consensus store state
  */
 export interface ConsensusState {
@@ -231,4 +240,7 @@ export interface ConsensusState {
 
   /** Current category filter */
   currentCategory: string | null;
+
+  /** Sort configuration for inventory view */
+  sortConfig: InventorySortConfig;
 }

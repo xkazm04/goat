@@ -161,6 +161,17 @@ body {
     transform: translateZ(0) rotate(360deg);
     }
   }
+  /* Optimistic drag preview pulse - subtle breathing effect for drop zone preview */
+  @keyframes optimistic-pulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+    }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.02);
+    }
+  }
   @keyframes spotlight-shimmer {
   0% {
     box-shadow: 0 0 20px rgba(6, 182, 212, 0.4), 0 0 40px rgba(6, 182, 212, 0.2);
@@ -232,6 +243,14 @@ body {
   }
 }
 
+/* ===== OPTIMISTIC DRAG PREVIEW STYLES ===== */
+@layer utilities {
+  .animate-optimistic-pulse {
+    animation: optimistic-pulse 1s ease-in-out infinite;
+    will-change: opacity, transform;
+  }
+}
+
 /* ===== SPOTLIGHT EASTER EGG STYLES ===== */
 @layer utilities {
   .spotlight-active {
@@ -249,5 +268,214 @@ body {
     border-radius: 0.5rem;
     z-index: -1;
     opacity: 0.6;
+  }
+}
+
+/* ===== CSS ANIMATION POOLING FOR AMBIENT EFFECTS ===== */
+/* GPU-accelerated CSS animations that run on compositor thread */
+/* These are more efficient than JS-driven Framer Motion for ambient decorative effects */
+
+@theme inline {
+  /* Floating orb animation - gentle movement for decorative backgrounds */
+  @keyframes ambient-float {
+    0%, 100% {
+      transform: translate(0, 0) scale(1);
+    }
+    50% {
+      transform: translate(var(--float-x, 30px), var(--float-y, -20px)) scale(var(--float-scale, 1.05));
+    }
+  }
+
+  /* Particle float - small vertical movement */
+  @keyframes ambient-particle {
+    0%, 100% {
+      transform: translateY(0) scale(1);
+      opacity: 0.2;
+    }
+    50% {
+      transform: translateY(-20px) scale(1.2);
+      opacity: 0.5;
+    }
+  }
+
+  /* Mesh/aurora opacity pulse */
+  @keyframes ambient-mesh {
+    0%, 100% {
+      opacity: 0.6;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+
+  /* Shimmer slide for loading states */
+  @keyframes ambient-shimmer {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+
+  /* Gentle card float */
+  @keyframes ambient-card-float {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-8px);
+    }
+  }
+}
+
+@layer utilities {
+  /* Base class for CSS-animated floating orbs */
+  .animate-ambient-float {
+    animation: ambient-float var(--float-duration, 15s) ease-in-out infinite;
+    animation-delay: var(--float-delay, 0s);
+    will-change: transform;
+  }
+
+  /* Particle animations pooled with CSS */
+  .animate-ambient-particle {
+    animation: ambient-particle var(--particle-duration, 3.5s) ease-in-out infinite;
+    animation-delay: var(--particle-delay, 0s);
+    will-change: transform, opacity;
+  }
+
+  /* Mesh/aurora pulse animation */
+  .animate-ambient-mesh {
+    animation: ambient-mesh 8s ease-in-out infinite;
+    will-change: opacity;
+  }
+
+  /* Card float animation */
+  .animate-ambient-card-float {
+    animation: ambient-card-float var(--card-float-duration, 4s) ease-in-out infinite;
+    animation-delay: var(--card-float-delay, 0s);
+    will-change: transform;
+  }
+
+  /* Shimmer animation for buttons/loaders */
+  .animate-ambient-shimmer {
+    animation: ambient-shimmer 1s linear infinite;
+    will-change: background-position;
+  }
+}
+
+/* ===== REDUCED MOTION SUPPORT ===== */
+/* Respect user preference for reduced motion */
+/* Stops ALL ambient/decorative animations while preserving essential transitions */
+@media (prefers-reduced-motion: reduce) {
+  .animate-ambient-float,
+  .animate-ambient-particle,
+  .animate-ambient-mesh,
+  .animate-ambient-card-float,
+  .animate-ambient-shimmer,
+  .animate-optimistic-pulse {
+    animation: none !important;
+  }
+
+  /* Also pause any framer-motion infinite animations when reduced motion is preferred */
+  [data-framer-motion-reducible="true"] {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ===== 3-TIER MOTION PREFERENCE SYSTEM ===== */
+/* Programmatic control over motion intensity via data attributes */
+/* Tiers: full (all animations), reduced (essential feedback only), minimal (no motion) */
+
+@layer utilities {
+  /* Full tier: All animations enabled (default) */
+  [data-motion-tier="full"] {
+    /* Full animations - no restrictions */
+  }
+
+  /* Reduced tier: Essential feedback only, no ambient decorations */
+  [data-motion-tier="reduced"] {
+    /* Disable ambient/decorative animations */
+    & .animate-ambient-float,
+    & .animate-ambient-particle,
+    & .animate-ambient-mesh,
+    & .animate-ambient-card-float {
+      animation: none !important;
+    }
+
+    /* Keep essential animations like shimmer for loading states */
+    /* Keep optimistic-pulse for drag feedback - it's essential UX */
+    /* Keep transitions for feedback */
+  }
+
+  /* Minimal tier: No motion at all - instant transitions */
+  [data-motion-tier="minimal"] {
+    /* Disable all ambient animations */
+    & .animate-ambient-float,
+    & .animate-ambient-particle,
+    & .animate-ambient-mesh,
+    & .animate-ambient-card-float,
+    & .animate-ambient-shimmer,
+    & .animate-optimistic-pulse {
+      animation: none !important;
+    }
+
+    /* Disable framer-motion animations */
+    & [data-framer-motion-reducible="true"] {
+      animation: none !important;
+      transition: none !important;
+    }
+
+    /* Make all transitions instant */
+    & * {
+      transition-duration: 0s !important;
+      animation-duration: 0s !important;
+    }
+  }
+}
+
+/* ===== ANIMATION PAUSE SUPPORT ===== */
+/* Pause animations when page is not visible or element is off-screen */
+/* Uses JavaScript hooks (useAnimationPause) to toggle these classes */
+
+@layer utilities {
+  /* Container class that pauses all child CSS animations */
+  .animations-paused {
+    /* All children with ambient animations get paused */
+    & .animate-ambient-float,
+    & .animate-ambient-particle,
+    & .animate-ambient-mesh,
+    & .animate-ambient-card-float,
+    & .animate-ambient-shimmer,
+    & .animate-optimistic-pulse {
+      animation-play-state: paused !important;
+    }
+
+    /* Pause framer-motion reducible animations */
+    & [data-framer-motion-reducible="true"] {
+      animation-play-state: paused !important;
+    }
+  }
+
+  /* Explicitly mark animations as playing (for clarity) */
+  .animations-playing {
+    & .animate-ambient-float,
+    & .animate-ambient-particle,
+    & .animate-ambient-mesh,
+    & .animate-ambient-card-float,
+    & .animate-ambient-shimmer,
+    & .animate-optimistic-pulse {
+      animation-play-state: running;
+    }
+  }
+
+  /* Direct class for individual elements */
+  .animation-paused {
+    animation-play-state: paused !important;
+  }
+
+  .animation-playing {
+    animation-play-state: running;
   }
 }

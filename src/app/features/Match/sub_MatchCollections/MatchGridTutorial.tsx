@@ -2,11 +2,132 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ArrowDown, Sparkles, CheckCircle2 } from "lucide-react";
+import { X, ArrowDown, Sparkles, Hand, MousePointerClick, CheckCircle2 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { BacklogItem } from "@/types/backlog-groups";
 import { GridItemType } from "@/types/match";
-import { DEMO_BACKLOG_ITEMS, createDemoGridItems, getRankColor } from "./tutorial/tutorialData";
-import { TUTORIAL_STEPS } from "./tutorial/tutorialSteps";
+
+// ============================================================================
+// Tutorial Data (inlined from tutorial/tutorialData.ts)
+// ============================================================================
+
+const DEMO_BACKLOG_ITEMS: BacklogItem[] = [
+  {
+    id: "demo-1",
+    name: "The Shawshank Redemption",
+    title: "The Shawshank Redemption",
+    description: "Classic prison drama",
+    category: "movies",
+    item_year: 1994,
+    image_url: undefined,
+    created_at: new Date().toISOString(),
+    tags: ["drama", "classic"],
+    used: false
+  },
+  {
+    id: "demo-2",
+    name: "The Godfather",
+    title: "The Godfather",
+    description: "Mafia masterpiece",
+    category: "movies",
+    item_year: 1972,
+    image_url: undefined,
+    created_at: new Date().toISOString(),
+    tags: ["crime", "classic"],
+    used: false
+  },
+  {
+    id: "demo-3",
+    name: "Pulp Fiction",
+    title: "Pulp Fiction",
+    description: "Tarantino's cult classic",
+    category: "movies",
+    item_year: 1994,
+    image_url: undefined,
+    created_at: new Date().toISOString(),
+    tags: ["crime", "thriller"],
+    used: false
+  }
+];
+
+function createDemoGridItems(): GridItemType[] {
+  return [
+    {
+      id: "grid-0",
+      title: "The Godfather",
+      description: "Mafia masterpiece",
+      position: 0,
+      matched: true,
+      backlogItemId: "demo-2",
+      tags: ["crime", "classic"],
+      isDragPlaceholder: false
+    },
+    {
+      id: "grid-1",
+      title: "The Shawshank Redemption",
+      description: "Classic prison drama",
+      position: 1,
+      matched: true,
+      backlogItemId: "demo-1",
+      tags: ["drama", "classic"],
+      isDragPlaceholder: false
+    }
+  ];
+}
+
+const RANK_COLORS = {
+  GOLD: '#FFD700',
+  SILVER: '#C0C0C0',
+  BRONZE: '#CD7F32',
+} as const;
+
+function getRankColor(position: number): string {
+  if (position === 0) return RANK_COLORS.GOLD;
+  if (position === 1) return RANK_COLORS.SILVER;
+  return RANK_COLORS.BRONZE;
+}
+
+// ============================================================================
+// Tutorial Steps (inlined from tutorial/tutorialSteps.ts)
+// ============================================================================
+
+interface TutorialStep {
+  title: string;
+  description: string;
+  icon: LucideIcon;
+  highlight: 'welcome' | 'drag' | 'swap' | 'complete';
+}
+
+const TUTORIAL_STEPS: TutorialStep[] = [
+  {
+    title: "Welcome to Match Grid!",
+    description: "This interactive grid helps you rank your favorite items. Let's learn how it works in just a few seconds.",
+    icon: Sparkles,
+    highlight: "welcome"
+  },
+  {
+    title: "Drag & Drop Items",
+    description: "Simply drag items from the collection panel at the bottom and drop them into any grid position to start ranking.",
+    icon: Hand,
+    highlight: "drag"
+  },
+  {
+    title: "Rearrange Positions",
+    description: "Already placed an item? You can drag it to a different position or swap it with another item anytime.",
+    icon: MousePointerClick,
+    highlight: "swap"
+  },
+  {
+    title: "You're Ready!",
+    description: "That's all you need to know. Start building your personalized rankings now!",
+    icon: CheckCircle2,
+    highlight: "complete"
+  }
+];
+
+// ============================================================================
+// Main Component
+// ============================================================================
 
 interface MatchGridTutorialProps {
   isOpen: boolean;
@@ -438,5 +559,6 @@ export function useTutorialState() {
   };
 }
 
-// Re-export tutorial steps for external use
-export { TUTORIAL_STEPS } from "./tutorial/tutorialSteps";
+// Export TUTORIAL_STEPS for external use
+export { TUTORIAL_STEPS };
+export type { TutorialStep };

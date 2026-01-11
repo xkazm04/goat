@@ -1,11 +1,16 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Volleyball, Trophy, Users } from "lucide-react";
 import { useState } from "react";
 import SetupListSize from "./SetupListSize";
 import SetupTimePeriod from "./SetupTimePeriod";
 import SetupCategory from "./SetupCategory";
+import {
+  CATEGORIES,
+  getSubcategories,
+  getDefaultSubcategory,
+  categoryHasSubcategories,
+} from "@/lib/config/category-config";
 
 interface CompositionModalLeftContentProps {
   selectedCategory: string;
@@ -29,13 +34,8 @@ interface CompositionModalLeftContentProps {
   };
 }
 
-const categories = ["Sports", "Music", "Games", "Stories"];
-
-const sportsSubcategories = [
-  { value: "Basketball", label: "Basketball", icon: Volleyball },
-  { value: "Ice-Hockey", label: "Ice Hockey", icon: Trophy },
-  { value: "Soccer", label: "Soccer", icon: Users }
-];
+// Use centralized category configuration
+const categories = CATEGORIES;
 
 const hierarchyOptions = [
   { value: "Top 10", label: "Top 10", description: "Curated essentials" },
@@ -69,11 +69,17 @@ export function CompositionModalLeftContent({
 
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category);
-    // Reset subcategory when changing main category
-    if (category === "Sports" && setSelectedSubcategory) {
-      setSelectedSubcategory("Basketball");
+    // Reset subcategory when changing main category using centralized config
+    if (categoryHasSubcategories(category) && setSelectedSubcategory) {
+      const defaultSub = getDefaultSubcategory(category);
+      if (defaultSub) {
+        setSelectedSubcategory(defaultSub);
+      }
     }
   };
+
+  // Get subcategories dynamically from config
+  const currentSubcategories = getSubcategories(selectedCategory);
 
   return (
     <div 
@@ -177,11 +183,11 @@ export function CompositionModalLeftContent({
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.3 }}
       >
-        <SetupCategory  
+        <SetupCategory
           categories={categories}
           handleCategoryChange={handleCategoryChange}
           selectedCategory={selectedCategory}
-          sportsSubcategories={sportsSubcategories}
+          subcategories={currentSubcategories}
           selectedSubcategory={selectedSubcategory}
           setSelectedSubcategory={setSelectedSubcategory}
           color={color}

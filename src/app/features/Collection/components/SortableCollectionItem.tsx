@@ -5,7 +5,9 @@ import { CSS } from '@dnd-kit/utilities';
 import { ItemCard } from '@/components/ui/item-card';
 import { CollectionItem as CollectionItemType } from '../types';
 import { useState, useCallback } from 'react';
-import { Sparkles, GripVertical } from 'lucide-react';
+import { DragHandleIndicator } from './DragHandleIndicator';
+import { FocusRingOverlay } from './FocusRingOverlay';
+import { SpotlightTooltip } from './SpotlightTooltip';
 
 interface SortableCollectionItemProps {
   item: CollectionItemType;
@@ -89,36 +91,14 @@ export function SortableCollectionItem({
       data-testid={isSpotlight ? "sortable-collection-item-spotlight" : `sortable-collection-item-${item.id}`}
     >
       {/* Easter egg tooltip */}
-      {isSpotlight && showTooltip && (
-        <div
-          className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-cyan-500 to-purple-500 text-white px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap shadow-lg z-20 flex items-center gap-1.5"
-          data-testid="spotlight-tooltip"
-          role="tooltip"
-        >
-          <Sparkles className="w-3 h-3" />
-          You found the hidden tag!
-        </div>
-      )}
+      <SpotlightTooltip visible={isSpotlight && showTooltip} />
 
       {/* Keyboard drag handle indicator - shows on focus */}
-      {showDragHandle && (
-        <div
-          className={`
-            absolute -left-1 top-1/2 -translate-y-1/2 -translate-x-full
-            flex items-center justify-center
-            w-6 h-6 rounded
-            bg-cyan-500/90 text-white
-            shadow-lg shadow-cyan-500/30
-            transition-opacity duration-150
-            ${isDragging ? 'opacity-100' : 'opacity-80'}
-            z-30
-          `}
-          aria-hidden="true"
-          data-testid={`drag-handle-indicator-${item.id}`}
-        >
-          <GripVertical className="w-4 h-4" />
-        </div>
-      )}
+      <DragHandleIndicator
+        itemId={item.id}
+        isDragging={isDragging}
+        visible={showDragHandle}
+      />
 
       {/* Focusable drag handle - captures keyboard events */}
       <div
@@ -148,13 +128,11 @@ export function SortableCollectionItem({
       </div>
 
       {/* Focus ring overlay */}
-      {isFocused && !isDragging && (
-        <div
-          className="absolute inset-0 rounded-lg ring-2 ring-cyan-500 ring-offset-2 ring-offset-gray-900 pointer-events-none z-20"
-          aria-hidden="true"
-          data-testid={`focus-ring-${item.id}`}
-        />
-      )}
+      <FocusRingOverlay
+        itemId={item.id}
+        isFocused={isFocused}
+        isDragging={isDragging}
+      />
 
       <ItemCard
         title={item.title}

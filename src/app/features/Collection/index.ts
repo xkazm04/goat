@@ -7,31 +7,35 @@
 
 // Components
 export { CollectionPanel } from './components/CollectionPanel';
-export { CollectionItem } from './components/CollectionItem';
+export { ConfigurableCollectionItem, MATCH_VIEW_CONFIG, COLLECTION_VIEW_CONFIG } from './components/ConfigurableCollectionItem';
+export type { CollectionItemConfig, ConfigurableCollectionItemProps } from './components/ConfigurableCollectionItem';
+// Backward compatibility aliases (use ConfigurableCollectionItem directly for new code)
+export { ConfigurableCollectionItem as CollectionItem } from './components/ConfigurableCollectionItem';
+export { ConfigurableCollectionItem as SimpleCollectionItem } from './components/ConfigurableCollectionItem';
 export { CollectionToolbar } from './components/CollectionToolbar';
-export { CategoryBar } from './components/CategoryBar';
-export { CollectionSearch } from './components/CollectionSearch';
 export { CollectionStats } from './components/CollectionStats';
 export { AddItemModal } from './components/AddItemModal';
 export { LazyLoadTrigger } from './components/LazyLoadTrigger';
-export { VirtualizedCollectionList } from './components/VirtualizedCollectionList';
 export { CollectionErrorBoundary, withCollectionErrorBoundary } from './components/CollectionErrorBoundary';
 
 // Types
 export type { CollectionItem as CollectionItemType, CollectionGroup, CollectionStats as CollectionStatsType, CollectionPaginationState, CollectionMutationHelpers } from './types';
 
 // Hooks
-export { useCollectionFilters } from './hooks/useCollectionFilters';
-export { useCollectionStats } from './hooks/useCollectionStats';
 export { useCollection } from './hooks/useCollection';
 export type { UseCollectionOptions, UseCollectionResult } from './hooks/useCollection';
 export { useCollectionLazyLoad } from './hooks/useCollectionLazyLoad';
 export type { UseCollectionLazyLoadOptions, UseCollectionLazyLoadResult } from './hooks/useCollectionLazyLoad';
 export { useIntersectionObserver } from './hooks/useIntersectionObserver';
 export type { UseIntersectionObserverOptions, UseIntersectionObserverResult } from './hooks/useIntersectionObserver';
+// Derived state hook for Collection-Grid relationship
+export { useVisibleCollectionItems, usePlacedItemIds, getPlacedItemIdsFromGrid } from './hooks/useVisibleCollectionItems';
+export type { UseVisibleCollectionItemsOptions, UseVisibleCollectionItemsResult, PlacementStats } from './hooks/useVisibleCollectionItems';
 
 // Utilities
 export { backlogGroupsToCollectionGroups, backlogGroupToCollectionGroup, backlogItemToCollectionItem } from './utils/transformers';
+export { useEasterEggSpotlight, isEasterEggKeyword, EASTER_EGG_KEYWORDS, SPOTLIGHT_DURATION } from './utils/easterEgg';
+export type { SpotlightableItem, UseEasterEggSpotlightResult, EasterEggKeyword } from './utils/easterEgg';
 
 // Configuration
 export { LAZY_LOAD_CONFIG, shouldUseVirtualization, shouldUseLazyLoading } from './constants/lazyLoadConfig';

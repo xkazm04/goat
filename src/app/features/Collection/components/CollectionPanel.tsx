@@ -6,13 +6,12 @@ import { snapCenterToCursor } from "@dnd-kit/modifiers";
 import { SortableContext, verticalListSortingStrategy, rectSortingStrategy, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { CollectionGroup, CollectionItem as CollectionItemType } from "../types";
 import { CollectionToolbar } from "./CollectionToolbar";
-import { CollectionItem } from "./CollectionItem";
+import { ConfigurableCollectionItem, COLLECTION_VIEW_CONFIG } from "./ConfigurableCollectionItem";
 import { SortableCollectionItem } from "./SortableCollectionItem";
 import { CollectionStats } from "./CollectionStats";
 import { AddItemModal } from "./AddItemModal";
 import { StickyContext } from "./StickyContext";
 import { LazyLoadTrigger } from "./LazyLoadTrigger";
-import { VirtualizedCollectionList } from "./VirtualizedCollectionList";
 import { VirtualizedGrid } from "./VirtualizedGrid";
 import { useCollection } from "../hooks/useCollection";
 import { useCollectionLazyLoad } from "../hooks/useCollectionLazyLoad";
@@ -287,13 +286,14 @@ function CollectionPanelInternal({
                     renderItem={(item, index) => {
                       const groupId = (item.metadata?.group_id as string) || '';
                       return (
-                        <CollectionItem
+                        <ConfigurableCollectionItem
                           key={`${groupId}-${item.id}`}
                           item={item}
                           groupId={groupId}
                           viewMode="grid"
                           index={index}
                           isSpotlight={collection.spotlightItemId === item.id}
+                          config={COLLECTION_VIEW_CONFIG}
                         />
                       );
                     }}
@@ -334,13 +334,14 @@ function CollectionPanelInternal({
                             isSpotlight={isSpotlight}
                           />
                         ) : (
-                          <CollectionItem
+                          <ConfigurableCollectionItem
                             key={`${groupId}-${item.id}`}
                             item={item}
                             groupId={groupId}
                             viewMode={viewMode}
                             index={index}
                             isSpotlight={isSpotlight}
+                            config={COLLECTION_VIEW_CONFIG}
                           />
                         );
                       })}
@@ -361,13 +362,14 @@ function CollectionPanelInternal({
                             isSpotlight={isSpotlight}
                           />
                         ) : (
-                          <CollectionItem
+                          <ConfigurableCollectionItem
                             key={`${groupId}-${item.id}`}
                             item={item}
                             groupId={groupId}
                             viewMode={viewMode}
                             index={index}
                             isSpotlight={isSpotlight}
+                            config={COLLECTION_VIEW_CONFIG}
                           />
                         );
                       })}
@@ -477,12 +479,13 @@ function CollectionPanelInternal({
                 if (!activeItem) return null;
                 const groupId = (activeItem.metadata?.group_id as string) || '';
                 return (
-                  <CollectionItem
+                  <ConfigurableCollectionItem
                     item={activeItem}
                     groupId={groupId}
                     viewMode={viewMode}
                     index={0}
                     isSpotlight={collection.spotlightItemId === activeItem.id}
+                    config={COLLECTION_VIEW_CONFIG}
                   />
                 );
               })()}

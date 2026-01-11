@@ -4,7 +4,7 @@ This directory contains hooks for managing collection data, filters, and statist
 
 ## useCollection Hook
 
-The **unified collection hook** that replaces `useCollectionFilters`, `useCollectionStats`, and ad-hoc fetch logic. It provides a single source of truth for collection data with built-in:
+The **unified collection hook** that provides a single source of truth for collection data with built-in:
 
 - Server-side pagination
 - Memoized caching via React Query
@@ -336,60 +336,6 @@ function GroupFilteredCollection() {
   );
 }
 ```
-
-### Migration Guide
-
-#### Before (separate hooks)
-
-```tsx
-const {
-  filter,
-  filteredGroups,
-  selectedGroups,
-  filteredItems,
-  toggleGroup,
-  selectAll,
-  deselectAll,
-  setSearchTerm
-} = useCollectionFilters(groups);
-
-const stats = useCollectionStats(groups, filter.selectedGroupIds);
-
-// Separate API calls
-const fetchItems = async () => {
-  const data = await fetch('/api/items');
-  // ...
-};
-```
-
-#### After (unified hook)
-
-```tsx
-const collection = useCollection({
-  category: 'your-category'
-});
-
-// All data, filters, stats, and mutations in one place!
-// collection.filteredItems
-// collection.stats
-// collection.toggleGroup()
-// collection.setSearchTerm()
-// collection.mutations.addItem.mutate()
-```
-
-## Legacy Hooks
-
-### useCollectionFilters
-
-**DEPRECATED**: Use `useCollection` instead for new code.
-
-Manages collection filters and selections. Still maintained for backward compatibility.
-
-### useCollectionStats
-
-**DEPRECATED**: Use `useCollection` instead for new code.
-
-Calculates collection statistics. Still maintained for backward compatibility.
 
 ## Query Keys & API
 

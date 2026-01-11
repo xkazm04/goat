@@ -2,12 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Star } from "lucide-react";
-
-export interface CardColor {
-  primary: string;
-  secondary: string;
-  accent: string;
-}
+import type { CardColor } from "../types";
 
 interface CardFooterProps {
   author: string;

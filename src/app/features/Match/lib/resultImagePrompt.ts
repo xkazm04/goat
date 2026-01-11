@@ -1,6 +1,14 @@
 import { GridItemType } from '@/types/match';
+import {
+  ImageStyle,
+  StyleConfig,
+  getStyleConfig,
+  STYLE_LAYOUTS,
+} from './constants/image-styles';
 
-export type ImageStyle = 'minimalist' | 'detailed' | 'abstract' | 'retro' | 'modern';
+// Re-export types and functions for backwards compatibility
+export type { ImageStyle, StyleConfig };
+export { getStyleConfig };
 
 export interface ImagePromptConfig {
   items: GridItemType[];
@@ -10,56 +18,6 @@ export interface ImagePromptConfig {
   timePeriod: string;
   style: ImageStyle;
   size: number;
-}
-
-export interface StyleConfig {
-  name: string;
-  description: string;
-  colorPalette: string[];
-  typography: string;
-  visualElements: string[];
-}
-
-const styleConfigs: Record<ImageStyle, StyleConfig> = {
-  minimalist: {
-    name: 'Minimalist',
-    description: 'Clean, simple design with lots of white space, modern sans-serif typography, subtle colors, and minimal decorative elements.',
-    colorPalette: ['#FFFFFF', '#F8F9FA', '#212529', '#6C757D', '#E9ECEF'],
-    typography: 'Inter, SF Pro Display, or similar modern sans-serif',
-    visualElements: ['Thin divider lines', 'Subtle shadows', 'Simple numbered list', 'Clean spacing'],
-  },
-  detailed: {
-    name: 'Detailed',
-    description: 'Rich visual design with ornate borders, detailed typography, vibrant colors, and decorative elements that reflect the category theme.',
-    colorPalette: ['#1A1A2E', '#16213E', '#0F3460', '#E94560', '#F4A261'],
-    typography: 'Playfair Display, Georgia, or serif with decorative elements',
-    visualElements: ['Ornate borders', 'Category-themed icons', 'Decorative flourishes', 'Rich textures'],
-  },
-  abstract: {
-    name: 'Abstract',
-    description: 'Abstract geometric shapes, bold color gradients, modern artistic interpretation with dynamic compositions.',
-    colorPalette: ['#667EEA', '#764BA2', '#F093FB', '#4FACFE', '#00F2FE'],
-    typography: 'Montserrat, Poppins, or bold modern sans-serif',
-    visualElements: ['Geometric shapes', 'Color gradients', 'Overlapping layers', 'Dynamic angles'],
-  },
-  retro: {
-    name: 'Retro',
-    description: 'Vintage-inspired design with retro color palettes, classic typography, nostalgic aesthetic elements from the era.',
-    colorPalette: ['#FFC857', '#E9724C', '#C5283D', '#481D24', '#F7B267'],
-    typography: 'Courier New, Archivo Black, or vintage display fonts',
-    visualElements: ['Vintage textures', 'Retro patterns', 'Classic badges', 'Nostalgic color blocks'],
-  },
-  modern: {
-    name: 'Modern',
-    description: 'Contemporary design with bold typography, vibrant gradients, modern UI elements, and sleek visual hierarchy.',
-    colorPalette: ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8'],
-    typography: 'DM Sans, Space Grotesk, or contemporary sans-serif',
-    visualElements: ['Bold gradients', 'Modern cards', 'Dynamic shadows', 'Contemporary icons'],
-  },
-};
-
-export function getStyleConfig(style: ImageStyle): StyleConfig {
-  return styleConfigs[style];
 }
 
 export function generateResultImagePrompt(config: ImagePromptConfig): string {
@@ -157,14 +115,6 @@ export function generatePromptForCanvas(
 } {
   const styleConfig = getStyleConfig(style);
 
-  const layouts: Record<ImageStyle, 'grid' | 'list' | 'podium'> = {
-    minimalist: 'list',
-    detailed: 'list',
-    abstract: 'grid',
-    retro: 'list',
-    modern: 'podium',
-  };
-
   return {
     backgroundGradient: styleConfig.colorPalette.slice(0, 2),
     titleColor: styleConfig.colorPalette[2] || '#FFFFFF',
@@ -174,7 +124,7 @@ export function generatePromptForCanvas(
       item: style === 'minimalist' ? 18 : 22,
       position: style === 'minimalist' ? 24 : 32,
     },
-    layout: layouts[style],
+    layout: STYLE_LAYOUTS[style],
   };
 }
 

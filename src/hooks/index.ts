@@ -89,7 +89,6 @@ export {
   useDeleteList,
   useCloneList,
   useInvalidateListsCache,
-  useListCreationFlow,
 } from './use-top-lists';
 
 /**
@@ -100,6 +99,15 @@ export {
   useListPreview,
   usePrefetchListPreview,
 } from './use-list-preview';
+
+/**
+ * Play List Hook
+ * Consolidates handlePlayList logic for navigating to match interface
+ * Used by FeaturedListsSection and UserListsSection
+ */
+export {
+  usePlayList,
+} from './use-play-list';
 
 /**
  * Item Research Hooks
@@ -234,7 +242,6 @@ export {
 /**
  * Swipe Gesture Hook
  * Mobile-optimized swipe gesture detection with velocity and distance tracking
- * Supports two-stage drag-to-reorder: short swipe lifts card, then drag to reorder
  */
 export {
   useSwipeGesture,
@@ -246,9 +253,55 @@ export type {
   TouchPosition,
   SwipeConfig,
   SwipeCallbacks,
-  GridPosition,
-  ReorderEvent,
 } from './useSwipeGesture.types';
+
+/**
+ * Motion Preference Hook
+ * 3-tier motion intensity system: Full, Reduced, Minimal
+ * Replaces binary prefers-reduced-motion with granular control
+ */
+export {
+  useMotionPreference,
+  useMotionCapabilities,
+  useMotionProps,
+  useMotionDuration,
+  getMotionCapabilities,
+} from './use-motion-preference';
+
+export type {
+  MotionTier,
+  MotionCapabilities,
+} from './use-motion-preference';
+
+// ========================================
+// Performance & Deferred Loading Hooks
+// ========================================
+
+/**
+ * Deferred Render Hook
+ * Defers component rendering until after initial paint for better perceived performance
+ */
+export {
+  useDeferredRender,
+  useDeferredValue,
+  useAfterPaint,
+} from './use-deferred-render';
+
+// ========================================
+// API Caching & Performance Hooks
+// ========================================
+
+/**
+ * API Cache Hooks
+ * Intelligent caching layer for API responses with metrics and invalidation
+ */
+export {
+  useCacheMetrics,
+  useCacheInvalidation,
+  useCachePrefetch,
+  useCacheStatus,
+  useAPICache,
+} from './use-api-cache';
 
 // ========================================
 // Migration Notes

@@ -1,4 +1,6 @@
-import { motion } from 'framer-motion';
+"use client";
+
+import { useMotionCapabilities } from "@/hooks/use-motion-preference";
 
 // Predefined particle configuration to avoid hydration mismatch
 const floatingParticleConfig = [
@@ -24,30 +26,42 @@ const floatingParticleConfig = [
     { left: 63.8, top: 7.3, duration: 3.6, delay: 1.7 }
 ];
 
+/**
+ * FloatingParticles - CSS-animated decorative particles
+ * Uses GPU-accelerated CSS animations for better performance
+ * Respects 3-tier motion preference: only shows in "full" tier
+ */
 export const FloatingParticles = () => {
-    return <>
-        <div className="absolute inset-0 pointer-events-none">
-            {floatingParticleConfig.map((particle, i) => (
-                <motion.div
-                    key={i}
-                    className="absolute w-2 h-2 rounded-full opacity-20"
-                    style={{
-                        background: `linear-gradient(45deg, #3b82f6, #8b5cf6)`,
-                        left: `${particle.left}%`,
-                        top: `${particle.top}%`,
-                    }}
-                    animate={{
-                        y: [0, -20, 0],
-                        opacity: [0.2, 0.5, 0.2],
-                        scale: [1, 1.2, 1],
-                    }}
-                    transition={{
-                        duration: particle.duration,
-                        repeat: Infinity,
-                        delay: particle.delay,
-                    }}
-                />
-            ))}
+    const { allowAmbient } = useMotionCapabilities();
+
+    // Don't render particles if ambient animations are disabled (reduced or minimal tier)
+    if (!allowAmbient) {
+        return null;
+    }
+
+    return (
+        <div className="absolute inset-0 pointer-events-none" data-testid="floating-particles">
+            {floatingParticleConfig.map((particle, i) => {
+                // CSS custom properties for animation parameters
+                const cssVars = {
+                    "--particle-duration": `${particle.duration}s`,
+                    "--particle-delay": `${particle.delay}s`,
+                } as React.CSSProperties;
+
+                return (
+                    <div
+                        key={i}
+                        className="absolute w-2 h-2 rounded-full animate-ambient-particle"
+                        style={{
+                            ...cssVars,
+                            background: `linear-gradient(45deg, #3b82f6, #8b5cf6)`,
+                            left: `${particle.left}%`,
+                            top: `${particle.top}%`,
+                        }}
+                        data-framer-motion-reducible="true"
+                    />
+                );
+            })}
         </div>
-    </>
+    );
 }

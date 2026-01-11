@@ -1,63 +1,39 @@
 "use client";
 
+import { memo, useCallback } from "react";
 import { motion } from "framer-motion";
-import { LucideIcon, Ban, AlertTriangle } from "lucide-react";
+import { Ban, AlertTriangle } from "lucide-react";
 import { CardHeader } from "./components/CardHeader";
 import { CardFooter } from "./components/CardFooter";
 import { cardVariants } from "./shared/animations";
+import type { ShowcaseCardData, CardClickHandler } from "./types";
 
-interface BannedShowcaseCardProps {
-  id: number;
-  category: string;
-  title: string;
-  author: string;
-  comment: string;
-  icon: LucideIcon;
-  color: {
-    primary: string;
-    secondary: string;
-    accent: string;
-  };
-  timePeriod: "all-time" | "decade" | "year";
-  hiearchy: string;
-  onCardClick?: (cardData: {
-    category: string;
-    subcategory?: string;
-    timePeriod: "all-time" | "decade" | "year";
-    hierarchy: string;
-    title: string;
-    author: string;
-    comment: string;
-    color: {
-      primary: string;
-      secondary: string;
-      accent: string;
-    };
-  }) => void;
+interface BannedShowcaseCardProps extends Omit<ShowcaseCardData, 'subcategory'> {
+  onCardClick?: CardClickHandler;
 }
 
-export function BannedShowcaseCard({
+export const BannedShowcaseCard = memo(function BannedShowcaseCard({
   category,
   title,
   author,
   comment,
   color,
   timePeriod,
-  hiearchy,
+  hierarchy,
   onCardClick,
 }: BannedShowcaseCardProps) {
-  const handleClick = () => {
+  const handleClick = useCallback(() => {
     onCardClick?.({
       category,
       subcategory: undefined,
       timePeriod,
-      hierarchy: hiearchy,
+      hierarchy,
       title,
       author,
       comment,
       color,
     });
-  };
+  }, [onCardClick, category, timePeriod, hierarchy, title, author, comment, color]);
 
   return (
     <motion.div
@@ -192,4 +168,4 @@ export function BannedShowcaseCard({
       </motion.div>
     </motion.div>
   );
-}
+});

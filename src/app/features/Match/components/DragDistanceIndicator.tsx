@@ -2,6 +2,8 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState, useRef } from "react";
+import { FeedbackParticles, FeedbackProgress } from "@/lib/feedback-pipeline";
+import type { ParticleConfig } from "@/lib/feedback-pipeline";
 
 interface DragDistanceIndicatorProps {
   distance: number;
@@ -10,16 +12,10 @@ interface DragDistanceIndicatorProps {
   cursorPosition?: { x: number; y: number };
 }
 
-interface Sparkle {
-  id: number;
-  x: number;
-  y: number;
-  timestamp: number;
-}
-
 /**
  * Visual indicator showing drag distance and target position
  * Shows warning when drag exceeds 500px
+ * Uses the unified FeedbackPipeline for consistent visual feedback
  */
 export function DragDistanceIndicator({
   distance,
@@ -28,7 +24,7 @@ export function DragDistanceIndicator({
   cursorPosition
 }: DragDistanceIndicatorProps) {
   const [showWarning, setShowWarning] = useState(false);
-  const [sparkles, setSparkles] = useState<Sparkle[]>([]);
+  const [sparkles, setSparkles] = useState<ParticleConfig[]>([]);
   const sparkleIdRef = useRef(0);
   const lastSparkleTimeRef = useRef(0);
 
@@ -48,11 +44,13 @@ export function DragDistanceIndicator({
 
     // Only create sparkle if enough time has passed
     if (now - lastSparkleTimeRef.current >= sparkleInterval) {
-      const newSparkle: Sparkle = {
+      const newSparkle: ParticleConfig = {
         id: sparkleIdRef.current++,
         x: cursorPosition.x,
         y: cursorPosition.y,
-        timestamp: now
+        timestamp: now,
+        size: 12,
+        duration: 0.3
       };
 
       setSparkles(prev => [...prev, newSparkle]);
@@ -63,7 +61,7 @@ export function DragDistanceIndicator({
     const cleanupTimer = setInterval(() => {
       const currentTime = Date.now();
       setSparkles(prev =>
-        prev.filter(sparkle => currentTime - sparkle.timestamp < 300)
+        prev.filter(sparkle => sparkle.timestamp && currentTime - sparkle.timestamp < 300)
       );
     }, 50);
 
@@ -77,62 +75,8 @@ export function DragDistanceIndicator({
 
   return (
     <>
-      {/* Sparkle Trail */}
-      <div className="fixed inset-0 z-[99] pointer-events-none" data-testid="drag-sparkle-trail">
-        <AnimatePresence>
-          {sparkles.map((sparkle) => (
-            <motion.div
-              key={sparkle.id}
-              initial={{
-                opacity: 1,
-                scale: 1,
-                x: sparkle.x,
-                y: sparkle.y
-              }}
-              animate={{
-                opacity: 0,
-                scale: 0,
-                x: sparkle.x + (Math.random() - 0.5) * 20,
-                y: sparkle.y + (Math.random() - 0.5) * 20
-              }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
-              className="absolute -translate-x-1/2 -translate-y-1/2"
-              style={{
-                left: 0,
-                top: 0
-              }}
-            >
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 12 12"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M6 0L7.5 4.5L12 6L7.5 7.5L6 12L4.5 7.5L0 6L4.5 4.5L6 0Z"
-                  fill="url(#sparkle-gradient)"
-                />
-                <defs>
-                  <linearGradient
-                    id="sparkle-gradient"
-                    x1="0"
-                    y1="0"
-                    x2="12"
-                    y2="12"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop offset="0%" stopColor="#06b6d4" />
-                    <stop offset="50%" stopColor="#3b82f6" />
-                    <stop offset="100%" stopColor="#8b5cf6" />
-                  </linearGradient>
-                </defs>
-              </svg>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </div>
+      {/* Sparkle Trail - using unified FeedbackParticles */}
+      <FeedbackParticles particles={sparkles} variant="sparkle" />
 
       {/* Distance Indicator */}
       <AnimatePresence>
@@ -146,7 +90,7 @@ export function DragDistanceIndicator({
           >
           <div className="bg-gray-900/95 backdrop-blur-md border border-gray-700 rounded-lg px-4 py-3 shadow-2xl">
             <div className="flex items-center gap-3">
-              {/* Distance meter */}
+              {/* Distance meter - using unified FeedbackProgress */}
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-gray-400">Drag distance:</span>
@@ -155,15 +99,12 @@ export function DragDistanceIndicator({
                   </span>
                 </div>
 
-                {/* Progress bar */}
-                <div className="w-32 h-1.5 bg-gray-700 rounded-full overflow-hidden">
-                  <motion.div
-                    className={`h-full rounded-full ${
-                      showWarning ? 'bg-orange-500' : 'bg-cyan-500'
-                    }`}
-                    initial={{ width: 0 }}
-                    animate={{ width: `${percentage}%` }}
-                    transition={{ duration: 0.2 }}
+                {/* Progress bar using FeedbackProgress */}
+                <div className="w-32">
+                  <FeedbackProgress
+                    progress={{ value: percentage }}
+                    size="sm"
+                    variant={showWarning ? 'warning' : 'cyan'}
                   />
                 </div>
               </div>

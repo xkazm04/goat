@@ -4,11 +4,12 @@ import { useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useTopList } from '@/hooks/use-top-lists';
 import { useListStore } from '@/stores/use-list-store';
-import { useItemStore } from '@/stores/item-store';
+import { useGridStore } from '@/stores/grid-store';
 import { useBacklogStore } from '@/stores/backlog-store';
 import { useSessionStore } from '@/stores/session-store';
 import { BacklogProvider } from '@/providers/BacklogProvider';
-import { SimpleMatchGrid } from '../features/Match/sub_MatchGrid/SimpleMatchGrid';
+// Lazy-load the match grid to defer loading of @dnd-kit (~25KB gzipped)
+import { LazySimpleMatchGrid } from '../features/Match/sub_MatchGrid/LazySimpleMatchGrid';
 
 // Default list metadata colors
 const DEFAULT_LIST_COLORS = {
@@ -34,10 +35,18 @@ function MatchTestContent() {
   const listId = searchParams.get('list');
 
   const { currentList, setCurrentList } = useListStore();
-  const itemStore = useItemStore();
-  const { switchToSession, syncWithBackend, initializeGrid, gridItems } = itemStore;
-  const activeSessionId = useSessionStore(state => state.activeSessionId);
-  const initializeGroups = useBacklogStore(state => state.initializeGroups);
+
+  // Grid Store
+  const gridItems = useGridStore((state) => state.gridItems);
+  const initializeGrid = useGridStore((state) => state.initializeGrid);
+
+  // Session Store
+  const activeSessionId = useSessionStore((state) => state.activeSessionId);
+  const switchToSession = useSessionStore((state) => state.switchToSession);
+  const syncWithBackend = useSessionStore((state) => state.syncWithBackend);
+
+  // Backlog Store
+  const initializeGroups = useBacklogStore((state) => state.initializeGroups);
 
   // Fetch list data if we have a listId and don't have it cached
   const shouldFetch = !!listId && (!currentList || currentList.id !== listId);
@@ -187,10 +196,10 @@ function MatchTestContent() {
     );
   }
 
-  // Render the match grid
+  // Render the match grid (lazy-loaded for code splitting)
   return (
     <BacklogProvider>
-      <SimpleMatchGrid />
+      <LazySimpleMatchGrid />
     </BacklogProvider>
   );
 }

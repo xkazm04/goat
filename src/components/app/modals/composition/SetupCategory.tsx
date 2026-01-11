@@ -1,16 +1,18 @@
 import { motion, AnimatePresence } from "framer-motion"
+import { SubcategoryDefinition } from "@/lib/config/category-config";
 
 type Props = {
     categories: string[];
     handleCategoryChange: (category: string) => void;
     selectedCategory: string;
     color: { primary: string; secondary: string; accent: string };
-    sportsSubcategories: { value: string; label: string; icon: React.ComponentType<{ className?: string }> }[];
+    /** Subcategories from centralized CATEGORY_CONFIG */
+    subcategories: SubcategoryDefinition[];
     selectedSubcategory?: string;
     setSelectedSubcategory?: (subcategory: string) => void;
 }
 
-const SetupCategory = ({categories, handleCategoryChange, selectedCategory, color, sportsSubcategories, selectedSubcategory, setSelectedSubcategory}: Props) => {
+const SetupCategory = ({categories, handleCategoryChange, selectedCategory, color, subcategories, selectedSubcategory, setSelectedSubcategory}: Props) => {
     return <>
         <div className="mb-8">
             <label className="block text-sm font-medium text-slate-300 mb-4">
@@ -59,9 +61,9 @@ const SetupCategory = ({categories, handleCategoryChange, selectedCategory, colo
             </div>
         </div>
 
-        {/* Sports Subcategories with enhanced styling */}
+        {/* Subcategories with enhanced styling - dynamically shown based on category config */}
         <AnimatePresence>
-            {selectedCategory === "Sports" && (
+            {subcategories.length > 0 && (
                 <motion.div
                     initial={{ opacity: 0, height: 0, y: -20 }}
                     animate={{ opacity: 1, height: "auto", y: 0 }}
@@ -70,10 +72,10 @@ const SetupCategory = ({categories, handleCategoryChange, selectedCategory, colo
                     className="mb-8"
                 >
                     <label className="block text-sm font-medium text-slate-300 mb-4">
-                        Sport Type
+                        Subcategory
                     </label>
                     <div className="space-y-3">
-                        {sportsSubcategories.map((subcategory, index) => (
+                        {subcategories.map((subcategory, index) => (
                             <motion.button
                                 key={subcategory.value}
                                 onClick={() => setSelectedSubcategory?.(subcategory.value)}
@@ -109,30 +111,34 @@ const SetupCategory = ({categories, handleCategoryChange, selectedCategory, colo
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: index * 0.1 }}
                             >
-                                <motion.div
-                                    className="w-10 h-10 rounded-lg flex items-center justify-center backdrop-blur-sm"
-                                    style={{
-                                        background: selectedSubcategory === subcategory.value
-                                            ? `linear-gradient(135deg, ${color.primary}80, ${color.secondary}80)`
-                                            : `linear-gradient(135deg, ${color.primary}30, ${color.secondary}20)`,
-                                        boxShadow: `0 4px 15px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2)`,
-                                        color: selectedSubcategory === subcategory.value ? '#fff' : color.accent
-                                    }}
-                                    whileHover={{ scale: 1.1 }}
-                                >
-                                    <subcategory.icon
-                                        className="w-5 h-5"
-                                    />
-                                </motion.div>
+                                {subcategory.icon && (
+                                    <motion.div
+                                        className="w-10 h-10 rounded-lg flex items-center justify-center backdrop-blur-sm"
+                                        style={{
+                                            background: selectedSubcategory === subcategory.value
+                                                ? `linear-gradient(135deg, ${color.primary}80, ${color.secondary}80)`
+                                                : `linear-gradient(135deg, ${color.primary}30, ${color.secondary}20)`,
+                                            boxShadow: `0 4px 15px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2)`,
+                                            color: selectedSubcategory === subcategory.value ? '#fff' : color.accent
+                                        }}
+                                        whileHover={{ scale: 1.1 }}
+                                    >
+                                        <subcategory.icon
+                                            className="w-5 h-5"
+                                        />
+                                    </motion.div>
+                                )}
                                 <div className="flex-1">
                                     <span className="font-medium text-base">
                                         {subcategory.label}
                                     </span>
-                                    <div className={`text-xs mt-1 ${
-                                        selectedSubcategory === subcategory.value ? 'text-slate-300' : 'text-slate-500'
-                                    }`}>
-                                        Professional & amateur leagues
-                                    </div>
+                                    {subcategory.description && (
+                                        <div className={`text-xs mt-1 ${
+                                            selectedSubcategory === subcategory.value ? 'text-slate-300' : 'text-slate-500'
+                                        }`}>
+                                            {subcategory.description}
+                                        </div>
+                                    )}
                                 </div>
                                 
                                 {/* Selection indicator */}

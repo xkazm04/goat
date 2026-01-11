@@ -13,7 +13,10 @@
       "Bash(git pull:*)",
       "Bash(npm run build:*)",
       "Bash(nul)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(npx tsc:*)",
+      "Bash(xxd:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

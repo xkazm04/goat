@@ -4,17 +4,29 @@ import { GridItemType, BacklogItemType } from '@/types/match';
 import { ListSession, SessionProgress } from './item-store/types';
 import { SessionManager } from './item-store/session-manager';
 import { BacklogGroup, BacklogItem } from '@/types/backlog-groups';
+import {
+  NormalizedBacklogData,
+  normalizeBacklogGroups,
+  denormalizeToBacklogGroup,
+  denormalizeToBacklogGroupType,
+  migrateFromLegacyFormat,
+  isNormalizedData,
+  createEmptyNormalizedData,
+  NormalizedOps
+} from './item-store/normalized-session';
 
 interface SessionStoreState {
   // Multi-list sessions
   listSessions: Record<string, ListSession>;
   activeSessionId: string | null;
-  
-  // Current session state - Updated to support both old and new types
-  backlogGroups: BacklogGroup[]; // Changed from BacklogGroupType[] to BacklogGroup[]
+
+  // Normalized backlog data for efficient storage/retrieval
+  normalizedData: NormalizedBacklogData;
+
+  // Current session state - computed lazily from normalizedData
+  backlogGroups: BacklogGroup[]; // Computed getter, derived from normalizedData
   selectedBacklogItem: string | null;
-  compareList: BacklogItemType[]; // Legacy support
-  
+
   // Actions - Session Management
   createSession: (listId: string, size: number) => void;
   switchToSession: (listId: string) => void;
@@ -37,11 +49,7 @@ interface SessionStoreState {
   
   // Actions - Selection
   setSelectedBacklogItem: (id: string | null) => void;
-  
-  // Actions - Compare List (Legacy)
-  toggleCompareItem: (item: BacklogItemType) => void;
-  clearCompareList: () => void;
-  
+
   // Utilities
   getAvailableBacklogItems: () => BacklogItem[];
   getSessionProgress: (listId?: string) => SessionProgress;
@@ -58,31 +66,65 @@ interface SessionStoreState {
   syncWithBackend: (listId: string) => Promise<void>;
 }
 
+// Cache for denormalized backlog groups to avoid repeated transformations
+let denormalizedCache: { data: NormalizedBacklogData | null; result: BacklogGroup[] } = {
+  data: null,
+  result: []
+};
+
+function getCachedBacklogGroups(normalizedData: NormalizedBacklogData): BacklogGroup[] {
+  // Only recompute if normalized data has changed (reference check)
+  if (denormalizedCache.data !== normalizedData) {
+    denormalizedCache.data = normalizedData;
+    denormalizedCache.result = denormalizeToBacklogGroup(normalizedData);
+  }
+  return denormalizedCache.result;
+}
+
+// PERFORMANCE OPTIMIZATION: Debounced auto-save to coalesce multiple rapid operations
+// into a single save, reducing localStorage thrashing and UI lag during bulk operations
+const DEBOUNCE_DELAY_MS = 300;
+let saveTimeout: ReturnType<typeof setTimeout> | null = null;
+
+function debouncedSaveSession(getSaveFunction: () => void) {
+  // Clear any pending save
+  if (saveTimeout !== null) {
+    clearTimeout(saveTimeout);
+  }
+  // Schedule new save with trailing delay
+  saveTimeout = setTimeout(() => {
+    saveTimeout = null;
+    getSaveFunction();
+  }, DEBOUNCE_DELAY_MS);
+}
+
 export const useSessionStore = create<SessionStoreState>()(
   persist(
     (set, get) => ({
       // Initial state
       listSessions: {},
       activeSessionId: null,
-      backlogGroups: [],
+      normalizedData: createEmptyNormalizedData(),
+      // backlogGroups is derived from normalizedData via cached getter
+      get backlogGroups(): BacklogGroup[] {
+        return getCachedBacklogGroups(get().normalizedData);
+      },
       selectedBacklogItem: null,
-      compareList: [],
 
       // Session Management
       createSession: (listId: string, size: number = 150) => {
         console.log(`Creating session for list ${listId} with size ${size}`);
-        
+
         const session = SessionManager.createEmptySession(listId, size);
-        
+
         set((state) => ({
           listSessions: {
             ...state.listSessions,
             [listId]: session
           },
           activeSessionId: listId,
-          backlogGroups: [], // Ensure this is always an array
-          selectedBacklogItem: null,
-          compareList: []
+          normalizedData: createEmptyNormalizedData(),
+          selectedBacklogItem: null
         }));
       },
 
@@ -99,47 +141,22 @@ export const useSessionStore = create<SessionStoreState>()(
       saveCurrentSession: () => {
         const state = get();
         if (!state.activeSessionId) return;
-        
+
         const currentSession = state.listSessions[state.activeSessionId];
         if (!currentSession) return;
 
+        // PERFORMANCE OPTIMIZATION: Use normalized data directly instead of
+        // expensive O(n*m) deep mapping transformation
+        // The denormalization to BacklogGroupType[] is done lazily only when needed
+        const backlogGroupsForStorage = denormalizeToBacklogGroupType(state.normalizedData);
+
         const updatedSession = SessionManager.updateSessionTimestamp({
           ...currentSession,
-          // Convert BacklogGroup[] to BacklogGroupType[] for session storage
-          // Add null check here
-          backlogGroups: (state.backlogGroups || []).map(group => ({
-            id: group.id,
-            name: group.name,
-            title: group.name, // Add title property
-            description: group.description,
-            category: group.category || 'general',
-            subcategory: group.subcategory,
-            image_url: group.image_url,
-            item_count: group.item_count || (group.items || []).length,
-            created_at: group.created_at || new Date().toISOString(),
-            updated_at: group.updated_at || new Date().toISOString(),
-            items: (group.items || []).map(item => ({
-              id: item.id,
-              title: item.name || item.title || '',
-              name: item.name || item.title || '',
-              description: item.description || '',
-              category: item.category || group.category || 'general',
-              subcategory: item.subcategory || group.subcategory,
-              item_year: item.item_year,
-              item_year_to: item.item_year_to,
-              image_url: item.image_url,
-              created_at: item.created_at || new Date().toISOString(),
-              updated_at: item.updated_at,
-              tags: item.tags || [],
-              matched: false,
-              used: item.used
-            })),
-            isOpen: true // Default to open
-          })),
+          backlogGroups: backlogGroupsForStorage,
           selectedBacklogItem: state.selectedBacklogItem,
-          compareList: state.compareList,
+          compareList: [], // Legacy field - kept empty for session compatibility
         });
-        
+
         set((state) => ({
           listSessions: {
             ...state.listSessions,
@@ -151,40 +168,16 @@ export const useSessionStore = create<SessionStoreState>()(
       loadSession: (listId: string) => {
         const state = get();
         const session = state.listSessions[listId];
-        
+
         if (session && SessionManager.validateSession(session)) {
-          // Convert stored BacklogGroupType[] back to BacklogGroup[]
-          // Add null check here too
-          const convertedGroups: BacklogGroup[] = (session.backlogGroups || []).map(group => ({
-            id: group.id,
-            name: group.title || group.name || '',
-            description: undefined,
-            category: 'sports', // Default, will be updated from API
-            subcategory: undefined,
-            image_url: undefined,
-            item_count: (group.items || []).length,
-            items: (group.items || []).map(item => ({
-              id: item.id,
-              name: item.title || '',
-              title: item.title || '',
-              description: item.description || '',
-              category: 'sports', // Default
-              subcategory: undefined,
-              item_year: undefined,
-              item_year_to: undefined,
-              image_url: undefined,
-              created_at: new Date().toISOString(),
-              tags: item.tags || []
-            })),
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }));
+          // PERFORMANCE OPTIMIZATION: Migrate legacy format to normalized format
+          // This conversion happens once on load, then normalized data is used for all operations
+          const normalizedData = migrateFromLegacyFormat(session.backlogGroups || []);
 
           set({
             activeSessionId: listId,
-            backlogGroups: convertedGroups,
-            selectedBacklogItem: session.selectedBacklogItem,
-            compareList: session.compareList || []
+            normalizedData,
+            selectedBacklogItem: session.selectedBacklogItem
           });
         } else {
           console.warn(`Session for list ${listId} not found, creating new session`);
@@ -223,196 +216,121 @@ export const useSessionStore = create<SessionStoreState>()(
 
       // Enhanced Backlog Management
       setBacklogGroups: (groups: BacklogGroup[]) => {
-        set({ backlogGroups: groups });
-        // Auto-save after a short delay
-        setTimeout(() => get().saveCurrentSession(), 100);
+        // PERFORMANCE OPTIMIZATION: Normalize on input, store in normalized format
+        const normalizedData = normalizeBacklogGroups(groups);
+        set({ normalizedData });
+        // Debounced auto-save to coalesce rapid operations
+        debouncedSaveSession(() => get().saveCurrentSession());
       },
 
       toggleBacklogGroup: (groupId: string) => {
         set((state) => {
-          const updatedGroups = state.backlogGroups.map(group => {
-            if (group.id === groupId) {
-              // For BacklogGroup, we don't have isOpen property, but we can track it in session
-              return group; // Keep the group as-is for now
+          const group = state.normalizedData.groupsById[groupId];
+          if (!group) return state;
+
+          return {
+            normalizedData: {
+              ...state.normalizedData,
+              groupsById: {
+                ...state.normalizedData.groupsById,
+                [groupId]: {
+                  ...group,
+                  isOpen: !group.isOpen
+                }
+              }
             }
-            return group;
-          });
-          
-          return { backlogGroups: updatedGroups };
+          };
         });
-        
-        setTimeout(() => get().saveCurrentSession(), 100);
+
+        debouncedSaveSession(() => get().saveCurrentSession());
       },
 
       addItemToGroup: (groupId: string, item: BacklogItem) => {
         set((state) => {
-          const updatedGroups = state.backlogGroups.map(group => {
-            if (group.id === groupId) {
-              // Check if item already exists
-              const itemExists = group.items.some(existingItem => existingItem.id === item.id);
-              if (!itemExists) {
-                return {
-                  ...group,
-                  items: [...group.items, item],
-                  item_count: group.item_count + 1
-                };
-              }
-            }
-            return group;
-          });
-          
-          return { backlogGroups: updatedGroups };
+          // PERFORMANCE OPTIMIZATION: O(1) item addition
+          const updatedData = NormalizedOps.addItem(state.normalizedData, groupId, item);
+          return { normalizedData: updatedData };
         });
-        
-        setTimeout(() => get().saveCurrentSession(), 100);
+
+        debouncedSaveSession(() => get().saveCurrentSession());
       },
 
       removeItemFromGroup: (groupId: string, itemId: string) => {
         set((state) => {
           console.log(`🗑️ SessionStore: Removing item ${itemId} from group ${groupId}`);
-          
-          // Find the group and item
-          const targetGroup = state.backlogGroups.find(group => group.id === groupId);
-          if (!targetGroup) {
+
+          // Check if item exists
+          const item = state.normalizedData.itemsById[itemId];
+          if (!item) {
+            console.warn(`⚠️ Item ${itemId} not found`);
+            return state;
+          }
+
+          const group = state.normalizedData.groupsById[groupId];
+          if (!group) {
             console.warn(`⚠️ Group ${groupId} not found`);
             return state;
           }
-          
-          const itemExists = targetGroup.items.some(item => item.id === itemId);
-          if (!itemExists) {
-            console.warn(`⚠️ Item ${itemId} not found in group ${groupId}`);
-            return state;
-          }
-          
-          const updatedGroups = state.backlogGroups.map(group => {
-            if (group.id === groupId) {
-              const updatedItems = group.items.filter(item => item.id !== itemId);
-              console.log(`📉 Group ${group.name}: ${group.items.length} → ${updatedItems.length} items`);
-              
-              return {
-                ...group,
-                items: updatedItems,
-                item_count: updatedItems.length
-              };
-            }
-            return group;
-          });
-          
-          // Clear selection and compare list
+
+          // PERFORMANCE OPTIMIZATION: O(n) where n is items in group, not total items
+          const updatedData = NormalizedOps.removeItem(state.normalizedData, groupId, itemId);
+
+          // Clear selection if removed item was selected
           const updatedSelectedBacklogItem = state.selectedBacklogItem === itemId ? null : state.selectedBacklogItem;
-          const updatedCompareList = state.compareList.filter(item => item.id !== itemId);
-          
+
           console.log(`✅ SessionStore: Item ${itemId} removed successfully`);
-          
+
           return {
-            backlogGroups: updatedGroups,
-            compareList: updatedCompareList,
+            normalizedData: updatedData,
             selectedBacklogItem: updatedSelectedBacklogItem
           };
         });
 
-        // Auto-save after removal
-        setTimeout(() => get().saveCurrentSession(), 100);
+        debouncedSaveSession(() => get().saveCurrentSession());
       },
 
       // NEW: Update items for a specific group
       updateGroupItems: (groupId: string, items: BacklogItem[]) => {
         set((state) => {
           console.log(`🔄 SessionStore: Updating ${items.length} items for group ${groupId}`);
-          
-          const updatedGroups = state.backlogGroups.map(group => {
-            if (group.id === groupId) {
-              return {
-                ...group,
-                items: items,
-                item_count: items.length
-              };
-            }
-            return group;
-          });
-          
-          return { backlogGroups: updatedGroups };
+
+          // PERFORMANCE OPTIMIZATION: Efficient bulk update
+          const updatedData = NormalizedOps.updateGroupItems(state.normalizedData, groupId, items);
+
+          return { normalizedData: updatedData };
         });
 
-        // Auto-save after update
-        setTimeout(() => get().saveCurrentSession(), 100);
+        debouncedSaveSession(() => get().saveCurrentSession());
       },
 
       getGroupItems: (groupId: string): BacklogItem[] => {
         const state = get();
-        const group = state.backlogGroups.find(g => g.id === groupId);
-        return group?.items || [];
+        // PERFORMANCE OPTIMIZATION: Direct lookup from normalized data
+        return NormalizedOps.getGroupItems(state.normalizedData, groupId);
       },
 
       // NEW: Local search function
       searchGroups: (searchTerm: string): BacklogGroup[] => {
         const state = get();
-        if (!searchTerm.trim()) {
-          return state.backlogGroups;
-        }
-
-        const lowerSearchTerm = searchTerm.toLowerCase().trim();
-        
-        return state.backlogGroups.filter(group => {
-          // Search in group name
-          const nameMatch = group.name.toLowerCase().includes(lowerSearchTerm);
-          
-          // Search in group description
-          const descriptionMatch = group.description?.toLowerCase().includes(lowerSearchTerm);
-          
-          // Search in items within the group
-          const itemsMatch = group.items.some(item => 
-            item.name.toLowerCase().includes(lowerSearchTerm) ||
-            item.description?.toLowerCase().includes(lowerSearchTerm) ||
-            item.tags?.some(tag => tag.toLowerCase().includes(lowerSearchTerm))
-          );
-          
-          return nameMatch || descriptionMatch || itemsMatch;
-        });
+        // PERFORMANCE OPTIMIZATION: Search on normalized data
+        return NormalizedOps.searchGroups(state.normalizedData, searchTerm);
       },
 
       // NEW: Local category filtering function
       getGroupsByCategory: (category: string, subcategory?: string): BacklogGroup[] => {
         const state = get();
-        
-        return state.backlogGroups.filter(group => {
-          const categoryMatch = group.category === category;
-          const subcategoryMatch = !subcategory || group.subcategory === subcategory;
-          
-          return categoryMatch && subcategoryMatch;
-        });
+        // PERFORMANCE OPTIMIZATION: Filter on normalized data
+        return NormalizedOps.getGroupsByCategory(state.normalizedData, category, subcategory);
       },
 
       // Selection Management
       setSelectedBacklogItem: (id) => set({ selectedBacklogItem: id }),
 
-      // Legacy Compare List
-      toggleCompareItem: (item) => set((state) => {
-        const isInList = state.compareList.some(compareItem => compareItem.id === item.id);
-        
-        if (isInList) {
-          return {
-            compareList: state.compareList.filter(compareItem => compareItem.id !== item.id)
-          };
-        } else {
-          return {
-            compareList: [...state.compareList, item]
-          };
-        }
-      }),
-
-      clearCompareList: () => set({ compareList: [] }),
-
       // Utilities
       getAvailableBacklogItems: (): BacklogItem[] => {
         const state = get();
-        return state.backlogGroups.flatMap(group => 
-          group.items.filter(item => {
-            // For BacklogItem, we don't have matched property, so return all items
-            // You might want to check against gridItems to see what's already placed
-            return true;
-          })
-        );
+        // PERFORMANCE OPTIMIZATION: Get all items directly from normalized data
+        return NormalizedOps.getAllItems(state.normalizedData);
       },
 
       getSessionProgress: (listId) => {
@@ -478,13 +396,16 @@ export const useSessionStore = create<SessionStoreState>()(
       },
 
       // Reset and Sync
-      resetStore: () => set({
-        listSessions: {},
-        activeSessionId: null,
-        backlogGroups: [],
-        selectedBacklogItem: null,
-        compareList: []
-      }),
+      resetStore: () => {
+        // Clear the cache when resetting
+        denormalizedCache = { data: null, result: [] };
+        set({
+          listSessions: {},
+          activeSessionId: null,
+          normalizedData: createEmptyNormalizedData(),
+          selectedBacklogItem: null
+        });
+      },
 
       syncWithBackend: async (listId) => {
         console.log(`Syncing session ${listId} with backend...`);
@@ -524,7 +445,8 @@ export const useSessionStore = create<SessionStoreState>()(
 );
 
 // Enhanced Selector hooks with new types
-export const useBacklogGroups = () => useSessionStore((state) => state.backlogGroups);
+// Note: backlogGroups is a computed getter, so we use the cached version
+export const useBacklogGroups = () => useSessionStore((state) => getCachedBacklogGroups(state.normalizedData));
 export const useActiveSession = () => useSessionStore((state) => ({
   activeSessionId: state.activeSessionId,
   hasSession: !!state.activeSessionId
@@ -532,7 +454,6 @@ export const useActiveSession = () => useSessionStore((state) => ({
 export const useSessionSelection = () => useSessionStore((state) => ({
   selectedBacklogItem: state.selectedBacklogItem
 }));
-export const useCompareList = () => useSessionStore((state) => state.compareList);
 export const useSessionProgress = () => useSessionStore((state) => state.getSessionProgress());
 export const useSessionMetadata = () => useSessionStore((state) => state.getSessionMetadata());
 

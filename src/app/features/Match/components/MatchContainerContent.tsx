@@ -11,14 +11,14 @@ const MatchContainerContent = () => {
   const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false)
 
   return (
-    <div className="p-6 relative">
+    <div className="p-6 relative" data-testid="match-container-content">
       {/* Header */}
-      <MatchContainerHeader 
+      <MatchContainerHeader
         setIsComparisonModalOpen={setIsComparisonModalOpen}
       />
 
       {/* Content Area */}
-      <div className="flex gap-6 relative">
+      <div className="flex gap-6 relative" data-testid="match-content-area">
         {/* Main Grid Area */}
         <motion.div
           className="flex-1"
@@ -26,6 +26,7 @@ const MatchContainerContent = () => {
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.1 }}
           layout
+          data-testid="match-grid-area"
         >
           <MatchGrid />
         </motion.div>
@@ -36,6 +37,7 @@ const MatchContainerContent = () => {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
             className="w-96 fixed right-0 2xl:relative"
+            data-testid="collection-sidebar"
           >
             <CollectionPanel />
           </motion.div>

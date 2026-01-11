@@ -3,17 +3,19 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Star } from "lucide-react";
 import { useComparisonStore } from "@/stores/comparison-store";
-import { useItemStore } from "@/stores/item-store";
+import { useGridStore } from "@/stores/grid-store";
 import { ComparisonItem } from "./ComparisonItem";
 import { ComparisonHeader } from "./ComparisonHeader";
 import { ComparisonActions } from "./ComparisonActions";
+import type { StoreConnectedComparisonModalProps } from "@/types/modal-props";
 
-interface ComparisonModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
-
-export function ComparisonModal({ isOpen, onClose }: ComparisonModalProps) {
+/**
+ * Store-connected Comparison Modal
+ *
+ * Gets items from useComparisonStore, so doesn't require items in props.
+ * Uses StoreConnectedComparisonModalProps for type safety.
+ */
+export function ComparisonModal({ isOpen, onClose }: StoreConnectedComparisonModalProps) {
   const {
     items,
     selectedForComparison,
@@ -25,10 +27,8 @@ export function ComparisonModal({ isOpen, onClose }: ComparisonModalProps) {
     closeComparison
   } = useComparisonStore();
 
-  const { 
-    assignItemToGrid,
-    getNextAvailableGridPosition
-  } = useItemStore();
+  const assignItemToGrid = useGridStore((state) => state.assignItemToGrid);
+  const getNextAvailableGridPosition = useGridStore((state) => state.getNextAvailableGridPosition);
 
   const handleClose = () => {
     closeComparison();
@@ -85,6 +85,7 @@ export function ComparisonModal({ isOpen, onClose }: ComparisonModalProps) {
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.9, opacity: 0, y: 20 }}
           className="w-full max-w-7xl max-h-[90vh] rounded-2xl overflow-hidden"
+          data-testid="comparison-modal"
           style={{
             background: `
               linear-gradient(135deg, 
@@ -111,13 +112,14 @@ export function ComparisonModal({ isOpen, onClose }: ComparisonModalProps) {
           />
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto p-6" style={{ maxHeight: 'calc(90vh - 200px)' }}>
+          <div className="flex-1 overflow-y-auto p-6" style={{ maxHeight: 'calc(90vh - 200px)' }} data-testid="comparison-content">
             {items.length === 0 ? (
               // Empty State
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 className="flex flex-col items-center justify-center py-16"
+                data-testid="comparison-empty-state"
               >
                 <div 
                   className="w-20 h-20 rounded-full flex items-center justify-center mb-6"
@@ -141,8 +143,9 @@ export function ComparisonModal({ isOpen, onClose }: ComparisonModalProps) {
                 <button
                   onClick={handleClose}
                   className="mt-6 px-6 py-3 rounded-xl font-semibold transition-all duration-200"
+                  data-testid="comparison-back-btn"
                   style={{
-                    background: `linear-gradient(135deg, 
+                    background: `linear-gradient(135deg,
                       rgba(59, 130, 246, 0.8) 0%,
                       rgba(147, 51, 234, 0.8) 100%
                     )`,
@@ -155,7 +158,7 @@ export function ComparisonModal({ isOpen, onClose }: ComparisonModalProps) {
               </motion.div>
             ) : (
               // Items Grid/List
-              <div className={getGridClasses()}>
+              <div className={getGridClasses()} data-testid="comparison-items-grid">
                 <AnimatePresence mode="popLayout">
                   {items.map((item, index) => (
                     <motion.div
@@ -169,6 +172,7 @@ export function ComparisonModal({ isOpen, onClose }: ComparisonModalProps) {
                         layout: { duration: 0.2 }
                       }}
                       layout
+                      data-testid={`comparison-item-${index}`}
                     >
                       <ComparisonItem
                         item={item}

@@ -1,27 +1,51 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { memo, useMemo } from "react";
+import { motion } from "framer-motion";
 import { ShowcaseCard } from "./ShowcaseCard";
 import { BannedShowcaseCard } from "./BannedShowcaseCard";
 import { ShowcaseHeader } from "./ShowcaseHeader";
-import { showcaseData } from "@/lib/constants/showCaseExamples";
-import { FloatingParticles } from "@/components/app/decorations/particles";
+import { showcaseData, LegacyShowcaseItem } from "@/lib/constants/showCaseExamples";
 import ShowcaseDecor from "@/components/app/decorations/ShowcaseDecor";
-import { useComposition } from "@/hooks/use-composition";
-import { staggerContainer, floatAnimation } from "./shared";
+import { staggerContainer, useCardClickHandler } from "./shared";
+import { useAnimationPause } from "@/hooks/use-animation-pause";
+import { useMotionCapabilities } from "@/hooks/use-motion-preference";
 
-interface SelectedCardData {
-    category: string;
-    subcategory?: string;
-    timePeriod: "all-time" | "decade" | "year";
-    hierarchy: string;
-    title: string;
-    author: string;
-    comment: string;
-    color: {
-        primary: string;
-        secondary: string;
-        accent: string;
+// Default color fallback for items missing color properties
+const DEFAULT_COLOR = {
+    primary: "rgba(6,182,212,0.8)",
+    secondary: "rgba(8,145,178,0.8)",
+    accent: "rgba(34,211,238,0.8)",
+};
+
+// Default position fallback for items missing position properties
+const DEFAULT_POSITION = { x: 50, y: 50 };
+
+// Validates that a showcase item has all required properties
+function isValidShowcaseItem(item: unknown): item is LegacyShowcaseItem {
+    if (!item || typeof item !== "object") return false;
+    const obj = item as Record<string, unknown>;
+
+    // Required fields
+    if (typeof obj.id !== "number") return false;
+    if (typeof obj.title !== "string" || !obj.title) return false;
+    if (typeof obj.category !== "string" || !obj.category) return false;
+
+    return true;
+}
+
+// Normalizes a showcase item by providing defaults for missing optional properties
+function normalizeShowcaseItem(item: LegacyShowcaseItem): LegacyShowcaseItem {
+    return {
+        ...item,
+        position: item.position && typeof item.position.x === "number" && typeof item.position.y === "number"
+            ? item.position
+            : DEFAULT_POSITION,
+        color: item.color && item.color.primary
+            ? item.color
+            : DEFAULT_COLOR,
+        rotation: typeof item.rotation === "number" ? item.rotation : 0,
+        scale: typeof item.scale === "number" && item.scale > 0 ? item.scale : 1,
     };
 }
 
@@ -50,39 +74,57 @@ const cardVariants = {
     }),
 };
 
-export function FloatingShowcase() {
-    const { openWithPreset } = useComposition();
-    const prefersReducedMotion = useReducedMotion();
+export const FloatingShowcase = memo(function FloatingShowcase() {
+    const handleCardClick = useCardClickHandler();
+    const {
+        ref: animationRef,
+        shouldAnimate,
+        animationClass,
+    } = useAnimationPause({ rootMargin: "200px" });
+    const { allowAmbient, allowInteraction, allowTransitions } = useMotionCapabilities();
 
-    const handleCardClick = (cardData: SelectedCardData) => {
-        openWithPreset({
-            category: cardData.category,
-            subcategory: cardData.subcategory,
-            timePeriod: cardData.timePeriod,
-            hierarchy: cardData.hierarchy,
-            title: cardData.title,
-            color: cardData.color
-        });
-    };
+    // Validate and normalize showcase data, filtering out invalid items
+    const validatedShowcaseData = useMemo(() => {
+        if (!Array.isArray(showcaseData) || showcaseData.length === 0) {
+            return [];
+        }
+        return showcaseData
+            .filter(isValidShowcaseItem)
+            .map(normalizeShowcaseItem);
+    }, []);
+
+    // Early return if no valid showcase data - render header only with empty state
+    if (validatedShowcaseData.length === 0) {
+        return (
+            <div
+                ref={animationRef}
+                className={`relative w-full h-screen ${animationClass}`}
+                style={{ perspective: "1500px" }}
+                data-testid="floating-showcase"
+            >
+                <ShowcaseHeader />
+                <ShowcaseDecor shouldAnimate={shouldAnimate} />
+                <div
+                    className="absolute inset-0 flex items-center justify-center"
+                    data-testid="floating-showcase-empty"
+                >
+                    <p className="text-muted-foreground text-sm opacity-50">
+                        No showcase items available
+                    </p>
+                </div>
+            </div>
+        );
+    }
 
     return (
-        <div className="relative w-full h-screen overflow-hidden" style={{ perspective: "1500px" }}>
-            {/* Ambient gradient layers - matching MatchGrid theme */}
-            <div className="absolute inset-0 bg-[#050505]" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(6,182,212,0.12)_0%,transparent_60%)]" />
-            
-            {/* Neon grid overlay - matching MatchGrid pattern */}
-            <div 
-                className="absolute inset-0 opacity-[0.03]"
-                style={{
-                    backgroundImage: `linear-gradient(0deg, transparent 24%, #22d3ee 25%, #22d3ee 26%, transparent 27%, transparent 74%, #22d3ee 75%, #22d3ee 76%, transparent 77%, transparent),
-                                      linear-gradient(90deg, transparent 24%, #22d3ee 25%, #22d3ee 26%, transparent 27%, transparent 74%, #22d3ee 75%, #22d3ee 76%, transparent 77%, transparent)`,
-                    backgroundSize: "60px 60px",
-                }}
-            />
-
+        <div
+            ref={animationRef}
+            className={`relative w-full h-screen ${animationClass}`}
+            style={{ perspective: "1500px" }}
+            data-testid="floating-showcase"
+        >
             <ShowcaseHeader />
-            <ShowcaseDecor />
+            <ShowcaseDecor shouldAnimate={shouldAnimate} />
 
             {/* Floating Cards with 3D transforms */}
             <motion.div
@@ -91,93 +133,67 @@ export function FloatingShowcase() {
                 animate="visible"
                 className="absolute inset-0"
                 style={{ transformStyle: "preserve-3d" }}
+                data-testid="floating-showcase-cards-container"
             >
-                {showcaseData.map((item, index) => (
-                    <motion.div
-                        key={item.id}
-                        custom={index}
-                        variants={cardVariants}
-                        className="absolute cursor-pointer"
-                        style={{
-                            left: `${item.position.x}%`,
-                            top: `${item.position.y}%`,
-                            transform: `translate(-50%, -50%) rotate(${item.rotation}deg) scale(${item.scale})`,
-                            transformStyle: "preserve-3d",
-                            zIndex: Math.round(item.scale * 10),
-                        }}
-                        whileHover={{
-                            scale: item.scale * 1.08,
-                            rotateY: item.rotation * 0.3,
-                            rotateX: -5,
-                            z: 80,
-                            transition: { 
-                                duration: 0.4, 
-                                ease: [0.23, 1, 0.32, 1] 
-                            },
-                        }}
-                        whileTap={{ scale: item.scale * 0.98 }}
-                        animate={prefersReducedMotion ? {} : {
-                            y: [0, -8, 0],
-                            transition: {
-                                duration: 4 + index * 0.5,
-                                repeat: Infinity,
-                                ease: "easeInOut",
-                                delay: index * 0.3,
-                            }
-                        }}
-                    >
-                        {/* Card glow effect */}
-                        <div 
-                            className="absolute -inset-4 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl"
+                {validatedShowcaseData.map((item, index) => {
+                    // CSS custom properties for card float animation
+                    const cardCssVars = {
+                        "--card-float-duration": `${4 + index * 0.5}s`,
+                        "--card-float-delay": `${index * 0.3}s`,
+                    } as React.CSSProperties;
+
+                    // Only apply float animation in full tier when animations should play
+                    const shouldFloat = shouldAnimate && allowAmbient;
+
+                    return (
+                        <motion.div
+                            key={item.id}
+                            custom={index}
+                            variants={allowTransitions ? cardVariants : undefined}
+                            initial={allowTransitions ? "hidden" : undefined}
+                            animate={allowTransitions ? "visible" : undefined}
+                            className={`absolute cursor-pointer ${shouldFloat ? "animate-ambient-card-float" : ""}`}
                             style={{
-                                background: `radial-gradient(circle, ${item.color?.primary || 'rgba(6,182,212,0.3)'} 0%, transparent 70%)`,
+                                ...cardCssVars,
+                                left: `${item.position.x}%`,
+                                top: `${item.position.y}%`,
+                                transform: `translate(-50%, -50%) rotate(${item.rotation}deg) scale(${item.scale})`,
+                                transformStyle: "preserve-3d",
+                                zIndex: Math.round(item.scale * 10),
                             }}
-                        />
-                        
-                        {item.isBanned ? (
-                            <BannedShowcaseCard {...item} onCardClick={handleCardClick} />
-                        ) : (
-                            <ShowcaseCard {...item} onCardClick={handleCardClick} />
-                        )}
-                    </motion.div>
-                ))}
+                            whileHover={allowInteraction ? {
+                                scale: item.scale * 1.08,
+                                rotateY: item.rotation * 0.3,
+                                rotateX: -5,
+                                z: 80,
+                                transition: {
+                                    duration: allowTransitions ? 0.4 : 0,
+                                    ease: [0.23, 1, 0.32, 1]
+                                },
+                            } : undefined}
+                            whileTap={allowInteraction ? { scale: item.scale * 0.98 } : undefined}
+                            data-testid={`showcase-card-${item.id}`}
+                            data-framer-motion-reducible="true"
+                        >
+                            {/* Card glow effect */}
+                            <div
+                                className="absolute -inset-4 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl"
+                                style={{
+                                    background: `radial-gradient(circle, ${item.color.primary} 0%, transparent 70%)`,
+                                }}
+                            />
+
+                            {item.isBanned ? (
+                                <BannedShowcaseCard {...item} onCardClick={handleCardClick} />
+                            ) : (
+                                <ShowcaseCard {...item} onCardClick={handleCardClick} />
+                            )}
+                        </motion.div>
+                    );
+                })}
             </motion.div>
 
-            {/* Enhanced floating orbs - cyan theme matching MatchGrid */}
-            <motion.div
-                className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full blur-3xl pointer-events-none"
-                style={{
-                    background: "radial-gradient(circle, rgba(6,182,212,0.12) 0%, transparent 70%)",
-                }}
-                animate={{
-                    x: [0, 50, 0],
-                    y: [0, -30, 0],
-                    scale: [1, 1.1, 1],
-                }}
-                transition={{
-                    duration: 15,
-                    repeat: Infinity,
-                    ease: "linear",
-                }}
-            />
-            <motion.div
-                className="absolute bottom-1/3 right-1/4 w-80 h-80 rounded-full blur-3xl pointer-events-none"
-                style={{
-                    background: "radial-gradient(circle, rgba(34,211,238,0.1) 0%, transparent 70%)",
-                }}
-                animate={{
-                    x: [0, -40, 0],
-                    y: [0, 40, 0],
-                    scale: [1, 1.15, 1],
-                }}
-                transition={{
-                    duration: 18,
-                    repeat: Infinity,
-                    ease: "linear",
-                }}
-            />
 
-            <FloatingParticles />
         </div>
     );
-}
+});

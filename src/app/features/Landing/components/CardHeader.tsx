@@ -2,12 +2,7 @@
 
 import { motion } from "framer-motion";
 import { getSubcategoryIcon } from "@/lib/helpers/getIcons";
-
-export interface CardColor {
-  primary: string;
-  secondary: string;
-  accent: string;
-}
+import type { CardColor } from "../types";
 
 interface CardHeaderProps {
   title: string;

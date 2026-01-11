@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { useItemStore } from "@/stores/item-store";
+import { useGridStore } from "@/stores/grid-store";
 import { useCurrentList } from "@/stores/use-list-store";
 import { useMemo, useState } from "react";
 import { CompletionModal } from "./modals/completion/CompletionModal";
@@ -14,7 +14,7 @@ interface ProgressMainProps {
 
 const ProgressMain = ({ text, showPercentage = true, className = "" }: ProgressMainProps) => {
     const currentList = useCurrentList();
-    const { gridItems } = useItemStore();
+    const gridItems = useGridStore((state) => state.gridItems);
     const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
 
     const { totalSize, progressPercentage, isCompleted } = useMemo(() => {

@@ -7,6 +7,9 @@
 
 # testing
 /coverage
+/playwright-report/
+/blob-report/
+/test-results/
 
 # next.js
 /.next/
@@ -14,7 +17,7 @@
 
 # production
 /build
-
+.claude/
 # misc
 .DS_Store
 *.pem

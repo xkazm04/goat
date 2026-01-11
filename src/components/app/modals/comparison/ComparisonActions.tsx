@@ -19,8 +19,9 @@ export function ComparisonActions({
   onClose
 }: ComparisonActionsProps) {
   return (
-    <div 
+    <div
       className="px-6 py-4 border-t flex items-center justify-between"
+      data-testid="comparison-actions"
       style={{
         borderColor: 'rgba(71, 85, 105, 0.4)',
         background: `
@@ -67,6 +68,7 @@ export function ComparisonActions({
             background: 'rgba(239, 68, 68, 0.1)',
             border: '1px solid rgba(239, 68, 68, 0.3)'
           }}
+          data-testid="comparison-clear-all-btn"
         >
           <Trash2 className="w-4 h-4" />
           <span className="hidden sm:inline">Clear All</span>
@@ -78,14 +80,15 @@ export function ComparisonActions({
           disabled={selectedCount === 0}
           className="flex items-center gap-2 px-6 py-2 rounded-lg font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           style={{
-            background: selectedCount > 0 
+            background: selectedCount > 0
               ? 'linear-gradient(135deg, rgba(34, 197, 94, 0.8), rgba(16, 185, 129, 0.8))'
               : 'rgba(71, 85, 105, 0.5)',
-            boxShadow: selectedCount > 0 
+            boxShadow: selectedCount > 0
               ? '0 4px 15px rgba(34, 197, 94, 0.3)'
               : 'none',
             color: 'white'
           }}
+          data-testid="comparison-bulk-assign-btn"
         >
           <Grid3X3 className="w-4 h-4" />
           <span>
@@ -101,6 +104,7 @@ export function ComparisonActions({
             background: 'rgba(51, 65, 85, 0.5)',
             border: '1px solid rgba(71, 85, 105, 0.4)'
           }}
+          data-testid="comparison-actions-close-btn"
         >
           <X className="w-4 h-4" />
           <span className="hidden sm:inline">Close</span>

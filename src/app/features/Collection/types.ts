@@ -47,6 +47,10 @@ export interface CollectionStats {
   curatorLevel?: number; // Current curator milestone level (1-5)
   itemsToNextLevel?: number; // Items needed to reach next milestone
   hiddenInGridCount?: number; // Number of items hidden because they are in the MatchGrid
+  // Derived placement state (first-class relationship with Grid)
+  placedCount?: number; // Number of items placed in the grid
+  remainingToRank?: number; // Number of items still available to rank
+  completionPercentage?: number; // Grid completion percentage (0-100)
 }
 
 export interface CollectionPaginationState {

@@ -128,3 +128,11 @@ export interface CloneListRequest {
     change_size?: number;
   };
 }
+
+// Featured lists consolidated response - returns all 4 categories in single request
+export interface FeaturedListsResponse {
+  popular: TopList[];
+  trending: TopList[];
+  latest: TopList[];
+  awards: TopList[];
+}

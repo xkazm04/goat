@@ -1,20 +1,30 @@
 import { create } from 'zustand';
+import { ListTemplate } from '@/types/templates';
+import { TopList } from '@/types/top-lists';
+import { Blueprint } from '@/types/blueprint';
+import {
+  ListIntent,
+  ListIntentColor,
+  ListIntentTimePeriod,
+  ListIntentSource,
+  createListIntent,
+  updateListIntent,
+  DEFAULT_LIST_INTENT,
+  DEFAULT_LIST_INTENT_COLOR,
+} from '@/types/list-intent';
+import {
+  listTemplateToIntent,
+  topListToIntent,
+  blueprintToIntent,
+  showcasePresetToIntent,
+} from '@/types/list-intent-transformers';
 
-export interface CompositionFormData {
-  selectedCategory: string;
-  selectedSubcategory?: string;
-  timePeriod: "all-time" | "decade" | "year";
-  selectedDecade?: string;
-  selectedYear?: string;
-  hierarchy: number;
-  isPredefined: boolean;
-  title?: string;
-  description?: string;
-  color: {
-    primary: string;
-    secondary: string;
-    accent: string;
-  };
+export type CompositionMode = 'create' | 'template' | 'clone' | 'blueprint';
+
+export interface TemplateData {
+  template: ListTemplate | null;
+  sourceList: TopList | null;
+  blueprint: Blueprint | null;
 }
 
 interface CompositionModalState {
@@ -22,16 +32,36 @@ interface CompositionModalState {
   isOpen: boolean;
   isExpanded: boolean;
 
-  // Form data
-  formData: CompositionFormData;
+  // Composition mode
+  mode: CompositionMode;
+
+  // Template data (when mode is 'template' or 'clone')
+  templateData: TemplateData;
+
+  // Show template gallery flag
+  showTemplateGallery: boolean;
+
+  // ListIntent - Single source of truth for list creation intent
+  intent: ListIntent;
 
   // Actions
-  openModal: (config?: Partial<CompositionFormData>) => void;
+  openModal: () => void;
   closeModal: () => void;
   resetModal: () => void;
   setIsExpanded: (expanded: boolean) => void;
-  updateFormData: (updates: Partial<CompositionFormData>) => void;
-  setFormData: (data: CompositionFormData) => void;
+
+  // ListIntent-based actions
+  updateIntent: (updates: Partial<ListIntent>) => void;
+  setIntent: (intent: ListIntent) => void;
+  getIntent: () => ListIntent;
+
+  // Template actions
+  setMode: (mode: CompositionMode) => void;
+  setShowTemplateGallery: (show: boolean) => void;
+  openWithTemplate: (template: ListTemplate) => void;
+  openWithSourceList: (list: TopList) => void;
+  openWithBlueprint: (blueprint: Blueprint) => void;
+  clearTemplateData: () => void;
 
   // Pre-populate from showcase cards or other triggers
   populateFromPreset: (preset: {
@@ -48,63 +78,42 @@ interface CompositionModalState {
   }) => void;
 }
 
-// Default color constant
-const DEFAULT_COLOR = {
-  primary: "#f59e0b",
-  secondary: "#d97706",
-  accent: "#fbbf24"
-} as const;
-
-// Default form data
-const DEFAULT_FORM_DATA: CompositionFormData = {
-  selectedCategory: "Sports",
-  selectedSubcategory: "Basketball",
-  timePeriod: "all-time",
-  selectedDecade: "2020",
-  selectedYear: "2024",
-  hierarchy: 50,
-  isPredefined: true,
-  title: "",
-  color: DEFAULT_COLOR
-};
-
-// Helper function to determine if category has subcategories
-const getInitialSubcategory = (category: string, providedSubcategory?: string): string | undefined => {
-  switch (category.toLowerCase()) {
-    case 'sports':
-      return providedSubcategory || 'Basketball';
-    case 'music':
-    case 'games':
-    case 'stories':
-      return undefined;
-    default:
-      return providedSubcategory;
-  }
+// Default template data
+const DEFAULT_TEMPLATE_DATA: TemplateData = {
+  template: null,
+  sourceList: null,
+  blueprint: null,
 };
 
 export const useCompositionModalStore = create<CompositionModalState>((set, get) => ({
   // Initial state
   isOpen: false,
   isExpanded: false,
-  formData: DEFAULT_FORM_DATA,
+  mode: 'create',
+  templateData: DEFAULT_TEMPLATE_DATA,
+  showTemplateGallery: false,
+  intent: DEFAULT_LIST_INTENT,
 
-  // Open modal with optional pre-populated data
-  openModal: (config) => {
-    const currentFormData = get().formData;
-
+  // Open modal
+  openModal: () => {
     set({
       isOpen: true,
       isExpanded: false,
-      formData: config ? {
-        ...currentFormData,
-        ...config
-      } : currentFormData
+      mode: 'create',
+      templateData: DEFAULT_TEMPLATE_DATA,
+      showTemplateGallery: false,
     });
   },
 
   // Close modal
   closeModal: () => {
-    set({ isOpen: false, isExpanded: false });
+    set({
+      isOpen: false,
+      isExpanded: false,
+      mode: 'create',
+      templateData: DEFAULT_TEMPLATE_DATA,
+      showTemplateGallery: false,
+    });
   },
 
   // Reset modal to default state
@@ -112,7 +121,10 @@ export const useCompositionModalStore = create<CompositionModalState>((set, get)
     set({
       isOpen: false,
       isExpanded: false,
-      formData: DEFAULT_FORM_DATA
+      mode: 'create',
+      templateData: DEFAULT_TEMPLATE_DATA,
+      showTemplateGallery: false,
+      intent: DEFAULT_LIST_INTENT,
     });
   },
 
@@ -121,43 +133,108 @@ export const useCompositionModalStore = create<CompositionModalState>((set, get)
     set({ isExpanded: expanded });
   },
 
-  // Update partial form data
-  updateFormData: (updates) => {
-    set((state) => ({
-      formData: {
-        ...state.formData,
-        ...updates
-      }
-    }));
+  // ListIntent-based actions
+  updateIntent: (updates) => {
+    const currentIntent = get().intent;
+    const newIntent = updateListIntent(currentIntent, updates);
+    set({ intent: newIntent });
   },
 
-  // Set complete form data
-  setFormData: (data) => {
-    set({ formData: data });
+  setIntent: (intent) => {
+    set({ intent });
   },
 
-  // Populate from preset (e.g., showcase card click)
-  populateFromPreset: (preset) => {
-    const category = preset.category || DEFAULT_FORM_DATA.selectedCategory;
-    const subcategory = getInitialSubcategory(category, preset.subcategory);
-    const hierarchy = preset.hierarchy
-      ? parseInt(preset.hierarchy.replace("Top ", ""))
-      : DEFAULT_FORM_DATA.hierarchy;
+  getIntent: () => get().intent,
+
+  // Template actions
+  setMode: (mode) => {
+    set({ mode });
+  },
+
+  setShowTemplateGallery: (show) => {
+    set({ showTemplateGallery: show });
+  },
+
+  openWithTemplate: (template) => {
+    const newIntent = listTemplateToIntent(template);
 
     set({
       isOpen: true,
       isExpanded: false,
-      formData: {
-        selectedCategory: category,
-        selectedSubcategory: subcategory,
-        timePeriod: preset.timePeriod || DEFAULT_FORM_DATA.timePeriod,
-        selectedDecade: DEFAULT_FORM_DATA.selectedDecade,
-        selectedYear: DEFAULT_FORM_DATA.selectedYear,
-        hierarchy,
-        isPredefined: true,
-        title: preset.title || "",
-        color: preset.color || DEFAULT_COLOR
-      }
+      mode: 'template',
+      showTemplateGallery: false,
+      templateData: {
+        template,
+        sourceList: null,
+        blueprint: null,
+      },
+      intent: newIntent,
     });
-  }
+  },
+
+  openWithSourceList: (list) => {
+    const newIntent = topListToIntent(list);
+
+    set({
+      isOpen: true,
+      isExpanded: false,
+      mode: 'clone',
+      showTemplateGallery: false,
+      templateData: {
+        template: null,
+        sourceList: list,
+        blueprint: null,
+      },
+      intent: newIntent,
+    });
+  },
+
+  openWithBlueprint: (blueprint) => {
+    const newIntent = blueprintToIntent(blueprint);
+
+    set({
+      isOpen: true,
+      isExpanded: false,
+      mode: 'blueprint',
+      showTemplateGallery: false,
+      templateData: {
+        template: null,
+        sourceList: null,
+        blueprint,
+      },
+      intent: newIntent,
+    });
+  },
+
+  clearTemplateData: () => {
+    const currentIntent = get().intent;
+    const newIntent = updateListIntent(currentIntent, { source: 'create', sourceId: undefined });
+
+    set({
+      mode: 'create',
+      templateData: DEFAULT_TEMPLATE_DATA,
+      intent: newIntent,
+    });
+  },
+
+  // Populate from preset (e.g., showcase card click or blueprint)
+  populateFromPreset: (preset) => {
+    const newIntent = showcasePresetToIntent({
+      category: preset.category,
+      subcategory: preset.subcategory,
+      timePeriod: preset.timePeriod,
+      hierarchy: preset.hierarchy,
+      title: preset.title,
+      color: preset.color,
+    });
+
+    set({
+      isOpen: true,
+      isExpanded: false,
+      mode: 'create',
+      templateData: DEFAULT_TEMPLATE_DATA,
+      showTemplateGallery: false,
+      intent: newIntent,
+    });
+  },
 }));

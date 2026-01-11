@@ -8,6 +8,7 @@ import {
 import { toast } from './use-toast';
 import { topListsApi } from '@/lib/api/top-lists';
 import { topListsKeys } from '@/lib/query-keys/top-lists';
+import { cacheInvalidation } from '@/lib/cache';
 import {
   TopList,
   ListWithItems,
@@ -18,7 +19,9 @@ import {
   SearchListsParams,
   VersionComparison,
   ListCreationResponse,
+  FeaturedListsResponse,
 } from '@/types/top-lists';
+import { FeaturedListsParams } from '@/lib/query-keys/top-lists';
 
 // Reusable cache times in milliseconds
 const CACHE_TIMES = {
@@ -125,6 +128,19 @@ export const useVersionComparison = (
   });
 };
 
+// Featured lists hook - consolidated endpoint for popular, trending, latest, and awards
+export const useFeaturedLists = (
+  params?: FeaturedListsParams,
+  options?: Omit<UseQueryOptions<FeaturedListsResponse, Error, FeaturedListsResponse, readonly unknown[]>, 'queryKey' | 'queryFn'>
+) => {
+  return useQuery({
+    queryKey: topListsKeys.featured(params),
+    queryFn: () => topListsApi.getFeaturedLists(params),
+    staleTime: CACHE_TIMES.STANDARD,
+    ...options,
+  });
+};
+
 // Mutation Hooks
 export const useCreateListWithUser = (
   options?: UseMutationOptions<ListCreationResponse, Error, CreateListRequest>
@@ -136,11 +152,14 @@ export const useCreateListWithUser = (
     onSuccess: (data, variables) => {
       // Invalidate and refetch lists
       queryClient.invalidateQueries({ queryKey: topListsKeys.lists() });
-      
+
       // Invalidate user lists for the created user
-      queryClient.invalidateQueries({ 
-        queryKey: topListsKeys.userLists(data.user.id) 
+      queryClient.invalidateQueries({
+        queryKey: topListsKeys.userLists(data.user.id)
       });
+
+      // Also invalidate the API cache layer
+      cacheInvalidation.onListCreated(data.list.id);
 
       // Pre-populate the cache with the new list data
       queryClient.setQueryData(
@@ -213,6 +232,10 @@ export const useUpdateList = (
         (old: ListWithItems | undefined) => old ? { ...old, ...data } : old
       );
       queryClient.invalidateQueries({ queryKey: topListsKeys.lists() });
+
+      // Invalidate API cache layer
+      cacheInvalidation.onListUpdated(variables.listId);
+
       showSuccessToast("Success", `List "${data.title}" updated successfully!`);
     },
     onError: (error) => showErrorToast("update list", error),
@@ -230,6 +253,10 @@ export const useDeleteList = (
     onSuccess: (_, listId) => {
       queryClient.removeQueries({ queryKey: topListsKeys.list(listId) });
       queryClient.invalidateQueries({ queryKey: topListsKeys.lists() });
+
+      // Invalidate API cache layer
+      cacheInvalidation.onListDeleted(listId);
+
       showSuccessToast("Success", "List deleted successfully!");
     },
     onError: (error) => showErrorToast("delete list", error),
@@ -264,46 +291,15 @@ export const useCloneList = (
 // Utility hooks for common patterns
 export const useInvalidateListsCache = () => {
   const queryClient = useQueryClient();
-  
+
   return {
     invalidateAll: () => queryClient.invalidateQueries({ queryKey: topListsKeys.all }),
     invalidateLists: () => queryClient.invalidateQueries({ queryKey: topListsKeys.lists() }),
-    invalidateUserLists: (userId: string) => 
+    invalidateUserLists: (userId: string) =>
       queryClient.invalidateQueries({ queryKey: topListsKeys.userLists(userId) }),
-    invalidateList: (listId: string) => 
+    invalidateList: (listId: string) =>
       queryClient.invalidateQueries({ queryKey: topListsKeys.list(listId) }),
-    invalidateCreation: () => 
+    invalidateCreation: () =>
       queryClient.invalidateQueries({ queryKey: topListsKeys.creation() }),
-  };
-};
-
-// NEW: Specialized hook for list creation flow
-export const useListCreationFlow = () => {
-  const createListWithUser = useCreateListWithUser();
-  const queryClient = useQueryClient();
-
-  const createAndPrepareForMatching = async (
-    listData: CreateListRequest,
-    onSuccess?: (response: ListCreationResponse) => void
-  ) => {
-    try {
-      const result = await createListWithUser.mutateAsync(listData);
-      
-      // Pre-load any additional data needed for matching
-      // This could include fetching initial items, etc.
-      
-      onSuccess?.(result);
-      return result;
-    } catch (error) {
-      console.error('List creation flow failed:', error);
-      throw error;
-    }
-  };
-
-  return {
-    createAndPrepareForMatching,
-    isCreating: createListWithUser.isPending,
-    error: createListWithUser.error,
-    reset: createListWithUser.reset,
   };
 };

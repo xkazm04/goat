@@ -3,6 +3,13 @@ import { useSessionStore } from './session-store';
 import { useGridStore } from './grid-store';
 import { useComparisonStore } from './comparison-store';
 import { useListStore } from './use-list-store';
+import { useValidationNotificationStore } from './validation-notification-store';
+import { ValidationErrorCode } from '@/lib/validation';
+
+// Re-export ValidationNotification type from the dedicated store for backwards compatibility
+export type { ValidationNotification } from './validation-notification-store';
+// Re-export for backwards compatibility
+export type { ValidationErrorCode as TransferValidationErrorCode } from '@/lib/validation';
 
 interface MatchStoreState {
   // Match-specific UI state
@@ -21,6 +28,9 @@ interface MatchStoreState {
   setShowResultShareModal: (show: boolean) => void;
   setShowQuickAssignModal: (show: boolean) => void;
   setKeyboardMode: (enabled: boolean) => void;
+
+  // Actions - Validation Notifications (delegates to validation-notification-store)
+  emitValidationError: (errorCode: ValidationErrorCode) => void;
   
   // Actions - Keyboard Navigation
   navigateBacklogItems: (direction: 'up' | 'down') => void;
@@ -73,6 +83,12 @@ export const useMatchStore = create<MatchStoreState>((set, get) => ({
   setShowResultShareModal: (show) => set({ showResultShareModal: show }),
 
   setShowQuickAssignModal: (show) => set({ showQuickAssignModal: show }),
+
+  // Validation Notification Actions - Delegates to validation-notification-store
+  emitValidationError: (errorCode) => {
+    // Delegate to the dedicated validation notification store
+    useValidationNotificationStore.getState().emitValidationError(errorCode);
+  },
 
   setKeyboardMode: (enabled) => {
     set({ keyboardMode: enabled });
@@ -350,3 +366,7 @@ export const useMatchActions = () => useMatchStore((state) => ({
   setKeyboardMode: state.setKeyboardMode,
   setShowQuickAssignModal: state.setShowQuickAssignModal
 }));
+
+// Selector for validation notifications - re-exported from validation-notification-store
+// This maintains backwards compatibility for existing consumers
+export { useValidationNotifications } from './validation-notification-store';

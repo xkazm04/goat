@@ -103,6 +103,7 @@ export function ComparisonItem({
                 boxShadow: '0 2px 8px rgba(34, 197, 94, 0.3)'
               }}
               title="Quick assign to grid"
+              data-testid="comparison-item-quick-assign-btn"
             >
               <Grid3X3 className="w-4 h-4 text-white" />
             </button>
@@ -171,6 +172,7 @@ export function ComparisonItem({
                 boxShadow: '0 2px 8px rgba(34, 197, 94, 0.3)',
                 color: 'white'
               }}
+              data-testid="comparison-item-assign-btn"
             >
               <Grid3X3 className="w-4 h-4" />
               Assign to Grid
@@ -260,6 +262,7 @@ export function ComparisonItem({
           boxShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
         }}
         title="Remove from comparison"
+        data-testid="comparison-item-remove-btn"
       >
         <X className="w-3 h-3 text-white" />
       </button>
@@ -282,6 +285,7 @@ export function ComparisonItem({
             boxShadow: '0 2px 8px rgba(34, 197, 94, 0.3)'
           }}
           title="Quick assign to grid"
+          data-testid="comparison-item-grid-assign-btn"
         >
           <ArrowUpRight className="w-4 h-4 text-white" />
         </button>

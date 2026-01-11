@@ -6,31 +6,13 @@ import { AdminItemCard } from './AdminItemCard';
 import { apiClient } from '@/lib/api/client';
 import { MasonryGrid } from '@/components/ui/masonry-grid';
 import { Skeleton } from '@/components/ui/skeleton';
-
-interface Item {
-  id: string;
-  name: string;
-  image_url?: string | null;
-  description?: string;
-  category: string;
-  subcategory?: string;
-  group?: string;
-  item_year?: number;
-  created_at: string;
-}
-
-interface ItemsResponse {
-  items: Item[];
-  total: number;
-  limit: number;
-  offset: number;
-}
+import { AdminItemsResponse } from './types';
 
 /**
  * Fetch items without images
  */
-async function fetchMissingImageItems(): Promise<ItemsResponse> {
-  return apiClient.get<ItemsResponse>('/top/items', {
+async function fetchMissingImageItems(): Promise<AdminItemsResponse> {
+  return apiClient.get<AdminItemsResponse>('/top/items', {
     missing_image: true,
     limit: 50,
     offset: 0,
