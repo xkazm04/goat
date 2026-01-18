@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { useDraggable } from "@dnd-kit/core";
+import { motion, AnimatePresence } from "framer-motion";
 import { ItemCard } from "@/components/ui/item-card";
 import { StarRating } from "@/components/ui/star-rating";
 import { CollectionItem as CollectionItemType } from "../types";
@@ -17,6 +18,19 @@ import { SpotlightTooltip } from "./SpotlightTooltip";
 import { useConsensusStore, useConsensusSortBy } from "@/stores/consensus-store";
 import { highlightMatch } from "@/app/features/Match/sub_MatchCollections/components/CollectionSearch";
 import { createCollectionDragData } from "@/lib/dnd";
+import { useTouchGestures, GestureItemData } from "@/app/features/Match/hooks/useTouchGestures";
+import { PreviewItem } from "@/app/features/Match/components/LongPressPreview";
+import { ArrowRight, ArrowLeft, PlusCircle, Eye, Trash2, Info } from "lucide-react";
+import { useInspectorStore } from "@/stores/inspector-store";
+
+/**
+ * Swipe action icon mapping
+ */
+const SWIPE_ACTION_ICONS: Record<string, React.ReactNode> = {
+  "quick-assign": <PlusCircle className="w-5 h-5" />,
+  remove: <Trash2 className="w-5 h-5" />,
+  preview: <Eye className="w-5 h-5" />,
+};
 
 /**
  * Configuration options for the collection item features
@@ -44,6 +58,12 @@ export interface CollectionItemConfig {
   useProgressiveImages?: boolean;
   /** Enable search query highlighting */
   enableSearchHighlight?: boolean;
+  /** Enable swipe gesture shortcuts (mobile) */
+  enableSwipeGestures?: boolean;
+  /** Enable long press preview (mobile) */
+  enableLongPressPreview?: boolean;
+  /** Show info button to open item inspector */
+  showInspectorButton?: boolean;
 }
 
 export interface ConfigurableCollectionItemProps {
@@ -63,6 +83,10 @@ export interface ConfigurableCollectionItemProps {
   onClick?: () => void;
   /** Feature configuration */
   config?: CollectionItemConfig;
+  /** Called when swipe gesture triggers quick-assign action */
+  onSwipeQuickAssign?: (item: CollectionItemType) => void;
+  /** Called when long press triggers preview */
+  onLongPressPreview?: (item: PreviewItem, position: { x: number; y: number }) => void;
 }
 
 /**
@@ -80,6 +104,9 @@ export const MATCH_VIEW_CONFIG: CollectionItemConfig = {
   showAverageRankingBadge: false,
   useProgressiveImages: true,
   enableSearchHighlight: true,
+  enableSwipeGestures: true,
+  enableLongPressPreview: true,
+  showInspectorButton: true,
 };
 
 /**
@@ -97,6 +124,9 @@ export const COLLECTION_VIEW_CONFIG: CollectionItemConfig = {
   showAverageRankingBadge: true,
   useProgressiveImages: false,
   enableSearchHighlight: false,
+  enableSwipeGestures: true,
+  enableLongPressPreview: true,
+  showInspectorButton: true,
 };
 
 /**
@@ -128,10 +158,13 @@ export function ConfigurableCollectionItem({
   isClickSelected = false,
   onClick,
   config = MATCH_VIEW_CONFIG,
+  onSwipeQuickAssign,
+  onLongPressPreview,
 }: ConfigurableCollectionItemProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Merge config with defaults
   const {
@@ -146,7 +179,13 @@ export function ConfigurableCollectionItem({
     showAverageRankingBadge = false,
     useProgressiveImages = false,
     enableSearchHighlight = false,
+    enableSwipeGestures = true,
+    enableLongPressPreview = true,
+    showInspectorButton = true,
   } = config;
+
+  // Inspector store for opening item details
+  const openInspector = useInspectorStore((state) => state.openInspector);
 
   // Consensus store integration
   const viewMode_ = useConsensusStore((state) => state.viewMode);
@@ -159,6 +198,55 @@ export function ConfigurableCollectionItem({
     id: item.id,
     data: createCollectionDragData(item, groupId),
   });
+
+  // Gesture action handlers
+  const handleSwipeAction = useCallback(
+    (result: { action: string; success: boolean }) => {
+      if (result.success && result.action === "quick-assign" && onSwipeQuickAssign) {
+        onSwipeQuickAssign(item);
+      }
+    },
+    [item, onSwipeQuickAssign]
+  );
+
+  const handleShowPreview = useCallback(
+    (previewItem: PreviewItem, position: { x: number; y: number }) => {
+      if (onLongPressPreview) {
+        onLongPressPreview(previewItem, position);
+      }
+    },
+    [onLongPressPreview]
+  );
+
+  // Touch gesture integration
+  const {
+    handlers: gestureHandlers,
+    isGesturing,
+    swipeIndicator,
+    setItemData: setGestureItemData,
+  } = useTouchGestures(
+    {
+      enabled: enableSwipeGestures && !isDragging,
+      contextType: "backlog",
+      swipeShortcutsEnabled: true,
+      longPressPreviewEnabled: enableLongPressPreview && !!onLongPressPreview,
+    },
+    {
+      onAction: handleSwipeAction,
+      onShowPreview: handleShowPreview,
+    }
+  );
+
+  // Sync item data with gesture system
+  useEffect(() => {
+    const gestureItemData: GestureItemData = {
+      id: item.id,
+      title: item.title,
+      imageUrl: item.image_url,
+      description: item.description,
+    };
+    setGestureItemData(gestureItemData);
+  }, [item, setGestureItemData]);
 
   // Style with optional transform
   const style = transform ? {
@@ -208,6 +296,13 @@ export function ConfigurableCollectionItem({
 
   const showDragHandle = showKeyboardHandles && (isFocused || isDragging);
 
+  // Handle opening item inspector
+  const handleOpenInspector = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    openInspector(item.id);
+  }, [item.id, openInspector]);
+
   // Determine aria label
   const ariaLabel = onClick
     ? `Click to select or drag: ${item.title}`
@@ -215,22 +310,86 @@ export function ConfigurableCollectionItem({
 
   return (
     <div
-      ref={setNodeRef}
+      ref={(el) => {
+        setNodeRef(el);
+        (containerRef as any).current = el;
+      }}
       style={style}
       className={`
         relative group touch-none
         ${isSpotlight && showSpotlight ? 'spotlight-active' : ''}
         ${isDragging ? 'z-50' : ''}
+        ${isGesturing ? 'z-40' : ''}
         ${isClickSelected ? 'ring-2 ring-cyan-500 ring-offset-2 ring-offset-gray-900 rounded-lg' : ''}
       `}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      {...gestureHandlers}
       data-testid={
         isSpotlight && showSpotlight
           ? "collection-item-spotlight"
           : `collection-item-wrapper-${item.id}`
       }
+      data-gesturing={isGesturing}
     >
+      {/* Swipe action indicator */}
+      <AnimatePresence>
+        {enableSwipeGestures && swipeIndicator.direction && swipeIndicator.progress > 0.2 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: swipeIndicator.progress }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 rounded-lg pointer-events-none z-30 flex items-center overflow-hidden"
+            style={{
+              justifyContent: swipeIndicator.direction === "right" ? "flex-start" : "flex-end",
+            }}
+          >
+            {/* Action indicator bar */}
+            <motion.div
+              className="h-full flex items-center justify-center px-3"
+              style={{
+                backgroundColor: swipeIndicator.color ? `${swipeIndicator.color}30` : "rgba(34, 211, 238, 0.3)",
+                width: `${swipeIndicator.progress * 100}%`,
+                maxWidth: "40%",
+              }}
+              animate={{ width: `${swipeIndicator.progress * 100}%` }}
+              transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            >
+              <motion.div
+                className="text-white"
+                style={{ color: swipeIndicator.color || "#22d3ee" }}
+                initial={{ opacity: 0, x: swipeIndicator.direction === "right" ? -8 : 8 }}
+                animate={{ opacity: 1, x: 0 }}
+              >
+                {swipeIndicator.action && SWIPE_ACTION_ICONS[swipeIndicator.action] || (
+                  swipeIndicator.direction === "right" ? (
+                    <ArrowRight className="w-4 h-4" />
+                  ) : (
+                    <ArrowLeft className="w-4 h-4" />
+                  )
+                )}
+              </motion.div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Swipe direction border glow */}
+      <AnimatePresence>
+        {enableSwipeGestures && swipeIndicator.direction && swipeIndicator.progress > 0.3 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: swipeIndicator.progress }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 rounded-lg pointer-events-none z-25"
+            style={{
+              border: `2px solid ${swipeIndicator.color || "#22d3ee"}`,
+              boxShadow: `0 0 12px ${swipeIndicator.color || "#22d3ee"}40`,
+            }}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Easter egg tooltip */}
       {showSpotlight && (
         <SpotlightTooltip visible={isSpotlight && showTooltip} />
@@ -272,11 +431,12 @@ export function ConfigurableCollectionItem({
           </span>
         </div>
       ) : (
-        // Simple drag wrapper (no separate focus area)
+        // Simple drag overlay - covers entire item for drag interaction
         <div
           {...attributes}
           {...listeners}
-          className="cursor-pointer"
+          className="absolute inset-0 z-10 cursor-grab active:cursor-grabbing"
+          data-testid={`draggable-overlay-${item.id}`}
         />
       )}
 
@@ -329,6 +489,26 @@ export function ConfigurableCollectionItem({
       {/* Consensus ranking overlay */}
       {shouldShowConsensus && !isDragging && (
         <ConsensusOverlay itemId={item.id} />
+      )}
+
+      {/* Inspector button - shows on hover */}
+      {showInspectorButton && !isDragging && (
+        <AnimatePresence>
+          {isHovered && (
+            <motion.button
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.15 }}
+              onClick={handleOpenInspector}
+              className="absolute bottom-1.5 left-1.5 z-20 p-1.5 rounded-lg bg-gray-900/80 backdrop-blur-sm border border-gray-600/50 text-gray-300 hover:text-cyan-400 hover:border-cyan-500/50 hover:bg-gray-800/90 transition-colors"
+              aria-label={`View details for ${item.title}`}
+              data-testid={`inspector-button-${item.id}`}
+            >
+              <Info className="w-3.5 h-3.5" />
+            </motion.button>
+          )}
+        </AnimatePresence>
       )}
 
       <ItemCard

@@ -92,8 +92,10 @@ export function PhysicsDragOverlay({
           : { duration: 0.1 },
         rotate: { duration: 0.08 },
       }}
-      className="relative w-24 h-24 rounded-xl overflow-hidden"
+      className="w-24 h-24 rounded-xl overflow-hidden"
       style={{
+        marginLeft: '-48px',
+        marginTop: '-48px',
         boxShadow: `
           0 ${10 + shadowIntensity * 20}px ${25 + shadowIntensity * 35}px rgba(0, 0, 0, ${0.3 + shadowIntensity * 0.3}),
           0 0 ${35 + shadowIntensity * 25}px rgba(34, 211, 238, ${0.35 + shadowIntensity * 0.35}),

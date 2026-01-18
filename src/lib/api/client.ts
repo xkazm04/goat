@@ -1,4 +1,22 @@
+import {
+  GoatError,
+  NetworkError,
+  fromHttpResponse,
+  isGoatError,
+  trackError,
+} from '@/lib/errors';
+import type { ErrorResponse } from '@/lib/errors';
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
+
+/**
+ * API Response type that includes error information
+ */
+interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: ErrorResponse;
+}
 
 export class ApiClient {
   private baseURL: string;
@@ -31,39 +49,110 @@ export class ApiClient {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
 
-        // Create a structured error with status information
-        const error = new Error(errorData.detail || `HTTP error! status: ${response.status}`) as any;
-        error.status = response.status;
-        error.statusText = response.statusText;
-        error.response = {
-          status: response.status,
-          statusText: response.statusText,
-          data: errorData
-        };
+        // Check if the response is in our new ErrorResponse format
+        if (errorData.success === false && errorData.code) {
+          const error = fromHttpResponse(response.status, {
+            error: errorData.message,
+            code: errorData.code,
+            details: errorData.details,
+          });
+
+          // Track the error
+          trackError({
+            code: error.code,
+            category: error.category,
+            severity: error.severity,
+            traceId: error.traceId,
+            path: endpoint,
+            method: options.method || 'GET',
+          });
+
+          throw error;
+        }
+
+        // Legacy error response handling
+        const error = fromHttpResponse(response.status, {
+          error: errorData.error || errorData.detail || errorData.message,
+        });
+
+        trackError({
+          code: error.code,
+          category: error.category,
+          severity: error.severity,
+          traceId: error.traceId,
+          path: endpoint,
+          method: options.method || 'GET',
+        });
+
         throw error;
       }
 
-      return response.json();
-    } catch (error: any) {
-      // If the error already has a status (from above), rethrow it
-      if (error.status) {
+      const data = await response.json();
+
+      // Handle wrapped responses
+      if (data && typeof data === 'object' && 'success' in data && data.success === true) {
+        return data.data as T;
+      }
+
+      return data;
+    } catch (error: unknown) {
+      // If it's already a GoatError, rethrow it
+      if (isGoatError(error)) {
         throw error;
       }
 
       // Network errors (fetch failures)
-      if (error.name === 'TypeError' && error.message.includes('fetch')) {
-        const networkError = new Error('Failed to connect to server') as any;
-        networkError.name = 'NetworkError';
-        networkError.originalError = error;
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        const networkError = NetworkError.fromFetchError(error);
+
+        trackError({
+          code: networkError.code,
+          category: networkError.category,
+          severity: networkError.severity,
+          traceId: networkError.traceId,
+          path: endpoint,
+          method: options.method || 'GET',
+        });
+
         throw networkError;
       }
 
-      // Other errors
-      throw error;
+      // Check for AbortError (timeout)
+      if (error instanceof Error && error.name === 'AbortError') {
+        const timeoutError = new NetworkError('NETWORK_TIMEOUT', 'Request timed out');
+
+        trackError({
+          code: timeoutError.code,
+          category: timeoutError.category,
+          severity: timeoutError.severity,
+          traceId: timeoutError.traceId,
+          path: endpoint,
+          method: options.method || 'GET',
+        });
+
+        throw timeoutError;
+      }
+
+      // Other unknown errors
+      const unknownError = new GoatError('CLIENT_UNKNOWN_ERROR',
+        error instanceof Error ? error.message : 'An unexpected error occurred',
+        { cause: error instanceof Error ? error : undefined }
+      );
+
+      trackError({
+        code: unknownError.code,
+        category: unknownError.category,
+        severity: unknownError.severity,
+        traceId: unknownError.traceId,
+        path: endpoint,
+        method: options.method || 'GET',
+      });
+
+      throw unknownError;
     }
   }
 
-  async get<T>(endpoint: string, params?: Record<string, any>): Promise<T> {
+  async get<T>(endpoint: string, params?: Record<string, unknown> | object): Promise<T> {
     let url = endpoint;
 
     if (params) {
@@ -83,16 +172,23 @@ export class ApiClient {
     return this.request<T>(url);
   }
 
-  async post<T>(endpoint: string, data?: any): Promise<T> {
+  async post<T>(endpoint: string, data?: unknown): Promise<T> {
     return this.request<T>(endpoint, {
       method: 'POST',
       body: data ? JSON.stringify(data) : undefined,
     });
   }
 
-  async put<T>(endpoint: string, data?: any): Promise<T> {
+  async put<T>(endpoint: string, data?: unknown): Promise<T> {
     return this.request<T>(endpoint, {
       method: 'PUT',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  }
+
+  async patch<T>(endpoint: string, data?: unknown): Promise<T> {
+    return this.request<T>(endpoint, {
+      method: 'PATCH',
       body: data ? JSON.stringify(data) : undefined,
     });
   }
@@ -105,3 +201,36 @@ export class ApiClient {
 }
 
 export const apiClient = new ApiClient();
+
+/**
+ * Helper to check if an error is retriable
+ */
+export function isApiErrorRetriable(error: unknown): boolean {
+  if (isGoatError(error)) {
+    return error.isRetriable();
+  }
+  return false;
+}
+
+/**
+ * Helper to get error message for display
+ */
+export function getApiErrorMessage(error: unknown): string {
+  if (isGoatError(error)) {
+    return error.message;
+  }
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return 'An unexpected error occurred';
+}
+
+/**
+ * Helper to get error code for tracking
+ */
+export function getApiErrorCode(error: unknown): string {
+  if (isGoatError(error)) {
+    return error.code;
+  }
+  return 'UNKNOWN';
+}

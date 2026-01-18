@@ -4,49 +4,47 @@
  */
 
 // ========================================
-// Supabase Integration Hooks (New)
+// Supabase Integration Hooks
 // ========================================
-// NOTE: Currently commented out - requires @supabase/supabase-js package installation
-// Uncomment when Supabase integration is ready
 
 /**
  * Supabase Query Hook
  * Wraps Supabase queries with loading, error, and data states
  * Follows React Query patterns for consistency
  */
-// export {
-//   useSupabaseQuery,
-//   useSupabasePaginatedQuery,
-//   type SupabaseQueryState,
-//   type SupabaseQueryOptions,
-//   type SupabaseQueryFn,
-// } from './useSupabaseQuery';
+export {
+  useSupabaseQuery,
+  useSupabasePaginatedQuery,
+  type SupabaseQueryState,
+  type SupabaseQueryOptions,
+  type SupabaseQueryFn,
+} from './useSupabaseQuery';
 
 /**
  * Supabase Mutation Hook
  * Handles insert, update, delete operations with optimistic updates
  */
-// export {
-//   useSupabaseMutation,
-//   useSupabaseBatchMutation,
-//   type SupabaseMutationState,
-//   type SupabaseMutationOptions,
-//   type SupabaseMutationFn,
-// } from './useSupabaseMutation';
+export {
+  useSupabaseMutation,
+  useSupabaseBatchMutation,
+  type SupabaseMutationState,
+  type SupabaseMutationOptions,
+  type SupabaseMutationFn,
+} from './useSupabaseMutation';
 
 /**
  * Supabase Authentication Hook
  * Manages authentication state using Supabase's built-in auth methods
  */
-// export {
-//   useSupabaseAuth,
-//   useSupabaseUser,
-//   useSupabaseUserRole,
-//   type AuthState,
-//   type AuthActions,
-//   type UseSupabaseAuthReturn,
-//   type UseSupabaseAuthOptions,
-// } from './useSupabaseAuth';
+export {
+  useSupabaseAuth,
+  useSupabaseUser,
+  useSupabaseUserRole,
+  type AuthState,
+  type AuthActions,
+  type UseSupabaseAuthReturn,
+  type UseSupabaseAuthOptions,
+} from './useSupabaseAuth';
 
 // ========================================
 // API Consumption Hooks (Existing)

@@ -15,6 +15,7 @@
  */
 
 import { create } from 'zustand';
+import { validationLogger } from '@/lib/logger';
 import {
   ValidationErrorCode,
   getValidationNotification,
@@ -108,7 +109,7 @@ export const useValidationNotificationStore = create<ValidationNotificationStore
       notifications: [...state.notifications, newNotification],
     }));
 
-    console.log(`📢 Validation notification emitted: [${errorCode}] ${notification.title}`);
+    validationLogger.debug(`Validation notification emitted: [${errorCode}] ${notification.title}`);
   },
 
   // Dismiss a specific notification

@@ -10,7 +10,7 @@ import {
   LucideIcon
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { topListsApi } from "@/lib/api/top-lists";
+import { goatApi } from "@/lib/api";
 import { topListsKeys } from "@/lib/query-keys/top-lists";
 import { getCategoryColor } from "@/lib/helpers/getColors";
 import { TopListItem } from "@/types/top-lists";
@@ -94,7 +94,7 @@ export function ListPreviewThumbnail({
   // Lazy-load list items to get images
   const { data: listData, isLoading } = useQuery({
     queryKey: topListsKeys.list(listId, true),
-    queryFn: () => topListsApi.getList(listId, true),
+    queryFn: () => goatApi.lists.get(listId, true),
     staleTime: 5 * 60 * 1000, // 5 minutes
     enabled: !!listId,
     select: (data) => {

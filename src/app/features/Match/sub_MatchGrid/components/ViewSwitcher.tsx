@@ -1,9 +1,9 @@
 "use client";
 
 import { motion } from 'framer-motion';
-import { Trophy, Crown, Mountain } from 'lucide-react';
+import { Trophy, Crown, Mountain, Swords, ListOrdered } from 'lucide-react';
 
-export type ViewMode = 'podium' | 'goat' | 'rushmore';
+export type ViewMode = 'podium' | 'goat' | 'rushmore' | 'bracket' | 'tierlist';
 
 interface ViewSwitcherProps {
     currentView: ViewMode;
@@ -14,6 +14,8 @@ const viewOptions = [
     { id: 'podium' as ViewMode, label: 'Podium', icon: Trophy, description: 'Top 3 Winners' },
     { id: 'goat' as ViewMode, label: 'G.O.A.T', icon: Crown, description: 'The Greatest' },
     { id: 'rushmore' as ViewMode, label: 'Mt. Rushmore', icon: Mountain, description: 'Top 4 Legends' },
+    { id: 'bracket' as ViewMode, label: 'Bracket', icon: Swords, description: 'Tournament Mode' },
+    { id: 'tierlist' as ViewMode, label: 'Tier List', icon: ListOrdered, description: 'S/A/B/C Tiers' },
 ];
 
 export function ViewSwitcher({ currentView, onViewChange }: ViewSwitcherProps) {

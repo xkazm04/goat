@@ -1,4 +1,5 @@
 import { BacklogState } from "./types";
+import { backlogLogger } from '@/lib/logger';
 
 // Type for immer-compatible set function
 type ImmerSet = (fn: (state: BacklogState) => void) => void;
@@ -44,26 +45,26 @@ export const createUtilActions = (
   // NEW: Get item by ID across all groups
   getItemById: (itemId: string) => {
     const state = get();
-    console.log(`🔍 BacklogStore: Looking for item ${itemId} across ${state.groups.length} groups`);
+    backlogLogger.debug(`Looking for item ${itemId} across ${state.groups.length} groups`);
     
     for (const group of state.groups) {
       if (group.items && Array.isArray(group.items)) {
         const item = group.items.find(item => item.id === itemId);
         if (item) {
-          console.log(`✅ BacklogStore: Found item ${itemId} in group ${group.name}`);
+          backlogLogger.debug(`Found item ${itemId} in group ${group.name}`);
           return item;
         }
       }
     }
     
-    console.warn(`⚠️ BacklogStore: Item ${itemId} not found in any group`);
+    backlogLogger.warn(`Item ${itemId} not found in any group`);
     return null;
   },
 
   // NEW: Mark item as used/unused
   markItemAsUsed: (itemId: string, used: boolean) => {
     set(state => {
-      console.log(`🔄 BacklogStore: Marking item ${itemId} as ${used ? 'used' : 'unused'}`);
+      backlogLogger.debug(`Marking item ${itemId} as ${used ? 'used' : 'unused'}`);
       
       let itemFound = false;
       const updatedGroups = state.groups.map(group => {
@@ -71,7 +72,7 @@ export const createUtilActions = (
           const updatedItems = group.items.map(item => {
             if (item.id === itemId) {
               itemFound = true;
-              console.log(`✅ BacklogStore: Updated item ${itemId} used status: ${used}`);
+              backlogLogger.debug(`Updated item ${itemId} used status: ${used}`);
               return { ...item, used };
             }
             return item;
@@ -85,7 +86,7 @@ export const createUtilActions = (
       });
       
       if (!itemFound) {
-        console.warn(`⚠️ BacklogStore: Item ${itemId} not found for used status update`);
+        backlogLogger.warn(`Item ${itemId} not found for used status update`);
         return;
       }
       

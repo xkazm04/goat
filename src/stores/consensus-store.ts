@@ -15,6 +15,7 @@ import {
   sortItemIds as unifiedSortItemIds,
   fromLegacySortBy,
 } from '@/lib/sorting';
+import { consensusLogger } from '@/lib/logger';
 
 interface ConsensusStoreActions {
   /** Set the consensus view mode */
@@ -120,7 +121,7 @@ export const useConsensusStore = create<ConsensusStore>((set, get) => ({
         isLoading: false,
       });
     } catch (error) {
-      console.error('Error fetching consensus data:', error);
+      consensusLogger.error('Error fetching consensus data:', error);
       set({
         error: error instanceof Error ? error : new Error('Unknown error'),
         isLoading: false,

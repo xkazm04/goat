@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, useCallback } from 'react';
-import { topListsApi } from '@/lib/api/top-lists';
+import { goatApi } from '@/lib/api';
 import { topListsKeys } from '@/lib/query-keys/top-lists';
 import { ListWithItems } from '@/types/top-lists';
 
@@ -37,7 +37,7 @@ export function useListPreview(
 
   const { data, isLoading, error } = useQuery({
     queryKey: topListsKeys.list(listId, true),
-    queryFn: () => topListsApi.getList(listId, true),
+    queryFn: () => goatApi.lists.get(listId, true),
     enabled: shouldFetch && !!listId,
     staleTime,
   });
@@ -124,7 +124,7 @@ export function usePrefetchListPreview() {
     (listId: string) => {
       queryClient.prefetchQuery({
         queryKey: topListsKeys.list(listId, true),
-        queryFn: () => topListsApi.getList(listId, true),
+        queryFn: () => goatApi.lists.get(listId, true),
         staleTime: 5 * 60 * 1000,
       });
     },

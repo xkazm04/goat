@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { TopList } from '@/types/top-lists';
+import { listLogger } from '@/lib/logger';
 
 export interface ListConfiguration extends TopList {
   metadata?: {
@@ -149,9 +150,9 @@ export const useListStore = create<ListStoreState>()(
           
           // This would typically be handled by React Query in the component
           // For now, we'll set loading and let the component handle the actual loading
-          console.log(`Loading list ${listId}...`);
+          listLogger.debug(`Loading list ${listId}...`);
         } catch (error) {
-          console.error('Failed to load list:', error);
+          listLogger.error('Failed to load list:', error);
           set({ isLoading: false });
         }
       },

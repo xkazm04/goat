@@ -1,5 +1,6 @@
 import { BacklogState } from './types';
 import { BacklogItem, BacklogGroup } from '@/types/backlog-groups';
+import { backlogLogger } from '@/lib/logger';
 
 // Type for immer-compatible set function
 type ImmerSet = (fn: (state: BacklogState) => void) => void;
@@ -80,13 +81,13 @@ export const createUtilActions = (
   // Get item by ID across all groups
   getItemById: (itemId: string): BacklogItem | null => {
     const state = get();
-    console.log(`🔍 BacklogStore: Looking for item ${itemId} across ${state.groups.length} groups`);
+    backlogLogger.debug(`Looking for item ${itemId} across ${state.groups.length} groups`);
 
     const item = findItemInGroups(state.groups, itemId);
     if (item) {
-      console.log(`✅ BacklogStore: Found item ${itemId}`);
+      backlogLogger.debug(`Found item ${itemId}`);
     } else {
-      console.warn(`⚠️ BacklogStore: Item ${itemId} not found in any group`);
+      backlogLogger.warn(`Item ${itemId} not found in any group`);
     }
     return item;
   },
@@ -94,7 +95,7 @@ export const createUtilActions = (
   // Mark item as used/unused
   markItemAsUsed: (itemId: string, used: boolean) => {
     set(state => {
-      console.log(`🔄 BacklogStore: Marking item ${itemId} as ${used ? 'used' : 'unused'}`);
+      backlogLogger.debug(`Marking item ${itemId} as ${used ? 'used' : 'unused'}`);
 
       const updater = (item: BacklogItem) => ({ ...item, used });
 
@@ -102,11 +103,11 @@ export const createUtilActions = (
       const { groups: updatedGroups, found } = updateItemInGroups(state.groups, itemId, updater);
 
       if (!found) {
-        console.warn(`⚠️ BacklogStore: Item ${itemId} not found for used status update`);
+        backlogLogger.warn(`Item ${itemId} not found for used status update`);
         return;
       }
 
-      console.log(`✅ BacklogStore: Updated item ${itemId} used status: ${used}`);
+      backlogLogger.debug(`Updated item ${itemId} used status: ${used}`);
       state.groups = updatedGroups;
 
       // Update cache as well
@@ -156,10 +157,10 @@ export const createUtilActions = (
   clearCache: async (category?: string) => {
     // Clear API cache as well
     try {
-      const { coalescedItemGroupsApi } = await import('@/lib/api/coalesced-item-groups');
-      coalescedItemGroupsApi.invalidateCache(category);
+      const { goatApi } = await import('@/lib/api');
+      goatApi.invalidateCache({ tags: category ? [`category-${category}`] : ['groups'] });
     } catch (error) {
-      console.warn('Failed to invalidate API cache:', error);
+      backlogLogger.warn('Failed to invalidate API cache:', error);
     }
 
     set(state => {
@@ -194,33 +195,37 @@ export const createUtilActions = (
     };
   },
 
-  // Get coalescer performance stats
+  // Get API cache performance stats
   getCoalescerStats: async () => {
     try {
-      const { coalescedItemGroupsApi } = await import('@/lib/api/coalesced-item-groups');
+      const { goatApi } = await import('@/lib/api');
+      const metrics = goatApi.getCacheMetrics();
       return {
-        stats: coalescedItemGroupsApi.getStats(),
-        efficiency: coalescedItemGroupsApi.getEfficiency(),
+        stats: metrics,
+        efficiency: {
+          hitRate: metrics.hits / Math.max(1, metrics.hits + metrics.misses),
+          savedRequests: metrics.hits,
+        },
       };
     } catch (error) {
-      console.warn('Failed to get coalescer stats:', error);
+      backlogLogger.warn('Failed to get cache stats:', error);
       return null;
     }
   },
 
-  // Reset coalescer stats
+  // Reset cache stats (invalidate all cache)
   resetCoalescerStats: async () => {
     try {
-      const { coalescedItemGroupsApi } = await import('@/lib/api/coalesced-item-groups');
-      coalescedItemGroupsApi.resetStats();
+      const { goatApi } = await import('@/lib/api');
+      goatApi.invalidateCache({ all: true });
     } catch (error) {
-      console.warn('Failed to reset coalescer stats:', error);
+      backlogLogger.warn('Failed to reset cache:', error);
     }
   },
 
   // Force refresh all data - clears cache and reloads from API
   forceRefreshAll: async (category?: string) => {
-    console.log('🔄 BacklogStore: Force refreshing all data...');
+    backlogLogger.debug('Force refreshing all data...');
     
     // Clear all caches first
     await get().clearCache(category);
@@ -237,14 +242,14 @@ export const createUtilActions = (
       };
     });
     
-    console.log('✅ BacklogStore: Cache cleared. Data will be refetched on next request.');
+    backlogLogger.info('Cache cleared. Data will be refetched on next request.');
   },
 
   // Debug helper to check image URLs in current data
   debugImageUrls: (limit: number = 10) => {
     const state = get();
-    console.log('🔍 Debug: Checking image URLs in backlog store...');
-    console.log(`Total groups: ${state.groups.length}`);
+    backlogLogger.debug('Debug: Checking image URLs in backlog store...');
+    backlogLogger.debug(`Total groups: ${state.groups.length}`);
     
     let itemCount = 0;
     let withImage = 0;
@@ -266,10 +271,10 @@ export const createUtilActions = (
       }
     }
     
-    console.log(`Total items: ${itemCount}`);
-    console.log(`With image_url: ${withImage}`);
-    console.log(`Without image_url: ${withoutImage}`);
-    console.log('Sample items:', samples);
+    backlogLogger.debug(`Total items: ${itemCount}`);
+    backlogLogger.debug(`With image_url: ${withImage}`);
+    backlogLogger.debug(`Without image_url: ${withoutImage}`);
+    backlogLogger.debug('Sample items:', samples);
     
     return { itemCount, withImage, withoutImage, samples };
   }

@@ -5,6 +5,7 @@ import { useComparisonStore } from './comparison-store';
 import { useListStore } from './use-list-store';
 import { useValidationNotificationStore } from './validation-notification-store';
 import { ValidationErrorCode } from '@/lib/validation';
+import { matchLogger } from '@/lib/logger';
 
 // Re-export ValidationNotification type from the dedicated store for backwards compatibility
 export type { ValidationNotification } from './validation-notification-store';
@@ -16,7 +17,6 @@ interface MatchStoreState {
   isLoading: boolean;
   showComparisonModal: boolean;
   showResultShareModal: boolean;
-  showQuickAssignModal: boolean;
 
   // Keyboard shortcuts state
   keyboardMode: boolean;
@@ -26,7 +26,6 @@ interface MatchStoreState {
   setIsLoading: (loading: boolean) => void;
   setShowComparisonModal: (show: boolean) => void;
   setShowResultShareModal: (show: boolean) => void;
-  setShowQuickAssignModal: (show: boolean) => void;
   setKeyboardMode: (enabled: boolean) => void;
 
   // Actions - Validation Notifications (delegates to validation-notification-store)
@@ -62,7 +61,6 @@ export const useMatchStore = create<MatchStoreState>((set, get) => ({
   isLoading: false,
   showComparisonModal: false,
   showResultShareModal: false,
-  showQuickAssignModal: false,
   keyboardMode: false,
   selectedItemIndex: 0,
 
@@ -81,8 +79,6 @@ export const useMatchStore = create<MatchStoreState>((set, get) => ({
   },
 
   setShowResultShareModal: (show) => set({ showResultShareModal: show }),
-
-  setShowQuickAssignModal: (show) => set({ showQuickAssignModal: show }),
 
   // Validation Notification Actions - Delegates to validation-notification-store
   emitValidationError: (errorCode) => {
@@ -191,12 +187,12 @@ export const useMatchStore = create<MatchStoreState>((set, get) => ({
       const currentList = listStore.currentList;
       
       if (!currentList) {
-        console.warn('No current list available for match session');
+        matchLogger.warn('No current list available for match session');
         set({ isLoading: false });
         return;
       }
       
-      console.log(`Initializing match session for list: ${currentList.title} (${currentList.id})`);
+      matchLogger.debug(`Initializing match session for list: ${currentList.title} (${currentList.id})`);
       
       // 1. Sync with session store first
       sessionStore.syncWithList(currentList.id, currentList.category);
@@ -206,11 +202,11 @@ export const useMatchStore = create<MatchStoreState>((set, get) => ({
       
       if (activeSession && activeSession.gridItems.length > 0) {
         // Load existing session
-        console.log('Loading existing session data');
+        matchLogger.debug('Loading existing session data');
         gridStore.loadFromSession(activeSession.gridItems, currentList.size);
       } else {
         // Create new grid
-        console.log('Creating new grid');
+        matchLogger.debug('Creating new grid');
         gridStore.initializeGrid(currentList.size, currentList.id, currentList.category);
       }
       
@@ -220,10 +216,10 @@ export const useMatchStore = create<MatchStoreState>((set, get) => ({
         get().selectNextAvailableItem();
       }
       
-      console.log('Match session initialized successfully');
+      matchLogger.info('Match session initialized successfully');
       
     } catch (error) {
-      console.error('Failed to initialize match session:', error);
+      matchLogger.error('Failed to initialize match session:', error);
     } finally {
       set({ isLoading: false });
     }
@@ -247,14 +243,14 @@ export const useMatchStore = create<MatchStoreState>((set, get) => ({
       selectedItemIndex: 0
     });
 
-    console.log('Match session reset');
+    matchLogger.debug('Match session reset');
   },
   
   saveMatchProgress: () => {
     const sessionStore = useSessionStore.getState();
     sessionStore.saveCurrentSession();
     
-    console.log('Match progress saved');
+    matchLogger.debug('Match progress saved');
   },
   
   // Keyboard Shortcuts Handler
@@ -346,7 +342,6 @@ export const useMatchUI = () => useMatchStore((state) => ({
   isLoading: state.isLoading,
   showComparisonModal: state.showComparisonModal,
   showResultShareModal: state.showResultShareModal,
-  showQuickAssignModal: state.showQuickAssignModal,
   keyboardMode: state.keyboardMode
 }));
 
@@ -363,8 +358,7 @@ export const useMatchActions = () => useMatchStore((state) => ({
   saveMatchProgress: state.saveMatchProgress,
   handleKeyboardShortcut: state.handleKeyboardShortcut,
   quickAssignToPosition: state.quickAssignToPosition,
-  setKeyboardMode: state.setKeyboardMode,
-  setShowQuickAssignModal: state.setShowQuickAssignModal
+  setKeyboardMode: state.setKeyboardMode
 }));
 
 // Selector for validation notifications - re-exported from validation-notification-store

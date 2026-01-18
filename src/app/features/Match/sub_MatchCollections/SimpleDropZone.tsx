@@ -24,6 +24,12 @@ interface SimpleDropZoneProps {
   gridItem?: GridItemType;
   onRemove?: () => void;
   dropId?: string;
+  /** Optional tier accent color (overrides default rank color) */
+  tierAccent?: string;
+  /** Optional tier glow color */
+  tierGlow?: string;
+  /** Whether to show position badge */
+  showBadge?: boolean;
 }
 
 /**
@@ -40,8 +46,14 @@ export function SimpleDropZone({
   imageUrl,
   gridItem,
   onRemove,
-  dropId
+  dropId,
+  tierAccent,
+  tierGlow,
+  showBadge = true,
 }: SimpleDropZoneProps) {
+  // Get rank styling config early (needed for magnetic physics registration)
+  const rankConfig = getRankConfig(position);
+  const isTop3 = isPodiumPosition(position);
 
   // Track when item was just dropped for snap animation
   const [justDropped, setJustDropped] = useState(false);
@@ -119,9 +131,9 @@ export function SimpleDropZone({
     setDropNodeRef(node);
   };
 
-  // Get rank styling config from shared memoized utility
-  const rankConfig = getRankConfig(position);
-  const isTop3 = isPodiumPosition(position);
+  // Use tier accent color if provided, otherwise fall back to rank config
+  const accentColor = tierAccent || rankConfig.color;
+  const glowColor = tierGlow || `${accentColor}40`;
 
   // Apply drag transform
   const style = transform ? {
@@ -179,7 +191,7 @@ export function SimpleDropZone({
               ? [1, 1.2, 0.92, 1.08, 0.98, 1.02, 1] // More dramatic bounce for podium
               : [1, 1.15, 0.95, 1.02, 1])
             : isOver ? 1.08 : showValidDropZoneHighlight ? 1.05 : 1, // Enhanced scale-105 for valid drop zones
-          borderColor: isOver ? rankConfig.color : isOccupied ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)',
+          borderColor: isOver ? accentColor : isOccupied ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)',
           rotate: justDropped && isTop3 ? [0, -2, 2, -1, 1, 0] : 0,
           opacity: shouldDimFilledSlot ? 0.6 : 1, // Dim filled positions during drag
         }}
@@ -199,63 +211,33 @@ export function SimpleDropZone({
           opacity: { duration: 0.3, ease: "easeOut" },
         }}
         className={`
-          relative aspect-square rounded-xl overflow-hidden group
+          relative aspect-[4/5] rounded-xl overflow-hidden group
           border-2 transition-colors duration-300
           ${isOccupied ? 'bg-gray-900/80' : 'bg-gray-900/20'}
-          ${isOver ? `shadow-[0_0_30px_${rankConfig.color}40]` : ''}
+          ${isOver ? `shadow-[0_0_30px_${accentColor}40]` : ''}
         `}
         data-testid={`drop-zone-${position}`}
         {...(isOccupied ? attributes : {})}
         {...(isOccupied ? listeners : {})}
       >
-      {/* Pulsing Valid Drop Zone Indicator - Enhanced cyan-400 glow for empty slots during drag */}
+      {/* Valid Drop Zone Indicator - Static cyan glow for empty slots during drag (no infinite animation) */}
       <AnimatePresence>
         {showValidDropZoneHighlight && (
           <motion.div
             className="absolute -inset-[2px] rounded-xl pointer-events-none z-40"
             initial={{ opacity: 0, scale: 0.98 }}
-            animate={{
-              opacity: [0.4, 0.9, 0.4],
-              scale: [1, 1.03, 1],
-            }}
+            animate={{ opacity: 0.7, scale: 1 }}
             exit={{ opacity: 0, scale: 0.98 }}
-            transition={{
-              opacity: { duration: 1.2, repeat: Infinity, ease: "easeInOut" },
-              scale: { duration: 1.2, repeat: Infinity, ease: "easeInOut" },
-            }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
             style={{
               border: '2px solid rgb(34, 211, 238)', // cyan-400
               boxShadow: `
-                0 0 20px rgba(6, 182, 212, 0.5),
-                0 0 40px rgba(6, 182, 212, 0.3),
-                inset 0 0 15px rgba(6, 182, 212, 0.15)
-              `, // shadow-cyan-500/50 effect
+                0 0 15px rgba(6, 182, 212, 0.4),
+                0 0 30px rgba(6, 182, 212, 0.2),
+                inset 0 0 10px rgba(6, 182, 212, 0.1)
+              `,
             }}
             data-testid={`valid-drop-zone-indicator-${position}`}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Secondary pulsing ring for emphasis on valid drop zones */}
-      <AnimatePresence>
-        {showValidDropZoneHighlight && (
-          <motion.div
-            className="absolute -inset-[6px] rounded-2xl pointer-events-none z-30"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{
-              opacity: [0.2, 0.5, 0.2],
-              scale: [0.98, 1.02, 0.98],
-            }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{
-              opacity: { duration: 1.5, repeat: Infinity, ease: "easeInOut", delay: 0.3 },
-              scale: { duration: 1.5, repeat: Infinity, ease: "easeInOut", delay: 0.3 },
-            }}
-            style={{
-              border: '1px solid rgba(34, 211, 238, 0.4)', // cyan-400/40
-              boxShadow: '0 0 30px rgba(6, 182, 212, 0.25)', // subtle outer glow
-            }}
-            data-testid={`drop-zone-outer-ring-${position}`}
           />
         )}
       </AnimatePresence>
@@ -293,7 +275,7 @@ export function SimpleDropZone({
       {!isOccupied && (
         <div className="absolute inset-0 opacity-20"
           style={{
-            backgroundImage: `radial-gradient(${rankConfig.color} 1px, transparent 1px)`,
+            backgroundImage: `radial-gradient(${accentColor} 1px, transparent 1px)`,
             backgroundSize: '10px 10px'
           }}
         />
@@ -304,7 +286,7 @@ export function SimpleDropZone({
         <span
           className="text-[6rem] font-black select-none transition-all duration-500"
           style={{
-            color: rankConfig.color,
+            color: accentColor,
             opacity: isOver ? 0.2 : isOccupied ? 0 : 0.05,
             transform: isOver ? 'scale(1.2)' : 'scale(1)'
           }}
@@ -349,34 +331,36 @@ export function SimpleDropZone({
             </motion.div>
 
             {/* Rank Number Overlay - Top center, above the image */}
-            <motion.div 
-              className="absolute top-2 left-1/2 -translate-x-1/2 z-20"
-              initial={{ opacity: 0, y: -10, scale: 0.8 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ delay: 0.1, duration: 0.3, type: "spring", stiffness: 300 }}
-            >
-              <div
-                className="px-3 py-1 rounded-lg backdrop-blur-md border flex items-center gap-1.5 shadow-lg"
-                style={{ 
-                  backgroundColor: `${rankConfig.color}25`,
-                  borderColor: `${rankConfig.color}50`,
-                  boxShadow: `0 0 15px ${rankConfig.color}30`
-                }}
+            {showBadge && (
+              <motion.div
+                className="absolute top-2 left-1/2 -translate-x-1/2 z-20"
+                initial={{ opacity: 0, y: -10, scale: 0.8 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ delay: 0.1, duration: 0.3, type: "spring", stiffness: 300 }}
               >
-                {isTop3 && rankConfig.icon && (
-                  <rankConfig.icon 
-                    className="w-4 h-4" 
-                    style={{ color: rankConfig.color }} 
-                  />
-                )}
-                <span 
-                  className="text-sm font-black tracking-wide"
-                  style={{ color: rankConfig.color }}
+                <div
+                  className="px-3 py-1 rounded-lg backdrop-blur-md border flex items-center gap-1.5 shadow-lg"
+                  style={{
+                    backgroundColor: `${accentColor}25`,
+                    borderColor: `${accentColor}50`,
+                    boxShadow: `0 0 15px ${accentColor}30`
+                  }}
                 >
-                  {position + 1}
-                </span>
-              </div>
-            </motion.div>
+                  {isTop3 && rankConfig.icon && (
+                    <rankConfig.icon
+                      className="w-4 h-4"
+                      style={{ color: accentColor }}
+                    />
+                  )}
+                  <span
+                    className="text-sm font-black tracking-wide"
+                    style={{ color: accentColor }}
+                  >
+                    {position + 1}
+                  </span>
+                </div>
+              </motion.div>
+            )}
 
             {/* Remove Button (Top Right) */}
             {onRemove && (
@@ -410,13 +394,9 @@ export function SimpleDropZone({
             className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center"
           >
             {isOver ? (
-              <motion.div
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ repeat: Infinity, duration: 1.5 }}
-                className="text-cyan-400 font-bold text-xs tracking-widest uppercase"
-              >
+              <div className="text-cyan-400 font-bold text-xs tracking-widest uppercase">
                 Drop Here
-              </motion.div>
+              </div>
             ) : (
               <div className="text-white/20 text-[10px] font-mono uppercase tracking-widest">
                 {isTop3 ? 'Podium' : 'Empty Slot'}
@@ -429,7 +409,7 @@ export function SimpleDropZone({
       {/* Hover Glow Border */}
       <div
         className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-        style={{ boxShadow: `inset 0 0 20px ${rankConfig.color}20` }}
+        style={{ boxShadow: `inset 0 0 20px ${accentColor}20` }}
       />
 
       {/* Active Selection Ring */}
@@ -437,9 +417,10 @@ export function SimpleDropZone({
         <motion.div
           layoutId="active-ring"
           className="absolute -inset-[2px] rounded-xl border-2 pointer-events-none z-50"
-          style={{ borderColor: rankConfig.color }}
-          animate={{ opacity: [0.5, 1, 0.5] }}
-          transition={{ duration: 1.5, repeat: Infinity }}
+          style={{ borderColor: accentColor }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.15 }}
         />
       )}
 
@@ -457,8 +438,8 @@ export function SimpleDropZone({
             ease: "easeOut"
           }}
           style={{
-            boxShadow: `0 0 30px 8px ${rankConfig.color}, inset 0 0 20px ${rankConfig.color}`,
-            border: `2px solid ${rankConfig.color}`
+            boxShadow: `0 0 30px 8px ${accentColor}, inset 0 0 20px ${accentColor}`,
+            border: `2px solid ${accentColor}`
           }}
           data-testid="snap-glow"
         />
@@ -468,7 +449,7 @@ export function SimpleDropZone({
       <DropCelebration
         isActive={showCelebration}
         isPodium={isTop3}
-        rankColor={rankConfig.color}
+        rankColor={accentColor}
         position={position}
       />
     </motion.div>

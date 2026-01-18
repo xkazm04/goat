@@ -6,7 +6,7 @@ import {
   UseMutationOptions,
 } from '@tanstack/react-query';
 import { toast } from './use-toast';
-import { topListsApi } from '@/lib/api/top-lists';
+import { goatApi } from '@/lib/api';
 import { topListsKeys } from '@/lib/query-keys/top-lists';
 import { cacheInvalidation } from '@/lib/cache';
 import {
@@ -22,15 +22,16 @@ import {
   FeaturedListsResponse,
 } from '@/types/top-lists';
 import { FeaturedListsParams } from '@/lib/query-keys/top-lists';
+import { CACHE_TTL_MS } from '@/lib/cache/unified-cache';
 
-// Reusable cache times in milliseconds
+// Unified cache times - imported from unified-cache.ts for consistency
 const CACHE_TIMES = {
-  SHORT: 1 * 60 * 1000,      // 1 minute - for frequently changing data
-  MEDIUM: 2 * 60 * 1000,     // 2 minutes
-  DEFAULT: 3 * 60 * 1000,    // 3 minutes
-  STANDARD: 5 * 60 * 1000,   // 5 minutes - standard cache
-  LONG: 10 * 60 * 1000,      // 10 minutes - for rarely changing data
-  VERY_LONG: 30 * 60 * 1000, // 30 minutes - for static data
+  SHORT: CACHE_TTL_MS.EPHEMERAL,   // 30 seconds - for real-time/analytics data
+  MEDIUM: CACHE_TTL_MS.SHORT,      // 1 minute - for user-specific data
+  DEFAULT: CACHE_TTL_MS.STANDARD,  // 5 minutes - default
+  STANDARD: CACHE_TTL_MS.STANDARD, // 5 minutes - standard cache
+  LONG: CACHE_TTL_MS.LONG,         // 15 minutes - for reference data
+  VERY_LONG: CACHE_TTL_MS.STATIC,  // 1 hour - for static data
 } as const;
 
 // Helper for success toasts
@@ -53,7 +54,7 @@ export const useTopLists = (
 ) => {
   return useQuery({
     queryKey: topListsKeys.listSearch(params || {}),
-    queryFn: () => topListsApi.getLists(params),
+    queryFn: () => goatApi.lists.search(params),
     staleTime: CACHE_TIMES.STANDARD,
     ...options,
   });
@@ -66,7 +67,7 @@ export const useTopList = (
 ) => {
   return useQuery({
     queryKey: topListsKeys.list(listId, includeItems),
-    queryFn: () => topListsApi.getList(listId, includeItems),
+    queryFn: () => goatApi.lists.get(listId, includeItems),
     enabled: !!listId,
     staleTime: CACHE_TIMES.MEDIUM,
     ...options,
@@ -80,7 +81,7 @@ export const useUserLists = (
 ) => {
   return useQuery({
     queryKey: topListsKeys.userLists(userId, params),
-    queryFn: () => topListsApi.getUserLists(userId, params),
+    queryFn: () => goatApi.lists.getByUser(userId, params),
     enabled: !!userId,
     staleTime: CACHE_TIMES.DEFAULT,
     ...options,
@@ -94,7 +95,7 @@ export const usePredefinedLists = (
 ) => {
   return useQuery({
     queryKey: topListsKeys.predefinedLists(category, subcategory),
-    queryFn: () => topListsApi.getPredefinedLists(category, subcategory),
+    queryFn: () => goatApi.lists.getPredefined(category, subcategory),
     staleTime: CACHE_TIMES.LONG,
     ...options,
   });
@@ -106,7 +107,7 @@ export const useListAnalytics = (
 ) => {
   return useQuery({
     queryKey: topListsKeys.analytics(listId),
-    queryFn: () => topListsApi.getListAnalytics(listId),
+    queryFn: () => goatApi.lists.getAnalytics(listId),
     enabled: !!listId,
     staleTime: CACHE_TIMES.SHORT,
     ...options,
@@ -121,7 +122,7 @@ export const useVersionComparison = (
 ) => {
   return useQuery({
     queryKey: topListsKeys.versions(listId, version1, version2),
-    queryFn: () => topListsApi.compareVersions(listId, version1, version2),
+    queryFn: () => goatApi.lists.compareVersions(listId, version1, version2),
     enabled: !!listId && version1 > 0 && version2 > 0,
     staleTime: CACHE_TIMES.VERY_LONG,
     ...options,
@@ -135,7 +136,7 @@ export const useFeaturedLists = (
 ) => {
   return useQuery({
     queryKey: topListsKeys.featured(params),
-    queryFn: () => topListsApi.getFeaturedLists(params),
+    queryFn: () => goatApi.lists.getFeatured(params),
     staleTime: CACHE_TIMES.STANDARD,
     ...options,
   });
@@ -148,7 +149,7 @@ export const useCreateListWithUser = (
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: topListsApi.createListWithUser,
+    mutationFn: goatApi.lists.createWithUser,
     onSuccess: (data, variables) => {
       // Invalidate and refetch lists
       queryClient.invalidateQueries({ queryKey: topListsKeys.lists() });
@@ -202,7 +203,7 @@ export const useCreateList = (
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: topListsApi.createList,
+    mutationFn: goatApi.lists.create,
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: topListsKeys.lists() });
 
@@ -225,7 +226,7 @@ export const useUpdateList = (
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ listId, data }) => topListsApi.updateList(listId, data),
+    mutationFn: ({ listId, data }) => goatApi.lists.update(listId, data),
     onSuccess: (data, variables) => {
       queryClient.setQueryData(
         topListsKeys.list(variables.listId),
@@ -249,7 +250,7 @@ export const useDeleteList = (
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: topListsApi.deleteList,
+    mutationFn: goatApi.lists.delete,
     onSuccess: (_, listId) => {
       queryClient.removeQueries({ queryKey: topListsKeys.list(listId) });
       queryClient.invalidateQueries({ queryKey: topListsKeys.lists() });
@@ -275,7 +276,7 @@ export const useCloneList = (
 
   return useMutation({
     mutationFn: ({ listId, userId, modifications }) =>
-      topListsApi.cloneList(listId, userId, modifications),
+      goatApi.lists.clone(listId, userId, modifications),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: topListsKeys.lists() });
       queryClient.invalidateQueries({

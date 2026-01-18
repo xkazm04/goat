@@ -2,11 +2,13 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Download, Share2, RefreshCw, Sparkles, Loader2, X, Clock } from 'lucide-react';
+import { Download, Share2, RefreshCw, Sparkles, Loader2, X, Clock, Wand2, Image as ImageIcon, Edit3 } from 'lucide-react';
 import { ImageStyle, getStyleConfig, IMAGE_STYLE_KEYS } from '../lib/constants/image-styles';
 import { getCachedResultImage, saveCachedResultImage } from '../lib/resultCache';
 import { generateShareMetadata, getSocialPlatforms, openShareDialog, shareViaWebAPI } from '../lib/socialShareIntegration';
 import { ResultImageDownload } from './ResultImageDownload';
+import { AIStyleSelector } from './AIStyleSelector';
+import { ImageEditor } from './ImageEditor';
 import {
   FeedbackModal,
   FeedbackErrorState,
@@ -17,13 +19,19 @@ import {
 import type { ParticleConfig } from '@/lib/feedback-pipeline';
 import type { ResultImageGeneratorProps, ResultImageListMetadata } from '@/types/modal-props';
 import { isResultImageGeneratorOpen } from '@/types/modal-props';
+import type { AIStylePreset, GenerationProgress } from '../lib/ai/types';
+import { generateAIImage, getCachedGeneration } from '../lib/aiImageGenerator';
+import { DEFAULT_AI_STYLE } from '../lib/ai/stylePresets';
 
 // html2canvas is dynamically imported when needed to reduce initial bundle size (~400KB)
 
 // Re-export type for external use
 export type { ResultImageListMetadata };
 
-// Progressive generation steps configuration
+// Generation mode types
+type GenerationMode = 'template' | 'ai';
+
+// Progressive generation steps configuration for template mode
 const GENERATION_STEPS = [
   { id: 'loading', label: 'Loading image generator...', duration: 150 },
   { id: 'preparing', label: 'Preparing your rankings...', duration: 400 },
@@ -32,13 +40,25 @@ const GENERATION_STEPS = [
   { id: 'finalizing', label: 'Finalizing image...', duration: 200 },
 ] as const;
 
+// AI generation steps
+const AI_GENERATION_STEPS = [
+  { id: 'preparing', label: 'Preparing your rankings...', duration: 1000 },
+  { id: 'prompting', label: 'Building AI prompt...', duration: 2000 },
+  { id: 'generating', label: 'AI is creating your artwork...', duration: 15000 },
+  { id: 'processing', label: 'Processing generated image...', duration: 5000 },
+  { id: 'finalizing', label: 'Finalizing your masterpiece...', duration: 2000 },
+] as const;
+
 const TOTAL_ESTIMATED_TIME = GENERATION_STEPS.reduce((acc, step) => acc + step.duration, 0);
+const TOTAL_AI_ESTIMATED_TIME = AI_GENERATION_STEPS.reduce((acc, step) => acc + step.duration, 0);
 
 interface ProgressiveLoadingStateProps {
   currentStepIndex: number;
   estimatedTimeRemaining: number;
   onCancel: () => void;
   isCancelling: boolean;
+  mode?: GenerationMode;
+  progressMessage?: string;
 }
 
 function ProgressiveLoadingState({
@@ -46,9 +66,13 @@ function ProgressiveLoadingState({
   estimatedTimeRemaining,
   onCancel,
   isCancelling,
+  mode = 'template',
+  progressMessage,
 }: ProgressiveLoadingStateProps) {
-  const currentStep = GENERATION_STEPS[currentStepIndex];
-  const progressPercent = ((currentStepIndex + 1) / GENERATION_STEPS.length) * 100;
+  const steps = mode === 'ai' ? AI_GENERATION_STEPS : GENERATION_STEPS;
+  const currentStep = steps[currentStepIndex];
+  const progressPercent = ((currentStepIndex + 1) / steps.length) * 100;
+  const displayMessage = progressMessage || currentStep?.label || 'Processing...';
 
   return (
     <motion.div
@@ -65,13 +89,24 @@ function ProgressiveLoadingState({
           transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
           className="mb-4"
         >
-          <Loader2 className="w-10 h-10 text-blue-400" />
+          {mode === 'ai' ? (
+            <Wand2 className="w-10 h-10 text-purple-400" />
+          ) : (
+            <Loader2 className="w-10 h-10 text-blue-400" />
+          )}
         </motion.div>
+
+        {/* Mode indicator */}
+        {mode === 'ai' && (
+          <span className="px-2 py-0.5 text-[10px] font-bold bg-purple-500/30 text-purple-300 rounded-full mb-2">
+            AI POWERED
+          </span>
+        )}
 
         {/* Current step message with animation */}
         <AnimatePresence mode="wait">
           <motion.p
-            key={currentStep?.id}
+            key={displayMessage}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
@@ -79,13 +114,13 @@ function ProgressiveLoadingState({
             className="font-medium text-white text-base mb-2"
             data-testid="generation-step-label"
           >
-            {currentStep?.label || 'Processing...'}
+            {displayMessage}
           </motion.p>
         </AnimatePresence>
 
         {/* Step indicators */}
         <div className="flex gap-2 mb-4" data-testid="generation-step-indicators">
-          {GENERATION_STEPS.map((step, index) => (
+          {steps.map((step, index) => (
             <motion.div
               key={step.id}
               className={`w-2 h-2 rounded-full transition-colors ${
@@ -167,13 +202,19 @@ export function ResultImageGenerator(props: ResultImageGeneratorProps) {
     category: '',
     size: 0,
   };
+  // Generation mode: template (fast, local) or AI (slower, more unique)
+  const [generationMode, setGenerationMode] = useState<GenerationMode>('template');
   const [selectedStyle, setSelectedStyle] = useState<ImageStyle>('modern');
+  const [selectedAIStyle, setSelectedAIStyle] = useState<AIStylePreset>(DEFAULT_AI_STYLE);
+  const [customPrompt, setCustomPrompt] = useState('');
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [particles, setParticles] = useState<ParticleConfig[]>([]);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [estimatedTimeRemaining, setEstimatedTimeRemaining] = useState(TOTAL_ESTIMATED_TIME);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [aiProgressMessage, setAIProgressMessage] = useState<string>('');
   const canvasRef = useRef<HTMLDivElement>(null);
   const cancelledRef = useRef(false);
 
@@ -187,15 +228,34 @@ export function ResultImageGenerator(props: ResultImageGeneratorProps) {
     cancelledRef.current = true;
   }, []);
 
-  // Reset cancel state when modal opens/closes
+  // Reset state when modal opens/closes
   useEffect(() => {
     if (isOpen) {
       cancelledRef.current = false;
       setIsCancelling(false);
       setCurrentStepIndex(0);
-      setEstimatedTimeRemaining(TOTAL_ESTIMATED_TIME);
+      setEstimatedTimeRemaining(generationMode === 'ai' ? TOTAL_AI_ESTIMATED_TIME : TOTAL_ESTIMATED_TIME);
+      setAIProgressMessage('');
     }
-  }, [isOpen]);
+  }, [isOpen, generationMode]);
+
+  // Handle mode change
+  const handleModeChange = useCallback((mode: GenerationMode) => {
+    setGenerationMode(mode);
+    setGeneratedImageUrl(null);
+    setEstimatedTimeRemaining(mode === 'ai' ? TOTAL_AI_ESTIMATED_TIME : TOTAL_ESTIMATED_TIME);
+  }, []);
+
+  // AI progress handler
+  const handleAIProgress = useCallback((progress: GenerationProgress) => {
+    setAIProgressMessage(progress.message);
+    if (progress.estimatedTimeRemaining !== undefined) {
+      setEstimatedTimeRemaining(progress.estimatedTimeRemaining);
+    }
+    // Map progress to step index
+    const stepIndex = Math.floor((progress.progress / 100) * AI_GENERATION_STEPS.length);
+    setCurrentStepIndex(Math.min(stepIndex, AI_GENERATION_STEPS.length - 1));
+  }, []);
 
   // Use the feedback pipeline for image generation
   const {
@@ -218,13 +278,54 @@ export function ResultImageGenerator(props: ResultImageGeneratorProps) {
       cancelledRef.current = false;
       setIsCancelling(false);
       setCurrentStepIndex(0);
-      setEstimatedTimeRemaining(TOTAL_ESTIMATED_TIME);
+      setAIProgressMessage('');
 
       // Generate particles for visual feedback
       setParticles(generateParticlesFn(20, { xRange: [0, 100], yRange: [0, 100] }));
 
-      // Step 0: Loading html2canvas library dynamically
-      setCurrentStepIndex(0);
+      // AI Generation Mode
+      if (generationMode === 'ai') {
+        setEstimatedTimeRemaining(TOTAL_AI_ESTIMATED_TIME);
+
+        // Build AI generation request
+        const aiRequest = {
+          listTitle: listMetadata.title,
+          category: listMetadata.category,
+          items: matchedItems.slice(0, 10).map((item, index) => ({
+            position: index + 1,
+            title: item.title || '',
+          })),
+          style: selectedAIStyle,
+          customPrompt: customPrompt || undefined,
+          dimensions: { width: 1200, height: 630 },
+        };
+
+        // Check cache first
+        const cached = getCachedGeneration(aiRequest);
+        if (cached && cached.images.length > 0) {
+          return cached.images[0].url;
+        }
+
+        // Generate with AI
+        const result = await generateAIImage(aiRequest, handleAIProgress, {
+          provider: 'mock', // Use mock by default, can be changed to 'replicate' or 'openai'
+        });
+
+        if (cancelledRef.current) {
+          throw new Error('Generation cancelled');
+        }
+
+        if (result.images.length === 0) {
+          // Fallback to template mode
+          setGenerationMode('template');
+          throw new Error('AI generation unavailable, please try template mode');
+        }
+
+        return result.images[0].url;
+      }
+
+      // Template Generation Mode (existing logic)
+      setEstimatedTimeRemaining(TOTAL_ESTIMATED_TIME);
       let remainingTime = TOTAL_ESTIMATED_TIME;
 
       // Dynamic import of html2canvas to reduce initial bundle size (~400KB)
@@ -284,14 +385,17 @@ export function ResultImageGenerator(props: ResultImageGeneratorProps) {
     onSuccess: (imageData) => {
       setGeneratedImageUrl(imageData);
       setParticles([]);
-      setCurrentStepIndex(GENERATION_STEPS.length);
+      const steps = generationMode === 'ai' ? AI_GENERATION_STEPS : GENERATION_STEPS;
+      setCurrentStepIndex(steps.length);
       setEstimatedTimeRemaining(0);
+      setAIProgressMessage('');
     },
     onError: () => {
       setParticles([]);
       setIsCancelling(false);
       setCurrentStepIndex(0);
-      setEstimatedTimeRemaining(TOTAL_ESTIMATED_TIME);
+      setEstimatedTimeRemaining(generationMode === 'ai' ? TOTAL_AI_ESTIMATED_TIME : TOTAL_ESTIMATED_TIME);
+      setAIProgressMessage('');
     },
   });
 
@@ -348,6 +452,21 @@ export function ResultImageGenerator(props: ResultImageGeneratorProps) {
     setIsDownloadModalOpen(true);
   };
 
+  const handleEditImage = () => {
+    setIsEditorOpen(true);
+  };
+
+  const handleEditorApply = (editedUrl: string) => {
+    setGeneratedImageUrl(editedUrl);
+    setIsEditorOpen(false);
+  };
+
+  const handleAIStyleChange = (style: AIStylePreset) => {
+    setSelectedAIStyle(style);
+    setGeneratedImageUrl(null);
+    reset();
+  };
+
   const styleConfig = getStyleConfig(selectedStyle);
 
   return (
@@ -363,28 +482,92 @@ export function ResultImageGenerator(props: ResultImageGeneratorProps) {
         {/* Particle effects during generation */}
         {isProcessing && <FeedbackParticles particles={particles} variant="dot" converge />}
 
-        {/* Style Selector */}
+        {/* Generation Mode Toggle */}
         <div className="mb-6">
-          <h3 className="text-sm font-semibold text-gray-300 mb-3">Select Style</h3>
-          <div className="flex flex-wrap gap-3">
-            {IMAGE_STYLE_KEYS.map((style) => {
-              const config = getStyleConfig(style);
-              return (
-                <button
-                  key={style}
-                  onClick={() => handleStyleChange(style)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    selectedStyle === style
-                      ? 'bg-blue-600 text-white shadow-lg scale-105'
-                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                  }`}
-                  data-testid={`style-btn-${style}`}
-                >
-                  {config.name}
-                </button>
-              );
-            })}
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-sm font-semibold text-gray-300">Generation Mode</span>
           </div>
+          <div className="flex gap-2 p-1 bg-gray-800/50 rounded-xl">
+            <button
+              onClick={() => handleModeChange('template')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${
+                generationMode === 'template'
+                  ? 'bg-blue-600 text-white shadow-lg'
+                  : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
+              }`}
+              data-testid="mode-template"
+            >
+              <ImageIcon className="w-4 h-4" />
+              Template
+              <span className="text-[10px] opacity-70">(Fast)</span>
+            </button>
+            <button
+              onClick={() => handleModeChange('ai')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${
+                generationMode === 'ai'
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+                  : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
+              }`}
+              data-testid="mode-ai"
+            >
+              <Wand2 className="w-4 h-4" />
+              AI Art
+              <span className="text-[10px] opacity-70">(Unique)</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Style Selector - changes based on mode */}
+        <div className="mb-6">
+          <AnimatePresence mode="wait">
+            {generationMode === 'template' ? (
+              <motion.div
+                key="template-styles"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+              >
+                <h3 className="text-sm font-semibold text-gray-300 mb-3">Select Style</h3>
+                <div className="flex flex-wrap gap-3">
+                  {IMAGE_STYLE_KEYS.map((style) => {
+                    const config = getStyleConfig(style);
+                    return (
+                      <button
+                        key={style}
+                        onClick={() => handleStyleChange(style)}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                          selectedStyle === style
+                            ? 'bg-blue-600 text-white shadow-lg scale-105'
+                            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                        }`}
+                        data-testid={`style-btn-${style}`}
+                      >
+                        {config.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="ai-styles"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+              >
+                <AIStyleSelector
+                  selectedStyle={selectedAIStyle}
+                  onStyleChange={handleAIStyleChange}
+                  category={listMetadata.category}
+                  customPrompt={customPrompt}
+                  onCustomPromptChange={setCustomPrompt}
+                  aiAvailable={true}
+                  loading={isProcessing}
+                  compact
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Preview Area */}
@@ -393,6 +576,8 @@ export function ResultImageGenerator(props: ResultImageGeneratorProps) {
             {isProcessing && (
               <ProgressiveLoadingState
                 currentStepIndex={currentStepIndex}
+                mode={generationMode}
+                progressMessage={aiProgressMessage}
                 estimatedTimeRemaining={estimatedTimeRemaining}
                 onCancel={handleCancel}
                 isCancelling={isCancelling}
@@ -469,8 +654,8 @@ export function ResultImageGenerator(props: ResultImageGeneratorProps) {
         <div className="space-y-4">
           {isSuccess && generatedImageUrl ? (
             <>
-              {/* Download & Regenerate */}
-              <div className="flex gap-3">
+              {/* Download, Edit & Regenerate */}
+              <div className="flex gap-2">
                 <button
                   onClick={handleDownload}
                   className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"
@@ -480,12 +665,20 @@ export function ResultImageGenerator(props: ResultImageGeneratorProps) {
                   Download
                 </button>
                 <button
+                  onClick={handleEditImage}
+                  className="px-4 bg-purple-600 hover:bg-purple-500 text-white font-semibold py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"
+                  data-testid="edit-btn"
+                  title="Edit image"
+                >
+                  <Edit3 className="w-5 h-5" />
+                </button>
+                <button
                   onClick={generateImage}
-                  className="px-6 bg-gray-700 hover:bg-gray-600 text-white font-semibold py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"
+                  className="px-4 bg-gray-700 hover:bg-gray-600 text-white font-semibold py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"
                   data-testid="remix-btn"
+                  title="Generate new variation"
                 >
                   <RefreshCw className="w-5 h-5" />
-                  Remix
                 </button>
               </div>
 
@@ -514,18 +707,26 @@ export function ResultImageGenerator(props: ResultImageGeneratorProps) {
             <button
               onClick={generateImage}
               disabled={isProcessing || matchedItems.length === 0}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"
+              className={`w-full text-white font-semibold py-3 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:bg-gray-700 disabled:cursor-not-allowed ${
+                generationMode === 'ai'
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500'
+                  : 'bg-blue-600 hover:bg-blue-700'
+              }`}
               data-testid="generate-btn"
             >
               {isProcessing ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Generating...
+                  {generationMode === 'ai' ? 'Creating AI Art...' : 'Generating...'}
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-5 h-5" />
-                  Generate Image
+                  {generationMode === 'ai' ? (
+                    <Wand2 className="w-5 h-5" />
+                  ) : (
+                    <Sparkles className="w-5 h-5" />
+                  )}
+                  {generationMode === 'ai' ? 'Generate AI Art' : 'Generate Image'}
                 </>
               )}
             </button>
@@ -540,6 +741,16 @@ export function ResultImageGenerator(props: ResultImageGeneratorProps) {
           onClose={() => setIsDownloadModalOpen(false)}
           imageUrl={generatedImageUrl}
           metadata={listMetadata}
+        />
+      )}
+
+      {/* Image Editor */}
+      {generatedImageUrl && (
+        <ImageEditor
+          imageUrl={generatedImageUrl}
+          isOpen={isEditorOpen}
+          onApply={handleEditorApply}
+          onCancel={() => setIsEditorOpen(false)}
         />
       )}
     </>

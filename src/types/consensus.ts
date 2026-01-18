@@ -244,3 +244,143 @@ export interface ConsensusState {
   /** Sort configuration for inventory view */
   sortConfig: InventorySortConfig;
 }
+
+// =============================================================================
+// Database Table Types (for Direction 1: Community Wisdom)
+// =============================================================================
+
+/**
+ * Consensus level classification
+ */
+export type ConsensusLevel =
+  | 'unanimous'     // >90% agreement
+  | 'strong'        // 70-90% agreement
+  | 'moderate'      // 50-70% agreement
+  | 'mixed'         // 30-50% agreement
+  | 'controversial'; // <30% agreement
+
+/**
+ * Item consensus cache database record
+ */
+export interface ItemConsensusCacheRecord {
+  id: string;
+  item_id: string;
+  category: string;
+
+  // Statistics
+  total_rankings: number;
+  average_position: number | null;
+  median_position: number | null;
+  position_std_dev: number | null;
+  volatility: number | null;
+  confidence: number | null;
+
+  // Distribution
+  distribution: Record<number, number>;
+  percentiles: {
+    p25: number | null;
+    p50: number | null;
+    p75: number | null;
+  };
+
+  // Classification
+  consensus_level: ConsensusLevel | null;
+
+  // TTL
+  expires_at: string;
+  last_calculated: string;
+
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Ranking aggregates database record
+ */
+export interface RankingAggregatesRecord {
+  id: string;
+  category: string;
+  subcategory: string | null;
+
+  total_user_rankings: number;
+  overall_consensus_score: number | null;
+  average_list_completion: number | null;
+  last_calculated: string;
+
+  // Top items
+  top_items: Array<{
+    item_id: string;
+    rank: number;
+    confidence: number;
+  }>;
+
+  // Controversial items
+  controversial_items: Array<{
+    item_id: string;
+    volatility: number;
+    spread: number;
+  }>;
+
+  // Trend data
+  trend_data: Record<string, unknown>;
+
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Convert database record to ItemConsensus
+ */
+export function dbRecordToItemConsensus(record: ItemConsensusCacheRecord): ItemConsensus {
+  return {
+    itemId: record.item_id,
+    medianRank: record.median_position ?? 0,
+    averageRank: record.average_position ?? 0,
+    volatility: record.volatility ?? 0,
+    totalRankings: record.total_rankings,
+    confidence: record.confidence ?? 0,
+    distribution: record.distribution,
+    modeRank: getModeFromDistribution(record.distribution),
+    percentiles: {
+      p25: record.percentiles.p25 ?? 0,
+      p50: record.percentiles.p50 ?? 0,
+      p75: record.percentiles.p75 ?? 0,
+    },
+  };
+}
+
+/**
+ * Get mode (most common value) from distribution
+ */
+function getModeFromDistribution(distribution: Record<number, number>): number {
+  let maxCount = 0;
+  let mode = 0;
+
+  for (const [position, count] of Object.entries(distribution)) {
+    if (count > maxCount) {
+      maxCount = count;
+      mode = parseInt(position, 10);
+    }
+  }
+
+  return mode;
+}
+
+/**
+ * Seeding data for bracket generation
+ */
+export interface ConsensusSeedingData {
+  itemId: string;
+  consensusRank: number;
+  confidence: number;
+}
+
+/**
+ * Seeding API response
+ */
+export interface ConsensusSeedingResponse {
+  seeds: ConsensusSeedingData[];
+  category: string;
+  sampleSize: number;
+  lastUpdated: string;
+}

@@ -48,48 +48,6 @@ export type ComparisonModalProps =
   | ComparisonModalOpenProps;
 
 // ============================================================================
-// Quick Assign Modal Types
-// ============================================================================
-
-/**
- * Information about a filled position for display in QuickAssignModal
- */
-export interface FilledPositionInfo {
-  title: string;
-  image_url?: string;
-}
-
-/**
- * Quick assign modal in closed state
- */
-interface QuickAssignModalClosedProps extends ModalClosedState {
-  onAssign?: (position: number) => void;
-  maxPosition?: number;
-  currentFilledPositions?: Set<number>;
-  filledPositionDetails?: Map<number, FilledPositionInfo>;
-}
-
-/**
- * Quick assign modal in open state - all required fields must be provided
- */
-interface QuickAssignModalOpenProps {
-  isOpen: true;
-  onClose: () => void;
-  onAssign: (position: number) => void;
-  maxPosition: number;
-  currentFilledPositions?: Set<number>;
-  filledPositionDetails?: Map<number, FilledPositionInfo>;
-}
-
-/**
- * Discriminated union for QuickAssignModal props
- * When isOpen=true, onAssign and maxPosition must be provided
- */
-export type QuickAssignModalProps =
-  | QuickAssignModalClosedProps
-  | QuickAssignModalOpenProps;
-
-// ============================================================================
 // Result Image Generator Types
 // ============================================================================
 
@@ -191,15 +149,6 @@ export function isModalOpen<T extends { isOpen: boolean }>(
 export function isComparisonModalOpen(
   props: ComparisonModalProps
 ): props is ComparisonModalOpenProps {
-  return props.isOpen === true;
-}
-
-/**
- * Type guard for QuickAssignModal open state
- */
-export function isQuickAssignModalOpen(
-  props: QuickAssignModalProps
-): props is QuickAssignModalOpenProps {
   return props.isOpen === true;
 }
 

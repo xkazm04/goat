@@ -1,0 +1,641 @@
+{
+  "version": "1.0.0",
+  "generated": "2026-01-15",
+  "description": "Business feature map for G.O.A.T. - Greatest Of All Time ranking application",
+  "contexts": [
+    {
+      "id": "match-grid-core",
+      "title": "Match Grid Core",
+      "summary": "The main drag-and-drop ranking interface where users place items into numbered grid positions. Handles position assignment, swapping, and visual grid rendering.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/Match/MatchGrid.tsx",
+          "src/app/features/Match/MatchGridHeader.tsx",
+          "src/app/features/Match/MatchGridSlot.tsx",
+          "src/app/features/Match/MatchGridToolbar.tsx",
+          "src/app/features/Match/sub_MatchGrid/SimpleMatchGrid.tsx",
+          "src/app/features/Match/sub_MatchGrid/components/GridSection.tsx",
+          "src/app/features/Match/sub_MatchGrid/components/PhysicsGridSlot.tsx",
+          "src/app/features/Match/sub_MatchGrid/components/SwapAnimation.tsx"
+        ],
+        "logic": [
+          "src/stores/grid-store.ts",
+          "src/app/features/Match/hooks/useGridPresenter.ts",
+          "src/app/features/Match/lib/useMatchGridState.ts",
+          "src/app/features/Match/MatchGrid/lib/gridCalculations.ts",
+          "src/app/features/Match/MatchGrid/lib/sizeMapping.ts"
+        ],
+        "server": [],
+        "data": [
+          "src/types/match.ts"
+        ]
+      }
+    },
+    {
+      "id": "match-drag-drop",
+      "title": "Match Drag & Drop System",
+      "summary": "Powers all drag-and-drop interactions in the ranking interface. Items can be dragged from backlog to grid, between grid positions, or removed via drop zones.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/Match/components/OptimisticDragPreview.tsx",
+          "src/app/features/Match/components/DragDistanceIndicator.tsx",
+          "src/app/features/Match/sub_MatchGrid/components/DragComponents.tsx",
+          "src/app/features/Match/sub_MatchGrid/components/InertiaDraggable.tsx"
+        ],
+        "logic": [
+          "src/app/features/Match/MatchGrid/lib/dragHandlers.ts",
+          "src/lib/dnd/index.ts",
+          "src/lib/dnd/transfer-protocol.ts",
+          "src/lib/dnd/type-guards.ts",
+          "src/lib/grid/index.ts",
+          "src/lib/grid/item-factory.ts",
+          "src/lib/grid/transfer-validator.ts"
+        ],
+        "server": [],
+        "data": []
+      }
+    },
+    {
+      "id": "match-session",
+      "title": "Match Session Management",
+      "summary": "Manages ranking session state, keyboard shortcuts, and orchestrates communication between stores. Persists progress to localStorage so users can resume unfinished rankings.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/Match/components/MatchContainerContent.tsx",
+          "src/app/features/Match/components/MatchContainerHeader.tsx",
+          "src/app/features/Match/components/MatchGridControls.tsx",
+          "src/app/features/Match/components/QuickAssignModal.tsx",
+          "src/app/features/Match/components/LazyModals.tsx"
+        ],
+        "logic": [
+          "src/stores/match-store.ts",
+          "src/stores/session-store.ts",
+          "src/lib/match/use-orchestrator.ts",
+          "src/lib/match/orchestrator.ts",
+          "src/lib/hooks/useHydrationSafe.ts",
+          "src/lib/hooks/useLoadingStateMachine.ts"
+        ],
+        "server": [],
+        "data": []
+      }
+    },
+    {
+      "id": "match-views",
+      "title": "Match Visual Views",
+      "summary": "Alternative visual presentations for ranked items including podium view (top 3), Mount Rushmore view, and GOAT view. Users can switch views while maintaining the same ranking data.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/Match/MatchPodium.tsx",
+          "src/app/features/Match/sub_MatchGrid/components/ViewSwitcher.tsx",
+          "src/app/features/Match/sub_MatchGrid/components/PodiumView.tsx",
+          "src/app/features/Match/sub_MatchGrid/components/MountRushmoreView.tsx",
+          "src/app/features/Match/sub_MatchGrid/components/GoatView.tsx",
+          "src/app/features/Match/components/PositionBadge.tsx"
+        ],
+        "logic": [
+          "src/app/features/Match/lib/rankConfig.ts"
+        ],
+        "server": [],
+        "data": []
+      }
+    },
+    {
+      "id": "match-comparison",
+      "title": "Item Comparison",
+      "summary": "Side-by-side comparison modal for directly comparing two items. Helps users make ranking decisions by viewing item details and stats together.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/Match/ComparisonModal.tsx",
+          "src/components/app/modals/comparison/ComparisonModalHeader.tsx",
+          "src/components/app/modals/comparison/ComparisonModalContent.tsx"
+        ],
+        "logic": [
+          "src/stores/comparison-store.ts"
+        ],
+        "server": [],
+        "data": []
+      }
+    },
+    {
+      "id": "collection-panel",
+      "title": "Collection Sidebar",
+      "summary": "The sidebar panel displaying available items to rank. Users browse, search, and drag items from here into the ranking grid. Supports filtering and sorting.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/Collection/SimpleCollectionPanel.tsx",
+          "src/app/features/Collection/components/CollectionPanel.tsx",
+          "src/app/features/Collection/components/ConfigurableCollectionItem.tsx",
+          "src/app/features/Collection/components/SortableCollectionItem.tsx",
+          "src/app/features/Collection/components/VirtualizedGrid.tsx",
+          "src/app/features/Collection/components/CollectionToolbar.tsx",
+          "src/app/features/Collection/components/CollectionStats.tsx"
+        ],
+        "logic": [
+          "src/stores/backlog-store.ts",
+          "src/app/features/Collection/hooks/useCollection.ts",
+          "src/app/features/Collection/hooks/useCollectionReorder.ts",
+          "src/app/features/Collection/hooks/useVisibleCollectionItems.ts",
+          "src/app/features/Collection/context/CollectionFiltersContext.tsx"
+        ],
+        "server": [],
+        "data": [
+          "src/types/backlog-groups.ts"
+        ]
+      }
+    },
+    {
+      "id": "collection-interactions",
+      "title": "Collection Item Interactions",
+      "summary": "Handles user interactions with collection items including quick-select badges, drag handles, lazy loading, and item addition modals.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/Collection/components/AddItemModal.tsx",
+          "src/app/features/Collection/components/AverageRankingBadge.tsx",
+          "src/app/features/Collection/components/LazyLoadTrigger.tsx",
+          "src/app/features/Collection/components/FocusRingOverlay.tsx",
+          "src/app/features/Collection/components/SpotlightTooltip.tsx",
+          "src/app/features/Collection/components/DragHandleIndicator.tsx",
+          "src/app/features/Collection/components/CuratorBadge.tsx"
+        ],
+        "logic": [
+          "src/app/features/Collection/hooks/useCollectionLazyLoad.ts",
+          "src/app/features/Collection/hooks/useIntersectionObserver.ts",
+          "src/app/features/Collection/hooks/useQuickSelect.ts",
+          "src/app/features/Collection/hooks/useDragAnnouncements.tsx",
+          "src/app/features/Collection/utils/transformers.ts",
+          "src/app/features/Collection/constants/lazyLoadConfig.ts"
+        ],
+        "server": [],
+        "data": []
+      }
+    },
+    {
+      "id": "match-collection-sidebar",
+      "title": "Match Collection Sidebar",
+      "summary": "The collection sidebar specifically integrated into the match interface. Displays items with consensus indicators, rank badges, and supports horizontal/vertical layouts.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/Match/sub_MatchCollections/SimpleCollectionPanel.tsx",
+          "src/app/features/Match/sub_MatchCollections/SimpleDropZone.tsx",
+          "src/app/features/Match/sub_MatchCollections/components/CollectionSidebar.tsx",
+          "src/app/features/Match/sub_MatchCollections/components/CollectionHeader.tsx",
+          "src/app/features/Match/sub_MatchCollections/components/CollectionSearch.tsx",
+          "src/app/features/Match/sub_MatchCollections/components/CollectionHorizontalBar.tsx",
+          "src/app/features/Match/sub_MatchCollections/components/VirtualizedCollectionGrid.tsx"
+        ],
+        "logic": [
+          "src/app/features/Match/sub_MatchCollections/components/useGridColumns.ts"
+        ],
+        "server": [],
+        "data": []
+      }
+    },
+    {
+      "id": "match-collection-badges",
+      "title": "Match Collection Badges & Overlays",
+      "summary": "Visual indicators on collection items showing rankings, consensus data, tiers, and quick-select functionality. Includes celebration effects for successful drops.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/Match/sub_MatchCollections/components/InventorySortControl.tsx",
+          "src/app/features/Match/sub_MatchCollections/components/RankBadge.tsx",
+          "src/app/features/Match/sub_MatchCollections/components/AvgRankBadge.tsx",
+          "src/app/features/Match/sub_MatchCollections/components/QuickSelectBadge.tsx",
+          "src/app/features/Match/sub_MatchCollections/components/TierIndicator.tsx",
+          "src/app/features/Match/sub_MatchCollections/components/ConsensusOverlay.tsx",
+          "src/app/features/Match/sub_MatchCollections/components/ConsensusToggle.tsx",
+          "src/app/features/Match/sub_MatchCollections/components/DropCelebration.tsx",
+          "src/app/features/Match/sub_MatchCollections/components/CollectionToggleButton.tsx"
+        ],
+        "logic": [
+          "src/stores/consensus-store.ts"
+        ],
+        "server": [
+          "src/app/api/consensus/route.ts"
+        ],
+        "data": [
+          "src/types/consensus.ts"
+        ]
+      }
+    },
+    {
+      "id": "backlog-api",
+      "title": "Backlog & Items API",
+      "summary": "Server-side API for fetching backlog groups and items by category. Provides search suggestions and supports item CRUD operations.",
+      "filepaths": {
+        "ui": [],
+        "logic": [
+          "src/stores/item-store/index.ts",
+          "src/lib/api/item-groups.ts",
+          "src/lib/api/coalesced-item-groups.ts",
+          "src/lib/api/collection.ts"
+        ],
+        "server": [
+          "src/app/api/top/groups/route.ts",
+          "src/app/api/top/groups/[id]/route.ts",
+          "src/app/api/top/groups/[id]/items/route.ts",
+          "src/app/api/top/groups/categories/[category]/route.ts",
+          "src/app/api/top/groups/search/suggestions/route.ts",
+          "src/app/api/top/items/route.ts",
+          "src/app/api/top/items/[id]/route.ts"
+        ],
+        "data": []
+      }
+    },
+    {
+      "id": "list-creation",
+      "title": "List Creation Modal",
+      "summary": "Modal interface for creating new ranked lists. Users select category, list size (Top 10, Top 50, etc.), and time period. Includes template gallery for quick starts.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/Landing/sub_CreateList/CompositionModal.tsx",
+          "src/app/features/Landing/sub_CreateList/LazyCompositionModal.tsx",
+          "src/app/features/Landing/sub_CreateList/components/TemplateGallery.tsx",
+          "src/app/features/Landing/sub_CreateList/components/CreationProgressIndicator.tsx",
+          "src/components/app/modals/composition/CompositionModalHeader.tsx",
+          "src/components/app/modals/composition/CompositionModalLeftContent.tsx",
+          "src/components/app/modals/composition/CompositionModalRightContent.tsx"
+        ],
+        "logic": [
+          "src/stores/composition-modal-store.ts"
+        ],
+        "server": [
+          "src/app/api/lists/route.ts",
+          "src/app/api/lists/create-with-user/route.ts",
+          "src/app/api/lists/[id]/route.ts"
+        ],
+        "data": [
+          "src/types/list-intent.ts",
+          "src/types/list-intent-transformers.ts",
+          "src/types/templates.ts"
+        ]
+      }
+    },
+    {
+      "id": "list-creation-setup",
+      "title": "List Creation Setup Steps",
+      "summary": "Individual setup steps within the list creation flow: category selection, header customization, list size picker, preview, and time period selection.",
+      "filepaths": {
+        "ui": [
+          "src/components/app/modals/composition/SetupCategory.tsx",
+          "src/components/app/modals/composition/SetupHeader.tsx",
+          "src/components/app/modals/composition/SetupListSize.tsx",
+          "src/components/app/modals/composition/SetupPreview.tsx",
+          "src/components/app/modals/composition/SetupTimePeriod.tsx"
+        ],
+        "logic": [
+          "src/lib/api/top-lists.ts"
+        ],
+        "server": [],
+        "data": []
+      }
+    },
+    {
+      "id": "landing-page",
+      "title": "Landing Page",
+      "summary": "The home page showcasing featured lists and user's lists. Includes list cards with previews, search/filter bar, and create button to start new rankings.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/Landing/LandingLayout.tsx",
+          "src/app/features/Landing/LandingMain.tsx",
+          "src/app/features/Landing/ListCreateButton.tsx",
+          "src/app/features/Landing/sub_LandingLists/FeaturedListsSection.tsx",
+          "src/app/features/Landing/sub_LandingLists/UserListsSection.tsx",
+          "src/app/features/Landing/sub_LandingLists/LazyListSections.tsx",
+          "src/app/features/Landing/sub_LandingLists/SearchFilterBar.tsx",
+          "src/app/features/Landing/sub_LandingLists/SectionHeader.tsx"
+        ],
+        "logic": [
+          "src/app/features/Landing/sub_LandingLists/useListProgress.ts",
+          "src/app/features/Landing/shared/useCardClickHandler.ts"
+        ],
+        "server": [],
+        "data": [
+          "src/app/features/Landing/types.ts"
+        ]
+      }
+    },
+    {
+      "id": "landing-list-cards",
+      "title": "Landing List Cards",
+      "summary": "Card components displaying list previews on the landing page. Shows list title, progress indicator, thumbnail previews, and popover details on hover.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/Landing/sub_LandingLists/ListCard.tsx",
+          "src/app/features/Landing/sub_LandingLists/ListItemContent.tsx",
+          "src/app/features/Landing/sub_LandingLists/ListPreviewPopover.tsx",
+          "src/app/features/Landing/sub_LandingLists/ListPreviewThumbnail.tsx",
+          "src/app/features/Landing/sub_LandingLists/RankingProgressIndicator.tsx",
+          "src/app/features/Landing/components/CardFooter.tsx",
+          "src/app/features/Landing/components/CardHeader.tsx"
+        ],
+        "logic": [
+          "src/app/features/Landing/shared/animations.ts",
+          "src/app/features/Landing/shared/gradients.ts"
+        ],
+        "server": [],
+        "data": []
+      }
+    },
+    {
+      "id": "landing-showcase",
+      "title": "Landing Showcase",
+      "summary": "Hero showcase section displaying featured rankings with floating cards and visual effects. Creates an engaging entry point for users.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/Landing/ShowcaseCard.tsx",
+          "src/app/features/Landing/BannedShowcaseCard.tsx",
+          "src/app/features/Landing/FloatingShowcase.tsx",
+          "src/app/features/Landing/ShowcaseHeader.tsx",
+          "src/app/features/Landing/shared/NeonArenaBackground.tsx",
+          "src/app/features/Landing/shared/NeonArenaTheme.tsx"
+        ],
+        "logic": [],
+        "server": [],
+        "data": []
+      }
+    },
+    {
+      "id": "showcase-universe",
+      "title": "Showcase Universe 3D",
+      "summary": "3D galaxy visualization for browsing lists. Lists appear as cards in a navigable space with star fields, nebulae, and cluster formations.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/Landing/ShowcaseUniverse/ShowcaseUniverse.tsx",
+          "src/app/features/Landing/ShowcaseUniverse/components/Card3DObject.tsx",
+          "src/app/features/Landing/ShowcaseUniverse/components/GalaxyCluster.tsx",
+          "src/app/features/Landing/ShowcaseUniverse/components/GalaxyNebula.tsx",
+          "src/app/features/Landing/ShowcaseUniverse/components/NavigationUI.tsx",
+          "src/app/features/Landing/ShowcaseUniverse/components/StarField.tsx",
+          "src/app/features/Landing/ShowcaseUniverse/components/UniverseCamera.tsx"
+        ],
+        "logic": [
+          "src/app/features/Landing/ShowcaseUniverse/hooks/useGestureControls.ts",
+          "src/app/features/Landing/ShowcaseUniverse/hooks/useUniverseNavigation.ts"
+        ],
+        "server": [],
+        "data": [
+          "src/app/features/Landing/ShowcaseUniverse/types.ts"
+        ]
+      }
+    },
+    {
+      "id": "sharing",
+      "title": "Sharing & Distribution",
+      "summary": "Share completed rankings via unique URLs and social media. Generates shareable codes and Open Graph images for social previews.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/Match/ShareModal/ShareModal.tsx",
+          "src/app/features/Share/ShareableListCard.tsx"
+        ],
+        "logic": [
+          "src/app/features/Match/lib/socialShareIntegration.ts",
+          "src/lib/api/public-api.ts"
+        ],
+        "server": [
+          "src/app/api/share/route.ts",
+          "src/app/api/share/[code]/route.ts",
+          "src/app/api/share/og-image/route.tsx"
+        ],
+        "data": [
+          "src/types/share.ts"
+        ]
+      }
+    },
+    {
+      "id": "result-image",
+      "title": "Result Image Generation",
+      "summary": "Generate downloadable images of completed rankings using AI. Users can choose visual styles and download their ranking as shareable graphics.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/Match/components/ResultImageGenerator.tsx",
+          "src/app/features/Match/components/ResultImageDownload.tsx"
+        ],
+        "logic": [
+          "src/app/features/Match/lib/resultImagePrompt.ts",
+          "src/app/features/Match/lib/resultCache.ts",
+          "src/app/features/Match/lib/constants/image-styles.ts",
+          "src/lib/providers/gemini.ts"
+        ],
+        "server": [
+          "src/app/api/match/generate-result-image/route.ts",
+          "src/app/api/grid/preview/route.ts"
+        ],
+        "data": []
+      }
+    },
+    {
+      "id": "blueprints",
+      "title": "Blueprints & Presets",
+      "summary": "Shareable list templates that users can clone to start their own rankings. Includes system presets and user-created blueprints with unique slugs.",
+      "filepaths": {
+        "ui": [
+          "src/app/blueprint/[slug]/page.tsx"
+        ],
+        "logic": [],
+        "server": [
+          "src/app/api/blueprints/route.ts",
+          "src/app/api/blueprints/[slugOrId]/route.ts",
+          "src/app/api/blueprints/[slugOrId]/clone/route.ts"
+        ],
+        "data": [
+          "src/types/blueprint.ts"
+        ]
+      }
+    },
+    {
+      "id": "taste-universe",
+      "title": "Taste Universe 3D Ranking",
+      "summary": "Experimental 3D spatial ranking interface where items appear as stars in a constellation. Includes AR mode and gesture-based navigation for immersive ranking.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/TasteUniverse/TasteUniverse.tsx",
+          "src/app/features/TasteUniverse/components/StarObject.tsx",
+          "src/app/features/TasteUniverse/components/UniverseCamera.tsx",
+          "src/app/features/TasteUniverse/components/CosmicBackground.tsx",
+          "src/app/features/TasteUniverse/components/StarConnections.tsx",
+          "src/app/features/TasteUniverse/components/ConstellationGroup.tsx",
+          "src/app/features/TasteUniverse/components/CenterDropZone.tsx"
+        ],
+        "logic": [
+          "src/app/features/TasteUniverse/hooks/useUniverseState.ts",
+          "src/app/features/TasteUniverse/hooks/useARMode.ts"
+        ],
+        "server": [],
+        "data": [
+          "src/app/features/TasteUniverse/types.ts"
+        ]
+      }
+    },
+    {
+      "id": "taste-universe-ui",
+      "title": "Taste Universe UI & Social",
+      "summary": "UI overlays and social features for the 3D Taste Universe view. Navigation controls, ranking panels, AR mode interface, and physics indicators.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/TasteUniverse/components/SpatialRankingOverlay.tsx",
+          "src/app/features/TasteUniverse/components/UniverseComparisonPanel.tsx",
+          "src/app/features/TasteUniverse/components/UniverseNavigationUI.tsx",
+          "src/app/features/TasteUniverse/components/ARModeOverlay.tsx",
+          "src/app/features/TasteUniverse/components/DragPhysicsIndicator.tsx"
+        ],
+        "logic": [
+          "src/app/features/TasteUniverse/hooks/useSocialFeatures.ts"
+        ],
+        "server": [],
+        "data": []
+      }
+    },
+    {
+      "id": "command-palette",
+      "title": "Command Palette",
+      "summary": "Quick-access command interface for searching and navigating lists. Keyboard-driven power-user feature for fast list discovery.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/CommandPalette/CommandPalette.tsx",
+          "src/app/features/CommandPalette/CommandPaletteProvider.tsx",
+          "src/app/features/CommandPalette/CommandPaletteTrigger.tsx"
+        ],
+        "logic": [
+          "src/app/features/CommandPalette/useCommandPalette.ts",
+          "src/app/features/CommandPalette/lib/parseListQuery.ts"
+        ],
+        "server": [],
+        "data": []
+      }
+    },
+    {
+      "id": "admin",
+      "title": "Admin Dashboard",
+      "summary": "Administrative interface for managing items, fixing missing images, and maintaining system data. Search and update item images from external sources.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/Admin/AdminItemCard.tsx",
+          "src/app/features/Admin/ContextMenu.tsx",
+          "src/app/features/Admin/LazyAdminContent.tsx",
+          "src/app/features/Admin/MissingImagesSection.tsx"
+        ],
+        "logic": [],
+        "server": [
+          "src/app/api/admin/search-image/route.ts"
+        ],
+        "data": [
+          "src/app/features/Admin/types.ts"
+        ]
+      }
+    },
+    {
+      "id": "awards",
+      "title": "Awards & Badges",
+      "summary": "Gamification system awarding badges for ranking milestones. Users earn achievements for completing rankings in various categories.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/Awards/AwardList.tsx",
+          "src/app/features/Awards/LazyAwardList.tsx",
+          "src/app/features/Awards/components/AwardItem.tsx"
+        ],
+        "logic": [],
+        "server": [
+          "src/app/api/badges/route.ts"
+        ],
+        "data": []
+      }
+    },
+    {
+      "id": "activity-feed",
+      "title": "Activity Feed",
+      "summary": "Real-time feed showing recent user activity like completed rankings. Enables social discovery by broadcasting ranking completions.",
+      "filepaths": {
+        "ui": [],
+        "logic": [
+          "src/stores/activity-store.ts"
+        ],
+        "server": [
+          "src/app/api/activities/route.ts"
+        ],
+        "data": []
+      }
+    },
+    {
+      "id": "public-api",
+      "title": "Public API & Widgets",
+      "summary": "Developer-facing public API for accessing ranking data. Includes embeddable widgets for displaying rankings on external sites.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/PublicAPI/APIDocumentation.tsx",
+          "src/app/features/PublicAPI/components/RankingWidget.tsx",
+          "src/app/features/PublicAPI/components/ComparisonWidget.tsx",
+          "src/app/features/PublicAPI/components/ItemBadge.tsx"
+        ],
+        "logic": [],
+        "server": [
+          "src/app/api/v1/rankings/route.ts",
+          "src/app/api/v1/rankings/[itemId]/route.ts",
+          "src/app/api/v1/categories/route.ts",
+          "src/app/api/v1/analytics/route.ts",
+          "src/app/api/v1/trends/route.ts",
+          "src/app/api/v1/widgets/embed.js/route.ts"
+        ],
+        "data": []
+      }
+    },
+    {
+      "id": "recommendations",
+      "title": "AI Recommendations",
+      "summary": "AI-powered item recommendations using Gemini. Suggests items users might want to add to their rankings based on their preferences.",
+      "filepaths": {
+        "ui": [],
+        "logic": [
+          "src/lib/api/item-research.ts",
+          "src/lib/providers/gemini.ts"
+        ],
+        "server": [
+          "src/app/api/recommendation/route.ts"
+        ],
+        "data": []
+      }
+    },
+    {
+      "id": "core-utilities",
+      "title": "Core Utilities",
+      "summary": "Cross-cutting infrastructure shared by 3+ features: API client, caching layer, query key management, validation, and storage utilities.",
+      "filepaths": {
+        "ui": [],
+        "logic": [
+          "src/lib/api/client.ts",
+          "src/lib/api/cached-client.ts",
+          "src/lib/cache/api-cache.ts",
+          "src/lib/cache/invalidation-strategies.ts",
+          "src/lib/validation/transfer-validation.ts",
+          "src/lib/storage/browser-storage.ts",
+          "src/lib/performance/index.ts",
+          "src/lib/image-utils.ts",
+          "src/lib/config/category-config.ts"
+        ],
+        "server": [],
+        "data": [
+          "src/lib/query-keys/collection.ts",
+          "src/lib/query-keys/top-lists.ts",
+          "src/lib/query-keys/top-items.ts"
+        ]
+      }
+    },
+    {
+      "id": "global-stores",
+      "title": "Global State Stores",
+      "summary": "Application-wide Zustand stores for cross-feature concerns: current list metadata, task management, validation notifications, and image caching.",
+      "filepaths": {
+        "ui": [],
+        "logic": [
+          "src/stores/use-list-store.ts",
+          "src/stores/task-store.ts",
+          "src/stores/validation-notification-store.ts",
+          "src/stores/wiki-image-store.ts"
+        ],
+        "server": [],
+        "data": [
+          "src/types/ranked-inventory.ts"
+        ]
+      }
+    }
+  ]
+}

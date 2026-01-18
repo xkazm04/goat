@@ -1,6 +1,28 @@
 /**
  * Collection API Service Layer
  * Unified API for collection groups and items with pagination support
+ *
+ * @deprecated This module is deprecated. Please migrate to the unified GoatAPI:
+ *
+ * ```ts
+ * // Old (deprecated)
+ * import { collectionApi } from '@/lib/api/collection';
+ * const groups = await collectionApi.getGroups({ category: 'movies' });
+ *
+ * // New (recommended)
+ * import { goatApi } from '@/lib/api';
+ * const groups = await goatApi.groups.search({ category: 'movies' });
+ * const items = await goatApi.items.search({ category: 'movies' });
+ * ```
+ *
+ * Method mapping:
+ * - collectionApi.getGroups()       -> goatApi.groups.search()
+ * - collectionApi.getItemsPaginated() -> goatApi.items.search()
+ * - collectionApi.searchItems()     -> goatApi.items.search()
+ * - collectionApi.createItem()      -> goatApi.items.create()
+ * - collectionApi.updateItem()      -> goatApi.items.update()
+ * - collectionApi.deleteItem()      -> goatApi.items.delete()
+ * - collectionApi.getItem()         -> goatApi.items.get()
  */
 
 import { apiClient } from './client';
@@ -52,6 +74,9 @@ export interface CollectionStatsResponse {
 
 const COLLECTION_ENDPOINT = '/top';
 
+/**
+ * @deprecated Use `goatApi.groups` and `goatApi.items` from '@/lib/api' instead
+ */
 export const collectionApi = {
   /**
    * Fetch collection groups with optional filtering

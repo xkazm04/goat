@@ -7,6 +7,8 @@ import { BacklogProvider } from '@/providers/BacklogProvider';
 import { PageTransition } from '@/components/page-transition';
 import { ThemeProvider } from '@/components/theme/theme-provider';
 import { CommandPaletteProvider } from '@/app/features/CommandPalette';
+import { ItemInspectorProvider } from '@/app/features/Collection/components/ItemInspectorProvider';
+import { OfflineProvider } from '@/lib/offline';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -32,13 +34,16 @@ export default function RootLayout({
           >
             <BacklogProvider>
               <QueryProvider>
-                <CommandPaletteProvider>
-                  <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800/95 text-gray-100 w-full flex flex-col">
-                    <main className="gradient-to-b">
-                      <PageTransition>{children}</PageTransition>
-                    </main>
-                  </div>
-                </CommandPaletteProvider>
+                <OfflineProvider showStatusIndicator enableAutoSync>
+                  <CommandPaletteProvider>
+                    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800/95 text-gray-100 w-full flex flex-col">
+                      <main className="gradient-to-b">
+                        <PageTransition>{children}</PageTransition>
+                      </main>
+                    </div>
+                    <ItemInspectorProvider />
+                  </CommandPaletteProvider>
+                </OfflineProvider>
               </QueryProvider>
             </BacklogProvider>
           </ThemeProvider>

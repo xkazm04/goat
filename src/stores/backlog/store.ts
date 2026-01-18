@@ -10,6 +10,7 @@ import { createItemActions } from './actions-items';
 import { createOfflineActions } from './actions-offline';
 import { createUtilActions } from './actions-utils';
 import { arrayToSet, setToArray } from '../../lib/set-utils';
+import { backlogLogger } from '@/lib/logger';
 
 // Enable MapSet support for Immer
 enableMapSet();
@@ -86,7 +87,7 @@ export const useBacklogStore = create<BacklogState>()(
         });
         
         // Log cache size for debugging
-        console.log(`📦 Persisting cache: ${Object.keys(serializedCache).length} keys, ${JSON.stringify(serializedCache).length} bytes`);
+        backlogLogger.debug(`Persisting cache: ${Object.keys(serializedCache).length} keys, ${JSON.stringify(serializedCache).length} bytes`);
         
         return {
           selectedGroupId: state.selectedGroupId,
@@ -106,7 +107,7 @@ export const useBacklogStore = create<BacklogState>()(
       onRehydrateStorage: () => (state) => {
         if (!state || !isBrowser) return;
         
-        console.log('🔄 BacklogStore rehydrated successfully');
+        backlogLogger.debug('BacklogStore rehydrated successfully');
         
         // Convert serialized data back to proper structure with Sets
         if (state.cache) {
@@ -135,12 +136,12 @@ export const useBacklogStore = create<BacklogState>()(
           state.cache = properCache;
           state.loadingGroupIds = new Set<string>();
           
-          console.log(`📦 Rehydrated cache has ${Object.keys(properCache).length} categories`);
+          backlogLogger.debug(`Rehydrated cache has ${Object.keys(properCache).length} categories`);
         }
         
         // Check if we have cached groups
         if (state.groups && state.groups.length > 0) {
-          console.log(`📦 Rehydrated with ${state.groups.length} groups from persistence`);
+          backlogLogger.debug(`Rehydrated with ${state.groups.length} groups from persistence`);
         }
       }
     }
@@ -160,14 +161,14 @@ if (typeof window !== 'undefined') {
         for (const db of databases) {
           if (db.name?.includes('backlog')) {
             indexedDB.deleteDatabase(db.name);
-            console.log(`🗑️ Deleted IndexedDB: ${db.name}`);
+            backlogLogger.debug(`Deleted IndexedDB: ${db.name}`);
           }
         }
-        console.log('✅ IndexedDB cleared. Please refresh the page.');
+        backlogLogger.info('IndexedDB cleared. Please refresh the page.');
       } catch (e) {
-        console.error('Failed to clear IndexedDB:', e);
+        backlogLogger.error('Failed to clear IndexedDB:', e);
       }
     }
   };
-  console.log('🔧 Backlog debug helpers available: window.__backlogStore');
+  backlogLogger.debug('Backlog debug helpers available: window.__backlogStore');
 }

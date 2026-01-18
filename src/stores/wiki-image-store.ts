@@ -8,6 +8,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { fetchItemImage } from "@/lib/api/wiki-images";
+import { wikiImageLogger } from "@/lib/logger";
 
 export interface WikiImageCache {
   /** Item title -> Image URL mapping */
@@ -90,7 +91,7 @@ export const useWikiImageStore = create<WikiImageStore>()(
         });
 
         try {
-          console.log("🔍 Fetching Wikipedia image for:", itemTitle);
+          wikiImageLogger.debug("Fetching Wikipedia image for:", itemTitle);
           const imageUrl = await fetchItemImage(itemTitle);
 
           if (imageUrl) {
@@ -102,7 +103,7 @@ export const useWikiImageStore = create<WikiImageStore>()(
               newFetching.delete(itemTitle);
               return { images: newImages, fetching: newFetching };
             });
-            console.log("✅ Cached Wikipedia image for:", itemTitle);
+            wikiImageLogger.debug("Cached Wikipedia image for:", itemTitle);
             return imageUrl;
           } else {
             // Mark as failed to avoid retrying
@@ -113,11 +114,11 @@ export const useWikiImageStore = create<WikiImageStore>()(
               newFetching.delete(itemTitle);
               return { failures: newFailures, fetching: newFetching };
             });
-            console.log("⚠️ No Wikipedia image found for:", itemTitle);
+            wikiImageLogger.debug("No Wikipedia image found for:", itemTitle);
             return null;
           }
         } catch (error) {
-          console.error("❌ Error fetching Wikipedia image:", error);
+          wikiImageLogger.error("Error fetching Wikipedia image:", error);
           // Mark as failed
           set((state) => {
             const newFailures = new Set(state.failures);
@@ -177,7 +178,7 @@ export const useWikiImageStore = create<WikiImageStore>()(
               },
             };
           } catch (error) {
-            console.error("Failed to parse wiki image cache:", error);
+            wikiImageLogger.error("Failed to parse wiki image cache:", error);
             return null;
           }
         },

@@ -1,0 +1,29 @@
+{
+  "name": "G.O.A.T. - Greatest Of All Time",
+  "short_name": "G.O.A.T.",
+  "description": "Create and rank your greatest of all time lists",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#111827",
+  "theme_color": "#F59E0B",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "categories": ["entertainment", "lifestyle"],
+  "prefer_related_applications": false,
+  "related_applications": []
+}

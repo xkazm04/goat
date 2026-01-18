@@ -359,7 +359,7 @@ export function SimpleCollectionPanel({ groups, onItemClick, selectedItemId }: S
               )}
 
               {/* Content Area - fills remaining space */}
-              <div className="flex flex-1 min-h-0 overflow-hidden">
+              <div className="flex flex-1 min-h-0">
 
                 {/* Sidebar (if in sidebar mode) */}
                 {groupViewMode === 'sidebar' && (
@@ -375,7 +375,7 @@ export function SimpleCollectionPanel({ groups, onItemClick, selectedItemId }: S
                 {/* Main Grid - Virtualized for performance */}
                 <div
                   ref={gridContainerRef}
-                  className="flex-1 p-3 bg-gradient-to-b from-transparent to-black/20 dark:to-black/40 min-h-0 overflow-hidden"
+                  className="flex-1 p-3 bg-gradient-to-b from-transparent to-black/20 dark:to-black/40 min-h-0"
                   data-testid="collection-grid-container"
                 >
                   <VirtualizedCollectionGrid

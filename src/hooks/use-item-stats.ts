@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { itemStatsApi, ItemStatsParams } from '@/lib/api/item-stats';
+import { goatApi, ItemStatsParams } from '@/lib/api';
 
 // Cache time constants
 const DEFAULT_STALE_TIME_MS = 2 * 60 * 1000; // 2 minutes
@@ -33,7 +33,7 @@ export const itemStatsKeys = {
 export function useItemStats(params?: ItemStatsParams, options?: QueryOptions) {
   return useQuery({
     queryKey: itemStatsKeys.list(params || {}),
-    queryFn: () => itemStatsApi.getItemStats(params),
+    queryFn: () => goatApi.items.getStats(params),
     ...buildQueryConfig(options),
   });
 }
@@ -44,7 +44,7 @@ export function useItemStats(params?: ItemStatsParams, options?: QueryOptions) {
 export function useItemStat(itemId: string, options?: QueryOptions) {
   return useQuery({
     queryKey: itemStatsKeys.item(itemId),
-    queryFn: () => itemStatsApi.getItemStat(itemId),
+    queryFn: () => goatApi.items.getStat(itemId),
     ...buildQueryConfig(options, !!itemId),
   });
 }

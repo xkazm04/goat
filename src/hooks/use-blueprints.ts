@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Blueprint, CreateBlueprintRequest, UpdateBlueprintRequest, SearchBlueprintsParams } from '@/types/blueprint';
+import { CACHE_TTL_MS, GC_TIME_MS } from '@/lib/cache/unified-cache';
 
 // Query keys for blueprint caching
 export const blueprintKeys = {
@@ -129,6 +130,8 @@ export function useBlueprints(params?: SearchBlueprintsParams) {
   return useQuery({
     queryKey: blueprintKeys.list(params || {}),
     queryFn: () => fetchBlueprints(params),
+    staleTime: CACHE_TTL_MS.LONG, // Blueprints are reference data
+    gcTime: GC_TIME_MS.LONG,
   });
 }
 
@@ -137,6 +140,8 @@ export function useFeaturedBlueprints() {
   return useQuery({
     queryKey: blueprintKeys.featured(),
     queryFn: () => fetchBlueprints({ isFeatured: true, limit: 20 }),
+    staleTime: CACHE_TTL_MS.LONG, // Featured blueprints rarely change
+    gcTime: GC_TIME_MS.LONG,
   });
 }
 
@@ -146,6 +151,8 @@ export function useBlueprintsByCategory(category: string) {
     queryKey: blueprintKeys.byCategory(category),
     queryFn: () => fetchBlueprints({ category }),
     enabled: !!category,
+    staleTime: CACHE_TTL_MS.LONG,
+    gcTime: GC_TIME_MS.LONG,
   });
 }
 
@@ -155,6 +162,8 @@ export function useBlueprintsByAuthor(authorId: string) {
     queryKey: blueprintKeys.byAuthor(authorId),
     queryFn: () => fetchBlueprints({ authorId }),
     enabled: !!authorId,
+    staleTime: CACHE_TTL_MS.STANDARD, // Author-specific data changes more often
+    gcTime: GC_TIME_MS.STANDARD,
   });
 }
 
@@ -164,6 +173,8 @@ export function useBlueprint(slugOrId: string) {
     queryKey: blueprintKeys.detail(slugOrId),
     queryFn: () => fetchBlueprint(slugOrId),
     enabled: !!slugOrId,
+    staleTime: CACHE_TTL_MS.LONG,
+    gcTime: GC_TIME_MS.LONG,
   });
 }
 

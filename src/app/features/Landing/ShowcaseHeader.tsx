@@ -1,7 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Crown } from "lucide-react";
+import { Crown, Sparkles } from "lucide-react";
+import { usePersonalizedWelcome } from "@/lib/personalization";
 
 // Individual letter configuration for staggered animation
 const letters = [
@@ -16,31 +17,33 @@ const letters = [
 ];
 
 export function ShowcaseHeader() {
+  const { greeting, subtitle, isReturningUser } = usePersonalizedWelcome();
+
   return (
     <motion.div
       initial="hidden"
       animate="visible"
-      className="text-center relative z-10 pt-20 pb-12"
+      className="text-center relative z-10 pt-12 pb-6"
     >
       <div className="relative inline-block">
         {/* Epic crown above title */}
         <motion.div
-          className="absolute -top-16 left-1/2 -translate-x-1/2"
-          initial={{ y: -50, opacity: 0, scale: 0 }}
+          className="absolute -top-8 left-1/2 -translate-x-1/2"
+          initial={{ y: -25, opacity: 0, scale: 0 }}
           animate={{ y: 0, opacity: 1, scale: 1 }}
           transition={{ delay: 0.8, duration: 0.8, type: "spring", stiffness: 100 }}
         >
           <motion.div
             animate={{
-              y: [-4, 4, -4],
+              y: [-2, 2, -2],
               rotate: [-2, 2, -2],
             }}
             transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
           >
-            <Crown 
-              className="w-16 h-16 text-amber-400" 
+            <Crown
+              className="w-8 h-8 text-amber-400"
               style={{
-                filter: "drop-shadow(0 0 30px rgba(251, 191, 36, 0.8)) drop-shadow(0 0 60px rgba(251, 191, 36, 0.4))"
+                filter: "drop-shadow(0 0 15px rgba(251, 191, 36, 0.8)) drop-shadow(0 0 30px rgba(251, 191, 36, 0.4))"
               }}
             />
           </motion.div>
@@ -59,7 +62,7 @@ export function ShowcaseHeader() {
 
         {/* Massive background glow */}
         <motion.div
-          className="absolute -inset-32 pointer-events-none"
+          className="absolute -inset-16 pointer-events-none"
           animate={{
             opacity: [0.3, 0.6, 0.3],
             scale: [1, 1.1, 1],
@@ -67,7 +70,7 @@ export function ShowcaseHeader() {
           transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
           style={{
             background: "radial-gradient(ellipse at center, rgba(251, 191, 36, 0.2) 0%, rgba(245, 158, 11, 0.1) 30%, transparent 60%)",
-            filter: "blur(40px)",
+            filter: "blur(20px)",
           }}
         />
 
@@ -102,7 +105,7 @@ export function ShowcaseHeader() {
                 transition: { duration: 0.2 },
               } : {}}
               style={{
-                fontSize: letter.char === "." ? "clamp(4rem, 12vw, 10rem)" : "clamp(5rem, 15vw, 14rem)",
+                fontSize: letter.char === "." ? "clamp(2rem, 6vw, 5rem)" : "clamp(2.5rem, 7.5vw, 7rem)",
                 fontWeight: 900,
                 fontFamily: "'Inter', system-ui, sans-serif",
                 letterSpacing: letter.char === "." ? "-0.05em" : "-0.02em",
@@ -151,63 +154,63 @@ export function ShowcaseHeader() {
 
         {/* Elegant underline accent */}
         <motion.div
-          className="relative mt-6 flex items-center justify-center"
+          className="relative mt-3 flex items-center justify-center"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1.2, duration: 0.8 }}
         >
           {/* Left decorative line */}
           <motion.div
-            className="h-[2px] w-24 md:w-32"
+            className="h-[1px] w-12 md:w-16"
             initial={{ scaleX: 0, opacity: 0 }}
             animate={{ scaleX: 1, opacity: 1 }}
             transition={{ delay: 1.4, duration: 0.6, ease: "easeOut" }}
             style={{
               background: "linear-gradient(90deg, transparent, rgba(251, 191, 36, 0.8))",
               transformOrigin: "right",
-              boxShadow: "0 0 20px rgba(251, 191, 36, 0.5)",
+              boxShadow: "0 0 10px rgba(251, 191, 36, 0.5)",
             }}
           />
 
           {/* Center emblem */}
           <motion.div
-            className="mx-4 relative"
+            className="mx-2 relative"
             initial={{ scale: 0, rotate: -180 }}
             animate={{ scale: 1, rotate: 0 }}
             transition={{ delay: 1.5, duration: 0.6, type: "spring" }}
           >
             <div
-              className="w-3 h-3 rotate-45"
+              className="w-2 h-2 rotate-45"
               style={{
                 background: "linear-gradient(135deg, #fcd34d 0%, #f59e0b 100%)",
-                boxShadow: "0 0 20px rgba(251, 191, 36, 0.8), 0 0 40px rgba(251, 191, 36, 0.4)",
+                boxShadow: "0 0 10px rgba(251, 191, 36, 0.8), 0 0 20px rgba(251, 191, 36, 0.4)",
               }}
             />
           </motion.div>
 
           {/* Right decorative line */}
           <motion.div
-            className="h-[2px] w-24 md:w-32"
+            className="h-[1px] w-12 md:w-16"
             initial={{ scaleX: 0, opacity: 0 }}
             animate={{ scaleX: 1, opacity: 1 }}
             transition={{ delay: 1.4, duration: 0.6, ease: "easeOut" }}
             style={{
               background: "linear-gradient(90deg, rgba(251, 191, 36, 0.8), transparent)",
               transformOrigin: "left",
-              boxShadow: "0 0 20px rgba(251, 191, 36, 0.5)",
+              boxShadow: "0 0 10px rgba(251, 191, 36, 0.5)",
             }}
           />
         </motion.div>
 
         {/* Subtitle with premium styling */}
         <motion.div
-          className="mt-8 relative"
+          className="mt-4 relative"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.6, duration: 0.6 }}
         >
           <motion.p
-            className="text-xl md:text-2xl font-light tracking-[0.3em] uppercase"
+            className="text-sm md:text-base font-light tracking-[0.3em] uppercase"
             style={{
               background: "linear-gradient(90deg, rgba(251, 191, 36, 0.6), #fbbf24, rgba(251, 191, 36, 0.6))",
               backgroundSize: "200% 100%",
@@ -222,7 +225,7 @@ export function ShowcaseHeader() {
           >
             Greatest Of All Time
           </motion.p>
-          
+
           {/* Subtle glow under subtitle */}
           <motion.div
             className="absolute -inset-4 -z-10"
@@ -232,6 +235,22 @@ export function ShowcaseHeader() {
             }}
           />
         </motion.div>
+
+        {/* Personalized welcome message for returning users */}
+        {isReturningUser && (
+          <motion.div
+            className="mt-6 flex items-center justify-center gap-2"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 2, duration: 0.5 }}
+          >
+            <Sparkles className="w-4 h-4 text-cyan-400" />
+            <span className="text-sm text-white/60 tracking-wide">
+              {subtitle}
+            </span>
+            <Sparkles className="w-4 h-4 text-cyan-400" />
+          </motion.div>
+        )}
       </div>
 
       {/* Ambient light rays */}
@@ -239,7 +258,7 @@ export function ShowcaseHeader() {
         {[...Array(6)].map((_, i) => (
           <motion.div
             key={i}
-            className="absolute top-1/2 left-1/2 h-[300px] w-[2px]"
+            className="absolute top-1/2 left-1/2 h-[150px] w-[1px]"
             style={{
               background: "linear-gradient(to bottom, rgba(251, 191, 36, 0.3), transparent)",
               transformOrigin: "top center",

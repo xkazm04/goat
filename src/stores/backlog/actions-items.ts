@@ -1,5 +1,6 @@
 import { BacklogState, PendingChange } from './types';
 import { BacklogItem } from '@/types/backlog-groups';
+import { backlogLogger } from '@/lib/logger';
 
 // Type for immer-compatible set function
 type ImmerSet = (fn: (state: BacklogState) => void) => void;
@@ -11,7 +12,7 @@ export const createItemActions = (
   // Add item to group
   addItemToGroup: (groupId: string, item: BacklogItem) => {
     set(state => {
-      console.log(`➕ BacklogStore: Adding item ${item.id} to group ${groupId}`);
+      backlogLogger.debug(`Adding item ${item.id} to group ${groupId}`);
       
       const updatedGroups = state.groups.map(group => {
         if (group.id === groupId) {
@@ -19,7 +20,7 @@ export const createItemActions = (
           const itemExists = group.items?.some(existingItem => existingItem.id === item.id);
           if (!itemExists) {
             const updatedItems = [...(group.items || []), item];
-            console.log(`✅ BacklogStore: Added item to group ${group.name}: ${group.items?.length || 0} → ${updatedItems.length}`);
+            backlogLogger.debug(`Added item to group ${group.name}: ${group.items?.length || 0} → ${updatedItems.length}`);
             
             return {
               ...group,
@@ -27,7 +28,7 @@ export const createItemActions = (
               item_count: updatedItems.length
             };
           } else {
-            console.log(`⚠️ BacklogStore: Item ${item.id} already exists in group ${group.name}`);
+            backlogLogger.warn(`Item ${item.id} already exists in group ${group.name}`);
           }
         }
         return group;
@@ -72,7 +73,7 @@ export const createItemActions = (
   // FIXED: Remove item from group with proper persistence
   removeItemFromGroup: (groupId: string, itemId: string) => {
     set(state => {
-      console.log(`🗑️ BacklogStore: Removing item ${itemId} from group ${groupId}`);
+      backlogLogger.debug(`Removing item ${itemId} from group ${groupId}`);
       
       let itemFound = false;
       let removedItem = null;
@@ -90,7 +91,7 @@ export const createItemActions = (
           });
           
           if (itemFound) {
-            console.log(`✅ BacklogStore: Removed item from group ${group.name}: ${originalCount} → ${updatedItems.length}`);
+            backlogLogger.debug(`Removed item from group ${group.name}: ${originalCount} → ${updatedItems.length}`);
             
             return {
               ...group,
@@ -103,11 +104,11 @@ export const createItemActions = (
       });
       
       if (!itemFound) {
-        console.warn(`⚠️ BacklogStore: Item ${itemId} not found in group ${groupId}`);
+        backlogLogger.warn(`Item ${itemId} not found in group ${groupId}`);
         // Debug: List all items in the group
         const targetGroup = state.groups.find(g => g.id === groupId);
         if (targetGroup && targetGroup.items) {
-          console.log(`🔍 Group ${groupId} contains items:`, targetGroup.items.map(i => ({ id: i.id, name: i.name })));
+          backlogLogger.debug(`Group ${groupId} contains items:`, targetGroup.items.map(i => ({ id: i.id, name: i.name })));
         }
         return;
       }
@@ -138,7 +139,7 @@ export const createItemActions = (
         }
       });
       
-      console.log(`💾 BacklogStore: Item removal persisted to cache`);
+      backlogLogger.debug(`Item removal persisted to cache`);
       
       // Clear selections if the removed item was selected
       if (state.selectedItemId === itemId) {
@@ -164,7 +165,7 @@ export const createItemActions = (
   // Update group items
   updateGroupItems: (groupId: string, items: BacklogItem[]) => {
     set(state => {
-      console.log(`🔄 BacklogStore: Updating group ${groupId} with ${items.length} items`);
+      backlogLogger.debug(`Updating group ${groupId} with ${items.length} items`);
       
       const updatedGroups = state.groups.map(group => {
         if (group.id === groupId) {
@@ -239,7 +240,7 @@ export const createItemActions = (
   // Update item in group
   updateItemInGroup: (groupId: string, itemId: string, updates: Partial<BacklogItem>) => {
     set(state => {
-      console.log(`🔄 BacklogStore: Updating item ${itemId} in group ${groupId}`);
+      backlogLogger.debug(`Updating item ${itemId} in group ${groupId}`);
 
       const updatedGroups = state.groups.map(group => {
         if (group.id === groupId && group.items) {
@@ -334,11 +335,11 @@ export const createItemActions = (
             delete state.cache[key];
           }
         });
-        console.log(`🧹 BacklogStore: Cleared cache for category: ${category}`);
+        backlogLogger.debug(`Cleared cache for category: ${category}`);
       } else {
         // Clear all caches
         state.cache = {};
-        console.log(`🧹 BacklogStore: Cleared all cache`);
+        backlogLogger.debug(`Cleared all cache`);
       }
     });
   }

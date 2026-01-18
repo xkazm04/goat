@@ -14,6 +14,8 @@ import {
   createEmptyNormalizedData,
   NormalizedOps
 } from './item-store/normalized-session';
+import { saveSessionToOffline, getOfflineSession } from '@/lib/offline';
+import { sessionLogger } from '@/lib/logger';
 
 interface SessionStoreState {
   // Multi-list sessions
@@ -113,7 +115,7 @@ export const useSessionStore = create<SessionStoreState>()(
 
       // Session Management
       createSession: (listId: string, size: number = 150) => {
-        console.log(`Creating session for list ${listId} with size ${size}`);
+        sessionLogger.debug(`Creating session for list ${listId} with size ${size}`);
 
         const session = SessionManager.createEmptySession(listId, size);
 
@@ -163,11 +165,39 @@ export const useSessionStore = create<SessionStoreState>()(
             [state.activeSessionId!]: updatedSession
           }
         }));
+
+        // OFFLINE SYNC: Also save to IndexedDB for offline persistence
+        // This is debounced internally by saveSessionToOffline
+        saveSessionToOffline(updatedSession);
       },
 
-      loadSession: (listId: string) => {
+      loadSession: async (listId: string) => {
         const state = get();
-        const session = state.listSessions[listId];
+        let session = state.listSessions[listId];
+
+        // OFFLINE SYNC: Try to load from IndexedDB and merge if needed
+        try {
+          const offlineSession = await getOfflineSession(listId);
+
+          if (offlineSession) {
+            if (!session) {
+              // No local session, use offline version
+              sessionLogger.debug(`Loading session ${listId} from offline storage`);
+              session = offlineSession;
+            } else {
+              // Both exist - compare timestamps and use the more recent one
+              const localTime = new Date(session.updatedAt).getTime();
+              const offlineTime = new Date(offlineSession.updatedAt).getTime();
+
+              if (offlineTime > localTime) {
+                sessionLogger.debug(`Using newer offline session for ${listId}`);
+                session = offlineSession;
+              }
+            }
+          }
+        } catch (error) {
+          sessionLogger.warn('Failed to load offline session:', error);
+        }
 
         if (session && SessionManager.validateSession(session)) {
           // PERFORMANCE OPTIMIZATION: Migrate legacy format to normalized format
@@ -177,10 +207,14 @@ export const useSessionStore = create<SessionStoreState>()(
           set({
             activeSessionId: listId,
             normalizedData,
-            selectedBacklogItem: session.selectedBacklogItem
+            selectedBacklogItem: session.selectedBacklogItem,
+            listSessions: {
+              ...state.listSessions,
+              [listId]: session
+            }
           });
         } else {
-          console.warn(`Session for list ${listId} not found, creating new session`);
+          sessionLogger.warn(`Session for list ${listId} not found, creating new session`);
           get().createSession(listId, 150);
         }
       },
@@ -210,7 +244,7 @@ export const useSessionStore = create<SessionStoreState>()(
         const currentSession = state.listSessions[listId];
         if (currentSession && currentSession.backlogGroups.length === 0) {
           // Don't set default groups here anymore, let BacklogGroups component handle it via API
-          console.log(`Session ${listId} ready, groups will be loaded via API`);
+          sessionLogger.debug(`Session ${listId} ready, groups will be loaded via API`);
         }
       },
 
@@ -257,18 +291,18 @@ export const useSessionStore = create<SessionStoreState>()(
 
       removeItemFromGroup: (groupId: string, itemId: string) => {
         set((state) => {
-          console.log(`🗑️ SessionStore: Removing item ${itemId} from group ${groupId}`);
+          sessionLogger.debug(`Removing item ${itemId} from group ${groupId}`);
 
           // Check if item exists
           const item = state.normalizedData.itemsById[itemId];
           if (!item) {
-            console.warn(`⚠️ Item ${itemId} not found`);
+            sessionLogger.warn(`Item ${itemId} not found`);
             return state;
           }
 
           const group = state.normalizedData.groupsById[groupId];
           if (!group) {
-            console.warn(`⚠️ Group ${groupId} not found`);
+            sessionLogger.warn(`Group ${groupId} not found`);
             return state;
           }
 
@@ -278,7 +312,7 @@ export const useSessionStore = create<SessionStoreState>()(
           // Clear selection if removed item was selected
           const updatedSelectedBacklogItem = state.selectedBacklogItem === itemId ? null : state.selectedBacklogItem;
 
-          console.log(`✅ SessionStore: Item ${itemId} removed successfully`);
+          sessionLogger.debug(`Item ${itemId} removed successfully`);
 
           return {
             normalizedData: updatedData,
@@ -292,7 +326,7 @@ export const useSessionStore = create<SessionStoreState>()(
       // NEW: Update items for a specific group
       updateGroupItems: (groupId: string, items: BacklogItem[]) => {
         set((state) => {
-          console.log(`🔄 SessionStore: Updating ${items.length} items for group ${groupId}`);
+          sessionLogger.debug(`Updating ${items.length} items for group ${groupId}`);
 
           // PERFORMANCE OPTIMIZATION: Efficient bulk update
           const updatedData = NormalizedOps.updateGroupItems(state.normalizedData, groupId, items);
@@ -372,21 +406,25 @@ export const useSessionStore = create<SessionStoreState>()(
       updateSessionGridItems: (gridItems) => {
         const state = get();
         if (!state.activeSessionId) return;
-        
+
         const currentSession = state.listSessions[state.activeSessionId];
         if (!currentSession) return;
 
         const updatedSession = {
           ...currentSession,
-          gridItems
+          gridItems,
+          updatedAt: new Date().toISOString(),
         };
-        
+
         set((state) => ({
           listSessions: {
             ...state.listSessions,
             [state.activeSessionId!]: updatedSession
           }
         }));
+
+        // OFFLINE SYNC: Save grid changes to IndexedDB
+        saveSessionToOffline(updatedSession);
       },
 
       getActiveSession: () => {
@@ -408,7 +446,7 @@ export const useSessionStore = create<SessionStoreState>()(
       },
 
       syncWithBackend: async (listId) => {
-        console.log(`Syncing session ${listId} with backend...`);
+        sessionLogger.debug(`Syncing session ${listId} with backend...`);
         
         try {
           const state = get();
@@ -430,7 +468,7 @@ export const useSessionStore = create<SessionStoreState>()(
           }
           
         } catch (error) {
-          console.error('Failed to sync with backend:', error);
+          sessionLogger.error('Failed to sync with backend:', error);
         }
       }
     }),

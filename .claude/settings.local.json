@@ -16,7 +16,12 @@
       "Bash(find:*)",
       "Bash(npx tsc:*)",
       "Bash(xxd:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(git stash:*)",
+      "Bash(git push:*)",
+      "Bash(npm run lint:*)",
+      "Bash(done)",
+      "Bash(npm ls:*)"
     ],
     "deny": [],
     "ask": []

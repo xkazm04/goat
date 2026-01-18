@@ -1,24 +1,18 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect } from "react";
-import { DndContext, DragOverlay, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
-import { snapCenterToCursor } from "@dnd-kit/modifiers";
-import { SortableContext, verticalListSortingStrategy, rectSortingStrategy, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { CollectionGroup, CollectionItem as CollectionItemType } from "../types";
 import { CollectionToolbar } from "./CollectionToolbar";
 import { ConfigurableCollectionItem, COLLECTION_VIEW_CONFIG } from "./ConfigurableCollectionItem";
-import { SortableCollectionItem } from "./SortableCollectionItem";
 import { CollectionStats } from "./CollectionStats";
 import { AddItemModal } from "./AddItemModal";
 import { StickyContext } from "./StickyContext";
 import { LazyLoadTrigger } from "./LazyLoadTrigger";
-import { VirtualizedGrid } from "./VirtualizedGrid";
 import { useCollection } from "../hooks/useCollection";
 import { useCollectionLazyLoad } from "../hooks/useCollectionLazyLoad";
-import { useCollectionReorder } from "../hooks/useCollectionReorder";
 import { useCurrentList } from "@/stores/use-list-store";
 import { CollectionFiltersProvider } from "../context/CollectionFiltersContext";
-import { shouldUseVirtualization, shouldUseLazyLoading } from "../constants/lazyLoadConfig";
+import { shouldUseLazyLoading } from "../constants/lazyLoadConfig";
 import { CollectionErrorBoundary } from "./CollectionErrorBoundary";
 import { MasonryGrid } from "@/components/ui/masonry-grid";
 
@@ -28,8 +22,6 @@ interface CollectionPanelProps {
   category?: string;
   subcategory?: string;
   enablePagination?: boolean;
-  enableReordering?: boolean; // New prop to enable drag-and-drop reordering
-  onOrderChange?: (items: CollectionItemType[]) => void; // Callback for order changes
 }
 
 /**
@@ -50,8 +42,6 @@ function CollectionPanelInternal({
   category,
   subcategory,
   enablePagination = false,
-  enableReordering = false,
-  onOrderChange
 }: CollectionPanelProps) {
   const [isVisible, setIsVisible] = useState(true);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -87,15 +77,9 @@ function CollectionPanelInternal({
   const selectedGroups = collection.selectedGroups;
   const stats = collection.stats;
 
-  // Determine rendering strategy based on item count
-  const useVirtualization = useMemo(
-    () => shouldUseVirtualization(filteredItems.length),
-    [filteredItems.length]
-  );
-
   const useLazyLoading = useMemo(
-    () => !useVirtualization && shouldUseLazyLoading(filteredItems.length),
-    [useVirtualization, filteredItems.length]
+    () => shouldUseLazyLoading(filteredItems.length),
+    [filteredItems.length]
   );
 
   // Lazy loading for medium-sized collections
@@ -105,27 +89,14 @@ function CollectionPanelInternal({
   });
 
   // Determine which items to render
-  const itemsToRender = useMemo(() => {
-    if (useVirtualization) {
-      // Virtualization handles its own slicing
-      return filteredItems;
-    }
+  const displayItems = useMemo(() => {
     if (useLazyLoading) {
       // Use lazy-loaded slice
       return lazyLoad.visibleItems;
     }
     // Small collections: render all
     return filteredItems;
-  }, [useVirtualization, useLazyLoading, filteredItems, lazyLoad.visibleItems]);
-
-  // Drag-and-drop reordering hook (only enabled when enableReordering is true)
-  const reorder = useCollectionReorder({
-    items: itemsToRender,
-    onOrderChange: onOrderChange,
-  });
-
-  // Use reordered items if reordering is enabled, otherwise use original items
-  const displayItems = enableReordering ? reorder.orderedItems : itemsToRender;
+  }, [useLazyLoading, filteredItems, lazyLoad.visibleItems]);
 
   const handleAddItemSuccess = async () => {
     // Invalidate cache to refetch fresh data
@@ -179,15 +150,14 @@ function CollectionPanelInternal({
     };
   }, []);
 
-  // Render content (wrapped in DndContext if reordering is enabled)
-  const renderContent = () => (
+  return (
     <CollectionFiltersProvider value={contextValue}>
       {/* Sticky Context Indicator */}
       <StickyContext
         isVisible={showStickyContext && isVisible}
         categoryName={currentList?.category || "All Categories"}
         itemCount={filteredItems.length}
-        isDragging={isDraggingItem || (enableReordering && reorder.activeId !== null)}
+        isDragging={isDraggingItem}
         selectedGroupName={
           selectedGroups.length === 1
             ? selectedGroups[0].name
@@ -274,38 +244,7 @@ function CollectionPanelInternal({
                     }
                   </p>
                 </div>
-              ) : useVirtualization && viewMode === 'grid' ? (
-                // Large collections: Use virtualized grid (PR#5 version)
-                <>
-                  <div className="mb-2 text-xs text-gray-400 flex items-center justify-between">
-                    <span>Virtualized rendering ({filteredItems.length} items)</span>
-                    <span className="text-cyan-400">High performance mode</span>
-                  </div>
-                  <VirtualizedGrid
-                    items={filteredItems}
-                    renderItem={(item, index) => {
-                      const groupId = (item.metadata?.group_id as string) || '';
-                      return (
-                        <ConfigurableCollectionItem
-                          key={`${groupId}-${item.id}`}
-                          item={item}
-                          groupId={groupId}
-                          viewMode="grid"
-                          index={index}
-                          isSpotlight={collection.spotlightItemId === item.id}
-                          config={COLLECTION_VIEW_CONFIG}
-                        />
-                      );
-                    }}
-                    itemHeight={120}
-                    columns={12}
-                    gap={8}
-                    className="h-full"
-                    overscan={3}
-                  />
-                </>
               ) : (
-                // Normal or lazy-loaded rendering
                 <>
                   {useLazyLoading && (
                     <div className="mb-2 text-xs text-gray-400 flex items-center justify-between">
@@ -321,19 +260,9 @@ function CollectionPanelInternal({
                       testId="collection-masonry-grid"
                     >
                       {displayItems.map((item, index) => {
-                        // Find groupId from the item metadata
                         const groupId = (item.metadata?.group_id as string) || '';
                         const isSpotlight = collection.spotlightItemId === item.id;
-                        return enableReordering ? (
-                          <SortableCollectionItem
-                            key={item.id}
-                            item={item}
-                            groupId={groupId}
-                            viewMode={viewMode}
-                            index={index}
-                            isSpotlight={isSpotlight}
-                          />
-                        ) : (
+                        return (
                           <ConfigurableCollectionItem
                             key={`${groupId}-${item.id}`}
                             item={item}
@@ -349,19 +278,9 @@ function CollectionPanelInternal({
                   ) : (
                     <div className="space-y-2">
                       {displayItems.map((item, index) => {
-                        // Find groupId from the item metadata
                         const groupId = (item.metadata?.group_id as string) || '';
                         const isSpotlight = collection.spotlightItemId === item.id;
-                        return enableReordering ? (
-                          <SortableCollectionItem
-                            key={item.id}
-                            item={item}
-                            groupId={groupId}
-                            viewMode={viewMode}
-                            index={index}
-                            isSpotlight={isSpotlight}
-                          />
-                        ) : (
+                        return (
                           <ConfigurableCollectionItem
                             key={`${groupId}-${item.id}`}
                             item={item}
@@ -432,72 +351,6 @@ function CollectionPanelInternal({
       />
     </CollectionFiltersProvider>
   );
-
-  // Wrap content with DndContext if reordering is enabled
-  if (enableReordering) {
-    // Use the appropriate sorting strategy based on view mode
-    const sortingStrategy = viewMode === 'grid' ? rectSortingStrategy : verticalListSortingStrategy;
-
-    return (
-      <DndContext
-        sensors={reorder.sensors}
-        collisionDetection={closestCenter}
-        onDragStart={reorder.handleDragStart}
-        onDragOver={reorder.handleDragOver}
-        onDragEnd={reorder.handleDragEnd}
-        onDragCancel={reorder.handleDragCancel}
-        accessibility={reorder.accessibilityConfig}
-      >
-        {/* Screen reader announcement region */}
-        <reorder.AnnouncementRegion liveRegionRef={reorder.liveRegionRef} />
-
-        <SortableContext
-          items={displayItems.map((item) => item.id)}
-          strategy={sortingStrategy}
-        >
-          {renderContent()}
-        </SortableContext>
-
-        {/* Drag Overlay for visual feedback (works with both mouse and keyboard) */}
-        <DragOverlay
-          modifiers={[snapCenterToCursor]}
-          dropAnimation={{
-            duration: 200,
-            easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)',
-          }}
-        >
-          {reorder.activeId ? (
-            <div
-              className="opacity-90 scale-105 ring-2 ring-cyan-500 ring-offset-2 ring-offset-gray-900 rounded-lg"
-              style={{ cursor: 'grabbing' }}
-              role="status"
-              aria-live="polite"
-              data-testid="drag-overlay-item"
-            >
-              {(() => {
-                const activeItem = displayItems.find((item) => item.id === reorder.activeId);
-                if (!activeItem) return null;
-                const groupId = (activeItem.metadata?.group_id as string) || '';
-                return (
-                  <ConfigurableCollectionItem
-                    item={activeItem}
-                    groupId={groupId}
-                    viewMode={viewMode}
-                    index={0}
-                    isSpotlight={collection.spotlightItemId === activeItem.id}
-                    config={COLLECTION_VIEW_CONFIG}
-                  />
-                );
-              })()}
-            </div>
-          ) : null}
-        </DragOverlay>
-      </DndContext>
-    );
-  }
-
-  // Return without DndContext if reordering is disabled
-  return renderContent();
 }
 
 /**

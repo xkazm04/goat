@@ -1,13 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { itemGroupsApi, ItemGroupSearchParams, ItemGroupCreate } from '@/lib/api/item-groups';
+import { goatApi, GroupSearchParams, GroupCreateRequest } from '@/lib/api';
 import { toast } from '@/hooks/use-toast';
 import { GridItemType as OriginalGridItemType, BacklogItemType as OriginalBacklogItemType, BacklogGroupType as OriginalBacklogGroupType } from '@/types/match';
 import { BacklogGroup as ApiBacklogGroup, BacklogItem as ApiBacklogItem } from '@/types/backlog-groups';
+import { CACHE_TTL_MS, GC_TIME_MS } from '@/lib/cache/unified-cache';
 
-// Cache time constants
+// Unified cache time constants - imported from unified-cache.ts
 const CACHE_TIMES = {
-  SHORT: 2 * 60 * 1000,   // 2 minutes - for detailed/frequently changing data
-  STANDARD: 5 * 60 * 1000, // 5 minutes - default cache duration
+  SHORT: CACHE_TTL_MS.SHORT,     // 1 minute - for user-specific/detailed data
+  STANDARD: CACHE_TTL_MS.STANDARD, // 5 minutes - default cache duration
+  LONG: CACHE_TTL_MS.LONG,       // 15 minutes - for reference data
 } as const;
 
 // Retry configuration
@@ -108,7 +110,7 @@ export interface ComparisonState {
 export const itemGroupsKeys = {
   all: ['item-groups'] as const,
   lists: () => [...itemGroupsKeys.all, 'list'] as const,
-  list: (filters: ItemGroupSearchParams) => [...itemGroupsKeys.lists(), { filters }] as const,
+  list: (filters: GroupSearchParams) => [...itemGroupsKeys.lists(), { filters }] as const,
   categories: () => [...itemGroupsKeys.all, 'categories'] as const,
   category: (category: string, subcategory?: string, search?: string) => {
     const params: CategoryParams = { category };
@@ -132,10 +134,10 @@ export const itemGroupsKeys = {
 };
 
 // Hook to get item groups with search/filter
-export function useItemGroups(params?: ItemGroupSearchParams, options?: BaseQueryOptions) {
+export function useItemGroups(params?: GroupSearchParams, options?: BaseQueryOptions) {
   return useQuery({
     queryKey: itemGroupsKeys.list(params || {}),
-    queryFn: () => itemGroupsApi.getItemGroups(params),
+    queryFn: () => goatApi.groups.search(params),
     ...buildQueryConfig(options),
   });
 }
@@ -159,12 +161,14 @@ export function useGroupsByCategory(
       console.log(`🔄 API: Fetching groups for ${category}/${subcategory || 'none'}`);
       const startTime = Date.now();
 
-      const groups = await itemGroupsApi.getGroupsByCategory(
+      const groups = await goatApi.groups.getByCategory(
         category,
-        subcategory,
-        cleanSearch,
-        100, // Higher limit
-        minItemCount // Filter empty groups at API level
+        {
+          subcategory,
+          search: cleanSearch,
+          limit: 100, // Higher limit
+          minItemCount, // Filter empty groups at API level
+        }
       );
 
       const endTime = Date.now();
@@ -194,7 +198,7 @@ export function useItemGroup(groupId: string, options?: {
       console.log(`🔄 API: Fetching group ${groupId} with items=${includeItems}`);
       const startTime = Date.now();
 
-      const group = await itemGroupsApi.getGroup(groupId, includeItems);
+      const group = await goatApi.groups.get(groupId, includeItems);
 
       const endTime = Date.now();
       console.log(`✅ API: Fetched group ${groupId} with ${group.items?.length || 0} items in ${endTime - startTime}ms`);
@@ -223,14 +227,14 @@ export function useGroupItems(
     queryKey: itemGroupsKeys.groupItems(groupId, limit, offset),
     queryFn: () => {
       if (preferSingleEndpoint && offset === 0) {
-        return itemGroupsApi.getGroup(groupId, true).then(group => ({
+        return goatApi.groups.get(groupId, true).then(group => ({
           group_id: groupId,
           items: group.items.slice(0, limit),
           count: group.items.length
         }));
       } else {
         // Fallback to legacy items endpoint for pagination
-        return itemGroupsApi.getGroupItems(groupId, limit, offset);
+        return goatApi.groups.getItems(groupId, { limit, offset });
       }
     },
     enabled: options?.enabled ?? !!groupId,
@@ -242,7 +246,7 @@ export function useCreateItemGroup() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: ItemGroupCreate) => itemGroupsApi.createGroup(data),
+    mutationFn: (data: GroupCreateRequest) => goatApi.groups.create(data),
     onSuccess: (newGroup) => {
       toast({
         title: "Group Created",

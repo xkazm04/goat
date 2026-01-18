@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useMemo } from "react";
+import { memo, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
 import { ShowcaseCard } from "./ShowcaseCard";
 import { BannedShowcaseCard } from "./BannedShowcaseCard";
@@ -8,8 +8,10 @@ import { ShowcaseHeader } from "./ShowcaseHeader";
 import { showcaseData, LegacyShowcaseItem } from "@/lib/constants/showCaseExamples";
 import ShowcaseDecor from "@/components/app/decorations/ShowcaseDecor";
 import { staggerContainer, useCardClickHandler } from "./shared";
+import type { ShowcaseCardData } from "./types";
 import { useAnimationPause } from "@/hooks/use-animation-pause";
 import { useMotionCapabilities } from "@/hooks/use-motion-preference";
+import { usePersonalization, type ContentItem } from "@/lib/personalization";
 
 // Default color fallback for items missing color properties
 const DEFAULT_COLOR = {
@@ -74,6 +76,17 @@ const cardVariants = {
     }),
 };
 
+// Convert showcase item to content item for personalization
+function toContentItem(item: LegacyShowcaseItem, index: number): ContentItem {
+    return {
+        id: item.id,
+        category: item.category,
+        subcategory: item.subcategory,
+        popularity: 70 + Math.random() * 30, // Simulated for now
+        trending: index <= 3, // First 3 items are considered trending
+    };
+}
+
 export const FloatingShowcase = memo(function FloatingShowcase() {
     const handleCardClick = useCardClickHandler();
     const {
@@ -82,6 +95,15 @@ export const FloatingShowcase = memo(function FloatingShowcase() {
         animationClass,
     } = useAnimationPause({ rootMargin: "200px" });
     const { allowAmbient, allowInteraction, allowTransitions } = useMotionCapabilities();
+
+    // Personalization hook
+    const {
+        isInitialized,
+        isPersonalized,
+        personalizeItems,
+        trackClick,
+        topInterests
+    } = usePersonalization();
 
     // Validate and normalize showcase data, filtering out invalid items
     const validatedShowcaseData = useMemo(() => {
@@ -92,6 +114,50 @@ export const FloatingShowcase = memo(function FloatingShowcase() {
             .filter(isValidShowcaseItem)
             .map(normalizeShowcaseItem);
     }, []);
+
+    // Personalize the showcase data based on user interests
+    const personalizedShowcaseData = useMemo(() => {
+        if (!isInitialized || validatedShowcaseData.length === 0) {
+            return validatedShowcaseData;
+        }
+
+        // Convert to content items for scoring
+        const contentItems = validatedShowcaseData.map((item, index) => ({
+            ...toContentItem(item, index),
+            originalItem: item,
+        }));
+
+        // Score and sort by personalization
+        const scored = personalizeItems(contentItems);
+
+        // Sort by relevance but keep position-based layout
+        // Higher relevance items get better positions (lower index)
+        const sorted = [...scored].sort((a, b) => b.relevanceScore - a.relevanceScore);
+
+        // Map back to original items with adjusted scales based on relevance
+        return sorted.map((scored, index) => {
+            const item = (scored.item as typeof contentItems[0]).originalItem;
+            // Boost scale for highly relevant items
+            const relevanceBoost = scored.relevanceScore > 70 ? 0.1 : 0;
+            return {
+                ...item,
+                scale: Math.min(1.3, (item.scale || 1) + relevanceBoost),
+                // Store personalization info for potential UI indicators
+                _personalization: {
+                    relevanceScore: scored.relevanceScore,
+                    reason: scored.selectionReason,
+                },
+            };
+        });
+    }, [isInitialized, validatedShowcaseData, personalizeItems]);
+
+    // Handle card click with tracking
+    const handlePersonalizedCardClick = useCallback((cardData: ShowcaseCardData) => {
+        // Track the click for personalization
+        trackClick(cardData.category, cardData.title);
+        // Call original handler
+        handleCardClick(cardData);
+    }, [handleCardClick, trackClick]);
 
     // Early return if no valid showcase data - render header only with empty state
     if (validatedShowcaseData.length === 0) {
@@ -123,19 +189,50 @@ export const FloatingShowcase = memo(function FloatingShowcase() {
             style={{ perspective: "1500px" }}
             data-testid="floating-showcase"
         >
-            <ShowcaseHeader />
-            <ShowcaseDecor shouldAnimate={shouldAnimate} />
+            {/* Background decor - lowest z-index */}
+            <div className="absolute inset-0 z-0">
+                <ShowcaseDecor shouldAnimate={shouldAnimate} />
+            </div>
 
-            {/* Floating Cards with 3D transforms */}
+            {/* Header - above decor */}
+            <div className="relative z-10">
+                <ShowcaseHeader />
+            </div>
+
+            {/* Personalization indicator for returning users */}
+            {isPersonalized && topInterests.length > 0 && (
+                <motion.div
+                    className="absolute top-24 left-1/2 -translate-x-1/2 z-20"
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 1.5 }}
+                >
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/30 backdrop-blur-sm border border-white/10">
+                        <span className="text-xs text-white/50">Personalized for you</span>
+                        <div className="flex gap-1">
+                            {topInterests.slice(0, 3).map((interest) => (
+                                <span
+                                    key={interest.category}
+                                    className="text-xs px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400"
+                                >
+                                    {interest.category}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+                </motion.div>
+            )}
+
+            {/* Floating Cards with 3D transforms - z-5 to be above decor but below header */}
             <motion.div
                 variants={staggerContainer}
                 initial="hidden"
                 animate="visible"
-                className="absolute inset-0"
+                className="absolute inset-0 z-[5]"
                 style={{ transformStyle: "preserve-3d" }}
                 data-testid="floating-showcase-cards-container"
             >
-                {validatedShowcaseData.map((item, index) => {
+                {personalizedShowcaseData.map((item, index) => {
                     // CSS custom properties for card float animation
                     const cardCssVars = {
                         "--card-float-duration": `${4 + index * 0.5}s`,
@@ -184,9 +281,9 @@ export const FloatingShowcase = memo(function FloatingShowcase() {
                             />
 
                             {item.isBanned ? (
-                                <BannedShowcaseCard {...item} onCardClick={handleCardClick} />
+                                <BannedShowcaseCard {...item} onCardClick={handlePersonalizedCardClick} />
                             ) : (
-                                <ShowcaseCard {...item} onCardClick={handleCardClick} />
+                                <ShowcaseCard {...item} onCardClick={handlePersonalizedCardClick} />
                             )}
                         </motion.div>
                     );

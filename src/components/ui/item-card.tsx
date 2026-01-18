@@ -22,7 +22,7 @@ const itemCardVariants = cva(
         solid: "bg-gray-900 border-2 border-gray-800 hover:border-cyan-400",
       },
       layout: {
-        grid: "aspect-square",
+        grid: "aspect-[4/5]",
         list: "flex items-center gap-3 p-2",
         compact: "aspect-video",
       },
@@ -148,7 +148,7 @@ export function ItemCardSkeleton({
   return (
     <div className={cn(
       "rounded-lg overflow-hidden bg-gray-800 border border-gray-700",
-      layout === "grid" ? "aspect-square" : "aspect-video",
+      layout === "grid" ? "aspect-[4/5]" : "aspect-video",
       className
     )}>
       <Skeleton className="w-full h-full" />

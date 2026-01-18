@@ -211,7 +211,7 @@ export function CompositionModalLeftContent({
         />
       </motion.div>
 
-      {/* List Size with enhanced styling */}
+      {/* List Size with enhanced styling and visualizer */}
       <motion.div
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
@@ -222,6 +222,8 @@ export function CompositionModalLeftContent({
           handleHierarchyChange={handleHierarchyChange}
           activeHierarchy={activeHierarchy}
           color={color}
+          category={selectedCategory}
+          subcategory={selectedSubcategory}
         />
       </motion.div>
 

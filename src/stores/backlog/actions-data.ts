@@ -1,5 +1,6 @@
 import { BacklogState } from './types';
 import { BacklogItem } from '@/types/backlog-groups';
+import { backlogLogger } from '@/lib/logger';
 
 // Maximum number of groups to load at once
 const MAX_CONCURRENT_LOADS = 30;
@@ -28,13 +29,13 @@ export const createDataActions = (
                          cachedData.groups.length > 0 && 
                          now - cachedData.loadedAt < CACHE_DURATION;
     
-    console.log(`🔍 BacklogStore: Initializing groups for ${cacheKey} (original: ${category})`);
-    console.log(`🔍 Cache status: ${hasValidCache ? 'Valid' : 'Invalid or missing'}`);
-    console.log(`🔍 Force refresh: ${forceRefresh}`);
+    backlogLogger.debug(`Initializing groups for ${cacheKey} (original: ${category})`);
+    backlogLogger.debug(`Cache status: ${hasValidCache ? 'Valid' : 'Invalid or missing'}`);
+    backlogLogger.debug(`Force refresh: ${forceRefresh}`);
     
     // Return early if we're in offline mode and don't have cached data
     if (state.isOfflineMode && !hasValidCache) {
-      console.warn(`⚠️ BacklogStore: No cached data available for ${cacheKey} while offline`);
+      backlogLogger.warn(`No cached data available for ${cacheKey} while offline`);
       set(state => {
         state.error = new Error('No cached data available while offline');
         state.isLoading = false;
@@ -45,7 +46,7 @@ export const createDataActions = (
     
     // Check if we have fresh cached data and not forcing refresh
     if (!forceRefresh && hasValidCache) {
-      console.log(`🔄 BacklogStore: Using cached groups for ${cacheKey}, ${cachedData.groups.length} groups`);
+      backlogLogger.debug(`Using cached groups for ${cacheKey}, ${cachedData.groups.length} groups`);
       set(state => {
         state.groups = cachedData.groups;
         state.isLoading = false;
@@ -63,7 +64,7 @@ export const createDataActions = (
     
     // Check if we're in offline mode but have some cached data
     if (state.isOfflineMode && cachedData) {
-      console.log(`📴 BacklogStore: Using cached data for ${cacheKey} in offline mode`);
+      backlogLogger.debug(`Using cached data for ${cacheKey} in offline mode`);
       set(state => {
         state.groups = cachedData.groups;
         state.isLoading = false;
@@ -85,23 +86,24 @@ export const createDataActions = (
     });
     
     try {
-      console.log(`🔄 BacklogStore: Fetching groups for ${cacheKey}...`);
+      backlogLogger.debug(`Fetching groups for ${cacheKey}...`);
 
-      // Import coalesced API to prevent duplicate requests
-      const { coalescedItemGroupsApi } = await import('@/lib/api/coalesced-item-groups');
+      // Import goatApi with built-in request deduplication
+      const { goatApi } = await import('@/lib/api');
 
       let groups;
       try {
-        // IMPROVED: Using coalesced API to de-duplicate simultaneous requests
-        groups = await coalescedItemGroupsApi.getGroupsByCategory(
+        // GoatAPI has built-in request deduplication and caching
+        groups = await goatApi.groups.getByCategory(
           apiCategory,
-          subcategory,
-          undefined, // no search
-          100, // higher limit
-          1 // only groups with at least 1 item (handled by backend)
+          {
+            subcategory,
+            limit: 100, // higher limit
+            minItemCount: 1, // only groups with at least 1 item (handled by backend)
+          }
         );
         
-        console.log(`✅ BacklogStore: Received ${groups.length} pre-filtered groups from backend`);
+        backlogLogger.info(`Received ${groups.length} pre-filtered groups from backend`);
         
         // Sort groups by name (alphabetically)
         groups = groups.sort((a, b) => {
@@ -113,7 +115,7 @@ export const createDataActions = (
       } catch (error) {
         // If we get a 422 error for "general" category, we already tried sports as fallback
         if (apiCategory === 'sports' && category === 'general') {
-          console.log('⚠️ Fallback failed for general category');
+          backlogLogger.warn('Fallback failed for general category');
           throw error;
         } else {
           // Rethrow for other errors or categories
@@ -121,7 +123,7 @@ export const createDataActions = (
         }
       }
       
-      console.log(`✅ BacklogStore: Fetched ${groups.length} groups, sorted alphabetically`);
+      backlogLogger.info(`Fetched ${groups.length} groups, sorted alphabetically`);
       
       if (!Array.isArray(groups)) {
         throw new Error('API did not return an array of groups');
@@ -181,7 +183,7 @@ export const createDataActions = (
       }
       
     } catch (error) {
-      console.error('❌ BacklogStore: Failed to fetch groups:', error);
+      backlogLogger.error('Failed to fetch groups:', error);
       set(state => {
         state.isLoading = false;
         state.error = error as Error;
@@ -189,7 +191,7 @@ export const createDataActions = (
         
         // If we have any cached data, fall back to it even if it's stale
         if (cachedData) {
-          console.log('⚠️ BacklogStore: Falling back to cached data due to fetch error');
+          backlogLogger.warn('Falling back to cached data due to fetch error');
           state.groups = cachedData.groups;
           state.error = new Error(`Failed to fetch fresh data: ${(error as Error).message}. Using cached data.`);
         }
@@ -210,7 +212,7 @@ export const createDataActions = (
       return nameA.localeCompare(nameB);
     });
     
-    console.log(`🚀 BacklogStore: Starting FAST progressive loading for ${sortedGroups.length} groups`);
+    backlogLogger.debug(`Starting FAST progressive loading for ${sortedGroups.length} groups`);
     
     set(state => {
       state.loadingProgress.isLoading = true;
@@ -223,7 +225,7 @@ export const createDataActions = (
       batches.push(sortedGroups.slice(i, i + BATCH_SIZE));
     }
     
-    console.log(`📦 Loading ${batches.length} batches of ${BATCH_SIZE} groups each`);
+    backlogLogger.debug(`Loading ${batches.length} batches of ${BATCH_SIZE} groups each`);
     
     for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
       const batch = batches[batchIndex];
@@ -231,12 +233,12 @@ export const createDataActions = (
       // Load batch in parallel (no artificial delays!)
       const batchPromises = batch.map(async (group) => {
         if (cachedData && cachedData.loadedGroupIds.has(group.id)) {
-          console.log(`⏭️ Batch ${batchIndex + 1}: Skipping ${group.name} - cached`);
+          backlogLogger.debug(`Batch ${batchIndex + 1}: Skipping ${group.name} - cached`);
           get().updateLoadingProgress();
           return;
         }
         
-        console.log(`🔄 Batch ${batchIndex + 1}: Loading ${group.name}`);
+        backlogLogger.debug(`Batch ${batchIndex + 1}: Loading ${group.name}`);
         await get().loadGroupItems(group.id);
       });
       
@@ -248,7 +250,7 @@ export const createDataActions = (
         await new Promise(resolve => setTimeout(resolve, 50));
       }
       
-      console.log(`✅ Batch ${batchIndex + 1}/${batches.length} completed`);
+      backlogLogger.debug(`Batch ${batchIndex + 1}/${batches.length} completed`);
     }
     
     set(state => {
@@ -256,7 +258,7 @@ export const createDataActions = (
       state.loadingProgress.percentage = 100;
     });
     
-    console.log(`🎉 BacklogStore: FAST loading completed for all ${sortedGroups.length} groups`);
+    backlogLogger.info(`FAST loading completed for all ${sortedGroups.length} groups`);
   },
 
   // Add progress update helper
@@ -283,26 +285,26 @@ export const createDataActions = (
     const state = get();
     const group = state.groups.find(g => g.id === groupId);
     if (!group) {
-      console.warn(`⚠️ BacklogStore: Group ${groupId} not found`);
+      backlogLogger.warn(`Group ${groupId} not found`);
       return;
     }
     
     // Skip if group has 0 items according to metadata
     if (!forceRefresh && group.item_count === 0) {
-      console.log(`⏭️ BacklogStore: Skipping group ${groupId} - has 0 items`);
+      backlogLogger.debug(`Skipping group ${groupId} - has 0 items`);
       get().updateLoadingProgress();
       return;
     }
     
     // Check if this group is already loading
     if (state.loadingGroupIds.has(groupId)) {
-      console.log(`⏳ BacklogStore: Group ${groupId} is already loading, skipping duplicate request`);
+      backlogLogger.debug(`Group ${groupId} is already loading, skipping duplicate request`);
       return;
     }
     
     // Check if items are already loaded in this group and not forcing refresh
     if (!forceRefresh && group.items && group.items.length > 0) {
-      console.log(`✅ BacklogStore: Group ${groupId} already has ${group.items.length} items loaded`);
+      backlogLogger.debug(`Group ${groupId} already has ${group.items.length} items loaded`);
       get().updateLoadingProgress();
       return;
     }
@@ -312,7 +314,7 @@ export const createDataActions = (
     const cachedData = state.cache[cacheKey];
     
     if (!forceRefresh && cachedData && cachedData.loadedGroupIds.has(groupId)) {
-      console.log(`🔄 BacklogStore: Restoring ${groupId} items from cache`);
+      backlogLogger.debug(`Restoring ${groupId} items from cache`);
       
       // Find the cached group with items
       const cachedGroup = cachedData.groups.find(g => g.id === groupId);
@@ -336,7 +338,7 @@ export const createDataActions = (
     
     // Check if we're in offline mode
     if (state.isOfflineMode) {
-      console.warn(`⚠️ BacklogStore: Cannot load new items in offline mode for group ${groupId}`);
+      backlogLogger.warn(`Cannot load new items in offline mode for group ${groupId}`);
       return;
     }
     
@@ -346,15 +348,15 @@ export const createDataActions = (
     });
     
     try {
-      console.log(`🔄 BacklogStore: Fetching items for group ${groupId}...`);
+      backlogLogger.debug(`Fetching items for group ${groupId}...`);
 
-      // Import coalesced API to prevent duplicate requests
-      const { coalescedItemGroupsApi } = await import('@/lib/api/coalesced-item-groups');
-      const groupWithItems = await coalescedItemGroupsApi.getGroup(groupId, true);
+      // Import goatApi with built-in request deduplication
+      const { goatApi } = await import('@/lib/api');
+      const groupWithItems = await goatApi.groups.get(groupId, true);
       
       // Handle case where group is actually empty
       if (!groupWithItems.items || groupWithItems.items.length === 0) {
-        console.log(`⚠️ BacklogStore: Group ${groupId} returned 0 items - updating metadata`);
+        backlogLogger.warn(`Group ${groupId} returned 0 items - updating metadata`);
         
         set(state => {
           const groupIndex = state.groups.findIndex(g => g.id === groupId);
@@ -372,7 +374,7 @@ export const createDataActions = (
         return;
       }
       
-      console.log(`✅ BacklogStore: Fetched ${groupWithItems.items?.length || 0} items for group ${groupId}`);
+      backlogLogger.info(`Fetched ${groupWithItems.items?.length || 0} items for group ${groupId}`);
       
       // Ensure we have proper image_url and title fields in each item
       const itemsWithImages = (groupWithItems.items || []).map(item => ({
@@ -388,9 +390,9 @@ export const createDataActions = (
       })) as BacklogItem[];
       
       // Log for debugging
-      console.log(`📷 Adding ${itemsWithImages.length} items with images to group ${groupId}`);
+      backlogLogger.debug(`Adding ${itemsWithImages.length} items with images to group ${groupId}`);
       if (itemsWithImages.length > 0) {
-        console.log(`📷 Sample item image_url: ${itemsWithImages[0].image_url || 'NONE'}`);
+        backlogLogger.debug(`Sample item image_url: ${itemsWithImages[0].image_url || 'NONE'}`);
       }
       
       // CRITICAL: Update only the specific group without affecting others
@@ -432,7 +434,7 @@ export const createDataActions = (
       get().updateLoadingProgress();
       
     } catch (error) {
-      console.error(`❌ BacklogStore: Failed to fetch items for group ${groupId}:`, error);
+      backlogLogger.error(`Failed to fetch items for group ${groupId}:`, error);
       
       // Remove from loading state
       set(state => {
@@ -448,7 +450,7 @@ export const createDataActions = (
       ? state.groups.filter(g => g.category === categoryFilter)
       : state.groups;
       
-    console.log(`🔄 BacklogStore: Loading all items for ${groupsToLoad.length} groups`);
+    backlogLogger.debug(`Loading all items for ${groupsToLoad.length} groups`);
     
     // Load in parallel batches
     for (let i = 0; i < groupsToLoad.length; i += MAX_CONCURRENT_LOADS) {
@@ -461,7 +463,7 @@ export const createDataActions = (
       }
     }
     
-    console.log(`✅ BacklogStore: Completed loading all group items`);
+    backlogLogger.info(`Completed loading all group items`);
   },
   
   // Sync changes with backend
@@ -470,7 +472,7 @@ export const createDataActions = (
     
     // Skip if offline
     if (state.isOfflineMode) {
-      console.log(`📴 BacklogStore: Skipping sync while offline`);
+      backlogLogger.debug(`Skipping sync while offline`);
       return;
     }
     
@@ -482,7 +484,7 @@ export const createDataActions = (
       state.lastSyncTimestamp = Date.now();
     });
     
-    console.log(`✅ BacklogStore: Sync completed at ${new Date().toLocaleString()}`);
+    backlogLogger.info(`Sync completed at ${new Date().toLocaleString()}`);
   },
 });
 

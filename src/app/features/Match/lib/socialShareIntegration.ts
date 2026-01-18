@@ -8,6 +8,9 @@ export interface ShareConfig {
   timePeriod?: string;
   imageUrl?: string;
   url?: string;
+  /** AI generation info */
+  aiGenerated?: boolean;
+  aiStyle?: string;
 }
 
 export interface SocialPlatform {
@@ -21,15 +24,20 @@ export interface SocialPlatform {
  * Generate Twitter/X share URL with pre-filled text
  */
 export function generateTwitterShareUrl(config: ShareConfig): string {
-  const { title, category, itemCount, timePeriod, imageUrl, url } = config;
+  const { title, category, itemCount, timePeriod, imageUrl, url, aiGenerated, aiStyle } = config;
 
   const timePeriodText = timePeriod ? ` (${timePeriod})` : '';
-  const text = `My Top ${itemCount} ${category}${timePeriodText}\n\n"${title}"\n\nCreated with GOAT`;
+  const aiText = aiGenerated ? `\n\n✨ AI Art: ${aiStyle || 'Custom'}` : '';
+  const text = `My Top ${itemCount} ${category}${timePeriodText}\n\n"${title}"${aiText}\n\nCreated with GOAT`;
+
+  const hashtags = aiGenerated
+    ? 'GOAT,Rankings,AIArt,Top50'
+    : 'GOAT,Rankings,Top50';
 
   const params = new URLSearchParams({
     text,
     ...(url && { url }),
-    hashtags: 'GOAT,Rankings,Top50',
+    hashtags,
   });
 
   return `https://twitter.com/intent/tweet?${params.toString()}`;

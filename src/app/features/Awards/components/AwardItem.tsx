@@ -2,7 +2,7 @@
 
 import { useDroppable } from "@dnd-kit/core";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, X, Sparkles, Crown, Award, Plus } from "lucide-react";
+import { Trophy, X, Sparkles, Crown, Award, Plus, Share2 } from "lucide-react";
 import { GridItemType } from "@/types/match";
 import { TopList } from "@/types/top-lists";
 import { ProgressiveImage } from "@/components/ui/progressive-image";
@@ -21,6 +21,7 @@ interface AwardItemProps {
   candidates: AwardCandidate[];
   onRemove: () => void;
   onAddCandidate?: () => void;
+  onShare?: (listId: string, winnerTitle: string) => void;
   getItemTitle: (item: any) => string;
   index?: number;
   hasSelectedItem?: boolean;
@@ -37,6 +38,7 @@ export function AwardItem({
   candidates = [],
   onRemove,
   onAddCandidate,
+  onShare,
   getItemTitle,
   index = 0,
   hasSelectedItem = false
@@ -244,19 +246,40 @@ export function AwardItem({
                           </p>
                         </div>
 
-                        {/* Remove button - larger */}
-                        <motion.button
-                          initial={{ opacity: 0, scale: 0.5 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          whileHover={{ scale: 1.1, backgroundColor: 'rgba(239, 68, 68, 0.8)' }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onRemove();
-                          }}
-                          className="absolute top-3 right-3 p-1.5 rounded-full bg-black/50 text-white/70 hover:text-white backdrop-blur-sm border border-white/20 z-30 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <X className="w-4 h-4" />
-                        </motion.button>
+                        {/* Action buttons container */}
+                        <div className="absolute top-3 right-3 flex items-center gap-2 z-30 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {/* Share button */}
+                          {onShare && (
+                            <motion.button
+                              initial={{ opacity: 0, scale: 0.5 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              whileHover={{ scale: 1.1, backgroundColor: 'rgba(6, 182, 212, 0.8)' }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onShare(list.id, getItemTitle(gridItem));
+                              }}
+                              className="p-1.5 rounded-full bg-black/50 text-white/70 hover:text-white backdrop-blur-sm border border-white/20"
+                              title="Share this award"
+                            >
+                              <Share2 className="w-4 h-4" />
+                            </motion.button>
+                          )}
+
+                          {/* Remove button */}
+                          <motion.button
+                            initial={{ opacity: 0, scale: 0.5 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            whileHover={{ scale: 1.1, backgroundColor: 'rgba(239, 68, 68, 0.8)' }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onRemove();
+                            }}
+                            className="p-1.5 rounded-full bg-black/50 text-white/70 hover:text-white backdrop-blur-sm border border-white/20"
+                            title="Remove winner"
+                          >
+                            <X className="w-4 h-4" />
+                          </motion.button>
+                        </div>
 
                         {/* Celebration sparkles */}
                         {justAwarded && (

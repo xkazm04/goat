@@ -1,11 +1,94 @@
 "use client";
 
-import { ChevronDown, ChevronUp, Grid3x3, List, Plus, Search, X, EyeOff } from "lucide-react";
+import { ChevronDown, ChevronUp, Grid3x3, List, Plus, Search, X, EyeOff, Filter, SlidersHorizontal } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
-import { CollectionStats, CollectionGroup } from "../types";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { CollectionStats, CollectionGroup, CollectionItem } from "../types";
 import { useCollectionFiltersContext } from "../context/CollectionFiltersContext";
-import { CuratorBadge } from "./CuratorBadge";
+import { useFilterStore, useQuickFilters, useActiveFilterCount, useHasActiveFilters } from "@/stores/filter-store";
+import { QuickFilterBar, type QuickFilter } from "@/lib/filters";
+
+/**
+ * Collection-specific quick filters for common filtering patterns
+ */
+const COLLECTION_QUICK_FILTERS: QuickFilter[] = [
+  {
+    id: 'unranked',
+    label: 'Unranked',
+    icon: '📋',
+    config: {
+      rootCombinator: 'AND',
+      groups: [],
+      conditions: [
+        {
+          id: 'unranked-condition',
+          field: 'used',
+          operator: 'equals',
+          value: false,
+          valueType: 'boolean',
+          enabled: true,
+        },
+      ],
+    },
+  },
+  {
+    id: 'ranked',
+    label: 'In Grid',
+    icon: '📍',
+    config: {
+      rootCombinator: 'AND',
+      groups: [],
+      conditions: [
+        {
+          id: 'ranked-condition',
+          field: 'used',
+          operator: 'equals',
+          value: true,
+          valueType: 'boolean',
+          enabled: true,
+        },
+      ],
+    },
+  },
+  {
+    id: 'top-rated',
+    label: 'Top Rated',
+    icon: '⭐',
+    config: {
+      rootCombinator: 'AND',
+      groups: [],
+      conditions: [
+        {
+          id: 'top-rated-condition',
+          field: 'ranking',
+          operator: 'greater_equal',
+          value: 4,
+          valueType: 'number',
+          enabled: true,
+        },
+      ],
+    },
+  },
+  {
+    id: 'recent',
+    label: 'Recent',
+    icon: '🆕',
+    config: {
+      rootCombinator: 'AND',
+      groups: [],
+      conditions: [
+        {
+          id: 'recent-condition',
+          field: 'year',
+          operator: 'greater_equal',
+          value: new Date().getFullYear() - 2,
+          valueType: 'number',
+          enabled: true,
+        },
+      ],
+    },
+  },
+];
 
 interface CollectionToolbarProps {
   // Header section
@@ -31,6 +114,10 @@ interface CollectionToolbarProps {
   // Layout control
   showCategoryBar?: boolean;
   showSearch?: boolean;
+  showQuickFilters?: boolean;
+
+  // Items for filter facet counts (optional)
+  items?: CollectionItem[];
 }
 
 /**
@@ -64,9 +151,71 @@ export function CollectionToolbar({
   onSearchChange: propOnSearchChange,
   searchPlaceholder = "Search items...",
   showCategoryBar = true,
-  showSearch = true
+  showSearch = true,
+  showQuickFilters = true,
+  items = []
 }: CollectionToolbarProps) {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+
+  // Filter store for quick filters
+  const filterStore = useFilterStore();
+  const quickFilters = useQuickFilters();
+  const activeFilterCount = useActiveFilterCount();
+  const hasActiveFilters = useHasActiveFilters();
+
+  // Initialize quick filters on mount
+  useEffect(() => {
+    if (showQuickFilters) {
+      filterStore.setQuickFilters(COLLECTION_QUICK_FILTERS);
+    }
+  }, [showQuickFilters]);
+
+  // Compute active quick filter IDs
+  const activeQuickFilterIds = useMemo(() => {
+    return quickFilters.filter((f) => f.isActive).map((f) => f.id);
+  }, [quickFilters]);
+
+  // Compute facet counts for quick filters
+  const filterCounts = useMemo(() => {
+    if (!items || items.length === 0) return {};
+
+    const counts: Record<string, number> = {};
+
+    COLLECTION_QUICK_FILTERS.forEach((filter) => {
+      const condition = filter.config.conditions[0];
+      if (!condition) {
+        counts[filter.id] = items.length;
+        return;
+      }
+
+      counts[filter.id] = items.filter((item) => {
+        const itemRecord = item as unknown as Record<string, unknown>;
+        const value = itemRecord[condition.field];
+
+        switch (condition.operator) {
+          case 'equals':
+            return value === condition.value;
+          case 'greater_equal':
+            return typeof value === 'number' && value >= (condition.value as number);
+          case 'less_equal':
+            return typeof value === 'number' && value <= (condition.value as number);
+          default:
+            return true;
+        }
+      }).length;
+    });
+
+    return counts;
+  }, [items]);
+
+  // Quick filter handlers
+  const handleQuickFilterToggle = useCallback((filterId: string) => {
+    filterStore.toggleQuickFilter(filterId);
+  }, [filterStore]);
+
+  const handleClearFilters = useCallback(() => {
+    filterStore.clearAll();
+  }, [filterStore]);
 
   // Animation state for category bar
   const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -114,9 +263,6 @@ export function CollectionToolbar({
 
   return (
     <>
-      {/* Curator Badge - Celebration on milestones */}
-      <CuratorBadge itemCount={stats.totalItems} />
-
       {/* Hide/Show Toggle Button */}
       <button
         onClick={onToggleVisibility}
@@ -308,6 +454,38 @@ export function CollectionToolbar({
                 );
               })}
             </AnimatePresence>
+          </div>
+        </div>
+      )}
+
+      {/* Quick Filters Section */}
+      {showQuickFilters && (
+        <div className="px-4 py-2 border-b border-gray-700/50 bg-gray-900/40" data-testid="collection-toolbar-quickfilters">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 text-xs text-gray-500">
+              <Filter className="w-3.5 h-3.5" />
+              <span>Quick filters:</span>
+            </div>
+            <QuickFilterBar
+              filters={COLLECTION_QUICK_FILTERS}
+              activeFilters={activeQuickFilterIds}
+              onToggle={handleQuickFilterToggle}
+              onClear={handleClearFilters}
+              filterCounts={filterCounts}
+              variant="default"
+              showClearAll={hasActiveFilters}
+              className="flex-1"
+            />
+            {hasActiveFilters && (
+              <motion.span
+                className="inline-flex items-center px-2 py-1 text-[10px] font-medium rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30"
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+              >
+                {activeFilterCount} active
+              </motion.span>
+            )}
           </div>
         </div>
       )}

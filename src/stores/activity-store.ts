@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
+import { activityLogger } from '@/lib/logger';
 
 export interface ActivityItem {
   id: string;
@@ -197,7 +198,7 @@ export const useActivityStore = create<ActivityStoreState>((set, get) => ({
         }
       }
     } catch (error) {
-      console.warn('Activity feed API not available, using demo data');
+      activityLogger.warn('Activity feed API not available, using demo data');
       // Generate a random demo activity on failure
       const demoActivity = generateDemoActivities()[Math.floor(Math.random() * 5)];
       demoActivity.id = `demo-${Date.now()}`;

@@ -36,6 +36,7 @@ import {
   ValidationErrorCode,
 } from '@/lib/validation';
 import { createLazyStoreAccessor } from '@/lib/stores/lazy-store-accessor';
+import { gridLogger } from '@/lib/logger';
 
 // Re-export for backwards compatibility
 export type { ValidationErrorCode as TransferValidationErrorCode } from '@/lib/validation';
@@ -188,7 +189,7 @@ export const useGridStore = create<GridStoreState>()(
       initializeGrid: (size, listId, category) => {
         const emptyGridItems = createEmptyGrid(size);
 
-        console.log(`🔄 GridStore: Initializing grid with ${size} positions`);
+        gridLogger.debug(`Initializing grid with ${size} positions`);
 
         set({
           gridItems: emptyGridItems,
@@ -201,7 +202,7 @@ export const useGridStore = create<GridStoreState>()(
         if (listId) {
           const sessionStore = useSessionStore.getState();
           sessionStore.updateSessionGridItems(emptyGridItems);
-          console.log(`🔄 GridStore: Grid initialized and saved to session ${listId}`);
+          gridLogger.debug(`Grid initialized and saved to session ${listId}`);
         }
       },
 
@@ -217,9 +218,9 @@ export const useGridStore = create<GridStoreState>()(
             selectedGridItem: null,
             gridStatistics: computeGridStatistics(activeSession.gridItems),
           });
-          console.log(`🔄 GridStore: Synced with session (${activeSession.gridItems.length} items)`);
+          gridLogger.debug(`Synced with session (${activeSession.gridItems.length} items)`);
         } else {
-          console.log(`⚠️ GridStore: No session data found for sync`);
+          gridLogger.warn(`No session data found for sync`);
         }
       },
 
@@ -238,7 +239,7 @@ export const useGridStore = create<GridStoreState>()(
           gridItems.length = size;
         }
 
-        console.log(`🔄 GridStore: Loaded ${gridItems.length} items from session`);
+        gridLogger.debug(`Loaded ${gridItems.length} items from session`);
 
         set({
           gridItems,
@@ -251,20 +252,20 @@ export const useGridStore = create<GridStoreState>()(
       // Place a backlog item in the grid
       assignItemToGrid: (item, position) => {
         set(state => {
-          console.log(`🔄 GridStore: Assigning item to position ${position}`);
+          gridLogger.debug(`Assigning item to position ${position}`);
 
           // Create a copy of the grid items
           const newGridItems = [...state.gridItems];
 
           // Check if position is valid
           if (position < 0 || position >= newGridItems.length) {
-            console.warn(`⚠️ GridStore: Invalid position ${position}`);
+            gridLogger.warn(`Invalid position ${position}`);
             return state;
           }
 
           // Check if position is already filled
           if (newGridItems[position].matched) {
-            console.warn(`⚠️ GridStore: Position ${position} already has an item`);
+            gridLogger.warn(`Position ${position} already has an item`);
             return state;
           }
 
@@ -287,14 +288,14 @@ export const useGridStore = create<GridStoreState>()(
       // Remove an item from a grid position
       removeItemFromGrid: (position) => {
         set(state => {
-          console.log(`🔄 GridStore: Removing item from position ${position}`);
+          gridLogger.debug(`Removing item from position ${position}`);
 
           // Create a copy of the grid items
           const newGridItems = [...state.gridItems];
 
           // Check if position is valid
           if (position < 0 || position >= newGridItems.length) {
-            console.warn(`⚠️ GridStore: Invalid position ${position}`);
+            gridLogger.warn(`Invalid position ${position}`);
             return state;
           }
 
@@ -317,7 +318,7 @@ export const useGridStore = create<GridStoreState>()(
       // Remove an item by the backlog item ID
       removeItemByItemId: (itemId) => {
         set(state => {
-          console.log(`🔄 GridStore: Removing item by backlog ID ${itemId}`);
+          gridLogger.debug(`Removing item by backlog ID ${itemId}`);
 
           const newGridItems = [...state.gridItems];
           let updated = false;
@@ -325,7 +326,7 @@ export const useGridStore = create<GridStoreState>()(
           // Find all grid items with this backlogItemId
           for (let i = 0; i < newGridItems.length; i++) {
             if (newGridItems[i].backlogItemId === itemId) {
-              console.log(`✅ GridStore: Found item in position ${i}`);
+              gridLogger.debug(`Found item in position ${i}`);
 
               // Reset the grid item at the specified position using factory
               newGridItems[i] = createEmptyGridSlot(i);
@@ -334,10 +335,10 @@ export const useGridStore = create<GridStoreState>()(
           }
 
           if (!updated) {
-            console.warn(`⚠️ GridStore: Item with ID ${itemId} not found in grid`);
+            gridLogger.warn(`Item with ID ${itemId} not found in grid`);
 
             // Debug log to see what's in the grid
-            console.log('Current grid items:',
+            gridLogger.debug('Current grid items:',
               state.gridItems
                 .filter(item => item.matched)
                 .map(item => ({
@@ -368,7 +369,7 @@ export const useGridStore = create<GridStoreState>()(
       // Move a grid item from one position to another
       moveGridItem: (fromPosition, toPosition) => {
         set(state => {
-          console.log(`🔄 GridStore: Moving item from position ${fromPosition} to ${toPosition}`);
+          gridLogger.debug(`Moving item from position ${fromPosition} to ${toPosition}`);
 
           // Create a copy of the grid items
           const newGridItems = [...state.gridItems];
@@ -378,13 +379,13 @@ export const useGridStore = create<GridStoreState>()(
             fromPosition < 0 || fromPosition >= newGridItems.length ||
             toPosition < 0 || toPosition >= newGridItems.length
           ) {
-            console.warn(`⚠️ GridStore: Invalid positions - from: ${fromPosition}, to: ${toPosition}`);
+            gridLogger.warn(`Invalid positions - from: ${fromPosition}, to: ${toPosition}`);
             return state;
           }
 
           // Check if source position has an item
           if (!newGridItems[fromPosition].matched) {
-            console.warn(`⚠️ GridStore: No item at position ${fromPosition}`);
+            gridLogger.warn(`No item at position ${fromPosition}`);
             return state;
           }
 
@@ -393,7 +394,7 @@ export const useGridStore = create<GridStoreState>()(
 
           // If target position already has an item, swap them
           if (newGridItems[toPosition].matched) {
-            console.log(`🔄 GridStore: Swapping items at positions ${fromPosition} and ${toPosition}`);
+            gridLogger.debug(`Swapping items at positions ${fromPosition} and ${toPosition}`);
 
             const targetItem = { ...newGridItems[toPosition] };
 
@@ -432,7 +433,7 @@ export const useGridStore = create<GridStoreState>()(
       // Clear all items from the grid
       clearGrid: () => {
         set(state => {
-          console.log(`🔄 GridStore: Clearing entire grid`);
+          gridLogger.debug(`Clearing entire grid`);
 
           const emptyGridItems = createEmptyGrid(state.gridItems.length);
 
@@ -465,7 +466,7 @@ export const useGridStore = create<GridStoreState>()(
         const activeId = String(active.id);
         const overId = String(over.id);
 
-        console.log(`🔄 GridStore: Drag end ${activeId} -> ${overId}`);
+        gridLogger.debug(`Drag end ${activeId} -> ${overId}`);
 
         // Use TransferProtocol utilities for consistent ID parsing
         const isActiveFromGrid = isGridReceiverId(activeId);
@@ -487,7 +488,7 @@ export const useGridStore = create<GridStoreState>()(
           const toPosition = extractGridPosition(overId);
 
           if (toPosition === null) {
-            console.warn(`⚠️ GridStore: Invalid grid position from ${overId}`);
+            gridLogger.warn(`Invalid grid position from ${overId}`);
             // Emit validation error to match-store
             get().emitValidationError('TARGET_POSITION_INVALID');
             return;
@@ -498,7 +499,7 @@ export const useGridStore = create<GridStoreState>()(
           const backlogState = backlogStoreAccessor.getState();
 
           if (!backlogState) {
-            console.error('❌ GridStore: Backlog store not initialized - cannot complete drag operation');
+            gridLogger.error('Backlog store not initialized - cannot complete drag operation');
             get().emitValidationError('SOURCE_NOT_FOUND');
             return;
           }
@@ -507,7 +508,7 @@ export const useGridStore = create<GridStoreState>()(
           // double-click drag placing same item in two grid positions.
           // If user double-clicks rapidly, second drag will fail to acquire lock.
           if (!acquireItemLock(activeId)) {
-            console.warn(`⚠️ GridStore: Item ${activeId} is already being assigned (concurrent drag blocked)`);
+            gridLogger.warn(`Item ${activeId} is already being assigned (concurrent drag blocked)`);
             get().emitValidationError('SOURCE_ALREADY_USED');
             return;
           }
@@ -556,7 +557,7 @@ export const useGridStore = create<GridStoreState>()(
           const item = validationResult.item;
 
           if (item) {
-            console.log(`🔄 GridStore: Validated backlog item:`, {
+            gridLogger.debug(`Validated backlog item:`, {
               id: item.id,
               title: item.title || item.name,
               hasImageUrl: !!item.image_url
@@ -573,7 +574,7 @@ export const useGridStore = create<GridStoreState>()(
             // Release lock only after both operations complete
             releaseItemLock(activeId);
 
-            console.log(`✅ GridStore: Successfully assigned item to position ${toPosition}`);
+            gridLogger.info(`Successfully assigned item to position ${toPosition}`);
           } else {
             // Edge case: validation passed but no item (shouldn't happen)
             releaseItemLock(activeId);
@@ -590,7 +591,7 @@ export const useGridStore = create<GridStoreState>()(
         if (notificationState && typeof notificationState.emitValidationError === 'function') {
           notificationState.emitValidationError(errorCode);
         } else {
-          console.error('❌ GridStore: Notification store not initialized - cannot emit validation error');
+          gridLogger.error('Notification store not initialized - cannot emit validation error');
         }
       },
 
@@ -730,13 +731,13 @@ export const useGridStore = create<GridStoreState>()(
 
       // Tutorial mode management
       setTutorialMode: (enabled) => {
-        console.log(`🎓 GridStore: Tutorial mode ${enabled ? 'enabled' : 'disabled'}`);
+        gridLogger.debug(`Tutorial mode ${enabled ? 'enabled' : 'disabled'}`);
         set({ isTutorialMode: enabled });
       },
 
       // Load tutorial demo data into grid
       loadTutorialData: (items) => {
-        console.log(`🎓 GridStore: Loading ${items.length} tutorial items`);
+        gridLogger.debug(`Loading ${items.length} tutorial items`);
 
         // Create a full grid with tutorial items at the start
         const tutorialGrid: GridItemType[] = Array.from({ length: 10 }, (_, i) => {
@@ -771,3 +772,123 @@ export const useGridStore = create<GridStoreState>()(
     }
   )
 );
+
+/**
+ * Position-scoped selectors for fine-grained reactivity
+ * These selectors only trigger re-renders when the specific position changes
+ */
+
+/**
+ * Create a selector for a specific grid position
+ * Only re-renders when the item at that position changes
+ */
+export function createPositionSelector(position: number) {
+  return (state: GridStoreState) => state.gridItems[position] ?? null;
+}
+
+/**
+ * Hook to get item at a specific position with minimal re-renders
+ */
+export function useGridItemAtPosition(position: number): GridItemType | null {
+  return useGridStore((state) => state.gridItems[position] ?? null);
+}
+
+/**
+ * Hook to check if a position is occupied
+ */
+export function useIsPositionOccupied(position: number): boolean {
+  return useGridStore((state) => state.gridItems[position]?.matched ?? false);
+}
+
+/**
+ * Hook to get the backlog item ID at a position
+ */
+export function useBacklogItemIdAtPosition(position: number): string | undefined {
+  return useGridStore((state) => state.gridItems[position]?.backlogItemId);
+}
+
+/**
+ * Hook to get the image URL at a position
+ */
+export function useImageUrlAtPosition(position: number): string | undefined | null {
+  return useGridStore((state) => state.gridItems[position]?.image_url);
+}
+
+/**
+ * Hook to get the title/name at a position
+ */
+export function useTitleAtPosition(position: number): string | undefined {
+  return useGridStore((state) => {
+    const item = state.gridItems[position];
+    return item?.title;
+  });
+}
+
+/**
+ * Hook to get grid statistics
+ */
+export function useGridStatistics() {
+  return useGridStore((state) => state.gridStatistics);
+}
+
+/**
+ * Hook to get filled count
+ */
+export function useFilledCount(): number {
+  return useGridStore((state) => state.gridStatistics.matchedCount);
+}
+
+/**
+ * Hook to check if grid is complete
+ */
+export function useIsGridComplete(): boolean {
+  return useGridStore((state) => {
+    const { matchedCount } = state.gridStatistics;
+    return matchedCount >= state.maxGridSize && state.maxGridSize > 0;
+  });
+}
+
+/**
+ * Hook to get an array of filled positions
+ */
+export function useFilledPositions(): number[] {
+  return useGridStore((state) =>
+    state.gridItems
+      .map((item, index) => (item.matched ? index : -1))
+      .filter((index) => index !== -1)
+  );
+}
+
+/**
+ * Hook to get an array of empty positions
+ */
+export function useEmptyPositions(): number[] {
+  return useGridStore((state) =>
+    state.gridItems
+      .map((item, index) => (!item.matched ? index : -1))
+      .filter((index) => index !== -1)
+  );
+}
+
+/**
+ * Batch selector for multiple positions
+ * More efficient than multiple individual selectors when you need several positions
+ */
+export function useGridItemsAtPositions(positions: number[]): (GridItemType | null)[] {
+  return useGridStore((state) =>
+    positions.map((pos) => state.gridItems[pos] ?? null)
+  );
+}
+
+/**
+ * Selector for grid actions only (no state, no re-renders on state change)
+ */
+export function useGridActions() {
+  return useGridStore((state) => ({
+    assignItemToGrid: state.assignItemToGrid,
+    removeItemFromGrid: state.removeItemFromGrid,
+    moveGridItem: state.moveGridItem,
+    clearGrid: state.clearGrid,
+    loadTutorialData: state.loadTutorialData,
+  }));
+}

@@ -1,4 +1,5 @@
 import { BacklogState, PendingChange } from './types';
+import { backlogLogger } from '@/lib/logger';
 
 // Type for immer-compatible set function
 type ImmerSet = (fn: (state: BacklogState) => void) => void;
@@ -10,13 +11,13 @@ const logChangeProcessing = (change: PendingChange): void => {
 
   switch (type) {
     case 'add':
-      console.log(`📤 BacklogStore: Processing addition of item ${idInfo} to group ${groupId}`);
+      backlogLogger.debug(`Processing addition of item ${idInfo} to group ${groupId}`);
       break;
     case 'remove':
-      console.log(`📤 BacklogStore: Processing removal of item ${idInfo} from group ${groupId}`);
+      backlogLogger.debug(`Processing removal of item ${idInfo} from group ${groupId}`);
       break;
     case 'update':
-      console.log(`📤 BacklogStore: Processing update of item ${idInfo} in group ${groupId}`);
+      backlogLogger.debug(`Processing update of item ${idInfo} in group ${groupId}`);
       break;
   }
 };
@@ -31,7 +32,7 @@ export const createOfflineActions = (
     
     // Only update if the status has changed
     if (currentOfflineMode !== isOffline) {
-      console.log(`🔄 BacklogStore: Offline mode ${isOffline ? 'enabled' : 'disabled'}`);
+      backlogLogger.debug(`Offline mode ${isOffline ? 'enabled' : 'disabled'}`);
       
       set(state => {
         state.isOfflineMode = isOffline;
@@ -48,11 +49,11 @@ export const createOfflineActions = (
     const state = get();
     
     if (state.isOfflineMode || state.pendingChanges.length === 0) {
-      console.log(`📤 BacklogStore: No pending changes to process`);
+      backlogLogger.debug(`No pending changes to process`);
       return;
     }
     
-    console.log(`📤 BacklogStore: Processing ${state.pendingChanges.length} pending changes`);
+    backlogLogger.debug(`Processing ${state.pendingChanges.length} pending changes`);
     
     // Sort changes by timestamp (oldest first)
     const sortedChanges = [...state.pendingChanges].sort((a, b) => a.timestamp - b.timestamp);
@@ -72,7 +73,7 @@ export const createOfflineActions = (
           // await itemGroupsApi.processChange(change);
         }
       } catch (error) {
-        console.error(`❌ BacklogStore: Failed to process change:`, error, change);
+        backlogLogger.error(`Failed to process change:`, error, change);
       }
     }
     
@@ -81,7 +82,7 @@ export const createOfflineActions = (
       state.pendingChanges = [];
     });
     
-    console.log(`✅ BacklogStore: All pending changes processed`);
+    backlogLogger.info(`All pending changes processed`);
   },
 });
 
