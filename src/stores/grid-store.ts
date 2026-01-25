@@ -122,11 +122,16 @@ export interface GridStoreState {
   activeItem: string | null;
   isTutorialMode: boolean;
 
+  // Per-list grid persistence
+  currentListId: string | null;
+  listGridCache: Record<string, { gridItems: GridItemType[]; maxGridSize: number }>;
+
   // Computed statistics (updated automatically when gridItems changes)
   gridStatistics: GridStatistics;
 
   // Actions - Grid setup
   initializeGrid: (size: number, listId?: string, category?: string) => void;
+  switchList: (listId: string, size: number) => void;
   syncWithSession: () => void;
   loadFromSession: (items: GridItemType[], size: number) => void;
   setTutorialMode: (enabled: boolean) => void;
@@ -183,19 +188,33 @@ export const useGridStore = create<GridStoreState>()(
       selectedGridItem: null,
       activeItem: null,
       isTutorialMode: false,
+      currentListId: null,
+      listGridCache: {},
       gridStatistics: emptyGridStatistics,
 
       // Initialize a new grid
       initializeGrid: (size, listId, category) => {
+        const state = get();
         const emptyGridItems = createEmptyGrid(size);
 
-        gridLogger.debug(`Initializing grid with ${size} positions`);
+        gridLogger.debug(`Initializing grid with ${size} positions for list ${listId || 'unknown'}`);
+
+        // If we have a different current list, save its grid to cache first
+        const updatedCache = { ...state.listGridCache };
+        if (state.currentListId && state.currentListId !== listId && state.gridItems.length > 0) {
+          updatedCache[state.currentListId] = {
+            gridItems: state.gridItems,
+            maxGridSize: state.maxGridSize,
+          };
+        }
 
         set({
           gridItems: emptyGridItems,
           maxGridSize: size,
           selectedGridItem: null,
           gridStatistics: computeGridStatistics(emptyGridItems),
+          currentListId: listId || null,
+          listGridCache: updatedCache,
         });
 
         // Save grid to session if listId provided
@@ -204,6 +223,84 @@ export const useGridStore = create<GridStoreState>()(
           sessionStore.updateSessionGridItems(emptyGridItems);
           gridLogger.debug(`Grid initialized and saved to session ${listId}`);
         }
+      },
+
+      // Switch to a different list - saves current grid to cache and loads/creates grid for new list
+      switchList: (listId, size) => {
+        const state = get();
+
+        gridLogger.debug(`Switching from list ${state.currentListId} to ${listId} (size: ${size})`);
+
+        // If same list, just ensure size is correct
+        if (state.currentListId === listId) {
+          if (state.maxGridSize !== size) {
+            // Resize grid if needed
+            const resizedGrid = [...state.gridItems];
+            if (resizedGrid.length < size) {
+              for (let i = resizedGrid.length; i < size; i++) {
+                resizedGrid.push(createEmptyGridSlot(i));
+              }
+            } else if (resizedGrid.length > size) {
+              resizedGrid.length = size;
+            }
+            set({
+              gridItems: resizedGrid,
+              maxGridSize: size,
+              gridStatistics: computeGridStatistics(resizedGrid),
+            });
+          }
+          return;
+        }
+
+        // Save current grid to cache (if we have a current list)
+        const updatedCache = { ...state.listGridCache };
+        if (state.currentListId && state.gridItems.length > 0) {
+          updatedCache[state.currentListId] = {
+            gridItems: state.gridItems,
+            maxGridSize: state.maxGridSize,
+          };
+          gridLogger.debug(`Saved grid for list ${state.currentListId} to cache`);
+        }
+
+        // Load cached grid for new list or create empty grid
+        const cached = updatedCache[listId];
+        let newGridItems: GridItemType[];
+        let newMaxSize: number;
+
+        if (cached && cached.gridItems.length > 0) {
+          gridLogger.debug(`Loading cached grid for list ${listId} (${cached.gridItems.length} items)`);
+          newGridItems = cached.gridItems;
+          newMaxSize = cached.maxGridSize;
+
+          // Resize if size changed
+          if (newMaxSize !== size) {
+            if (newGridItems.length < size) {
+              for (let i = newGridItems.length; i < size; i++) {
+                newGridItems.push(createEmptyGridSlot(i));
+              }
+            } else if (newGridItems.length > size) {
+              newGridItems = newGridItems.slice(0, size);
+            }
+            newMaxSize = size;
+          }
+        } else {
+          gridLogger.debug(`Creating new empty grid for list ${listId}`);
+          newGridItems = createEmptyGrid(size);
+          newMaxSize = size;
+        }
+
+        set({
+          gridItems: newGridItems,
+          maxGridSize: newMaxSize,
+          currentListId: listId,
+          listGridCache: updatedCache,
+          selectedGridItem: null,
+          gridStatistics: computeGridStatistics(newGridItems),
+        });
+
+        // Update session store with new grid
+        const sessionStore = useSessionStore.getState();
+        sessionStore.updateSessionGridItems(newGridItems);
       },
 
       // Sync with session store
@@ -762,11 +859,29 @@ export const useGridStore = create<GridStoreState>()(
         gridItems: state.gridItems,
         maxGridSize: state.maxGridSize,
         gridStatistics: state.gridStatistics,
+        currentListId: state.currentListId,
+        listGridCache: state.listGridCache,
       }),
-      // Re-compute statistics on hydration to ensure consistency
+      // Re-compute statistics on hydration and restore correct list's grid from cache
       onRehydrateStorage: () => (state) => {
-        if (state && state.gridItems) {
-          state.gridStatistics = computeGridStatistics(state.gridItems);
+        if (state) {
+          // Re-compute statistics
+          if (state.gridItems) {
+            state.gridStatistics = computeGridStatistics(state.gridItems);
+          }
+
+          // Ensure listGridCache exists
+          if (!state.listGridCache) {
+            state.listGridCache = {};
+          }
+
+          // If we have a currentListId, ensure the current grid is from that list's cache
+          if (state.currentListId && state.listGridCache[state.currentListId]) {
+            const cached = state.listGridCache[state.currentListId];
+            state.gridItems = cached.gridItems;
+            state.maxGridSize = cached.maxGridSize;
+            state.gridStatistics = computeGridStatistics(cached.gridItems);
+          }
         }
       },
     }

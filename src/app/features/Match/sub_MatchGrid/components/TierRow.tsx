@@ -2,12 +2,14 @@
 
 import { useMemo, forwardRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useDroppable, useDraggable } from '@dnd-kit/core';
+import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, useSortable, horizontalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { ChevronDown, ChevronRight, X, GripVertical } from 'lucide-react';
+import { ChevronDown, ChevronRight, X } from 'lucide-react';
 import { TierListTier, CommunityTierConsensus } from '../../lib/tierPresets';
 import { BacklogItem } from '@/types/backlog-groups';
+import { createUnifiedTierRowDropData, createUnifiedTierDragData } from '@/lib/dnd/unified-protocol';
+import { useOptionalDropZoneHighlight } from './DropZoneHighlightContext';
 
 interface TierItemProps {
   item: BacklogItem;
@@ -19,6 +21,7 @@ interface TierItemProps {
 
 /**
  * Draggable item within a tier row
+ * Uses unified protocol for drag data format
  */
 function TierItem({
   item,
@@ -27,6 +30,9 @@ function TierItem({
   communityTier,
   onRemove,
 }: TierItemProps) {
+  // Get item's index within the tier for unified protocol
+  const orderInTier = 0; // Will be derived from actual position when dragging
+
   const {
     attributes,
     listeners,
@@ -36,11 +42,8 @@ function TierItem({
     isDragging,
   } = useSortable({
     id: item.id,
-    data: {
-      type: 'tier-item',
-      item,
-      tierId,
-    },
+    // Use unified protocol data format
+    data: createUnifiedTierDragData(item, tierId, orderInTier),
   });
 
   const style = {
@@ -143,6 +146,7 @@ interface TierRowProps {
 
 /**
  * Single tier row with drop zone and sortable items
+ * Uses unified protocol for drop target data
  */
 export const TierRow = forwardRef<HTMLDivElement, TierRowProps>(function TierRow(
   {
@@ -157,17 +161,24 @@ export const TierRow = forwardRef<HTMLDivElement, TierRowProps>(function TierRow
   },
   ref
 ) {
+  // Get tier index for unified protocol (0-based)
+  const tierIndex = 0; // Will be computed by parent if needed
+
+  // Use unified protocol for drop data
   const { setNodeRef, isOver } = useDroppable({
     id: `tier-${tier.id}`,
-    data: {
-      type: 'tier-drop-zone',
-      tier,
-    },
+    data: createUnifiedTierRowDropData(tier.id, tierIndex),
   });
+
+  // Get drag state from context for magnetic glow effect
+  const dropZoneContext = useOptionalDropZoneHighlight();
+  const isParentDragging = dropZoneContext?.dragState?.isDragging ?? false;
 
   const itemIds = useMemo(() => items.map(item => item.id), [items]);
 
+  // Highlight when: hovered over, or parent is dragging (subtle glow)
   const isHighlighted = isOver || isDraggingOver;
+  const showMagneticGlow = isParentDragging && !isHighlighted;
 
   return (
     <motion.div
@@ -223,6 +234,7 @@ export const TierRow = forwardRef<HTMLDivElement, TierRowProps>(function TierRow
           ${tier.collapsed ? 'overflow-hidden max-h-6' : ''}
           transition-all duration-200
           ${isHighlighted ? 'bg-slate-800 border-cyan-500/50 shadow-inner shadow-cyan-500/10' : ''}
+          ${showMagneticGlow ? 'border-cyan-500/20 shadow-lg shadow-cyan-500/5' : ''}
         `}
         style={{
           borderRadius: '0 8px 8px 0',
@@ -278,6 +290,7 @@ export const TierRow = forwardRef<HTMLDivElement, TierRowProps>(function TierRow
 
 /**
  * Unranked items pool at the bottom
+ * Uses unified protocol for drop target
  */
 interface UnrankedPoolProps {
   items: BacklogItem[];
@@ -285,12 +298,18 @@ interface UnrankedPoolProps {
 }
 
 export function UnrankedPool({ items }: UnrankedPoolProps) {
+  // Use unified protocol for drop data
   const { setNodeRef, isOver } = useDroppable({
     id: 'unranked-pool',
     data: {
       type: 'unranked-pool',
     },
   });
+
+  // Get drag state from context for magnetic glow effect
+  const dropZoneContext = useOptionalDropZoneHighlight();
+  const isParentDragging = dropZoneContext?.dragState?.isDragging ?? false;
+  const showMagneticGlow = isParentDragging && !isOver;
 
   const itemIds = useMemo(() => items.map(item => item.id), [items]);
 
@@ -319,6 +338,7 @@ export function UnrankedPool({ items }: UnrankedPoolProps) {
           min-h-[100px] p-4 rounded-xl
           bg-slate-900/50 border-2 border-dashed
           ${isOver ? 'border-cyan-500/50 bg-cyan-500/5' : 'border-slate-700/50'}
+          ${showMagneticGlow ? 'border-cyan-500/20 shadow-lg shadow-cyan-500/5' : ''}
           transition-all duration-200
         `}
       >

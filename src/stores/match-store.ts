@@ -4,8 +4,10 @@ import { useGridStore } from './grid-store';
 import { useComparisonStore } from './comparison-store';
 import { useListStore } from './use-list-store';
 import { useValidationNotificationStore } from './validation-notification-store';
+import { usePlacementStore, SmartFillMode } from './placement-store';
 import { ValidationErrorCode } from '@/lib/validation';
 import { matchLogger } from '@/lib/logger';
+import { BacklogItem } from '@/types/backlog-groups';
 
 // Re-export ValidationNotification type from the dedicated store for backwards compatibility
 export type { ValidationNotification } from './validation-notification-store';
@@ -17,6 +19,7 @@ interface MatchStoreState {
   isLoading: boolean;
   showComparisonModal: boolean;
   showResultShareModal: boolean;
+  showSmartFillPanel: boolean;
 
   // Keyboard shortcuts state
   keyboardMode: boolean;
@@ -27,26 +30,34 @@ interface MatchStoreState {
   setShowComparisonModal: (show: boolean) => void;
   setShowResultShareModal: (show: boolean) => void;
   setKeyboardMode: (enabled: boolean) => void;
+  setShowSmartFillPanel: (show: boolean) => void;
 
   // Actions - Validation Notifications (delegates to validation-notification-store)
   emitValidationError: (errorCode: ValidationErrorCode) => void;
-  
+
   // Actions - Keyboard Navigation
   navigateBacklogItems: (direction: 'up' | 'down') => void;
   selectNextAvailableItem: () => void;
-  
+
   // Actions - Quick Assign (1-9, 0 for positions 1-10)
   quickAssignToPosition: (position: number) => void;
   quickAssignSelected: () => void;
-  
+
+  // Actions - Smart Placement
+  startSmartFill: () => void;
+  stopSmartFill: () => void;
+  toggleSmartFill: () => void;
+  smartPlaceItem: (item: BacklogItem, position: number) => void;
+  smartPlaceToSuggested: () => void;
+
   // Actions - Match Session Management
   initializeMatchSession: () => Promise<void>;
   resetMatchSession: () => void;
   saveMatchProgress: () => void;
-  
+
   // Actions - Keyboard Shortcuts Integration
   handleKeyboardShortcut: (key: string) => void;
-  
+
   // Utilities
   getSelectedBacklogItem: () => any | null;
   getKeyboardNavigationState: () => {
@@ -54,6 +65,7 @@ interface MatchStoreState {
     totalItems: number;
     selectedItem: any | null;
   };
+  getSmartFillMode: () => SmartFillMode;
 }
 
 export const useMatchStore = create<MatchStoreState>((set, get) => ({
@@ -61,6 +73,7 @@ export const useMatchStore = create<MatchStoreState>((set, get) => ({
   isLoading: false,
   showComparisonModal: false,
   showResultShareModal: false,
+  showSmartFillPanel: false,
   keyboardMode: false,
   selectedItemIndex: 0,
 
@@ -79,6 +92,8 @@ export const useMatchStore = create<MatchStoreState>((set, get) => ({
   },
 
   setShowResultShareModal: (show) => set({ showResultShareModal: show }),
+
+  setShowSmartFillPanel: (show) => set({ showSmartFillPanel: show }),
 
   // Validation Notification Actions - Delegates to validation-notification-store
   emitValidationError: (errorCode) => {
@@ -170,12 +185,77 @@ export const useMatchStore = create<MatchStoreState>((set, get) => ({
   quickAssignSelected: () => {
     const gridStore = useGridStore.getState();
     const nextPosition = gridStore.getNextAvailableGridPosition();
-    
+
     if (nextPosition !== null) {
       get().quickAssignToPosition(nextPosition + 1); // Convert 0-based to 1-based
     }
   },
-  
+
+  // Smart Placement Actions
+  startSmartFill: () => {
+    const sessionStore = useSessionStore.getState();
+    const placementStore = usePlacementStore.getState();
+    const availableItems = sessionStore.getAvailableBacklogItems();
+
+    placementStore.startSmartFill(availableItems);
+    set({ showSmartFillPanel: true });
+    matchLogger.debug('Smart fill mode started');
+  },
+
+  stopSmartFill: () => {
+    const placementStore = usePlacementStore.getState();
+    placementStore.stopSmartFill();
+    set({ showSmartFillPanel: false });
+    matchLogger.debug('Smart fill mode stopped');
+  },
+
+  toggleSmartFill: () => {
+    const placementStore = usePlacementStore.getState();
+    if (placementStore.smartFillMode === 'off') {
+      get().startSmartFill();
+    } else {
+      get().stopSmartFill();
+    }
+  },
+
+  smartPlaceItem: (item, position) => {
+    const gridStore = useGridStore.getState();
+    const placementStore = usePlacementStore.getState();
+
+    // Place the item
+    gridStore.assignItemToGrid(item, position);
+
+    // Record placement for learning
+    placementStore.recordPlacement(item, position);
+
+    // Advance smart fill if active
+    if (placementStore.smartFillMode === 'active') {
+      placementStore.advanceSmartFill();
+    }
+
+    matchLogger.debug(`Smart placed item ${item.id} at position ${position}`);
+  },
+
+  smartPlaceToSuggested: () => {
+    const state = get();
+    const placementStore = usePlacementStore.getState();
+    const sessionStore = useSessionStore.getState();
+
+    // Get the current item and top suggestion
+    const selectedItemId = sessionStore.selectedBacklogItem;
+    if (!selectedItemId) return;
+
+    const backlogItem = sessionStore.getAvailableBacklogItems()
+      .find(item => item.id === selectedItemId);
+
+    if (!backlogItem) return;
+
+    const topSuggestion = placementStore.currentPrediction?.topSuggestion;
+    if (topSuggestion) {
+      state.smartPlaceItem(backlogItem, topSuggestion.position);
+    }
+  },
+
   // Match Session Management
   initializeMatchSession: async () => {
     set({ isLoading: true });
@@ -306,7 +386,19 @@ export const useMatchStore = create<MatchStoreState>((set, get) => ({
         // Save progress
         get().saveMatchProgress();
         break;
-        
+
+      case 'f':
+        // Toggle smart fill mode
+        get().toggleSmartFill();
+        break;
+
+      case 'p':
+        // Place to top suggested position (when in keyboard mode)
+        if (state.keyboardMode) {
+          get().smartPlaceToSuggested();
+        }
+        break;
+
       default:
         // Handle other shortcuts
         break;
@@ -328,12 +420,16 @@ export const useMatchStore = create<MatchStoreState>((set, get) => ({
     const state = get();
     const sessionStore = useSessionStore.getState();
     const availableItems = sessionStore.getAvailableBacklogItems();
-    
+
     return {
       selectedIndex: state.selectedItemIndex,
       totalItems: availableItems.length,
       selectedItem: availableItems[state.selectedItemIndex] || null
     };
+  },
+
+  getSmartFillMode: () => {
+    return usePlacementStore.getState().smartFillMode;
   }
 }));
 
@@ -358,7 +454,18 @@ export const useMatchActions = () => useMatchStore((state) => ({
   saveMatchProgress: state.saveMatchProgress,
   handleKeyboardShortcut: state.handleKeyboardShortcut,
   quickAssignToPosition: state.quickAssignToPosition,
-  setKeyboardMode: state.setKeyboardMode
+  setKeyboardMode: state.setKeyboardMode,
+  startSmartFill: state.startSmartFill,
+  stopSmartFill: state.stopSmartFill,
+  toggleSmartFill: state.toggleSmartFill,
+  smartPlaceItem: state.smartPlaceItem,
+}));
+
+// Selector for smart fill panel
+export const useSmartFillPanel = () => useMatchStore((state) => ({
+  showSmartFillPanel: state.showSmartFillPanel,
+  setShowSmartFillPanel: state.setShowSmartFillPanel,
+  toggleSmartFill: state.toggleSmartFill,
 }));
 
 // Selector for validation notifications - re-exported from validation-notification-store

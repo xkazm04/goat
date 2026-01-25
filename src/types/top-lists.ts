@@ -15,6 +15,9 @@ export interface TopList {
   items?: TopListItem[];
   type?: 'top' | 'award';
   parent_list_id?: string;
+  // Engagement metrics
+  engagementCount?: number;
+  shareCount?: number;
 }
 
 export interface TopListItem {

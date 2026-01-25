@@ -407,3 +407,222 @@ export const DEFAULT_TIER_CONFIGURATION = {
   showSeparators: true,
   autoAdjust: true,
 };
+
+/**
+ * Algorithm preset definitions for dynamic thresholds
+ * These define the percentage distribution for each algorithm type
+ */
+export interface AlgorithmPresetDefinition {
+  id: string;
+  name: string;
+  description: string;
+  algorithm: 'equal' | 'pyramid' | 'bell' | 'percentile' | 'custom';
+  icon: string;
+  getPercentages: (tierCount: number) => number[];
+}
+
+/**
+ * Equal distribution - evenly split
+ */
+export const ALGORITHM_EQUAL: AlgorithmPresetDefinition = {
+  id: 'algo-equal',
+  name: 'Equal',
+  description: 'Even distribution across all tiers',
+  algorithm: 'equal',
+  icon: '═',
+  getPercentages: (tierCount: number) => {
+    const pct = 100 / tierCount;
+    const result: number[] = [];
+    for (let i = 1; i < tierCount; i++) {
+      result.push(Math.round(pct * i));
+    }
+    return result;
+  },
+};
+
+/**
+ * Pyramid distribution - exponential growth
+ */
+export const ALGORITHM_PYRAMID: AlgorithmPresetDefinition = {
+  id: 'algo-pyramid',
+  name: 'Pyramid',
+  description: 'Fewer items at top, more at bottom',
+  algorithm: 'pyramid',
+  icon: '△',
+  getPercentages: (tierCount: number) => {
+    const ratio = 1.6;
+    let totalWeight = 0;
+    for (let i = 0; i < tierCount; i++) {
+      totalWeight += Math.pow(ratio, i);
+    }
+
+    const result: number[] = [];
+    let accumulated = 0;
+    for (let i = 0; i < tierCount - 1; i++) {
+      accumulated += Math.pow(ratio, i);
+      result.push(Math.round((accumulated / totalWeight) * 100));
+    }
+    return result;
+  },
+};
+
+/**
+ * Bell curve distribution - normal distribution
+ */
+export const ALGORITHM_BELL: AlgorithmPresetDefinition = {
+  id: 'algo-bell',
+  name: 'Bell Curve',
+  description: 'Most items in middle tiers',
+  algorithm: 'bell',
+  icon: '∩',
+  getPercentages: (tierCount: number) => {
+    const midPoint = tierCount / 2;
+    const weights: number[] = [];
+
+    for (let i = 0; i < tierCount; i++) {
+      const distance = Math.abs(i - midPoint);
+      weights.push(Math.exp(-0.5 * Math.pow(distance / (tierCount / 3), 2)));
+    }
+
+    const totalWeight = weights.reduce((a, b) => a + b, 0);
+    const result: number[] = [];
+    let accumulated = 0;
+
+    for (let i = 0; i < tierCount - 1; i++) {
+      accumulated += weights[i] / totalWeight;
+      result.push(Math.round(accumulated * 100));
+    }
+    return result;
+  },
+};
+
+/**
+ * Percentile distribution - standard percentile breaks
+ */
+export const ALGORITHM_PERCENTILE: AlgorithmPresetDefinition = {
+  id: 'algo-percentile',
+  name: 'Percentile',
+  description: 'Standard percentile divisions',
+  algorithm: 'percentile',
+  icon: '%',
+  getPercentages: (tierCount: number) => {
+    const presets: Record<number, number[]> = {
+      3: [10, 40],
+      4: [10, 30, 60],
+      5: [5, 15, 35, 65],
+      6: [5, 12, 25, 45, 70],
+      7: [3, 8, 18, 35, 55, 75],
+      8: [3, 8, 15, 28, 45, 62, 80],
+      9: [3, 8, 15, 25, 40, 55, 70, 85],
+    };
+
+    if (presets[tierCount]) {
+      return presets[tierCount];
+    }
+
+    // Fallback to equal distribution
+    return ALGORITHM_EQUAL.getPercentages(tierCount);
+  },
+};
+
+/**
+ * Elite distribution - very exclusive top tier
+ */
+export const ALGORITHM_ELITE: AlgorithmPresetDefinition = {
+  id: 'algo-elite',
+  name: 'Elite',
+  description: 'Very exclusive top tier (5%)',
+  algorithm: 'custom',
+  icon: '★',
+  getPercentages: (tierCount: number) => {
+    // Top tier is always ~5%, rest distributed exponentially
+    const result: number[] = [5];  // First break at 5%
+
+    if (tierCount <= 2) return result;
+
+    const remaining = 95;
+    const remainingTiers = tierCount - 1;
+    const pctPerTier = remaining / remainingTiers;
+
+    for (let i = 1; i < tierCount - 1; i++) {
+      result.push(Math.round(5 + pctPerTier * i));
+    }
+
+    return result;
+  },
+};
+
+/**
+ * Balanced pyramid - moderate distribution
+ */
+export const ALGORITHM_BALANCED: AlgorithmPresetDefinition = {
+  id: 'algo-balanced',
+  name: 'Balanced',
+  description: 'Moderate pyramid distribution',
+  algorithm: 'custom',
+  icon: '◇',
+  getPercentages: (tierCount: number) => {
+    // Gentler pyramid with 1.3 ratio
+    const ratio = 1.3;
+    let totalWeight = 0;
+    for (let i = 0; i < tierCount; i++) {
+      totalWeight += Math.pow(ratio, i);
+    }
+
+    const result: number[] = [];
+    let accumulated = 0;
+    for (let i = 0; i < tierCount - 1; i++) {
+      accumulated += Math.pow(ratio, i);
+      result.push(Math.round((accumulated / totalWeight) * 100));
+    }
+    return result;
+  },
+};
+
+/**
+ * All algorithm presets
+ */
+export const ALGORITHM_PRESETS: AlgorithmPresetDefinition[] = [
+  ALGORITHM_PYRAMID,
+  ALGORITHM_EQUAL,
+  ALGORITHM_BELL,
+  ALGORITHM_PERCENTILE,
+  ALGORITHM_ELITE,
+  ALGORITHM_BALANCED,
+];
+
+/**
+ * Get algorithm preset by ID
+ */
+export function getAlgorithmPreset(id: string): AlgorithmPresetDefinition | undefined {
+  return ALGORITHM_PRESETS.find(p => p.id === id);
+}
+
+/**
+ * Get algorithm preset by algorithm type
+ */
+export function getPresetByAlgorithm(
+  algorithm: 'equal' | 'pyramid' | 'bell' | 'percentile' | 'custom'
+): AlgorithmPresetDefinition {
+  const preset = ALGORITHM_PRESETS.find(p => p.algorithm === algorithm);
+  return preset || ALGORITHM_PYRAMID;
+}
+
+/**
+ * Calculate boundaries from algorithm for a given list size
+ */
+export function calculateBoundariesFromAlgorithm(
+  algorithm: AlgorithmPresetDefinition,
+  listSize: number,
+  tierCount: number
+): number[] {
+  const percentages = algorithm.getPercentages(tierCount);
+
+  const boundaries: number[] = [0];
+  for (const pct of percentages) {
+    boundaries.push(Math.round((pct / 100) * listSize));
+  }
+  boundaries.push(listSize);
+
+  return boundaries;
+}

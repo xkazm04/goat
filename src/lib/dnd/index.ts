@@ -117,3 +117,47 @@ export {
   describeDropData,
   logDragEvent,
 } from './type-guards';
+
+// Unified Protocol for all ranking modes
+export {
+  // Types
+  type UnifiedSourceType,
+  type UnifiedDragData,
+  type UnifiedDropType,
+  type UnifiedDropData,
+  type TransferRoute,
+
+  // Type guards
+  isUnifiedDragData,
+  isUnifiedDropData,
+  isTierDragData,
+  isTierRowDropData,
+  isTierItemDropData,
+  isUnrankedPoolDropData,
+
+  // Factory functions - Drag data
+  createUnifiedCollectionDragData,
+  createUnifiedGridDragData,
+  createUnifiedTierDragData,
+  createUnifiedUnrankedDragData,
+
+  // Factory functions - Drop data
+  createUnifiedGridSlotDropData,
+  createUnifiedTierRowDropData,
+  createUnifiedTierItemDropData,
+  createUnifiedUnrankedPoolDropData,
+
+  // ID utilities
+  DROP_ID_PATTERNS,
+  parseDropTargetId,
+  isGridSlotId,
+  isTierRowId,
+  isTierItemId,
+
+  // Debug helpers
+  describeUnifiedDragData,
+  describeUnifiedDropData,
+
+  // Route determination
+  determineTransferRoute,
+} from './unified-protocol';

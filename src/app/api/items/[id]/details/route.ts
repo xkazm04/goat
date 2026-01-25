@@ -72,6 +72,9 @@ export async function GET(
         updated_at: item.updated_at,
         group_id: item.group_id,
         group_name: item.group,
+        // DB engagement metrics
+        view_count: item.view_count || 0,
+        selection_count: item.selection_count || 0,
       },
       relatedItems,
       rankingStats,

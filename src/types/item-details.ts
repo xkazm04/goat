@@ -25,6 +25,9 @@ export interface ItemDetailResponse {
     updated_at?: string;
     group_id?: string;
     group_name?: string;
+    /** DB engagement metrics */
+    view_count?: number;
+    selection_count?: number;
   };
   /** Related items from same category/tags */
   relatedItems: RelatedItemData[];

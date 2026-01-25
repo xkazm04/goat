@@ -21,7 +21,9 @@
       "Bash(git push:*)",
       "Bash(npm run lint:*)",
       "Bash(done)",
-      "Bash(npm ls:*)"
+      "Bash(npm ls:*)",
+      "Bash(node:*)",
+      "Bash(PROJECT_ID=\"e7093813-b128-40bb-a21d-4be968aa7655\":*)"
     ],
     "deny": [],
     "ask": []

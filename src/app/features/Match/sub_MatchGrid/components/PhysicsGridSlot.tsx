@@ -1,7 +1,7 @@
 "use client";
 
 import { useDroppable } from "@dnd-kit/core";
-import { motion, AnimatePresence, useSpring, useTransform } from "framer-motion";
+import { motion, AnimatePresence, useSpring } from "framer-motion";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { DropCelebration } from "../../sub_MatchCollections/components/DropCelebration";
 import { createGridSlotDropData } from "@/lib/dnd";
@@ -9,6 +9,9 @@ import { getRankColor, isPodiumPosition } from "../../lib/rankConfig";
 import { getPositionAwareSpringConfig, getFramerSpringConfig } from "../lib/physicsEngine";
 import { triggerHaptic, isHapticSupported } from "../lib/hapticFeedback";
 import { PositionBadge } from "../../components/PositionBadge";
+import { SlotSuggestionOverlay, QuickPlaceIndicator } from "../../components/SuggestionOverlay";
+import { useIndicatorAtPosition, useIsDragging as usePlacementDragging } from "@/stores/placement-store";
+import { DropZoneIndicator } from "@/lib/placement/DropZoneScorer";
 
 interface PhysicsGridSlotProps {
   position: number;
@@ -29,6 +32,12 @@ interface PhysicsGridSlotProps {
   onRegisterSlot?: (position: number, element: HTMLElement | null) => void;
   /** Gravity well influence (0-1) for visual effect */
   gravityInfluence?: number;
+  /** Optional external suggestion indicator (overrides store) */
+  suggestionIndicator?: DropZoneIndicator | null;
+  /** Whether to show quick-place keyboard hints */
+  showQuickPlaceHint?: boolean;
+  /** Quick-place keyboard shortcut for this position */
+  quickPlaceShortcut?: string;
 }
 
 /**
@@ -54,9 +63,19 @@ export function PhysicsGridSlot({
   swapPath,
   onRegisterSlot,
   gravityInfluence = 0,
+  suggestionIndicator: externalIndicator,
+  showQuickPlaceHint = false,
+  quickPlaceShortcut,
 }: PhysicsGridSlotProps) {
   const isOccupied = gridItem?.matched;
   const slotRef = useRef<HTMLDivElement>(null);
+
+  // Smart placement indicators from store
+  const storeIndicator = useIndicatorAtPosition(position);
+  const isPlacementDragging = usePlacementDragging();
+
+  // Use external indicator if provided, otherwise use store
+  const suggestionIndicator = externalIndicator ?? storeIndicator;
 
   const { setNodeRef, isOver } = useDroppable({
     id: `grid-${position}`,
@@ -366,6 +385,25 @@ export function PhysicsGridSlot({
             border: "2px dashed rgba(34, 211, 238, 0.7)",
           }}
           data-testid="hover-indicator"
+        />
+      )}
+
+      {/* Smart Placement Suggestion Overlay */}
+      {!isOccupied && suggestionIndicator && (
+        <SlotSuggestionOverlay
+          indicator={suggestionIndicator}
+          isHovered={isOver}
+          isDragging={isPlacementDragging}
+        />
+      )}
+
+      {/* Quick-Place Keyboard Shortcut Hint */}
+      {showQuickPlaceHint && quickPlaceShortcut && !isOccupied && suggestionIndicator && (
+        <QuickPlaceIndicator
+          position={position}
+          shortcut={quickPlaceShortcut}
+          confidence={suggestionIndicator.confidence}
+          isActive={isOver}
         />
       )}
     </motion.div>

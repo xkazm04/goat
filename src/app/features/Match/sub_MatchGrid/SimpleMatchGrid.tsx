@@ -11,15 +11,16 @@ import { useGridStore } from "@/stores/grid-store";
 import { useBacklogStore } from "@/stores/backlog-store";
 import { useCurrentList } from "@/stores/use-list-store";
 import { useMatchStore } from "@/stores/match-store";
-import { TutorialPanel, useTutorialPanel } from "../components/TutorialPanel";
+import { useRankingStore } from "@/stores/ranking-store";
 import { LazyShareModal } from "../components/LazyModals";
+import { isUnifiedDragData, isUnifiedDropData, determineTransferRoute } from "@/lib/dnd/unified-protocol";
 
 // Import modular components
 import { ViewSwitcher, ViewMode } from "./components/ViewSwitcher";
 import { PodiumView } from "./components/PodiumView";
 import { GoatView } from "./components/GoatView";
 import { MountRushmoreView } from "./components/MountRushmoreView";
-import { BracketView } from "./components/BracketView";
+import { BracketView } from "../sub_MatchBracket";
 import { TierListView } from "./components/TierListView";
 import { GridSection } from "./components/GridSection";
 import { MatchGridHeader } from "./components/MatchGridHeader";
@@ -55,6 +56,8 @@ function SimpleMatchGridInner() {
   // Connect to stores
   const gridItems = useGridStore(state => state.gridItems);
   const maxGridSize = useGridStore(state => state.maxGridSize);
+  const currentListId = useGridStore(state => state.currentListId);
+  const switchList = useGridStore(state => state.switchList);
   const assignItemToGrid = useGridStore(state => state.assignItemToGrid);
   const removeItemFromGrid = useGridStore(state => state.removeItemFromGrid);
   const moveGridItem = useGridStore(state => state.moveGridItem);
@@ -65,6 +68,14 @@ function SimpleMatchGridInner() {
   // Match store for share modal
   const setShowResultShareModal = useMatchStore(state => state.setShowResultShareModal);
 
+  // Ranking store for tier mode operations
+  const assignToTier = useRankingStore(state => state.assignToTier);
+  const addToUnranked = useRankingStore(state => state.addToUnranked);
+  const moveBetweenTiers = useRankingStore(state => state.moveBetweenTiers);
+  const setRankingActiveMode = useRankingStore(state => state.setActiveMode);
+  const setRankingDirectViewMode = useRankingStore(state => state.setDirectViewMode);
+  const initializeRanking = useRankingStore(state => state.initializeRanking);
+
   // Drag state - simple: just track active item and target position
   const [activeItem, setActiveItem] = useState<CollectionItem | GridItemType | null>(null);
   const [activeType, setActiveType] = useState<'collection' | 'grid' | null>(null);
@@ -73,13 +84,29 @@ function SimpleMatchGridInner() {
   // Track if we've already shown the share modal for this session
   const hasShownShareModal = useRef(false);
 
-  // Tutorial state - triggered by help icon only
-  const { isOpen: showTutorial, showTutorial: openTutorial, hideTutorial } = useTutorialPanel();
-
   // Get all backlog items from groups for bracket view
   const allBacklogItems = useMemo(() => {
     return groups.flatMap(group => group.items || []);
   }, [groups]);
+
+  // Handle view mode change - sync with ranking store
+  const handleViewModeChange = useCallback((newMode: ViewMode) => {
+    setViewMode(newMode);
+
+    // Map ViewMode to RankingMode for the store
+    if (newMode === 'bracket') {
+      setRankingActiveMode('bracket');
+    } else if (newMode === 'tierlist') {
+      setRankingActiveMode('tierlist');
+    } else {
+      // podium, goat, rushmore are all "direct" ranking modes
+      setRankingActiveMode('direct');
+      // Also set the direct view mode
+      if (newMode === 'podium' || newMode === 'goat' || newMode === 'rushmore') {
+        setRankingDirectViewMode(newMode);
+      }
+    }
+  }, [setRankingActiveMode, setRankingDirectViewMode]);
 
   // Handle bracket ranking completion - apply ranked items to grid
   const handleBracketRankingComplete = useCallback((rankedItems: BacklogItem[]) => {
@@ -92,8 +119,8 @@ function SimpleMatchGridInner() {
     });
 
     // Switch back to podium view to show results
-    setViewMode('podium');
-  }, [assignItemToGrid, markItemAsUsed, maxGridSize]);
+    handleViewModeChange('podium');
+  }, [assignItemToGrid, markItemAsUsed, maxGridSize, handleViewModeChange]);
 
   // Calculate completion status
   const filledPositions = useMemo(() => {
@@ -107,7 +134,7 @@ function SimpleMatchGridInner() {
 
   // Show share modal when ranking is complete
   useEffect(() => {
-    if (isComplete && !hasShownShareModal.current && !showTutorial) {
+    if (isComplete && !hasShownShareModal.current) {
       // Small delay to let the last drop animation complete
       const timer = setTimeout(() => {
         hasShownShareModal.current = true;
@@ -115,12 +142,31 @@ function SimpleMatchGridInner() {
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [isComplete, showTutorial, setShowResultShareModal]);
+  }, [isComplete, setShowResultShareModal]);
 
   // Reset the share modal flag when list changes
   useEffect(() => {
     hasShownShareModal.current = false;
   }, [currentList?.id]);
+
+  // Switch grid store to new list when list changes
+  useEffect(() => {
+    if (currentList?.id && currentList?.size > 0) {
+      // Only switch if we're actually changing lists
+      if (currentListId !== currentList.id) {
+        console.log(`🔄 Switching grid to list: ${currentList.id} (size: ${currentList.size})`);
+        switchList(currentList.id, currentList.size);
+      }
+    }
+  }, [currentList?.id, currentList?.size, currentListId, switchList]);
+
+  // Initialize ranking store when list size changes
+  useEffect(() => {
+    const size = currentList?.size || maxGridSize;
+    if (size > 0) {
+      initializeRanking(size);
+    }
+  }, [currentList?.size, maxGridSize, initializeRanking]);
 
   // Simple pointer sensor
   const sensors = useSensors(
@@ -162,14 +208,20 @@ function SimpleMatchGridInner() {
   }, [setIsDragging]);
 
   /**
-   * Simple drag move handler - just track target position
+   * Unified drag move handler - track target position for all drop zones
    */
   const handleDragMove = useCallback((event: DragMoveEvent) => {
-    // Update target position based on drop target
-    if (event.over?.data?.current?.type === 'grid-slot') {
-      const position = event.over.data.current.position;
+    const dropData = event.over?.data?.current;
+
+    // Update target position based on drop target type
+    if (dropData?.type === 'grid-slot') {
+      const position = dropData.position;
       setTargetPosition(position);
       setHoveredPosition(position);
+    } else if (dropData?.type === 'tier-row' || dropData?.type === 'tier-item') {
+      // For tier drops, we don't track position (tiers don't have numeric positions)
+      setTargetPosition(null);
+      setHoveredPosition(null);
     } else {
       setTargetPosition(null);
       setHoveredPosition(null);
@@ -177,7 +229,8 @@ function SimpleMatchGridInner() {
   }, [setHoveredPosition]);
 
   /**
-   * Simple drag end handler - perform the drop action
+   * Unified drag end handler - handles drops across all ranking modes
+   * Supports: grid slots, tier rows, unranked pool
    */
   const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
@@ -193,28 +246,107 @@ function SimpleMatchGridInner() {
 
     const itemData = active.data.current;
     const dropData = over.data.current;
+    const overId = String(over.id);
 
-    // Case 1: Collection item dropped on grid slot
+    // === Case 1: Drop on grid slot ===
+    if (dropData?.type === 'grid-slot') {
+      const position = dropData.position;
+
+      // Collection item → Grid
+      if (itemData?.type === 'collection-item' && itemData.item) {
+        const item: BacklogItem = itemData.item;
+        console.log(`🎯 Dropping collection item ${item.id} at grid position ${position}`);
+        assignItemToGrid(item, position);
+        markItemAsUsed(item.id, true);
+        return;
+      }
+
+      // Grid item → Grid (move/swap)
+      if (itemData?.type === 'grid-item') {
+        const fromPosition = itemData.position ?? itemData.source?.gridPosition;
+        if (fromPosition !== undefined && fromPosition !== position) {
+          console.log(`🔄 Moving grid item: position ${fromPosition} → ${position}`);
+          moveGridItem(fromPosition, position);
+        }
+        return;
+      }
+
+      // Tier item → Grid (from tier mode to grid slot)
+      if (itemData?.type === 'tier-item' && itemData.item) {
+        const item = itemData.item;
+        console.log(`🎯 Moving tier item ${item.id} to grid position ${position}`);
+        assignItemToGrid(item, position);
+        markItemAsUsed(item.id, true);
+        return;
+      }
+    }
+
+    // === Case 2: Drop on tier row ===
+    if (dropData?.type === 'tier-row' || overId.startsWith('tier-')) {
+      const tierId = dropData?.tierId || overId.replace('tier-', '');
+
+      // Collection item → Tier
+      if (itemData?.type === 'collection-item' && itemData.item) {
+        const item = itemData.item;
+        console.log(`🏷️ Assigning collection item ${item.id} to tier ${tierId}`);
+        assignToTier(item.id, tierId, {
+          id: item.id,
+          title: item.title || item.name || 'Untitled',
+          description: item.description,
+          image_url: item.image_url,
+          tags: item.tags,
+          category: item.category,
+        });
+        markItemAsUsed(item.id, true);
+        return;
+      }
+
+      // Tier item → Tier (move between tiers)
+      if (itemData?.type === 'tier-item' && itemData.item) {
+        const item = itemData.item;
+        const sourceTierId = itemData.source?.tierId;
+        if (sourceTierId && sourceTierId !== tierId) {
+          console.log(`🔄 Moving tier item ${item.id} from tier ${sourceTierId} to ${tierId}`);
+          moveBetweenTiers(item.id, sourceTierId, tierId);
+        } else if (!sourceTierId) {
+          // From unranked pool to tier
+          console.log(`🏷️ Assigning unranked item ${item.id} to tier ${tierId}`);
+          assignToTier(item.id, tierId);
+        }
+        return;
+      }
+    }
+
+    // === Case 3: Drop on unranked pool ===
+    if (dropData?.type === 'unranked-pool' || overId === 'unranked-pool') {
+      // Tier item → Unranked
+      if (itemData?.type === 'tier-item' && itemData.item) {
+        const item = itemData.item;
+        console.log(`📦 Moving tier item ${item.id} to unranked pool`);
+        addToUnranked(item.id);
+        return;
+      }
+    }
+
+    // === Legacy fallback for backward compatibility ===
+    // (Handles any remaining cases from old drag data format)
     if (itemData?.type === 'collection-item' && dropData?.type === 'grid-slot') {
       const position = dropData.position;
       const item: BacklogItem = itemData.item;
-
-      console.log(`🎯 Dropping collection item ${item.id} at position ${position}`);
+      console.log(`🎯 [Legacy] Dropping collection item ${item.id} at position ${position}`);
       assignItemToGrid(item, position);
       markItemAsUsed(item.id, true);
     }
 
-    // Case 2: Grid item dropped on another grid slot (move/swap)
     if (itemData?.type === 'grid-item' && dropData?.type === 'grid-slot') {
       const fromPosition = itemData.position;
       const toPosition = dropData.position;
-
-      if (fromPosition === toPosition) return;
-
-      console.log(`🔄 Moving item: position ${fromPosition} → position ${toPosition}`);
-      moveGridItem(fromPosition, toPosition);
+      if (fromPosition !== toPosition) {
+        console.log(`🔄 [Legacy] Moving item: position ${fromPosition} → ${toPosition}`);
+        moveGridItem(fromPosition, toPosition);
+      }
     }
-  }, [assignItemToGrid, markItemAsUsed, moveGridItem, setIsDragging, setHoveredPosition]);
+  }, [assignItemToGrid, markItemAsUsed, moveGridItem, setIsDragging, setHoveredPosition, assignToTier, addToUnranked, moveBetweenTiers]);
 
   const handleRemove = useCallback((position: number) => {
     const item = gridItems[position];
@@ -229,12 +361,6 @@ function SimpleMatchGridInner() {
 
   return (
     <>
-      {/* Tutorial Panel - triggered by help icon */}
-      <TutorialPanel
-        isOpen={showTutorial}
-        onClose={hideTutorial}
-      />
-
       <DndContext
         sensors={sensors}
         onDragStart={handleDragStart}
@@ -262,12 +388,11 @@ function SimpleMatchGridInner() {
                 <MatchGridHeader
                   title={currentList?.title || "Neon Arena"}
                   subtitle={currentList?.description || "Assemble Your Dream Team"}
-                  onHelpClick={openTutorial}
                 />
                 
                 {/* View Switcher - Top Right */}
                 <div className="pt-4">
-                  <ViewSwitcher currentView={viewMode} onViewChange={setViewMode} />
+                  <ViewSwitcher currentView={viewMode} onViewChange={handleViewModeChange} />
                 </div>
               </div>
             </div>
@@ -307,6 +432,7 @@ function SimpleMatchGridInner() {
                 backlogItems={allBacklogItems}
                 onRankingComplete={handleBracketRankingComplete}
                 listSize={currentList?.size || maxGridSize}
+                onCancel={() => handleViewModeChange('podium')}
               />
             )}
 
@@ -380,12 +506,12 @@ function SimpleMatchGridInner() {
               </div>
             )}
           </div>
-
-          {/* Collection Panel - Fixed at bottom (hidden in bracket and tierlist mode) */}
-          {viewMode !== 'bracket' && viewMode !== 'tierlist' && (
-            <SimpleCollectionPanel groups={backlogGroupsToCollectionGroups(groups)} />
-          )}
         </div>
+
+        {/* Collection Panel - Fixed at bottom, OUTSIDE scrollable container (hidden in bracket mode only) */}
+        {viewMode !== 'bracket' && (
+          <SimpleCollectionPanel groups={backlogGroupsToCollectionGroups(groups)} />
+        )}
 
         {/* Portal-based Drag Overlay - bypasses all CSS clipping/scroll issues */}
         <PortalDragOverlay item={activeItem} targetPosition={targetPosition} />

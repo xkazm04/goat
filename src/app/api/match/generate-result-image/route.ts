@@ -1,5 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GridItemType } from '@/types/match';
+import {
+  LayoutEngine,
+  BalanceOptimizer,
+  PlaceholderGenerator,
+  ColorAnalyzer,
+  type Layout,
+  type LayoutItem,
+  type LayoutType,
+  type ExtractedColors,
+  type BalanceAnalysis,
+  type ColorHarmony,
+} from '@/lib/image-gen';
 
 interface GenerateImageRequest {
   gridItems: GridItemType[];
@@ -13,12 +25,30 @@ interface GenerateImageRequest {
     selectedYear?: number;
   };
   style?: 'minimalist' | 'detailed' | 'abstract' | 'retro' | 'modern';
+  layoutType?: LayoutType;
+  targetWidth?: number;
+  targetHeight?: number;
+}
+
+interface CompositionResult {
+  layout: Layout;
+  balance: BalanceAnalysis;
+  colorHarmony: ColorHarmony | null;
+  placeholders: Map<number, string>;
+  suggestedLayouts: LayoutType[];
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body: GenerateImageRequest = await request.json();
-    const { gridItems, listMetadata, style = 'modern' } = body;
+    const {
+      gridItems,
+      listMetadata,
+      style = 'modern',
+      layoutType,
+      targetWidth = 1200,
+      targetHeight = 630,
+    } = body;
 
     // Validate request
     if (!gridItems || !Array.isArray(gridItems) || gridItems.length === 0) {
@@ -35,16 +65,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get API key from environment
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      console.error('GEMINI_API_KEY not configured');
-      return NextResponse.json(
-        { error: 'Image generation service not configured' },
-        { status: 500 }
-      );
-    }
-
     // Filter matched items and sort by position
     const matchedItems = gridItems
       .filter(item => item.matched && item.title)
@@ -57,10 +77,47 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Build the prompt for Gemini
-    const prompt = buildImagePrompt(matchedItems, listMetadata, style);
+    // Generate smart composition
+    const composition = generateSmartComposition(
+      matchedItems,
+      targetWidth,
+      targetHeight,
+      layoutType
+    );
 
-    // Call Gemini Flash Image 2.5 API
+    // Get API key from environment
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      // Return composition data without AI enhancement
+      return NextResponse.json({
+        success: true,
+        data: {
+          composition: {
+            layout: composition.layout,
+            balance: composition.balance,
+            suggestedLayouts: composition.suggestedLayouts,
+            placeholders: Object.fromEntries(composition.placeholders),
+          },
+          style,
+          metadata: listMetadata,
+          itemCount: matchedItems.length,
+          items: matchedItems.map((item, index) => ({
+            position: item.position + 1,
+            title: item.title,
+            description: item.description,
+            image_url: item.image_url,
+            cell: composition.layout.cells[index],
+            placeholder: item.image_url ? null : composition.placeholders.get(index),
+          })),
+          aiEnhanced: false,
+        },
+      });
+    }
+
+    // Build the prompt for Gemini with composition data
+    const prompt = buildImagePrompt(matchedItems, listMetadata, style, composition);
+
+    // Call Gemini Flash API
     const geminiResponse = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`,
       {
@@ -91,42 +148,61 @@ export async function POST(request: NextRequest) {
     if (!geminiResponse.ok) {
       const errorData = await geminiResponse.text();
       console.error('Gemini API error:', errorData);
-      return NextResponse.json(
-        { error: 'Failed to generate image', details: errorData },
-        { status: geminiResponse.status }
-      );
+      // Still return composition data on API error
+      return NextResponse.json({
+        success: true,
+        data: {
+          composition: {
+            layout: composition.layout,
+            balance: composition.balance,
+            suggestedLayouts: composition.suggestedLayouts,
+            placeholders: Object.fromEntries(composition.placeholders),
+          },
+          style,
+          metadata: listMetadata,
+          itemCount: matchedItems.length,
+          items: matchedItems.map((item, index) => ({
+            position: item.position + 1,
+            title: item.title,
+            description: item.description,
+            image_url: item.image_url,
+            cell: composition.layout.cells[index],
+            placeholder: item.image_url ? null : composition.placeholders.get(index),
+          })),
+          aiEnhanced: false,
+          aiError: 'Gemini API unavailable',
+        },
+      });
     }
 
     const geminiData = await geminiResponse.json();
-
-    // Extract the generated content
-    // Note: Gemini Flash doesn't directly generate images, but provides text descriptions
-    // For actual image generation, we'd need to use a different model or approach
-    // This implementation returns structured data that can be used to render an image client-side
     const generatedContent = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
 
-    if (!generatedContent) {
-      return NextResponse.json(
-        { error: 'No content generated' },
-        { status: 500 }
-      );
-    }
-
-    // Return structured data for client-side rendering
+    // Return enhanced data with composition
     return NextResponse.json({
       success: true,
       data: {
         prompt,
         content: generatedContent,
+        composition: {
+          layout: composition.layout,
+          balance: composition.balance,
+          colorHarmony: composition.colorHarmony,
+          suggestedLayouts: composition.suggestedLayouts,
+          placeholders: Object.fromEntries(composition.placeholders),
+        },
         style,
         metadata: listMetadata,
         itemCount: matchedItems.length,
-        items: matchedItems.map(item => ({
+        items: matchedItems.map((item, index) => ({
           position: item.position + 1,
           title: item.title,
           description: item.description,
           image_url: item.image_url,
+          cell: composition.layout.cells[index],
+          placeholder: item.image_url ? null : composition.placeholders.get(index),
         })),
+        aiEnhanced: !!generatedContent,
       },
     });
   } catch (error) {
@@ -141,10 +217,156 @@ export async function POST(request: NextRequest) {
   }
 }
 
+/**
+ * Generate smart composition for the grid items
+ */
+function generateSmartComposition(
+  items: GridItemType[],
+  targetWidth: number,
+  targetHeight: number,
+  preferredLayout?: LayoutType
+): CompositionResult {
+  // Initialize engines
+  const layoutEngine = new LayoutEngine({
+    targetWidth,
+    targetHeight,
+  });
+  const balanceOptimizer = new BalanceOptimizer(targetWidth, targetHeight);
+  const placeholderGenerator = new PlaceholderGenerator({
+    width: Math.floor(targetWidth / 4),
+    height: Math.floor(targetHeight / 4),
+  });
+  const colorAnalyzer = new ColorAnalyzer();
+
+  // Convert grid items to layout items
+  const layoutItems: LayoutItem[] = items.map((item, index) => ({
+    id: item.id || `item-${index}`,
+    aspectRatio: item.image_url ? estimateAspectRatio(item.image_url) : 1,
+    importance: calculateImportance(index, items.length),
+    hasImage: !!item.image_url,
+    rank: index + 1,
+    title: item.title,
+  }));
+
+  // Generate layout
+  let layout = layoutEngine.generateLayout(layoutItems, {
+    layoutType: preferredLayout,
+    padding: 16,
+    spacing: 12,
+  });
+
+  // Optimize for visual balance
+  layout = balanceOptimizer.optimizeLayout(layout, 5);
+
+  // Analyze balance
+  const balance = balanceOptimizer.analyzeBalance(layout);
+
+  // Get layout suggestions
+  const suggestedLayouts = layoutEngine.suggestLayouts(layoutItems);
+
+  // Generate placeholders for items without images
+  const placeholders = new Map<number, string>();
+  items.forEach((item, index) => {
+    if (!item.image_url) {
+      const placeholder = placeholderGenerator.generateDataURL(
+        index + 1,
+        item.title
+      );
+      placeholders.set(index, placeholder);
+    }
+  });
+
+  // Analyze color harmony if we have items with colors
+  // In a full implementation, we would extract colors from actual images
+  let colorHarmony: ColorHarmony | null = null;
+
+  // Create mock color sets for demonstration
+  // In production, these would come from actual image analysis
+  const mockColorSets: ExtractedColors[] = items
+    .filter(item => item.image_url)
+    .slice(0, 5)
+    .map(() => ({
+      dominant: generateCategoryColor(items[0]?.title || ''),
+      accent: generateAccentColor(),
+      palette: [generateCategoryColor(items[0]?.title || ''), generateAccentColor()],
+    }));
+
+  if (mockColorSets.length > 0) {
+    colorHarmony = colorAnalyzer.analyzeHarmony(mockColorSets);
+  }
+
+  return {
+    layout,
+    balance,
+    colorHarmony,
+    placeholders,
+    suggestedLayouts,
+  };
+}
+
+/**
+ * Estimate aspect ratio from image URL
+ * In production, this would use actual image dimensions
+ */
+function estimateAspectRatio(imageUrl: string): number {
+  // Default to common aspect ratios
+  if (imageUrl.includes('poster') || imageUrl.includes('movie')) {
+    return 0.67; // 2:3 portrait
+  }
+  if (imageUrl.includes('album') || imageUrl.includes('cover')) {
+    return 1; // Square
+  }
+  if (imageUrl.includes('landscape') || imageUrl.includes('banner')) {
+    return 1.78; // 16:9
+  }
+  return 1; // Default square
+}
+
+/**
+ * Calculate importance based on position
+ * Top positions are more important
+ */
+function calculateImportance(index: number, total: number): number {
+  if (total <= 3) {
+    return index === 0 ? 1 : 0.8;
+  }
+  if (index === 0) return 1; // #1
+  if (index <= 2) return 0.9; // Top 3
+  if (index <= 9) return 0.7; // Top 10
+  if (index <= 24) return 0.5; // Top 25
+  return 0.3;
+}
+
+/**
+ * Generate a category-appropriate color based on title
+ */
+function generateCategoryColor(title: string): string {
+  // Create a hash from the title
+  let hash = 0;
+  for (let i = 0; i < title.length; i++) {
+    hash = ((hash << 5) - hash) + title.charCodeAt(i);
+    hash = hash & hash;
+  }
+
+  // Generate hue from hash
+  const hue = Math.abs(hash) % 360;
+  return `hsl(${hue}, 70%, 40%)`;
+}
+
+/**
+ * Generate an accent color
+ */
+function generateAccentColor(): string {
+  const hues = [340, 200, 160, 280, 40]; // Pink, Blue, Teal, Purple, Orange
+  const hue = hues[Math.floor(Math.random() * hues.length)];
+  return `hsl(${hue}, 80%, 50%)`;
+}
+
 function buildImagePrompt(
   items: GridItemType[],
   metadata: GenerateImageRequest['listMetadata'],
-  style: string
+  style: string,
+  composition: CompositionResult
 ): string {
   const timePeriodText = metadata.timePeriod === 'decade' && metadata.selectedDecade
     ? `${metadata.selectedDecade}s`
@@ -167,6 +389,10 @@ function buildImagePrompt(
 
   const styleDescription = styleDescriptions[style as keyof typeof styleDescriptions] || styleDescriptions.modern;
 
+  // Include composition analysis in prompt
+  const balanceInfo = composition.balance;
+  const layoutInfo = composition.layout;
+
   return `Create a visually striking social media shareable image design concept for:
 
 Title: "${metadata.title}"
@@ -180,17 +406,39 @@ ${itemsList}
 Design Style: ${style.toUpperCase()}
 ${styleDescription}
 
+Layout Analysis:
+- Layout Type: ${layoutInfo.type}
+- Visual Balance Score: ${(balanceInfo.overallBalance * 100).toFixed(0)}%
+- Symmetry Score: ${(balanceInfo.symmetryScore * 100).toFixed(0)}%
+- Distribution Score: ${(balanceInfo.distributionScore * 100).toFixed(0)}%
+- Center of Mass: (${balanceInfo.centerOfMass.x.toFixed(0)}, ${balanceInfo.centerOfMass.y.toFixed(0)})
+
+${composition.colorHarmony ? `
+Color Analysis:
+- Harmony Type: ${composition.colorHarmony.type}
+- Harmony Score: ${(composition.colorHarmony.score * 100).toFixed(0)}%
+- Contrast Ratio: ${composition.colorHarmony.contrastRatio.toFixed(2)}
+- Accessibility: ${composition.colorHarmony.isAccessible ? 'WCAG AA Compliant' : 'Needs Improvement'}
+` : ''}
+
 Design Requirements:
 1. Create a layout that clearly shows the ranking hierarchy (top items more prominent)
 2. Include the list title prominently at the top
 3. Use the ${style} style aesthetic throughout
-4. Make it optimized for social media sharing (1200x630px or similar)
+4. Make it optimized for social media sharing (${layoutInfo.dimensions.width}x${layoutInfo.dimensions.height}px)
 5. Include subtle branding element that says "Created with GOAT"
 6. Use color scheme that reflects the ${metadata.category} category
 7. Ensure text is readable at thumbnail size
 8. Create visual hierarchy with top 10 items being more prominent
 9. Add subtle decorative elements that enhance without overwhelming
 10. Include the time period context (${timePeriodText})
+
+Based on the ${layoutInfo.type} layout type, ensure:
+- ${layoutInfo.type === 'podium' ? 'Top 3 items displayed prominently like a winners podium' : ''}
+- ${layoutInfo.type === 'featured' ? 'First item takes prominent center/top position' : ''}
+- ${layoutInfo.type === 'grid' ? 'Items arranged in a balanced grid with equal emphasis' : ''}
+- ${layoutInfo.type === 'pyramid' ? 'Items cascade down from most to least important' : ''}
+- ${layoutInfo.type === 'masonry' ? 'Items flow naturally with varied sizes' : ''}
 
 Output a detailed description of the image design that includes:
 - Layout structure and composition

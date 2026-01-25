@@ -105,6 +105,53 @@ export type {
 } from './collection';
 
 // =============================================================================
+// Request Batching & Deduplication
+// =============================================================================
+
+export {
+  // BatchManager
+  BatchManager,
+  getGlobalBatchManager,
+  resetGlobalBatchManager,
+  batchGet,
+  batchPost,
+  type BatchRequest,
+  type BatchResponse,
+  type BatchResult,
+  type BatchManagerOptions,
+  type BatchManagerStats,
+} from './BatchManager';
+
+export {
+  // Deduplicator
+  Deduplicator,
+  getGlobalDeduplicator,
+  resetGlobalDeduplicator,
+  type DeduplicatorOptions,
+  type DeduplicatorStats,
+} from './Deduplicator';
+
+export {
+  // WindowScheduler
+  WindowScheduler,
+  getGlobalWindowScheduler,
+  resetGlobalWindowScheduler,
+  type WindowSchedulerOptions,
+  type BatchPriority,
+} from './WindowScheduler';
+
+export {
+  // BatchAnalytics
+  BatchAnalytics,
+  getGlobalBatchAnalytics,
+  resetGlobalBatchAnalytics,
+  logBatchAnalytics,
+  type BatchAnalyticsSnapshot,
+  type BatchAnalyticsSummary,
+  type BatchAnalyticsReport,
+} from './BatchAnalytics';
+
+// =============================================================================
 // Utility Exports
 // =============================================================================
 

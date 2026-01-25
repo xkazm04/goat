@@ -29,7 +29,7 @@
  */
 
 import { apiClient } from './client';
-import { getGlobalAPICache, createCacheKey, CACHE_TTL } from '@/lib/cache';
+import { createCacheKey, getGlobalAPICache } from '@/lib/cache';
 import {
   GoatError,
   NetworkError,
@@ -287,13 +287,11 @@ export interface UserPreferences {
 // =============================================================================
 
 interface RequestConfig {
-  /** Cache TTL preset or milliseconds */
+  /** @deprecated Cache is now handled by React Query - this option is ignored */
   cache?: 'none' | 'short' | 'standard' | 'long' | 'static' | number;
-  /** Cache tags for invalidation */
+  /** @deprecated Cache tags - this option is ignored */
   tags?: string[];
-  /** Bypass cache and fetch fresh */
-  bypassCache?: boolean;
-  /** Enable request deduplication */
+  /** Enable request deduplication (default: true for GET) */
   dedupe?: boolean;
   /** Retry configuration */
   retry?: {
@@ -328,18 +326,6 @@ function cleanParams<T extends object>(params: T): Record<string, unknown> {
     }
   }
   return cleaned;
-}
-
-/**
- * Get cache TTL in milliseconds
- */
-function getCacheTTL(ttl: RequestConfig['cache']): number | null {
-  if (ttl === 'none' || ttl === undefined) return null;
-  if (typeof ttl === 'number') return ttl;
-  // CACHE_TTL keys are uppercase (SHORT, STANDARD, LONG, STATIC)
-  const ttlKey = ttl.toUpperCase() as keyof typeof CACHE_TTL;
-  const ttlValue = CACHE_TTL[ttlKey];
-  return typeof ttlValue === 'number' ? ttlValue : null;
 }
 
 /**
@@ -399,22 +385,8 @@ async function request<T>(
   config: RequestConfig = {}
 ): Promise<T> {
   const cacheKey = createCacheKey(endpoint, data as Record<string, unknown>);
-  const cache = getGlobalAPICache();
-  const ttl = getCacheTTL(config.cache);
 
-  // Check cache for GET requests
-  if (method === 'GET' && ttl && !config.bypassCache) {
-    try {
-      const cached = await cache.get<T>(cacheKey, async () => {
-        throw new Error('Cache miss - will fetch');
-      }, { ttl, tags: config.tags });
-      return cached;
-    } catch {
-      // Cache miss - continue to fetch
-    }
-  }
-
-  // Request deduplication for GET requests
+  // Request deduplication for GET requests (prevents duplicate in-flight requests)
   if (method === 'GET' && config.dedupe !== false) {
     const pending = pendingRequests.get(cacheKey) as Promise<T> | undefined;
     if (pending) {
@@ -451,12 +423,8 @@ async function request<T>(
     });
   }
 
-  // Cache successful GET responses
-  if (method === 'GET' && ttl) {
-    promise.then(result => {
-      cache.get<T>(cacheKey, async () => result, { ttl, tags: config.tags });
-    });
-  }
+  // Note: Response caching is handled by React Query at the hook level.
+  // The APICache layer was removed to avoid double-caching conflicts.
 
   return promise;
 }

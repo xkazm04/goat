@@ -23,6 +23,15 @@ export type {
 
 export { LAYOUT_STORAGE_KEYS } from './types';
 
+// Container Query Types
+export type {
+  ContainerBreakpoint,
+  ContainerBreakpointConfig,
+  ContainerDimensions,
+  ContainerContextValue,
+  ContainerProviderProps,
+} from './ContainerProvider';
+
 // Constants
 export {
   BREAKPOINTS,
@@ -92,3 +101,37 @@ export {
   PipToggleButton,
   usePip,
 } from './components/PictureInPicture';
+
+// ContainerProvider (Container Queries)
+export {
+  ContainerProvider,
+  useContainer,
+  useContainerSafe,
+  withContainer,
+  CONTAINER_BREAKPOINTS,
+  getContainerBreakpointFromWidth,
+} from './ContainerProvider';
+
+// Responsive Utilities
+export {
+  fluidTypography,
+  fluidContainer,
+  fluidTypeScale,
+  fluidContainerTypeScale,
+  fluidSpacing,
+  resolveResponsiveValue,
+  responsiveCSSVars,
+  containerQueryClasses,
+  responsiveGridCols,
+  responsiveGap,
+  DynamicBreakpoints,
+  defaultBreakpoints,
+  cssUtils,
+  supportsContainerQueries,
+  featureSupport,
+} from './responsive-utils';
+
+export type {
+  FluidTypographyConfig,
+  ResponsiveValue,
+} from './responsive-utils';

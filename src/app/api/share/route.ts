@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { CreateSharedRankingRequest, SharedRanking } from '@/types/share';
+import { getOGCacheManager } from '@/lib/og/CacheManager';
+import type { OGCardLayout } from '@/lib/og/types';
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -18,6 +20,25 @@ function generateShareCode(): string {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return result;
+}
+
+// Determine the best layout based on items
+function suggestLayout(items: Array<{ image_url?: string }>): OGCardLayout {
+  const hasImages = items.some(item => item.image_url);
+  const itemCount = items.length;
+
+  // Featured layout for short lists with images
+  if (itemCount <= 3 && hasImages) {
+    return 'featured';
+  }
+
+  // Grid layout for visual categories
+  if (hasImages && itemCount >= 4) {
+    return 'grid';
+  }
+
+  // Default list layout
+  return 'list';
 }
 
 // POST - Create a new shared ranking
@@ -63,7 +84,14 @@ export async function POST(request: NextRequest) {
 
     // Get base URL for OG image
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://goat.app';
-    const ogImageUrl = `${baseUrl}/api/share/og-image?code=${shareCode}`;
+
+    // Determine the best layout for this content
+    const suggestedLayout = suggestLayout(items);
+
+    // Generate OG image URLs for different platforms
+    const ogImageUrl = `${baseUrl}/api/og/${shareCode}?layout=${suggestedLayout}`;
+    const twitterImageUrl = `${baseUrl}/api/og/${shareCode}?layout=${suggestedLayout}&platform=twitter`;
+    const facebookImageUrl = `${baseUrl}/api/og/${shareCode}?layout=${suggestedLayout}&platform=facebook`;
 
     // Create the shared ranking
     const { data, error } = await supabase
@@ -97,6 +125,12 @@ export async function POST(request: NextRequest) {
       data: {
         ...data,
         share_url: shareUrl,
+        og_images: {
+          default: ogImageUrl,
+          twitter: twitterImageUrl,
+          facebook: facebookImageUrl,
+        },
+        suggested_layout: suggestedLayout,
       },
     });
   } catch (error) {
@@ -142,11 +176,21 @@ export async function GET(request: NextRequest) {
 
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://goat.app';
 
+      // Generate OG image URLs
+      const suggestedLayout = suggestLayout(data.items || []);
+      const ogImageUrl = `${baseUrl}/api/og/${data.share_code}?layout=${suggestedLayout}`;
+
       return NextResponse.json({
         success: true,
         data: {
           ...data,
           share_url: `${baseUrl}/share/${data.share_code}`,
+          og_images: {
+            default: ogImageUrl,
+            twitter: `${ogImageUrl}&platform=twitter`,
+            facebook: `${ogImageUrl}&platform=facebook`,
+            discord: `${ogImageUrl}&platform=discord`,
+          },
         },
       });
     }

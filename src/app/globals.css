@@ -327,6 +327,51 @@ body {
       transform: translateY(-8px);
     }
   }
+
+  /* Collection panel slide animations - CSS-based to avoid transform containing block */
+  @keyframes collection-panel-slide-in {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes collection-panel-slide-out {
+    from {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+  }
+
+  @keyframes toggle-btn-in {
+    from {
+      transform: translateX(-50%) translateY(100px);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes toggle-btn-out {
+    from {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateX(-50%) translateY(100px);
+      opacity: 0;
+    }
+  }
 }
 
 @layer utilities {

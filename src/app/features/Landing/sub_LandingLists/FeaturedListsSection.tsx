@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useMemo, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, TrendingUp, Clock, Trophy, Medal, Play, Copy, AlertCircle } from "lucide-react";
+import { Sparkles, TrendingUp, Clock, Trophy, Medal, Play, Copy, AlertCircle, Users, Share2 } from "lucide-react";
 import { useFeaturedLists } from "@/hooks/use-top-lists";
 import { useComposition } from "@/hooks/use-composition";
 import { usePlayList } from "@/hooks/use-play-list";
@@ -159,9 +159,18 @@ const CompactListCard = memo(function CompactListCard({
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
               Top {list.size}
             </span>
-            <span className="uppercase tracking-wide opacity-80">
-              {list.time_period?.replace("-", " ") || "All time"}
-            </span>
+            {list.engagementCount !== undefined && (
+              <span className="flex items-center gap-1 opacity-80">
+                <Users className="w-3 h-3" />
+                {list.engagementCount}
+              </span>
+            )}
+            {list.shareCount !== undefined && (
+              <span className="flex items-center gap-1 opacity-80">
+                <Share2 className="w-3 h-3" />
+                {list.shareCount}
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-1.5">

@@ -20,8 +20,8 @@ import { highlightMatch } from "@/app/features/Match/sub_MatchCollections/compon
 import { createCollectionDragData } from "@/lib/dnd";
 import { useTouchGestures, GestureItemData } from "@/app/features/Match/hooks/useTouchGestures";
 import { PreviewItem } from "@/app/features/Match/components/LongPressPreview";
-import { ArrowRight, ArrowLeft, PlusCircle, Eye, Trash2, Info } from "lucide-react";
-import { useInspectorStore } from "@/stores/inspector-store";
+import { ArrowRight, ArrowLeft, PlusCircle, Eye, Trash2 } from "lucide-react";
+import { useItemPopupStore } from "@/stores/item-popup-store";
 
 /**
  * Swipe action icon mapping
@@ -62,8 +62,8 @@ export interface CollectionItemConfig {
   enableSwipeGestures?: boolean;
   /** Enable long press preview (mobile) */
   enableLongPressPreview?: boolean;
-  /** Show info button to open item inspector */
-  showInspectorButton?: boolean;
+  /** Enable right-click to open item detail popup */
+  enableContextMenu?: boolean;
 }
 
 export interface ConfigurableCollectionItemProps {
@@ -106,7 +106,7 @@ export const MATCH_VIEW_CONFIG: CollectionItemConfig = {
   enableSearchHighlight: true,
   enableSwipeGestures: true,
   enableLongPressPreview: true,
-  showInspectorButton: true,
+  enableContextMenu: true,
 };
 
 /**
@@ -126,7 +126,7 @@ export const COLLECTION_VIEW_CONFIG: CollectionItemConfig = {
   enableSearchHighlight: false,
   enableSwipeGestures: true,
   enableLongPressPreview: true,
-  showInspectorButton: true,
+  enableContextMenu: true,
 };
 
 /**
@@ -181,11 +181,11 @@ export function ConfigurableCollectionItem({
     enableSearchHighlight = false,
     enableSwipeGestures = true,
     enableLongPressPreview = true,
-    showInspectorButton = true,
+    enableContextMenu = true,
   } = config;
 
-  // Inspector store for opening item details
-  const openInspector = useInspectorStore((state) => state.openInspector);
+  // Popup store for opening item detail popup on right-click
+  const openPopup = useItemPopupStore((state) => state.openPopup);
 
   // Consensus store integration
   const viewMode_ = useConsensusStore((state) => state.viewMode);
@@ -296,12 +296,14 @@ export function ConfigurableCollectionItem({
 
   const showDragHandle = showKeyboardHandles && (isFocused || isDragging);
 
-  // Handle opening item inspector
-  const handleOpenInspector = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
+  // Handle right-click to open item detail popup
+  const handleContextMenu = useCallback((e: React.MouseEvent) => {
+    if (!enableContextMenu) return;
     e.preventDefault();
-    openInspector(item.id);
-  }, [item.id, openInspector]);
+    e.stopPropagation();
+    // Open popup at mouse position
+    openPopup(item.id, { x: e.clientX - 200, y: e.clientY - 50 });
+  }, [item.id, openPopup, enableContextMenu]);
 
   // Determine aria label
   const ariaLabel = onClick
@@ -324,6 +326,7 @@ export function ConfigurableCollectionItem({
       `}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      onContextMenu={handleContextMenu}
       {...gestureHandlers}
       data-testid={
         isSpotlight && showSpotlight
@@ -489,26 +492,6 @@ export function ConfigurableCollectionItem({
       {/* Consensus ranking overlay */}
       {shouldShowConsensus && !isDragging && (
         <ConsensusOverlay itemId={item.id} />
-      )}
-
-      {/* Inspector button - shows on hover */}
-      {showInspectorButton && !isDragging && (
-        <AnimatePresence>
-          {isHovered && (
-            <motion.button
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.15 }}
-              onClick={handleOpenInspector}
-              className="absolute bottom-1.5 left-1.5 z-20 p-1.5 rounded-lg bg-gray-900/80 backdrop-blur-sm border border-gray-600/50 text-gray-300 hover:text-cyan-400 hover:border-cyan-500/50 hover:bg-gray-800/90 transition-colors"
-              aria-label={`View details for ${item.title}`}
-              data-testid={`inspector-button-${item.id}`}
-            >
-              <Info className="w-3.5 h-3.5" />
-            </motion.button>
-          )}
-        </AnimatePresence>
       )}
 
       <ItemCard

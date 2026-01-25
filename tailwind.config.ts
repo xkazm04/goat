@@ -1,4 +1,5 @@
 import type { Config } from 'tailwindcss';
+import containerQueries from '@tailwindcss/container-queries';
 
 const config: Config = {
   darkMode: ['class'],
@@ -9,6 +10,15 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      // Container query breakpoints (component-level responsiveness)
+      containers: {
+        'xs': '320px',
+        'sm': '400px',
+        'md': '500px',
+        'lg': '700px',
+        'xl': '900px',
+        '2xl': '1200px',
+      },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'gradient-conic':
@@ -85,6 +95,6 @@ const config: Config = {
       },
     },
   },
-  plugins: [require('tailwindcss-animate')],
+  plugins: [require('tailwindcss-animate'), containerQueries],
 };
 export default config;

@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { createPortal } from "react-dom";
 import { GripHorizontal } from "lucide-react";
 import { CollectionGroup, CollectionItem } from "@/app/features/Collection/types";
 import { useQuickSelect } from "@/app/features/Collection/hooks/useQuickSelect";
+import { cn } from "@/lib/utils";
 import {
   CollectionHeader,
   CollectionSidebar,
@@ -30,12 +31,15 @@ const DEFAULT_PANEL_HEIGHT = 400;
 const MIN_PANEL_HEIGHT = 200;
 const MAX_PANEL_HEIGHT_VH = 80; // Max 80% of viewport height
 
+// Animation states for CSS-based transitions
+type AnimationState = 'hidden' | 'entering' | 'visible' | 'exiting';
+
 /**
  * "Glass Dock" Collection Panel
  * A premium, floating dock for managing collection items.
  *
  * Features:
- * - Fixed at bottom of viewport
+ * - Fixed at bottom of viewport via React Portal
  * - Resizable via drag handle
  * - Switchable group navigation (sidebar vs horizontal bar)
  * - Filters out items already placed in the grid
@@ -47,6 +51,36 @@ export function SimpleCollectionPanel({ groups, onItemClick, selectedItemId }: S
   const [activeTab, setActiveTab] = useState<string | 'all'>('all');
   const [groupViewMode, setGroupViewMode] = useState<GroupViewMode>('sidebar');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // SSR safety - only render portal on client
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Animation state machine for CSS-based transitions
+  const [animState, setAnimState] = useState<AnimationState>('visible');
+
+  // Handle visibility changes with animation states
+  useEffect(() => {
+    if (isVisible && animState === 'hidden') {
+      setAnimState('entering');
+    } else if (!isVisible && animState === 'visible') {
+      setAnimState('exiting');
+    }
+  }, [isVisible, animState]);
+
+  // Handle animation end events
+  const handleAnimationEnd = useCallback((e: React.AnimationEvent) => {
+    // Only handle animations on the panel itself, not child elements
+    if (e.target !== e.currentTarget) return;
+
+    if (animState === 'entering') {
+      setAnimState('visible');
+    } else if (animState === 'exiting') {
+      setAnimState('hidden');
+    }
+  }, [animState]);
 
   // Panel height state (resizable)
   const [panelHeight, setPanelHeight] = useState(DEFAULT_PANEL_HEIGHT);
@@ -257,7 +291,15 @@ export function SimpleCollectionPanel({ groups, onItemClick, selectedItemId }: S
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isVisible, quickSelect]);
 
-  return (
+  // Don't render on server (SSR safety)
+  if (!mounted) {
+    return null;
+  }
+
+  // Determine if panel should be rendered (visible or animating)
+  const shouldRenderPanel = animState !== 'hidden';
+
+  const panelContent = (
     <>
       {/* Toggle Button (When Hidden) */}
       <CollectionToggleButton
@@ -266,136 +308,119 @@ export function SimpleCollectionPanel({ groups, onItemClick, selectedItemId }: S
       />
 
       {/* Main Dock Panel - Fixed at bottom of viewport */}
-      <AnimatePresence>
-        {isVisible && (
-          <motion.div
-            ref={panelRef}
-            initial={{ y: "100%", opacity: 0 }}
-            animate={{
-              y: 0,
-              opacity: 1,
-              transition: {
-                type: "spring",
-                stiffness: 300,
-                damping: 30,
-                mass: 0.8,
-                opacity: { duration: 0.2 }
-              }
-            }}
-            exit={{
-              y: "100%",
-              opacity: 0,
-              transition: {
-                type: "spring",
-                stiffness: 300,
-                damping: 30,
-                mass: 0.8,
-                opacity: { duration: 0.15 }
-              }
-            }}
-            className="fixed bottom-0 left-0 right-0 z-50"
-            style={{ height: panelHeight }}
-            data-testid="collection-panel"
+      {shouldRenderPanel && (
+        <div
+          ref={panelRef}
+          className={cn(
+            "fixed bottom-0 left-0 right-0 z-50",
+            // CSS animation classes
+            animState === 'entering' && "animate-[collection-panel-slide-in_0.3s_ease-out_forwards]",
+            animState === 'exiting' && "animate-[collection-panel-slide-out_0.25s_ease-in_forwards]"
+          )}
+          style={{ height: panelHeight }}
+          onAnimationEnd={handleAnimationEnd}
+          data-testid="collection-panel"
+        >
+          {/* Resize Handle */}
+          <div
+            onMouseDown={handleResizeStart}
+            onTouchStart={handleResizeStart}
+            className={cn(
+              "absolute -top-3 left-0 right-0 h-6 cursor-ns-resize z-10",
+              "flex items-center justify-center transition-colors",
+              isResizing ? 'bg-cyan-500/20' : 'hover:bg-white/5'
+            )}
+            data-testid="panel-resize-handle"
           >
-            {/* Resize Handle */}
-            <div
-              onMouseDown={handleResizeStart}
-              onTouchStart={handleResizeStart}
-              className={`
-                absolute -top-3 left-0 right-0 h-6 cursor-ns-resize z-10
-                flex items-center justify-center
-                ${isResizing ? 'bg-cyan-500/20' : 'hover:bg-white/5'}
-                transition-colors
-              `}
-              data-testid="panel-resize-handle"
-            >
-              <div className="flex items-center gap-1 px-4 py-1 rounded-full bg-gray-800/80 border border-white/10">
-                <GripHorizontal className="w-4 h-4 text-gray-400" />
-                <span className="text-[10px] text-gray-500 hidden sm:inline">Drag to resize</span>
-              </div>
+            <div className="flex items-center gap-1 px-4 py-1 rounded-full bg-gray-800/80 border border-white/10">
+              <GripHorizontal className="w-4 h-4 text-gray-400" />
+              <span className="text-[10px] text-gray-500 hidden sm:inline">Drag to resize</span>
+            </div>
+          </div>
+
+          <div className="w-full h-full bg-gray-900/95 dark:bg-gray-950/95 backdrop-blur-2xl border-t border-white/10 dark:border-white/5 shadow-[0_-8px_32px_rgba(0,0,0,0.4)] dark:shadow-[0_-8px_48px_rgba(0,0,0,0.6)] flex flex-col">
+
+            {/* Header Bar */}
+            <CollectionHeader
+              totalItems={totalItemCount}
+              isVisible={isVisible}
+              onTogglePanel={togglePanel}
+              groupViewMode={groupViewMode}
+              onGroupViewModeChange={setGroupViewMode}
+              searchQuery={searchQuery}
+              onSearchChange={handleSearchChange}
+              filteredItemCount={filteredItemCount}
+            />
+
+            {/* Quick-Select Status Bar */}
+            <div className="px-4 py-1 flex-shrink-0">
+              <QuickSelectStatusBar
+                isActive={quickSelect.state.isActive}
+                mode={quickSelect.state.mode}
+                selectedItemTitle={
+                  quickSelect.state.selectedItemId
+                    ? flatFilteredItems.find(i => i.id === quickSelect.state.selectedItemId)?.title
+                    : undefined
+                }
+                statusMessage={quickSelect.state.statusMessage}
+                onToggle={quickSelect.toggleQuickSelect}
+                onClear={quickSelect.clearSelection}
+              />
             </div>
 
-            <div className="w-full h-full bg-gray-900/95 dark:bg-gray-950/95 backdrop-blur-2xl border-t border-white/10 dark:border-white/5 shadow-[0_-8px_32px_rgba(0,0,0,0.4)] dark:shadow-[0_-8px_48px_rgba(0,0,0,0.6)] flex flex-col">
-
-              {/* Header Bar */}
-              <CollectionHeader
-                totalItems={totalItemCount}
-                isVisible={isVisible}
-                onTogglePanel={togglePanel}
-                groupViewMode={groupViewMode}
-                onGroupViewModeChange={setGroupViewMode}
-                searchQuery={searchQuery}
-                onSearchChange={handleSearchChange}
-                filteredItemCount={filteredItemCount}
-              />
-
-              {/* Quick-Select Status Bar */}
-              <div className="px-4 py-1 flex-shrink-0">
-                <QuickSelectStatusBar
-                  isActive={quickSelect.state.isActive}
-                  mode={quickSelect.state.mode}
-                  selectedItemTitle={
-                    quickSelect.state.selectedItemId
-                      ? flatFilteredItems.find(i => i.id === quickSelect.state.selectedItemId)?.title
-                      : undefined
-                  }
-                  statusMessage={quickSelect.state.statusMessage}
-                  onToggle={quickSelect.toggleQuickSelect}
-                  onClear={quickSelect.clearSelection}
+            {/* Horizontal Group Bar (if in horizontal mode) */}
+            {groupViewMode === 'horizontal' && (
+              <div className="flex-shrink-0">
+                <CollectionHorizontalBar
+                  groups={availableGroups}
+                  groupAvailableCounts={groupAvailableCounts}
+                  activeTab={activeTab}
+                  onTabChange={setActiveTab}
+                  totalItemCount={totalItemCount}
                 />
               </div>
+            )}
 
-              {/* Horizontal Group Bar (if in horizontal mode) */}
-              {groupViewMode === 'horizontal' && (
-                <div className="flex-shrink-0">
-                  <CollectionHorizontalBar
-                    groups={availableGroups}
-                    groupAvailableCounts={groupAvailableCounts}
-                    activeTab={activeTab}
-                    onTabChange={setActiveTab}
-                    totalItemCount={totalItemCount}
-                  />
-                </div>
+            {/* Content Area - fills remaining space */}
+            <div className="flex flex-1 min-h-0">
+
+              {/* Sidebar (if in sidebar mode) */}
+              {groupViewMode === 'sidebar' && (
+                <CollectionSidebar
+                  groups={availableGroups}
+                  groupAvailableCounts={groupAvailableCounts}
+                  activeTab={activeTab}
+                  onTabChange={setActiveTab}
+                  totalItemCount={totalItemCount}
+                />
               )}
 
-              {/* Content Area - fills remaining space */}
-              <div className="flex flex-1 min-h-0">
-
-                {/* Sidebar (if in sidebar mode) */}
-                {groupViewMode === 'sidebar' && (
-                  <CollectionSidebar
-                    groups={availableGroups}
-                    groupAvailableCounts={groupAvailableCounts}
-                    activeTab={activeTab}
-                    onTabChange={setActiveTab}
-                    totalItemCount={totalItemCount}
-                  />
-                )}
-
-                {/* Main Grid - Virtualized for performance */}
-                <div
-                  ref={gridContainerRef}
-                  className="flex-1 p-3 bg-gradient-to-b from-transparent to-black/20 dark:to-black/40 min-h-0"
-                  data-testid="collection-grid-container"
-                >
-                  <VirtualizedCollectionGrid
-                    displayGroups={displayGroups}
-                    showGroupHeaders={activeTab === 'all'}
-                    searchQuery={searchQuery}
-                    getQuickSelectNumber={quickSelect.state.isActive ? quickSelect.getQuickSelectNumber : undefined}
-                    isItemSelected={quickSelect.state.isActive ? quickSelect.isItemSelected : undefined}
-                    columnCount={columnCount}
-                    containerHeight={gridHeight}
-                    onItemClick={onItemClick}
-                    selectedItemId={selectedItemId}
-                    itemSize="large"
-                  />
-                </div>
+              {/* Main Grid - Virtualized for performance */}
+              <div
+                ref={gridContainerRef}
+                className="flex-1 p-3 bg-gradient-to-b from-transparent to-black/20 dark:to-black/40 min-h-0"
+                data-testid="collection-grid-container"
+              >
+                <VirtualizedCollectionGrid
+                  displayGroups={displayGroups}
+                  showGroupHeaders={activeTab === 'all'}
+                  searchQuery={searchQuery}
+                  getQuickSelectNumber={quickSelect.state.isActive ? quickSelect.getQuickSelectNumber : undefined}
+                  isItemSelected={quickSelect.state.isActive ? quickSelect.isItemSelected : undefined}
+                  columnCount={columnCount}
+                  containerHeight={gridHeight}
+                  onItemClick={onItemClick}
+                  selectedItemId={selectedItemId}
+                  itemSize="large"
+                />
               </div>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        </div>
+      )}
     </>
   );
+
+  // Render via portal to document.body to escape any CSS transforms
+  return createPortal(panelContent, document.body);
 }

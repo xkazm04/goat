@@ -491,6 +491,132 @@ export function smartCalculateTiers(
 }
 
 /**
+ * Calculate tiers with custom boundaries
+ */
+export function calculateTiersWithCustomBoundaries(
+  customBoundaries: number[],
+  preset: TierPreset,
+  filledPositions: Array<{ itemId: string; position: number }>
+): {
+  tiers: TierDefinition[];
+  tieredItems: TieredItem[];
+  summary: TierSummary;
+} {
+  const listSize = customBoundaries[customBoundaries.length - 1];
+  const tiers = createTiersFromBoundaries(customBoundaries, preset);
+  const tieredItems = assignTiersToItems(filledPositions, tiers);
+  const summary = calculateTierSummary(tiers, tieredItems, listSize);
+
+  return { tiers, tieredItems, summary };
+}
+
+/**
+ * Validate and normalize boundaries
+ */
+export function normalizeBoundaries(
+  boundaries: number[],
+  listSize: number
+): number[] {
+  // Ensure boundaries are valid
+  if (boundaries.length < 2) {
+    return [0, listSize];
+  }
+
+  // Sort boundaries
+  const sorted = [...boundaries].sort((a, b) => a - b);
+
+  // Ensure first is 0 and last is listSize
+  if (sorted[0] !== 0) {
+    sorted.unshift(0);
+  }
+  if (sorted[sorted.length - 1] !== listSize) {
+    sorted.push(listSize);
+  }
+
+  // Remove duplicates and out-of-range values
+  const normalized = sorted.filter((b, i, arr) => {
+    if (b < 0 || b > listSize) return false;
+    if (i > 0 && b === arr[i - 1]) return false;
+    return true;
+  });
+
+  return normalized;
+}
+
+/**
+ * Calculate distribution statistics for boundaries
+ */
+export function calculateDistributionStats(
+  boundaries: number[],
+  listSize: number
+): {
+  tierSizes: number[];
+  percentages: number[];
+  evenness: number;  // 0-100, how even the distribution is
+  smallest: { tier: number; size: number };
+  largest: { tier: number; size: number };
+} {
+  const tierSizes: number[] = [];
+  const percentages: number[] = [];
+
+  for (let i = 1; i < boundaries.length; i++) {
+    const size = boundaries[i] - boundaries[i - 1];
+    tierSizes.push(size);
+    percentages.push(listSize > 0 ? Math.round((size / listSize) * 100) : 0);
+  }
+
+  // Calculate evenness (inverse of coefficient of variation)
+  const avg = tierSizes.reduce((a, b) => a + b, 0) / tierSizes.length;
+  const variance = tierSizes.reduce((sum, s) => sum + Math.pow(s - avg, 2), 0) / tierSizes.length;
+  const stdDev = Math.sqrt(variance);
+  const cv = avg > 0 ? stdDev / avg : 0;
+  const evenness = Math.round((1 - Math.min(cv, 1)) * 100);
+
+  // Find smallest and largest
+  let smallest = { tier: 0, size: Infinity };
+  let largest = { tier: 0, size: -Infinity };
+
+  tierSizes.forEach((size, i) => {
+    if (size < smallest.size) smallest = { tier: i, size };
+    if (size > largest.size) largest = { tier: i, size };
+  });
+
+  return { tierSizes, percentages, evenness, smallest, largest };
+}
+
+/**
+ * Create boundaries from percentages
+ */
+export function boundariesFromPercentages(
+  percentages: number[],
+  listSize: number
+): number[] {
+  const boundaries = [0];
+
+  for (const pct of percentages) {
+    boundaries.push(Math.round((pct / 100) * listSize));
+  }
+
+  if (boundaries[boundaries.length - 1] !== listSize) {
+    boundaries.push(listSize);
+  }
+
+  return boundaries;
+}
+
+/**
+ * Convert boundaries to percentages
+ */
+export function boundariesToPercentages(
+  boundaries: number[],
+  listSize: number
+): number[] {
+  if (listSize === 0) return [];
+
+  return boundaries.map(b => Math.round((b / listSize) * 100));
+}
+
+/**
  * Singleton instance
  */
 let calculatorInstance: typeof TierCalculator | null = null;
@@ -506,6 +632,12 @@ export const TierCalculator = {
   calculateSummary: calculateTierSummary,
   generateSuggestions: generateTierSuggestions,
   smartCalculate: smartCalculateTiers,
+  // Dynamic threshold support
+  calculateWithCustomBoundaries: calculateTiersWithCustomBoundaries,
+  normalizeBoundaries,
+  calculateDistributionStats,
+  boundariesFromPercentages,
+  boundariesToPercentages,
 };
 
 export function getTierCalculator() {

@@ -302,6 +302,53 @@ export {
 } from './use-api-cache';
 
 // ========================================
+// Request Batching & Deduplication Hooks
+// ========================================
+
+/**
+ * Batched Query Hooks
+ * Automatic request batching and deduplication for optimal API performance.
+ * Combines multiple requests into single batch calls.
+ */
+export {
+  useBatchedQuery,
+  useBatchedMutation,
+  useBatchedQueries,
+  useBatchManager,
+  useBatchedPrefetch,
+  useLazyBatchedQuery,
+  createBatchedFetcher,
+  createBatchedMutation,
+  getGlobalBatchManager,
+  type BatchedQueryOptions,
+  type BatchedMutationOptions,
+  type BatchedFetcherConfig,
+  type BatchManagerStats,
+  type BatchRequest,
+  type BatchPriority,
+} from './use-batched-query';
+
+// ========================================
+// Container Query & Responsive Hooks
+// ========================================
+
+/**
+ * Container Query Hooks
+ * Advanced container query utilities with ResizeObserver integration
+ * Enables components to respond to their container size
+ */
+export {
+  useContainerQuery,
+  useContainerBreakpoint,
+  useContainerDimensions,
+  useMultipleContainerQueries,
+  useContainerCallback,
+  containerQueryUtils,
+  type ContainerQueryMatch,
+  type ContainerQueryConfig,
+} from './use-container-query';
+
+// ========================================
 // Migration Notes
 // ========================================
 /**
