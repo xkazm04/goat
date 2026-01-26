@@ -194,6 +194,12 @@ export const FloatingShowcase = memo(function FloatingShowcase() {
                 <ShowcaseDecor shouldAnimate={shouldAnimate} />
             </div>
 
+            {/* Noise texture overlay - adds tactile quality */}
+            <div
+                className="absolute inset-0 z-[1] pointer-events-none noise-texture"
+                aria-hidden="true"
+            />
+
             {/* Header - above decor */}
             <div className="relative z-10">
                 <ShowcaseHeader />
