@@ -329,8 +329,34 @@ export function SimpleDropZone({
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
             className="absolute inset-0"
           >
+            {/* Medal Gradient Border Overlay - positions 0-2 only */}
+            {getMedalGradient(position) && (
+              <Shimmer duration={600} className="absolute inset-0 rounded-xl z-10 pointer-events-none">
+                <div
+                  className="absolute inset-0 rounded-xl pointer-events-none"
+                  style={{
+                    padding: position === 0 ? 3 : 2, // Thicker border for #1
+                    background: GRADIENT_PRESETS[getMedalGradient(position)!],
+                  }}
+                >
+                  {/* Inner transparent area */}
+                  <div className="w-full h-full rounded-[10px] bg-transparent" />
+                </div>
+              </Shimmer>
+            )}
+
+            {/* Position #1 Extra Glow */}
+            {position === 0 && (
+              <Glow
+                color="gold"
+                intensity="subtle"
+                asBackground
+                className="absolute inset-0 rounded-xl z-[5] pointer-events-none"
+              />
+            )}
+
             {/* Image - Full coverage using ProgressiveImage with wiki fallback */}
-            <motion.div 
+            <motion.div
               className="absolute inset-0"
               initial={{ scale: 1.1 }}
               animate={{ scale: 1 }}
