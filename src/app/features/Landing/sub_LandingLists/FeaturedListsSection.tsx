@@ -18,6 +18,7 @@ import { ListPreviewThumbnail } from "./ListPreviewThumbnail";
 import { useQuery } from "@tanstack/react-query";
 import { goatApi } from "@/lib/api";
 import { topListsKeys } from "@/lib/query-keys/top-lists";
+import { SURFACE_ELEVATION, ELEVATION } from "@/components/visual";
 
 interface FeaturedListsSectionProps {
   className?: string;
@@ -413,51 +414,59 @@ export function FeaturedListsSection({ className }: FeaturedListsSectionProps) {
                 })}
               </div>
 
-              {/* Tab Content - Three Column Grid */}
-              <motion.div
-                key={activeTabId}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-6xl mx-auto"
+              {/* Tab Content - Raised surface container for visual hierarchy */}
+              <div
+                className="p-6 rounded-2xl max-w-6xl mx-auto"
+                style={{
+                  backgroundColor: SURFACE_ELEVATION.raised,
+                  boxShadow: ELEVATION.low,
+                }}
               >
-                {isCurrentLoading ? (
-                  Array.from({ length: 9 }).map((_, i) => (
-                    <ShimmerSkeleton
-                      key={i}
-                      size="md"
-                      accentColor={currentColumn.accentColor}
-                      testId={`featured-skeleton-${activeTabId}-${i}`}
-                    />
-                  ))
-                ) : isCurrentError ? (
-                  <div className="col-span-full p-12 text-center text-red-400 bg-red-500/10 rounded-2xl border border-red-500/20">
-                    <AlertCircle className="w-10 h-10 mx-auto mb-4 opacity-80" />
-                    <p className="text-lg font-medium">Failed to load content</p>
-                    <button
-                      onClick={() => refetch()}
-                      className="mt-4 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg text-sm transition-colors"
-                    >
-                      Retry
-                    </button>
-                  </div>
-                ) : currentLists.length > 0 ? (
-                  currentLists.map((list) => (
-                    <motion.div key={list.id} variants={listItemVariants} layout>
-                      <CompactListCard
-                        list={list}
-                        onPlay={handlePlayList}
-                        onUseAsTemplate={handleUseAsTemplate}
+                <motion.div
+                  key={activeTabId}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+                >
+                  {isCurrentLoading ? (
+                    Array.from({ length: 9 }).map((_, i) => (
+                      <ShimmerSkeleton
+                        key={i}
+                        size="md"
+                        accentColor={currentColumn.accentColor}
+                        testId={`featured-skeleton-${activeTabId}-${i}`}
                       />
-                    </motion.div>
-                  ))
-                ) : (
-                  <div className="col-span-full py-20 text-center text-slate-500">
-                    <p>No lists found in this category.</p>
-                  </div>
-                )}
-              </motion.div>
+                    ))
+                  ) : isCurrentError ? (
+                    <div className="col-span-full p-12 text-center text-red-400 bg-red-500/10 rounded-2xl border border-red-500/20">
+                      <AlertCircle className="w-10 h-10 mx-auto mb-4 opacity-80" />
+                      <p className="text-lg font-medium">Failed to load content</p>
+                      <button
+                        onClick={() => refetch()}
+                        className="mt-4 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg text-sm transition-colors"
+                      >
+                        Retry
+                      </button>
+                    </div>
+                  ) : currentLists.length > 0 ? (
+                    currentLists.map((list) => (
+                      <motion.div key={list.id} variants={listItemVariants} layout>
+                        <CompactListCard
+                          list={list}
+                          onPlay={handlePlayList}
+                          onUseAsTemplate={handleUseAsTemplate}
+                        />
+                      </motion.div>
+                    ))
+                  ) : (
+                    <div className="col-span-full py-20 text-center text-slate-500">
+                      <p>No lists found in this category.</p>
+                    </div>
+                  )}
+                </motion.div>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
