@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Crown, Sparkles } from 'lucide-react';
 import { SimpleDropZone } from '../../sub_MatchCollections/SimpleDropZone';
 import { GridItemType } from '@/types/match';
+import { Elevated } from '@/components/visual';
 
 interface GoatViewProps {
     gridItems: (GridItemType | null)[];
@@ -51,14 +52,17 @@ export function GoatView({ gridItems, onRemove, getItemTitle }: GoatViewProps) {
                     <div className="absolute -inset-4 rounded-full border-4 border-yellow-500/30 animate-pulse" />
                     <div className="absolute -inset-8 rounded-full border-2 border-yellow-500/10" />
 
-                    <SimpleDropZone
-                        position={0}
-                        isOccupied={!!(gridItems[0] && gridItems[0].matched)}
-                        occupiedBy={gridItems[0]?.matched ? getItemTitle(gridItems[0]) : undefined}
-                        imageUrl={gridItems[0]?.matched ? gridItems[0].image_url : undefined}
-                        gridItem={gridItems[0]?.matched ? gridItems[0] : undefined}
-                        onRemove={() => onRemove(0)}
-                    />
+                    <Elevated level="high" hoverLift={false} className="w-full h-full rounded-full">
+                        <SimpleDropZone
+                            position={0}
+                            isOccupied={!!(gridItems[0] && gridItems[0].matched)}
+                            occupiedBy={gridItems[0]?.matched ? getItemTitle(gridItems[0]) : undefined}
+                            imageUrl={gridItems[0]?.matched ? gridItems[0].image_url : undefined}
+                            gridItem={gridItems[0]?.matched ? gridItems[0] : undefined}
+                            onRemove={() => onRemove(0)}
+                            showBadge={false}
+                        />
+                    </Elevated>
                 </motion.div>
 
                 {/* Description */}
