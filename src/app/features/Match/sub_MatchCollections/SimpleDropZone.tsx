@@ -10,11 +10,27 @@ import { DropCelebration } from "./components/DropCelebration";
 import { useOptionalDropZoneHighlight } from "../sub_MatchGrid/components/DropZoneHighlightContext";
 import { createGridDragData, createGridSlotDropData } from "@/lib/dnd";
 import { getRankConfig, isPodiumPosition } from "../lib/rankConfig";
+import { GradientBorder, Shimmer, Glow, GRADIENT_PRESETS } from '@/components/visual';
 
 // Constants for magnetic snap effect
 const MAGNETIC_THRESHOLD = 120; // pixels from center to activate magnetism
 const MAGNETIC_STRENGTH_MIN = 0.3;
 const MAGNETIC_STRENGTH_MAX = 0.7;
+
+// Medal styling helper for positions 0-2
+function getMedalGradient(position: number): 'gold' | 'silver' | 'bronze' | null {
+  if (position === 0) return 'gold';
+  if (position === 1) return 'silver';
+  if (position === 2) return 'bronze';
+  return null;
+}
+
+// Medal color hints for empty slots (very subtle)
+const MEDAL_HINT_COLORS = {
+  gold: 'rgba(250, 204, 21, 0.06)',    // yellow-400 at 6%
+  silver: 'rgba(203, 213, 225, 0.06)', // slate-300 at 6%
+  bronze: 'rgba(251, 146, 60, 0.06)',  // orange-400 at 6%
+} as const;
 
 interface SimpleDropZoneProps {
   position: number;
