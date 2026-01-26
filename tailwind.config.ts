@@ -19,6 +19,18 @@ const config: Config = {
         'xl': '900px',
         '2xl': '1200px',
       },
+      // Semantic z-index scale - prevents z-index wars
+      zIndex: {
+        'base': '0',
+        'raised': '10',      // Cards, slightly elevated content
+        'dropdown': '100',   // Dropdowns, autocomplete
+        'sticky': '200',     // Sticky headers, sidebars
+        'modal': '300',      // Modals, dialogs
+        'popover': '400',    // Popovers, tooltips
+        'toast': '500',      // Toast notifications
+        'overlay': '600',    // Full-screen overlays
+        'drag': '700',       // Active drag elements (highest)
+      },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'gradient-conic':
