@@ -199,7 +199,13 @@ export function SimpleDropZone({
       {/* Card Container */}
       <motion.div
         ref={setNodeRef}
-        style={style as any}
+        style={{
+          ...style,
+          // Medal color hint for empty medal slots
+          ...((!isOccupied && getMedalGradient(position)) && {
+            backgroundColor: MEDAL_HINT_COLORS[getMedalGradient(position)!],
+          }),
+        } as React.CSSProperties}
         initial={false}
         animate={{
           scale: justDropped
@@ -230,6 +236,7 @@ export function SimpleDropZone({
           relative aspect-[4/5] rounded-xl overflow-hidden group
           border-2 transition-colors duration-300
           ${isOccupied ? 'bg-gray-900/80' : 'bg-gray-900/20'}
+          ${!isOccupied && 'shadow-[inset_0_2px_8px_rgba(0,0,0,0.3)]'}
           ${isOver ? `shadow-[0_0_30px_${accentColor}40]` : ''}
         `}
         data-testid={`drop-zone-${position}`}
@@ -303,7 +310,7 @@ export function SimpleDropZone({
           className="text-[6rem] font-black select-none transition-all duration-500"
           style={{
             color: accentColor,
-            opacity: isOver ? 0.2 : isOccupied ? 0 : 0.05,
+            opacity: isOver ? 0.2 : isOccupied ? 0 : 0.15,
             transform: isOver ? 'scale(1.2)' : 'scale(1)'
           }}
         >
