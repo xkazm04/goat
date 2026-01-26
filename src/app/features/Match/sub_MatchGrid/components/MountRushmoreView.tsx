@@ -5,6 +5,7 @@ import { Mountain } from 'lucide-react';
 import { SimpleDropZone } from '../../sub_MatchCollections/SimpleDropZone';
 import { GridItemType } from '@/types/match';
 import { PositionBadge } from '../../components/PositionBadge';
+import { Elevated } from '@/components/visual';
 
 interface MountRushmoreViewProps {
     gridItems: (GridItemType | null)[];
@@ -54,14 +55,17 @@ export function MountRushmoreView({ gridItems, onRemove, getItemTitle }: MountRu
                             {/* Stone frame effect */}
                             <div className="absolute -inset-2 bg-gradient-to-br from-slate-700/20 to-slate-900/20 rounded-xl blur-sm" />
 
-                            <SimpleDropZone
-                                position={position}
-                                isOccupied={!!(gridItems[position] && gridItems[position].matched)}
-                                occupiedBy={gridItems[position]?.matched ? getItemTitle(gridItems[position]) : undefined}
-                                imageUrl={gridItems[position]?.matched ? gridItems[position].image_url : undefined}
-                                gridItem={gridItems[position]?.matched ? gridItems[position] : undefined}
-                                onRemove={() => onRemove(position)}
-                            />
+                            <Elevated level="medium" hoverLift={false} className="w-full h-full rounded-xl">
+                                <SimpleDropZone
+                                    position={position}
+                                    isOccupied={!!(gridItems[position] && gridItems[position].matched)}
+                                    occupiedBy={gridItems[position]?.matched ? getItemTitle(gridItems[position]) : undefined}
+                                    imageUrl={gridItems[position]?.matched ? gridItems[position].image_url : undefined}
+                                    gridItem={gridItems[position]?.matched ? gridItems[position] : undefined}
+                                    onRemove={() => onRemove(position)}
+                                    showBadge={false}
+                                />
+                            </Elevated>
                         </motion.div>
                     ))}
                 </div>
