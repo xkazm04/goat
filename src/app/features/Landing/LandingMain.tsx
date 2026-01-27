@@ -1,7 +1,6 @@
 "use client";
 
 import { FloatingShowcase } from "./FloatingShowcase";
-import { LazyCompositionModal } from "./sub_CreateList/LazyCompositionModal";
 import { NeonArenaTheme } from "./shared";
 import { CommandPaletteTrigger } from "@/app/features/CommandPalette";
 
@@ -15,9 +14,6 @@ export function LandingMain() {
       >
         {/* Main content */}
         <FloatingShowcase />
-
-        {/* Composition Modal - lazy loaded */}
-        <LazyCompositionModal />
 
         {/* Command Palette Trigger - floating button for quick create */}
         <CommandPaletteTrigger />

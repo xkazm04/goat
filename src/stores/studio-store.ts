@@ -6,6 +6,7 @@
  */
 
 import { create } from 'zustand';
+import { useShallow } from 'zustand/react/shallow';
 import { apiClient, getApiErrorMessage } from '@/lib/api/client';
 import type { EnrichedItem, GenerateResponse } from '@/types/studio';
 
@@ -213,94 +214,108 @@ export const useStudioStore = create<StudioState>((set, get) => ({
  * Form state selector - topic and item count
  */
 export const useStudioForm = () =>
-  useStudioStore((state) => ({
-    topic: state.topic,
-    itemCount: state.itemCount,
-    setTopic: state.setTopic,
-    setItemCount: state.setItemCount,
-  }));
+  useStudioStore(
+    useShallow((state) => ({
+      topic: state.topic,
+      itemCount: state.itemCount,
+      setTopic: state.setTopic,
+      setItemCount: state.setItemCount,
+    }))
+  );
 
 /**
  * Generation state selector - loading and error states
  */
 export const useStudioGeneration = () =>
-  useStudioStore((state) => ({
-    isGenerating: state.isGenerating,
-    error: state.error,
-    generateItems: state.generateItems,
-    clearError: state.clearError,
-  }));
+  useStudioStore(
+    useShallow((state) => ({
+      isGenerating: state.isGenerating,
+      error: state.error,
+      generateItems: state.generateItems,
+      clearError: state.clearError,
+    }))
+  );
 
 /**
  * Items selector - generated items list and manipulation actions
  */
 export const useStudioItems = () =>
-  useStudioStore((state) => ({
-    generatedItems: state.generatedItems,
-    clearItems: state.clearItems,
-    updateItem: state.updateItem,
-    removeItem: state.removeItem,
-    reorderItems: state.reorderItems,
-    addItem: state.addItem,
-  }));
+  useStudioStore(
+    useShallow((state) => ({
+      generatedItems: state.generatedItems,
+      clearItems: state.clearItems,
+      updateItem: state.updateItem,
+      removeItem: state.removeItem,
+      reorderItems: state.reorderItems,
+      addItem: state.addItem,
+    }))
+  );
 
 /**
  * Metadata state selector - list title, description, category
  */
 export const useStudioMetadata = () =>
-  useStudioStore((state) => ({
-    listTitle: state.listTitle,
-    listDescription: state.listDescription,
-    category: state.category,
-    setListTitle: state.setListTitle,
-    setListDescription: state.setListDescription,
-    setCategory: state.setCategory,
-    suggestTitleFromTopic: state.suggestTitleFromTopic,
-  }));
+  useStudioStore(
+    useShallow((state) => ({
+      listTitle: state.listTitle,
+      listDescription: state.listDescription,
+      category: state.category,
+      setListTitle: state.setListTitle,
+      setListDescription: state.setListDescription,
+      setCategory: state.setCategory,
+      suggestTitleFromTopic: state.suggestTitleFromTopic,
+    }))
+  );
 
 /**
  * Validation state selector - publish readiness
  */
 export const useStudioValidation = () =>
-  useStudioStore((state) => ({
-    canPublish: state.listTitle.trim() !== '' && state.generatedItems.length >= 5,
-    hasTitle: state.listTitle.trim() !== '',
-    hasItems: state.generatedItems.length >= 5,
-    itemCount: state.generatedItems.length,
-  }));
+  useStudioStore(
+    useShallow((state) => ({
+      canPublish: state.listTitle.trim() !== '' && state.generatedItems.length >= 5,
+      hasTitle: state.listTitle.trim() !== '',
+      hasItems: state.generatedItems.length >= 5,
+      itemCount: state.generatedItems.length,
+    }))
+  );
 
 /**
  * Publishing state selector - publish progress and success
  */
 export const useStudioPublishing = () =>
-  useStudioStore((state) => ({
-    isPublishing: state.isPublishing,
-    publishError: state.publishError,
-    publishedListId: state.publishedListId,
-    showSuccess: state.showSuccess,
-    setPublishing: state.setPublishing,
-    setPublishError: state.setPublishError,
-    setPublishedListId: state.setPublishedListId,
-    setShowSuccess: state.setShowSuccess,
-  }));
+  useStudioStore(
+    useShallow((state) => ({
+      isPublishing: state.isPublishing,
+      publishError: state.publishError,
+      publishedListId: state.publishedListId,
+      showSuccess: state.showSuccess,
+      setPublishing: state.setPublishing,
+      setPublishError: state.setPublishError,
+      setPublishedListId: state.setPublishedListId,
+      setShowSuccess: state.setShowSuccess,
+    }))
+  );
 
 /**
  * Actions selector - all actions without state
  */
 export const useStudioActions = () =>
-  useStudioStore((state) => ({
-    setTopic: state.setTopic,
-    setItemCount: state.setItemCount,
-    generateItems: state.generateItems,
-    clearItems: state.clearItems,
-    clearError: state.clearError,
-    updateItem: state.updateItem,
-    removeItem: state.removeItem,
-    reorderItems: state.reorderItems,
-    addItem: state.addItem,
-    setListTitle: state.setListTitle,
-    setListDescription: state.setListDescription,
-    setCategory: state.setCategory,
-    suggestTitleFromTopic: state.suggestTitleFromTopic,
-    reset: state.reset,
-  }));
+  useStudioStore(
+    useShallow((state) => ({
+      setTopic: state.setTopic,
+      setItemCount: state.setItemCount,
+      generateItems: state.generateItems,
+      clearItems: state.clearItems,
+      clearError: state.clearError,
+      updateItem: state.updateItem,
+      removeItem: state.removeItem,
+      reorderItems: state.reorderItems,
+      addItem: state.addItem,
+      setListTitle: state.setListTitle,
+      setListDescription: state.setListDescription,
+      setCategory: state.setCategory,
+      suggestTitleFromTopic: state.suggestTitleFromTopic,
+      reset: state.reset,
+    }))
+  );

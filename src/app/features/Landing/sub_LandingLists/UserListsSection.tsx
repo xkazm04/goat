@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Plus, User, Sparkles } from "lucide-react";
 import { useUserLists, useDeleteList } from "@/hooks/use-top-lists";
@@ -9,8 +10,6 @@ import { usePlayList } from "@/hooks/use-play-list";
 import { toast } from "@/hooks/use-toast";
 import { ListCard } from "./ListCard";
 import { ListGrid } from "@/components/ui/list-grid";
-import { useComposition } from "@/hooks/use-composition";
-import { CompositionModal } from "@/app/features/Landing/sub_CreateList/CompositionModal";
 import { listContainerVariants } from "../shared/animations";
 import { NeonArenaTheme } from "../shared/NeonArenaTheme";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
@@ -21,11 +20,15 @@ interface UserListsSectionProps {
 }
 
 export function UserListsSection({ className }: UserListsSectionProps) {
+  const router = useRouter();
   const { tempUserId, isLoaded } = useTempUser();
   const { handlePlayList } = usePlayList();
   const deleteListMutation = useDeleteList();
-  const { openComposition, isOpen: isModalOpen } = useComposition();
   const prefersReducedMotion = useReducedMotion();
+
+  const handleCreateNew = useCallback(() => {
+    router.push("/studio");
+  }, [router]);
 
   const {
     data: userLists = [],
@@ -76,7 +79,7 @@ export function UserListsSection({ className }: UserListsSectionProps) {
             testIdPrefix="user-lists"
             rightContent={
               <motion.button
-                onClick={() => openComposition()}
+                onClick={handleCreateNew}
                 className="relative group px-5 py-2.5 rounded-xl font-medium text-sm text-white overflow-hidden"
                 style={{
                   background: `linear-gradient(135deg, rgba(6, 182, 212, 0.9), rgba(34, 211, 238, 0.9))`,
@@ -145,7 +148,7 @@ export function UserListsSection({ className }: UserListsSectionProps) {
                     Create your first ranking list and start comparing your favorites!
                   </p>
                   <motion.button
-                    onClick={() => openComposition()}
+                    onClick={handleCreateNew}
                     className="px-6 py-3 rounded-xl font-medium text-white"
                     style={{
                       background: `linear-gradient(135deg, rgba(6, 182, 212, 0.9), rgba(34, 211, 238, 0.9))`,
@@ -169,10 +172,6 @@ export function UserListsSection({ className }: UserListsSectionProps) {
           </motion.div>
         </div>
       </NeonArenaTheme>
-
-      {/* Note: CompositionModal's onSuccess doesn't need refetch() because
-          useCreateListWithUser already invalidates queries in its onSuccess handler */}
-      <CompositionModal onSuccess={() => {}} />
     </>
   );
 }
