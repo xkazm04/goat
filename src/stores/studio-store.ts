@@ -83,7 +83,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   // Initial state - Metadata
   listTitle: '',
   listDescription: '',
-  category: 'Music',
+  category: 'Games',
 
   // Initial state - Publishing
   isPublishing: false,
@@ -110,7 +110,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
     try {
       const response = await apiClient.post<GenerateResponse>(
-        '/api/studio/generate',
+        '/studio/generate',
         { topic: topic.trim(), count: itemCount }
       );
 
@@ -198,7 +198,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       error: null,
       listTitle: '',
       listDescription: '',
-      category: 'Music',
+      category: 'Games',
       isPublishing: false,
       publishError: null,
       publishedListId: null,
