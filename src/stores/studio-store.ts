@@ -37,6 +37,12 @@ interface StudioState {
   clearItems: () => void;
   clearError: () => void;
 
+  // Actions - Item Manipulation
+  updateItem: (index: number, updates: Partial<EnrichedItem>) => void;
+  removeItem: (index: number) => void;
+  reorderItems: (fromIndex: number, toIndex: number) => void;
+  addItem: (item: EnrichedItem) => void;
+
   // Actions - Metadata
   setListTitle: (title: string) => void;
   setListDescription: (description: string) => void;
@@ -105,6 +111,46 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   clearItems: () => set({ generatedItems: [] }),
   clearError: () => set({ error: null }),
 
+  // Item manipulation actions
+  updateItem: (index, updates) => {
+    const { generatedItems } = get();
+    if (index < 0 || index >= generatedItems.length) return;
+
+    const newItems = [...generatedItems];
+    newItems[index] = { ...newItems[index], ...updates };
+    set({ generatedItems: newItems });
+  },
+
+  removeItem: (index) => {
+    const { generatedItems } = get();
+    if (index < 0 || index >= generatedItems.length) return;
+
+    const newItems = generatedItems.filter((_, i) => i !== index);
+    set({ generatedItems: newItems });
+  },
+
+  reorderItems: (fromIndex, toIndex) => {
+    const { generatedItems } = get();
+    if (
+      fromIndex < 0 ||
+      fromIndex >= generatedItems.length ||
+      toIndex < 0 ||
+      toIndex >= generatedItems.length
+    ) {
+      return;
+    }
+
+    const newItems = [...generatedItems];
+    const [movedItem] = newItems.splice(fromIndex, 1);
+    newItems.splice(toIndex, 0, movedItem);
+    set({ generatedItems: newItems });
+  },
+
+  addItem: (item) => {
+    const { generatedItems } = get();
+    set({ generatedItems: [...generatedItems, item] });
+  },
+
   // Metadata actions
   setListTitle: (title) => set({ listTitle: title }),
   setListDescription: (description) => set({ listDescription: description }),
@@ -158,12 +204,16 @@ export const useStudioGeneration = () =>
   }));
 
 /**
- * Items selector - generated items list
+ * Items selector - generated items list and manipulation actions
  */
 export const useStudioItems = () =>
   useStudioStore((state) => ({
     generatedItems: state.generatedItems,
     clearItems: state.clearItems,
+    updateItem: state.updateItem,
+    removeItem: state.removeItem,
+    reorderItems: state.reorderItems,
+    addItem: state.addItem,
   }));
 
 /**
@@ -201,6 +251,10 @@ export const useStudioActions = () =>
     generateItems: state.generateItems,
     clearItems: state.clearItems,
     clearError: state.clearError,
+    updateItem: state.updateItem,
+    removeItem: state.removeItem,
+    reorderItems: state.reorderItems,
+    addItem: state.addItem,
     setListTitle: state.setListTitle,
     setListDescription: state.setListDescription,
     setCategory: state.setCategory,
