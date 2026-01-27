@@ -88,16 +88,33 @@ export function StudioItemCard({ item, index, onRemove }: StudioItemCardProps) {
           {index + 1}
         </div>
 
-        {/* DB matched indicator - top right */}
-        {item.db_matched && (
-          <div
-            className="absolute top-2 right-2 w-6 h-6 rounded-md flex items-center justify-center
-              bg-green-500/20 border border-green-500/50"
-            title="Matched with existing item"
+        {/* Top-right controls container */}
+        <div className="absolute top-2 right-2 flex items-center gap-1">
+          {/* DB matched indicator */}
+          {item.db_matched && (
+            <div
+              className="w-5 h-5 rounded flex items-center justify-center
+                bg-green-500/20 border border-green-500/50"
+              title="Matched with existing item"
+            >
+              <Database className="w-3 h-3 text-green-400" />
+            </div>
+          )}
+
+          {/* Remove button - visible on hover */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove(index);
+            }}
+            className="w-5 h-5 rounded flex items-center justify-center
+              bg-red-500/80 hover:bg-red-500 text-white
+              opacity-0 group-hover:opacity-100 transition-all"
+            title="Remove"
           >
-            <Database className="w-3.5 h-3.5 text-green-400" />
-          </div>
-        )}
+            <X className="w-3 h-3" />
+          </button>
+        </div>
 
         {/* Drag handle - visible on hover */}
         <div
@@ -109,21 +126,6 @@ export function StudioItemCard({ item, index, onRemove }: StudioItemCardProps) {
         >
           <GripVertical className="w-4 h-4 text-white" />
         </div>
-
-        {/* Remove button - visible on hover */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onRemove(index);
-          }}
-          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100
-            w-6 h-6 rounded-md flex items-center justify-center
-            bg-red-500/80 hover:bg-red-500 text-white
-            transition-all"
-          title="Remove"
-        >
-          <X className="w-3.5 h-3.5" />
-        </button>
 
         {/* Play button for Music - centered */}
         {isMusicCategory && (

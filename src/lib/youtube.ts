@@ -20,7 +20,14 @@ export function extractYouTubeId(url: string): string | null {
  * Get YouTube thumbnail URL for different qualities
  */
 export function getYouTubeThumbnail(videoId: string, quality: 'default' | 'medium' | 'high' | 'standard' | 'maxres' = 'high'): string {
-  return `https://img.youtube.com/vi/${videoId}/${quality}resdefault.jpg`;
+  const qualityMap: Record<string, string> = {
+    'default': 'default',
+    'medium': 'mqdefault',
+    'high': 'hqdefault',
+    'standard': 'sddefault',
+    'maxres': 'maxresdefault',
+  };
+  return `https://img.youtube.com/vi/${videoId}/${qualityMap[quality]}.jpg`;
 }
 
 /**
@@ -43,23 +50,72 @@ export function formatDuration(seconds: number): string {
 
 /**
  * Load YouTube API dynamically
+ * Returns a promise that resolves when the API is ready
  */
+let youtubeApiPromise: Promise<void> | null = null;
+
 export function loadYouTubeAPI(): Promise<void> {
-  return new Promise((resolve) => {
-    if (window.YT) {
-      resolve();
+  // Return existing promise if already loading
+  if (youtubeApiPromise) {
+    return youtubeApiPromise;
+  }
+
+  // If already loaded, resolve immediately
+  if (typeof window !== 'undefined' && window.YT && window.YT.Player) {
+    return Promise.resolve();
+  }
+
+  youtubeApiPromise = new Promise((resolve, reject) => {
+    // Check if script is already added
+    const existingScript = document.querySelector('script[src*="youtube.com/iframe_api"]');
+
+    if (existingScript) {
+      // Script exists but YT not ready - wait for it
+      const checkYT = () => {
+        if (window.YT && window.YT.Player) {
+          resolve();
+        } else {
+          setTimeout(checkYT, 100);
+        }
+      };
+      checkYT();
       return;
     }
-    
+
+    // Set up callback before adding script
+    const previousCallback = window.onYouTubeIframeAPIReady;
     window.onYouTubeIframeAPIReady = () => {
+      if (previousCallback) {
+        previousCallback();
+      }
       resolve();
     };
-    
+
+    // Add the script
     const tag = document.createElement('script');
     tag.src = 'https://www.youtube.com/iframe_api';
+    tag.onerror = () => {
+      youtubeApiPromise = null;
+      reject(new Error('Failed to load YouTube API'));
+    };
+
     const firstScriptTag = document.getElementsByTagName('script')[0];
-    firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+    if (firstScriptTag?.parentNode) {
+      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+    } else {
+      document.head.appendChild(tag);
+    }
+
+    // Timeout after 10 seconds
+    setTimeout(() => {
+      if (!window.YT || !window.YT.Player) {
+        youtubeApiPromise = null;
+        reject(new Error('YouTube API load timeout'));
+      }
+    }, 10000);
   });
+
+  return youtubeApiPromise;
 }
 
 /**
