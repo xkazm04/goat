@@ -28,9 +28,11 @@ export const geminiResponseSchema = z.object({
   items: z.array(generatedItemSchema),
 });
 
-/** Final item schema (with image from Wikipedia API) */
+/** Final item schema (with image from Wikipedia API and optional YouTube URL) */
 export const enrichedItemSchema = generatedItemSchema.extend({
   image_url: z.string().nullable(),
+  youtube_url: z.string().nullable().optional(),
+  youtube_id: z.string().nullable().optional(),
 });
 
 /** Response schema for /api/studio/generate */

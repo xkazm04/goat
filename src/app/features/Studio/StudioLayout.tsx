@@ -11,6 +11,7 @@ import { StudioHeader } from './components/StudioHeader';
 import { StudioMain } from './components/StudioMain';
 import { StudioSidebar } from './components/StudioSidebar';
 import { NeonArenaTheme, SECTION_ORBS } from '@/app/features/Landing/shared';
+import { AudioPlayer } from '@/components/AudioPlayer';
 
 export interface StudioLayoutProps {
   /** Optional header props override */
@@ -50,12 +51,15 @@ export function StudioLayout({
     >
       <StudioHeader {...headerProps} />
 
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <main className="max-w-7xl mx-auto px-6 py-8 pb-24">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
           <StudioMain>{mainContent}</StudioMain>
           <StudioSidebar>{sidebarContent}</StudioSidebar>
         </div>
       </main>
+
+      {/* Audio Player for Music category */}
+      <AudioPlayer />
     </NeonArenaTheme>
   );
 }

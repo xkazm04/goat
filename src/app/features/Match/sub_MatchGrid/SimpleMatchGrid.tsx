@@ -27,6 +27,7 @@ import { MatchGridHeader } from "./components/MatchGridHeader";
 import { PortalDragOverlay } from "./components/PortalDragOverlay";
 import { DropZoneHighlightProvider, useDropZoneHighlight } from "./components/DropZoneHighlightContext";
 import { getItemTitle } from "./lib/helpers";
+import { AudioPlayer } from "@/components/AudioPlayer";
 
 /**
  * "Neon Arena" Match Grid
@@ -75,6 +76,8 @@ function SimpleMatchGridInner() {
   const setRankingActiveMode = useRankingStore(state => state.setActiveMode);
   const setRankingDirectViewMode = useRankingStore(state => state.setDirectViewMode);
   const initializeRanking = useRankingStore(state => state.initializeRanking);
+  const tierState = useRankingStore(state => state.tierState);
+  const syncRankingFromTiers = useRankingStore(state => state.syncRankingFromTiers);
 
   // Drag state - simple: just track active item and target position
   const [activeItem, setActiveItem] = useState<CollectionItem | GridItemType | null>(null);
@@ -91,6 +94,51 @@ function SimpleMatchGridInner() {
 
   // Handle view mode change - sync with ranking store
   const handleViewModeChange = useCallback((newMode: ViewMode) => {
+    const previousMode = viewMode;
+
+    // When leaving tier list mode, sync tier state to grid
+    if (previousMode === 'tierlist' && newMode !== 'tierlist') {
+      // Build items map for sync
+      const transferableMap = new Map(
+        allBacklogItems.map(item => [
+          item.id,
+          {
+            id: item.id,
+            title: item.title || item.name || 'Untitled',
+            description: item.description,
+            image_url: item.image_url,
+            tags: item.tags,
+            category: item.category,
+          },
+        ])
+      );
+
+      // Sync tier state to ranking store
+      syncRankingFromTiers(transferableMap);
+
+      // Apply tier items to grid in order (top-left to bottom-right)
+      // Clear grid first, then apply tier items
+      gridItems.forEach((_, index) => {
+        if (gridItems[index].matched) {
+          removeItemFromGrid(index);
+        }
+      });
+
+      // Apply items from tiers to grid in order
+      let gridPosition = 0;
+      for (const tier of tierState.tiers) {
+        for (const itemId of tier.itemIds) {
+          if (gridPosition >= maxGridSize) break;
+          const item = allBacklogItems.find(i => i.id === itemId);
+          if (item) {
+            assignItemToGrid(item, gridPosition);
+            markItemAsUsed(item.id, true);
+            gridPosition++;
+          }
+        }
+      }
+    }
+
     setViewMode(newMode);
 
     // Map ViewMode to RankingMode for the store
@@ -106,7 +154,7 @@ function SimpleMatchGridInner() {
         setRankingDirectViewMode(newMode);
       }
     }
-  }, [setRankingActiveMode, setRankingDirectViewMode]);
+  }, [viewMode, allBacklogItems, tierState.tiers, gridItems, maxGridSize, syncRankingFromTiers, removeItemFromGrid, assignItemToGrid, markItemAsUsed, setRankingActiveMode, setRankingDirectViewMode]);
 
   // Handle bracket ranking completion - apply ranked items to grid
   const handleBracketRankingComplete = useCallback((rankedItems: BacklogItem[]) => {
@@ -168,11 +216,11 @@ function SimpleMatchGridInner() {
     }
   }, [currentList?.size, maxGridSize, initializeRanking]);
 
-  // Simple pointer sensor
+  // Simple pointer sensor with minimal activation delay
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 5, // Slightly higher threshold to prevent accidental drags
+        distance: 2, // Low threshold for responsive drag initiation
       },
     })
   );
@@ -382,18 +430,13 @@ function SimpleMatchGridInner() {
 
           {/* Header with ViewSwitcher */}
           <div className="relative z-10">
+            {/* Title - Absolute positioned top left */}
+            <MatchGridHeader title={currentList?.title || "Neon Arena"} />
+
             <div className="max-w-7xl mx-auto px-8">
-              <div className="flex items-start justify-between pt-8">
-                {/* Header content */}
-                <MatchGridHeader
-                  title={currentList?.title || "Neon Arena"}
-                  subtitle={currentList?.description || "Assemble Your Dream Team"}
-                />
-                
+              <div className="flex justify-end pt-8">
                 {/* View Switcher - Top Right */}
-                <div className="pt-4">
-                  <ViewSwitcher currentView={viewMode} onViewChange={handleViewModeChange} />
-                </div>
+                <ViewSwitcher currentView={viewMode} onViewChange={handleViewModeChange} />
               </div>
             </div>
           </div>
@@ -519,6 +562,9 @@ function SimpleMatchGridInner() {
 
       {/* Share Modal - shown when ranking is complete (lazy loaded) */}
       <LazyShareModal />
+
+      {/* Audio Player for Music category */}
+      <AudioPlayer />
     </>
   );
 }

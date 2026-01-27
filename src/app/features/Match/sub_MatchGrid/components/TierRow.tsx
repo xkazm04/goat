@@ -5,11 +5,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, useSortable, horizontalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { ChevronDown, ChevronRight, X } from 'lucide-react';
+import { ChevronDown, ChevronRight, X, Play, Pause } from 'lucide-react';
 import { TierListTier, CommunityTierConsensus } from '../../lib/tierPresets';
 import { BacklogItem } from '@/types/backlog-groups';
 import { createUnifiedTierRowDropData, createUnifiedTierDragData } from '@/lib/dnd/unified-protocol';
 import { useOptionalDropZoneHighlight } from './DropZoneHighlightContext';
+import { useCurrentList } from '@/stores/use-list-store';
+import { useAudioStore, useIsItemPlaying } from '@/stores/audio-store';
 
 interface TierItemProps {
   item: BacklogItem;
@@ -32,6 +34,36 @@ function TierItem({
 }: TierItemProps) {
   // Get item's index within the tier for unified protocol
   const orderInTier = 0; // Will be derived from actual position when dragging
+
+  // Check if Music category for play button
+  const currentList = useCurrentList();
+  const isMusicCategory = currentList?.category?.toLowerCase() === 'music';
+
+  // Audio playback state
+  const play = useAudioStore((state) => state.play);
+  const pause = useAudioStore((state) => state.pause);
+  const isLoading = useAudioStore((state) => state.isLoading);
+  const currentItem = useAudioStore((state) => state.currentItem);
+  const isThisItemPlaying = useIsItemPlaying(item.id);
+  const isThisItemCurrent = currentItem?.id === item.id;
+  const isThisItemLoading = isThisItemCurrent && isLoading;
+
+  const handlePlayClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+
+    if (isThisItemPlaying) {
+      pause();
+    } else {
+      play({
+        id: item.id,
+        title: item.title || item.name || 'Unknown',
+        image_url: item.image_url,
+        youtube_url: item.youtube_url,
+        youtube_id: item.youtube_id,
+      });
+    }
+  };
 
   const {
     attributes,
@@ -76,6 +108,7 @@ function TierItem({
           bg-slate-800 border border-slate-700
           transition-all duration-200
           ${isDragging ? 'shadow-xl shadow-cyan-500/30 scale-105' : 'hover:border-slate-500 hover:shadow-lg'}
+          ${isThisItemPlaying ? 'ring-2 ring-cyan-400/50' : ''}
           cursor-grab active:cursor-grabbing
         `}
       >
@@ -113,6 +146,31 @@ function TierItem({
           >
             {communityTier}
           </div>
+        )}
+
+        {/* Play button for Music category */}
+        {isMusicCategory && (
+          <button
+            onClick={handlePlayClick}
+            disabled={isThisItemLoading}
+            className={`
+              absolute top-1 right-1 w-6 h-6 rounded-full
+              flex items-center justify-center
+              bg-cyan-500/80 hover:bg-cyan-400
+              opacity-0 group-hover:opacity-100 transition-all
+              ${isThisItemPlaying ? 'opacity-100 ring-2 ring-cyan-300' : ''}
+              disabled:opacity-50
+            `}
+            title={isThisItemPlaying ? 'Pause' : 'Play preview'}
+          >
+            {isThisItemLoading ? (
+              <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : isThisItemPlaying ? (
+              <Pause className="w-3 h-3 text-white" />
+            ) : (
+              <Play className="w-3 h-3 text-white ml-0.5" />
+            )}
+          </button>
         )}
 
         {/* Remove button */}

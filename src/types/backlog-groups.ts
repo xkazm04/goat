@@ -13,7 +13,11 @@ export interface BacklogItem {
   created_at: string;
   updated_at?: string;
   tags?: string[];
-  
+
+  // Media URLs (for Music category)
+  youtube_url?: string;
+  youtube_id?: string;
+
   // UI state properties
   matched?: boolean;
   matchedWith?: string;

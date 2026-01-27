@@ -13,6 +13,8 @@ import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Pencil, Trash2, Check, X, ExternalLink, ImageIcon } from 'lucide-react';
 import type { EnrichedItem } from '@/types/studio';
 import { cn } from '@/lib/utils';
+import { PlayButton } from '@/components/AudioPlayer';
+import { useStudioMetadata } from '@/stores/studio-store';
 
 interface EditableItemCardProps {
   item: EnrichedItem;
@@ -30,6 +32,9 @@ export function EditableItemCard({
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(item.title);
   const [editDescription, setEditDescription] = useState(item.description);
+
+  const { category } = useStudioMetadata();
+  const isMusicCategory = category?.toLowerCase() === 'music';
 
   const {
     attributes,
@@ -217,6 +222,20 @@ export function EditableItemCard({
           </>
         ) : (
           <>
+            {/* Play button for Music category */}
+            {isMusicCategory && (
+              <PlayButton
+                item={{
+                  id: `studio-item-${index}`,
+                  title: item.title,
+                  image_url: item.image_url,
+                  youtube_url: item.youtube_url,
+                  youtube_id: item.youtube_id,
+                }}
+                size="sm"
+                className="opacity-0 group-hover:opacity-100"
+              />
+            )}
             <button
               onClick={() => setIsEditing(true)}
               className="p-2 text-gray-500 hover:text-cyan-400 hover:bg-cyan-500/10
