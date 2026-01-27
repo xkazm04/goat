@@ -2,6 +2,8 @@
 
 import { memo, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
+import Link from "next/link";
+import { Plus } from "lucide-react";
 import { ShowcaseCard } from "./ShowcaseCard";
 import { BannedShowcaseCard } from "./BannedShowcaseCard";
 import { ShowcaseHeader } from "./ShowcaseHeader";
@@ -204,6 +206,28 @@ export const FloatingShowcase = memo(function FloatingShowcase() {
             <div className="relative z-10">
                 <ShowcaseHeader />
             </div>
+
+            {/* Create List CTA */}
+            <motion.div
+                className="relative z-20 flex justify-center mt-4"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.8, duration: 0.5 }}
+            >
+                <Link
+                    href="/studio"
+                    className="group flex items-center gap-2 px-6 py-3 rounded-full
+                        bg-gradient-to-r from-cyan-500/90 to-blue-500/90
+                        hover:from-cyan-400 hover:to-blue-400
+                        text-white font-medium text-sm
+                        shadow-lg shadow-cyan-500/25 hover:shadow-cyan-400/40
+                        transition-all duration-300 hover:scale-105"
+                    data-testid="create-list-cta"
+                >
+                    <Plus className="w-4 h-4" />
+                    <span>Create Your List</span>
+                </Link>
+            </motion.div>
 
             {/* Personalization indicator for returning users */}
             {isPersonalized && topInterests.length > 0 && (
