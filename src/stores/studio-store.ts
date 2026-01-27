@@ -17,7 +17,8 @@ import type { EnrichedItem, GenerateResponse } from '@/types/studio';
 interface StudioState {
   // Form state
   topic: string;
-  itemCount: number;
+  listSize: number; // Final list size (Top N)
+  generateCount: number; // How many items to generate (can be higher)
 
   // Generation state
   generatedItems: EnrichedItem[];
@@ -37,7 +38,8 @@ interface StudioState {
 
   // Actions - Form
   setTopic: (topic: string) => void;
-  setItemCount: (count: number) => void;
+  setListSize: (size: number) => void;
+  setGenerateCount: (count: number) => void;
 
   // Actions - Generation
   generateItems: () => Promise<void>;
@@ -73,7 +75,8 @@ interface StudioState {
 export const useStudioStore = create<StudioState>((set, get) => ({
   // Initial state - Form
   topic: '',
-  itemCount: 10,
+  listSize: 10,
+  generateCount: 15,
 
   // Initial state - Generation
   generatedItems: [],
@@ -93,11 +96,12 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
   // Form actions
   setTopic: (topic) => set({ topic }),
-  setItemCount: (count) => set({ itemCount: count }),
+  setListSize: (size) => set({ listSize: size }),
+  setGenerateCount: (count) => set({ generateCount: count }),
 
   // Generation action
   generateItems: async () => {
-    const { topic, itemCount } = get();
+    const { topic, generateCount } = get();
 
     // Validate topic
     if (!topic.trim()) {
@@ -111,7 +115,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     try {
       const response = await apiClient.post<GenerateResponse>(
         '/studio/generate',
-        { topic: topic.trim(), count: itemCount }
+        { topic: topic.trim(), count: generateCount }
       );
 
       set({
@@ -192,7 +196,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   reset: () =>
     set({
       topic: '',
-      itemCount: 10,
+      listSize: 10,
+      generateCount: 15,
       generatedItems: [],
       isGenerating: false,
       error: null,
@@ -211,15 +216,17 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 // ─────────────────────────────────────────────────────────────
 
 /**
- * Form state selector - topic and item count
+ * Form state selector - topic, list size, and generate count
  */
 export const useStudioForm = () =>
   useStudioStore(
     useShallow((state) => ({
       topic: state.topic,
-      itemCount: state.itemCount,
+      listSize: state.listSize,
+      generateCount: state.generateCount,
       setTopic: state.setTopic,
-      setItemCount: state.setItemCount,
+      setListSize: state.setListSize,
+      setGenerateCount: state.setGenerateCount,
     }))
   );
 
@@ -273,10 +280,11 @@ export const useStudioMetadata = () =>
 export const useStudioValidation = () =>
   useStudioStore(
     useShallow((state) => ({
-      canPublish: state.listTitle.trim() !== '' && state.generatedItems.length >= 5,
+      canPublish: state.listTitle.trim() !== '' && state.generatedItems.length >= state.listSize,
       hasTitle: state.listTitle.trim() !== '',
-      hasItems: state.generatedItems.length >= 5,
+      hasItems: state.generatedItems.length >= state.listSize,
       itemCount: state.generatedItems.length,
+      listSize: state.listSize,
     }))
   );
 
@@ -304,7 +312,8 @@ export const useStudioActions = () =>
   useStudioStore(
     useShallow((state) => ({
       setTopic: state.setTopic,
-      setItemCount: state.setItemCount,
+      setListSize: state.setListSize,
+      setGenerateCount: state.setGenerateCount,
       generateItems: state.generateItems,
       clearItems: state.clearItems,
       clearError: state.clearError,
