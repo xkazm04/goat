@@ -61,14 +61,18 @@ For each item, provide:
 Items should be notable and well-known examples relevant to the topic.
 Each item must be unique - do not include duplicates.${exclusionPart}`;
 
+    // Convert Zod schema to JSON Schema and strip $schema field (Gemini doesn't accept it)
+    const jsonSchema = zodToJsonSchema(geminiResponseSchema) as Record<string, unknown>;
+    delete jsonSchema.$schema;
+
     // Generate with Gemini using structured output
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-2.5-flash-preview-05-20',
       contents: prompt,
       config: {
         tools: [{ googleSearch: {} }],
         responseMimeType: 'application/json',
-        responseSchema: zodToJsonSchema(geminiResponseSchema) as Record<string, unknown>,
+        responseJsonSchema: jsonSchema,
       },
     });
 
