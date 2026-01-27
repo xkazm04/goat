@@ -100,6 +100,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   setGenerateCount: (count) => set({ generateCount: count }),
 
   // Generation action - appends to existing items, avoiding duplicates
+  // Also matches against existing DB items to reuse their IDs and images
   generateItems: async () => {
     const { topic, generateCount, generatedItems, category } = get();
 
@@ -127,9 +128,55 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       );
 
       // Filter out any duplicates that slipped through (case-insensitive)
-      const newItems = response.items.filter(
+      let newItems = response.items.filter(
         (item) => !existingTitles.includes(item.title.toLowerCase().trim())
       );
+
+      // Try to match new items against existing DB items
+      if (newItems.length > 0) {
+        try {
+          const matchResponse = await apiClient.post<{
+            items: Array<{
+              title: string;
+              matched: boolean;
+              db_item?: {
+                id: string;
+                name: string;
+                image_url: string | null;
+                description: string | null;
+              };
+            }>;
+          }>('/studio/match-items', {
+            items: newItems.map((item) => ({
+              title: item.title,
+              description: item.description,
+            })),
+            category,
+          });
+
+          // Merge DB data into items (use DB image if available)
+          newItems = newItems.map((item) => {
+            const match = matchResponse.items.find(
+              (m) => m.title.toLowerCase() === item.title.toLowerCase()
+            );
+
+            if (match?.matched && match.db_item) {
+              return {
+                ...item,
+                db_item_id: match.db_item.id,
+                db_matched: true,
+                // Use DB image if item doesn't have one, or if DB has one
+                image_url: match.db_item.image_url || item.image_url,
+              };
+            }
+
+            return item;
+          });
+        } catch (matchError) {
+          // Non-critical - continue without DB matching
+          console.warn('DB matching failed:', matchError);
+        }
+      }
 
       // Append new items to existing items (don't replace)
       set({

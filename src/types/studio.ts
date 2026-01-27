@@ -35,6 +35,9 @@ export const enrichedItemSchema = generatedItemSchema.extend({
   image_url: z.string().nullable(),
   youtube_url: z.string().nullable().optional(),
   youtube_id: z.string().nullable().optional(),
+  // Database item reference (if matched to existing item)
+  db_item_id: z.string().nullable().optional(),
+  db_matched: z.boolean().optional(),
 });
 
 /** Response schema for /api/studio/generate */
