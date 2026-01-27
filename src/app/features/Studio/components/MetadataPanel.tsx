@@ -4,18 +4,23 @@
  * MetadataPanel
  *
  * Form for configuring list metadata: title, description, category.
- * Includes publish button with validation.
+ * Includes publish button with validation and API integration.
  */
 
-import { Wand2 } from 'lucide-react';
+import { Wand2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   useStudioForm,
   useStudioMetadata,
   useStudioValidation,
+  useStudioPublishing,
+  useStudioStore,
 } from '@/stores/studio-store';
+import { useCreateListWithUser } from '@/hooks/use-top-lists';
 import { CATEGORIES } from '@/lib/config/category-config';
 import { cn } from '@/lib/utils';
+import { DEFAULT_LIST_INTENT_COLOR } from '@/types/list-intent';
+import type { CreateListRequest } from '@/types/list-intent-transformers';
 
 export function MetadataPanel() {
   const { topic } = useStudioForm();
@@ -29,6 +34,54 @@ export function MetadataPanel() {
     suggestTitleFromTopic,
   } = useStudioMetadata();
   const { canPublish, hasTitle, hasItems, itemCount } = useStudioValidation();
+  const generatedItems = useStudioStore((state) => state.generatedItems);
+  const {
+    isPublishing,
+    publishError,
+    setPublishing,
+    setPublishError,
+    setPublishedListId,
+    setShowSuccess,
+  } = useStudioPublishing();
+
+  const createListMutation = useCreateListWithUser();
+
+  const handlePublish = async () => {
+    if (!canPublish) return;
+
+    setPublishing(true);
+    setPublishError(null);
+
+    try {
+      // Generate temp user ID
+      const tempUserId = `studio-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+      // Build request payload
+      const request: CreateListRequest = {
+        title: listTitle.trim(),
+        category,
+        size: generatedItems.length,
+        time_period: 'all-time',
+        description: listDescription.trim() || undefined,
+        user: {
+          email: `temp-${tempUserId}@goat.app`,
+          name: `User ${tempUserId.slice(-6)}`,
+        },
+        metadata: {
+          color: DEFAULT_LIST_INTENT_COLOR,
+        },
+      };
+
+      const result = await createListMutation.mutateAsync(request);
+
+      setPublishedListId(result.list.id);
+      setShowSuccess(true);
+    } catch (error) {
+      setPublishError(error instanceof Error ? error.message : 'Failed to publish');
+    } finally {
+      setPublishing(false);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -137,18 +190,33 @@ export function MetadataPanel() {
         )}
       </div>
 
+      {/* Error Display */}
+      {publishError && (
+        <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+          <p className="text-sm text-red-400">{publishError}</p>
+        </div>
+      )}
+
       {/* Publish Button */}
       <div className="pt-4">
         <Button
-          disabled={!canPublish}
+          onClick={handlePublish}
+          disabled={!canPublish || isPublishing}
           className="w-full py-3 bg-gradient-to-r from-cyan-500 to-purple-500
             hover:from-cyan-400 hover:to-purple-400
             disabled:from-gray-600 disabled:to-gray-600
             disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Publish List
+          {isPublishing ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Publishing...
+            </>
+          ) : (
+            'Publish List'
+          )}
         </Button>
-        {!canPublish && (
+        {!canPublish && !isPublishing && (
           <p className="text-xs text-gray-500 text-center mt-2">
             {!hasTitle && !hasItems
               ? 'Add a title and generate items to publish'

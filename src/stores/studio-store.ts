@@ -28,6 +28,12 @@ interface StudioState {
   listDescription: string;
   category: string;
 
+  // Publishing state
+  isPublishing: boolean;
+  publishError: string | null;
+  publishedListId: string | null;
+  showSuccess: boolean;
+
   // Actions - Form
   setTopic: (topic: string) => void;
   setItemCount: (count: number) => void;
@@ -48,6 +54,12 @@ interface StudioState {
   setListDescription: (description: string) => void;
   setCategory: (category: string) => void;
   suggestTitleFromTopic: () => void;
+
+  // Actions - Publishing
+  setPublishing: (isPublishing: boolean) => void;
+  setPublishError: (error: string | null) => void;
+  setPublishedListId: (id: string | null) => void;
+  setShowSuccess: (show: boolean) => void;
 
   // Actions - Reset
   reset: () => void;
@@ -71,6 +83,12 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   listTitle: '',
   listDescription: '',
   category: 'Music',
+
+  // Initial state - Publishing
+  isPublishing: false,
+  publishError: null,
+  publishedListId: null,
+  showSuccess: false,
 
   // Form actions
   setTopic: (topic) => set({ topic }),
@@ -163,6 +181,12 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     }
   },
 
+  // Publishing actions
+  setPublishing: (isPublishing) => set({ isPublishing }),
+  setPublishError: (publishError) => set({ publishError }),
+  setPublishedListId: (publishedListId) => set({ publishedListId }),
+  setShowSuccess: (showSuccess) => set({ showSuccess }),
+
   // Full reset
   reset: () =>
     set({
@@ -174,6 +198,10 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       listTitle: '',
       listDescription: '',
       category: 'Music',
+      isPublishing: false,
+      publishError: null,
+      publishedListId: null,
+      showSuccess: false,
     }),
 }));
 
@@ -239,6 +267,21 @@ export const useStudioValidation = () =>
     hasTitle: state.listTitle.trim() !== '',
     hasItems: state.generatedItems.length >= 5,
     itemCount: state.generatedItems.length,
+  }));
+
+/**
+ * Publishing state selector - publish progress and success
+ */
+export const useStudioPublishing = () =>
+  useStudioStore((state) => ({
+    isPublishing: state.isPublishing,
+    publishError: state.publishError,
+    publishedListId: state.publishedListId,
+    showSuccess: state.showSuccess,
+    setPublishing: state.setPublishing,
+    setPublishError: state.setPublishError,
+    setPublishedListId: state.setPublishedListId,
+    setShowSuccess: state.setShowSuccess,
   }));
 
 /**
