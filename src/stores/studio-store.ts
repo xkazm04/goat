@@ -2,7 +2,7 @@
  * Studio Store
  *
  * Zustand store for the List Creation Studio feature.
- * Manages topic input, AI generation, and generated items state.
+ * Manages topic input, AI generation, generated items, and list metadata state.
  */
 
 import { create } from 'zustand';
@@ -23,12 +23,27 @@ interface StudioState {
   isGenerating: boolean;
   error: string | null;
 
-  // Actions
+  // Metadata state
+  listTitle: string;
+  listDescription: string;
+  category: string;
+
+  // Actions - Form
   setTopic: (topic: string) => void;
   setItemCount: (count: number) => void;
+
+  // Actions - Generation
   generateItems: () => Promise<void>;
   clearItems: () => void;
   clearError: () => void;
+
+  // Actions - Metadata
+  setListTitle: (title: string) => void;
+  setListDescription: (description: string) => void;
+  setCategory: (category: string) => void;
+  suggestTitleFromTopic: () => void;
+
+  // Actions - Reset
   reset: () => void;
 }
 
@@ -37,12 +52,19 @@ interface StudioState {
 // ─────────────────────────────────────────────────────────────
 
 export const useStudioStore = create<StudioState>((set, get) => ({
-  // Initial state
+  // Initial state - Form
   topic: '',
   itemCount: 10,
+
+  // Initial state - Generation
   generatedItems: [],
   isGenerating: false,
   error: null,
+
+  // Initial state - Metadata
+  listTitle: '',
+  listDescription: '',
+  category: 'Music',
 
   // Form actions
   setTopic: (topic) => set({ topic }),
@@ -83,6 +105,18 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   clearItems: () => set({ generatedItems: [] }),
   clearError: () => set({ error: null }),
 
+  // Metadata actions
+  setListTitle: (title) => set({ listTitle: title }),
+  setListDescription: (description) => set({ listDescription: description }),
+  setCategory: (category) => set({ category }),
+
+  suggestTitleFromTopic: () => {
+    const { topic, listTitle } = get();
+    if (!listTitle.trim() && topic.trim()) {
+      set({ listTitle: topic.trim() });
+    }
+  },
+
   // Full reset
   reset: () =>
     set({
@@ -91,6 +125,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       generatedItems: [],
       isGenerating: false,
       error: null,
+      listTitle: '',
+      listDescription: '',
+      category: 'Music',
     }),
 }));
 
@@ -130,6 +167,31 @@ export const useStudioItems = () =>
   }));
 
 /**
+ * Metadata state selector - list title, description, category
+ */
+export const useStudioMetadata = () =>
+  useStudioStore((state) => ({
+    listTitle: state.listTitle,
+    listDescription: state.listDescription,
+    category: state.category,
+    setListTitle: state.setListTitle,
+    setListDescription: state.setListDescription,
+    setCategory: state.setCategory,
+    suggestTitleFromTopic: state.suggestTitleFromTopic,
+  }));
+
+/**
+ * Validation state selector - publish readiness
+ */
+export const useStudioValidation = () =>
+  useStudioStore((state) => ({
+    canPublish: state.listTitle.trim() !== '' && state.generatedItems.length >= 5,
+    hasTitle: state.listTitle.trim() !== '',
+    hasItems: state.generatedItems.length >= 5,
+    itemCount: state.generatedItems.length,
+  }));
+
+/**
  * Actions selector - all actions without state
  */
 export const useStudioActions = () =>
@@ -139,5 +201,9 @@ export const useStudioActions = () =>
     generateItems: state.generateItems,
     clearItems: state.clearItems,
     clearError: state.clearError,
+    setListTitle: state.setListTitle,
+    setListDescription: state.setListDescription,
+    setCategory: state.setCategory,
+    suggestTitleFromTopic: state.suggestTitleFromTopic,
     reset: state.reset,
   }));
