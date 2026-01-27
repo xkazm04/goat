@@ -38,18 +38,28 @@ export async function POST(request: NextRequest) {
   try {
     // Parse and validate request body
     const body = await request.json();
-    const { topic, count } = generateRequestSchema.parse(body);
+    const { topic, count, category, excludeTitles } = generateRequestSchema.parse(body);
 
     const ai = getClient();
 
+    // Build exclusion instruction if there are existing items
+    const exclusionPart = excludeTitles && excludeTitles.length > 0
+      ? `\n\nIMPORTANT: Do NOT include any of these items (they already exist in the list):
+${excludeTitles.map((t) => `- ${t}`).join('\n')}`
+      : '';
+
+    // Build category context if provided
+    const categoryPart = category ? ` in the "${category}" category` : '';
+
     // Build prompt for Gemini
-    const prompt = `Generate exactly ${count} items for a "${topic}" ranked list.
+    const prompt = `Generate exactly ${count} items for a "${topic}" ranked list${categoryPart}.
 For each item, provide:
 - title: The item name
 - description: A brief description (max 200 characters)
 - wikipedia_url: The Wikipedia URL for this item if it exists, or null
 
-Items should be notable and well-known examples relevant to the topic.`;
+Items should be notable and well-known examples relevant to the topic.
+Each item must be unique - do not include duplicates.${exclusionPart}`;
 
     // Generate with Gemini using structured output
     const response = await ai.models.generateContent({

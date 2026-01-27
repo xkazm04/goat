@@ -13,7 +13,9 @@ import { z } from 'zod';
 /** Request schema for /api/studio/generate */
 export const generateRequestSchema = z.object({
   topic: z.string().min(1, 'Topic is required').max(200, 'Topic too long'),
-  count: z.number().int().min(1).max(50).default(10),
+  count: z.number().int().min(1).max(100).default(10),
+  category: z.string().optional(),
+  excludeTitles: z.array(z.string()).optional(),
 });
 
 /** Individual item schema from Gemini response */

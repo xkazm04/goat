@@ -76,7 +76,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   // Initial state - Form
   topic: '',
   listSize: 10,
-  generateCount: 15,
+  generateCount: 30,
 
   // Initial state - Generation
   generatedItems: [],
@@ -99,9 +99,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   setListSize: (size) => set({ listSize: size }),
   setGenerateCount: (count) => set({ generateCount: count }),
 
-  // Generation action
+  // Generation action - appends to existing items, avoiding duplicates
   generateItems: async () => {
-    const { topic, generateCount } = get();
+    const { topic, generateCount, generatedItems, category } = get();
 
     // Validate topic
     if (!topic.trim()) {
@@ -112,14 +112,28 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     // Start generation
     set({ isGenerating: true, error: null });
 
+    // Get existing item titles to exclude duplicates
+    const existingTitles = generatedItems.map((item) => item.title.toLowerCase().trim());
+
     try {
       const response = await apiClient.post<GenerateResponse>(
         '/studio/generate',
-        { topic: topic.trim(), count: generateCount }
+        {
+          topic: topic.trim(),
+          count: generateCount,
+          category,
+          excludeTitles: existingTitles.length > 0 ? existingTitles : undefined,
+        }
       );
 
+      // Filter out any duplicates that slipped through (case-insensitive)
+      const newItems = response.items.filter(
+        (item) => !existingTitles.includes(item.title.toLowerCase().trim())
+      );
+
+      // Append new items to existing items (don't replace)
       set({
-        generatedItems: response.items,
+        generatedItems: [...generatedItems, ...newItems],
         isGenerating: false,
       });
     } catch (error) {
@@ -197,7 +211,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     set({
       topic: '',
       listSize: 10,
-      generateCount: 15,
+      generateCount: 30,
       generatedItems: [],
       isGenerating: false,
       error: null,
