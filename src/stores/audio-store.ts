@@ -7,6 +7,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { useShallow } from 'zustand/react/shallow';
 import { loadYouTubeAPI, extractYouTubeId } from '@/lib/youtube';
 import { apiClient } from '@/lib/api';
 import type { YouTubePlayer } from '@/types/youtube';
@@ -306,39 +307,47 @@ export const useAudioStore = create<AudioStoreState>()(
 // ─────────────────────────────────────────────────────────────
 
 export const useAudioPlayback = () =>
-  useAudioStore((state) => ({
-    isPlaying: state.isPlaying,
-    isPaused: state.isPaused,
-    currentItem: state.currentItem,
-    currentTime: state.currentTime,
-    duration: state.duration,
-    isLoading: state.isLoading,
-    error: state.error,
-  }));
+  useAudioStore(
+    useShallow((state) => ({
+      isPlaying: state.isPlaying,
+      isPaused: state.isPaused,
+      currentItem: state.currentItem,
+      currentTime: state.currentTime,
+      duration: state.duration,
+      isLoading: state.isLoading,
+      error: state.error,
+    }))
+  );
 
 export const useAudioControls = () =>
-  useAudioStore((state) => ({
-    play: state.play,
-    pause: state.pause,
-    resume: state.resume,
-    stop: state.stop,
-    seek: state.seek,
-  }));
+  useAudioStore(
+    useShallow((state) => ({
+      play: state.play,
+      pause: state.pause,
+      resume: state.resume,
+      stop: state.stop,
+      seek: state.seek,
+    }))
+  );
 
 export const useAudioVolume = () =>
-  useAudioStore((state) => ({
-    volume: state.volume,
-    isMuted: state.isMuted,
-    setVolume: state.setVolume,
-    toggleMute: state.toggleMute,
-  }));
+  useAudioStore(
+    useShallow((state) => ({
+      volume: state.volume,
+      isMuted: state.isMuted,
+      setVolume: state.setVolume,
+      toggleMute: state.toggleMute,
+    }))
+  );
 
 export const useAudioPlayer = () =>
-  useAudioStore((state) => ({
-    isVisible: state.isPlayerVisible,
-    hide: state.hidePlayer,
-    show: state.showPlayer,
-  }));
+  useAudioStore(
+    useShallow((state) => ({
+      isVisible: state.isPlayerVisible,
+      hide: state.hidePlayer,
+      show: state.showPlayer,
+    }))
+  );
 
 // Helper to check if an item is currently playing
 export const useIsItemPlaying = (itemId: string) =>
