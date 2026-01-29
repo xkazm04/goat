@@ -1,9 +1,15 @@
 "use client";
 
 import * as React from "react";
-import { cn } from "@/lib/utils";
-import { mapCategoryToTheme } from "@/lib/criteria/theme-mapping";
-import { ScoreBar } from "./ScoreBar";
+import { mapCategoryToTheme, type ThemeKey } from "@/lib/criteria/theme-mapping";
+import {
+  SportsScoreRenderer,
+  MoviesScoreRenderer,
+  MusicScoreRenderer,
+  GamesScoreRenderer,
+  DefaultScoreRenderer,
+  type ScoreRendererProps,
+} from "./renderers";
 
 export interface ThemedScoreDisplayProps {
   /** Weighted score value (0-100) */
@@ -20,25 +26,41 @@ export interface ThemedScoreDisplayProps {
   className?: string;
 }
 
+type RendererComponent = React.ComponentType<ScoreRendererProps>;
+
+/**
+ * Map theme keys to their respective renderer components
+ */
+const THEME_RENDERERS: Record<ThemeKey, RendererComponent> = {
+  sports: SportsScoreRenderer,
+  movies: MoviesScoreRenderer,
+  music: MusicScoreRenderer,
+  games: GamesScoreRenderer,
+  default: DefaultScoreRenderer,
+};
+
 /**
  * Factory component that renders themed score display based on category.
  *
- * The component automatically detects the appropriate visual theme from
- * the category prop and renders the score with category-specific styling.
+ * Automatically detects the appropriate visual theme from the category prop
+ * and routes to category-specific renderers with unique visual character:
  *
- * Currently renders ScoreBar with theme styling.
- * Will be extended in Plan 02 to route to category-specific renderers.
+ * - Sports: Health bar with segments, red/yellow/green coloring
+ * - Movies: 5-star rating with cinematic gold styling
+ * - Music: 5 equalizer bars with purple/blue gradient
+ * - Games: XP bar with level indicator and green glow
+ * - Default: Clean minimal cyan progress bar
  *
  * @example
  * ```tsx
- * // Sports score with red/yellow/green coding
- * <ThemedScoreDisplay score={85} category="Sports" />
+ * // Sports score with health bar styling
+ * <ThemedScoreDisplay score={85} category="Sports" variant="full" showLabel />
  *
- * // Movie score with gold gradient
- * <ThemedScoreDisplay score={92} category="Movies" variant="full" showLabel />
+ * // Movie score with star rating
+ * <ThemedScoreDisplay score={92} category="Movies" variant="compact" />
  *
- * // Inline variant for compact displays
- * <ThemedScoreDisplay score={78} category="Music" variant="inline" showLabel />
+ * // Music score with equalizer bars
+ * <ThemedScoreDisplay score={78} category="Music" variant="full" showLabel />
  * ```
  */
 export function ThemedScoreDisplay({
@@ -50,36 +72,15 @@ export function ThemedScoreDisplay({
   className,
 }: ThemedScoreDisplayProps) {
   const theme = mapCategoryToTheme(category);
-
-  // Size mapping based on variant
-  const size = variant === "compact" ? "sm" : variant === "full" ? "lg" : "md";
+  const Renderer = THEME_RENDERERS[theme];
 
   return (
-    <div
-      className={cn(
-        "flex items-center gap-2",
-        variant === "inline" && "flex-row",
-        variant === "full" && "flex-col items-start gap-1",
-        className
-      )}
-    >
-      <ScoreBar
-        value={score}
-        theme={theme}
-        size={size}
-        animated={animated}
-        showLabel={showLabel && variant !== "inline"}
-        className={cn(
-          variant === "compact" && "w-full",
-          variant === "full" && "w-full",
-          variant === "inline" && "w-16"
-        )}
-      />
-      {showLabel && variant === "inline" && (
-        <span className="text-xs text-gray-400 tabular-nums">
-          {score.toFixed(0)}
-        </span>
-      )}
-    </div>
+    <Renderer
+      score={score}
+      variant={variant}
+      showLabel={showLabel}
+      animated={animated}
+      className={className}
+    />
   );
 }
