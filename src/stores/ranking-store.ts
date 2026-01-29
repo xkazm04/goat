@@ -17,6 +17,7 @@
 import { create } from 'zustand';
 import { persist, subscribeWithSelector } from 'zustand/middleware';
 import type { TransferableItem } from '@/lib/dnd/transfer-protocol';
+import { GRID_LIMITS } from '@/lib/grid/constants';
 import type { BacklogItem } from '@/types/backlog-groups';
 import type {
   RankingMode,
@@ -200,7 +201,7 @@ export const useRankingStore = create<RankingStore>()(
       (set, get) => ({
         // === Initial State ===
         ranking: [],
-        maxRankingSize: 50,
+        maxRankingSize: GRID_LIMITS.MAX_SIZE,
         activeMode: 'direct' as RankingMode,
         directViewMode: 'podium' as DirectViewMode,
         bracketState: null,
@@ -228,6 +229,9 @@ export const useRankingStore = create<RankingStore>()(
                 collapsed: false,
               })),
             },
+            // Reset bracket state when list changes
+            bracketState: null,
+            bracketConfig: null,
           });
         },
 

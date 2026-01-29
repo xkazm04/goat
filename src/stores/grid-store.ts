@@ -24,12 +24,16 @@ import {
   isGridReceiverId,
   extractGridPosition,
   createGridReceiverId,
+  createGridOnlyRouter,
+  type DragOperationRouter,
+  type OperationStoreContext,
 } from '@/lib/dnd';
 import {
   createGridItem,
   createEmptyGridSlot,
   createEmptyGrid,
 } from '@/lib/grid';
+import { GRID_LIMITS, TUTORIAL_GRID } from '@/lib/grid/constants';
 import {
   getValidationAuthority,
   logValidationFailure,
@@ -58,6 +62,24 @@ const notificationStoreAccessor = createLazyStoreAccessor(
   () => require('./validation-notification-store').useValidationNotificationStore,
   { storeName: 'validation-notification-store', maxRetries: 5, retryDelay: 20 }
 );
+
+/**
+ * Singleton DragOperationRouter for grid operations.
+ * Lazily initialized on first use.
+ */
+let gridRouter: DragOperationRouter | null = null;
+
+/**
+ * Get the grid-specific DragOperationRouter.
+ * Creates a router with only grid operations (assign, move, swap).
+ */
+export function getGridDragRouter(): DragOperationRouter {
+  if (!gridRouter) {
+    gridRouter = createGridOnlyRouter({ debug: false });
+    gridLogger.debug('Created grid-only DragOperationRouter');
+  }
+  return gridRouter;
+}
 
 /**
  * Lock set for items currently being assigned to prevent race conditions.
@@ -150,6 +172,8 @@ export interface GridStoreState {
 
   // Actions - Drag & Drop
   handleDragEnd: (event: DragEndEvent) => void;
+  /** Get store context for use with DragOperationRouter */
+  getStoreContext: () => OperationStoreContext | null;
 
   // Actions - Validation
   emitValidationError: (errorCode: ValidationErrorCode) => void;
@@ -184,7 +208,7 @@ export const useGridStore = create<GridStoreState>()(
     (set, get) => ({
       // Initial state
       gridItems: [],
-      maxGridSize: 50,
+      maxGridSize: GRID_LIMITS.MAX_SIZE,
       selectedGridItem: null,
       activeItem: null,
       isTutorialMode: false,
@@ -692,6 +716,34 @@ export const useGridStore = create<GridStoreState>()(
         }
       },
 
+      // Get store context for DragOperationRouter
+      getStoreContext: (): OperationStoreContext | null => {
+        const state = get();
+        const backlogState = backlogStoreAccessor.getState();
+
+        if (!backlogState) {
+          gridLogger.error('Backlog store not initialized');
+          return null;
+        }
+
+        return {
+          grid: {
+            gridItems: state.gridItems,
+            maxGridSize: state.maxGridSize,
+            assignItemToGrid: state.assignItemToGrid,
+            removeItemFromGrid: state.removeItemFromGrid,
+            moveGridItem: state.moveGridItem,
+            emitValidationError: state.emitValidationError,
+          },
+          backlog: {
+            getItemById: backlogState.getItemById,
+            isItemUsed: backlogState.isItemUsed,
+            markItemAsUsed: backlogState.markItemAsUsed,
+          },
+          // Tier context can be added when needed
+        };
+      },
+
       // TransferProtocol Integration Methods
 
       // Receive a TransferableItem and convert to GridItemType
@@ -837,7 +889,7 @@ export const useGridStore = create<GridStoreState>()(
         gridLogger.debug(`Loading ${items.length} tutorial items`);
 
         // Create a full grid with tutorial items at the start
-        const tutorialGrid: GridItemType[] = Array.from({ length: 10 }, (_, i) => {
+        const tutorialGrid: GridItemType[] = Array.from({ length: TUTORIAL_GRID.SIZE }, (_, i) => {
           const tutorialItem = items.find(item => item.position === i);
           if (tutorialItem) {
             return tutorialItem;
@@ -847,7 +899,7 @@ export const useGridStore = create<GridStoreState>()(
 
         set({
           gridItems: tutorialGrid,
-          maxGridSize: 10,
+          maxGridSize: TUTORIAL_GRID.SIZE,
           isTutorialMode: true,
           gridStatistics: computeGridStatistics(tutorialGrid),
         });

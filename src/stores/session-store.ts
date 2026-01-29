@@ -16,6 +16,7 @@ import {
 } from './item-store/normalized-session';
 import { saveSessionToOffline, getOfflineSession } from '@/lib/offline';
 import { sessionLogger } from '@/lib/logger';
+import { GRID_LIMITS } from '@/lib/grid/constants';
 
 interface SessionStoreState {
   // Multi-list sessions
@@ -234,7 +235,7 @@ export const useSessionStore = create<SessionStoreState>()(
         const state = get();
         
         if (!state.listSessions[listId]) {
-          get().createSession(listId, 50);
+          get().createSession(listId, GRID_LIMITS.MAX_SIZE);
         }
         
         if (state.activeSessionId !== listId) {
@@ -452,7 +453,7 @@ export const useSessionStore = create<SessionStoreState>()(
           const state = get();
           
           if (!state.listSessions[listId]) {
-            get().createSession(listId, 50);
+            get().createSession(listId, GRID_LIMITS.MAX_SIZE);
           }
           
           const session = state.listSessions[listId];
