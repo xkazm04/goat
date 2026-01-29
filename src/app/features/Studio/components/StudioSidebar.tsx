@@ -5,6 +5,7 @@
  * Sidebar for list metadata configuration in the List Creation Studio
  */
 
+import { Surface } from '@/components/visual';
 import { MetadataPanel } from './MetadataPanel';
 
 export interface StudioSidebarProps {
@@ -18,8 +19,10 @@ export interface StudioSidebarProps {
  */
 export function StudioSidebar({ children }: StudioSidebarProps) {
   return (
-    <aside className="space-y-4">
-      {children || <MetadataPanel />}
+    <aside>
+      <Surface elevation="raised" className="rounded-xl p-4 space-y-4">
+        {children || <MetadataPanel />}
+      </Surface>
     </aside>
   );
 }
