@@ -1,89 +1,107 @@
-# G.O.A.T. UI Visual Elevation
+# G.O.A.T. — Greatest Of All Time
 
 ## What This Is
 
-A focused UI/visual polish initiative for the G.O.A.T. ranking app. The match grid sets a quality bar that other parts of the app don't meet. This project elevates the landing page and view modes (Podium, Bracket, Rushmore) to match that standard with a unified, dynamic visual language.
+A ranking platform where users create and rank lists of anything. Users can create lists via AI-powered studio or browse existing lists, then rank them through an interactive drag-and-drop interface.
 
 ## Core Value
 
-**Every screen feels like it belongs to the same polished, energetic ranking experience.** Visual consistency and depth create a cohesive product where no section feels generic or disconnected.
+**Users can create any list they imagine and rank it their way.** The core experience must be smooth, reliable, and free of friction.
+
+## Current Milestone: v1.2.0 Studio Enhancement
+
+**Goal:** Elevate the List Creation Studio to match-test visual quality and add criteria scoring system for multi-dimensional item ratings.
+
+**Target features:**
+- Studio UI polish (depth system, visual styling to match /match-test quality)
+- Criteria system: list creators can add 0-8 scoring criteria
+- Predefined criteria sets per category (Games, Movies, Music, Sports)
+- Unique themed stat visualizations for predefined criteria
+- Default stat styling for custom user-defined criteria
+- Criteria rating in item detail modal (post-placement)
 
 ## Requirements
 
 ### Validated
 
-<!-- Existing capabilities that work and are relied upon. -->
+<!-- Shipped and proven to work. Format: ✓ [Requirement] — v[X.Y] -->
 
-- ✓ Match grid with drag-and-drop ranking — existing
-- ✓ Multiple view modes (Podium, Bracket, Rushmore, GOAT) — existing
-- ✓ Landing page with featured lists and categories — existing
-- ✓ Collection sidebar with backlog items — existing
-- ✓ Result image generation and sharing — existing
-- ✓ Dark theme with Tailwind + Radix UI — existing
-- ✓ Framer Motion animation infrastructure — existing
+- ✓ Z-index design token scale (8 semantic levels) — v1.0
+- ✓ Elevation token system (none/low/medium/high/floating) — v1.0
+- ✓ Glow token system (subtle/medium/intense + medal colors) — v1.0
+- ✓ Noise texture utility (3% opacity SVG overlay) — v1.0
+- ✓ Elevated wrapper component with hover lift — v1.0
+- ✓ Surface component (solid/glass/outline variants) — v1.0
+- ✓ Glow decorator component — v1.0
+- ✓ Shimmer hover-triggered effect — v1.0
+- ✓ GradientBorder with medal presets — v1.0
+- ✓ GoatView with high elevation — v1.0
+- ✓ PodiumView with medium elevation + medal borders — v1.0
+- ✓ MountRushmoreView with medium elevation + medal borders — v1.0
+- ✓ Empty drop zones with inner shadow + medal hints — v1.0
+- ✓ Landing hero with noise texture — v1.0
+- ✓ Featured section with raised surface hierarchy — v1.0
+- ✓ Studio page foundation (`/studio` route) — v1.1
+- ✓ Gemini 2.0 Flash API integration for item generation — v1.1
+- ✓ Topic input with AI generation flow — v1.1
+- ✓ Item list editor (edit, remove, regenerate, add manual) — v1.1
+- ✓ Metadata configuration (title, description, size, category) — v1.1
+- ✓ Preview and publish flow — v1.1
 
 ### Active
 
-<!-- Current scope. Building toward these. -->
+<!-- Next milestone scope. -->
 
-- [ ] **LAND-01**: Landing page sections share consistent visual language (spacing, cards, typography)
-- [ ] **LAND-02**: Landing page has creative, non-generic section designs with depth effects
-- [ ] **LAND-03**: Featured lists section feels premium with layered shadows and z-depth
-- [ ] **VIEW-01**: All view modes (Podium, Bracket, Rushmore, GOAT) share unified visual baseline
-- [ ] **VIEW-02**: Podium view elevated to match grid quality level
-- [ ] **VIEW-03**: Bracket view elevated to match grid quality level
-- [ ] **VIEW-04**: Rushmore view elevated to match grid quality level
-- [ ] **VIEW-05**: GOAT view elevated to match grid quality level
-- [ ] **DEPTH-01**: Consistent shadow system applied across all elevated components
-- [ ] **DEPTH-02**: Layered depth effects (z-depth on cards, subtle parallax where appropriate)
-- [ ] **DECOR-01**: Static decorative elements add visual interest without animation overhead
-- [ ] **DECOR-02**: Gradient meshes, noise textures, or glow accents used tastefully
+- Studio UI visual polish using depth token system
+- Remove dead space and improve layout efficiency
+- Criteria configuration in list creation flow
+- Predefined criteria sets for Games, Movies, Music, Sports
+- Themed stat visualizations for predefined criteria
+- Default stat component for custom criteria
+- Criteria rating UI in item detail modal
 
 ### Out of Scope
 
-<!-- Explicit boundaries. Includes reasoning to prevent re-adding. -->
+<!-- Explicit boundaries with reasoning. -->
 
-- Infinite/continuous animations — performance impact, user preference for depth over motion
-- New features or functionality — this is visual polish, not feature work
-- Backend changes — purely frontend visual improvements
-- Mobile-specific optimizations — desktop-first for this phase
-- Comprehensive app-wide audit — focusing on key pain points first
+- Production polish (logging, error handling) — defer to v1.3
+- Public list discovery — defer to v1.3+
+- User profiles — defer to v1.3+
+- Mobile-specific work — desktop-first remains
+- Criteria weighting/aggregation — simple ratings only for v1.2
 
 ## Context
 
-**Existing quality baseline:** The match grid drag-and-drop interface represents the current quality ceiling. Other components should aspire to this level.
+**Existing codebase:**
+- Visual depth system with tokens and reusable components (v1.0)
+- List Creation Studio with Gemini AI integration (v1.1)
+- Drag-and-drop ranking interface with multiple views (GOAT, Podium, Rushmore)
+- Supabase backend with lists, items, rankings tables
+- Item detail modal exists (comparison view) — target for criteria rating UI
+- Match views (/match-test) represent visual quality target for studio
 
-**Visual direction:** Dynamic and energetic, game-like feel. Users are ranking their favorites — there's inherent competition and drama to lean into.
-
-**Technical foundation:**
-- Tailwind CSS for utility-first styling
-- Radix UI for accessible primitives
-- Framer Motion available for transitions (used sparingly)
-- Feature-based architecture at `src/app/features/`
-
-**Key files to elevate:**
-- `src/app/features/Landing/` — landing page components
-- `src/app/features/Match/sub_MatchGrid/components/PodiumView.tsx`
-- `src/app/features/Match/sub_MatchGrid/components/MountRushmoreView.tsx`
-- `src/app/features/Match/sub_MatchGrid/components/GoatView.tsx`
-- View switcher and related components
+**Tech stack:** Next.js 15, Supabase, Zustand, TanStack Query, @dnd-kit, Framer Motion
 
 ## Constraints
 
-- **Performance**: No infinite animations, heavy particle effects, or constantly repainting elements
-- **Consistency**: Changes must work within existing Tailwind/Radix design system
-- **Maintainability**: Decorative elements should be reusable components, not one-off implementations
-- **Dark theme**: All improvements must work in dark mode (primary theme)
+- **Performance**: Shadow blur ≤20px on draggables, no infinite animations
+- **Safari**: Glass blur uses fixed values (CSS variables bug)
+- **Consistency**: All visual polish uses token system, no magic numbers
+- **Dark theme**: Primary theme, all tokens designed for dark background
+- **No new dependencies**: Use existing tools where possible
 
 ## Key Decisions
 
-<!-- Decisions that constrain future work. Add throughout project lifecycle. -->
-
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Focus depth effects over animations | User preference + performance safety | — Pending |
-| Unified visual language across view modes | Consistency > distinct themes | — Pending |
-| Key pain points first, expand later | Validate approach before broad rollout | — Pending |
+| Depth effects over animations | User preference + performance safety | ✓ Good — clean visual hierarchy |
+| Unified elevation vocabulary | Consistency across view modes | ✓ Good — high/medium/low works everywhere |
+| 20px max blur constraint | Drag performance preservation | ✓ Good — no FPS impact |
+| Gemini 2.0 Flash for AI generation | Fast, capable, good structured output | ✓ Good — reliable item generation |
+| Wikipedia as image source | Free, high quality, no API key needed | ✓ Good — consistent image quality |
+| Criteria in item detail modal | Natural location, doesn't clutter grid | — Pending |
+| Predefined + custom criteria | Balance curation with flexibility | — Pending |
+| Themed stat visualizations | Visual character matches metadata meaning | — Pending |
 
 ---
-*Last updated: 2026-01-26 after initialization*
+*Last updated: 2026-01-29 after v1.2.0 Studio Enhancement milestone start*
