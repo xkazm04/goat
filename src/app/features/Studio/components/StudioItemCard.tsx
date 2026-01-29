@@ -15,6 +15,26 @@ import type { EnrichedItem } from '@/types/studio';
 import { cn } from '@/lib/utils';
 import { PlayButton } from '@/components/AudioPlayer';
 import { useStudioMetadata } from '@/stores/studio-store';
+import { Elevated, Shimmer, Glow, GradientBorder, GRADIENT_PRESETS } from '@/components/visual';
+
+/**
+ * Get gradient preset for medal positions (top 3)
+ * Returns null for non-medal positions
+ */
+function getMedalGradient(index: number): 'gold' | 'silver' | 'bronze' | null {
+  if (index === 0) return 'gold';
+  if (index === 1) return 'silver';
+  if (index === 2) return 'bronze';
+  return null;
+}
+
+/**
+ * Get glow preset for medal positions
+ * Only position 0 (gold) gets glow effect
+ */
+function getMedalGlow(index: number): 'goldSubtle' | null {
+  return index === 0 ? 'goldSubtle' : null;
+}
 
 interface StudioItemCardProps {
   item: EnrichedItem;
@@ -93,11 +113,12 @@ export function StudioItemCard({ item, index, onRemove }: StudioItemCardProps) {
           {/* DB matched indicator */}
           {item.db_matched && (
             <div
-              className="w-5 h-5 rounded flex items-center justify-center
+              className="w-6 h-6 rounded flex items-center justify-center
                 bg-green-500/20 border border-green-500/50"
-              title="Matched with existing item"
+              role="img"
+              aria-label="Matched with existing database item"
             >
-              <Database className="w-3 h-3 text-green-400" />
+              <Database className="w-3.5 h-3.5 text-green-400" />
             </div>
           )}
 
@@ -107,12 +128,13 @@ export function StudioItemCard({ item, index, onRemove }: StudioItemCardProps) {
               e.stopPropagation();
               onRemove(index);
             }}
-            className="w-5 h-5 rounded flex items-center justify-center
+            className="w-6 h-6 rounded flex items-center justify-center
               bg-red-500/80 hover:bg-red-500 text-white
-              opacity-0 group-hover:opacity-100 transition-all"
-            title="Remove"
+              opacity-0 group-hover:opacity-100 transition-all
+              focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+            aria-label={`Remove ${item.title} from list`}
           >
-            <X className="w-3 h-3" />
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
 
@@ -120,9 +142,14 @@ export function StudioItemCard({ item, index, onRemove }: StudioItemCardProps) {
         <div
           {...attributes}
           {...listeners}
+          role="button"
+          tabIndex={0}
+          aria-label={`Drag to reorder ${item.title}. Currently at position ${index + 1}`}
+          aria-roledescription="draggable item"
           className="absolute top-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100
             cursor-grab active:cursor-grabbing transition-opacity
-            bg-black/60 rounded-md p-1"
+            bg-black/60 rounded-md p-1.5
+            focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
         >
           <GripVertical className="w-4 h-4 text-white" />
         </div>
