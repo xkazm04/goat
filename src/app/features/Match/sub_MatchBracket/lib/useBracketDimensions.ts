@@ -77,12 +77,12 @@ export function useBracketDimensions(): BracketDimensions {
     // Image aspect ratio - taller on desktop, more square on mobile
     const imageAspect = isMobile ? 1.1 : isTablet ? 1.2 : 1.25;
 
-    // Max image height as percentage of viewport
+    // Max image height as percentage of viewport (reduced to fit in view)
     const imageMaxHeight = isMobile
-      ? vh * 0.35
+      ? vh * 0.28
       : isTablet
-        ? vh * 0.45
-        : vh * 0.5;
+        ? vh * 0.32
+        : vh * 0.38;
 
     // VS divider size
     const vsDividerSize = isMobile ? 40 : isTablet ? 56 : 72;

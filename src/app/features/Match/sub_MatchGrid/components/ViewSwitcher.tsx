@@ -31,9 +31,12 @@ export function ViewSwitcher({ currentView, onViewChange }: ViewSwitcherProps) {
                         onClick={() => onViewChange(option.id)}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
+                        aria-label={`${option.label} view: ${option.description}`}
+                        aria-pressed={isActive}
                         className={`
               relative px-4 py-2 rounded-lg font-bold text-xs tracking-wide
               transition-all duration-300 flex items-center gap-2
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900
               ${isActive
                                 ? 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/50 text-cyan-300 shadow-lg shadow-cyan-500/20'
                                 : 'bg-gray-800/40 border border-gray-700/50 text-gray-400 hover:border-cyan-500/30 hover:text-cyan-400'
@@ -45,7 +48,7 @@ export function ViewSwitcher({ currentView, onViewChange }: ViewSwitcherProps) {
                         <Icon className={`w-4 h-4 ${isActive ? 'text-cyan-400' : 'text-gray-500'}`} />
 
                         {/* Label */}
-                        <span className="hidden sm:inline text-xs font-bold uppercase">{option.label}</span>
+                        <span className="hidden sm:inline text-xs font-bold uppercase whitespace-nowrap">{option.label}</span>
 
                         {/* Active indicator */}
                         {isActive && (

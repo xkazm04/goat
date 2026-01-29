@@ -22,13 +22,14 @@ import {
   Filter,
 } from "lucide-react";
 import { parseListQuery, generateListTitle, getExampleQueries, ParsedListQuery } from "./lib/parseListQuery";
-import { useCreateListWithUser, useTopLists, useUserLists } from "@/hooks/use-top-lists";
+import { useTopLists, useUserLists } from "@/hooks/use-top-lists";
 import { useTempUser } from "@/hooks/use-temp-user";
 import { useListStore } from "@/stores/use-list-store";
-import { mapCompositionToCreateListRequest } from "@/types/composition-to-api";
 import { toast } from "@/hooks/use-toast";
 import { CATEGORY_CONFIG } from "@/lib/config/category-config";
 import { TopList } from "@/types/top-lists";
+import { createListIntent } from "@/types/list-intent";
+import { listCreationService } from "@/services/list-creation-service";
 
 // Color palette by category
 const CATEGORY_COLORS: Record<string, { primary: string; secondary: string; accent: string }> = {
@@ -171,7 +172,6 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
 
   const { tempUserId, isLoaded } = useTempUser();
   const { setCurrentList } = useListStore();
-  const createListMutation = useCreateListWithUser();
 
   // Fetch user lists for search
   const { data: userLists = [], isLoading: isLoadingUserLists } = useUserLists(
@@ -356,7 +356,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     }
   }, [allLists, handleNavigateToList, onClose, router]);
 
-  // Create list from parsed query
+  // Create list from parsed query - using unified ListCreationService
   const handleCreateList = useCallback(async (queryOverride?: string) => {
     const targetQuery = queryOverride || searchQuery;
     if (!targetQuery.trim() || isCreating) return;
@@ -371,46 +371,40 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     setIsCreating(true);
     saveRecentQuery(targetQuery.trim());
 
-    try {
-      const queryParsed = parseListQuery(targetQuery);
-      const title = generateListTitle(queryParsed);
-      const colors = CATEGORY_COLORS[queryParsed.category] || CATEGORY_COLORS.Sports;
+    // Parse the query and create a ListIntent
+    const queryParsed = parseListQuery(targetQuery);
+    const colors = CATEGORY_COLORS[queryParsed.category] || CATEGORY_COLORS.Sports;
 
-      const compositionData = {
-        selectedCategory: queryParsed.category,
-        selectedSubcategory: queryParsed.subcategory,
-        hierarchy: queryParsed.hierarchy,
-        timePeriod: queryParsed.timePeriod,
-        selectedDecade: queryParsed.decade,
-        selectedYear: queryParsed.year,
-        color: colors,
-        title: title,
-      };
+    const intent = createListIntent({
+      category: queryParsed.category,
+      subcategory: queryParsed.subcategory,
+      size: queryParsed.hierarchy,
+      timePeriod: queryParsed.timePeriod,
+      selectedDecade: queryParsed.decade,
+      selectedYear: queryParsed.year,
+      color: colors,
+      isPredefined: true,
+      source: 'create',
+    });
 
-      const createListRequest = mapCompositionToCreateListRequest(compositionData, tempUserId);
-      const result = await createListMutation.mutateAsync(createListRequest);
+    // Use the unified service
+    const result = await listCreationService.createList(intent, {
+      userId: tempUserId,
+    });
 
+    if (result.success && result.list) {
       const enhancedListData = {
         ...result.list,
-        metadata: {
-          size: queryParsed.hierarchy,
-          selectedCategory: queryParsed.category,
-          selectedSubcategory: queryParsed.subcategory,
-          timePeriod: queryParsed.timePeriod,
-          selectedDecade: queryParsed.decade ? parseInt(queryParsed.decade) : undefined,
-          selectedYear: queryParsed.year ? parseInt(queryParsed.year) : undefined,
-          color: colors,
-        },
+        metadata: result.metadata,
       };
 
       setCurrentList(enhancedListData);
       onClose();
-      router.push(`/match-test?list=${result.list.id}`);
-    } catch (error) {
-      console.error("Error creating list:", error);
+      router.push(`/match-test?list=${result.listId}`);
+    } else {
       toast({
         title: "Creation Failed",
-        description: error instanceof Error ? error.message : "Failed to create list",
+        description: result.error || "Failed to create list",
       });
       setIsCreating(false);
     }
@@ -420,7 +414,6 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     isLoaded,
     tempUserId,
     saveRecentQuery,
-    createListMutation,
     setCurrentList,
     onClose,
     router,

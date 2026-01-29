@@ -42,9 +42,12 @@ function CommunityComparisonToggle({
   return (
     <button
       onClick={onToggle}
+      aria-pressed={enabled}
+      aria-label={`Community comparison${enabled && agreementScore !== undefined ? `: ${agreementScore.toFixed(0)}% match` : ''}`}
       className={`
         flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium
         transition-colors
+        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900
         ${
           enabled
             ? 'bg-purple-500/20 text-purple-300 border border-purple-500/50'
@@ -276,44 +279,35 @@ export function TierListView({
   // No DndContext here - parent SimpleMatchGrid provides the DndContext
   return (
     <div className="relative py-4">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
-        <div>
-          <h2 className="text-xl font-bold text-white">{listTitle}</h2>
-          <p className="text-sm text-slate-400">
-            Drag items from the collection below to place them in tiers
-          </p>
-        </div>
+      {/* Action buttons - title is in page header */}
+      <div className="flex items-center justify-end gap-2 mb-4 flex-wrap">
+        {/* Community comparison toggle */}
+        <CommunityComparisonToggle
+          enabled={showCommunityComparison}
+          onToggle={() => setShowCommunityComparison(!showCommunityComparison)}
+          agreementScore={agreementScore}
+        />
 
-        <div className="flex items-center gap-2">
-          {/* Community comparison toggle */}
-          <CommunityComparisonToggle
-            enabled={showCommunityComparison}
-            onToggle={() => setShowCommunityComparison(!showCommunityComparison)}
-            agreementScore={agreementScore}
-          />
+        {/* Customize button */}
+        <TierConfigurator
+          currentPreset={preset}
+          tiers={tiers}
+          onPresetChange={handlePresetChange}
+          onTierUpdate={handleTierUpdate}
+          onTierAdd={handleTierAdd}
+          onTierRemove={handleTierRemove}
+          onTiersReset={handleReset}
+          onExport={handleExport}
+        />
 
-          {/* Customize button */}
-          <TierConfigurator
-            currentPreset={preset}
-            tiers={tiers}
-            onPresetChange={handlePresetChange}
-            onTierUpdate={handleTierUpdate}
-            onTierAdd={handleTierAdd}
-            onTierRemove={handleTierRemove}
-            onTiersReset={handleReset}
-            onExport={handleExport}
-          />
-
-          {/* Apply ranking button */}
-          <button
-            onClick={handleApplyRanking}
-            disabled={tiers.every(t => t.items.length === 0)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium transition-all text-sm"
-          >
-            Apply Ranking
-          </button>
-        </div>
+        {/* Apply ranking button */}
+        <button
+          onClick={handleApplyRanking}
+          disabled={tiers.every(t => t.items.length === 0)}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium transition-all text-sm"
+        >
+          Apply Ranking
+        </button>
       </div>
 
       {/* Tier list */}

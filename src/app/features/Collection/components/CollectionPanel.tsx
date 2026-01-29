@@ -203,19 +203,33 @@ function CollectionPanelInternal({
       {isVisible && (
         <div className="flex flex-col h-[calc(100vh-8rem)] max-h-[600px] min-h-[300px]">
 
-          {/* Loading State */}
+          {/* Loading State - Skeleton Grid */}
           {collection.isLoading && (
-            <div className="flex-1 flex items-center justify-center" data-testid="collection-loading">
-              <div className="text-sm text-gray-400">Loading items...</div>
+            <div className="flex-1 p-4" data-testid="collection-loading" role="status" aria-label="Loading collection items">
+              <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
+                {Array.from({ length: 20 }).map((_, i) => (
+                  <div key={i} className="aspect-[3/4] rounded-lg bg-gray-800/50 animate-pulse" />
+                ))}
+              </div>
+              <span className="sr-only">Loading items...</span>
             </div>
           )}
 
           {/* Error State */}
           {collection.isError && (
-            <div className="flex-1 flex items-center justify-center" data-testid="collection-error">
-              <div className="text-sm text-red-400">
-                Error loading items: {collection.error?.message}
+            <div className="flex-1 flex flex-col items-center justify-center gap-4" data-testid="collection-error" role="alert">
+              <div className="text-center">
+                <p className="text-sm text-red-400 mb-1">Failed to load items</p>
+                <p className="text-xs text-gray-500">{collection.error?.message}</p>
               </div>
+              <button
+                onClick={() => collection.invalidateCache()}
+                className="px-4 py-2 text-sm bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
+                aria-label="Retry loading items"
+              >
+                Try Again
+              </button>
             </div>
           )}
 

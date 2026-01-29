@@ -9,6 +9,7 @@
 import { GridItemType } from '@/types/match';
 import { BacklogItem } from '@/types/backlog-groups';
 import { TransferableItem, createGridReceiverId, isGridReceiverId } from '@/lib/dnd';
+import { gridLogger, validationLogger } from '@/lib/logger';
 
 // ============================================================================
 // Types
@@ -226,12 +227,9 @@ export function assertValidGridItem(item: GridItemType): void {
     );
   }
 
-  // Log warnings in development
-  if (validation.warnings.length > 0 && process.env.NODE_ENV === 'development') {
-    console.warn(
-      `GridItem validation warnings for position ${item.position}:`,
-      validation.warnings
-    );
+  // Log warnings (controlled by debug config)
+  if (validation.warnings.length > 0) {
+    validationLogger.warn(`GridItem validation warnings for position ${item.position}`, validation.warnings);
   }
 }
 
@@ -247,7 +245,7 @@ export function safeCreateGridItem(
   try {
     // Basic type check
     if (!source || typeof source !== 'object') {
-      console.warn('safeCreateGridItem: Invalid source - not an object');
+      validationLogger.warn('safeCreateGridItem: Invalid source - not an object');
       return null;
     }
 
@@ -255,7 +253,7 @@ export function safeCreateGridItem(
 
     // Must have an id
     if (typeof sourceObj.id !== 'string') {
-      console.warn('safeCreateGridItem: Invalid source - missing id');
+      validationLogger.warn('safeCreateGridItem: Invalid source - missing id');
       return null;
     }
 
@@ -265,13 +263,13 @@ export function safeCreateGridItem(
     // Validate
     const validation = validateGridItem(gridItem);
     if (!validation.isValid) {
-      console.warn('safeCreateGridItem: Validation failed', validation.errors);
+      validationLogger.warn('safeCreateGridItem: Validation failed', validation.errors);
       return null;
     }
 
     return gridItem;
   } catch (error) {
-    console.error('safeCreateGridItem: Unexpected error', error);
+    validationLogger.error('safeCreateGridItem: Unexpected error', error);
     return null;
   }
 }
@@ -316,9 +314,10 @@ export function gridItemToBacklogFormat(gridItem: GridItemType): Partial<Backlog
 
 /**
  * Debug helper - log grid item with relevant info
+ * Uses structured logger with runtime toggle via window.__DEBUG_GOAT__
  */
 export function logGridItem(gridItem: GridItemType, label = 'GridItem'): void {
-  console.log(`🔄 ${label}:`, {
+  gridLogger.debug(label, {
     id: gridItem.id,
     position: gridItem.position,
     title: gridItem.title,

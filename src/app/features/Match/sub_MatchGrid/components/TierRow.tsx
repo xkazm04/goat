@@ -142,7 +142,8 @@ function TierItem({
         {showCommunityTier && communityTier && (
           <div
             className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold bg-black/60 border border-white/30"
-            title={`Community: ${communityTier}`}
+            aria-label={`Community consensus: ${communityTier} tier`}
+            role="img"
           >
             {communityTier}
           </div>
@@ -153,22 +154,24 @@ function TierItem({
           <button
             onClick={handlePlayClick}
             disabled={isThisItemLoading}
+            aria-label={isThisItemPlaying ? `Pause ${title}` : `Play preview of ${title}`}
+            aria-pressed={isThisItemPlaying}
             className={`
               absolute top-1 right-1 w-6 h-6 rounded-full
               flex items-center justify-center
               bg-cyan-500/80 hover:bg-cyan-400
               opacity-0 group-hover:opacity-100 transition-all
+              focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300
               ${isThisItemPlaying ? 'opacity-100 ring-2 ring-cyan-300' : ''}
               disabled:opacity-50
             `}
-            title={isThisItemPlaying ? 'Pause' : 'Play preview'}
           >
             {isThisItemLoading ? (
-              <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" aria-hidden="true" />
             ) : isThisItemPlaying ? (
-              <Pause className="w-3 h-3 text-white" />
+              <Pause className="w-3 h-3 text-white" aria-hidden="true" />
             ) : (
-              <Play className="w-3 h-3 text-white ml-0.5" />
+              <Play className="w-3 h-3 text-white ml-0.5" aria-hidden="true" />
             )}
           </button>
         )}
@@ -180,9 +183,10 @@ function TierItem({
               e.stopPropagation();
               onRemove(item.id);
             }}
-            className="absolute top-1 left-1 w-5 h-5 rounded-full bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-red-500/80"
+            aria-label={`Remove ${title} from tier`}
+            className="absolute top-1 left-1 w-5 h-5 rounded-full bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-red-500/80 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
           >
-            <X className="w-3 h-3 text-white" />
+            <X className="w-3 h-3 text-white" aria-hidden="true" />
           </button>
         )}
       </div>
@@ -274,12 +278,14 @@ export const TierRow = forwardRef<HTMLDivElement, TierRowProps>(function TierRow
       {/* Collapse toggle */}
       <button
         onClick={() => onToggleCollapse?.(tier.id)}
-        className="flex-shrink-0 w-6 flex items-center justify-center bg-slate-800 hover:bg-slate-700 transition-colors"
+        aria-expanded={!tier.collapsed}
+        aria-label={`${tier.collapsed ? 'Expand' : 'Collapse'} ${tier.customLabel || tier.label} tier`}
+        className="flex-shrink-0 w-6 flex items-center justify-center bg-slate-800 hover:bg-slate-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-inset"
       >
         {tier.collapsed ? (
-          <ChevronRight className="w-4 h-4 text-slate-400" />
+          <ChevronRight className="w-4 h-4 text-slate-400" aria-hidden="true" />
         ) : (
-          <ChevronDown className="w-4 h-4 text-slate-400" />
+          <ChevronDown className="w-4 h-4 text-slate-400" aria-hidden="true" />
         )}
       </button>
 

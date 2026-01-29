@@ -158,9 +158,6 @@ export function useGroupsByCategory(
   return useQuery({
     queryKey: itemGroupsKeys.category(category, subcategory, cleanSearch),
     queryFn: async () => {
-      console.log(`🔄 API: Fetching groups for ${category}/${subcategory || 'none'}`);
-      const startTime = Date.now();
-
       const groups = await goatApi.groups.getByCategory(
         category,
         {
@@ -170,9 +167,6 @@ export function useGroupsByCategory(
           minItemCount, // Filter empty groups at API level
         }
       );
-
-      const endTime = Date.now();
-      console.log(`✅ API: Fetched ${groups.length} groups in ${endTime - startTime}ms`);
 
       if (options?.sortByItemCount !== false) {
         return groups.sort((a, b) => (b.item_count || 0) - (a.item_count || 0));
@@ -195,14 +189,7 @@ export function useItemGroup(groupId: string, options?: {
   return useQuery({
     queryKey: itemGroupsKeys.detail(groupId, includeItems),
     queryFn: async () => {
-      console.log(`🔄 API: Fetching group ${groupId} with items=${includeItems}`);
-      const startTime = Date.now();
-
       const group = await goatApi.groups.get(groupId, includeItems);
-
-      const endTime = Date.now();
-      console.log(`✅ API: Fetched group ${groupId} with ${group.items?.length || 0} items in ${endTime - startTime}ms`);
-
       return group;
     },
     enabled: options?.enabled ?? !!groupId,

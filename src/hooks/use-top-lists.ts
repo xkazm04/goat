@@ -177,17 +177,8 @@ export const useCreateListWithUser = (
         title: "List Created! 🎉",
         description: `"${data.list.title}" is ready for ranking!`,
       });
-
-      // Log for debugging
-      console.log('List created with user:', {
-        listId: data.list.id,
-        userId: data.user.id,
-        isNewUser: data.is_new_user,
-      });
     },
-    onError: (error, variables) => {
-      console.error('Failed to create list with user:', error);
-
+    onError: (error) => {
       toast({
         title: "Creation Failed",
         description: `Failed to create list: ${error.message}`,

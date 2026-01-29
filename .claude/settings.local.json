@@ -23,7 +23,9 @@
       "Bash(done)",
       "Bash(npm ls:*)",
       "Bash(node:*)",
-      "Bash(PROJECT_ID=\"e7093813-b128-40bb-a21d-4be968aa7655\":*)"
+      "Bash(PROJECT_ID=\"e7093813-b128-40bb-a21d-4be968aa7655\":*)",
+      "WebSearch",
+      "WebFetch(domain:ai.google.dev)"
     ],
     "deny": [],
     "ask": []

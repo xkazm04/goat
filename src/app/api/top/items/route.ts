@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import type { ItemInsert } from '@/types/database';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -110,7 +111,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Prepare item data
-    const itemData: any = {
+    const itemData: ItemInsert = {
       name: String(name).trim(),
       category: String(category).trim(),
     };

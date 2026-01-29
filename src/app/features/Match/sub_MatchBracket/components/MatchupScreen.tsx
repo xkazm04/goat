@@ -57,10 +57,13 @@ function ParticipantCard({
       <motion.button
         onClick={onSelect}
         disabled={isDisabled}
+        aria-label={`Select ${title} as winner${isSelected ? ' (currently selected)' : ''}`}
+        aria-pressed={isSelected}
         whileHover={!isDisabled ? { scale: 1.02, y: -2 } : {}}
         whileTap={!isDisabled ? { scale: 0.98 } : {}}
         className={`
           relative w-full rounded-xl overflow-hidden transition-all duration-300
+          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900
           ${isSelected
             ? 'ring-3 ring-green-400 ring-offset-2 ring-offset-slate-900 shadow-2xl shadow-green-500/40'
             : 'ring-1 ring-slate-600/50 hover:ring-cyan-400/50 shadow-xl'
@@ -326,7 +329,8 @@ export function MatchupScreen({
           {/* Back button */}
           <button
             onClick={onClose}
-            className="p-2 -ml-2 rounded-lg hover:bg-slate-800/50 transition-colors"
+            aria-label="Close matchup screen"
+            className="p-2 -ml-2 rounded-lg hover:bg-slate-800/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
           >
             <X className="w-5 h-5 text-slate-400" />
           </button>
@@ -346,8 +350,8 @@ export function MatchupScreen({
             {onSkip && (
               <button
                 onClick={onSkip}
-                className="p-2 rounded-lg hover:bg-slate-800/50 transition-colors text-slate-500 hover:text-slate-300"
-                title="Skip to next matchup"
+                aria-label="Skip to next matchup"
+                className="p-2 rounded-lg hover:bg-slate-800/50 transition-colors text-slate-500 hover:text-slate-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
@@ -357,7 +361,7 @@ export function MatchupScreen({
       </div>
 
       {/* Main matchup area */}
-      <div className="flex-1 flex items-center justify-center px-3 sm:px-6 py-4 overflow-hidden">
+      <div className="flex-1 flex items-center justify-center px-3 sm:px-6 py-2 overflow-hidden">
         <div
           className="flex items-center justify-center w-full"
           style={{ gap: dims.cardGap }}
@@ -402,7 +406,8 @@ export function MatchupScreen({
                 <button
                   onClick={handleClear}
                   disabled={isConfirming}
-                  className="flex-1 px-4 py-2.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 font-medium transition-colors disabled:opacity-50 text-sm"
+                  aria-label="Change selection"
+                  className="flex-1 px-4 py-2.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 font-medium transition-colors disabled:opacity-50 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                 >
                   Change
                 </button>
@@ -410,7 +415,9 @@ export function MatchupScreen({
                 <button
                   onClick={handleConfirm}
                   disabled={isConfirming}
-                  className="flex-[2] px-6 py-2.5 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-green-500/30 text-sm sm:text-base"
+                  aria-label={isConfirming ? 'Advancing winner...' : 'Confirm selected winner'}
+                  aria-busy={isConfirming}
+                  className="flex-[2] px-6 py-2.5 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-green-500/30 text-sm sm:text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                 >
                   {isConfirming ? (
                     <motion.div

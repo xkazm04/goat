@@ -105,8 +105,6 @@ export function useSupabaseAuth(options: UseSupabaseAuthOptions = {}): UseSupaba
         authListener = client.auth.onAuthStateChange(async (event, newSession) => {
           if (!mountedRef.current) return;
 
-          console.log('Auth state changed:', event);
-
           setSession(newSession);
           setUser(newSession?.user ?? null);
           setIsLoading(false);

@@ -5,6 +5,8 @@ import type {
   ConsensusAPIResponse,
   PeerCluster,
 } from '@/types/consensus';
+import type { TypedSupabaseClient } from '@/lib/supabase/types';
+import type { TopItemRow } from '@/types/database';
 
 /**
  * GET /api/consensus
@@ -70,7 +72,7 @@ export async function GET(request: NextRequest) {
  * In production, this would be replaced with actual database aggregations.
  */
 async function generateConsensusData(
-  supabase: any,
+  supabase: TypedSupabaseClient,
   category: string,
   subcategory: string | null,
   itemIds: string[] | undefined

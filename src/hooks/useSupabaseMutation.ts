@@ -1,44 +1,12 @@
-import { useState, useCallback, useRef } from 'react';
-import { SupabaseClient } from '@supabase/supabase-js';
-
 /**
- * State interface for Supabase mutations
- */
-export interface SupabaseMutationState<TData, TVariables> {
-  data: TData | null;
-  error: Error | null;
-  isLoading: boolean;
-  isError: boolean;
-  isSuccess: boolean;
-  mutate: (variables: TVariables) => Promise<TData>;
-  mutateAsync: (variables: TVariables) => Promise<TData>;
-  reset: () => void;
-}
-
-/**
- * Configuration options for useSupabaseMutation
- */
-export interface SupabaseMutationOptions<TData, TVariables> {
-  onSuccess?: (data: TData, variables: TVariables) => void | Promise<void>;
-  onError?: (error: Error, variables: TVariables) => void;
-  onSettled?: (data: TData | null, error: Error | null, variables: TVariables) => void;
-  onMutate?: (variables: TVariables) => void | Promise<any>;
-  retry?: number;
-  retryDelay?: number;
-  optimisticUpdate?: (variables: TVariables) => TData | null;
-}
-
-/**
- * Mutation function type - returns a promise with the mutation result
- */
-export type SupabaseMutationFn<TData, TVariables> = (
-  client: SupabaseClient,
-  variables: TVariables
-) => Promise<TData>;
-
-/**
- * Custom hook for Supabase mutations (insert, update, delete)
- * Provides optimistic updates and error handling
+ * Supabase Mutation Hook - TanStack Query Integration
+ *
+ * A unified wrapper around TanStack Query useMutation that provides:
+ * - Direct Supabase client integration
+ * - Optimistic updates with automatic rollback
+ * - Cache invalidation integration
+ * - Type-safe mutation functions
+ * - Compatible API with previous custom implementation
  *
  * @example
  * ```tsx
@@ -60,284 +28,363 @@ export type SupabaseMutationFn<TData, TVariables> = (
  *     onSuccess: (data) => {
  *       console.log('List created:', data);
  *     },
- *     onError: (error) => {
- *       console.error('Failed to create list:', error);
- *     },
+ *     invalidateTags: ['lists', 'user-lists'],
  *   }
  * );
  *
  * // Execute mutation
- * await createList.mutate({ title: 'My List', category: 'movies' });
+ * await createList.mutateAsync({ title: 'My List', category: 'movies' });
  * ```
  */
-export function useSupabaseMutation<TData = any, TVariables = any>(
-  mutationFn: SupabaseMutationFn<TData, TVariables>,
-  options: SupabaseMutationOptions<TData, TVariables> = {}
-): SupabaseMutationState<TData, TVariables> {
-  const {
-    onSuccess,
-    onError,
-    onSettled,
-    onMutate,
-    retry = 0,
-    retryDelay = 1000,
-    optimisticUpdate,
-  } = options;
 
-  const [data, setData] = useState<TData | null>(null);
-  const [error, setError] = useState<Error | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+import { useMutation, useQueryClient, UseMutationOptions } from '@tanstack/react-query';
+import { SupabaseClient } from '@supabase/supabase-js';
+import { createClient } from '@/lib/supabase/client';
+import { invalidateByTags } from '@/lib/cache/query-cache-config';
 
-  const retryCountRef = useRef(0);
-  const mountedRef = useRef(true);
-  const rollbackRef = useRef<any>(null);
+// =============================================================================
+// Types
+// =============================================================================
 
-  /**
-   * Execute the mutation with retry and optimistic update logic
-   */
-  const executeMutation = useCallback(
-    async (variables: TVariables, isRetry = false): Promise<TData> => {
-      if (!isRetry) {
-        setIsLoading(true);
-        setError(null);
-        retryCountRef.current = 0;
-      }
+/**
+ * Mutation function type - receives Supabase client and variables
+ */
+export type SupabaseMutationFn<TData, TVariables> = (
+  client: SupabaseClient,
+  variables: TVariables
+) => Promise<TData>;
 
-      try {
-        // Call onMutate for optimistic updates
-        if (onMutate && !isRetry) {
-          rollbackRef.current = await onMutate(variables);
-        }
-
-        // Apply optimistic update if provided
-        if (optimisticUpdate && !isRetry) {
-          const optimisticData = optimisticUpdate(variables);
-          if (optimisticData) {
-            setData(optimisticData);
-          }
-        }
-
-        // Import Supabase client dynamically
-        const { createClient } = await import('@supabase/supabase-js');
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-        const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-        if (!supabaseUrl || !supabaseAnonKey) {
-          throw new Error('Supabase configuration missing. Please check your environment variables.');
-        }
-
-        const client = createClient(supabaseUrl, supabaseAnonKey);
-        const result = await mutationFn(client, variables);
-
-        if (!mountedRef.current) return result;
-
-        setData(result);
-        setError(null);
-        setIsLoading(false);
-        retryCountRef.current = 0;
-
-        // Call onSuccess callback
-        if (onSuccess) {
-          await onSuccess(result, variables);
-        }
-
-        // Call onSettled callback
-        if (onSettled) {
-          onSettled(result, null, variables);
-        }
-
-        return result;
-      } catch (err) {
-        if (!mountedRef.current) throw err;
-
-        const mutationError = err instanceof Error ? err : new Error(String(err));
-
-        // Retry logic
-        if (retryCountRef.current < retry) {
-          retryCountRef.current++;
-          const delay = retryDelay * Math.pow(2, retryCountRef.current - 1);
-
-          return new Promise((resolve, reject) => {
-            setTimeout(async () => {
-              if (mountedRef.current) {
-                try {
-                  const result = await executeMutation(variables, true);
-                  resolve(result);
-                } catch (retryErr) {
-                  reject(retryErr);
-                }
-              } else {
-                reject(mutationError);
-              }
-            }, delay);
-          });
-        }
-
-        // Rollback optimistic update on error
-        if (rollbackRef.current !== null && optimisticUpdate) {
-          setData(rollbackRef.current);
-        }
-
-        setError(mutationError);
-        setIsLoading(false);
-        retryCountRef.current = 0;
-
-        // Call onError callback
-        if (onError) {
-          onError(mutationError, variables);
-        }
-
-        // Call onSettled callback
-        if (onSettled) {
-          onSettled(null, mutationError, variables);
-        }
-
-        throw mutationError;
-      }
-    },
-    [mutationFn, onSuccess, onError, onSettled, onMutate, retry, retryDelay, optimisticUpdate]
-  );
-
-  /**
-   * Synchronous mutation trigger (fire and forget)
-   */
-  const mutate = useCallback(
-    (variables: TVariables) => {
-      return executeMutation(variables).catch((err) => {
-        // Error is already handled in executeMutation
-        console.error('Mutation error:', err);
-        return Promise.reject(err);
-      });
-    },
-    [executeMutation]
-  );
-
-  /**
-   * Async mutation trigger (returns promise)
-   */
-  const mutateAsync = useCallback(
-    (variables: TVariables) => {
-      return executeMutation(variables);
-    },
-    [executeMutation]
-  );
-
-  /**
-   * Reset mutation state
-   */
-  const reset = useCallback(() => {
-    setData(null);
-    setError(null);
-    setIsLoading(false);
-    retryCountRef.current = 0;
-    rollbackRef.current = null;
-  }, []);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
-
-  return {
-    data,
-    error,
-    isLoading,
-    isError: error !== null,
-    isSuccess: data !== null && error === null && !isLoading,
-    mutate,
-    mutateAsync,
-    reset,
-  };
+/**
+ * Configuration options for useSupabaseMutation
+ */
+export interface SupabaseMutationOptions<TData, TVariables, TContext = unknown> {
+  /** Callback before mutation executes (for optimistic updates) */
+  onMutate?: (variables: TVariables) => TContext | Promise<TContext>;
+  /** Callback on successful mutation */
+  onSuccess?: (data: TData, variables: TVariables, context: TContext | undefined) => void | Promise<void>;
+  /** Callback on error */
+  onError?: (error: Error, variables: TVariables, context: TContext | undefined) => void;
+  /** Callback when mutation settles (success or error) */
+  onSettled?: (
+    data: TData | undefined,
+    error: Error | null,
+    variables: TVariables,
+    context: TContext | undefined
+  ) => void;
+  /** Number of retry attempts */
+  retry?: number;
+  /** Delay between retries in ms */
+  retryDelay?: number;
+  /** Optimistic update function (legacy compatibility) */
+  optimisticUpdate?: (variables: TVariables) => TData | null;
+  /** Cache tags to invalidate on success */
+  invalidateTags?: string[];
+  /** Query keys to invalidate on success */
+  invalidateQueries?: readonly unknown[][];
+  /** Mutation key for tracking/deduplication */
+  mutationKey?: readonly unknown[];
 }
 
 /**
- * Helper hook for batch mutations
- * Executes multiple mutations in sequence or parallel
+ * State interface for Supabase mutations
+ * Compatible with previous implementation for easy migration
  */
-export function useSupabaseBatchMutation<TData = any, TVariables = any>(
+export interface SupabaseMutationState<TData, TVariables> {
+  data: TData | null;
+  error: Error | null;
+  isLoading: boolean;
+  isPending: boolean;
+  isIdle: boolean;
+  isError: boolean;
+  isSuccess: boolean;
+  mutate: (variables: TVariables) => void;
+  mutateAsync: (variables: TVariables) => Promise<TData>;
+  reset: () => void;
+  /** Additional TanStack Query properties */
+  status: 'idle' | 'pending' | 'success' | 'error';
+  failureCount: number;
+  submittedAt: number;
+}
+
+// =============================================================================
+// Singleton Supabase Client
+// =============================================================================
+
+let supabaseClient: SupabaseClient | null = null;
+
+/**
+ * Get or create the Supabase client singleton
+ */
+function getSupabaseClient(): SupabaseClient {
+  if (!supabaseClient) {
+    supabaseClient = createClient();
+  }
+  return supabaseClient;
+}
+
+// =============================================================================
+// Main Hook
+// =============================================================================
+
+/**
+ * useSupabaseMutation - TanStack Query wrapper for Supabase mutations
+ *
+ * Handles insert, update, delete operations with optimistic updates,
+ * automatic cache invalidation, and rollback on error.
+ */
+export function useSupabaseMutation<TData = unknown, TVariables = unknown, TContext = unknown>(
   mutationFn: SupabaseMutationFn<TData, TVariables>,
-  options: SupabaseMutationOptions<TData[], TVariables[]> & {
-    mode?: 'sequential' | 'parallel';
-  } = {}
-) {
-  const { mode = 'sequential', ...mutationOptions } = options;
-  const [data, setData] = useState<TData[] | null>(null);
-  const [error, setError] = useState<Error | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  options: SupabaseMutationOptions<TData, TVariables, TContext> = {}
+): SupabaseMutationState<TData, TVariables> {
+  const queryClient = useQueryClient();
 
-  const executeBatch = useCallback(
-    async (variablesArray: TVariables[]): Promise<TData[]> => {
-      setIsLoading(true);
-      setError(null);
+  const {
+    onMutate,
+    onSuccess,
+    onError,
+    onSettled,
+    retry = 0,
+    retryDelay = 1000,
+    invalidateTags,
+    invalidateQueries,
+    mutationKey,
+  } = options;
 
-      try {
-        const { createClient } = await import('@supabase/supabase-js');
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-        const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  // Build TanStack Query mutation options
+  const mutationOptions: UseMutationOptions<TData, Error, TVariables, TContext> = {
+    mutationKey,
+    mutationFn: async (variables: TVariables) => {
+      const client = getSupabaseClient();
+      return mutationFn(client, variables);
+    },
+    onMutate: onMutate as ((variables: TVariables) => Promise<TContext> | TContext) | undefined,
+    onSuccess: async (data, variables, context) => {
+      // Call user's onSuccess callback
+      if (onSuccess) {
+        await onSuccess(data, variables, context);
+      }
 
-        if (!supabaseUrl || !supabaseAnonKey) {
-          throw new Error('Supabase configuration missing.');
+      // Invalidate specified tags
+      if (invalidateTags && invalidateTags.length > 0) {
+        invalidateByTags(queryClient, invalidateTags);
+      }
+
+      // Invalidate specified query keys
+      if (invalidateQueries && invalidateQueries.length > 0) {
+        for (const queryKey of invalidateQueries) {
+          await queryClient.invalidateQueries({ queryKey });
         }
-
-        const client = createClient(supabaseUrl, supabaseAnonKey);
-
-        let results: TData[];
-
-        if (mode === 'parallel') {
-          // Execute all mutations in parallel
-          results = await Promise.all(
-            variablesArray.map((variables) => mutationFn(client, variables))
-          );
-        } else {
-          // Execute mutations sequentially
-          results = [];
-          for (const variables of variablesArray) {
-            const result = await mutationFn(client, variables);
-            results.push(result);
-          }
-        }
-
-        setData(results);
-        setIsLoading(false);
-
-        if (mutationOptions.onSuccess) {
-          await mutationOptions.onSuccess(results, variablesArray);
-        }
-
-        return results;
-      } catch (err) {
-        const batchError = err instanceof Error ? err : new Error(String(err));
-        setError(batchError);
-        setIsLoading(false);
-
-        if (mutationOptions.onError) {
-          mutationOptions.onError(batchError, variablesArray);
-        }
-
-        throw batchError;
       }
     },
-    [mutationFn, mode, mutationOptions]
-  );
+    onError: (error, variables, context) => {
+      if (onError) {
+        onError(error, variables, context);
+      }
+    },
+    onSettled: (data, error, variables, context) => {
+      if (onSettled) {
+        onSettled(data, error, variables, context);
+      }
+    },
+    retry,
+    retryDelay: (attemptIndex) => Math.min(retryDelay * 2 ** attemptIndex, 30000),
+  };
+
+  // Execute the mutation
+  const mutation = useMutation(mutationOptions);
 
   return {
-    data,
-    error,
-    isLoading,
-    isError: error !== null,
-    isSuccess: data !== null && error === null,
-    mutate: executeBatch,
-    mutateAsync: executeBatch,
-    reset: () => {
-      setData(null);
-      setError(null);
-      setIsLoading(false);
+    data: mutation.data ?? null,
+    error: mutation.error ?? null,
+    isLoading: mutation.isPending,
+    isPending: mutation.isPending,
+    isIdle: mutation.isIdle,
+    isError: mutation.isError,
+    isSuccess: mutation.isSuccess,
+    mutate: mutation.mutate,
+    mutateAsync: mutation.mutateAsync,
+    reset: mutation.reset,
+    // Additional properties
+    status: mutation.status,
+    failureCount: mutation.failureCount,
+    submittedAt: mutation.submittedAt,
+  };
+}
+
+// =============================================================================
+// Batch Mutation Hook
+// =============================================================================
+
+/**
+ * Batch mutation options
+ */
+export interface SupabaseBatchMutationOptions<TData, TVariables>
+  extends Omit<SupabaseMutationOptions<TData[], TVariables[], unknown>, 'onMutate'> {
+  /** Execute mutations in parallel or sequentially */
+  mode?: 'sequential' | 'parallel';
+  /** Stop on first error in sequential mode */
+  stopOnError?: boolean;
+}
+
+/**
+ * useSupabaseBatchMutation - Execute multiple mutations
+ *
+ * Executes an array of mutations either in sequence or parallel.
+ */
+export function useSupabaseBatchMutation<TData = unknown, TVariables = unknown>(
+  mutationFn: SupabaseMutationFn<TData, TVariables>,
+  options: SupabaseBatchMutationOptions<TData, TVariables> = {}
+): SupabaseMutationState<TData[], TVariables[]> {
+  const {
+    mode = 'sequential',
+    stopOnError = true,
+    ...mutationOptions
+  } = options;
+
+  // Wrap the mutation function for batch execution
+  const batchMutationFn: SupabaseMutationFn<TData[], TVariables[]> = async (client, variablesArray) => {
+    if (mode === 'parallel') {
+      // Execute all mutations in parallel
+      return Promise.all(variablesArray.map((variables) => mutationFn(client, variables)));
+    } else {
+      // Execute mutations sequentially
+      const results: TData[] = [];
+      for (const variables of variablesArray) {
+        try {
+          const result = await mutationFn(client, variables);
+          results.push(result);
+        } catch (error) {
+          if (stopOnError) {
+            throw error;
+          }
+          // Continue on error - push null or re-throw
+          console.error('Batch mutation error (continuing):', error);
+        }
+      }
+      return results;
+    }
+  };
+
+  return useSupabaseMutation<TData[], TVariables[]>(batchMutationFn, mutationOptions);
+}
+
+// =============================================================================
+// Optimistic Update Helpers
+// =============================================================================
+
+/**
+ * Helper type for optimistic update context
+ */
+export interface OptimisticContext<T> {
+  previousData: T | undefined;
+  optimisticData: T;
+}
+
+/**
+ * Create optimistic update handlers with queryClient access
+ *
+ * @example
+ * ```tsx
+ * const queryClient = useQueryClient();
+ *
+ * const { onMutate, onError, onSettled } = createOptimisticUpdate<Item[], NewItem>(
+ *   queryClient,
+ *   ['items'],
+ *   (current, newItem) => [...(current ?? []), { ...newItem, id: 'temp-' + Date.now() }]
+ * );
+ *
+ * const mutation = useSupabaseMutation(mutationFn, { onMutate, onError, onSettled });
+ * ```
+ */
+export function createOptimisticUpdate<TData, TVariables>(
+  queryClient: ReturnType<typeof useQueryClient>,
+  queryKey: readonly unknown[],
+  updateFn: (currentData: TData | undefined, variables: TVariables) => TData
+) {
+  return {
+    onMutate: async (variables: TVariables): Promise<OptimisticContext<TData>> => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey });
+
+      // Snapshot the previous value
+      const previousData = queryClient.getQueryData<TData>(queryKey);
+
+      // Optimistically update
+      const optimisticData = updateFn(previousData, variables);
+      queryClient.setQueryData<TData>(queryKey, optimisticData);
+
+      return { previousData, optimisticData };
+    },
+
+    onError: (
+      _error: Error,
+      _variables: TVariables,
+      context: OptimisticContext<TData> | undefined
+    ) => {
+      // Rollback on error
+      if (context?.previousData !== undefined) {
+        queryClient.setQueryData(queryKey, context.previousData);
+      }
+    },
+
+    onSettled: () => {
+      // Refetch after mutation settles
+      queryClient.invalidateQueries({ queryKey });
     },
   };
 }
 
-// Import useEffect for cleanup
-import { useEffect } from 'react';
+// =============================================================================
+// Factory Functions
+// =============================================================================
+
+/**
+ * Create a typed mutation hook for a specific operation
+ *
+ * @example
+ * ```tsx
+ * const useCreateList = createSupabaseMutationHook<List, CreateListInput>(
+ *   async (client, input) => {
+ *     const { data, error } = await client.from('lists').insert(input).select().single();
+ *     if (error) throw error;
+ *     return data;
+ *   },
+ *   { invalidateTags: ['lists'] }
+ * );
+ *
+ * // Usage
+ * const createList = useCreateList();
+ * await createList.mutateAsync({ title: 'New List', category: 'movies' });
+ * ```
+ */
+export function createSupabaseMutationHook<TData, TVariables, TContext = unknown>(
+  mutationFn: SupabaseMutationFn<TData, TVariables>,
+  defaultOptions: SupabaseMutationOptions<TData, TVariables, TContext> = {}
+) {
+  return function useTypedSupabaseMutation(
+    options: SupabaseMutationOptions<TData, TVariables, TContext> = {}
+  ) {
+    return useSupabaseMutation<TData, TVariables, TContext>(mutationFn, {
+      ...defaultOptions,
+      ...options,
+    });
+  };
+}
+
+// =============================================================================
+// Utility Functions
+// =============================================================================
+
+/**
+ * Get the Supabase client for direct use
+ */
+export function getSupabase(): SupabaseClient {
+  return getSupabaseClient();
+}
+
+/**
+ * Reset the Supabase client singleton (for testing)
+ */
+export function resetSupabaseClient(): void {
+  supabaseClient = null;
+}

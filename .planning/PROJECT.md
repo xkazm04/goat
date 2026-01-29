@@ -8,17 +8,17 @@ A ranking platform where users create and rank lists of anything. Users can crea
 
 **Users can create any list they imagine and rank it their way.** The core experience must be smooth, reliable, and free of friction.
 
-## Current Milestone: v1.2.0 Studio Enhancement
+## Current Milestone: v1.3.0 Criteria System
 
-**Goal:** Elevate the List Creation Studio to match-test visual quality and add criteria scoring system for multi-dimensional item ratings.
+**Goal:** List creators can add multi-dimensional scoring criteria with themed visualizations that match each category's character.
 
-**Target features:**
-- Studio UI polish (depth system, visual styling to match /match-test quality)
-- Criteria system: list creators can add 0-8 scoring criteria
-- Predefined criteria sets per category (Games, Movies, Music, Sports)
-- Unique themed stat visualizations for predefined criteria
-- Default stat styling for custom user-defined criteria
+**Target outcomes:**
+- Lists support 0-8 custom criteria with 1-10 scale scoring
+- Predefined criteria templates for Sports, Movies, Music, Games categories
+- Themed stat visualizations unique to each category (competitive metrics, cinematic displays, waveforms, gaming UI)
+- Default styling for custom criteria
 - Criteria rating in item detail modal (post-placement)
+- Score persistence with Supabase sync
 
 ## Requirements
 
@@ -52,23 +52,25 @@ A ranking platform where users create and rank lists of anything. Users can crea
 
 <!-- Next milestone scope. -->
 
-- Studio UI visual polish using depth token system
-- Remove dead space and improve layout efficiency
-- Criteria configuration in list creation flow
-- Predefined criteria sets for Games, Movies, Music, Sports
-- Themed stat visualizations for predefined criteria
-- Default stat component for custom criteria
+- Multi-criteria scoring system (0-8 criteria per list, 1-10 scale)
+- Predefined criteria templates for Sports, Movies, Music, Games
+- Custom criteria support with default styling
+- Themed stat visualizations per category
 - Criteria rating UI in item detail modal
+- Score persistence (localStorage + Supabase sync)
+- Radar chart summary for multi-criteria overview
 
 ### Out of Scope
 
 <!-- Explicit boundaries with reasoning. -->
 
-- Production polish (logging, error handling) — defer to v1.3
-- Public list discovery — defer to v1.3+
-- User profiles — defer to v1.3+
+- Complex weighting UI — use simple presets for v1.3
+- Real-time community scores — local scores only
+- Score-based automatic reordering — suggestions only, not auto-apply
+- Score import from external sources — defer to v1.4+
+- Public list discovery — defer to v1.4+
+- User profiles — defer to v1.4+
 - Mobile-specific work — desktop-first remains
-- Criteria weighting/aggregation — simple ratings only for v1.2
 
 ## Context
 
@@ -77,8 +79,10 @@ A ranking platform where users create and rank lists of anything. Users can crea
 - List Creation Studio with Gemini AI integration (v1.1)
 - Drag-and-drop ranking interface with multiple views (GOAT, Podium, Rushmore)
 - Supabase backend with lists, items, rankings tables
-- Item detail modal exists (comparison view) — target for criteria rating UI
-- Match views (/match-test) represent visual quality target for studio
+- Logger infrastructure exists in src/lib/logger/ but underutilized
+- 50+ console.log statements scattered across features
+- 30+ deprecated exports in types/ causing confusion
+- Error boundaries exist but need enhancement
 
 **Tech stack:** Next.js 15, Supabase, Zustand, TanStack Query, @dnd-kit, Framer Motion
 
@@ -89,6 +93,7 @@ A ranking platform where users create and rank lists of anything. Users can crea
 - **Consistency**: All visual polish uses token system, no magic numbers
 - **Dark theme**: Primary theme, all tokens designed for dark background
 - **No new dependencies**: Use existing tools where possible
+- **Backward compatibility**: Logger migration should not break existing functionality
 
 ## Key Decisions
 
@@ -99,9 +104,9 @@ A ranking platform where users create and rank lists of anything. Users can crea
 | 20px max blur constraint | Drag performance preservation | ✓ Good — no FPS impact |
 | Gemini 2.0 Flash for AI generation | Fast, capable, good structured output | ✓ Good — reliable item generation |
 | Wikipedia as image source | Free, high quality, no API key needed | ✓ Good — consistent image quality |
-| Criteria in item detail modal | Natural location, doesn't clutter grid | — Pending |
-| Predefined + custom criteria | Balance curation with flexibility | — Pending |
-| Themed stat visualizations | Visual character matches metadata meaning | — Pending |
+| Logger with runtime toggles | Debug without rebuilding, silent in production | — Pending |
+| Centralized constants | Eliminate magic numbers, single source of truth | — Pending |
+| Error boundaries per feature | Isolate failures, preserve user session | — Pending |
 
 ---
-*Last updated: 2026-01-29 after v1.2.0 Studio Enhancement milestone start*
+*Last updated: 2026-01-29 after v1.3.0 Criteria System milestone start*

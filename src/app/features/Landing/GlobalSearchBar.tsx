@@ -170,6 +170,11 @@ export function GlobalSearchBar({
             onFocus={() => setIsFocused(true)}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
+            aria-label="Search lists, items, and collections"
+            aria-expanded={showResults}
+            aria-controls="search-results"
+            aria-autocomplete="list"
+            role="combobox"
             className="flex-1 bg-transparent text-white placeholder:text-white/40 focus:outline-none text-sm"
             data-testid="global-search-input"
           />
@@ -213,6 +218,9 @@ export function GlobalSearchBar({
             className="absolute top-full left-0 right-0 mt-2 z-50"
           >
             <div
+              id="search-results"
+              role="listbox"
+              aria-label="Search results"
               className="rounded-xl overflow-hidden shadow-2xl"
               style={{
                 background: "linear-gradient(135deg, rgba(15, 20, 35, 0.98) 0%, rgba(25, 35, 55, 0.98) 100%)",
@@ -230,9 +238,12 @@ export function GlobalSearchBar({
                       <button
                         key={`${result.domain}-${result.id}`}
                         onClick={() => handleNavigateToResult(result)}
+                        role="option"
+                        aria-selected={isSelected}
                         className={`
                           w-full px-3 py-2.5 rounded-lg text-left flex items-center gap-3
                           transition-colors group
+                          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-inset
                           ${isSelected ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/5"}
                         `}
                         data-testid={`quick-result-${index}`}
@@ -261,9 +272,12 @@ export function GlobalSearchBar({
                   {/* See all results */}
                   <button
                     onClick={handleOpenFullSearch}
+                    role="option"
+                    aria-selected={selectedIndex === results.length}
                     className={`
                       w-full px-3 py-2.5 rounded-lg text-left flex items-center gap-3
                       transition-colors border-t border-white/5 mt-2 pt-3
+                      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-inset
                       ${selectedIndex === results.length ? "bg-white/10 text-white" : "text-white/50 hover:text-white/70"}
                     `}
                   >
@@ -286,7 +300,8 @@ export function GlobalSearchBar({
                       <p className="text-sm">No quick results</p>
                       <button
                         onClick={handleOpenFullSearch}
-                        className="mt-2 text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1 mx-auto"
+                        className="mt-2 text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1 mx-auto
+                          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:rounded"
                       >
                         <Sparkles className="w-3 h-3" />
                         Open full search

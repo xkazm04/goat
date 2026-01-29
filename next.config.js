@@ -8,6 +8,7 @@ const nextConfig = {
   images: {
     unoptimized: true,
     remotePatterns: [
+      // Primary sources - most reliable
       {
         protocol: 'https',
         hostname: 'upload.wikimedia.org',
@@ -19,6 +20,32 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'static.wikia.nocookie.net',
+      },
+      // Secondary sources - reliable media
+      {
+        protocol: 'https',
+        hostname: 'cdn.britannica.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'media.d3.nhle.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'files.eliteprospects.com',
+      },
+      // WordPress-hosted images
+      {
+        protocol: 'https',
+        hostname: 'i0.wp.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'i1.wp.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'i2.wp.com',
       },
     ],
   },

@@ -10,6 +10,7 @@ import { TransferableItem, TransferSourceType } from './transfer-protocol';
 import type { GridItemType } from '@/types/match';
 import type { BacklogItem } from '@/types/backlog-groups';
 import type { CollectionItem } from '@/app/features/Collection/types';
+import { dndLogger } from '@/lib/logger';
 
 // ============================================================================
 // DnD Data Types (for use with @dnd-kit data.current)
@@ -520,6 +521,7 @@ export function describeDropData(data: unknown): string {
 
 /**
  * Log drag event details for debugging
+ * Uses structured logger with runtime toggle via window.__DEBUG_GOAT__
  */
 export function logDragEvent(
   event: DragStartEvent | DragEndEvent | DragOverEvent,
@@ -528,7 +530,7 @@ export function logDragEvent(
   const activeData = event.active.data.current;
   const overData = 'over' in event && event.over?.data?.current;
 
-  console.log(`🔄 DnD ${eventType}:`, {
+  dndLogger.debug(`DnD ${eventType}`, {
     activeId: event.active.id,
     activeData: describeDragData(activeData),
     overId: 'over' in event ? event.over?.id : undefined,

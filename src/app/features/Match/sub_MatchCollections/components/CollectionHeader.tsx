@@ -2,9 +2,7 @@
 
 import { motion } from "framer-motion";
 import { ChevronDown, Layers, LayoutGrid, List } from "lucide-react";
-import { ConsensusToggle } from "./ConsensusToggle";
 import { CollectionSearch } from "./CollectionSearch";
-import { InventorySortControl } from "./InventorySortControl";
 
 export type GroupViewMode = 'sidebar' | 'horizontal';
 
@@ -69,30 +67,19 @@ export function CollectionHeader({
       </div>
 
       <div className="flex items-center gap-3">
-        {/* Inventory Sort Control - enables sorting by consensus ranking */}
-        <InventorySortControl />
-
-        {/* Separator */}
-        <div className="h-5 w-[1px] bg-white/10 dark:bg-white/5" />
-
-        {/* Consensus Discovery Toggle */}
-        <ConsensusToggle compact />
-
-        {/* Separator */}
-        <div className="h-5 w-[1px] bg-white/10 dark:bg-white/5" />
-
         {/* Group View Mode Switcher */}
         <div className="flex items-center gap-1 bg-gray-800/50 rounded-lg p-1">
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => onGroupViewModeChange('sidebar')}
-            className={`p-1.5 rounded-md transition-colors ${
+            className={`p-1.5 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-1 focus-visible:ring-offset-gray-800 ${
               groupViewMode === 'sidebar'
                 ? 'bg-cyan-500/20 text-cyan-400'
                 : 'text-gray-500 hover:text-gray-300'
             }`}
-            title="Sidebar view"
+            aria-label="Sidebar view"
+            aria-pressed={groupViewMode === 'sidebar'}
             data-testid="group-view-sidebar-btn"
           >
             <List className="w-4 h-4" />
@@ -101,12 +88,13 @@ export function CollectionHeader({
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => onGroupViewModeChange('horizontal')}
-            className={`p-1.5 rounded-md transition-colors ${
+            className={`p-1.5 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-1 focus-visible:ring-offset-gray-800 ${
               groupViewMode === 'horizontal'
                 ? 'bg-cyan-500/20 text-cyan-400'
                 : 'text-gray-500 hover:text-gray-300'
             }`}
-            title="Horizontal bar view"
+            aria-label="Horizontal bar view"
+            aria-pressed={groupViewMode === 'horizontal'}
             data-testid="group-view-horizontal-btn"
           >
             <LayoutGrid className="w-4 h-4" />

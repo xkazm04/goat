@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import type { ItemDetailResponse } from '@/types/item-details';
+import type { TypedSupabaseClient } from '@/lib/supabase/types';
+import type { ItemRow } from '@/types/database';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -59,19 +61,19 @@ export async function GET(
     const response: ItemDetailResponse = {
       item: {
         id: item.id,
-        title: item.name || item.title,
-        description: item.description,
-        image_url: item.image_url,
-        category: item.category,
-        subcategory: item.subcategory,
+        title: item.name || item.title || '',
+        description: item.description ?? undefined,
+        image_url: item.image_url ?? undefined,
+        category: item.category ?? undefined,
+        subcategory: item.subcategory ?? undefined,
         tags: item.tags || [],
-        item_year: item.item_year,
-        item_year_to: item.item_year_to,
-        reference_url: item.reference_url,
-        created_at: item.created_at,
-        updated_at: item.updated_at,
-        group_id: item.group_id,
-        group_name: item.group,
+        item_year: item.item_year ?? undefined,
+        item_year_to: item.item_year_to ?? undefined,
+        reference_url: item.reference_url ?? undefined,
+        created_at: item.created_at ?? undefined,
+        updated_at: item.updated_at ?? undefined,
+        group_id: item.group_id ?? undefined,
+        group_name: item.group ?? undefined,
         // DB engagement metrics
         view_count: item.view_count || 0,
         selection_count: item.selection_count || 0,
@@ -96,8 +98,8 @@ export async function GET(
  * Fetch related items based on category and tags
  */
 async function fetchRelatedItems(
-  supabase: any,
-  item: any
+  supabase: TypedSupabaseClient,
+  item: ItemRow
 ): Promise<ItemDetailResponse['relatedItems']> {
   const relatedItems: ItemDetailResponse['relatedItems'] = [];
 
@@ -111,11 +113,11 @@ async function fetchRelatedItems(
       .limit(8);
 
     if (categoryItems) {
-      categoryItems.forEach((related: any) => {
+      categoryItems.forEach((related) => {
         relatedItems.push({
           id: related.id,
-          title: related.name || related.title,
-          image_url: related.image_url,
+          title: related.name || related.title || '',
+          image_url: related.image_url ?? undefined,
           similarity_reason: 'category',
         });
       });
@@ -132,13 +134,13 @@ async function fetchRelatedItems(
       .limit(4);
 
     if (taggedItems) {
-      taggedItems.forEach((related: any) => {
+      taggedItems.forEach((related) => {
         // Avoid duplicates
         if (!relatedItems.find(r => r.id === related.id)) {
           relatedItems.push({
             id: related.id,
-            title: related.name || related.title,
-            image_url: related.image_url,
+            title: related.name || related.title || '',
+            image_url: related.image_url ?? undefined,
             similarity_reason: 'tags',
           });
         }
@@ -154,7 +156,7 @@ async function fetchRelatedItems(
  * Note: This generates mock data. In production, aggregate from rankings table.
  */
 async function fetchRankingStats(
-  supabase: any,
+  _supabase: TypedSupabaseClient,
   itemId: string
 ): Promise<ItemDetailResponse['rankingStats']> {
   // Generate deterministic mock data based on item ID
@@ -197,7 +199,7 @@ async function fetchRankingStats(
  * Note: Returns mock data. In production, query from rankings/lists tables.
  */
 async function fetchRecentRankings(
-  supabase: any,
+  _supabase: TypedSupabaseClient,
   itemId: string
 ): Promise<ItemDetailResponse['recentRankings']> {
   // Mock recent rankings for now
@@ -228,16 +230,18 @@ async function fetchRecentRankings(
 /**
  * Generate external links based on item data
  */
-function generateExternalLinks(item: any): ItemDetailResponse['externalLinks'] {
+function generateExternalLinks(item: ItemRow): ItemDetailResponse['externalLinks'] {
   const links: ItemDetailResponse['externalLinks'] = [];
-  const title = item.name || item.title;
+  const title = item.name || item.title || '';
 
   // Wikipedia link (always add for most items)
-  links.push({
-    type: 'wikipedia',
-    url: `https://en.wikipedia.org/wiki/${encodeURIComponent(title.replace(/ /g, '_'))}`,
-    label: 'Wikipedia',
-  });
+  if (title) {
+    links.push({
+      type: 'wikipedia',
+      url: `https://en.wikipedia.org/wiki/${encodeURIComponent(title.replace(/ /g, '_'))}`,
+      label: 'Wikipedia',
+    });
+  }
 
   // Add reference URL if exists
   if (item.reference_url) {
@@ -257,7 +261,7 @@ function generateExternalLinks(item: any): ItemDetailResponse['externalLinks'] {
   // Category-specific links
   const category = (item.category || '').toLowerCase();
 
-  if (category.includes('movie') || category.includes('film')) {
+  if (title && (category.includes('movie') || category.includes('film'))) {
     links.push({
       type: 'imdb',
       url: `https://www.imdb.com/find/?q=${encodeURIComponent(title)}`,
@@ -265,7 +269,7 @@ function generateExternalLinks(item: any): ItemDetailResponse['externalLinks'] {
     });
   }
 
-  if (category.includes('music') || category.includes('album') || category.includes('song')) {
+  if (title && (category.includes('music') || category.includes('album') || category.includes('song'))) {
     links.push({
       type: 'spotify',
       url: `https://open.spotify.com/search/${encodeURIComponent(title)}`,

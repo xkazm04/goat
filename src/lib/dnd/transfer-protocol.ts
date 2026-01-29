@@ -292,7 +292,7 @@ export class TransferProtocol<T extends TransferableItem = TransferableItem> {
     const result = this.findSourceForItem(itemId);
 
     if (!result) {
-      console.warn(`[TransferProtocol] No source found for item: ${itemId}`);
+      // Source not found - this is expected in some cases (e.g., external drag)
       return null;
     }
 

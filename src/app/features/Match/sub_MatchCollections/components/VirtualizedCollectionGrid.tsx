@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useCallback } from "react";
+import { useMemo, useRef } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, TrendingUp, Sparkles } from "lucide-react";
@@ -34,12 +34,14 @@ interface VirtualizedCollectionGridProps {
   columnCount?: number;
   /** Container height for virtualization */
   containerHeight?: number;
+  /** Row height for items (calculated dynamically based on aspect ratio) */
+  rowHeight?: number;
+  /** Fixed item width for constrained sizing (prevents items from expanding) */
+  itemWidth?: number;
   /** Optional callback when an item is clicked (for click-to-assign) */
   onItemClick?: (item: CollectionItem) => void;
   /** ID of the currently selected item (for click-to-assign highlighting) */
   selectedItemId?: string;
-  /** Size of items: 'default' (80px row height) or 'large' (140px row height) */
-  itemSize?: 'default' | 'large';
 }
 
 interface FlattenedRow {
@@ -74,9 +76,10 @@ export function VirtualizedCollectionGrid({
   isItemSelected,
   columnCount = 10,
   containerHeight = 280,
+  rowHeight = 76, // Default: 56px width * 5/4 aspect + 6px gap
+  itemWidth,
   onItemClick,
   selectedItemId,
-  itemSize = 'default',
 }: VirtualizedCollectionGridProps) {
   const parentRef = useRef<HTMLDivElement>(null);
   const sortBy = useConsensusSortBy();
@@ -151,39 +154,39 @@ export function VirtualizedCollectionGrid({
         });
       }
 
-      // Chunk items into rows based on column count
-      for (let i = 0; i < group.items.length; i += columnCount) {
-        const rowItems = group.items.slice(i, i + columnCount);
-        rows.push({
-          type: "items",
-          groupId: group.id,
-          items: rowItems,
-        });
-      }
+      // Put all group items in a single "row" - CSS Grid auto-fill handles wrapping
+      // This allows dynamic column count based on actual container width
+      rows.push({
+        type: "items",
+        groupId: group.id,
+        items: group.items,
+      });
     });
 
     return rows;
-  }, [sortedGroups, showGroupHeaders, columnCount]);
+  }, [sortedGroups, showGroupHeaders]);
 
-  // Row heights based on item size
-  const itemRowHeight = itemSize === 'large' ? 140 : 80;
-  const headerRowHeight = 40;
+  // Row heights
+  const headerRowHeight = 36;
+  const gap = 8;
 
-  // Estimate row heights
-  const estimateSize = useCallback((index: number) => {
-    const row = flattenedRows[index];
-    if (row.type === "header") {
-      return headerRowHeight;
-    }
-    return itemRowHeight;
-  }, [flattenedRows, itemRowHeight]);
-
-  // Initialize virtualizer
+  // Initialize virtualizer with dynamic measurement
+  // Instead of estimating, we measure actual rendered heights
   const rowVirtualizer = useVirtualizer({
     count: flattenedRows.length,
     getScrollElement: () => parentRef.current,
-    estimateSize,
-    overscan: 3, // Render a few extra rows above/below for smoother scrolling
+    estimateSize: (index) => {
+      // Provide reasonable initial estimate
+      const row = flattenedRows[index];
+      if (row.type === "header") return headerRowHeight;
+      // Estimate based on item count - will be corrected by measureElement
+      const itemCount = row.items?.length || 0;
+      const estimatedRows = Math.ceil(itemCount / Math.max(3, columnCount));
+      return estimatedRows * (rowHeight + gap);
+    },
+    overscan: 3,
+    // Enable dynamic measurement - virtualizer will measure actual DOM height
+    measureElement: (element) => element.getBoundingClientRect().height,
   });
 
   if (!hasVisibleItems) {
@@ -195,10 +198,12 @@ export function VirtualizedCollectionGrid({
           scale: 1,
           transition: { delay: 0.3, duration: 0.2 }
         }}
+        role="status"
+        aria-label="No items available"
         className="h-full flex flex-col items-center justify-center text-gray-500 dark:text-gray-600 gap-3"
         data-testid="virtualized-collection-grid-empty"
       >
-        <Search className="w-8 h-8 opacity-20" />
+        <Search className="w-8 h-8 opacity-20" aria-hidden="true" />
         <p className="text-sm">No items available in this category</p>
         <p className="text-xs text-gray-600">Items placed in the grid are hidden here</p>
       </motion.div>
@@ -212,21 +217,26 @@ export function VirtualizedCollectionGrid({
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
+          role="status"
+          aria-live="polite"
           className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 rounded-lg border border-cyan-500/20"
           data-testid="virtualized-consensus-sort-indicator"
         >
-          <TrendingUp className="w-3.5 h-3.5 text-cyan-400" />
+          <TrendingUp className="w-3.5 h-3.5 text-cyan-400" aria-hidden="true" />
           <span className="text-[11px] text-cyan-300/80">
             Sorted by community ranking
           </span>
-          <Sparkles className="w-3 h-3 text-purple-400/60 ml-auto" />
+          <Sparkles className="w-3 h-3 text-purple-400/60 ml-auto" aria-hidden="true" />
         </motion.div>
       )}
 
       {/* Virtualized scroll container */}
       <div
         ref={parentRef}
-        className="overflow-auto"
+        role="region"
+        aria-label="Collection items - drag items to add them to your ranking"
+        tabIndex={0}
+        className="overflow-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-inset"
         style={{ height: containerHeight }}
         data-testid="virtualized-scroll-container"
       >
@@ -244,12 +254,13 @@ export function VirtualizedCollectionGrid({
               return (
                 <div
                   key={`header-${row.groupId}`}
+                  ref={rowVirtualizer.measureElement}
+                  data-index={virtualRow.index}
                   style={{
                     position: 'absolute',
                     top: 0,
                     left: 0,
                     width: '100%',
-                    height: `${virtualRow.size}px`,
                     transform: `translateY(${virtualRow.start}px)`,
                   }}
                   data-testid={`virtualized-group-header-${row.groupId}`}
@@ -275,20 +286,21 @@ export function VirtualizedCollectionGrid({
             return (
               <div
                 key={`items-${row.groupId}-${virtualRow.index}`}
+                ref={rowVirtualizer.measureElement}
+                data-index={virtualRow.index}
                 style={{
                   position: 'absolute',
                   top: 0,
                   left: 0,
                   width: '100%',
-                  height: `${virtualRow.size}px`,
                   transform: `translateY(${virtualRow.start}px)`,
                 }}
                 data-testid={`virtualized-items-row-${virtualRow.index}`}
               >
                 <div
-                  className={`grid ${itemSize === 'large' ? 'gap-3' : 'gap-2'}`}
+                  className="flex flex-wrap gap-2"
                   style={{
-                    gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))`,
+                    // Fixed item width - items wrap naturally to next line
                   }}
                 >
                   {row.items?.map((item: CollectionItem, itemIndex: number) => {
@@ -300,6 +312,7 @@ export function VirtualizedCollectionGrid({
                       <div
                         key={item.id}
                         className="relative"
+                        style={{ width: itemWidth || 112 }}
                         data-testid={`virtualized-item-cell-${item.id}`}
                         onClick={onItemClick ? () => onItemClick(item) : undefined}
                       >

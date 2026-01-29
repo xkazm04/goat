@@ -41,8 +41,11 @@ function BracketSizeSelector({
         <button
           key={s}
           onClick={() => onChange(s)}
+          aria-pressed={size === s}
+          aria-label={`Bracket size: ${s} competitors`}
           className={`
             px-3 py-1.5 rounded-lg text-sm font-bold transition-all duration-200
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-800
             ${
               size === s
                 ? 'bg-cyan-500/20 border border-cyan-400/50 text-cyan-300'
@@ -74,7 +77,11 @@ function SeedingSelector({
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 transition-all"
+        aria-expanded={isOpen}
+        aria-haspopup="listbox"
+        aria-label={`Seeding strategy: ${getSeedingStrategyName(strategy)}`}
+        className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 transition-all
+          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
       >
         <div className="flex items-center gap-2">
           <Settings2 className="w-4 h-4" />
@@ -92,23 +99,29 @@ function SeedingSelector({
             <div
               className="fixed inset-0 z-40"
               onClick={() => setIsOpen(false)}
+              aria-hidden="true"
             />
 
             <motion.div
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
+              role="listbox"
+              aria-label="Seeding strategy options"
               className="absolute top-full left-0 right-0 mt-1 bg-slate-800 border border-slate-600 rounded-lg shadow-xl z-50 overflow-hidden"
             >
               {strategies.map((s) => (
                 <button
                   key={s.id}
+                  role="option"
+                  aria-selected={strategy === s.id}
                   onClick={() => {
                     onChange(s.id);
                     setIsOpen(false);
                   }}
                   className={`
                     w-full px-3 py-2.5 text-left hover:bg-slate-700 transition-colors
+                    focus-visible:outline-none focus-visible:bg-slate-700
                     ${
                       strategy === s.id
                         ? 'bg-slate-700/50 border-l-2 border-cyan-400'
@@ -219,13 +232,15 @@ export function BracketSetup({
         <div className="flex gap-2">
           <button
             onClick={onCancel}
-            className="flex-1 px-4 py-2.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 font-medium transition-colors text-sm"
+            className="flex-1 px-4 py-2.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 font-medium transition-colors text-sm
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-800"
           >
             Cancel
           </button>
           <button
             onClick={onStart}
-            className="flex-1 px-4 py-2.5 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold transition-all flex items-center justify-center gap-2 text-sm"
+            className="flex-1 px-4 py-2.5 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold transition-all flex items-center justify-center gap-2 text-sm
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-800"
           >
             <Play className="w-4 h-4" />
             Start

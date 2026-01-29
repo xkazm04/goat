@@ -1,14 +1,17 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useTempUser } from "@/hooks/use-temp-user";
-import { toast } from "@/hooks/use-toast";
 import { useListStore } from "@/stores/use-list-store";
 import { useRouter } from "next/navigation";
 import { CompositionResult } from "@/types/composition-to-api";
 import { ShimmerBtn } from "@/components/app/button/AnimButtons";
-import { ListIntent, validateListIntent } from "@/types/list-intent";
-import { listIntentToCreateRequest, listIntentToMetadata } from "@/types/list-intent-transformers";
+import { ListIntent } from "@/types/list-intent";
+import { listIntentToMetadata } from "@/types/list-intent-transformers";
 import { CreationProgressIndicator, CreationStep } from "./sub_CreateList/components/CreationProgressIndicator";
-import { categoryHasSubcategories, isValidSubcategory } from "@/lib/config/category-config";
+import {
+  listCreationService,
+  CreationStep as ServiceCreationStep,
+} from "@/services/list-creation-service";
+import { toast } from "@/hooks/use-toast";
 
 type Props = {
     intent: ListIntent;
@@ -20,44 +23,28 @@ type Props = {
     onClose: () => void;
 }
 
+/**
+ * ListCreateButton - Unified list creation button
+ *
+ * Uses the centralized ListCreationService for validation, transformation,
+ * and error handling. This component now serves as a thin UI wrapper.
+ */
 const ListCreateButton = ({ intent, createListMutation, onSuccess, onClose }: Props) => {
-     const router = useRouter();
-     const { tempUserId, isLoaded } = useTempUser();
+    const router = useRouter();
+    const { tempUserId, isLoaded } = useTempUser();
     const { setCreationResult, setIsCreating, setCreationError } = useListStore();
     const [creationStep, setCreationStep] = useState<CreationStep | null>(null);
+
     const isButtonDisabled = createListMutation.isPending || !isLoaded || !tempUserId || creationStep !== null;
+
     const getButtonText = () => {
         if (creationStep !== null) return "";
         if (!isLoaded) return "LOADING...";
         return "START";
     };
 
-    const validateIntent = (): { isValid: boolean; errors: string[] } => {
-        // Use the ListIntent validator
-        const validation = validateListIntent(intent);
-        const errors: string[] = [...validation.errors];
-
-        // Additional validation for custom lists (non-predefined)
-        if (!intent.isPredefined && (!intent.title || !intent.title.trim())) {
-            errors.push("Please provide a title for your custom list");
-        }
-
-        // Validate subcategory for categories that require it (e.g., Sports)
-        if (intent.category && categoryHasSubcategories(intent.category)) {
-            if (!intent.subcategory) {
-                errors.push(`Please select a subcategory for ${intent.category}`);
-            } else if (!isValidSubcategory(intent.category, intent.subcategory)) {
-                errors.push(`Invalid subcategory for ${intent.category}`);
-            }
-        }
-
-        return {
-            isValid: errors.length === 0,
-            errors
-        };
-    };
-    const handleCreate = async () => {
-        // Early return if button is disabled (aria-disabled doesn't prevent clicks)
+    const handleCreate = useCallback(async () => {
+        // Early return if button is disabled
         if (isButtonDisabled) {
             return;
         }
@@ -70,46 +57,44 @@ const ListCreateButton = ({ intent, createListMutation, onSuccess, onClose }: Pr
             return;
         }
 
-        // Step 1: Validating
-        setCreationStep("validating");
-
-        const validation = validateIntent();
-        if (!validation.isValid) {
-            setCreationStep(null);
-            toast({
-                title: "Validation Error",
-                description: validation.errors.join(", "),
-            });
-            return;
-        }
-
         setIsCreating(true);
         setCreationError(null);
 
-        try {
-            // Step 2: Creating list - Use ListIntent transformation pipeline
-            setCreationStep("creating");
-            const createListRequest = listIntentToCreateRequest(intent, tempUserId);
+        // Progress handler that maps service steps to component steps
+        const onProgress = (step: ServiceCreationStep) => {
+            // Map service steps to component steps (they use the same type)
+            setCreationStep(step === 'idle' ? null : step as CreationStep);
+        };
 
-            console.log("Creating list with enhanced endpoint:", createListRequest);
-            const result = await createListMutation.mutateAsync(createListRequest);
+        // Use the unified service for list creation
+        const result = await listCreationService.createList(intent, {
+            userId: tempUserId,
+            onProgress,
+        });
 
-            // Step 3: Loading items - Use ListIntent to generate metadata
-            setCreationStep("loading");
+        if (result.success && result.list) {
+            // Store the creation result with metadata
             const enhancedListData: any = {
                 ...result.list,
                 metadata: listIntentToMetadata(intent),
             };
 
+            // Convert API user shape to store UserInfo shape
+            const userInfo = result.user
+                ? {
+                      id: result.user.id,
+                      is_temporary: result.isNewUser ?? false,
+                      email: result.user.email,
+                      display_name: result.user.name,
+                  }
+                : { id: '', is_temporary: true };
+
             setCreationResult({
                 list: enhancedListData,
-                user: result.user,
-                is_new_user: result.is_new_user,
+                user: userInfo,
+                is_new_user: result.isNewUser ?? false,
                 success: result.success
             });
-
-            // Step 4: Complete
-            setCreationStep("complete");
 
             // Brief pause to show completion before navigating
             await new Promise(resolve => setTimeout(resolve, 300));
@@ -121,25 +106,25 @@ const ListCreateButton = ({ intent, createListMutation, onSuccess, onClose }: Pr
 
             const compositionResult: CompositionResult = {
                 success: true,
-                listId: result.list.id,
+                listId: result.listId,
                 message: `Successfully created "${result.list.title}"!`,
-                redirectUrl: `/match-test?list=${result.list.id}`
+                redirectUrl: `/match-test?list=${result.listId}`
             };
             onSuccess?.(compositionResult);
             onClose();
 
-            router.push(`/match-test?list=${result.list.id}`);
-
-        } catch (error) {
-            console.error("Error creating list:", error);
+            router.push(`/match-test?list=${result.listId}`);
+        } else {
+            // Handle error
             setCreationStep(null);
-
-            const errorMessage = error instanceof Error ? error.message : "Failed to create list";
+            const errorMessage = result.error || "Failed to create list";
             setCreationError(errorMessage);
 
             toast({
                 title: "Creation Failed",
-                description: errorMessage,
+                description: result.validationErrors?.length
+                    ? result.validationErrors.join(", ")
+                    : errorMessage,
             });
 
             const failureResult: CompositionResult = {
@@ -148,7 +133,21 @@ const ListCreateButton = ({ intent, createListMutation, onSuccess, onClose }: Pr
             };
             onSuccess?.(failureResult);
         }
-    };
+
+        setIsCreating(false);
+    }, [
+        isButtonDisabled,
+        isLoaded,
+        tempUserId,
+        intent,
+        setIsCreating,
+        setCreationError,
+        setCreationResult,
+        onSuccess,
+        onClose,
+        router,
+    ]);
+
     const isPending = createListMutation.isPending || creationStep !== null;
 
     return (

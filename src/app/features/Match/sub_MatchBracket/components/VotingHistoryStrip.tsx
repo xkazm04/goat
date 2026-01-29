@@ -28,28 +28,33 @@ interface VoteResult {
  * Compact vote display showing winner vs loser
  */
 function VoteCard({ vote, isNew }: { vote: VoteResult; isNew: boolean }) {
+  const winnerName = vote.winner.title || 'Winner';
+  const loserName = vote.loser.title || 'Loser';
+
   return (
     <motion.div
       layout
       initial={isNew ? { opacity: 0, scale: 0.8, x: 20 } : false}
       animate={{ opacity: 1, scale: 1, x: 0 }}
       className="flex-shrink-0 flex items-center gap-px rounded-lg overflow-hidden bg-slate-800/40 border border-slate-700/30"
+      role="listitem"
+      aria-label={`${winnerName} beat ${loserName}`}
     >
       {/* Winner */}
       <div className="relative w-9 h-9 sm:w-10 sm:h-10">
         {vote.winner.image_url ? (
           <img
             src={vote.winner.image_url}
-            alt=""
+            alt={`${winnerName} (winner)`}
             className="w-full h-full object-cover"
           />
         ) : (
-          <div className="w-full h-full bg-slate-700 flex items-center justify-center text-[10px] text-slate-400 font-bold">
+          <div className="w-full h-full bg-slate-700 flex items-center justify-center text-[10px] text-slate-400 font-bold" aria-label={winnerName}>
             {vote.winner.title?.charAt(0)?.toUpperCase() || '?'}
           </div>
         )}
         {/* Winner indicator */}
-        <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-green-500 flex items-center justify-center border border-slate-900">
+        <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-green-500 flex items-center justify-center border border-slate-900" aria-hidden="true">
           <Check className="w-2 h-2 text-white stroke-[3]" />
         </div>
       </div>
@@ -59,16 +64,16 @@ function VoteCard({ vote, isNew }: { vote: VoteResult; isNew: boolean }) {
         {vote.loser.image_url ? (
           <img
             src={vote.loser.image_url}
-            alt=""
+            alt={`${loserName} (eliminated)`}
             className="w-full h-full object-cover grayscale opacity-40"
           />
         ) : (
-          <div className="w-full h-full bg-slate-800 flex items-center justify-center text-[10px] text-slate-700 font-bold">
+          <div className="w-full h-full bg-slate-800 flex items-center justify-center text-[10px] text-slate-700 font-bold" aria-label={loserName}>
             {vote.loser.title?.charAt(0)?.toUpperCase() || '?'}
           </div>
         )}
         {/* Loser X overlay */}
-        <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+        <div className="absolute inset-0 flex items-center justify-center bg-black/30" aria-hidden="true">
           <X className="w-4 h-4 text-red-500/80 stroke-[2.5]" />
         </div>
       </div>
@@ -162,6 +167,8 @@ export function VotingHistoryStrip({ bracket }: VotingHistoryStripProps) {
         {/* Scrollable history */}
         <div
           ref={scrollRef}
+          role="list"
+          aria-label={`Voting history: ${completedVotes.length} completed matchups`}
           className="flex-1 overflow-x-auto scrollbar-none flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3"
         >
           <AnimatePresence mode="popLayout">

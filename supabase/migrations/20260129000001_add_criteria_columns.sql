@@ -43,7 +43,7 @@ CREATE INDEX IF NOT EXISTS idx_list_items_scores_gin
 -- Create B-tree expression index for weighted score range queries
 -- Enables efficient ORDER BY and WHERE clauses on weightedScore
 CREATE INDEX IF NOT EXISTS idx_list_items_weighted_score
-  ON list_items ((criteria_scores->>'weightedScore')::numeric)
+  ON list_items (CAST(criteria_scores->>'weightedScore' AS numeric))
   WHERE criteria_scores IS NOT NULL;
 
 COMMENT ON COLUMN list_items.criteria_scores IS

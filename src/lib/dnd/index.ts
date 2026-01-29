@@ -161,3 +161,54 @@ export {
   // Route determination
   determineTransferRoute,
 } from './unified-protocol';
+
+// DragOperation Router System
+export {
+  // Types
+  type DragOperationType,
+  type DragSource,
+  type DragTarget,
+  type DragContext,
+  type DragOperationResult,
+  type GridStoreContext,
+  type BacklogStoreContext,
+  type TierStoreContext,
+  type OperationStoreContext,
+  type DragOperation,
+  type RouterConfig,
+  type OperationResultHandler,
+  type ValidationErrorHandler,
+  type DragNotification,
+  type NotificationCallback,
+  type ValidationErrorEmitter,
+  type DragResultHandlerConfig,
+
+  // Router
+  DragOperationRouter,
+  getDragOperationRouter,
+  resetDragOperationRouter,
+
+  // Operations
+  AssignOperation,
+  MoveOperation,
+  SwapOperation,
+  TierAssignOperation,
+  TierMoveOperation,
+  TierTransferOperation,
+  UnrankOperation,
+  RankFromPoolOperation,
+  TierToGridOperation,
+  GridToTierOperation,
+
+  // Result Handler
+  DragResultHandler,
+  getDragResultHandler,
+  resetDragResultHandler,
+  createConsoleNotificationCallback,
+  connectToNotificationStore,
+
+  // Factory functions
+  createStandardRouter,
+  createGridOnlyRouter,
+  createDragSystem,
+} from './operations';

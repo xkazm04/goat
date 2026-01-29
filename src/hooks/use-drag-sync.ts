@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useGridStore } from "@/stores/grid-store";
 import { useCompositionModalStore } from "@/stores/composition-modal-store";
-import { GridItemType } from "@/types/match";
 import { DragEndEvent, DragMoveEvent, DragStartEvent } from "@dnd-kit/core";
 
 interface DragState {

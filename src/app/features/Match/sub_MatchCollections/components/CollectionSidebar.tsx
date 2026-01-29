@@ -28,21 +28,24 @@ export function CollectionSidebar({
   totalItemCount,
 }: CollectionSidebarProps) {
   return (
-    <motion.div
+    <motion.nav
       initial={{ opacity: 0, x: -20 }}
       animate={{
         opacity: 1,
         x: 0,
         transition: { delay: 0.15, duration: 0.25 }
       }}
-      className="w-64 bg-black/20 dark:bg-black/40 backdrop-blur-sm border-r border-white/5 dark:border-white/[0.02] p-4 overflow-y-auto space-y-2"
+      aria-label="Collection categories"
+      className="w-44 bg-black/20 dark:bg-black/40 backdrop-blur-sm border-r border-white/5 dark:border-white/[0.02] p-3 overflow-y-auto space-y-1.5"
     >
       {/* All Items Button */}
       <motion.button
         onClick={() => onTabChange('all')}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
-        className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold tracking-wide transition-all duration-200 flex items-center justify-between group ${
+        aria-pressed={activeTab === 'all'}
+        aria-label={`Show all items (${totalItemCount} available)`}
+        className={`w-full text-left px-3 py-2 rounded-lg text-[10px] font-bold tracking-wide transition-all duration-200 flex items-center justify-between group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 ${
           activeTab === 'all'
             ? 'bg-cyan-500/20 dark:bg-cyan-500/10 text-cyan-300 dark:text-cyan-200 border border-cyan-500/30 dark:border-cyan-500/20 shadow-[0_0_15px_rgba(6,182,212,0.1)]'
             : 'text-gray-400 dark:text-gray-500 hover:bg-white/5 dark:hover:bg-white/10 hover:text-white'
@@ -52,7 +55,7 @@ export function CollectionSidebar({
         <span>ALL ITEMS</span>
         <span className={`text-[10px] px-2 py-0.5 rounded-full ${
           activeTab === 'all' ? 'bg-cyan-500/20 dark:bg-cyan-500/10' : 'bg-white/5 dark:bg-white/10'
-        }`}>
+        }`} aria-hidden="true">
           {totalItemCount}
         </span>
       </motion.button>
@@ -79,7 +82,9 @@ export function CollectionSidebar({
             onClick={() => onTabChange(group.id)}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className={`w-full text-left px-4 py-3 rounded-xl text-xs transition-all duration-200 flex items-center justify-between group ${
+            aria-pressed={activeTab === group.id}
+            aria-label={`Filter by ${group.name} (${availableCount} available)`}
+            className={`w-full text-left px-3 py-2 rounded-lg text-[10px] transition-all duration-200 flex items-center justify-between group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 ${
               activeTab === group.id
                 ? 'bg-white/10 dark:bg-white/5 text-white border border-white/20 dark:border-white/10'
                 : 'text-gray-500 dark:text-gray-600 hover:bg-white/5 dark:hover:bg-white/10 hover:text-gray-300 dark:hover:text-gray-400'
@@ -87,12 +92,16 @@ export function CollectionSidebar({
             data-testid={`category-${group.id}-btn`}
           >
             <span className="font-medium truncate pr-2">{group.name}</span>
-            <span className="text-[10px] opacity-50">
+            <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
+              activeTab === group.id
+                ? 'bg-white/20 text-white'
+                : 'bg-white/10 text-gray-300'
+            }`} aria-hidden="true">
               {availableCount}
             </span>
           </motion.button>
         );
       })}
-    </motion.div>
+    </motion.nav>
   );
 }

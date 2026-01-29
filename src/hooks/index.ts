@@ -8,28 +8,38 @@
 // ========================================
 
 /**
- * Supabase Query Hook
- * Wraps Supabase queries with loading, error, and data states
- * Follows React Query patterns for consistency
+ * Supabase Query Hook - TanStack Query Integration
+ * Wraps TanStack Query with Supabase client integration and unified cache config
+ * Provides consistent caching via CACHE_PRESETS from unified-cache.ts
  */
 export {
   useSupabaseQuery,
   useSupabasePaginatedQuery,
+  useSupabaseInfiniteQuery,
+  createSupabaseQueryHook,
+  getSupabase,
+  resetSupabaseClient,
   type SupabaseQueryState,
   type SupabaseQueryOptions,
   type SupabaseQueryFn,
+  type SupabasePaginatedQueryState,
+  type SupabaseInfiniteQueryOptions,
 } from './useSupabaseQuery';
 
 /**
- * Supabase Mutation Hook
- * Handles insert, update, delete operations with optimistic updates
+ * Supabase Mutation Hook - TanStack Query Integration
+ * Handles insert, update, delete with optimistic updates and cache invalidation
  */
 export {
   useSupabaseMutation,
   useSupabaseBatchMutation,
+  createSupabaseMutationHook,
+  createOptimisticUpdate,
   type SupabaseMutationState,
   type SupabaseMutationOptions,
   type SupabaseMutationFn,
+  type SupabaseBatchMutationOptions,
+  type OptimisticContext,
 } from './useSupabaseMutation';
 
 /**
@@ -107,17 +117,6 @@ export {
   usePlayList,
 } from './use-play-list';
 
-/**
- * Item Research Hooks
- * Handles AI-powered item validation and research
- */
-export {
-  useItemResearch,
-  useItemValidation,
-  useItemResearchFlow,
-  type UseItemResearchOptions,
-} from './use-item-research';
-
 // ========================================
 // UI/UX Hooks (Existing)
 // ========================================
@@ -135,14 +134,6 @@ export {
   useIsSmallScreen,
   useIsMediumScreen,
 } from './useMediaQuery';
-
-/**
- * Backlog Filtering Hook
- * Manages search, filters, and sorting for backlog items
- */
-export {
-  useBacklogFiltering,
-} from './use-backlog-filtering';
 
 /**
  * Backlog Selectors Hook
@@ -256,7 +247,6 @@ export type {
 /**
  * Motion Preference Hook
  * 3-tier motion intensity system: Full, Reduced, Minimal
- * Replaces binary prefers-reduced-motion with granular control
  */
 export {
   useMotionPreference,
@@ -271,82 +261,24 @@ export type {
   MotionCapabilities,
 } from './use-motion-preference';
 
-// ========================================
-// Performance & Deferred Loading Hooks
-// ========================================
-
 /**
- * Deferred Render Hook
- * Defers component rendering until after initial paint for better perceived performance
+ * Blueprint Hooks
+ * Manages blueprint templates for list creation
  */
 export {
-  useDeferredRender,
-  useDeferredValue,
-  useAfterPaint,
-} from './use-deferred-render';
-
-// ========================================
-// API Caching & Performance Hooks
-// ========================================
+  useBlueprint,
+  useBlueprints,
+  useFeaturedBlueprints,
+} from './use-blueprints';
 
 /**
- * API Cache Hooks
- * Intelligent caching layer for API responses with metrics and invalidation
+ * Item Stats Hook
+ * Fetches and manages item statistics
  */
 export {
-  useCacheMetrics,
-  useCacheInvalidation,
-  useCachePrefetch,
-  useCacheStatus,
-  useAPICache,
-} from './use-api-cache';
-
-// ========================================
-// Request Batching & Deduplication Hooks
-// ========================================
-
-/**
- * Batched Query Hooks
- * Automatic request batching and deduplication for optimal API performance.
- * Combines multiple requests into single batch calls.
- */
-export {
-  useBatchedQuery,
-  useBatchedMutation,
-  useBatchedQueries,
-  useBatchManager,
-  useBatchedPrefetch,
-  useLazyBatchedQuery,
-  createBatchedFetcher,
-  createBatchedMutation,
-  getGlobalBatchManager,
-  type BatchedQueryOptions,
-  type BatchedMutationOptions,
-  type BatchedFetcherConfig,
-  type BatchManagerStats,
-  type BatchRequest,
-  type BatchPriority,
-} from './use-batched-query';
-
-// ========================================
-// Container Query & Responsive Hooks
-// ========================================
-
-/**
- * Container Query Hooks
- * Advanced container query utilities with ResizeObserver integration
- * Enables components to respond to their container size
- */
-export {
-  useContainerQuery,
-  useContainerBreakpoint,
-  useContainerDimensions,
-  useMultipleContainerQueries,
-  useContainerCallback,
-  containerQueryUtils,
-  type ContainerQueryMatch,
-  type ContainerQueryConfig,
-} from './use-container-query';
+  useItemStat,
+  useItemStats,
+} from './use-item-stats';
 
 // ========================================
 // Migration Notes

@@ -1,34 +1,39 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import {
-  Blueprint,
   BlueprintRow,
   blueprintFromRow,
-  blueprintToRow,
-  UpdateBlueprintRequest
+  UpdateBlueprintRequest,
 } from '@/types/blueprint';
+import {
+  withErrorHandler,
+  fromSupabaseError,
+  notFound,
+  forbidden,
+  successResponse,
+} from '@/lib/errors';
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic';
 
+// Helper to check if a string is a UUID
+const isUUID = (str: string) =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+
 // GET /api/blueprints/[slugOrId] - Get a specific blueprint by slug or ID
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ slugOrId: string }> }
-) {
-  try {
+export const GET = withErrorHandler(
+  async (request: NextRequest, context?: { params?: Promise<Record<string, string>> }) => {
     const supabase = await createClient();
-    const { slugOrId } = await params;
+    const { slugOrId } = (await context?.params) || {};
+
+    if (!slugOrId) {
+      notFound('Blueprint');
+    }
 
     // Try to find by slug first, then by ID
-    let query = supabase
-      .from('blueprints')
-      .select('*');
+    let query = supabase.from('blueprints').select('*');
 
-    // Check if it's a UUID (ID) or a slug
-    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId);
-
-    if (isUUID) {
+    if (isUUID(slugOrId)) {
       query = query.eq('id', slugOrId);
     } else {
       query = query.eq('slug', slugOrId);
@@ -38,16 +43,9 @@ export async function GET(
 
     if (error) {
       if (error.code === 'PGRST116') {
-        return NextResponse.json(
-          { error: 'Blueprint not found' },
-          { status: 404 }
-        );
+        notFound('Blueprint', slugOrId);
       }
-      console.error('Error fetching blueprint:', error);
-      return NextResponse.json(
-        { error: error.message },
-        { status: 500 }
-      );
+      throw fromSupabaseError(error);
     }
 
     const blueprint = blueprintFromRow(data as BlueprintRow);
@@ -58,34 +56,25 @@ export async function GET(
       .update({ usage_count: (data.usage_count || 0) + 1 })
       .eq('id', data.id);
 
-    return NextResponse.json(blueprint);
-  } catch (error) {
-    console.error('Unexpected error in GET /api/blueprints/[slugOrId]:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return successResponse(blueprint);
   }
-}
+);
 
 // PATCH /api/blueprints/[slugOrId] - Update a blueprint
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ slugOrId: string }> }
-) {
-  try {
+export const PATCH = withErrorHandler(
+  async (request: NextRequest, context?: { params?: Promise<Record<string, string>> }) => {
     const supabase = await createClient();
-    const { slugOrId } = await params;
+    const { slugOrId } = (await context?.params) || {};
     const body: UpdateBlueprintRequest = await request.json();
 
+    if (!slugOrId) {
+      notFound('Blueprint');
+    }
+
     // First, find the blueprint
-    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId);
+    let findQuery = supabase.from('blueprints').select('*');
 
-    let findQuery = supabase
-      .from('blueprints')
-      .select('*');
-
-    if (isUUID) {
+    if (isUUID(slugOrId)) {
       findQuery = findQuery.eq('id', slugOrId);
     } else {
       findQuery = findQuery.eq('slug', slugOrId);
@@ -95,23 +84,14 @@ export async function PATCH(
 
     if (findError) {
       if (findError.code === 'PGRST116') {
-        return NextResponse.json(
-          { error: 'Blueprint not found' },
-          { status: 404 }
-        );
+        notFound('Blueprint', slugOrId);
       }
-      return NextResponse.json(
-        { error: findError.message },
-        { status: 500 }
-      );
+      throw fromSupabaseError(findError);
     }
 
     // Prevent editing system blueprints
     if (existingData.is_system) {
-      return NextResponse.json(
-        { error: 'Cannot modify system blueprints' },
-        { status: 403 }
-      );
+      forbidden('Cannot modify system blueprints');
     }
 
     // Prepare update data
@@ -139,42 +119,29 @@ export async function PATCH(
       .single();
 
     if (error) {
-      console.error('Error updating blueprint:', error);
-      return NextResponse.json(
-        { error: error.message },
-        { status: 500 }
-      );
+      throw fromSupabaseError(error);
     }
 
     const blueprint = blueprintFromRow(data as BlueprintRow);
 
-    return NextResponse.json(blueprint);
-  } catch (error) {
-    console.error('Unexpected error in PATCH /api/blueprints/[slugOrId]:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return successResponse(blueprint);
   }
-}
+);
 
 // DELETE /api/blueprints/[slugOrId] - Delete a blueprint
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ slugOrId: string }> }
-) {
-  try {
+export const DELETE = withErrorHandler(
+  async (request: NextRequest, context?: { params?: Promise<Record<string, string>> }) => {
     const supabase = await createClient();
-    const { slugOrId } = await params;
+    const { slugOrId } = (await context?.params) || {};
+
+    if (!slugOrId) {
+      notFound('Blueprint');
+    }
 
     // First, find the blueprint
-    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId);
+    let findQuery = supabase.from('blueprints').select('*');
 
-    let findQuery = supabase
-      .from('blueprints')
-      .select('*');
-
-    if (isUUID) {
+    if (isUUID(slugOrId)) {
       findQuery = findQuery.eq('id', slugOrId);
     } else {
       findQuery = findQuery.eq('slug', slugOrId);
@@ -184,45 +151,23 @@ export async function DELETE(
 
     if (findError) {
       if (findError.code === 'PGRST116') {
-        return NextResponse.json(
-          { error: 'Blueprint not found' },
-          { status: 404 }
-        );
+        notFound('Blueprint', slugOrId);
       }
-      return NextResponse.json(
-        { error: findError.message },
-        { status: 500 }
-      );
+      throw fromSupabaseError(findError);
     }
 
     // Prevent deleting system blueprints
     if (existingData.is_system) {
-      return NextResponse.json(
-        { error: 'Cannot delete system blueprints' },
-        { status: 403 }
-      );
+      forbidden('Cannot delete system blueprints');
     }
 
     // Delete the blueprint
-    const { error } = await supabase
-      .from('blueprints')
-      .delete()
-      .eq('id', existingData.id);
+    const { error } = await supabase.from('blueprints').delete().eq('id', existingData.id);
 
     if (error) {
-      console.error('Error deleting blueprint:', error);
-      return NextResponse.json(
-        { error: error.message },
-        { status: 500 }
-      );
+      throw fromSupabaseError(error);
     }
 
-    return NextResponse.json({ success: true }, { status: 200 });
-  } catch (error) {
-    console.error('Unexpected error in DELETE /api/blueprints/[slugOrId]:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return successResponse({ message: 'Blueprint deleted successfully' });
   }
-}
+);

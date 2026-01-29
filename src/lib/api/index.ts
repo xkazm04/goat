@@ -93,7 +93,6 @@ export type { CachedRequestOptions } from './cached-client';
 /**
  * @deprecated Use `goatApi.items` instead
  * This export is maintained for backwards compatibility during migration.
- * Will be removed in a future version.
  */
 export { collectionApi } from './collection';
 export type {

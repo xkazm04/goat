@@ -15,7 +15,7 @@ import {
   GroupViewMode,
   filterItemsByQuery,
   QuickSelectStatusBar,
-  useGridColumns,
+  useGridDimensions,
 } from "./components";
 
 interface SimpleCollectionPanelProps {
@@ -90,12 +90,14 @@ export function SimpleCollectionPanel({ groups, onItemClick, selectedItemId }: S
   // Ref for the grid container to calculate responsive columns
   const gridContainerRef = useRef<HTMLDivElement>(null);
 
-  // Use larger item width for better readability (doubled from 64 to 128)
-  const columnCount = useGridColumns(gridContainerRef, {
+  // Calculate responsive grid dimensions matching ItemCard's 4:5 aspect ratio
+  // Larger items (112px min) for better visibility and readability
+  const gridDimensions = useGridDimensions(gridContainerRef, {
     minColumns: 3,
-    maxColumns: 8,
-    minItemWidth: 120, // Larger items
-    gap: 12,
+    maxColumns: 10,
+    minItemWidth: 112, // Doubled size for better visibility
+    gap: 8,
+    aspectRatio: 4 / 5, // Match ItemCard's aspect-[4/5]
   });
 
   // Calculate dynamic grid height based on panel height
@@ -216,9 +218,6 @@ export function SimpleCollectionPanel({ groups, onItemClick, selectedItemId }: S
   const quickSelect = useQuickSelect({
     visibleItems: flatFilteredItems,
     enabled: isVisible,
-    onItemAssigned: (item, position) => {
-      console.log(`⌨️ Quick-select: Assigned "${item.title}" to position ${position}`);
-    },
   });
 
   // Reset to 'all' if the currently selected group becomes empty
@@ -407,11 +406,12 @@ export function SimpleCollectionPanel({ groups, onItemClick, selectedItemId }: S
                   searchQuery={searchQuery}
                   getQuickSelectNumber={quickSelect.state.isActive ? quickSelect.getQuickSelectNumber : undefined}
                   isItemSelected={quickSelect.state.isActive ? quickSelect.isItemSelected : undefined}
-                  columnCount={columnCount}
+                  columnCount={gridDimensions.columnCount}
                   containerHeight={gridHeight}
+                  rowHeight={gridDimensions.rowHeight}
+                  itemWidth={gridDimensions.itemWidth}
                   onItemClick={onItemClick}
                   selectedItemId={selectedItemId}
-                  itemSize="large"
                 />
               </div>
             </div>

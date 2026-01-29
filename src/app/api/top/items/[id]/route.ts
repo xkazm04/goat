@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import type { ItemUpdate } from '@/types/database';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -58,7 +59,7 @@ export async function PUT(
     const body = await request.json();
 
     // Prepare update data
-    const updateData: any = {};
+    const updateData: ItemUpdate = {};
 
     // Only include fields that are provided
     if (body.name !== undefined) updateData.name = body.name;

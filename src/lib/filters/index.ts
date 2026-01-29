@@ -180,3 +180,45 @@ export {
   FilterCountBadge,
   SearchResultSummary,
 } from './components/FilterResultsCounter';
+
+// Faceted Navigation
+export {
+  // Types
+  type FacetValue,
+  type FacetDefinition,
+  type Facet,
+  type HierarchicalFacetNode,
+  type HierarchicalFacet,
+  type FacetSelection,
+  type FacetState,
+  type FacetBreadcrumb,
+  type FacetExtractionConfig,
+  type FacetAggregationResult,
+  type FacetActions,
+  type FacetAggregationOptions,
+  // Constants
+  DEFAULT_FACET_DEFINITIONS,
+  // Classes
+  FacetExtractor,
+  createCollectionFacetExtractor,
+  defaultFacetExtractor,
+  FacetAggregator,
+  createFacetAggregator,
+  defaultFacetAggregator,
+  // Components
+  FacetPanel,
+  FacetBreadcrumbs,
+  GroupedFacetBreadcrumbs,
+  MobileFacetDrawer,
+  MobileFilterButton,
+  useMobileFacetDrawer,
+  // Hook
+  useFacets,
+  // Context
+  FacetProvider,
+  useFacetContext,
+  useFacetContextOptional,
+  type FacetContextState,
+  type FacetContextValue,
+  type FacetProviderProps,
+} from './facets';

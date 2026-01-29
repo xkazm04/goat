@@ -301,12 +301,12 @@ export const ListCard = memo(function ListCard({
             {/* Use as Template button (featured only) */}
             {isFeatured && showTemplateButton && onUseAsTemplate && (
               <motion.button
-                className="relative"
+                className="relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 rounded-lg"
                 onClick={handleTemplateClick}
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
                 data-testid={`use-template-btn-${list.id}`}
-                title="Use as Template"
+                aria-label={`Use ${list.title} as template`}
               >
                 <div
                   className="w-9 h-9 rounded-lg flex items-center justify-center opacity-60 group-hover:opacity-100 transition-opacity"
@@ -358,10 +358,12 @@ export const ListCard = memo(function ListCard({
             {isUser && onDelete && (
               <motion.button
                 onClick={handleShowDeleteConfirm}
-                className="p-2 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                className="p-2 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
                 disabled={isDeleting}
+                aria-label={`Delete ${list.title}`}
                 data-testid={`user-list-delete-btn-${list.id}`}
               >
                 <Trash2 className="w-4 h-4" />
@@ -445,7 +447,8 @@ export const ListCard = memo(function ListCard({
                 <div className="flex gap-3">
                   <button
                     onClick={handleHideDeleteConfirm}
-                    className="flex-1 px-4 py-2.5 text-sm font-medium text-slate-400 hover:text-white rounded-xl hover:bg-white/5 transition-colors"
+                    className="flex-1 px-4 py-2.5 text-sm font-medium text-slate-400 hover:text-white rounded-xl hover:bg-white/5 transition-colors
+                      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
                     disabled={isDeleting}
                     data-testid={`user-list-delete-cancel-btn-${list.id}`}
                   >
@@ -454,7 +457,8 @@ export const ListCard = memo(function ListCard({
                   <motion.button
                     onClick={handleDelete}
                     disabled={isDeleting}
-                    className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium text-white"
+                    className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium text-white
+                      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
                     style={{
                       background: `linear-gradient(135deg, rgba(220, 38, 38, 0.9), rgba(185, 28, 28, 0.9))`,
                       boxShadow: `0 4px 15px rgba(220, 38, 38, 0.25)`,

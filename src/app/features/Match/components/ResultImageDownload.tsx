@@ -151,7 +151,9 @@ export function ResultImageDownload(props: ResultImageDownloadProps) {
               <h3 className="text-lg font-bold text-white">Download Options</h3>
               <button
                 onClick={onClose}
-                className="text-gray-400 hover:text-white transition-colors"
+                className="text-gray-400 hover:text-white transition-colors p-1 rounded-lg
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                aria-label="Close download dialog"
                 data-testid="download-close-btn"
               >
                 <X className="w-5 h-5" />
@@ -170,7 +172,10 @@ export function ResultImageDownload(props: ResultImageDownloadProps) {
                     <button
                       key={`${option.format}-${option.quality}`}
                       onClick={() => setSelectedOption(option)}
-                      className={`w-full text-left p-3 rounded-lg transition-all ${
+                      aria-pressed={selectedOption === option}
+                      className={`w-full text-left p-3 rounded-lg transition-all
+                        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900
+                        ${
                         selectedOption === option
                           ? 'bg-blue-600 text-white shadow-lg'
                           : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
@@ -201,9 +206,12 @@ export function ResultImageDownload(props: ResultImageDownloadProps) {
                 </div>
                 <button
                   onClick={() => setIncludeMetadata(!includeMetadata)}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    includeMetadata ? 'bg-blue-600' : 'bg-gray-600'
-                  }`}
+                  role="switch"
+                  aria-checked={includeMetadata}
+                  aria-label="Include metadata in image"
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors
+                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-800
+                    ${includeMetadata ? 'bg-blue-600' : 'bg-gray-600'}`}
                   data-testid="download-metadata-toggle"
                 >
                   <span
