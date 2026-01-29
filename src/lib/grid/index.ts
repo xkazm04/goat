@@ -5,6 +5,9 @@
  * factory functions and validation.
  */
 
+// Constants
+export * from './constants';
+
 export {
   // Core factory functions
   createGridItem,
