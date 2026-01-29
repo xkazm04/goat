@@ -18,6 +18,9 @@ import { SpotlightTooltip } from "./SpotlightTooltip";
 import { useConsensusStore, useConsensusSortBy } from "@/stores/consensus-store";
 import { highlightMatch } from "@/app/features/Match/sub_MatchCollections/components/CollectionSearch";
 import { createCollectionDragData } from "@/lib/dnd";
+import { ThemedScoreDisplay } from "@/components/ui/themed-scores";
+import { useCriteriaStore } from "@/stores/criteria-store";
+import { useListStore } from "@/stores/use-list-store";
 import { useTouchGestures, GestureItemData } from "@/app/features/Match/hooks/useTouchGestures";
 import { PreviewItem } from "@/app/features/Match/components/LongPressPreview";
 import { ArrowRight, ArrowLeft, PlusCircle, Eye, Trash2 } from "lucide-react";
@@ -64,6 +67,10 @@ export interface CollectionItemConfig {
   enableLongPressPreview?: boolean;
   /** Enable right-click to open item detail popup */
   enableContextMenu?: boolean;
+  /** Show subtitle/description under item title */
+  showSubtitle?: boolean;
+  /** Show criteria score display when item has scores */
+  showCriteriaScore?: boolean;
 }
 
 export interface ConfigurableCollectionItemProps {
@@ -93,10 +100,10 @@ export interface ConfigurableCollectionItemProps {
  * Default configuration for match/ranking view (SimpleCollectionItem behavior)
  */
 export const MATCH_VIEW_CONFIG: CollectionItemConfig = {
-  showConsensus: true,
-  showRankBadge: true,
-  showAvgRank: true,
-  showTierIndicator: true,
+  showConsensus: false,
+  showRankBadge: false,
+  showAvgRank: false,
+  showTierIndicator: false,
   showKeyboardHandles: false,
   showFocusRing: false,
   showSpotlight: false,
@@ -107,6 +114,8 @@ export const MATCH_VIEW_CONFIG: CollectionItemConfig = {
   enableSwipeGestures: true,
   enableLongPressPreview: true,
   enableContextMenu: true,
+  showSubtitle: false,
+  showCriteriaScore: false,
 };
 
 /**
@@ -182,10 +191,24 @@ export function ConfigurableCollectionItem({
     enableSwipeGestures = true,
     enableLongPressPreview = true,
     enableContextMenu = true,
+    showSubtitle = true,
+    showCriteriaScore = false,
   } = config;
 
   // Popup store for opening item detail popup on right-click
   const openPopup = useItemPopupStore((state) => state.openPopup);
+
+  // Criteria store for score display
+  const getItemScores = useCriteriaStore((state) => state.getItemScores);
+  const activeProfileId = useCriteriaStore((state) => state.activeProfileId);
+  const currentList = useListStore((state) => state.currentList);
+
+  // Get score for this item if config enabled
+  const itemScores = showCriteriaScore && activeProfileId
+    ? getItemScores(item.id)
+    : null;
+  const weightedScore = itemScores?.weightedScore ?? 0;
+  const category = currentList?.category;
 
   // Consensus store integration
   const viewMode_ = useConsensusStore((state) => state.viewMode);
@@ -318,7 +341,7 @@ export function ConfigurableCollectionItem({
       }}
       style={style}
       className={`
-        relative group touch-none
+        relative group touch-none w-full
         ${isSpotlight && showSpotlight ? 'spotlight-active' : ''}
         ${isDragging ? 'z-50' : ''}
         ${isGesturing ? 'z-40' : ''}
@@ -496,7 +519,7 @@ export function ConfigurableCollectionItem({
 
       <ItemCard
         title={item.title}
-        subtitle={item.description}
+        subtitle={showSubtitle ? item.description : undefined}
         image={currentImageUrl}
         layout={viewMode}
         interactive="draggable"
@@ -522,6 +545,18 @@ export function ConfigurableCollectionItem({
         }
         actionsPosition={viewMode === 'list' ? 'top-right' : 'top-right'}
       />
+
+      {/* Criteria Score Overlay */}
+      {showCriteriaScore && weightedScore > 0 && !isDragging && (
+        <div className="absolute bottom-0 left-0 right-0 p-1 bg-gradient-to-t from-black/80 to-transparent pointer-events-none z-20">
+          <ThemedScoreDisplay
+            score={weightedScore}
+            category={category}
+            variant="compact"
+            animated={false}
+          />
+        </div>
+      )}
 
       {/* Search highlight overlay - shows highlighted title when searching */}
       {enableSearchHighlight && highlightedTitle && !isDragging && (
