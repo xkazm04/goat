@@ -51,8 +51,8 @@ export function StudioLayout({
     >
       <StudioHeader {...headerProps} />
 
-      <main className="max-w-7xl mx-auto px-6 py-8 pb-24">
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
+      <main className="max-w-7xl mx-auto px-4 py-6 pb-24">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
           <StudioMain>{mainContent}</StudioMain>
           <StudioSidebar>{sidebarContent}</StudioSidebar>
         </div>
