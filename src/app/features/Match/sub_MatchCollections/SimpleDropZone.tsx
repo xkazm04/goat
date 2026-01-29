@@ -11,6 +11,9 @@ import { useOptionalDropZoneHighlight } from "../sub_MatchGrid/components/DropZo
 import { createGridDragData, createGridSlotDropData } from "@/lib/dnd";
 import { getRankConfig, isPodiumPosition } from "../lib/rankConfig";
 import { GradientBorder, Shimmer, Glow, GRADIENT_PRESETS } from '@/components/visual';
+import { ThemedScoreDisplay } from '@/components/ui/themed-scores';
+import { useCriteriaStore } from '@/stores/criteria-store';
+import { useListStore } from '@/stores/use-list-store';
 
 // Constants for magnetic snap effect
 const MAGNETIC_THRESHOLD = 120; // pixels from center to activate magnetism
@@ -82,6 +85,17 @@ export function SimpleDropZone({
   const isGlobalDragging = highlightContext?.dragState.isDragging ?? false;
   const hoveredPosition = highlightContext?.dragState.hoveredPosition;
   const cursorPosition = highlightContext?.dragState.cursorPosition ?? { x: 0, y: 0 };
+
+  // Criteria store for score display
+  const getItemScores = useCriteriaStore((state) => state.getItemScores);
+  const activeProfileId = useCriteriaStore((state) => state.activeProfileId);
+  const category = useListStore((state) => state.currentList?.category);
+
+  // Get score for this item if occupied
+  const itemScores = isOccupied && activeProfileId && gridItem?.backlogItemId
+    ? getItemScores(gridItem.backlogItemId)
+    : null;
+  const weightedScore = itemScores?.weightedScore ?? 0;
 
   // Extract stable callback references from context
   const registerDropZone = highlightContext?.registerDropZone;
@@ -426,6 +440,19 @@ export function SimpleDropZone({
               >
                 <X className="w-3 h-3" />
               </motion.button>
+            )}
+
+            {/* Score Overlay - Only show if item has been scored */}
+            {weightedScore > 0 && (
+              <div className="absolute bottom-1 left-1 right-1 z-25 pointer-events-none">
+                <ThemedScoreDisplay
+                  score={weightedScore}
+                  category={category}
+                  variant="compact"
+                  showLabel={false}
+                  animated={false}
+                />
+              </div>
             )}
 
             {/* Active Drag Overlay */}
