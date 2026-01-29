@@ -73,7 +73,7 @@ export const createOfflineActions = (
           // await itemGroupsApi.processChange(change);
         }
       } catch (error) {
-        backlogLogger.error(`Failed to process change:`, error, change);
+        backlogLogger.error(`Failed to process change: ${JSON.stringify(change)}`, error);
       }
     }
     

@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
     // Fetch item
     const { data: item, error } = await supabase
       .from('top_items')
-      .select('id, name, category, selection_count')
+      .select('id, name, category')
       .eq('id', itemId)
       .single();
 
@@ -93,7 +93,8 @@ export async function GET(request: NextRequest) {
     startDate.setDate(startDate.getDate() - days);
 
     // Generate trend data points
-    const dataPoints = generateTrendDataPoints(item, startDate, endDate, granularity);
+    const normalizedItem = { ...item, selection_count: undefined };
+    const dataPoints = generateTrendDataPoints(normalizedItem, startDate, endDate, granularity);
 
     // Calculate trend direction
     const startRank = dataPoints[0]?.rank || 10;

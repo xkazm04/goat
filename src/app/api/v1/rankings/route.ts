@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
     // Fetch items from database
     let query = supabase
       .from('top_items')
-      .select('id, name, title, image_url, category, subcategory, selection_count, view_count', { count: 'exact' })
+      .select('id, name, title, image_url, category, subcategory', { count: 'exact' })
       .eq('category', category);
 
     if (subcategory) {
@@ -88,8 +88,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Determine sort field
-    let sortField = 'selection_count';
-    if (sort === 'rank') sortField = 'selection_count';
+    let sortField = 'name';
+    if (sort === 'rank') sortField = 'name';
     else if (sort === 'name') sortField = 'name';
 
     query = query
@@ -103,11 +103,19 @@ export async function GET(request: NextRequest) {
       return apiError('Failed to fetch rankings', 500, 'DATABASE_ERROR');
     }
 
+    // Normalize items to handle null/undefined
+    const normalizedItems = (items || []).map(item => ({
+      ...item,
+      title: item.title ?? undefined,
+      image_url: item.image_url ?? undefined,
+      subcategory: item.subcategory ?? null,
+    }));
+
     // Generate consensus data for items
-    const consensusData = await generateConsensusData(items || [], category);
+    const consensusData = await generateConsensusData(normalizedItems, category);
 
     // Sort by consensus rank
-    const sortedItems = (items || [])
+    const sortedItems = normalizedItems
       .map((item, index) => ({
         item,
         consensus: consensusData[item.id],

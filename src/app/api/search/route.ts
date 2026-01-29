@@ -261,7 +261,7 @@ async function searchItems(
 ): Promise<ApiSearchResult[]> {
   const dbQuery = supabase
     .from('top_items')
-    .select('id, name, group_id, image_url, metadata')
+    .select('id, name, group_id, image_url')
     .ilike('name', `%${query}%`)
     .limit(options.limit * 2);
 
@@ -270,19 +270,17 @@ async function searchItems(
 
   return data.map(item => {
     const matchResult = fuzzyMatch(query, (item.name || '').toLowerCase());
-    const metadata = item.metadata as Record<string, unknown> | null;
 
     return {
       id: item.id,
       domain: 'items' as const,
       title: item.name || 'Unknown Item',
-      subtitle: metadata?.year ? String(metadata.year) : undefined,
+      subtitle: undefined,
       score: matchResult.score,
       url: `/item/${item.id}`,
       imageUrl: item.image_url || undefined,
       metadata: {
         groupId: item.group_id,
-        ...(metadata || {}),
       },
     };
   }).sort((a, b) => b.score - a.score).slice(0, options.limit);
@@ -347,8 +345,8 @@ async function searchBlueprints(
 ): Promise<ApiSearchResult[]> {
   let dbQuery = supabase
     .from('blueprints')
-    .select('id, slug, name, description, category, metadata')
-    .or(`name.ilike.%${query}%,description.ilike.%${query}%`)
+    .select('id, slug, title, description, category')
+    .or(`title.ilike.%${query}%,description.ilike.%${query}%`)
     .limit(options.limit * 2);
 
   if (options.category) {
@@ -360,14 +358,14 @@ async function searchBlueprints(
 
   return data.map(blueprint => {
     const matchResult = fuzzyMatchFields(query, [
-      { text: blueprint.name || '', weight: 1.0 },
+      { text: blueprint.title || '', weight: 1.0 },
       { text: blueprint.description || '', weight: 0.5 },
     ]);
 
     return {
       id: blueprint.id,
       domain: 'blueprints' as const,
-      title: blueprint.name || 'Untitled Blueprint',
+      title: blueprint.title || 'Untitled Blueprint',
       subtitle: blueprint.category || undefined,
       score: matchResult.score,
       url: `/blueprint/${blueprint.slug || blueprint.id}`,

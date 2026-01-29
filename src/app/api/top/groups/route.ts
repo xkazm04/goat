@@ -66,8 +66,10 @@ export async function GET(request: NextRequest) {
       // Count items per group
       const countMap = new Map<string, number>();
       itemCounts?.forEach(item => {
-        const count = countMap.get(item.group_id) || 0;
-        countMap.set(item.group_id, count + 1);
+        if (item.group_id) {
+          const count = countMap.get(item.group_id) || 0;
+          countMap.set(item.group_id, count + 1);
+        }
       });
 
       const groupsWithCount = data.map(group => ({

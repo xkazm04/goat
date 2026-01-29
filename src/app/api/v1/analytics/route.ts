@@ -72,9 +72,9 @@ export async function GET(request: NextRequest) {
     // Fetch items and their statistics
     let query = supabase
       .from('top_items')
-      .select('id, name, selection_count, view_count, created_at')
+      .select('id, name, created_at')
       .eq('category', category)
-      .order('selection_count', { ascending: false })
+      .order('created_at', { ascending: false })
       .limit(100);
 
     if (subcategory) {
@@ -100,9 +100,9 @@ export async function GET(request: NextRequest) {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
-    // Generate analytics data
-    const totalSelections = items?.reduce((sum, item) => sum + (item.selection_count || 0), 0) || 0;
-    const totalViews = items?.reduce((sum, item) => sum + (item.view_count || 0), 0) || 0;
+    // Generate analytics data (placeholder values since selection_count/view_count not tracked)
+    const totalSelections = items?.length || 0;
+    const totalViews = items?.length || 0;
 
     // Generate distribution data
     const byPosition: Record<number, number> = {};
@@ -115,7 +115,7 @@ export async function GET(request: NextRequest) {
 
     (items || []).forEach((item, index) => {
       const pos = index + 1;
-      byPosition[pos] = item.selection_count || 0;
+      byPosition[pos] = 1; // Placeholder since selection_count not tracked
 
       // Mock volatility distribution
       const seed = hashCode(item.id);
@@ -133,7 +133,7 @@ export async function GET(request: NextRequest) {
       return {
         id: item.id,
         name: item.name,
-        rankingCount: item.selection_count || 0,
+        rankingCount: 1, // Placeholder since selection_count not tracked
         averagePosition: index + 1 + ((seed % 5) - 2) / 10,
         trend: trendOptions[seed % 3],
       };

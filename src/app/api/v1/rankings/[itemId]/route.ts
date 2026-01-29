@@ -54,7 +54,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     const { data: item, error } = await supabase
       .from('top_items')
-      .select('id, name, title, image_url, category, subcategory, selection_count, view_count')
+      .select('id, name, title, image_url, category, subcategory')
       .eq('id', itemId)
       .single();
 
@@ -63,11 +63,17 @@ export async function GET(request: NextRequest, context: RouteContext) {
     }
 
     // Generate consensus data
-    const consensus = generateItemConsensus(item);
+    const normalizedItem = {
+      ...item,
+      title: item.title ?? undefined,
+      image_url: item.image_url ?? undefined,
+      subcategory: item.subcategory ?? null,
+    };
+    const consensus = generateItemConsensus(normalizedItem);
 
     const includeExtended = keyValidation.features.peerClusters;
     const rankingItem: PublicRankingItem = toPublicRankingItem(
-      item,
+      normalizedItem,
       consensus,
       consensus.medianRank,
       includeExtended

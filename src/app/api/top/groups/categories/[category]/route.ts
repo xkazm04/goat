@@ -83,8 +83,10 @@ export async function GET(
       // Count items per group
       const countMap = new Map<string, number>();
       itemCounts?.forEach(item => {
-        const count = countMap.get(item.group_id) || 0;
-        countMap.set(item.group_id, count + 1);
+        if (item.group_id) {
+          const count = countMap.get(item.group_id) || 0;
+          countMap.set(item.group_id, count + 1);
+        }
       });
 
       // Filter groups by minimum item count and add item_count to response

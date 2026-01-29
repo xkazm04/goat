@@ -215,7 +215,7 @@ export const ItemCard = React.forwardRef<HTMLDivElement, ItemCardProps>(
     const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
       if (onClick && (e.key === "Enter" || e.key === " ")) {
         e.preventDefault();
-        onClick(e as any);
+        onClick(e as unknown as React.MouseEvent<HTMLDivElement>);
       }
       onKeyDown?.(e);
     };
@@ -224,18 +224,6 @@ export const ItemCard = React.forwardRef<HTMLDivElement, ItemCardProps>(
     if (loading) {
       return <ItemCardSkeleton layout={layout || "grid"} className={className} />;
     }
-
-    // Base component
-    const Component = animated ? motion.div : "div";
-
-    // Animation props
-    const animationProps: MotionProps = animated
-      ? {
-          initial: layout === "list" ? { opacity: 0, x: -20 } : { opacity: 0, scale: 0.9 },
-          animate: layout === "list" ? { opacity: 1, x: 0 } : { opacity: 1, scale: 1 },
-          transition: { delay: animationDelay },
-        }
-      : {};
 
     // Actions positioning classes
     const actionsPositionClasses = {
@@ -253,25 +241,17 @@ export const ItemCard = React.forwardRef<HTMLDivElement, ItemCardProps>(
       strong: "hover:scale-105 hover:shadow-2xl",
     };
 
-    return (
-      <Component
-        ref={ref}
-        role={role}
-        aria-label={ariaLabel || title}
-        aria-description={ariaDescription || subtitle}
-        tabIndex={interactive !== "static" ? tabIndex : undefined}
-        data-testid={testId || `item-card-${title.toLowerCase().replace(/\s+/g, "-")}`}
-        className={cn(
-          itemCardVariants({ variant, layout, interactive, state }),
-          focusRing && "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900",
-          hoverEffectClasses[hoverEffect],
-          className
-        )}
-        onClick={onClick}
-        onKeyDown={handleKeyDown}
-        {...(animationProps as any)}
-        {...props}
-      >
+    // Common className
+    const cardClassName = cn(
+      itemCardVariants({ variant, layout, interactive, state }),
+      focusRing && "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900",
+      hoverEffectClasses[hoverEffect],
+      className
+    );
+
+    // Card content shared between animated and non-animated
+    const cardContent = (
+      <>
         {/* List Layout */}
         {layout === "list" && (
           <>
@@ -390,7 +370,40 @@ export const ItemCard = React.forwardRef<HTMLDivElement, ItemCardProps>(
             )}
           </>
         )}
-      </Component>
+      </>
+    );
+
+    // Common props for the wrapper
+    const commonWrapperProps = {
+      role,
+      'aria-label': ariaLabel || title,
+      'aria-description': ariaDescription || subtitle,
+      tabIndex: interactive !== "static" ? tabIndex : undefined,
+      'data-testid': testId || `item-card-${title.toLowerCase().replace(/\s+/g, "-")}`,
+      className: cardClassName,
+      onClick,
+      onKeyDown: handleKeyDown,
+    };
+
+    // Return motion.div or regular div based on animated prop
+    if (animated) {
+      return (
+        <motion.div
+          ref={ref}
+          {...commonWrapperProps}
+          initial={layout === "list" ? { opacity: 0, x: -20 } : { opacity: 0, scale: 0.9 }}
+          animate={layout === "list" ? { opacity: 1, x: 0 } : { opacity: 1, scale: 1 }}
+          transition={{ delay: animationDelay }}
+        >
+          {cardContent}
+        </motion.div>
+      );
+    }
+
+    return (
+      <div ref={ref} {...commonWrapperProps}>
+        {cardContent}
+      </div>
     );
   }
 );
