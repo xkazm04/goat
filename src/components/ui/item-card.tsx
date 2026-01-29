@@ -121,6 +121,12 @@ export interface ItemCardProps
 
   /** Callback when image loads successfully */
   onImageLoad?: () => void;
+
+  /** Optional score content to display (criteria score display) */
+  scoreContent?: React.ReactNode;
+
+  /** Position for score display */
+  scorePosition?: "bottom" | "top-right";
 }
 
 /**
@@ -200,6 +206,8 @@ export const ItemCard = React.forwardRef<HTMLDivElement, ItemCardProps>(
       imagePlaceholder,
       onImageError,
       onImageLoad,
+      scoreContent,
+      scorePosition,
       variant,
       layout = "grid",
       interactive = "default",
@@ -361,6 +369,18 @@ export const ItemCard = React.forwardRef<HTMLDivElement, ItemCardProps>(
             {actions && (
               <div className={actionsPositionClasses[actionsPosition]}>
                 {actions}
+              </div>
+            )}
+
+            {/* Score content overlay */}
+            {scoreContent && (
+              <div className={cn(
+                "absolute z-10 pointer-events-none",
+                scorePosition === "top-right" && "top-1 right-1",
+                scorePosition === "bottom" && "bottom-0 left-0 right-0 p-1 bg-gradient-to-t from-black/80 to-transparent",
+                !scorePosition && "bottom-0 left-0 right-0 p-1 bg-gradient-to-t from-black/80 to-transparent"
+              )}>
+                {scoreContent}
               </div>
             )}
 
