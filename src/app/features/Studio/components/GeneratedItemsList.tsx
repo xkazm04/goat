@@ -53,7 +53,7 @@ export function GeneratedItemsList() {
           </div>
           <h3 className="text-lg font-semibold text-white">Generating items...</h3>
         </div>
-        <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 gap-3">
+        <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-7 lg:grid-cols-8 xl:grid-cols-9 gap-2">
           {Array.from({ length: 10 }).map((_, i) => (
             <ItemGridSkeleton key={i} delay={i * 0.05} />
           ))}
@@ -117,7 +117,7 @@ export function GeneratedItemsList() {
         onDragEnd={handleDragEnd}
       >
         <SortableContext items={sortableIds} strategy={rectSortingStrategy}>
-          <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 gap-3">
+          <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-7 lg:grid-cols-8 xl:grid-cols-9 gap-2">
             {generatedItems.map((item, index) => (
               <StudioItemCard
                 key={`item-${index}`}
