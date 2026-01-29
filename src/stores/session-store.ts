@@ -17,6 +17,7 @@ import {
 import { saveSessionToOffline, getOfflineSession } from '@/lib/offline';
 import { sessionLogger } from '@/lib/logger';
 import { GRID_LIMITS } from '@/lib/grid/constants';
+import { DEBOUNCE } from '@/lib/timing';
 
 interface SessionStoreState {
   // Multi-list sessions
@@ -86,7 +87,6 @@ function getCachedBacklogGroups(normalizedData: NormalizedBacklogData): BacklogG
 
 // PERFORMANCE OPTIMIZATION: Debounced auto-save to coalesce multiple rapid operations
 // into a single save, reducing localStorage thrashing and UI lag during bulk operations
-const DEBOUNCE_DELAY_MS = 300;
 let saveTimeout: ReturnType<typeof setTimeout> | null = null;
 
 function debouncedSaveSession(getSaveFunction: () => void) {
@@ -98,7 +98,7 @@ function debouncedSaveSession(getSaveFunction: () => void) {
   saveTimeout = setTimeout(() => {
     saveTimeout = null;
     getSaveFunction();
-  }, DEBOUNCE_DELAY_MS);
+  }, DEBOUNCE.SESSION_SYNC);
 }
 
 export const useSessionStore = create<SessionStoreState>()(

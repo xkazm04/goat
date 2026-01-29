@@ -8,6 +8,7 @@ import { usePlacementStore, SmartFillMode } from './placement-store';
 import { ValidationErrorCode } from '@/lib/validation';
 import { matchLogger } from '@/lib/logger';
 import { BacklogItem } from '@/types/backlog-groups';
+import { DEBOUNCE } from '@/lib/timing';
 
 // Re-export ValidationNotification type from the dedicated store for backwards compatibility
 export type { ValidationNotification } from './validation-notification-store';
@@ -59,11 +60,11 @@ interface MatchStoreState {
   handleKeyboardShortcut: (key: string) => void;
 
   // Utilities
-  getSelectedBacklogItem: () => any | null;
+  getSelectedBacklogItem: () => BacklogItem | null;
   getKeyboardNavigationState: () => {
     selectedIndex: number;
     totalItems: number;
-    selectedItem: any | null;
+    selectedItem: BacklogItem | null;
   };
   getSmartFillMode: () => SmartFillMode;
 }
@@ -172,12 +173,12 @@ export const useMatchStore = create<MatchStoreState>((set, get) => ({
     
     if (backlogItem && gridStore.canAddAtPosition(gridPosition)) {
       gridStore.assignItemToGrid(backlogItem, gridPosition);
-      
+
       // In keyboard mode, automatically select next available item
       if (state.keyboardMode) {
         setTimeout(() => {
           get().selectNextAvailableItem();
-        }, 100);
+        }, DEBOUNCE.UI_FEEDBACK);
       }
     }
   },

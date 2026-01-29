@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { UI_TIMING } from '@/lib/timing';
 
 /**
  * Inspector Store
@@ -32,7 +33,7 @@ export const useInspectorStore = create<InspectorState>((set, get) => ({
     // Clear itemId after animation completes
     setTimeout(() => {
       set({ itemId: null });
-    }, 300);
+    }, UI_TIMING.PANEL_TRANSITION);
   },
 
   toggleInspector: (itemId: string) => {
