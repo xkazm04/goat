@@ -29,6 +29,8 @@ import { cn } from "@/lib/utils";
 import { PlaceholderImage } from "@/components/ui/placeholder-image";
 import { useItemPopupStore, PopupInstance } from "@/stores/item-popup-store";
 import type { ItemDetailResponse } from "@/types/item-details";
+import { CriteriaScoringSection } from './CriteriaScoringSection';
+import { useCurrentList } from '@/stores/use-list-store';
 
 interface ItemDetailPopupProps {
   popup: PopupInstance;
@@ -63,6 +65,7 @@ export function ItemDetailPopup({ popup, onQuickAssign }: ItemDetailPopupProps) 
 
   const { closePopup, bringToFront } = useItemPopupStore();
   const dragControls = useDragControls();
+  const currentList = useCurrentList();
 
   // Accent color based on item's median ranking
   const accent = useMemo(() =>
@@ -232,6 +235,19 @@ export function ItemDetailPopup({ popup, onQuickAssign }: ItemDetailPopupProps) 
               {/* Metadata & Rankings */}
               <div className="p-3 space-y-3">
                 <MetadataRow item={data.item} />
+
+                {/* Criteria Scoring Section */}
+                {currentList && (
+                  <>
+                    <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+                    <CriteriaScoringSection
+                      itemId={popup.itemId}
+                      listId={currentList.id}
+                      accentColor={accent.color}
+                    />
+                  </>
+                )}
+
                 {data.rankingStats && (
                   <RankingChart stats={data.rankingStats} accent={accent} />
                 )}
