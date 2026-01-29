@@ -72,6 +72,9 @@ export interface ListIntent {
   /** Number of items in the ranking */
   size: number;
 
+  /** Optional criteria profile ID for multi-dimensional scoring */
+  criteriaProfileId?: string;
+
   // ---- Time Period Details ----
   /** Selected decade when timePeriod is 'decade' (e.g., "2020") */
   selectedDecade?: string;
