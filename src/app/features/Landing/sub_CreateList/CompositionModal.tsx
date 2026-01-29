@@ -17,15 +17,16 @@ import { modalBackdropVariants, modalContentVariants } from "../shared/animation
 import { getInitialSubcategory } from "@/lib/config/category-config";
 import { CreationStep } from "./components/CreationProgressIndicator";
 import { TemplateGallery } from "./components/TemplateGallery";
+import { CriteriaTemplateSection } from "./components/CriteriaTemplateSection";
 import { ListTemplate } from "@/types/templates";
 import { useCreateBlueprint, copyBlueprintShareUrl } from "@/hooks/use-blueprints";
 import { CompositionResult } from "@/types/composition-to-api";
 import {
-  listIntentToCreateRequest,
   listIntentToMetadata,
   listIntentToBlueprintRequest,
 } from "@/types/list-intent-transformers";
 import { ListIntent } from "@/types/list-intent";
+import { listCreationService, CreationStep as ServiceCreationStep } from "@/services/list-creation-service";
 
 interface CompositionModalProps {
   initialAuthor?: string;
@@ -68,6 +69,14 @@ export function CompositionModal({
     updateIntent({
       category,
       subcategory: getInitialSubcategory(category),
+      criteriaProfileId: undefined, // Reset criteria when category changes
+      isPredefined: false,
+    });
+  };
+
+  const handleCriteriaProfileSelect = (profileId: string | null) => {
+    updateIntent({
+      criteriaProfileId: profileId || undefined,
       isPredefined: false,
     });
   };
@@ -87,31 +96,30 @@ export function CompositionModal({
   };
 
   const handleCreatePredefined = async () => {
-    if (!isLoaded) {
+    if (!isLoaded || !tempUserId) {
       toast({ title: "Not Ready", description: "Please wait while we prepare your session..." });
       return;
     }
 
-    // Step 1: Validating
-    setCreationStep("validating");
+    // Progress handler that maps service steps to component steps
+    const onProgress = (step: ServiceCreationStep) => {
+      setCreationStep(step === 'idle' ? null : step as CreationStep);
+    };
 
-    try {
-      // Step 2: Creating list - Use ListIntent transformation pipeline
-      setCreationStep("creating");
-      const createListRequest = listIntentToCreateRequest(intent, tempUserId);
-      const result = await createListMutation.mutateAsync(createListRequest);
+    // Use the unified service for list creation
+    const result = await listCreationService.createList(intent, {
+      userId: tempUserId,
+      onProgress,
+    });
 
-      // Step 3: Loading items - Use ListIntent to generate metadata
-      setCreationStep("loading");
+    if (result.success && result.list) {
+      // Update store with enhanced list data
       const enhancedListData = {
         ...result.list,
         metadata: listIntentToMetadata(intent),
       };
 
       setCurrentList(enhancedListData);
-
-      // Step 4: Complete
-      setCreationStep("complete");
 
       // Brief pause to show completion before navigating
       await new Promise(resolve => setTimeout(resolve, 300));
@@ -120,17 +128,17 @@ export function CompositionModal({
 
       const compositionResult: CompositionResult = {
         success: true,
-        listId: result.list.id,
+        listId: result.listId,
         message: `Successfully created "${result.list.title}"!`,
-        redirectUrl: `/match-test?list=${result.list.id}`,
+        redirectUrl: `/match-test?list=${result.listId}`,
       };
 
       onSuccess?.(compositionResult);
       closeComposition();
-      router.push(`/match-test?list=${result.list.id}`);
-    } catch (error) {
+      router.push(`/match-test?list=${result.listId}`);
+    } else {
       setCreationStep(null);
-      const errorMessage = error instanceof Error ? error.message : "Failed to create list";
+      const errorMessage = result.error || "Failed to create list";
       toast({ title: "Creation Failed", description: errorMessage });
     }
   };
@@ -385,56 +393,70 @@ export function CompositionModal({
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
-                    className="relative grid grid-cols-1 lg:grid-cols-2 min-h-[600px]"
+                    className="relative"
                   >
-                    {/* Left - Configuration */}
-                    <CompositionModalLeftContent
-                      selectedCategory={intent.category}
-                      setSelectedCategory={handleCategoryChange}
-                      selectedSubcategory={intent.subcategory}
-                      setSelectedSubcategory={(subcategory) =>
-                        updateIntent({ subcategory, isPredefined: false })
-                      }
-                      timePeriod={intent.timePeriod}
-                      setTimePeriod={(period) => updateIntent({ timePeriod: period, isPredefined: false })}
-                      selectedDecade={intent.selectedDecade ? parseInt(intent.selectedDecade) : 2020}
-                      setSelectedDecade={(decade: number) =>
-                        updateIntent({ selectedDecade: decade.toString(), isPredefined: false })
-                      }
-                      selectedYear={intent.selectedYear ? parseInt(intent.selectedYear) : 2024}
-                      setSelectedYear={(year: number) =>
-                        updateIntent({ selectedYear: year.toString(), isPredefined: false })
-                      }
-                      hierarchy={`Top ${intent.size}`}
-                      setHierarchy={(hierarchy: string) =>
-                        updateIntent({ size: parseInt(hierarchy.replace("Top ", "")), isPredefined: false })
-                      }
-                      customName={intent.title || ""}
-                      setCustomName={(name) => updateIntent({ title: name, isPredefined: false })}
-                      color={intent.color}
-                    />
+                    {/* Configuration Grid */}
+                    <div className="relative grid grid-cols-1 lg:grid-cols-2 min-h-[600px]">
+                      {/* Left - Configuration */}
+                      <CompositionModalLeftContent
+                        selectedCategory={intent.category}
+                        setSelectedCategory={handleCategoryChange}
+                        selectedSubcategory={intent.subcategory}
+                        setSelectedSubcategory={(subcategory) =>
+                          updateIntent({ subcategory, isPredefined: false })
+                        }
+                        timePeriod={intent.timePeriod}
+                        setTimePeriod={(period) => updateIntent({ timePeriod: period, isPredefined: false })}
+                        selectedDecade={intent.selectedDecade ? parseInt(intent.selectedDecade) : 2020}
+                        setSelectedDecade={(decade: number) =>
+                          updateIntent({ selectedDecade: decade.toString(), isPredefined: false })
+                        }
+                        selectedYear={intent.selectedYear ? parseInt(intent.selectedYear) : 2024}
+                        setSelectedYear={(year: number) =>
+                          updateIntent({ selectedYear: year.toString(), isPredefined: false })
+                        }
+                        hierarchy={`Top ${intent.size}`}
+                        setHierarchy={(hierarchy: string) =>
+                          updateIntent({ size: parseInt(hierarchy.replace("Top ", "")), isPredefined: false })
+                        }
+                        customName={intent.title || ""}
+                        setCustomName={(name) => updateIntent({ title: name, isPredefined: false })}
+                        color={intent.color}
+                      />
 
-                    {/* Center - Create Button */}
-                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
-                      <ListCreateButton
-                        intent={intent}
-                        createListMutation={createListMutation}
-                        onClose={handleClose}
-                        onSuccess={onSuccess}
+                      {/* Center - Create Button */}
+                      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
+                        <ListCreateButton
+                          intent={intent}
+                          createListMutation={createListMutation}
+                          onClose={handleClose}
+                          onSuccess={onSuccess}
+                        />
+                      </div>
+
+                      {/* Right - Preview */}
+                      <CompositionModalRightContent
+                        selectedCategory={intent.category}
+                        selectedSubcategory={intent.subcategory}
+                        timePeriod={intent.timePeriod}
+                        selectedDecade={intent.selectedDecade ? parseInt(intent.selectedDecade) : 2020}
+                        selectedYear={intent.selectedYear ? parseInt(intent.selectedYear) : 2024}
+                        hierarchy={`Top ${intent.size}`}
+                        customName={intent.title || ""}
+                        color={intent.color}
                       />
                     </div>
 
-                    {/* Right - Preview */}
-                    <CompositionModalRightContent
-                      selectedCategory={intent.category}
-                      selectedSubcategory={intent.subcategory}
-                      timePeriod={intent.timePeriod}
-                      selectedDecade={intent.selectedDecade ? parseInt(intent.selectedDecade) : 2020}
-                      selectedYear={intent.selectedYear ? parseInt(intent.selectedYear) : 2024}
-                      hierarchy={`Top ${intent.size}`}
-                      customName={intent.title || ""}
-                      color={intent.color}
-                    />
+                    {/* Criteria Template Section - Full width below grid */}
+                    <div className="px-6 pb-6 border-t border-slate-700/50">
+                      <div className="pt-4">
+                        <CriteriaTemplateSection
+                          category={intent.category}
+                          selectedProfileId={intent.criteriaProfileId ?? null}
+                          onProfileSelect={handleCriteriaProfileSelect}
+                        />
+                      </div>
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
