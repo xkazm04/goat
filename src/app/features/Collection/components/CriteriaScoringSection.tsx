@@ -33,9 +33,11 @@ export function CriteriaScoringSection({
   // Local UI state
   const [isOpen, setIsOpen] = useState(false);
   const [recentlySaved, setRecentlySaved] = useState(false);
+  const [pendingSave, setPendingSave] = useState(false);
 
   // Debounce timer ref
   const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const savedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Criteria store state
   const {
@@ -69,11 +71,14 @@ export function CriteriaScoringSection({
     return scores?.weightedScore ?? 0;
   }, [itemId, getItemScores]);
 
-  // Cleanup timeout on unmount
+  // Cleanup timeouts on unmount
   useEffect(() => {
     return () => {
       if (syncTimeoutRef.current) {
         clearTimeout(syncTimeoutRef.current);
+      }
+      if (savedTimeoutRef.current) {
+        clearTimeout(savedTimeoutRef.current);
       }
     };
   }, []);
@@ -81,16 +86,24 @@ export function CriteriaScoringSection({
   // Debounced sync function
   const debouncedSync = useCallback(
     (targetListId: string, targetItemId: string) => {
-      // Clear existing timeout
+      // Clear existing timeouts
       if (syncTimeoutRef.current) {
         clearTimeout(syncTimeoutRef.current);
       }
+      if (savedTimeoutRef.current) {
+        clearTimeout(savedTimeoutRef.current);
+      }
+
+      // Show pending indicator immediately
+      setPendingSave(true);
+      setRecentlySaved(false);
 
       // Set new timeout for 500ms debounce
       syncTimeoutRef.current = setTimeout(async () => {
+        setPendingSave(false);
         await syncItemScoresToDatabase(targetListId, targetItemId);
         setRecentlySaved(true);
-        setTimeout(() => setRecentlySaved(false), 1500);
+        savedTimeoutRef.current = setTimeout(() => setRecentlySaved(false), 1500);
       }, 500);
     },
     [syncItemScoresToDatabase]
@@ -156,15 +169,20 @@ export function CriteriaScoringSection({
             <div className="flex items-center gap-2">
               {/* Sync status indicator */}
               <AnimatePresence mode="wait">
-                {syncStatus === 'syncing' ? (
+                {pendingSave || syncStatus === 'syncing' ? (
                   <motion.div
                     key="saving"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="text-[10px] text-gray-400"
+                    className="text-[10px] text-gray-400 flex items-center gap-1"
                   >
-                    Saving...
+                    <motion.span
+                      animate={{ opacity: [0.4, 1, 0.4] }}
+                      transition={{ duration: 1.2, repeat: Infinity }}
+                    >
+                      Saving...
+                    </motion.span>
                   </motion.div>
                 ) : recentlySaved ? (
                   <motion.div
@@ -172,9 +190,10 @@ export function CriteriaScoringSection({
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0 }}
-                    className="text-green-400"
+                    className="text-green-400 flex items-center gap-1"
                   >
                     <Check className="w-3 h-3" />
+                    <span className="text-[10px]">Saved</span>
                   </motion.div>
                 ) : null}
               </AnimatePresence>
