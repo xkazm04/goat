@@ -8,6 +8,7 @@
  */
 
 import { ContainerProvider } from '@/lib/layout/ContainerProvider';
+import { Surface } from '@/components/visual';
 import { TopicInputForm } from './TopicInputForm';
 import { GeneratedItemsList } from './GeneratedItemsList';
 import { PublishSuccess } from './PublishSuccess';
@@ -52,35 +53,9 @@ export function StudioMain({ children }: StudioMainProps) {
  */
 function StudioMainContent() {
   return (
-    <div className="relative">
-      {/* Glass card container */}
-      <div
-        className="relative rounded-2xl overflow-hidden"
-        style={{
-          background: 'linear-gradient(135deg, rgba(17, 24, 39, 0.8) 0%, rgba(17, 24, 39, 0.4) 100%)',
-        }}
-      >
-        {/* Gradient border */}
-        <div className="absolute inset-0 rounded-2xl p-px">
-          <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-cyan-500/20 via-transparent to-teal-500/20" />
-        </div>
-
-        {/* Inner content */}
-        <div className="relative border border-gray-800/50 rounded-2xl p-6 backdrop-blur-xl">
-          {/* Corner decorations */}
-          <div className="absolute top-0 right-0 w-32 h-32 pointer-events-none">
-            <div className="absolute top-4 right-4 w-px h-8 bg-gradient-to-b from-cyan-500/50 to-transparent" />
-            <div className="absolute top-4 right-4 w-8 h-px bg-gradient-to-r from-cyan-500/50 to-transparent" />
-          </div>
-          <div className="absolute bottom-0 left-0 w-32 h-32 pointer-events-none">
-            <div className="absolute bottom-4 left-4 w-px h-8 bg-gradient-to-t from-teal-500/50 to-transparent" />
-            <div className="absolute bottom-4 left-4 w-8 h-px bg-gradient-to-l from-teal-500/50 to-transparent" />
-          </div>
-
-          <TopicInputForm />
-          <GeneratedItemsList />
-        </div>
-      </div>
-    </div>
+    <Surface variant="glass" className="rounded-2xl p-4">
+      <TopicInputForm />
+      <GeneratedItemsList />
+    </Surface>
   );
 }
