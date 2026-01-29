@@ -68,17 +68,9 @@ export function StudioItemCard({ item, index, onRemove }: StudioItemCardProps) {
     return 'from-gray-600 to-gray-700 text-gray-200';
   };
 
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={cn(
-        'group relative flex flex-col rounded-lg overflow-hidden transition-all duration-200',
-        'bg-gray-900/60 border border-gray-800/50',
-        'hover:border-cyan-500/30 hover:shadow-lg hover:shadow-cyan-500/10',
-        isDragging && 'opacity-50 scale-105 shadow-2xl shadow-cyan-500/20 border-cyan-500/50 z-50'
-      )}
-    >
+  // Card inner content - extracted for cleaner visual wrapper nesting
+  const cardContent = (
+    <div className="group relative flex flex-col rounded-xl overflow-hidden bg-gray-900/80">
       {/* Image Container - 3:4 aspect ratio */}
       <div className="relative aspect-[3/4] bg-gray-800/50">
         {item.image_url ? (
@@ -178,6 +170,62 @@ export function StudioItemCard({ item, index, onRemove }: StudioItemCardProps) {
           </h4>
         </div>
       </div>
+    </div>
+  );
+
+  // Wrap with medal decorations if top 3
+  const medalGradient = getMedalGradient(index);
+  const medalGlow = getMedalGlow(index);
+
+  // Build content with optional medal decorations
+  let decoratedContent = cardContent;
+
+  if (medalGlow) {
+    // Position 0 gets glow effect
+    decoratedContent = (
+      <Glow preset={medalGlow} asBackground className="rounded-xl">
+        {cardContent}
+      </Glow>
+    );
+  }
+
+  if (medalGradient) {
+    // Top 3 get gradient border (gold=3px, silver/bronze=2px)
+    decoratedContent = (
+      <GradientBorder
+        gradient={medalGradient}
+        borderWidth={index === 0 ? 3 : 2}
+        rounded="rounded-xl"
+      >
+        {medalGlow ? (
+          <Glow preset={medalGlow} asBackground className="rounded-xl">
+            {cardContent}
+          </Glow>
+        ) : (
+          cardContent
+        )}
+      </GradientBorder>
+    );
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(isDragging && 'z-50')}
+    >
+      <Elevated
+        level="medium"
+        hoverLift={!isDragging}
+        className={cn(
+          'rounded-xl overflow-hidden',
+          isDragging && 'scale-105'
+        )}
+      >
+        <Shimmer duration={600}>
+          {decoratedContent}
+        </Shimmer>
+      </Elevated>
     </div>
   );
 }
