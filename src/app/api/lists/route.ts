@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import type { ListRow } from '@/types/database';
+import type { ListCriteriaConfig } from '@/lib/criteria/types';
 import {
   withErrorHandler,
   fromSupabaseError,
@@ -7,6 +9,17 @@ import {
   createdResponse,
   assertRequired,
 } from '@/lib/errors';
+
+/**
+ * Transform list response from snake_case DB format to camelCase frontend format
+ */
+function transformListResponse(list: ListRow) {
+  const { criteria_config, ...rest } = list;
+  return {
+    ...rest,
+    criteriaConfig: criteria_config as ListCriteriaConfig | null,
+  };
+}
 
 // Force dynamic rendering for this route since it uses cookies
 export const dynamic = 'force-dynamic';
@@ -59,7 +72,9 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
     throw fromSupabaseError(error);
   }
 
-  return successResponse(data);
+  // Transform all lists to include camelCase criteriaConfig
+  const transformedData = (data || []).map(transformListResponse);
+  return successResponse(transformedData);
 });
 
 // POST /api/lists - Create a new list
@@ -74,6 +89,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
   assertRequired(size, 'size');
 
   // Insert the new list
+  // Support both camelCase (frontend) and snake_case (legacy) for criteria_config
   const { data, error } = await supabase
     .from('lists')
     .insert([
@@ -88,6 +104,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
         time_period: body.time_period,
         type: body.type || 'top',
         parent_list_id: body.parent_list_id,
+        criteria_config: body.criteriaConfig ?? body.criteria_config ?? null,
       },
     ])
     .select()
@@ -97,5 +114,5 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     throw fromSupabaseError(error);
   }
 
-  return createdResponse(data);
+  return createdResponse(transformListResponse(data));
 });
