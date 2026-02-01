@@ -83,11 +83,9 @@ export function BracketView({
   listSize,
   onCancel,
 }: BracketViewProps) {
-  // Local UI state
-  const [bracketSize, setBracketSize] = useState<BracketSize>(
-    getBracketSizeForItems(backlogItems.length)
-  );
-  const [seedingStrategy, setSeedingStrategy] = useState<SeedingStrategy>('random');
+  // Fixed bracket settings - Size 16 with random strategy (no user choice)
+  const bracketSize: BracketSize = 16;
+  const seedingStrategy: SeedingStrategy = 'random';
 
   // Voting overlay state - this controls whether the MatchupScreen overlay is shown
   const [isVotingActive, setIsVotingActive] = useState(false);
@@ -138,6 +136,16 @@ export function BracketView({
       seedingStrategy: seedingStrategy,
     });
   }, [availableItems, bracketSize, seedingStrategy, storeInitializeBracket]);
+
+  // Auto-initialize bracket on mount (skip setup phase)
+  useEffect(() => {
+    if (!bracket && availableItems.length >= 2) {
+      storeInitializeBracket(availableItems, {
+        size: bracketSize,
+        seedingStrategy: seedingStrategy,
+      });
+    }
+  }, [bracket, availableItems, bracketSize, seedingStrategy, storeInitializeBracket]);
 
   // When bracket completes, close voting overlay
   useEffect(() => {
@@ -245,18 +253,18 @@ export function BracketView({
       <div className="absolute inset-0 bg-gradient-to-b from-cyan-500/5 via-blue-500/5 to-transparent blur-3xl -z-10" />
 
       <AnimatePresence mode="wait">
-        {/* Setup Phase */}
+        {/* Setup Phase - Auto-initialized, show loading state */}
         {phase === 'setup' && (
-          <BracketSetup
+          <motion.div
             key="setup"
-            itemCount={availableItems.length}
-            bracketSize={bracketSize}
-            seedingStrategy={seedingStrategy}
-            onBracketSizeChange={setBracketSize}
-            onSeedingStrategyChange={setSeedingStrategy}
-            onStart={initializeBracket}
-            onCancel={onCancel || (() => {})}
-          />
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex flex-col items-center justify-center py-16 gap-4"
+          >
+            <div className="w-8 h-8 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin" />
+            <p className="text-slate-400 text-sm">Preparing bracket tournament...</p>
+          </motion.div>
         )}
 
         {/* Playing Phase - BracketVisualization as base */}

@@ -7,6 +7,13 @@ import { useRouter } from "next/navigation";
 import { useQuickSearch } from "@/hooks/use-search";
 import type { SearchResult, SearchDomain } from "@/lib/search";
 import { useCommandPalette } from "@/app/features/CommandPalette";
+import {
+  dropdownVariants,
+  menuItemVariants,
+  DURATION,
+  SCALE,
+  prefersReducedMotion,
+} from "@/lib/animations/micro-interactions";
 
 // =============================================================================
 // Constants
@@ -26,6 +33,42 @@ const DOMAIN_COLORS: Record<SearchDomain, string> = {
   groups: "#8b5cf6",
   blueprints: "#10b981",
   users: "#ec4899",
+};
+
+// Enhanced result item variants with micro-interactions
+const resultItemVariants = {
+  initial: {
+    opacity: 0,
+    x: -8,
+    scale: 0.98,
+  },
+  animate: (i: number) => ({
+    opacity: 1,
+    x: 0,
+    scale: 1,
+    transition: {
+      duration: DURATION.fast,
+      delay: i * 0.03,
+      ease: [0.16, 1, 0.3, 1] as const,
+    },
+  }),
+  hover: {
+    x: 4,
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    transition: {
+      duration: DURATION.fast,
+      ease: [0.16, 1, 0.3, 1] as const,
+    },
+  },
+  tap: {
+    scale: SCALE.pressed,
+    transition: { duration: DURATION.instant },
+  },
+  selected: {
+    x: 4,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    boxShadow: "inset 0 0 0 1px rgba(255, 255, 255, 0.1)",
+  },
 };
 
 // =============================================================================
@@ -185,7 +228,7 @@ export function GlobalSearchBar({
 
           {/* Keyboard shortcut hint */}
           <div className="flex items-center gap-1 text-white/30">
-            <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-[10px] font-mono flex items-center gap-0.5">
+            <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-[10px] font-mono flex items-center gap-0.5 transition-colors duration-200 hover:bg-white/15 hover:text-white/40">
               <Command className="w-2.5 h-2.5" />K
             </kbd>
           </div>
@@ -211,21 +254,22 @@ export function GlobalSearchBar({
       <AnimatePresence>
         {showResults && (
           <motion.div
-            initial={{ opacity: 0, y: -10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.95 }}
-            transition={{ duration: 0.15 }}
+            variants={dropdownVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
             className="absolute top-full left-0 right-0 mt-2 z-50"
           >
             <div
               id="search-results"
               role="listbox"
               aria-label="Search results"
-              className="rounded-xl overflow-hidden shadow-2xl"
+              className="rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/5"
               style={{
                 background: "linear-gradient(135deg, rgba(15, 20, 35, 0.98) 0%, rgba(25, 35, 55, 0.98) 100%)",
                 border: "1px solid rgba(255, 255, 255, 0.08)",
                 backdropFilter: "blur(20px)",
+                boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05)",
               }}
             >
               {results.length > 0 ? (
@@ -233,60 +277,86 @@ export function GlobalSearchBar({
                   {results.map((result, index) => {
                     const domainColor = DOMAIN_COLORS[result.domain];
                     const isSelected = selectedIndex === index;
+                    const reducedMotion = prefersReducedMotion();
 
                     return (
-                      <button
+                      <motion.button
                         key={`${result.domain}-${result.id}`}
+                        custom={index}
+                        variants={reducedMotion ? undefined : resultItemVariants}
+                        initial="initial"
+                        animate={isSelected ? "selected" : "animate"}
+                        whileHover="hover"
+                        whileTap="tap"
                         onClick={() => handleNavigateToResult(result)}
                         role="option"
                         aria-selected={isSelected}
                         className={`
                           w-full px-3 py-2.5 rounded-lg text-left flex items-center gap-3
-                          transition-colors group
-                          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-inset
-                          ${isSelected ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/5"}
+                          group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-inset
+                          ${isSelected ? "text-white" : "text-white/70"}
                         `}
                         data-testid={`quick-result-${index}`}
                       >
-                        <div
+                        <motion.div
                           className="p-1.5 rounded-md flex-shrink-0"
                           style={{ background: `${domainColor}20` }}
+                          whileHover={{ scale: 1.15, rotate: 5 }}
+                          transition={{ type: "spring", stiffness: 400, damping: 15 }}
                         >
                           <span style={{ color: domainColor }}>{DOMAIN_ICONS[result.domain]}</span>
-                        </div>
+                        </motion.div>
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-medium truncate">{result.title}</div>
                           {result.subtitle && (
-                            <div className="text-xs text-white/40 truncate">{result.subtitle}</div>
+                            <div className="text-xs text-white/40 truncate transition-colors group-hover:text-white/50">{result.subtitle}</div>
                           )}
                         </div>
-                        <ArrowRight
-                          className={`w-4 h-4 flex-shrink-0 transition-colors ${
-                            isSelected ? "text-white" : "text-white/20 group-hover:text-white/40"
-                          }`}
-                        />
-                      </button>
+                        <motion.div
+                          animate={{ x: isSelected ? 2 : 0, opacity: isSelected ? 1 : 0.2 }}
+                          transition={{ duration: DURATION.fast }}
+                        >
+                          <ArrowRight className="w-4 h-4 flex-shrink-0 text-white group-hover:text-white/60" />
+                        </motion.div>
+                      </motion.button>
                     );
                   })}
 
                   {/* See all results */}
-                  <button
+                  <motion.button
                     onClick={handleOpenFullSearch}
                     role="option"
                     aria-selected={selectedIndex === results.length}
+                    initial={{ opacity: 0 }}
+                    animate={{
+                      opacity: 1,
+                      x: selectedIndex === results.length ? 4 : 0,
+                      backgroundColor: selectedIndex === results.length ? "rgba(255, 255, 255, 0.1)" : "transparent",
+                    }}
+                    whileHover={{ x: 4, backgroundColor: "rgba(255, 255, 255, 0.05)" }}
+                    whileTap={{ scale: SCALE.pressed }}
+                    transition={{ duration: DURATION.fast }}
                     className={`
                       w-full px-3 py-2.5 rounded-lg text-left flex items-center gap-3
-                      transition-colors border-t border-white/5 mt-2 pt-3
+                      border-t border-white/5 mt-2 pt-3 group
                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-inset
-                      ${selectedIndex === results.length ? "bg-white/10 text-white" : "text-white/50 hover:text-white/70"}
+                      ${selectedIndex === results.length ? "text-white" : "text-white/50"}
                     `}
                   >
-                    <Search className="w-4 h-4" />
+                    <motion.div
+                      whileHover={{ scale: 1.1, rotate: -10 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                    >
+                      <Search className="w-4 h-4" />
+                    </motion.div>
                     <span className="text-sm">See all results for "{query}"</span>
-                    <kbd className="ml-auto px-1.5 py-0.5 rounded bg-white/10 text-[10px] font-mono">
+                    <motion.kbd
+                      className="ml-auto px-1.5 py-0.5 rounded bg-white/10 text-[10px] font-mono"
+                      whileHover={{ backgroundColor: "rgba(255, 255, 255, 0.2)" }}
+                    >
                       Enter
-                    </kbd>
-                  </button>
+                    </motion.kbd>
+                  </motion.button>
                 </div>
               ) : (
                 <div className="p-4 text-center">

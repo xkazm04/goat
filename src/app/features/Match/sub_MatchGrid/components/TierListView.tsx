@@ -2,8 +2,7 @@
 
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { arrayMove } from '@dnd-kit/sortable';
-import { Users } from 'lucide-react';
+import { Users, Keyboard } from 'lucide-react';
 import { GridItemType } from '@/types/match';
 import { BacklogItem } from '@/types/backlog-groups';
 import {
@@ -18,6 +17,18 @@ import { TierConfigurator } from './TierConfigurator';
 import { exportTierListImage } from '../../lib/tierListExporter';
 import { useRankingStore } from '@/stores/ranking-store';
 import { useDropZoneHighlight, useOptionalDropZoneHighlight } from './DropZoneHighlightContext';
+import { TierFocusProvider, useTierFocus } from './TierFocusProvider';
+import {
+  ScreenReaderAnnouncer,
+  SkipLinks,
+  TierInstructions,
+} from './ScreenReaderAnnouncer';
+import {
+  KeyboardShortcutsPanel,
+  KeyboardModeIndicator,
+  KeyboardHint,
+} from './KeyboardShortcutsPanel';
+import { useTierKeyboardNavigation } from '../hooks/useTierKeyboardNavigation';
 
 interface TierListViewProps {
   gridItems: GridItemType[];
@@ -46,19 +57,19 @@ function CommunityComparisonToggle({
       aria-label={`Community comparison${enabled && agreementScore !== undefined ? `: ${agreementScore.toFixed(0)}% match` : ''}`}
       className={`
         flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium
-        transition-colors
+        transition-all duration-200 ease-out
         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900
         ${
           enabled
-            ? 'bg-purple-500/20 text-purple-300 border border-purple-500/50'
-            : 'bg-slate-800 text-slate-300 border border-slate-600 hover:border-slate-500'
+            ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40 shadow-lg shadow-purple-500/10'
+            : 'bg-slate-800/80 text-slate-300 border border-slate-600/80 hover:border-slate-500 hover:bg-slate-700/80'
         }
       `}
     >
-      <Users className="w-4 h-4" />
+      <Users className={`w-4 h-4 transition-colors duration-200 ${enabled ? 'text-purple-400' : ''}`} />
       <span className="hidden sm:inline">Community</span>
       {enabled && agreementScore !== undefined && (
-        <span className="px-1.5 py-0.5 rounded bg-purple-500/30 text-xs">
+        <span className="px-1.5 py-0.5 rounded bg-purple-500/30 text-xs font-semibold">
           {agreementScore.toFixed(0)}% match
         </span>
       )}
@@ -71,6 +82,7 @@ function CommunityComparisonToggle({
  *
  * Now uses ranking-store for tier state instead of local useState.
  * DnD is handled by parent SimpleMatchGrid's DndContext.
+ * Includes comprehensive keyboard navigation and accessibility.
  */
 export function TierListView({
   gridItems,
@@ -83,6 +95,7 @@ export function TierListView({
   const [preset, setPreset] = useState<TierListPreset>(PRESET_CLASSIC);
   const [showCommunityComparison, setShowCommunityComparison] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
 
   const tierListRef = useRef<HTMLDivElement>(null);
 
@@ -276,15 +289,188 @@ export function TierListView({
   // Calculate agreement score if community comparison is enabled
   const agreementScore = showCommunityComparison ? 75 : undefined; // Placeholder
 
+  // Create tier items map for focus provider
+  const tierItemsMap = useMemo(() => {
+    const map = new Map<string, BacklogItem[]>();
+    tiers.forEach(tier => {
+      map.set(tier.id, getTierItems(tier));
+    });
+    return map;
+  }, [tiers, getTierItems]);
+
   // No DndContext here - parent SimpleMatchGrid provides the DndContext
+  // Wrap with TierFocusProvider for keyboard navigation
   return (
-    <div className="relative py-4">
+    <TierFocusProvider initialTiers={tiers}>
+      <TierListViewContent
+        tiers={tiers}
+        tierItemsMap={tierItemsMap}
+        unrankedItems={unrankedItems}
+        itemsMap={itemsMap}
+        preset={preset}
+        showCommunityComparison={showCommunityComparison}
+        agreementScore={agreementScore}
+        isDragging={isDragging}
+        isExporting={isExporting}
+        showKeyboardHelp={showKeyboardHelp}
+        listTitle={listTitle}
+        tierListRef={tierListRef}
+        onPresetChange={handlePresetChange}
+        onTierUpdate={handleTierUpdate}
+        onTierAdd={handleTierAdd}
+        onTierRemove={handleTierRemove}
+        onReset={handleReset}
+        onExport={handleExport}
+        onApplyRanking={handleApplyRanking}
+        onToggleCollapse={handleToggleCollapse}
+        onRemoveItem={handleRemoveItem}
+        onToggleCommunityComparison={() => setShowCommunityComparison(!showCommunityComparison)}
+        onToggleKeyboardHelp={() => setShowKeyboardHelp(!showKeyboardHelp)}
+        getTierItems={getTierItems}
+      />
+    </TierFocusProvider>
+  );
+}
+
+/**
+ * Inner content component that uses the TierFocusProvider context
+ */
+interface TierListViewContentProps {
+  tiers: TierListTier[];
+  tierItemsMap: Map<string, BacklogItem[]>;
+  unrankedItems: BacklogItem[];
+  itemsMap: Map<string, BacklogItem>;
+  preset: TierListPreset;
+  showCommunityComparison: boolean;
+  agreementScore?: number;
+  isDragging: boolean;
+  isExporting: boolean;
+  showKeyboardHelp: boolean;
+  listTitle: string;
+  tierListRef: React.RefObject<HTMLDivElement | null>;
+  onPresetChange: (preset: TierListPreset) => void;
+  onTierUpdate: (tierId: string, updates: Partial<TierListTier>) => void;
+  onTierAdd: (tier: TierListTier) => void;
+  onTierRemove: (tierId: string) => void;
+  onReset: () => void;
+  onExport: () => void;
+  onApplyRanking: () => void;
+  onToggleCollapse: (tierId: string) => void;
+  onRemoveItem: (itemId: string) => void;
+  onToggleCommunityComparison: () => void;
+  onToggleKeyboardHelp: () => void;
+  getTierItems: (tier: TierListTier) => BacklogItem[];
+}
+
+function TierListViewContent({
+  tiers,
+  tierItemsMap,
+  unrankedItems,
+  itemsMap,
+  preset,
+  showCommunityComparison,
+  agreementScore,
+  isDragging,
+  isExporting,
+  showKeyboardHelp,
+  listTitle,
+  tierListRef,
+  onPresetChange,
+  onTierUpdate,
+  onTierAdd,
+  onTierRemove,
+  onReset,
+  onExport,
+  onApplyRanking,
+  onToggleCollapse,
+  onRemoveItem,
+  onToggleCommunityComparison,
+  onToggleKeyboardHelp,
+  getTierItems,
+}: TierListViewContentProps) {
+  // Access focus context
+  const {
+    setTiers,
+    setTierItems,
+    setUnrankedItems,
+    focusTier,
+    focusUnrankedPool,
+  } = useTierFocus();
+
+  // Sync tier data with focus provider
+  useEffect(() => {
+    setTiers(tiers);
+    setTierItems(tierItemsMap);
+    setUnrankedItems(unrankedItems);
+  }, [tiers, tierItemsMap, unrankedItems, setTiers, setTierItems, setUnrankedItems]);
+
+  // Handle item detail open (placeholder for future implementation)
+  const handleOpenItemDetail = useCallback((item: BacklogItem) => {
+    // Could open a detail modal here
+    console.log('Open item detail:', item.title);
+  }, []);
+
+  // Keyboard navigation hook
+  const { isKeyboardNavigating } = useTierKeyboardNavigation({
+    enabled: true,
+    onShowHelp: onToggleKeyboardHelp,
+    onOpenItemDetail: handleOpenItemDetail,
+    onEscape: () => {
+      if (showKeyboardHelp) {
+        onToggleKeyboardHelp();
+      }
+    },
+  });
+
+  // Skip link handlers
+  const handleSkipToTier = useCallback((tierId: string) => {
+    focusTier(tierId);
+  }, [focusTier]);
+
+  const handleSkipToUnranked = useCallback(() => {
+    focusUnrankedPool();
+  }, [focusUnrankedPool]);
+
+  return (
+    <div
+      className="relative py-4"
+      role="application"
+      aria-label="Tier list ranking"
+      aria-describedby="tier-list-instructions"
+    >
+      {/* Screen reader instructions */}
+      <TierInstructions />
+
+      {/* Screen reader announcer */}
+      <ScreenReaderAnnouncer />
+
+      {/* Skip links for keyboard users */}
+      <SkipLinks
+        tiers={tiers.map(t => ({ id: t.id, label: t.customLabel || t.label }))}
+        onSkipToTier={handleSkipToTier}
+        onSkipToUnranked={handleSkipToUnranked}
+      />
       {/* Action buttons - title is in page header */}
       <div className="flex items-center justify-end gap-2 mb-4 flex-wrap">
+        {/* Keyboard shortcuts hint */}
+        <button
+          onClick={onToggleKeyboardHelp}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium
+            bg-slate-800/80 text-slate-300 border border-slate-600/80
+            hover:border-slate-500 hover:bg-slate-700/80
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900
+            transition-all duration-200"
+          aria-label="Show keyboard shortcuts (press ? key)"
+        >
+          <Keyboard className="w-4 h-4" />
+          <span className="hidden sm:inline">Shortcuts</span>
+          <kbd className="px-1 py-0.5 rounded bg-slate-700 text-[10px] font-mono text-slate-400">?</kbd>
+        </button>
+
         {/* Community comparison toggle */}
         <CommunityComparisonToggle
           enabled={showCommunityComparison}
-          onToggle={() => setShowCommunityComparison(!showCommunityComparison)}
+          onToggle={onToggleCommunityComparison}
           agreementScore={agreementScore}
         />
 
@@ -292,37 +478,43 @@ export function TierListView({
         <TierConfigurator
           currentPreset={preset}
           tiers={tiers}
-          onPresetChange={handlePresetChange}
-          onTierUpdate={handleTierUpdate}
-          onTierAdd={handleTierAdd}
-          onTierRemove={handleTierRemove}
-          onTiersReset={handleReset}
-          onExport={handleExport}
+          onPresetChange={onPresetChange}
+          onTierUpdate={onTierUpdate}
+          onTierAdd={onTierAdd}
+          onTierRemove={onTierRemove}
+          onTiersReset={onReset}
+          onExport={onExport}
         />
 
         {/* Apply ranking button */}
         <button
-          onClick={handleApplyRanking}
+          onClick={onApplyRanking}
           disabled={tiers.every(t => t.items.length === 0)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium transition-all text-sm"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium transition-all duration-200 text-sm shadow-lg shadow-green-500/20 hover:shadow-green-500/30 hover:-translate-y-0.5 active:translate-y-0"
         >
           Apply Ranking
         </button>
       </div>
 
       {/* Tier list */}
-      <div ref={tierListRef} className="space-y-2">
+      <div
+        ref={tierListRef}
+        className="space-y-2.5"
+        role="list"
+        aria-label="Tier rows"
+      >
         <AnimatePresence mode="popLayout">
-          {tiers.map((tier) => (
+          {tiers.map((tier, index) => (
             <TierRow
               key={tier.id}
               tier={tier}
               items={getTierItems(tier)}
-              onToggleCollapse={handleToggleCollapse}
-              onRemoveItem={handleRemoveItem}
-              onEditTier={(t) => handleTierUpdate(t.id, t)}
+              onToggleCollapse={onToggleCollapse}
+              onRemoveItem={onRemoveItem}
+              onEditTier={(t) => onTierUpdate(t.id, t)}
               showCommunityComparison={showCommunityComparison}
               isDraggingOver={isDragging}
+              tierIndex={index}
             />
           ))}
         </AnimatePresence>
@@ -330,6 +522,15 @@ export function TierListView({
 
       {/* Unranked pool */}
       <UnrankedPool items={unrankedItems} />
+
+      {/* Keyboard mode indicator */}
+      <KeyboardModeIndicator isActive={isKeyboardNavigating} />
+
+      {/* Keyboard shortcuts help panel */}
+      <KeyboardShortcutsPanel
+        isOpen={showKeyboardHelp}
+        onClose={onToggleKeyboardHelp}
+      />
 
       {/* Export loading overlay */}
       <AnimatePresence>

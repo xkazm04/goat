@@ -57,7 +57,7 @@ export function GamesScoreRenderer({
       {/* XP bar container with gaming aesthetic */}
       <div
         className={cn(
-          "relative overflow-hidden bg-black/90 border border-green-500/30",
+          "relative overflow-hidden bg-black/90 border border-green-500/30 transition-all duration-200 hover:border-green-500/50",
           variant === "compact" && "h-2 rounded-sm",
           variant === "full" && "h-4 rounded",
           variant === "inline" && "h-1.5 w-16 rounded-sm"
@@ -80,9 +80,9 @@ export function GamesScoreRenderer({
       </div>
       {/* Level indicator */}
       {showLabel && variant === "full" && (
-        <div className="flex justify-between mt-1">
-          <span className="text-xs font-bold text-green-400">LVL {level}</span>
-          <span className="text-xs font-mono text-green-500/70">
+        <div className="flex justify-between mt-1.5">
+          <span className="text-xs font-bold text-green-400 drop-shadow-[0_0_4px_rgba(34,197,94,0.3)]">LVL {level}</span>
+          <span className="text-xs font-mono text-green-500/70 tabular-nums">
             {score.toFixed(0)} XP
           </span>
         </div>

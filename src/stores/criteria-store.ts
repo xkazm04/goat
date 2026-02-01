@@ -5,6 +5,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { useShallow } from 'zustand/react/shallow';
 import type {
   CriteriaProfile,
   Criterion,
@@ -18,6 +19,7 @@ import type {
 } from '@/lib/criteria/types';
 import { CriteriaManager, createCriteriaManager } from '@/lib/criteria/CriteriaManager';
 import { ALL_TEMPLATES } from '@/lib/criteria/templates';
+import { calculateWeightedScore } from '@/lib/criteria/calculateWeightedScore';
 import {
   fetchListCriteria,
   saveListCriteria,
@@ -330,17 +332,8 @@ export const useCriteriaStore = create<CriteriaStore>()(
           scores = [criterionScore];
         }
 
-        // Calculate weighted score
-        const totalWeight = profile.criteria.reduce((sum, c) => sum + c.weight, 0);
-        let weightedSum = 0;
-        for (const s of scores) {
-          const c = profile.criteria.find((cr) => cr.id === s.criterionId);
-          if (!c) continue;
-          const normalized = (s.score - c.minScore) / (c.maxScore - c.minScore);
-          weightedSum += normalized * c.weight;
-        }
-        const weightedScore =
-          totalWeight > 0 ? Math.round((weightedSum / totalWeight) * 100 * 100) / 100 : 0;
+        // Calculate weighted score using shared utility
+        const weightedScore = calculateWeightedScore(scores, profile.criteria);
 
         const itemScores: ItemCriteriaScores = {
           itemId,
@@ -674,33 +667,33 @@ export const useCriteriaStore = create<CriteriaStore>()(
 export const useCriteriaProfiles = () => useCriteriaStore((state) => state.profiles);
 export const useActiveProfile = () => useCriteriaStore((state) => state.getActiveProfile());
 export const useCriteriaPanelState = () =>
-  useCriteriaStore((state) => ({
+  useCriteriaStore(useShallow((state) => ({
     isVisible: state.isPanelVisible,
     inputMode: state.scoreInputMode,
-  }));
+  })));
 export const useCriteriaActions = () =>
-  useCriteriaStore((state) => ({
+  useCriteriaStore(useShallow((state) => ({
     setActiveProfile: state.setActiveProfile,
     setItemScore: state.setItemScore,
     getItemScores: state.getItemScores,
     togglePanel: state.togglePanelVisibility,
     setInputMode: state.setScoreInputMode,
     getRankingSuggestions: state.getRankingSuggestions,
-  }));
+  })));
 
 // Database sync selector hooks
 export const useSyncStatus = () =>
-  useCriteriaStore((state) => ({
+  useCriteriaStore(useShallow((state) => ({
     status: state.syncStatus,
     lastSyncAt: state.lastSyncAt,
     currentListId: state.currentListId,
-  }));
+  })));
 
 export const useCriteriaSync = () =>
-  useCriteriaStore((state) => ({
+  useCriteriaStore(useShallow((state) => ({
     loadFromDatabase: state.loadFromDatabase,
     saveToDatabase: state.saveToDatabase,
     syncItemScoresToDatabase: state.syncItemScoresToDatabase,
     syncAllScoresToDatabase: state.syncAllScoresToDatabase,
     setCurrentList: state.setCurrentList,
-  }));
+  })));

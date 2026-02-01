@@ -14,7 +14,7 @@ const ANIMATION_DURATION = 0.5;
 const ANIMATION_EASE = "easeOut";
 
 const scoreBarVariants = cva(
-  "relative overflow-hidden rounded-full transition-all",
+  "relative overflow-hidden rounded-full transition-all duration-300",
   {
     variants: {
       size: {
@@ -37,7 +37,7 @@ const scoreBarVariants = cva(
   }
 );
 
-const fillVariants = cva("absolute inset-y-0 left-0 rounded-full", {
+const fillVariants = cva("absolute inset-y-0 left-0 rounded-full transition-all duration-300", {
   variants: {
     theme: {
       sports: "", // Color determined by score level
@@ -133,7 +133,7 @@ export function ScoreBar({
         />
       )}
       {showLabel && (
-        <span className="absolute inset-0 flex items-center justify-center text-[10px] font-medium text-white/90 tabular-nums">
+        <span className="absolute inset-0 flex items-center justify-center text-[10px] font-medium text-white/90 tabular-nums drop-shadow-sm">
           {clampedValue.toFixed(0)}
         </span>
       )}

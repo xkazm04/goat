@@ -28,6 +28,8 @@ export const generatedItemSchema = z.object({
 /** Gemini API response schema (before image enrichment) */
 export const geminiResponseSchema = z.object({
   items: z.array(generatedItemSchema),
+  suggested_title: z.string().optional(),
+  suggested_description: z.string().optional(),
 });
 
 /** Final item schema (with image from Wikipedia API and optional YouTube URL) */
@@ -43,6 +45,8 @@ export const enrichedItemSchema = generatedItemSchema.extend({
 /** Response schema for /api/studio/generate */
 export const generateResponseSchema = z.object({
   items: z.array(enrichedItemSchema),
+  suggested_title: z.string().optional(),
+  suggested_description: z.string().optional(),
 });
 
 // ─────────────────────────────────────────────────────────────

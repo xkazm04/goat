@@ -72,7 +72,7 @@ export function CriteriaTemplateSection({
         whileTap={{ scale: 0.995 }}
       >
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-purple-500/10">
+          <div className="p-2 rounded-lg bg-purple-500/10 transition-transform duration-200 group-hover:scale-105">
             <Sparkles className="w-4 h-4 text-purple-400" />
           </div>
           <div className="text-left">
@@ -80,7 +80,7 @@ export function CriteriaTemplateSection({
               <span className="text-sm font-medium text-white">
                 Rating Criteria
               </span>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-slate-700/50 text-slate-400">
+              <span className="text-xs px-2 py-0.5 rounded-full bg-slate-700/50 text-slate-400 transition-colors duration-200">
                 Optional
               </span>
             </div>
@@ -217,11 +217,11 @@ function TemplateCard({ profile, isSelected, onSelect }: TemplateCardProps) {
             {profile.description}
           </p>
           <div className="flex items-center gap-2">
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-700/50 text-slate-400">
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-700/50 text-slate-400 transition-colors duration-200">
               {profile.criteria.length} criteria
             </span>
             {profile.category !== 'universal' && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 capitalize">
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 capitalize transition-colors duration-200">
                 {profile.category}
               </span>
             )}

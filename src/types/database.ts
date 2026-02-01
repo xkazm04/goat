@@ -582,6 +582,76 @@ export interface Database {
         };
         Relationships: [];
       };
+
+      /**
+       * List collections for organizing lists into folders
+       */
+      list_collections: {
+        Row: {
+          id: string;
+          name: string;
+          description: string | null;
+          cover_image: string | null;
+          color: string | null;
+          icon: string | null;
+          parent_id: string | null;
+          user_id: string;
+          list_ids: string[];
+          is_public: boolean;
+          share_slug: string | null;
+          order: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          description?: string | null;
+          cover_image?: string | null;
+          color?: string | null;
+          icon?: string | null;
+          parent_id?: string | null;
+          user_id: string;
+          list_ids?: string[];
+          is_public?: boolean;
+          share_slug?: string | null;
+          order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          description?: string | null;
+          cover_image?: string | null;
+          color?: string | null;
+          icon?: string | null;
+          parent_id?: string | null;
+          user_id?: string;
+          list_ids?: string[];
+          is_public?: boolean;
+          share_slug?: string | null;
+          order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'list_collections_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'list_collections_parent_id_fkey';
+            columns: ['parent_id'];
+            isOneToOne: false;
+            referencedRelation: 'list_collections';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -659,6 +729,9 @@ export type TopItemRow = TableRow<'top_items'>;
 /** Top group row (legacy table) */
 export type TopGroupRow = TableRow<'top_groups'>;
 
+/** List collection row from the list_collections table */
+export type ListCollectionRow = TableRow<'list_collections'>;
+
 // =============================================================================
 // Insert Type Aliases
 // =============================================================================
@@ -681,6 +754,9 @@ export type BlueprintInsert = TableInsert<'blueprints'>;
 /** Insert type for shared_rankings table */
 export type SharedRankingInsert = TableInsert<'shared_rankings'>;
 
+/** Insert type for list_collections table */
+export type ListCollectionInsert = TableInsert<'list_collections'>;
+
 // =============================================================================
 // Update Type Aliases
 // =============================================================================
@@ -693,6 +769,9 @@ export type ListUpdate = TableUpdate<'lists'>;
 
 /** Update type for blueprints table */
 export type BlueprintUpdate = TableUpdate<'blueprints'>;
+
+/** Update type for list_collections table */
+export type ListCollectionUpdate = TableUpdate<'list_collections'>;
 
 // =============================================================================
 // Query Result Types

@@ -6,10 +6,13 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleGenAI } from '@google/genai';
 import { z } from 'zod';
 import { extractYouTubeId } from '@/lib/youtube';
-import type { StudioApiError } from '@/types/studio';
+import {
+  getGeminiClient,
+  handleStudioError,
+  StudioErrorCodes,
+} from '@/lib/api/studio-utils';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
@@ -28,32 +31,15 @@ interface FindYouTubeResponse {
   video_title: string | null;
 }
 
-// Lazy singleton for Gemini client
-let aiClient: GoogleGenAI | null = null;
-
-function getClient(): GoogleGenAI {
-  if (!aiClient) {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      throw new Error('GEMINI_API_KEY not configured');
-    }
-    aiClient = new GoogleGenAI({ apiKey });
-  }
-  return aiClient;
-}
-
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { title, artist, context } = findYouTubeRequestSchema.parse(body);
 
-    const ai = getClient();
+    const ai = getGeminiClient();
 
     // Build search query
-    const searchQuery = artist
-      ? `${title} by ${artist}`
-      : title;
-
+    const searchQuery = artist ? `${title} by ${artist}` : title;
     const contextHint = context || 'song';
 
     const prompt = `Find the official YouTube video for the ${contextHint}: "${searchQuery}"
@@ -119,30 +105,6 @@ If no suitable video is found, respond with:
 
     return NextResponse.json(result);
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      const errorResponse: StudioApiError = {
-        error: 'Invalid request',
-        details: error.errors,
-      };
-      return NextResponse.json(errorResponse, { status: 400 });
-    }
-
-    if (
-      error instanceof Error &&
-      error.message === 'GEMINI_API_KEY not configured'
-    ) {
-      const errorResponse: StudioApiError = {
-        error: 'GEMINI_API_KEY not configured',
-        code: 'CONFIG_ERROR',
-      };
-      return NextResponse.json(errorResponse, { status: 500 });
-    }
-
-    console.error('Find YouTube error:', error);
-    const errorResponse: StudioApiError = {
-      error: error instanceof Error ? error.message : 'YouTube search failed',
-      code: 'YOUTUBE_SEARCH_ERROR',
-    };
-    return NextResponse.json(errorResponse, { status: 500 });
+    return handleStudioError(error, 'Find YouTube error', StudioErrorCodes.YOUTUBE_SEARCH_ERROR);
   }
 }

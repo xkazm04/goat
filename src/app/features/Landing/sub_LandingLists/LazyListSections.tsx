@@ -121,5 +121,58 @@ export const LazyUserListsSection = dynamic(
   }
 );
 
+// Loading skeleton for collections section
+function CollectionsSkeleton() {
+  return (
+    <div
+      className="py-12 px-4"
+      data-testid="collections-skeleton"
+      role="status"
+      aria-label="Loading collections"
+    >
+      <div className="max-w-7xl mx-auto">
+        {/* Section header skeleton */}
+        <div className="mb-8">
+          <div className="h-8 w-40 bg-purple-800/30 rounded animate-pulse mb-2" />
+          <div className="h-4 w-64 bg-purple-800/20 rounded animate-pulse" />
+        </div>
+
+        {/* Card grid skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05 }}
+              className="bg-gray-900/50 border border-purple-800/30 rounded-xl p-4 animate-pulse"
+            >
+              {/* Folder icon skeleton */}
+              <div className="w-12 h-12 bg-purple-800/30 rounded-lg mb-4" />
+              {/* Card title skeleton */}
+              <div className="h-5 w-3/4 bg-purple-800/30 rounded mb-2" />
+              {/* Card description skeleton */}
+              <div className="h-4 w-full bg-purple-800/20 rounded mb-1" />
+              <div className="h-4 w-1/2 bg-purple-800/20 rounded" />
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Lazy-loaded CollectionsSection
+ * Deferred loading since it's below the fold
+ */
+export const LazyCollectionsSection = dynamic(
+  () => import('./CollectionsSection').then(mod => ({ default: mod.CollectionsSection })),
+  {
+    loading: () => <CollectionsSkeleton />,
+    ssr: true,
+  }
+);
+
 // Export skeletons for testing/storybook
-export { ListSectionSkeleton, UserListsSkeleton };
+export { ListSectionSkeleton, UserListsSkeleton, CollectionsSkeleton };

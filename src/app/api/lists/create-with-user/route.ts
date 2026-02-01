@@ -26,37 +26,16 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
   let isNewUser = false;
   let user = null;
 
-  // If no user_id provided, create a temporary user
+  // If no user_id provided, try to create or find a user
   if (!userId) {
-    userId = uuidv4();
+    // For now, skip user creation and just leave user_id as null
+    // The lists table allows null user_id
+    userId = null;
     isNewUser = true;
-
-    // Create temporary user in users table (if it exists)
-    // Note: This assumes you have a users table. If not, you can skip this step
-    // and just use the generated UUID directly
-    const { data: userData, error: userError } = await supabase
-      .from('users')
-      .insert([
-        {
-          id: userId,
-          is_temporary: true,
-          created_at: new Date().toISOString(),
-        },
-      ])
-      .select()
-      .single();
-
-    if (userError && userError.code !== '42P01') {
-      // Ignore table not found error
-      // Continue anyway with the generated UUID
-      console.warn('Warning creating temp user:', userError.message);
-    } else {
-      user = userData;
-    }
+    user = null;
   } else {
     // Check if user exists
     const { data: userData } = await supabase.from('users').select('*').eq('id', userId).single();
-
     user = userData;
   }
 

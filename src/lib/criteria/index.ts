@@ -21,6 +21,8 @@ export type {
   CriteriaActions,
   CriteriaStore,
   TemplateCategory,
+  ListCriteriaConfig,
+  ListItemCriteriaScores,
 } from './types';
 
 export {
@@ -28,6 +30,19 @@ export {
   DEFAULT_CRITERION,
   TEMPLATE_CATEGORIES,
 } from './types';
+
+// Weighted Score Calculation
+export {
+  calculateWeightedScore,
+  calculateWeightedScoreDetailed,
+  calculateScoringCompletion,
+  validateCriterionScores,
+  clampScore,
+  getCriterionImportance,
+  type CalculateWeightedScoreOptions,
+  type WeightedScoreResult,
+  type CriterionBreakdown,
+} from './calculateWeightedScore';
 
 // Manager
 export {

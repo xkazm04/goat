@@ -337,10 +337,6 @@ function SimpleMatchGridInner() {
     const storeContext = getStoreContext();
     const result = dragRouter.handleDragEnd(event, storeContext);
 
-    // Log failures for debugging (success is silent)
-    if (!result.success && result.errorCode) {
-      console.debug('[DragRouter] Operation failed:', result.errorCode, result.errorMessage);
-    }
   }, [dragRouter, getStoreContext, setIsDragging, setHoveredPosition]);
 
   const handleRemove = useCallback((position: number) => {
@@ -378,8 +374,6 @@ function SimpleMatchGridInner() {
             {/* Title - Absolute positioned top left */}
             <MatchGridHeader
               title={currentList?.title || "Neon Arena"}
-              listId={currentList?.id}
-              listCategory={currentList?.category}
             />
 
             <div className="max-w-7xl mx-auto px-8">
@@ -438,64 +432,17 @@ function SimpleMatchGridInner() {
               />
             )}
 
-            {/* Main Grid Sections - hidden in bracket and tierlist mode */}
+            {/* Unified Grid - hidden in bracket and tierlist mode */}
             {viewMode !== 'bracket' && viewMode !== 'tierlist' && (
-              <div className="space-y-12">
-                {/* Positions 4-10 (or 5-10 for rushmore) */}
-                {gridItems.length > (viewMode === 'rushmore' ? 4 : 3) && (
-                  <GridSection
-                    title="Elite Tier"
-                    gridItems={gridItems}
-                    startPosition={viewMode === 'rushmore' ? 4 : 3}
-                    endPosition={Math.min(10, gridItems.length)}
-                    columns={7}
-                    onRemove={handleRemove}
-                    getItemTitle={getItemTitle}
-                  />
-                )}
-
-                {/* Positions 11-20 */}
-                {gridItems.length > 10 && (
-                  <GridSection
-                    title="Core Roster"
-                    gridItems={gridItems}
-                    startPosition={10}
-                    endPosition={Math.min(20, gridItems.length)}
-                    columns={10}
-                    gap={3}
-                    onRemove={handleRemove}
-                    getItemTitle={getItemTitle}
-                  />
-                )}
-
-                {/* Positions 21-35 */}
-                {gridItems.length > 20 && (
-                  <GridSection
-                    title="Rising Stars"
-                    gridItems={gridItems}
-                    startPosition={20}
-                    endPosition={Math.min(35, gridItems.length)}
-                    columns={10}
-                    gap={3}
-                    onRemove={handleRemove}
-                    getItemTitle={getItemTitle}
-                  />
-                )}
-
-                {/* Positions 36-50 */}
-                {gridItems.length > 35 && (
-                  <GridSection
-                    title="Reserves"
-                    gridItems={gridItems}
-                    startPosition={35}
-                    endPosition={Math.min(50, gridItems.length)}
-                    columns={10}
-                    gap={3}
-                    onRemove={handleRemove}
-                    getItemTitle={getItemTitle}
-                  />
-                )}
-              </div>
+              <GridSection
+                gridItems={gridItems}
+                startPosition={viewMode === 'rushmore' ? 4 : 3}
+                endPosition={gridItems.length}
+                columns={10}
+                gap={3}
+                onRemove={handleRemove}
+                getItemTitle={getItemTitle}
+              />
             )}
           </div>
         </div>

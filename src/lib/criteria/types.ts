@@ -3,6 +3,50 @@
  * Type definitions for criteria-based scoring and ranking
  */
 
+// =============================================================================
+// Display Configuration Types (for score overlays on cards)
+// =============================================================================
+
+/**
+ * Display type for criterion score overlay on item cards
+ * - ring: Circular progress with score in center (primary score)
+ * - bar: Horizontal progress bar (secondary scores, compact)
+ * - label: "8.5 Quality" badge (text-focused, detailed)
+ * - hidden: Not shown on card (detail popup only)
+ */
+export type CriterionDisplayType = 'ring' | 'bar' | 'label' | 'hidden';
+
+/**
+ * Position for criterion overlay on item card
+ * Cards support 6 positions. top-right is typically reserved for remove button.
+ */
+export type CriterionDisplayPosition =
+  | 'top-left'
+  | 'top-right'
+  | 'top-center'
+  | 'bottom-left'
+  | 'bottom-right'
+  | 'bottom-center';
+
+/**
+ * Size options for overlays
+ */
+export type CriterionDisplaySize = 'sm' | 'md' | 'lg';
+
+/**
+ * Display configuration for a criterion on item cards
+ */
+export interface CriterionDisplayConfig {
+  /** How to render the score overlay */
+  displayType: CriterionDisplayType;
+  /** Where to position on the card (auto-assigned if not specified) */
+  position?: CriterionDisplayPosition;
+  /** Size of the overlay element */
+  size?: CriterionDisplaySize;
+  /** Whether to show the criterion name alongside the score */
+  showName?: boolean;
+}
+
 /**
  * A single criterion definition
  */
@@ -20,6 +64,8 @@ export interface Criterion {
   icon?: string;
   /** Color for visualization */
   color?: string;
+  /** Display configuration for score overlays on cards */
+  displayConfig?: CriterionDisplayConfig;
 }
 
 /**

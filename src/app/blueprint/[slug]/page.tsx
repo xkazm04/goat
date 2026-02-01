@@ -60,7 +60,7 @@ export default function BlueprintPage() {
           </p>
           <button
             onClick={() => router.push("/")}
-            className="px-6 py-3 bg-cyan-500 hover:bg-cyan-400 text-white font-semibold rounded-xl transition-colors"
+            className="px-6 py-3 bg-cyan-500 hover:bg-cyan-400 text-white font-semibold rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-cyan-500/25 hover:scale-105 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
             data-testid="blueprint-not-found-home-btn"
           >
             Go to Home
@@ -82,7 +82,7 @@ export default function BlueprintPage() {
       >
         {/* Blueprint Card */}
         <div
-          className="relative rounded-3xl overflow-hidden p-6"
+          className="relative rounded-3xl overflow-hidden p-6 ring-1 ring-white/5"
           style={{
             background: `
               linear-gradient(135deg,
@@ -92,9 +92,9 @@ export default function BlueprintPage() {
               )
             `,
             boxShadow: `
-              0 20px 50px rgba(0, 0, 0, 0.5),
+              0 25px 60px rgba(0, 0, 0, 0.6),
               0 0 80px ${blueprint.color.primary}20,
-              inset 0 1px 0 rgba(255, 255, 255, 0.05)
+              inset 0 1px 0 rgba(255, 255, 255, 0.08)
             `,
           }}
           data-testid="blueprint-preview-card"
@@ -113,15 +113,16 @@ export default function BlueprintPage() {
             {/* Header */}
             <div className="flex items-center gap-4 mb-6">
               <div
-                className="w-14 h-14 rounded-2xl flex items-center justify-center"
+                className="w-14 h-14 rounded-2xl flex items-center justify-center transition-transform duration-300 hover:scale-105"
                 style={{
                   background: `linear-gradient(135deg, ${blueprint.color.primary}30, ${blueprint.color.secondary}20)`,
+                  boxShadow: `0 4px 12px ${blueprint.color.primary}15`,
                 }}
               >
                 <CategoryIcon className="w-7 h-7" style={{ color: blueprint.color.primary }} />
               </div>
               <div className="flex-1">
-                <h1 className="text-2xl font-bold text-white">{blueprint.title}</h1>
+                <h1 className="text-2xl font-bold text-white tracking-tight">{blueprint.title}</h1>
                 <p className="text-white/50 text-sm">
                   {blueprint.category}
                   {blueprint.subcategory && ` • ${blueprint.subcategory}`}
@@ -136,18 +137,18 @@ export default function BlueprintPage() {
 
             {/* Stats */}
             <div className="flex items-center gap-6 mb-6 text-sm">
-              <div className="flex items-center gap-2 text-white/50">
+              <div className="flex items-center gap-2 text-white/50 transition-colors duration-200 hover:text-white/70">
                 <Sparkles className="w-4 h-4" style={{ color: blueprint.color.primary }} />
                 <span>Top {blueprint.size}</span>
               </div>
               {blueprint.usageCount !== undefined && blueprint.usageCount > 0 && (
-                <div className="flex items-center gap-2 text-white/50">
+                <div className="flex items-center gap-2 text-white/50 transition-colors duration-200 hover:text-white/70">
                   <Users className="w-4 h-4" />
                   <span>{blueprint.usageCount} views</span>
                 </div>
               )}
               {blueprint.cloneCount !== undefined && blueprint.cloneCount > 0 && (
-                <div className="flex items-center gap-2 text-white/50">
+                <div className="flex items-center gap-2 text-white/50 transition-colors duration-200 hover:text-white/70">
                   <Clock className="w-4 h-4" />
                   <span>{blueprint.cloneCount} uses</span>
                 </div>
@@ -163,7 +164,7 @@ export default function BlueprintPage() {
             )}
 
             {/* Loading indicator */}
-            <div className="flex items-center justify-center gap-3 py-4">
+            <div className="flex items-center justify-center gap-3 py-4 rounded-xl bg-white/[0.02] border border-white/5">
               <Loader2 className="w-5 h-5 animate-spin" style={{ color: blueprint.color.primary }} />
               <span className="text-white/70">Opening creation modal...</span>
             </div>

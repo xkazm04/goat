@@ -3,20 +3,26 @@
 /**
  * TopicInputForm
  *
- * Compact form for entering a topic and generating AI-powered list items.
- * Separates list size (Top N) from generate count for flexibility.
- * Category selection is placed next to topic input for better context.
+ * Main form for list creation including topic, category, title, description,
+ * list size, and generate count. All core fields in one place.
  */
 
 import { useState } from 'react';
-import { Sparkles, Loader2, Zap, ListOrdered, Wand2, Plus, ChevronUp, ImageIcon, Tag } from 'lucide-react';
+import { Sparkles, Loader2, Zap, ListOrdered, Wand2, Plus, ChevronUp, ImageIcon, Tag, FileText, Type } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { UniversalSelect } from '@/components/ui/universal-select';
 import { useToast } from '@/hooks/use-toast';
 import { useStudioForm, useStudioGeneration, useStudioItems, useStudioMetadata } from '@/stores/studio-store';
 import { apiClient } from '@/lib/api/client';
 import { cn } from '@/lib/utils';
 import { CATEGORIES } from '@/lib/config/category-config';
 import type { EnrichedItem } from '@/types/studio';
+
+// Category options for the select
+const CATEGORY_OPTIONS = CATEGORIES.map(cat => ({
+  value: cat,
+  label: cat,
+}));
 
 const LIST_SIZE_OPTIONS = [10, 20, 50] as const;
 const GENERATE_COUNT_OPTIONS = [10, 30, 50, 70] as const;
@@ -30,7 +36,15 @@ export function TopicInputForm() {
   const { topic, listSize, generateCount, setTopic, setListSize, setGenerateCount } = useStudioForm();
   const { isGenerating, error, generateItems, clearError } = useStudioGeneration();
   const { addItem } = useStudioItems();
-  const { category, setCategory } = useStudioMetadata();
+  const {
+    category,
+    setCategory,
+    listTitle,
+    listDescription,
+    setListTitle,
+    setListDescription,
+    suggestTitleFromTopic,
+  } = useStudioMetadata();
   const { toast } = useToast();
 
   // Add item form state
@@ -79,7 +93,7 @@ export function TopicInputForm() {
         );
         imageUrl = response.image_url;
       } catch {
-        console.warn('Could not find image for:', addTitle);
+        // Image lookup failed - item will be added without image
       }
 
       const newItem: EnrichedItem = {
@@ -117,11 +131,11 @@ export function TopicInputForm() {
             htmlFor="topic-input"
             className="flex items-center gap-2 text-sm font-medium text-gray-200"
           >
-            <Zap className="w-4 h-4 text-cyan-400" />
+            <Zap className="w-4 h-4 text-amber-400" />
             What do you want to rank?
           </label>
           <div className="relative group">
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500/20 to-cyan-400/20
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-500/20 to-orange-400/20
               rounded-lg opacity-0 group-focus-within:opacity-100 blur transition-opacity" />
             <input
               id="topic-input"
@@ -134,7 +148,7 @@ export function TopicInputForm() {
               maxLength={200}
               className="relative w-full px-3 py-2.5 bg-gray-900/80 border border-gray-700/50
                 rounded-lg text-white placeholder-gray-500 text-sm
-                focus:outline-none focus:border-cyan-500/50
+                focus:outline-none focus:border-amber-500/50
                 disabled:opacity-50 disabled:cursor-not-allowed
                 transition-all"
             />
@@ -143,36 +157,83 @@ export function TopicInputForm() {
 
         {/* Category */}
         <div className="space-y-1.5">
-          <label
-            htmlFor="topic-category"
-            className="flex items-center gap-1.5 text-sm font-medium text-gray-200"
-          >
-            <Tag className="w-3.5 h-3.5 text-cyan-400" />
+          <label className="flex items-center gap-1.5 text-sm font-medium text-gray-200">
+            <Tag className="w-3.5 h-3.5 text-gray-400" />
             Category
           </label>
-          <select
-            id="topic-category"
+          <UniversalSelect
             value={category}
-            onChange={(e) => setCategory(e.target.value)}
+            onChange={setCategory}
+            options={CATEGORY_OPTIONS}
             disabled={isGenerating}
-            className="w-full px-2.5 py-2.5 bg-gray-900/80 border border-gray-700/50
-              rounded-lg text-white text-sm appearance-none cursor-pointer
-              focus:outline-none focus:border-cyan-500/50
-              disabled:opacity-50 disabled:cursor-not-allowed
-              transition-all"
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-              backgroundPosition: 'right 0.5rem center',
-              backgroundRepeat: 'no-repeat',
-              backgroundSize: '1.25em 1.25em',
-            }}
+            size="md"
+          />
+        </div>
+      </div>
+
+      {/* List Title & Description - Side by Side */}
+      <div className="grid grid-cols-[1fr_1fr] gap-3">
+        {/* List Title */}
+        <div className="space-y-1.5">
+          <label
+            htmlFor="list-title"
+            className="flex items-center gap-1.5 text-xs font-medium text-gray-400"
           >
-            {CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
+            <Type className="w-3 h-3" />
+            List Title <span className="text-red-400">*</span>
+          </label>
+          <div className="flex gap-1.5">
+            <input
+              id="list-title"
+              type="text"
+              value={listTitle}
+              onChange={(e) => setListTitle(e.target.value)}
+              placeholder="My Awesome List"
+              maxLength={100}
+              disabled={isGenerating}
+              className="flex-1 px-2.5 py-2 bg-gray-900/60 border border-gray-700/50
+                rounded-md text-white placeholder-gray-500 text-sm
+                focus:outline-none focus:ring-1 focus:ring-amber-500/50
+                disabled:opacity-50 transition-all"
+            />
+            {topic && !listTitle && (
+              <button
+                type="button"
+                onClick={suggestTitleFromTopic}
+                title="Use topic as title"
+                disabled={isGenerating}
+                className="p-2 bg-gray-900/60 border border-gray-700/50 rounded-md
+                  text-gray-400 hover:text-amber-400 hover:border-amber-500/30
+                  disabled:opacity-50 transition-all"
+              >
+                <Wand2 className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Description */}
+        <div className="space-y-1.5">
+          <label
+            htmlFor="list-description"
+            className="flex items-center gap-1.5 text-xs font-medium text-gray-400"
+          >
+            <FileText className="w-3 h-3" />
+            Description <span className="text-gray-600">(optional)</span>
+          </label>
+          <input
+            id="list-description"
+            type="text"
+            value={listDescription}
+            onChange={(e) => setListDescription(e.target.value)}
+            placeholder="What is this list about?"
+            maxLength={200}
+            disabled={isGenerating}
+            className="w-full px-2.5 py-2 bg-gray-900/60 border border-gray-700/50
+              rounded-md text-white placeholder-gray-500 text-sm
+              focus:outline-none focus:ring-1 focus:ring-amber-500/50
+              disabled:opacity-50 transition-all"
+          />
         </div>
       </div>
 
@@ -238,12 +299,11 @@ export function TopicInputForm() {
         onClick={handleGenerate}
         disabled={isGenerating || !topic.trim()}
         className="w-full h-10 text-sm font-medium
-          bg-gradient-to-r from-cyan-500 to-teal-500
-          hover:from-cyan-400 hover:to-teal-400
-          text-white rounded-lg border-0
-          shadow-md shadow-cyan-500/20 hover:shadow-cyan-400/30
+          bg-amber-500/15 hover:bg-amber-500/25
+          text-amber-400 hover:text-amber-300
+          rounded-lg border border-amber-500/30 hover:border-amber-500/50
           transition-all
-          disabled:opacity-50 disabled:shadow-none"
+          disabled:opacity-50"
       >
         {isGenerating ? (
           <>

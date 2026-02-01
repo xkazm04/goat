@@ -65,7 +65,6 @@ export const STORE_DEPENDENCIES = {
   'backlog-store': [],
   'validation-notification-store': [],
   'consensus-store': [],
-  'tier-store': [],
   'activity-store': [],
   'heatmap-store': [],
   'wiki-image-store': [],
@@ -73,6 +72,7 @@ export const STORE_DEPENDENCIES = {
   'inspector-store': [],
   'layout-store': [],
   'use-list-store': [],
+  'ranking-store': [],  // Unified ranking store (includes tier functionality, consolidated from tier-store)
 
   // Dependent stores
   'grid-store': ['session-store', 'backlog-store', 'validation-notification-store'],

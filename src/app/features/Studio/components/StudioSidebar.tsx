@@ -3,6 +3,7 @@
 /**
  * StudioSidebar
  * Sidebar for list metadata configuration in the List Creation Studio
+ * Contains publish controls (criteria is now in the main content tabs)
  */
 
 import { Surface } from '@/components/visual';
@@ -15,12 +16,12 @@ export interface StudioSidebarProps {
 
 /**
  * StudioSidebar Component
- * Renders the metadata configuration panel for the list.
+ * Renders publish controls panel.
  */
 export function StudioSidebar({ children }: StudioSidebarProps) {
   return (
     <aside>
-      <Surface elevation="raised" className="rounded-xl p-4 space-y-4">
+      <Surface elevation="raised" className="rounded-xl p-4">
         {children || <MetadataPanel />}
       </Surface>
     </aside>

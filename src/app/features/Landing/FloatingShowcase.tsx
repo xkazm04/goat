@@ -1,193 +1,311 @@
 "use client";
 
-import { memo, useMemo, useCallback } from "react";
+import { memo, useMemo, useCallback, useState } from "react";
 import { motion } from "framer-motion";
-import Link from "next/link";
-import { Plus } from "lucide-react";
-import { ShowcaseCard } from "./ShowcaseCard";
-import { BannedShowcaseCard } from "./BannedShowcaseCard";
+import { Play, Plus } from "lucide-react";
 import { ShowcaseHeader } from "./ShowcaseHeader";
-import { showcaseData, LegacyShowcaseItem } from "@/lib/constants/showCaseExamples";
 import ShowcaseDecor from "@/components/app/decorations/ShowcaseDecor";
-import { staggerContainer, useCardClickHandler } from "./shared";
-import type { ShowcaseCardData } from "./types";
 import { useAnimationPause } from "@/hooks/use-animation-pause";
-import { useMotionCapabilities } from "@/hooks/use-motion-preference";
-import { usePersonalization, type ContentItem } from "@/lib/personalization";
+import { useFeaturedLists } from "@/hooks/use-top-lists";
+import { useComposition } from "@/hooks/use-composition";
+import { usePlayList } from "@/hooks/use-play-list";
+import { TopList } from "@/types/top-lists";
+import { getCategoryColor } from "@/lib/helpers/getColors";
+import { useQueries } from "@tanstack/react-query";
+import { goatApi } from "@/lib/api";
 
-// Default color fallback for items missing color properties
-const DEFAULT_COLOR = {
-    primary: "rgba(6,182,212,0.8)",
-    secondary: "rgba(8,145,178,0.8)",
-    accent: "rgba(34,211,238,0.8)",
-};
+/**
+ * FloatingShowcase - Hero section with category tables
+ *
+ * Design: Three category tables side by side showing lists
+ */
 
-// Default position fallback for items missing position properties
-const DEFAULT_POSITION = { x: 50, y: 50 };
+const CATEGORIES = ['sports', 'movies', 'games'] as const;
 
-// Validates that a showcase item has all required properties
-function isValidShowcaseItem(item: unknown): item is LegacyShowcaseItem {
-    if (!item || typeof item !== "object") return false;
-    const obj = item as Record<string, unknown>;
-
-    // Required fields
-    if (typeof obj.id !== "number") return false;
-    if (typeof obj.title !== "string" || !obj.title) return false;
-    if (typeof obj.category !== "string" || !obj.category) return false;
-
-    return true;
+interface TableRowProps {
+    list: TopList;
+    imageUrl: string | null;
+    isLoading: boolean;
+    onPlay: (list: TopList) => void;
+    onCustomize: (list: TopList) => void;
+    colors: ReturnType<typeof getCategoryColor>;
 }
 
-// Normalizes a showcase item by providing defaults for missing optional properties
-function normalizeShowcaseItem(item: LegacyShowcaseItem): LegacyShowcaseItem {
-    return {
-        ...item,
-        position: item.position && typeof item.position.x === "number" && typeof item.position.y === "number"
-            ? item.position
-            : DEFAULT_POSITION,
-        color: item.color && item.color.primary
-            ? item.color
-            : DEFAULT_COLOR,
-        rotation: typeof item.rotation === "number" ? item.rotation : 0,
-        scale: typeof item.scale === "number" && item.scale > 0 ? item.scale : 1,
-    };
+const TableRow = memo(function TableRow({
+    list,
+    imageUrl,
+    isLoading,
+    onPlay,
+    onCustomize,
+    colors,
+}: TableRowProps) {
+    const [isHovered, setIsHovered] = useState(false);
+
+    const handleClick = useCallback(() => {
+        onPlay(list);
+    }, [onPlay, list]);
+
+    const handleContextMenu = useCallback((e: React.MouseEvent) => {
+        e.preventDefault();
+        onCustomize(list);
+    }, [onCustomize, list]);
+
+    const sizeLabel = `Top ${list.size}`;
+
+    return (
+        <motion.div
+            className="flex items-center gap-2 px-2 py-1.5 cursor-pointer transition-colors"
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+            onClick={handleClick}
+            onContextMenu={handleContextMenu}
+            style={{
+                background: isHovered ? `${colors.primary}10` : 'transparent',
+            }}
+            whileHover={{ x: 2 }}
+            transition={{ duration: 0.15 }}
+        >
+            {/* Winner Image */}
+            <div
+                className="w-8 h-8 flex-shrink-0 rounded overflow-hidden relative"
+                style={{ background: '#0c0c12' }}
+            >
+                {imageUrl && !isLoading ? (
+                    <img
+                        src={imageUrl}
+                        alt=""
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                    />
+                ) : isLoading ? (
+                    <div className="w-full h-full bg-slate-800 animate-pulse" />
+                ) : (
+                    <div
+                        className="w-full h-full flex items-center justify-center text-[10px] font-bold opacity-30"
+                        style={{ color: colors.primary }}
+                    >
+                        {list.title.substring(0, 2).toUpperCase()}
+                    </div>
+                )}
+                {isHovered && (
+                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                        <Play className="w-3.5 h-3.5 text-amber-400 fill-current" />
+                    </div>
+                )}
+            </div>
+
+            {/* Title */}
+            <div className="flex-1 min-w-0">
+                <p
+                    className="text-[11px] font-medium leading-tight truncate transition-colors"
+                    style={{ color: isHovered ? colors.accent : '#e2e8f0' }}
+                >
+                    {list.title}
+                </p>
+            </div>
+
+            {/* Type badge */}
+            <span
+                className="flex-shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded"
+                style={{
+                    background: `${colors.primary}20`,
+                    color: colors.primary,
+                }}
+            >
+                {sizeLabel}
+            </span>
+        </motion.div>
+    );
+});
+
+interface CategoryTableProps {
+    category: string;
+    lists: TopList[];
+    imageMap: Record<string, { url: string | null; loading: boolean }>;
+    onPlay: (list: TopList) => void;
+    onCustomize: (list: TopList) => void;
+    isLoading: boolean;
 }
 
-// 3D perspective card variants
-const cardVariants = {
-    hidden: (index: number) => ({
-        opacity: 0,
-        y: 120,
-        rotateX: -15,
-        rotateY: index % 2 === 0 ? -10 : 10,
-        scale: 0.8,
-    }),
-    visible: (index: number) => ({
-        opacity: 1,
-        y: 0,
-        rotateX: 0,
-        rotateY: 0,
-        scale: 1,
-        transition: {
-            duration: 1,
-            delay: index * 0.15 + 0.8,
-            type: "spring" as const,
-            stiffness: 80,
-            damping: 15,
-        },
-    }),
-};
+const CategoryTable = memo(function CategoryTable({
+    category,
+    lists,
+    imageMap,
+    onPlay,
+    onCustomize,
+    isLoading,
+}: CategoryTableProps) {
+    const colors = useMemo(() => getCategoryColor(category), [category]);
 
-// Convert showcase item to content item for personalization
-function toContentItem(item: LegacyShowcaseItem, index: number): ContentItem {
-    return {
-        id: item.id,
-        category: item.category,
-        subcategory: item.subcategory,
-        popularity: 70 + Math.random() * 30, // Simulated for now
-        trending: index <= 3, // First 3 items are considered trending
-    };
-}
+    return (
+        <div
+            className="flex-1 min-w-0 rounded-lg overflow-hidden"
+            style={{
+                background: 'rgba(10, 10, 16, 0.8)',
+                border: `1px solid ${colors.primary}20`,
+                backdropFilter: 'blur(8px)',
+            }}
+        >
+            {/* Thin category header */}
+            <div
+                className="px-3 py-1.5 flex items-center justify-between"
+                style={{
+                    background: `linear-gradient(90deg, ${colors.primary}15 0%, transparent 100%)`,
+                    borderBottom: `1px solid ${colors.primary}30`,
+                }}
+            >
+                <span
+                    className="text-[10px] font-bold uppercase tracking-widest"
+                    style={{ color: colors.primary }}
+                >
+                    {category}
+                </span>
+                <span className="text-[9px] text-slate-500">
+                    {lists.length} lists
+                </span>
+            </div>
+
+            {/* Table rows */}
+            <div className="max-h-[320px] overflow-y-auto scrollbar-hide">
+                {isLoading ? (
+                    Array.from({ length: 10 }).map((_, i) => (
+                        <div key={i} className="flex items-center gap-2 px-2 py-1.5">
+                            <div className="w-8 h-8 bg-slate-800/50 rounded animate-pulse" />
+                            <div className="flex-1 h-3 bg-slate-800/50 rounded animate-pulse" />
+                            <div className="w-12 h-4 bg-slate-800/50 rounded animate-pulse" />
+                        </div>
+                    ))
+                ) : lists.length > 0 ? (
+                    lists.map((list) => (
+                        <TableRow
+                            key={list.id}
+                            list={list}
+                            imageUrl={imageMap[list.id]?.url ?? null}
+                            isLoading={imageMap[list.id]?.loading ?? true}
+                            onPlay={onPlay}
+                            onCustomize={onCustomize}
+                            colors={colors}
+                        />
+                    ))
+                ) : (
+                    <div className="px-3 py-8 text-center">
+                        <p className="text-xs text-slate-600">No lists in this category</p>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+});
 
 export const FloatingShowcase = memo(function FloatingShowcase() {
-    const handleCardClick = useCardClickHandler();
     const {
         ref: animationRef,
         shouldAnimate,
         animationClass,
     } = useAnimationPause({ rootMargin: "200px" });
-    const { allowAmbient, allowInteraction, allowTransitions } = useMotionCapabilities();
 
-    // Personalization hook
-    const {
-        isInitialized,
-        isPersonalized,
-        personalizeItems,
-        trackClick,
-        topInterests
-    } = usePersonalization();
+    const { openWithSourceList, openComposition } = useComposition();
+    const { handlePlayList } = usePlayList();
 
-    // Validate and normalize showcase data, filtering out invalid items
-    const validatedShowcaseData = useMemo(() => {
-        if (!Array.isArray(showcaseData) || showcaseData.length === 0) {
-            return [];
-        }
-        return showcaseData
-            .filter(isValidShowcaseItem)
-            .map(normalizeShowcaseItem);
-    }, []);
+    const { data: featuredData, isLoading } = useFeaturedLists({
+        popular_limit: 80,
+        trending_limit: 80,
+        latest_limit: 80,
+        awards_limit: 80,
+    });
 
-    // Personalize the showcase data based on user interests
-    const personalizedShowcaseData = useMemo(() => {
-        if (!isInitialized || validatedShowcaseData.length === 0) {
-            return validatedShowcaseData;
-        }
+    // Combine and dedupe all lists
+    const allLists = useMemo(() => {
+        if (!featuredData) return [];
 
-        // Convert to content items for scoring
-        const contentItems = validatedShowcaseData.map((item, index) => ({
-            ...toContentItem(item, index),
-            originalItem: item,
-        }));
+        const seen = new Set<string>();
+        const combined: TopList[] = [];
 
-        // Score and sort by personalization
-        const scored = personalizeItems(contentItems);
+        const sources = [
+            featuredData.popular ?? [],
+            featuredData.trending ?? [],
+            featuredData.latest ?? [],
+            featuredData.awards ?? [],
+        ];
 
-        // Sort by relevance but keep position-based layout
-        // Higher relevance items get better positions (lower index)
-        const sorted = [...scored].sort((a, b) => b.relevanceScore - a.relevanceScore);
-
-        // Map back to original items with adjusted scales based on relevance
-        return sorted.map((scored, index) => {
-            const item = (scored.item as typeof contentItems[0]).originalItem;
-            // Boost scale for highly relevant items
-            const relevanceBoost = scored.relevanceScore > 70 ? 0.1 : 0;
-            return {
-                ...item,
-                scale: Math.min(1.3, (item.scale || 1) + relevanceBoost),
-                // Store personalization info for potential UI indicators
-                _personalization: {
-                    relevanceScore: scored.relevanceScore,
-                    reason: scored.selectionReason,
-                },
-            };
+        sources.forEach(source => {
+            source.forEach(list => {
+                if (!seen.has(list.id)) {
+                    seen.add(list.id);
+                    combined.push(list);
+                }
+            });
         });
-    }, [isInitialized, validatedShowcaseData, personalizeItems]);
 
-    // Handle card click with tracking
-    const handlePersonalizedCardClick = useCallback((cardData: ShowcaseCardData) => {
-        // Track the click for personalization
-        trackClick(cardData.category, cardData.title);
-        // Call original handler
-        handleCardClick(cardData);
-    }, [handleCardClick, trackClick]);
+        return combined;
+    }, [featuredData]);
 
-    // Early return if no valid showcase data - render header only with empty state
-    if (validatedShowcaseData.length === 0) {
-        return (
-            <div
-                ref={animationRef}
-                className={`relative w-full h-screen ${animationClass}`}
-                style={{ perspective: "1500px" }}
-                data-testid="floating-showcase"
-            >
-                <ShowcaseHeader />
-                <ShowcaseDecor shouldAnimate={shouldAnimate} />
-                <div
-                    className="absolute inset-0 flex items-center justify-center"
-                    data-testid="floating-showcase-empty"
-                >
-                    <p className="text-muted-foreground text-sm opacity-50">
-                        No showcase items available
-                    </p>
-                </div>
-            </div>
-        );
-    }
+    // Group by category
+    const categoryLists = useMemo(() => {
+        const groups: Record<string, TopList[]> = {
+            sports: [],
+            movies: [],
+            games: [],
+        };
+
+        allLists.forEach(list => {
+            const cat = list.category.toLowerCase();
+            if (cat.includes('sport')) {
+                groups.sports.push(list);
+            } else if (cat.includes('movie') || cat.includes('film')) {
+                groups.movies.push(list);
+            } else if (cat.includes('game')) {
+                groups.games.push(list);
+            }
+        });
+
+        return groups;
+    }, [allLists]);
+
+    // Fetch images for visible lists
+    const listsToFetch = useMemo(() => {
+        return [
+            ...categoryLists.sports.slice(0, 30),
+            ...categoryLists.movies.slice(0, 30),
+            ...categoryLists.games.slice(0, 30),
+        ];
+    }, [categoryLists]);
+
+    const imageQueries = useQueries({
+        queries: listsToFetch.map(list => ({
+            queryKey: ['list-image', list.id],
+            queryFn: async () => {
+                const data = await goatApi.lists.get(list.id);
+                const firstWithImage = data?.items?.find(item => item.image_url);
+                return { id: list.id, url: firstWithImage?.image_url || null };
+            },
+            staleTime: 1000 * 60 * 15,
+            gcTime: 1000 * 60 * 30,
+        })),
+    });
+
+    const imageMap = useMemo(() => {
+        const map: Record<string, { url: string | null; loading: boolean }> = {};
+        imageQueries.forEach((query, index) => {
+            const listId = listsToFetch[index]?.id;
+            if (listId) {
+                map[listId] = {
+                    url: query.data?.url ?? null,
+                    loading: query.isLoading,
+                };
+            }
+        });
+        return map;
+    }, [imageQueries, listsToFetch]);
+
+    const handleCustomize = useCallback((list: TopList) => {
+        openWithSourceList(list);
+    }, [openWithSourceList]);
 
     return (
         <div
             ref={animationRef}
-            className={`relative w-full h-screen ${animationClass}`}
+            className={`relative w-full min-h-screen ${animationClass}`}
             style={{ perspective: "1500px" }}
             data-testid="floating-showcase"
         >
@@ -196,131 +314,47 @@ export const FloatingShowcase = memo(function FloatingShowcase() {
                 <ShowcaseDecor shouldAnimate={shouldAnimate} />
             </div>
 
-            {/* Noise texture overlay - adds tactile quality */}
+            {/* Noise texture overlay */}
             <div
                 className="absolute inset-0 z-[1] pointer-events-none noise-texture"
                 aria-hidden="true"
             />
 
-            {/* Header - above decor */}
+            {/* Header */}
             <div className="relative z-10">
                 <ShowcaseHeader />
             </div>
 
-            {/* Create List CTA */}
-            <motion.div
-                className="relative z-20 flex justify-center mt-4"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1.8, duration: 0.5 }}
-            >
-                <Link
-                    href="/studio"
-                    className="group flex items-center gap-2 px-6 py-3 rounded-full
-                        bg-gradient-to-r from-cyan-500/90 to-blue-500/90
-                        hover:from-cyan-400 hover:to-blue-400
-                        text-white font-medium text-sm
-                        shadow-lg shadow-cyan-500/25 hover:shadow-cyan-400/40
-                        transition-all duration-300 hover:scale-105"
-                    data-testid="create-list-cta"
-                >
-                    <Plus className="w-4 h-4" />
-                    <span>Create Your List</span>
-                </Link>
-            </motion.div>
-
-            {/* Personalization indicator for returning users */}
-            {isPersonalized && topInterests.length > 0 && (
-                <motion.div
-                    className="absolute top-24 left-1/2 -translate-x-1/2 z-20"
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 1.5 }}
-                >
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/30 backdrop-blur-sm border border-white/10">
-                        <span className="text-xs text-white/50">Personalized for you</span>
-                        <div className="flex gap-1">
-                            {topInterests.slice(0, 3).map((interest) => (
-                                <span
-                                    key={interest.category}
-                                    className="text-xs px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400"
-                                >
-                                    {interest.category}
-                                </span>
-                            ))}
-                        </div>
-                    </div>
-                </motion.div>
-            )}
-
-            {/* Floating Cards with 3D transforms - z-5 to be above decor but below header */}
-            <motion.div
-                variants={staggerContainer}
-                initial="hidden"
-                animate="visible"
-                className="absolute inset-0 z-[5]"
-                style={{ transformStyle: "preserve-3d" }}
-                data-testid="floating-showcase-cards-container"
-            >
-                {personalizedShowcaseData.map((item, index) => {
-                    // CSS custom properties for card float animation
-                    const cardCssVars = {
-                        "--card-float-duration": `${4 + index * 0.5}s`,
-                        "--card-float-delay": `${index * 0.3}s`,
-                    } as React.CSSProperties;
-
-                    // Only apply float animation in full tier when animations should play
-                    const shouldFloat = shouldAnimate && allowAmbient;
-
-                    return (
-                        <motion.div
-                            key={item.id}
-                            custom={index}
-                            variants={allowTransitions ? cardVariants : undefined}
-                            initial={allowTransitions ? "hidden" : undefined}
-                            animate={allowTransitions ? "visible" : undefined}
-                            className={`absolute cursor-pointer ${shouldFloat ? "animate-ambient-card-float" : ""}`}
-                            style={{
-                                ...cardCssVars,
-                                left: `${item.position.x}%`,
-                                top: `${item.position.y}%`,
-                                transform: `translate(-50%, -50%) rotate(${item.rotation}deg) scale(${item.scale})`,
-                                transformStyle: "preserve-3d",
-                                zIndex: Math.round(item.scale * 10),
-                            }}
-                            whileHover={allowInteraction ? {
-                                scale: item.scale * 1.08,
-                                rotateY: item.rotation * 0.3,
-                                rotateX: -5,
-                                z: 80,
-                                transition: {
-                                    duration: allowTransitions ? 0.4 : 0,
-                                    ease: [0.23, 1, 0.32, 1]
-                                },
-                            } : undefined}
-                            whileTap={allowInteraction ? { scale: item.scale * 0.98 } : undefined}
-                            data-testid={`showcase-card-${item.id}`}
-                            data-framer-motion-reducible="true"
+            {/* Category Tables */}
+            <div className="relative z-10 px-4 pb-8 pt-4">
+                <div className="max-w-6xl mx-auto">
+                    {/* Create button */}
+                    <div className="flex justify-end mb-4">
+                        <button
+                            onClick={() => openComposition()}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-cyan-400 hover:text-white hover:bg-cyan-500/20 border border-cyan-500/30 rounded-md transition-all"
                         >
-                            {/* Card glow effect */}
-                            <div
-                                className="absolute -inset-4 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl"
-                                style={{
-                                    background: `radial-gradient(circle, ${item.color.primary} 0%, transparent 70%)`,
-                                }}
+                            <Plus className="w-3.5 h-3.5" />
+                            Create New
+                        </button>
+                    </div>
+
+                    {/* Three tables side by side */}
+                    <div className="flex gap-4">
+                        {CATEGORIES.map(category => (
+                            <CategoryTable
+                                key={category}
+                                category={category}
+                                lists={categoryLists[category]}
+                                imageMap={imageMap}
+                                onPlay={handlePlayList}
+                                onCustomize={handleCustomize}
+                                isLoading={isLoading}
                             />
-
-                            {item.isBanned ? (
-                                <BannedShowcaseCard {...item} onCardClick={handlePersonalizedCardClick} />
-                            ) : (
-                                <ShowcaseCard {...item} onCardClick={handlePersonalizedCardClick} />
-                            )}
-                        </motion.div>
-                    );
-                })}
-            </motion.div>
-
-
+                        ))}
+                    </div>
+                </div>
+            </div>
         </div>
     );
 });

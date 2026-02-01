@@ -4,13 +4,35 @@
  * CriteriaScoreInput
  * Component for inputting scores for individual criteria
  * Supports slider, stars, and numeric input modes
+ * Features enhanced visual feedback with criterion color propagation
  */
 
-import React, { useCallback, useState, useRef } from 'react';
-import { motion } from 'framer-motion';
+import React, { useCallback, useState, useRef, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Star, Minus, Plus, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Criterion, ScoreInputMode, CriterionScore } from '@/lib/criteria/types';
+
+// Animation configuration
+const ANIMATION_CONFIG = {
+  spring: { stiffness: 300, damping: 30 },
+  duration: { fast: 0.15, normal: 0.2, slow: 0.3 },
+};
+
+// Score quality thresholds for visual feedback
+const SCORE_THRESHOLDS = {
+  low: 33,
+  mid: 66,
+};
+
+/**
+ * Get score quality color based on percentage
+ */
+function getScoreQualityColor(percentage: number): string {
+  if (percentage < SCORE_THRESHOLDS.low) return '#ef4444'; // red
+  if (percentage < SCORE_THRESHOLDS.mid) return '#f59e0b'; // orange/amber
+  return '#22c55e'; // green
+}
 
 /**
  * CriteriaScoreInput Props
@@ -23,6 +45,10 @@ interface CriteriaScoreInputProps {
   className?: string;
   compact?: boolean;
   showNote?: boolean;
+  /** Show live score preview with themed visualization */
+  showPreview?: boolean;
+  /** Category for themed preview */
+  category?: string;
 }
 
 /**
@@ -36,10 +62,17 @@ export function CriteriaScoreInput({
   className,
   compact = false,
   showNote = true,
+  showPreview = false,
+  category,
 }: CriteriaScoreInputProps) {
   const [note, setNote] = useState(currentScore?.note ?? '');
   const [showNoteInput, setShowNoteInput] = useState(false);
+  const [isInteracting, setIsInteracting] = useState(false);
   const score = currentScore?.score ?? criterion.minScore;
+
+  // Calculate percentage for visual feedback
+  const range = criterion.maxScore - criterion.minScore;
+  const percentage = ((score - criterion.minScore) / range) * 100;
 
   const handleScoreChange = useCallback(
     (newScore: number) => {
@@ -56,20 +89,43 @@ export function CriteriaScoreInput({
     [score, onScoreChange]
   );
 
+  // Get dynamic score color based on criterion color and value
+  const scoreColor = useMemo(() => {
+    const baseColor = criterion.color ?? '#6366f1';
+    // Use criterion color for filled portion, quality color for text
+    return {
+      fill: baseColor,
+      quality: getScoreQualityColor(percentage),
+    };
+  }, [criterion.color, percentage]);
+
   return (
-    <div
+    <motion.div
       className={cn(
-        'rounded-lg border border-border bg-card/50',
+        'rounded-lg border border-border bg-card/50 transition-all duration-200',
+        isInteracting && 'border-border/80 shadow-md',
+        !isInteracting && 'hover:border-border/80 hover:shadow-sm',
         compact ? 'p-3' : 'p-4',
         className
       )}
+      animate={{
+        borderColor: isInteracting ? `${criterion.color ?? '#6366f1'}40` : undefined,
+      }}
+      transition={{ duration: ANIMATION_CONFIG.duration.fast }}
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <span
-            className="w-3 h-3 rounded-full"
+          <motion.span
+            className="w-3 h-3 rounded-full shadow-sm"
             style={{ backgroundColor: criterion.color ?? '#6366f1' }}
+            animate={{
+              scale: isInteracting ? 1.15 : 1,
+              boxShadow: isInteracting
+                ? `0 0 8px ${criterion.color ?? '#6366f1'}60`
+                : '0 1px 2px rgba(0,0,0,0.1)',
+            }}
+            transition={{ duration: ANIMATION_CONFIG.duration.fast }}
           />
           <span className={cn('font-medium', compact ? 'text-sm' : '')}>
             {criterion.name}
@@ -79,19 +135,20 @@ export function CriteriaScoreInput({
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <span
+          {/* Animated score display */}
+          <motion.span
             className={cn(
-              'font-bold',
-              compact ? 'text-sm' : 'text-lg',
-              score > (criterion.maxScore - criterion.minScore) / 2 + criterion.minScore
-                ? 'text-green-500'
-                : score < (criterion.maxScore - criterion.minScore) / 2 + criterion.minScore
-                ? 'text-orange-500'
-                : 'text-foreground'
+              'font-bold tabular-nums',
+              compact ? 'text-sm' : 'text-lg'
             )}
+            style={{ color: scoreColor.quality }}
+            key={Math.floor(score * 10)}
+            initial={{ scale: 1.1, opacity: 0.8 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: ANIMATION_CONFIG.duration.fast }}
           >
             {score.toFixed(1)}
-          </span>
+          </motion.span>
           <span className="text-xs text-muted-foreground">
             / {criterion.maxScore}
           </span>
@@ -111,6 +168,8 @@ export function CriteriaScoreInput({
           criterion={criterion}
           value={score}
           onChange={handleScoreChange}
+          onInteractionStart={() => setIsInteracting(true)}
+          onInteractionEnd={() => setIsInteracting(false)}
         />
       )}
 
@@ -119,6 +178,8 @@ export function CriteriaScoreInput({
           criterion={criterion}
           value={score}
           onChange={handleScoreChange}
+          onInteractionStart={() => setIsInteracting(true)}
+          onInteractionEnd={() => setIsInteracting(false)}
         />
       )}
 
@@ -127,6 +188,8 @@ export function CriteriaScoreInput({
           criterion={criterion}
           value={score}
           onChange={handleScoreChange}
+          onInteractionStart={() => setIsInteracting(true)}
+          onInteractionEnd={() => setIsInteracting(false)}
         />
       )}
 
@@ -140,14 +203,14 @@ export function CriteriaScoreInput({
                 onChange={(e) => handleNoteChange(e.target.value)}
                 placeholder="Add a note about your score..."
                 className={cn(
-                  'w-full px-2 py-1 text-xs rounded border border-border',
-                  'bg-background resize-none',
-                  'focus:outline-none focus:ring-1 focus:ring-ring'
+                  'w-full px-2 py-1.5 text-xs rounded-md border border-border',
+                  'bg-background resize-none transition-all duration-200',
+                  'focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-ring'
                 )}
                 rows={2}
               />
               <button
-                className="text-xs text-muted-foreground hover:text-foreground"
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors duration-200"
                 onClick={() => setShowNoteInput(false)}
               >
                 Hide note
@@ -155,7 +218,7 @@ export function CriteriaScoreInput({
             </div>
           ) : (
             <button
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors duration-200"
               onClick={() => setShowNoteInput(true)}
             >
               <MessageSquare className="w-3 h-3" />
@@ -164,23 +227,35 @@ export function CriteriaScoreInput({
           )}
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }
 
 /**
- * Slider Input Component
+ * Slider Input Component with enhanced feedback
  */
 interface SliderInputProps {
   criterion: Criterion;
   value: number;
   onChange: (value: number) => void;
+  onInteractionStart?: () => void;
+  onInteractionEnd?: () => void;
 }
 
-function SliderInput({ criterion, value, onChange }: SliderInputProps) {
+function SliderInput({
+  criterion,
+  value,
+  onChange,
+  onInteractionStart,
+  onInteractionEnd,
+}: SliderInputProps) {
   const sliderRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [hoverPercentage, setHoverPercentage] = useState<number | null>(null);
+
   const range = criterion.maxScore - criterion.minScore;
   const percentage = ((value - criterion.minScore) / range) * 100;
+  const criterionColor = criterion.color ?? '#6366f1';
 
   const handleSliderClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
@@ -202,37 +277,109 @@ function SliderInput({ criterion, value, onChange }: SliderInputProps) {
     [handleSliderClick]
   );
 
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (!sliderRef.current || isDragging) return;
+      const rect = sliderRef.current.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const percent = Math.max(0, Math.min(100, (x / rect.width) * 100));
+      setHoverPercentage(percent);
+    },
+    [isDragging]
+  );
+
+  const handleMouseLeave = useCallback(() => {
+    if (!isDragging) {
+      setHoverPercentage(null);
+    }
+  }, [isDragging]);
+
+  const handleMouseDown = useCallback(() => {
+    setIsDragging(true);
+    onInteractionStart?.();
+  }, [onInteractionStart]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+    onInteractionEnd?.();
+  }, [onInteractionEnd]);
+
   return (
     <div className="space-y-2">
       <div
         ref={sliderRef}
-        className="relative h-2 rounded-full bg-muted cursor-pointer"
+        className="relative h-3 rounded-full bg-muted cursor-pointer transition-all duration-200 hover:bg-muted/80 group"
         onClick={handleSliderClick}
-        onMouseMove={handleDrag}
+        onMouseMove={(e) => {
+          handleDrag(e);
+          handleMouseMove(e);
+        }}
+        onMouseLeave={handleMouseLeave}
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
       >
+        {/* Hover preview track */}
+        <AnimatePresence>
+          {hoverPercentage !== null && !isDragging && (
+            <motion.div
+              className="absolute h-full rounded-full pointer-events-none"
+              style={{
+                backgroundColor: `${criterionColor}20`,
+                width: `${hoverPercentage}%`,
+              }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.1 }}
+            />
+          )}
+        </AnimatePresence>
+
         {/* Filled track */}
         <motion.div
           className="absolute h-full rounded-full"
           style={{
-            backgroundColor: criterion.color ?? '#6366f1',
-            width: `${percentage}%`,
+            backgroundColor: criterionColor,
+            boxShadow: isDragging ? `0 0 12px ${criterionColor}60` : `0 0 4px ${criterionColor}30`,
           }}
           initial={false}
           animate={{ width: `${percentage}%` }}
-          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+          transition={{ type: 'spring', ...ANIMATION_CONFIG.spring }}
         />
+
+        {/* Tick marks for visual reference */}
+        <div className="absolute inset-0 flex justify-between px-1 pointer-events-none">
+          {[0, 25, 50, 75, 100].map((tick) => (
+            <div
+              key={tick}
+              className="w-0.5 h-full bg-white/10 rounded-full"
+              style={{ opacity: percentage > tick ? 0.3 : 0.1 }}
+            />
+          ))}
+        </div>
 
         {/* Thumb */}
         <motion.div
-          className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white border-2 shadow-md cursor-grab active:cursor-grabbing"
+          className={cn(
+            'absolute top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-white border-2 shadow-lg',
+            'cursor-grab active:cursor-grabbing transition-shadow duration-150',
+            isDragging && 'ring-4 ring-white/20'
+          )}
           style={{
-            borderColor: criterion.color ?? '#6366f1',
+            borderColor: criterionColor,
             left: `${percentage}%`,
-            marginLeft: '-8px',
+            marginLeft: '-10px',
+            boxShadow: isDragging
+              ? `0 0 0 4px ${criterionColor}20, 0 4px 12px rgba(0,0,0,0.2)`
+              : '0 2px 6px rgba(0,0,0,0.15)',
           }}
           initial={false}
-          animate={{ left: `${percentage}%` }}
-          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+          animate={{
+            left: `${percentage}%`,
+            scale: isDragging ? 1.15 : 1,
+          }}
+          transition={{ type: 'spring', ...ANIMATION_CONFIG.spring }}
+          whileHover={{ scale: 1.1 }}
         />
       </div>
 
@@ -246,12 +393,19 @@ function SliderInput({ criterion, value, onChange }: SliderInputProps) {
 }
 
 /**
- * Star Input Component
+ * Star Input Component with enhanced feedback
  */
-function StarInput({ criterion, value, onChange }: SliderInputProps) {
+function StarInput({
+  criterion,
+  value,
+  onChange,
+  onInteractionStart,
+  onInteractionEnd,
+}: SliderInputProps) {
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const range = criterion.maxScore - criterion.minScore;
   const starCount = Math.min(10, range);
-  const starValue = (value - criterion.minScore) / range * starCount;
+  const starValue = ((value - criterion.minScore) / range) * starCount;
 
   const handleStarClick = useCallback(
     (starIndex: number) => {
@@ -266,24 +420,35 @@ function StarInput({ criterion, value, onChange }: SliderInputProps) {
       {Array.from({ length: starCount }).map((_, index) => {
         const filled = index < Math.floor(starValue);
         const partial = !filled && index < starValue;
+        const hovered = hoverIndex !== null && index <= hoverIndex;
 
         return (
-          <button
+          <motion.button
             key={index}
-            className="p-0.5 transition-transform hover:scale-110"
+            className="p-0.5 transition-transform duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             onClick={() => handleStarClick(index)}
+            onMouseEnter={() => {
+              setHoverIndex(index);
+              onInteractionStart?.();
+            }}
+            onMouseLeave={() => {
+              setHoverIndex(null);
+              onInteractionEnd?.();
+            }}
+            whileHover={{ scale: 1.2 }}
+            whileTap={{ scale: 0.9 }}
           >
             <Star
               className={cn(
-                'w-5 h-5 transition-colors',
-                filled
-                  ? 'fill-yellow-400 text-yellow-400'
+                'w-5 h-5 transition-all duration-200',
+                filled || hovered
+                  ? 'fill-yellow-400 text-yellow-400 drop-shadow-[0_0_6px_rgba(250,204,21,0.5)]'
                   : partial
                   ? 'fill-yellow-400/50 text-yellow-400'
-                  : 'text-muted-foreground'
+                  : 'text-muted-foreground hover:text-yellow-400/60'
               )}
             />
-          </button>
+          </motion.button>
         );
       })}
     </div>
@@ -291,9 +456,15 @@ function StarInput({ criterion, value, onChange }: SliderInputProps) {
 }
 
 /**
- * Numeric Input Component
+ * Numeric Input Component with enhanced feedback
  */
-function NumericInput({ criterion, value, onChange }: SliderInputProps) {
+function NumericInput({
+  criterion,
+  value,
+  onChange,
+  onInteractionStart,
+  onInteractionEnd,
+}: SliderInputProps) {
   const step = (criterion.maxScore - criterion.minScore) / 10;
 
   const handleIncrement = useCallback(() => {
@@ -321,19 +492,25 @@ function NumericInput({ criterion, value, onChange }: SliderInputProps) {
 
   return (
     <div className="flex items-center justify-center gap-2">
-      <button
+      <motion.button
         className={cn(
           'p-1.5 rounded-lg border border-border',
-          'hover:bg-accent transition-colors',
-          'disabled:opacity-50 disabled:cursor-not-allowed'
+          'hover:bg-accent transition-all duration-150',
+          'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100',
+          'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring'
         )}
         onClick={handleDecrement}
         disabled={value <= criterion.minScore}
+        onMouseDown={onInteractionStart}
+        onMouseUp={onInteractionEnd}
+        onMouseLeave={onInteractionEnd}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
       >
         <Minus className="w-4 h-4" />
-      </button>
+      </motion.button>
 
-      <input
+      <motion.input
         type="number"
         value={value}
         onChange={handleInputChange}
@@ -341,23 +518,32 @@ function NumericInput({ criterion, value, onChange }: SliderInputProps) {
         max={criterion.maxScore}
         step={0.1}
         className={cn(
-          'w-16 text-center text-lg font-bold',
-          'bg-transparent border border-border rounded-lg py-1',
-          'focus:outline-none focus:ring-1 focus:ring-ring'
+          'w-16 text-center text-lg font-bold tabular-nums',
+          'bg-transparent border border-border rounded-lg py-1 transition-all duration-200',
+          'focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-ring'
         )}
+        onFocus={onInteractionStart}
+        onBlur={onInteractionEnd}
+        whileFocus={{ scale: 1.02 }}
       />
 
-      <button
+      <motion.button
         className={cn(
           'p-1.5 rounded-lg border border-border',
-          'hover:bg-accent transition-colors',
-          'disabled:opacity-50 disabled:cursor-not-allowed'
+          'hover:bg-accent transition-all duration-150',
+          'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100',
+          'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring'
         )}
         onClick={handleIncrement}
         disabled={value >= criterion.maxScore}
+        onMouseDown={onInteractionStart}
+        onMouseUp={onInteractionEnd}
+        onMouseLeave={onInteractionEnd}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
       >
         <Plus className="w-4 h-4" />
-      </button>
+      </motion.button>
     </div>
   );
 }
@@ -372,6 +558,12 @@ interface BulkCriteriaScoreInputProps {
   onScoreChange: (criterionId: string, score: number, note?: string) => void;
   className?: string;
   compact?: boolean;
+  /** Category for themed preview */
+  category?: string;
+  /** Show weighted score preview */
+  showWeightedPreview?: boolean;
+  /** Current weighted score */
+  weightedScore?: number;
 }
 
 export function BulkCriteriaScoreInput({
@@ -381,6 +573,9 @@ export function BulkCriteriaScoreInput({
   onScoreChange,
   className,
   compact = false,
+  category,
+  showWeightedPreview = false,
+  weightedScore = 0,
 }: BulkCriteriaScoreInputProps) {
   return (
     <div className={cn('space-y-3', className)}>
@@ -393,6 +588,7 @@ export function BulkCriteriaScoreInput({
           onScoreChange={(score, note) => onScoreChange(criterion.id, score, note)}
           compact={compact}
           showNote={!compact}
+          category={category}
         />
       ))}
     </div>

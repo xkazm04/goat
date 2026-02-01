@@ -281,6 +281,36 @@ export {
 } from './use-item-stats';
 
 // ========================================
+// Criteria & Scoring Hooks
+// ========================================
+
+/**
+ * Criteria TanStack Query Hooks
+ * Type-safe hooks for criteria operations with caching and optimistic updates
+ */
+export {
+  useCriteriaConfig,
+  useListItemScores,
+  useItemScores,
+  useSaveCriteriaConfig,
+  useSaveItemScores,
+  useBatchSaveItemScores,
+  useCriteriaCache,
+  useCriteriaData,
+  useItemScoresFromList,
+} from './use-criteria-queries';
+
+/**
+ * Criteria Sync Hook
+ * Bridges Zustand criteria store with TanStack Query for database sync
+ */
+export {
+  useCriteriaSync,
+  useItemScoring,
+  useCriteriaConfigManager,
+} from './use-criteria-sync';
+
+// ========================================
 // Migration Notes
 // ========================================
 /**

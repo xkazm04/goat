@@ -171,11 +171,9 @@ function CollectionPanelInternal({
       <div
         className={`
           fixed bottom-0 left-0 right-0
-          bg-gray-900/98 backdrop-blur-md
-          border-t border-gray-700/50
+          glass-dock-panel
           z-40
-          transition-transform duration-300 ease-in-out
-          shadow-2xl
+          transition-all duration-[var(--glass-transition-slow)] ease-[var(--glass-easing)]
           ${isVisible ? 'translate-y-0' : 'translate-y-full'}
           ${className}
         `}
@@ -208,7 +206,7 @@ function CollectionPanelInternal({
             <div className="flex-1 p-4" data-testid="collection-loading" role="status" aria-label="Loading collection items">
               <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
                 {Array.from({ length: 20 }).map((_, i) => (
-                  <div key={i} className="aspect-[3/4] rounded-lg bg-gray-800/50 animate-pulse" />
+                  <div key={i} className="aspect-[3/4] glass-dock-skeleton" />
                 ))}
               </div>
               <span className="sr-only">Loading items...</span>
@@ -220,12 +218,12 @@ function CollectionPanelInternal({
             <div className="flex-1 flex flex-col items-center justify-center gap-4" data-testid="collection-error" role="alert">
               <div className="text-center">
                 <p className="text-sm text-red-400 mb-1">Failed to load items</p>
-                <p className="text-xs text-gray-500">{collection.error?.message}</p>
+                <p className="text-xs text-slate-500">{collection.error?.message}</p>
               </div>
               <button
                 onClick={() => collection.invalidateCache()}
-                className="px-4 py-2 text-sm bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors
-                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
+                className="px-4 py-2 text-sm bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition-all duration-[var(--glass-transition-normal)] ease-[var(--glass-easing)]
+                  glass-dock-focus hover:shadow-[var(--glass-shadow-elevated)]"
                 aria-label="Retry loading items"
               >
                 Try Again
@@ -235,14 +233,14 @@ function CollectionPanelInternal({
 
           {/* Items Area */}
           {!collection.isLoading && !collection.isError && (
-            <div ref={itemsAreaRef} className="flex-1 overflow-y-auto p-4">
+            <div ref={itemsAreaRef} className="flex-1 overflow-y-auto p-4 glass-dock-content">
               {selectedGroups.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center">
                   <div className="text-center">
-                    <p className="text-sm text-gray-500 mb-2">No groups selected</p>
+                    <p className="text-sm text-slate-500 mb-2">No groups selected</p>
                     <button
                       onClick={collection.selectAllGroups}
-                      className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors"
+                      className="text-xs text-cyan-400 hover:text-cyan-300 transition-all duration-[var(--glass-transition-normal)] hover:underline underline-offset-2"
                       data-testid="select-all-groups-btn"
                     >
                       Select all groups
@@ -251,7 +249,7 @@ function CollectionPanelInternal({
                 </div>
               ) : filteredItems.length === 0 ? (
                 <div className="h-full flex items-center justify-center">
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-slate-500">
                     {collection.filter.searchTerm
                       ? `No items found matching "${collection.filter.searchTerm}"`
                       : 'No items in selected groups'
@@ -261,7 +259,7 @@ function CollectionPanelInternal({
               ) : (
                 <>
                   {useLazyLoading && (
-                    <div className="mb-2 text-xs text-gray-400 flex items-center justify-between">
+                    <div className="mb-2 text-xs text-slate-400 flex items-center justify-between transition-colors duration-[var(--glass-transition-normal)]">
                       <span>Loaded {lazyLoad.loadedCount} of {lazyLoad.totalItems} items</span>
                       <span className="text-cyan-400">{lazyLoad.loadProgress}% loaded</span>
                     </div>
@@ -326,22 +324,22 @@ function CollectionPanelInternal({
 
           {/* Pagination Controls (if enabled) */}
           {enablePagination && collection.pagination.totalPages > 1 && (
-            <div className="px-4 py-2 border-t border-gray-700/50 bg-gray-900/50 flex items-center justify-between">
+            <div className="px-4 py-2 border-t border-[var(--glass-border-subtle)] glass-dock-header flex items-center justify-between">
               <button
                 onClick={collection.pagination.prevPage}
                 disabled={collection.pagination.page === 1}
-                className="px-3 py-1 text-xs bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed rounded"
+                className="px-3 py-1 text-xs bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed rounded transition-all duration-[var(--glass-transition-normal)] hover:shadow-md glass-dock-focus"
                 data-testid="prev-page-btn"
               >
                 Previous
               </button>
-              <span className="text-xs text-gray-400">
+              <span className="text-xs text-slate-400 transition-colors duration-[var(--glass-transition-normal)]">
                 Page {collection.pagination.page} of {collection.pagination.totalPages}
               </span>
               <button
                 onClick={collection.pagination.nextPage}
                 disabled={!collection.pagination.hasMore}
-                className="px-3 py-1 text-xs bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed rounded"
+                className="px-3 py-1 text-xs bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed rounded transition-all duration-[var(--glass-transition-normal)] hover:shadow-md glass-dock-focus"
                 data-testid="next-page-btn"
               >
                 Next
@@ -350,7 +348,7 @@ function CollectionPanelInternal({
           )}
 
           {/* Footer Stats */}
-          <div className="px-4 py-2 border-t border-gray-700/50 bg-gray-900/50">
+          <div className="px-4 py-2 border-t border-[var(--glass-border-subtle)] glass-dock-header">
             <CollectionStats stats={stats} />
           </div>
         </div>

@@ -126,11 +126,11 @@ export function ComparisonModal(props: ComparisonModalProps) {
             <div className="flex items-center gap-2" role="group" aria-label="View mode">
               <button
                 className={cn(
-                  "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+                  "px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
                   viewMode === 'grid'
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted hover:bg-muted/80"
+                    ? "bg-primary text-primary-foreground shadow-md"
+                    : "bg-muted hover:bg-muted/80 hover:shadow-sm active:scale-[0.98]"
                 )}
                 onClick={() => setViewMode('grid')}
                 aria-pressed={viewMode === 'grid'}
@@ -139,11 +139,12 @@ export function ComparisonModal(props: ComparisonModalProps) {
               </button>
               <button
                 className={cn(
-                  "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+                  "px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
                   viewMode === 'scoring'
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted hover:bg-muted/80"
+                    ? "bg-primary text-primary-foreground shadow-md"
+                    : "bg-muted hover:bg-muted/80 hover:shadow-sm active:scale-[0.98]",
+                  !activeProfile && "opacity-50 cursor-not-allowed"
                 )}
                 onClick={() => setViewMode('scoring')}
                 disabled={!activeProfile}
@@ -166,10 +167,12 @@ export function ComparisonModal(props: ComparisonModalProps) {
 
             {/* Settings */}
             <button
-              className="p-2 rounded-lg hover:bg-muted transition-colors"
+              className="p-2 rounded-lg hover:bg-muted transition-all duration-200 hover:shadow-sm active:scale-95"
               onClick={() => setShowSettings(!showSettings)}
+              aria-expanded={showSettings}
+              aria-label="Toggle settings"
             >
-              <Settings className="w-4 h-4" />
+              <Settings className={cn("w-4 h-4 transition-transform duration-200", showSettings && "rotate-90")} />
             </button>
           </div>
 
@@ -182,7 +185,7 @@ export function ComparisonModal(props: ComparisonModalProps) {
                 exit={{ height: 0, opacity: 0 }}
                 className="overflow-hidden"
               >
-                <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
+                <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50 backdrop-blur-sm border border-border/50">
                   <span className="text-sm text-muted-foreground">Input Mode:</span>
                   <InputModeSelector
                     value={scoreInputMode}
@@ -212,7 +215,7 @@ export function ComparisonModal(props: ComparisonModalProps) {
                     onClick={() => handleItemSelect(item.id)}
                   >
                     <div
-                      className="aspect-[3/4] rounded-2xl border-2 overflow-hidden transition-all duration-300 group hover:scale-[1.02]"
+                      className="aspect-[3/4] rounded-2xl border-2 overflow-hidden transition-all duration-300 group hover:scale-[1.02] hover:shadow-xl"
                       style={{
                         background: `
                           linear-gradient(135deg,
@@ -221,7 +224,8 @@ export function ComparisonModal(props: ComparisonModalProps) {
                           )
                         `,
                         border: '2px solid rgba(71, 85, 105, 0.3)',
-                        boxShadow: '0 8px 25px rgba(0, 0, 0, 0.3)'
+                        boxShadow: '0 8px 25px rgba(0, 0, 0, 0.3)',
+                        backdropFilter: 'blur(8px)'
                       }}
                     >
                       {/* Content */}
@@ -290,14 +294,14 @@ export function ComparisonModal(props: ComparisonModalProps) {
                         {/* Score Button */}
                         {activeProfile && (
                           <button
-                            className="mt-4 flex items-center justify-center gap-1 px-3 py-2 rounded-lg bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
+                            className="mt-4 flex items-center justify-center gap-1 px-3 py-2 rounded-lg bg-primary/20 text-primary hover:bg-primary/30 transition-all duration-200 hover:shadow-md active:scale-[0.97] group/btn"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleItemSelect(item.id);
                             }}
                           >
                             <span className="text-sm font-medium">Score</span>
-                            <ChevronRight className="w-4 h-4" />
+                            <ChevronRight className="w-4 h-4 transition-transform duration-200 group-hover/btn:translate-x-0.5" />
                           </button>
                         )}
                       </div>
@@ -334,10 +338,10 @@ export function ComparisonModal(props: ComparisonModalProps) {
                       key={item.id}
                       className={cn(
                         "w-full flex items-center justify-between px-4 py-3 rounded-lg",
-                        "border transition-colors",
+                        "border transition-all duration-200",
                         isSelected
-                          ? "border-primary bg-primary/10"
-                          : "border-border hover:border-primary/50"
+                          ? "border-primary bg-primary/10 shadow-md"
+                          : "border-border hover:border-primary/50 hover:bg-muted/30 hover:shadow-sm active:scale-[0.99]"
                       )}
                       onClick={() => setSelectedItemId(item.id)}
                     >
@@ -410,7 +414,7 @@ export function ComparisonModal(props: ComparisonModalProps) {
 
           {/* Ranking Suggestions Summary */}
           {activeProfile && suggestions.length > 0 && suggestions.some(s => s.confidence > 0.5) && (
-            <div className="mt-6 p-4 rounded-lg bg-muted/50 border border-border">
+            <div className="mt-6 p-4 rounded-lg bg-muted/50 backdrop-blur-sm border border-border shadow-sm">
               <h4 className="font-medium mb-2 flex items-center gap-2">
                 <BarChart3 className="w-4 h-4" />
                 Suggested Rankings (based on criteria scores)
@@ -425,7 +429,7 @@ export function ComparisonModal(props: ComparisonModalProps) {
                     return (
                       <span
                         key={suggestion.itemId}
-                        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-background border border-border text-sm"
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-background border border-border text-sm transition-all duration-200 hover:border-primary/40 hover:shadow-sm"
                       >
                         <span className="font-bold text-primary">#{suggestion.suggestedPosition}</span>
                         <span>{item.title}</span>

@@ -1,11 +1,24 @@
 /**
  * useTierIntegration Hook
- * Connects the tier store with the grid store for automatic tier calculation
+ * Connects the ranking store's smart tier functionality with the grid store for automatic tier calculation
+ *
+ * Consolidated: Now uses ranking-store instead of separate tier-store
  */
 
 import { useEffect, useCallback, useMemo } from "react";
 import { useGridStore } from "@/stores/grid-store";
-import { useTierStore, useTierForPosition, useIsTierBoundary } from "@/stores/tier-store";
+import {
+  useRankingStore,
+  selectSmartTierConfiguration,
+  selectCurrentSmartTiers,
+  selectSmartTieredItems,
+  selectSmartTierSummary,
+  selectIsSmartTierCalculating,
+  selectSmartTiersEnabled,
+  selectSmartTierBoundaries,
+  useSmartTierForPosition,
+  useIsSmartTierBoundary,
+} from "@/stores/ranking-store";
 import type { TierDefinition, TieredItem, TierSummary } from "@/lib/tiers/types";
 
 interface TierIntegrationOptions {
@@ -34,6 +47,7 @@ interface TierIntegrationResult {
 
 /**
  * Hook that integrates tier system with grid state
+ * Now uses unified ranking-store for tier calculations
  */
 export function useTierIntegration(
   listSize: number,
@@ -43,19 +57,18 @@ export function useTierIntegration(
 
   // Grid store state
   const gridItems = useGridStore((state) => state.gridItems);
-  const gridStatistics = useGridStore((state) => state.gridStatistics);
 
-  // Tier store state
-  const tiersEnabled = useTierStore((state) => state.configuration.enabled);
-  const currentTiers = useTierStore((state) => state.currentTiers);
-  const tieredItems = useTierStore((state) => state.tieredItems);
-  const summary = useTierStore((state) => state.summary);
-  const isCalculating = useTierStore((state) => state.isCalculating);
+  // Ranking store state (smart tier)
+  const tiersEnabled = useRankingStore(selectSmartTiersEnabled);
+  const currentTiers = useRankingStore(selectCurrentSmartTiers);
+  const tieredItems = useRankingStore(selectSmartTieredItems);
+  const summary = useRankingStore(selectSmartTierSummary);
+  const isCalculating = useRankingStore(selectIsSmartTierCalculating);
 
-  // Tier store actions
-  const setEnabled = useTierStore((state) => state.setEnabled);
-  const calculateTiers = useTierStore((state) => state.calculateTiers);
-  const recalculateTiers = useTierStore((state) => state.recalculate);
+  // Ranking store actions
+  const setSmartTierEnabled = useRankingStore((state) => state.setSmartTierEnabled);
+  const calculateSmartTiers = useRankingStore((state) => state.calculateSmartTiers);
+  const recalculateSmartTiers = useRankingStore((state) => state.recalculateSmartTiers);
 
   // Get filled positions from grid
   const filledPositions = useMemo(() => {
@@ -70,11 +83,11 @@ export function useTierIntegration(
 
     // Debounce the calculation
     const timeoutId = setTimeout(() => {
-      calculateTiers(listSize, filledPositions);
+      calculateSmartTiers(listSize, filledPositions);
     }, debounceMs);
 
     return () => clearTimeout(timeoutId);
-  }, [autoCalculate, tiersEnabled, listSize, filledPositions, calculateTiers, debounceMs]);
+  }, [autoCalculate, tiersEnabled, listSize, filledPositions, calculateSmartTiers, debounceMs]);
 
   // Get tier for a specific position
   const getTierForPosition = useCallback(
@@ -109,17 +122,17 @@ export function useTierIntegration(
   );
 
   // Actions
-  const enableTiers = useCallback(() => setEnabled(true), [setEnabled]);
-  const disableTiers = useCallback(() => setEnabled(false), [setEnabled]);
+  const enableTiers = useCallback(() => setSmartTierEnabled(true), [setSmartTierEnabled]);
+  const disableTiers = useCallback(() => setSmartTierEnabled(false), [setSmartTierEnabled]);
   const toggleTiers = useCallback(
-    () => setEnabled(!tiersEnabled),
-    [setEnabled, tiersEnabled]
+    () => setSmartTierEnabled(!tiersEnabled),
+    [setSmartTierEnabled, tiersEnabled]
   );
   const recalculate = useCallback(() => {
     if (tiersEnabled && listSize > 0) {
-      calculateTiers(listSize, filledPositions);
+      calculateSmartTiers(listSize, filledPositions);
     }
-  }, [tiersEnabled, listSize, filledPositions, calculateTiers]);
+  }, [tiersEnabled, listSize, filledPositions, calculateSmartTiers]);
 
   return {
     // State
@@ -145,9 +158,9 @@ export function useTierIntegration(
  * Hook to get tier information for a specific grid slot
  */
 export function useTierForSlot(position: number) {
-  const tier = useTierForPosition(position);
-  const isBoundary = useIsTierBoundary(position);
-  const tiersEnabled = useTierStore((state) => state.configuration.enabled);
+  const tier = useSmartTierForPosition(position);
+  const isBoundary = useIsSmartTierBoundary(position);
+  const tiersEnabled = useRankingStore(selectSmartTiersEnabled);
 
   return {
     tier,
@@ -160,9 +173,9 @@ export function useTierForSlot(position: number) {
  * Hook to get tier statistics
  */
 export function useTierStatistics() {
-  const summary = useTierStore((state) => state.summary);
-  const tieredItems = useTierStore((state) => state.tieredItems);
-  const currentTiers = useTierStore((state) => state.currentTiers);
+  const summary = useRankingStore(selectSmartTierSummary);
+  const tieredItems = useRankingStore(selectSmartTieredItems);
+  const currentTiers = useRankingStore(selectCurrentSmartTiers);
 
   return useMemo(() => {
     if (!summary) {
@@ -193,12 +206,12 @@ export function useTierStatistics() {
  * Hook for tier configuration state
  */
 export function useTierConfiguration() {
-  const configuration = useTierStore((state) => state.configuration);
-  const setPreset = useTierStore((state) => state.setPreset);
-  const toggleBands = useTierStore((state) => state.toggleBands);
-  const toggleLabels = useTierStore((state) => state.toggleLabels);
-  const toggleSeparators = useTierStore((state) => state.toggleSeparators);
-  const setEnabled = useTierStore((state) => state.setEnabled);
+  const configuration = useRankingStore(selectSmartTierConfiguration);
+  const setPreset = useRankingStore((state) => state.setSmartTierPreset);
+  const toggleBands = useRankingStore((state) => state.toggleBands);
+  const toggleLabels = useRankingStore((state) => state.toggleLabels);
+  const toggleSeparators = useRankingStore((state) => state.toggleSeparators);
+  const setEnabled = useRankingStore((state) => state.setSmartTierEnabled);
 
   return {
     configuration,

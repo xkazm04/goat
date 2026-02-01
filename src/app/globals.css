@@ -243,6 +243,17 @@ body {
   }
 }
 
+/* ===== SCROLLBAR UTILITIES ===== */
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* ===== OPTIMISTIC DRAG PREVIEW STYLES ===== */
 @layer utilities {
   .animate-optimistic-pulse {
@@ -522,6 +533,427 @@ body {
 
   .animation-playing {
     animation-play-state: running;
+  }
+}
+
+/* ===== GLASS DOCK DESIGN SYSTEM ===== */
+/* Unified visual tokens for Collection and Backlog panels */
+/* Creates cohesive glass-morphism experience across all collection views */
+
+@layer base {
+  :root {
+    /* Glass Dock - Core Glass Morphism Tokens (neutral dark) */
+    --glass-bg-primary: rgba(10, 10, 12, 0.95);
+    --glass-bg-secondary: rgba(10, 10, 12, 0.85);
+    --glass-bg-tertiary: rgba(10, 10, 12, 0.7);
+    --glass-blur: 24px;
+    --glass-blur-heavy: 32px;
+
+    /* Glass Dock - Gradient System (neutral dark to match MatchGrid #050505) */
+    --glass-gradient-primary: linear-gradient(
+      to bottom,
+      rgba(10, 10, 12, 0.97),
+      rgba(5, 5, 5, 0.99)
+    );
+    --glass-gradient-header: linear-gradient(
+      to right,
+      rgba(0, 0, 0, 0.3),
+      rgba(0, 0, 0, 0.35),
+      rgba(0, 0, 0, 0.3)
+    );
+    --glass-gradient-accent: linear-gradient(
+      135deg,
+      rgba(6, 182, 212, 0.15),
+      rgba(139, 92, 246, 0.1)
+    );
+    --glass-gradient-border: linear-gradient(
+      135deg,
+      rgba(6, 182, 212, 0.3),
+      rgba(139, 92, 246, 0.2)
+    );
+
+    /* Glass Dock - Shadow System */
+    --glass-shadow-panel: 0 -8px 32px rgba(0, 0, 0, 0.4),
+                          0 -2px 8px rgba(6, 182, 212, 0.05);
+    --glass-shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.3),
+                             0 4px 12px rgba(6, 182, 212, 0.1);
+    --glass-shadow-glow: 0 0 20px rgba(6, 182, 212, 0.2);
+    --glass-shadow-glow-active: 0 0 24px rgba(6, 182, 212, 0.35);
+
+    /* Glass Dock - Border System */
+    --glass-border-subtle: rgba(255, 255, 255, 0.05);
+    --glass-border-medium: rgba(255, 255, 255, 0.1);
+    --glass-border-emphasis: rgba(255, 255, 255, 0.15);
+    --glass-border-gradient: 1px solid transparent;
+
+    /* Glass Dock - Interactive States */
+    --glass-hover-bg: rgba(255, 255, 255, 0.05);
+    --glass-active-bg: rgba(6, 182, 212, 0.15);
+    --glass-active-border: rgba(6, 182, 212, 0.3);
+    --glass-focus-ring: rgba(6, 182, 212, 0.5);
+
+    /* Glass Dock - Animation Timing */
+    --glass-transition-fast: 150ms;
+    --glass-transition-normal: 200ms;
+    --glass-transition-slow: 300ms;
+    --glass-easing: cubic-bezier(0.16, 1, 0.3, 1);
+    --glass-easing-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .dark {
+    /* Dark mode adjustments - neutral near-black */
+    --glass-bg-primary: rgba(5, 5, 5, 0.97);
+    --glass-bg-secondary: rgba(5, 5, 5, 0.92);
+    --glass-bg-tertiary: rgba(5, 5, 5, 0.8);
+    --glass-shadow-panel: 0 -8px 48px rgba(0, 0, 0, 0.6),
+                          0 -2px 8px rgba(6, 182, 212, 0.03);
+    --glass-border-subtle: rgba(255, 255, 255, 0.02);
+    --glass-border-medium: rgba(255, 255, 255, 0.05);
+  }
+}
+
+@layer utilities {
+  /* Glass Dock - Panel Container */
+  .glass-dock-panel {
+    background: linear-gradient(
+      to bottom,
+      rgba(18, 18, 22, 0.97),
+      rgba(12, 12, 14, 0.99)
+    );
+    backdrop-filter: blur(var(--glass-blur-heavy));
+    -webkit-backdrop-filter: blur(var(--glass-blur-heavy));
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow:
+      0 -4px 20px rgba(0, 0, 0, 0.5),
+      0 -1px 3px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  /* Glass Dock - Header Bar */
+  .glass-dock-header {
+    background: linear-gradient(
+      to right,
+      rgba(0, 0, 0, 0.3),
+      rgba(6, 182, 212, 0.05),
+      rgba(0, 0, 0, 0.3)
+    );
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+  }
+
+  /* Glass Dock - Sidebar */
+  .glass-dock-sidebar {
+    background: linear-gradient(
+      to right,
+      rgba(0, 0, 0, 0.35),
+      rgba(0, 0, 0, 0.2)
+    );
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow:
+      inset -1px 0 0 rgba(255, 255, 255, 0.02),
+      2px 0 8px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Glass Dock - Content Area */
+  .glass-dock-content {
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      rgba(0, 0, 0, 0.1),
+      rgba(0, 0, 0, 0.2)
+    );
+  }
+
+  /* Glass Dock - Interactive Button Base */
+  .glass-dock-btn {
+    transition: all var(--glass-transition-normal) var(--glass-easing);
+  }
+
+  .glass-dock-btn:hover {
+    background: var(--glass-hover-bg);
+    box-shadow: var(--glass-shadow-glow);
+  }
+
+  .glass-dock-btn:active {
+    transform: scale(0.98);
+  }
+
+  /* Glass Dock - Active/Selected Button State */
+  .glass-dock-btn-active {
+    background: var(--glass-active-bg);
+    border-color: var(--glass-active-border);
+    box-shadow: var(--glass-shadow-glow-active);
+  }
+
+  /* Glass Dock - Unified Focus Ring */
+  .glass-dock-focus {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900;
+  }
+
+  /* Glass Dock - Card Item */
+  .glass-dock-card {
+    background: linear-gradient(
+      145deg,
+      rgba(30, 30, 36, 0.8),
+      rgba(20, 20, 24, 0.9)
+    );
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0.5rem;
+    box-shadow:
+      0 2px 4px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    transition: all var(--glass-transition-normal) var(--glass-easing);
+  }
+
+  .glass-dock-card:hover {
+    background: linear-gradient(
+      145deg,
+      rgba(38, 38, 46, 0.85),
+      rgba(26, 26, 32, 0.95)
+    );
+    border-color: rgba(6, 182, 212, 0.2);
+    box-shadow:
+      0 4px 12px rgba(0, 0, 0, 0.3),
+      0 0 0 1px rgba(6, 182, 212, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    border-color: var(--glass-border-medium);
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: var(--glass-shadow-elevated);
+  }
+
+  /* Glass Dock - Selection Ring */
+  .glass-dock-selection-ring {
+    @apply ring-2 ring-cyan-400 ring-offset-1 ring-offset-slate-900;
+    box-shadow: 0 0 16px rgba(6, 182, 212, 0.3);
+  }
+
+  /* Glass Dock - Gradient Border Effect */
+  .glass-dock-gradient-border {
+    position: relative;
+    background: linear-gradient(var(--glass-bg-primary), var(--glass-bg-primary)) padding-box,
+                var(--glass-gradient-border) border-box;
+    border: 1px solid transparent;
+    border-radius: 0.5rem;
+  }
+
+  /* Glass Dock - Loading Skeleton */
+  .glass-dock-skeleton {
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.03) 25%,
+      rgba(255, 255, 255, 0.08) 50%,
+      rgba(255, 255, 255, 0.03) 75%
+    );
+    background-size: 200% 100%;
+    animation: glass-skeleton-shimmer 1.5s ease-in-out infinite;
+    border-radius: 0.5rem;
+  }
+
+  /* Glass Dock - Divider */
+  .glass-dock-divider {
+    height: 1px;
+    background: linear-gradient(
+      to right,
+      transparent,
+      var(--glass-border-medium),
+      transparent
+    );
+  }
+
+  /* Glass Dock - Badge/Count Pill */
+  .glass-dock-badge {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 9999px;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    transition: all var(--glass-transition-fast) var(--glass-easing);
+  }
+
+  .glass-dock-badge-active {
+    background: rgba(6, 182, 212, 0.2);
+    color: rgb(103, 232, 249);
+  }
+
+  /* Glass Dock - Tooltip */
+  .glass-dock-tooltip {
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--glass-border-medium);
+    border-radius: 0.375rem;
+    box-shadow: var(--glass-shadow-elevated);
+  }
+
+  /* ===== ENHANCED GLASS DOCK V2 ===== */
+
+  /* Gradient Glow Card - Animated border on hover */
+  .glass-card-glow {
+    position: relative;
+    background: linear-gradient(
+      145deg,
+      rgba(28, 28, 34, 0.9),
+      rgba(18, 18, 22, 0.95)
+    );
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow:
+      0 2px 6px rgba(0, 0, 0, 0.25),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .glass-card-glow::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(6,182,212,0), rgba(168,85,247,0));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+
+  .glass-card-glow:hover::before {
+    background: linear-gradient(135deg, rgba(6,182,212,0.6), rgba(168,85,247,0.4));
+    opacity: 1;
+  }
+
+  .glass-card-glow:hover {
+    transform: translateY(-1px);
+    border-color: rgba(6, 182, 212, 0.25);
+    box-shadow:
+      0 8px 24px -8px rgba(6, 182, 212, 0.2),
+      0 4px 12px -4px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+
+  /* Deep Glass Layer - For sidebar/nav with more depth */
+  .glass-layer-deep {
+    background: linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.6) 100%);
+    backdrop-filter: blur(20px) saturate(1.2);
+    -webkit-backdrop-filter: blur(20px) saturate(1.2);
+    border-right: 1px solid rgba(255,255,255,0.03);
+  }
+
+  /* Light Glass Layer - For content area */
+  .glass-layer-light {
+    background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.2) 100%);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  /* Frosted Glass Panel - Enhanced main panel */
+  .glass-panel-frosted {
+    background: linear-gradient(
+      135deg,
+      rgba(15,23,42,0.85) 0%,
+      rgba(15,23,42,0.92) 50%,
+      rgba(15,23,42,0.85) 100%
+    );
+    backdrop-filter: blur(24px) saturate(1.1);
+    -webkit-backdrop-filter: blur(24px) saturate(1.1);
+    border-top: 1px solid rgba(255,255,255,0.08);
+    box-shadow:
+      0 -8px 32px rgba(0,0,0,0.4),
+      inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+
+  /* Subtle Glow Effect - For active items */
+  .glow-cyan {
+    box-shadow: 0 0 20px -5px rgba(6,182,212,0.4);
+  }
+
+  .glow-purple {
+    box-shadow: 0 0 20px -5px rgba(168,85,247,0.4);
+  }
+
+  /* Pill Active Indicator */
+  .pill-active-glow {
+    position: relative;
+  }
+
+  .pill-active-glow::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: inset 0 0 12px rgba(6,182,212,0.3);
+    pointer-events: none;
+  }
+
+  /* Category Pill - Compact vertical style */
+  .category-pill {
+    @apply relative flex flex-col items-center justify-center rounded-lg transition-all duration-200;
+  }
+
+  .category-pill[data-active="true"] {
+    @apply bg-cyan-500/20 text-cyan-400;
+    box-shadow: 0 0 16px -4px rgba(6,182,212,0.3);
+  }
+
+  /* Item Card - Enhanced with gradient border potential */
+  .item-card-enhanced {
+    position: relative;
+    background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 0.5rem;
+    overflow: hidden;
+  }
+
+  .item-card-enhanced::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    opacity: 0;
+    background: linear-gradient(135deg, rgba(6,182,212,0.1), rgba(168,85,247,0.1));
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+  }
+
+  .item-card-enhanced:hover::after {
+    opacity: 1;
+  }
+}
+
+/* Glass Dock - Keyframes */
+@keyframes glass-skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes glass-dock-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes glass-dock-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 

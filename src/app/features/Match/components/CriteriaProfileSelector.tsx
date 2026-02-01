@@ -136,7 +136,7 @@ export function CriteriaProfileSelector({
         className={cn(
           'w-full flex items-center justify-between gap-2 px-4 py-3',
           'rounded-lg border border-border bg-card',
-          'hover:bg-accent/50 transition-colors',
+          'hover:bg-accent/50 hover:shadow-sm transition-all duration-200',
           'focus:outline-none focus:ring-2 focus:ring-ring'
         )}
         onClick={() => setIsOpen(!isOpen)}
@@ -154,7 +154,7 @@ export function CriteriaProfileSelector({
         </div>
         <ChevronDown
           className={cn(
-            'w-4 h-4 text-muted-foreground transition-transform',
+            'w-4 h-4 text-muted-foreground transition-transform duration-200',
             isOpen && 'rotate-180'
           )}
         />
@@ -170,8 +170,8 @@ export function CriteriaProfileSelector({
             transition={{ duration: 0.15 }}
             className={cn(
               'absolute z-50 w-full mt-2',
-              'rounded-lg border border-border bg-card shadow-lg',
-              'max-h-[400px] overflow-y-auto'
+              'rounded-lg border border-border bg-card shadow-xl',
+              'max-h-[400px] overflow-y-auto backdrop-blur-sm'
             )}
           >
             {/* Templates Section */}
@@ -226,7 +226,7 @@ export function CriteriaProfileSelector({
                 <button
                   className={cn(
                     'w-full flex items-center gap-2 px-3 py-2 rounded-lg',
-                    'text-primary hover:bg-primary/10 transition-colors'
+                    'text-primary hover:bg-primary/10 transition-all duration-200 hover:scale-[1.01]'
                   )}
                   onClick={() => {
                     setIsOpen(false);
@@ -300,8 +300,8 @@ function ProfileOption({
     <div
       className={cn(
         'relative flex items-center justify-between px-3 py-2 rounded-lg',
-        'cursor-pointer transition-colors',
-        isActive ? 'bg-primary/10' : 'hover:bg-accent/50'
+        'cursor-pointer transition-all duration-200',
+        isActive ? 'bg-primary/10' : 'hover:bg-accent/50 hover:translate-x-0.5'
       )}
       onClick={onSelect}
       onMouseEnter={() => setShowActions(true)}
@@ -338,7 +338,7 @@ function ProfileOption({
           >
             {onEdit && (
               <button
-                className="p-1 rounded hover:bg-accent"
+                className="p-1 rounded hover:bg-accent hover:scale-110 transition-all duration-150"
                 onClick={onEdit}
                 title="Edit"
               >
@@ -347,7 +347,7 @@ function ProfileOption({
             )}
             {onDuplicate && (
               <button
-                className="p-1 rounded hover:bg-accent"
+                className="p-1 rounded hover:bg-accent hover:scale-110 transition-all duration-150"
                 onClick={onDuplicate}
                 title="Duplicate"
               >
@@ -356,7 +356,7 @@ function ProfileOption({
             )}
             {onShare && (
               <button
-                className="p-1 rounded hover:bg-accent"
+                className="p-1 rounded hover:bg-accent hover:scale-110 transition-all duration-150"
                 onClick={onShare}
                 title="Share"
               >
@@ -365,7 +365,7 @@ function ProfileOption({
             )}
             {onExport && (
               <button
-                className="p-1 rounded hover:bg-accent"
+                className="p-1 rounded hover:bg-accent hover:scale-110 transition-all duration-150"
                 onClick={onExport}
                 title="Export"
               >
@@ -374,7 +374,7 @@ function ProfileOption({
             )}
             {onDelete && !profile.isTemplate && (
               <button
-                className="p-1 rounded hover:bg-destructive/20 text-destructive"
+                className="p-1 rounded hover:bg-destructive/20 text-destructive hover:scale-110 transition-all duration-150"
                 onClick={onDelete}
                 title="Delete"
               >
@@ -476,14 +476,14 @@ function CriteriaProfileEditor({
   const totalWeight = criteria.reduce((sum, c) => sum + c.weight, 0);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
         className={cn(
           'w-full max-w-xl max-h-[90vh] overflow-y-auto',
-          'rounded-xl border border-border bg-card shadow-xl'
+          'rounded-xl border border-border bg-card shadow-2xl'
         )}
       >
         {/* Header */}
@@ -492,7 +492,7 @@ function CriteriaProfileEditor({
             {isEditing ? 'Edit Profile' : 'Create Profile'}
           </h2>
           <button
-            className="p-1 rounded hover:bg-accent"
+            className="p-1 rounded hover:bg-accent hover:scale-110 transition-all duration-150"
             onClick={onClose}
           >
             ×
@@ -510,8 +510,8 @@ function CriteriaProfileEditor({
               onChange={(e) => setName(e.target.value)}
               placeholder="My Custom Criteria"
               className={cn(
-                'w-full px-3 py-2 rounded-lg border border-border',
-                'bg-background focus:outline-none focus:ring-2 focus:ring-ring'
+                'w-full px-3 py-2 rounded-lg border border-border transition-all duration-200',
+                'bg-background focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-ring'
               )}
             />
           </div>
@@ -527,9 +527,9 @@ function CriteriaProfileEditor({
               placeholder="Describe your criteria profile..."
               rows={2}
               className={cn(
-                'w-full px-3 py-2 rounded-lg border border-border',
+                'w-full px-3 py-2 rounded-lg border border-border transition-all duration-200',
                 'bg-background resize-none',
-                'focus:outline-none focus:ring-2 focus:ring-ring'
+                'focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-ring'
               )}
             />
           </div>
@@ -556,7 +556,7 @@ function CriteriaProfileEditor({
               {criteria.map((criterion, index) => (
                 <div
                   key={criterion.id}
-                  className="p-3 rounded-lg border border-border bg-muted/30"
+                  className="p-3 rounded-lg border border-border bg-muted/30 transition-all duration-200 hover:border-border/80 hover:shadow-sm"
                 >
                   <div className="flex items-start gap-2">
                     <div className="flex-1 space-y-2">
@@ -609,7 +609,7 @@ function CriteriaProfileEditor({
                       </div>
                     </div>
                     <button
-                      className="p-1 rounded hover:bg-destructive/20 text-destructive"
+                      className="p-1 rounded hover:bg-destructive/20 text-destructive hover:scale-110 transition-all duration-150"
                       onClick={() => removeCriterion(criterion.id)}
                     >
                       <Trash2 className="w-4 h-4" />
@@ -623,7 +623,7 @@ function CriteriaProfileEditor({
                   'w-full flex items-center justify-center gap-2 px-3 py-2',
                   'rounded-lg border border-dashed border-border',
                   'text-muted-foreground hover:text-foreground hover:border-foreground',
-                  'transition-colors'
+                  'transition-all duration-200 hover:scale-[1.01] hover:shadow-sm'
                 )}
                 onClick={addCriterion}
               >
@@ -639,7 +639,7 @@ function CriteriaProfileEditor({
           <button
             className={cn(
               'px-4 py-2 rounded-lg border border-border',
-              'hover:bg-accent transition-colors'
+              'hover:bg-accent transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]'
             )}
             onClick={onClose}
           >
@@ -649,8 +649,8 @@ function CriteriaProfileEditor({
             className={cn(
               'px-4 py-2 rounded-lg',
               'bg-primary text-primary-foreground',
-              'hover:bg-primary/90 transition-colors',
-              'disabled:opacity-50 disabled:cursor-not-allowed'
+              'hover:bg-primary/90 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]',
+              'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100'
             )}
             disabled={!name.trim() || criteria.length === 0}
             onClick={handleSave}
@@ -689,10 +689,10 @@ export function InputModeSelector({
         <button
           key={mode.value}
           className={cn(
-            'px-3 py-1 text-sm rounded transition-colors',
+            'px-3 py-1 text-sm rounded transition-all duration-200',
             value === mode.value
-              ? 'bg-background text-foreground shadow-sm'
-              : 'text-muted-foreground hover:text-foreground'
+              ? 'bg-background text-foreground shadow-sm scale-[1.02]'
+              : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
           )}
           onClick={() => onChange(mode.value)}
         >

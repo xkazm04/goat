@@ -618,7 +618,12 @@ function PercentileItem({
   );
 }
 
-function MiniTooltip({ active, payload, label, accent }: any) {
+function MiniTooltip({ active, payload, label, accent }: {
+  active?: boolean;
+  payload?: Array<{ value: number }>;
+  label?: string | number;
+  accent: string;
+}) {
   if (!active || !payload?.[0]) return null;
   return (
     <div

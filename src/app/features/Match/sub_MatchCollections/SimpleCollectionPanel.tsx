@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef, useDeferredValue } from "react";
 import { createPortal } from "react-dom";
 import { GripHorizontal } from "lucide-react";
 import { CollectionGroup, CollectionItem } from "@/app/features/Collection/types";
 import { useQuickSelect } from "@/app/features/Collection/hooks/useQuickSelect";
 import { cn } from "@/lib/utils";
 import {
-  CollectionHeader,
   CollectionSidebar,
   CollectionHorizontalBar,
   VirtualizedCollectionGrid,
@@ -17,6 +16,8 @@ import {
   QuickSelectStatusBar,
   useGridDimensions,
 } from "./components";
+import { CompactCollectionHeader } from "./components/CompactCollectionHeader";
+import { VerticalCategoryNav } from "./components/VerticalCategoryNav";
 
 interface SimpleCollectionPanelProps {
   groups: CollectionGroup[];
@@ -51,6 +52,9 @@ export function SimpleCollectionPanel({ groups, onItemClick, selectedItemId }: S
   const [activeTab, setActiveTab] = useState<string | 'all'>('all');
   const [groupViewMode, setGroupViewMode] = useState<GroupViewMode>('sidebar');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Performance: Defer search to keep UI responsive during typing
+  const deferredSearchQuery = useDeferredValue(searchQuery);
 
   // SSR safety - only render portal on client
   const [mounted, setMounted] = useState(false);
@@ -101,11 +105,12 @@ export function SimpleCollectionPanel({ groups, onItemClick, selectedItemId }: S
   });
 
   // Calculate dynamic grid height based on panel height
-  // Subtract header (~52px), quick-select bar (~40px), horizontal bar if visible (~48px), padding (~32px)
-  const headerHeight = 52;
-  const quickSelectHeight = 40;
-  const horizontalBarHeight = groupViewMode === 'horizontal' ? 48 : 0;
-  const paddingHeight = 32;
+  // Compact header: 36px, quick-select bar: 32px, horizontal bar if visible: 40px, padding: 16px
+  const headerHeight = 36;
+  const quickSelectHeight = 32;
+  const horizontalBarHeight = groupViewMode === 'horizontal' ? 40 : 0;
+  const paddingHeight = 16;
+  const navWidth = groupViewMode === 'minimal' ? 44 : (groupViewMode === 'sidebar' ? 176 : 0);
   const gridHeight = Math.max(
     150,
     panelHeight - headerHeight - quickSelectHeight - horizontalBarHeight - paddingHeight
@@ -182,10 +187,10 @@ export function SimpleCollectionPanel({ groups, onItemClick, selectedItemId }: S
       ? groupsWithAvailable
       : groupsWithAvailable.filter(g => g.id === activeTab);
 
-    // Step 4: Apply search filter (items are already filtered for used)
+    // Step 4: Apply search filter using deferred query for performance
     const searchFilteredGroups = selectedGroups.map(group => {
-      const matchingItems = searchQuery
-        ? filterItemsByQuery(group.items || [], searchQuery)
+      const matchingItems = deferredSearchQuery
+        ? filterItemsByQuery(group.items || [], deferredSearchQuery)
         : group.items || [];
       return {
         ...group,
@@ -212,7 +217,7 @@ export function SimpleCollectionPanel({ groups, onItemClick, selectedItemId }: S
       filteredItemCount: filtered,
       flatFilteredItems: flatItems,
     };
-  }, [groups, activeTab, searchQuery]);
+  }, [groups, activeTab, deferredSearchQuery]);
 
   // Initialize quick-select hook with visible items
   const quickSelect = useQuickSelect({
@@ -320,52 +325,60 @@ export function SimpleCollectionPanel({ groups, onItemClick, selectedItemId }: S
           onAnimationEnd={handleAnimationEnd}
           data-testid="collection-panel"
         >
-          {/* Resize Handle */}
+          {/* Resize Handle - Styled grip */}
           <div
             onMouseDown={handleResizeStart}
             onTouchStart={handleResizeStart}
             className={cn(
               "absolute -top-3 left-0 right-0 h-6 cursor-ns-resize z-10",
-              "flex items-center justify-center transition-colors",
-              isResizing ? 'bg-cyan-500/20' : 'hover:bg-white/5'
+              "flex items-center justify-center group",
+              isResizing && 'bg-gradient-to-b from-cyan-500/10 to-transparent'
             )}
             data-testid="panel-resize-handle"
           >
-            <div className="flex items-center gap-1 px-4 py-1 rounded-full bg-gray-800/80 border border-white/10">
-              <GripHorizontal className="w-4 h-4 text-gray-400" />
-              <span className="text-[10px] text-gray-500 hidden sm:inline">Drag to resize</span>
+            <div className={cn(
+              "flex items-center gap-1 px-3 py-1 rounded-full transition-all duration-200",
+              isResizing
+                ? "bg-cyan-500/20 border border-cyan-500/30"
+                : "bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/15"
+            )}>
+              <div className={cn(
+                "w-8 h-0.5 rounded-full transition-all",
+                isResizing ? "bg-cyan-400" : "bg-white/30 group-hover:bg-white/50"
+              )} />
             </div>
           </div>
 
-          <div className="w-full h-full bg-gray-900/95 dark:bg-gray-950/95 backdrop-blur-2xl border-t border-white/10 dark:border-white/5 shadow-[0_-8px_32px_rgba(0,0,0,0.4)] dark:shadow-[0_-8px_48px_rgba(0,0,0,0.6)] flex flex-col">
-
-            {/* Header Bar */}
-            <CollectionHeader
+          <div className="w-full h-full glass-dock-panel flex flex-col overflow-hidden rounded-t-xl">
+            {/* Compact Header with integrated search */}
+            <CompactCollectionHeader
               totalItems={totalItemCount}
+              filteredItemCount={filteredItemCount}
               isVisible={isVisible}
               onTogglePanel={togglePanel}
-              groupViewMode={groupViewMode}
-              onGroupViewModeChange={setGroupViewMode}
               searchQuery={searchQuery}
               onSearchChange={handleSearchChange}
-              filteredItemCount={filteredItemCount}
+              activeCategory={activeTab === 'all' ? 'all' : (availableGroups.find(g => g.id === activeTab)?.name || activeTab)}
+              searchableItems={flatFilteredItems}
             />
 
-            {/* Quick-Select Status Bar */}
-            <div className="px-4 py-1 flex-shrink-0">
-              <QuickSelectStatusBar
-                isActive={quickSelect.state.isActive}
-                mode={quickSelect.state.mode}
-                selectedItemTitle={
-                  quickSelect.state.selectedItemId
-                    ? flatFilteredItems.find(i => i.id === quickSelect.state.selectedItemId)?.title
-                    : undefined
-                }
-                statusMessage={quickSelect.state.statusMessage}
-                onToggle={quickSelect.toggleQuickSelect}
-                onClear={quickSelect.clearSelection}
-              />
-            </div>
+            {/* Quick-Select Status Bar - more compact */}
+            {quickSelect.state.isActive && (
+              <div className="px-3 py-1 flex-shrink-0 border-b border-white/5">
+                <QuickSelectStatusBar
+                  isActive={quickSelect.state.isActive}
+                  mode={quickSelect.state.mode}
+                  selectedItemTitle={
+                    quickSelect.state.selectedItemId
+                      ? flatFilteredItems.find(i => i.id === quickSelect.state.selectedItemId)?.title
+                      : undefined
+                  }
+                  statusMessage={quickSelect.state.statusMessage}
+                  onToggle={quickSelect.toggleQuickSelect}
+                  onClear={quickSelect.clearSelection}
+                />
+              </div>
+            )}
 
             {/* Horizontal Group Bar (if in horizontal mode) */}
             {groupViewMode === 'horizontal' && (
@@ -381,7 +394,17 @@ export function SimpleCollectionPanel({ groups, onItemClick, selectedItemId }: S
             )}
 
             {/* Content Area - fills remaining space */}
-            <div className="flex flex-1 min-h-0">
+            <div className="flex flex-1 min-h-0 overflow-hidden">
+              {/* Minimal Vertical Nav (default, most space efficient) */}
+              {groupViewMode === 'minimal' && (
+                <VerticalCategoryNav
+                  groups={availableGroups}
+                  groupAvailableCounts={groupAvailableCounts}
+                  activeTab={activeTab}
+                  onTabChange={setActiveTab}
+                  totalItemCount={totalItemCount}
+                />
+              )}
 
               {/* Sidebar (if in sidebar mode) */}
               {groupViewMode === 'sidebar' && (
@@ -397,13 +420,13 @@ export function SimpleCollectionPanel({ groups, onItemClick, selectedItemId }: S
               {/* Main Grid - Virtualized for performance */}
               <div
                 ref={gridContainerRef}
-                className="flex-1 p-3 bg-gradient-to-b from-transparent to-black/20 dark:to-black/40 min-h-0"
+                className="flex-1 p-2 min-h-0 overflow-hidden"
                 data-testid="collection-grid-container"
               >
                 <VirtualizedCollectionGrid
                   displayGroups={displayGroups}
                   showGroupHeaders={activeTab === 'all'}
-                  searchQuery={searchQuery}
+                  searchQuery={deferredSearchQuery}
                   getQuickSelectNumber={quickSelect.state.isActive ? quickSelect.getQuickSelectNumber : undefined}
                   isItemSelected={quickSelect.state.isActive ? quickSelect.isItemSelected : undefined}
                   columnCount={gridDimensions.columnCount}

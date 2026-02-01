@@ -3,13 +3,14 @@
 /**
  * StudioLayout
  * Main layout orchestrator for the List Creation Studio feature
- * Composes header, main content, and sidebar into a responsive grid
+ * Layout: Form + Sidebar on top, Full-width items grid below
  * Uses NeonArenaTheme for consistent visual styling with landing page
  */
 
 import { StudioHeader } from './components/StudioHeader';
-import { StudioMain } from './components/StudioMain';
+import { StudioFormPanel } from './components/StudioFormPanel';
 import { StudioSidebar } from './components/StudioSidebar';
+import { StudioItemsGrid } from './components/StudioItemsGrid';
 import { NeonArenaTheme, SECTION_ORBS } from '@/app/features/Landing/shared';
 import { AudioPlayer } from '@/components/AudioPlayer';
 
@@ -19,21 +20,16 @@ export interface StudioLayoutProps {
     title?: string;
     subtitle?: string;
   };
-  /** Optional custom main content */
-  mainContent?: React.ReactNode;
-  /** Optional custom sidebar content */
-  sidebarContent?: React.ReactNode;
 }
 
 /**
  * StudioLayout Component
- * Uses NeonArenaTheme for consistent visual design matching landing page
+ * Layout structure:
+ * - Header
+ * - Top row: Form panel (left) + Sidebar (right)
+ * - Bottom row: Full-width items grid
  */
-export function StudioLayout({
-  headerProps,
-  mainContent,
-  sidebarContent,
-}: StudioLayoutProps = {}) {
+export function StudioLayout({ headerProps }: StudioLayoutProps = {}) {
   return (
     <NeonArenaTheme
       variant="fullPage"
@@ -51,11 +47,15 @@ export function StudioLayout({
     >
       <StudioHeader {...headerProps} />
 
-      <main className="max-w-7xl mx-auto px-4 py-6 pb-24">
+      <main className="max-w-7xl mx-auto px-4 py-6 pb-24 space-y-6">
+        {/* Top row: Form + Sidebar */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
-          <StudioMain>{mainContent}</StudioMain>
-          <StudioSidebar>{sidebarContent}</StudioSidebar>
+          <StudioFormPanel />
+          <StudioSidebar />
         </div>
+
+        {/* Bottom row: Full-width items grid */}
+        <StudioItemsGrid />
       </main>
 
       {/* Audio Player for Music category */}

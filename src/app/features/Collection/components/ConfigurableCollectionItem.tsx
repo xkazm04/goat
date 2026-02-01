@@ -25,6 +25,7 @@ import { useTouchGestures, GestureItemData } from "@/app/features/Match/hooks/us
 import { PreviewItem } from "@/app/features/Match/components/LongPressPreview";
 import { ArrowRight, ArrowLeft, PlusCircle, Eye, Trash2 } from "lucide-react";
 import { useItemPopupStore } from "@/stores/item-popup-store";
+import { SelectionCheckbox } from "@/app/features/Match/sub_MatchCollections/components/ComparisonSelector";
 
 /**
  * Swipe action icon mapping
@@ -71,6 +72,8 @@ export interface CollectionItemConfig {
   showSubtitle?: boolean;
   /** Show criteria score display when item has scores */
   showCriteriaScore?: boolean;
+  /** Enable comparison selection checkbox */
+  enableComparisonSelection?: boolean;
 }
 
 export interface ConfigurableCollectionItemProps {
@@ -94,6 +97,12 @@ export interface ConfigurableCollectionItemProps {
   onSwipeQuickAssign?: (item: CollectionItemType) => void;
   /** Called when long press triggers preview */
   onLongPressPreview?: (item: PreviewItem, position: { x: number; y: number }) => void;
+  /** Whether this item is selected for comparison */
+  isComparisonSelected?: boolean;
+  /** Called when comparison selection is toggled */
+  onComparisonToggle?: () => void;
+  /** Whether more items can be added to comparison */
+  canAddToComparison?: boolean;
 }
 
 /**
@@ -116,6 +125,7 @@ export const MATCH_VIEW_CONFIG: CollectionItemConfig = {
   enableContextMenu: true,
   showSubtitle: false,
   showCriteriaScore: false,
+  enableComparisonSelection: false,
 };
 
 /**
@@ -169,6 +179,9 @@ export function ConfigurableCollectionItem({
   config = MATCH_VIEW_CONFIG,
   onSwipeQuickAssign,
   onLongPressPreview,
+  isComparisonSelected = false,
+  onComparisonToggle,
+  canAddToComparison = true,
 }: ConfigurableCollectionItemProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
@@ -193,6 +206,7 @@ export function ConfigurableCollectionItem({
     enableContextMenu = true,
     showSubtitle = true,
     showCriteriaScore = false,
+    enableComparisonSelection = false,
   } = config;
 
   // Popup store for opening item detail popup on right-click
@@ -346,6 +360,7 @@ export function ConfigurableCollectionItem({
         ${isDragging ? 'z-50' : ''}
         ${isGesturing ? 'z-40' : ''}
         ${isClickSelected ? 'ring-2 ring-cyan-500 ring-offset-2 ring-offset-gray-900 rounded-lg' : ''}
+        ${isComparisonSelected ? 'ring-2 ring-indigo-500 ring-offset-1 ring-offset-slate-900 rounded-lg' : ''}
       `}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -484,8 +499,20 @@ export function ConfigurableCollectionItem({
         />
       )}
 
+      {/* Comparison selection checkbox */}
+      {enableComparisonSelection && onComparisonToggle && !isDragging && (
+        <div className="absolute top-1 left-1 z-30">
+          <SelectionCheckbox
+            isSelected={isComparisonSelected}
+            onClick={onComparisonToggle}
+            disabled={!canAddToComparison && !isComparisonSelected}
+            size="sm"
+          />
+        </div>
+      )}
+
       {/* Average Ranking Badge - collection panel style */}
-      {showAverageRankingBadge && !isDragging && (
+      {showAverageRankingBadge && !isDragging && !enableComparisonSelection && (
         <AverageRankingBadge
           itemId={item.id}
           position="top-left"

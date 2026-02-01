@@ -6,10 +6,19 @@
  *
  * Instead of deep nested mapping on every save, data is stored in flat maps
  * and transformed lazily only when needed for read operations.
+ *
+ * NOTE: Uses ItemTransformer for core conversion logic.
  */
 
 import { BacklogGroup, BacklogItem } from '@/types/backlog-groups';
 import { BacklogGroupType, BacklogItemType } from '@/types/match';
+import {
+  backlogToNormalized,
+  normalizedToBacklog,
+  normalizedToBacklogItemType,
+  extractTitle,
+  normalizeImageUrl,
+} from '@/lib/items';
 
 /**
  * Normalized storage format for groups - stores metadata separately from items
@@ -76,6 +85,19 @@ export function isNormalizedData(data: unknown): data is NormalizedBacklogData {
 }
 
 /**
+ * Helper to create NormalizedItem from BacklogItem with group context
+ */
+function createNormalizedItem(item: BacklogItem, groupId: string, groupCategory?: string): NormalizedItem {
+  return backlogToNormalized(
+    {
+      ...item,
+      category: item.category || groupCategory || 'general',
+    },
+    groupId
+  );
+}
+
+/**
  * Normalize BacklogGroup[] to NormalizedBacklogData
  * This is only called once when setting backlog groups from API
  */
@@ -87,25 +109,9 @@ export function normalizeBacklogGroups(groups: BacklogGroup[]): NormalizedBacklo
   for (const group of groups) {
     const itemIds: string[] = [];
 
-    // Process items
+    // Process items using ItemTransformer
     for (const item of group.items || []) {
-      const normalizedItem: NormalizedItem = {
-        id: item.id,
-        title: item.name || item.title || '',
-        name: item.name || item.title || '',
-        description: item.description || '',
-        category: item.category || group.category || 'general',
-        subcategory: item.subcategory || group.subcategory,
-        item_year: item.item_year,
-        item_year_to: item.item_year_to,
-        image_url: item.image_url,
-        created_at: item.created_at || new Date().toISOString(),
-        updated_at: item.updated_at,
-        tags: item.tags || [],
-        matched: false,
-        used: item.used,
-        groupId: group.id
-      };
+      const normalizedItem = createNormalizedItem(item, group.id, group.category);
       itemsById[item.id] = normalizedItem;
       itemIds.push(item.id);
     }
@@ -118,7 +124,7 @@ export function normalizeBacklogGroups(groups: BacklogGroup[]): NormalizedBacklo
       description: group.description,
       category: group.category || 'general',
       subcategory: group.subcategory,
-      image_url: group.image_url,
+      image_url: normalizeImageUrl(group.image_url),
       item_count: group.item_count || itemIds.length,
       created_at: group.created_at || new Date().toISOString(),
       updated_at: group.updated_at || new Date().toISOString(),
@@ -149,25 +155,11 @@ export function denormalizeToBacklogGroupType(data: NormalizedBacklogData): Back
     const group = data.groupsById[groupId];
     if (!group) continue;
 
+    // Convert items using ItemTransformer
     const items: BacklogItemType[] = group.itemIds
       .map(itemId => data.itemsById[itemId])
       .filter((item): item is NormalizedItem => item !== undefined)
-      .map(item => ({
-        id: item.id,
-        title: item.title,
-        name: item.name,
-        description: item.description,
-        category: item.category,
-        subcategory: item.subcategory,
-        item_year: item.item_year,
-        item_year_to: item.item_year_to,
-        image_url: item.image_url,
-        created_at: item.created_at,
-        updated_at: item.updated_at,
-        tags: item.tags,
-        matched: item.matched,
-        used: item.used
-      }));
+      .map(item => normalizedToBacklogItemType(item));
 
     result.push({
       id: group.id,
@@ -176,7 +168,7 @@ export function denormalizeToBacklogGroupType(data: NormalizedBacklogData): Back
       description: group.description,
       category: group.category,
       subcategory: group.subcategory,
-      image_url: group.image_url,
+      image_url: normalizeImageUrl(group.image_url),
       item_count: group.item_count,
       created_at: group.created_at,
       updated_at: group.updated_at,
@@ -199,25 +191,11 @@ export function denormalizeToBacklogGroup(data: NormalizedBacklogData): BacklogG
     const group = data.groupsById[groupId];
     if (!group) continue;
 
+    // Convert items using ItemTransformer
     const items: BacklogItem[] = group.itemIds
       .map(itemId => data.itemsById[itemId])
       .filter((item): item is NormalizedItem => item !== undefined)
-      .map(item => ({
-        id: item.id,
-        name: item.name,
-        title: item.title,
-        description: item.description || undefined,
-        category: item.category,
-        subcategory: item.subcategory,
-        item_year: item.item_year,
-        item_year_to: item.item_year_to,
-        image_url: item.image_url,
-        created_at: item.created_at,
-        updated_at: item.updated_at,
-        tags: item.tags,
-        matched: item.matched,
-        used: item.used
-      }));
+      .map(item => normalizedToBacklog(item));
 
     result.push({
       id: group.id,
@@ -225,7 +203,7 @@ export function denormalizeToBacklogGroup(data: NormalizedBacklogData): BacklogG
       description: group.description,
       category: group.category,
       subcategory: group.subcategory,
-      image_url: group.image_url,
+      image_url: normalizeImageUrl(group.image_url),
       item_count: group.item_count,
       items,
       created_at: group.created_at,
@@ -250,11 +228,12 @@ export function migrateFromLegacyFormat(groups: BacklogGroupType[]): NormalizedB
     const itemIds: string[] = [];
 
     for (const item of group.items || []) {
-      const normalizedItem: NormalizedItem = {
+      // BacklogItemType has slightly different shape, adapt it
+      const backlogItem: BacklogItem = {
         id: item.id,
-        title: item.title || '',
         name: item.name || item.title || '',
-        description: item.description || '',
+        title: item.title || '',
+        description: item.description,
         category: item.category || group.category || 'general',
         subcategory: item.subcategory || group.subcategory,
         item_year: item.item_year,
@@ -262,11 +241,11 @@ export function migrateFromLegacyFormat(groups: BacklogGroupType[]): NormalizedB
         image_url: item.image_url,
         created_at: item.created_at || new Date().toISOString(),
         updated_at: item.updated_at,
-        tags: item.tags || [],
-        matched: item.matched || false,
+        tags: item.tags,
+        matched: item.matched,
         used: item.used,
-        groupId: group.id
       };
+      const normalizedItem = createNormalizedItem(backlogItem, group.id, group.category);
       itemsById[item.id] = normalizedItem;
       itemIds.push(item.id);
     }
@@ -278,7 +257,7 @@ export function migrateFromLegacyFormat(groups: BacklogGroupType[]): NormalizedB
       description: group.description,
       category: group.category || 'general',
       subcategory: group.subcategory,
-      image_url: group.image_url,
+      image_url: normalizeImageUrl(group.image_url),
       item_count: group.item_count || itemIds.length,
       created_at: group.created_at || new Date().toISOString(),
       updated_at: group.updated_at || new Date().toISOString(),
@@ -322,23 +301,7 @@ export const NormalizedOps = {
     if (!group) return data;
     if (data.itemsById[item.id]) return data; // Already exists
 
-    const normalizedItem: NormalizedItem = {
-      id: item.id,
-      title: item.name || item.title || '',
-      name: item.name || item.title || '',
-      description: item.description || '',
-      category: item.category || group.category,
-      subcategory: item.subcategory || group.subcategory,
-      item_year: item.item_year,
-      item_year_to: item.item_year_to,
-      image_url: item.image_url,
-      created_at: item.created_at || new Date().toISOString(),
-      updated_at: item.updated_at,
-      tags: item.tags || [],
-      matched: item.matched || false,
-      used: item.used,
-      groupId
-    };
+    const normalizedItem = createNormalizedItem(item, groupId, group.category);
 
     return {
       ...data,
@@ -394,26 +357,10 @@ export const NormalizedOps = {
       delete remainingItems[oldItemId];
     }
 
-    // Add new items
+    // Add new items using ItemTransformer
     const newItemIds: string[] = [];
     for (const item of items) {
-      const normalizedItem: NormalizedItem = {
-        id: item.id,
-        title: item.name || item.title || '',
-        name: item.name || item.title || '',
-        description: item.description || '',
-        category: item.category || group.category,
-        subcategory: item.subcategory || group.subcategory,
-        item_year: item.item_year,
-        item_year_to: item.item_year_to,
-        image_url: item.image_url,
-        created_at: item.created_at || new Date().toISOString(),
-        updated_at: item.updated_at,
-        tags: item.tags || [],
-        matched: item.matched || false,
-        used: item.used,
-        groupId
-      };
+      const normalizedItem = createNormalizedItem(item, groupId, group.category);
       remainingItems[item.id] = normalizedItem;
       newItemIds.push(item.id);
     }
@@ -442,44 +389,14 @@ export const NormalizedOps = {
     return group.itemIds
       .map(itemId => data.itemsById[itemId])
       .filter((item): item is NormalizedItem => item !== undefined)
-      .map(item => ({
-        id: item.id,
-        name: item.name,
-        title: item.title,
-        description: item.description || undefined,
-        category: item.category,
-        subcategory: item.subcategory,
-        item_year: item.item_year,
-        item_year_to: item.item_year_to,
-        image_url: item.image_url,
-        created_at: item.created_at,
-        updated_at: item.updated_at,
-        tags: item.tags,
-        matched: item.matched,
-        used: item.used
-      }));
+      .map(item => normalizedToBacklog(item));
   },
 
   /**
    * Get all items as flat array
    */
   getAllItems(data: NormalizedBacklogData): BacklogItem[] {
-    return Object.values(data.itemsById).map(item => ({
-      id: item.id,
-      name: item.name,
-      title: item.title,
-      description: item.description || undefined,
-      category: item.category,
-      subcategory: item.subcategory,
-      item_year: item.item_year,
-      item_year_to: item.item_year_to,
-      image_url: item.image_url,
-      created_at: item.created_at,
-      updated_at: item.updated_at,
-      tags: item.tags,
-      matched: item.matched,
-      used: item.used
-    }));
+    return Object.values(data.itemsById).map(item => normalizedToBacklog(item));
   },
 
   /**

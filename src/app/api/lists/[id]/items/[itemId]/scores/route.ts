@@ -4,8 +4,8 @@ import type {
   ListItemCriteriaScores,
   ListCriteriaConfig,
   CriterionScore,
-  Criterion,
 } from '@/lib/criteria/types';
+import { calculateWeightedScore } from '@/lib/criteria/calculateWeightedScore';
 import {
   withErrorHandler,
   fromSupabaseError,
@@ -14,34 +14,6 @@ import {
 } from '@/lib/errors';
 
 export const dynamic = 'force-dynamic';
-
-/**
- * Calculate weighted score from criteria scores and list config
- */
-function calculateWeightedScore(
-  scores: CriterionScore[],
-  criteria: Criterion[]
-): number {
-  if (!scores.length || !criteria.length) return 0;
-
-  const totalWeight = criteria.reduce((sum, c) => sum + c.weight, 0);
-  if (totalWeight === 0) return 0;
-
-  let weightedSum = 0;
-  for (const score of scores) {
-    const criterion = criteria.find((c) => c.id === score.criterionId);
-    if (!criterion) continue;
-
-    // Normalize score to 0-1 range
-    const range = criterion.maxScore - criterion.minScore;
-    if (range === 0) continue;
-    const normalized = (score.score - criterion.minScore) / range;
-    weightedSum += normalized * criterion.weight;
-  }
-
-  // Return as 0-100 scale, rounded to 2 decimal places
-  return Math.round((weightedSum / totalWeight) * 100 * 100) / 100;
-}
 
 // GET /api/lists/:id/items/:itemId/scores - Get scores for a specific item
 export const GET = withErrorHandler(

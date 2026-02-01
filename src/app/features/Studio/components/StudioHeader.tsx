@@ -2,13 +2,11 @@
 
 /**
  * StudioHeader
- * Premium sticky header for the List Creation Studio
- * Features gradient accents, glow effects, and smooth transitions
+ * Clean sticky header for the studio with subtle G.O.A.T. branding
  */
 
 import Link from 'next/link';
-import { ArrowLeft, Sparkles } from 'lucide-react';
-import { SURFACE_ELEVATION, ELEVATION } from '@/components/visual';
+import { ArrowLeft, Crown, Wand2 } from 'lucide-react';
 
 export interface StudioHeaderProps {
   /** Optional custom title override */
@@ -19,62 +17,63 @@ export interface StudioHeaderProps {
 
 /**
  * StudioHeader Component
- * Provides navigation and page context with premium visual design
+ * G.O.A.T. branded header with landing page inspired theming
  */
 export function StudioHeader({
-  title = 'List Creation Studio',
-  subtitle = 'Create custom ranking lists with AI-powered generation',
+  title = 'Creation Studio',
+  subtitle = 'AI-powered list generation',
 }: StudioHeaderProps) {
   return (
-    <header
-      className="border-b border-gray-800/50 backdrop-blur-xl sticky top-0 z-sticky"
-      style={{
-        backgroundColor: SURFACE_ELEVATION.overlay,
-        boxShadow: ELEVATION.low,
-      }}
-    >
-      {/* Subtle top gradient line */}
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
+    <header className="relative border-b border-gray-800/80 backdrop-blur-xl sticky top-0 z-sticky bg-black/80">
+      {/* Subtle top line */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-600/30 to-transparent" />
 
-      <div className="max-w-7xl mx-auto px-4 py-4">
-        <div className="flex items-center gap-5">
+      <div className="max-w-7xl mx-auto px-4 py-3">
+        <div className="flex items-center gap-4">
           {/* Back navigation */}
           <Link
             href="/"
-            className="group flex items-center justify-center w-11 h-11 rounded-xl
-              bg-gray-800/30 border border-gray-700/50
-              hover:bg-gray-800/50 hover:border-cyan-500/30
-              text-gray-400 hover:text-cyan-400
+            className="group flex items-center justify-center w-10 h-10 rounded-xl
+              bg-gray-800/60 border border-gray-700/50
+              hover:bg-gray-700/60 hover:border-gray-600/50
+              text-gray-400 hover:text-gray-300
               transition-all duration-300"
             aria-label="Back to home"
           >
-            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" />
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
           </Link>
 
-          {/* Title section */}
-          <div className="flex-1">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-10 h-10 rounded-xl
-                bg-gradient-to-br from-cyan-500/20 to-purple-500/20
-                border border-cyan-500/20">
-                <Sparkles className="w-5 h-5 text-cyan-400" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-white tracking-tight">
-                  {title}
-                </h1>
-                <p className="text-sm text-gray-400 mt-0.5">{subtitle}</p>
-              </div>
+          {/* Title section with crown */}
+          <div className="flex-1 flex items-center gap-3">
+            {/* Crown icon */}
+            <Crown className="w-5 h-5 text-amber-500/70" />
+
+            {/* G.O.A.T. mini brand + title */}
+            <div className="flex items-baseline gap-2">
+              <span
+                className="text-lg font-black tracking-tight"
+                style={{
+                  background: 'linear-gradient(180deg, #fcd34d 0%, #f59e0b 50%, #d97706 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                }}
+              >
+                G.O.A.T.
+              </span>
+              <span className="text-white/40">|</span>
+              <h1 className="text-lg font-semibold text-white/90 tracking-tight">
+                {title}
+              </h1>
             </div>
           </div>
 
-          {/* Right section - visual accent */}
+          {/* Right section - AI badge */}
           <div className="hidden sm:flex items-center gap-2">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full
-              bg-gradient-to-r from-cyan-500/10 to-purple-500/10
-              border border-gray-700/50">
-              <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-              <span className="text-xs font-medium text-gray-400">AI Powered</span>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full
+              bg-gray-800/60 border border-gray-700/50">
+              <Wand2 className="w-3.5 h-3.5 text-gray-400" />
+              <span className="text-xs font-medium text-gray-400">{subtitle}</span>
             </div>
           </div>
         </div>

@@ -203,3 +203,22 @@ export function isValidSubcategory(category: string, subcategory: string): boole
 export function isValidCategory(category: string): boolean {
   return getCategoryConfig(category) !== undefined;
 }
+
+/**
+ * Convert UI category name to database enum value (lowercase)
+ * The database uses lowercase enum values like 'games', 'sports', 'music', 'stories'
+ * @param category - The category name from UI (e.g., 'Games')
+ * @returns Lowercase version for database (e.g., 'games')
+ */
+export function categoryToDbValue(category: string): string {
+  return category.toLowerCase();
+}
+
+/**
+ * Convert database category enum value to UI display name (title case)
+ * @param dbCategory - The category from database (e.g., 'games')
+ * @returns Title case version for UI (e.g., 'Games')
+ */
+export function dbCategoryToDisplay(dbCategory: string): string {
+  return dbCategory.charAt(0).toUpperCase() + dbCategory.slice(1).toLowerCase();
+}

@@ -6,7 +6,10 @@ const nextConfig = {
     root: path.resolve(__dirname),
   },
   images: {
-    unoptimized: true,
+    // Image optimization enabled for WebP/AVIF conversion
+    formats: ['image/avif', 'image/webp'],
+    deviceSizes: [640, 750, 828, 1080, 1200],
+    imageSizes: [32, 48, 64, 96, 128, 256],
     remotePatterns: [
       // Primary sources - most reliable
       {

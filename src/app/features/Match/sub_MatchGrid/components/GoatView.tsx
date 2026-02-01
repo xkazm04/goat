@@ -13,8 +13,51 @@ interface GoatViewProps {
 }
 
 export function GoatView({ gridItems, onRemove, getItemTitle }: GoatViewProps) {
+    const isFirstPositionAssigned = gridItems[0]?.matched;
+
     return (
         <div className="mb-16 relative">
+            {/* Goat Illustration - slides in from left when 1st position assigned */}
+            <motion.div
+                initial={{ x: -200, opacity: 0 }}
+                animate={{
+                    x: isFirstPositionAssigned ? 0 : -200,
+                    opacity: isFirstPositionAssigned ? 1 : 0,
+                }}
+                transition={{ type: "spring", stiffness: 100, damping: 20, duration: 0.6 }}
+                className="absolute left-0 top-0 bottom-0 w-1/3 flex items-center justify-center pointer-events-none z-0"
+            >
+                <div className="relative">
+                    {/* Goat emoji/illustration with glow */}
+                    <div className="text-[180px] leading-none filter drop-shadow-[0_0_40px_rgba(250,204,21,0.4)]">
+                        🐐
+                    </div>
+                    {/* Floating crown above goat */}
+                    <motion.div
+                        animate={{ y: [0, -8, 0] }}
+                        transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                        className="absolute -top-8 left-1/2 -translate-x-1/2"
+                    >
+                        <Crown className="w-16 h-16 text-yellow-400 drop-shadow-[0_0_20px_rgba(250,204,21,0.8)]" />
+                    </motion.div>
+                    {/* Sparkle effects */}
+                    <motion.div
+                        animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
+                        transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+                        className="absolute top-4 -right-4"
+                    >
+                        <Sparkles className="w-8 h-8 text-yellow-400" />
+                    </motion.div>
+                    <motion.div
+                        animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0.8, 0.3] }}
+                        transition={{ repeat: Infinity, duration: 2, ease: "easeInOut", delay: 0.5 }}
+                        className="absolute bottom-8 -left-4"
+                    >
+                        <Sparkles className="w-6 h-6 text-yellow-300" />
+                    </motion.div>
+                </div>
+            </motion.div>
+
             {/* Radial glow effect */}
             <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/10 via-transparent to-transparent blur-3xl -z-10" />
 

@@ -1,5 +1,5 @@
 import { ListSession, SessionProgress } from './types';
-import { GridItemType, BacklogGroupType } from '@/types/match';
+import { GridItemType } from '@/types/match';
 
 export class SessionManager {
   static createEmptySession(listId: string, size: number): ListSession {

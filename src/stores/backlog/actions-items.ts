@@ -76,15 +76,13 @@ export const createItemActions = (
       backlogLogger.debug(`Removing item ${itemId} from group ${groupId}`);
       
       let itemFound = false;
-      let removedItem = null;
-      
+
       const updatedGroups = state.groups.map(group => {
         if (group.id === groupId) {
           const originalCount = group.items?.length || 0;
           const updatedItems = (group.items || []).filter(item => {
             if (item.id === itemId) {
               itemFound = true;
-              removedItem = item;
               return false; // Remove this item
             }
             return true; // Keep other items

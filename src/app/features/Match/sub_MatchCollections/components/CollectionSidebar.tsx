@@ -33,10 +33,10 @@ export function CollectionSidebar({
       animate={{
         opacity: 1,
         x: 0,
-        transition: { delay: 0.15, duration: 0.25 }
+        transition: { delay: 0.15, duration: 0.25, ease: [0.16, 1, 0.3, 1] }
       }}
       aria-label="Collection categories"
-      className="w-44 bg-black/20 dark:bg-black/40 backdrop-blur-sm border-r border-white/5 dark:border-white/[0.02] p-3 overflow-y-auto space-y-1.5"
+      className="w-44 glass-dock-sidebar p-3 overflow-y-auto space-y-1.5 scrollbar-thin scrollbar-thumb-white/15 scrollbar-track-white/[0.02]"
     >
       {/* All Items Button */}
       <motion.button
@@ -45,22 +45,24 @@ export function CollectionSidebar({
         whileTap={{ scale: 0.98 }}
         aria-pressed={activeTab === 'all'}
         aria-label={`Show all items (${totalItemCount} available)`}
-        className={`w-full text-left px-3 py-2 rounded-lg text-[10px] font-bold tracking-wide transition-all duration-200 flex items-center justify-between group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 ${
+        className={`w-full text-left px-3 py-2.5 rounded-lg text-[10px] font-bold tracking-wide transition-all duration-200 flex items-center justify-between group glass-dock-focus ${
           activeTab === 'all'
-            ? 'bg-cyan-500/20 dark:bg-cyan-500/10 text-cyan-300 dark:text-cyan-200 border border-cyan-500/30 dark:border-cyan-500/20 shadow-[0_0_15px_rgba(6,182,212,0.1)]'
-            : 'text-gray-400 dark:text-gray-500 hover:bg-white/5 dark:hover:bg-white/10 hover:text-white'
+            ? 'bg-gradient-to-r from-cyan-500/20 to-cyan-500/10 text-cyan-300 border border-cyan-500/30 shadow-[0_0_12px_rgba(6,182,212,0.15),inset_0_1px_0_rgba(255,255,255,0.05)]'
+            : 'bg-white/[0.02] text-slate-400 hover:text-white hover:bg-white/[0.05] border border-white/[0.04] hover:border-white/[0.08]'
         }`}
         data-testid="category-all-items-btn"
       >
         <span>ALL ITEMS</span>
-        <span className={`text-[10px] px-2 py-0.5 rounded-full ${
-          activeTab === 'all' ? 'bg-cyan-500/20 dark:bg-cyan-500/10' : 'bg-white/5 dark:bg-white/10'
+        <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded transition-all ${
+          activeTab === 'all'
+            ? 'bg-cyan-500/20 text-cyan-300'
+            : 'bg-white/5 text-white/50 group-hover:bg-white/10 group-hover:text-white/70'
         }`} aria-hidden="true">
           {totalItemCount}
         </span>
       </motion.button>
 
-      <div className="h-[1px] bg-white/5 dark:bg-white/[0.02] my-2" />
+      <div className="glass-dock-divider my-2" />
 
       {/* Group Buttons - only show groups with available items */}
       {groups.map((group, index) => {
@@ -77,25 +79,25 @@ export function CollectionSidebar({
             animate={{
               opacity: 1,
               x: 0,
-              transition: { delay: 0.2 + index * 0.03, duration: 0.2 }
+              transition: { delay: 0.2 + index * 0.03, duration: 0.2, ease: [0.16, 1, 0.3, 1] }
             }}
             onClick={() => onTabChange(group.id)}
-            whileHover={{ scale: 1.02 }}
+            whileHover={{ scale: 1.02, x: 2 }}
             whileTap={{ scale: 0.98 }}
             aria-pressed={activeTab === group.id}
             aria-label={`Filter by ${group.name} (${availableCount} available)`}
-            className={`w-full text-left px-3 py-2 rounded-lg text-[10px] transition-all duration-200 flex items-center justify-between group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 ${
+            className={`w-full text-left px-3 py-2 rounded-lg text-[10px] transition-all duration-200 flex items-center justify-between group glass-dock-focus ${
               activeTab === group.id
-                ? 'bg-white/10 dark:bg-white/5 text-white border border-white/20 dark:border-white/10'
-                : 'text-gray-500 dark:text-gray-600 hover:bg-white/5 dark:hover:bg-white/10 hover:text-gray-300 dark:hover:text-gray-400'
+                ? 'bg-gradient-to-r from-white/10 to-white/5 text-white border border-white/15 shadow-[0_2px_8px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.05)]'
+                : 'bg-transparent text-slate-500 hover:text-slate-200 hover:bg-white/[0.03] border border-transparent hover:border-white/[0.05]'
             }`}
             data-testid={`category-${group.id}-btn`}
           >
             <span className="font-medium truncate pr-2">{group.name}</span>
-            <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
+            <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded transition-all ${
               activeTab === group.id
-                ? 'bg-white/20 text-white'
-                : 'bg-white/10 text-gray-300'
+                ? 'bg-white/15 text-white'
+                : 'bg-white/5 text-white/40 group-hover:bg-white/10 group-hover:text-white/60'
             }`} aria-hidden="true">
               {availableCount}
             </span>

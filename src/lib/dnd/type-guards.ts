@@ -3,6 +3,8 @@
  *
  * Provides runtime type validation for drag-and-drop data contracts.
  * These guards help catch type mismatches early and provide clear error messages.
+ *
+ * NOTE: Uses ItemTransformer for conversion functions.
  */
 
 import { DragEndEvent, DragStartEvent, DragOverEvent, Active, Over } from '@dnd-kit/core';
@@ -11,6 +13,12 @@ import type { GridItemType } from '@/types/match';
 import type { BacklogItem } from '@/types/backlog-groups';
 import type { CollectionItem } from '@/app/features/Collection/types';
 import { dndLogger } from '@/lib/logger';
+import {
+  backlogToTransferable as transformBacklogToTransferable,
+  gridToTransferable as transformGridToTransferable,
+  normalizeImageUrl,
+  extractTitle,
+} from '@/lib/items';
 
 // ============================================================================
 // DnD Data Types (for use with @dnd-kit data.current)
@@ -369,36 +377,23 @@ export function assertTransferableItem(
 }
 
 // ============================================================================
-// Safe Type Conversions
+// Safe Type Conversions (delegating to ItemTransformer)
 // ============================================================================
 
 /**
  * Safely convert a BacklogItem to TransferableItem
+ * Uses ItemTransformer for consistent conversion logic
  */
 export function backlogToTransferable(item: BacklogItem): TransferableItem {
-  return {
-    id: item.id,
-    title: item.title || item.name,
-    description: item.description,
-    image_url: item.image_url,
-    tags: item.tags,
-    category: item.category,
-    subcategory: item.subcategory,
-  };
+  return transformBacklogToTransferable(item);
 }
 
 /**
  * Safely convert a GridItemType to TransferableItem
+ * Uses ItemTransformer for consistent conversion logic
  */
 export function gridToTransferable(item: GridItemType): TransferableItem | null {
-  if (!item.matched) return null;
-  return {
-    id: item.backlogItemId || item.id,
-    title: item.title,
-    description: item.description,
-    image_url: item.image_url,
-    tags: item.tags,
-  };
+  return transformGridToTransferable(item);
 }
 
 /**
@@ -471,9 +466,9 @@ export function isCollectionItem(item: unknown): item is CollectionItem {
 export function collectionToTransferable(item: CollectionItem): TransferableItem {
   return {
     id: item.id,
-    title: item.title,
+    title: extractTitle(item),
     description: item.description,
-    image_url: item.image_url,
+    image_url: normalizeImageUrl(item.image_url),
     tags: item.tags,
     category: item.category,
     subcategory: item.subcategory,
@@ -489,7 +484,7 @@ export function collectionToTransferable(item: CollectionItem): TransferableItem
  */
 export function describeDragData(data: unknown): string {
   if (isBacklogDragData(data)) {
-    return `BacklogItem[${data.item.id}] "${data.item.title || data.item.name}"`;
+    return `BacklogItem[${data.item.id}] "${extractTitle(data.item)}"`;
   }
   if (isGridDragData(data)) {
     return `GridItem[${data.item.id}] at position ${data.position}`;

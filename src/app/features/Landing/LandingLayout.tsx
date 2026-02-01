@@ -6,8 +6,10 @@ import { LandingMain } from './LandingMain';
 import {
     LazyFeaturedListsSection,
     LazyUserListsSection,
+    LazyCollectionsSection,
     ListSectionSkeleton,
-    UserListsSkeleton
+    UserListsSkeleton,
+    CollectionsSkeleton
 } from './sub_LandingLists/LazyListSections';
 import { ParallaxSection, ParallaxLayer, FloatingElements, FloatingPresets } from '@/components/3d';
 import { useScrollTrigger, scrollAnimationVariants } from '@/lib/animations';
@@ -46,9 +48,11 @@ function ScrollRevealSection({
 /**
  * LandingLayout - Main layout for the landing page
  *
- * Features immersive 3D effects, parallax scrolling, and scroll-triggered
- * animations. Uses lazy loading for below-the-fold sections.
- * All animations respect reduced motion preferences.
+ * Structure:
+ * - Hero with G.O.A.T. header and category tables
+ * - Featured Rankings section with mosaic grid
+ * - User Lists section
+ * - Collections section
  */
 const LandingLayout = () => {
     return (
@@ -62,7 +66,7 @@ const LandingLayout = () => {
                 className="fixed inset-0"
             />
 
-            {/* Main hero section - loads immediately */}
+            {/* Main hero section with category tables */}
             <LandingMain />
 
             {/* Below-the-fold sections with parallax and scroll reveals */}
@@ -103,6 +107,20 @@ const LandingLayout = () => {
                     <ScrollRevealSection animation="scale">
                         <Suspense fallback={<UserListsSkeleton />}>
                             <LazyUserListsSection />
+                        </Suspense>
+                    </ScrollRevealSection>
+                </ParallaxLayer>
+            </ParallaxSection>
+
+            {/* Collections section */}
+            <ParallaxSection
+                offset={['start end', 'end start']}
+                className="relative z-10"
+            >
+                <ParallaxLayer speedY={0.08}>
+                    <ScrollRevealSection animation="fadeLeft">
+                        <Suspense fallback={<CollectionsSkeleton />}>
+                            <LazyCollectionsSection />
                         </Suspense>
                     </ScrollRevealSection>
                 </ParallaxLayer>

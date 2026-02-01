@@ -52,7 +52,7 @@ export function MoviesScoreRenderer({
       {showLabel && (
         <span
           className={cn(
-            "text-yellow-500/80 font-medium",
+            "text-yellow-500/80 font-medium tabular-nums drop-shadow-[0_0_4px_rgba(234,179,8,0.2)] transition-colors duration-200",
             variant === "compact" && "text-xs",
             variant === "full" && "text-sm"
           )}

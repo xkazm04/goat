@@ -103,10 +103,10 @@ export function ListSettingsModal({
                   onClick={onClose}
                   disabled={syncStatus === 'syncing'}
                   className={cn(
-                    'p-2 rounded-lg transition-colors',
-                    'hover:bg-slate-700/50 text-slate-400 hover:text-white',
+                    'p-2 rounded-lg transition-all duration-200',
+                    'hover:bg-slate-700/50 hover:scale-105 text-slate-400 hover:text-white',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400',
-                    'disabled:opacity-50 disabled:cursor-not-allowed'
+                    'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100'
                   )}
                   aria-label="Close settings"
                 >
@@ -137,7 +137,7 @@ export function ListSettingsModal({
                 </div>
 
                 {/* Sync Status Indicator */}
-                <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-slate-800/30">
+                <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-slate-800/30 transition-all duration-200 hover:bg-slate-800/40">
                   <span className="text-xs text-slate-400">Sync Status</span>
                   <div className="flex items-center gap-2">
                     {syncStatus === 'idle' && (
@@ -170,9 +170,9 @@ export function ListSettingsModal({
                   className={cn(
                     'px-6 py-2.5 rounded-xl font-medium transition-all duration-200',
                     'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30',
-                    'hover:bg-cyan-500/30 hover:border-cyan-500/50',
+                    'hover:bg-cyan-500/30 hover:border-cyan-500/50 hover:scale-[1.02] active:scale-[0.98]',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400',
-                    'disabled:opacity-50 disabled:cursor-not-allowed'
+                    'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100'
                   )}
                 >
                   Done

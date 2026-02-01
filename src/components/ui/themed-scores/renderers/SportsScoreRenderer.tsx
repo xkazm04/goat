@@ -55,7 +55,7 @@ export function SportsScoreRenderer({
       {/* Health bar container */}
       <div
         className={cn(
-          "relative overflow-hidden rounded-sm bg-gray-900/90 border border-gray-700/50",
+          "relative overflow-hidden rounded-sm bg-gray-900/90 border border-gray-700/50 transition-all duration-200 hover:border-gray-600/70",
           variant === "compact" && "h-2",
           variant === "full" && "h-4",
           variant === "inline" && "h-1.5 w-16"
@@ -85,11 +85,11 @@ export function SportsScoreRenderer({
       </div>
       {/* Label */}
       {showLabel && variant === "full" && (
-        <div className="flex justify-between mt-1">
-          <span className="text-xs font-bold tracking-wider text-gray-400">
+        <div className="flex justify-between mt-1.5">
+          <span className="text-xs font-bold tracking-wider text-gray-400 transition-colors duration-200">
             {label}
           </span>
-          <span className="text-xs font-mono text-gray-500">
+          <span className="text-xs font-mono text-gray-500 tabular-nums">
             {score.toFixed(0)}
           </span>
         </div>

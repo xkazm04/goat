@@ -20,27 +20,51 @@ let isInitialized = false;
 let saveDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 /**
- * Default sync executor that sends session updates to the server
+ * Sync executor that sends operations to the sync API endpoint
  */
 const defaultSyncExecutor: SyncExecutor = async (operation: SyncOperation) => {
-  // This is a placeholder - in a real implementation, this would call your API
-  // For now, we'll simulate a successful sync
   console.log('[OfflineSync] Executing operation:', operation.type, operation.entityId);
 
   try {
-    // Simulate API call
-    // In production, replace with actual API call:
-    // const response = await apiClient.put(`/api/sessions/${operation.entityId}`, operation.payload);
+    const response = await fetch('/api/sync', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        operations: [operation],
+      }),
+    });
 
-    // For now, just mark as successful
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return {
+        success: false,
+        error: errorData.error || `HTTP ${response.status}`,
+      };
+    }
+
+    const data = await response.json();
+    const result = data.results?.[0];
+
+    if (!result) {
+      return {
+        success: false,
+        error: 'No result returned from sync API',
+      };
+    }
+
     return {
-      success: true,
-      serverVersion: Date.now(),
+      success: result.success,
+      serverVersion: result.serverVersion,
+      error: result.error,
+      serverData: result.serverData,
     };
   } catch (error) {
+    // Network error - operation will be retried
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: error instanceof Error ? error.message : 'Network error',
     };
   }
 };

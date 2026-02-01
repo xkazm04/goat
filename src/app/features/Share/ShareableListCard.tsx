@@ -1,8 +1,19 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { memo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { SharedRanking } from "@/types/share";
-import { useState } from "react";
+import { useCopyAnimation } from "@/hooks/useCopyAnimation";
+import { SocialButton, CopyButton } from "@/components/ui/SocialButton";
+import {
+  pageEntranceVariants,
+  listItemVariants,
+  staggerContainerVariants,
+  medalBounceVariants,
+  shimmerVariants,
+  STAGGER,
+  prefersReducedMotion,
+} from "@/lib/animations/sharing";
 
 interface ShareableListCardProps {
   ranking: SharedRanking;
@@ -12,23 +23,42 @@ interface ShareableListCardProps {
   compact?: boolean;
 }
 
-export function ShareableListCard({
+// Medal star icon for top 3
+const MedalStar = memo(function MedalStar({ color }: { color: string }) {
+  return (
+    <motion.svg
+      className="w-6 h-6"
+      viewBox="0 0 24 24"
+      fill={color}
+      variants={medalBounceVariants}
+      initial="hidden"
+      animate="visible"
+      whileHover="hover"
+    >
+      <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+    </motion.svg>
+  );
+});
+
+export const ShareableListCard = memo(function ShareableListCard({
   ranking,
   onChallenge,
   onShare,
   onCopyLink,
   compact = false,
 }: ShareableListCardProps) {
-  const [copied, setCopied] = useState(false);
+  const { copied, copy } = useCopyAnimation();
+  const reducedMotion = prefersReducedMotion();
 
   const { title, category, subcategory, time_period, items = [] } = ranking;
   const topItems = compact ? items.slice(0, 3) : items.slice(0, 10);
   const timePeriodText = time_period || "All Time";
 
   const handleCopy = async () => {
+    const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+    const shareUrl = `${baseUrl}/share/${ranking.share_code}`;
+    await copy(shareUrl);
     onCopyLink?.();
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
   };
 
   // Get medal color for position
@@ -40,6 +70,7 @@ export function ShareableListCard({
           border: "rgba(250, 204, 21, 0.4)",
           text: "#facc15",
           shadow: "0 0 20px rgba(250, 204, 21, 0.2)",
+          starColor: "#facc15",
         };
       case 2:
         return {
@@ -47,6 +78,7 @@ export function ShareableListCard({
           border: "rgba(226, 232, 240, 0.3)",
           text: "#e2e8f0",
           shadow: "0 0 15px rgba(226, 232, 240, 0.1)",
+          starColor: "#e2e8f0",
         };
       case 3:
         return {
@@ -54,6 +86,7 @@ export function ShareableListCard({
           border: "rgba(180, 83, 9, 0.4)",
           text: "#f59e0b",
           shadow: "0 0 15px rgba(180, 83, 9, 0.15)",
+          starColor: "#f59e0b",
         };
       default:
         return {
@@ -61,13 +94,14 @@ export function ShareableListCard({
           border: "rgba(255, 255, 255, 0.05)",
           text: "#64748b",
           shadow: "none",
+          starColor: "",
         };
     }
   };
 
   return (
     <motion.div
-      className="relative rounded-2xl overflow-hidden"
+      className="relative rounded-2xl overflow-hidden group"
       style={{
         background: `linear-gradient(135deg,
           rgba(15, 20, 35, 0.98) 0%,
@@ -80,11 +114,22 @@ export function ShareableListCard({
           inset 0 1px 0 rgba(255, 255, 255, 0.05)
         `,
       }}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
+      variants={pageEntranceVariants}
+      initial={reducedMotion ? false : "hidden"}
+      animate="visible"
       data-testid="shareable-list-card"
     >
+      {/* Shimmer effect on hover */}
+      <motion.div
+        className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+        style={{
+          background: "linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent)",
+        }}
+        variants={shimmerVariants}
+        initial="hidden"
+        animate="visible"
+      />
+
       {/* Decorative gradient overlay */}
       <div
         className="absolute inset-0 pointer-events-none"
@@ -106,7 +151,12 @@ export function ShareableListCard({
         <div className="flex justify-between items-start mb-6">
           <div>
             {/* Category badges */}
-            <div className="flex items-center gap-2 mb-3">
+            <motion.div
+              className="flex items-center gap-2 mb-3"
+              initial={reducedMotion ? false : { opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
               <span
                 className="px-3 py-1 rounded-lg text-sm font-medium"
                 style={{
@@ -128,19 +178,36 @@ export function ShareableListCard({
               >
                 {timePeriodText}
               </span>
-            </div>
+            </motion.div>
 
             {/* Title */}
-            <h1 className="text-2xl md:text-3xl font-bold text-white">{title}</h1>
+            <motion.h1
+              className="text-2xl md:text-3xl font-bold text-white tracking-tight"
+              initial={reducedMotion ? false : { opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              {title}
+            </motion.h1>
 
             {/* Item count */}
-            <p className="text-gray-400 mt-2">
+            <motion.p
+              className="text-gray-400 mt-2"
+              initial={reducedMotion ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+            >
               Top {items.length} Rankings
-            </p>
+            </motion.p>
           </div>
 
           {/* GOAT branding */}
-          <div className="text-right">
+          <motion.div
+            className="text-right"
+            initial={reducedMotion ? false : { opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2, type: "spring", stiffness: 400, damping: 20 }}
+          >
             <div
               className="text-2xl font-extrabold"
               style={{
@@ -152,11 +219,16 @@ export function ShareableListCard({
               G.O.A.T.
             </div>
             <div className="text-xs text-gray-500">Greatest Of All Time</div>
-          </div>
+          </motion.div>
         </div>
 
-        {/* Rankings list */}
-        <div className="space-y-3 mb-6">
+        {/* Rankings list with staggered animation */}
+        <motion.div
+          className="space-y-3 mb-6"
+          variants={staggerContainerVariants}
+          initial={reducedMotion ? false : "hidden"}
+          animate="visible"
+        >
           {topItems.map((item, index) => {
             const style = getMedalStyle(item.position);
             const isTopThree = item.position <= 3;
@@ -164,19 +236,23 @@ export function ShareableListCard({
             return (
               <motion.div
                 key={index}
-                className="flex items-center gap-4 rounded-xl p-3"
+                className="flex items-center gap-4 rounded-xl p-3 transition-all duration-200 hover:scale-[1.01]"
                 style={{
                   background: style.bg,
                   border: `1px solid ${style.border}`,
                   boxShadow: style.shadow,
                 }}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.05 }}
+                variants={listItemVariants}
+                custom={index}
+                transition={{
+                  delay: index * STAGGER.normal,
+                  duration: 0.3,
+                }}
+                whileHover={{ x: 4 }}
                 data-testid={`ranking-item-${item.position}`}
               >
                 {/* Position */}
-                <div
+                <motion.div
                   className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold ${
                     isTopThree ? "text-xl" : "text-lg"
                   }`}
@@ -186,9 +262,17 @@ export function ShareableListCard({
                       ? `rgba(${item.position === 1 ? "250, 204, 21" : item.position === 2 ? "226, 232, 240" : "180, 83, 9"}, 0.15)`
                       : "transparent",
                   }}
+                  initial={reducedMotion ? false : { scale: 0, rotate: -180 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 400,
+                    damping: 15,
+                    delay: index * STAGGER.normal + 0.1,
+                  }}
                 >
                   {item.position}
-                </div>
+                </motion.div>
 
                 {/* Image */}
                 {item.image_url && (
@@ -224,23 +308,9 @@ export function ShareableListCard({
                 </div>
 
                 {/* Medal icon for top 3 */}
-                {isTopThree && (
+                {isTopThree && style.starColor && (
                   <div className="flex-shrink-0">
-                    {item.position === 1 && (
-                      <svg className="w-6 h-6" viewBox="0 0 24 24" fill="#facc15">
-                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-                      </svg>
-                    )}
-                    {item.position === 2 && (
-                      <svg className="w-6 h-6" viewBox="0 0 24 24" fill="#e2e8f0">
-                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-                      </svg>
-                    )}
-                    {item.position === 3 && (
-                      <svg className="w-6 h-6" viewBox="0 0 24 24" fill="#f59e0b">
-                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-                      </svg>
-                    )}
+                    <MedalStar color={style.starColor} />
                   </div>
                 )}
               </motion.div>
@@ -249,23 +319,35 @@ export function ShareableListCard({
 
           {/* More items indicator */}
           {items.length > topItems.length && (
-            <div className="text-center text-gray-500 text-sm pt-2">
+            <motion.div
+              className="text-center text-gray-500 text-sm pt-2"
+              initial={reducedMotion ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: topItems.length * STAGGER.normal + 0.2 }}
+            >
               +{items.length - topItems.length} more items
-            </div>
+            </motion.div>
           )}
-        </div>
+        </motion.div>
 
         {/* Action buttons */}
-        <div className="flex flex-col sm:flex-row gap-3">
+        <motion.div
+          className="flex flex-col sm:flex-row gap-3"
+          initial={reducedMotion ? false : { opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+        >
           {/* Challenge button */}
           {onChallenge && (
-            <button
+            <motion.button
               onClick={onChallenge}
-              className="flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold text-white transition-all hover:scale-[1.02]"
+              className="flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
               style={{
                 background: "linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%)",
-                boxShadow: "0 4px 20px rgba(6, 182, 212, 0.3)",
+                boxShadow: "0 6px 24px rgba(6, 182, 212, 0.35)",
               }}
+              whileHover={{ scale: 1.02, boxShadow: "0 8px 30px rgba(6, 182, 212, 0.45)" }}
+              whileTap={{ scale: 0.99 }}
               data-testid="shareable-challenge-btn"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -277,58 +359,35 @@ export function ShareableListCard({
                 />
               </svg>
               Challenge This Ranking
-            </button>
+            </motion.button>
           )}
 
           {/* Share buttons row */}
           <div className="flex gap-2">
             {/* Twitter/X */}
             {onShare && (
-              <button
+              <SocialButton
+                platform="twitter"
                 onClick={() => onShare("twitter")}
-                className="p-3 rounded-xl transition-all hover:scale-105"
-                style={{
-                  background: "rgba(29, 161, 242, 0.15)",
-                  border: "1px solid rgba(29, 161, 242, 0.3)",
-                }}
-                data-testid="shareable-twitter-btn"
-              >
-                <svg className="w-5 h-5" fill="#1DA1F2" viewBox="0 0 24 24">
-                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                </svg>
-              </button>
+                size="md"
+                testId="shareable-twitter-btn"
+              />
             )}
 
             {/* Copy link */}
             {onCopyLink && (
-              <button
+              <CopyButton
+                copied={copied}
                 onClick={handleCopy}
-                className="p-3 rounded-xl transition-all hover:scale-105"
-                style={{
-                  background: "rgba(255, 255, 255, 0.05)",
-                  border: "1px solid rgba(255, 255, 255, 0.1)",
-                }}
-                data-testid="shareable-copy-btn"
-              >
-                {copied ? (
-                  <svg className="w-5 h-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                ) : (
-                  <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
-                    />
-                  </svg>
-                )}
-              </button>
+                size="md"
+                testId="shareable-copy-btn"
+              />
             )}
           </div>
-        </div>
+        </motion.div>
       </div>
     </motion.div>
   );
-}
+});
+
+export default ShareableListCard;

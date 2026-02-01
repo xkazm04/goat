@@ -3,35 +3,36 @@
 /**
  * MetadataPanel
  *
- * Compact form for configuring list metadata.
- * Title + Description with checklist and publish button.
- * Category is now in TopicInputForm alongside the topic input.
+ * Compact sidebar showing publish readiness checklist and publish button.
+ * Title and description are now in TopicInputForm.
+ * Now also saves new items to Supabase on publish for reuse.
  */
 
-import { Wand2, Loader2, Tag, FileText, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertCircle, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   useStudioForm,
   useStudioMetadata,
   useStudioValidation,
   useStudioPublishing,
+  useStudioItems,
+  useStudioCriteria,
 } from '@/stores/studio-store';
 import { useCreateListWithUser } from '@/hooks/use-top-lists';
+import { apiClient } from '@/lib/api/client';
 import { cn } from '@/lib/utils';
 import { DEFAULT_LIST_INTENT_COLOR } from '@/types/list-intent';
+import { getTemplateById } from '@/lib/criteria/templates';
+import { categoryToDbValue } from '@/lib/config/category-config';
 import type { CreateListRequest } from '@/types/list-intent-transformers';
+import type { ListCriteriaConfig } from '@/lib/criteria/types';
 
 export function MetadataPanel() {
-  const { topic } = useStudioForm();
-  const {
-    listTitle,
-    listDescription,
-    category,
-    setListTitle,
-    setListDescription,
-    suggestTitleFromTopic,
-  } = useStudioMetadata();
-  const { canPublish, hasTitle, hasItems, itemCount, listSize } = useStudioValidation();
+  const { listSize } = useStudioForm();
+  const { listTitle, listDescription, category } = useStudioMetadata();
+  const { canPublish, hasTitle, hasItems, itemCount } = useStudioValidation();
+  const { generatedItems } = useStudioItems();
+  const { criteriaMode, selectedProfileId, customProfile } = useStudioCriteria();
   const {
     isPublishing,
     publishError,
@@ -43,6 +44,39 @@ export function MetadataPanel() {
 
   const createListMutation = useCreateListWithUser();
 
+  // Build criteria config from selected profile
+  const buildCriteriaConfig = (): ListCriteriaConfig | null => {
+    if (criteriaMode === 'none' || !selectedProfileId) {
+      return null;
+    }
+
+    // For custom profiles
+    if (criteriaMode === 'custom' && customProfile) {
+      return {
+        profileId: customProfile.id,
+        profileName: customProfile.name,
+        criteria: customProfile.criteria,
+        createdAt: customProfile.createdAt,
+        updatedAt: customProfile.updatedAt,
+      };
+    }
+
+    // For preset profiles
+    const template = getTemplateById(selectedProfileId);
+    if (template) {
+      const now = new Date().toISOString();
+      return {
+        profileId: template.id,
+        profileName: template.name,
+        criteria: template.criteria,
+        createdAt: now,
+        updatedAt: now,
+      };
+    }
+
+    return null;
+  };
+
   const handlePublish = async () => {
     if (!canPublish) return;
 
@@ -50,11 +84,37 @@ export function MetadataPanel() {
     setPublishError(null);
 
     try {
+      // Convert category to database enum format (lowercase)
+      const dbCategory = categoryToDbValue(category);
+
+      // Save new items (not in DB) to Supabase for future reuse
+      const newItems = generatedItems.filter(item => !item.db_matched);
+      if (newItems.length > 0) {
+        try {
+          await apiClient.post('/studio/save-items', {
+            items: newItems.map(item => ({
+              name: item.title,
+              category: dbCategory,
+              description: item.description || undefined,
+              image_url: item.image_url || undefined,
+              reference_url: item.wikipedia_url || undefined,
+            })),
+          });
+          console.log(`[Studio] Saved ${newItems.length} new items to database`);
+        } catch (err) {
+          // Don't block publish if item save fails
+          console.warn('[Studio] Failed to save new items:', err);
+        }
+      }
+
       const tempUserId = `studio-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-      const request: CreateListRequest = {
+      // Build criteria config if selected
+      const criteriaConfig = buildCriteriaConfig();
+
+      const request: CreateListRequest & { criteria_config?: ListCriteriaConfig } = {
         title: listTitle.trim(),
-        category,
+        category: dbCategory,
         size: listSize,
         time_period: 'all-time',
         description: listDescription.trim() || undefined,
@@ -65,6 +125,7 @@ export function MetadataPanel() {
         metadata: {
           color: DEFAULT_LIST_INTENT_COLOR,
         },
+        ...(criteriaConfig && { criteria_config: criteriaConfig }),
       };
 
       const result = await createListMutation.mutateAsync(request);
@@ -80,102 +141,41 @@ export function MetadataPanel() {
 
   return (
     <div className="space-y-4">
-      {/* Title with auto-suggest */}
-      <div className="space-y-1.5">
-        <label
-          htmlFor="list-title"
-          className="flex items-center gap-1.5 text-xs font-medium text-gray-400"
-        >
-          <Tag className="w-3 h-3" />
-          List Title <span className="text-red-400">*</span>
-        </label>
-        <div className="flex gap-1.5">
-          <input
-            id="list-title"
-            type="text"
-            value={listTitle}
-            onChange={(e) => setListTitle(e.target.value)}
-            placeholder="My Awesome List"
-            maxLength={100}
-            className="flex-1 px-2.5 py-2 bg-gray-900/60 border border-gray-700/50
-              rounded-md text-white placeholder-gray-500 text-sm
-              focus:outline-none focus:ring-1 focus:ring-cyan-500/50
-              transition-all"
-          />
-          {topic && !listTitle && (
-            <button
-              type="button"
-              onClick={suggestTitleFromTopic}
-              title="Use topic as title"
-              className="p-2 bg-gray-900/60 border border-gray-700/50 rounded-md
-                text-gray-400 hover:text-cyan-400 hover:border-cyan-500/30
-                transition-all"
-            >
-              <Wand2 className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
-      </div>
+      {/* Publish Readiness */}
+      <div className="space-y-2">
+        <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+          Ready to Publish?
+        </span>
+        <div className="space-y-2 p-3 bg-gray-900/40 border border-gray-800/50 rounded-lg">
+          {/* Title check */}
+          <div className="flex items-center gap-2 text-sm">
+            {hasTitle ? (
+              <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" />
+            ) : (
+              <div className="w-4 h-4 rounded-full border-2 border-gray-600 flex-shrink-0" />
+            )}
+            <span className={hasTitle ? 'text-gray-200' : 'text-gray-500'}>
+              Title set
+            </span>
+          </div>
 
-      {/* Description + Checklist side by side */}
-      <div className="grid grid-cols-[1fr_auto] gap-3">
-        {/* Description */}
-        <div className="space-y-1.5">
-          <label
-            htmlFor="list-description"
-            className="flex items-center gap-1.5 text-xs font-medium text-gray-400"
-          >
-            <FileText className="w-3 h-3" />
-            Description
-          </label>
-          <textarea
-            id="list-description"
-            value={listDescription}
-            onChange={(e) => setListDescription(e.target.value)}
-            placeholder="What is this list about?"
-            maxLength={500}
-            rows={2}
-            className="w-full px-2.5 py-2 bg-gray-900/60 border border-gray-700/50
-              rounded-md text-white placeholder-gray-500 text-sm resize-none
-              focus:outline-none focus:ring-1 focus:ring-cyan-500/50
-              transition-all"
-          />
-        </div>
-
-        {/* Checklist - Compact */}
-        <div className="space-y-1.5">
-          <span className="text-xs font-medium text-gray-400">Ready?</span>
-          <div className="space-y-1.5 p-2 bg-gray-900/40 border border-gray-800/50 rounded-md">
-            {/* Title check */}
-            <div className="flex items-center gap-1.5 text-xs">
-              {hasTitle ? (
-                <CheckCircle2 className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />
-              ) : (
-                <div className="w-3.5 h-3.5 rounded-full border border-gray-600 flex-shrink-0" />
-              )}
-              <span className={hasTitle ? 'text-gray-300' : 'text-gray-500'}>
-                Title
-              </span>
-            </div>
-
-            {/* Items check */}
-            <div className="flex items-center gap-1.5 text-xs">
-              {hasItems ? (
-                <CheckCircle2 className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />
-              ) : (
-                <div className="w-3.5 h-3.5 rounded-full border border-gray-600 flex-shrink-0" />
-              )}
-              <span className={hasItems ? 'text-gray-300' : 'text-gray-500'}>
-                {itemCount}/{listSize}
-              </span>
-            </div>
+          {/* Items check */}
+          <div className="flex items-center gap-2 text-sm">
+            {hasItems ? (
+              <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" />
+            ) : (
+              <div className="w-4 h-4 rounded-full border-2 border-gray-600 flex-shrink-0" />
+            )}
+            <span className={hasItems ? 'text-gray-200' : 'text-gray-500'}>
+              Items: {itemCount}/{listSize}
+            </span>
           </div>
         </div>
       </div>
 
       {/* Error Display */}
       {publishError && (
-        <div className="p-2 bg-red-500/10 border border-red-500/30 rounded-md">
+        <div className="p-2.5 bg-red-500/10 border border-red-500/30 rounded-lg">
           <p className="text-xs text-red-400">{publishError}</p>
         </div>
       )}
@@ -183,8 +183,8 @@ export function MetadataPanel() {
       {/* Title warning */}
       {!hasTitle && itemCount > 0 && (
         <p className="flex items-center gap-1.5 text-xs text-amber-400">
-          <AlertCircle className="w-3 h-3" />
-          Title is required to publish
+          <AlertCircle className="w-3.5 h-3.5" />
+          Add a title above to publish
         </p>
       )}
 
@@ -193,19 +193,22 @@ export function MetadataPanel() {
         onClick={handlePublish}
         disabled={!canPublish || isPublishing}
         className={cn(
-          'w-full h-9 text-sm font-medium rounded-lg transition-all',
+          'w-full h-10 text-sm font-medium rounded-lg transition-all',
           canPublish && !isPublishing
-            ? 'bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-400 hover:to-teal-400 text-white shadow-md shadow-cyan-500/15'
-            : 'bg-gray-800 text-gray-500 cursor-not-allowed'
+            ? 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 hover:text-amber-300 border border-amber-500/30 hover:border-amber-500/50'
+            : 'bg-gray-800/50 text-gray-500 cursor-not-allowed border border-gray-700/30'
         )}
       >
         {isPublishing ? (
           <>
-            <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
             Publishing...
           </>
         ) : (
-          'Publish List'
+          <>
+            <Send className="w-4 h-4 mr-2" />
+            Publish List
+          </>
         )}
       </Button>
     </div>

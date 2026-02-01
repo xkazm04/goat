@@ -4,6 +4,7 @@ import { Inter } from 'next/font/google';
 import { ClerkProvider } from '@clerk/nextjs';
 import { QueryProvider } from '@/providers/query-provider';
 import { BacklogProvider } from '@/providers/BacklogProvider';
+import { PrefetchProvider } from '@/providers/prefetch-provider';
 import { PageTransition } from '@/components/page-transition';
 import { ThemeProvider } from '@/components/theme/theme-provider';
 import { CommandPaletteProvider } from '@/app/features/CommandPalette';
@@ -83,8 +84,9 @@ export default function RootLayout({
           >
             <BacklogProvider>
               <QueryProvider>
-                <OfflineProvider showStatusIndicator enableAutoSync>
-                  <CommandPaletteProvider>
+                <PrefetchProvider>
+                  <OfflineProvider showStatusIndicator enableAutoSync>
+                    <CommandPaletteProvider>
                     {/* Skip to main content link for keyboard users */}
                     <a
                       href="#main-content"
@@ -98,8 +100,9 @@ export default function RootLayout({
                       </main>
                     </div>
                     <ItemDetailPopupProvider />
-                  </CommandPaletteProvider>
-                </OfflineProvider>
+                    </CommandPaletteProvider>
+                  </OfflineProvider>
+                </PrefetchProvider>
               </QueryProvider>
             </BacklogProvider>
           </ThemeProvider>

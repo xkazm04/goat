@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { ChevronDown, Layers, LayoutGrid, List } from "lucide-react";
 import { CollectionSearch } from "./CollectionSearch";
 
-export type GroupViewMode = 'sidebar' | 'horizontal';
+export type GroupViewMode = 'sidebar' | 'horizontal' | 'minimal';
 
 interface CollectionHeaderProps {
   totalItems: number;
@@ -12,7 +12,6 @@ interface CollectionHeaderProps {
   onTogglePanel: () => void;
   groupViewMode: GroupViewMode;
   onGroupViewModeChange: (mode: GroupViewMode) => void;
-  category?: string;
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
   filteredItemCount?: number;
@@ -39,22 +38,22 @@ export function CollectionHeader({
       animate={{
         opacity: 1,
         y: 0,
-        transition: { delay: 0.1, duration: 0.2 }
+        transition: { delay: 0.1, duration: 0.2, ease: [0.16, 1, 0.3, 1] }
       }}
-      className="flex items-center justify-between px-6 py-3 border-b border-white/5 dark:border-white/[0.02] bg-black/20 dark:bg-black/30 backdrop-blur-sm"
+      className="flex items-center justify-between px-6 py-3 glass-dock-header"
     >
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2 text-cyan-400 dark:text-cyan-300">
-          <Layers className="w-5 h-5" />
+        <div className="flex items-center gap-2 text-cyan-400 transition-colors duration-[var(--glass-transition-fast)]">
+          <Layers className="w-5 h-5 transition-transform duration-[var(--glass-transition-normal)] hover:scale-110" />
           <span className="font-bold tracking-wider text-sm">INVENTORY</span>
         </div>
-        <div className="h-4 w-[1px] bg-white/10 dark:bg-white/5" />
-        <span className="text-xs text-gray-400 dark:text-gray-500 font-mono">{totalItems} ITEMS AVAILABLE</span>
+        <div className="h-4 w-[1px] bg-[var(--glass-border-medium)]" />
+        <span className="text-xs text-slate-400 font-mono">{totalItems} ITEMS AVAILABLE</span>
 
         {/* Search Filter */}
         {onSearchChange && (
           <>
-            <div className="h-4 w-[1px] bg-white/10 dark:bg-white/5" />
+            <div className="h-4 w-[1px] bg-[var(--glass-border-medium)]" />
             <CollectionSearch
               value={searchQuery}
               onChange={onSearchChange}
@@ -68,15 +67,15 @@ export function CollectionHeader({
 
       <div className="flex items-center gap-3">
         {/* Group View Mode Switcher */}
-        <div className="flex items-center gap-1 bg-gray-800/50 rounded-lg p-1">
+        <div className="flex items-center gap-1 bg-slate-800/50 rounded-lg p-1 shadow-inner shadow-black/20 border border-[var(--glass-border-subtle)]">
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => onGroupViewModeChange('sidebar')}
-            className={`p-1.5 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-1 focus-visible:ring-offset-gray-800 ${
+            className={`p-1.5 rounded-md transition-all duration-[var(--glass-transition-normal)] glass-dock-focus ${
               groupViewMode === 'sidebar'
-                ? 'bg-cyan-500/20 text-cyan-400'
-                : 'text-gray-500 hover:text-gray-300'
+                ? 'glass-dock-btn-active text-cyan-400'
+                : 'glass-dock-btn text-slate-500 hover:text-slate-300'
             }`}
             aria-label="Sidebar view"
             aria-pressed={groupViewMode === 'sidebar'}
@@ -88,10 +87,10 @@ export function CollectionHeader({
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => onGroupViewModeChange('horizontal')}
-            className={`p-1.5 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-1 focus-visible:ring-offset-gray-800 ${
+            className={`p-1.5 rounded-md transition-all duration-[var(--glass-transition-normal)] glass-dock-focus ${
               groupViewMode === 'horizontal'
-                ? 'bg-cyan-500/20 text-cyan-400'
-                : 'text-gray-500 hover:text-gray-300'
+                ? 'glass-dock-btn-active text-cyan-400'
+                : 'glass-dock-btn text-slate-500 hover:text-slate-300'
             }`}
             aria-label="Horizontal bar view"
             aria-pressed={groupViewMode === 'horizontal'}
@@ -108,7 +107,7 @@ export function CollectionHeader({
           onClick={onTogglePanel}
           aria-expanded={isVisible}
           aria-label="Close inventory panel"
-          className="p-2 hover:bg-white/5 dark:hover:bg-white/10 rounded-full text-gray-400 dark:text-gray-500 hover:text-white dark:hover:text-white transition-colors"
+          className="p-2 glass-dock-btn rounded-full text-slate-400 hover:text-white transition-all duration-[var(--glass-transition-normal)] glass-dock-focus"
           data-testid="close-inventory-btn"
         >
           <ChevronDown className="w-5 h-5" />

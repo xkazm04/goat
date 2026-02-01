@@ -218,20 +218,23 @@ export function getTemplateById(id: string): CriteriaProfile | undefined {
 }
 
 /**
- * Get templates for a category
+ * Get templates for a category (excludes Universal - use category-specific only)
  */
 export function getTemplatesForCategory(category: string): CriteriaProfile[] {
   return ALL_TEMPLATES.filter(
-    (t) => t.category === category || t.category === 'universal'
+    (t) => t.category === category && t.category !== 'universal'
   );
 }
 
 /**
  * Get suggested template for a category
+ * Returns null if no category-specific template exists (Universal is excluded)
  */
-export function getSuggestedTemplate(category: string): CriteriaProfile {
-  const categoryTemplate = ALL_TEMPLATES.find((t) => t.category === category);
-  return categoryTemplate ?? UNIVERSAL_TEMPLATE;
+export function getSuggestedTemplate(category: string): CriteriaProfile | null {
+  const categoryTemplate = ALL_TEMPLATES.find(
+    (t) => t.category === category && t.category !== 'universal'
+  );
+  return categoryTemplate ?? null;
 }
 
 /**

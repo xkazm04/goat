@@ -9,6 +9,13 @@ import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 import { apiClient, getApiErrorMessage } from '@/lib/api/client';
 import type { EnrichedItem, GenerateResponse } from '@/types/studio';
+import type { CriteriaProfile, ListCriteriaConfig } from '@/lib/criteria/types';
+
+// ─────────────────────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────────────────────
+
+export type CriteriaMode = 'none' | 'preset' | 'custom';
 
 // ─────────────────────────────────────────────────────────────
 // Store State Interface
@@ -29,6 +36,11 @@ interface StudioState {
   listTitle: string;
   listDescription: string;
   category: string;
+
+  // Criteria state
+  criteriaMode: CriteriaMode;
+  selectedProfileId: string | null;
+  customProfile: CriteriaProfile | null;
 
   // Publishing state
   isPublishing: boolean;
@@ -57,6 +69,12 @@ interface StudioState {
   setListDescription: (description: string) => void;
   setCategory: (category: string) => void;
   suggestTitleFromTopic: () => void;
+
+  // Actions - Criteria
+  setCriteriaMode: (mode: CriteriaMode) => void;
+  setSelectedProfileId: (id: string | null) => void;
+  setCustomProfile: (profile: CriteriaProfile | null) => void;
+  getCriteriaConfig: () => ListCriteriaConfig | null;
 
   // Actions - Publishing
   setPublishing: (isPublishing: boolean) => void;
@@ -88,6 +106,11 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   listDescription: '',
   category: 'Games',
 
+  // Initial state - Criteria
+  criteriaMode: 'none',
+  selectedProfileId: null,
+  customProfile: null,
+
   // Initial state - Publishing
   isPublishing: false,
   publishError: null,
@@ -101,8 +124,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
   // Generation action - appends to existing items, avoiding duplicates
   // Also matches against existing DB items to reuse their IDs and images
+  // Auto-fills title and description if empty using LLM suggestions
   generateItems: async () => {
-    const { topic, generateCount, generatedItems, category } = get();
+    const { topic, generateCount, generatedItems, category, listTitle, listDescription } = get();
 
     // Validate topic
     if (!topic.trim()) {
@@ -126,6 +150,15 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           excludeTitles: existingTitles.length > 0 ? existingTitles : undefined,
         }
       );
+
+      // Auto-fill title and description if empty (LLM suggestions)
+      const metadataUpdates: Partial<{ listTitle: string; listDescription: string }> = {};
+      if (!listTitle.trim() && response.suggested_title) {
+        metadataUpdates.listTitle = response.suggested_title;
+      }
+      if (!listDescription.trim() && response.suggested_description) {
+        metadataUpdates.listDescription = response.suggested_description;
+      }
 
       // Filter out any duplicates that slipped through (case-insensitive)
       let newItems = response.items.filter(
@@ -172,16 +205,17 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
             return item;
           });
-        } catch (matchError) {
+        } catch {
           // Non-critical - continue without DB matching
-          console.warn('DB matching failed:', matchError);
         }
       }
 
       // Append new items to existing items (don't replace)
+      // Also apply any metadata updates from LLM suggestions
       set({
         generatedItems: [...generatedItems, ...newItems],
         isGenerating: false,
+        ...metadataUpdates,
       });
     } catch (error) {
       set({
@@ -247,6 +281,40 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     }
   },
 
+  // Criteria actions
+  setCriteriaMode: (mode) => {
+    set({ criteriaMode: mode });
+    // Clear profile selection when switching to 'none'
+    if (mode === 'none') {
+      set({ selectedProfileId: null, customProfile: null });
+    }
+  },
+  setSelectedProfileId: (id) => set({ selectedProfileId: id }),
+  setCustomProfile: (profile) => set({ customProfile: profile }),
+
+  getCriteriaConfig: () => {
+    const { criteriaMode, selectedProfileId, customProfile } = get();
+
+    if (criteriaMode === 'none' || !selectedProfileId) {
+      return null;
+    }
+
+    // For custom profiles, use the customProfile directly
+    if (criteriaMode === 'custom' && customProfile) {
+      return {
+        profileId: customProfile.id,
+        profileName: customProfile.name,
+        criteria: customProfile.criteria,
+        createdAt: customProfile.createdAt,
+        updatedAt: customProfile.updatedAt,
+      };
+    }
+
+    // For presets, we'll need to get the template - imported dynamically to avoid circular deps
+    // The actual template lookup happens in MetadataPanel when publishing
+    return null;
+  },
+
   // Publishing actions
   setPublishing: (isPublishing) => set({ isPublishing }),
   setPublishError: (publishError) => set({ publishError }),
@@ -265,6 +333,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       listTitle: '',
       listDescription: '',
       category: 'Games',
+      criteriaMode: 'none',
+      selectedProfileId: null,
+      customProfile: null,
       isPublishing: false,
       publishError: null,
       publishedListId: null,
@@ -346,6 +417,23 @@ export const useStudioValidation = () =>
       hasItems: state.generatedItems.length >= state.listSize,
       itemCount: state.generatedItems.length,
       listSize: state.listSize,
+    }))
+  );
+
+/**
+ * Criteria state selector - criteria mode and profile selection
+ */
+export const useStudioCriteria = () =>
+  useStudioStore(
+    useShallow((state) => ({
+      criteriaMode: state.criteriaMode,
+      selectedProfileId: state.selectedProfileId,
+      customProfile: state.customProfile,
+      category: state.category,
+      setCriteriaMode: state.setCriteriaMode,
+      setSelectedProfileId: state.setSelectedProfileId,
+      setCustomProfile: state.setCustomProfile,
+      getCriteriaConfig: state.getCriteriaConfig,
     }))
   );
 

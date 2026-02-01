@@ -8,8 +8,11 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createClient } from '@supabase/supabase-js';
-import type { StudioApiError } from '@/types/studio';
+import {
+  getSupabaseClient,
+  handleStudioError,
+  StudioErrorCodes,
+} from '@/lib/api/studio-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,18 +34,6 @@ interface MatchedItem {
     description: string | null;
     category: string;
   };
-}
-
-// Create Supabase client
-function getSupabaseClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error('Supabase credentials not configured');
-  }
-
-  return createClient(supabaseUrl, supabaseKey);
 }
 
 export async function POST(request: NextRequest) {
@@ -134,19 +125,6 @@ export async function POST(request: NextRequest) {
       unmatched: items.length - matchCount,
     });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      const errorResponse: StudioApiError = {
-        error: 'Invalid request',
-        details: error.errors,
-      };
-      return NextResponse.json(errorResponse, { status: 400 });
-    }
-
-    console.error('Match items error:', error);
-    const errorResponse: StudioApiError = {
-      error: error instanceof Error ? error.message : 'Matching failed',
-      code: 'MATCH_ERROR',
-    };
-    return NextResponse.json(errorResponse, { status: 500 });
+    return handleStudioError(error, 'Match items error', StudioErrorCodes.MATCH_ERROR);
   }
 }

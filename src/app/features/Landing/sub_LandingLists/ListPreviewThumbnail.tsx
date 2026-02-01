@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import {
   Trophy,
@@ -67,13 +69,57 @@ const SIZE_CONFIG = {
     imageClass: "w-[calc(50%-2px)] h-[calc(50%-2px)]",
   },
   row: {
-    container: "w-32 h-24 sm:w-48 sm:h-32",
-    iconSize: "w-8 h-8",
-    gap: "gap-1.5",
-    borderRadius: "rounded-xl",
+    container: "w-full h-16 sm:h-20",
+    iconSize: "w-5 h-5",
+    gap: "gap-1",
+    borderRadius: "rounded-md",
     imageClass: "h-full flex-1 min-w-0", // Flex 1 to fill width, row layout
   },
 };
+
+// Optimized image component with next/Image and error handling
+interface MosaicImageProps {
+  item: TopListItem;
+  index: number;
+  sizeConfig: typeof SIZE_CONFIG[keyof typeof SIZE_CONFIG];
+  testIdPrefix: string;
+  listId: string;
+}
+
+function MosaicImage({ item, index, sizeConfig, testIdPrefix, listId }: MosaicImageProps) {
+  const [hasError, setHasError] = useState(false);
+
+  if (hasError || !item.image_url) {
+    return null;
+  }
+
+  return (
+    <motion.div
+      className={`${sizeConfig.imageClass} ${sizeConfig.borderRadius} overflow-hidden relative`}
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay: index * 0.05, duration: 0.2 }}
+      data-testid={`${testIdPrefix}-image-${index}-${listId}`}
+    >
+      <Image
+        src={item.image_url}
+        alt={item.title || `Item ${index + 1}`}
+        fill
+        sizes="(max-width: 640px) 48px, 64px"
+        className="object-cover"
+        loading="lazy"
+        onError={() => setHasError(true)}
+      />
+      {/* Subtle overlay gradient */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: `linear-gradient(135deg, transparent 50%, rgba(0,0,0,0.2) 100%)`,
+        }}
+      />
+    </motion.div>
+  );
+}
 
 /**
  * Pinterest-inspired mosaic thumbnail showing top-ranked item images.
@@ -180,32 +226,14 @@ export function ListPreviewThumbnail({
         <div className={`w-full h-full flex flex-wrap ${sizeConfig.gap} p-0.5`}>
           {/* Render available images */}
           {displayImages.map((item, index) => (
-            <motion.div
+            <MosaicImage
               key={item.id}
-              className={`${sizeConfig.imageClass} ${sizeConfig.borderRadius} overflow-hidden relative`}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: index * 0.05, duration: 0.2 }}
-              data-testid={`${testIdPrefix}-image-${index}-${listId}`}
-            >
-              <img
-                src={item.image_url}
-                alt={item.title || `Item ${index + 1}`}
-                className="w-full h-full object-cover"
-                loading="lazy"
-                onError={(e) => {
-                  // Hide broken images
-                  (e.target as HTMLImageElement).style.display = 'none';
-                }}
-              />
-              {/* Subtle overlay gradient */}
-              <div
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  background: `linear-gradient(135deg, transparent 50%, rgba(0,0,0,0.2) 100%)`,
-                }}
-              />
-            </motion.div>
+              item={item}
+              index={index}
+              sizeConfig={sizeConfig}
+              testIdPrefix={testIdPrefix}
+              listId={listId}
+            />
           ))}
 
           {/* Fill remaining slots with category-colored placeholders */}

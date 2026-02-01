@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, memo, useCallback } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, TrendingUp, Sparkles } from "lucide-react";
@@ -8,6 +8,7 @@ import { CollectionGroup, CollectionItem } from "@/app/features/Collection/types
 import { ConfigurableCollectionItem, MATCH_VIEW_CONFIG } from "@/app/features/Collection/components/ConfigurableCollectionItem";
 import { useConsensusStore, useConsensusSortBy } from "@/stores/consensus-store";
 import { QuickSelectBadge } from "./QuickSelectBadge";
+import { ItemStatsTooltip } from "./ItemStatsTooltip";
 import { createSortComparator, type SortConfig } from "@/lib/sorting";
 
 /**
@@ -136,15 +137,15 @@ export function VirtualizedCollectionGrid({
   // Check if consensus sorting is active
   const isConsensusSortActive = sortByConsensus && sortBy === 'consensus' && hasConsensusData;
 
-  // Flatten groups into rows (headers + item rows)
-  // Each row contains items for one row of the grid
+  // Flatten groups into rows with compact inline headers
+  // Groups are displayed with subtle visual separators instead of full header rows
   const flattenedRows = useMemo(() => {
     const rows: FlattenedRow[] = [];
 
     sortedGroups.forEach(group => {
       if (!group.items || group.items.length === 0) return;
 
-      // Add header row if showing group headers
+      // Add compact header row if showing group headers
       if (showGroupHeaders) {
         rows.push({
           type: "header",
@@ -154,8 +155,7 @@ export function VirtualizedCollectionGrid({
         });
       }
 
-      // Put all group items in a single "row" - CSS Grid auto-fill handles wrapping
-      // This allows dynamic column count based on actual container width
+      // Items row for this group
       rows.push({
         type: "items",
         groupId: group.id,
@@ -171,23 +171,26 @@ export function VirtualizedCollectionGrid({
   const gap = 8;
 
   // Initialize virtualizer with dynamic measurement
-  // Instead of estimating, we measure actual rendered heights
+  // Optimized for smooth scrolling with minimal overscan
   const rowVirtualizer = useVirtualizer({
     count: flattenedRows.length,
     getScrollElement: () => parentRef.current,
     estimateSize: (index) => {
-      // Provide reasonable initial estimate
       const row = flattenedRows[index];
       if (row.type === "header") return headerRowHeight;
-      // Estimate based on item count - will be corrected by measureElement
+      // Estimate based on item count
       const itemCount = row.items?.length || 0;
       const estimatedRows = Math.ceil(itemCount / Math.max(3, columnCount));
       return estimatedRows * (rowHeight + gap);
     },
     overscan: 3,
-    // Enable dynamic measurement - virtualizer will measure actual DOM height
     measureElement: (element) => element.getBoundingClientRect().height,
   });
+
+  // Memoized item click handler
+  const handleItemClick = useCallback((item: CollectionItem) => {
+    onItemClick?.(item);
+  }, [onItemClick]);
 
   if (!hasVisibleItems) {
     return (
@@ -196,16 +199,16 @@ export function VirtualizedCollectionGrid({
         animate={{
           opacity: 1,
           scale: 1,
-          transition: { delay: 0.3, duration: 0.2 }
+          transition: { delay: 0.3, duration: 0.2, ease: [0.16, 1, 0.3, 1] }
         }}
         role="status"
         aria-label="No items available"
-        className="h-full flex flex-col items-center justify-center text-gray-500 dark:text-gray-600 gap-3"
+        className="h-full flex flex-col items-center justify-center text-slate-500 gap-3"
         data-testid="virtualized-collection-grid-empty"
       >
-        <Search className="w-8 h-8 opacity-20" aria-hidden="true" />
-        <p className="text-sm">No items available in this category</p>
-        <p className="text-xs text-gray-600">Items placed in the grid are hidden here</p>
+        <Search className="w-8 h-8 opacity-20 transition-opacity duration-[var(--glass-transition-slow)]" aria-hidden="true" />
+        <p className="text-sm transition-colors duration-[var(--glass-transition-normal)]">No items available in this category</p>
+        <p className="text-xs text-slate-600 transition-colors duration-[var(--glass-transition-normal)]">Items placed in the grid are hidden here</p>
       </motion.div>
     );
   }
@@ -217,9 +220,10 @@ export function VirtualizedCollectionGrid({
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ ease: [0.16, 1, 0.3, 1] }}
           role="status"
           aria-live="polite"
-          className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 rounded-lg border border-cyan-500/20"
+          className="flex items-center gap-2 px-3 py-1.5 glass-dock-gradient-border bg-gradient-to-r from-cyan-500/10 to-purple-500/10"
           data-testid="virtualized-consensus-sort-indicator"
         >
           <TrendingUp className="w-3.5 h-3.5 text-cyan-400" aria-hidden="true" />
@@ -230,14 +234,19 @@ export function VirtualizedCollectionGrid({
         </motion.div>
       )}
 
-      {/* Virtualized scroll container */}
+      {/* Virtualized scroll container - optimized for smooth scrolling */}
       <div
         ref={parentRef}
         role="region"
         aria-label="Collection items - drag items to add them to your ranking"
         tabIndex={0}
-        className="overflow-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-inset"
-        style={{ height: containerHeight }}
+        className="overflow-auto glass-dock-focus focus-visible:ring-inset scrollbar-thin scrollbar-thumb-white/15 scrollbar-track-white/[0.02] rounded-lg"
+        style={{
+          height: containerHeight,
+          willChange: 'scroll-position',
+          background: 'linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.2) 100%)',
+          boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.2), inset 0 0 0 1px rgba(255,255,255,0.02)',
+        }}
         data-testid="virtualized-scroll-container"
       >
         <div
@@ -265,18 +274,20 @@ export function VirtualizedCollectionGrid({
                   }}
                   data-testid={`virtualized-group-header-${row.groupId}`}
                 >
-                  <div className="flex items-center gap-3 py-2">
-                    <h4 className="text-xs font-bold text-cyan-500/70 dark:text-cyan-400/60 uppercase tracking-widest">
+                  <div className="flex items-center gap-3 py-2.5 px-2 rounded-lg bg-gradient-to-r from-white/[0.02] to-transparent border-l-2 border-cyan-500/40 transition-all duration-200 hover:from-white/[0.04] hover:border-cyan-400/60">
+                    <h4 className="text-[11px] font-semibold text-cyan-400/90 uppercase tracking-wider">
                       {row.groupName}
                     </h4>
-                    <span className="text-[10px] text-gray-500">({row.groupItemCount})</span>
+                    <span className="text-[10px] font-mono text-white/40 bg-white/5 px-1.5 py-0.5 rounded">
+                      {row.groupItemCount}
+                    </span>
                     {isConsensusSortActive && (
-                      <span className="text-[9px] text-purple-400/60 flex items-center gap-1">
+                      <span className="text-[9px] text-purple-400/70 flex items-center gap-1 ml-1">
                         <TrendingUp className="w-2.5 h-2.5" />
                         popular first
                       </span>
                     )}
-                    <div className="h-[1px] flex-1 bg-gradient-to-r from-cyan-500/20 dark:from-cyan-400/10 to-transparent" />
+                    <div className="h-px flex-1 bg-gradient-to-r from-cyan-500/20 via-purple-500/10 to-transparent ml-2" />
                   </div>
                 </div>
               );
@@ -297,55 +308,55 @@ export function VirtualizedCollectionGrid({
                 }}
                 data-testid={`virtualized-items-row-${virtualRow.index}`}
               >
-                <div
-                  className="flex flex-wrap gap-2"
-                  style={{
-                    // Fixed item width - items wrap naturally to next line
-                  }}
-                >
+                <div className="flex flex-wrap gap-2">
                   {row.items?.map((item: CollectionItem, itemIndex: number) => {
                     const quickSelectNum = getQuickSelectNumber?.(item.id);
                     const selected = isItemSelected?.(item.id) ?? false;
                     const isClickSelected = selectedItemId === item.id;
 
                     return (
-                      <div
-                        key={item.id}
-                        className="relative"
-                        style={{ width: itemWidth || 112 }}
-                        data-testid={`virtualized-item-cell-${item.id}`}
-                        onClick={onItemClick ? () => onItemClick(item) : undefined}
-                      >
-                        <ConfigurableCollectionItem
-                          item={item}
-                          groupId={row.groupId}
-                          index={itemIndex}
-                          searchQuery={searchQuery}
-                          isClickSelected={isClickSelected}
-                          onClick={onItemClick ? () => onItemClick(item) : undefined}
-                          config={MATCH_VIEW_CONFIG}
-                        />
-                        {/* Quick-select badge overlay */}
-                        <AnimatePresence>
-                          {quickSelectNum !== null && quickSelectNum !== undefined && (
-                            <QuickSelectBadge
-                              number={quickSelectNum}
-                              isSelected={selected}
-                              size="sm"
-                              position="top-left"
+                      <ItemStatsTooltip key={item.id} itemId={item.id}>
+                        <div
+                          className="relative glass-card-glow"
+                          style={{
+                            width: itemWidth || 112,
+                            contain: 'layout style',
+                          }}
+                          data-testid={`virtualized-item-cell-${item.id}`}
+                          onClick={onItemClick ? () => handleItemClick(item) : undefined}
+                        >
+                          <ConfigurableCollectionItem
+                            item={item}
+                            groupId={row.groupId}
+                            index={itemIndex}
+                            searchQuery={searchQuery}
+                            isClickSelected={isClickSelected}
+                            onClick={onItemClick ? () => handleItemClick(item) : undefined}
+                            config={MATCH_VIEW_CONFIG}
+                          />
+                          {/* Quick-select badge overlay */}
+                          <AnimatePresence>
+                            {quickSelectNum !== null && quickSelectNum !== undefined && (
+                              <QuickSelectBadge
+                                number={quickSelectNum}
+                                isSelected={selected}
+                                size="sm"
+                                position="top-left"
+                              />
+                            )}
+                          </AnimatePresence>
+                          {/* Selection highlight ring (quick-select or click-select) */}
+                          {(selected || isClickSelected) && (
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.95 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              transition={{ ease: [0.16, 1, 0.3, 1] }}
+                              className="absolute inset-0 rounded-lg glass-dock-selection-ring pointer-events-none z-10"
+                              data-testid={`virtualized-quick-select-highlight-${item.id}`}
                             />
                           )}
-                        </AnimatePresence>
-                        {/* Selection highlight ring (quick-select or click-select) */}
-                        {(selected || isClickSelected) && (
-                          <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="absolute inset-0 rounded-lg ring-2 ring-cyan-400 ring-offset-1 ring-offset-gray-900 pointer-events-none z-10"
-                            data-testid={`virtualized-quick-select-highlight-${item.id}`}
-                          />
-                        )}
-                      </div>
+                        </div>
+                      </ItemStatsTooltip>
                     );
                   })}
                 </div>

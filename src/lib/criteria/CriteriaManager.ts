@@ -14,6 +14,7 @@ import type {
   ConsensusData,
 } from './types';
 import { DEFAULT_SCORE_OPTIONS, DEFAULT_CRITERION } from './types';
+import { calculateWeightedScore as calculateWeightedScoreUtil } from './calculateWeightedScore';
 
 /**
  * Generate a unique ID
@@ -338,40 +339,17 @@ export class CriteriaManager {
 
   /**
    * Calculate weighted score from criterion scores
+   * Delegates to shared utility function for consistent calculation
    */
   calculateWeightedScore(
     scores: CriterionScore[],
     criteria: Criterion[]
   ): number {
-    if (scores.length === 0 || criteria.length === 0) return 0;
-
-    const totalWeight = criteria.reduce((sum, c) => sum + c.weight, 0);
-    if (totalWeight === 0) return 0;
-
-    let weightedSum = 0;
-
-    for (const score of scores) {
-      const criterion = criteria.find((c) => c.id === score.criterionId);
-      if (!criterion) continue;
-
-      // Normalize score to 0-1 range
-      const normalizedScore =
-        (score.score - criterion.minScore) /
-        (criterion.maxScore - criterion.minScore);
-
-      // Apply weight
-      weightedSum += normalizedScore * criterion.weight;
-    }
-
-    // Normalize to 0-100 scale
-    let result = (weightedSum / totalWeight) * 100;
-
-    if (this.options.roundResult) {
-      const factor = Math.pow(10, this.options.decimalPlaces);
-      result = Math.round(result * factor) / factor;
-    }
-
-    return result;
+    return calculateWeightedScoreUtil(scores, criteria, {
+      normalization: this.options.normalization,
+      roundResult: this.options.roundResult,
+      decimalPlaces: this.options.decimalPlaces,
+    });
   }
 
   /**

@@ -12,7 +12,15 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react";
-import { useTierStore } from "@/stores/tier-store";
+import {
+  useRankingStore,
+  selectSmartTierConfiguration,
+  selectCurrentSmartTiers,
+  selectSmartTieredItems,
+  selectSmartTierSummary,
+  selectSmartTierSuggestions,
+  selectSmartTiersEnabled,
+} from "@/stores/ranking-store";
 import {
   TierCustomizer,
   TierSummaryPanel,
@@ -29,8 +37,8 @@ interface TierPanelProps {
  * TierToggle - Quick enable/disable tier view
  */
 const TierToggle = memo(function TierToggle() {
-  const enabled = useTierStore((state) => state.configuration.enabled);
-  const setEnabled = useTierStore((state) => state.setEnabled);
+  const enabled = useRankingStore(selectSmartTiersEnabled);
+  const setEnabled = useRankingStore((state) => state.setSmartTierEnabled);
 
   return (
     <motion.button
@@ -121,27 +129,28 @@ const CollapsibleSection = memo(function CollapsibleSection({
 
 /**
  * TierPanel - Main tier control panel for sidebar
+ * Now uses unified ranking-store instead of separate tier-store
  */
 export const TierPanel = memo(function TierPanel({
   listTitle = "My List",
   listSize,
 }: TierPanelProps) {
-  const enabled = useTierStore((state) => state.configuration.enabled);
-  const configuration = useTierStore((state) => state.configuration);
-  const currentTiers = useTierStore((state) => state.currentTiers);
-  const tieredItems = useTierStore((state) => state.tieredItems);
-  const summary = useTierStore((state) => state.summary);
-  const suggestions = useTierStore((state) => state.suggestions);
+  const enabled = useRankingStore(selectSmartTiersEnabled);
+  const configuration = useRankingStore(selectSmartTierConfiguration);
+  const currentTiers = useRankingStore(selectCurrentSmartTiers);
+  const tieredItems = useRankingStore(selectSmartTieredItems);
+  const summary = useRankingStore(selectSmartTierSummary);
+  const suggestions = useRankingStore(selectSmartTierSuggestions);
 
-  // Actions
-  const setPreset = useTierStore((state) => state.setPreset);
-  const toggleBands = useTierStore((state) => state.toggleBands);
-  const toggleLabels = useTierStore((state) => state.toggleLabels);
-  const toggleSeparators = useTierStore((state) => state.toggleSeparators);
-  const adjustBoundary = useTierStore((state) => state.adjustBoundary);
-  const applySuggestion = useTierStore((state) => state.applySuggestion);
-  const applyAlgorithm = useTierStore((state) => state.applyAlgorithm);
-  const reset = useTierStore((state) => state.reset);
+  // Actions from ranking store
+  const setPreset = useRankingStore((state) => state.setSmartTierPreset);
+  const toggleBands = useRankingStore((state) => state.toggleBands);
+  const toggleLabels = useRankingStore((state) => state.toggleLabels);
+  const toggleSeparators = useRankingStore((state) => state.toggleSeparators);
+  const adjustBoundary = useRankingStore((state) => state.adjustBoundary);
+  const applySuggestion = useRankingStore((state) => state.applySmartTierSuggestion);
+  const applyAlgorithm = useRankingStore((state) => state.applyAlgorithm);
+  const reset = useRankingStore((state) => state.resetSmartTiers);
 
   return (
     <div
@@ -248,8 +257,8 @@ export const TierButton = memo(function TierButton({
 }: {
   onClick?: () => void;
 }) {
-  const enabled = useTierStore((state) => state.configuration.enabled);
-  const setEnabled = useTierStore((state) => state.setEnabled);
+  const enabled = useRankingStore(selectSmartTiersEnabled);
+  const setEnabled = useRankingStore((state) => state.setSmartTierEnabled);
 
   const handleClick = () => {
     if (onClick) {

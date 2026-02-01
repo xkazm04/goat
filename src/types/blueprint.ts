@@ -17,6 +17,23 @@ export interface BlueprintDisplayPosition {
   y: number;
 }
 
+/**
+ * Serialized tier configuration for blueprint sharing
+ */
+export interface BlueprintTierConfig {
+  /** Preset ID (e.g., 'classic', 'god-tier', 'custom') */
+  presetId: string;
+  /** Custom tier definitions (only included if customized) */
+  tiers?: Array<{
+    id: string;
+    label: string;
+    displayName: string;
+    description?: string;
+    customLabel?: string;
+    customColor?: string;
+  }>;
+}
+
 // Core Blueprint entity - the unified type for both system presets and user-created blueprints
 export interface Blueprint {
   // Identity
@@ -42,6 +59,9 @@ export interface Blueprint {
   displayPosition?: BlueprintDisplayPosition;
   rotation?: number;
   scale?: number;
+
+  // Tier configuration (for tier list views)
+  tierConfig?: BlueprintTierConfig;
 
   // Flags
   isSystem?: boolean; // System preset (not editable)
@@ -75,6 +95,7 @@ export interface BlueprintRow {
   color_primary: string;
   color_secondary: string;
   color_accent: string;
+  tier_config?: string; // JSON serialized BlueprintTierConfig
   is_system: boolean;
   is_featured: boolean;
   usage_count: number;
@@ -86,6 +107,16 @@ export interface BlueprintRow {
 
 // Convert database row to Blueprint
 export function blueprintFromRow(row: BlueprintRow): Blueprint {
+  // Parse tier config if present
+  let tierConfig: BlueprintTierConfig | undefined;
+  if (row.tier_config) {
+    try {
+      tierConfig = JSON.parse(row.tier_config) as BlueprintTierConfig;
+    } catch {
+      // Invalid JSON, ignore tier config
+    }
+  }
+
   return {
     id: row.id,
     slug: row.slug,
@@ -102,6 +133,7 @@ export function blueprintFromRow(row: BlueprintRow): Blueprint {
       secondary: row.color_secondary,
       accent: row.color_accent,
     },
+    tierConfig,
     isSystem: row.is_system,
     isFeatured: row.is_featured,
     usageCount: row.usage_count,
@@ -130,6 +162,9 @@ export function blueprintToRow(blueprint: Partial<Blueprint>): Partial<Blueprint
     row.color_primary = blueprint.color.primary;
     row.color_secondary = blueprint.color.secondary;
     row.color_accent = blueprint.color.accent;
+  }
+  if (blueprint.tierConfig !== undefined) {
+    row.tier_config = JSON.stringify(blueprint.tierConfig);
   }
   if (blueprint.isSystem !== undefined) row.is_system = blueprint.isSystem;
   if (blueprint.isFeatured !== undefined) row.is_featured = blueprint.isFeatured;

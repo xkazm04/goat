@@ -105,10 +105,10 @@ function TierItem({
       <div
         className={`
           relative w-20 h-20 sm:w-24 sm:h-24 rounded-lg overflow-hidden
-          bg-slate-800 border border-slate-700
-          transition-all duration-200
-          ${isDragging ? 'shadow-xl shadow-cyan-500/30 scale-105' : 'hover:border-slate-500 hover:shadow-lg'}
-          ${isThisItemPlaying ? 'ring-2 ring-cyan-400/50' : ''}
+          bg-slate-800/90 border border-slate-700/80
+          transition-all duration-200 ease-out
+          ${isDragging ? 'shadow-xl shadow-cyan-500/30 scale-105 border-cyan-500/50' : 'hover:border-slate-500/80 hover:shadow-lg hover:shadow-slate-900/50 hover:-translate-y-0.5'}
+          ${isThisItemPlaying ? 'ring-2 ring-cyan-400/50 shadow-lg shadow-cyan-500/20' : ''}
           cursor-grab active:cursor-grabbing
         `}
       >
@@ -128,8 +128,8 @@ function TierItem({
           </div>
         )}
 
-        {/* Overlay gradient */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+        {/* Overlay gradient - enhanced for better readability */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
 
         {/* Title */}
         <div className="absolute bottom-0 left-0 right-0 p-1">
@@ -204,6 +204,8 @@ interface TierRowProps {
   showCommunityComparison?: boolean;
   communityConsensus?: Map<string, CommunityTierConsensus>;
   isDraggingOver?: boolean;
+  /** Index of this tier for accessibility */
+  tierIndex?: number;
 }
 
 /**
@@ -220,11 +222,10 @@ export const TierRow = forwardRef<HTMLDivElement, TierRowProps>(function TierRow
     showCommunityComparison,
     communityConsensus,
     isDraggingOver,
+    tierIndex = 0,
   },
   ref
 ) {
-  // Get tier index for unified protocol (0-based)
-  const tierIndex = 0; // Will be computed by parent if needed
 
   // Use unified protocol for drop data
   const { setNodeRef, isOver } = useDroppable({
@@ -242,6 +243,27 @@ export const TierRow = forwardRef<HTMLDivElement, TierRowProps>(function TierRow
   const isHighlighted = isOver || isDraggingOver;
   const showMagneticGlow = isParentDragging && !isHighlighted;
 
+  const tierLabel = tier.customLabel || tier.label;
+
+  // Compute background and text color based on custom color or tier colors
+  const tierBackground = tier.customColor
+    ? `linear-gradient(135deg, ${tier.customColor}, ${tier.customColor}cc)`
+    : tier.color.gradient;
+
+  // Calculate text color for custom colors (light text for dark backgrounds)
+  const getTextColor = (bgColor?: string) => {
+    if (!bgColor) return tier.color.text;
+    // Simple luminance calculation
+    const hex = bgColor.replace('#', '');
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance > 0.5 ? '#000000' : '#FFFFFF';
+  };
+
+  const tierTextColor = tier.customColor ? getTextColor(tier.customColor) : tier.color.text;
+
   return (
     <motion.div
       ref={ref}
@@ -249,26 +271,37 @@ export const TierRow = forwardRef<HTMLDivElement, TierRowProps>(function TierRow
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
       className="flex"
+      role="listitem"
+      aria-label={`${tierLabel} tier with ${items.length} items`}
     >
       {/* Tier label */}
       <div
-        className="flex-shrink-0 w-16 sm:w-20 flex flex-col items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
+        className="flex-shrink-0 w-16 sm:w-20 flex flex-col items-center justify-center cursor-pointer hover:brightness-110 transition-all duration-200"
         style={{
-          background: tier.customColor || tier.color.gradient,
+          background: tierBackground,
           borderRadius: '8px 0 0 8px',
         }}
         onClick={() => onEditTier?.(tier)}
+        role="button"
+        aria-label={`Edit ${tierLabel} tier`}
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onEditTier?.(tier);
+          }
+        }}
       >
         <span
           className="text-xl sm:text-2xl font-black"
-          style={{ color: tier.color.text }}
+          style={{ color: tierTextColor }}
         >
           {tier.customLabel || tier.label}
         </span>
         {!tier.collapsed && items.length > 0 && (
           <span
             className="text-[10px] font-medium opacity-80"
-            style={{ color: tier.color.text }}
+            style={{ color: tierTextColor }}
           >
             {items.length} item{items.length !== 1 ? 's' : ''}
           </span>
@@ -279,8 +312,9 @@ export const TierRow = forwardRef<HTMLDivElement, TierRowProps>(function TierRow
       <button
         onClick={() => onToggleCollapse?.(tier.id)}
         aria-expanded={!tier.collapsed}
-        aria-label={`${tier.collapsed ? 'Expand' : 'Collapse'} ${tier.customLabel || tier.label} tier`}
-        className="flex-shrink-0 w-6 flex items-center justify-center bg-slate-800 hover:bg-slate-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-inset"
+        aria-controls={`tier-items-${tier.id}`}
+        aria-label={`${tier.collapsed ? 'Expand' : 'Collapse'} ${tierLabel} tier`}
+        className="flex-shrink-0 w-6 flex items-center justify-center bg-slate-800/80 hover:bg-slate-700/80 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-inset"
       >
         {tier.collapsed ? (
           <ChevronRight className="w-4 h-4 text-slate-400" aria-hidden="true" />
@@ -292,13 +326,16 @@ export const TierRow = forwardRef<HTMLDivElement, TierRowProps>(function TierRow
       {/* Items container (drop zone) */}
       <div
         ref={setNodeRef}
+        id={`tier-items-${tier.id}`}
+        role="group"
+        aria-label={`Items in ${tierLabel} tier`}
         className={`
           flex-1 min-h-[88px] sm:min-h-[104px] p-2
-          bg-slate-900/80 border border-slate-700/50
+          bg-slate-900/70 backdrop-blur-sm border border-slate-700/40
           ${tier.collapsed ? 'overflow-hidden max-h-6' : ''}
-          transition-all duration-200
-          ${isHighlighted ? 'bg-slate-800 border-cyan-500/50 shadow-inner shadow-cyan-500/10' : ''}
-          ${showMagneticGlow ? 'border-cyan-500/20 shadow-lg shadow-cyan-500/5' : ''}
+          transition-all duration-200 ease-out
+          ${isHighlighted ? 'bg-slate-800/90 border-cyan-500/50 shadow-inner shadow-cyan-500/10' : ''}
+          ${showMagneticGlow ? 'border-cyan-500/25 shadow-lg shadow-cyan-500/5' : ''}
         `}
         style={{
           borderRadius: '0 8px 8px 0',
@@ -400,10 +437,10 @@ export function UnrankedPool({ items }: UnrankedPoolProps) {
         ref={setNodeRef}
         className={`
           min-h-[100px] p-4 rounded-xl
-          bg-slate-900/50 border-2 border-dashed
-          ${isOver ? 'border-cyan-500/50 bg-cyan-500/5' : 'border-slate-700/50'}
-          ${showMagneticGlow ? 'border-cyan-500/20 shadow-lg shadow-cyan-500/5' : ''}
-          transition-all duration-200
+          bg-slate-900/40 backdrop-blur-sm border-2 border-dashed
+          ${isOver ? 'border-cyan-500/50 bg-cyan-500/5 shadow-inner shadow-cyan-500/5' : 'border-slate-700/40'}
+          ${showMagneticGlow ? 'border-cyan-500/25 shadow-lg shadow-cyan-500/5' : ''}
+          transition-all duration-200 ease-out
         `}
       >
         <SortableContext items={itemIds} strategy={horizontalListSortingStrategy}>

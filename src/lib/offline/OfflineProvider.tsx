@@ -7,6 +7,7 @@ import { useNetworkStatus } from './useNetworkStatus';
 import { useOfflineSync, UseOfflineSyncReturn } from './useOfflineSync';
 import { ConflictRecord, ConflictResolutionStrategy } from './types';
 import { SyncStatusIndicator } from '@/app/features/Match/components/SyncStatusIndicator';
+import { ConflictResolutionModal } from '@/app/features/Match/components/ConflictResolutionModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RefreshCw, X } from 'lucide-react';
 
@@ -206,7 +207,13 @@ export function OfflineProvider({
         </div>
       )}
 
-      {/* Conflict modal removed - ConflictResolutionModal was deleted */}
+      {/* Conflict Resolution Modal */}
+      <ConflictResolutionModal
+        isOpen={showConflictModal}
+        conflicts={conflicts}
+        onResolve={handleResolveConflict}
+        onClose={() => setShowConflictModal(false)}
+      />
     </OfflineContext.Provider>
   );
 }
