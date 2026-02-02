@@ -310,7 +310,7 @@ export function TopicInputForm() {
                   'flex-1 py-1.5 rounded-md text-xs font-medium transition-all',
                   'disabled:opacity-50 disabled:cursor-not-allowed',
                   listSize === size
-                    ? 'bg-cyan-500/20 text-cyan-400 ring-1 ring-cyan-500/50'
+                    ? 'bg-amber-500/20 text-amber-400 ring-1 ring-amber-500/50'
                     : 'bg-gray-800/50 text-gray-500 hover:text-gray-300 hover:bg-gray-700/50'
                 )}
               >
@@ -337,7 +337,7 @@ export function TopicInputForm() {
                   'flex-1 py-1.5 rounded-md text-xs font-medium transition-all',
                   'disabled:opacity-50 disabled:cursor-not-allowed',
                   generateCount === count
-                    ? 'bg-cyan-500/20 text-cyan-400 ring-1 ring-cyan-500/50'
+                    ? 'bg-amber-500/20 text-amber-400 ring-1 ring-amber-500/50'
                     : 'bg-gray-800/50 text-gray-500 hover:text-gray-300 hover:bg-gray-700/50'
                 )}
               >
@@ -380,8 +380,8 @@ export function TopicInputForm() {
               type="button"
               onClick={() => setShowAddForm(true)}
               disabled={isGenerating || isAddingItem}
-              className="w-full py-2 text-xs text-gray-400 hover:text-cyan-400
-                border border-dashed border-gray-700/50 hover:border-cyan-500/30
+              className="w-full py-2 text-xs text-gray-400 hover:text-amber-400
+                border border-dashed border-gray-700/50 hover:border-amber-500/30
                 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed
                 flex items-center justify-center gap-1.5"
             >
@@ -392,7 +392,7 @@ export function TopicInputForm() {
             <div className="p-4 bg-gray-900/60 border border-gray-700/50 rounded-lg space-y-3">
               <div className="flex items-center justify-between">
                 <h4 className="text-sm font-medium text-white flex items-center gap-2">
-                  <Plus className="w-4 h-4 text-cyan-400" />
+                  <Plus className="w-4 h-4 text-amber-400" />
                   Add New Item
                 </h4>
                 <button
@@ -450,7 +450,7 @@ export function TopicInputForm() {
                   onClick={handleAddItem}
                   disabled={!addTitle.trim() || isAddingItem}
                   size="sm"
-                  className="bg-cyan-600 hover:bg-cyan-500 border-0"
+                  className="bg-amber-600 hover:bg-amber-500 border-0"
                 >
                   {isAddingItem ? (
                     <>
