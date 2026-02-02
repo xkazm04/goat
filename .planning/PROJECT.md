@@ -8,16 +8,17 @@ A ranking platform where users create and rank lists of anything. Users can crea
 
 **Users can create any list they imagine and rank it their way.** The core experience must be smooth, reliable, and free of friction.
 
-## Current Milestone: v1.4.0 Match UI Polish
+## Current Milestone: v1.6.0 Match-Test UI Polish
 
-**Goal:** Refine the Match page experience with better space efficiency and clearer visual hierarchy across view modes — preparing the core ranking experience for launch.
+**Goal:** Polish the /match-test page modes (Collection, Bracket, Tier List) for a unified, space-efficient experience.
 
-**Target outcomes:**
-- Collection panel uses space efficiently without crowding the grid
-- Podium, GOAT, and Rushmore views feel visually distinct and purposeful
-- Reduced visual clutter (fewer competing borders, shadows, overlays)
-- Improved spacing and breathing room throughout
-- Subtle polish that elevates without overwhelming
+**Target features:**
+- Collection items with shared rows and category dividers (space efficiency)
+- Bracket mode tree height fix for larger tournaments
+- Bracket matchup overlay with reduced vertical padding
+- Tier List unified with Collection (same DnD experience)
+- Tier List cleanup (remove Community button, Apply Ranking button)
+- Tier List keyboard shortcuts implementation
 
 ## Requirements
 
@@ -52,28 +53,50 @@ A ranking platform where users create and rank lists of anything. Users can crea
 - ✓ Themed stat visualizations per category — v1.3
 - ✓ Criteria rating UI in item detail modal — v1.3
 - ✓ Score persistence (localStorage + Supabase sync) — v1.3
+- ✓ Dynamic height calculation for collection panel — v1.4
+- ✓ Compact mode spacing (< 300px threshold) — v1.4
+- ✓ Responsive sidebar width (140px tablet, 176px desktop) — v1.4
+- ✓ Solid podium blocks with 70%+ opacity — v1.4
+- ✓ Tiered icon placement (-top-12/-8/-6 for 1st/2nd/3rd) — v1.4
+- ✓ GOAT illustration always visible (placeholder + vibrant states) — v1.4
+- ✓ Rushmore position #1 prominence (5% scale, slate glow) — v1.4
+- ✓ Distinct view color personalities (gold/silver/bronze, rich gold, slate) — v1.4
+- ✓ Section headers with gold/amber gradients and spring physics — v1.5
+- ✓ Featured section depth treatment with FEATURED_ORBS ambient background — v1.5
+- ✓ My Rankings gold/amber theme (replacing cyan) — v1.5
+- ✓ Character count indicators on form fields — v1.5
+- ✓ Field validation feedback with visual states — v1.5
+- ✓ Form field focus animations with glow treatment — v1.5
+- ✓ Generation progress feedback (contextual messages) — v1.5
+- ✓ Prominent empty state for items grid — v1.5
+- ✓ Preview cards with position styling (gold border, badges) — v1.5
+- ✓ Preview grid with elevation/depth tokens — v1.5
+- ✓ Criteria preview with scores visualized — v1.5
+- ✓ Publish button with state transitions — v1.5
+- ✓ Studio containers with Surface glass variant — v1.5
+- ✓ Item cards with Elevated wrapper and hover lift — v1.5
+- ✓ Studio gold/amber theme consistency — v1.5
+- ✓ Spring physics for card animations — v1.5
 
 ### Active
 
-<!-- Next milestone scope. -->
+<!-- v1.6.0 Match-Test UI Polish scope -->
 
-- Collection panel space efficiency (collapsible, better height management)
-- View mode visual hierarchy (distinct Podium/GOAT/Rushmore styling)
-- Visual clutter reduction (consolidated shadows, borders, overlays)
-- Improved spacing and breathing room throughout Match page
-- Subtle polish and refinement (transitions, feedback states)
+- [ ] Collection items share rows across categories with vertical dividers
+- [ ] Bracket tree height scales to fit all pairs without collision
+- [ ] Bracket matchup overlay reduces vertical padding (no scroll needed)
+- [ ] Tier List unranked items use Collection panel with same DnD experience
+- [ ] Tier List Community button and logic removed
+- [ ] Tier List Apply Ranking button removed (autosave like other modes)
+- [ ] Tier List keyboard shortcuts verified/implemented
 
 ### Out of Scope
 
 <!-- Explicit boundaries with reasoning. -->
 
-- Landing page polish — strict Match focus for v1.4
-- Studio page polish — strict Match focus for v1.4
-- New animations or effects — refined minimal, not adding complexity
 - Mobile-specific layouts — desktop-first remains
-- New view modes — polish existing views only
-- Public list discovery — defer to v1.5+
-- User profiles — defer to v1.5+
+- Public list discovery — defer to v1.6+
+- User profiles — defer to v1.6+
 
 ## Context
 
@@ -81,11 +104,11 @@ A ranking platform where users create and rank lists of anything. Users can crea
 - Visual depth system with tokens and reusable components (v1.0)
 - List Creation Studio with Gemini AI integration (v1.1)
 - Multi-criteria scoring with themed visualizations (v1.3)
+- Polished Match page with distinct view mode personalities (v1.4)
+- Landing and Studio with unified gold/amber visual language (v1.5)
 - Drag-and-drop ranking interface with multiple views (GOAT, Podium, Rushmore)
 - Supabase backend with lists, items, rankings, criteria tables
-- Collection panel at 400px default height with glass-dock styling
-- Multiple animation layers on drop zones (10+ overlays)
-- View modes share similar elevation/styling (lack distinction)
+- Collection panel with dynamic height and compact mode
 
 **Tech stack:** Next.js 15, Supabase, Zustand, TanStack Query, @dnd-kit, Framer Motion
 
@@ -112,4 +135,4 @@ A ranking platform where users create and rank lists of anything. Users can crea
 | Error boundaries per feature | Isolate failures, preserve user session | — Pending |
 
 ---
-*Last updated: 2026-02-02 after v1.4.0 Match UI Polish milestone start*
+*Last updated: 2026-02-02 after v1.6.0 Match-Test UI Polish milestone started*

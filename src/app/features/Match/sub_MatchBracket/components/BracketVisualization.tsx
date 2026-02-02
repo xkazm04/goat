@@ -218,7 +218,9 @@ function calculateMatchupY(
   matchupHeight: number,
   verticalGap: number
 ): number {
-  const totalHeight = bracketSize * (matchupHeight + verticalGap) / 2;
+  // Calculate total height based on first round (largest round)
+  const firstRoundMatchups = Math.ceil(bracketSize / 2);
+  const totalHeight = firstRoundMatchups * (matchupHeight + verticalGap);
   const spacing = totalHeight / matchupsInRound;
   return matchIndex * spacing + spacing / 2 - matchupHeight / 2 + 50;
 }
@@ -240,7 +242,10 @@ export function BracketVisualization({
   const { width, height, roundX } = useMemo(() => {
     const numRounds = bracket.rounds.length;
     const width = numRounds * (matchupWidth + roundGap) + 180;
-    const height = bracket.size * (matchupHeight + verticalGap) / 2 + 100;
+
+    // Calculate based on first round matchup count for proper spacing
+    const firstRoundMatchups = bracket.rounds[0]?.matchups.length || Math.ceil(bracket.size / 2);
+    const height = firstRoundMatchups * (matchupHeight + verticalGap) + 100;
 
     const roundX: number[] = [];
     for (let r = 0; r < numRounds; r++) {
