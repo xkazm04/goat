@@ -210,4 +210,22 @@ export const springConfig = {
   gentle: { type: "spring", stiffness: 100, damping: 15 } as const,
   snappy: { type: "spring", stiffness: 400, damping: 30 } as const,
   bouncy: { type: "spring", stiffness: 300, damping: 15 } as const,
+  section: { type: "spring", stiffness: 100, damping: 12 } as const, // Matches ShowcaseHeader letter animation
+};
+
+// Section header spring animation (consistent with ShowcaseHeader)
+export const sectionHeaderVariants: Variants = {
+  hidden: {
+    opacity: 0,
+    y: 30,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 100,
+      damping: 12,
+    },
+  },
 };
