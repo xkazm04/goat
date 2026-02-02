@@ -3,6 +3,7 @@
 import { memo, useState, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { ScoreOverlayContainer } from '@/components/ui/score-overlays';
+import { ELEVATION, Glow } from '@/components/visual';
 import type { Criterion, CriterionScore } from '@/lib/criteria/types';
 
 export interface CardPreviewPanelProps {
@@ -100,6 +101,7 @@ export const CardPreviewPanel = memo(function CardPreviewPanel({
           {/* Card container */}
           <motion.div
             className="relative w-full h-full rounded-xl overflow-hidden border-2 border-white/10 bg-gray-900/80 group"
+            style={{ boxShadow: ELEVATION.medium }}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.3 }}
