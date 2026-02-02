@@ -19,12 +19,20 @@ export function GoatView({ gridItems, onRemove, getItemTitle }: GoatViewProps) {
         <div className="mb-16 relative">
             {/* Goat Illustration - slides in from left when 1st position assigned */}
             <motion.div
-                initial={{ x: -200, opacity: 0 }}
+                initial={{ x: 0, opacity: 0.4, filter: 'grayscale(0.8) brightness(0.6)' }}
                 animate={{
-                    x: isFirstPositionAssigned ? 0 : -200,
-                    opacity: isFirstPositionAssigned ? 1 : 0,
+                    x: 0,
+                    opacity: isFirstPositionAssigned ? 1 : 0.4,
+                    filter: isFirstPositionAssigned
+                        ? 'grayscale(0) brightness(1)'
+                        : 'grayscale(0.8) brightness(0.6)',
                 }}
-                transition={{ type: "spring", stiffness: 100, damping: 20, duration: 0.6 }}
+                transition={{
+                    type: "spring",
+                    stiffness: 100,
+                    damping: 20,
+                    opacity: { duration: 0.4 },
+                }}
                 className="absolute left-0 top-0 bottom-0 w-1/3 flex items-center justify-center pointer-events-none z-0"
             >
                 <div className="relative">
