@@ -18,6 +18,27 @@ import { cn } from '@/lib/utils';
 import { CATEGORIES } from '@/lib/config/category-config';
 import type { EnrichedItem } from '@/types/studio';
 
+/**
+ * Character counter component showing current/max with color-coded limits
+ */
+function CharacterCounter({ current, max, className }: {
+  current: number;
+  max: number;
+  className?: string;
+}) {
+  const isNearLimit = current > max * 0.8;
+  const isAtLimit = current >= max;
+  return (
+    <span className={cn(
+      'text-xs transition-colors',
+      isAtLimit ? 'text-red-400' : isNearLimit ? 'text-amber-400' : 'text-gray-500',
+      className
+    )}>
+      {current}/{max}
+    </span>
+  );
+}
+
 // Category options for the select
 const CATEGORY_OPTIONS = CATEGORIES.map(cat => ({
   value: cat,
@@ -153,6 +174,9 @@ export function TopicInputForm() {
                 transition-all"
             />
           </div>
+          <div className="flex justify-end mt-1">
+            <CharacterCounter current={topic.length} max={200} />
+          </div>
         </div>
 
         {/* Category */}
@@ -210,6 +234,9 @@ export function TopicInputForm() {
               </button>
             )}
           </div>
+          <div className="flex justify-end mt-1">
+            <CharacterCounter current={listTitle.length} max={100} />
+          </div>
         </div>
 
         {/* Description */}
@@ -234,6 +261,9 @@ export function TopicInputForm() {
               focus:outline-none focus:ring-1 focus:ring-amber-500/50
               disabled:opacity-50 transition-all"
           />
+          <div className="flex justify-end mt-1">
+            <CharacterCounter current={listDescription.length} max={200} />
+          </div>
         </div>
       </div>
 
