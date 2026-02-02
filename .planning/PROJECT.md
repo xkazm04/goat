@@ -8,17 +8,16 @@ A ranking platform where users create and rank lists of anything. Users can crea
 
 **Users can create any list they imagine and rank it their way.** The core experience must be smooth, reliable, and free of friction.
 
-## Current Milestone: v1.3.0 Criteria System
+## Current Milestone: v1.4.0 Match UI Polish
 
-**Goal:** List creators can add multi-dimensional scoring criteria with themed visualizations that match each category's character.
+**Goal:** Refine the Match page experience with better space efficiency and clearer visual hierarchy across view modes — preparing the core ranking experience for launch.
 
 **Target outcomes:**
-- Lists support 0-8 custom criteria with 1-10 scale scoring
-- Predefined criteria templates for Sports, Movies, Music, Games categories
-- Themed stat visualizations unique to each category (competitive metrics, cinematic displays, waveforms, gaming UI)
-- Default styling for custom criteria
-- Criteria rating in item detail modal (post-placement)
-- Score persistence with Supabase sync
+- Collection panel uses space efficiently without crowding the grid
+- Podium, GOAT, and Rushmore views feel visually distinct and purposeful
+- Reduced visual clutter (fewer competing borders, shadows, overlays)
+- Improved spacing and breathing room throughout
+- Subtle polish that elevates without overwhelming
 
 ## Requirements
 
@@ -47,42 +46,46 @@ A ranking platform where users create and rank lists of anything. Users can crea
 - ✓ Item list editor (edit, remove, regenerate, add manual) — v1.1
 - ✓ Metadata configuration (title, description, size, category) — v1.1
 - ✓ Preview and publish flow — v1.1
+- ✓ Multi-criteria scoring system (0-8 criteria per list, 1-10 scale) — v1.3
+- ✓ Predefined criteria templates for Sports, Movies, Music, Games — v1.3
+- ✓ Custom criteria support with default styling — v1.3
+- ✓ Themed stat visualizations per category — v1.3
+- ✓ Criteria rating UI in item detail modal — v1.3
+- ✓ Score persistence (localStorage + Supabase sync) — v1.3
 
 ### Active
 
 <!-- Next milestone scope. -->
 
-- Multi-criteria scoring system (0-8 criteria per list, 1-10 scale)
-- Predefined criteria templates for Sports, Movies, Music, Games
-- Custom criteria support with default styling
-- Themed stat visualizations per category
-- Criteria rating UI in item detail modal
-- Score persistence (localStorage + Supabase sync)
-- Radar chart summary for multi-criteria overview
+- Collection panel space efficiency (collapsible, better height management)
+- View mode visual hierarchy (distinct Podium/GOAT/Rushmore styling)
+- Visual clutter reduction (consolidated shadows, borders, overlays)
+- Improved spacing and breathing room throughout Match page
+- Subtle polish and refinement (transitions, feedback states)
 
 ### Out of Scope
 
 <!-- Explicit boundaries with reasoning. -->
 
-- Complex weighting UI — use simple presets for v1.3
-- Real-time community scores — local scores only
-- Score-based automatic reordering — suggestions only, not auto-apply
-- Score import from external sources — defer to v1.4+
-- Public list discovery — defer to v1.4+
-- User profiles — defer to v1.4+
-- Mobile-specific work — desktop-first remains
+- Landing page polish — strict Match focus for v1.4
+- Studio page polish — strict Match focus for v1.4
+- New animations or effects — refined minimal, not adding complexity
+- Mobile-specific layouts — desktop-first remains
+- New view modes — polish existing views only
+- Public list discovery — defer to v1.5+
+- User profiles — defer to v1.5+
 
 ## Context
 
 **Existing codebase:**
 - Visual depth system with tokens and reusable components (v1.0)
 - List Creation Studio with Gemini AI integration (v1.1)
+- Multi-criteria scoring with themed visualizations (v1.3)
 - Drag-and-drop ranking interface with multiple views (GOAT, Podium, Rushmore)
-- Supabase backend with lists, items, rankings tables
-- Logger infrastructure exists in src/lib/logger/ but underutilized
-- 50+ console.log statements scattered across features
-- 30+ deprecated exports in types/ causing confusion
-- Error boundaries exist but need enhancement
+- Supabase backend with lists, items, rankings, criteria tables
+- Collection panel at 400px default height with glass-dock styling
+- Multiple animation layers on drop zones (10+ overlays)
+- View modes share similar elevation/styling (lack distinction)
 
 **Tech stack:** Next.js 15, Supabase, Zustand, TanStack Query, @dnd-kit, Framer Motion
 
@@ -109,4 +112,4 @@ A ranking platform where users create and rank lists of anything. Users can crea
 | Error boundaries per feature | Isolate failures, preserve user session | — Pending |
 
 ---
-*Last updated: 2026-01-29 after v1.3.0 Criteria System milestone start*
+*Last updated: 2026-02-02 after v1.4.0 Match UI Polish milestone start*

@@ -598,6 +598,14 @@ body {
     --glass-transition-slow: 300ms;
     --glass-easing: cubic-bezier(0.16, 1, 0.3, 1);
     --glass-easing-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    /* Glass Dock - Panel Layout Tokens */
+    --panel-header-height: 36px;
+    --panel-quick-select-height: 32px;
+    --panel-horizontal-bar-height: 40px;
+    --panel-padding-normal: 16px;
+    --panel-padding-compact: 8px;
+    --panel-compact-threshold: 300px;
   }
 
   .dark {
