@@ -90,7 +90,15 @@ export const CardPreviewPanel = memo(function CardPreviewPanel({
       {/* Mock Card */}
       <div className="flex justify-center">
         <div className="relative w-36 aspect-[4/5]">
-          {/* Gold border for position 1 preview */}
+          {/* Position #1 Glow Background */}
+          <Glow
+            color="gold"
+            intensity="subtle"
+            asBackground
+            className="absolute inset-0 rounded-xl z-0 pointer-events-none"
+          />
+
+          {/* Gold Border - Position #1 */}
           <div
             className="absolute inset-0 rounded-xl pointer-events-none z-[35]"
             style={{
