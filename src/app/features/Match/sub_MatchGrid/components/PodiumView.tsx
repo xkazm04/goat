@@ -65,17 +65,17 @@ export function PodiumView({ gridItems, onRemove, getItemTitle }: PodiumViewProp
                         style={{ originY: 0 }}
                     >
                         {/* Top surface with shine */}
-                        <div className="h-4 bg-gradient-to-b from-slate-400/40 to-slate-600/30 rounded-t-lg border-t border-x border-slate-400/30" />
+                        <div className="h-4 bg-gradient-to-b from-slate-400/70 to-slate-600/60 rounded-t-lg border-t border-x border-slate-400/50" />
 
                         {/* Main block body */}
-                        <div className="h-24 bg-gradient-to-b from-slate-600/40 via-slate-700/50 to-slate-800/60 border-x border-slate-600/20 relative overflow-hidden">
+                        <div className="h-24 bg-gradient-to-b from-slate-600/70 via-slate-700/80 to-slate-800/90 border-x border-slate-600/40 relative overflow-hidden">
                             {/* Vertical highlight lines */}
                             <div className="absolute left-2 top-0 bottom-0 w-px bg-gradient-to-b from-white/10 via-white/5 to-transparent" />
                             <div className="absolute right-2 top-0 bottom-0 w-px bg-gradient-to-b from-white/10 via-white/5 to-transparent" />
 
                             {/* Number */}
                             <div className="absolute inset-0 flex items-center justify-center">
-                                <span className="text-5xl font-black text-slate-400/50 drop-shadow-lg">2</span>
+                                <span className="text-5xl font-black text-slate-400/80 drop-shadow-lg">2</span>
                             </div>
                         </div>
                     </motion.div>
@@ -132,20 +132,20 @@ export function PodiumView({ gridItems, onRemove, getItemTitle }: PodiumViewProp
                         style={{ originY: 0 }}
                     >
                         {/* Gold top surface with shine */}
-                        <div className="h-5 bg-gradient-to-b from-yellow-300/50 to-yellow-500/40 rounded-t-lg border-t border-x border-yellow-400/40 shadow-[inset_0_2px_4px_rgba(255,255,255,0.2)]" />
+                        <div className="h-5 bg-gradient-to-b from-yellow-300/70 to-yellow-500/60 rounded-t-lg border-t border-x border-yellow-400/60 shadow-[inset_0_2px_4px_rgba(255,255,255,0.2)]" />
 
                         {/* Main block body with gold tint */}
-                        <div className="h-40 bg-gradient-to-b from-yellow-500/20 via-yellow-600/15 to-amber-900/30 border-x border-yellow-500/20 relative overflow-hidden">
+                        <div className="h-40 bg-gradient-to-b from-yellow-500/40 via-yellow-600/35 to-amber-900/50 border-x border-yellow-500/40 relative overflow-hidden">
                             {/* Vertical highlight lines */}
-                            <div className="absolute left-3 top-0 bottom-0 w-px bg-gradient-to-b from-yellow-400/20 via-yellow-500/10 to-transparent" />
-                            <div className="absolute right-3 top-0 bottom-0 w-px bg-gradient-to-b from-yellow-400/20 via-yellow-500/10 to-transparent" />
+                            <div className="absolute left-3 top-0 bottom-0 w-px bg-gradient-to-b from-yellow-400/40 via-yellow-500/20 to-transparent" />
+                            <div className="absolute right-3 top-0 bottom-0 w-px bg-gradient-to-b from-yellow-400/40 via-yellow-500/20 to-transparent" />
 
                             {/* Center glow */}
-                            <div className="absolute inset-x-8 top-4 bottom-4 bg-gradient-to-b from-yellow-400/10 to-transparent rounded-full blur-xl" />
+                            <div className="absolute inset-x-8 top-4 bottom-4 bg-gradient-to-b from-yellow-400/20 to-transparent rounded-full blur-xl" />
 
                             {/* Number */}
                             <div className="absolute inset-0 flex items-center justify-center">
-                                <span className="text-7xl font-black text-yellow-400/60 drop-shadow-[0_0_20px_rgba(250,204,21,0.3)]">1</span>
+                                <span className="text-7xl font-black text-yellow-400/80 drop-shadow-[0_0_20px_rgba(250,204,21,0.3)]">1</span>
                             </div>
                         </div>
                     </motion.div>
@@ -192,17 +192,17 @@ export function PodiumView({ gridItems, onRemove, getItemTitle }: PodiumViewProp
                         style={{ originY: 0 }}
                     >
                         {/* Bronze top surface */}
-                        <div className="h-3 bg-gradient-to-b from-orange-400/30 to-orange-600/25 rounded-t-lg border-t border-x border-orange-500/25" />
+                        <div className="h-3 bg-gradient-to-b from-orange-400/50 to-orange-600/45 rounded-t-lg border-t border-x border-orange-500/45" />
 
                         {/* Main block body */}
-                        <div className="h-16 bg-gradient-to-b from-orange-600/20 via-orange-800/25 to-orange-900/30 border-x border-orange-600/15 relative overflow-hidden">
+                        <div className="h-16 bg-gradient-to-b from-orange-600/40 via-orange-800/45 to-orange-900/50 border-x border-orange-600/35 relative overflow-hidden">
                             {/* Vertical highlight lines */}
                             <div className="absolute left-2 top-0 bottom-0 w-px bg-gradient-to-b from-orange-400/15 via-orange-500/8 to-transparent" />
                             <div className="absolute right-2 top-0 bottom-0 w-px bg-gradient-to-b from-orange-400/15 via-orange-500/8 to-transparent" />
 
                             {/* Number */}
                             <div className="absolute inset-0 flex items-center justify-center">
-                                <span className="text-4xl font-black text-orange-500/40 drop-shadow-lg">3</span>
+                                <span className="text-4xl font-black text-orange-500/70 drop-shadow-lg">3</span>
                             </div>
                         </div>
                     </motion.div>
