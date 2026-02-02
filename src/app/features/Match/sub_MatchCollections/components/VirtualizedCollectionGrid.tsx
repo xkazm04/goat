@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, memo, useCallback } from "react";
+import React, { useMemo, useRef, useCallback } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, TrendingUp, Sparkles } from "lucide-react";
@@ -21,9 +21,26 @@ function generateSortCacheKey(groups: CollectionGroup[], consensusTimestamp: num
   return `${itemIds}:${consensusTimestamp || 0}`;
 }
 
+/**
+ * Represents a single item in the flattened continuous layout
+ */
+interface FlattenedItem {
+  item: CollectionItem;
+  groupId: string;
+  globalIndex: number;
+}
+
+/**
+ * Represents a row in the continuous layout with category boundary tracking
+ */
+interface ContinuousRow {
+  items: FlattenedItem[];
+  startIndex: number;
+  boundaryIndices: number[]; // indices where category changes (dividers go BEFORE these)
+}
+
 interface VirtualizedCollectionGridProps {
   displayGroups: CollectionGroup[];
-  showGroupHeaders?: boolean;
   searchQuery?: string;
   /** Enable sorting by consensus ranking (popular items first) */
   sortByConsensus?: boolean;
@@ -45,12 +62,18 @@ interface VirtualizedCollectionGridProps {
   selectedItemId?: string;
 }
 
-interface FlattenedRow {
-  type: "header" | "items";
-  groupId: string;
-  groupName?: string;
-  groupItemCount?: number;
-  items?: CollectionItem[];
+
+/**
+ * Visual divider between items from different categories within a row.
+ * Uses a subtle gradient for a soft separation effect.
+ */
+function CategoryDivider() {
+  return (
+    <div
+      className="w-px self-stretch my-1 bg-gradient-to-b from-transparent via-white/15 to-transparent"
+      aria-hidden="true"
+    />
+  );
 }
 
 /**
@@ -70,7 +93,6 @@ interface FlattenedRow {
  */
 export function VirtualizedCollectionGrid({
   displayGroups,
-  showGroupHeaders = true,
   searchQuery = "",
   sortByConsensus = true,
   getQuickSelectNumber,
@@ -131,58 +153,67 @@ export function VirtualizedCollectionGrid({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortCacheKey, sortByConsensus, sortBy, hasConsensusData, consensusData]);
 
-  // Check if there are any visible items
-  const hasVisibleItems = sortedGroups.some(group => (group.items?.length || 0) > 0);
-
   // Check if consensus sorting is active
   const isConsensusSortActive = sortByConsensus && sortBy === 'consensus' && hasConsensusData;
 
-  // Flatten groups into rows with compact inline headers
-  // Groups are displayed with subtle visual separators instead of full header rows
-  const flattenedRows = useMemo(() => {
-    const rows: FlattenedRow[] = [];
+  // Flatten ALL items across ALL groups into a single continuous array
+  // This enables items from different categories to appear in the same row
+  const flattenedItems = useMemo(() => {
+    const items: FlattenedItem[] = [];
+    let globalIndex = 0;
 
     sortedGroups.forEach(group => {
-      if (!group.items || group.items.length === 0) return;
-
-      // Add compact header row if showing group headers
-      if (showGroupHeaders) {
-        rows.push({
-          type: "header",
+      (group.items || []).forEach(item => {
+        items.push({
+          item,
           groupId: group.id,
-          groupName: group.name,
-          groupItemCount: group.items.length,
+          globalIndex: globalIndex++,
         });
-      }
-
-      // Items row for this group
-      rows.push({
-        type: "items",
-        groupId: group.id,
-        items: group.items,
       });
     });
 
-    return rows;
-  }, [sortedGroups, showGroupHeaders]);
+    return items;
+  }, [sortedGroups]);
 
-  // Row heights
-  const headerRowHeight = 36;
+  // Check if there are any visible items
+  const hasVisibleItems = flattenedItems.length > 0;
+
+  // Chunk flattened items into rows and detect category boundaries
+  // Boundaries are used to insert visual dividers between categories
+  const continuousRows = useMemo(() => {
+    const rows: ContinuousRow[] = [];
+
+    for (let i = 0; i < flattenedItems.length; i += columnCount) {
+      const rowItems = flattenedItems.slice(i, i + columnCount);
+
+      // Detect category boundaries within this row
+      // A boundary exists at index j if item[j] is from a different group than item[j-1]
+      const boundaries: number[] = [];
+      for (let j = 1; j < rowItems.length; j++) {
+        if (rowItems[j].groupId !== rowItems[j - 1].groupId) {
+          boundaries.push(j);
+        }
+      }
+
+      rows.push({
+        items: rowItems,
+        startIndex: i,
+        boundaryIndices: boundaries,
+      });
+    }
+
+    return rows;
+  }, [flattenedItems, columnCount]);
+
+  // Row heights - all rows now have uniform height
   const gap = 8;
 
   // Initialize virtualizer with dynamic measurement
   // Optimized for smooth scrolling with minimal overscan
   const rowVirtualizer = useVirtualizer({
-    count: flattenedRows.length,
+    count: continuousRows.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: (index) => {
-      const row = flattenedRows[index];
-      if (row.type === "header") return headerRowHeight;
-      // Estimate based on item count
-      const itemCount = row.items?.length || 0;
-      const estimatedRows = Math.ceil(itemCount / Math.max(3, columnCount));
-      return estimatedRows * (rowHeight + gap);
-    },
+    estimateSize: () => rowHeight + gap,
     overscan: 3,
     measureElement: (element) => element.getBoundingClientRect().height,
   });
@@ -257,46 +288,11 @@ export function VirtualizedCollectionGrid({
           }}
         >
           {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-            const row = flattenedRows[virtualRow.index];
+            const row = continuousRows[virtualRow.index];
 
-            if (row.type === "header") {
-              return (
-                <div
-                  key={`header-${row.groupId}`}
-                  ref={rowVirtualizer.measureElement}
-                  data-index={virtualRow.index}
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    transform: `translateY(${virtualRow.start}px)`,
-                  }}
-                  data-testid={`virtualized-group-header-${row.groupId}`}
-                >
-                  <div className="flex items-center gap-3 py-2.5 px-2 rounded-lg bg-gradient-to-r from-white/[0.02] to-transparent border-l-2 border-cyan-500/40 transition-all duration-200 hover:from-white/[0.04] hover:border-cyan-400/60">
-                    <h4 className="text-[11px] font-semibold text-cyan-400/90 uppercase tracking-wider">
-                      {row.groupName}
-                    </h4>
-                    <span className="text-[10px] font-mono text-white/40 bg-white/5 px-1.5 py-0.5 rounded">
-                      {row.groupItemCount}
-                    </span>
-                    {isConsensusSortActive && (
-                      <span className="text-[9px] text-purple-400/70 flex items-center gap-1 ml-1">
-                        <TrendingUp className="w-2.5 h-2.5" />
-                        popular first
-                      </span>
-                    )}
-                    <div className="h-px flex-1 bg-gradient-to-r from-cyan-500/20 via-purple-500/10 to-transparent ml-2" />
-                  </div>
-                </div>
-              );
-            }
-
-            // Items row
             return (
               <div
-                key={`items-${row.groupId}-${virtualRow.index}`}
+                key={`row-${virtualRow.index}`}
                 ref={rowVirtualizer.measureElement}
                 data-index={virtualRow.index}
                 style={{
@@ -308,55 +304,59 @@ export function VirtualizedCollectionGrid({
                 }}
                 data-testid={`virtualized-items-row-${virtualRow.index}`}
               >
-                <div className="flex flex-wrap gap-2">
-                  {row.items?.map((item: CollectionItem, itemIndex: number) => {
-                    const quickSelectNum = getQuickSelectNumber?.(item.id);
-                    const selected = isItemSelected?.(item.id) ?? false;
-                    const isClickSelected = selectedItemId === item.id;
+                <div className="flex flex-wrap gap-2 items-center">
+                  {row.items.map((flatItem, idx) => {
+                    const showDivider = row.boundaryIndices.includes(idx);
+                    const quickSelectNum = getQuickSelectNumber?.(flatItem.item.id);
+                    const selected = isItemSelected?.(flatItem.item.id) ?? false;
+                    const isClickSelected = selectedItemId === flatItem.item.id;
 
                     return (
-                      <ItemStatsTooltip key={item.id} itemId={item.id}>
-                        <div
-                          className="relative glass-card-glow"
-                          style={{
-                            width: itemWidth || 112,
-                            contain: 'layout style',
-                          }}
-                          data-testid={`virtualized-item-cell-${item.id}`}
-                          onClick={onItemClick ? () => handleItemClick(item) : undefined}
-                        >
-                          <ConfigurableCollectionItem
-                            item={item}
-                            groupId={row.groupId}
-                            index={itemIndex}
-                            searchQuery={searchQuery}
-                            isClickSelected={isClickSelected}
-                            onClick={onItemClick ? () => handleItemClick(item) : undefined}
-                            config={MATCH_VIEW_CONFIG}
-                          />
-                          {/* Quick-select badge overlay */}
-                          <AnimatePresence>
-                            {quickSelectNum !== null && quickSelectNum !== undefined && (
-                              <QuickSelectBadge
-                                number={quickSelectNum}
-                                isSelected={selected}
-                                size="sm"
-                                position="top-left"
+                      <React.Fragment key={flatItem.item.id}>
+                        {showDivider && <CategoryDivider />}
+                        <ItemStatsTooltip itemId={flatItem.item.id}>
+                          <div
+                            className="relative glass-card-glow"
+                            style={{
+                              width: itemWidth || 112,
+                              contain: 'layout style',
+                            }}
+                            data-testid={`virtualized-item-cell-${flatItem.item.id}`}
+                            onClick={onItemClick ? () => handleItemClick(flatItem.item) : undefined}
+                          >
+                            <ConfigurableCollectionItem
+                              item={flatItem.item}
+                              groupId={flatItem.groupId}
+                              index={flatItem.globalIndex}
+                              searchQuery={searchQuery}
+                              isClickSelected={isClickSelected}
+                              onClick={onItemClick ? () => handleItemClick(flatItem.item) : undefined}
+                              config={MATCH_VIEW_CONFIG}
+                            />
+                            {/* Quick-select badge overlay */}
+                            <AnimatePresence>
+                              {quickSelectNum !== null && quickSelectNum !== undefined && (
+                                <QuickSelectBadge
+                                  number={quickSelectNum}
+                                  isSelected={selected}
+                                  size="sm"
+                                  position="top-left"
+                                />
+                              )}
+                            </AnimatePresence>
+                            {/* Selection highlight ring (quick-select or click-select) */}
+                            {(selected || isClickSelected) && (
+                              <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ ease: [0.16, 1, 0.3, 1] }}
+                                className="absolute inset-0 rounded-lg glass-dock-selection-ring pointer-events-none z-10"
+                                data-testid={`virtualized-quick-select-highlight-${flatItem.item.id}`}
                               />
                             )}
-                          </AnimatePresence>
-                          {/* Selection highlight ring (quick-select or click-select) */}
-                          {(selected || isClickSelected) && (
-                            <motion.div
-                              initial={{ opacity: 0, scale: 0.95 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              transition={{ ease: [0.16, 1, 0.3, 1] }}
-                              className="absolute inset-0 rounded-lg glass-dock-selection-ring pointer-events-none z-10"
-                              data-testid={`virtualized-quick-select-highlight-${item.id}`}
-                            />
-                          )}
-                        </div>
-                      </ItemStatsTooltip>
+                          </div>
+                        </ItemStatsTooltip>
+                      </React.Fragment>
                     );
                   })}
                 </div>

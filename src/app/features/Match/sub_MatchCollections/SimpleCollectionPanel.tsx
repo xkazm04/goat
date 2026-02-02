@@ -441,7 +441,6 @@ export function SimpleCollectionPanel({ groups, onItemClick, selectedItemId }: S
               >
                 <VirtualizedCollectionGrid
                   displayGroups={displayGroups}
-                  showGroupHeaders={activeTab === 'all'}
                   searchQuery={deferredSearchQuery}
                   getQuickSelectNumber={quickSelect.state.isActive ? quickSelect.getQuickSelectNumber : undefined}
                   isItemSelected={quickSelect.state.isActive ? quickSelect.isItemSelected : undefined}
