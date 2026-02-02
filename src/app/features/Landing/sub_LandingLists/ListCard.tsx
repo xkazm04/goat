@@ -176,7 +176,7 @@ export const ListCard = memo(function ListCard({
             <div className="flex items-start gap-4 w-full">
               {/* Left side: Thumbnail & Rank */}
               <div className="flex-shrink-0 relative group-hover:scale-[1.02] transition-transform duration-500">
-                <div className="absolute -inset-1 bg-gradient-to-br from-cyan-500/30 to-purple-600/30 rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <div className="absolute -inset-1 bg-gradient-to-br from-amber-500/30 to-amber-600/20 rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 <ListPreviewThumbnail
                   listId={list.id}
                   category={list.category}
@@ -196,7 +196,7 @@ export const ListCard = memo(function ListCard({
               <div className="flex-1 min-w-0 flex flex-col justify-center py-0.5">
                 <div className="flex items-start justify-between gap-2">
                   <h4
-                    className="text-xl font-bold text-white leading-tight group-hover:text-cyan-300 transition-colors line-clamp-2 drop-shadow-md"
+                    className="text-xl font-bold text-white leading-tight group-hover:text-amber-300 transition-colors line-clamp-2 drop-shadow-md"
                     data-testid={`featured-list-title-${list.id}`}
                   >
                     {list.title}
@@ -301,7 +301,7 @@ export const ListCard = memo(function ListCard({
             {/* Use as Template button (featured only) */}
             {isFeatured && showTemplateButton && onUseAsTemplate && (
               <motion.button
-                className="relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 rounded-lg"
+                className="relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 rounded-lg"
                 onClick={handleTemplateClick}
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
@@ -311,11 +311,11 @@ export const ListCard = memo(function ListCard({
                 <div
                   className="w-9 h-9 rounded-lg flex items-center justify-center opacity-60 group-hover:opacity-100 transition-opacity"
                   style={{
-                    background: `linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(34, 211, 238, 0.15))`,
-                    border: "1px solid rgba(6, 182, 212, 0.3)",
+                    background: `linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(245, 158, 11, 0.12))`,
+                    border: "1px solid rgba(251, 191, 36, 0.25)",
                   }}
                 >
-                  <Copy className="w-3.5 h-3.5 text-cyan-400" />
+                  <Copy className="w-3.5 h-3.5 text-amber-400" />
                 </div>
               </motion.button>
             )}
