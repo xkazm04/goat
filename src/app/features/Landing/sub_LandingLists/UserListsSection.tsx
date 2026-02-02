@@ -3,7 +3,7 @@
 import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Plus, User, Sparkles } from "lucide-react";
+import { Plus, Crown, Sparkles } from "lucide-react";
 import { useUserLists, useDeleteList } from "@/hooks/use-top-lists";
 import { useTempUser } from "@/hooks/use-temp-user";
 import { usePlayList } from "@/hooks/use-play-list";
@@ -69,22 +69,18 @@ export function UserListsSection({ className }: UserListsSectionProps) {
         <div className="max-w-6xl mx-auto relative">
           {/* Section header */}
           <SectionHeader
-            icon={User}
+            icon={Crown}
             title="My Rankings"
             subtitle="Your personal collection of ranking lists"
-            gradientColors={{
-              start: "rgba(6, 182, 212, 0.15)",
-              end: "rgba(34, 211, 238, 0.1)",
-            }}
             testIdPrefix="user-lists"
             rightContent={
               <motion.button
                 onClick={handleCreateNew}
                 className="relative group px-5 py-2.5 rounded-xl font-medium text-sm text-white overflow-hidden"
                 style={{
-                  background: `linear-gradient(135deg, rgba(6, 182, 212, 0.9), rgba(34, 211, 238, 0.9))`,
+                  background: `linear-gradient(135deg, rgba(251, 191, 36, 0.9), rgba(245, 158, 11, 0.9))`,
                   boxShadow: `
-                    0 8px 30px rgba(6, 182, 212, 0.3),
+                    0 8px 30px rgba(251, 191, 36, 0.3),
                     inset 0 1px 0 rgba(255, 255, 255, 0.2)
                   `,
                 }}
@@ -97,7 +93,7 @@ export function UserListsSection({ className }: UserListsSectionProps) {
                   <div
                     className="absolute inset-0 opacity-0 group-hover:opacity-100 animate-ambient-shimmer"
                     style={{
-                      background: `linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.2) 50%, transparent 60%)`,
+                      background: `linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.25) 50%, transparent 60%)`,
                       backgroundSize: "200% 100%",
                     }}
                     data-framer-motion-reducible="true"
@@ -135,13 +131,13 @@ export function UserListsSection({ className }: UserListsSectionProps) {
                   <div
                     className={`mx-auto w-20 h-20 rounded-2xl flex items-center justify-center mb-6 ${prefersReducedMotion ? "" : "animate-ambient-card-float"}`}
                     style={{
-                      background: `linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(34, 211, 238, 0.1))`,
+                      background: `linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(245, 158, 11, 0.1))`,
                       "--card-float-duration": "3s",
                       "--card-float-delay": "0s",
                     } as React.CSSProperties}
                     data-framer-motion-reducible="true"
                   >
-                    <Sparkles className="w-10 h-10 text-cyan-400/60" />
+                    <Sparkles className="w-10 h-10 text-amber-400/60" />
                   </div>
                   <h3 className="text-xl font-semibold text-white mb-2">No Lists Yet</h3>
                   <p className="text-slate-400 mb-8 max-w-sm mx-auto">
@@ -151,8 +147,8 @@ export function UserListsSection({ className }: UserListsSectionProps) {
                     onClick={handleCreateNew}
                     className="px-6 py-3 rounded-xl font-medium text-white"
                     style={{
-                      background: `linear-gradient(135deg, rgba(6, 182, 212, 0.9), rgba(34, 211, 238, 0.9))`,
-                      boxShadow: `0 8px 30px rgba(6, 182, 212, 0.25)`,
+                      background: `linear-gradient(135deg, rgba(251, 191, 36, 0.9), rgba(245, 158, 11, 0.9))`,
+                      boxShadow: `0 8px 30px rgba(251, 191, 36, 0.25)`,
                     }}
                     whileHover={prefersReducedMotion ? {} : { scale: 1.05 }}
                     whileTap={prefersReducedMotion ? {} : { scale: 0.98 }}
