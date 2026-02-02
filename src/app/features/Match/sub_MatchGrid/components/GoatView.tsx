@@ -67,7 +67,7 @@ export function GoatView({ gridItems, onRemove, getItemTitle }: GoatViewProps) {
             </motion.div>
 
             {/* Radial glow effect */}
-            <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/10 via-transparent to-transparent blur-3xl -z-10" />
+            <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/20 via-yellow-400/10 to-transparent blur-3xl -z-10" />
 
             {/* The GOAT - Centered and Massive */}
             <div className="flex flex-col items-center gap-6">
@@ -100,8 +100,8 @@ export function GoatView({ gridItems, onRemove, getItemTitle }: GoatViewProps) {
                     className="relative w-96 h-96"
                 >
                     {/* Golden ring */}
-                    <div className="absolute -inset-4 rounded-full border-4 border-yellow-500/30 animate-pulse" />
-                    <div className="absolute -inset-8 rounded-full border-2 border-yellow-500/10" />
+                    <div className="absolute -inset-4 rounded-full border-4 border-yellow-500/40 animate-pulse" />
+                    <div className="absolute -inset-8 rounded-full border-2 border-yellow-500/20" />
 
                     <Elevated level="high" hoverLift={false} className="w-full h-full rounded-full">
                         <SimpleDropZone
@@ -117,7 +117,7 @@ export function GoatView({ gridItems, onRemove, getItemTitle }: GoatViewProps) {
                 </motion.div>
 
                 {/* Description */}
-                <p className="text-yellow-500/60 text-sm font-mono uppercase tracking-widest">
+                <p className="text-yellow-500/70 text-sm font-mono uppercase tracking-widest">
                     Greatest Of All Time
                 </p>
             </div>
