@@ -8,11 +8,11 @@
  */
 
 import { useState } from 'react';
-import { Sparkles, Loader2, Zap, ListOrdered, Wand2, Plus, ChevronUp, ImageIcon, Tag, FileText, Type } from 'lucide-react';
+import { Sparkles, Loader2, Zap, ListOrdered, Wand2, Plus, ChevronUp, ImageIcon, Tag, FileText, Type, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { UniversalSelect } from '@/components/ui/universal-select';
 import { useToast } from '@/hooks/use-toast';
-import { useStudioForm, useStudioGeneration, useStudioItems, useStudioMetadata } from '@/stores/studio-store';
+import { useStudioForm, useStudioGeneration, useStudioItems, useStudioMetadata, useStudioValidation } from '@/stores/studio-store';
 import { apiClient } from '@/lib/api/client';
 import { cn } from '@/lib/utils';
 import { CATEGORIES } from '@/lib/config/category-config';
@@ -67,6 +67,7 @@ export function TopicInputForm() {
     suggestTitleFromTopic,
   } = useStudioMetadata();
   const { toast } = useToast();
+  const { itemCount } = useStudioValidation();
 
   // Add item form state
   const [showAddForm, setShowAddForm] = useState(false);
@@ -167,11 +168,15 @@ export function TopicInputForm() {
               disabled={isGenerating}
               placeholder="e.g., Best Horror Games, Top Pizza Toppings..."
               maxLength={200}
-              className="relative w-full px-3 py-2.5 bg-gray-900/80 border border-gray-700/50
-                rounded-lg text-white placeholder-gray-500 text-sm
-                focus:outline-none focus:border-amber-500/50
-                disabled:opacity-50 disabled:cursor-not-allowed
-                transition-all"
+              className={cn(
+                'relative w-full px-3 py-2.5 bg-gray-900/80 rounded-lg text-white placeholder-gray-500 text-sm',
+                'focus:outline-none focus:border-amber-500/50',
+                'disabled:opacity-50 disabled:cursor-not-allowed transition-all',
+                // Validation states
+                topic.trim()
+                  ? 'border border-green-500/20'  // Has content - subtle success
+                  : 'border border-gray-700/50'   // Empty - neutral
+              )}
             />
           </div>
           <div className="flex justify-end mt-1">
@@ -206,7 +211,7 @@ export function TopicInputForm() {
             <Type className="w-3 h-3" />
             List Title <span className="text-red-400">*</span>
           </label>
-          <div className="flex gap-1.5">
+          <div className="flex items-center gap-1.5">
             <input
               id="list-title"
               type="text"
@@ -215,11 +220,22 @@ export function TopicInputForm() {
               placeholder="My Awesome List"
               maxLength={100}
               disabled={isGenerating}
-              className="flex-1 px-2.5 py-2 bg-gray-900/60 border border-gray-700/50
-                rounded-md text-white placeholder-gray-500 text-sm
-                focus:outline-none focus:ring-1 focus:ring-amber-500/50
-                disabled:opacity-50 transition-all"
+              className={cn(
+                'flex-1 px-2.5 py-2 bg-gray-900/60 rounded-md text-white placeholder-gray-500 text-sm',
+                'focus:outline-none focus:ring-1',
+                'disabled:opacity-50 transition-all',
+                // Validation states based on items existence
+                itemCount > 0 && !listTitle.trim()
+                  ? 'border border-red-500/50 focus:ring-red-500/50'  // Error: items exist but no title
+                  : itemCount > 0 && listTitle.trim()
+                  ? 'border border-green-500/30 focus:ring-green-500/50'  // Success: title + items
+                  : 'border border-gray-700/50 focus:ring-amber-500/50'   // Neutral
+              )}
             />
+            {/* Success checkmark when valid */}
+            {itemCount > 0 && listTitle.trim() && (
+              <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" />
+            )}
             {topic && !listTitle && (
               <button
                 type="button"
