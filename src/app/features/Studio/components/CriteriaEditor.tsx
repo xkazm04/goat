@@ -205,7 +205,7 @@ function ModeSelector({ mode, onModeChange, hasTemplate, categoryName }: ModeSel
           className={cn(
             'flex-1 p-4 rounded-xl border transition-all text-left',
             mode === m.id
-              ? 'border-cyan-500/50 bg-cyan-500/10'
+              ? 'border-amber-500/50 bg-amber-500/10'
               : 'border-gray-700/50 bg-gray-900/30 hover:border-gray-600/50 hover:bg-gray-800/30',
             m.id === 'preset' && !hasTemplate && 'opacity-50 cursor-not-allowed'
           )}
@@ -213,13 +213,13 @@ function ModeSelector({ mode, onModeChange, hasTemplate, categoryName }: ModeSel
           <div className="flex items-center justify-between mb-1">
             <span className={cn(
               'font-medium',
-              mode === m.id ? 'text-cyan-300' : 'text-gray-300'
+              mode === m.id ? 'text-amber-300' : 'text-gray-300'
             )}>
               {m.label}
             </span>
             {mode === m.id && (
-              <div className="w-5 h-5 rounded-full bg-cyan-500/30 border border-cyan-500/50 flex items-center justify-center">
-                <Check className="w-3 h-3 text-cyan-300" />
+              <div className="w-5 h-5 rounded-full bg-amber-500/30 border border-amber-500/50 flex items-center justify-center">
+                <Check className="w-3 h-3 text-amber-300" />
               </div>
             )}
           </div>
@@ -255,8 +255,8 @@ function EmptyState({ onEnablePreset, hasTemplate, templateName }: EmptyStatePro
       <button
         onClick={onEnablePreset}
         className="flex items-center gap-2 px-6 py-3 rounded-xl
-          bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-400 hover:text-cyan-300
-          font-medium border border-cyan-500/30 hover:border-cyan-500/50 transition-all"
+          bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 hover:text-amber-300
+          font-medium border border-amber-500/30 hover:border-amber-500/50 transition-all"
       >
         <Wand2 className="w-4 h-4" />
         {hasTemplate ? `Enable ${templateName}` : 'Create Custom Criteria'}
@@ -319,7 +319,7 @@ function PresetView({ profile, onProfileChange, onCustomize }: PresetViewProps) 
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-cyan-400" />
+            <Sparkles className="w-4 h-4 text-amber-400" />
             {profile.name}
           </h3>
           <p className="text-sm text-gray-500 mt-0.5">{profile.description}</p>
