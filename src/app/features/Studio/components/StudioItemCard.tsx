@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils';
 import { PlayButton } from '@/components/AudioPlayer';
 import { useStudioMetadata } from '@/stores/studio-store';
 import { ProgressiveImage } from '@/components/ui/progressive-image';
+import { Elevated } from '@/components/visual';
 
 interface StudioItemCardProps {
   item: EnrichedItem;
@@ -48,7 +49,9 @@ export const StudioItemCard = memo(function StudioItemCard({ item, index, onRemo
       style={style}
       className={cn('relative', isDragging && 'z-50')}
     >
-      <motion.div
+      <Elevated
+        level="medium"
+        hoverLift
         className={cn(
           'group relative aspect-[3/4] rounded-xl overflow-hidden cursor-pointer border border-gray-700/30',
           isDragging && 'scale-105'
@@ -56,7 +59,6 @@ export const StudioItemCard = memo(function StudioItemCard({ item, index, onRemo
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-        whileHover={{ y: -2 }}
       >
         {/* Image with ProgressiveImage */}
         <div className="absolute inset-0">
@@ -150,7 +152,7 @@ export const StudioItemCard = memo(function StudioItemCard({ item, index, onRemo
             <div className="w-8 h-8 rounded-full border-2 border-white/30 border-t-white animate-spin" />
           </div>
         )}
-      </motion.div>
+      </Elevated>
     </div>
   );
 });
