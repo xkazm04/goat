@@ -10,7 +10,6 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, CheckCircle2, AlertCircle, Send } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import {
   useStudioForm,
   useStudioMetadata,
@@ -190,28 +189,45 @@ export function MetadataPanel() {
       )}
 
       {/* Publish Button */}
-      <Button
+      <motion.button
         onClick={handlePublish}
         disabled={!canPublish || isPublishing}
+        whileHover={canPublish && !isPublishing ? { scale: 1.02 } : undefined}
+        whileTap={canPublish && !isPublishing ? { scale: 0.98 } : undefined}
         className={cn(
-          'w-full h-10 text-sm font-medium rounded-lg transition-all',
+          'w-full h-10 text-sm font-medium rounded-lg transition-all duration-200',
+          'flex items-center justify-center gap-2',
           canPublish && !isPublishing
-            ? 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 hover:text-amber-300 border border-amber-500/30 hover:border-amber-500/50'
+            ? 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 hover:text-amber-300 border border-amber-500/30 hover:border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.15)] hover:shadow-[0_0_20px_rgba(245,158,11,0.25)]'
             : 'bg-gray-800/50 text-gray-500 cursor-not-allowed border border-gray-700/30'
         )}
       >
-        {isPublishing ? (
-          <>
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            Publishing...
-          </>
-        ) : (
-          <>
-            <Send className="w-4 h-4 mr-2" />
-            Publish List
-          </>
-        )}
-      </Button>
+        <AnimatePresence mode="wait">
+          {isPublishing ? (
+            <motion.span
+              key="loading"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              className="flex items-center gap-2"
+            >
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Publishing...
+            </motion.span>
+          ) : (
+            <motion.span
+              key="idle"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              className="flex items-center gap-2"
+            >
+              <Send className="w-4 h-4" />
+              Publish List
+            </motion.span>
+          )}
+        </AnimatePresence>
+      </motion.button>
     </div>
   );
 }
