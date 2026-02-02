@@ -6,6 +6,7 @@ import { SimpleDropZone } from '../../sub_MatchCollections/SimpleDropZone';
 import { GridItemType } from '@/types/match';
 import { PositionBadge } from '../../components/PositionBadge';
 import { Elevated } from '@/components/visual';
+import { cn } from '@/lib/utils';
 
 interface MountRushmoreViewProps {
     gridItems: (GridItemType | null)[];
@@ -43,9 +44,15 @@ export function MountRushmoreView({ gridItems, onRemove, getItemTitle }: MountRu
                         <motion.div
                             key={position}
                             initial={{ opacity: 0, y: 20, scale: 0.9 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            animate={{ opacity: 1, y: 0, scale: position === 0 ? 1.05 : 1 }}
                             transition={{ delay: idx * 0.1, type: "spring", bounce: 0.3 }}
-                            className="relative aspect-square"
+                            className={cn(
+                                "relative aspect-square",
+                                position === 0 && "z-10"
+                            )}
+                            style={position === 0 ? {
+                                boxShadow: '0 0 20px rgba(100, 116, 139, 0.4)'
+                            } : undefined}
                         >
                             {/* Position label - Tier-based visual hierarchy */}
                             <div className="absolute -top-8 left-1/2 -translate-x-1/2 z-20">
