@@ -104,18 +104,6 @@ export function SimpleCollectionPanel({ groups, onItemClick, selectedItemId }: S
     aspectRatio: 4 / 5, // Match ItemCard's aspect-[4/5]
   });
 
-  // Calculate dynamic grid height based on panel height
-  // Compact header: 36px, quick-select bar: 32px, horizontal bar if visible: 40px, padding: 16px
-  const headerHeight = 36;
-  const quickSelectHeight = 32;
-  const horizontalBarHeight = groupViewMode === 'horizontal' ? 40 : 0;
-  const paddingHeight = 16;
-  const navWidth = groupViewMode === 'minimal' ? 44 : (groupViewMode === 'sidebar' ? 176 : 0);
-  const gridHeight = Math.max(
-    150,
-    panelHeight - headerHeight - quickSelectHeight - horizontalBarHeight - paddingHeight
-  );
-
   // Handle resize drag
   const handleResizeStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
@@ -224,6 +212,28 @@ export function SimpleCollectionPanel({ groups, onItemClick, selectedItemId }: S
     visibleItems: flatFilteredItems,
     enabled: isVisible,
   });
+
+  // Compact mode detection - tighter spacing when panel is short
+  const COMPACT_THRESHOLD = 300;
+  const isCompactMode = panelHeight < COMPACT_THRESHOLD;
+
+  // Calculate dynamic grid height based on panel height
+  const headerHeight = 36;
+  const quickSelectHeight = 32;
+  const horizontalBarHeight = groupViewMode === 'horizontal' ? 40 : 0;
+  const paddingHeight = isCompactMode ? 8 : 16; // SPACE-03: Tighter when compact
+
+  // SPACE-01: Only subtract quick-select height when active
+  const quickSelectSubtraction = quickSelect.state.isActive ? quickSelectHeight : 0;
+
+  // Note: Sidebar actual width is responsive (140px tablet, 176px desktop via CSS)
+  // This uses desktop width for calculations; grid flexes to fill remaining space
+  const navWidth = groupViewMode === 'minimal' ? 44 : (groupViewMode === 'sidebar' ? 176 : 0);
+
+  const gridHeight = Math.max(
+    150,
+    panelHeight - headerHeight - quickSelectSubtraction - horizontalBarHeight - paddingHeight
+  );
 
   // Reset to 'all' if the currently selected group becomes empty
   // Uses pre-calculated counts from centralized filtering
@@ -394,7 +404,10 @@ export function SimpleCollectionPanel({ groups, onItemClick, selectedItemId }: S
             )}
 
             {/* Content Area - fills remaining space */}
-            <div className="flex flex-1 min-h-0 overflow-hidden">
+            <div className={cn(
+              "flex flex-1 min-h-0 overflow-hidden",
+              isCompactMode && "gap-0.5"
+            )}>
               {/* Minimal Vertical Nav (default, most space efficient) */}
               {groupViewMode === 'minimal' && (
                 <VerticalCategoryNav
