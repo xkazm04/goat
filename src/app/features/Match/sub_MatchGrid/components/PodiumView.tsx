@@ -90,7 +90,7 @@ export function PodiumView({ gridItems, onRemove, getItemTitle }: PodiumViewProp
                 >
                     {/* Trophy with glow */}
                     <motion.div
-                        className="absolute -top-14 left-1/2 -translate-x-1/2 z-20"
+                        className="absolute -top-12 left-1/2 -translate-x-1/2 z-20"
                         initial={{ scale: 0, y: 20 }}
                         animate={{ scale: 1, y: 0 }}
                         transition={{ delay: 0.5, type: "spring", stiffness: 200 }}
@@ -160,7 +160,7 @@ export function PodiumView({ gridItems, onRemove, getItemTitle }: PodiumViewProp
                 >
                     {/* Award icon */}
                     <motion.div
-                        className="absolute -top-8 left-1/2 -translate-x-1/2 z-20"
+                        className="absolute -top-6 left-1/2 -translate-x-1/2 z-20"
                         initial={{ scale: 0, rotate: 20 }}
                         animate={{ scale: 1, rotate: 0 }}
                         transition={{ delay: 0.45, type: "spring" }}
