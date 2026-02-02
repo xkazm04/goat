@@ -62,16 +62,34 @@ export function GeneratedItemsList() {
     );
   }
 
-  // Empty state
+  // Empty state - prominent with depth treatment
   if (generatedItems.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-gray-800/50 flex items-center justify-center mb-4">
-          <ListOrdered className="w-8 h-8 text-gray-600" />
+      <div className="relative py-20">
+        {/* Subtle ambient glow */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="w-64 h-64 bg-amber-500/5 rounded-full blur-3xl" />
         </div>
-        <p className="text-gray-400 text-sm">
-          Enter a topic and generate items to get started
-        </p>
+
+        {/* Content */}
+        <div className="relative flex flex-col items-center justify-center text-center">
+          {/* Icon with gradient background */}
+          <div className="w-20 h-20 rounded-2xl
+            bg-gradient-to-br from-gray-800/80 to-gray-900/80
+            border border-gray-700/50
+            flex items-center justify-center mb-6
+            shadow-lg shadow-black/20">
+            <ListOrdered className="w-10 h-10 text-gray-600" />
+          </div>
+
+          {/* Text content */}
+          <h3 className="text-lg font-medium text-gray-300 mb-2">
+            No items yet
+          </h3>
+          <p className="text-gray-500 text-sm max-w-xs">
+            Enter a topic above and click <span className="text-amber-400">Generate Items</span> to get started
+          </p>
+        </div>
       </div>
     );
   }
