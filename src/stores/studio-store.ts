@@ -30,6 +30,7 @@ interface StudioState {
   // Generation state
   generatedItems: EnrichedItem[];
   isGenerating: boolean;
+  generationProgress: string | null;  // Progress message during generation
   error: string | null;
 
   // Metadata state
@@ -55,6 +56,7 @@ interface StudioState {
 
   // Actions - Generation
   generateItems: () => Promise<void>;
+  setGenerationProgress: (progress: string | null) => void;
   clearItems: () => void;
   clearError: () => void;
 
@@ -99,6 +101,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   // Initial state - Generation
   generatedItems: [],
   isGenerating: false,
+  generationProgress: null,
   error: null,
 
   // Initial state - Metadata
@@ -134,8 +137,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       return;
     }
 
-    // Start generation
-    set({ isGenerating: true, error: null });
+    // Start generation with progress message
+    set({ isGenerating: true, error: null, generationProgress: 'Generating ideas...' });
 
     // Get existing item titles to exclude duplicates
     const existingTitles = generatedItems.map((item) => item.title.toLowerCase().trim());
@@ -167,6 +170,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
       // Try to match new items against existing DB items
       if (newItems.length > 0) {
+        set({ generationProgress: `Matching ${newItems.length} items...` });
         try {
           const matchResponse = await apiClient.post<{
             items: Array<{
@@ -215,15 +219,20 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       set({
         generatedItems: [...generatedItems, ...newItems],
         isGenerating: false,
+        generationProgress: null,
         ...metadataUpdates,
       });
     } catch (error) {
       set({
         error: getApiErrorMessage(error),
         isGenerating: false,
+        generationProgress: null,
       });
     }
   },
+
+  // Progress action
+  setGenerationProgress: (progress) => set({ generationProgress: progress }),
 
   // Clear actions
   clearItems: () => set({ generatedItems: [] }),
@@ -329,6 +338,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       generateCount: 30,
       generatedItems: [],
       isGenerating: false,
+      generationProgress: null,
       error: null,
       listTitle: '',
       listDescription: '',
@@ -363,12 +373,13 @@ export const useStudioForm = () =>
   );
 
 /**
- * Generation state selector - loading and error states
+ * Generation state selector - loading, progress, and error states
  */
 export const useStudioGeneration = () =>
   useStudioStore(
     useShallow((state) => ({
       isGenerating: state.isGenerating,
+      generationProgress: state.generationProgress,
       error: state.error,
       generateItems: state.generateItems,
       clearError: state.clearError,
