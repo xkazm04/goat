@@ -47,9 +47,9 @@ export function GeneratedItemsList() {
       <div className="space-y-4">
         <div className="flex items-center gap-3">
           <div className="flex items-center justify-center w-8 h-8 rounded-lg
-            bg-gradient-to-br from-cyan-500/20 to-teal-500/10
-            border border-cyan-500/20">
-            <ListOrdered className="w-4 h-4 text-cyan-400" />
+            bg-gradient-to-br from-amber-500/20 to-orange-500/10
+            border border-amber-500/20">
+            <ListOrdered className="w-4 h-4 text-amber-400" />
           </div>
           <h3 className="text-lg font-semibold text-white">Generating items...</h3>
         </div>
@@ -102,9 +102,9 @@ export function GeneratedItemsList() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="flex items-center justify-center w-8 h-8 rounded-lg
-            bg-gradient-to-br from-cyan-500/20 to-teal-500/10
-            border border-cyan-500/20">
-            <ListOrdered className="w-4 h-4 text-cyan-400" />
+            bg-gradient-to-br from-amber-500/20 to-orange-500/10
+            border border-amber-500/20">
+            <ListOrdered className="w-4 h-4 text-amber-400" />
           </div>
           <h3 className="text-lg font-semibold text-white">
             Items
