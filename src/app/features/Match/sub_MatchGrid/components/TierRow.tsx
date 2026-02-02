@@ -6,7 +6,7 @@ import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, useSortable, horizontalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { ChevronDown, ChevronRight, X, Play, Pause } from 'lucide-react';
-import { TierListTier, CommunityTierConsensus } from '../../lib/tierPresets';
+import { TierListTier } from '../../lib/tierPresets';
 import { BacklogItem } from '@/types/backlog-groups';
 import { createUnifiedTierRowDropData, createUnifiedTierDragData } from '@/lib/dnd/unified-protocol';
 import { useOptionalDropZoneHighlight } from './DropZoneHighlightContext';
@@ -16,8 +16,6 @@ import { useAudioStore, useIsItemPlaying } from '@/stores/audio-store';
 interface TierItemProps {
   item: BacklogItem;
   tierId: string;
-  showCommunityTier?: boolean;
-  communityTier?: string;
   onRemove?: (itemId: string) => void;
 }
 
@@ -28,8 +26,6 @@ interface TierItemProps {
 function TierItem({
   item,
   tierId,
-  showCommunityTier,
-  communityTier,
   onRemove,
 }: TierItemProps) {
   // Get item's index within the tier for unified protocol
@@ -138,17 +134,6 @@ function TierItem({
           </p>
         </div>
 
-        {/* Community tier indicator */}
-        {showCommunityTier && communityTier && (
-          <div
-            className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold bg-black/60 border border-white/30"
-            aria-label={`Community consensus: ${communityTier} tier`}
-            role="img"
-          >
-            {communityTier}
-          </div>
-        )}
-
         {/* Play button for Music category */}
         {isMusicCategory && (
           <button
@@ -201,8 +186,6 @@ interface TierRowProps {
   onToggleCollapse?: (tierId: string) => void;
   onRemoveItem?: (itemId: string) => void;
   onEditTier?: (tier: TierListTier) => void;
-  showCommunityComparison?: boolean;
-  communityConsensus?: Map<string, CommunityTierConsensus>;
   isDraggingOver?: boolean;
   /** Index of this tier for accessibility */
   tierIndex?: number;
@@ -219,8 +202,6 @@ export const TierRow = forwardRef<HTMLDivElement, TierRowProps>(function TierRow
     onToggleCollapse,
     onRemoveItem,
     onEditTier,
-    showCommunityComparison,
-    communityConsensus,
     isDraggingOver,
     tierIndex = 0,
   },
@@ -367,19 +348,14 @@ export const TierRow = forwardRef<HTMLDivElement, TierRowProps>(function TierRow
           ) : (
             <SortableContext items={itemIds} strategy={horizontalListSortingStrategy}>
               <div className="flex flex-wrap gap-2">
-                {items.map((item) => {
-                  const consensus = communityConsensus?.get(item.id);
-                  return (
-                    <TierItem
-                      key={item.id}
-                      item={item}
-                      tierId={tier.id}
-                      showCommunityTier={showCommunityComparison}
-                      communityTier={consensus?.consensusTier}
-                      onRemove={onRemoveItem}
-                    />
-                  );
-                })}
+                {items.map((item) => (
+                  <TierItem
+                    key={item.id}
+                    item={item}
+                    tierId={tier.id}
+                    onRemove={onRemoveItem}
+                  />
+                ))}
               </div>
             </SortableContext>
           )}
