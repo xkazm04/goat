@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Keyboard } from 'lucide-react';
+import { Keyboard } from 'lucide-react';
 import { GridItemType } from '@/types/match';
 import { BacklogItem } from '@/types/backlog-groups';
 import {
@@ -10,7 +10,6 @@ import {
   TierListPreset,
   PRESET_CLASSIC,
   tierListToRanking,
-  CommunityTierConsensus,
 } from '../../lib/tierPresets';
 import { TierRow, UnrankedPool } from './TierRow';
 import { TierConfigurator } from './TierConfigurator';
@@ -39,45 +38,6 @@ interface TierListViewProps {
 }
 
 /**
- * Community comparison toggle
- */
-function CommunityComparisonToggle({
-  enabled,
-  onToggle,
-  agreementScore,
-}: {
-  enabled: boolean;
-  onToggle: () => void;
-  agreementScore?: number;
-}) {
-  return (
-    <button
-      onClick={onToggle}
-      aria-pressed={enabled}
-      aria-label={`Community comparison${enabled && agreementScore !== undefined ? `: ${agreementScore.toFixed(0)}% match` : ''}`}
-      className={`
-        flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium
-        transition-all duration-200 ease-out
-        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900
-        ${
-          enabled
-            ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40 shadow-lg shadow-purple-500/10'
-            : 'bg-slate-800/80 text-slate-300 border border-slate-600/80 hover:border-slate-500 hover:bg-slate-700/80'
-        }
-      `}
-    >
-      <Users className={`w-4 h-4 transition-colors duration-200 ${enabled ? 'text-purple-400' : ''}`} />
-      <span className="hidden sm:inline">Community</span>
-      {enabled && agreementScore !== undefined && (
-        <span className="px-1.5 py-0.5 rounded bg-purple-500/30 text-xs font-semibold">
-          {agreementScore.toFixed(0)}% match
-        </span>
-      )}
-    </button>
-  );
-}
-
-/**
  * Main Tier List View Component
  *
  * Now uses ranking-store for tier state instead of local useState.
@@ -93,7 +53,6 @@ export function TierListView({
 }: TierListViewProps) {
   // UI-only state
   const [preset, setPreset] = useState<TierListPreset>(PRESET_CLASSIC);
-  const [showCommunityComparison, setShowCommunityComparison] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
 
@@ -286,9 +245,6 @@ export function TierListView({
     [itemsMap]
   );
 
-  // Calculate agreement score if community comparison is enabled
-  const agreementScore = showCommunityComparison ? 75 : undefined; // Placeholder
-
   // Create tier items map for focus provider
   const tierItemsMap = useMemo(() => {
     const map = new Map<string, BacklogItem[]>();
@@ -308,8 +264,6 @@ export function TierListView({
         unrankedItems={unrankedItems}
         itemsMap={itemsMap}
         preset={preset}
-        showCommunityComparison={showCommunityComparison}
-        agreementScore={agreementScore}
         isDragging={isDragging}
         isExporting={isExporting}
         showKeyboardHelp={showKeyboardHelp}
@@ -321,10 +275,8 @@ export function TierListView({
         onTierRemove={handleTierRemove}
         onReset={handleReset}
         onExport={handleExport}
-        onApplyRanking={handleApplyRanking}
         onToggleCollapse={handleToggleCollapse}
         onRemoveItem={handleRemoveItem}
-        onToggleCommunityComparison={() => setShowCommunityComparison(!showCommunityComparison)}
         onToggleKeyboardHelp={() => setShowKeyboardHelp(!showKeyboardHelp)}
         getTierItems={getTierItems}
       />
@@ -341,8 +293,6 @@ interface TierListViewContentProps {
   unrankedItems: BacklogItem[];
   itemsMap: Map<string, BacklogItem>;
   preset: TierListPreset;
-  showCommunityComparison: boolean;
-  agreementScore?: number;
   isDragging: boolean;
   isExporting: boolean;
   showKeyboardHelp: boolean;
@@ -354,10 +304,8 @@ interface TierListViewContentProps {
   onTierRemove: (tierId: string) => void;
   onReset: () => void;
   onExport: () => void;
-  onApplyRanking: () => void;
   onToggleCollapse: (tierId: string) => void;
   onRemoveItem: (itemId: string) => void;
-  onToggleCommunityComparison: () => void;
   onToggleKeyboardHelp: () => void;
   getTierItems: (tier: TierListTier) => BacklogItem[];
 }
@@ -368,8 +316,6 @@ function TierListViewContent({
   unrankedItems,
   itemsMap,
   preset,
-  showCommunityComparison,
-  agreementScore,
   isDragging,
   isExporting,
   showKeyboardHelp,
@@ -381,10 +327,8 @@ function TierListViewContent({
   onTierRemove,
   onReset,
   onExport,
-  onApplyRanking,
   onToggleCollapse,
   onRemoveItem,
-  onToggleCommunityComparison,
   onToggleKeyboardHelp,
   getTierItems,
 }: TierListViewContentProps) {
@@ -467,13 +411,6 @@ function TierListViewContent({
           <kbd className="px-1 py-0.5 rounded bg-slate-700 text-[10px] font-mono text-slate-400">?</kbd>
         </button>
 
-        {/* Community comparison toggle */}
-        <CommunityComparisonToggle
-          enabled={showCommunityComparison}
-          onToggle={onToggleCommunityComparison}
-          agreementScore={agreementScore}
-        />
-
         {/* Customize button */}
         <TierConfigurator
           currentPreset={preset}
@@ -485,15 +422,6 @@ function TierListViewContent({
           onTiersReset={onReset}
           onExport={onExport}
         />
-
-        {/* Apply ranking button */}
-        <button
-          onClick={onApplyRanking}
-          disabled={tiers.every(t => t.items.length === 0)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium transition-all duration-200 text-sm shadow-lg shadow-green-500/20 hover:shadow-green-500/30 hover:-translate-y-0.5 active:translate-y-0"
-        >
-          Apply Ranking
-        </button>
       </div>
 
       {/* Tier list */}
@@ -512,7 +440,6 @@ function TierListViewContent({
               onToggleCollapse={onToggleCollapse}
               onRemoveItem={onRemoveItem}
               onEditTier={(t) => onTierUpdate(t.id, t)}
-              showCommunityComparison={showCommunityComparison}
               isDraggingOver={isDragging}
               tierIndex={index}
             />
