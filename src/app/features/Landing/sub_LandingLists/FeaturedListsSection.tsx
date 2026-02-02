@@ -9,10 +9,12 @@ import { usePlayList } from "@/hooks/use-play-list";
 import { TopList } from "@/types/top-lists";
 import { SearchFilterBar, SearchFilterResult } from "./SearchFilterBar";
 import { NeonArenaTheme } from "../shared/NeonArenaTheme";
+import { FEATURED_ORBS } from "../shared/NeonArenaBackground";
 import { SectionHeader } from "./SectionHeader";
 import { getCategoryColor } from "@/lib/helpers/getColors";
 import { useQueries } from "@tanstack/react-query";
 import { goatApi } from "@/lib/api";
+import { ELEVATION, GLOW_PRESET } from "@/components/visual/depth";
 
 interface FeaturedListsSectionProps {
   className?: string;
@@ -63,8 +65,9 @@ const MosaicCard = memo(function MosaicCard({
       style={{
         background: '#0e1117',
         boxShadow: isHovered
-          ? `0 8px 24px rgba(0,0,0,0.4), 0 0 0 1px ${colors.primary}30`
-          : '0 2px 8px rgba(0,0,0,0.2)',
+          ? `${ELEVATION.medium}, ${GLOW_PRESET.goldSubtle}`
+          : ELEVATION.low,
+        transition: 'box-shadow 0.3s ease',
       }}
     >
       {/* Category accent - left border */}
@@ -73,6 +76,18 @@ const MosaicCard = memo(function MosaicCard({
         style={{
           background: colors.primary,
           boxShadow: isHovered ? `0 0 12px ${colors.primary}50` : 'none',
+        }}
+      />
+
+      {/* Hover glow overlay */}
+      <motion.div
+        className="absolute inset-0 rounded-md pointer-events-none"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: isHovered ? 1 : 0 }}
+        transition={{ duration: 0.3 }}
+        style={{
+          background: `radial-gradient(circle at center, rgba(251, 191, 36, 0.08) 0%, transparent 70%)`,
+          boxShadow: isHovered ? `inset 0 0 30px rgba(251, 191, 36, 0.05)` : 'none',
         }}
       />
 
@@ -142,7 +157,11 @@ const MosaicCard = memo(function MosaicCard({
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-              className="w-12 h-12 rounded-full bg-amber-500 flex items-center justify-center shadow-xl shadow-amber-500/40"
+              className="w-12 h-12 rounded-full flex items-center justify-center"
+              style={{
+                background: "linear-gradient(135deg, #fbbf24, #f59e0b)",
+                boxShadow: "0 4px 20px rgba(251, 191, 36, 0.4), 0 0 15px rgba(251, 191, 36, 0.3)",
+              }}
             >
               <Play className="w-6 h-6 text-white fill-current ml-0.5" />
             </motion.div>
@@ -241,6 +260,11 @@ export function FeaturedListsSection({ className }: FeaturedListsSectionProps) {
       variant="section"
       as="section"
       className={`py-20 px-6 ${className}`}
+      config={{
+        orbs: FEATURED_ORBS,
+        showCenterGlow: true,
+        glowIntensity: 0.12,
+      }}
       data-testid="featured-lists-section"
     >
       <div className="max-w-7xl mx-auto relative">
