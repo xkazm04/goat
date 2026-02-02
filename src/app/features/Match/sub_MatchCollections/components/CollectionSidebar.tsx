@@ -36,7 +36,7 @@ export function CollectionSidebar({
         transition: { delay: 0.15, duration: 0.25, ease: [0.16, 1, 0.3, 1] }
       }}
       aria-label="Collection categories"
-      className="w-44 glass-dock-sidebar p-3 overflow-y-auto space-y-1.5 scrollbar-thin scrollbar-thumb-white/15 scrollbar-track-white/[0.02]"
+      className="w-[140px] lg:w-44 glass-dock-sidebar p-3 overflow-y-auto space-y-1.5 scrollbar-thin scrollbar-thumb-white/15 scrollbar-track-white/[0.02]"
     >
       {/* All Items Button */}
       <motion.button
