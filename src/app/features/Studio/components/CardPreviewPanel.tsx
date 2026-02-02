@@ -132,7 +132,7 @@ export const CardPreviewPanel = memo(function CardPreviewPanel({
             {/* Gradient overlay for readability */}
             <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/20 pointer-events-none" />
 
-            {/* Rank Badge (position 1) */}
+            {/* Rank Badge (position 1) - matches PositionBadge podium styling */}
             <motion.div
               className="absolute top-2 left-1/2 -translate-x-1/2 z-20"
               initial={{ opacity: 0, y: -10 }}
@@ -140,19 +140,14 @@ export const CardPreviewPanel = memo(function CardPreviewPanel({
               transition={{ delay: 0.1, duration: 0.3 }}
             >
               <div
-                className="px-3 py-1 rounded-lg backdrop-blur-md border flex items-center gap-1.5 shadow-lg"
+                className="px-2.5 py-1 rounded-lg font-bold text-gray-900 text-sm"
                 style={{
-                  backgroundColor: 'rgba(251, 191, 36, 0.15)',
-                  borderColor: 'rgba(251, 191, 36, 0.5)',
-                  boxShadow: '0 0 15px rgba(251, 191, 36, 0.3)',
+                  background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FFD700 100%)',
+                  boxShadow: '0 2px 8px rgba(255, 215, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.3)',
+                  textShadow: '0 1px 2px rgba(0, 0, 0, 0.4), 0 0 8px rgba(255, 215, 0, 0.6)',
                 }}
               >
-                <span
-                  className="text-sm font-black tracking-wide"
-                  style={{ color: '#fbbf24' }}
-                >
-                  1
-                </span>
+                #1
               </div>
             </motion.div>
 
