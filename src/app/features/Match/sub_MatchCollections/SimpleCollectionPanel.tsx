@@ -433,7 +433,10 @@ export function SimpleCollectionPanel({ groups, onItemClick, selectedItemId }: S
               {/* Main Grid - Virtualized for performance */}
               <div
                 ref={gridContainerRef}
-                className="flex-1 p-2 min-h-0 overflow-hidden"
+                className={cn(
+                  "flex-1 min-h-0 overflow-hidden",
+                  isCompactMode ? "p-1" : "p-2"
+                )}
                 data-testid="collection-grid-container"
               >
                 <VirtualizedCollectionGrid
