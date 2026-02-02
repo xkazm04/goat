@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { LucideIcon } from "lucide-react";
-import { fadeInUp } from "../shared/animations";
+import { springConfig } from "../shared/animations";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 
 interface SectionHeaderProps {
@@ -23,8 +23,8 @@ interface SectionHeaderProps {
 }
 
 const DEFAULT_GRADIENT = {
-  start: "rgba(6, 182, 212, 0.15)",
-  end: "rgba(34, 211, 238, 0.1)",
+  start: "rgba(251, 191, 36, 0.15)", // amber-400
+  end: "rgba(245, 158, 11, 0.1)", // amber-500
 };
 
 export function SectionHeader({
@@ -32,7 +32,7 @@ export function SectionHeader({
   title,
   subtitle,
   gradientColors = DEFAULT_GRADIENT,
-  iconColorClass = "text-cyan-400",
+  iconColorClass = "text-amber-400",
   rightContent,
   testIdPrefix,
 }: SectionHeaderProps) {
@@ -41,9 +41,9 @@ export function SectionHeader({
   return (
     <motion.div
       className={`flex items-center ${rightContent ? "justify-between" : "gap-4"} mb-8`}
-      variants={fadeInUp}
-      initial="hidden"
-      whileInView="visible"
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={springConfig.section}
       viewport={{ once: true }}
       data-testid={testIdPrefix ? `${testIdPrefix}-header` : undefined}
     >
@@ -54,6 +54,7 @@ export function SectionHeader({
             background: `linear-gradient(135deg, ${gradientColors.start}, ${gradientColors.end})`,
             boxShadow: `
               0 8px 32px ${gradientColors.start},
+              0 0 15px rgba(251, 191, 36, 0.2),
               inset 0 1px 0 rgba(255, 255, 255, 0.1)
             `,
           }}
@@ -64,7 +65,7 @@ export function SectionHeader({
         </motion.div>
         <div>
           <h2
-            className="text-3xl font-bold text-white tracking-tight flex"
+            className="text-3xl font-bold tracking-tight flex"
             data-testid={testIdPrefix ? `${testIdPrefix}-section-title` : undefined}
           >
             {title.split("").map((char, i) => (
@@ -72,8 +73,22 @@ export function SectionHeader({
                 key={i}
                 initial={{ opacity: 0, y: 5 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.05, delay: i * 0.03 }}
+                transition={{
+                  type: "spring",
+                  stiffness: 100,
+                  damping: 12,
+                  delay: i * 0.03,
+                }}
                 viewport={{ once: true }}
+                style={{
+                  background:
+                    "linear-gradient(180deg, #fcd34d 0%, #f59e0b 50%, #d97706 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                  filter:
+                    "drop-shadow(0 2px 0 rgba(146, 64, 14, 0.3)) drop-shadow(0 4px 12px rgba(251, 191, 36, 0.3))",
+                }}
               >
                 {char === " " ? "\u00A0" : char}
               </motion.span>
