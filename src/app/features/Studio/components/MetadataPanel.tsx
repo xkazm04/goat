@@ -8,6 +8,7 @@
  * Now also saves new items to Supabase on publish for reuse.
  */
 
+import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, CheckCircle2, AlertCircle, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
