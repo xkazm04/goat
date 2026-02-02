@@ -11,7 +11,7 @@ import {
   PRESET_CLASSIC,
   tierListToRanking,
 } from '../../lib/tierPresets';
-import { TierRow, UnrankedPool } from './TierRow';
+import { TierRow } from './TierRow';
 import { TierConfigurator } from './TierConfigurator';
 import { exportTierListImage } from '../../lib/tierListExporter';
 import { useRankingStore } from '@/stores/ranking-store';
@@ -447,8 +447,6 @@ function TierListViewContent({
         </AnimatePresence>
       </div>
 
-      {/* Unranked pool */}
-      <UnrankedPool items={unrankedItems} />
 
       {/* Keyboard mode indicator */}
       <KeyboardModeIndicator isActive={isKeyboardNavigating} />
