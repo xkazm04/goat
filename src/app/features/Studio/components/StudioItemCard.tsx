@@ -18,6 +18,7 @@ import { PlayButton } from '@/components/AudioPlayer';
 import { useStudioMetadata } from '@/stores/studio-store';
 import { ProgressiveImage } from '@/components/ui/progressive-image';
 import { Elevated } from '@/components/visual';
+import { springConfig } from '@/app/features/Landing/shared/animations';
 
 interface StudioItemCardProps {
   item: EnrichedItem;
@@ -56,9 +57,9 @@ export const StudioItemCard = memo(function StudioItemCard({ item, index, onRemo
           'group relative aspect-[3/4] rounded-xl overflow-hidden cursor-pointer border border-gray-700/30',
           isDragging && 'scale-105'
         )}
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={springConfig.section}
       >
         {/* Image with ProgressiveImage */}
         <div className="absolute inset-0">
