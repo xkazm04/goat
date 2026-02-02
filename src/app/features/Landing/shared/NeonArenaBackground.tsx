@@ -23,6 +23,8 @@ export interface FloatingOrbConfig {
   scale?: [number, number];
   /** Use secondary cyan color (rgba(34, 211, 238)) instead of primary (rgba(6, 182, 212)) */
   secondary?: boolean;
+  /** Custom color override - uses full rgba string, falls back to cyan colors if not provided */
+  color?: string;
 }
 
 export interface NeonArenaBackgroundProps {
@@ -116,6 +118,47 @@ export const MINIMAL_ORBS: FloatingOrbConfig[] = [
 ];
 
 /**
+ * Featured section orbs - gold/amber tinted for premium feel
+ * Matches ShowcaseHeader color palette
+ */
+export const FEATURED_ORBS: FloatingOrbConfig[] = [
+  {
+    position: { x: 15, y: 20 },
+    size: 300,
+    opacity: 0.08,
+    blur: 48,
+    duration: 18,
+    movement: { x: 40, y: -25 },
+    scale: [1, 1.08],
+    // Gold orb - uses amber-400
+    color: "rgba(251, 191, 36, 1)",
+  },
+  {
+    position: { x: 85, y: 70 },
+    size: 250,
+    opacity: 0.06,
+    blur: 48,
+    duration: 22,
+    movement: { x: -35, y: 30 },
+    scale: [1, 1.1],
+    // Amber orb - uses amber-500
+    color: "rgba(245, 158, 11, 1)",
+    secondary: true,
+  },
+  {
+    position: { x: 50, y: 90 },
+    size: 200,
+    opacity: 0.05,
+    blur: 48,
+    duration: 20,
+    movement: { x: 20, y: -15 },
+    scale: [1, 1.05],
+    // Subtle gold accent
+    color: "rgba(252, 211, 77, 1)",
+  },
+];
+
+/**
  * CSS-animated floating orb - uses GPU-accelerated CSS animations
  * instead of JS-driven Framer Motion for better performance
  */
@@ -130,10 +173,22 @@ const FloatingOrb = memo(function FloatingOrb({ config, prefersReducedMotion }: 
     movement = { x: 0, y: 0 },
     scale,
     secondary = false,
+    color: customColor,
   } = config;
 
-  const color = secondary ? "34, 211, 238" : "6, 182, 212";
+  // Use custom color if provided, otherwise use default cyan colors
+  const defaultColor = secondary ? "34, 211, 238" : "6, 182, 212";
   const scaleValue = scale ? scale[1] : 1.05;
+
+  // Build the radial gradient background
+  // If customColor is provided (full rgba string), extract RGB and apply opacity
+  // Otherwise use the default cyan colors with opacity
+  const gradientBackground = customColor
+    ? `radial-gradient(circle, ${customColor.replace(/rgba?\(([^)]+)\)/, (_, rgb) => {
+        const parts = rgb.split(',').map((p: string) => p.trim());
+        return `rgba(${parts[0]}, ${parts[1]}, ${parts[2]}, ${opacity})`;
+      })} 0%, transparent 60%)`
+    : `radial-gradient(circle, rgba(${defaultColor}, ${opacity}) 0%, transparent 60%)`;
 
   // Use CSS custom properties for animation parameters
   const cssVars = {
@@ -155,7 +210,7 @@ const FloatingOrb = memo(function FloatingOrb({ config, prefersReducedMotion }: 
         width: size,
         height: size,
         transform: "translate(-50%, -50%)",
-        background: `radial-gradient(circle, rgba(${color}, ${opacity}) 0%, transparent 60%)`,
+        background: gradientBackground,
         filter: `blur(${blur}px)`,
         borderRadius: "9999px",
         pointerEvents: "none",
