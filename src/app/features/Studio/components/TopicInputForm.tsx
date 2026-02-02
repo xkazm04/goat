@@ -8,11 +8,11 @@
  */
 
 import { useState } from 'react';
-import { Sparkles, Loader2, Zap, ListOrdered, Wand2, Plus, ChevronUp, ImageIcon, Tag, FileText, Type, CheckCircle2 } from 'lucide-react';
+import { Sparkles, Loader2, Zap, ListOrdered, Wand2, Plus, ChevronUp, ImageIcon, Tag, FileText, Type } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { UniversalSelect } from '@/components/ui/universal-select';
 import { useToast } from '@/hooks/use-toast';
-import { useStudioForm, useStudioGeneration, useStudioItems, useStudioMetadata, useStudioValidation } from '@/stores/studio-store';
+import { useStudioForm, useStudioGeneration, useStudioItems, useStudioMetadata } from '@/stores/studio-store';
 import { apiClient } from '@/lib/api/client';
 import { cn } from '@/lib/utils';
 import { CATEGORIES } from '@/lib/config/category-config';
@@ -67,7 +67,6 @@ export function TopicInputForm() {
     suggestTitleFromTopic,
   } = useStudioMetadata();
   const { toast } = useToast();
-  const { itemCount } = useStudioValidation();
 
   // Add item form state
   const [showAddForm, setShowAddForm] = useState(false);
@@ -168,15 +167,11 @@ export function TopicInputForm() {
               disabled={isGenerating}
               placeholder="e.g., Best Horror Games, Top Pizza Toppings..."
               maxLength={200}
-              className={cn(
-                'relative w-full px-3 py-2.5 bg-gray-900/80 rounded-lg text-white placeholder-gray-500 text-sm',
-                'focus:outline-none focus:border-amber-500/50',
-                'disabled:opacity-50 disabled:cursor-not-allowed transition-all',
-                // Validation states
-                topic.trim()
-                  ? 'border border-green-500/20'  // Has content - subtle success
-                  : 'border border-gray-700/50'   // Empty - neutral
-              )}
+              className="relative w-full px-3 py-2.5 bg-gray-900/80 border border-gray-700/50
+                rounded-lg text-white placeholder-gray-500 text-sm
+                focus:outline-none focus:border-amber-500/50
+                disabled:opacity-50 disabled:cursor-not-allowed
+                transition-all"
             />
           </div>
           <div className="flex justify-end mt-1">
@@ -211,44 +206,37 @@ export function TopicInputForm() {
             <Type className="w-3 h-3" />
             List Title <span className="text-red-400">*</span>
           </label>
-          <div className="flex items-center gap-1.5">
-            <input
-              id="list-title"
-              type="text"
-              value={listTitle}
-              onChange={(e) => setListTitle(e.target.value)}
-              placeholder="My Awesome List"
-              maxLength={100}
-              disabled={isGenerating}
-              className={cn(
-                'flex-1 px-2.5 py-2 bg-gray-900/60 rounded-md text-white placeholder-gray-500 text-sm',
-                'focus:outline-none focus:ring-1',
-                'disabled:opacity-50 transition-all',
-                // Validation states based on items existence
-                itemCount > 0 && !listTitle.trim()
-                  ? 'border border-red-500/50 focus:ring-red-500/50'  // Error: items exist but no title
-                  : itemCount > 0 && listTitle.trim()
-                  ? 'border border-green-500/30 focus:ring-green-500/50'  // Success: title + items
-                  : 'border border-gray-700/50 focus:ring-amber-500/50'   // Neutral
-              )}
-            />
-            {/* Success checkmark when valid */}
-            {itemCount > 0 && listTitle.trim() && (
-              <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" />
-            )}
-            {topic && !listTitle && (
-              <button
-                type="button"
-                onClick={suggestTitleFromTopic}
-                title="Use topic as title"
+          <div className="relative group">
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-500/20 to-orange-400/20
+              rounded-lg opacity-0 group-focus-within:opacity-100 blur transition-opacity" />
+            <div className="relative flex gap-1.5">
+              <input
+                id="list-title"
+                type="text"
+                value={listTitle}
+                onChange={(e) => setListTitle(e.target.value)}
+                placeholder="My Awesome List"
+                maxLength={100}
                 disabled={isGenerating}
-                className="p-2 bg-gray-900/60 border border-gray-700/50 rounded-md
-                  text-gray-400 hover:text-amber-400 hover:border-amber-500/30
+                className="flex-1 px-2.5 py-2 bg-gray-900/60 border border-gray-700/50
+                  rounded-md text-white placeholder-gray-500 text-sm
+                  focus:outline-none focus:ring-1 focus:ring-amber-500/50
                   disabled:opacity-50 transition-all"
-              >
-                <Wand2 className="w-3.5 h-3.5" />
-              </button>
-            )}
+              />
+              {topic && !listTitle && (
+                <button
+                  type="button"
+                  onClick={suggestTitleFromTopic}
+                  title="Use topic as title"
+                  disabled={isGenerating}
+                  className="p-2 bg-gray-900/60 border border-gray-700/50 rounded-md
+                    text-gray-400 hover:text-amber-400 hover:border-amber-500/30
+                    disabled:opacity-50 transition-all"
+                >
+                  <Wand2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
           </div>
           <div className="flex justify-end mt-1">
             <CharacterCounter current={listTitle.length} max={100} />
@@ -264,19 +252,23 @@ export function TopicInputForm() {
             <FileText className="w-3 h-3" />
             Description <span className="text-gray-600">(optional)</span>
           </label>
-          <input
-            id="list-description"
-            type="text"
-            value={listDescription}
-            onChange={(e) => setListDescription(e.target.value)}
-            placeholder="What is this list about?"
-            maxLength={200}
-            disabled={isGenerating}
-            className="w-full px-2.5 py-2 bg-gray-900/60 border border-gray-700/50
-              rounded-md text-white placeholder-gray-500 text-sm
-              focus:outline-none focus:ring-1 focus:ring-amber-500/50
-              disabled:opacity-50 transition-all"
-          />
+          <div className="relative group">
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-500/20 to-orange-400/20
+              rounded-lg opacity-0 group-focus-within:opacity-100 blur transition-opacity" />
+            <input
+              id="list-description"
+              type="text"
+              value={listDescription}
+              onChange={(e) => setListDescription(e.target.value)}
+              placeholder="What is this list about?"
+              maxLength={200}
+              disabled={isGenerating}
+              className="relative w-full px-2.5 py-2 bg-gray-900/60 border border-gray-700/50
+                rounded-md text-white placeholder-gray-500 text-sm
+                focus:outline-none focus:ring-1 focus:ring-amber-500/50
+                disabled:opacity-50 transition-all"
+            />
+          </div>
           <div className="flex justify-end mt-1">
             <CharacterCounter current={listDescription.length} max={200} />
           </div>
@@ -396,31 +388,42 @@ export function TopicInputForm() {
                 </button>
               </div>
 
-              <input
-                type="text"
-                value={addTitle}
-                onChange={(e) => setAddTitle(e.target.value)}
-                onKeyDown={handleAddKeyDown}
-                placeholder="Item title *"
-                autoFocus
-                disabled={isAddingItem}
-                className="w-full px-3 py-2 bg-gray-800/50 border border-gray-700/50
-                  rounded-md text-white placeholder-gray-500 text-sm
-                  focus:outline-none focus:ring-1 focus:ring-cyan-500/50
-                  disabled:opacity-50 transition-all"
-              />
-              <textarea
-                value={addDescription}
-                onChange={(e) => setAddDescription(e.target.value)}
-                onKeyDown={handleAddKeyDown}
-                placeholder="Description (optional)"
-                rows={2}
-                disabled={isAddingItem}
-                className="w-full px-3 py-2 bg-gray-800/50 border border-gray-700/50
-                  rounded-md text-white placeholder-gray-500 text-sm resize-none
-                  focus:outline-none focus:ring-1 focus:ring-cyan-500/50
-                  disabled:opacity-50 transition-all"
-              />
+              {/* Add item title input with focus glow */}
+              <div className="relative group">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-500/20 to-orange-400/20
+                  rounded-lg opacity-0 group-focus-within:opacity-100 blur transition-opacity" />
+                <input
+                  type="text"
+                  value={addTitle}
+                  onChange={(e) => setAddTitle(e.target.value)}
+                  onKeyDown={handleAddKeyDown}
+                  placeholder="Item title *"
+                  autoFocus
+                  disabled={isAddingItem}
+                  className="relative w-full px-3 py-2 bg-gray-800/50 border border-gray-700/50
+                    rounded-md text-white placeholder-gray-500 text-sm
+                    focus:outline-none focus:ring-1 focus:ring-amber-500/50
+                    disabled:opacity-50 transition-all"
+                />
+              </div>
+
+              {/* Add item description textarea with focus glow */}
+              <div className="relative group">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-500/20 to-orange-400/20
+                  rounded-lg opacity-0 group-focus-within:opacity-100 blur transition-opacity" />
+                <textarea
+                  value={addDescription}
+                  onChange={(e) => setAddDescription(e.target.value)}
+                  onKeyDown={handleAddKeyDown}
+                  placeholder="Description (optional)"
+                  rows={2}
+                  disabled={isAddingItem}
+                  className="relative w-full px-3 py-2 bg-gray-800/50 border border-gray-700/50
+                    rounded-md text-white placeholder-gray-500 text-sm resize-none
+                    focus:outline-none focus:ring-1 focus:ring-amber-500/50
+                    disabled:opacity-50 transition-all"
+                />
+              </div>
 
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5 text-xs text-gray-500">
