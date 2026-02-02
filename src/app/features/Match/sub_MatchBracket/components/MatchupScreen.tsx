@@ -361,7 +361,7 @@ export function MatchupScreen({
       </div>
 
       {/* Main matchup area */}
-      <div className="flex-1 flex items-center justify-center px-3 sm:px-6 py-2 overflow-hidden">
+      <div className="flex-1 flex items-center justify-center px-3 sm:px-6 py-1 overflow-hidden">
         <div
           className="flex items-center justify-center w-full"
           style={{ gap: dims.cardGap }}
@@ -392,7 +392,7 @@ export function MatchupScreen({
       </div>
 
       {/* Bottom actions */}
-      <div className="flex-shrink-0 px-4 py-4 border-t border-slate-800/50 bg-slate-900/50">
+      <div className="flex-shrink-0 px-4 py-3 border-t border-slate-800/50 bg-slate-900/50">
         <div className="max-w-lg mx-auto">
           <AnimatePresence mode="wait">
             {selectedWinnerId ? (
