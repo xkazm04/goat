@@ -27,11 +27,11 @@ export function MountRushmoreView({ gridItems, onRemove, getItemTitle }: MountRu
                     animate={{ opacity: 1, y: 0 }}
                     className="flex items-center gap-3 mb-2"
                 >
-                    <Mountain className="w-7 h-7 text-slate-400" />
+                    <Mountain className="w-7 h-7 text-slate-400 drop-shadow-[0_0_8px_rgba(100,116,139,0.5)]" />
                     <h3 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-slate-300 via-slate-100 to-slate-300 tracking-wider">
                         MOUNT RUSHMORE
                     </h3>
-                    <Mountain className="w-7 h-7 text-slate-400" />
+                    <Mountain className="w-7 h-7 text-slate-400 drop-shadow-[0_0_8px_rgba(100,116,139,0.5)]" />
                 </motion.div>
 
                 <p className="text-slate-500 text-xs font-mono uppercase tracking-widest mb-4">
@@ -59,8 +59,10 @@ export function MountRushmoreView({ gridItems, onRemove, getItemTitle }: MountRu
                                 <PositionBadge position={position} />
                             </div>
 
-                            {/* Stone frame effect */}
-                            <div className="absolute -inset-2 bg-gradient-to-br from-slate-700/20 to-slate-900/20 rounded-xl blur-sm" />
+                            {/* Stone frame - outer glow */}
+                            <div className="absolute -inset-2 bg-gradient-to-br from-slate-600/40 to-slate-900/50 rounded-xl blur-sm" />
+                            {/* Stone frame - inner carved effect */}
+                            <div className="absolute inset-0 rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.3),inset_0_-2px_4px_rgba(255,255,255,0.05)]" />
 
                             <Elevated level="medium" hoverLift={false} className="w-full h-full rounded-xl">
                                 <SimpleDropZone
