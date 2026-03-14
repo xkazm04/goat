@@ -33,8 +33,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans:** 2/2 plans complete
 
 Plans:
-- [ ] 01-01-PLAN.md -- Debug and fix item loading, store hydration gate, LRU eviction, legacy cleanup
-- [ ] 01-02-PLAN.md -- Wire CompletionModal, landing page category browse and search
+- [x] 01-01-PLAN.md -- Debug and fix item loading, store hydration gate, LRU eviction, legacy cleanup (completed 2026-03-14)
+- [x] 01-02-PLAN.md -- Wire CompletionModal, landing page category browse and search (completed 2026-03-14)
 
 ### Phase 2: Auth Migration
 **Goal**: Supabase Auth replaces Clerk so user identity is correct before any data ownership is assigned
@@ -49,7 +49,7 @@ Plans:
 
 Plans:
 - [x] 02-01: Supabase Auth foundation -- useAuthUser hook, middleware, OAuth callback, merge endpoint, Clerk removal (completed 2026-03-14)
-- [ ] 02-02: Swap ClerkProvider for Supabase Auth, implement middleware, remove Clerk and svix
+- [x] 02-02: Auth UI components -- AuthModal, AuthPrompt, UserMenu wired into layout and match flow (completed 2026-03-14)
 
 ### Phase 3: Content and AI Generation
 **Goal**: The app has real content users want to rank, and anyone can create a custom list via AI

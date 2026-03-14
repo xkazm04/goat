@@ -106,7 +106,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FLOW-06 | Phase 1 | Complete |
 | FLOW-07 | Phase 1 | Complete |
 | AUTH-01 | Phase 2 | Complete |
-| AUTH-02 | Phase 2 | Pending |
+| AUTH-02 | Phase 2 | Complete |
 | AUTH-03 | Phase 2 | Complete |
 | AUTH-04 | Phase 2 | Complete |
 | AUTH-05 | Phase 2 | Complete |

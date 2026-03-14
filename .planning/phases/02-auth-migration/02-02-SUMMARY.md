@@ -61,7 +61,7 @@ completed: 2026-03-14
 - **Duration:** 4 min
 - **Started:** 2026-03-14T22:20:39Z
 - **Completed:** 2026-03-14T22:24:47Z
-- **Tasks:** 2 of 3 (task 3 is checkpoint:human-verify)
+- **Tasks:** 3 of 3 (task 3 checkpoint:human-verify approved)
 - **Files modified:** 8 (6 created, 2 modified)
 
 ## Accomplishments
@@ -129,9 +129,9 @@ None.
 None - Google OAuth provider must already be configured in Supabase dashboard (covered in Plan 01 notes).
 
 ## Next Phase Readiness
-- Auth UI is complete and ready for human verification (Task 3 checkpoint)
+- Auth UI complete -- human verification (Task 3 checkpoint) approved
 - All components compile cleanly
-- Pending: manual verification of full OAuth flow (sign in, sign out, session persistence, guest merge)
+- Full OAuth flow verified: sign in, sign out, session persistence, guest merge
 
 ## Self-Check
 
