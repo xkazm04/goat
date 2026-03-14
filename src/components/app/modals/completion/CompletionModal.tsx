@@ -14,15 +14,17 @@ interface CompletionData {
 interface CompletionModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onKeepEditing: () => void;
   listTitle: string;
   completionData: CompletionData;
 }
 
-export function CompletionModal({ 
-  isOpen, 
-  onClose, 
-  listTitle, 
-  completionData 
+export function CompletionModal({
+  isOpen,
+  onClose,
+  onKeepEditing,
+  listTitle,
+  completionData
 }: CompletionModalProps) {
   if (!isOpen) return null;
 
@@ -32,7 +34,7 @@ export function CompletionModal({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 modal-overlay"
+        className="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 modal-overlay"
         onClick={onClose}
         data-exclude-capture="true"
       >
@@ -43,7 +45,7 @@ export function CompletionModal({
           className="w-full max-w-2xl max-h-[90vh] rounded-2xl overflow-hidden"
           style={{
             background: `
-              linear-gradient(135deg, 
+              linear-gradient(135deg,
                 rgba(15, 23, 42, 0.95) 0%,
                 rgba(30, 41, 59, 0.98) 50%,
                 rgba(51, 65, 85, 0.95) 100%
@@ -60,20 +62,21 @@ export function CompletionModal({
           data-modal="completion"
         >
           {/* Header */}
-          <CompletionModalHeader 
+          <CompletionModalHeader
             onClose={onClose}
             listTitle={listTitle}
           />
 
           {/* Content */}
-          <CompletionModalContent 
+          <CompletionModalContent
             listTitle={listTitle}
             completionData={completionData}
           />
 
           {/* Actions */}
-          <CompletionModalActions 
+          <CompletionModalActions
             onClose={onClose}
+            onKeepEditing={onKeepEditing}
             listTitle={listTitle}
           />
         </motion.div>

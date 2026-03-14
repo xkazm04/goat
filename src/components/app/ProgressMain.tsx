@@ -210,10 +210,11 @@ const ProgressMain = ({ text, showPercentage = true, className = "" }: ProgressM
             <CompletionModal
                 isOpen={isCompletionModalOpen}
                 onClose={() => setIsCompletionModalOpen(false)}
+                onKeepEditing={() => setIsCompletionModalOpen(false)}
                 listTitle={currentList?.title || "Your Ranking"}
                 completionData={{
                     totalItems: totalSize,
-                    timeTaken: "Just now", // We'll calculate this later
+                    timeTaken: "Just now",
                     category: currentList?.category || "General"
                 }}
             />

@@ -1,94 +1,41 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Share2, Download, Save } from "lucide-react";
-import { useTwitterShare } from "@/hooks/useTwitterShare";
-import { useScreenCapture } from "@/hooks/useScreenCapture";
-import CompletionModalActionButton from "./CompletionModalActionButton";
+import { Download, Share2, Pencil, Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface CompletionModalActionsProps {
   onClose: () => void;
+  onKeepEditing: () => void;
   listTitle: string;
 }
 
-export function CompletionModalActions({ 
-  onClose, 
-  listTitle 
+export function CompletionModalActions({
+  onClose,
+  onKeepEditing,
+  listTitle
 }: CompletionModalActionsProps) {
-  const { shareOnTwitter } = useTwitterShare();
-  const { captureAndDownload, isCapturing } = useScreenCapture();
+  const router = useRouter();
+  const [comingSoonLabel, setComingSoonLabel] = useState<string | null>(null);
 
-  const handleTwitterShare = () => {
-    shareOnTwitter({
-      text: `🏆 Just completed my "${listTitle}" ranking! Check out my results and create your own ranking list.`,
-      hashtags: ['ranking', 'goat'],
-      via: 'G.O.A.T' 
-    });
+  const showComingSoon = (label: string) => {
+    setComingSoonLabel(label);
+    setTimeout(() => setComingSoonLabel(null), 2000);
   };
 
-  const handleExportImage = async () => {
-    try {
-      await captureAndDownload({
-        filename: `${listTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_ranking.png`,
-        excludeSelectors: [
-          '[data-modal="completion"]', 
-          '.modal-overlay',
-          '[data-exclude-capture="true"]'
-        ]
-      });
-    } catch (error) {
-      console.error('Failed to export image:', error);
-      // TODO: Show user-friendly error message
-    }
+  const handleStartNew = () => {
+    onClose();
+    router.push('/');
   };
-
-  const handleSave = () => {
-    // TODO: Implement save functionality
-    console.log("Save ranking clicked for:", listTitle);
-    // This will save the ranking to user's collection/favorites
-  };
-
-  const actions: Array<{
-    icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
-    label: string;
-    description: string;
-    onClick: () => void;
-    color: string;
-    special?: 'twitter';
-    disabled?: boolean;
-  }> = [
-    {
-      icon: Share2,
-      label: "Tweet",
-      description: "Share on Twitter",
-      onClick: handleTwitterShare,
-      color: "#1da1f2", // Twitter blue
-      special: "twitter" as const
-    },
-    {
-      icon: Download, // data-exclude-capture="true"
-      label: "Export",
-      description: isCapturing ? "Capturing..." : "Download as image",
-      onClick: handleExportImage,
-      color: "#f59e0b",
-      disabled: isCapturing
-    },
-    {
-      icon: Save,
-      label: "Save",
-      description: "Save to collection",
-      onClick: handleSave,
-      color: "#10b981"
-    }
-  ];
 
   return (
-    <div 
+    <div
       className="px-8 py-6 border-t"
       style={{
         borderColor: 'rgba(16, 185, 129, 0.2)',
         background: `
-          linear-gradient(135deg, 
+          linear-gradient(135deg,
             rgba(15, 23, 42, 0.8) 0%,
             rgba(30, 41, 59, 0.9) 100%
           )
@@ -96,38 +43,116 @@ export function CompletionModalActions({
       }}
       data-modal="completion"
     >
-      <div className="space-y-4">
+      <div className="space-y-3">
+        {/* Coming soon toast */}
+        {comingSoonLabel && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="text-center text-xs text-slate-400 py-1.5 px-3 rounded-lg bg-slate-800/60 border border-slate-700/50"
+          >
+            {comingSoonLabel} is coming in a future update
+          </motion.div>
+        )}
 
-        {/* Secondary Actions */}
-        <motion.div 
-          className="grid grid-cols-3 gap-3"
+        {/* 2x2 Action Grid */}
+        <motion.div
+          className="grid grid-cols-2 gap-3"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.6 }}
+          transition={{ delay: 1.2 }}
         >
-          {actions.map((action, index) => (
-            <CompletionModalActionButton 
-              key={action.label}
-              action={action}
-              index={index}
-              />
-          ))}
-        </motion.div>
+          {/* Download Result Image - stub */}
+          <motion.button
+            className="flex items-center gap-3 p-3.5 rounded-xl transition-all duration-200 opacity-60 cursor-default"
+            style={{
+              background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.4) 0%, rgba(51, 65, 85, 0.5) 100%)',
+              border: '1px solid rgba(71, 85, 105, 0.3)'
+            }}
+            onClick={() => showComingSoon('Download result image')}
+            whileTap={{ scale: 0.97 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 0.6, y: 0 }}
+            transition={{ delay: 1.3 }}
+          >
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-amber-500/10 border border-amber-500/20">
+              <Download className="w-4 h-4 text-amber-500/70" />
+            </div>
+            <div className="text-left">
+              <div className="text-xs font-semibold text-slate-400">Download Image</div>
+              <div className="text-[10px] text-slate-600">Coming soon</div>
+            </div>
+          </motion.button>
 
-        {/* Close Button */}
-        <motion.button
-          className="w-full py-3 rounded-xl text-slate-400 font-medium transition-all duration-200 hover:text-slate-200"
-          style={{
-            background: 'rgba(51, 65, 85, 0.3)',
-            border: '1px solid rgba(71, 85, 105, 0.4)'
-          }}
-          onClick={onClose}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 2 }}
-        >
-          Close
-        </motion.button>
+          {/* Share Link - stub */}
+          <motion.button
+            className="flex items-center gap-3 p-3.5 rounded-xl transition-all duration-200 opacity-60 cursor-default"
+            style={{
+              background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.4) 0%, rgba(51, 65, 85, 0.5) 100%)',
+              border: '1px solid rgba(71, 85, 105, 0.3)'
+            }}
+            onClick={() => showComingSoon('Share link')}
+            whileTap={{ scale: 0.97 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 0.6, y: 0 }}
+            transition={{ delay: 1.4 }}
+          >
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-blue-500/10 border border-blue-500/20">
+              <Share2 className="w-4 h-4 text-blue-500/70" />
+            </div>
+            <div className="text-left">
+              <div className="text-xs font-semibold text-slate-400">Share Link</div>
+              <div className="text-[10px] text-slate-600">Coming soon</div>
+            </div>
+          </motion.button>
+
+          {/* Keep Editing - primary */}
+          <motion.button
+            className="flex items-center gap-3 p-3.5 rounded-xl transition-all duration-200 hover:brightness-110"
+            style={{
+              background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.15) 0%, rgba(59, 130, 246, 0.15) 100%)',
+              border: '1px solid rgba(6, 182, 212, 0.4)'
+            }}
+            onClick={onKeepEditing}
+            whileHover={{ scale: 1.02, boxShadow: '0 4px 20px rgba(6, 182, 212, 0.2)' }}
+            whileTap={{ scale: 0.97 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.5 }}
+          >
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-cyan-500/20 border border-cyan-500/30">
+              <Pencil className="w-4 h-4 text-cyan-400" />
+            </div>
+            <div className="text-left">
+              <div className="text-xs font-semibold text-cyan-300">Keep Editing</div>
+              <div className="text-[10px] text-cyan-500/60">Return to grid</div>
+            </div>
+          </motion.button>
+
+          {/* Start New Ranking - primary */}
+          <motion.button
+            className="flex items-center gap-3 p-3.5 rounded-xl transition-all duration-200 hover:brightness-110"
+            style={{
+              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(52, 211, 153, 0.15) 100%)',
+              border: '1px solid rgba(16, 185, 129, 0.4)'
+            }}
+            onClick={handleStartNew}
+            whileHover={{ scale: 1.02, boxShadow: '0 4px 20px rgba(16, 185, 129, 0.2)' }}
+            whileTap={{ scale: 0.97 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.6 }}
+          >
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-emerald-500/20 border border-emerald-500/30">
+              <Plus className="w-4 h-4 text-emerald-400" />
+            </div>
+            <div className="text-left">
+              <div className="text-xs font-semibold text-emerald-300">Start New</div>
+              <div className="text-[10px] text-emerald-500/60">New ranking</div>
+            </div>
+          </motion.button>
+        </motion.div>
       </div>
     </div>
   );
