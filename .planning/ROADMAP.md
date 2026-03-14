@@ -48,7 +48,7 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 02-01: Audit schema, build user_id_mapping table, abstract auth behind useAuthUser hook
+- [x] 02-01: Supabase Auth foundation -- useAuthUser hook, middleware, OAuth callback, merge endpoint, Clerk removal (completed 2026-03-14)
 - [ ] 02-02: Swap ClerkProvider for Supabase Auth, implement middleware, remove Clerk and svix
 
 ### Phase 3: Content and AI Generation
@@ -109,7 +109,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Core Ranking Flow | 2/2 | Complete   | 2026-03-14 |
-| 2. Auth Migration | 0/2 | Not started | - |
+| 2. Auth Migration | 1/2 | In progress | - |
 | 3. Content and AI Generation | 0/3 | Not started | - |
 | 4. Result Sharing | 0/3 | Not started | - |
 | 5. Polish and Production Readiness | 0/3 | Not started | - |

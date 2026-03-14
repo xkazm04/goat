@@ -27,11 +27,11 @@ Requirements for production launch. Each maps to roadmap phases.
 
 ### Authentication & Accounts
 
-- [ ] **AUTH-01**: User can start ranking without creating an account (guest mode)
-- [ ] **AUTH-02**: User can sign up with email/password via Supabase Auth
-- [ ] **AUTH-03**: User can sign up with Google OAuth via Supabase Auth
-- [ ] **AUTH-04**: User session persists across browser refresh
-- [ ] **AUTH-05**: Guest rankings sync to user account after sign-up
+- [x] **AUTH-01**: User can start ranking without creating an account (guest mode)
+- [x] **AUTH-02**: User can sign up with email/password via Supabase Auth
+- [x] **AUTH-03**: User can sign up with Google OAuth via Supabase Auth
+- [x] **AUTH-04**: User session persists across browser refresh
+- [x] **AUTH-05**: Guest rankings sync to user account after sign-up
 
 ### Content & Data
 

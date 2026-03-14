@@ -2,31 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: completed
-stopped_at: Phase 2 context gathered
-last_updated: "2026-03-14T21:46:46.853Z"
-last_activity: 2026-03-14 — Completed 01-03-PLAN.md (category card browse flow)
+status: in-progress
+stopped_at: Completed 02-01-PLAN.md (auth foundation and Clerk removal)
+last_updated: "2026-03-14T22:16:15Z"
+last_activity: 2026-03-14 — Completed 02-01-PLAN.md (auth foundation and Clerk removal)
 progress:
   total_phases: 5
   completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
----
-
----
-gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: phase-complete
-stopped_at: Completed 01-03-PLAN.md — Phase 1 complete (all 3 plans)
-last_updated: "2026-03-14T21:00:00Z"
-last_activity: 2026-03-14 — Completed 01-03-PLAN.md (category card browse flow)
-progress:
-  total_phases: 5
-  completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
-  percent: 100
+  total_plans: 13
+  completed_plans: 4
+  percent: 31
 ---
 
 # Project State
@@ -36,32 +21,33 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-14)
 
 **Core value:** Users can complete a full ranking from start to finish — pick a list, fill the grid, and share the result — without hitting dead ends or broken flows.
-**Current focus:** Phase 1 — Core Ranking Flow
+**Current focus:** Phase 2 — Auth Migration
 
 ## Current Position
 
-Phase: 1 of 5 (Core Ranking Flow) -- COMPLETE
-Plan: 3 of 3 in current phase (all plans complete)
-Status: Phase complete
-Last activity: 2026-03-14 — Completed 01-03-PLAN.md (category card browse flow)
+Phase: 2 of 5 (Auth Migration)
+Plan: 1 of 2 in current phase (1 complete)
+Status: In progress
+Last activity: 2026-03-14 — Completed 02-01-PLAN.md (auth foundation and Clerk removal)
 
-Progress: [██████████] 100%
+Progress: [███-------] 31%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
-- Average duration: 7 min
-- Total execution time: 0.37 hours
+- Total plans completed: 4
+- Average duration: 8 min
+- Total execution time: 0.50 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-core-ranking-flow | 3 | 22 min | 7 min |
+| 02-auth-migration | 1 | 8 min | 8 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (8 min), 01-02 (12 min), 01-03 (2 min)
+- Last 5 plans: 01-01 (8 min), 01-02 (12 min), 01-03 (2 min), 02-01 (8 min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -84,6 +70,10 @@ Recent decisions affecting current work:
 - [01-02]: MIN_CATEGORY_ITEMS threshold as tunable constant for category gating on landing page
 - [01-03]: Used store-based initialQuery approach to avoid prop drilling through CommandPaletteProvider
 - [01-03]: Used getState() in event handler for cross-store access, matching project conventions
+- [02-01]: Refactored supabase-auth/client.ts to use shared browser client singleton (avoids duplicate clients)
+- [02-01]: Root-level middleware.ts (Clerk) deleted; src/middleware.ts is correct for Next.js with src/ directory
+- [02-01]: DB schema types retain clerk_id columns for migration; merge endpoint updates lists, shared_rankings, list_collections
+- [02-01]: useAuthUser() is the single consumer-facing auth hook -- components should not use useSupabaseAuth or useTempUser directly
 
 ### Pending Todos
 
@@ -98,6 +88,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-14T21:46:46.850Z
-Stopped at: Phase 2 context gathered
-Resume file: .planning/phases/02-auth-migration/02-CONTEXT.md
+Last session: 2026-03-14T22:16:15Z
+Stopped at: Completed 02-01-PLAN.md (auth foundation and Clerk removal)
+Resume file: .planning/phases/02-auth-migration/02-01-SUMMARY.md
