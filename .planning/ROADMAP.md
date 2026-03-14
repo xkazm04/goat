@@ -12,8 +12,8 @@ This roadmap takes the existing feature-rich but broken codebase to a production
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [x] **Phase 1: Core Ranking Flow** - Fix the broken end-to-end ranking experience so users can pick, fill, and save a list (completed 2026-03-14)
-- [x] **Phase 2: Auth Migration** - Replace Clerk with Supabase Auth so user identity is stable before data ownership matters (completed 2026-03-14)
+- [x] **Phase 1: Core Ranking Flow** - Fix the broken end-to-end ranking experience so users can pick, fill, and save a list (completed 2026-03-14)
+- [x] **Phase 2: Auth Migration** - Replace Clerk with Supabase Auth so user identity is stable before data ownership matters (completed 2026-03-14)
 - [ ] **Phase 3: Content and AI Generation** - Populate 10-15 categories and complete the AI custom list pipeline
 - [ ] **Phase 4: Result Sharing** - Implement real image generation and shareable links to close the viral loop
 - [ ] **Phase 5: Polish and Production Readiness** - UI polish, test coverage, error monitoring, and launch gate
@@ -60,12 +60,12 @@ Plans:
   2. Empty or underpopulated categories are hidden from browsing automatically
   3. User types any topic in Studio and receives a populated, rankable list of AI-generated items with images
   4. Studio list creation flow feels polished — progress feedback, error states, clear save/publish action
-**Plans**: TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] 03-01: Run category audit, write idempotent seed scripts, populate and gate categories
-- [ ] 03-02: Complete Gemini generation pipeline — Zod schema, rate limiting, image enrichment, save to Supabase
-- [ ] 03-03: Polish Studio UI — progress UX, error states, confirmation flow
+- [ ] 03-01-PLAN.md -- Seed 10+ video game categories with 100+ items each, update landing page to hide underpopulated categories
+- [ ] 03-02-PLAN.md -- Add streaming progressive generation to Studio endpoint, update store and UI for real-time item reveal
+- [ ] 03-03-PLAN.md -- Polish Studio UI: progress indicators, error states, item editing, draft/publish flow
 
 ### Phase 4: Result Sharing
 **Goal**: Users can download a branded result image and share a link that shows an OG preview
