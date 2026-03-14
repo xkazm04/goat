@@ -12,7 +12,7 @@ This roadmap takes the existing feature-rich but broken codebase to a production
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Core Ranking Flow** - Fix the broken end-to-end ranking experience so users can pick, fill, and save a list
+- [x] **Phase 1: Core Ranking Flow** - Fix the broken end-to-end ranking experience so users can pick, fill, and save a list (completed 2026-03-14)
 - [ ] **Phase 2: Auth Migration** - Replace Clerk with Supabase Auth so user identity is stable before data ownership matters
 - [ ] **Phase 3: Content and AI Generation** - Populate 10-15 categories and complete the AI custom list pipeline
 - [ ] **Phase 4: Result Sharing** - Implement real image generation and shareable links to close the viral loop
@@ -30,7 +30,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. User can fill all grid positions and the app shows a clear completion state
   4. User can close the browser and return to find their ranking exactly where they left it
   5. User can browse and search available lists from the landing page and find populated categories
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 
 Plans:
 - [ ] 01-01-PLAN.md -- Debug and fix item loading, store hydration gate, LRU eviction, legacy cleanup
@@ -108,7 +108,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Core Ranking Flow | 0/2 | Planning complete | - |
+| 1. Core Ranking Flow | 2/2 | Complete   | 2026-03-14 |
 | 2. Auth Migration | 0/2 | Not started | - |
 | 3. Content and AI Generation | 0/3 | Not started | - |
 | 4. Result Sharing | 0/3 | Not started | - |

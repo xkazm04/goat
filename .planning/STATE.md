@@ -1,3 +1,19 @@
+---
+gsd_state_version: 1.0
+milestone: v1.0
+milestone_name: milestone
+status: phase-complete
+stopped_at: Completed 01-02-PLAN.md — Phase 1 complete
+last_updated: "2026-03-14T20:39:00.000Z"
+last_activity: 2026-03-14 — Completed 01-02-PLAN.md (completion modal, landing page browse and search)
+progress:
+  total_phases: 5
+  completed_phases: 1
+  total_plans: 2
+  completed_plans: 2
+  percent: 100
+---
+
 # Project State
 
 ## Project Reference
@@ -9,29 +25,29 @@ See: .planning/PROJECT.md (updated 2026-03-14)
 
 ## Current Position
 
-Phase: 1 of 5 (Core Ranking Flow)
-Plan: 1 of 2 in current phase
-Status: Executing
-Last activity: 2026-03-14 — Completed 01-01-PLAN.md (core store fixes, hydration gate, LRU eviction)
+Phase: 1 of 5 (Core Ranking Flow) -- COMPLETE
+Plan: 2 of 2 in current phase (all plans complete)
+Status: Phase complete
+Last activity: 2026-03-14 — Completed 01-02-PLAN.md (completion modal, landing page browse and search)
 
-Progress: [██░░░░░░░░] 10%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
-- Average duration: 8 min
-- Total execution time: 0.13 hours
+- Total plans completed: 2
+- Average duration: 10 min
+- Total execution time: 0.33 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-core-ranking-flow | 1 | 8 min | 8 min |
+| 01-core-ranking-flow | 2 | 20 min | 10 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (8 min)
-- Trend: baseline
+- Last 5 plans: 01-01 (8 min), 01-02 (12 min)
+- Trend: stable
 
 *Updated after each plan completion*
 
@@ -48,6 +64,9 @@ Recent decisions affecting current work:
 - [01-01]: Deprecated type re-exports left in place due to active importers (consensus-store, CommandPalette)
 - [Pre-Phase 2]: Auth migration is a data migration, not just a library swap. All tables with user_id columns need a mapping script. Must abstract auth behind useAuthUser() hook before swapping provider.
 - [Pre-Phase 4]: Result image endpoint (/api/match/generate-result-image) returns JSON metadata, not a binary image. @zumer/snapdom for client download, Next.js ImageResponse for OG previews.
+- [01-02]: Download/Share buttons shown as Coming soon stubs rather than hidden -- keeps modal complete, sets expectations for Phase 4
+- [01-02]: hasUserDismissed flag prevents completion modal re-trigger after Keep editing
+- [01-02]: MIN_CATEGORY_ITEMS threshold as tunable constant for category gating on landing page
 
 ### Pending Todos
 
@@ -63,5 +82,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-14
-Stopped at: Completed 01-01-PLAN.md
+Stopped at: Completed 01-02-PLAN.md — Phase 1 (Core Ranking Flow) complete
 Resume file: None
