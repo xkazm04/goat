@@ -30,12 +30,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. User can fill all grid positions and the app shows a clear completion state
   4. User can close the browser and return to find their ranking exactly where they left it
   5. User can browse and search available lists from the landing page and find populated categories
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 01-01: Debug and fix backlog item loading into the grid
-- [ ] 01-02: Validate drag-and-drop operations and session persistence
-- [ ] 01-03: Fix landing page browse and search with populated data gate
+- [ ] 01-01-PLAN.md -- Debug and fix item loading, store hydration gate, LRU eviction, legacy cleanup
+- [ ] 01-02-PLAN.md -- Wire CompletionModal, landing page category browse and search
 
 ### Phase 2: Auth Migration
 **Goal**: Supabase Auth replaces Clerk so user identity is correct before any data ownership is assigned
@@ -109,7 +108,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Core Ranking Flow | 0/3 | Not started | - |
+| 1. Core Ranking Flow | 0/2 | Planning complete | - |
 | 2. Auth Migration | 0/2 | Not started | - |
 | 3. Content and AI Generation | 0/3 | Not started | - |
 | 4. Result Sharing | 0/3 | Not started | - |
