@@ -20,6 +20,9 @@ import { GRID_LIMITS } from '@/lib/grid/constants';
 import { DEBOUNCE } from '@/lib/timing';
 
 interface SessionStoreState {
+  // Hydration readiness flag - true once persist middleware has rehydrated from storage
+  _hydrated: boolean;
+
   // Multi-list sessions
   listSessions: Record<string, ListSession>;
   activeSessionId: string | null;
@@ -105,6 +108,7 @@ export const useSessionStore = create<SessionStoreState>()(
   persist(
     (set, get) => ({
       // Initial state
+      _hydrated: false,
       listSessions: {},
       activeSessionId: null,
       normalizedData: createEmptyNormalizedData(),
@@ -478,7 +482,14 @@ export const useSessionStore = create<SessionStoreState>()(
       partialize: (state) => ({
         listSessions: state.listSessions,
         activeSessionId: state.activeSessionId
-      })
+        // NOTE: _hydrated is intentionally excluded -- it must reset to false on page load
+      }),
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          state._hydrated = true;
+          sessionLogger.debug('Session store rehydrated successfully');
+        }
+      }
     }
   )
 );
@@ -495,6 +506,9 @@ export const useSessionSelection = () => useSessionStore((state) => ({
 }));
 export const useSessionProgress = () => useSessionStore((state) => state.getSessionProgress());
 export const useSessionMetadata = () => useSessionStore((state) => state.getSessionMetadata());
+
+// Hydration readiness selector
+export const useSessionHydrated = () => useSessionStore((state) => state._hydrated);
 
 // New selectors for group management
 export const useGroupItems = (groupId: string) => useSessionStore((state) => state.getGroupItems(groupId));

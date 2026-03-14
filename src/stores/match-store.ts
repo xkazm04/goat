@@ -260,27 +260,27 @@ export const useMatchStore = create<MatchStoreState>((set, get) => ({
   // Match Session Management
   initializeMatchSession: async () => {
     set({ isLoading: true });
-    
+
     try {
       const listStore = useListStore.getState();
       const sessionStore = useSessionStore.getState();
       const gridStore = useGridStore.getState();
       const currentList = listStore.currentList;
-      
+
       if (!currentList) {
         matchLogger.warn('No current list available for match session');
         set({ isLoading: false });
         return;
       }
-      
+
       matchLogger.debug(`Initializing match session for list: ${currentList.title} (${currentList.id})`);
-      
+
       // 1. Sync with session store first
       sessionStore.syncWithList(currentList.id, currentList.category);
-      
+
       // 2. Initialize or load grid
       const activeSession = sessionStore.getActiveSession();
-      
+
       if (activeSession && activeSession.gridItems.length > 0) {
         // Load existing session
         matchLogger.debug('Loading existing session data');
@@ -290,15 +290,37 @@ export const useMatchStore = create<MatchStoreState>((set, get) => ({
         matchLogger.debug('Creating new grid');
         gridStore.initializeGrid(currentList.size, currentList.id, currentList.category);
       }
-      
-      // 3. Setup keyboard mode if needed
+
+      // 3. Trigger backlog loading if groups are not already loaded
+      // This is critical: without this, backlog items never appear in the collection panel
+      try {
+        const { useBacklogStore } = await import('@/stores/backlog-store');
+        const backlogState = useBacklogStore.getState();
+
+        if (!backlogState.groups || backlogState.groups.length === 0) {
+          matchLogger.debug(`Loading backlog groups for category: ${currentList.category}`);
+          await backlogState.initializeGroups(
+            currentList.category,
+            currentList.subcategory,
+            false // don't force refresh if cache is valid
+          );
+          matchLogger.debug('Backlog groups loaded successfully');
+        } else {
+          matchLogger.debug(`Backlog already has ${backlogState.groups.length} groups loaded`);
+        }
+      } catch (backlogError) {
+        matchLogger.error('Failed to load backlog groups:', backlogError);
+        // Non-fatal: session and grid are still initialized, user can retry
+      }
+
+      // 4. Setup keyboard mode if needed
       const state = get();
       if (state.keyboardMode) {
         get().selectNextAvailableItem();
       }
-      
+
       matchLogger.info('Match session initialized successfully');
-      
+
     } catch (error) {
       matchLogger.error('Failed to initialize match session:', error);
     } finally {

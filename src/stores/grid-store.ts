@@ -46,6 +46,21 @@ import { gridLogger } from '@/lib/logger';
 export type { ValidationErrorCode as TransferValidationErrorCode } from '@/lib/validation';
 
 /**
+ * Safely sync grid items to session store, gated on session hydration.
+ * If session store has not yet rehydrated from storage, the sync is skipped
+ * to prevent overwriting persisted data with empty/stale grid state.
+ * The next user action (drag, assign, etc.) will catch up once hydrated.
+ */
+function syncGridToSession(gridItems: GridItemType[]): void {
+  const sessionState = useSessionStore.getState();
+  if (!sessionState._hydrated) {
+    gridLogger.warn('Session store not yet hydrated -- skipping grid sync to prevent data loss');
+    return;
+  }
+  sessionState.updateSessionGridItems(gridItems);
+}
+
+/**
  * Lazy accessor for backlog-store to avoid circular dependency issues.
  * Uses retry logic in case user drags immediately before module initializes.
  */
@@ -243,8 +258,7 @@ export const useGridStore = create<GridStoreState>()(
 
         // Save grid to session if listId provided
         if (listId) {
-          const sessionStore = useSessionStore.getState();
-          sessionStore.updateSessionGridItems(emptyGridItems);
+          syncGridToSession(emptyGridItems);
           gridLogger.debug(`Grid initialized and saved to session ${listId}`);
         }
       },
@@ -323,8 +337,7 @@ export const useGridStore = create<GridStoreState>()(
         });
 
         // Update session store with new grid
-        const sessionStore = useSessionStore.getState();
-        sessionStore.updateSessionGridItems(newGridItems);
+        syncGridToSession(newGridItems);
       },
 
       // Sync with session store
@@ -397,8 +410,7 @@ export const useGridStore = create<GridStoreState>()(
           newGridItems[position] = gridItem;
 
           // Update session store if needed
-          const sessionStore = useSessionStore.getState();
-          sessionStore.updateSessionGridItems(newGridItems);
+          syncGridToSession(newGridItems);
 
           return {
             gridItems: newGridItems,
@@ -424,8 +436,7 @@ export const useGridStore = create<GridStoreState>()(
           newGridItems[position] = createEmptyGridSlot(position);
 
           // Update session store
-          const sessionStore = useSessionStore.getState();
-          sessionStore.updateSessionGridItems(newGridItems);
+          syncGridToSession(newGridItems);
 
           return {
             gridItems: newGridItems,
@@ -473,8 +484,7 @@ export const useGridStore = create<GridStoreState>()(
           }
 
           // Update session store
-          const sessionStore = useSessionStore.getState();
-          sessionStore.updateSessionGridItems(newGridItems);
+          syncGridToSession(newGridItems);
 
           return {
             gridItems: newGridItems,
@@ -541,8 +551,7 @@ export const useGridStore = create<GridStoreState>()(
           }
 
           // Update session store
-          const sessionStore = useSessionStore.getState();
-          sessionStore.updateSessionGridItems(newGridItems);
+          syncGridToSession(newGridItems);
 
           return {
             gridItems: newGridItems,
@@ -559,8 +568,7 @@ export const useGridStore = create<GridStoreState>()(
           const emptyGridItems = createEmptyGrid(state.gridItems.length);
 
           // Update session store
-          const sessionStore = useSessionStore.getState();
-          sessionStore.updateSessionGridItems(emptyGridItems);
+          syncGridToSession(emptyGridItems);
 
           return {
             gridItems: emptyGridItems,
