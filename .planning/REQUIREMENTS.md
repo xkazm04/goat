@@ -9,11 +9,11 @@ Requirements for production launch. Each maps to roadmap phases.
 
 ### Core Ranking Flow
 
-- [ ] **FLOW-01**: User can select a list and see all backlog items loaded correctly in the collection panel
-- [ ] **FLOW-02**: User can drag items from backlog to grid positions without errors
+- [x] **FLOW-01**: User can select a list and see all backlog items loaded correctly in the collection panel
+- [x] **FLOW-02**: User can drag items from backlog to grid positions without errors
 - [ ] **FLOW-03**: User can complete a full ranking (all grid positions filled) and see a completion state
 - [ ] **FLOW-04**: Drag-and-drop feels smooth with no lag or visual glitches
-- [ ] **FLOW-05**: User can save progress and resume a ranking after closing the browser
+- [x] **FLOW-05**: User can save progress and resume a ranking after closing the browser
 - [ ] **FLOW-06**: User can browse available lists by category on the landing page
 - [ ] **FLOW-07**: User can search for specific lists from the landing page
 
@@ -98,11 +98,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FLOW-01 | Phase 1 | Pending |
-| FLOW-02 | Phase 1 | Pending |
+| FLOW-01 | Phase 1 | Complete |
+| FLOW-02 | Phase 1 | Complete |
 | FLOW-03 | Phase 1 | Pending |
 | FLOW-04 | Phase 1 | Pending |
-| FLOW-05 | Phase 1 | Pending |
+| FLOW-05 | Phase 1 | Complete |
 | FLOW-06 | Phase 1 | Pending |
 | FLOW-07 | Phase 1 | Pending |
 | AUTH-01 | Phase 2 | Pending |
