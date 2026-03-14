@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams, useRouter, notFound } from 'next/navigation';
 import { useTopList } from '@/hooks/use-top-lists';
 import { useListStore } from '@/stores/use-list-store';
 import { useGridStore } from '@/stores/grid-store';
@@ -22,8 +22,8 @@ const DEFAULT_LIST_COLORS = {
 const MAX_RETRY_COUNT = 3;
 
 // Page container styles (shared across loading states)
-const PAGE_CONTAINER_CLASS = "min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center";
-const SPINNER_CLASS = "animate-spin w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full mx-auto mb-4";
+const PAGE_CONTAINER_CLASS = "min-h-screen bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center";
+const SPINNER_CLASS = "animate-spin w-8 h-8 border-2 border-brand border-t-transparent rounded-full mx-auto mb-4";
 const BUTTON_CLASS = "px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-white transition-colors";
 
 /**
@@ -215,6 +215,11 @@ function MatchTestContent() {
  * Access at: /match-test?list={listId}
  */
 export default function MatchTestPage() {
+  // Block access in production -- this is a development-only test page
+  if (process.env.NODE_ENV === 'production') {
+    notFound();
+  }
+
   return (
     <Suspense fallback={
       <div className={PAGE_CONTAINER_CLASS}>

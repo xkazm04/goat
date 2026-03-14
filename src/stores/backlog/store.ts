@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import { enableMapSet } from 'immer';
 import { createIndexedDBStorage } from '@/lib/storage/indexed-db-storage';
 import { createSafeStorage } from '@/lib/storage/create-safe-storage';
 import { BacklogState, SerializedBacklogCache } from './types';
@@ -11,9 +10,7 @@ import { createOfflineActions } from './actions-offline';
 import { createUtilActions } from './actions-utils';
 import { arrayToSet, setToArray } from '../../lib/set-utils';
 import { backlogLogger } from '@/lib/logger';
-
-// Enable MapSet support for Immer
-enableMapSet();
+import { rebuildItemIndex } from './item-index';
 
 // Helper to check if we're in a browser environment
 const isBrowser = typeof window !== 'undefined';
@@ -37,6 +34,7 @@ export const useBacklogStore = create<BacklogState>()(
       return {
         // Initial state
         groups: [],
+        _itemIndex: new Map(),
         selectedGroupId: null,
         selectedItemId: null,
         activeItemId: null,
@@ -142,14 +140,16 @@ export const useBacklogStore = create<BacklogState>()(
         // Check if we have cached groups
         if (state.groups && state.groups.length > 0) {
           backlogLogger.debug(`Rehydrated with ${state.groups.length} groups from persistence`);
+          // Rebuild runtime item index from persisted groups
+          state._itemIndex = rebuildItemIndex(state.groups);
         }
       }
     }
   )
 );
 
-// Expose debug helpers to window for troubleshooting
-if (typeof window !== 'undefined') {
+// Expose debug helpers to window for troubleshooting (development only)
+if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
   (window as any).__backlogStore = {
     getState: () => useBacklogStore.getState(),
     clearCache: () => useBacklogStore.getState().clearCache(),

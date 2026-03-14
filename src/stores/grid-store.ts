@@ -60,6 +60,44 @@ function syncGridToSession(gridItems: GridItemType[]): void {
   sessionState.updateSessionGridItems(gridItems);
 }
 
+/** Maximum number of lists to keep in the grid cache (LRU eviction) */
+const MAX_CACHE_SIZE = 15;
+
+/** Grid cache entry type */
+interface GridCacheEntry {
+  gridItems: GridItemType[];
+  maxGridSize: number;
+}
+
+/**
+ * Evict oldest entries from listGridCache to keep it within MAX_CACHE_SIZE.
+ * Returns new cache and order arrays (pure function, no mutation).
+ */
+function evictOldestCacheEntries(
+  cache: Record<string, GridCacheEntry>,
+  order: string[],
+  maxSize: number
+): { cache: Record<string, GridCacheEntry>; order: string[] } {
+  const newOrder = [...order];
+  const newCache = { ...cache };
+  while (newOrder.length > maxSize) {
+    const oldest = newOrder.shift()!;
+    delete newCache[oldest];
+    gridLogger.debug(`LRU evicted grid cache for list: ${oldest}`);
+  }
+  return { cache: newCache, order: newOrder };
+}
+
+/**
+ * Touch a list ID in the LRU order (move to end = most recently used).
+ * Returns a new order array.
+ */
+function touchLRUOrder(order: string[], listId: string): string[] {
+  const newOrder = order.filter(id => id !== listId);
+  newOrder.push(listId);
+  return newOrder;
+}
+
 /**
  * Lazy accessor for backlog-store to avoid circular dependency issues.
  * Uses retry logic in case user drags immediately before module initializes.
@@ -161,7 +199,8 @@ export interface GridStoreState {
 
   // Per-list grid persistence
   currentListId: string | null;
-  listGridCache: Record<string, { gridItems: GridItemType[]; maxGridSize: number }>;
+  listGridCache: Record<string, GridCacheEntry>;
+  listGridCacheOrder: string[]; // LRU order: oldest first, newest last
 
   // Computed statistics (updated automatically when gridItems changes)
   gridStatistics: GridStatistics;
@@ -229,6 +268,7 @@ export const useGridStore = create<GridStoreState>()(
       isTutorialMode: false,
       currentListId: null,
       listGridCache: {},
+      listGridCacheOrder: [],
       gridStatistics: emptyGridStatistics,
 
       // Initialize a new grid
@@ -239,13 +279,24 @@ export const useGridStore = create<GridStoreState>()(
         gridLogger.debug(`Initializing grid with ${size} positions for list ${listId || 'unknown'}`);
 
         // If we have a different current list, save its grid to cache first
-        const updatedCache = { ...state.listGridCache };
+        let updatedCache = { ...state.listGridCache };
+        let updatedOrder = [...state.listGridCacheOrder];
+
         if (state.currentListId && state.currentListId !== listId && state.gridItems.length > 0) {
           updatedCache[state.currentListId] = {
             gridItems: state.gridItems,
             maxGridSize: state.maxGridSize,
           };
+          updatedOrder = touchLRUOrder(updatedOrder, state.currentListId);
         }
+
+        // Touch the new list in LRU order if it has an ID
+        if (listId) {
+          updatedOrder = touchLRUOrder(updatedOrder, listId);
+        }
+
+        // Evict oldest entries if over limit
+        const evicted = evictOldestCacheEntries(updatedCache, updatedOrder, MAX_CACHE_SIZE);
 
         set({
           gridItems: emptyGridItems,
@@ -253,7 +304,8 @@ export const useGridStore = create<GridStoreState>()(
           selectedGridItem: null,
           gridStatistics: computeGridStatistics(emptyGridItems),
           currentListId: listId || null,
-          listGridCache: updatedCache,
+          listGridCache: evicted.cache,
+          listGridCacheOrder: evicted.order,
         });
 
         // Save grid to session if listId provided
@@ -291,14 +343,25 @@ export const useGridStore = create<GridStoreState>()(
         }
 
         // Save current grid to cache (if we have a current list)
-        const updatedCache = { ...state.listGridCache };
+        let updatedCache = { ...state.listGridCache };
+        let updatedOrder = [...state.listGridCacheOrder];
+
         if (state.currentListId && state.gridItems.length > 0) {
           updatedCache[state.currentListId] = {
             gridItems: state.gridItems,
             maxGridSize: state.maxGridSize,
           };
+          updatedOrder = touchLRUOrder(updatedOrder, state.currentListId);
           gridLogger.debug(`Saved grid for list ${state.currentListId} to cache`);
         }
+
+        // Touch the new list in LRU order
+        updatedOrder = touchLRUOrder(updatedOrder, listId);
+
+        // Evict oldest entries if over limit
+        const evicted = evictOldestCacheEntries(updatedCache, updatedOrder, MAX_CACHE_SIZE);
+        updatedCache = evicted.cache;
+        updatedOrder = evicted.order;
 
         // Load cached grid for new list or create empty grid
         const cached = updatedCache[listId];
@@ -332,6 +395,7 @@ export const useGridStore = create<GridStoreState>()(
           maxGridSize: newMaxSize,
           currentListId: listId,
           listGridCache: updatedCache,
+          listGridCacheOrder: updatedOrder,
           selectedGridItem: null,
           gridStatistics: computeGridStatistics(newGridItems),
         });
@@ -921,6 +985,7 @@ export const useGridStore = create<GridStoreState>()(
         gridStatistics: state.gridStatistics,
         currentListId: state.currentListId,
         listGridCache: state.listGridCache,
+        listGridCacheOrder: state.listGridCacheOrder,
       }),
       // Re-compute statistics on hydration and restore correct list's grid from cache
       onRehydrateStorage: () => (state) => {
@@ -930,9 +995,13 @@ export const useGridStore = create<GridStoreState>()(
             state.gridStatistics = computeGridStatistics(state.gridItems);
           }
 
-          // Ensure listGridCache exists
+          // Ensure listGridCache and order exist
           if (!state.listGridCache) {
             state.listGridCache = {};
+          }
+          if (!state.listGridCacheOrder) {
+            // Reconstruct order from cache keys if missing (migration)
+            state.listGridCacheOrder = Object.keys(state.listGridCache);
           }
 
           // If we have a currentListId, ensure the current grid is from that list's cache
