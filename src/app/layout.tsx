@@ -9,6 +9,7 @@ import { ThemeProvider } from '@/components/theme/theme-provider';
 import { CommandPaletteProvider } from '@/app/features/CommandPalette';
 import { ItemDetailPopupProvider } from '@/app/features/Collection/components/ItemDetailPopupProvider';
 import { OfflineProvider } from '@/lib/offline';
+import { AuthHeader, Toaster } from '@/components/auth';
 
 const inter = Inter({ subsets: ['latin'] });
 const spaceGrotesk = Space_Grotesk({
@@ -98,10 +99,15 @@ export default function RootLayout({
                       Skip to main content
                     </a>
                     <div className="min-h-screen bg-linear-to-b from-gray-900 to-gray-800/95 text-gray-100 w-full flex flex-col">
+                      {/* Auth header -- sign in button or user menu */}
+                      <div className="fixed top-4 right-4 z-50">
+                        <AuthHeader />
+                      </div>
                       <main id="main-content" className="gradient-to-b" tabIndex={-1}>
                         <PageTransition>{children}</PageTransition>
                       </main>
                     </div>
+                    <Toaster />
                     <ItemDetailPopupProvider />
                     </CommandPaletteProvider>
                   </OfflineProvider>

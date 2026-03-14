@@ -32,6 +32,8 @@ import { getItemTitle } from "./lib/helpers";
 import { AudioPlayer } from "@/components/AudioPlayer";
 import { ComparisonDrawer } from "../components/ComparisonDrawer";
 import { PositionHistoryProvider } from "../components/PositionHistoryContext";
+import { useAuthUser } from "@/hooks/use-auth-user";
+import { AuthPrompt } from "@/components/auth";
 
 /**
  * "Neon Arena" Match Grid
@@ -130,6 +132,9 @@ function SimpleMatchGridInner() {
   const [activeItem, setActiveItem] = useState<{ id?: string; title: string; image_url?: string | null } | null>(null);
   const [activeType, setActiveType] = useState<'collection' | 'grid' | null>(null);
   const [targetPosition, setTargetPosition] = useState<number | null>(null);
+
+  // Auth state for post-completion prompt
+  const { isGuest } = useAuthUser();
 
   // Track if we've already shown the share modal for this session
   const hasShownShareModal = useRef(false);
@@ -508,6 +513,13 @@ function SimpleMatchGridInner() {
           category: currentList?.category || "",
         }}
       />
+
+      {/* Post-completion auth prompt for guests */}
+      {isComplete && isGuest && !showCompletionModal && (
+        <div className="fixed bottom-[440px] left-1/2 -translate-x-1/2 z-40 w-full max-w-lg px-4">
+          <AuthPrompt />
+        </div>
+      )}
 
       {/* Share Modal - shown when ranking is complete (lazy loaded) */}
       <LazyShareModal />
