@@ -24,12 +24,15 @@ import {
 import { parseListQuery, generateListTitle, getExampleQueries, ParsedListQuery } from "./lib/parseListQuery";
 import { useTopLists, useUserLists } from "@/hooks/use-top-lists";
 import { useTempUser } from "@/hooks/use-temp-user";
+import { useCommandPaletteStore } from "./useCommandPalette";
 import { useListStore } from "@/stores/use-list-store";
 import { toast } from "@/hooks/use-toast";
 import { CATEGORY_CONFIG } from "@/lib/config/category-config";
 import { TopList } from "@/types/top-lists";
 import { createListIntent } from "@/types/list-intent";
 import { listCreationService } from "@/services/list-creation-service";
+import { ELEVATION } from "@/components/visual/depth";
+import { fuzzyMatch } from "@/lib/search/fuzzy";
 
 // Color palette by category
 const CATEGORY_COLORS: Record<string, { primary: string; secondary: string; accent: string }> = {
@@ -53,52 +56,6 @@ type CommandMode = "search" | "create" | "filter";
 // Recent list storage key
 const RECENT_LISTS_KEY = "command-palette-recent-lists";
 const MAX_RECENT_LISTS = 5;
-
-/**
- * Simple fuzzy search implementation
- * Matches if all characters in the pattern appear in order in the text
- */
-function fuzzyMatch(pattern: string, text: string): { matches: boolean; score: number } {
-  const pLower = pattern.toLowerCase();
-  const tLower = text.toLowerCase();
-
-  // Exact match gets highest score
-  if (tLower === pLower) return { matches: true, score: 1 };
-
-  // Contains match gets high score
-  if (tLower.includes(pLower)) return { matches: true, score: 0.9 };
-
-  // Word start matching
-  const words = tLower.split(/\s+/);
-  const patternWords = pLower.split(/\s+/);
-  let wordMatchScore = 0;
-  for (const pw of patternWords) {
-    if (words.some(w => w.startsWith(pw))) {
-      wordMatchScore += 0.3;
-    }
-  }
-  if (wordMatchScore > 0) return { matches: true, score: Math.min(wordMatchScore, 0.8) };
-
-  // Fuzzy character matching
-  let patternIdx = 0;
-  let consecutiveBonus = 0;
-  let lastMatchIdx = -2;
-
-  for (let i = 0; i < tLower.length && patternIdx < pLower.length; i++) {
-    if (tLower[i] === pLower[patternIdx]) {
-      if (i === lastMatchIdx + 1) consecutiveBonus += 0.1;
-      lastMatchIdx = i;
-      patternIdx++;
-    }
-  }
-
-  if (patternIdx === pLower.length) {
-    const baseScore = pLower.length / tLower.length;
-    return { matches: true, score: Math.min(baseScore + consecutiveBonus, 0.7) };
-  }
-
-  return { matches: false, score: 0 };
-}
 
 /**
  * Filter and sort lists based on search query
@@ -317,12 +274,22 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     localStorage.setItem(RECENT_LISTS_KEY, JSON.stringify(updated));
   }, [recentLists]);
 
+  // Read initialQuery from store for programmatic opening
+  const initialQuery = useCommandPaletteStore((s) => s.initialQuery);
+
   // Focus input when opening
   useEffect(() => {
     if (isOpen && inputRef.current) {
       inputRef.current.focus();
     }
   }, [isOpen]);
+
+  // Seed search input from initialQuery when opened programmatically
+  useEffect(() => {
+    if (isOpen && initialQuery) {
+      setQuery(initialQuery);
+    }
+  }, [isOpen, initialQuery]);
 
   // Reset state when closing
   useEffect(() => {
@@ -523,7 +490,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         data-testid={`command-palette-list-${index}`}
       >
         <div
-          className="p-1.5 rounded-md flex-shrink-0"
+          className="p-1.5 rounded-md shrink-0"
           style={{ background: `${listColor.primary}20` }}
         >
           {CATEGORY_ICONS[list.category] || <List className="w-4 h-4" />}
@@ -539,14 +506,14 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
               </>
             )}
             {isUserList && (
-              <span className="ml-2 px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-400 text-[10px]">
+              <span className="ml-2 px-1.5 py-0.5 rounded bg-brand/20 text-brand-hover text-[10px]">
                 Your list
               </span>
             )}
           </div>
         </div>
         <Play
-          className={`w-4 h-4 flex-shrink-0 transition-colors ${
+          className={`w-4 h-4 shrink-0 transition-colors ${
             isSelected ? "text-white" : "text-white/30 group-hover:text-white/60"
           }`}
         />
@@ -562,7 +529,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.15 }}
-          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-start justify-center pt-[12vh]"
+          className="fixed inset-0 bg-black/70 backdrop-blur-xl z-dropdown flex items-start justify-center pt-[12vh]"
           onClick={onClose}
           data-testid="command-palette-backdrop"
         >
@@ -576,10 +543,10 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
             data-testid="command-palette-container"
           >
             <div
-              className="rounded-2xl overflow-hidden shadow-2xl"
+              className="rounded-2xl overflow-hidden"
               style={{
                 background: `linear-gradient(135deg, rgba(15, 20, 35, 0.98) 0%, rgba(25, 35, 55, 0.98) 100%)`,
-                boxShadow: `0 25px 60px rgba(0, 0, 0, 0.5), 0 0 80px ${categoryColor.primary}20`,
+                boxShadow: ELEVATION.modal,
                 border: `1px solid rgba(255, 255, 255, 0.08)`,
               }}
             >
@@ -600,7 +567,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                     }}
                     onKeyDown={handleKeyDown}
                     placeholder="Search lists or type 'new action movies' to create..."
-                    className="flex-1 ml-4 bg-transparent text-white text-lg placeholder:text-white/30 focus:outline-none"
+                    className="flex-1 ml-4 bg-transparent text-white text-lg placeholder:text-white/30 focus:outline-hidden"
                     data-testid="command-palette-input"
                     disabled={isCreating}
                   />
@@ -618,7 +585,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                 {/* Category filter bar */}
                 {!query.trim() && (
                   <div className="px-4 py-2 border-b border-white/5 flex items-center gap-2 overflow-x-auto">
-                    <span className="text-xs text-white/40 flex items-center gap-1.5 flex-shrink-0">
+                    <span className="text-xs text-white/40 flex items-center gap-1.5 shrink-0">
                       <Filter className="w-3 h-3" />
                       Filter:
                     </span>
@@ -629,7 +596,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                         <button
                           key={cat}
                           onClick={() => setCategoryFilter(isActive ? undefined : cat)}
-                          className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 flex-shrink-0 ${
+                          className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 shrink-0 ${
                             isActive
                               ? "text-white"
                               : "text-white/50 hover:text-white/80"
@@ -804,7 +771,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                               data-testid={`command-palette-recent-list-${i}`}
                             >
                               <div
-                                className="p-1.5 rounded-md flex-shrink-0"
+                                className="p-1.5 rounded-md shrink-0"
                                 style={{ background: `${listColor.primary}20` }}
                               >
                                 {CATEGORY_ICONS[entry.category] || <List className="w-4 h-4" />}
@@ -822,7 +789,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                                 </div>
                               </div>
                               <Play
-                                className={`w-4 h-4 flex-shrink-0 transition-colors ${
+                                className={`w-4 h-4 shrink-0 transition-colors ${
                                   selectedIndex === i ? "text-white" : "text-white/30 group-hover:text-white/60"
                                 }`}
                               />
@@ -894,7 +861,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                 <div className="flex items-center gap-4 text-xs text-white/40">
                   <div className="flex items-center gap-1.5">
                     <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white/60 font-mono">
-                      <ArrowRight className="w-3 h-3 rotate-[-90deg]" />
+                      <ArrowRight className="w-3 h-3 -rotate-90" />
                     </kbd>
                     <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white/60 font-mono">
                       <ArrowRight className="w-3 h-3 rotate-90" />

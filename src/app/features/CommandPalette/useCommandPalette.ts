@@ -5,7 +5,9 @@ import { create } from "zustand";
 
 interface CommandPaletteState {
   isOpen: boolean;
+  initialQuery: string;
   open: () => void;
+  openWithQuery: (query: string) => void;
   close: () => void;
   toggle: () => void;
 }
@@ -15,9 +17,11 @@ interface CommandPaletteState {
  */
 export const useCommandPaletteStore = create<CommandPaletteState>((set) => ({
   isOpen: false,
-  open: () => set({ isOpen: true }),
-  close: () => set({ isOpen: false }),
-  toggle: () => set((state) => ({ isOpen: !state.isOpen })),
+  initialQuery: "",
+  open: () => set({ isOpen: true, initialQuery: "" }),
+  openWithQuery: (query: string) => set({ isOpen: true, initialQuery: query }),
+  close: () => set({ isOpen: false, initialQuery: "" }),
+  toggle: () => set((state) => ({ isOpen: !state.isOpen, initialQuery: "" })),
 }));
 
 /**
@@ -55,11 +59,12 @@ export function useCommandPaletteKeyboard() {
  * Hook to use the command palette programmatically
  */
 export function useCommandPalette() {
-  const { isOpen, open, close, toggle } = useCommandPaletteStore();
+  const { isOpen, open, openWithQuery, close, toggle } = useCommandPaletteStore();
 
   return {
     isOpen,
     openCommandPalette: open,
+    openWithQuery,
     closeCommandPalette: close,
     toggleCommandPalette: toggle,
   };
