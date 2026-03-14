@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Mountain } from 'lucide-react';
-import { SimpleDropZone } from '../../sub_MatchCollections/SimpleDropZone';
+import { SimpleDropZone } from '../../sub_DropZone/SimpleDropZone';
 import { GridItemType } from '@/types/match';
 import { PositionBadge } from '../../components/PositionBadge';
 import { Elevated } from '@/components/visual';

@@ -317,7 +317,7 @@ export function BracketView({
             </div>
 
             {/* Bracket visualization */}
-            <div className="bg-slate-900/50 border border-slate-800 rounded-xl overflow-hidden mx-4">
+            <div className="bg-slate-900/50 border border-slate-800 rounded-xl mx-4">
               <BracketVisualization
                 bracket={bracket}
                 onMatchupClick={handleMatchupClick}

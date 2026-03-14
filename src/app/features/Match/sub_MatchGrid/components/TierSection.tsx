@@ -8,7 +8,7 @@
 import { memo, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ChevronUp, Sparkles } from "lucide-react";
-import { SimpleDropZone } from "../../sub_MatchCollections/SimpleDropZone";
+import { SimpleDropZone } from "../../sub_DropZone/SimpleDropZone";
 import { GridItemType } from "@/types/match";
 import { TierDefinition, TierId, getTierCSSProperties } from "../lib/tierConfig";
 

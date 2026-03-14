@@ -300,8 +300,7 @@ export function BracketVisualization({
 
       <div
         ref={containerRef}
-        className="overflow-x-auto overflow-y-hidden pb-3 scrollbar-thin scrollbar-track-slate-800 scrollbar-thumb-slate-600"
-        style={{ maxHeight: height + 30 }}
+        className="overflow-x-auto overflow-y-auto pb-3 scrollbar-thin scrollbar-track-slate-800 scrollbar-thumb-slate-600"
       >
         <div className="relative" style={{ width, height, minWidth: width }}>
           {/* Connector lines SVG */}

@@ -3,7 +3,7 @@
 import { useDroppable } from "@dnd-kit/core";
 import { motion, AnimatePresence, useSpring } from "framer-motion";
 import { useState, useEffect, useRef, useCallback } from "react";
-import { DropCelebration } from "../../sub_MatchCollections/components/DropCelebration";
+import { DropCelebration } from "../../sub_DropZone/components/DropCelebration";
 import { createGridSlotDropData } from "@/lib/dnd";
 import { getRankColor, isPodiumPosition } from "../../lib/rankConfig";
 import { getPositionAwareSpringConfig, getFramerSpringConfig } from "../lib/physicsEngine";

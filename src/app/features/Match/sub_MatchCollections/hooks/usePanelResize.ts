@@ -1,0 +1,66 @@
+"use client";
+
+import { useState, useCallback } from "react";
+
+interface UsePanelResizeOptions {
+  defaultHeight?: number;
+  minHeight?: number;
+  maxHeightVh?: number;
+}
+
+interface UsePanelResizeResult {
+  panelHeight: number;
+  isResizing: boolean;
+  handleResizeStart: (e: React.MouseEvent | React.TouchEvent) => void;
+}
+
+const DEFAULT_HEIGHT = 400;
+const MIN_HEIGHT = 200;
+const MAX_HEIGHT_VH = 80;
+
+/**
+ * Hook for handling panel resize via drag.
+ */
+export function usePanelResize(options: UsePanelResizeOptions = {}): UsePanelResizeResult {
+  const {
+    defaultHeight = DEFAULT_HEIGHT,
+    minHeight = MIN_HEIGHT,
+    maxHeightVh = MAX_HEIGHT_VH,
+  } = options;
+
+  const [panelHeight, setPanelHeight] = useState(defaultHeight);
+  const [isResizing, setIsResizing] = useState(false);
+
+  const handleResizeStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+
+    const startY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    const startHeight = panelHeight;
+    const maxHeight = window.innerHeight * (maxHeightVh / 100);
+
+    const handleMove = (moveEvent: MouseEvent | TouchEvent) => {
+      const currentY = 'touches' in moveEvent
+        ? (moveEvent as TouchEvent).touches[0].clientY
+        : (moveEvent as MouseEvent).clientY;
+      const delta = startY - currentY;
+      const newHeight = Math.min(maxHeight, Math.max(minHeight, startHeight + delta));
+      setPanelHeight(newHeight);
+    };
+
+    const handleEnd = () => {
+      setIsResizing(false);
+      document.removeEventListener('mousemove', handleMove);
+      document.removeEventListener('mouseup', handleEnd);
+      document.removeEventListener('touchmove', handleMove);
+      document.removeEventListener('touchend', handleEnd);
+    };
+
+    document.addEventListener('mousemove', handleMove);
+    document.addEventListener('mouseup', handleEnd);
+    document.addEventListener('touchmove', handleMove);
+    document.addEventListener('touchend', handleEnd);
+  }, [panelHeight, minHeight, maxHeightVh]);
+
+  return { panelHeight, isResizing, handleResizeStart };
+}

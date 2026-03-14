@@ -276,7 +276,7 @@ export const MemoizedPositionSlot = memo(
     const isOccupied = item?.matched ?? false;
 
     // Import SimpleDropZone dynamically to avoid circular dependency
-    const { SimpleDropZone } = require("../../sub_MatchCollections/SimpleDropZone");
+    const { SimpleDropZone } = require("../../sub_DropZone/SimpleDropZone");
 
     return (
       <SimpleDropZone

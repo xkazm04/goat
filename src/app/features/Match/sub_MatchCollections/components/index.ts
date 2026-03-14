@@ -10,12 +10,6 @@ export { CollectionSearch, highlightMatch, filterItemsByQuery } from './Collecti
 export { EnhancedCollectionSearch } from './EnhancedCollectionSearch';
 export { useGridColumns, useGridDimensions } from './useGridColumns';
 
-// NOTE: getAvailableCount was removed as filtering is now centralized in SimpleCollectionPanel.
-// Child components receive pre-filtered groups and pre-calculated counts from the parent.
-
-// Quick-Select Components (keyboard-driven item selection)
-export { QuickSelectBadge, QuickSelectStatusBar } from './QuickSelectBadge';
-
-// Context Menu Components (DB integration)
-export { ItemContextMenu } from './ItemContextMenu';
-export { ItemStatsTooltip } from './ItemStatsTooltip';
+// Re-export from sub_ItemBadges for backwards compatibility
+export { QuickSelectBadge, QuickSelectStatusBar } from '../../sub_ItemBadges/QuickSelectBadge';
+export { ItemStatsTooltip } from '../../sub_ItemBadges/ItemStatsTooltip';

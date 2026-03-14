@@ -45,8 +45,9 @@ export async function GET(
     const supabase = await createClient();
 
     // Fetch consensus data for the item
+    // Note: item_consensus_cache table exists but isn't in generated types yet
     const { data, error } = await supabase
-      .from('item_consensus_cache')
+      .from('item_consensus_cache' as any)
       .select(`
         item_id,
         category,
@@ -61,7 +62,7 @@ export async function GET(
         last_calculated
       `)
       .eq('item_id', id)
-      .single();
+      .single() as { data: any; error: any };
 
     if (error) {
       // Not found is not an error - just means no consensus data yet

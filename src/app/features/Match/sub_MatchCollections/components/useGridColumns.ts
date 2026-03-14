@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useLayoutEffect, useMemo, useRef, useCallback } from "react";
 
 interface UseGridColumnsOptions {
   /** Minimum column count */
@@ -42,6 +42,9 @@ export function useGridColumns(
 /**
  * Extended hook that returns full grid dimensions including item sizes.
  * Use this when you need to calculate row heights for virtualization.
+ *
+ * Handles late-binding refs (e.g., when container is inside a portal)
+ * by re-checking on every layout until the ref is available.
  */
 export function useGridDimensions(
   containerRef: React.RefObject<HTMLElement | null>,
@@ -52,33 +55,60 @@ export function useGridDimensions(
     maxColumns = 12,
     minItemWidth = 64,
     gap = 8,
-    aspectRatio = 3 / 4, // Default 3:4 (width:height), so height = width / (3/4) = width * 4/3
+    aspectRatio = 3 / 4,
   } = options;
 
   const [containerWidth, setContainerWidth] = useState(0);
+  const observerRef = useRef<ResizeObserver | null>(null);
+  const observedElementRef = useRef<HTMLElement | null>(null);
 
-  useEffect(() => {
+  // Memoize the update function
+  const updateWidth = useCallback(() => {
     const container = containerRef.current;
-    if (!container) return;
+    if (container) {
+      const width = container.offsetWidth;
+      setContainerWidth(prev => prev !== width ? width : prev);
+    }
+  }, [containerRef]);
 
-    const updateWidth = () => {
-      setContainerWidth(container.offsetWidth);
-    };
+  // Use useLayoutEffect to catch the ref as soon as DOM is ready
+  // Runs on every render until observer is set up
+  useLayoutEffect(() => {
+    const container = containerRef.current;
 
-    // Initial calculation
+    // If no container yet, try again on next render
+    if (!container) {
+      return;
+    }
+
+    // If we're already observing this element, nothing to do
+    if (observedElementRef.current === container && observerRef.current) {
+      return;
+    }
+
+    // Clean up previous observer if element changed
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+    }
+
+    // Initial measurement
     updateWidth();
 
-    // Set up ResizeObserver for responsive updates
-    const resizeObserver = new ResizeObserver(() => {
+    // Set up ResizeObserver
+    observerRef.current = new ResizeObserver(() => {
       updateWidth();
     });
-
-    resizeObserver.observe(container);
+    observerRef.current.observe(container);
+    observedElementRef.current = container;
 
     return () => {
-      resizeObserver.disconnect();
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+        observerRef.current = null;
+        observedElementRef.current = null;
+      }
     };
-  }, [containerRef]);
+  }); // No dependencies - runs every render until setup succeeds
 
   // Calculate all dimensions from container width
   const dimensions = useMemo((): GridDimensions => {

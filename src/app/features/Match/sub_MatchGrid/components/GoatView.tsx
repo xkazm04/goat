@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Crown, Sparkles } from 'lucide-react';
-import { SimpleDropZone } from '../../sub_MatchCollections/SimpleDropZone';
+import { SimpleDropZone } from '../../sub_DropZone/SimpleDropZone';
 import { GridItemType } from '@/types/match';
 import { Elevated } from '@/components/visual';
 

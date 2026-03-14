@@ -1,6 +1,6 @@
 "use client";
 
-import { SimpleDropZone } from '../../sub_MatchCollections/SimpleDropZone';
+import { SimpleDropZone } from '../../sub_DropZone/SimpleDropZone';
 import { GridItemType } from '@/types/match';
 
 interface GridSectionProps {

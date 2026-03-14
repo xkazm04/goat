@@ -7,10 +7,10 @@ import { ItemCard } from "@/components/ui/item-card";
 import { StarRating } from "@/components/ui/star-rating";
 import { CollectionItem as CollectionItemType } from "../types";
 import { useProgressiveWikiImage } from "@/hooks/use-progressive-wiki-image";
-import { ConsensusOverlay } from "@/app/features/Match/sub_MatchCollections/components/ConsensusOverlay";
-import { RankBadge } from "@/app/features/Match/sub_MatchCollections/components/RankBadge";
-import { AvgRankBadge } from "@/app/features/Match/sub_MatchCollections/components/AvgRankBadge";
-import { TierIndicator } from "@/app/features/Match/sub_MatchCollections/components/TierIndicator";
+import { ConsensusOverlay } from "@/app/features/Match/sub_ItemBadges/ConsensusOverlay";
+import { RankBadge } from "@/app/features/Match/sub_ItemBadges/RankBadge";
+import { AvgRankBadge } from "@/app/features/Match/sub_ItemBadges/AvgRankBadge";
+import { TierIndicator } from "@/app/features/Match/sub_ItemBadges/TierIndicator";
 import { AverageRankingBadge } from "./AverageRankingBadge";
 import { DragHandleIndicator } from "./DragHandleIndicator";
 import { FocusRingOverlay } from "./FocusRingOverlay";
@@ -25,7 +25,7 @@ import { useTouchGestures, GestureItemData } from "@/app/features/Match/hooks/us
 import { PreviewItem } from "@/app/features/Match/components/LongPressPreview";
 import { ArrowRight, ArrowLeft, PlusCircle, Eye, Trash2 } from "lucide-react";
 import { useItemPopupStore } from "@/stores/item-popup-store";
-import { SelectionCheckbox } from "@/app/features/Match/sub_MatchCollections/components/ComparisonSelector";
+import { SelectionCheckbox } from "@/app/features/Match/sub_ItemBadges/ComparisonSelector";
 
 /**
  * Swipe action icon mapping
