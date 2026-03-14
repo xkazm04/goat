@@ -584,6 +584,31 @@ export interface Database {
       };
 
       /**
+       * Clerk-to-Supabase user ID mapping for migration
+       */
+      user_id_mapping: {
+        Row: {
+          id: string;
+          clerk_id: string;
+          supabase_id: string;
+          migrated_at: string;
+        };
+        Insert: {
+          id?: string;
+          clerk_id: string;
+          supabase_id: string;
+          migrated_at?: string;
+        };
+        Update: {
+          id?: string;
+          clerk_id?: string;
+          supabase_id?: string;
+          migrated_at?: string;
+        };
+        Relationships: [];
+      };
+
+      /**
        * List collections for organizing lists into folders
        */
       list_collections: {

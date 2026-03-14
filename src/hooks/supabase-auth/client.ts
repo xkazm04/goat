@@ -1,35 +1,20 @@
-import { useRef, useCallback } from 'react';
+import { useCallback } from 'react';
 import { SupabaseClient } from '@supabase/supabase-js';
+import { createClient } from '@/lib/supabase/client';
 
 /**
- * Hook to manage Supabase client initialization
+ * Hook to provide access to the shared Supabase browser client singleton.
+ *
+ * Uses the shared singleton from `src/lib/supabase/client.ts` to avoid
+ * creating duplicate clients with separate auth listeners and sessions.
+ *
+ * The `autoRefresh` parameter is accepted for API compatibility but
+ * has no effect -- the shared client is configured once at creation.
  */
-export function useSupabaseClient(autoRefresh: boolean) {
-  const clientRef = useRef<SupabaseClient | null>(null);
-
+export function useSupabaseClient(_autoRefresh?: boolean) {
   const getClient = useCallback(async (): Promise<SupabaseClient> => {
-    if (clientRef.current) {
-      return clientRef.current;
-    }
+    return createClient();
+  }, []);
 
-    const { createClient } = await import('@supabase/supabase-js');
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-    if (!supabaseUrl || !supabaseAnonKey) {
-      throw new Error('Supabase configuration missing. Please check your environment variables.');
-    }
-
-    clientRef.current = createClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        autoRefreshToken: autoRefresh,
-        persistSession: true,
-        detectSessionInUrl: true,
-      },
-    });
-
-    return clientRef.current;
-  }, [autoRefresh]);
-
-  return { getClient, clientRef };
+  return { getClient };
 }
