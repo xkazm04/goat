@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in-progress
-stopped_at: Completed 02-01-PLAN.md (auth foundation and Clerk removal)
-last_updated: "2026-03-14T22:16:15Z"
-last_activity: 2026-03-14 — Completed 02-01-PLAN.md (auth foundation and Clerk removal)
+stopped_at: Completed 02-02-PLAN.md (auth UI components) -- awaiting human verification
+last_updated: "2026-03-14T22:25:00Z"
+last_activity: 2026-03-14 — Completed 02-02-PLAN.md tasks 1-2, checkpoint task 3 pending
 progress:
   total_phases: 5
   completed_phases: 1
   total_plans: 13
-  completed_plans: 4
-  percent: 31
+  completed_plans: 5
+  percent: 38
 ---
 
 # Project State
@@ -26,28 +26,28 @@ See: .planning/PROJECT.md (updated 2026-03-14)
 ## Current Position
 
 Phase: 2 of 5 (Auth Migration)
-Plan: 1 of 2 in current phase (1 complete)
-Status: In progress
-Last activity: 2026-03-14 — Completed 02-01-PLAN.md (auth foundation and Clerk removal)
+Plan: 2 of 2 in current phase (1 complete, 1 awaiting verification)
+Status: In progress -- checkpoint:human-verify pending for 02-02
+Last activity: 2026-03-14 — Completed 02-02-PLAN.md tasks 1-2, task 3 (human-verify) pending
 
-Progress: [███-------] 31%
+Progress: [████------] 38%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
-- Average duration: 8 min
-- Total execution time: 0.50 hours
+- Total plans completed: 5
+- Average duration: 7 min
+- Total execution time: 0.57 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-core-ranking-flow | 3 | 22 min | 7 min |
-| 02-auth-migration | 1 | 8 min | 8 min |
+| 02-auth-migration | 2 | 12 min | 6 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (8 min), 01-02 (12 min), 01-03 (2 min), 02-01 (8 min)
+- Last 5 plans: 01-02 (12 min), 01-03 (2 min), 02-01 (8 min), 02-02 (4 min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -74,6 +74,10 @@ Recent decisions affecting current work:
 - [02-01]: Root-level middleware.ts (Clerk) deleted; src/middleware.ts is correct for Next.js with src/ directory
 - [02-01]: DB schema types retain clerk_id columns for migration; merge endpoint updates lists, shared_rankings, list_collections
 - [02-01]: useAuthUser() is the single consumer-facing auth hook -- components should not use useSupabaseAuth or useTempUser directly
+- [02-02]: Created AuthHeader wrapper because layout.tsx is server component (exports metadata) -- cannot use hooks directly
+- [02-02]: Used sessionStorage for AuthPrompt dismissal to reset on new browser session
+- [02-02]: Created Toaster renderer -- toast system had dispatch/state but no render component across entire app
+- [02-02]: AuthHeader fixed-positioned top-right to work across all pages without modifying individual layouts
 
 ### Pending Todos
 
@@ -88,6 +92,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-14T22:16:15Z
-Stopped at: Completed 02-01-PLAN.md (auth foundation and Clerk removal)
-Resume file: .planning/phases/02-auth-migration/02-01-SUMMARY.md
+Last session: 2026-03-14T22:25:00Z
+Stopped at: Completed 02-02-PLAN.md tasks 1-2, checkpoint task 3 pending human verification
+Resume file: .planning/phases/02-auth-migration/02-02-SUMMARY.md

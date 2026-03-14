@@ -13,7 +13,7 @@ This roadmap takes the existing feature-rich but broken codebase to a production
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Core Ranking Flow** - Fix the broken end-to-end ranking experience so users can pick, fill, and save a list (completed 2026-03-14)
-- [ ] **Phase 2: Auth Migration** - Replace Clerk with Supabase Auth so user identity is stable before data ownership matters
+- [x] **Phase 2: Auth Migration** - Replace Clerk with Supabase Auth so user identity is stable before data ownership matters (completed 2026-03-14)
 - [ ] **Phase 3: Content and AI Generation** - Populate 10-15 categories and complete the AI custom list pipeline
 - [ ] **Phase 4: Result Sharing** - Implement real image generation and shareable links to close the viral loop
 - [ ] **Phase 5: Polish and Production Readiness** - UI polish, test coverage, error monitoring, and launch gate
@@ -109,7 +109,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Core Ranking Flow | 2/2 | Complete   | 2026-03-14 |
-| 2. Auth Migration | 1/2 | In progress | - |
+| 2. Auth Migration | 2/2 | Complete   | 2026-03-14 |
 | 3. Content and AI Generation | 0/3 | Not started | - |
 | 4. Result Sharing | 0/3 | Not started | - |
 | 5. Polish and Production Readiness | 0/3 | Not started | - |
