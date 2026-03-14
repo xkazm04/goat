@@ -164,17 +164,16 @@ export {
 } from './use-consensus';
 
 // ========================================
-// Authentication Hooks (Legacy/Clerk)
+// Authentication Hooks
 // ========================================
 
 /**
- * Clerk User Hook
- * Manages Clerk authentication state
- * NOTE: Being migrated to useSupabaseAuth
+ * Unified Auth Hook
+ * Provides userId for both guests and authenticated users via Supabase Auth
  */
 export {
-  useClerkUser,
-} from './use-clerk-user';
+  useAuthUser,
+} from './use-auth-user';
 
 /**
  * Temporary User Hook
@@ -278,6 +277,7 @@ export {
 export {
   useItemStat,
   useItemStats,
+  useItemStatsBatch,
 } from './use-item-stats';
 
 // ========================================

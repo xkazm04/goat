@@ -433,7 +433,7 @@ export interface Database {
       };
 
       /**
-       * User profile data (Clerk integration)
+       * User profile data (legacy -- clerk_id column retained for migration)
        */
       user_profiles: {
         Row: {

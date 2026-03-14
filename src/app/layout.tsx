@@ -1,7 +1,6 @@
 import './globals.css';
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
-import { ClerkProvider } from '@clerk/nextjs';
+import { Inter, Space_Grotesk } from 'next/font/google';
 import { QueryProvider } from '@/providers/query-provider';
 import { BacklogProvider } from '@/providers/BacklogProvider';
 import { PrefetchProvider } from '@/providers/prefetch-provider';
@@ -12,6 +11,11 @@ import { ItemDetailPopupProvider } from '@/app/features/Collection/components/It
 import { OfflineProvider } from '@/lib/offline';
 
 const inter = Inter({ subsets: ['latin'] });
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  weight: ['600', '700'],
+  variable: '--font-grotesk',
+});
 
 const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://goat.app';
 
@@ -73,9 +77,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ClerkProvider>
-      <html lang="en" suppressHydrationWarning>
-        <body className={inter.className}>
+    <html lang="en" suppressHydrationWarning>
+        <body className={`${inter.className} ${spaceGrotesk.variable}`}>
           <ThemeProvider
             attribute="class"
             defaultTheme="dark"
@@ -90,11 +93,11 @@ export default function RootLayout({
                     {/* Skip to main content link for keyboard users */}
                     <a
                       href="#main-content"
-                      className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-cyan-600 focus:text-white focus:rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-gray-900"
+                      className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-9999 focus:px-4 focus:py-2 focus:bg-brand-muted focus:text-white focus:rounded-lg focus-ring"
                     >
                       Skip to main content
                     </a>
-                    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800/95 text-gray-100 w-full flex flex-col">
+                    <div className="min-h-screen bg-linear-to-b from-gray-900 to-gray-800/95 text-gray-100 w-full flex flex-col">
                       <main id="main-content" className="gradient-to-b" tabIndex={-1}>
                         <PageTransition>{children}</PageTransition>
                       </main>
@@ -108,6 +111,5 @@ export default function RootLayout({
           </ThemeProvider>
         </body>
       </html>
-    </ClerkProvider>
   );
 }
