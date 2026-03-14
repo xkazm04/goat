@@ -6,6 +6,7 @@ import { Gamepad2, Music, Trophy, BookOpen, Grid3X3 } from "lucide-react";
 import { FloatingShowcase } from "./FloatingShowcase";
 import { NeonArenaTheme } from "./shared";
 import { CommandPaletteTrigger } from "@/app/features/CommandPalette";
+import { useCommandPaletteStore } from "@/app/features/CommandPalette/useCommandPalette";
 import { ContinueRankingBar } from "./sub_LandingLists/ContinueRankingBar";
 import { GlobalSearchBar } from "./GlobalSearchBar";
 import { SectionHeader } from "./sub_LandingLists/SectionHeader";
@@ -124,8 +125,7 @@ export function LandingMain() {
                     : "1px solid rgba(71, 85, 105, 0.2)",
                 }}
                 onClick={cat.isReady ? () => {
-                  // Navigate to first list in this category
-                  // For now, trigger a search by opening command palette with category
+                  useCommandPaletteStore.getState().openWithQuery(cat.name);
                 } : undefined}
                 disabled={!cat.isReady}
                 data-testid={`category-card-${cat.name.toLowerCase()}`}
