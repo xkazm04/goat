@@ -63,6 +63,22 @@ export const IMAGE_STYLES: Record<ImageStyle, StyleConfig> = {
 export const IMAGE_STYLE_KEYS: ImageStyle[] = ['minimalist', 'detailed', 'abstract', 'retro', 'modern'];
 
 /**
+ * Narrowed set of themes for the share flow (3 choices)
+ */
+export const SHARE_THEME_KEYS: ImageStyle[] = ['modern', 'minimalist', 'retro'];
+
+/**
+ * Social media image size presets
+ */
+export const IMAGE_SIZE_PRESETS = {
+  twitter: { width: 1600, height: 900, label: 'Twitter/X (16:9)' },
+  instagram_square: { width: 1080, height: 1080, label: 'Instagram Square (1:1)' },
+  instagram_portrait: { width: 1080, height: 1350, label: 'Instagram Portrait (4:5)' },
+  og_default: { width: 1200, height: 630, label: 'Link Preview (1.91:1)' },
+} as const;
+export type ImageSizePreset = keyof typeof IMAGE_SIZE_PRESETS;
+
+/**
  * Get the configuration for a specific style
  */
 export function getStyleConfig(style: ImageStyle): StyleConfig {

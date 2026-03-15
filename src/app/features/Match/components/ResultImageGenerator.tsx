@@ -23,7 +23,7 @@ import type { AIStylePreset, GenerationProgress } from '../lib/ai/types';
 import { generateAIImage, getCachedGeneration } from '../lib/aiImageGenerator';
 import { DEFAULT_AI_STYLE } from '../lib/ai/stylePresets';
 
-// html2canvas is dynamically imported when needed to reduce initial bundle size (~400KB)
+// @zumer/snapdom is dynamically imported when needed for DOM-to-image capture
 
 // Re-export type for external use
 export type { ResultImageListMetadata };
@@ -79,7 +79,7 @@ function ProgressiveLoadingState({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="absolute inset-0 z-10 flex items-center justify-center bg-black/50 backdrop-blur-sm rounded-xl"
+      className="absolute inset-0 z-10 flex items-center justify-center bg-black/50 backdrop-blur-xs rounded-xl"
       data-testid="progressive-loading-overlay"
     >
       <div className="flex flex-col items-center justify-center text-center py-10 px-6 max-w-sm">
@@ -150,7 +150,7 @@ function ProgressiveLoadingState({
         <div className="w-48 mb-3">
           <div className="w-full bg-gray-700 rounded-full overflow-hidden h-1.5">
             <motion.div
-              className="h-full rounded-full bg-cyan-500"
+              className="h-full rounded-full bg-brand"
               initial={{ width: 0 }}
               animate={{ width: `${progressPercent}%` }}
               transition={{ duration: 0.3, ease: 'easeOut' }}
@@ -328,9 +328,8 @@ export function ResultImageGenerator(props: ResultImageGeneratorProps) {
       setEstimatedTimeRemaining(TOTAL_ESTIMATED_TIME);
       let remainingTime = TOTAL_ESTIMATED_TIME;
 
-      // Dynamic import of html2canvas to reduce initial bundle size (~400KB)
-      const html2canvasModule = await import('html2canvas');
-      const html2canvas = html2canvasModule.default;
+      // Dynamic import of snapdom for DOM-to-image capture
+      const { snapdom } = await import('@zumer/snapdom');
 
       // Check cancellation after library load
       if (cancelledRef.current) {
@@ -353,18 +352,13 @@ export function ResultImageGenerator(props: ResultImageGeneratorProps) {
             throw new Error('Canvas reference not available');
           }
 
-          const canvas = await html2canvas(canvasRef.current, {
-            backgroundColor: null,
-            scale: 2,
-            logging: false,
-          });
+          const canvas = await snapdom.toCanvas(canvasRef.current, { scale: 2 });
+          const imageData = canvas.toDataURL('image/png');
 
           // Check cancellation after heavy operation
           if (cancelledRef.current) {
             throw new Error('Generation cancelled');
           }
-
-          const imageData = canvas.toDataURL('image/png');
 
           // Move to finalizing step
           setCurrentStepIndex(4);
@@ -505,7 +499,7 @@ export function ResultImageGenerator(props: ResultImageGeneratorProps) {
               onClick={() => handleModeChange('ai')}
               className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${
                 generationMode === 'ai'
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+                  ? 'bg-linear-to-r from-purple-600 to-pink-600 text-white shadow-lg'
                   : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
               }`}
               data-testid="mode-ai"
@@ -610,7 +604,7 @@ export function ResultImageGenerator(props: ResultImageGeneratorProps) {
           ) : (
             <div
               ref={canvasRef}
-              className="bg-gradient-to-br rounded-lg shadow-xl p-8"
+              className="bg-linear-to-br rounded-lg shadow-xl p-8"
               style={{
                 backgroundImage: `linear-gradient(135deg, ${styleConfig.colorPalette[0]}, ${styleConfig.colorPalette[1]})`,
               }}
@@ -709,7 +703,7 @@ export function ResultImageGenerator(props: ResultImageGeneratorProps) {
               disabled={isProcessing || matchedItems.length === 0}
               className={`w-full text-white font-semibold py-3 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:bg-gray-700 disabled:cursor-not-allowed ${
                 generationMode === 'ai'
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500'
+                  ? 'bg-linear-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500'
                   : 'bg-blue-600 hover:bg-blue-700'
               }`}
               data-testid="generate-btn"
