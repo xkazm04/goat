@@ -95,7 +95,7 @@ Example format: ["Game Title 1", "Game Title 2", ...]`;
     const titles = JSON.parse(text) as string[];
     if (!Array.isArray(titles)) throw new Error("Not an array");
     // Deduplicate
-    return [...new Set(titles.map((t) => t.trim()).filter(Boolean))];
+    return Array.from(new Set(titles.map((t) => t.trim()).filter(Boolean)));
   } catch (err) {
     console.error(`  Failed to parse Gemini response for "${categoryName}":`, err);
     // Try to extract JSON array from text
@@ -103,7 +103,7 @@ Example format: ["Game Title 1", "Game Title 2", ...]`;
     if (match) {
       try {
         const titles = JSON.parse(match[0]) as string[];
-        return [...new Set(titles.map((t) => t.trim()).filter(Boolean))];
+        return Array.from(new Set(titles.map((t) => t.trim()).filter(Boolean)));
       } catch {
         // fall through
       }

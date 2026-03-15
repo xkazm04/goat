@@ -7,16 +7,17 @@
  * list size, and generate count. All core fields in one place.
  */
 
-import { useState } from 'react';
-import { Sparkles, Loader2, Zap, ListOrdered, Wand2, Plus, ChevronUp, ImageIcon, Tag, FileText, Type, CheckCircle2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Sparkles, Loader2, Zap, ListOrdered, Wand2, Tag, FileText, Type, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { UniversalSelect } from '@/components/ui/universal-select';
 import { useToast } from '@/hooks/use-toast';
-import { useStudioForm, useStudioGeneration, useStudioItems, useStudioMetadata, useStudioValidation } from '@/stores/studio-store';
-import { apiClient } from '@/lib/api/client';
+import { SURFACE_ELEVATION, INSET } from '@/components/visual/depth/depth-tokens';
+import { useStudioForm, useStudioGeneration, useStudioMetadata, useStudioValidation } from '@/stores/studio-store';
 import { cn } from '@/lib/utils';
 import { CATEGORIES } from '@/lib/config/category-config';
-import type { EnrichedItem } from '@/types/studio';
+import { StudioError } from './StudioError';
+import { AddItemForm } from './AddItemForm';
 
 /**
  * Character counter component showing current/max with color-coded limits
@@ -30,7 +31,7 @@ function CharacterCounter({ current, max, className }: {
   const isAtLimit = current >= max;
   return (
     <span className={cn(
-      'text-xs transition-colors',
+      'text-xs transition-colors duration-200',
       isAtLimit ? 'text-red-400' : isNearLimit ? 'text-amber-400' : 'text-gray-500',
       className
     )}>
@@ -48,16 +49,10 @@ const CATEGORY_OPTIONS = CATEGORIES.map(cat => ({
 const LIST_SIZE_OPTIONS = [10, 20, 50] as const;
 const GENERATE_COUNT_OPTIONS = [10, 30, 50, 70] as const;
 
-interface FindImageResponse {
-  image_url: string | null;
-  suggested_title?: string | null;
-}
-
 export function TopicInputForm() {
   const { topic, listSize, generateCount, setTopic, setListSize, setGenerateCount } = useStudioForm();
   const { isGenerating, generationProgress, error, generateItems, clearError } = useStudioGeneration();
   const { itemCount } = useStudioValidation();
-  const { addItem } = useStudioItems();
   const {
     category,
     setCategory,
@@ -68,12 +63,6 @@ export function TopicInputForm() {
     suggestTitleFromTopic,
   } = useStudioMetadata();
   const { toast } = useToast();
-
-  // Add item form state
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [addTitle, setAddTitle] = useState('');
-  const [addDescription, setAddDescription] = useState('');
-  const [isAddingItem, setIsAddingItem] = useState(false);
 
   // Can only add items manually if topic is filled
   const canAddItems = topic.trim().length > 0;
@@ -97,54 +86,8 @@ export function TopicInputForm() {
     }
   };
 
-  const handleAddItem = async () => {
-    if (!addTitle.trim() || isAddingItem) return;
-
-    setIsAddingItem(true);
-
-    try {
-      let imageUrl: string | null = null;
-
-      try {
-        const response = await apiClient.post<FindImageResponse>(
-          '/studio/find-image',
-          {
-            title: addTitle.trim(),
-            context: addDescription.trim() || undefined,
-          }
-        );
-        imageUrl = response.image_url;
-      } catch {
-        // Image lookup failed - item will be added without image
-      }
-
-      const newItem: EnrichedItem = {
-        title: addTitle.trim(),
-        description: addDescription.trim(),
-        wikipedia_url: null,
-        image_url: imageUrl,
-      };
-
-      addItem(newItem);
-      setAddTitle('');
-      setAddDescription('');
-      setShowAddForm(false);
-    } finally {
-      setIsAddingItem(false);
-    }
-  };
-
-  const handleAddKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey && addTitle.trim() && !isAddingItem) {
-      e.preventDefault();
-      handleAddItem();
-    } else if (e.key === 'Escape') {
-      setShowAddForm(false);
-    }
-  };
-
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Topic Input + Category - Side by Side */}
       <div className="grid grid-cols-[1fr_140px] gap-3">
         {/* Topic Input */}
@@ -157,8 +100,9 @@ export function TopicInputForm() {
             What do you want to rank?
           </label>
           <div className="relative group">
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-500/20 to-orange-400/20
-              rounded-lg opacity-0 group-focus-within:opacity-100 blur transition-opacity" />
+            <div className="absolute -inset-0.5
+              rounded-lg opacity-0 group-focus-within:opacity-100 transition-opacity pointer-events-none"
+              style={{ boxShadow: INSET.focusGlow }} />
             <input
               id="topic-input"
               type="text"
@@ -169,14 +113,15 @@ export function TopicInputForm() {
               placeholder="e.g., Best Horror Games, Top Pizza Toppings..."
               maxLength={200}
               className={cn(
-                'relative w-full px-3 py-2.5 bg-gray-900/80 rounded-lg text-white placeholder-gray-500 text-sm',
-                'focus:outline-none focus:border-amber-500/50',
+                'relative w-full px-3 py-2.5 rounded-lg text-white placeholder-gray-500 text-sm',
+                'focus:outline-hidden focus:border-amber-500/50',
                 'disabled:opacity-50 disabled:cursor-not-allowed transition-all',
                 // Validation states
                 topic.trim()
                   ? 'border border-green-500/20'  // Has content - subtle success
                   : 'border border-gray-700/50'   // Empty - neutral
               )}
+              style={{ backgroundColor: SURFACE_ELEVATION.raised }}
             />
           </div>
           <div className="flex justify-end mt-1">
@@ -208,12 +153,13 @@ export function TopicInputForm() {
             htmlFor="list-title"
             className="flex items-center gap-1.5 text-xs font-medium text-gray-400"
           >
-            <Type className="w-3 h-3" />
+            <Type className="w-3.5 h-3.5" />
             List Title <span className="text-red-400">*</span>
           </label>
           <div className="relative group">
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-500/20 to-orange-400/20
-              rounded-lg opacity-0 group-focus-within:opacity-100 blur transition-opacity" />
+            <div className="absolute -inset-0.5
+              rounded-lg opacity-0 group-focus-within:opacity-100 transition-opacity pointer-events-none"
+              style={{ boxShadow: INSET.focusGlow }} />
             <div className="relative flex items-center gap-1.5">
               <input
                 id="list-title"
@@ -225,7 +171,7 @@ export function TopicInputForm() {
                 disabled={isGenerating}
                 className={cn(
                   'flex-1 px-2.5 py-2 bg-gray-900/60 rounded-md text-white placeholder-gray-500 text-sm',
-                  'focus:outline-none focus:ring-1',
+                  'focus:outline-hidden focus:ring-1',
                   'disabled:opacity-50 transition-all',
                   // Validation states based on items existence
                   itemCount > 0 && !listTitle.trim()
@@ -237,7 +183,7 @@ export function TopicInputForm() {
               />
               {/* Success checkmark when valid */}
               {itemCount > 0 && listTitle.trim() && (
-                <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" />
+                <CheckCircle2 className="w-4 h-4 text-green-400 shrink-0" />
               )}
               {topic && !listTitle && (
                 <button
@@ -265,12 +211,13 @@ export function TopicInputForm() {
             htmlFor="list-description"
             className="flex items-center gap-1.5 text-xs font-medium text-gray-400"
           >
-            <FileText className="w-3 h-3" />
+            <FileText className="w-3.5 h-3.5" />
             Description <span className="text-gray-600">(optional)</span>
           </label>
           <div className="relative group">
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-500/20 to-orange-400/20
-              rounded-lg opacity-0 group-focus-within:opacity-100 blur transition-opacity" />
+            <div className="absolute -inset-0.5
+              rounded-lg opacity-0 group-focus-within:opacity-100 transition-opacity pointer-events-none"
+              style={{ boxShadow: INSET.focusGlow }} />
             <input
               id="list-description"
               type="text"
@@ -281,7 +228,7 @@ export function TopicInputForm() {
               disabled={isGenerating}
               className="relative w-full px-2.5 py-2 bg-gray-900/60 border border-gray-700/50
                 rounded-md text-white placeholder-gray-500 text-sm
-                focus:outline-none focus:ring-1 focus:ring-amber-500/50
+                focus:outline-hidden focus:ring-1 focus:ring-amber-500/50
                 disabled:opacity-50 transition-all"
             />
           </div>
@@ -292,7 +239,7 @@ export function TopicInputForm() {
       </div>
 
       {/* List Size & Generate Count - Side by Side */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-3">
         {/* List Size (Top N) */}
         <div className="space-y-2">
           <label className="flex items-center gap-1.5 text-xs font-medium text-gray-400">
@@ -311,8 +258,9 @@ export function TopicInputForm() {
                   'disabled:opacity-50 disabled:cursor-not-allowed',
                   listSize === size
                     ? 'bg-amber-500/20 text-amber-400 ring-1 ring-amber-500/50'
-                    : 'bg-gray-800/50 text-gray-500 hover:text-gray-300 hover:bg-gray-700/50'
+                    : 'text-gray-500 hover:text-gray-300 hover:bg-gray-700/50'
                 )}
+                style={listSize !== size ? { backgroundColor: SURFACE_ELEVATION.raised } : undefined}
               >
                 {size}
               </button>
@@ -338,8 +286,9 @@ export function TopicInputForm() {
                   'disabled:opacity-50 disabled:cursor-not-allowed',
                   generateCount === count
                     ? 'bg-amber-500/20 text-amber-400 ring-1 ring-amber-500/50'
-                    : 'bg-gray-800/50 text-gray-500 hover:text-gray-300 hover:bg-gray-700/50'
+                    : 'text-gray-500 hover:text-gray-300 hover:bg-gray-700/50'
                 )}
+                style={generateCount !== count ? { backgroundColor: SURFACE_ELEVATION.raised } : undefined}
               >
                 {count}
               </button>
@@ -352,12 +301,15 @@ export function TopicInputForm() {
       <Button
         onClick={handleGenerate}
         disabled={isGenerating || !topic.trim()}
-        className="w-full h-10 text-sm font-medium
-          bg-amber-500/15 hover:bg-amber-500/25
-          text-amber-400 hover:text-amber-300
-          rounded-lg border border-amber-500/30 hover:border-amber-500/50
-          transition-all
-          disabled:opacity-50"
+        className={cn(
+          'w-full h-10 text-sm font-medium',
+          'bg-amber-500/15 hover:bg-amber-500/25',
+          'text-amber-400 hover:text-amber-300',
+          'rounded-lg border border-amber-500/30 hover:border-amber-500/50',
+          'transition-all',
+          'disabled:opacity-50',
+          isGenerating && 'animate-pulse'
+        )}
       >
         {isGenerating ? (
           <>
@@ -367,122 +319,37 @@ export function TopicInputForm() {
         ) : (
           <>
             <Sparkles className="w-4 h-4 mr-2" />
-            Generate Items
+            {itemCount > 0 ? 'Generate More' : 'Generate Items'}
           </>
         )}
       </Button>
 
       {/* Add Item - Only available when topic is filled */}
       {canAddItems && (
-        <>
-          {!showAddForm ? (
-            <button
-              type="button"
-              onClick={() => setShowAddForm(true)}
-              disabled={isGenerating || isAddingItem}
-              className="w-full py-2 text-xs text-gray-400 hover:text-amber-400
-                border border-dashed border-gray-700/50 hover:border-amber-500/30
-                rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed
-                flex items-center justify-center gap-1.5"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Add item manually
-            </button>
-          ) : (
-            <div className="p-4 bg-gray-900/60 border border-gray-700/50 rounded-lg space-y-3">
-              <div className="flex items-center justify-between">
-                <h4 className="text-sm font-medium text-white flex items-center gap-2">
-                  <Plus className="w-4 h-4 text-amber-400" />
-                  Add New Item
-                </h4>
-                <button
-                  type="button"
-                  onClick={() => setShowAddForm(false)}
-                  className="text-gray-400 hover:text-white transition-colors p-1 hover:bg-white/5 rounded"
-                >
-                  <ChevronUp className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Add item title input with focus glow */}
-              <div className="relative group">
-                <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-500/20 to-orange-400/20
-                  rounded-lg opacity-0 group-focus-within:opacity-100 blur transition-opacity" />
-                <input
-                  type="text"
-                  value={addTitle}
-                  onChange={(e) => setAddTitle(e.target.value)}
-                  onKeyDown={handleAddKeyDown}
-                  placeholder="Item title *"
-                  autoFocus
-                  disabled={isAddingItem}
-                  className="relative w-full px-3 py-2 bg-gray-800/50 border border-gray-700/50
-                    rounded-md text-white placeholder-gray-500 text-sm
-                    focus:outline-none focus:ring-1 focus:ring-amber-500/50
-                    disabled:opacity-50 transition-all"
-                />
-              </div>
-
-              {/* Add item description textarea with focus glow */}
-              <div className="relative group">
-                <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-500/20 to-orange-400/20
-                  rounded-lg opacity-0 group-focus-within:opacity-100 blur transition-opacity" />
-                <textarea
-                  value={addDescription}
-                  onChange={(e) => setAddDescription(e.target.value)}
-                  onKeyDown={handleAddKeyDown}
-                  placeholder="Description (optional)"
-                  rows={2}
-                  disabled={isAddingItem}
-                  className="relative w-full px-3 py-2 bg-gray-800/50 border border-gray-700/50
-                    rounded-md text-white placeholder-gray-500 text-sm resize-none
-                    focus:outline-none focus:ring-1 focus:ring-amber-500/50
-                    disabled:opacity-50 transition-all"
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                  <ImageIcon className="w-3 h-3" />
-                  <span>Image auto-found via Wikipedia</span>
-                </div>
-                <Button
-                  onClick={handleAddItem}
-                  disabled={!addTitle.trim() || isAddingItem}
-                  size="sm"
-                  className="bg-amber-600 hover:bg-amber-500 border-0"
-                >
-                  {isAddingItem ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                      Adding...
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="w-3.5 h-3.5 mr-1.5" />
-                      Add Item
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          )}
-        </>
+        <AddItemForm disabled={isGenerating} />
       )}
 
       {/* Error Display */}
-      {error && (
-        <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-sm">
-          <p className="text-red-400">{error}</p>
-          <button
-            type="button"
-            onClick={clearError}
-            className="text-xs text-red-300 underline mt-1 hover:text-red-200"
+      <AnimatePresence>
+        {error && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
           >
-            Dismiss
-          </button>
-        </div>
-      )}
+            <StudioError
+              message={error}
+              suggestion="Try rephrasing your topic or being more specific"
+              onDismiss={clearError}
+              onRetry={() => {
+                clearError();
+                generateItems();
+              }}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
