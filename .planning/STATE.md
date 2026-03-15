@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in-progress
-stopped_at: Phase 3 context gathered
-last_updated: "2026-03-14T23:40:40.605Z"
+stopped_at: Completed 03-01-PLAN.md
+last_updated: "2026-03-15T00:02:45.530Z"
 last_activity: 2026-03-14 — Phase 2 complete (02-02 checkpoint approved)
 progress:
   total_phases: 5
   completed_phases: 2
-  total_plans: 5
-  completed_plans: 5
+  total_plans: 8
+  completed_plans: 6
 ---
 
 ---
@@ -36,16 +36,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-14)
 
 **Core value:** Users can complete a full ranking from start to finish — pick a list, fill the grid, and share the result — without hitting dead ends or broken flows.
-**Current focus:** Phase 2 — Auth Migration
+**Current focus:** Phase 3 — Content and AI Generation
 
 ## Current Position
 
 Phase: 3 of 5 (Content and AI Generation)
-Plan: 0 of 3 in current phase (not started)
-Status: Phase 2 complete -- ready to begin Phase 3
-Last activity: 2026-03-14 — Phase 2 complete (02-02 checkpoint approved)
+Plan: 1 of 3 in current phase
+Status: 03-01 complete -- video game category seed script and landing page gating
+Last activity: 2026-03-15 — Completed 03-01-PLAN.md
 
-Progress: [████------] 38%
+Progress: [████████░░] 75%
 
 ## Performance Metrics
 
@@ -66,6 +66,7 @@ Progress: [████------] 38%
 - Trend: stable
 
 *Updated after each plan completion*
+| Phase 03 P01 | 3 min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -93,6 +94,9 @@ Recent decisions affecting current work:
 - [02-02]: Used sessionStorage for AuthPrompt dismissal to reset on new browser session
 - [02-02]: Created Toaster renderer -- toast system had dispatch/state but no render component across entire app
 - [02-02]: AuthHeader fixed-positioned top-right to work across all pages without modifying individual layouts
+- [Phase 03]: Used direct @supabase/supabase-js with service role key for seed script (avoids Next.js request context)
+- [Phase 03]: IGDB concurrency 4, Wiki 6, HEAD 10 for rate limit compliance in seed pipeline
+- [Phase 03]: Landing page filters out underpopulated categories (MIN_CATEGORY_ITEMS=50) instead of showing Coming soon badges
 
 ### Pending Todos
 
@@ -107,6 +111,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-14T23:40:40.602Z
-Stopped at: Phase 3 context gathered
-Resume file: .planning/phases/03-content-and-ai-generation/03-CONTEXT.md
+Last session: 2026-03-15T00:02:45.528Z
+Stopped at: Completed 03-01-PLAN.md
+Resume file: None
