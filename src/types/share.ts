@@ -4,6 +4,7 @@ export interface SharedRanking {
   id: string;
   list_id: string;
   user_id?: string;
+  display_name?: string | null;
   title: string;
   category: string;
   subcategory?: string;
@@ -27,6 +28,7 @@ export interface SharedRankingItem {
 export interface CreateSharedRankingRequest {
   list_id: string;
   user_id?: string;
+  display_name?: string | null;
   title: string;
   category: string;
   subcategory?: string;

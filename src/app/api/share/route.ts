@@ -45,7 +45,7 @@ function suggestLayout(items: Array<{ image_url?: string }>): OGCardLayout {
 export async function POST(request: NextRequest) {
   try {
     const body: CreateSharedRankingRequest = await request.json();
-    const { list_id, user_id, title, category, subcategory, time_period, items } = body;
+    const { list_id, user_id, display_name, title, category, subcategory, time_period, items } = body;
 
     // Validate request
     if (!title || !category || !items || items.length === 0) {
@@ -99,6 +99,7 @@ export async function POST(request: NextRequest) {
       .insert({
         list_id,
         user_id,
+        display_name: display_name || null,
         title,
         category,
         subcategory,
