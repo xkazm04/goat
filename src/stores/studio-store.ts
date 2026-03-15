@@ -7,6 +7,7 @@
  */
 
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { useShallow } from 'zustand/react/shallow';
 import { apiClient, getApiErrorMessage } from '@/lib/api/client';
 import type { EnrichedItem } from '@/types/studio';
@@ -83,6 +84,7 @@ interface StudioState {
 
   // Actions - Generation
   generateItems: () => Promise<void>;
+  streamGenerate: () => Promise<void>; // Alias for generateItems
   setGenerationProgress: (progress: string | null) => void;
   clearItems: () => void;
   clearError: () => void;
@@ -119,7 +121,9 @@ interface StudioState {
 // Store Implementation
 // ─────────────────────────────────────────────────────────────
 
-export const useStudioStore = create<StudioState>((set, get) => ({
+export const useStudioStore = create<StudioState>()(
+  persist(
+    (set, get) => ({
   // Initial state - Form
   topic: '',
   listSize: 10,
@@ -333,6 +337,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     }
   },
 
+  // Alias for generateItems -- satisfies the streamGenerate contract
+  streamGenerate: () => get().generateItems(),
+
   // Progress action
   setGenerationProgress: (progress) => set({ generationProgress: progress }),
 
@@ -453,7 +460,23 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       publishedListId: null,
       showSuccess: false,
     }),
-}));
+    }),
+    {
+      name: 'goat-studio-store',
+      partialize: (state) => ({
+        generatedItems: state.generatedItems,
+        listTitle: state.listTitle,
+        listDescription: state.listDescription,
+        category: state.category,
+        topic: state.topic,
+        generateCount: state.generateCount,
+        criteriaMode: state.criteriaMode,
+        selectedProfileId: state.selectedProfileId,
+        customProfile: state.customProfile,
+      }),
+    }
+  )
+);
 
 // ─────────────────────────────────────────────────────────────
 // Selector Hooks (prevent unnecessary re-renders)
@@ -484,6 +507,7 @@ export const useStudioGeneration = () =>
       generationProgress: state.generationProgress,
       error: state.error,
       generateItems: state.generateItems,
+      streamGenerate: state.streamGenerate,
       clearError: state.clearError,
     }))
   );
@@ -577,6 +601,7 @@ export const useStudioActions = () =>
       setListSize: state.setListSize,
       setGenerateCount: state.setGenerateCount,
       generateItems: state.generateItems,
+      streamGenerate: state.streamGenerate,
       clearItems: state.clearItems,
       clearError: state.clearError,
       updateItem: state.updateItem,
