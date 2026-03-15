@@ -3,11 +3,27 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in-progress
+stopped_at: Completed 03-04-PLAN.md (gap closure)
+last_updated: "2026-03-15T09:26:26.213Z"
+last_activity: 2026-03-15 — Phase 3 complete (03-03 checkpoint approved)
+progress:
+  total_phases: 5
+  completed_phases: 3
+  total_plans: 9
+  completed_plans: 9
+  percent: 100
+---
+
+---
+gsd_state_version: 1.0
+milestone: v1.0
+milestone_name: milestone
+status: in-progress
 stopped_at: Completed 03-03-PLAN.md -- Phase 3 complete
 last_updated: "2026-03-15T09:09:26.317Z"
 last_activity: 2026-03-15 — Phase 3 complete (03-03 checkpoint approved)
 progress:
-  total_phases: 5
+  [██████████] 100%
   completed_phases: 3
   total_plans: 8
   completed_plans: 8
@@ -101,6 +117,7 @@ Progress: [█████████░] 88%
 | Phase 03 P01 | 3 min | 2 tasks | 2 files |
 | Phase 03 P02 | 5min | 2 tasks | 3 files |
 | Phase 03 P03 | 8min | 3 tasks | 8 files |
+| Phase 03 P04 | 2min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -135,6 +152,7 @@ Recent decisions affecting current work:
 - [Phase 03]: Kept backward-compatible non-streaming mode via ?stream=true query param
 - [Phase 03]: Used inline editing for item titles rather than modal editor
 - [Phase 03]: Draft save uses Zustand persist, publish hits API -- two-step save flow
+- [Phase 03]: Flipped ENABLE_ENRICHMENT_PIPELINE from opt-in to opt-out for default-on enrichment
 
 ### Pending Todos
 
@@ -149,6 +167,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-15T09:09:26.314Z
-Stopped at: Completed 03-03-PLAN.md -- Phase 3 complete
+Last session: 2026-03-15T09:26:26.210Z
+Stopped at: Completed 03-04-PLAN.md (gap closure)
 Resume file: None
