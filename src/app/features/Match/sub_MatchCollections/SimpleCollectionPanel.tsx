@@ -7,18 +7,18 @@ import { useQuickSelect } from "@/app/features/Collection/hooks/useQuickSelect";
 import { cn } from "@/lib/utils";
 import {
   CollectionSidebar,
-  CollectionHorizontalBar,
   VirtualizedCollectionGrid,
   CollectionToggleButton,
-  GroupViewMode,
   QuickSelectStatusBar,
   useGridDimensions,
 } from "./components";
 import { CompactCollectionHeader } from "./components/CompactCollectionHeader";
-import { VerticalCategoryNav } from "./components/VerticalCategoryNav";
 import { PanelResizeHandle } from "./components/PanelResizeHandle";
+import { AddCustomItemForm } from "./components/AddCustomItemForm";
+import { MobileBacklogPanel } from "./components/MobileBacklogPanel";
 import { useCollectionFiltering } from "./hooks/useCollectionFiltering";
 import { usePanelResize } from "./hooks/usePanelResize";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 interface SimpleCollectionPanelProps {
   groups: CollectionGroup[];
@@ -32,9 +32,9 @@ type AnimationState = 'hidden' | 'entering' | 'visible' | 'exiting';
  * "Glass Dock" Collection Panel - A floating dock for managing collection items.
  */
 export function SimpleCollectionPanel({ groups, onItemClick, selectedItemId }: SimpleCollectionPanelProps) {
+  const isMobileBreakpoint = useMediaQuery('(max-width: 767px)');
   const [isVisible, setIsVisible] = useState(true);
   const [activeTab, setActiveTab] = useState<string | 'all'>('all');
-  const [groupViewMode] = useState<GroupViewMode>('sidebar');
   const [searchQuery, setSearchQuery] = useState('');
   const [mounted, setMounted] = useState(false);
   const [animState, setAnimState] = useState<AnimationState>('visible');
@@ -51,6 +51,7 @@ export function SimpleCollectionPanel({ groups, onItemClick, selectedItemId }: S
   const {
     availableGroups, groupAvailableCounts, totalItemCount,
     displayGroups, filteredItemCount, flatFilteredItems,
+    groupMatchCounts, groupNameMatches,
   } = useCollectionFiltering(groups, activeTab, deferredSearchQuery);
 
   const quickSelect = useQuickSelect({ visibleItems: flatFilteredItems, enabled: isVisible });
@@ -73,7 +74,7 @@ export function SimpleCollectionPanel({ groups, onItemClick, selectedItemId }: S
   // Layout calculations
   const isCompactMode = panelHeight < 300;
   const gridHeight = Math.max(150, panelHeight - 36 - (quickSelect.state.isActive ? 32 : 0) -
-    (groupViewMode === 'horizontal' ? 40 : 0) - (isCompactMode ? 8 : 16));
+    (isCompactMode ? 8 : 16));
 
   // Reset to 'all' if selected group becomes empty
   useEffect(() => {
@@ -113,6 +114,17 @@ export function SimpleCollectionPanel({ groups, onItemClick, selectedItemId }: S
 
   if (!mounted) return null;
 
+  // On mobile (< 768px), render the bottom sheet panel instead of the desktop sidebar
+  if (isMobileBreakpoint) {
+    return createPortal(
+      <MobileBacklogPanel
+        items={flatFilteredItems}
+        totalCount={totalItemCount}
+      />,
+      document.body
+    );
+  }
+
   const shouldRenderPanel = animState !== 'hidden';
 
   return createPortal(
@@ -145,7 +157,7 @@ export function SimpleCollectionPanel({ groups, onItemClick, selectedItemId }: S
             />
 
             {quickSelect.state.isActive && (
-              <div className="px-3 py-1 flex-shrink-0 border-b border-white/5">
+              <div className="px-3 py-1 shrink-0 border-b border-white/5">
                 <QuickSelectStatusBar
                   isActive={quickSelect.state.isActive}
                   mode={quickSelect.state.mode}
@@ -157,24 +169,26 @@ export function SimpleCollectionPanel({ groups, onItemClick, selectedItemId }: S
               </div>
             )}
 
-            {groupViewMode === 'horizontal' && (
-              <div className="flex-shrink-0">
-                <CollectionHorizontalBar
-                  groups={availableGroups} groupAvailableCounts={groupAvailableCounts}
-                  activeTab={activeTab} onTabChange={setActiveTab} totalItemCount={totalItemCount}
+            {/* Add Custom Item Form */}
+            {(() => {
+              const targetGroup = activeTab !== 'all'
+                ? availableGroups.find(g => g.id === activeTab)
+                : availableGroups[0];
+              if (!targetGroup) return null;
+              return (
+                <AddCustomItemForm
+                  category={targetGroup.category || ''}
+                  subcategory={targetGroup.subcategory || undefined}
+                  groupId={targetGroup.id}
                 />
-              </div>
-            )}
+              );
+            })()}
 
             <div className={cn("flex flex-1 min-h-0 overflow-hidden", isCompactMode && "gap-0.5")}>
-              {groupViewMode === 'minimal' && (
-                <VerticalCategoryNav groups={availableGroups} groupAvailableCounts={groupAvailableCounts}
-                  activeTab={activeTab} onTabChange={setActiveTab} totalItemCount={totalItemCount} />
-              )}
-              {groupViewMode === 'sidebar' && (
-                <CollectionSidebar groups={availableGroups} groupAvailableCounts={groupAvailableCounts}
-                  activeTab={activeTab} onTabChange={setActiveTab} totalItemCount={totalItemCount} />
-              )}
+              <CollectionSidebar groups={availableGroups} groupAvailableCounts={groupAvailableCounts}
+                activeTab={activeTab} onTabChange={setActiveTab} totalItemCount={totalItemCount}
+                searchQuery={deferredSearchQuery} groupMatchCounts={groupMatchCounts}
+                groupNameMatches={groupNameMatches} />
 
               <div className={cn("flex-1 min-h-0 overflow-hidden", isCompactMode ? "p-1" : "p-2")}>
                 <div ref={gridContainerRef} className="w-full h-full" data-testid="collection-grid-container">
