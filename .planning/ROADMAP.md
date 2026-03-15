@@ -78,12 +78,12 @@ Plans:
   3. User can copy a unique shareable URL for their completed ranking
   4. Pasting the shareable URL in Twitter, iMessage, or Slack shows an OG preview card with the result image
   5. The ranking grid and result/sharing pages render correctly and are usable on mobile
-**Plans**: TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] 04-01: Implement client-side image capture with @zumer/snapdom — replace generate-result-image stub
-- [ ] 04-02: Build /share/[code] server-rendered page with OG meta tags and Next.js ImageResponse
-- [ ] 04-03: Mobile grid usability and sharing page responsive layout validation
+- [ ] 04-01-PLAN.md -- Image capture with @zumer/snapdom, share button on completion, two-step share modal with theme picker
+- [ ] 04-02-PLAN.md -- Enhanced share page with attribution, challenge CTA, and OG preview metadata
+- [ ] 04-03-PLAN.md -- Mobile grid with tap-to-place, bottom panel backlog, responsive share pages
 
 ### Phase 5: Polish and Production Readiness
 **Goal**: The app is stable enough for strangers, monitored in production, and covered by tests
