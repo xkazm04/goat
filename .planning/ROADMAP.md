@@ -60,12 +60,13 @@ Plans:
   2. Empty or underpopulated categories are hidden from browsing automatically
   3. User types any topic in Studio and receives a populated, rankable list of AI-generated items with images
   4. Studio list creation flow feels polished — progress feedback, error states, clear save/publish action
-**Plans:** 3 plans
+**Plans:** 4 plans
 
 Plans:
-- [ ] 03-01-PLAN.md -- Seed 10+ video game categories with 100+ items each, update landing page to hide underpopulated categories
-- [ ] 03-02-PLAN.md -- Add streaming progressive generation to Studio endpoint, update store and UI for real-time item reveal
-- [ ] 03-03-PLAN.md -- Polish Studio UI: progress indicators, error states, item editing, draft/publish flow
+- [x] 03-01-PLAN.md -- Seed 10+ video game categories with 100+ items each, update landing page to hide underpopulated categories
+- [x] 03-02-PLAN.md -- Add streaming progressive generation to Studio endpoint, update store and UI for real-time item reveal
+- [x] 03-03-PLAN.md -- Polish Studio UI: progress indicators, error states, item editing, draft/publish flow
+- [ ] 03-04-PLAN.md -- Gap closure: enable IGDB enrichment by default, add studio-store persist middleware, add streamGenerate alias
 
 ### Phase 4: Result Sharing
 **Goal**: Users can download a branded result image and share a link that shows an OG preview
@@ -110,6 +111,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 |-------|----------------|--------|-----------|
 | 1. Core Ranking Flow | 2/2 | Complete   | 2026-03-14 |
 | 2. Auth Migration | 2/2 | Complete   | 2026-03-14 |
-| 3. Content and AI Generation | 0/3 | Not started | - |
+| 3. Content and AI Generation | 3/4 | In progress | - |
 | 4. Result Sharing | 0/3 | Not started | - |
 | 5. Polish and Production Readiness | 0/3 | Not started | - |
