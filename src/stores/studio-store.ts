@@ -3,12 +3,13 @@
  *
  * Zustand store for the List Creation Studio feature.
  * Manages topic input, AI generation, generated items, and list metadata state.
+ * Supports progressive streaming generation via NDJSON.
  */
 
 import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 import { apiClient, getApiErrorMessage } from '@/lib/api/client';
-import type { EnrichedItem, GenerateResponse } from '@/types/studio';
+import type { EnrichedItem } from '@/types/studio';
 import type { CriteriaProfile, ListCriteriaConfig } from '@/lib/criteria/types';
 
 // ─────────────────────────────────────────────────────────────
@@ -16,6 +17,32 @@ import type { CriteriaProfile, ListCriteriaConfig } from '@/lib/criteria/types';
 // ─────────────────────────────────────────────────────────────
 
 export type CriteriaMode = 'none' | 'preset' | 'custom';
+
+/** NDJSON stream line types from /api/studio/generate?stream=true */
+interface StreamMetaLine {
+  type: 'meta';
+  suggested_title: string;
+  suggested_description: string;
+}
+
+interface StreamItemLine {
+  type: 'item';
+  data: EnrichedItem;
+  index: number;
+  total: number;
+}
+
+interface StreamDoneLine {
+  type: 'done';
+  total: number;
+}
+
+interface StreamErrorLine {
+  type: 'error';
+  message: string;
+}
+
+type StreamLine = StreamMetaLine | StreamItemLine | StreamDoneLine | StreamErrorLine;
 
 // ─────────────────────────────────────────────────────────────
 // Store State Interface
@@ -125,7 +152,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   setListSize: (size) => set({ listSize: size }),
   setGenerateCount: (count) => set({ generateCount: count }),
 
-  // Generation action - appends to existing items, avoiding duplicates
+  // Generation action - uses streaming NDJSON to progressively append items
   // Also matches against existing DB items to reuse their IDs and images
   // Auto-fills title and description if empty using LLM suggestions
   generateItems: async () => {
@@ -144,33 +171,118 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     const existingTitles = generatedItems.map((item) => item.title.toLowerCase().trim());
 
     try {
-      const response = await apiClient.post<GenerateResponse>(
-        '/studio/generate',
-        {
+      // Use streaming endpoint for progressive item reveal
+      const response = await fetch('/api/studio/generate?stream=true', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           topic: topic.trim(),
           count: generateCount,
           category,
           excludeTitles: existingTitles.length > 0 ? existingTitles : undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Generation failed (${response.status})`);
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('No response stream available');
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+      const newItems: EnrichedItem[] = [];
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        // Process complete lines from buffer
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed) continue;
+
+          let parsed: StreamLine;
+          try {
+            parsed = JSON.parse(trimmed) as StreamLine;
+          } catch {
+            continue; // Skip malformed lines
+          }
+
+          switch (parsed.type) {
+            case 'meta': {
+              // Auto-fill title and description if empty
+              const metaUpdates: Partial<{ listTitle: string; listDescription: string }> = {};
+              if (!listTitle.trim() && parsed.suggested_title) {
+                metaUpdates.listTitle = parsed.suggested_title;
+              }
+              if (!listDescription.trim() && parsed.suggested_description) {
+                metaUpdates.listDescription = parsed.suggested_description;
+              }
+              if (Object.keys(metaUpdates).length > 0) {
+                set(metaUpdates);
+              }
+              break;
+            }
+
+            case 'item': {
+              const item = parsed.data;
+              // Filter duplicates (case-insensitive)
+              if (!existingTitles.includes(item.title.toLowerCase().trim())) {
+                newItems.push(item);
+                // Progressive append: update store immediately so UI shows each item
+                set({
+                  generatedItems: [...generatedItems, ...newItems],
+                  generationProgress: `Loading item ${parsed.index + 1}/${parsed.total}...`,
+                });
+              }
+              break;
+            }
+
+            case 'done': {
+              set({
+                isGenerating: false,
+                generationProgress: 'Generation complete!',
+              });
+
+              // Clear "Generation complete!" after 2 seconds
+              setTimeout(() => {
+                const current = get();
+                if (current.generationProgress === 'Generation complete!') {
+                  set({ generationProgress: null });
+                }
+              }, 2000);
+              break;
+            }
+
+            case 'error': {
+              set({
+                error: `${parsed.message} Try a more specific topic, or rephrase your request.`,
+                isGenerating: false,
+                generationProgress: null,
+              });
+              return;
+            }
+          }
         }
-      );
-
-      // Auto-fill title and description if empty (LLM suggestions)
-      const metadataUpdates: Partial<{ listTitle: string; listDescription: string }> = {};
-      if (!listTitle.trim() && response.suggested_title) {
-        metadataUpdates.listTitle = response.suggested_title;
-      }
-      if (!listDescription.trim() && response.suggested_description) {
-        metadataUpdates.listDescription = response.suggested_description;
       }
 
-      // Filter out any duplicates that slipped through (case-insensitive)
-      let newItems = response.items.filter(
-        (item) => !existingTitles.includes(item.title.toLowerCase().trim())
-      );
+      // If we exited the loop without a done/error line, finalize
+      const currentState = get();
+      if (currentState.isGenerating) {
+        set({ isGenerating: false, generationProgress: null });
+      }
 
-      // Try to match new items against existing DB items
+      // Match new items against DB (post-stream, same as before)
       if (newItems.length > 0) {
-        set({ generationProgress: `Matching ${newItems.length} items...` });
         try {
           const matchResponse = await apiClient.post<{
             items: Array<{
@@ -191,37 +303,27 @@ export const useStudioStore = create<StudioState>((set, get) => ({
             category,
           });
 
-          // Merge DB data into items (use DB image if available)
-          newItems = newItems.map((item) => {
+          // Merge DB matches back into the items
+          const currentItems = get().generatedItems;
+          const updatedItems = currentItems.map((item) => {
             const match = matchResponse.items.find(
               (m) => m.title.toLowerCase() === item.title.toLowerCase()
             );
-
             if (match?.matched && match.db_item) {
               return {
                 ...item,
                 db_item_id: match.db_item.id,
                 db_matched: true,
-                // Use DB image if item doesn't have one, or if DB has one
                 image_url: match.db_item.image_url || item.image_url,
               };
             }
-
             return item;
           });
+          set({ generatedItems: updatedItems });
         } catch {
           // Non-critical - continue without DB matching
         }
       }
-
-      // Append new items to existing items (don't replace)
-      // Also apply any metadata updates from LLM suggestions
-      set({
-        generatedItems: [...generatedItems, ...newItems],
-        isGenerating: false,
-        generationProgress: null,
-        ...metadataUpdates,
-      });
     } catch (error) {
       set({
         error: getApiErrorMessage(error),

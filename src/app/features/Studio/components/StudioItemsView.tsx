@@ -3,22 +3,33 @@
 /**
  * StudioItemsView
  *
- * Items grid view for the studio - displays generated items with drag-and-drop reordering.
- * Extracted from StudioItemsGrid for use within StudioContentTabs.
+ * Sortable items grid for the studio with drag-and-drop reordering.
+ * Supports progressive reveal animation when items stream in during generation.
+ * Accepts configurable grid column breakpoints via `gridClassName` prop.
  */
 
 import { DndContext, closestCenter, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, rectSortingStrategy } from '@dnd-kit/sortable';
 import { useSensor, useSensors, PointerSensor } from '@dnd-kit/core';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useStudioItems, useStudioGeneration, useStudioValidation } from '@/stores/studio-store';
+import { SURFACE_ELEVATION } from '@/components/visual/depth/depth-tokens';
+import { useStudioItems, useStudioGeneration, useStudioValidation, useStudioStore } from '@/stores/studio-store';
 import { StudioItemCard } from './StudioItemCard';
 import { ListOrdered, GripVertical, Database } from 'lucide-react';
 
-export function StudioItemsView() {
-  const { generatedItems, removeItem, reorderItems } = useStudioItems();
-  const { isGenerating } = useStudioGeneration();
+const DEFAULT_GRID_CLASS = 'grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3';
+
+interface StudioItemsViewProps {
+  /** Custom grid column class (default: responsive 4-10 columns) */
+  gridClassName?: string;
+}
+
+export function StudioItemsView({ gridClassName = DEFAULT_GRID_CLASS }: StudioItemsViewProps = {}) {
+  const { generatedItems, removeItem, reorderItems, updateItem } = useStudioItems();
+  const { isGenerating, generationProgress } = useStudioGeneration();
   const { listSize } = useStudioValidation();
+  const category = useStudioStore((s) => s.category);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -42,7 +53,8 @@ export function StudioItemsView() {
   if (!isGenerating && generatedItems.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-gray-800/50 border border-gray-700/40 flex items-center justify-center mb-4">
+        <div className="w-16 h-16 rounded-2xl border border-gray-700/40 flex items-center justify-center mb-4"
+          style={{ backgroundColor: SURFACE_ELEVATION.raised }}>
           <ListOrdered className="w-8 h-8 text-gray-500" />
         </div>
         <p className="text-gray-500 text-sm">
@@ -77,41 +89,59 @@ export function StudioItemsView() {
         </div>
       </div>
 
-      {/* Loading Grid */}
-      {isGenerating && (
-        <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3">
+      {/* Loading Skeleton Grid (only when generating with no items yet) */}
+      {isGenerating && generatedItems.length === 0 && (
+        <div className={gridClassName}>
           {Array.from({ length: 10 }).map((_, i) => (
             <div
               key={i}
-              className="aspect-[3/4] rounded-xl overflow-hidden animate-pulse"
+              className="aspect-3/4 rounded-xl overflow-hidden animate-ambient-shimmer"
               style={{ animationDelay: `${i * 0.05}s` }}
             >
-              <Skeleton className="w-full h-full bg-gray-800/50" />
+              <Skeleton className="w-full h-full" style={{ backgroundColor: SURFACE_ELEVATION.raised }} />
             </div>
           ))}
         </div>
       )}
 
-      {/* Items Grid */}
-      {!isGenerating && generatedItems.length > 0 && (
+      {/* Items Grid -- shown during streaming and after completion */}
+      {generatedItems.length > 0 && (
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}
         >
           <SortableContext items={sortableIds} strategy={rectSortingStrategy}>
-            <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3">
-              {generatedItems.map((item, index) => (
-                <StudioItemCard
-                  key={`item-${index}`}
-                  item={item}
-                  index={index}
-                  onRemove={removeItem}
-                />
-              ))}
+            <div className={gridClassName}>
+              <AnimatePresence initial={false}>
+                {generatedItems.map((item, index) => (
+                  <motion.div
+                    key={item.title}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -12 }}
+                    transition={{ duration: 0.2, ease: 'easeOut' }}
+                  >
+                    <StudioItemCard
+                      item={item}
+                      index={index}
+                      onRemove={removeItem}
+                      onUpdate={updateItem}
+                      category={category}
+                    />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </div>
           </SortableContext>
         </DndContext>
+      )}
+
+      {/* Generation progress indicator */}
+      {generationProgress && (
+        <div className="mt-3 text-center">
+          <p className="text-sm text-gray-400">{generationProgress}</p>
+        </div>
       )}
     </div>
   );
