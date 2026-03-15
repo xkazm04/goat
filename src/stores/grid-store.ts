@@ -46,18 +46,44 @@ import { gridLogger } from '@/lib/logger';
 export type { ValidationErrorCode as TransferValidationErrorCode } from '@/lib/validation';
 
 /**
- * Safely sync grid items to session store, gated on session hydration.
- * If session store has not yet rehydrated from storage, the sync is skipped
- * to prevent overwriting persisted data with empty/stale grid state.
- * The next user action (drag, assign, etc.) will catch up once hydrated.
+ * Batched grid-to-session sync.
+ *
+ * During rapid drag sequences (assign, move, swap, clear) multiple grid
+ * mutations can fire in a single frame.  Each one used to synchronously call
+ * sessionStore.updateSessionGridItems, which spreads the entire listSessions
+ * object, creates a new session copy, and triggers saveSessionToOffline.
+ *
+ * This batching layer coalesces those writes: only the *last* gridItems
+ * snapshot within a microtask tick is flushed to the session store, so
+ * rapid-fire operations produce at most one session update per frame.
  */
-function syncGridToSession(gridItems: GridItemType[]): void {
+let pendingSyncGridItems: GridItemType[] | null = null;
+let syncScheduled = false;
+
+function flushGridToSession(): void {
+  syncScheduled = false;
+  const gridItems = pendingSyncGridItems;
+  pendingSyncGridItems = null;
+
+  if (!gridItems) return;
+
   const sessionState = useSessionStore.getState();
   if (!sessionState._hydrated) {
     gridLogger.warn('Session store not yet hydrated -- skipping grid sync to prevent data loss');
     return;
   }
   sessionState.updateSessionGridItems(gridItems);
+}
+
+function syncGridToSession(gridItems: GridItemType[]): void {
+  // Always capture the latest snapshot
+  pendingSyncGridItems = gridItems;
+
+  // Schedule flush once per microtask tick
+  if (!syncScheduled) {
+    syncScheduled = true;
+    Promise.resolve().then(flushGridToSession);
+  }
 }
 
 /** Maximum number of lists to keep in the grid cache (LRU eviction) */
@@ -189,6 +215,13 @@ export interface GridStatistics {
   isComplete: boolean;
 }
 
+/** Mobile selected item for tap-to-place interaction */
+export interface MobileSelectedItem {
+  id: string;
+  title: string;
+  image_url?: string;
+}
+
 export interface GridStoreState {
   // Core state
   gridItems: GridItemType[];
@@ -196,6 +229,9 @@ export interface GridStoreState {
   selectedGridItem: string | null;
   activeItem: string | null;
   isTutorialMode: boolean;
+
+  // Mobile tap-to-place state
+  mobileSelectedItem: MobileSelectedItem | null;
 
   // Per-list grid persistence
   currentListId: string | null;
@@ -223,6 +259,10 @@ export interface GridStoreState {
   // Actions - Selection
   setSelectedGridItem: (id: string | null) => void;
   setActiveItem: (id: string | null) => void;
+
+  // Actions - Mobile tap-to-place
+  setMobileSelectedItem: (item: MobileSelectedItem | null) => void;
+  handleMobileTapSlot: (position: number) => void;
 
   // Actions - Drag & Drop
   handleDragEnd: (event: DragEndEvent) => void;
@@ -266,6 +306,7 @@ export const useGridStore = create<GridStoreState>()(
       selectedGridItem: null,
       activeItem: null,
       isTutorialMode: false,
+      mobileSelectedItem: null,
       currentListId: null,
       listGridCache: {},
       listGridCacheOrder: [],
@@ -646,7 +687,68 @@ export const useGridStore = create<GridStoreState>()(
       setSelectedGridItem: (id) => set({ selectedGridItem: id }),
 
       // Set the active drag item
-      setActiveItem: (id) => set({ activeItem: id }),
+      setActiveItem: (id) => {
+        // Clear mobile selection on drag start to prevent state conflicts
+        const state = get();
+        if (id !== null && state.mobileSelectedItem !== null) {
+          set({ activeItem: id, mobileSelectedItem: null });
+        } else {
+          set({ activeItem: id });
+        }
+      },
+
+      // Mobile tap-to-place: set the currently selected backlog item
+      setMobileSelectedItem: (item) => set({ mobileSelectedItem: item }),
+
+      // Mobile tap-to-place: place the selected backlog item at a grid position
+      handleMobileTapSlot: (position) => {
+        const state = get();
+        const selected = state.mobileSelectedItem;
+
+        if (!selected) return;
+
+        // Check bounds
+        if (position < 0 || position >= state.gridItems.length) {
+          gridLogger.warn(`Mobile tap: invalid position ${position}`);
+          return;
+        }
+
+        // If slot is occupied, do nothing
+        if (state.gridItems[position].matched) {
+          gridLogger.debug(`Mobile tap: position ${position} already occupied`);
+          return;
+        }
+
+        // Use the backlog store to get the full item and validate
+        const backlogState = backlogStoreAccessor.getState();
+        if (!backlogState) {
+          gridLogger.error('Mobile tap: backlog store not initialized');
+          return;
+        }
+
+        const item = backlogState.getItemById(selected.id);
+        if (!item) {
+          gridLogger.warn(`Mobile tap: item ${selected.id} not found in backlog`);
+          set({ mobileSelectedItem: null });
+          return;
+        }
+
+        // Check if already used
+        if (backlogState.isItemUsed(selected.id)) {
+          gridLogger.warn(`Mobile tap: item ${selected.id} already used`);
+          set({ mobileSelectedItem: null });
+          return;
+        }
+
+        // Place the item
+        const gridItem = createGridItem(item, position);
+        get().assignItemToGrid(gridItem, position);
+        backlogState.markItemAsUsed(item.id, true);
+
+        // Clear selection after placement
+        set({ mobileSelectedItem: null });
+        gridLogger.info(`Mobile tap: placed item at position ${position}`);
+      },
 
       // Handle drag end events (uses TransferProtocol utilities for ID parsing)
       handleDragEnd: (event) => {

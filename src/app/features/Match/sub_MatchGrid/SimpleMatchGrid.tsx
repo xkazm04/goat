@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
-import { DndContext, DragEndEvent, DragMoveEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { DndContext, DragEndEvent, DragMoveEvent, PointerSensor, TouchSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { backlogGroupsToCollectionGroups } from "../../Collection";
 import { SimpleCollectionPanel } from "../sub_MatchCollections/SimpleCollectionPanel";
 import { CollectionItem } from "../../Collection/types";
@@ -283,11 +283,17 @@ function SimpleMatchGridInner() {
     }
   }, [currentList?.size, maxGridSize, initializeRanking]);
 
-  // Simple pointer sensor with minimal activation delay
+  // Pointer sensor for desktop, touch sensor with long-press delay for mobile reorder
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
         distance: 2, // Low threshold for responsive drag initiation
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 350, // Long-press to pick up (iOS home screen UX)
+        tolerance: 5, // Allow slight finger movement during hold
       },
     })
   );

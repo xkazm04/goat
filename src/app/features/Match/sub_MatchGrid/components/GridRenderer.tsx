@@ -81,70 +81,62 @@ const ViewSelector = memo(function ViewSelector({
  * Standard grid sections renderer
  */
 const StandardGridSections = memo(function StandardGridSections({
-  gridItems,
+  gridItemsLength,
   viewMode,
   onRemove,
 }: {
-  gridItems: GridItemType[];
+  gridItemsLength: number;
   viewMode: ViewMode;
   onRemove: (position: number) => void;
 }) {
   const startOffset = viewMode === "rushmore" ? 4 : 3;
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-4 sm:space-y-8 lg:space-y-12">
       {/* Elite Tier: Positions 4-10 (or 5-10 for rushmore) */}
-      {gridItems.length > startOffset && (
+      {gridItemsLength > startOffset && (
         <GridSection
           title="Elite Tier"
-          gridItems={gridItems}
           startPosition={startOffset}
-          endPosition={Math.min(10, gridItems.length)}
+          endPosition={Math.min(10, gridItemsLength)}
           columns={7}
           onRemove={onRemove}
-          getItemTitle={getItemTitle}
         />
       )}
 
       {/* Core Roster: Positions 11-20 */}
-      {gridItems.length > 10 && (
+      {gridItemsLength > 10 && (
         <GridSection
           title="Core Roster"
-          gridItems={gridItems}
           startPosition={10}
-          endPosition={Math.min(20, gridItems.length)}
+          endPosition={Math.min(20, gridItemsLength)}
           columns={10}
           gap={3}
           onRemove={onRemove}
-          getItemTitle={getItemTitle}
         />
       )}
 
       {/* Rising Stars: Positions 21-35 */}
-      {gridItems.length > 20 && (
+      {gridItemsLength > 20 && (
         <GridSection
           title="Rising Stars"
-          gridItems={gridItems}
           startPosition={20}
-          endPosition={Math.min(35, gridItems.length)}
+          endPosition={Math.min(35, gridItemsLength)}
           columns={10}
           gap={3}
           onRemove={onRemove}
-          getItemTitle={getItemTitle}
         />
       )}
 
       {/* Reserves: Positions 36-50 */}
-      {gridItems.length > 35 && (
+      {gridItemsLength > 35 && (
         <GridSection
           title="Reserves"
-          gridItems={gridItems}
           startPosition={35}
-          endPosition={Math.min(50, gridItems.length)}
+          endPosition={Math.min(50, gridItemsLength)}
           columns={10}
           gap={3}
           onRemove={onRemove}
-          getItemTitle={getItemTitle}
         />
       )}
     </div>
@@ -227,7 +219,7 @@ export const GridRenderer = memo(function GridRenderer({
   );
 
   return (
-    <div className="max-w-7xl mx-auto px-8 relative z-10">
+    <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 relative z-10">
       {/* View-specific top section (Podium, GOAT, Rushmore) */}
       <ViewSelector
         viewMode={viewMode}
@@ -245,7 +237,7 @@ export const GridRenderer = memo(function GridRenderer({
         />
       ) : (
         <StandardGridSections
-          gridItems={gridItems}
+          gridItemsLength={gridItems.length}
           viewMode={viewMode}
           onRemove={handleRemove}
         />
