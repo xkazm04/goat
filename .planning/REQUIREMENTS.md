@@ -36,8 +36,8 @@ Requirements for production launch. Each maps to roadmap phases.
 ### Content & Data
 
 - [x] **CONT-01**: At least 10-15 popular categories are fully populated with items (100+ each)
-- [ ] **CONT-02**: User can create a custom list by typing any topic
-- [ ] **CONT-03**: AI generates relevant items with images for custom lists
+- [x] **CONT-02**: User can create a custom list by typing any topic
+- [x] **CONT-03**: AI generates relevant items with images for custom lists
 - [ ] **CONT-04**: Studio list creation flow is intuitive and polished
 - [x] **CONT-05**: Empty/unpopulated categories are hidden from browsing
 
@@ -111,8 +111,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUTH-04 | Phase 2 | Complete |
 | AUTH-05 | Phase 2 | Complete |
 | CONT-01 | Phase 3 | Complete |
-| CONT-02 | Phase 3 | Pending |
-| CONT-03 | Phase 3 | Pending |
+| CONT-02 | Phase 3 | Complete |
+| CONT-03 | Phase 3 | Complete |
 | CONT-04 | Phase 3 | Pending |
 | CONT-05 | Phase 3 | Complete |
 | SHAR-01 | Phase 4 | Pending |

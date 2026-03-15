@@ -3,11 +3,27 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in-progress
+stopped_at: Completed 03-02-PLAN.md
+last_updated: "2026-03-15T00:05:05.284Z"
+last_activity: 2026-03-15 — Completed 03-01-PLAN.md
+progress:
+  total_phases: 5
+  completed_phases: 2
+  total_plans: 8
+  completed_plans: 7
+  percent: 88
+---
+
+---
+gsd_state_version: 1.0
+milestone: v1.0
+milestone_name: milestone
+status: in-progress
 stopped_at: Completed 03-01-PLAN.md
 last_updated: "2026-03-15T00:02:45.530Z"
 last_activity: 2026-03-14 — Phase 2 complete (02-02 checkpoint approved)
 progress:
-  total_phases: 5
+  [█████████░] 88%
   completed_phases: 2
   total_plans: 8
   completed_plans: 6
@@ -41,11 +57,11 @@ See: .planning/PROJECT.md (updated 2026-03-14)
 ## Current Position
 
 Phase: 3 of 5 (Content and AI Generation)
-Plan: 1 of 3 in current phase
-Status: 03-01 complete -- video game category seed script and landing page gating
-Last activity: 2026-03-15 — Completed 03-01-PLAN.md
+Plan: 2 of 3 in current phase
+Status: 03-02 complete -- streaming AI generation pipeline
+Last activity: 2026-03-15 — Completed 03-02-PLAN.md
 
-Progress: [████████░░] 75%
+Progress: [█████████░] 88%
 
 ## Performance Metrics
 
@@ -67,6 +83,7 @@ Progress: [████████░░] 75%
 
 *Updated after each plan completion*
 | Phase 03 P01 | 3 min | 2 tasks | 2 files |
+| Phase 03 P02 | 5min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -97,6 +114,8 @@ Recent decisions affecting current work:
 - [Phase 03]: Used direct @supabase/supabase-js with service role key for seed script (avoids Next.js request context)
 - [Phase 03]: IGDB concurrency 4, Wiki 6, HEAD 10 for rate limit compliance in seed pipeline
 - [Phase 03]: Landing page filters out underpopulated categories (MIN_CATEGORY_ITEMS=50) instead of showing Coming soon badges
+- [Phase 03]: Used NDJSON streaming over SSE for progressive generation -- simpler parsing, no EventSource needed
+- [Phase 03]: Kept backward-compatible non-streaming mode via ?stream=true query param
 
 ### Pending Todos
 
@@ -111,6 +130,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-15T00:02:45.528Z
-Stopped at: Completed 03-01-PLAN.md
+Last session: 2026-03-15T00:05:05.281Z
+Stopped at: Completed 03-02-PLAN.md
 Resume file: None
