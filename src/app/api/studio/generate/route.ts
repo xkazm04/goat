@@ -298,7 +298,7 @@ async function handleClassicGenerate(request: NextRequest) {
     const titles = geminiResult.items.map(item => item.title);
     const existingItems = await findExistingItems(titles, category);
 
-    const useEnrichmentPipeline = process.env.ENABLE_ENRICHMENT_PIPELINE === 'true';
+    const useEnrichmentPipeline = process.env.ENABLE_ENRICHMENT_PIPELINE !== 'false';
     const WIKI_CONCURRENCY = 6;
 
     const itemsWithImages = await pLimit(
@@ -393,7 +393,7 @@ async function handleStreamingGenerate(request: NextRequest) {
         const titles = geminiResult.items.map(item => item.title);
         const existingItems = await findExistingItems(titles, category);
 
-        const useEnrichmentPipeline = process.env.ENABLE_ENRICHMENT_PIPELINE === 'true';
+        const useEnrichmentPipeline = process.env.ENABLE_ENRICHMENT_PIPELINE !== 'false';
         const WIKI_CONCURRENCY = 6;
         const totalItems = geminiResult.items.length;
 
