@@ -27,6 +27,8 @@ export interface DropZoneCardProps {
   medalType: MedalType | null;
   /** Medal hint background color */
   medalHintColor?: string;
+  /** Whether this drop zone has an active error (triggers shake animation) */
+  hasError?: boolean;
   /** Inline style (for drag transform) */
   style?: React.CSSProperties;
   /** Draggable attributes - spread onto the element when occupied */
@@ -55,6 +57,7 @@ export const DropZoneCard = memo(
       accentColor,
       medalType,
       medalHintColor,
+      hasError,
       style,
       attributes,
       listeners,
@@ -70,6 +73,9 @@ export const DropZoneCard = memo(
           ...((!isOccupied && medalType && medalHintColor) && {
             backgroundColor: medalHintColor,
           }),
+          ...(hasError && {
+            animation: 'drag-error-shake 200ms ease-out, drag-error-border-flash 600ms ease-out',
+          }),
         } as React.CSSProperties}
         initial={false}
         animate={{
@@ -78,7 +84,7 @@ export const DropZoneCard = memo(
               ? [1, 1.2, 0.92, 1.08, 0.98, 1.02, 1]
               : [1, 1.15, 0.95, 1.02, 1])
             : isOver ? 1.08 : showValidDropZoneHighlight ? 1.05 : 1,
-          borderColor: isOver ? accentColor : isOccupied ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)',
+          borderColor: hasError ? '#f87171' : isOver ? accentColor : isOccupied ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)',
           rotate: justDropped && isTop3 ? [0, -2, 2, -1, 1, 0] : 0,
           opacity: shouldDimFilledSlot ? 0.6 : 1,
         }}
@@ -98,7 +104,7 @@ export const DropZoneCard = memo(
           opacity: { duration: 0.3, ease: "easeOut" },
         }}
         className={`
-          relative aspect-[4/5] rounded-xl overflow-hidden group
+          relative aspect-4/5 rounded-xl overflow-hidden group
           border-2 transition-colors duration-300
           ${isOccupied ? 'bg-gray-900/80' : 'bg-gray-900/20'}
           ${!isOccupied && 'shadow-[inset_0_2px_8px_rgba(0,0,0,0.3)]'}

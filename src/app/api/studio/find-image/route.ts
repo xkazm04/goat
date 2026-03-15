@@ -136,7 +136,7 @@ Return ONLY the URL or null, nothing else.`;
     if (error instanceof z.ZodError) {
       const errorResponse: StudioApiError = {
         error: 'Invalid request',
-        details: error.errors,
+        details: error.issues,
       };
       return NextResponse.json(errorResponse, { status: 400 });
     }

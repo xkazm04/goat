@@ -92,7 +92,7 @@ export function AwardItem({
       {/* Main Card */}
       <div className={`
         relative overflow-hidden rounded-2xl
-        bg-gradient-to-br from-gray-900/95 via-gray-900/90 to-gray-950/95
+        bg-linear-to-br from-gray-900/95 via-gray-900/90 to-gray-950/95
         border transition-all duration-300
         ${isOver ? 'border-yellow-500/50 shadow-[0_0_40px_rgba(234,179,8,0.15)]' : 'border-white/5 shadow-xl shadow-black/50'}
       `}>
@@ -112,7 +112,7 @@ export function AwardItem({
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3 min-w-0">
               {/* Trophy Icon */}
-              <div className="flex-shrink-0 p-2 bg-gradient-to-br from-yellow-500/20 to-orange-500/10 rounded-xl border border-yellow-500/20">
+              <div className="shrink-0 p-2 bg-linear-to-br from-yellow-500/20 to-orange-500/10 rounded-xl border border-yellow-500/20">
                 <Trophy className="w-5 h-5 text-yellow-500" />
               </div>
 
@@ -128,7 +128,7 @@ export function AwardItem({
             </div>
 
             {/* Category Badge */}
-            <div className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1 bg-yellow-500/10 rounded-full border border-yellow-500/20">
+            <div className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 bg-yellow-500/10 rounded-full border border-yellow-500/20">
               <Award className="w-3 h-3 text-yellow-500" />
               <span className="text-[10px] font-semibold text-yellow-500 uppercase tracking-wider">
                 Award
@@ -147,7 +147,7 @@ export function AwardItem({
                 <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
                   Nominees
                 </span>
-                <div className="flex-1 h-px bg-gradient-to-r from-gray-700/50 to-transparent" />
+                <div className="flex-1 h-px bg-linear-to-r from-gray-700/50 to-transparent" />
                 <span className="text-[10px] text-gray-600">
                   {candidates.filter(c => c.title).length}/5
                 </span>
@@ -168,13 +168,13 @@ export function AwardItem({
 
             {/* Divider */}
             <div className="flex flex-col items-center gap-2 px-2 self-center">
-              <div className="w-px h-12 bg-gradient-to-b from-transparent via-yellow-500/30 to-transparent" />
+              <div className="w-px h-12 bg-linear-to-b from-transparent via-yellow-500/30 to-transparent" />
               <Sparkles className="w-5 h-5 text-yellow-500/40" />
-              <div className="w-px h-12 bg-gradient-to-b from-transparent via-yellow-500/30 to-transparent" />
+              <div className="w-px h-12 bg-linear-to-b from-transparent via-yellow-500/30 to-transparent" />
             </div>
 
             {/* Winner Podium - 2X LARGER */}
-            <div className="flex-shrink-0">
+            <div className="shrink-0">
               <div className="flex items-center gap-2 mb-3">
                 <Crown className="w-4 h-4 text-yellow-500" />
                 <span className="text-xs font-semibold text-yellow-500 uppercase tracking-wider">
@@ -196,11 +196,11 @@ export function AwardItem({
                   relative w-56 h-72 rounded-2xl overflow-hidden
                   transition-all duration-300
                   ${isOccupied
-                    ? 'bg-gradient-to-b from-yellow-500/20 to-yellow-600/10 border-yellow-500/40'
-                    : 'bg-gradient-to-b from-gray-800/60 to-gray-900/60 border-white/10'
+                    ? 'bg-linear-to-b from-yellow-500/20 to-yellow-600/10 border-yellow-500/40'
+                    : 'bg-linear-to-b from-gray-800/60 to-gray-900/60 border-white/10'
                   }
                   ${isOver ? 'ring-2 ring-yellow-500 ring-offset-2 ring-offset-gray-900 border-yellow-500/50' : 'border-2'}
-                  ${showClickHint ? 'ring-2 ring-cyan-500/50 ring-offset-2 ring-offset-gray-900 hover:ring-cyan-400' : ''}
+                  ${showClickHint ? 'ring-2 ring-brand/50 ring-offset-2 ring-offset-gray-900 hover:ring-brand-hover' : ''}
                 `}>
 
                   <AnimatePresence mode="wait">
@@ -224,7 +224,7 @@ export function AwardItem({
                         />
 
                         {/* Gradient overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-black/30" />
+                        <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/20 to-black/30" />
 
                         {/* Crown badge - larger */}
                         <motion.div
@@ -258,7 +258,7 @@ export function AwardItem({
                                 e.stopPropagation();
                                 onShare(list.id, getItemTitle(gridItem));
                               }}
-                              className="p-1.5 rounded-full bg-black/50 text-white/70 hover:text-white backdrop-blur-sm border border-white/20"
+                              className="p-1.5 rounded-full bg-black/50 text-white/70 hover:text-white backdrop-blur-xs border border-white/20"
                               title="Share this award"
                             >
                               <Share2 className="w-4 h-4" />
@@ -274,7 +274,7 @@ export function AwardItem({
                               e.stopPropagation();
                               onRemove();
                             }}
-                            className="p-1.5 rounded-full bg-black/50 text-white/70 hover:text-white backdrop-blur-sm border border-white/20"
+                            className="p-1.5 rounded-full bg-black/50 text-white/70 hover:text-white backdrop-blur-xs border border-white/20"
                             title="Remove winner"
                           >
                             <X className="w-4 h-4" />
@@ -321,13 +321,13 @@ export function AwardItem({
                           transition={{ duration: 0.2 }}
                           className="mb-4"
                         >
-                          <Trophy className={`w-16 h-16 ${isOver ? 'text-yellow-500' : showClickHint ? 'text-cyan-500' : 'text-gray-600'}`} />
+                          <Trophy className={`w-16 h-16 ${isOver ? 'text-yellow-500' : showClickHint ? 'text-brand' : 'text-gray-600'}`} />
                         </motion.div>
 
                         {/* Drop/Click hint - larger text */}
                         <motion.p
                           animate={{ opacity: isOver || showClickHint ? 1 : 0.5 }}
-                          className={`text-sm text-center font-medium leading-tight ${isOver ? 'text-yellow-400' : showClickHint ? 'text-cyan-400' : 'text-gray-500'}`}
+                          className={`text-sm text-center font-medium leading-tight ${isOver ? 'text-yellow-400' : showClickHint ? 'text-brand-hover' : 'text-gray-500'}`}
                         >
                           {isOver ? 'Release to Award!' : showClickHint ? 'Click to Assign!' : 'Drop or Click'}
                         </motion.p>
@@ -335,7 +335,7 @@ export function AwardItem({
                         {/* Animated border */}
                         {(isOver || showClickHint) && (
                           <motion.div
-                            className={`absolute inset-0 border-2 border-dashed rounded-2xl ${isOver ? 'border-yellow-500/60' : 'border-cyan-500/60'}`}
+                            className={`absolute inset-0 border-2 border-dashed rounded-2xl ${isOver ? 'border-yellow-500/60' : 'border-brand/60'}`}
                             animate={{ opacity: [0.4, 1, 0.4] }}
                             transition={{ duration: 1, repeat: Infinity }}
                           />
@@ -347,7 +347,7 @@ export function AwardItem({
 
                 {/* Glow effect */}
                 {(isOver || isOccupied || showClickHint) && (
-                  <div className={`absolute -inset-3 rounded-3xl blur-xl -z-10 ${showClickHint && !isOccupied ? 'bg-cyan-500/10' : 'bg-yellow-500/10'}`} />
+                  <div className={`absolute -inset-3 rounded-3xl blur-xl -z-10 ${showClickHint && !isOccupied ? 'bg-brand/10' : 'bg-yellow-500/10'}`} />
                 )}
               </motion.div>
             </div>
@@ -355,7 +355,7 @@ export function AwardItem({
         </div>
 
         {/* Bottom accent line */}
-        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-yellow-500/20 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-linear-to-r from-transparent via-yellow-500/20 to-transparent" />
       </div>
     </motion.div>
   );
@@ -408,22 +408,22 @@ function CandidateSlot({
       transition={{ delay: index * 0.05 }}
       whileHover={isEmpty ? { scale: 1.05, borderColor: 'rgba(234, 179, 8, 0.3)' } : { scale: 1.03 }}
       className={`
-        relative aspect-[3/4] rounded-lg overflow-hidden
+        relative aspect-3/4 rounded-lg overflow-hidden
         transition-all duration-200
         ${isEmpty
           ? 'bg-gray-800/30 border border-dashed border-gray-700/50'
           : 'bg-gray-800/50 border border-white/10'
         }
         ${isOver ? 'ring-2 ring-yellow-500/50 border-yellow-500/50 bg-yellow-500/5' : ''}
-        ${showClickHint ? 'ring-2 ring-cyan-500/50 border-cyan-500/50 bg-cyan-500/5 cursor-pointer' : ''}
+        ${showClickHint ? 'ring-2 ring-brand/50 border-brand/50 bg-brand/5 cursor-pointer' : ''}
       `}
     >
       {isEmpty ? (
         /* Empty Slot */
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <Plus className={`w-4 h-4 ${isOver ? 'text-yellow-500' : showClickHint ? 'text-cyan-500' : 'text-gray-600'}`} />
+          <Plus className={`w-4 h-4 ${isOver ? 'text-yellow-500' : showClickHint ? 'text-brand' : 'text-gray-600'}`} />
           {(isOver || showClickHint) && (
-            <span className={`text-[8px] mt-1 ${isOver ? 'text-yellow-500' : 'text-cyan-500'}`}>
+            <span className={`text-[8px] mt-1 ${isOver ? 'text-yellow-500' : 'text-brand'}`}>
               {isOver ? 'Drop' : 'Click'}
             </span>
           )}
@@ -440,7 +440,7 @@ function CandidateSlot({
           />
 
           {/* Gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-linear-to-t from-black/80 via-transparent to-transparent" />
 
           {/* Nominee number badge */}
           <div className="absolute top-1 left-1 w-4 h-4 rounded-full bg-black/60 border border-white/20 flex items-center justify-center">

@@ -85,10 +85,10 @@ export const useMatchStore = create<MatchStoreState>((set, get) => ({
 
     // Sync with comparison store
     const comparisonStore = useComparisonStore.getState();
-    if (show && !comparisonStore.isComparisonOpen) {
-      comparisonStore.openComparison();
-    } else if (!show && comparisonStore.isComparisonOpen) {
-      comparisonStore.closeComparison();
+    if (show && !comparisonStore.isOpen) {
+      comparisonStore.open();
+    } else if (!show && comparisonStore.isOpen) {
+      comparisonStore.close();
     }
   },
 
@@ -335,7 +335,7 @@ export const useMatchStore = create<MatchStoreState>((set, get) => ({
 
     // Clear all stores
     gridStore.clearGrid();
-    comparisonStore.clearComparison();
+    comparisonStore.clearAll();
     sessionStore.setSelectedBacklogItem(null);
 
     // Reset match store state

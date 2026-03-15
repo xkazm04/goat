@@ -2,7 +2,8 @@
 
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RotateCcw, Play, Pause } from 'lucide-react';
+import { RotateCcw, Play } from 'lucide-react';
+import { BracketDrawingLoader } from '@/components/illustrations/BracketDrawingLoader';
 import { GridItemType } from '@/types/match';
 import { BacklogItem } from '@/types/backlog-groups';
 import {
@@ -13,6 +14,7 @@ import {
   getBracketStats,
   bracketToRanking,
   getBracketSizeForItems,
+  findMatchupById,
   SeedingStrategy,
 } from './lib';
 import {
@@ -46,14 +48,14 @@ function BracketProgress({
   return (
     <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-3">
       <div className="flex items-center justify-between mb-1.5">
-        <span className="text-xs font-medium text-slate-300">{currentRoundName}</span>
-        <span className="text-[10px] text-slate-400">
+        <span className="text-[11px] font-medium font-grotesk text-slate-300">{currentRoundName}</span>
+        <span className="text-[9px] text-slate-400">
           {stats.completedMatchups} / {stats.totalMatchups}
         </span>
       </div>
       <div className="relative h-1.5 bg-slate-700 rounded-full overflow-hidden">
         <motion.div
-          className="absolute inset-y-0 left-0 bg-gradient-to-r from-cyan-500 to-blue-500"
+          className="absolute inset-y-0 left-0 bg-linear-to-r from-brand to-blue-500"
           initial={{ width: 0 }}
           animate={{ width: `${stats.progressPercentage}%` }}
           transition={{ duration: 0.3 }}
@@ -83,20 +85,24 @@ export function BracketView({
   listSize,
   onCancel,
 }: BracketViewProps) {
-  // Fixed bracket settings - Size 16 with random strategy (no user choice)
-  const bracketSize: BracketSize = 16;
-  const seedingStrategy: SeedingStrategy = 'random';
+  // User-configurable bracket settings
+  const [bracketSize, setBracketSize] = useState<BracketSize>(() => getBracketSizeForItems(backlogItems.length));
+  const [seedingStrategy, setSeedingStrategy] = useState<SeedingStrategy>('random');
 
   // Voting overlay state - this controls whether the MatchupScreen overlay is shown
   const [isVotingActive, setIsVotingActive] = useState(false);
   const [currentMatchup, setCurrentMatchup] = useState<BracketMatchup | null>(null);
+  const [isInitializing, setIsInitializing] = useState(false);
 
   // Connect to ranking store for bracket state
   const storeBracketState = useRankingStore((state) => state.bracketState);
   const storeInitializeBracket = useRankingStore((state) => state.initializeBracket);
   const storeRecordMatchup = useRankingStore((state) => state.recordMatchup);
+  const storeUndoBracketMatchup = useRankingStore((state) => state.undoBracketMatchup);
+  const storeRevoteBracketMatchup = useRankingStore((state) => state.revoteBracketMatchup);
   const storeApplyBracketToRanking = useRankingStore((state) => state.applyBracketToRanking);
   const storeResetBracket = useRankingStore((state) => state.resetBracket);
+  const bracketUndoStack = useRankingStore((state) => state.bracketUndoStack);
 
   const bracket = storeBracketState;
 
@@ -129,23 +135,18 @@ export function BracketView({
     return getPlayableMatchups(bracket);
   }, [bracket]);
 
-  // Initialize bracket and start voting immediately
-  const initializeBracket = useCallback(() => {
-    storeInitializeBracket(availableItems, {
-      size: bracketSize,
-      seedingStrategy: seedingStrategy,
-    });
-  }, [availableItems, bracketSize, seedingStrategy, storeInitializeBracket]);
-
-  // Auto-initialize bracket on mount (skip setup phase)
-  useEffect(() => {
-    if (!bracket && availableItems.length >= 2) {
+  // Initialize bracket from setup with branded loading transition
+  const handleSetupStart = useCallback(() => {
+    setIsInitializing(true);
+    // Show bracket-drawing animation briefly before initializing
+    setTimeout(() => {
       storeInitializeBracket(availableItems, {
         size: bracketSize,
         seedingStrategy: seedingStrategy,
       });
-    }
-  }, [bracket, availableItems, bracketSize, seedingStrategy, storeInitializeBracket]);
+      setIsInitializing(false);
+    }, 1500);
+  }, [availableItems, bracketSize, seedingStrategy, storeInitializeBracket]);
 
   // When bracket completes, close voting overlay
   useEffect(() => {
@@ -185,17 +186,8 @@ export function BracketView({
 
     // Look up current matchup from fresh bracket state to check if complete
     const currentMatchupId = currentMatchup?.id;
-    let isCurrentComplete = false;
-
-    if (currentMatchupId) {
-      for (const round of bracket.rounds) {
-        const found = round.matchups.find((m) => m.id === currentMatchupId);
-        if (found) {
-          isCurrentComplete = found.isComplete;
-          break;
-        }
-      }
-    }
+    const freshMatchup = currentMatchupId ? findMatchupById(bracket, currentMatchupId) : null;
+    const isCurrentComplete = freshMatchup?.isComplete ?? false;
 
     // If current matchup is now complete (or doesn't exist), advance to next
     if (isCurrentComplete || !currentMatchup) {
@@ -219,6 +211,35 @@ export function BracketView({
       setIsVotingActive(true);
     }
   }, [playableMatchups]);
+
+  // Undo last vote - restores previous bracket state and reopens that matchup
+  const handleUndo = useCallback(() => {
+    const restoredMatchupId = storeUndoBracketMatchup();
+    if (restoredMatchupId) {
+      const updatedBracket = useRankingStore.getState().bracketState;
+      if (updatedBracket) {
+        const matchup = findMatchupById(updatedBracket, restoredMatchupId);
+        if (matchup && !matchup.isComplete) {
+          setCurrentMatchup(matchup);
+          setIsVotingActive(true);
+        }
+      }
+    }
+  }, [storeUndoBracketMatchup]);
+
+  // Revote a specific past matchup - undoes it and all downstream, reopens for voting
+  const handleRevote = useCallback((matchupId: string) => {
+    storeRevoteBracketMatchup(matchupId);
+
+    const updatedBracket = useRankingStore.getState().bracketState;
+    if (updatedBracket) {
+      const matchup = findMatchupById(updatedBracket, matchupId);
+      if (matchup && !matchup.isComplete) {
+        setCurrentMatchup(matchup);
+        setIsVotingActive(true);
+      }
+    }
+  }, [storeRevoteBracketMatchup]);
 
   // Exit voting overlay (return to bracket visualization)
   const handleExitVoting = useCallback(() => {
@@ -250,20 +271,75 @@ export function BracketView({
   return (
     <div className="relative py-6">
       {/* Background glow */}
-      <div className="absolute inset-0 bg-gradient-to-b from-cyan-500/5 via-blue-500/5 to-transparent blur-3xl -z-10" />
+      <div className="absolute inset-0 bg-linear-to-b from-brand/5 via-blue-500/5 to-transparent blur-3xl -z-10" />
 
       <AnimatePresence mode="wait">
-        {/* Setup Phase - Auto-initialized, show loading state */}
-        {phase === 'setup' && (
+        {/* Initializing Phase - Bracket drawing animation */}
+        {isInitializing && (
+          <motion.div
+            key="initializing"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex items-center justify-center py-20"
+          >
+            <BracketDrawingLoader className="text-center" />
+          </motion.div>
+        )}
+
+        {/* Setup Phase - User selects bracket size and seeding */}
+        {phase === 'setup' && !isInitializing && (
           <motion.div
             key="setup"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="flex flex-col items-center justify-center py-16 gap-4"
+            className="py-8"
           >
-            <div className="w-8 h-8 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin" />
-            <p className="text-slate-400 text-sm">Preparing bracket tournament...</p>
+            <BracketSetup
+              itemCount={availableItems.length}
+              bracketSize={bracketSize}
+              seedingStrategy={seedingStrategy}
+              onBracketSizeChange={setBracketSize}
+              onSeedingStrategyChange={setSeedingStrategy}
+              onStart={handleSetupStart}
+              onCancel={onCancel || (() => {})}
+            />
+
+            {/* Seed preview - show first round matchup pairs */}
+            {availableItems.length >= 2 && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="max-w-sm mx-auto mt-4 px-4"
+              >
+                <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-3">
+                  <p className="text-[9px] uppercase tracking-wide text-slate-500 font-medium mb-2">
+                    Preview: First {Math.min(4, Math.floor(Math.min(availableItems.length, bracketSize) / 2))} matchups
+                  </p>
+                  <div className="space-y-1">
+                    {Array.from({ length: Math.min(4, Math.floor(Math.min(availableItems.length, bracketSize) / 2)) }).map((_, i) => {
+                      const a = availableItems[i * 2];
+                      const b = availableItems[i * 2 + 1];
+                      if (!a || !b) return null;
+                      return (
+                        <div key={i} className="flex items-center gap-2 text-[11px]">
+                          <span className="text-slate-300 truncate flex-1 text-right">{a.title || a.name}</span>
+                          <span className="text-slate-600 text-[9px] font-bold shrink-0">VS</span>
+                          <span className="text-slate-300 truncate flex-1">{b.title || b.name}</span>
+                        </div>
+                      );
+                    })}
+                    {Math.floor(Math.min(availableItems.length, bracketSize) / 2) > 4 && (
+                      <p className="text-[9px] text-slate-600 text-center">
+                        +{Math.floor(Math.min(availableItems.length, bracketSize) / 2) - 4} more
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            )}
           </motion.div>
         )}
 
@@ -290,7 +366,7 @@ export function BracketView({
                   {!isVotingActive && playableMatchups.length > 0 && (
                     <button
                       onClick={handleStartVoting}
-                      className="flex items-center gap-2 px-3 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-medium transition-colors text-sm"
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg bg-brand-muted hover:bg-brand text-white font-medium transition-colors text-sm"
                     >
                       <Play className="w-4 h-4" />
                       {stats.completedMatchups > 0 ? 'Resume' : 'Start'} Voting
@@ -347,6 +423,9 @@ export function BracketView({
             bracket={bracket}
             onSelectWinner={handleSelectWinner}
             onClose={handleExitVoting}
+            onUndo={handleUndo}
+            onRevote={handleRevote}
+            canUndo={bracketUndoStack.length > 0}
             roundName={bracket.rounds[currentMatchup.roundIndex]?.name || ''}
             matchNumber={currentMatchup.matchIndex + 1}
             totalMatchesInRound={

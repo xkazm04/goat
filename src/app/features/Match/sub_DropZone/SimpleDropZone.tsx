@@ -17,6 +17,8 @@ import { createGridDragData, createGridSlotDropData } from "@/lib/dnd";
 import { getRankConfig, isPodiumPosition } from "../lib/rankConfig";
 import { useCriteriaStore, useActiveProfile } from '@/stores/criteria-store';
 import { useListStore } from '@/stores/use-list-store';
+import { usePositionChange } from "../components/PositionHistoryContext";
+import { PositionChangeIndicator } from "../components/PositionChangeIndicator";
 
 interface SimpleDropZoneProps {
   position: number;
@@ -46,6 +48,9 @@ export function SimpleDropZone({
   const [showCelebration, setShowCelebration] = useState(false);
   const prevOccupiedRef = useRef(isOccupied);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Position change tracking (Billboard-style movement indicators)
+  const positionChange = usePositionChange(gridItem?.backlogItemId);
 
   // Global drag state from highlight context
   const highlightContext = useOptionalDropZoneHighlight();
@@ -106,6 +111,10 @@ export function SimpleDropZone({
     prevOccupiedRef.current = isOccupied;
   }, [isOccupied, isDragging]);
 
+  // Drag error state for this position
+  const dragError = highlightContext?.dragState.dragError ?? null;
+  const hasError = dragError !== null && dragError.position === position;
+
   const accentColor = tierAccent || rankConfig.color;
   const style = transform ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0) scale(1.05)`, zIndex: 100 } : undefined;
   const showValidDrop = isGlobalDragging && !isOccupied && !isDragging;
@@ -115,22 +124,25 @@ export function SimpleDropZone({
 
   return (
     <div ref={containerRef} className="flex flex-col" data-testid={`drop-zone-wrapper-${position}`}>
-      {/* Header row above card: Badge (center) + Remove button (right) */}
+      {/* Header row above card: Badge (center) + Change indicator + Remove button (right) */}
       {isOccupied && (
         <div className="flex items-center justify-center h-6 mb-1 relative">
-          {/* Centered position badge */}
-          <div
-            className="px-2.5 py-0.5 rounded-md backdrop-blur-md border flex items-center gap-1 shadow-md text-xs font-bold"
-            style={{
-              backgroundColor: `${accentColor}20`,
-              borderColor: `${accentColor}40`,
-              color: accentColor,
-            }}
-          >
-            {isTop3 && rankConfig.icon && (
-              <rankConfig.icon className="w-3 h-3" style={{ color: accentColor }} />
-            )}
-            #{position + 1}
+          {/* Centered position badge + change indicator */}
+          <div className="flex items-center gap-1">
+            <div
+              className="px-2.5 py-0.5 rounded-md backdrop-blur-md border flex items-center gap-1 shadow-md text-xs font-bold"
+              style={{
+                backgroundColor: `${accentColor}20`,
+                borderColor: `${accentColor}40`,
+                color: accentColor,
+              }}
+            >
+              {isTop3 && rankConfig.icon && (
+                <rankConfig.icon className="w-3 h-3" style={{ color: accentColor }} />
+              )}
+              #{position + 1}
+            </div>
+            <PositionChangeIndicator change={positionChange} size="xs" />
           </div>
           {/* Remove button - absolute right */}
           {onRemove && (
@@ -156,11 +168,13 @@ export function SimpleDropZone({
         accentColor={accentColor}
         medalType={medalType}
         medalHintColor={medalType ? MEDAL_HINT_COLORS[medalType] : undefined}
+        hasError={hasError}
         style={style}
         attributes={attributes}
         listeners={listeners}
       >
         <ValidDropIndicator isActive={showValidDrop} testId={`valid-drop-zone-indicator-${position}`} />
+        <InvalidDropIndicator isActive={hasError} />
         <MagneticGlowAura isActive={isInRange} strength={strength} testId={`magnetic-glow-${position}`} />
         <HoloGridPattern accentColor={accentColor} isVisible={!isOccupied} />
         <RankNumberBackground position={position} accentColor={accentColor} isOver={isOver} isOccupied={isOccupied} />
@@ -182,6 +196,38 @@ export function SimpleDropZone({
         <DropCelebration isActive={showCelebration} isPodium={isTop3} rankColor={accentColor} position={position} />
       </DropZoneCard>
       <ItemTitle isOccupied={isOccupied} title={occupiedBy} />
+    </div>
+  );
+}
+
+/**
+ * InvalidDropIndicator
+ * Shows a crossed-circle SVG icon with red-400 pulse when a drop is invalid.
+ * Displays for 600ms matching the error animation duration.
+ */
+function InvalidDropIndicator({ isActive }: { isActive: boolean }) {
+  if (!isActive) return null;
+
+  return (
+    <div
+      className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none"
+      style={{ animation: 'invalid-drop-pulse 600ms ease-out forwards' }}
+      data-testid="invalid-drop-indicator"
+    >
+      <svg
+        width="32"
+        height="32"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="#f87171"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="drop-shadow-[0_0_8px_rgba(248,113,113,0.6)]"
+      >
+        <circle cx="12" cy="12" r="10" />
+        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+      </svg>
     </div>
   );
 }

@@ -27,13 +27,18 @@ import {
   ChevronRight,
   Filter,
   Tag,
+  Loader2,
+  Hash,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   useFilterIntegrationOptional,
   type FilterIntegrationContextValue,
+  type FilterableItem,
 } from '../CollectionFilterIntegration';
+import { useLiveSearchCounts } from '../hooks/useLiveSearchCounts';
 import { QUERY_TEMPLATES, type QuerySuggestion } from '../SmartQueryParser';
+import { FILTER_TIMING } from '../constants';
 
 /**
  * Suggestion item with type indicator
@@ -59,9 +64,11 @@ interface SearchAutocompleteProps {
   showHistory?: boolean;
   showTemplates?: boolean;
   showSuggestions?: boolean;
+  showLiveCounts?: boolean;
   autoFocus?: boolean;
   maxSuggestions?: number;
   debounceMs?: number;
+  items?: FilterableItem[];
 }
 
 /**
@@ -69,7 +76,7 @@ interface SearchAutocompleteProps {
  */
 const TYPE_ICONS: Record<AutocompleteSuggestion['type'], React.ReactNode> = {
   history: <Clock size={14} className="text-zinc-500" />,
-  suggestion: <Sparkles size={14} className="text-cyan-400" />,
+  suggestion: <Sparkles size={14} className="text-brand-hover" />,
   template: <Filter size={14} className="text-purple-400" />,
   item: <Tag size={14} className="text-emerald-400" />,
 };
@@ -87,12 +94,17 @@ export function SearchAutocomplete({
   showHistory = true,
   showTemplates = true,
   showSuggestions = true,
+  showLiveCounts = true,
   autoFocus = false,
   maxSuggestions = 8,
   debounceMs = 150,
+  items: propItems,
 }: SearchAutocompleteProps) {
   // Try to get context (optional - works without provider too)
   const context = useFilterIntegrationOptional();
+
+  // Items for live count - from prop or context
+  const liveCountItems = propItems || (context?.filteredItems as FilterableItem[]) || [];
 
   // Local state for uncontrolled mode
   const [localValue, setLocalValue] = useState('');
@@ -108,6 +120,14 @@ export function SearchAutocomplete({
   // Determine value (controlled vs uncontrolled)
   const isControlled = controlledValue !== undefined;
   const inputValue = isControlled ? controlledValue : localValue;
+
+  // Live search counts
+  const liveCounts = useLiveSearchCounts(inputValue, {
+    items: liveCountItems,
+    debounceMs: Math.max(50, debounceMs - 50), // Slightly faster than suggestion updates
+    facetFields: ['category', 'subcategory'],
+    maxFacetValues: 3,
+  });
 
   // Update suggestions based on input
   const updateSuggestions = useCallback(
@@ -361,11 +381,41 @@ export function SearchAutocomplete({
           className={cn(
             'w-full rounded-lg border border-zinc-700 bg-zinc-800/50 py-2.5 pl-10 pr-10',
             'text-sm text-zinc-200 placeholder-zinc-500',
-            'focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500',
+            'focus:border-brand focus:outline-hidden focus:ring-1 focus:ring-brand',
             'transition-all',
             inputClassName
           )}
         />
+        {/* Live count badge */}
+        {showLiveCounts && inputValue.trim() && (
+          <AnimatePresence mode="wait">
+            <motion.span
+              key={liveCounts.isCalculating ? 'calc' : liveCounts.totalMatches}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.1 }}
+              className={cn(
+                'absolute right-10 top-1/2 -translate-y-1/2',
+                'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium',
+                liveCounts.isCalculating
+                  ? 'text-zinc-500'
+                  : liveCounts.totalMatches === 0
+                  ? 'text-red-400 bg-red-500/10'
+                  : 'text-brand-hover bg-brand/10'
+              )}
+            >
+              {liveCounts.isCalculating ? (
+                <Loader2 size={10} className="animate-spin" />
+              ) : (
+                <>
+                  <span>{liveCounts.totalMatches}</span>
+                  <span className="text-zinc-600">/ {liveCounts.totalItems}</span>
+                </>
+              )}
+            </motion.span>
+          </AnimatePresence>
+        )}
         {inputValue && (
           <button
             onClick={handleClear}
@@ -376,6 +426,11 @@ export function SearchAutocomplete({
         )}
       </div>
 
+      {/* Live facet counts below search */}
+      {showLiveCounts && inputValue.trim() && !liveCounts.isCalculating && (
+        <LiveFacetCounts counts={liveCounts} />
+      )}
+
       {/* Dropdown */}
       <AnimatePresence>
         {isOpen && suggestions.length > 0 && (
@@ -383,7 +438,7 @@ export function SearchAutocomplete({
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.15 }}
+            transition={{ duration: FILTER_TIMING.fast }}
             className={cn(
               'absolute left-0 right-0 top-full z-50 mt-1',
               'rounded-lg border border-zinc-700 bg-zinc-900 shadow-xl'
@@ -399,8 +454,8 @@ export function SearchAutocomplete({
                       'flex w-full items-center gap-3 px-3 py-2 text-left',
                       'transition-colors',
                       index === selectedIndex
-                        ? 'bg-cyan-500/10 text-cyan-300'
-                        : 'text-zinc-300 hover:bg-zinc-800'
+                        ? 'bg-brand/10 text-brand-hover'
+                        : 'text-zinc-300 filter-hover'
                     )}
                   >
                     {TYPE_ICONS[suggestion.type]}
@@ -415,7 +470,7 @@ export function SearchAutocomplete({
                     <ChevronRight
                       size={14}
                       className={cn(
-                        'flex-shrink-0 transition-opacity',
+                        'shrink-0 transition-opacity',
                         index === selectedIndex ? 'opacity-100' : 'opacity-0'
                       )}
                     />
@@ -502,7 +557,7 @@ export function CompactSearchInput({
         className={cn(
           'w-full rounded-md border border-zinc-700 bg-zinc-800/50 py-1.5 pl-8 pr-8',
           'text-sm text-zinc-200 placeholder-zinc-500',
-          'focus:border-cyan-500 focus:outline-none'
+          'focus:border-brand focus:outline-hidden'
         )}
       />
       {inputValue && (
@@ -514,5 +569,40 @@ export function CompactSearchInput({
         </button>
       )}
     </div>
+  );
+}
+
+/**
+ * LiveFacetCounts - shows per-category counts below search
+ */
+function LiveFacetCounts({
+  counts,
+}: {
+  counts: ReturnType<typeof useLiveSearchCounts>;
+}) {
+  const hasFacets = Object.values(counts.facetCounts).some((f) => f.length > 0);
+  if (!hasFacets) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: 'auto' }}
+      exit={{ opacity: 0, height: 0 }}
+      transition={{ duration: FILTER_TIMING.fast }}
+      className="flex flex-wrap items-center gap-1.5 px-1 pt-1"
+    >
+      {Object.entries(counts.facetCounts).map(([field, facets]) =>
+        facets.map((facet) => (
+          <span
+            key={`${field}-${facet.value}`}
+            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-zinc-800/50 text-zinc-500"
+          >
+            <Hash size={8} className="text-zinc-600" />
+            <span className="text-zinc-400">{facet.value}</span>
+            <span className="text-brand/70">{facet.count}</span>
+          </span>
+        ))
+      )}
+    </motion.div>
   );
 }

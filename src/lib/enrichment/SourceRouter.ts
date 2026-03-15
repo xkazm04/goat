@@ -29,11 +29,11 @@ const SOURCE_ROUTES: Record<EnrichmentCategory, SourceRoutingConfig> = {
   },
   music: {
     primary: ['spotify'],
-    fallback: ['musicbrainz', 'wikipedia', 'gemini'],
+    fallback: ['wikipedia', 'gemini'],
   },
   books: {
-    primary: ['openlibrary'],
-    fallback: ['googlebooks', 'wikipedia', 'gemini'],
+    primary: ['wikipedia'],
+    fallback: ['gemini'],
   },
   sports: {
     primary: ['wikipedia'],

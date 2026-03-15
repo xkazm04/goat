@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { Command, Keyboard } from "lucide-react";
 import { useCommandPalette } from "./useCommandPalette";
+import { ELEVATION } from "@/components/visual/depth";
 
 interface CommandPaletteTriggerProps {
   className?: string;
@@ -46,22 +47,22 @@ export function CommandPaletteTrigger({
       transition={{ delay: 1, duration: 0.5 }}
       onClick={openCommandPalette}
       className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl
-        bg-gradient-to-r from-gray-900/90 to-gray-800/90 backdrop-blur-sm
+        bg-linear-to-r from-gray-900/90 to-gray-800/90 backdrop-blur-xs
         border border-white/10 text-white/70 hover:text-white hover:border-white/20
-        shadow-lg shadow-black/20 hover:shadow-xl hover:shadow-black/30
         transition-all hover:scale-105 group ${className}`}
+      style={{ boxShadow: ELEVATION.medium }}
       data-testid="command-palette-trigger-floating"
     >
-      <div className="flex items-center gap-1.5 text-white/40 group-hover:text-cyan-400 transition-colors">
+      <div className="flex items-center gap-1.5 text-white/40 group-hover:text-brand-hover transition-colors">
         <Command className="w-3.5 h-3.5" />
       </div>
       <span className="text-sm font-medium">Quick Create</span>
       <div className="flex items-center gap-1 ml-1">
-        <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white/50 font-mono text-xs group-hover:bg-cyan-500/20 group-hover:text-cyan-400 transition-colors">
+        <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white/50 font-mono text-xs group-hover:bg-brand/20 group-hover:text-brand-hover transition-colors">
           {shortcutKey}
         </kbd>
         <span className="text-white/30">+</span>
-        <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white/50 font-mono text-xs group-hover:bg-cyan-500/20 group-hover:text-cyan-400 transition-colors">
+        <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white/50 font-mono text-xs group-hover:bg-brand/20 group-hover:text-brand-hover transition-colors">
           K
         </kbd>
       </div>

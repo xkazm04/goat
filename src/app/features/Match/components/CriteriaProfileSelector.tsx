@@ -136,8 +136,8 @@ export function CriteriaProfileSelector({
         className={cn(
           'w-full flex items-center justify-between gap-2 px-4 py-3',
           'rounded-lg border border-border bg-card',
-          'hover:bg-accent/50 hover:shadow-sm transition-all duration-200',
-          'focus:outline-none focus:ring-2 focus:ring-ring'
+          'hover:bg-accent/50 hover:shadow-xs transition-all duration-200',
+          'focus:outline-hidden focus:ring-2 focus:ring-ring'
         )}
         onClick={() => setIsOpen(!isOpen)}
       >
@@ -171,7 +171,7 @@ export function CriteriaProfileSelector({
             className={cn(
               'absolute z-50 w-full mt-2',
               'rounded-lg border border-border bg-card shadow-xl',
-              'max-h-[400px] overflow-y-auto backdrop-blur-sm'
+              'max-h-[400px] overflow-y-auto backdrop-blur-xs'
             )}
           >
             {/* Templates Section */}
@@ -476,7 +476,7 @@ function CriteriaProfileEditor({
   const totalWeight = criteria.reduce((sum, c) => sum + c.weight, 0);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xl">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -511,7 +511,7 @@ function CriteriaProfileEditor({
               placeholder="My Custom Criteria"
               className={cn(
                 'w-full px-3 py-2 rounded-lg border border-border transition-all duration-200',
-                'bg-background focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-ring'
+                'bg-background focus:outline-hidden focus:ring-2 focus:ring-ring/50 focus:border-ring'
               )}
             />
           </div>
@@ -529,7 +529,7 @@ function CriteriaProfileEditor({
               className={cn(
                 'w-full px-3 py-2 rounded-lg border border-border transition-all duration-200',
                 'bg-background resize-none',
-                'focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-ring'
+                'focus:outline-hidden focus:ring-2 focus:ring-ring/50 focus:border-ring'
               )}
             />
           </div>
@@ -556,7 +556,7 @@ function CriteriaProfileEditor({
               {criteria.map((criterion, index) => (
                 <div
                   key={criterion.id}
-                  className="p-3 rounded-lg border border-border bg-muted/30 transition-all duration-200 hover:border-border/80 hover:shadow-sm"
+                  className="p-3 rounded-lg border border-border bg-muted/30 transition-all duration-200 hover:border-border/80 hover:shadow-xs"
                 >
                   <div className="flex items-start gap-2">
                     <div className="flex-1 space-y-2">
@@ -571,7 +571,7 @@ function CriteriaProfileEditor({
                         placeholder="Criterion name"
                         className={cn(
                           'w-full px-2 py-1 text-sm rounded border border-border',
-                          'bg-background focus:outline-none focus:ring-1 focus:ring-ring'
+                          'bg-background focus:outline-hidden focus:ring-1 focus:ring-ring'
                         )}
                       />
                       <input
@@ -585,7 +585,7 @@ function CriteriaProfileEditor({
                         placeholder="Description"
                         className={cn(
                           'w-full px-2 py-1 text-xs rounded border border-border',
-                          'bg-background focus:outline-none focus:ring-1 focus:ring-ring'
+                          'bg-background focus:outline-hidden focus:ring-1 focus:ring-ring'
                         )}
                       />
                       <div className="flex items-center gap-2">
@@ -602,7 +602,7 @@ function CriteriaProfileEditor({
                           max={100}
                           className={cn(
                             'w-16 px-2 py-1 text-xs rounded border border-border',
-                            'bg-background focus:outline-none focus:ring-1 focus:ring-ring'
+                            'bg-background focus:outline-hidden focus:ring-1 focus:ring-ring'
                           )}
                         />
                         <span className="text-xs text-muted-foreground">%</span>
@@ -623,7 +623,7 @@ function CriteriaProfileEditor({
                   'w-full flex items-center justify-center gap-2 px-3 py-2',
                   'rounded-lg border border-dashed border-border',
                   'text-muted-foreground hover:text-foreground hover:border-foreground',
-                  'transition-all duration-200 hover:scale-[1.01] hover:shadow-sm'
+                  'transition-all duration-200 hover:scale-[1.01] hover:shadow-xs'
                 )}
                 onClick={addCriterion}
               >
@@ -691,7 +691,7 @@ export function InputModeSelector({
           className={cn(
             'px-3 py-1 text-sm rounded transition-all duration-200',
             value === mode.value
-              ? 'bg-background text-foreground shadow-sm scale-[1.02]'
+              ? 'bg-background text-foreground shadow-xs scale-[1.02]'
               : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
           )}
           onClick={() => onChange(mode.value)}

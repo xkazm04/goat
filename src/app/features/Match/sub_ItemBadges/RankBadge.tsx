@@ -86,9 +86,9 @@ export function RankBadge({
       }
       if (ranking >= 4.0) {
         return {
-          bg: 'from-cyan-500/80 to-blue-600/80',
+          bg: 'from-brand/80 to-blue-600/80',
           text: 'text-white',
-          ring: 'ring-cyan-400/40',
+          ring: 'ring-brand-hover/40',
           icon: 'text-white',
         };
       }
@@ -120,9 +120,9 @@ export function RankBadge({
     }
     if (rankNum <= 10) {
       return {
-        bg: 'from-cyan-500/80 to-blue-600/80',
+        bg: 'from-brand/80 to-blue-600/80',
         text: 'text-white font-semibold',
-        ring: 'ring-cyan-400/40',
+        ring: 'ring-brand-hover/40',
         icon: 'text-white',
       };
     }
@@ -168,7 +168,7 @@ export function RankBadge({
           'absolute top-1 left-1 z-10',
           // Glassmorphism styling
           'backdrop-blur-md',
-          'bg-gradient-to-br',
+          'bg-linear-to-br',
           style.bg,
           // Layout
           'flex items-center gap-0.5',
@@ -200,7 +200,7 @@ export function RankBadge({
 
         {/* Icon */}
         <BadgeIcon
-          className={cn('w-2.5 h-2.5 flex-shrink-0', style.icon)}
+          className={cn('w-2.5 h-2.5 shrink-0', style.icon)}
         />
 
         {/* Value */}

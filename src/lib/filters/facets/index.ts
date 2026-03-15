@@ -24,14 +24,12 @@ export { DEFAULT_FACET_DEFINITIONS } from './types';
 export {
   FacetExtractor,
   createCollectionFacetExtractor,
-  defaultFacetExtractor,
 } from './FacetExtractor';
 
 // Facet Aggregator
 export {
   FacetAggregator,
   createFacetAggregator,
-  defaultFacetAggregator,
 } from './FacetAggregator';
 
 export type { FacetAggregationOptions } from './FacetAggregator';

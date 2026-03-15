@@ -26,7 +26,7 @@ function MatchGridSkeleton() {
     >
       {/* Background gradient */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-cyan-900/10 via-[#050505] to-[#050505]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,var(--tw-gradient-stops))] from-brand-muted/10 via-[#050505] to-[#050505]" />
       </div>
 
       {/* Header skeleton */}
@@ -101,8 +101,8 @@ function MatchGridSkeleton() {
 
       {/* Loading indicator */}
       <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-50">
-        <div className="bg-gray-900/90 backdrop-blur-sm rounded-xl px-6 py-4 flex items-center gap-3">
-          <div className="w-5 h-5 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+        <div className="bg-gray-900/90 backdrop-blur-xs rounded-xl px-6 py-4 flex items-center gap-3">
+          <div className="w-5 h-5 border-2 border-brand border-t-transparent rounded-full animate-spin" />
           <span className="text-sm text-gray-300">Loading drag & drop...</span>
         </div>
       </div>

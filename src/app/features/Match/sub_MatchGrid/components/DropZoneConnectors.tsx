@@ -100,7 +100,7 @@ export function DropZoneConnectors() {
 
   return (
     <svg
-      className="fixed inset-0 pointer-events-none z-[97]"
+      className="fixed inset-0 pointer-events-none z-97"
       style={{ width: "100vw", height: "100vh" }}
       data-testid="drop-zone-connectors"
     >

@@ -22,15 +22,40 @@ export const createIndexedDBStorage = (storeName: string): StorageAdapter => {
     };
   }
 
-  // Open database connection
+  // Cached database connection (shared across all operations)
+  let cachedDB: IDBDatabase | null = null;
+  let dbPromise: Promise<IDBDatabase> | null = null;
+
   const openDB = (): Promise<IDBDatabase> => {
-    return new Promise((resolve, reject) => {
+    // Return cached connection if still open
+    if (cachedDB) {
+      try {
+        // Test if connection is still valid by checking objectStoreNames
+        cachedDB.objectStoreNames;
+        return Promise.resolve(cachedDB);
+      } catch {
+        cachedDB = null;
+        dbPromise = null;
+      }
+    }
+    // Deduplicate concurrent open requests
+    if (dbPromise) return dbPromise;
+
+    dbPromise = new Promise<IDBDatabase>((resolve, reject) => {
       const request = window.indexedDB.open(DB_NAME, DB_VERSION);
-      
-      request.onerror = () => reject(request.error);
-      
-      request.onsuccess = () => resolve(request.result);
-      
+
+      request.onerror = () => {
+        dbPromise = null;
+        reject(request.error);
+      };
+
+      request.onsuccess = () => {
+        cachedDB = request.result;
+        // Clear cache if connection closes unexpectedly
+        cachedDB.onclose = () => { cachedDB = null; dbPromise = null; };
+        resolve(cachedDB);
+      };
+
       request.onupgradeneeded = () => {
         const db = request.result;
         if (!db.objectStoreNames.contains(STORE_NAME)) {
@@ -38,6 +63,7 @@ export const createIndexedDBStorage = (storeName: string): StorageAdapter => {
         }
       };
     });
+    return dbPromise;
   };
   
   // Get item from IndexedDB

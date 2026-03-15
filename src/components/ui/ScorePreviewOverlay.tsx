@@ -433,7 +433,7 @@ const MiniDefaultPreview = memo(function MiniDefaultPreview({
           transition={{ type: 'spring', stiffness: 200, damping: 25 }}
         />
       </div>
-      <span className="text-[10px] font-medium text-cyan-400 tabular-nums">{Math.round(score)}</span>
+      <span className="text-[10px] font-medium text-brand-hover tabular-nums">{Math.round(score)}</span>
     </div>
   );
 });

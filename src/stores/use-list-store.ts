@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { useShallow } from 'zustand/react/shallow';
 import { TopList } from '@/types/top-lists';
 import { listLogger } from '@/lib/logger';
 
@@ -274,22 +275,22 @@ export const useCurrentUser = () => useListStore((state) => state.currentUser);
 export const useAvailableLists = () => useListStore((state) => state.availableLists);
 export const useUserLists = () => useListStore((state) => state.getUserLists());
 
-export const useListCreationState = () => useListStore((state) => ({
+export const useListCreationState = () => useListStore(useShallow((state) => ({
   isCreating: state.isCreating,
   isLoading: state.isLoading,
   creationError: state.creationError,
   shouldRedirectToMatch: state.shouldRedirectToMatch
-}));
+})));
 
 // Fixed: Use cached matching context to prevent infinite loops
 export const useMatchingContext = () => useListStore((state) => state._matchingContext);
 
 // Additional selector hooks for specific data
 export const useCurrentListMetadata = () => useListStore((state) => state.currentList?.metadata);
-export const useCurrentListInfo = () => useListStore((state) => state.currentList ? {
+export const useCurrentListInfo = () => useListStore(useShallow((state) => state.currentList ? {
   id: state.currentList.id,
   title: state.currentList.title,
   category: state.currentList.category,
   subcategory: state.currentList.subcategory,
   size: state.currentList.size
-} : null);
+} : null));

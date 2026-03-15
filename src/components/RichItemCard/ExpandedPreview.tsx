@@ -123,14 +123,14 @@ export const ExpandedPreview = memo(function ExpandedPreview({
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
-          className="relative h-24 bg-gray-800 overflow-hidden flex-shrink-0"
+          className="relative h-24 bg-gray-800 overflow-hidden shrink-0"
         >
           <img
             src={item.image}
             alt={item.title}
             className="w-full h-full object-cover opacity-60"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-gray-900/50 to-gray-900" />
+          <div className="absolute inset-0 bg-linear-to-b from-transparent via-gray-900/50 to-gray-900" />
         </motion.div>
       )}
 
@@ -223,7 +223,7 @@ export const ExpandedPreview = memo(function ExpandedPreview({
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35 }}
-          className="flex-shrink-0 p-3 border-t border-gray-700/50 bg-gray-800/50"
+          className="shrink-0 p-3 border-t border-gray-700/50 bg-gray-800/50"
         >
           <QuickActions
             actions={quickActions}

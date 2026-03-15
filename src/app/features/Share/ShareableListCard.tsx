@@ -277,7 +277,7 @@ export const ShareableListCard = memo(function ShareableListCard({
                 {/* Image */}
                 {item.image_url && (
                   <div
-                    className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0"
+                    className="w-12 h-12 rounded-lg overflow-hidden shrink-0"
                     style={{
                       background: "rgba(255, 255, 255, 0.1)",
                     }}
@@ -309,7 +309,7 @@ export const ShareableListCard = memo(function ShareableListCard({
 
                 {/* Medal icon for top 3 */}
                 {isTopThree && style.starColor && (
-                  <div className="flex-shrink-0">
+                  <div className="shrink-0">
                     <MedalStar color={style.starColor} />
                   </div>
                 )}
@@ -341,7 +341,7 @@ export const ShareableListCard = memo(function ShareableListCard({
           {onChallenge && (
             <motion.button
               onClick={onChallenge}
-              className="flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+              className="flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 focus-ring"
               style={{
                 background: "linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%)",
                 boxShadow: "0 6px 24px rgba(6, 182, 212, 0.35)",

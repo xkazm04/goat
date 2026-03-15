@@ -68,7 +68,6 @@ export const STORE_DEPENDENCIES = {
   'activity-store': [],
   'heatmap-store': [],
   'wiki-image-store': [],
-  'filter-store': [],
   'inspector-store': [],
   'layout-store': [],
   'use-list-store': [],

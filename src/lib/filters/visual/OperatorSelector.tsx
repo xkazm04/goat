@@ -84,7 +84,7 @@ export function OperatorSelector({
       onChange={(e) => onChange(e.target.value as FilterOperator)}
       className={cn(
         'rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1.5 text-sm',
-        'text-zinc-200 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500',
+        'text-zinc-200 focus:border-brand focus:outline-hidden focus:ring-1 focus:ring-brand',
         'min-w-[120px]',
         className
       )}

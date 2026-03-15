@@ -21,17 +21,16 @@ export function ComparisonModal({ isOpen, onClose }: StoreConnectedComparisonMod
     selectedForComparison,
     comparisonMode,
     setComparisonMode,
-    toggleComparisonSelection,
-    removeFromComparison,
-    clearComparison,
-    closeComparison
+    removeItem,
+    clearAll,
+    close,
   } = useComparisonStore();
 
   const assignItemToGrid = useGridStore((state) => state.assignItemToGrid);
   const getNextAvailableGridPosition = useGridStore((state) => state.getNextAvailableGridPosition);
 
   const handleClose = () => {
-    closeComparison();
+    close();
     onClose();
   };
 
@@ -43,7 +42,7 @@ export function ComparisonModal({ isOpen, onClose }: StoreConnectedComparisonMod
     const nextPosition = getNextAvailableGridPosition();
     if (nextPosition !== null) {
       assignItemToGrid(item, nextPosition);
-      removeFromComparison(item.id);
+      removeItem(item.id);
     }
   };
 
@@ -77,7 +76,7 @@ export function ComparisonModal({ isOpen, onClose }: StoreConnectedComparisonMod
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        className="fixed inset-0 bg-black/70 backdrop-blur-xl z-50 flex items-center justify-center p-4"
         onClick={handleClose}
       >
         <motion.div
@@ -177,8 +176,13 @@ export function ComparisonModal({ isOpen, onClose }: StoreConnectedComparisonMod
                       <ComparisonItem
                         item={item}
                         isSelected={selectedForComparison.includes(item.id)}
-                        onToggleSelection={() => toggleComparisonSelection(item.id)}
-                        onRemove={() => removeFromComparison(item.id)}
+                        onToggleSelection={() => {
+                          const newSelected = selectedForComparison.includes(item.id)
+                            ? selectedForComparison.filter(id => id !== item.id)
+                            : [...selectedForComparison, item.id];
+                          useComparisonStore.setState({ selectedForComparison: newSelected });
+                        }}
+                        onRemove={() => removeItem(item.id)}
                         onQuickAssign={() => handleQuickAssign(item)}
                         comparisonMode={comparisonMode}
                       />
@@ -195,7 +199,7 @@ export function ComparisonModal({ isOpen, onClose }: StoreConnectedComparisonMod
               selectedCount={selectedForComparison.length}
               totalCount={items.length}
               onBulkAssign={handleBulkAssign}
-              onClearAll={clearComparison}
+              onClearAll={clearAll}
               onClose={handleClose}
             />
           )}

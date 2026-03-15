@@ -36,6 +36,13 @@ export interface MetadataRecord {
 }
 
 // ============================================================================
+// Shared Entity Types
+// ============================================================================
+
+/** Canonical entity type union — import from here, not inline. */
+export type EntityType = 'session' | 'grid' | 'backlog';
+
+// ============================================================================
 // Sync Queue Types
 // ============================================================================
 
@@ -57,7 +64,7 @@ export interface SyncOperation {
   id: string;
   type: OperationType;
   entityId: string;
-  entityType: 'session' | 'grid' | 'backlog';
+  entityType: EntityType;
   payload: unknown;
   timestamp: number;
   status: OperationStatus;
@@ -103,7 +110,7 @@ export interface ConflictRecord {
   id: string;
   operationId: string;
   entityId: string;
-  entityType: 'session' | 'grid' | 'backlog';
+  entityType: EntityType;
   conflictType: ConflictType;
   localData: unknown;
   serverData: unknown;

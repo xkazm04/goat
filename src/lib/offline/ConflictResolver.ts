@@ -432,37 +432,6 @@ export class ConflictResolver {
   }
 
   // ============================================================================
-  // Resolution Helpers
-  // ============================================================================
-
-  resolveGridConflict(
-    conflict: GridMergeResult['conflicts'][0],
-    choice: 'local' | 'server'
-  ): GridItemType {
-    if (choice === 'local') {
-      return conflict.local ?? this.createEmptyGridItem(conflict.position);
-    }
-    return conflict.server ?? this.createEmptyGridItem(conflict.position);
-  }
-
-  applyGridConflictResolutions(
-    mergedGrid: GridItemType[],
-    conflicts: GridMergeResult['conflicts'],
-    resolutions: Map<number, 'local' | 'server'>
-  ): GridItemType[] {
-    const result = [...mergedGrid];
-
-    for (const conflict of conflicts) {
-      const choice = resolutions.get(conflict.position);
-      if (choice) {
-        result[conflict.position] = this.resolveGridConflict(conflict, choice);
-      }
-    }
-
-    return result;
-  }
-
-  // ============================================================================
   // Conflict Summary
   // ============================================================================
 

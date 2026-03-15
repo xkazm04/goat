@@ -98,7 +98,7 @@ function TierEditor({
               if (e.key === 'Enter') handleLabelSave();
               if (e.key === 'Escape') setIsEditing(false);
             }}
-            className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-sm text-white focus:outline-none focus:border-cyan-500"
+            className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-sm text-white focus:outline-hidden focus:border-brand"
             autoFocus
           />
         ) : (
@@ -199,7 +199,7 @@ function PresetSelector({
                           w-full px-3 py-2 text-left hover:bg-slate-700 transition-colors
                           ${
                             currentPreset.id === preset.id
-                              ? 'bg-cyan-500/10 text-cyan-300'
+                              ? 'bg-brand/10 text-brand-hover'
                               : 'text-slate-300'
                           }
                         `}
@@ -212,7 +212,7 @@ function PresetSelector({
                             </div>
                           </div>
                           {currentPreset.id === preset.id && (
-                            <Check className="w-4 h-4 text-cyan-400" />
+                            <Check className="w-4 h-4 text-brand-hover" />
                           )}
                         </div>
                       </button>
@@ -262,7 +262,7 @@ export function TierConfigurator({
           transition-colors text-sm font-medium
           ${
             isOpen
-              ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/50'
+              ? 'bg-brand/20 text-brand-hover border border-brand/50'
               : 'bg-slate-800 text-slate-300 border border-slate-600 hover:border-slate-500'
           }
         `}
@@ -347,7 +347,7 @@ export function TierConfigurator({
 
                 <button
                   onClick={onExport}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-medium transition-all text-sm"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-linear-to-r from-brand to-blue-600 hover:from-brand-hover hover:to-blue-500 text-white font-medium transition-all text-sm"
                 >
                   <Download className="w-4 h-4" />
                   Export as Image

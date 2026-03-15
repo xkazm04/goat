@@ -142,7 +142,7 @@ export const ComparisonSelector = memo(function ComparisonSelector({
                     px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2
                     transition-all
                     ${canCompare
-                      ? "bg-gradient-to-r from-emerald-500 to-green-500 text-white shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50"
+                      ? "bg-linear-to-r from-emerald-500 to-green-500 text-white shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50"
                       : "bg-slate-800 text-slate-500 cursor-not-allowed"}
                   `}
                   whileHover={canCompare ? { scale: 1.02 } : {}}
@@ -196,7 +196,7 @@ const ComparisonItemChip = memo(function ComparisonItemChip({
             className="w-full h-full object-cover"
           />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-indigo-500/20 to-purple-500/20
+          <div className="w-full h-full bg-linear-to-br from-indigo-500/20 to-purple-500/20
             flex items-center justify-center">
             <span className="text-lg font-bold text-indigo-400">
               {item.title.charAt(0)}

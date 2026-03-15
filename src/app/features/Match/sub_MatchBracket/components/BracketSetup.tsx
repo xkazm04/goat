@@ -8,12 +8,14 @@ import {
   SeedingStrategy,
   getAvailableSeedingStrategies,
   getSeedingStrategyName,
+  type SeedingStrategyInfo,
 } from '../lib';
 
 interface BracketSetupProps {
   itemCount: number;
   bracketSize: BracketSize;
   seedingStrategy: SeedingStrategy;
+  hasConsensusData?: boolean;
   onBracketSizeChange: (size: BracketSize) => void;
   onSeedingStrategyChange: (strategy: SeedingStrategy) => void;
   onStart: () => void;
@@ -45,10 +47,10 @@ function BracketSizeSelector({
           aria-label={`Bracket size: ${s} competitors`}
           className={`
             px-3 py-1.5 rounded-lg text-sm font-bold transition-all duration-200
-            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-800
+            focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-hover focus-visible:ring-offset-2 focus-visible:ring-offset-slate-800
             ${
               size === s
-                ? 'bg-cyan-500/20 border border-cyan-400/50 text-cyan-300'
+                ? 'bg-brand/20 border border-brand-hover/50 text-brand-hover'
                 : 'bg-slate-800 border border-slate-600 text-slate-400 hover:border-slate-500'
             }
           `}
@@ -66,12 +68,14 @@ function BracketSizeSelector({
 function SeedingSelector({
   strategy,
   onChange,
+  hasConsensusData,
 }: {
   strategy: SeedingStrategy;
   onChange: (strategy: SeedingStrategy) => void;
+  hasConsensusData?: boolean;
 }) {
   const [isOpen, setIsOpen] = useState(false);
-  const strategies = getAvailableSeedingStrategies();
+  const strategies = getAvailableSeedingStrategies({ hasConsensusData });
 
   return (
     <div className="relative">
@@ -81,7 +85,7 @@ function SeedingSelector({
         aria-haspopup="listbox"
         aria-label={`Seeding strategy: ${getSeedingStrategyName(strategy)}`}
         className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 transition-all
-          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+          focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-hover focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
       >
         <div className="flex items-center gap-2">
           <Settings2 className="w-4 h-4" />
@@ -115,16 +119,23 @@ function SeedingSelector({
                   key={s.id}
                   role="option"
                   aria-selected={strategy === s.id}
+                  aria-disabled={s.disabled}
+                  disabled={s.disabled}
                   onClick={() => {
+                    if (s.disabled) return;
                     onChange(s.id);
                     setIsOpen(false);
                   }}
                   className={`
-                    w-full px-3 py-2.5 text-left hover:bg-slate-700 transition-colors
-                    focus-visible:outline-none focus-visible:bg-slate-700
+                    w-full px-3 py-2.5 text-left transition-colors
+                    focus-visible:outline-hidden focus-visible:bg-slate-700
+                    ${s.disabled
+                      ? 'opacity-40 cursor-not-allowed'
+                      : 'hover:bg-slate-700'
+                    }
                     ${
                       strategy === s.id
-                        ? 'bg-slate-700/50 border-l-2 border-cyan-400'
+                        ? 'bg-slate-700/50 border-l-2 border-brand-hover'
                         : ''
                     }
                   `}
@@ -133,7 +144,7 @@ function SeedingSelector({
                     {s.name}
                   </div>
                   <div className="text-xs text-slate-400 mt-0.5">
-                    {s.description}
+                    {s.disabledReason || s.description}
                   </div>
                 </button>
               ))}
@@ -152,6 +163,7 @@ export function BracketSetup({
   itemCount,
   bracketSize,
   seedingStrategy,
+  hasConsensusData,
   onBracketSizeChange,
   onSeedingStrategyChange,
   onStart,
@@ -166,21 +178,21 @@ export function BracketSetup({
       exit={{ opacity: 0, scale: 0.95 }}
       className="w-full max-w-sm mx-auto px-4"
     >
-      <div className="bg-slate-800/80 border border-slate-700 rounded-2xl p-5 backdrop-blur-sm">
+      <div className="bg-slate-800/80 border border-slate-700 rounded-2xl p-5 backdrop-blur-xs">
         {/* Header */}
         <div className="text-center mb-5">
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: 'spring', delay: 0.1 }}
-            className="w-14 h-14 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center mx-auto mb-3"
+            className="w-14 h-14 rounded-full bg-linear-to-br from-brand to-blue-600 flex items-center justify-center mx-auto mb-3"
           >
             <Trophy className="w-7 h-7 text-white" />
           </motion.div>
-          <h2 className="text-lg font-bold text-white mb-1">
+          <h2 className="text-[18px] font-bold font-grotesk text-white mb-1">
             Tournament Bracket
           </h2>
-          <p className="text-xs text-slate-400">
+          <p className="text-[11px] text-slate-400">
             Rank items through head-to-head matchups
           </p>
         </div>
@@ -189,7 +201,7 @@ export function BracketSetup({
         <div className="space-y-4 mb-5">
           {/* Bracket size */}
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-2">
+            <label className="block text-[11px] font-medium text-slate-300 mb-2">
               Bracket Size
             </label>
             <BracketSizeSelector
@@ -198,7 +210,7 @@ export function BracketSetup({
               maxSize={itemCount}
             />
             {byeCount > 0 && (
-              <p className="text-[10px] text-slate-500 mt-1.5">
+              <p className="text-[9px] text-slate-500 mt-1.5">
                 {byeCount} bye{byeCount > 1 ? 's' : ''} will be added
               </p>
             )}
@@ -206,19 +218,20 @@ export function BracketSetup({
 
           {/* Seeding strategy */}
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-2">
+            <label className="block text-[11px] font-medium text-slate-300 mb-2">
               Seeding Strategy
             </label>
             <SeedingSelector
               strategy={seedingStrategy}
               onChange={onSeedingStrategyChange}
+              hasConsensusData={hasConsensusData}
             />
           </div>
 
           {/* Info box */}
           <div className="bg-slate-900/50 rounded-lg p-3">
             <div className="flex items-start gap-2">
-              <Zap className="w-4 h-4 text-yellow-400 mt-0.5 flex-shrink-0" />
+              <Zap className="w-4 h-4 text-yellow-400 mt-0.5 shrink-0" />
               <p className="text-[11px] text-slate-400 leading-relaxed">
                 <strong className="text-slate-300">How it works:</strong> Choose
                 between two items in each matchup. Winners advance until a
@@ -233,14 +246,14 @@ export function BracketSetup({
           <button
             onClick={onCancel}
             className="flex-1 px-4 py-2.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 font-medium transition-colors text-sm
-              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-800"
+              focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-800"
           >
             Cancel
           </button>
           <button
             onClick={onStart}
-            className="flex-1 px-4 py-2.5 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold transition-all flex items-center justify-center gap-2 text-sm
-              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-800"
+            className="flex-1 px-4 py-2.5 rounded-lg bg-linear-to-r from-brand to-blue-600 hover:from-brand-hover hover:to-blue-500 text-white font-bold transition-all flex items-center justify-center gap-2 text-sm
+              focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-hover focus-visible:ring-offset-2 focus-visible:ring-offset-slate-800"
           >
             <Play className="w-4 h-4" />
             Start

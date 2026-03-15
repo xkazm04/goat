@@ -148,7 +148,7 @@ export async function GET(request: NextRequest) {
         font-size: 12px;
         width: 28px;
         text-align: center;
-        flex-shrink: 0;
+        shrink: 0;
       }
       .goat-widget-rank-1 { color: #facc15; }
       .goat-widget-rank-2 { color: #d1d5db; }
@@ -160,7 +160,7 @@ export async function GET(request: NextRequest) {
         height: 32px;
         border-radius: 6px;
         object-fit: cover;
-        flex-shrink: 0;
+        shrink: 0;
       }
       .goat-widget-name {
         flex: 1;
@@ -174,7 +174,7 @@ export async function GET(request: NextRequest) {
       .goat-widget-votes {
         font-size: 11px;
         color: var(--goat-muted);
-        flex-shrink: 0;
+        shrink: 0;
       }
       .goat-widget-footer {
         padding: 10px 16px;

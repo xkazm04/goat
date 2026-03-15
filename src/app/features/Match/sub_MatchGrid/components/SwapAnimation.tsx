@@ -5,7 +5,32 @@ import { useEffect, useState, useMemo } from "react";
 import { calculateSwapPath, Vector2D, getPositionAwareSpringConfig, getFramerSpringConfig } from "../lib/physicsEngine";
 import { triggerSwapSequence, isHapticSupported } from "../lib/hapticFeedback";
 import { PlaceholderImage } from "@/components/ui/placeholder-image";
-import { getPositionBadgeStyles } from "../../components/PositionBadge";
+import { getPositionBadgeStyles, getPositionTier } from "../../components/PositionBadge";
+
+/** Map position tier to an RGBA flash color */
+function getTierFlashColor(position: number): [number, number, number] {
+  const tier = getPositionTier(position);
+  switch (tier) {
+    case 'podium':
+      if (position === 0) return [255, 215, 0];   // gold
+      if (position === 1) return [192, 192, 192]; // silver
+      return [205, 127, 50];                       // bronze
+    case 'top10':
+      return [59, 130, 246];                       // blue-500
+    default:
+      return [148, 163, 184];                      // slate-400
+  }
+}
+
+/** Blend two RGB colors equally and return a radial-gradient CSS string */
+function getBlendedFlashGradient(posA: number, posB: number): string {
+  const [r1, g1, b1] = getTierFlashColor(posA);
+  const [r2, g2, b2] = getTierFlashColor(posB);
+  const r = Math.round((r1 + r2) / 2);
+  const g = Math.round((g1 + g2) / 2);
+  const b = Math.round((b1 + b2) / 2);
+  return `radial-gradient(circle, rgba(${r}, ${g}, ${b}, 0.5) 0%, transparent 70%)`;
+}
 
 interface SwapItem {
   id: string;
@@ -132,7 +157,7 @@ export function SwapAnimation({
   return (
     <AnimatePresence>
       <div
-        className="fixed inset-0 pointer-events-none z-[200]"
+        className="fixed inset-0 pointer-events-none z-sticky"
         data-testid="swap-animation-container"
       >
         {/* Trail effect for item A */}
@@ -240,7 +265,7 @@ export function SwapAnimation({
           <div
             className="w-[60px] h-[60px] rounded-full"
             style={{
-              background: "radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, transparent 70%)",
+              background: getBlendedFlashGradient(itemA.position, itemB.position),
             }}
           />
         </motion.div>
@@ -312,7 +337,7 @@ function SwapItemCard({ item, isHighlighted }: SwapItemCardProps) {
         const { containerClassName, textClassName, style } = getPositionBadgeStyles(item.position);
         return (
           <div
-            className={`absolute top-1 left-1 ${containerClassName} text-[10px] backdrop-blur-sm`}
+            className={`absolute top-1 left-1 ${containerClassName} text-[10px] backdrop-blur-xs`}
             style={style}
           >
             <span className={textClassName}>#{item.position + 1}</span>
@@ -425,7 +450,7 @@ function PositionIndicator({ position, label, delay, gridPosition = 10 }: Positi
       data-testid="position-indicator"
     >
       <div
-        className={`${containerClassName} backdrop-blur-sm text-xs font-bold`}
+        className={`${containerClassName} backdrop-blur-xs text-xs font-bold`}
         style={style}
       >
         {label}

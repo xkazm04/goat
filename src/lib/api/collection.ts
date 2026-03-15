@@ -27,6 +27,7 @@
 
 import { apiClient } from './client';
 import { CollectionItem, CollectionGroup } from '@/app/features/Collection/types';
+import { apiLogger } from '@/lib/logger';
 
 export interface CollectionApiParams {
   category?: string;
@@ -84,7 +85,7 @@ export const collectionApi = {
   getGroups: async (params?: Pick<CollectionApiParams, 'category' | 'subcategory'>): Promise<CollectionGroup[]> => {
     const response = await apiClient.get<any[]>(`${COLLECTION_ENDPOINT}/groups`, params);
 
-    console.log('🔍 API response sample (first 3 groups):', response.slice(0, 3));
+    apiLogger.debug('API response sample (first 3 groups)', response.slice(0, 3));
 
     // Transform API response to CollectionGroup format
     return response.map(group => ({

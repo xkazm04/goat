@@ -13,14 +13,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Filter, X, ChevronDown, Bookmark, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
-  useFilterStore,
-  useQuickFilters,
-  useFilterPresets,
-  useActivePresetId,
-  useActiveFilterCount,
-  useHasActiveFilters,
-  useFilterStatistics,
-} from '@/stores/filter-store';
+  useCollectionFilterState,
+  getActiveFilterCount,
+  getHasActiveFilters,
+} from '../hooks/useCollectionFilterState';
 import {
   QuickFilterBar,
   FilterPanel,
@@ -223,14 +219,14 @@ export function CollectionFilterIntegration({
   const [isPanelExpanded, setIsPanelExpanded] = useState(false);
   const [isPresetsExpanded, setIsPresetsExpanded] = useState(false);
 
-  // Filter store state
-  const filterStore = useFilterStore();
-  const quickFilters = useQuickFilters();
-  const presets = useFilterPresets();
-  const activePresetId = useActivePresetId();
-  const activeFilterCount = useActiveFilterCount();
-  const hasActiveFilters = useHasActiveFilters();
-  const statistics = useFilterStatistics();
+  // Filter state (local hook replacing global filter-store)
+  const filterStore = useCollectionFilterState();
+  const quickFilters = filterStore.quickFilters;
+  const presets = filterStore.presets;
+  const activePresetId = filterStore.activePresetId;
+  const activeFilterCount = getActiveFilterCount(filterStore.config);
+  const hasActiveFilters = getHasActiveFilters(filterStore.config);
+  const statistics = filterStore.statistics;
 
   // Initialize quick filters on mount
   useEffect(() => {
@@ -452,14 +448,14 @@ export function CollectionFilterIntegration({
 
       {/* Statistics Summary */}
       {showStatistics && hasActiveFilters && statistics && (
-        <div className="flex items-center justify-between p-2 rounded-lg bg-gray-900/50 border border-gray-700/50">
+        <div className="flex items-center justify-between p-2 rounded-lg bg-slate-900/50 border border-slate-700/50">
           <FilterStatsDisplay
             statistics={statistics}
             variant="inline"
           />
           <button
             onClick={handleClearFilters}
-            className="text-xs text-gray-400 hover:text-cyan-400 transition-colors"
+            className="text-xs text-slate-400 hover:text-brand-hover transition-colors"
           >
             Clear all
           </button>
@@ -502,13 +498,14 @@ export function CollectionQuickFilters({
 export function CollectionFilterBadge({
   onClick,
   className,
+  activeCount = 0,
+  hasActive = false,
 }: {
   onClick?: () => void;
   className?: string;
+  activeCount?: number;
+  hasActive?: boolean;
 }) {
-  const activeCount = useActiveFilterCount();
-  const hasActive = useHasActiveFilters();
-
   if (!hasActive) return null;
 
   return (
@@ -539,12 +536,13 @@ export function CollectionSmartSuggestions({
   items,
   onApplySuggestion,
   className,
+  hasFilters = false,
 }: {
   items: CollectionItem[];
   onApplySuggestion?: (config: FilterConfig) => void;
   className?: string;
+  hasFilters?: boolean;
 }) {
-  const hasFilters = useHasActiveFilters();
 
   // Generate suggestions based on item data
   const suggestions = useMemo(() => {

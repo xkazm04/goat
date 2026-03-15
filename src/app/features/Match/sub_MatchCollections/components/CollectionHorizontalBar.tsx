@@ -36,7 +36,7 @@ export function CollectionHorizontalBar({
         y: 0,
         transition: { delay: 0.15, duration: 0.25 }
       }}
-      className="px-4 py-3 border-b border-white/5 dark:border-white/[0.02] bg-black/10 dark:bg-black/20"
+      className="px-4 py-3 border-b border-white/5 dark:border-white/2 bg-black/10 dark:bg-black/20"
     >
       <div className="flex flex-wrap gap-2">
         {/* All Items Chip */}
@@ -46,14 +46,14 @@ export function CollectionHorizontalBar({
           whileTap={{ scale: 0.98 }}
           className={`px-3 py-1.5 rounded-full text-xs font-bold tracking-wide transition-all duration-200 flex items-center gap-2 ${
             activeTab === 'all'
-              ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-[0_0_10px_rgba(6,182,212,0.15)]'
-              : 'bg-gray-800/50 text-gray-400 border border-transparent hover:bg-gray-700/50 hover:text-white'
+              ? 'bg-brand/20 text-brand-hover border border-brand/30 shadow-[0_0_10px_rgba(6,182,212,0.15)]'
+              : 'bg-slate-800/50 text-slate-400 border border-transparent hover:bg-slate-700/50 hover:text-white'
           }`}
           data-testid="category-all-items-chip"
         >
           <span>ALL</span>
-          <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-            activeTab === 'all' ? 'bg-cyan-500/30' : 'bg-white/10'
+          <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+            activeTab === 'all' ? 'bg-brand/30' : 'bg-white/10'
           }`}>
             {totalItemCount}
           </span>
@@ -82,12 +82,12 @@ export function CollectionHorizontalBar({
               className={`px-3 py-1.5 rounded-full text-xs transition-all duration-200 flex items-center gap-2 ${
                 activeTab === group.id
                   ? 'bg-white/15 text-white border border-white/20'
-                  : 'bg-gray-800/30 text-gray-500 border border-transparent hover:bg-gray-700/40 hover:text-gray-300'
+                  : 'bg-slate-800/30 text-slate-500 border border-transparent hover:bg-slate-700/40 hover:text-slate-300'
               }`}
               data-testid={`category-${group.id}-chip`}
             >
               <span className="font-medium truncate max-w-[120px]">{group.name}</span>
-              <span className="text-[10px] opacity-60">
+              <span className="text-xs opacity-60">
                 {availableCount}
               </span>
             </motion.button>

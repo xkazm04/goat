@@ -114,7 +114,7 @@ export function ConsensusOverlay({ itemId, className }: ConsensusOverlayProps) {
                   animate={{ scale: 1 }}
                   transition={{ delay: i * 0.1 }}
                   className={cn(
-                    'p-0.5 rounded bg-black/60 backdrop-blur-sm',
+                    'p-0.5 rounded bg-black/60 backdrop-blur-xs',
                     badge.color
                   )}
                   title={badge.description}
@@ -155,15 +155,15 @@ function MedianRankBadge({
   let ringColor = 'ring-gray-600';
 
   if (rankNum <= 3) {
-    bgColor = 'bg-gradient-to-br from-yellow-500 to-amber-600';
+    bgColor = 'bg-linear-to-br from-yellow-500 to-amber-600';
     textColor = 'text-black font-bold';
     ringColor = 'ring-yellow-400/50';
   } else if (rankNum <= 10) {
-    bgColor = 'bg-gradient-to-br from-cyan-600 to-blue-700';
+    bgColor = 'bg-linear-to-br from-brand-muted to-blue-700';
     textColor = 'text-white font-semibold';
-    ringColor = 'ring-cyan-400/50';
+    ringColor = 'ring-brand-hover/50';
   } else if (rankNum <= 25) {
-    bgColor = 'bg-gradient-to-br from-purple-600 to-indigo-700';
+    bgColor = 'bg-linear-to-br from-purple-600 to-indigo-700';
     textColor = 'text-white';
     ringColor = 'ring-purple-400/30';
   }
@@ -178,7 +178,7 @@ function MedianRankBadge({
       transition={{ type: 'spring', stiffness: 300, damping: 20 }}
       className={cn(
         'min-w-[24px] h-5 px-1 rounded text-[10px] flex items-center justify-center',
-        'backdrop-blur-sm shadow-lg',
+        'backdrop-blur-xs shadow-lg',
         bgColor,
         textColor,
         ringWidth,
@@ -220,7 +220,7 @@ function VolatilityIndicator({
       animate={{ opacity: 1, x: 0 }}
       className={cn(
         'flex items-center gap-0.5 px-1 py-0.5 rounded text-[9px]',
-        'backdrop-blur-sm',
+        'backdrop-blur-xs',
         bgColor,
         color
       )}
@@ -243,7 +243,7 @@ function PeerClusterIndicator({
 }) {
   const colorMap: Record<string, string> = {
     purple: 'bg-purple-500',
-    cyan: 'bg-cyan-500',
+    cyan: 'bg-brand',
     amber: 'bg-amber-500',
     rose: 'bg-rose-500',
     emerald: 'bg-emerald-500',
@@ -253,7 +253,7 @@ function PeerClusterIndicator({
     <motion.div
       initial={{ opacity: 0, y: 5 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex gap-0.5 items-center bg-black/60 backdrop-blur-sm rounded px-1 py-0.5"
+      className="flex gap-0.5 items-center bg-black/60 backdrop-blur-xs rounded px-1 py-0.5"
       data-testid="consensus-peer-clusters"
     >
       <Users className="w-2 h-2 text-gray-400" />

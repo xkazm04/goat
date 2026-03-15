@@ -47,7 +47,7 @@ export const SuggestionBadge = memo(function SuggestionBadge({
         absolute top-0 right-0 z-20
         rounded-bl-lg rounded-tr-lg
         font-medium
-        backdrop-blur-sm
+        backdrop-blur-xs
         cursor-pointer
         transition-all duration-150
         hover:scale-105
@@ -182,10 +182,10 @@ export const QuickPlaceIndicator = memo(function QuickPlaceIndicator({
         w-6 h-6 rounded-md
         flex items-center justify-center
         text-xs font-bold
-        backdrop-blur-sm
+        backdrop-blur-xs
         transition-colors duration-150
         ${isActive
-          ? "bg-cyan-500 text-white"
+          ? "bg-brand text-white"
           : "bg-gray-800/80 text-gray-300 border border-gray-600"
         }
       `}

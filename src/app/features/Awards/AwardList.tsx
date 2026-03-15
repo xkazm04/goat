@@ -270,7 +270,7 @@ export function AwardList({ parentListId, title = "Annual Awards", description }
                 {/* Fixed background */}
                 <div className="fixed inset-0 bg-[#050505] -z-10" />
                 <div className="fixed inset-0 pointer-events-none -z-10">
-                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-yellow-900/15 via-[#050505] to-[#050505]" />
+                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-yellow-900/15 via-[#050505] to-[#050505]" />
                     <div
                         className="absolute top-20 left-1/4 w-96 h-96 bg-yellow-500/10 rounded-full blur-3xl"
                     />
@@ -293,7 +293,7 @@ export function AwardList({ parentListId, title = "Annual Awards", description }
                             <div className="inline-flex items-center justify-center mb-4">
                                 <div className="relative">
                                     <div className="absolute inset-0 bg-yellow-500/20 blur-2xl rounded-full" />
-                                    <div className="relative p-3 bg-gradient-to-br from-yellow-500/20 to-orange-500/10 rounded-xl border border-yellow-500/30">
+                                    <div className="relative p-3 bg-linear-to-br from-yellow-500/20 to-orange-500/10 rounded-xl border border-yellow-500/30">
                                         <Trophy className="w-8 h-8 text-yellow-500" />
                                     </div>
                                     <Sparkles className="absolute -top-1 -right-1 w-4 h-4 text-yellow-400 animate-pulse" />
@@ -301,7 +301,7 @@ export function AwardList({ parentListId, title = "Annual Awards", description }
                             </div>
 
                             {/* Title */}
-                            <h1 className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-yellow-400 to-orange-400 mb-2">
+                            <h1 className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-linear-to-r from-yellow-200 via-yellow-400 to-orange-400 mb-2">
                                 {title}
                             </h1>
 
@@ -331,15 +331,15 @@ export function AwardList({ parentListId, title = "Annual Awards", description }
                                 <motion.div
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-cyan-500/20 rounded-full border border-cyan-500/40"
+                                    className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-brand/20 rounded-full border border-brand/40"
                                 >
-                                    <MousePointer2 className="w-4 h-4 text-cyan-400" />
-                                    <span className="text-sm text-cyan-300">
+                                    <MousePointer2 className="w-4 h-4 text-brand-hover" />
+                                    <span className="text-sm text-brand-hover">
                                         Click on an award slot to assign: <strong>{selectedItem.title}</strong>
                                     </span>
                                     <button
                                         onClick={() => setSelectedItem(null)}
-                                        className="ml-2 text-cyan-400 hover:text-white transition-colors"
+                                        className="ml-2 text-brand-hover hover:text-white transition-colors"
                                     >
                                         ✕
                                     </button>
@@ -349,7 +349,7 @@ export function AwardList({ parentListId, title = "Annual Awards", description }
 
                         {/* Divider */}
                         <div className="flex items-center gap-4 mb-6">
-                            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-yellow-500/20 to-transparent" />
+                            <div className="flex-1 h-px bg-linear-to-r from-transparent via-yellow-500/20 to-transparent" />
                         </div>
 
                         {/* Award Categories List */}

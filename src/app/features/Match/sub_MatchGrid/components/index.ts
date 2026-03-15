@@ -14,6 +14,7 @@ export { MountRushmoreView } from './MountRushmoreView';
 export { TierListView } from './TierListView';
 export { TierRow, UnrankedPool } from './TierRow';
 export { TierConfigurator } from './TierConfigurator';
+export { TierBoundarySlider } from './TierBoundarySlider';
 export { GridSection } from './GridSection';
 export { MatchGridHeader } from './MatchGridHeader';
 

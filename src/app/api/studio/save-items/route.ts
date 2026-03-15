@@ -29,50 +29,34 @@ export async function POST(request: NextRequest) {
     const { items } = requestSchema.parse(body);
 
     const supabase = await createClient();
-    const savedCount = { success: 0, skipped: 0, errors: 0 };
 
-    // Insert items one by one to handle duplicates gracefully
-    for (const item of items) {
-      try {
-        // Check if item already exists (by name + category)
-        const { data: existing } = await supabase
-          .from('items')
-          .select('id')
-          .eq('name', item.name)
-          .eq('category', item.category)
-          .limit(1)
-          .single();
+    // Batch upsert all items in a single query
+    // onConflict skips duplicates (name + category unique constraint)
+    const rows = items.map((item) => ({
+      name: item.name,
+      category: item.category,
+      description: item.description,
+      image_url: item.image_url,
+      reference_url: item.reference_url,
+    }));
 
-        if (existing) {
-          // Item already exists, skip
-          savedCount.skipped++;
-          continue;
-        }
+    const { data, error: upsertError } = await supabase
+      .from('items')
+      .upsert(rows, {
+        onConflict: 'name,category',
+        ignoreDuplicates: true,
+      })
+      .select('id');
 
-        // Insert new item
-        const { error } = await supabase.from('items').insert({
-          name: item.name,
-          category: item.category,
-          description: item.description,
-          image_url: item.image_url,
-          reference_url: item.reference_url,
-        });
+    const savedCount = {
+      success: data?.length ?? 0,
+      skipped: items.length - (data?.length ?? 0),
+      errors: upsertError ? 1 : 0,
+    };
 
-        if (error) {
-          // Handle unique constraint violation gracefully
-          if (error.code === '23505') {
-            savedCount.skipped++;
-          } else {
-            console.warn('[Save Items] Insert error:', error.message);
-            savedCount.errors++;
-          }
-        } else {
-          savedCount.success++;
-        }
-      } catch (err) {
-        console.warn('[Save Items] Error processing item:', item.name, err);
-        savedCount.errors++;
-      }
+    if (upsertError) {
+      console.warn('[Save Items] Batch upsert error:', upsertError.message);
+      // Still return partial success if some items were saved
     }
 
     console.log(`[Save Items] Results: ${savedCount.success} saved, ${savedCount.skipped} skipped, ${savedCount.errors} errors`);
@@ -86,7 +70,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Invalid request', details: error.errors },
+        { error: 'Invalid request', details: error.issues },
         { status: 400 }
       );
     }

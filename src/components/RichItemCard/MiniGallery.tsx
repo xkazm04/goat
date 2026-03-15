@@ -135,7 +135,7 @@ export const MiniGallery = memo(function MiniGallery({
             className={cn(
               'absolute left-1 top-1/2 -translate-y-1/2 z-10',
               'w-6 h-6 rounded-full',
-              'bg-black/60 backdrop-blur-sm',
+              'bg-black/60 backdrop-blur-xs',
               'flex items-center justify-center',
               'text-white/80 hover:text-white hover:bg-black/80',
               'transition-colors'
@@ -153,7 +153,7 @@ export const MiniGallery = memo(function MiniGallery({
             className={cn(
               'absolute right-1 top-1/2 -translate-y-1/2 z-10',
               'w-6 h-6 rounded-full',
-              'bg-black/60 backdrop-blur-sm',
+              'bg-black/60 backdrop-blur-xs',
               'flex items-center justify-center',
               'text-white/80 hover:text-white hover:bg-black/80',
               'transition-colors'
@@ -237,7 +237,7 @@ export const ThumbnailStrip = memo(function ThumbnailStrip({
           className={cn(
             'w-8 h-8 rounded overflow-hidden border-2 transition-colors',
             index === activeIndex
-              ? 'border-cyan-400'
+              ? 'border-brand-hover'
               : 'border-transparent hover:border-gray-500'
           )}
         >

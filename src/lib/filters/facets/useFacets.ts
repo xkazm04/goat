@@ -102,56 +102,31 @@ export function useFacets<T extends Record<string, unknown>>({
   const [isComputing, setIsComputing] = useState(false);
   const [computeTime, setComputeTime] = useState(0);
 
-  // Compute facets
-  const aggregationResult = useMemo(() => {
-    const result = aggregator.aggregate(items, selections, expandedFacets);
+  // Compute facets — expandedFacets is excluded from deps since it's UI-only state
+  const rawAggregationResult = useMemo(() => {
+    const result = aggregator.aggregate(items, selections);
     setComputeTime(result.computeTime);
     return result;
-  }, [items, selections, expandedFacets, aggregator]);
+  }, [items, selections, aggregator]);
 
-  // Filtered items
+  // Apply UI-only expanded state separately (lightweight O(facets) pass)
+  const aggregationResult = useMemo(() => ({
+    ...rawAggregationResult,
+    facets: rawAggregationResult.facets.map((f) => ({
+      ...f,
+      isExpanded: expandedFacets.has(f.definition.id) || f.definition.defaultExpanded || false,
+    })),
+    hierarchicalFacets: rawAggregationResult.hierarchicalFacets.map((f) => ({
+      ...f,
+      isExpanded: expandedFacets.has(f.definition.id) || f.definition.defaultExpanded || false,
+    })),
+  }), [rawAggregationResult, expandedFacets]);
+
+  // Filtered items — delegate to aggregator to avoid duplicating filter logic
   const filteredItems = useMemo(() => {
     if (selections.length === 0) return items;
-
-    return items.filter((item) => {
-      for (const selection of selections) {
-        if (selection.values.length === 0) continue;
-
-        const definition = definitions.find((d) => d.id === selection.facetId);
-        if (!definition) continue;
-
-        const fieldValue = getFieldValue(item, selection.field);
-
-        // Handle range selection
-        if (selection.range && definition.type === 'range') {
-          if (typeof fieldValue !== 'number') return false;
-          if (fieldValue < selection.range.min || fieldValue > selection.range.max) {
-            return false;
-          }
-          continue;
-        }
-
-        // Handle array fields (tags)
-        if (Array.isArray(fieldValue)) {
-          const matches = selection.values.some((v) =>
-            fieldValue.some((fv) => String(fv) === String(v))
-          );
-          if (!matches) return false;
-          continue;
-        }
-
-        // Handle single values
-        const matches = selection.values.some((v) => {
-          if (typeof fieldValue === 'boolean') {
-            return fieldValue === v;
-          }
-          return String(fieldValue) === String(v);
-        });
-        if (!matches) return false;
-      }
-      return true;
-    });
-  }, [items, selections, definitions]);
+    return aggregator.applyFacetFilters(items, selections);
+  }, [items, selections, aggregator]);
 
   // Sync to URL
   useEffect(() => {
@@ -368,22 +343,6 @@ function parseSelectionsFromUrl(
   });
 
   return selections;
-}
-
-/**
- * Get nested field value from item
- */
-function getFieldValue<T extends Record<string, unknown>>(
-  item: T,
-  field: string
-): unknown {
-  const parts = field.split('.');
-  let value: unknown = item;
-  for (const part of parts) {
-    if (value === null || value === undefined) return undefined;
-    value = (value as Record<string, unknown>)[part];
-  }
-  return value;
 }
 
 export default useFacets;

@@ -23,9 +23,6 @@ export type DataSource =
   | 'tmdb'
   | 'igdb'
   | 'spotify'
-  | 'musicbrainz'
-  | 'openlibrary'
-  | 'googlebooks'
   | 'wikipedia'
   | 'gemini';
 
@@ -107,7 +104,6 @@ export interface NormalizedItemData {
     imdb?: string;
     igdb?: string;
     spotify?: string;
-    musicbrainz?: string;
     wikipedia?: string;
     isbn?: string;
   };

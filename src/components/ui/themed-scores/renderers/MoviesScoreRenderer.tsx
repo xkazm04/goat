@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { formatScore } from "@/lib/constants/scoring";
 import { StarRating } from "@/components/ui/star-rating";
 import type { ScoreRendererProps } from "./types";
 
@@ -57,7 +58,7 @@ export function MoviesScoreRenderer({
             variant === "full" && "text-sm"
           )}
         >
-          {score.toFixed(0)}%
+          {formatScore(score)}%
         </span>
       )}
     </motion.div>

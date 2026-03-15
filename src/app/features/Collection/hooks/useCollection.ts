@@ -11,11 +11,11 @@
  * Unified hook for collection data management
  */
 
-import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useCallback, useState, useEffect, useRef } from 'react';
 import { collectionApi, CollectionApiParams, CollectionItemCreate, CollectionItemUpdate } from '@/lib/api/collection';
 import { collectionKeys } from '@/lib/query-keys/collection';
-import { CollectionItem, CollectionGroup, CollectionStats } from '../types';
+import { CollectionItem, CollectionGroup, ItemPanelStats } from '../types';
 import { useVisibleCollectionItems, PlacementStats } from './useVisibleCollectionItems';
 import { useEasterEggSpotlight } from '../utils/easterEgg';
 
@@ -59,7 +59,6 @@ export interface UseCollectionOptions {
   sortOrder?: 'asc' | 'desc';
   pageSize?: number;
   enablePagination?: boolean;
-  enableInfiniteScroll?: boolean;
   staleTime?: number;
   cacheTime?: number;
 }
@@ -70,7 +69,7 @@ export interface UseCollectionResult {
   items: CollectionItem[];
   filteredItems: CollectionItem[];
   selectedGroups: CollectionGroup[];
-  stats: CollectionStats;
+  stats: ItemPanelStats;
 
   // Derived placement state (first-class relationship with Grid)
   placementStats: PlacementStats;
@@ -93,13 +92,6 @@ export interface UseCollectionResult {
     nextPage: () => void;
     prevPage: () => void;
     goToPage: (page: number) => void;
-  };
-
-  // Infinite scroll (alternative to pagination)
-  infiniteScroll?: {
-    hasNextPage: boolean;
-    isFetchingNextPage: boolean;
-    fetchNextPage: () => void;
   };
 
   // Filter controls
@@ -158,7 +150,6 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
     sortOrder: initialSortOrder = 'desc', // Descending (highest ranking first)
     pageSize = 50,
     enablePagination = false,
-    enableInfiniteScroll = false,
     staleTime = 5 * 60 * 1000, // 5 minutes
     cacheTime = 10 * 60 * 1000 // 10 minutes
   } = options;
@@ -195,18 +186,15 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
   // Sort groups alphabetically by name (ascending)
   // Note: API returns groups with item_count, not items array
   const groupsData = useMemo(() => {
-    console.log('📦 Raw groups from API:', groupsDataRaw.length);
     const filtered = groupsDataRaw
       .filter(group => (group.item_count || 0) > 0) // Hide groups with no items
       .sort((a, b) => a.name.localeCompare(b.name)); // Sort groups by name (asc)
-    console.log('📦 Filtered groups (with items):', filtered.length);
     return filtered;
   }, [groupsDataRaw]);
 
   // Initialize selected groups when groups load (only once)
   useEffect(() => {
     if (!hasInitializedGroupsRef.current && groupsData.length > 0 && selectedGroupIds.size === 0) {
-      console.log('🔄 Initializing selected groups:', groupsData.length, 'groups');
       hasInitializedGroupsRef.current = true;
       setSelectedGroupIds(new Set(groupsData.map(g => g.id)));
     }
@@ -234,37 +222,14 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
   } = useQuery({
     queryKey: collectionKeys.itemsPaginated(queryParams),
     queryFn: () => collectionApi.getItemsPaginated(queryParams),
-    enabled: !enableInfiniteScroll,
-    staleTime,
-    gcTime: cacheTime
-  });
-
-  // Infinite scroll query (alternative to pagination)
-  const infiniteQuery = useInfiniteQuery({
-    queryKey: collectionKeys.itemsInfinite(queryParams),
-    queryFn: ({ pageParam = 0 }) =>
-      collectionApi.getItemsPaginated({ ...queryParams, offset: pageParam, limit: pageSize }),
-    initialPageParam: 0,
-    getNextPageParam: (lastPage) => lastPage.nextOffset,
-    enabled: enableInfiniteScroll,
     staleTime,
     gcTime: cacheTime
   });
 
   // Extract raw items from query results (before placement filtering)
   const rawItems = useMemo(() => {
-    let items: CollectionItem[] = [];
-    if (enableInfiniteScroll && infiniteQuery.data) {
-      items = infiniteQuery.data.pages.flatMap(page => page.data);
-    } else {
-      items = paginatedData?.data || [];
-    }
-    console.log('📊 Items from API:', items.length);
-    if (items.length > 0) {
-      console.log('📊 Sample item:', items[0]);
-    }
-    return items;
-  }, [enableInfiniteScroll, infiniteQuery.data, paginatedData]);
+    return paginatedData?.data || [];
+  }, [paginatedData]);
 
   // Use the derived-state hook for Collection-Grid relationship
   // This makes the relationship first-class: VisibleItems = AllItems - GridPlacedItems
@@ -278,14 +243,9 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
     maxGridSize: pageSize, // Use page size as proxy for grid size
   });
 
-  console.log('📊 Available items after placement filtering:', allItems.length, 'placed:', placementStats.placedCount);
-
   // Client-side filtering by selected groups and sorting
   const filteredItems = useMemo(() => {
-    console.log('🔍 Filtering items - selectedGroupIds:', selectedGroupIds.size, 'allItems:', allItems.length);
-
     if (selectedGroupIds.size === 0) {
-      console.log('⚠️  No groups selected, returning empty array');
       return [];
     }
 
@@ -294,8 +254,6 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
       if (!itemGroupId) return true; // Include items without group
       return selectedGroupIds.has(itemGroupId);
     });
-
-    console.log('✅ Filtered to', items.length, 'items');
 
     // Apply client-side sorting
     items = [...items].sort((a, b) => {
@@ -337,7 +295,7 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
   const { spotlightItemId } = useEasterEggSpotlight(searchTerm, filteredItems);
 
   // Calculate statistics with first-class placement state
-  const stats: CollectionStats = useMemo(() => {
+  const stats: ItemPanelStats = useMemo(() => {
     const totalItems = groupsData.reduce((sum, g) => sum + (g.item_count || 0), 0);
     const selectedItems = selectedGroups.reduce((sum, g) => sum + (g.item_count || 0), 0);
 
@@ -548,10 +506,10 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
     isItemPlaced,
 
     // Loading states
-    isLoading: isLoadingGroups || isLoadingItems || (enableInfiniteScroll && infiniteQuery.isLoading),
-    isError: isErrorGroups || isErrorItems || (enableInfiniteScroll && infiniteQuery.isError),
-    error: (errorGroups || errorItems || (enableInfiniteScroll && infiniteQuery.error)) as Error | null,
-    isFetching: isFetching || (enableInfiniteScroll && infiniteQuery.isFetching),
+    isLoading: isLoadingGroups || isLoadingItems,
+    isError: isErrorGroups || isErrorItems,
+    error: (errorGroups || errorItems) as Error | null,
+    isFetching,
 
     // Pagination
     pagination: {
@@ -564,13 +522,6 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
       prevPage,
       goToPage
     },
-
-    // Infinite scroll
-    infiniteScroll: enableInfiniteScroll ? {
-      hasNextPage: infiniteQuery.hasNextPage || false,
-      isFetchingNextPage: infiniteQuery.isFetchingNextPage,
-      fetchNextPage: infiniteQuery.fetchNextPage
-    } : undefined,
 
     // Filter
     filter: {

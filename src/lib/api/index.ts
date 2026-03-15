@@ -22,16 +22,6 @@
  *
  * // Blueprints
  * const blueprints = await goatApi.blueprints.getFeatured();
- *
- * // Batch requests
- * const [list, group] = await goatApi.batch([
- *   goatApi.lists.get('list-id'),
- *   goatApi.groups.get('group-id'),
- * ]);
- *
- * // Cache management
- * goatApi.invalidateCache({ tags: ['lists'] });
- * const metrics = goatApi.getCacheMetrics();
  * ```
  */
 
@@ -80,13 +70,6 @@ export type {
 export { ApiClient, apiClient, isApiErrorRetriable, getApiErrorMessage, getApiErrorCode } from './client';
 
 // =============================================================================
-// Cached Client (for backwards compatibility)
-// =============================================================================
-
-export { cachedApiClient, CACHE_CONFIGS } from './cached-client';
-export type { CachedRequestOptions } from './cached-client';
-
-// =============================================================================
 // Legacy API Client (Deprecated - Use goatApi instead)
 // =============================================================================
 
@@ -104,51 +87,17 @@ export type {
 } from './collection';
 
 // =============================================================================
-// Request Batching & Deduplication
+// Circuit Breaker
 // =============================================================================
 
 export {
-  // BatchManager
-  BatchManager,
-  getGlobalBatchManager,
-  resetGlobalBatchManager,
-  batchGet,
-  batchPost,
-  type BatchRequest,
-  type BatchResponse,
-  type BatchResult,
-  type BatchManagerOptions,
-  type BatchManagerStats,
-} from './BatchManager';
-
-export {
-  // Deduplicator
-  Deduplicator,
-  getGlobalDeduplicator,
-  resetGlobalDeduplicator,
-  type DeduplicatorOptions,
-  type DeduplicatorStats,
-} from './Deduplicator';
-
-export {
-  // WindowScheduler
-  WindowScheduler,
-  getGlobalWindowScheduler,
-  resetGlobalWindowScheduler,
-  type WindowSchedulerOptions,
-  type BatchPriority,
-} from './WindowScheduler';
-
-export {
-  // BatchAnalytics
-  BatchAnalytics,
-  getGlobalBatchAnalytics,
-  resetGlobalBatchAnalytics,
-  logBatchAnalytics,
-  type BatchAnalyticsSnapshot,
-  type BatchAnalyticsSummary,
-  type BatchAnalyticsReport,
-} from './BatchAnalytics';
+  CircuitBreaker,
+  getGlobalCircuitBreaker,
+  resetGlobalCircuitBreaker,
+  type CircuitState,
+  type CircuitBreakerConfig,
+  type CircuitBreakerStats,
+} from './CircuitBreaker';
 
 // =============================================================================
 // Utility Exports

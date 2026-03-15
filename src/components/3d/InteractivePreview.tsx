@@ -216,7 +216,7 @@ export const InteractivePreview = memo(function InteractivePreview({
           <>
             {/* Backdrop */}
             <motion.div
-              className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm"
+              className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xl"
               variants={backdropVariants}
               initial="hidden"
               animate="visible"
@@ -231,7 +231,7 @@ export const InteractivePreview = memo(function InteractivePreview({
               className={cn(
                 'fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2',
                 'overflow-auto rounded-2xl',
-                'bg-gradient-to-br from-slate-900/95 to-slate-950/95',
+                'bg-linear-to-br from-slate-900/95 to-slate-950/95',
                 'border border-white/10 shadow-2xl',
                 previewClassName
               )}

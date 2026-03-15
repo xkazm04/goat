@@ -56,6 +56,7 @@ export {
 } from './DragOperationRouter';
 
 // Core Grid Operations
+export { BaseGridOperation } from './BaseGridOperation';
 export { AssignOperation } from './AssignOperation';
 export { MoveOperation } from './MoveOperation';
 export { SwapOperation } from './SwapOperation';

@@ -4,6 +4,7 @@ import { useCallback } from "react";
 import { ItemInspector, RelatedItem } from "./ItemInspector";
 import { useInspectorStore } from "@/stores/inspector-store";
 import { useGridStore } from "@/stores/grid-store";
+import { gridLogger } from "@/lib/logger";
 
 /**
  * ItemInspectorProvider
@@ -29,7 +30,7 @@ export function ItemInspectorProvider() {
       // We need the full item data - for now we'll need to get it from the API
       // This is a simplified version that just assigns by ID
       // In a full implementation, we'd fetch the item data first
-      console.log('Quick assign item:', id, 'to position:', nextPosition);
+      gridLogger.debug('Quick assign item', { id, position: nextPosition });
       // Note: The actual assignment would need the full item data
       // This would typically be done via a store action or API call
     }

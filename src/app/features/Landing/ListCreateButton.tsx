@@ -228,8 +228,8 @@ const ListCreateButton = ({ intent, createListMutation, onSuccess, onClose }: Pr
                 aria-label={isPending ? "Creating list..." : "Create list"}
                 className={`
                     relative rounded-2xl
-                    focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
-                    focus-visible:ring-blue-500/80 focus-visible:ring-offset-slate-900
+                    focus:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2
+                    focus-visible:ring-amber-400/80 focus-visible:ring-offset-slate-900
                     ${isButtonDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}
                 `}
                 variants={ctaButtonVariants}

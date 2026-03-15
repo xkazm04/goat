@@ -12,7 +12,10 @@ import {
   Play,
   Plus,
 } from "lucide-react";
+import { EmptyTrophyCase } from "@/components/illustrations/EmptyStateIllustrations";
 import { cn } from "@/lib/utils";
+import { SPRING, DURATION } from "@/lib/animations/motion-presets";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { PlaceholderImage } from "@/components/ui/placeholder-image";
 import { MetadataGrid } from "./MetadataGrid";
 import { RankingDistribution, RankingStats } from "./RankingDistribution";
@@ -42,7 +45,7 @@ export interface ItemInspectorProps {
 type ExternalLinkType = 'wikipedia' | 'imdb' | 'spotify' | 'youtube' | 'custom';
 
 const EXTERNAL_LINK_COLORS: Record<ExternalLinkType, string> = {
-  wikipedia: 'bg-gray-600 hover:bg-gray-500',
+  wikipedia: 'bg-slate-600 hover:bg-slate-500',
   imdb: 'bg-amber-600 hover:bg-amber-500',
   spotify: 'bg-green-600 hover:bg-green-500',
   youtube: 'bg-red-600 hover:bg-red-500',
@@ -85,6 +88,7 @@ export function ItemInspector({
   const [data, setData] = useState<ItemDetailResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const reducedMotion = useReducedMotion();
   const [expandedSections, setExpandedSections] = useState({
     metadata: true,
     rankings: true,
@@ -166,20 +170,20 @@ export function ItemInspector({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        transition={{ duration: 0.2 }}
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+        transition={{ duration: DURATION.normal }}
+        className="fixed inset-0 bg-black/60 backdrop-blur-xl z-50"
         onClick={handleBackdropClick}
       >
         {/* Panel - Slide up from bottom on mobile, side panel on desktop */}
         <motion.div
-          initial={{ y: '100%', opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
+          initial={reducedMotion ? { opacity: 0 } : { y: '100%', opacity: 0 }}
+          animate={reducedMotion ? { opacity: 1 } : { y: 0, opacity: 1 }}
           exit={{ y: '100%', opacity: 0 }}
-          transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+          transition={SPRING.smooth}
           className={cn(
             "absolute bottom-0 left-0 right-0 max-h-[90vh] overflow-hidden",
             "md:top-0 md:bottom-0 md:left-auto md:right-0 md:w-[480px] md:max-h-full",
-            "bg-gray-900 border-t md:border-l md:border-t-0 border-gray-700 rounded-t-2xl md:rounded-none",
+            "bg-slate-900 border-t md:border-l md:border-t-0 border-slate-700 rounded-t-2xl md:rounded-none",
             "flex flex-col"
           )}
           onClick={(e) => e.stopPropagation()}
@@ -189,17 +193,17 @@ export function ItemInspector({
         >
           {/* Drag handle (mobile) */}
           <div className="md:hidden flex justify-center py-2">
-            <div className="w-10 h-1 rounded-full bg-gray-600" />
+            <div className="w-10 h-1 rounded-full bg-slate-600" />
           </div>
 
           {/* Header */}
-          <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-gray-700/50">
+          <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-slate-700/50">
             <h2 id="inspector-title" className="text-lg font-semibold text-white">
               Item Details
             </h2>
             <button
               onClick={onClose}
-              className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700/50 transition-colors"
+              className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700/50 transition-colors"
               aria-label="Close inspector"
             >
               <X className="w-5 h-5" />
@@ -211,14 +215,14 @@ export function ItemInspector({
             {loading && (
               <div className="p-4 space-y-4">
                 {/* Image skeleton */}
-                <div className="w-full aspect-video rounded-lg bg-gray-800/50 animate-pulse" />
+                <div className="w-full aspect-video rounded-lg bg-slate-800/50 animate-pulse" />
                 {/* Title skeleton */}
-                <div className="h-6 w-3/4 bg-gray-800/50 rounded animate-pulse" />
-                <div className="h-4 w-1/2 bg-gray-800/50 rounded animate-pulse" />
+                <div className="h-6 w-3/4 bg-slate-800/50 rounded animate-pulse" />
+                <div className="h-4 w-1/2 bg-slate-800/50 rounded animate-pulse" />
                 {/* Content skeleton */}
                 <div className="space-y-3">
                   {Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className="h-16 bg-gray-800/30 rounded-lg animate-pulse" />
+                    <div key={i} className="h-16 bg-slate-800/30 rounded-lg animate-pulse" />
                   ))}
                 </div>
               </div>
@@ -229,10 +233,10 @@ export function ItemInspector({
                 <div className="w-12 h-12 rounded-full bg-rose-500/20 flex items-center justify-center mx-auto mb-4">
                   <X className="w-6 h-6 text-rose-400" />
                 </div>
-                <p className="text-gray-400 mb-4">{error}</p>
+                <p className="text-slate-400 mb-4">{error}</p>
                 <button
                   onClick={onClose}
-                  className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition-colors"
+                  className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm font-medium transition-colors"
                 >
                   Close
                 </button>
@@ -243,7 +247,7 @@ export function ItemInspector({
               <div className="p-4 space-y-6">
                 {/* Hero Section */}
                 <div className="relative">
-                  <div className="aspect-video w-full rounded-lg overflow-hidden bg-gray-800">
+                  <div className="aspect-video w-full rounded-lg overflow-hidden bg-slate-800">
                     <PlaceholderImage
                       src={data.item.image_url}
                       alt={data.item.title}
@@ -257,7 +261,7 @@ export function ItemInspector({
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={handleQuickAssign}
-                      className="absolute bottom-3 right-3 flex items-center gap-2 px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-gray-900 font-semibold rounded-lg shadow-lg transition-colors"
+                      className="absolute bottom-3 right-3 flex items-center gap-2 px-4 py-2 bg-brand hover:bg-brand-hover text-slate-900 font-semibold rounded-lg shadow-lg transition-colors"
                     >
                       <Plus className="w-4 h-4" />
                       Add to Grid
@@ -271,7 +275,7 @@ export function ItemInspector({
                     {data.item.title}
                   </h3>
                   {data.item.category && (
-                    <p className="text-sm text-gray-400">
+                    <p className="text-sm text-slate-400">
                       {data.item.category}
                       {data.item.subcategory && ` / ${data.item.subcategory}`}
                     </p>
@@ -321,21 +325,21 @@ export function ItemInspector({
                           <button
                             key={item.id}
                             onClick={() => onRelatedItemClick?.(item)}
-                            className="flex-shrink-0 w-20 text-center hover:bg-gray-800/50 p-2 rounded-lg transition-colors"
+                            className="shrink-0 w-20 text-center hover:bg-slate-800/50 p-2 rounded-lg transition-colors"
                           >
-                            <div className="w-16 h-16 mx-auto rounded-lg bg-gray-800 overflow-hidden mb-1">
+                            <div className="w-16 h-16 mx-auto rounded-lg bg-slate-800 overflow-hidden mb-1">
                               <PlaceholderImage
                                 src={item.image_url}
                                 alt={item.title}
                                 seed={item.title}
                               />
                             </div>
-                            <p className="text-[10px] text-gray-400 truncate">{item.title}</p>
+                            <p className="text-xs text-slate-400 truncate">{item.title}</p>
                           </button>
                         ))}
                       </div>
                     ) : (
-                      <p className="text-sm text-gray-500 text-center py-4">No related items</p>
+                      <p className="text-sm text-slate-500 text-center py-4">No related items</p>
                     )}
                   </CollapsibleSection>
 
@@ -378,23 +382,23 @@ interface CollapsibleSectionProps {
 
 function CollapsibleSection({ title, isExpanded, onToggle, badge, children }: CollapsibleSectionProps) {
   return (
-    <div className="border border-gray-700/50 rounded-lg overflow-hidden">
+    <div className="border border-slate-700/50 rounded-lg overflow-hidden">
       <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between p-3 bg-gray-800/30 hover:bg-gray-800/50 transition-colors"
+        className="w-full flex items-center justify-between p-3 bg-slate-800/30 hover:bg-slate-800/50 transition-colors"
       >
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-gray-200">{title}</span>
+          <span className="text-sm font-medium text-slate-200">{title}</span>
           {badge !== undefined && (
-            <span className="px-1.5 py-0.5 text-[10px] font-medium bg-cyan-500/20 text-cyan-400 rounded-full">
+            <span className="px-1.5 py-0.5 text-xs font-medium bg-brand/20 text-brand-hover rounded-full">
               {badge}
             </span>
           )}
         </div>
         {isExpanded ? (
-          <ChevronUp className="w-4 h-4 text-gray-400" />
+          <ChevronUp className="w-4 h-4 text-slate-400" />
         ) : (
-          <ChevronDown className="w-4 h-4 text-gray-400" />
+          <ChevronDown className="w-4 h-4 text-slate-400" />
         )}
       </button>
       <AnimatePresence>
@@ -403,9 +407,9 @@ function CollapsibleSection({ title, isExpanded, onToggle, badge, children }: Co
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: DURATION.normal }}
           >
-            <div className="p-3 bg-gray-800/10">{children}</div>
+            <div className="p-3 bg-slate-800/10">{children}</div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -417,9 +421,9 @@ function CollapsibleSection({ title, isExpanded, onToggle, badge, children }: Co
 function RecentRankingsList({ rankings }: { rankings: RecentRanking[] }) {
   if (rankings.length === 0) {
     return (
-      <div className="text-center py-4 text-gray-500 text-sm">
-        <Clock className="w-5 h-5 mx-auto mb-2 opacity-50" />
-        No recent rankings
+      <div className="flex flex-col items-center text-center py-4 text-slate-500 text-sm">
+        <EmptyTrophyCase width={100} height={80} />
+        <span className="mt-1">No recent rankings</span>
       </div>
     );
   }
@@ -432,11 +436,11 @@ function RecentRankingsList({ rankings }: { rankings: RecentRanking[] }) {
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: index * 0.05 }}
-          className="flex items-center justify-between p-2 rounded-lg bg-gray-800/30 hover:bg-gray-800/50 transition-colors"
+          className="flex items-center justify-between p-2 rounded-lg bg-slate-800/30 hover:bg-slate-800/50 transition-colors"
         >
           <div className="flex-1 min-w-0">
-            <p className="text-sm text-gray-200 truncate">{ranking.listTitle}</p>
-            <p className="text-[10px] text-gray-500">
+            <p className="text-sm text-slate-200 truncate">{ranking.listTitle}</p>
+            <p className="text-xs text-slate-500">
               {new Date(ranking.rankedAt).toLocaleDateString('en-US', {
                 month: 'short',
                 day: 'numeric',
@@ -444,7 +448,7 @@ function RecentRankingsList({ rankings }: { rankings: RecentRanking[] }) {
               })}
             </p>
           </div>
-          <div className="flex-shrink-0 px-2 py-1 bg-cyan-500/20 text-cyan-400 rounded text-sm font-bold">
+          <div className="shrink-0 px-2 py-1 bg-brand/20 text-brand-hover rounded text-sm font-bold">
             #{ranking.position}
           </div>
         </motion.div>
@@ -457,9 +461,9 @@ function RecentRankingsList({ rankings }: { rankings: RecentRanking[] }) {
 function ExternalLinksSection({ links }: { links: ExternalLinkItem[] }) {
   if (links.length === 0) {
     return (
-      <div className="text-center py-4 text-gray-500 text-sm">
-        <ExternalLink className="w-5 h-5 mx-auto mb-2 opacity-50" />
-        No external links available
+      <div className="flex flex-col items-center text-center py-4 text-slate-500 text-sm">
+        <EmptyTrophyCase width={100} height={80} />
+        <span className="mt-1">No external links available</span>
       </div>
     );
   }

@@ -87,7 +87,7 @@ const TierHeader = memo(function TierHeader({
     <div className="flex items-center gap-4 mb-4">
       {/* Left gradient line */}
       <div
-        className="h-[1px] flex-1"
+        className="h-px flex-1"
         style={{
           background: `linear-gradient(to right, transparent, ${tier.style.accentColor}20)`,
         }}
@@ -115,7 +115,7 @@ const TierHeader = memo(function TierHeader({
 
         {/* Title */}
         <h3
-          className="text-sm font-bold tracking-wider uppercase"
+          className="text-base font-bold tracking-wider uppercase"
           style={{ color: tier.style.accentColor }}
         >
           {tier.displayName}
@@ -149,7 +149,7 @@ const TierHeader = memo(function TierHeader({
 
       {/* Right gradient line */}
       <div
-        className="h-[1px] flex-1"
+        className="h-px flex-1"
         style={{
           background: `linear-gradient(to left, transparent, ${tier.style.accentColor}20)`,
         }}

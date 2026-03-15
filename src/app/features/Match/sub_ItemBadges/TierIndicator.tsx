@@ -80,7 +80,7 @@ export function TierIndicator({
         config.bgColor,
         'ring-1',
         config.borderColor,
-        'backdrop-blur-sm',
+        'backdrop-blur-xs',
         className
       )}
       title={`${config.label} tier - Avg rank #${Math.round(consensus?.averageRank || 0)}`}

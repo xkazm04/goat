@@ -5,7 +5,27 @@
  * Displays a challenge in a card format
  */
 
-import { formatDistanceToNow } from 'date-fns';
+/** Format a date as relative time (e.g. "3 days ago", "in 2 hours") */
+function formatDistanceToNow(date: Date, opts?: { addSuffix?: boolean }): string {
+  const now = Date.now();
+  const diff = date.getTime() - now;
+  const absDiff = Math.abs(diff);
+  const seconds = Math.floor(absDiff / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  const months = Math.floor(days / 30);
+
+  let result: string;
+  if (months > 0) result = `${months} month${months > 1 ? 's' : ''}`;
+  else if (days > 0) result = `${days} day${days > 1 ? 's' : ''}`;
+  else if (hours > 0) result = `${hours} hour${hours > 1 ? 's' : ''}`;
+  else if (minutes > 0) result = `${minutes} minute${minutes > 1 ? 's' : ''}`;
+  else result = 'less than a minute';
+
+  if (!opts?.addSuffix) return result;
+  return diff < 0 ? `${result} ago` : `in ${result}`;
+}
 import { motion } from 'framer-motion';
 import type { Challenge } from '@/lib/challenges/types';
 

@@ -232,7 +232,7 @@ export const CategorySearch = memo(function CategorySearch({
           onFocus={() => setIsFocused(true)}
           onBlur={() => setTimeout(() => setIsFocused(false), 200)}
           placeholder={placeholder}
-          className="flex-1 bg-transparent text-white placeholder-slate-500 text-sm focus:outline-none"
+          className="flex-1 bg-transparent text-white placeholder-slate-500 text-sm focus:outline-hidden"
         />
 
         {/* Clear button */}
@@ -255,11 +255,10 @@ export const CategorySearch = memo(function CategorySearch({
       <AnimatePresence>
         {showDropdown && (
           <motion.div
-            className="absolute top-full left-0 right-0 mt-2 rounded-xl overflow-hidden z-50"
+            className="absolute top-full left-0 right-0 mt-2 rounded-xl overflow-hidden z-50 backdrop-blur-md"
             style={{
               background: "rgba(15, 23, 42, 0.95)",
               border: `1px solid ${color.primary}30`,
-              backdropFilter: "blur(12px)",
               boxShadow: "0 20px 40px rgba(0, 0, 0, 0.4)",
             }}
             initial={{ opacity: 0, y: -10, scale: 0.95 }}

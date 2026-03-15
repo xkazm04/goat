@@ -7,14 +7,18 @@
 
 import React, { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Save, Pencil, Trash2, Target, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { FilterPreset, FilterConfig } from '../types';
 import {
   PRESET_ICONS,
   PRESET_COLORS,
   FILTER_ANIMATIONS,
+  FILTER_TIMING,
+  FILTER_SCALE,
   EMPTY_FILTER_CONFIG,
 } from '../constants';
+import { GoatBookmark } from '@/components/illustrations/EmptyStateIllustrations';
 
 /**
  * FilterPresetManager Props
@@ -78,12 +82,12 @@ export function FilterPresetManager({
           className={cn(
             'flex items-center gap-1.5 px-2 py-1 text-xs',
             'bg-accent hover:bg-accent/80 rounded transition-colors',
-            'disabled:opacity-50 disabled:cursor-not-allowed'
+            'disabled:filter-disabled'
           )}
           onClick={() => setShowSaveDialog(true)}
           disabled={currentConfig.conditions.length === 0}
         >
-          <span>💾</span>
+          <Save size={12} />
           <span>Save Current</span>
         </button>
       </div>
@@ -97,7 +101,7 @@ export function FilterPresetManager({
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
-              transition={{ delay: index * 0.03 }}
+              transition={{ delay: index * FILTER_TIMING.staggerChildren }}
             >
               <PresetCard
                 preset={preset}
@@ -111,10 +115,12 @@ export function FilterPresetManager({
         </AnimatePresence>
 
         {sortedPresets.length === 0 && (
-          <div className="text-center py-6 text-sm text-muted-foreground">
-            No saved presets yet.
-            <br />
-            Create filters and save them for quick access.
+          <div className="flex flex-col items-center justify-center rounded-lg bg-gradient-to-br from-brand/[0.04] to-purple-500/[0.04] py-6">
+            <GoatBookmark width={100} height={80} />
+            <p className="text-sm text-muted-foreground mt-2">No saved presets yet.</p>
+            <p className="text-xs text-muted-foreground/70 mt-1">
+              Create filters and save them for quick access.
+            </p>
           </div>
         )}
       </div>
@@ -122,7 +128,7 @@ export function FilterPresetManager({
       {/* Unsaved changes indicator */}
       {hasUnsavedChanges && activePresetId && (
         <div className="flex items-center gap-2 text-xs text-amber-500">
-          <span>⚠️</span>
+          <AlertTriangle size={12} />
           <span>You have unsaved changes</span>
           <button
             className="underline hover:no-underline"
@@ -210,20 +216,20 @@ function PresetCard({
         'relative flex items-center gap-3 p-3 rounded-lg border transition-all cursor-pointer',
         isActive
           ? 'bg-primary/10 border-primary ring-1 ring-primary'
-          : 'bg-background border-border hover:border-border/80 hover:bg-accent/30'
+          : 'bg-background border-border hover:border-border/80 filter-hover'
       )}
       onClick={onLoad}
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
-      whileHover={{ scale: 1.01 }}
-      whileTap={{ scale: 0.99 }}
+      whileHover={{ scale: FILTER_SCALE.hover }}
+      whileTap={{ scale: FILTER_SCALE.tap }}
     >
       {/* Icon */}
       <div
-        className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-lg"
+        className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-lg"
         style={{ backgroundColor: preset.color ? `${preset.color}20` : undefined }}
       >
-        {preset.icon || '🎯'}
+        {preset.icon || <Target size={16} />}
       </div>
 
       {/* Info */}
@@ -260,7 +266,7 @@ function PresetCard({
               }}
               title="Edit preset"
             >
-              ✏️
+              <Pencil size={14} />
             </button>
             <button
               className="p-1.5 rounded hover:bg-destructive/10 hover:text-destructive transition-colors"
@@ -270,7 +276,7 @@ function PresetCard({
               }}
               title="Delete preset"
             >
-              🗑️
+              <Trash2 size={14} />
             </button>
           </motion.div>
         )}
@@ -336,7 +342,7 @@ function SavePresetDialog({ onSave, onCancel }: SavePresetDialogProps) {
               type="text"
               className={cn(
                 'w-full px-3 py-2 rounded-lg border border-border',
-                'bg-background focus:outline-none focus:ring-2 focus:ring-ring'
+                'bg-background focus:outline-hidden focus:ring-2 focus:ring-ring'
               )}
               placeholder="My Filter Preset"
               value={name}
@@ -353,7 +359,7 @@ function SavePresetDialog({ onSave, onCancel }: SavePresetDialogProps) {
             <textarea
               className={cn(
                 'w-full px-3 py-2 rounded-lg border border-border resize-none',
-                'bg-background focus:outline-none focus:ring-2 focus:ring-ring'
+                'bg-background focus:outline-hidden focus:ring-2 focus:ring-ring'
               )}
               placeholder="Describe what this preset filters..."
               rows={2}
@@ -414,7 +420,7 @@ function SavePresetDialog({ onSave, onCancel }: SavePresetDialogProps) {
             className={cn(
               'px-4 py-2 text-sm rounded-lg transition-colors',
               'bg-primary text-primary-foreground hover:bg-primary/90',
-              'disabled:opacity-50 disabled:cursor-not-allowed'
+              'disabled:filter-disabled'
             )}
             onClick={handleSave}
             disabled={!name.trim()}
@@ -483,7 +489,7 @@ function EditPresetDialog({ preset, onSave, onCancel }: EditPresetDialogProps) {
               type="text"
               className={cn(
                 'w-full px-3 py-2 rounded-lg border border-border',
-                'bg-background focus:outline-none focus:ring-2 focus:ring-ring'
+                'bg-background focus:outline-hidden focus:ring-2 focus:ring-ring'
               )}
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -497,7 +503,7 @@ function EditPresetDialog({ preset, onSave, onCancel }: EditPresetDialogProps) {
             <textarea
               className={cn(
                 'w-full px-3 py-2 rounded-lg border border-border resize-none',
-                'bg-background focus:outline-none focus:ring-2 focus:ring-ring'
+                'bg-background focus:outline-hidden focus:ring-2 focus:ring-ring'
               )}
               rows={2}
               value={description}
@@ -557,7 +563,7 @@ function EditPresetDialog({ preset, onSave, onCancel }: EditPresetDialogProps) {
             className={cn(
               'px-4 py-2 text-sm rounded-lg transition-colors',
               'bg-primary text-primary-foreground hover:bg-primary/90',
-              'disabled:opacity-50 disabled:cursor-not-allowed'
+              'disabled:filter-disabled'
             )}
             onClick={handleSave}
             disabled={!name.trim()}
@@ -604,8 +610,8 @@ export function PresetQuickAccess({
               : 'bg-background border-border hover:border-primary/50'
           )}
           onClick={() => onSelect(preset)}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
+          whileHover={{ scale: FILTER_SCALE.hover }}
+          whileTap={{ scale: FILTER_SCALE.tap }}
           title={preset.description}
         >
           <span>{preset.icon}</span>

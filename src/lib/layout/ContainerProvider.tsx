@@ -299,7 +299,7 @@ function ContainerDebugOverlay({
       <div className="flex flex-col gap-0.5">
         <span className="text-yellow-400">{name}</span>
         <span>
-          bp: <span className="text-cyan-400">{breakpoint}</span>
+          bp: <span className="text-brand-hover">{breakpoint}</span>
         </span>
         <span>
           {Math.round(dimensions.width)} x {Math.round(dimensions.height)}

@@ -30,7 +30,7 @@ const variantClasses = {
   success: 'bg-green-500',
   warning: 'bg-orange-500',
   error: 'bg-red-500',
-  cyan: 'bg-cyan-500',
+  cyan: 'bg-brand',
   purple: 'bg-purple-500',
 };
 

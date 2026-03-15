@@ -6,6 +6,8 @@ import { X, Sparkles, Loader2 } from "lucide-react";
 import { useCurrentList } from "@/stores/use-list-store";
 import { topItemsApi } from "@/lib/api/top-items";
 import { toast } from "@/hooks/use-toast";
+import { SPRING } from "@/lib/animations/motion-presets";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 
 interface AddItemModalProps {
   isOpen: boolean;
@@ -27,6 +29,7 @@ interface FormData {
  * Includes AI-powered completion via Gemini
  */
 export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) {
+  const reducedMotion = useReducedMotion();
   const currentList = useCurrentList();
   const category = currentList?.category || '';
 
@@ -179,34 +182,34 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        className="fixed inset-0 bg-black/70 backdrop-blur-xl z-50 flex items-center justify-center p-4"
         onClick={onClose}
       >
         <motion.div
-          initial={{ opacity: 0, scale: 0.9, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
+          initial={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.9, y: 20 }}
+          animate={reducedMotion ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
-          transition={{ type: "spring", duration: 0.3 }}
-          className="bg-gray-900 rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-700 shadow-2xl"
+          transition={SPRING.smooth}
+          className="bg-slate-900 rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-slate-700 shadow-2xl"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-cyan-400" />
+                <Sparkles className="w-5 h-5 text-brand-hover" />
                 Add New Item
               </h2>
-              <p className="text-sm text-gray-400 mt-1">
+              <p className="text-sm text-slate-400 mt-1">
                 Create a new item for your {category} collection
               </p>
             </div>
             <button
               onClick={onClose}
-              className="p-2 rounded-lg hover:bg-gray-800 transition-colors"
+              className="p-2 rounded-lg hover:bg-slate-800 transition-colors"
               disabled={isSubmitting}
             >
-              <X className="w-5 h-5 text-gray-400" />
+              <X className="w-5 h-5 text-slate-400" />
             </button>
           </div>
 
@@ -214,7 +217,7 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Name Field */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-slate-300 mb-2">
                 Name <span className="text-red-400">*</span>
               </label>
               <input
@@ -222,8 +225,8 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
                 value={formData.name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
                 placeholder="Enter item name"
-                className={`w-full px-4 py-2 bg-gray-800 border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 ${
-                  errors.name ? 'border-red-500' : 'border-gray-700'
+                className={`w-full px-4 py-2 bg-slate-800 border rounded-lg text-white placeholder-slate-500 focus:outline-hidden focus:ring-2 focus:ring-brand ${
+                  errors.name ? 'border-red-500' : 'border-slate-700'
                 }`}
                 disabled={isSubmitting}
               />
@@ -234,20 +237,20 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
 
             {/* Category (read-only) */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-slate-300 mb-2">
                 Category
               </label>
               <input
                 type="text"
                 value={category}
-                className="w-full px-4 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-gray-400 cursor-not-allowed"
+                className="w-full px-4 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-slate-400 cursor-not-allowed"
                 disabled
               />
             </div>
 
             {/* Subcategory Field */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-slate-300 mb-2">
                 Subcategory
               </label>
               <input
@@ -255,18 +258,18 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
                 value={formData.subcategory}
                 onChange={(e) => handleInputChange('subcategory', e.target.value)}
                 placeholder="Enter subcategory (optional)"
-                className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-hidden focus:ring-2 focus:ring-brand"
                 disabled={isSubmitting}
               />
             </div>
 
             {/* AI Completion Button */}
-            <div className="flex items-center gap-2 pb-2 border-b border-gray-700">
+            <div className="flex items-center gap-2 pb-2 border-b border-slate-700">
               <button
                 type="button"
                 onClick={handleAICompletion}
                 disabled={isLoadingAI || isSubmitting || !formData.name.trim()}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 disabled:from-gray-700 disabled:to-gray-700 disabled:cursor-not-allowed text-white rounded-lg transition-all text-sm font-medium"
+                className="flex items-center gap-2 px-4 py-2 bg-linear-to-r from-purple-600 to-brand-muted hover:from-purple-500 hover:to-brand disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed text-white rounded-lg transition-all text-sm font-medium"
               >
                 {isLoadingAI ? (
                   <>
@@ -280,7 +283,7 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
                   </>
                 )}
               </button>
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-slate-500">
                 AI will fill in year, image, and description
               </span>
             </div>
@@ -289,7 +292,7 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
             <div className="grid grid-cols-2 gap-4">
               {/* Item Year */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-slate-300 mb-2">
                   Year Created
                 </label>
                 <input
@@ -299,14 +302,14 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
                   placeholder="e.g., 2020"
                   min="1000"
                   max={new Date().getFullYear() + 10}
-                  className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-hidden focus:ring-2 focus:ring-brand"
                   disabled={isSubmitting}
                 />
               </div>
 
               {/* Item Year To */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-slate-300 mb-2">
                   Year To (optional)
                 </label>
                 <input
@@ -316,7 +319,7 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
                   placeholder="e.g., 2024"
                   min="1000"
                   max={new Date().getFullYear() + 10}
-                  className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-hidden focus:ring-2 focus:ring-brand"
                   disabled={isSubmitting}
                 />
               </div>
@@ -324,7 +327,7 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
 
             {/* Image URL */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-slate-300 mb-2">
                 Image URL
               </label>
               <input
@@ -332,7 +335,7 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
                 value={formData.image_url || ''}
                 onChange={(e) => handleInputChange('image_url', e.target.value)}
                 placeholder="https://upload.wikimedia.org/..."
-                className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm"
+                className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-hidden focus:ring-2 focus:ring-brand text-sm"
                 disabled={isSubmitting}
               />
               {formData.image_url && (
@@ -340,7 +343,7 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
                   <img
                     src={formData.image_url}
                     alt="Preview"
-                    className="w-24 h-24 object-cover rounded-lg border border-gray-700"
+                    className="w-24 h-24 object-cover rounded-lg border border-slate-700"
                     onError={(e) => {
                       e.currentTarget.style.display = 'none';
                     }}
@@ -351,7 +354,7 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-slate-300 mb-2">
                 Description
               </label>
               <textarea
@@ -359,25 +362,25 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
                 onChange={(e) => handleInputChange('description', e.target.value)}
                 placeholder="Enter description (optional)"
                 rows={3}
-                className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none"
+                className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-hidden focus:ring-2 focus:ring-brand resize-none"
                 disabled={isSubmitting}
               />
             </div>
 
             {/* Actions */}
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-700">
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-700">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={isSubmitting}
-                className="px-4 py-2 text-gray-400 hover:text-gray-300 transition-colors disabled:opacity-50"
+                className="px-4 py-2 text-slate-400 hover:text-slate-300 transition-colors disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting || !formData.name.trim()}
-                className="px-6 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 disabled:from-gray-700 disabled:to-gray-700 disabled:cursor-not-allowed text-white rounded-lg transition-all font-medium flex items-center gap-2"
+                className="px-6 py-2 bg-linear-to-r from-brand to-blue-500 hover:from-brand-hover hover:to-blue-400 disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed text-white rounded-lg transition-all font-medium flex items-center gap-2"
               >
                 {isSubmitting ? (
                   <>

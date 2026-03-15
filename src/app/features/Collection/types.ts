@@ -37,7 +37,7 @@ export interface CollectionFilter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export interface CollectionStats {
+export interface ItemPanelStats {
   totalItems: number;
   selectedItems: number;
   visibleGroups: number;

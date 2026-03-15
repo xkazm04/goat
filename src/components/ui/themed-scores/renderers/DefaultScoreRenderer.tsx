@@ -1,11 +1,9 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { formatScore } from "@/lib/constants/scoring";
+import { AnimatedProgressBar } from "./AnimatedProgressBar";
 import type { ScoreRendererProps } from "./types";
-
-// Animation configuration
-const ANIMATION_DURATION = 0.5;
 
 /**
  * Default score renderer with clean minimal styling.
@@ -39,15 +37,14 @@ export function DefaultScoreRenderer({
           variant === "inline" && "h-1 w-16"
         )}
       >
-        <motion.div
-          className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-cyan-600 to-cyan-400"
-          initial={animated ? { width: 0 } : false}
-          animate={{ width: `${score}%` }}
-          transition={{ duration: ANIMATION_DURATION, ease: "easeOut" }}
+        <AnimatedProgressBar
+          score={score}
+          animated={animated}
+          fillClassName="rounded-full bg-linear-to-r from-brand-muted to-brand-hover"
         />
       </div>
       {showLabel && variant !== "inline" && (
-        <span className="ml-2 text-xs text-gray-400">{score.toFixed(0)}</span>
+        <span className="ml-2 text-xs text-gray-400">{formatScore(score)}</span>
       )}
     </div>
   );

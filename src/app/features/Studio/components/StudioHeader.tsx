@@ -26,7 +26,7 @@ export function StudioHeader({
   return (
     <header className="relative border-b border-gray-800/80 backdrop-blur-xl sticky top-0 z-sticky bg-black/80">
       {/* Subtle top line */}
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-600/30 to-transparent" />
+      <div className="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-gray-600/30 to-transparent" />
 
       <div className="max-w-7xl mx-auto px-4 py-3">
         <div className="flex items-center gap-4">

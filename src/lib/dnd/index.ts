@@ -6,9 +6,6 @@
  */
 
 export {
-  // Core class
-  TransferProtocol,
-
   // Interfaces
   type TransferableItem,
   type TransferSource,
@@ -22,25 +19,12 @@ export {
   type DropReceiverType,
   type TransferAction,
 
-  // Factory functions
-  createBacklogSource,
-  createGridSource,
-  createCollectionSource,
-  createGridPositionReceiver,
-  createCollectionListReceiver,
-
   // Utility functions
   extractGridPosition,
   createGridReceiverId,
   isGridReceiverId,
   toTransferableItem,
-
-  // Global instance
-  getGlobalTransferProtocol,
-  resetGlobalTransferProtocol,
 } from './transfer-protocol';
-
-export { useTransferProtocol, TransferProtocolProvider, useTransferContext } from './use-transfer-protocol';
 
 // Lazy-loaded DnD components for code splitting
 export {

@@ -145,7 +145,7 @@ export const WinnerBadge = memo(function WinnerBadge({
       className={`
         inline-flex items-center gap-1.5 rounded-full
         ${sizeConfig.badge}
-        bg-gradient-to-r from-amber-500/20 to-yellow-500/20
+        bg-linear-to-r from-amber-500/20 to-yellow-500/20
         text-amber-400
         border border-amber-500/40
         shadow-lg shadow-amber-500/20

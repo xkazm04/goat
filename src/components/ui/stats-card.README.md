@@ -190,7 +190,7 @@ import { TrendingUpIcon, UsersIcon, DollarSignIcon } from "lucide-react";
 ```tsx
 <StatsCard
   metrics={metrics}
-  className="p-4 bg-gradient-to-r from-purple-900/20 to-blue-900/20 border border-purple-500/30 rounded-xl"
+  className="p-4 bg-linear-to-r from-purple-900/20 to-blue-900/20 border border-purple-500/30 rounded-xl"
   itemClassName="hover:scale-105 transition-transform"
 />
 ```

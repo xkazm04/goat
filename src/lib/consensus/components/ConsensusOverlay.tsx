@@ -147,11 +147,10 @@ export const ModeSelector = memo(function ModeSelector({
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            className="absolute top-full left-0 mt-2 w-56 rounded-xl overflow-hidden z-50"
+            className="absolute top-full left-0 mt-2 w-56 rounded-xl overflow-hidden z-50 backdrop-blur-md"
             style={{
               background: "rgba(30, 41, 59, 0.95)",
               border: "1px solid rgba(71, 85, 105, 0.4)",
-              backdropFilter: "blur(12px)",
             }}
             initial={{ opacity: 0, y: -10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -436,11 +435,10 @@ export const ConsensusOverlayPanel = memo(function ConsensusOverlayPanel({
 }) {
   return (
     <div
-      className="rounded-xl overflow-hidden"
+      className="rounded-xl overflow-hidden backdrop-blur-md"
       style={{
         background: "rgba(30, 41, 59, 0.6)",
         border: "1px solid rgba(71, 85, 105, 0.3)",
-        backdropFilter: "blur(12px)",
       }}
     >
       {/* Header */}

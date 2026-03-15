@@ -9,15 +9,13 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  SyncStatus,
   SyncState,
   SyncQueueState,
   ConflictRecord,
   ConflictResolutionStrategy,
 } from './types';
 import { getOfflineStorage } from './OfflineStorage';
-import { getSyncQueue, SyncExecutor } from './SyncQueue';
-import { getConflictResolver } from './ConflictResolver';
+import { getSyncQueue } from './SyncQueue';
 import { getNetworkMonitor } from './NetworkMonitor';
 import { ListSession } from '@/stores/item-store/types';
 
@@ -46,9 +44,7 @@ export interface UseOfflineSyncReturn {
 const SYNC_DEBOUNCE_MS = 500;
 const AUTO_SYNC_INTERVAL_MS = 30000; // 30 seconds
 
-export function useOfflineSync(
-  syncExecutor?: SyncExecutor
-): UseOfflineSyncReturn {
+export function useOfflineSync(): UseOfflineSyncReturn {
   const [syncState, setSyncState] = useState<SyncState>({
     status: 'idle',
     lastSyncedAt: null,
@@ -72,22 +68,8 @@ export function useOfflineSync(
     const storage = getOfflineStorage();
     const syncQueue = getSyncQueue();
     const networkMonitor = getNetworkMonitor();
-    const conflictResolver = getConflictResolver();
 
-    // Initialize storage
-    storage.initialize();
-
-    // Configure sync executor if provided
-    if (syncExecutor) {
-      syncQueue.setExecutor(syncExecutor);
-    }
-
-    // Set up conflict handler
-    syncQueue.setConflictHandler(async (operation, serverData) => {
-      return conflictResolver.createConflictRecord(operation, serverData);
-    });
-
-    // Set up sync queue events
+    // Set up sync queue events (React state handlers)
     syncQueue.setEvents({
       onSyncStart: () => {
         setSyncState((prev) => ({
@@ -191,7 +173,7 @@ export function useOfflineSync(
         clearTimeout(syncDebounceRef.current);
       }
     };
-  }, [syncExecutor]);
+  }, []);
 
   // Save session with debounced sync
   const saveSession = useCallback(async (session: ListSession): Promise<void> => {

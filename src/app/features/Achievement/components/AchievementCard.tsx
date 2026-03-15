@@ -200,7 +200,7 @@ export function AchievementCard({
         {/* Achievement icon/visual */}
         <div className="flex items-center gap-4 mb-5">
           <motion.div
-            className="relative flex-shrink-0"
+            className="relative shrink-0"
             animate={config.animated && achievement.unlocked ? {
               scale: [1, 1.05, 1],
             } : {}}
@@ -421,7 +421,7 @@ export function AchievementCardCompact({
     >
       {/* Icon */}
       <div
-        className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+        className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
         style={{
           background: achievement.unlocked ? tierConfig.gradient : 'rgba(255, 255, 255, 0.05)',
           opacity: achievement.unlocked ? 1 : 0.5,
@@ -442,7 +442,7 @@ export function AchievementCardCompact({
         <div className="flex items-center gap-2">
           <span className="font-semibold text-white truncate">{achievement.title}</span>
           {achievement.unlocked && (
-            <svg className="w-4 h-4 text-green-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <svg className="w-4 h-4 text-green-400 shrink-0" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
             </svg>
           )}
@@ -462,7 +462,7 @@ export function AchievementCardCompact({
       </div>
 
       {/* Arrow */}
-      <svg className="w-5 h-5 text-gray-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <svg className="w-5 h-5 text-gray-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
       </svg>
     </motion.button>

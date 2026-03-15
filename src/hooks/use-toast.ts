@@ -2,13 +2,10 @@
 
 // Inspired by react-hot-toast library
 import * as React from 'react';
-import { ToasterProps } from 'sonner';
-
-
 const TOAST_LIMIT = 1;
 const TOAST_REMOVE_DELAY = 1000000;
 
-type ToasterToast = ToasterProps & {
+type ToasterToast = {
   id: string;
   title?: React.ReactNode;
   description?: React.ReactNode;

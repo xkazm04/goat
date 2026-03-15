@@ -6,11 +6,11 @@
  */
 
 import { getOfflineStorage } from './OfflineStorage';
-import { getSyncQueue, SyncExecutor } from './SyncQueue';
+import { getSyncQueue, BatchSyncExecutor, SyncExecutorResult } from './SyncQueue';
 import { getConflictResolver } from './ConflictResolver';
 import { getNetworkMonitor } from './NetworkMonitor';
 import { ListSession } from '@/stores/item-store/types';
-import { SyncOperation, ConflictRecord } from './types';
+import { SyncOperation } from './types';
 
 // Debounce time for syncing to offline storage
 const OFFLINE_SAVE_DEBOUNCE_MS = 300;
@@ -20,53 +20,45 @@ let isInitialized = false;
 let saveDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 /**
- * Sync executor that sends operations to the sync API endpoint
+ * Batch sync executor that sends all pending operations in a single HTTP request
  */
-const defaultSyncExecutor: SyncExecutor = async (operation: SyncOperation) => {
-  console.log('[OfflineSync] Executing operation:', operation.type, operation.entityId);
+const defaultBatchSyncExecutor: BatchSyncExecutor = async (operations: SyncOperation[]) => {
+  console.log('[OfflineSync] Batch executing', operations.length, 'operations');
 
-  try {
-    const response = await fetch('/api/sync', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        operations: [operation],
-      }),
-    });
+  const response = await fetch('/api/sync', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ operations }),
+  });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      return {
-        success: false,
-        error: errorData.error || `HTTP ${response.status}`,
-      };
-    }
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    const errorMsg = errorData.error || `HTTP ${response.status}`;
+    // Return failure for every operation in the batch
+    return operations.map((op): SyncExecutorResult => ({
+      success: false,
+      error: errorMsg,
+    }));
+  }
 
-    const data = await response.json();
-    const result = data.results?.[0];
+  const data = await response.json();
+  const serverResults = data.results ?? [];
 
+  // Map server results back to operations by index
+  return operations.map((op, i): SyncExecutorResult => {
+    const result = serverResults[i];
     if (!result) {
-      return {
-        success: false,
-        error: 'No result returned from sync API',
-      };
+      return { success: false, error: 'No result returned from sync API' };
     }
-
     return {
       success: result.success,
       serverVersion: result.serverVersion,
       error: result.error,
       serverData: result.serverData,
     };
-  } catch (error) {
-    // Network error - operation will be retried
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Network error',
-    };
-  }
+  });
 };
 
 /**
@@ -74,7 +66,7 @@ const defaultSyncExecutor: SyncExecutor = async (operation: SyncOperation) => {
  * Call this once at app startup
  */
 export async function initializeOfflineSessionSync(
-  customSyncExecutor?: SyncExecutor
+  customBatchExecutor?: BatchSyncExecutor
 ): Promise<void> {
   if (isInitialized) {
     console.log('[OfflineSync] Already initialized');
@@ -84,51 +76,20 @@ export async function initializeOfflineSessionSync(
   const storage = getOfflineStorage();
   const syncQueue = getSyncQueue();
   const conflictResolver = getConflictResolver();
-  const networkMonitor = getNetworkMonitor();
 
   // Initialize storage
   await storage.initialize();
 
-  // Configure sync executor
-  syncQueue.setExecutor(customSyncExecutor ?? defaultSyncExecutor);
+  // Configure batch sync executor
+  syncQueue.setBatchExecutor(customBatchExecutor ?? defaultBatchSyncExecutor);
 
   // Configure conflict handler
   syncQueue.setConflictHandler(async (operation: SyncOperation, serverData: unknown) => {
     return conflictResolver.createConflictRecord(operation, serverData);
   });
 
-  // Set up sync queue event handlers
-  syncQueue.setEvents({
-    onSyncStart: () => {
-      console.log('[OfflineSync] Sync started');
-    },
-    onSyncComplete: (successful, failed) => {
-      console.log(`[OfflineSync] Sync complete: ${successful} succeeded, ${failed} failed`);
-    },
-    onSyncError: (error) => {
-      console.error('[OfflineSync] Sync error:', error);
-    },
-    onConflictDetected: (conflict: ConflictRecord) => {
-      console.warn('[OfflineSync] Conflict detected:', conflict.entityId);
-    },
-  });
-
-  // Subscribe to network status changes
-  networkMonitor.subscribe((state) => {
-    if (state.status !== 'offline') {
-      // Trigger sync when coming back online
-      console.log('[OfflineSync] Network available, processing queue');
-      syncQueue.processQueue();
-    }
-  });
-
-  // Process any pending operations on startup
-  if (networkMonitor.isOnline()) {
-    syncQueue.processQueue();
-  }
-
   isInitialized = true;
-  console.log('[OfflineSync] Initialized');
+  console.log('[OfflineSync] Initialized with batch sync');
 }
 
 /**
@@ -232,15 +193,6 @@ export async function getPendingOperationsCount(): Promise<number> {
 }
 
 /**
- * Get all offline sessions
- */
-export async function getAllOfflineSessions(): Promise<ListSession[]> {
-  const storage = getOfflineStorage();
-  const records = await storage.getAllSessions();
-  return records.map((r) => r.data);
-}
-
-/**
  * Merge offline and online session data
  * Returns the merged session, preferring more recent changes
  */
@@ -280,15 +232,3 @@ export async function triggerSync(): Promise<void> {
   await syncQueue.processQueue();
 }
 
-/**
- * Clear all offline data (use with caution!)
- */
-export async function clearAllOfflineData(): Promise<void> {
-  const storage = getOfflineStorage();
-  const syncQueue = getSyncQueue();
-
-  await storage.clearAll();
-  await syncQueue.clearAll();
-
-  console.log('[OfflineSync] All offline data cleared');
-}

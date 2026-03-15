@@ -18,40 +18,34 @@ export const MAX_HISTORY_ENTRIES = 10;
 
 interface ComparisonStoreState {
   // Core state
-  isComparisonOpen: boolean;
+  isOpen: boolean;
   items: BacklogItemType[];
   selectedForComparison: string[];
   comparisonMode: 'grid' | 'list' | 'side-by-side';
-
-  // New comparison mode state
-  isComparisonPanelOpen: boolean;
   comparisonHistory: ComparisonHistoryEntry[];
   activeComparisonId: string | null;
 
-  // Actions
-  openComparison: () => void;
-  closeComparison: () => void;
-  addToComparison: (item: BacklogItemType) => void;
-  removeFromComparison: (itemId: string) => void;
-  toggleComparisonSelection: (itemId: string) => void;
-  clearComparison: () => void;
+  // Actions - Open/Close
+  open: () => void;
+  close: () => void;
+
+  // Actions - Item Management
+  toggleItem: (item: BacklogItemType) => void;
+  removeItem: (itemId: string) => void;
+  selectMultipleItems: (items: BacklogItemType[]) => void;
+  swapItem: (oldItemId: string, newItem: BacklogItemType) => void;
+  reorderItems: (fromIndex: number, toIndex: number) => void;
+  clearAll: () => void;
+  clearSelection: () => void;
   setComparisonMode: (mode: 'grid' | 'list' | 'side-by-side') => void;
 
-  // New actions for comparison panel
-  openComparisonPanel: () => void;
-  closeComparisonPanel: () => void;
-  toggleItemSelection: (item: BacklogItemType) => void;
-  selectMultipleItems: (items: BacklogItemType[]) => void;
-  clearSelection: () => void;
-  swapComparisonItem: (oldItemId: string, newItem: BacklogItemType) => void;
+  // Actions - History
   recordComparison: (winnerId?: string) => void;
   loadHistoryComparison: (historyId: string) => void;
   clearHistory: () => void;
-  reorderComparisonItems: (fromIndex: number, toIndex: number) => void;
 
   // Utilities
   isInComparison: (itemId: string) => boolean;
-  isSelected: (itemId: string) => boolean;
   canAddMore: () => boolean;
   canCompare: () => boolean;
   getSelectedItems: () => BacklogItemType[];
@@ -61,118 +55,65 @@ export const useComparisonStore = create<ComparisonStoreState>()(
   persist(
     (set, get) => ({
       // Initial state
-      isComparisonOpen: false,
+      isOpen: false,
       items: [],
       selectedForComparison: [],
       comparisonMode: 'grid',
-      isComparisonPanelOpen: false,
       comparisonHistory: [],
       activeComparisonId: null,
 
-      // Actions
-      openComparison: () => set({ isComparisonOpen: true }),
+      // Open/Close
+      open: () => set({ isOpen: true }),
+      close: () => set({ isOpen: false }),
 
-      closeComparison: () => set({ isComparisonOpen: false }),
-
-      addToComparison: (item) => {
-        set(state => {
-          // Check if item already exists
-          if (state.items.some(i => i.id === item.id)) {
-            return state;
-          }
-
-          return {
-            items: [...state.items, item],
-            // Open comparison automatically when adding the first item
-            isComparisonOpen: state.items.length === 0 ? true : state.isComparisonOpen
-          };
-        });
-      },
-
-      removeFromComparison: (itemId) => {
-        set(state => {
-          const newItems = state.items.filter(item => item.id !== itemId);
-
-          return {
-            items: newItems,
-            // Remove from selected items if it was selected
-            selectedForComparison: state.selectedForComparison.filter(id => id !== itemId),
-            // Close comparison if no items left
-            isComparisonOpen: newItems.length > 0 ? state.isComparisonOpen : false
-          };
-        });
-      },
-
-      toggleComparisonSelection: (itemId) => {
-        set(state => ({
-          selectedForComparison: state.selectedForComparison.includes(itemId)
-            ? state.selectedForComparison.filter(id => id !== itemId)
-            : [...state.selectedForComparison, itemId]
-        }));
-      },
-
-      clearComparison: () => {
-        set({
-          items: [],
-          selectedForComparison: [],
-          isComparisonOpen: false,
-          isComparisonPanelOpen: false,
-          activeComparisonId: null
-        });
-      },
-
-      setComparisonMode: (mode) => {
-        set({ comparisonMode: mode });
-      },
-
-      // New actions for comparison panel
-      openComparisonPanel: () => {
-        const state = get();
-        if (state.selectedForComparison.length >= MIN_COMPARISON_ITEMS) {
-          set({ isComparisonPanelOpen: true });
-        }
-      },
-
-      closeComparisonPanel: () => {
-        set({ isComparisonPanelOpen: false });
-      },
-
-      toggleItemSelection: (item) => {
+      // Item Management
+      toggleItem: (item) => {
         set(state => {
           const isCurrentlySelected = state.selectedForComparison.includes(item.id);
 
           if (isCurrentlySelected) {
-            // Remove from selection
+            // Remove from selection and items
+            const newItems = state.items.filter(i => i.id !== item.id);
             return {
               selectedForComparison: state.selectedForComparison.filter(id => id !== item.id),
-              items: state.items.filter(i => i.id !== item.id)
+              items: newItems,
+              isOpen: newItems.length > 0 ? state.isOpen : false
             };
           } else {
             // Add to selection if under limit
             if (state.selectedForComparison.length >= MAX_COMPARISON_ITEMS) {
-              return state; // At limit, don't add
+              return state;
             }
 
-            // Add item if not already in items array
             const newItems = state.items.some(i => i.id === item.id)
               ? state.items
               : [...state.items, item];
 
             return {
               selectedForComparison: [...state.selectedForComparison, item.id],
-              items: newItems
+              items: newItems,
+              isOpen: true
             };
           }
         });
       },
 
+      removeItem: (itemId) => {
+        set(state => {
+          const newItems = state.items.filter(item => item.id !== itemId);
+          return {
+            items: newItems,
+            selectedForComparison: state.selectedForComparison.filter(id => id !== itemId),
+            isOpen: newItems.length > 0 ? state.isOpen : false
+          };
+        });
+      },
+
       selectMultipleItems: (items) => {
         set(state => {
-          // Take only up to MAX items
           const itemsToAdd = items.slice(0, MAX_COMPARISON_ITEMS);
           const newIds = itemsToAdd.map(i => i.id);
 
-          // Merge with existing items, avoiding duplicates
           const existingItemsById = new Map(state.items.map(i => [i.id, i]));
           itemsToAdd.forEach(item => existingItemsById.set(item.id, item));
 
@@ -183,22 +124,12 @@ export const useComparisonStore = create<ComparisonStoreState>()(
         });
       },
 
-      clearSelection: () => {
-        set({
-          selectedForComparison: [],
-          isComparisonPanelOpen: false,
-          activeComparisonId: null
-        });
-      },
-
-      swapComparisonItem: (oldItemId, newItem) => {
+      swapItem: (oldItemId, newItem) => {
         set(state => {
-          // Replace old item with new item in selection
           const newSelectedIds = state.selectedForComparison.map(id =>
             id === oldItemId ? newItem.id : id
           );
 
-          // Update items array
           const newItems = state.items.filter(i => i.id !== oldItemId);
           if (!newItems.some(i => i.id === newItem.id)) {
             newItems.push(newItem);
@@ -211,6 +142,37 @@ export const useComparisonStore = create<ComparisonStoreState>()(
         });
       },
 
+      reorderItems: (fromIndex, toIndex) => {
+        set(state => {
+          const newSelected = [...state.selectedForComparison];
+          const [removed] = newSelected.splice(fromIndex, 1);
+          newSelected.splice(toIndex, 0, removed);
+          return { selectedForComparison: newSelected };
+        });
+      },
+
+      clearAll: () => {
+        set({
+          items: [],
+          selectedForComparison: [],
+          isOpen: false,
+          activeComparisonId: null
+        });
+      },
+
+      clearSelection: () => {
+        set({
+          selectedForComparison: [],
+          isOpen: false,
+          activeComparisonId: null
+        });
+      },
+
+      setComparisonMode: (mode) => {
+        set({ comparisonMode: mode });
+      },
+
+      // History
       recordComparison: (winnerId) => {
         set(state => {
           const selectedItems = state.items.filter(i =>
@@ -229,7 +191,6 @@ export const useComparisonStore = create<ComparisonStoreState>()(
             winnerId
           };
 
-          // Add to history, keeping only last MAX entries
           const newHistory = [historyEntry, ...state.comparisonHistory]
             .slice(0, MAX_HISTORY_ENTRIES);
 
@@ -245,7 +206,6 @@ export const useComparisonStore = create<ComparisonStoreState>()(
           const historyEntry = state.comparisonHistory.find(h => h.id === historyId);
           if (!historyEntry) return state;
 
-          // Find matching items that still exist
           const matchingItems = state.items.filter(item =>
             historyEntry.itemIds.includes(item.id)
           );
@@ -253,7 +213,7 @@ export const useComparisonStore = create<ComparisonStoreState>()(
           return {
             selectedForComparison: matchingItems.map(i => i.id),
             activeComparisonId: historyId,
-            isComparisonPanelOpen: matchingItems.length >= MIN_COMPARISON_ITEMS
+            isOpen: matchingItems.length >= MIN_COMPARISON_ITEMS
           };
         });
       },
@@ -262,22 +222,9 @@ export const useComparisonStore = create<ComparisonStoreState>()(
         set({ comparisonHistory: [], activeComparisonId: null });
       },
 
-      reorderComparisonItems: (fromIndex, toIndex) => {
-        set(state => {
-          const newSelected = [...state.selectedForComparison];
-          const [removed] = newSelected.splice(fromIndex, 1);
-          newSelected.splice(toIndex, 0, removed);
-          return { selectedForComparison: newSelected };
-        });
-      },
-
       // Utilities
       isInComparison: (itemId) => {
         return get().items.some(item => item.id === itemId);
-      },
-
-      isSelected: (itemId) => {
-        return get().selectedForComparison.includes(itemId);
       },
 
       canAddMore: () => {
@@ -307,25 +254,8 @@ export const useComparisonStore = create<ComparisonStoreState>()(
 );
 
 // Selector hooks
-export const useComparisonItems = () => useComparisonStore(state => state.items);
-export const useComparisonState = () => useComparisonStore(state => ({
-  isOpen: state.isComparisonOpen,
-  mode: state.comparisonMode,
-  selectedItem: state.selectedForComparison
-}));
-export const useComparisonActions = () => useComparisonStore(state => ({
-  open: state.openComparison,
-  close: state.closeComparison,
-  add: state.addToComparison,
-  remove: state.removeFromComparison,
-  clear: state.clearComparison,
-  toggleSelection: state.toggleComparisonSelection,
-  setMode: state.setComparisonMode
-}));
-
-// New selector hooks for comparison panel
 export const useComparisonPanelState = () => useComparisonStore(state => ({
-  isOpen: state.isComparisonPanelOpen,
+  isOpen: state.isOpen,
   selectedIds: state.selectedForComparison,
   selectedItems: state.getSelectedItems(),
   canAddMore: state.canAddMore(),
@@ -335,15 +265,15 @@ export const useComparisonPanelState = () => useComparisonStore(state => ({
 }));
 
 export const useComparisonPanelActions = () => useComparisonStore(state => ({
-  openPanel: state.openComparisonPanel,
-  closePanel: state.closeComparisonPanel,
-  toggleSelection: state.toggleItemSelection,
+  openPanel: state.open,
+  closePanel: state.close,
+  toggleSelection: state.toggleItem,
   selectMultiple: state.selectMultipleItems,
   clearSelection: state.clearSelection,
-  swapItem: state.swapComparisonItem,
+  swapItem: state.swapItem,
   recordComparison: state.recordComparison,
   loadHistory: state.loadHistoryComparison,
   clearHistory: state.clearHistory,
-  reorder: state.reorderComparisonItems,
-  isSelected: state.isSelected
+  reorder: state.reorderItems,
+  isSelected: (itemId: string) => state.selectedForComparison.includes(itemId)
 }));

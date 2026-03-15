@@ -18,6 +18,7 @@ import {
   NetworkState,
   OfflineConfig,
   DEFAULT_OFFLINE_CONFIG,
+  EntityType,
 } from './types';
 
 // =============================================================================
@@ -34,7 +35,7 @@ export interface SyncEngineConfig extends Partial<OfflineConfig> {
   /** Enable Background Sync API (default: true) */
   useBackgroundSync?: boolean;
   /** Selective sync - entity types to sync */
-  syncEntityTypes?: Array<'session' | 'grid' | 'backlog'>;
+  syncEntityTypes?: EntityType[];
   /** API endpoint for sync operations */
   syncEndpoint?: string;
 }
@@ -55,12 +56,6 @@ export interface SyncResult {
   failed: number;
   conflicts: number;
   duration: number;
-}
-
-export interface SelectiveSyncOptions {
-  entityTypes?: Array<'session' | 'grid' | 'backlog'>;
-  entityIds?: string[];
-  priority?: 'high' | 'normal' | 'low';
 }
 
 // =============================================================================
@@ -189,7 +184,7 @@ export class SyncEngine {
   /**
    * Trigger a full sync
    */
-  async sync(options?: SelectiveSyncOptions): Promise<SyncResult> {
+  async sync(): Promise<SyncResult> {
     const startTime = Date.now();
 
     // Check if we can sync
@@ -274,7 +269,7 @@ export class SyncEngine {
   /**
    * Sync a specific entity
    */
-  async syncEntity(entityType: 'session' | 'grid' | 'backlog', entityId: string): Promise<boolean> {
+  async syncEntity(entityType: EntityType, entityId: string): Promise<boolean> {
     if (!this.canSync()) return false;
 
     const pendingOps = await this.storage.getPendingOperations();

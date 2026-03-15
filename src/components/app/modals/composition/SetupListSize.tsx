@@ -144,7 +144,7 @@ const SimpleListSizeSelector = memo(function SimpleListSizeSelector({
         <motion.button
           key={option.value}
           onClick={() => handleHierarchyChange(option.value)}
-          className={`w-full text-left p-4 rounded-xl transition-all duration-300 group cursor-pointer backdrop-blur-sm ${
+          className={`w-full text-left p-4 rounded-xl transition-all duration-300 group cursor-pointer backdrop-blur-xs ${
             activeHierarchy === option.value
               ? "text-white"
               : "text-slate-400 hover:text-slate-200"

@@ -64,7 +64,7 @@ export function StudioContentTabs() {
             {activeTab === tab.id && (
               <motion.div
                 layoutId="activeTab"
-                className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-500 to-orange-500"
+                className="absolute bottom-0 left-0 right-0 h-0.5 bg-linear-to-r from-amber-500 to-orange-500"
                 transition={{ type: 'spring', stiffness: 500, damping: 30 }}
               />
             )}

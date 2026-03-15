@@ -35,6 +35,15 @@ export interface ActiveItemData {
   image_url?: string;
 }
 
+export interface DragError {
+  /** The grid position where the error occurred (null for general errors) */
+  position: number | null;
+  /** Human-readable error message */
+  message: string;
+  /** Timestamp to uniquely identify each error event */
+  timestamp: number;
+}
+
 interface DragState {
   isDragging: boolean;
   activeItemId: string | null;
@@ -43,6 +52,7 @@ interface DragState {
   dropZonePositions: Map<number, DropZonePosition>;
   cursorPosition: { x: number; y: number };
   magneticState: MagneticState;
+  dragError: DragError | null;
 }
 
 interface DropZoneHighlightContextValue {
@@ -54,6 +64,7 @@ interface DropZoneHighlightContextValue {
   updateCursorPosition: (x: number, y: number) => void;
   updateMagneticState: (targetId: string | null, strength: number) => void;
   getClosestDropZones: (count?: number) => DropZonePosition[];
+  emitDragError: (position: number | null, message: string) => void;
 }
 
 const DropZoneHighlightContext = createContext<DropZoneHighlightContextValue | null>(null);
@@ -67,6 +78,7 @@ export function DropZoneHighlightProvider({ children }: { children: ReactNode })
     dropZonePositions: new Map(),
     cursorPosition: { x: 0, y: 0 },
     magneticState: { targetId: null, strength: 0 },
+    dragError: null,
   });
 
   const dropZoneRefs = useRef<Map<number, HTMLElement>>(new Map());
@@ -103,6 +115,23 @@ export function DropZoneHighlightProvider({ children }: { children: ReactNode })
       if (prev.magneticState.targetId === targetId && prev.magneticState.strength === strength) return prev;
       return { ...prev, magneticState: { targetId, strength } };
     });
+  }, []);
+
+  const dragErrorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const emitDragError = useCallback((position: number | null, message: string) => {
+    // Clear any previous error timeout
+    if (dragErrorTimeoutRef.current) {
+      clearTimeout(dragErrorTimeoutRef.current);
+    }
+
+    const error: DragError = { position, message, timestamp: Date.now() };
+    setDragState((prev) => ({ ...prev, dragError: error }));
+
+    // Auto-clear after 600ms (matches animation duration)
+    dragErrorTimeoutRef.current = setTimeout(() => {
+      setDragState((prev) => ({ ...prev, dragError: null }));
+    }, 600);
   }, []);
 
   const registerDropZone = useCallback((position: number, element: HTMLElement) => {
@@ -164,6 +193,7 @@ export function DropZoneHighlightProvider({ children }: { children: ReactNode })
     updateCursorPosition,
     updateMagneticState,
     getClosestDropZones,
+    emitDragError,
   });
   callbacksRef.current = {
     setIsDragging,
@@ -173,6 +203,7 @@ export function DropZoneHighlightProvider({ children }: { children: ReactNode })
     updateCursorPosition,
     updateMagneticState,
     getClosestDropZones,
+    emitDragError,
   };
 
   // Create stable context value - only dragState changes trigger re-renders
@@ -187,6 +218,7 @@ export function DropZoneHighlightProvider({ children }: { children: ReactNode })
       updateCursorPosition: (...args) => callbacksRef.current.updateCursorPosition(...args),
       updateMagneticState: (...args) => callbacksRef.current.updateMagneticState(...args),
       getClosestDropZones: (...args) => callbacksRef.current.getClosestDropZones(...args),
+      emitDragError: (...args) => callbacksRef.current.emitDragError(...args),
     };
   }
   // Update dragState in the value

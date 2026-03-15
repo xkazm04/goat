@@ -59,7 +59,7 @@ export function FeedbackErrorState({
         )}
         data-testid="feedback-error-inline"
       >
-        <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+        <AlertCircle className="w-5 h-5 text-red-400 shrink-0" />
         <p className="text-sm text-red-200 flex-1">{message}</p>
         {onDismiss && (
           <button
@@ -97,11 +97,11 @@ export function FeedbackErrorState({
         <AlertCircle className={cn('text-red-400', sizes.iconInner)} />
       </motion.div>
 
-      <h3 className={cn('font-semibold text-slate-200 mb-2', sizes.title)}>
+      <h3 className={cn('font-semibold text-gray-200 mb-2', sizes.title)}>
         {title}
       </h3>
 
-      <p className={cn('text-slate-400 max-w-md mb-4', sizes.text)}>
+      <p className={cn('text-gray-400 max-w-md mb-4', sizes.text)}>
         {message}
       </p>
 

@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Hash, Calendar, BarChart3, Loader2, Star, Clock } from "lucide-react";
 import { useListPreview } from "@/hooks/use-list-preview";
 import { getCategoryColor } from "@/lib/helpers/getColors";
+import { ELEVATION, INSET, withInset } from "@/components/visual/depth";
 
 interface ListPreviewPopoverProps {
   listId: string;
@@ -62,16 +63,11 @@ export function ListPreviewPopover({
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: side === "top" ? 5 : side === "bottom" ? -5 : 0, scale: 0.96 }}
               transition={{ duration: 0.15, ease: "easeOut" }}
-              className="w-64 rounded-xl overflow-hidden"
+              className="w-64 rounded-xl overflow-hidden backdrop-blur-sm"
               style={{
                 background: `linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(30, 41, 59, 0.98) 100%)`,
                 border: "1px solid rgba(255, 255, 255, 0.1)",
-                boxShadow: `
-                  0 20px 40px rgba(0, 0, 0, 0.4),
-                  0 0 30px rgba(0, 0, 0, 0.2),
-                  inset 0 1px 0 rgba(255, 255, 255, 0.05)
-                `,
-                backdropFilter: "blur(20px)",
+                boxShadow: withInset(ELEVATION.overlay),
               }}
             >
               {isLoading ? (
@@ -129,7 +125,7 @@ function PreviewContent({ data }: PreviewContentProps) {
       {/* Category badge and title */}
       <div className="flex items-start gap-3 mb-4">
         <div
-          className="flex-shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-bold text-white uppercase tracking-wide"
+          className="shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-bold text-white uppercase tracking-wide"
           style={{
             background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`,
             boxShadow: `0 2px 8px ${colors.primary}30`,
@@ -163,7 +159,7 @@ function PreviewContent({ data }: PreviewContentProps) {
           }}
           data-testid="list-preview-item-count"
         >
-          <Hash className="w-3.5 h-3.5 text-cyan-400" />
+          <Hash className="w-3.5 h-3.5 text-brand-hover" />
           <div>
             <div className="text-xs font-medium text-white">
               {data.itemCount}/{data.size}

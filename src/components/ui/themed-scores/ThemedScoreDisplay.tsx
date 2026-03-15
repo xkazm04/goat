@@ -166,7 +166,7 @@ function PreviewWrapper({
   if (!animated) {
     return (
       <div
-        className={`relative rounded-lg px-2 py-1.5 backdrop-blur-sm transition-all duration-200 ${className ?? ""}`}
+        className={`relative rounded-lg px-2 py-1.5 backdrop-blur-xs transition-all duration-200 ${className ?? ""}`}
         style={{
           backgroundColor: bgColor,
           border: `1px solid ${borderColor}`,
@@ -179,7 +179,7 @@ function PreviewWrapper({
 
   return (
     <motion.div
-      className={`relative rounded-lg px-2 py-1.5 backdrop-blur-sm ${className ?? ""}`}
+      className={`relative rounded-lg px-2 py-1.5 backdrop-blur-xs ${className ?? ""}`}
       style={{
         backgroundColor: bgColor,
         border: `1px solid ${borderColor}`,

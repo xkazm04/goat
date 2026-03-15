@@ -132,8 +132,8 @@ const INDICATOR_CONFIGS: Record<IndicatorType, Omit<IndicatorConfig, 'type'>> = 
   new: {
     icon: Sparkles,
     label: 'New',
-    color: 'text-cyan-400',
-    bgColor: 'bg-cyan-500/20 border-cyan-500/30',
+    color: 'text-brand-hover',
+    bgColor: 'bg-brand/20 border-brand/30',
     priority: 8,
   },
   recent: {
@@ -246,7 +246,7 @@ const Indicator = memo(function Indicator({
         animate={{ scale: 1 }}
         exit={{ scale: 0 }}
         className={cn(
-          'flex items-center justify-center rounded-full border backdrop-blur-sm',
+          'flex items-center justify-center rounded-full border backdrop-blur-xs',
           sizeConfig.container,
           config.bgColor
         )}
@@ -265,7 +265,7 @@ const Indicator = memo(function Indicator({
       animate={{ scale: 1 }}
       exit={{ scale: 0 }}
       className={cn(
-        'flex items-center justify-center rounded-full border backdrop-blur-sm',
+        'flex items-center justify-center rounded-full border backdrop-blur-xs',
         sizeConfig.container,
         config.bgColor,
         showLabel && 'rounded-md px-1.5'
@@ -401,7 +401,7 @@ export const RankedIndicator = memo(function RankedIndicator({
       initial={{ scale: 0 }}
       animate={{ scale: 1 }}
       className={cn(
-        'flex items-center justify-center rounded-full border backdrop-blur-sm',
+        'flex items-center justify-center rounded-full border backdrop-blur-xs',
         sizeConfig.container,
         config.bgColor,
         className
@@ -443,7 +443,7 @@ export const FavoriteIndicator = memo(function FavoriteIndicator({
         onClick?.();
       }}
       className={cn(
-        'flex items-center justify-center rounded-full border backdrop-blur-sm',
+        'flex items-center justify-center rounded-full border backdrop-blur-xs',
         sizeConfig.container,
         isFavorite
           ? 'bg-pink-500/20 border-pink-500/30'

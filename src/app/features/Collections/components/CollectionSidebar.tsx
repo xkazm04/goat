@@ -273,7 +273,7 @@ export const CollectionSidebar = memo(function CollectionSidebar({
         <motion.button
           className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
             selectedCollectionId === null
-              ? "bg-cyan-600/20 text-cyan-400"
+              ? "bg-brand-muted/20 text-brand-hover"
               : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-200"
           }`}
           onClick={handleShowAll}
@@ -299,7 +299,7 @@ export const CollectionSidebar = memo(function CollectionSidebar({
             {onCreateCollection && (
               <button
                 onClick={onCreateCollection}
-                className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors"
+                className="text-sm text-brand-hover hover:text-brand-hover transition-colors"
               >
                 Create your first collection
               </button>

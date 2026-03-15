@@ -112,7 +112,7 @@ export function ListGrid<T extends { id?: string | number }>({
         {onRetry && (
           <button
             onClick={onRetry}
-            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-white text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-white text-xs transition-colors focus-ring"
             data-testid={`${testId}-retry-btn`}
           >
             Try Again
@@ -165,7 +165,7 @@ export function ListGrid<T extends { id?: string | number }>({
               }}
               exit={{ opacity: 0, scale: EXIT_SCALE }}
               layout
-              className="focus-within:ring-2 focus-within:ring-cyan-500/50 rounded-lg transition-shadow"
+              className="focus-within:ring-2 focus-within:ring-brand/50 rounded-lg transition-shadow"
               data-testid={`${testId}-item-${key}`}
               role="listitem"
             >

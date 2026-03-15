@@ -45,11 +45,12 @@ import {
   createEmptyBracket,
   seedBracket,
   recordMatchupResult,
+  undoMatchupResult,
   bracketToRanking,
   type BracketState,
   type BracketSize,
-} from '@/app/features/Match/lib/bracketGenerator';
-import { seedParticipants, type SeedingStrategy } from '@/app/features/Match/lib/seedingEngine';
+} from '@/app/features/Match/sub_MatchBracket/lib/bracketGenerator';
+import { seedParticipants, type SeedingStrategy } from '@/app/features/Match/sub_MatchBracket/lib/seedingEngine';
 import { backlogToTransferable } from '@/lib/dnd/type-guards';
 import {
   calculateTierBoundaries,
@@ -233,6 +234,8 @@ interface RankingActions {
   // === Bracket Actions ===
   initializeBracket: (items: BacklogItem[], config: BracketConfig) => void;
   recordMatchup: (matchupId: string, winnerId: string) => void;
+  undoBracketMatchup: () => string | null;
+  revoteBracketMatchup: (matchupId: string) => void;
   applyBracketToRanking: () => void;
   resetBracket: () => void;
 
@@ -299,6 +302,7 @@ export const useRankingStore = create<RankingStore>()(
         directViewMode: 'podium' as DirectViewMode,
         bracketState: null,
         bracketConfig: null,
+        bracketUndoStack: [] as Array<{ bracketState: RankingBracketState; matchupId: string }>,
         tierState: initialTierState,
         tierConfig: DEFAULT_TIER_CONFIG,
         smartTierState: initialSmartTierState,
@@ -460,6 +464,7 @@ export const useRankingStore = create<RankingStore>()(
           set({
             bracketState,
             bracketConfig: config,
+            bracketUndoStack: [],
             activeMode: 'bracket',
           });
         },
@@ -468,6 +473,12 @@ export const useRankingStore = create<RankingStore>()(
           set(state => {
             if (!state.bracketState) return state;
 
+            // Snapshot current state for undo
+            const undoEntry = {
+              bracketState: structuredClone(state.bracketState),
+              matchupId,
+            };
+
             const updated = recordMatchupResult(state.bracketState, matchupId, winnerId);
             const bracketState: RankingBracketState = {
               ...updated,
@@ -475,7 +486,61 @@ export const useRankingStore = create<RankingStore>()(
               rankingSnapshot: state.bracketState.rankingSnapshot,
             };
 
-            return { bracketState };
+            return {
+              bracketState,
+              bracketUndoStack: [...state.bracketUndoStack, undoEntry],
+            };
+          });
+        },
+
+        undoBracketMatchup: () => {
+          let restoredMatchupId: string | null = null;
+          set(state => {
+            if (!state.bracketState || state.bracketUndoStack.length === 0) return state;
+
+            const stack = [...state.bracketUndoStack];
+            const lastEntry = stack.pop()!;
+            restoredMatchupId = lastEntry.matchupId;
+
+            return {
+              bracketState: lastEntry.bracketState,
+              bracketUndoStack: stack,
+            };
+          });
+          return restoredMatchupId;
+        },
+
+        revoteBracketMatchup: (matchupId) => {
+          set(state => {
+            if (!state.bracketState) return state;
+
+            const reverted = undoMatchupResult(state.bracketState, matchupId);
+            const bracketState: RankingBracketState = {
+              ...reverted,
+              appliedToRankingAt: state.bracketState.appliedToRankingAt,
+              rankingSnapshot: state.bracketState.rankingSnapshot,
+            };
+
+            // Clear undo stack entries at or after this matchup since we're rewriting history
+            // Find which entries are still valid (before the revoted matchup)
+            const matchupRound = reverted.rounds.find(r =>
+              r.matchups.some(m => m.id === matchupId)
+            );
+            const matchupObj = matchupRound?.matchups.find(m => m.id === matchupId);
+
+            let stack = state.bracketUndoStack;
+            if (matchupObj) {
+              // Keep only undo entries whose matchups are still complete in the reverted state
+              stack = stack.filter(entry => {
+                for (const round of reverted.rounds) {
+                  const m = round.matchups.find(mu => mu.id === entry.matchupId);
+                  if (m) return m.isComplete;
+                }
+                return false;
+              });
+            }
+
+            return { bracketState, bracketUndoStack: stack };
           });
         },
 
@@ -530,6 +595,7 @@ export const useRankingStore = create<RankingStore>()(
           set({
             bracketState: null,
             bracketConfig: null,
+            bracketUndoStack: [],
           });
         },
 

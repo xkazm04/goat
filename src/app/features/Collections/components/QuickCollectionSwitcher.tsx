@@ -120,7 +120,7 @@ export const QuickCollectionSwitcher = memo(function QuickCollectionSwitcher({
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Search collections..."
-                  className="w-full pl-9 pr-3 py-2 bg-slate-800/50 border border-slate-700/50 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500/50"
+                  className="w-full pl-9 pr-3 py-2 bg-slate-800/50 border border-slate-700/50 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-hidden focus:border-brand/50"
                   autoFocus
                 />
               </div>
@@ -133,7 +133,7 @@ export const QuickCollectionSwitcher = memo(function QuickCollectionSwitcher({
                 onClick={() => handleSelect(null)}
                 className={`w-full flex items-center gap-3 px-3 py-2 text-left text-sm transition-colors ${
                   !selectedCollectionId
-                    ? "bg-cyan-600/20 text-cyan-400"
+                    ? "bg-brand-muted/20 text-brand-hover"
                     : "text-slate-300 hover:bg-slate-800/50"
                 }`}
               >
@@ -156,7 +156,7 @@ export const QuickCollectionSwitcher = memo(function QuickCollectionSwitcher({
                   onClick={() => handleSelect(collection)}
                   className={`w-full flex items-center gap-3 px-3 py-2 text-left text-sm transition-colors ${
                     selectedCollectionId === collection.id
-                      ? "bg-cyan-600/20 text-cyan-400"
+                      ? "bg-brand-muted/20 text-brand-hover"
                       : "text-slate-300 hover:bg-slate-800/50"
                   }`}
                 >

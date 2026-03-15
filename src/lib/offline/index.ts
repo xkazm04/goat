@@ -21,6 +21,8 @@ export {
   getSyncQueue,
   resetSyncQueue,
   type SyncExecutor,
+  type SyncExecutorResult,
+  type BatchSyncExecutor,
   type ConflictHandler,
   type SyncQueueEvents,
 } from './SyncQueue';
@@ -48,7 +50,6 @@ export {
   type SyncEngineConfig,
   type SyncEngineEvents,
   type SyncResult,
-  type SelectiveSyncOptions,
 } from './SyncEngine';
 
 // Quota Manager - Storage quota management
@@ -86,6 +87,13 @@ export {
   type ServiceWorkerState,
   type UseServiceWorkerReturn,
 } from './useServiceWorker';
+
+// Unsaved changes guard
+export { useUnsavedChangesGuard, type UseUnsavedChangesGuardOptions } from './useUnsavedChangesGuard';
+export { UnsavedChangesBanner, type UnsavedChangesBannerProps } from './UnsavedChangesBanner';
+
+// Sync status color tokens
+export { syncStatusColors, getEffectiveSyncColors, type SyncColorState } from './sync-status-colors';
 
 // Provider (exported from .tsx file)
 export { OfflineProvider, useOffline } from './OfflineProvider';

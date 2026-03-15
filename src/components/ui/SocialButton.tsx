@@ -122,7 +122,7 @@ export const SocialButton = memo(
         className={`
           flex items-center justify-center rounded-xl
           transition-all duration-200
-          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50
+          focus-ring
           disabled:opacity-50 disabled:cursor-not-allowed
           ${showLabel ? `flex-col ${sizeConfig.gap}` : ''}
           ${sizeConfig.button}
@@ -203,7 +203,7 @@ export const CopyButton = memo(function CopyButton({
       className={`
         flex items-center justify-center rounded-xl
         transition-all duration-200
-        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30
+        focus-ring
         ${sizeConfig.button}
         ${className}
       `}

@@ -191,7 +191,7 @@ export const AI_STYLE_PRESETS: Record<AIStylePreset, AIStyleConfig> = {
       'sports broadcast graphics',
       'stadium lights',
       'dynamic angles',
-      'motion blur effects',
+      'motion blur-sm effects',
       'metallic textures',
       'scoreboard style',
       'championship trophy',

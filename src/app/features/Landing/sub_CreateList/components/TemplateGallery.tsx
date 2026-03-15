@@ -85,7 +85,7 @@ export function TemplateGallery({ onSelectTemplate, onClose }: TemplateGalleryPr
       {/* Header */}
       <div className="mb-6">
         <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-          <Copy className="w-5 h-5 text-cyan-400" />
+          <Copy className="w-5 h-5 text-brand-hover" />
           Start from Template
         </h3>
         <p className="text-sm text-slate-400 mt-1">
@@ -107,7 +107,7 @@ export function TemplateGallery({ onSelectTemplate, onClose }: TemplateGalleryPr
                 flex items-center gap-2 px-4 py-2.5 rounded-xl
                 transition-all duration-200 whitespace-nowrap
                 ${isActive
-                  ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/40'
+                  ? 'bg-brand/20 text-brand-hover border border-brand/40'
                   : 'bg-slate-800/50 text-slate-400 border border-slate-700/50 hover:bg-slate-700/50'
                 }
               `}
@@ -178,7 +178,7 @@ export function TemplateGallery({ onSelectTemplate, onClose }: TemplateGalleryPr
                       relative group rounded-xl overflow-hidden cursor-pointer
                       border transition-all duration-200
                       ${isSelected
-                        ? 'border-cyan-400 ring-2 ring-cyan-400/30'
+                        ? 'border-brand-hover ring-2 ring-brand-hover/30'
                         : 'border-slate-700/50 hover:border-slate-600'
                       }
                     `}
@@ -210,7 +210,7 @@ export function TemplateGallery({ onSelectTemplate, onClose }: TemplateGalleryPr
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
                           exit={{ scale: 0 }}
-                          className="absolute top-2 right-2 w-6 h-6 rounded-full bg-cyan-500 flex items-center justify-center z-10"
+                          className="absolute top-2 right-2 w-6 h-6 rounded-full bg-brand flex items-center justify-center z-10"
                         >
                           <Check className="w-4 h-4 text-white" />
                         </motion.div>
@@ -247,7 +247,7 @@ export function TemplateGallery({ onSelectTemplate, onClose }: TemplateGalleryPr
                       )}
 
                       {/* Use Template hint */}
-                      <div className="flex items-center gap-1 mt-2 text-xs text-slate-500 group-hover:text-cyan-400 transition-colors">
+                      <div className="flex items-center gap-1 mt-2 text-xs text-slate-500 group-hover:text-brand-hover transition-colors">
                         <span>Use template</span>
                         <ChevronRight className="w-3 h-3" />
                       </div>

@@ -112,13 +112,13 @@ export function AudioPlayer() {
           onClick={handleSeek}
         >
           <div
-            className="h-full bg-gradient-to-r from-cyan-500 to-cyan-400 transition-all duration-100"
+            className="h-full bg-linear-to-r from-brand to-brand-hover transition-all duration-100"
             style={{ width: `${progress}%` }}
           />
           {/* Hover indicator */}
           <div
-            className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-cyan-400
-              opacity-0 group-hover:opacity-100 transition-opacity shadow-lg shadow-cyan-500/50"
+            className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-brand-hover
+              opacity-0 group-hover:opacity-100 transition-opacity shadow-lg shadow-brand/50"
             style={{ left: `${progress}%`, transform: `translateX(-50%) translateY(-50%)` }}
           />
         </div>
@@ -126,7 +126,7 @@ export function AudioPlayer() {
         {/* Player content */}
         <div className="flex items-center gap-4 px-4 py-3">
           {/* Thumbnail */}
-          <div className="relative w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-gray-800">
+          <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0 bg-gray-800">
             {thumbnailUrl ? (
               <img
                 src={thumbnailUrl}
@@ -141,7 +141,7 @@ export function AudioPlayer() {
             {/* Loading overlay */}
             {isLoading && (
               <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                <Loader2 className="w-5 h-5 text-cyan-400 animate-spin" />
+                <Loader2 className="w-5 h-5 text-brand-hover animate-spin" />
               </div>
             )}
           </div>
@@ -179,7 +179,7 @@ export function AudioPlayer() {
               disabled={isLoading}
               className={cn(
                 'w-10 h-10 rounded-full flex items-center justify-center',
-                'bg-cyan-500 hover:bg-cyan-400 text-white',
+                'bg-brand hover:bg-brand-hover text-white',
                 'transition-all duration-200',
                 'disabled:opacity-50 disabled:cursor-not-allowed'
               )}
@@ -227,7 +227,7 @@ export function AudioPlayer() {
                       [&::-webkit-slider-thumb]:w-3
                       [&::-webkit-slider-thumb]:h-3
                       [&::-webkit-slider-thumb]:rounded-full
-                      [&::-webkit-slider-thumb]:bg-cyan-400"
+                      [&::-webkit-slider-thumb]:bg-brand-hover"
                   />
                 </div>
               )}

@@ -172,7 +172,7 @@ export function PictureInPicture({
         ref={containerRef}
         className={cn(
           'fixed flex flex-col',
-          'bg-background/95 backdrop-blur-sm',
+          'bg-background/95 backdrop-blur-xs',
           'border border-border rounded-lg shadow-2xl',
           'overflow-hidden',
           className

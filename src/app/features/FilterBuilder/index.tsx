@@ -40,7 +40,7 @@ const SAMPLE_ITEMS = [
 function MovieItemRenderer(item: typeof SAMPLE_ITEMS[0], index: number) {
   return (
     <div className="flex items-center gap-3 rounded-md bg-zinc-800/50 p-2">
-      <div className="flex h-10 w-10 items-center justify-center rounded bg-gradient-to-br from-cyan-500/20 to-purple-500/20 text-lg">
+      <div className="flex h-10 w-10 items-center justify-center rounded bg-linear-to-br from-brand/20 to-purple-500/20 text-lg">
         {item.ranking >= 5 ? '🏆' : item.ranking >= 4 ? '⭐' : '🎬'}
       </div>
       <div className="min-w-0 flex-1">
@@ -91,7 +91,7 @@ export function FilterBuilderPage() {
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
       {/* Header */}
-      <header className="border-b border-zinc-800 bg-zinc-900/50 backdrop-blur-sm sticky top-0 z-40">
+      <header className="border-b border-zinc-800 bg-zinc-900/50 backdrop-blur-xs sticky top-0 z-40">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -104,13 +104,13 @@ export function FilterBuilderPage() {
               </Link>
               <div className="h-6 w-px bg-zinc-700" />
               <div className="flex items-center gap-2">
-                <Filter className="text-cyan-400" size={24} />
+                <Filter className="text-brand-hover" size={24} />
                 <h1 className="text-xl font-bold">Visual Filter Builder</h1>
               </div>
             </div>
 
             <div className="flex items-center gap-2 text-sm text-zinc-500">
-              <Sparkles size={16} className="text-cyan-400" />
+              <Sparkles size={16} className="text-brand-hover" />
               <span className="hidden sm:inline">Drag & Drop Filter Composition</span>
             </div>
           </div>
@@ -124,7 +124,7 @@ export function FilterBuilderPage() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-8 rounded-xl border border-cyan-500/20 bg-gradient-to-r from-cyan-500/5 to-purple-500/5 p-6"
+            className="mb-8 rounded-xl border border-brand/20 bg-linear-to-r from-brand/5 to-purple-500/5 p-6"
           >
             <h2 className="text-lg font-semibold text-zinc-100 mb-2">
               Build Complex Filters Visually
@@ -135,19 +135,19 @@ export function FilterBuilderPage() {
             </p>
             <div className="flex flex-wrap gap-4 text-sm">
               <div className="flex items-center gap-2">
-                <span className="rounded bg-cyan-500/20 px-2 py-1 text-cyan-400">1</span>
+                <span className="rounded bg-brand/20 px-2 py-1 text-brand-hover">1</span>
                 <span className="text-zinc-300">Add conditions</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="rounded bg-cyan-500/20 px-2 py-1 text-cyan-400">2</span>
+                <span className="rounded bg-brand/20 px-2 py-1 text-brand-hover">2</span>
                 <span className="text-zinc-300">Organize with groups</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="rounded bg-cyan-500/20 px-2 py-1 text-cyan-400">3</span>
+                <span className="rounded bg-brand/20 px-2 py-1 text-brand-hover">3</span>
                 <span className="text-zinc-300">Drag to reorder</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="rounded bg-cyan-500/20 px-2 py-1 text-cyan-400">4</span>
+                <span className="rounded bg-brand/20 px-2 py-1 text-brand-hover">4</span>
                 <span className="text-zinc-300">Save & share</span>
               </div>
             </div>

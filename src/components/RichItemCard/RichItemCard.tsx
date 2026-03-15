@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 import { QuickActions, QuickActionConfig } from './QuickActions';
 import { MetadataBadges, MetadataBadgeData } from './MetadataBadges';
 import { ExpandedPreview } from './ExpandedPreview';
+import { CardFlipReveal } from './CardFlipReveal';
 import { MiniGallery } from './MiniGallery';
 import { ItemIndicators, ItemIndicatorState } from './ItemIndicators';
 
@@ -61,6 +62,10 @@ export interface RichItemCardConfig {
   enableKeyboardShortcuts?: boolean;
   /** Show tooltip on hover */
   enableTooltip?: boolean;
+  /** Enable Letterboxd-style card flip to reveal metadata */
+  enableFlip?: boolean;
+  /** Flip trigger: tap, hover, or both */
+  flipTrigger?: 'tap' | 'hover' | 'both';
 }
 
 /**
@@ -76,6 +81,8 @@ const DEFAULT_CONFIG: RichItemCardConfig = {
   enableIndicators: true,
   enableKeyboardShortcuts: true,
   enableTooltip: true,
+  enableFlip: false,
+  flipTrigger: 'tap',
 };
 
 /**
@@ -108,6 +115,8 @@ export interface RichItemCardProps {
   onExpandChange?: (expanded: boolean, item: RichItemData) => void;
   /** Custom render for expanded content */
   renderExpandedContent?: (item: RichItemData) => React.ReactNode;
+  /** Custom render for card flip back face */
+  renderFlipContent?: (item: RichItemData) => React.ReactNode;
   /** Custom class name */
   className?: string;
   /** Test ID */
@@ -140,6 +149,7 @@ export const RichItemCard = memo(function RichItemCard({
   onQuickAction,
   onExpandChange,
   renderExpandedContent,
+  renderFlipContent,
   className,
   testId,
 }: RichItemCardProps) {
@@ -149,6 +159,7 @@ export const RichItemCard = memo(function RichItemCard({
 
   const [isHovered, setIsHovered] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isFlipped, setIsFlipped] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [activeGalleryIndex, setActiveGalleryIndex] = useState(0);
 
@@ -170,6 +181,13 @@ export const RichItemCard = memo(function RichItemCard({
   const handleMouseEnter = useCallback(() => {
     setIsHovered(true);
 
+    if (config.enableFlip && (config.flipTrigger === 'hover' || config.flipTrigger === 'both')) {
+      expandTimeoutRef.current = setTimeout(() => {
+        setIsFlipped(true);
+      }, config.expandDelay);
+      return;
+    }
+
     if (config.enableExpand && (config.expandTrigger === 'hover' || config.expandTrigger === 'both')) {
       expandTimeoutRef.current = setTimeout(() => {
         setIsExpanded(true);
@@ -185,6 +203,10 @@ export const RichItemCard = memo(function RichItemCard({
       clearTimeout(expandTimeoutRef.current);
     }
 
+    if (config.enableFlip && (config.flipTrigger === 'hover' || config.flipTrigger === 'both')) {
+      setIsFlipped(false);
+    }
+
     if (config.expandTrigger === 'hover') {
       setIsExpanded(false);
     }
@@ -192,6 +214,10 @@ export const RichItemCard = memo(function RichItemCard({
 
   // Handle click
   const handleClick = useCallback(() => {
+    if (config.enableFlip && (config.flipTrigger === 'tap' || config.flipTrigger === 'both')) {
+      setIsFlipped((prev) => !prev);
+      return;
+    }
     if (config.enableExpand && (config.expandTrigger === 'click' || config.expandTrigger === 'both')) {
       setIsExpanded((prev) => !prev);
     }
@@ -220,18 +246,25 @@ export const RichItemCard = memo(function RichItemCard({
         }
       }
 
-      // Enter/Space to expand
+      // Enter/Space to expand or flip
       if (e.key === 'Enter' || e.key === ' ') {
-        if (config.enableExpand) {
-          e.preventDefault();
+        e.preventDefault();
+        if (config.enableFlip) {
+          setIsFlipped((prev) => !prev);
+        } else if (config.enableExpand) {
           setIsExpanded((prev) => !prev);
         }
       }
 
-      // Escape to collapse
-      if (e.key === 'Escape' && isExpanded) {
-        e.preventDefault();
-        setIsExpanded(false);
+      // Escape to collapse or unflip
+      if (e.key === 'Escape') {
+        if (isFlipped) {
+          e.preventDefault();
+          setIsFlipped(false);
+        } else if (isExpanded) {
+          e.preventDefault();
+          setIsExpanded(false);
+        }
       }
 
       // Arrow keys for gallery navigation
@@ -250,7 +283,7 @@ export const RichItemCard = memo(function RichItemCard({
         }
       }
     },
-    [config, quickActions, handleQuickAction, isExpanded, item.images]
+    [config, quickActions, handleQuickAction, isExpanded, isFlipped, item.images]
   );
 
   // Generate auto badges from metadata if not provided
@@ -286,8 +319,9 @@ export const RichItemCard = memo(function RichItemCard({
     return autoBadges;
   }, [badges, item]);
 
-  // Determine if should show expanded view
-  const showExpanded = isExpanded && !isDragging;
+  // Determine if should show flip or expanded view
+  const showFlip = config.enableFlip && !isDragging;
+  const showExpanded = isExpanded && !isDragging && !config.enableFlip;
   const showQuickActions = config.enableQuickActions && (isHovered || isFocused) && !isDragging && quickActions.length > 0;
   const showBadges = config.enableBadges && effectiveBadges.length > 0 && !isDragging;
   const showGallery = config.enableGallery && item.images && item.images.length > 1 && isHovered && !isDragging;
@@ -303,13 +337,13 @@ export const RichItemCard = memo(function RichItemCard({
       ref={containerRef}
       className={cn(
         'relative group rounded-lg overflow-hidden',
-        'bg-gray-800 border border-gray-700',
+        'bg-[var(--surface-card)] border border-[var(--border-card)]',
         'transition-colors duration-200',
-        isHovered && 'border-cyan-500/50',
-        isSelected && 'ring-2 ring-cyan-500',
+        isHovered && 'border-brand/50',
+        isSelected && 'ring-2 ring-brand',
         isDragging && 'opacity-50 scale-95',
-        isFocused && 'ring-2 ring-cyan-400 ring-offset-2 ring-offset-gray-900',
-        viewMode === 'grid' ? 'aspect-[4/5]' : 'flex items-center gap-3 p-2',
+        isFocused && 'ring-2 ring-brand-hover ring-offset-2 ring-offset-[hsl(var(--background))]',
+        viewMode === 'grid' ? 'aspect-4/5' : 'flex items-center gap-3 p-2',
         className
       )}
       style={{ contain: 'layout style paint' }}
@@ -353,8 +387,8 @@ export const RichItemCard = memo(function RichItemCard({
 
       {/* Image Area */}
       <div className={cn(
-        'relative overflow-hidden bg-gray-900',
-        viewMode === 'grid' ? 'aspect-[4/3]' : 'w-16 h-16 rounded flex-shrink-0'
+        'relative overflow-hidden bg-[var(--surface-deep)]',
+        viewMode === 'grid' ? 'aspect-4/3' : 'w-16 h-16 rounded shrink-0'
       )}>
         {displayImage ? (
           <motion.img
@@ -410,6 +444,16 @@ export const RichItemCard = memo(function RichItemCard({
           </p>
         )}
       </div>
+
+      {/* Card Flip Reveal */}
+      {showFlip && (
+        <CardFlipReveal
+          item={item}
+          isFlipped={isFlipped}
+          badges={effectiveBadges}
+          renderBackContent={renderFlipContent}
+        />
+      )}
 
       {/* Expanded Preview Overlay */}
       <AnimatePresence>

@@ -1,312 +1,287 @@
 # Codebase Structure
 
-**Analysis Date:** 2026-01-26
+**Analysis Date:** 2026-03-14
 
 ## Directory Layout
 
 ```
 goat/
 ├── src/
-│   ├── app/                          # Next.js App Router pages and routes
-│   │   ├── api/                      # API route handlers (REST endpoints)
-│   │   ├── features/                 # Feature-based modules
-│   │   ├── layout.tsx                # Root layout (providers)
-│   │   └── page.tsx                  # Home page (landing)
-│   │
-│   ├── components/                   # Shared UI components
-│   │   ├── app/                      # App-specific components
-│   │   ├── patterns/                 # Reusable patterns (drag-drop, forms, etc)
-│   │   ├── ui/                       # Radix UI + Tailwind primitives
-│   │   └── theme/                    # Theme provider and utilities
-│   │
-│   ├── lib/                          # Shared utility libraries and business logic
-│   │   ├── api/                      # API client and query utilities
-│   │   ├── dnd/                      # Drag-drop protocol and handlers
-│   │   ├── grid/                     # Grid operations and validation
-│   │   ├── match/                    # Match orchestration logic
-│   │   ├── validation/               # Validation rules and authority
-│   │   ├── offline/                  # Offline cache and PWA support
-│   │   ├── hooks/                    # Reusable custom hooks
-│   │   └── [other domains]           # Domain-specific utilities
-│   │
-│   ├── stores/                       # Zustand state stores
-│   │   ├── grid-store.ts             # Grid state and drag logic
-│   │   ├── session-store.ts          # Session persistence
-│   │   ├── match-store.ts            # Match UI state
-│   │   ├── backlog-store.ts          # Backlog groups/items
-│   │   ├── ranking-store.ts          # Tier ranking state
-│   │   └── [other stores]            # Domain-specific stores
-│   │
-│   ├── types/                        # TypeScript definitions
-│   │   ├── match.ts                  # Grid and match types
-│   │   ├── backlog-groups.ts         # Backlog domain types
-│   │   └── [other types]             # Domain types
-│   │
-│   ├── providers/                    # Context providers
-│   │   ├── BacklogProvider.tsx       # Backlog initialization
-│   │   └── query-provider.tsx        # TanStack Query setup
-│   │
-│   ├── hooks/                        # App-level custom hooks
-│   ├── globals.css                   # Global Tailwind styles
-│   └── layout.tsx                    # Root layout file (providers)
-│
-├── public/                           # Static assets
-│   ├── groups/                       # Category images
-│   ├── avatars/                      # User avatars
-│   └── [other static]                # Favicon, etc
-│
-├── docs/                             # Documentation
-│   ├── analysis/                     # Analysis documents
-│   ├── features/                     # Feature documentation
-│   └── [other docs]
-│
-├── e2e/                              # Playwright E2E tests
-├── db/                               # Database migrations and seeds
-├── context/                          # Build context/config
-└── scripts/                          # Build and utility scripts
+│   ├── app/                      # Next.js App Router pages, layouts, API routes
+│   │   ├── layout.tsx            # Root layout with provider hierarchy
+│   │   ├── page.tsx              # Home page (/)
+│   │   ├── globals.css           # Global styles
+│   │   ├── api/                  # API route handlers (Next.js route segments)
+│   │   ├── features/             # Feature-based UI modules (co-located with app)
+│   │   ├── achievement/          # Achievement page routes
+│   │   ├── award/                # Award page route
+│   │   ├── blueprint/            # Blueprint page route
+│   │   ├── collections/          # Collections page route
+│   │   ├── my-collections/       # My collections page route
+│   │   ├── share/                # Share page route
+│   │   ├── studio/               # Studio page route
+│   │   ├── match-test/           # Match test/debug route
+│   │   └── offline/              # Offline fallback page
+│   ├── components/               # Shared/reusable UI components
+│   │   ├── app/                  # App-level components (buttons, icons, modals, decorations)
+│   │   ├── ui/                   # Generic UI primitives (Radix-based)
+│   │   ├── visual/               # Visual/decorative components (3D, depth effects)
+│   │   ├── patterns/             # Reusable interaction patterns (drag-drop, virtualization, badges)
+│   │   ├── 3d/                   # 3D/parallax components
+│   │   ├── AudioPlayer/          # Audio playback component
+│   │   ├── RichItemCard/         # Enriched item card component
+│   │   ├── theme/                # Theme provider and switcher
+│   │   └── dev/                  # Dev-only components
+│   ├── stores/                   # Zustand state stores
+│   │   ├── backlog/              # Modular backlog store (actions, selectors, types)
+│   │   ├── item-store/           # Session manager, normalized data, grid operations
+│   │   ├── slices/               # Store slices (grid-slice.ts)
+│   │   ├── registry.ts           # Store dependency graph and initialization order
+│   │   ├── match-store.ts        # Match UI state, keyboard nav, session orchestration
+│   │   ├── grid-store.ts         # Grid state and drag-and-drop handlers (primary DnD store)
+│   │   ├── session-store.ts      # Session persistence, backlog management (persisted)
+│   │   ├── backlog-store.ts      # Backlog re-export shim (backward compat)
+│   │   ├── comparison-store.ts   # Item comparison modal state
+│   │   ├── use-list-store.ts     # Current list metadata
+│   │   ├── placement-store.ts    # Smart fill / placement state
+│   │   ├── validation-notification-store.ts  # Drag validation error notifications
+│   │   ├── filter-store.ts       # Filter state
+│   │   ├── criteria-store.ts     # Criteria/scoring state
+│   │   ├── ranking-store.ts      # Ranking state
+│   │   ├── consensus-store.ts    # Community consensus state
+│   │   ├── studio-store.ts       # Studio creation state
+│   │   ├── panel-store.ts        # Panel open/close state
+│   │   ├── layout-store.ts       # Layout preferences
+│   │   ├── audio-store.ts        # Audio player state
+│   │   ├── activity-store.ts     # Activity feed state
+│   │   └── inspector-store.ts    # Item inspector panel state
+│   ├── lib/                      # Shared logic, utilities, hooks, and domain modules
+│   │   ├── api/                  # GoatAPI client, batching, caching, deduplication
+│   │   ├── dnd/                  # Drag-and-drop: TransferProtocol, DragOperationRouter, operations
+│   │   ├── errors/               # Error classes, API error handler, typed responses
+│   │   ├── hooks/                # Shared React hooks (useHydrationSafe, data hooks, auth hooks)
+│   │   ├── supabase/             # Supabase browser/server client factories
+│   │   ├── query-keys/           # Centralized TanStack Query key factories
+│   │   ├── validation/           # ValidationAuthority, list-intent validator
+│   │   ├── orchestration/        # GlobalOrchestrator, command bus, orchestrated drag handlers
+│   │   ├── logger/               # Category-based structured logger
+│   │   ├── offline/              # OfflineProvider, SyncEngine, SyncQueue, NetworkMonitor
+│   │   ├── stores/               # Store utilities (lazy-store-accessor, store-registry)
+│   │   ├── grid/                 # Grid utilities (createEmptyGrid, constants, GRID_LIMITS)
+│   │   ├── tiers/                # Tier list algorithms and components
+│   │   ├── tier/                 # Tier configuration utilities
+│   │   ├── match/                # Match-specific lib utilities
+│   │   ├── criteria/             # Scoring criteria templates and logic
+│   │   ├── consensus/            # Consensus data service, heatmap, controversy calculator
+│   │   ├── sharing/              # ShareManager, DeepLinkGenerator, platform-specific sharing
+│   │   ├── filters/              # Filter builder, facets, filter components
+│   │   ├── search/               # Search utilities
+│   │   ├── personalization/      # User preference and recommendation logic
+│   │   ├── enrichment/           # Item data enrichment fetchers
+│   │   ├── image-gen/            # Image generation utilities
+│   │   ├── og/                   # Open Graph card layouts
+│   │   ├── cache/                # Cache management
+│   │   ├── storage/              # Storage utilities
+│   │   ├── animations/           # Animation hooks and variants (Framer Motion)
+│   │   ├── agent-bridge/         # AI agent bridge (task memory, types)
+│   │   ├── collaboration/        # Collaboration utilities
+│   │   ├── timing/               # Debounce/timing constants
+│   │   ├── constants/            # App-wide constants
+│   │   ├── helpers/              # General helper functions
+│   │   ├── utils/                # Utility functions
+│   │   └── providers/            # Shared React providers
+│   ├── providers/                # Root-level React providers
+│   │   ├── BacklogProvider.tsx   # Initializes backlog store, network sync
+│   │   ├── query-provider.tsx    # TanStack Query client setup
+│   │   └── prefetch-provider.tsx # Prefetch coordination
+│   ├── services/                 # Application-level services
+│   │   └── list-creation-service.ts  # Unified list creation flow (validation → API)
+│   ├── hooks/                    # Root-level hooks (supabase-auth)
+│   │   └── supabase-auth/        # Supabase auth hooks
+│   └── types/                    # TypeScript type definitions
+│       ├── database.ts           # Auto-generated/curated Supabase DB types
+│       ├── match.ts              # GridItemType, BacklogItemType
+│       ├── backlog-groups.ts     # BacklogGroup, BacklogItem
+│       ├── top-lists.ts          # TopList, ListCreationResponse
+│       ├── ranking.ts            # Ranking types
+│       ├── collection.ts         # Collection types
+│       ├── blueprint.ts          # Blueprint types
+│       ├── consensus.ts          # Consensus types
+│       ├── share.ts              # Share/embed types
+│       ├── studio.ts             # Studio types
+│       ├── list-intent.ts        # ListIntent (creation intent model)
+│       └── ...                   # Other domain types
+├── db/
+│   ├── migrations/               # Raw SQL migration files
+│   ├── scripts/                  # DB utility scripts
+│   └── seeds/                    # DB seed files
+├── supabase/
+│   └── migrations/               # Supabase migration files (timestamped SQL)
+├── database/                     # Additional DB schema references
+├── e2e/                          # End-to-end tests (Playwright)
+├── docs/                         # Internal documentation and analysis
+├── context/                      # Theme fallback context files
+├── scripts/                      # Project utility scripts
+├── public/                       # Static assets (avatars, games, gifs, groups, sounds)
+├── .planning/                    # GSD planning documents
+├── .storybook/                   # Storybook configuration
+└── .claude/                      # Claude AI skill definitions
 ```
 
 ## Directory Purposes
 
-**src/app/api/:**
-- Purpose: Server-side REST API handlers
-- Contains: Route handler files (`route.ts`)
-- Key paths:
-  - `api/lists/` - List CRUD operations
-  - `api/top/groups/` - Backlog category/item retrieval
-  - `api/match/` - Match-specific operations
-  - `api/share/` - Sharing and result handling
-  - `api/challenges/` - Challenge system endpoints
-  - `api/webhooks/clerk` - Clerk auth webhooks
-
-**src/app/features/:**
-- Purpose: Feature-based application modules
-- Contains: Feature-specific components, hooks, lib, types
-- Naming: PascalCase directories
+**`src/app/features/`:**
+- Purpose: Self-contained feature modules that map to major user-facing workflows
+- Contains: Feature layout components, sub-features (`sub_*`), co-located hooks, lib utilities, components
 - Key features:
-  - `Match/` - Core matching/ranking interface (103+ files)
-  - `Collection/` - Backlog item display and management
-  - `Landing/` - Home page and list browsing
-  - `Challenges/` - Challenge system UI
-  - `Awards/` - Achievement/award display
-  - `Share/` - Result sharing interface
-  - `CommandPalette/` - Command palette navigation
-  - `Admin/` - Administrative tools
+  - `Match/` — Core ranking interface (grid, bracket, tier modes, drag-drop, share)
+  - `Collection/` — Backlog item browser and collection management panel
+  - `Landing/` — Home page, list showcase, create list flow
+  - `Studio/` — List/collection creation wizard with AI assistance
+  - `Challenges/` — Social ranking challenges
+  - `Achievement/` — User achievement display
+  - `Awards/` — Award ceremony feature
+  - `CommandPalette/` — Global command palette (`⌘K`)
+  - `Share/` — Share page rendering
+  - `FilterBuilder/` — Advanced filter building UI
+  - `Collections/` — Community collections browser
 
-**src/components/app/:**
-- Purpose: App-specific reusable components
-- Contains: UI components used across features
-- Subdirectories:
-  - `button/` - Button variants
-  - `match/` - Match-specific components
-  - `modals/` - Modal implementations
-  - `icons/` - Icon libraries
-  - `decorations/` - Decorative elements
+**`src/app/api/`:**
+- Purpose: All server-side REST endpoints; each directory maps to a route segment
+- Contains: `route.ts` files with named exports (`GET`, `POST`, `PUT`, `DELETE`)
+- Key endpoints: `/api/lists`, `/api/top/groups`, `/api/items`, `/api/match/generate-result-image`, `/api/share`, `/api/challenges`, `/api/studio`, `/api/blueprints`, `/api/consensus`, `/api/agent-bridge`, `/api/v1/*` (public API)
 
-**src/components/patterns/:**
-- Purpose: Reusable interaction patterns
-- Contains: Complex component patterns
-- Examples:
-  - `drag-drop/` - DnD utilities
-  - `forms/` - Form components
-  - `virtualization/` - Virtual scrolling
-  - `badges/` - Badge components
+**`src/stores/`:**
+- Purpose: All Zustand client state; each file is one domain store
+- Key stores: `grid-store.ts` (DnD authority), `session-store.ts` (persistence), `match-store.ts` (orchestrator), `backlog-store.ts` (backlog shim)
+- Modular stores: `backlog/` (split into actions-*, selectors, types)
 
-**src/components/ui/:**
-- Purpose: Radix UI + Tailwind primitive components
-- Contains: Base UI components
-- Examples: Button, Card, Modal, Dialog, Toast, etc.
-
-**src/lib/dnd/:**
-- Purpose: Drag-and-drop protocol and handlers
-- Contains:
-  - `unified-protocol.ts` - Unified drag/drop data format
-  - `transfer-protocol.ts` - Item transfer protocol
-  - `type-guards.ts` - Type checking utilities
-  - `index.ts` - Protocol exports and helpers
-
-**src/lib/grid/:**
-- Purpose: Grid item management and validation
-- Contains:
-  - `item-factory.ts` - Factory functions for grid items
-  - `transfer-validator.ts` - Transfer validation logic
-
-**src/lib/validation/:**
-- Purpose: Centralized business rule validation
-- Contains: ValidationAuthority pattern implementation
-- Exports: ValidationErrorCode enum, validation functions
-
-**src/lib/match/:**
-- Purpose: Match session orchestration
-- Contains:
-  - `orchestrator.ts` - Command pattern orchestrator
-  - `use-orchestrator.ts` - Hook for orchestrator access
-
-**src/lib/offline/:**
-- Purpose: Offline-first PWA support
-- Contains: Cache management, sync logic, status tracking
-
-**src/lib/api/:**
-- Purpose: API client and server functions
-- Contains: Client wrapper, query utilities, request coalescing
-
-**src/stores/:**
-- Purpose: Centralized Zustand state management
-- Core stores:
-  - `grid-store.ts` - Grid state, drag logic (single source of truth for grid)
-  - `session-store.ts` - Session persistence, backlog management
-  - `match-store.ts` - Match UI state (keyboard mode, modals, etc)
-  - `backlog-store.ts` - Backlog groups and items (modularized)
-  - `ranking-store.ts` - Tier ranking state
-- Supporting stores:
-  - `comparison-store.ts` - Item comparison modal
-  - `filter-store.ts` - Item filtering
-  - `user-preferences-store.ts` - User settings
-  - `activity-store.ts` - User activity tracking
-
-**src/stores/backlog/:**
-- Purpose: Modularized backlog store implementation
-- Contains:
-  - `store.ts` - Store definition
-  - `actions-*.ts` - Action groups (data, groups, items, offline, utils)
-  - `selectors.ts` - Selector hooks for components
-  - `types.ts` - Store types
-
-**src/stores/item-store/:**
-- Purpose: Session and item data management
-- Contains:
-  - `session-manager.ts` - Session lifecycle
-  - `normalized-session.ts` - Normalized storage format
-  - `grid-operations.ts` - Grid manipulation utilities
-  - `types.ts` - Store types
-
-**src/types/:**
-- Purpose: Centralized TypeScript type definitions
-- Key files:
-  - `match.ts` - GridItemType, BacklogItemType, MatchSession
-  - `backlog-groups.ts` - BacklogItem, BacklogGroup, API types
-  - `ranking.ts` - Tier ranking types
-  - `consensus.ts` - Voting/consensus types
-  - `list-intent.ts` - List creation intent types
+**`src/lib/`:**
+- Purpose: All logic that is not tied to a specific page or feature; safe to import from anywhere
+- Notable modules: `dnd/` (TransferProtocol), `orchestration/` (GlobalOrchestrator), `api/` (GoatAPI), `offline/` (SyncEngine)
 
 ## Key File Locations
 
 **Entry Points:**
-- `src/app/page.tsx` - Home page (renders LandingLayout)
-- `src/app/layout.tsx` - Root layout with all providers
-- `src/app/global-error.tsx` - Global error boundary
+- `src/app/layout.tsx`: Root layout and provider hierarchy
+- `src/app/page.tsx`: Home page
+- `src/app/features/Match/`: Core match/ranking interface
 
 **Configuration:**
-- `next.config.js` - Next.js configuration (turbopack, images, PWA headers)
-- `tsconfig.json` - TypeScript configuration (strict mode, path aliases)
-- `tailwind.config.ts` - Tailwind theme and plugins
-- `.eslintrc.json` - ESLint configuration
+- `src/stores/registry.ts`: Store dependency graph
+- `src/lib/grid/constants.ts`: `GRID_LIMITS`, `TUTORIAL_GRID`
+- `src/lib/timing/index.ts`: `DEBOUNCE` constants
+- `src/lib/config/category-config.ts`: Category configuration
 
 **Core Logic:**
-- `src/stores/grid-store.ts` - Drag-drop and grid operations (1000+ lines)
-- `src/stores/session-store.ts` - Session persistence and backlog sync
-- `src/stores/match-store.ts` - Match UI orchestration
-- `src/lib/dnd/unified-protocol.ts` - Drag-drop ID protocol
-- `src/lib/grid/transfer-validator.ts` - Transfer validation rules
+- `src/stores/grid-store.ts`: Grid state and drag-and-drop handlers
+- `src/stores/session-store.ts`: Session persistence and backlog management
+- `src/stores/match-store.ts`: Match session orchestration
+- `src/lib/dnd/transfer-protocol.ts`: Drag-and-drop abstraction
+- `src/lib/dnd/operations/DragOperationRouter.ts`: DnD operation dispatcher
+- `src/lib/orchestration/GlobalOrchestrator.ts`: Atomic multi-store transactions
+- `src/lib/api/goat-api.ts`: Unified API client
+- `src/lib/errors/api-error-handler.ts`: API route error handler (`withErrorHandler`)
+- `src/lib/supabase/server.ts`: Server-side Supabase client factory
+- `src/lib/supabase/client.ts`: Browser-side Supabase client factory
+
+**Hydration/SSR Safety:**
+- `src/lib/hooks/useHydrationSafe.ts`: Hook to defer client-only rendering
 
 **Testing:**
-- `e2e/` - Playwright E2E tests
-- `[feature]/*.test.ts` or `.test.tsx` - Unit/integration tests (pattern not yet established)
+- `e2e/drag-drop-ranking.spec.ts`: E2E drag-and-drop tests
+- `e2e/list-play-journey.spec.ts`: E2E list play journey tests
+- `src/components/visual/__tests__/`: Visual component unit tests
 
 ## Naming Conventions
 
 **Files:**
-- Components: `PascalCase.tsx` (e.g., `SimpleMatchGrid.tsx`)
-- Stores: `kebab-case-store.ts` (e.g., `grid-store.ts`)
-- Utilities: `camelCase.ts` (e.g., `transfer-validator.ts`)
-- Types: `PascalCase.ts` (e.g., `backlog-groups.ts`)
-- Hooks: `use[PascalCase].ts` or `.tsx` (e.g., `useTouchGestures.ts`)
+- React components: `PascalCase.tsx` (e.g., `CollectionPanel.tsx`, `TierRow.tsx`)
+- Hooks: `use-kebab-case.ts` or `useCamelCase.ts` (both styles present; prefer `use-kebab-case.ts` for new hooks in `src/lib/hooks/`)
+- Stores: `kebab-case-store.ts` or `use-kebab-case-store.ts` (e.g., `grid-store.ts`, `use-list-store.ts`)
+- Utilities/lib: `kebab-case.ts`
+- API routes: `route.ts` inside the route directory segment
 
 **Directories:**
-- Features: `PascalCase` (e.g., `Match`, `Collection`)
-- Utilities: `kebab-case` (e.g., `dnd`, `query-keys`)
-- Domain libs: `kebab-case` (e.g., `backlog-store`, `grid`)
+- Feature modules: `PascalCase/` under `src/app/features/`
+- Sub-features within a feature: `sub_PascalCase/` (e.g., `sub_MatchGrid/`, `sub_DropZone/`)
+- Route segments: `kebab-case/` or `[paramName]/` (Next.js convention)
 
-**Exports:**
-- Use named exports in `index.ts` files for public APIs
-- Example: `src/lib/dnd/index.ts` exports protocol utilities
-
-**Path Aliases:**
-- `@/*` → `./src/*` (configured in tsconfig.json)
-- Use `@/` for all imports from src/ (enforced convention)
+**Components:**
+- Named exports preferred for feature components; default exports for page-level components (Next.js requirement)
+- Barrel files (`index.ts`) at each feature/module root for controlled re-exports
 
 ## Where to Add New Code
 
-**New Feature:**
+**New Feature (user-facing page workflow):**
 - Primary code: `src/app/features/[FeatureName]/`
-  - Create subdirectories: `components/`, `hooks/`, `lib/`, `types/` as needed
-  - Main export file: `src/app/features/[FeatureName]/index.tsx` or named file
-- Tests: `src/app/features/[FeatureName]/[name].test.tsx`
-- Route: `src/app/[feature-route]/page.tsx` or `src/app/features/[FeatureName]/page.tsx`
+- Sub-components: `src/app/features/[FeatureName]/components/`
+- Feature-local hooks: `src/app/features/[FeatureName]/hooks/`
+- Feature-local utilities: `src/app/features/[FeatureName]/lib/`
+- Tests: `src/app/features/[FeatureName]/__tests__/` or `e2e/`
 
-**New Component:**
-- If feature-specific: `src/app/features/[FeatureName]/components/[ComponentName].tsx`
-- If shared across features: `src/components/app/[DomainName]/[ComponentName].tsx`
-- If UI primitive: `src/components/ui/[ComponentName].tsx`
+**New API Endpoint:**
+- Route handler: `src/app/api/[resource]/route.ts`
+- Use `withErrorHandler` from `src/lib/errors/`
+- Use `createClient()` from `src/lib/supabase/server.ts`
+- Add TanStack Query keys to `src/lib/query-keys/`
 
-**New Store:**
-- Location: `src/stores/[domain]-store.ts`
-- If complex: `src/stores/[domain]/` directory with modular structure
-- Import in components via `useXStore` hook
-- Pattern: Use `create()` from zustand, persist middleware for important state
+**New Zustand Store:**
+- File: `src/stores/[domain]-store.ts`
+- Register in `src/stores/registry.ts` with correct dependency order
+- Export selectors separately if the store is large (see `src/stores/backlog/selectors.ts`)
 
-**New Utility/Library:**
-- If domain-specific: `src/lib/[domain]/` directory
-- Core utilities: `src/lib/utils.ts` or `src/lib/[utility-name].ts`
-- Query utilities: `src/lib/query-keys/[domain].ts`
-- Validation: `src/lib/validation/[rule-name].ts`
+**New Shared Component:**
+- Generic UI primitive: `src/components/ui/`
+- App-specific shared component: `src/components/app/`
+- Visual/decorative: `src/components/visual/`
 
-**New API Route:**
-- Location: `src/app/api/[resource]/route.ts`
-- Subdirectories: Create nested routes via directories
-- Pattern: Export `GET`, `POST`, `PUT`, `DELETE` handlers
-- Example: `src/app/api/lists/[id]/route.ts` for `PUT /api/lists/:id`
-
-**New Hook:**
-- If feature-specific: `src/app/features/[FeatureName]/hooks/[useHookName].ts`
-- If shared: `src/hooks/[useHookName].ts` or `src/lib/hooks/[useHookName].ts`
+**New Utility/Hook:**
+- Shared hook: `src/lib/hooks/use-[name].ts`
+- Domain utility: `src/lib/[domain]/`
+- App-wide constant: `src/lib/constants/`
 
 **New Type:**
-- Location: `src/types/[domain].ts`
-- Domain examples: `match.ts`, `backlog-groups.ts`, `ranking.ts`
+- Domain type: `src/types/[domain].ts`
+- Database row type: extend `src/types/database.ts`
 
 ## Special Directories
 
-**src/lib/offline/:**
-- Purpose: Offline-first PWA cache and sync
-- Generated: No (code-based)
+**`.planning/`:**
+- Purpose: GSD planning documents (codebase maps, phase plans)
+- Generated: Yes (by GSD commands)
 - Committed: Yes
 
-**public/groups/:**
-- Purpose: Category image assets
-- Generated: No (manually curated)
-- Committed: Yes
-
-**db/migrations/:**
-- Purpose: PostgreSQL migration files
-- Generated: No (version controlled)
-- Committed: Yes
-
-**.next/:**
+**`.next/`:**
 - Purpose: Next.js build output
-- Generated: Yes (by build process)
-- Committed: No
+- Generated: Yes
+- Committed: No (in `.gitignore`)
 
-**node_modules/:**
+**`node_modules/`:**
 - Purpose: npm dependencies
-- Generated: Yes (by npm install)
+- Generated: Yes
 - Committed: No
 
-**context/:**
-- Purpose: Build context and configuration
-- Generated: No (manually managed)
+**`supabase/migrations/`:**
+- Purpose: Supabase migration files applied to the hosted database
+- Generated: Partially (Supabase CLI)
+- Committed: Yes
+
+**`db/migrations/`:**
+- Purpose: Raw SQL migrations; may be applied separately from Supabase migrations
+- Generated: Manually authored
+- Committed: Yes
+
+**`e2e/`:**
+- Purpose: Playwright end-to-end tests
+- Generated: No
+- Committed: Yes
+
+**`context/`:**
+- Purpose: Theme fallback context reference files
+- Generated: No
 - Committed: Yes
 
 ---
 
-*Structure analysis: 2026-01-26*
+*Structure analysis: 2026-03-14*

@@ -30,7 +30,7 @@ function AwardListSkeleton() {
       {/* Background */}
       <div className="fixed inset-0 bg-[#050505] -z-10" />
       <div className="fixed inset-0 pointer-events-none -z-10">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-yellow-900/15 via-[#050505] to-[#050505]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-yellow-900/15 via-[#050505] to-[#050505]" />
       </div>
 
       {/* Main content */}
@@ -44,7 +44,7 @@ function AwardListSkeleton() {
           <div className="inline-flex items-center justify-center mb-4">
             <div className="relative">
               <div className="absolute inset-0 bg-yellow-500/20 blur-2xl rounded-full" />
-              <div className="relative p-3 bg-gradient-to-br from-yellow-500/20 to-orange-500/10 rounded-xl border border-yellow-500/30">
+              <div className="relative p-3 bg-linear-to-br from-yellow-500/20 to-orange-500/10 rounded-xl border border-yellow-500/30">
                 <Trophy className="w-8 h-8 text-yellow-500 animate-pulse" />
               </div>
             </div>
@@ -67,7 +67,7 @@ function AwardListSkeleton() {
 
         {/* Divider */}
         <div className="flex items-center gap-4 mb-6">
-          <div className="flex-1 h-px bg-gradient-to-r from-transparent via-yellow-500/20 to-transparent" />
+          <div className="flex-1 h-px bg-linear-to-r from-transparent via-yellow-500/20 to-transparent" />
         </div>
 
         {/* Award items skeleton */}
@@ -109,7 +109,7 @@ function AwardListSkeleton() {
 
       {/* Loading indicator */}
       <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-50">
-        <div className="bg-gray-900/90 backdrop-blur-sm rounded-xl px-6 py-4 flex items-center gap-3">
+        <div className="bg-gray-900/90 backdrop-blur-xs rounded-xl px-6 py-4 flex items-center gap-3">
           <Loader2 className="w-5 h-5 text-yellow-500 animate-spin" />
           <span className="text-sm text-gray-300">Loading awards...</span>
         </div>

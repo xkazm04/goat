@@ -191,11 +191,24 @@ export function createEmptyBracket(size: BracketSize): BracketState {
 
 /**
  * Seed participants into a bracket
+ *
+ * @throws Error if participant count exceeds bracket size
  */
 export function seedBracket(
   bracket: BracketState,
   participants: BracketParticipant[]
 ): BracketState {
+  if (participants.length > bracket.size) {
+    throw new Error(
+      `Participant count (${participants.length}) exceeds bracket size (${bracket.size}). ` +
+      `Use a larger bracket or reduce participants.`
+    );
+  }
+
+  if (participants.length === 0) {
+    throw new Error('Cannot seed a bracket with zero participants.');
+  }
+
   const seedOrder = generateSeedOrder(bracket.size);
   const updatedBracket = { ...bracket };
   const firstRound = { ...updatedBracket.rounds[0] };
@@ -377,6 +390,116 @@ export function recordMatchupResult(
 }
 
 /**
+ * Undo a matchup result - clears the winner and cascades removal
+ * through all downstream matchups that depended on this result.
+ * Returns the reverted bracket state.
+ */
+export function undoMatchupResult(
+  bracket: BracketState,
+  matchupId: string
+): BracketState {
+  let updated = structuredClone(bracket);
+
+  // Find the matchup to undo
+  let targetMatchup: BracketMatchup | null = null;
+  for (const round of updated.rounds) {
+    const found = round.matchups.find(m => m.id === matchupId);
+    if (found) {
+      targetMatchup = found;
+      break;
+    }
+  }
+
+  if (!targetMatchup || !targetMatchup.winner) return bracket;
+
+  // Collect all matchup IDs that need to be cleared (cascade downstream)
+  const toClear = new Set<string>([matchupId]);
+  let frontier = [matchupId];
+
+  while (frontier.length > 0) {
+    const nextFrontier: string[] = [];
+    for (const id of frontier) {
+      // Find the matchup and its next matchup
+      for (const round of updated.rounds) {
+        const m = round.matchups.find(mu => mu.id === id);
+        if (m?.nextMatchupId) {
+          // Only cascade if the next matchup used a winner from one of our cleared matchups
+          const nextRound = updated.rounds[m.roundIndex + 1];
+          if (nextRound) {
+            const nextMatchup = nextRound.matchups.find(mu => mu.id === m.nextMatchupId);
+            if (nextMatchup && nextMatchup.isComplete) {
+              toClear.add(nextMatchup.id);
+              nextFrontier.push(nextMatchup.id);
+            }
+          }
+        }
+      }
+    }
+    frontier = nextFrontier;
+  }
+
+  // Clear all affected matchups
+  for (let r = 0; r < updated.rounds.length; r++) {
+    updated.rounds[r].matchups = updated.rounds[r].matchups.map(m => {
+      if (toClear.has(m.id)) {
+        return { ...m, winner: null, isComplete: false };
+      }
+      return m;
+    });
+
+    // Also clear advanced participants in downstream matchups
+    // (participants that were placed by a now-cleared matchup)
+    if (r > 0) {
+      updated.rounds[r].matchups = updated.rounds[r].matchups.map(m => {
+        let p1 = m.participant1;
+        let p2 = m.participant2;
+
+        // Check if participant1 came from a cleared matchup
+        const feederTop = updated.rounds[r - 1]?.matchups.find(
+          fm => fm.nextMatchupId === m.id && fm.position === 'top'
+        );
+        if (feederTop && toClear.has(feederTop.id)) {
+          p1 = null;
+        }
+
+        // Check if participant2 came from a cleared matchup
+        const feederBottom = updated.rounds[r - 1]?.matchups.find(
+          fm => fm.nextMatchupId === m.id && fm.position === 'bottom'
+        );
+        if (feederBottom && toClear.has(feederBottom.id)) {
+          p2 = null;
+        }
+
+        if (p1 !== m.participant1 || p2 !== m.participant2) {
+          return { ...m, participant1: p1, participant2: p2, winner: null, isComplete: false };
+        }
+        return m;
+      });
+    }
+
+    // Recalculate round completion
+    updated.rounds[r].isComplete = updated.rounds[r].matchups.every(m => m.isComplete);
+  }
+
+  // Reset champion if final was cleared
+  const finalRound = updated.rounds[updated.rounds.length - 1];
+  const finalMatchup = finalRound.matchups[0];
+  if (!finalMatchup.isComplete || !finalMatchup.winner) {
+    updated.champion = null;
+    updated.isComplete = false;
+  }
+
+  // Update current round index
+  updated.currentRoundIndex = updated.rounds.findIndex(r => !r.isComplete);
+  if (updated.currentRoundIndex === -1) {
+    updated.currentRoundIndex = updated.rounds.length - 1;
+  }
+
+  updated.updatedAt = Date.now();
+  return updated;
+}
+
+/**
  * Get the current active matchup (first incomplete in current round)
  */
 export function getCurrentMatchup(bracket: BracketState): BracketMatchup | null {
@@ -420,11 +543,7 @@ export function bracketToRanking(bracket: BracketState): BracketParticipant[] {
 
     for (const matchup of round.matchups) {
       if (matchup.isComplete && matchup.winner) {
-        // The loser of this matchup gets ranked
-        const loser = matchup.participant1?.id === matchup.winner.id
-          ? matchup.participant2
-          : matchup.participant1;
-
+        const loser = getLoserFromMatchup(matchup);
         if (loser && !loser.isBye) {
           losers.push(loser);
         }
@@ -485,4 +604,181 @@ export function getBracketSizeForItems(itemCount: number): BracketSize {
   if (itemCount <= 16) return 16;
   if (itemCount <= 32) return 32;
   return 64;
+}
+
+// ─── Shared Utilities ─────────────────────────────────────────────────
+
+/**
+ * Find a matchup by ID across all rounds
+ */
+export function findMatchupById(
+  bracket: BracketState,
+  matchupId: string
+): BracketMatchup | null {
+  for (const round of bracket.rounds) {
+    const found = round.matchups.find(m => m.id === matchupId);
+    if (found) return found;
+  }
+  return null;
+}
+
+/**
+ * Get the loser of a completed matchup
+ */
+export function getLoserFromMatchup(
+  matchup: BracketMatchup
+): BracketParticipant | null {
+  if (!matchup.winner || !matchup.participant1 || !matchup.participant2) return null;
+  return matchup.participant1.id === matchup.winner.id
+    ? matchup.participant2
+    : matchup.participant1;
+}
+
+/**
+ * Get display title from a participant's item
+ */
+export function getParticipantTitle(
+  participant: BracketParticipant | null | undefined,
+  fallback = 'Unknown'
+): string {
+  return participant?.item?.title || participant?.item?.name || fallback;
+}
+
+/**
+ * Check if a matchup is a completed, non-bye matchup (i.e. a real voted matchup)
+ */
+export function isCompletedNonBye(matchup: BracketMatchup): boolean {
+  return (
+    matchup.isComplete &&
+    !!matchup.winner &&
+    !!matchup.participant1 &&
+    !!matchup.participant2 &&
+    !matchup.participant1.isBye &&
+    !matchup.participant2.isBye
+  );
+}
+
+// ─── Tournament Analytics ────────────────────────────────────────────
+
+export interface UpsetResult {
+  matchup: BracketMatchup;
+  winnerSeed: number;
+  loserSeed: number;
+  seedDiff: number;
+  roundName: string;
+}
+
+export interface ClosestMatchup {
+  matchup: BracketMatchup;
+  seedDiff: number;
+  roundName: string;
+}
+
+export interface TournamentAnalytics {
+  upsets: UpsetResult[];
+  closestMatchups: ClosestMatchup[];
+  seedAccuracyScore: number; // 0-100, how often higher seed won
+  totalVotedMatchups: number;
+  higherSeedWins: number;
+}
+
+/**
+ * Detect upsets: lower seed (higher number) beating higher seed (lower number)
+ */
+export function detectUpsets(bracket: BracketState): UpsetResult[] {
+  const upsets: UpsetResult[] = [];
+
+  for (const round of bracket.rounds) {
+    for (const matchup of round.matchups) {
+      if (!isCompletedNonBye(matchup)) continue;
+
+      const winnerSeed = matchup.winner!.seed;
+      const loser = getLoserFromMatchup(matchup)!;
+      const loserSeed = loser.seed;
+
+      // Upset = winner has a higher seed number (worse seed) than loser
+      if (winnerSeed > loserSeed) {
+        const participantsInRound =
+          bracket.size / Math.pow(2, round.index);
+        upsets.push({
+          matchup,
+          winnerSeed,
+          loserSeed,
+          seedDiff: winnerSeed - loserSeed,
+          roundName:
+            ROUND_NAMES[participantsInRound] ||
+            `Round of ${participantsInRound}`,
+        });
+      }
+    }
+  }
+
+  // Sort by seed difference descending (biggest upsets first)
+  return upsets.sort((a, b) => b.seedDiff - a.seedDiff);
+}
+
+/**
+ * Find the closest matchups (smallest seed difference between opponents)
+ */
+export function findClosestMatchups(bracket: BracketState): ClosestMatchup[] {
+  const matchups: ClosestMatchup[] = [];
+
+  for (const round of bracket.rounds) {
+    for (const matchup of round.matchups) {
+      if (!isCompletedNonBye(matchup)) continue;
+
+      const seedDiff = Math.abs(
+        matchup.participant1!.seed - matchup.participant2!.seed
+      );
+      const participantsInRound =
+        bracket.size / Math.pow(2, round.index);
+
+      matchups.push({
+        matchup,
+        seedDiff,
+        roundName:
+          ROUND_NAMES[participantsInRound] ||
+          `Round of ${participantsInRound}`,
+      });
+    }
+  }
+
+  return matchups.sort((a, b) => a.seedDiff - b.seedDiff);
+}
+
+/**
+ * Calculate full tournament analytics
+ */
+export function getTournamentAnalytics(
+  bracket: BracketState
+): TournamentAnalytics {
+  let totalVotedMatchups = 0;
+  let higherSeedWins = 0;
+
+  for (const round of bracket.rounds) {
+    for (const matchup of round.matchups) {
+      if (!isCompletedNonBye(matchup)) continue;
+
+      totalVotedMatchups++;
+      const loser = getLoserFromMatchup(matchup)!;
+
+      // Higher seed = lower number wins
+      if (matchup.winner!.seed < loser.seed) {
+        higherSeedWins++;
+      }
+    }
+  }
+
+  const seedAccuracyScore =
+    totalVotedMatchups > 0
+      ? Math.round((higherSeedWins / totalVotedMatchups) * 100)
+      : 0;
+
+  return {
+    upsets: detectUpsets(bracket),
+    closestMatchups: findClosestMatchups(bracket),
+    seedAccuracyScore,
+    totalVotedMatchups,
+    higherSeedWins,
+  };
 }

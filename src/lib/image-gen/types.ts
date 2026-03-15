@@ -374,7 +374,7 @@ export type RenderContent =
  * Visual effects for render
  */
 export interface RenderEffect {
-  type: 'shadow' | 'blur' | 'opacity' | 'border' | 'glow';
+  type: 'shadow-sm' | 'blur-sm' | 'opacity' | 'border' | 'glow';
   params: Record<string, number | string>;
 }
 

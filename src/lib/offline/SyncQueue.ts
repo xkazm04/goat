@@ -34,9 +34,15 @@ function calculateBackoffDelay(
   return delay + Math.random() * delay * 0.1;
 }
 
+export type SyncExecutorResult = { success: boolean; serverVersion?: number; error?: string; serverData?: unknown };
+
 export type SyncExecutor = (
   operation: SyncOperation
-) => Promise<{ success: boolean; serverVersion?: number; error?: string; serverData?: unknown }>;
+) => Promise<SyncExecutorResult>;
+
+export type BatchSyncExecutor = (
+  operations: SyncOperation[]
+) => Promise<SyncExecutorResult[]>;
 
 export type ConflictHandler = (
   operation: SyncOperation,
@@ -57,11 +63,17 @@ export class SyncQueue {
   private config: OfflineConfig;
   private storage: OfflineStorage;
   private executor: SyncExecutor | null = null;
+  private batchExecutor: BatchSyncExecutor | null = null;
   private conflictHandler: ConflictHandler | null = null;
   private events: SyncQueueEvents = {};
   private isProcessing = false;
   private processingPromise: Promise<void> | null = null;
   private retryTimeouts: Map<string, ReturnType<typeof setTimeout>> = new Map();
+  // In-memory counters to avoid full IDB reads in notifyQueueChange
+  private _pendingCount = 0;
+  private _failedCount = 0;
+  private _countsInitialized = false;
+  private _lastSyncTime: number | null = null;
 
   constructor(config: Partial<OfflineConfig> = {}) {
     this.config = { ...DEFAULT_OFFLINE_CONFIG, ...config };
@@ -74,6 +86,10 @@ export class SyncQueue {
 
   setExecutor(executor: SyncExecutor): void {
     this.executor = executor;
+  }
+
+  setBatchExecutor(executor: BatchSyncExecutor): void {
+    this.batchExecutor = executor;
   }
 
   setConflictHandler(handler: ConflictHandler): void {
@@ -109,6 +125,7 @@ export class SyncQueue {
     };
 
     await this.storage.addToSyncQueue(operation);
+    this._pendingCount++;
     await this.notifyQueueChange();
 
     return operation;
@@ -151,7 +168,14 @@ export class SyncQueue {
   }
 
   async dequeue(operationId: string): Promise<void> {
+    // Look up status before removing so we can update in-memory counters
+    const queue = await this.storage.getSyncQueue();
+    const op = queue.find(o => o.id === operationId);
     await this.storage.removeOperation(operationId);
+    if (op) {
+      if (op.status === 'pending') this._pendingCount = Math.max(0, this._pendingCount - 1);
+      if (op.status === 'failed') this._failedCount = Math.max(0, this._failedCount - 1);
+    }
     await this.notifyQueueChange();
   }
 
@@ -178,7 +202,7 @@ export class SyncQueue {
       return this.processingPromise ?? Promise.resolve();
     }
 
-    if (!this.executor) {
+    if (!this.executor && !this.batchExecutor) {
       console.warn('[SyncQueue] No executor configured');
       return;
     }
@@ -201,95 +225,174 @@ export class SyncQueue {
     let failCount = 0;
 
     try {
-      while (true) {
-        const pendingOps = await this.storage.getPendingOperations();
-
-        if (pendingOps.length === 0) {
-          break;
-        }
-
-        const operation = pendingOps[0];
-
-        // Mark as in progress
-        const inProgressOp: SyncOperation = {
-          ...operation,
-          status: 'in_progress',
-        };
-        await this.storage.updateOperation(inProgressOp);
-
-        try {
-          const result = await this.executor!(operation);
-
-          if (result.success) {
-            // Mark as completed
-            const completedOp: SyncOperation = {
-              ...operation,
-              status: 'completed',
-            };
-            await this.storage.updateOperation(completedOp);
-            this.events.onOperationSuccess?.(completedOp);
-            successCount++;
-
-            // Update session sync status if applicable
-            if (
-              operation.entityType === 'session' &&
-              result.serverVersion !== undefined
-            ) {
-              await this.storage.markSessionSynced(
-                operation.entityId,
-                result.serverVersion
-              );
-            }
-          } else {
-            // Check for conflict
-            if (result.serverData && this.conflictHandler) {
-              const conflict = await this.conflictHandler(
-                operation,
-                result.serverData
-              );
-
-              if (conflict) {
-                await this.storage.addConflict(conflict);
-                this.events.onConflictDetected?.(conflict);
-
-                // Mark operation as conflict
-                const conflictOp: SyncOperation = {
-                  ...operation,
-                  status: 'conflict',
-                  conflictData: {
-                    localVersion: operation.payload,
-                    serverVersion: result.serverData,
-                    baseVersion: null,
-                    localTimestamp: operation.timestamp,
-                    serverTimestamp: Date.now(),
-                  },
-                };
-                await this.storage.updateOperation(conflictOp);
-                failCount++;
-                continue;
-              }
-            }
-
-            // Handle regular failure with retry
-            await this.handleOperationFailure(operation, result.error ?? 'Unknown error');
-            failCount++;
-          }
-        } catch (error) {
-          await this.handleOperationFailure(
-            operation,
-            error instanceof Error ? error.message : 'Unknown error'
-          );
-          failCount++;
-        }
-
-        await this.notifyQueueChange();
+      if (this.batchExecutor) {
+        // Batched processing: send all pending ops in one HTTP request
+        await this.doProcessQueueBatched(
+          (s) => { successCount += s; },
+          (f) => { failCount += f; }
+        );
+      } else {
+        // Sequential fallback: process one at a time
+        await this.doProcessQueueSequential(
+          (s) => { successCount += s; },
+          (f) => { failCount += f; }
+        );
       }
 
-      await this.storage.setMetadata('lastSyncTime', Date.now());
+      const now = Date.now();
+      await this.storage.setMetadata('lastSyncTime', now);
+      this._lastSyncTime = now;
       this.events.onSyncComplete?.(successCount, failCount);
     } catch (error) {
       this.events.onSyncError?.(error as Error);
       throw error;
+    }
+  }
+
+  private async doProcessQueueBatched(
+    addSuccess: (n: number) => void,
+    addFail: (n: number) => void
+  ): Promise<void> {
+    // Keep processing in rounds until no pending ops remain
+    // (conflict resolution or retries may re-enqueue ops)
+    while (true) {
+      const pendingOps = await this.storage.getPendingOperations();
+      if (pendingOps.length === 0) break;
+
+      // Mark all as in_progress
+      for (const op of pendingOps) {
+        await this.storage.updateOperation({ ...op, status: 'in_progress' });
+      }
+
+      let results: SyncExecutorResult[];
+      try {
+        results = await this.batchExecutor!(pendingOps);
+      } catch (error) {
+        // Entire batch failed (network error) — handle each op as failed
+        for (const op of pendingOps) {
+          await this.handleOperationFailure(
+            op,
+            error instanceof Error ? error.message : 'Network error'
+          );
+          addFail(1);
+        }
+        await this.notifyQueueChange();
+        break;
+      }
+
+      // Process per-operation results
+      for (let i = 0; i < pendingOps.length; i++) {
+        const operation = pendingOps[i];
+        const result = results[i] ?? { success: false, error: 'No result returned' };
+
+        if (result.success) {
+          const completedOp: SyncOperation = { ...operation, status: 'completed' };
+          await this.storage.updateOperation(completedOp);
+          this.events.onOperationSuccess?.(completedOp);
+          this._pendingCount = Math.max(0, this._pendingCount - 1);
+          addSuccess(1);
+
+          if (operation.entityType === 'session' && result.serverVersion !== undefined) {
+            await this.storage.markSessionSynced(operation.entityId, result.serverVersion);
+          }
+        } else if (result.serverData && this.conflictHandler) {
+          const conflict = await this.conflictHandler(operation, result.serverData);
+          if (conflict) {
+            await this.storage.addConflict(conflict);
+            this.events.onConflictDetected?.(conflict);
+            const conflictOp: SyncOperation = {
+              ...operation,
+              status: 'conflict',
+              conflictData: {
+                localVersion: operation.payload,
+                serverVersion: result.serverData,
+                baseVersion: null,
+                localTimestamp: operation.timestamp,
+                serverTimestamp: Date.now(),
+              },
+            };
+            await this.storage.updateOperation(conflictOp);
+            this._pendingCount = Math.max(0, this._pendingCount - 1);
+            addFail(1);
+          } else {
+            await this.handleOperationFailure(operation, result.error ?? 'Unknown error');
+            addFail(1);
+          }
+        } else {
+          await this.handleOperationFailure(operation, result.error ?? 'Unknown error');
+          addFail(1);
+        }
+      }
+
+      await this.notifyQueueChange();
+
+      // If all operations in the batch failed, don't loop again
+      // (retry is handled by handleOperationFailure with backoff)
+      const anySuccess = results.some((r) => r?.success);
+      if (!anySuccess) break;
+    }
+  }
+
+  private async doProcessQueueSequential(
+    addSuccess: (n: number) => void,
+    addFail: (n: number) => void
+  ): Promise<void> {
+    while (true) {
+      const pendingOps = await this.storage.getPendingOperations();
+      if (pendingOps.length === 0) break;
+
+      const operation = pendingOps[0];
+
+      const inProgressOp: SyncOperation = { ...operation, status: 'in_progress' };
+      await this.storage.updateOperation(inProgressOp);
+
+      try {
+        const result = await this.executor!(operation);
+
+        if (result.success) {
+          const completedOp: SyncOperation = { ...operation, status: 'completed' };
+          await this.storage.updateOperation(completedOp);
+          this.events.onOperationSuccess?.(completedOp);
+          this._pendingCount = Math.max(0, this._pendingCount - 1);
+          addSuccess(1);
+
+          if (operation.entityType === 'session' && result.serverVersion !== undefined) {
+            await this.storage.markSessionSynced(operation.entityId, result.serverVersion);
+          }
+        } else {
+          if (result.serverData && this.conflictHandler) {
+            const conflict = await this.conflictHandler(operation, result.serverData);
+            if (conflict) {
+              await this.storage.addConflict(conflict);
+              this.events.onConflictDetected?.(conflict);
+              const conflictOp: SyncOperation = {
+                ...operation,
+                status: 'conflict',
+                conflictData: {
+                  localVersion: operation.payload,
+                  serverVersion: result.serverData,
+                  baseVersion: null,
+                  localTimestamp: operation.timestamp,
+                  serverTimestamp: Date.now(),
+                },
+              };
+              await this.storage.updateOperation(conflictOp);
+              addFail(1);
+              continue;
+            }
+          }
+          await this.handleOperationFailure(operation, result.error ?? 'Unknown error');
+          addFail(1);
+        }
+      } catch (error) {
+        await this.handleOperationFailure(
+          operation,
+          error instanceof Error ? error.message : 'Unknown error'
+        );
+        addFail(1);
+      }
+
+      await this.notifyQueueChange();
     }
   }
 
@@ -308,6 +411,8 @@ export class SyncQueue {
         lastError: errorMessage,
       };
       await this.storage.updateOperation(failedOp);
+      this._pendingCount = Math.max(0, this._pendingCount - 1);
+      this._failedCount++;
       this.events.onOperationFailed?.(failedOp, errorMessage);
     } else {
       // Schedule retry with exponential backoff
@@ -383,6 +488,7 @@ export class SyncQueue {
     };
 
     await this.storage.updateOperation(resolvedOp);
+    this._pendingCount++;
 
     // Find and resolve associated conflict record
     const conflicts = await this.storage.getUnresolvedConflicts();
@@ -416,6 +522,8 @@ export class SyncQueue {
       await this.storage.updateOperation(retriedOp);
     }
 
+    this._pendingCount += failedOps.length;
+    this._failedCount = 0;
     await this.notifyQueueChange();
     this.processQueue();
   }
@@ -444,6 +552,8 @@ export class SyncQueue {
       await this.storage.removeOperation(op.id);
     }
 
+    this._pendingCount = 0;
+    this._failedCount = 0;
     await this.notifyQueueChange();
   }
 
@@ -459,14 +569,33 @@ export class SyncQueue {
   // Utilities
   // ============================================================================
 
+  /** Sync in-memory counters from IDB (lazy, once) */
+  private async ensureCountsInitialized(): Promise<void> {
+    if (this._countsInitialized) return;
+    const queue = await this.storage.getSyncQueue();
+    this._pendingCount = queue.filter(op => op.status === 'pending').length;
+    this._failedCount = queue.filter(op => op.status === 'failed').length;
+    this._lastSyncTime = await this.storage.getMetadata<number>('lastSyncTime') ?? null;
+    this._countsInitialized = true;
+  }
+
   private async notifyQueueChange(): Promise<void> {
-    const state = await this.getState();
-    this.events.onQueueChange?.(state);
+    if (!this.events.onQueueChange) return;
+    await this.ensureCountsInitialized();
+    // Build lightweight state from in-memory counters — no IDB reads
+    const state: SyncQueueState = {
+      operations: [], // Avoid full queue read; consumers use counts
+      isProcessing: this.isProcessing,
+      lastProcessedAt: this._lastSyncTime,
+      failedCount: this._failedCount,
+      pendingCount: this._pendingCount,
+    };
+    this.events.onQueueChange(state);
   }
 
   async getPendingCount(): Promise<number> {
-    const state = await this.getState();
-    return state.pendingCount;
+    await this.ensureCountsInitialized();
+    return this._pendingCount;
   }
 
   async hasPendingOperations(): Promise<boolean> {

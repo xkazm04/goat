@@ -22,6 +22,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useFilterIntegrationOptional } from '../CollectionFilterIntegration';
 import type { FilterConfig } from '../types';
+import { FILTER_TIMING } from '../constants';
 
 /**
  * Props for FilterResultsCounter
@@ -102,11 +103,11 @@ export function FilterResultsCounter({
     return (
       <div className={cn('flex items-center gap-2 text-sm', className)}>
         {isLoading ? (
-          <Loader2 size={14} className="animate-spin text-cyan-400" />
+          <Loader2 size={14} className="animate-spin text-brand-hover" />
         ) : (
           <Filter
             size={14}
-            className={isFiltering ? 'text-cyan-400' : 'text-zinc-500'}
+            className={isFiltering ? 'text-brand-hover' : 'text-zinc-500'}
           />
         )}
         <span className={isFiltering ? 'text-zinc-200' : 'text-zinc-500'}>
@@ -131,9 +132,9 @@ export function FilterResultsCounter({
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             {isLoading ? (
-              <Loader2 size={16} className="animate-spin text-cyan-400" />
+              <Loader2 size={16} className="animate-spin text-brand-hover" />
             ) : isFiltering ? (
-              <Filter size={16} className="text-cyan-400" />
+              <Filter size={16} className="text-brand-hover" />
             ) : (
               <CheckCircle2 size={16} className="text-emerald-400" />
             )}
@@ -152,7 +153,7 @@ export function FilterResultsCounter({
         {/* Stats grid */}
         <div className="grid grid-cols-3 gap-3">
           <div className="text-center">
-            <div className="text-2xl font-bold text-cyan-400">{matchedItems}</div>
+            <div className="text-2xl font-bold text-brand-hover">{matchedItems}</div>
             <div className="text-xs text-zinc-500">Matched</div>
           </div>
           <div className="text-center">
@@ -181,7 +182,7 @@ export function FilterResultsCounter({
           <div className="mt-3 pt-3 border-t border-zinc-800">
             <div className="flex items-center gap-2 text-xs text-zinc-400">
               {hasSearch && (
-                <span className="flex items-center gap-1 rounded bg-cyan-500/10 px-1.5 py-0.5 text-cyan-400">
+                <span className="flex items-center gap-1 rounded bg-brand/10 px-1.5 py-0.5 text-brand-hover">
                   <Search size={10} />
                   Search active
                 </span>
@@ -208,7 +209,7 @@ export function FilterResultsCounter({
       )}
     >
       {/* Icon */}
-      <div className="flex-shrink-0">
+      <div className="shrink-0">
         <AnimatePresence mode="wait">
           {isLoading ? (
             <motion.div
@@ -217,7 +218,7 @@ export function FilterResultsCounter({
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
             >
-              <Loader2 size={18} className="animate-spin text-cyan-400" />
+              <Loader2 size={18} className="animate-spin text-brand-hover" />
             </motion.div>
           ) : trend === 'none' ? (
             <motion.div
@@ -244,7 +245,7 @@ export function FilterResultsCounter({
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
             >
-              <Filter size={18} className="text-cyan-400" />
+              <Filter size={18} className="text-brand-hover" />
             </motion.div>
           )}
         </AnimatePresence>
@@ -262,7 +263,7 @@ export function FilterResultsCounter({
               ? 'text-red-400'
               : trend === 'all' || !isFiltering
               ? 'text-emerald-400'
-              : 'text-cyan-400'
+              : 'text-brand-hover'
           )}
         >
           {matchedItems}
@@ -280,7 +281,7 @@ export function FilterResultsCounter({
 
       {/* Trend indicator */}
       {isFiltering && trend && (
-        <div className="flex-shrink-0">
+        <div className="shrink-0">
           {trend === 'low' && (
             <TrendingDown size={14} className="text-orange-400" />
           )}
@@ -324,7 +325,7 @@ export function FilterCountBadge({
       className={cn(
         'inline-flex items-center justify-center',
         'min-w-[18px] h-[18px] px-1',
-        'rounded-full bg-cyan-500 text-[10px] font-bold text-white',
+        'rounded-full bg-brand text-[10px] font-bold text-white',
         className
       )}
     >
@@ -377,7 +378,7 @@ export function SearchResultSummary({
 
   return (
     <span className={cn('text-sm', className)}>
-      <span className="text-cyan-400">{matchedItems}</span>
+      <span className="text-brand-hover">{matchedItems}</span>
       <span className="text-zinc-500"> of </span>
       <span className="text-zinc-400">{totalItems}</span>
       <span className="text-zinc-500"> match </span>

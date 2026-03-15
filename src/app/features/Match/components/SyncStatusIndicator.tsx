@@ -11,8 +11,9 @@ import {
   WifiOff,
   Loader2,
 } from 'lucide-react';
-import { useNetworkStatus, useOfflineSync } from '@/lib/offline';
+import { useNetworkStatus, useOfflineSync, syncStatusColors } from '@/lib/offline';
 import { SyncStatus } from '@/lib/offline/types';
+import { SyncErrorIllustration, classifySyncError } from '@/components/illustrations/SyncErrorIllustrations';
 
 interface SyncStatusIndicatorProps {
   className?: string;
@@ -31,38 +32,38 @@ const STATUS_CONFIG: Record<
 > = {
   idle: {
     icon: Cloud,
-    color: 'text-gray-400',
-    bgColor: 'bg-gray-800/50',
+    color: syncStatusColors.idle.text,
+    bgColor: syncStatusColors.idle.bgMuted,
     label: 'Idle',
   },
   syncing: {
     icon: Loader2,
-    color: 'text-blue-400',
-    bgColor: 'bg-blue-900/30',
+    color: syncStatusColors.syncing.text,
+    bgColor: syncStatusColors.syncing.bgMuted,
     label: 'Syncing',
   },
   synced: {
     icon: CheckCircle,
-    color: 'text-green-400',
-    bgColor: 'bg-green-900/30',
+    color: syncStatusColors.synced.text,
+    bgColor: syncStatusColors.synced.bgMuted,
     label: 'Synced',
   },
   pending: {
     icon: RefreshCw,
-    color: 'text-yellow-400',
-    bgColor: 'bg-yellow-900/30',
+    color: syncStatusColors.pending.text,
+    bgColor: syncStatusColors.pending.bgMuted,
     label: 'Pending',
   },
   error: {
     icon: AlertTriangle,
-    color: 'text-red-400',
-    bgColor: 'bg-red-900/30',
+    color: syncStatusColors.error.text,
+    bgColor: syncStatusColors.error.bgMuted,
     label: 'Error',
   },
   conflict: {
     icon: AlertTriangle,
-    color: 'text-orange-400',
-    bgColor: 'bg-orange-900/30',
+    color: syncStatusColors.conflict.text,
+    bgColor: syncStatusColors.conflict.bgMuted,
     label: 'Conflict',
   },
 };
@@ -111,7 +112,7 @@ export function SyncStatusIndicator({
             exit={{ opacity: 0, y: -50 }}
             className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 shadow-lg flex items-center gap-3"
           >
-            <WifiOff className="w-5 h-5 text-yellow-400" />
+            <WifiOff className={`w-5 h-5 ${syncStatusColors.offline.text}`} />
             <div>
               <p className="text-white font-medium">You're offline</p>
               <p className="text-gray-400 text-sm">
@@ -129,7 +130,7 @@ export function SyncStatusIndicator({
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-colors ${
-            isOffline ? 'bg-yellow-900/30' : config.bgColor
+            isOffline ? syncStatusColors.offline.bgMuted : config.bgColor
           }`}
         >
           <motion.div
@@ -141,13 +142,13 @@ export function SyncStatusIndicator({
             }
           >
             <Icon
-              className={`w-4 h-4 ${isOffline ? 'text-yellow-400' : config.color}`}
+              className={`w-4 h-4 ${isOffline ? syncStatusColors.offline.text : config.color}`}
             />
           </motion.div>
 
           {showDetails && (
             <span
-              className={`text-sm ${isOffline ? 'text-yellow-400' : config.color}`}
+              className={`text-sm ${isOffline ? syncStatusColors.offline.text : config.color}`}
             >
               {isOffline ? 'Offline' : config.label}
             </span>
@@ -158,7 +159,7 @@ export function SyncStatusIndicator({
             <motion.span
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              className="absolute -top-1 -right-1 bg-yellow-500 text-gray-900 text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold"
+              className={`absolute -top-1 -right-1 ${syncStatusColors.pending.bg} text-gray-900 text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold`}
             >
               {syncState.pendingChanges}
             </motion.span>
@@ -169,7 +170,7 @@ export function SyncStatusIndicator({
             <motion.span
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold"
+              className={`absolute -top-1 -right-1 ${syncStatusColors.conflict.bg} text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold`}
             >
               !
             </motion.span>
@@ -191,7 +192,7 @@ export function SyncStatusIndicator({
                   <span className="text-white font-medium">Sync Status</span>
                   <span
                     className={`text-sm ${
-                      isOffline ? 'text-yellow-400' : config.color
+                      isOffline ? syncStatusColors.offline.text : config.color
                     }`}
                   >
                     {isOffline ? 'Offline' : statusText}
@@ -224,10 +225,21 @@ export function SyncStatusIndicator({
                   </div>
                 )}
 
-                {/* Error message */}
+                {/* Error message with illustration */}
                 {syncState.error && (
-                  <div className="text-sm text-red-400 bg-red-900/20 px-3 py-2 rounded">
-                    {syncState.error}
+                  <div className={`flex flex-col items-center gap-2 px-3 py-3 rounded text-center ${
+                    classifySyncError(syncState.error) === 'quota'
+                      ? syncStatusColors.pending.bgMuted
+                      : syncStatusColors.error.bgMuted
+                  }`}>
+                    <SyncErrorIllustration error={syncState.error} width={56} height={56} />
+                    <span className={`text-sm ${
+                      classifySyncError(syncState.error) === 'quota'
+                        ? syncStatusColors.pending.text
+                        : syncStatusColors.error.text
+                    }`}>
+                      {syncState.error}
+                    </span>
                   </div>
                 )}
 
@@ -238,8 +250,9 @@ export function SyncStatusIndicator({
                       setIsExpanded(false);
                       onConflictClick?.();
                     }}
-                    className="w-full text-left text-sm text-orange-400 bg-orange-900/20 px-3 py-2 rounded hover:bg-orange-900/30 transition-colors"
+                    className={`w-full flex flex-col items-center gap-2 text-sm ${syncStatusColors.conflict.text} ${syncStatusColors.conflict.bgMuted} px-3 py-3 rounded hover:bg-orange-900/30 transition-colors`}
                   >
+                    <SyncErrorIllustration error="conflict" width={48} height={48} />
                     {syncState.conflicts.length} conflict
                     {syncState.conflicts.length > 1 ? 's' : ''} need resolution
                   </button>

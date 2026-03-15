@@ -46,7 +46,7 @@ export function FeedbackParticles({
 
   return (
     <div
-      className={cn('fixed inset-0 z-[99] pointer-events-none', className)}
+      className={cn('fixed inset-0 z-99 pointer-events-none', className)}
       data-testid="feedback-particles"
     >
       <AnimatePresence>

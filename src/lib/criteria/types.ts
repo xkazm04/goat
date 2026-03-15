@@ -14,7 +14,7 @@
  * - label: "8.5 Quality" badge (text-focused, detailed)
  * - hidden: Not shown on card (detail popup only)
  */
-export type CriterionDisplayType = 'ring' | 'bar' | 'label' | 'hidden';
+export type CriterionDisplayType = 'ring-3' | 'bar' | 'label' | 'hidden';
 
 /**
  * Position for criterion overlay on item card

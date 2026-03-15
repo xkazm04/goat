@@ -17,10 +17,10 @@ import {
 } from 'lucide-react';
 import {
   SYSTEM_TIER_PRESETS,
-  getPresetsByCategory,
-  getPresetCategories,
+  getCustomPresetsByCategory as getPresetsByCategory,
+  getCustomPresetCategories as getPresetCategories,
   type CustomTierPreset,
-} from '@/lib/tier/customPresets';
+} from '../../lib/tierPresets';
 
 interface TierPresetGalleryProps {
   isOpen: boolean;
@@ -51,7 +51,7 @@ function TierPreview({ preset }: { preset: CustomTierPreset }) {
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ delay: i * 0.05 }}
-          className="w-7 h-7 rounded-md flex items-center justify-center text-[10px] font-bold shadow-sm"
+          className="w-7 h-7 rounded-md flex items-center justify-center text-[10px] font-bold shadow-xs"
           style={{
             background: tier.color.gradient,
             color: tier.color.text,
@@ -93,8 +93,9 @@ function PresetCard({
       onClick={onSelect}
       className={`
         relative w-full p-4 rounded-xl border text-left transition-all
+        focus-ring
         ${isSelected
-          ? 'bg-cyan-500/10 border-cyan-500/50 ring-2 ring-cyan-500/30'
+          ? 'bg-brand/10 border-brand/50 ring-2 ring-brand/30'
           : 'bg-slate-800/50 border-slate-700/50 hover:bg-slate-700/50 hover:border-slate-600'
         }
       `}
@@ -102,7 +103,7 @@ function PresetCard({
       {/* Selected indicator */}
       {isSelected && (
         <div className="absolute top-3 right-3">
-          <div className="w-6 h-6 bg-cyan-500 rounded-full flex items-center justify-center">
+          <div className="w-6 h-6 bg-brand rounded-full flex items-center justify-center">
             <Check className="w-4 h-4 text-white" />
           </div>
         </div>
@@ -113,13 +114,13 @@ function PresetCard({
         <div
           className={`
             w-10 h-10 rounded-lg flex items-center justify-center
-            ${isSelected ? 'bg-cyan-500/20 text-cyan-400' : 'bg-slate-700/50 text-slate-400'}
+            ${isSelected ? 'bg-brand/20 text-brand-hover' : 'bg-slate-700/50 text-slate-400'}
           `}
         >
           <CategoryIcon className="w-5 h-5" />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className={`font-semibold ${isSelected ? 'text-cyan-400' : 'text-white'}`}>
+          <h3 className={`font-semibold ${isSelected ? 'text-brand-hover' : 'text-white'}`}>
             {preset.name}
           </h3>
           <p className="text-xs text-slate-500 truncate mt-0.5">
@@ -169,7 +170,7 @@ function CategoryTabs({
             className={`
               flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all
               ${isSelected
-                ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                ? 'bg-brand/20 text-brand-hover border border-brand/30'
                 : 'bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 border border-transparent'
               }
             `}
@@ -239,20 +240,23 @@ export function TierPresetGallery({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xl p-4"
         onClick={onClose}
       >
         <motion.div
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="tier-preset-title"
           className="w-full max-w-4xl max-h-[85vh] bg-slate-900 rounded-2xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-slate-700">
             <div>
-              <h2 className="text-xl font-bold text-white">
+              <h2 id="tier-preset-title" className="text-xl font-bold text-white">
                 Tier List Presets
               </h2>
               <p className="text-sm text-slate-400 mt-0.5">
@@ -278,7 +282,7 @@ export function TierPresetGallery({
                 placeholder="Search presets..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+                className="w-full pl-10 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-hidden focus:border-brand focus:ring-1 focus:ring-brand"
               />
             </div>
 
@@ -325,7 +329,7 @@ export function TierPresetGallery({
                 </div>
                 <button
                   onClick={handleApply}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-cyan-500 hover:bg-cyan-400 text-white font-medium rounded-lg transition-colors"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-brand hover:bg-brand-hover text-white font-medium rounded-lg transition-colors"
                 >
                   Apply Preset
                   <ChevronRight className="w-4 h-4" />

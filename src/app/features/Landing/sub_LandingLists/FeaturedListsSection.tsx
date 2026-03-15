@@ -12,9 +12,8 @@ import { NeonArenaTheme } from "../shared/NeonArenaTheme";
 import { FEATURED_ORBS } from "../shared/NeonArenaBackground";
 import { SectionHeader } from "./SectionHeader";
 import { getCategoryColor } from "@/lib/helpers/getColors";
-import { useQueries } from "@tanstack/react-query";
-import { goatApi } from "@/lib/api";
-import { ELEVATION, GLOW_PRESET } from "@/components/visual/depth";
+import { useListThumbnails } from "@/hooks/use-list-thumbnails";
+import { ELEVATION, GLOW_PRESET, getGlow } from "@/components/visual/depth";
 
 interface FeaturedListsSectionProps {
   className?: string;
@@ -52,7 +51,11 @@ const MosaicCard = memo(function MosaicCard({
 
   return (
     <motion.div
-      className="relative aspect-[4/3] cursor-pointer overflow-hidden rounded-md group"
+      className="relative aspect-4/3 cursor-pointer overflow-hidden rounded-md group
+        focus-ring"
+      tabIndex={0}
+      role="button"
+      aria-label={`Play ${list.title}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={handleClick}
@@ -120,7 +123,7 @@ const MosaicCard = memo(function MosaicCard({
       {/* Loading shimmer */}
       {isLoading && (
         <div className="absolute inset-0 bg-slate-800/60">
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-slate-700/30 to-transparent animate-pulse" />
+          <div className="absolute inset-0 bg-linear-to-r from-transparent via-slate-700/30 to-transparent animate-pulse" />
         </div>
       )}
 
@@ -160,7 +163,7 @@ const MosaicCard = memo(function MosaicCard({
               className="w-12 h-12 rounded-full flex items-center justify-center"
               style={{
                 background: "linear-gradient(135deg, #fbbf24, #f59e0b)",
-                boxShadow: "0 4px 20px rgba(251, 191, 36, 0.4), 0 0 15px rgba(251, 191, 36, 0.3)",
+                boxShadow: `${ELEVATION.medium}, ${GLOW_PRESET.goldMedium}`,
               }}
             >
               <Play className="w-6 h-6 text-white fill-current ml-0.5" />
@@ -181,14 +184,15 @@ export function FeaturedListsSection({ className }: FeaturedListsSectionProps) {
   const [filteredResults, setFilteredResults] = useState<SearchFilterResult[]>([]);
 
   // Single consolidated API call for all featured lists
+  // Uses same limits as FloatingShowcase so TanStack Query serves both from one cache entry
   const {
     data: featuredData,
     isLoading,
   } = useFeaturedLists({
-    popular_limit: 50,
-    trending_limit: 50,
-    latest_limit: 50,
-    awards_limit: 50,
+    popular_limit: 80,
+    trending_limit: 80,
+    latest_limit: 80,
+    awards_limit: 80,
   });
 
   // Combine and dedupe all lists
@@ -210,32 +214,9 @@ export function FeaturedListsSection({ className }: FeaturedListsSectionProps) {
     }).slice(0, 60);
   }, [featuredData]);
 
-  // Fetch images for grid cards
-  const imageQueries = useQueries({
-    queries: allLists.slice(0, 60).map(list => ({
-      queryKey: ['list-image', list.id],
-      queryFn: async () => {
-        const data = await goatApi.lists.get(list.id);
-        const firstWithImage = data?.items?.find(item => item.image_url);
-        return { id: list.id, url: firstWithImage?.image_url || null };
-      },
-      staleTime: 1000 * 60 * 15,
-    })),
-  });
-
-  const imageMap = useMemo(() => {
-    const map: Record<string, { url: string | null; loading: boolean }> = {};
-    imageQueries.forEach((query, index) => {
-      const listId = allLists[index]?.id;
-      if (listId) {
-        map[listId] = {
-          url: query.data?.url ?? null,
-          loading: query.isLoading,
-        };
-      }
-    });
-    return map;
-  }, [imageQueries, allLists]);
+  // Batch-fetch thumbnail images (replaces N+1 individual queries)
+  const thumbnailIds = useMemo(() => allLists.map(l => l.id), [allLists]);
+  const imageMap = useListThumbnails(thumbnailIds);
 
   // Handlers for search/filter
   const handleFilteredResults = useCallback((results: SearchFilterResult[]) => {
@@ -303,7 +284,7 @@ export function FeaturedListsSection({ className }: FeaturedListsSectionProps) {
               Array.from({ length: 24 }).map((_, i) => (
                 <div
                   key={`skeleton-${i}`}
-                  className="aspect-[4/3] rounded-md bg-slate-800/30 animate-pulse"
+                  className="aspect-4/3 rounded-md bg-slate-800/30 animate-pulse"
                 />
               ))
             ) : displayLists.length > 0 ? (

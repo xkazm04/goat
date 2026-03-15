@@ -64,14 +64,14 @@ export function QuickSelectBadge({
         shadow-lg shadow-black/30
         ${
           isSelected
-            ? "bg-gradient-to-br from-cyan-400 to-cyan-600 text-white ring-2 ring-cyan-400/50"
-            : "bg-gradient-to-br from-gray-700 to-gray-900 text-gray-200 border border-gray-600/50"
+            ? "bg-linear-to-br from-brand-hover to-brand-muted text-white ring-2 ring-brand-hover/50"
+            : "bg-linear-to-br from-gray-700 to-gray-900 text-gray-200 border border-gray-600/50"
         }
         transition-all duration-150
       `}
       data-testid={`quick-select-badge-${number}`}
     >
-      <span className="drop-shadow-sm">{number}</span>
+      <span className="drop-shadow-xs">{number}</span>
     </motion.div>
   );
 }
@@ -118,7 +118,7 @@ export function QuickSelectStatusBar({
         flex items-center gap-3 px-3 py-2 rounded-lg
         ${
           isActive
-            ? "bg-gradient-to-r from-cyan-500/15 to-purple-500/15 border border-cyan-500/30"
+            ? "bg-linear-to-r from-brand/15 to-purple-500/15 border border-brand/30"
             : "bg-gray-800/50 border border-gray-700/50"
         }
         transition-colors duration-200
@@ -129,7 +129,7 @@ export function QuickSelectStatusBar({
       <div
         className={`
           flex items-center justify-center w-6 h-6 rounded
-          ${isActive ? "bg-cyan-500/20 text-cyan-400" : "bg-gray-700/50 text-gray-500"}
+          ${isActive ? "bg-brand/20 text-brand-hover" : "bg-gray-700/50 text-gray-500"}
         `}
       >
         <Keyboard className="w-4 h-4" />
@@ -146,7 +146,7 @@ export function QuickSelectStatusBar({
 
         {mode === "item-selection" && (
           <div className="flex items-center gap-2">
-            <span className="text-xs text-cyan-400 font-medium">Quick-select active</span>
+            <span className="text-xs text-brand-hover font-medium">Quick-select active</span>
             <span className="text-[10px] text-gray-400">
               Press <kbd className="px-1 py-0.5 bg-gray-700/80 rounded text-gray-300 font-mono">1-9</kbd>{" "}
               to select
@@ -156,7 +156,7 @@ export function QuickSelectStatusBar({
 
         {mode === "position-assignment" && selectedItemTitle && (
           <div className="flex items-center gap-2">
-            <span className="text-xs text-cyan-400 font-medium truncate max-w-[150px]">
+            <span className="text-xs text-brand-hover font-medium truncate max-w-[150px]">
               "{selectedItemTitle}"
             </span>
             <span className="text-[10px] text-gray-400">
@@ -196,7 +196,7 @@ export function QuickSelectStatusBar({
               px-2 py-1 text-[10px] rounded transition-colors
               ${
                 isActive
-                  ? "text-cyan-400 hover:text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/20"
+                  ? "text-brand-hover hover:text-brand-hover bg-brand/10 hover:bg-brand/20"
                   : "text-gray-400 hover:text-gray-200 bg-gray-700/50 hover:bg-gray-600/50"
               }
             `}

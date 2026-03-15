@@ -37,7 +37,7 @@ export function AchievementEmbed({
       >
         {/* Icon */}
         <div
-          className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+          className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
           style={{ background: tierConfig.gradient }}
         >
           <Trophy
@@ -132,7 +132,7 @@ export function AchievementEmbed({
         <div className="flex items-center gap-4 mb-4">
           {/* Icon */}
           <div
-            className="w-16 h-16 rounded-xl flex items-center justify-center flex-shrink-0"
+            className="w-16 h-16 rounded-xl flex items-center justify-center shrink-0"
             style={{
               background: tierConfig.gradient,
               boxShadow: `0 0 30px ${tierConfig.glow}40`,
@@ -173,7 +173,7 @@ export function AchievementEmbed({
           <div className="flex-1" />
 
           {/* View link */}
-          <div className="flex items-center gap-1 text-xs text-cyan-400">
+          <div className="flex items-center gap-1 text-xs text-brand-hover">
             <span>View on G.O.A.T.</span>
             <ExternalLink className="w-3 h-3" />
           </div>

@@ -408,7 +408,7 @@ export const SizeNumberInput = memo(function SizeNumberInput({
         onChange={(e) => setInputValue(e.target.value)}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
-        className="w-16 px-2 py-1 rounded-lg text-center text-sm font-medium bg-slate-800/50 border border-slate-700/50 text-white focus:outline-none focus:border-cyan-500/50"
+        className="w-16 px-2 py-1 rounded-lg text-center text-sm font-medium bg-slate-800/50 border border-slate-700/50 text-white focus:outline-hidden focus:border-brand/50"
         style={{
           background: "rgba(30, 41, 59, 0.5)",
           borderColor: `${color.primary}30`,

@@ -2,6 +2,8 @@
 
 import { memo } from "react";
 import { motion } from "framer-motion";
+import { useCurrentList } from "@/stores/use-list-store";
+import { CategorySlotIllustration } from "@/components/illustrations/EmptyStateIllustrations";
 
 export interface DropZoneEmptyProps {
   /** Position in the grid (0-based) */
@@ -16,7 +18,7 @@ export interface DropZoneEmptyProps {
 
 /**
  * DropZoneEmpty
- * Renders the empty state of a drop zone with rank number and placeholder text.
+ * Renders the empty state of a drop zone with category-aware illustration.
  */
 export const DropZoneEmpty = memo(function DropZoneEmpty({
   position,
@@ -24,6 +26,8 @@ export const DropZoneEmpty = memo(function DropZoneEmpty({
   isOver,
   accentColor,
 }: DropZoneEmptyProps) {
+  const currentList = useCurrentList();
+
   return (
     <motion.div
       key="empty"
@@ -32,13 +36,11 @@ export const DropZoneEmpty = memo(function DropZoneEmpty({
       className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center"
     >
       {isOver ? (
-        <div className="text-cyan-400 font-bold text-xs tracking-widest uppercase">
+        <div className="text-brand-hover font-bold text-xs tracking-widest uppercase">
           Drop Here
         </div>
       ) : (
-        <div className="text-white/20 text-[10px] font-mono uppercase tracking-widest">
-          {isTop3 ? 'Podium' : 'Empty Slot'}
-        </div>
+        <CategorySlotIllustration category={currentList?.category} />
       )}
     </motion.div>
   );
@@ -68,7 +70,7 @@ export const RankNumberBackground = memo(function RankNumberBackground({
   return (
     <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
       <span
-        className="text-[6rem] font-black select-none transition-all duration-500"
+        className="text-[6rem] font-black font-grotesk select-none transition-all duration-500"
         style={{
           color: accentColor,
           opacity: isOver ? 0.2 : isOccupied ? 0 : 0.15,

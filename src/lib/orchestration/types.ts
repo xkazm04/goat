@@ -313,7 +313,7 @@ export interface SessionStoreSnapshot {
 }
 
 export interface ComparisonStoreSnapshot {
-  isComparisonOpen: boolean;
+  isOpen: boolean;
   items: unknown[];
 }
 
@@ -353,11 +353,11 @@ export interface SessionStoreActions {
 }
 
 export interface ComparisonStoreActions {
-  openComparison: () => void;
-  closeComparison: () => void;
-  addToComparison: (item: unknown) => void;
-  removeFromComparison: (itemId: string) => void;
-  clearComparison: () => void;
+  open: () => void;
+  close: () => void;
+  toggleItem: (item: unknown) => void;
+  removeItem: (itemId: string) => void;
+  clearAll: () => void;
 }
 
 export interface MatchStoreActions {

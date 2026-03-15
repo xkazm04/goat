@@ -105,7 +105,7 @@ export async function GET() {
         { id: 'tv', primary: ['tmdb'], fallback: ['wikipedia'] },
         { id: 'games', primary: ['igdb'], fallback: ['wikipedia'] },
         { id: 'music', primary: ['spotify'], fallback: ['wikipedia'] },
-        { id: 'books', primary: ['openlibrary'], fallback: ['wikipedia'] },
+        { id: 'books', primary: ['wikipedia'], fallback: [] },
         { id: 'sports', primary: ['wikipedia'], fallback: [] },
         { id: 'general', primary: ['wikipedia'], fallback: [] },
       ],

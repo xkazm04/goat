@@ -9,7 +9,7 @@ import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import type { FilterStatistics as FilterStatsType, FieldDistribution } from '../types';
-import { FILTER_ANIMATIONS } from '../constants';
+import { FILTER_ANIMATIONS, FILTER_TIMING } from '../constants';
 
 /**
  * FilterStatistics Props
@@ -161,7 +161,7 @@ function CardStatistics({
           className="h-full bg-primary rounded-full"
           initial={{ width: 0 }}
           animate={{ width: `${statistics.matchPercentage}%` }}
-          transition={{ duration: 0.5, ease: 'easeOut' }}
+          transition={{ duration: FILTER_TIMING.slow, ease: 'easeOut' }}
         />
       </div>
 
@@ -343,7 +343,7 @@ function FieldDistributionChart({
                 className="h-full bg-primary/60 rounded-full"
                 initial={{ width: 0 }}
                 animate={{ width: `${(item.count / maxCount) * 100}%` }}
-                transition={{ duration: 0.3, delay: 0.1 }}
+                transition={{ duration: FILTER_TIMING.slow, delay: 0.1 }}
               />
             </div>
             <span className="text-xs font-medium w-10 text-right">

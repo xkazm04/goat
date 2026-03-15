@@ -44,13 +44,6 @@ export {
   type CriterionBreakdown,
 } from './calculateWeightedScore';
 
-// Manager
-export {
-  CriteriaManager,
-  createCriteriaManager,
-  defaultCriteriaManager,
-} from './CriteriaManager';
-
 // Templates
 export {
   UNIVERSAL_TEMPLATE,

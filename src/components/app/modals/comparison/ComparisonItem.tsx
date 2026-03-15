@@ -55,7 +55,7 @@ export function ComparisonItem({
         <>
           {/* Icon */}
           <div 
-            className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0"
+            className="w-12 h-12 rounded-lg flex items-center justify-center shrink-0"
             style={{
               background: `linear-gradient(135deg, 
                 #4c1d95 0%, 
@@ -91,7 +91,7 @@ export function ComparisonItem({
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={(e) => {
                 e.stopPropagation();

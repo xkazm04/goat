@@ -31,9 +31,6 @@ const IMAGE_SOURCE_PRIORITIES: Record<DataSource, number> = {
   tmdb: 95, // Best quality for movies/TV
   igdb: 90, // Best for games
   spotify: 90, // Good for music
-  openlibrary: 70, // Decent for books
-  googlebooks: 65, // Lower quality
-  musicbrainz: 60, // Often no images
   wikipedia: 50, // Variable quality
   gemini: 30, // AI-generated, least preferred
 };

@@ -205,7 +205,7 @@ export function CompositionModal({
           initial="hidden"
           animate="visible"
           exit="exit"
-          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/70 backdrop-blur-xl z-50 flex items-center justify-center p-4"
           onClick={handleClose}
           data-testid="composition-modal-backdrop"
         >
@@ -264,7 +264,7 @@ export function CompositionModal({
                     <div className="flex items-center gap-3 mb-4">
                       <motion.button
                         onClick={handleBackFromTemplates}
-                        className="p-2 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                        className="p-2 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition-all duration-200 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-hover focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         data-testid="back-from-templates-btn"
@@ -311,7 +311,7 @@ export function CompositionModal({
                           {mode === 'blueprint' ? (
                             <Share2 className="w-4 h-4 text-purple-400" />
                           ) : (
-                            <Copy className="w-4 h-4 text-cyan-400" />
+                            <Copy className="w-4 h-4 text-brand-hover" />
                           )}
                           <div>
                             <p className="text-sm font-medium text-white">
@@ -324,7 +324,7 @@ export function CompositionModal({
                         </div>
                         <motion.button
                           onClick={clearTemplateData}
-                          className="text-xs text-slate-400 hover:text-white transition-all duration-200 px-2 py-1 rounded-md hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+                          className="text-xs text-slate-400 hover:text-white transition-all duration-200 px-2 py-1 rounded-md hover:bg-white/5 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-hover"
                           whileHover={{ scale: 1.05 }}
                           data-testid="clear-template-btn"
                         >
@@ -338,7 +338,7 @@ export function CompositionModal({
                       <div className="flex flex-col gap-3">
                         <motion.button
                           onClick={() => setShowTemplateGallery(true)}
-                          className="group w-full flex items-center justify-center gap-3 py-4 rounded-xl transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                          className="group w-full flex items-center justify-center gap-3 py-4 rounded-xl transition-all duration-200 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-hover focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                           style={{
                             background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(34, 211, 238, 0.05))',
                             border: '1px solid rgba(6, 182, 212, 0.2)',
@@ -350,7 +350,7 @@ export function CompositionModal({
                           whileTap={{ scale: 0.99 }}
                           data-testid="start-from-template-btn"
                         >
-                          <Copy className="w-5 h-5 text-cyan-400 transition-transform duration-200 group-hover:scale-110" />
+                          <Copy className="w-5 h-5 text-brand-hover transition-transform duration-200 group-hover:scale-110" />
                           <span className="text-sm font-medium text-white">Start from Template</span>
                           <span className="text-xs text-slate-400 ml-2 transition-colors duration-200 group-hover:text-slate-300">
                             Clone popular lists or use presets
@@ -361,7 +361,7 @@ export function CompositionModal({
                         <motion.button
                           onClick={handleShareAsBlueprint}
                           disabled={createBlueprintMutation.isPending}
-                          className="group w-full flex items-center justify-center gap-3 py-3 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                          className="group w-full flex items-center justify-center gap-3 py-3 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                           style={{
                             background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(168, 85, 247, 0.05))',
                             border: '1px solid rgba(139, 92, 246, 0.2)',

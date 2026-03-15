@@ -59,33 +59,6 @@ const SOURCE_FIELD_MAPPINGS: Record<DataSource, Record<string, string>> = {
     id: 'spotifyId',
     total_tracks: 'tracks',
   },
-  musicbrainz: {
-    title: 'name',
-    'artist-credit': 'artist',
-    date: 'releaseDate',
-    id: 'musicbrainzId',
-  },
-  openlibrary: {
-    title: 'name',
-    description: 'description',
-    authors: 'author',
-    publish_date: 'releaseDate',
-    number_of_pages: 'pages',
-    covers: 'images',
-    isbn_13: 'isbn',
-    isbn_10: 'isbn',
-    key: 'openlibraryId',
-  },
-  googlebooks: {
-    title: 'name',
-    description: 'description',
-    authors: 'author',
-    publishedDate: 'releaseDate',
-    pageCount: 'pages',
-    imageLinks: 'images',
-    industryIdentifiers: 'isbn',
-    id: 'googlebooksId',
-  },
   wikipedia: {
     title: 'name',
     extract: 'description',
@@ -107,9 +80,6 @@ const SOURCE_PRIORITIES: Record<DataSource, number> = {
   tmdb: 90, // Very reliable for movies/TV
   igdb: 90, // Very reliable for games
   spotify: 90, // Very reliable for music
-  musicbrainz: 80, // Reliable for music metadata
-  openlibrary: 85, // Reliable for books
-  googlebooks: 80, // Good for books
   wikipedia: 70, // General purpose, lower priority
   gemini: 50, // AI fallback, lowest priority
 };
@@ -278,32 +248,6 @@ function extractImages(
     }
   }
 
-  if (source === 'openlibrary' || source === 'googlebooks') {
-    if (source === 'openlibrary') {
-      const covers = data.covers as number[] | undefined;
-      if (covers && covers.length > 0) {
-        images.push({
-          url: `https://covers.openlibrary.org/b/id/${covers[0]}-L.jpg`,
-          source,
-          quality: 'medium',
-        });
-      }
-    }
-
-    if (source === 'googlebooks') {
-      const imageLinks = data.imageLinks as
-        | { thumbnail?: string; smallThumbnail?: string }
-        | undefined;
-      if (imageLinks?.thumbnail) {
-        images.push({
-          url: imageLinks.thumbnail.replace('http:', 'https:'),
-          source,
-          quality: 'medium',
-        });
-      }
-    }
-  }
-
   if (source === 'wikipedia') {
     const thumbnail = data.thumbnail as
       | { source?: string; width?: number; height?: number }
@@ -333,36 +277,17 @@ function normalizeArtist(data: Record<string, unknown>, source: DataSource): str
     }
   }
 
-  if (source === 'musicbrainz') {
-    const credit = data['artist-credit'] as
-      | Array<{ name?: string; artist?: { name?: string } }>
-      | undefined;
-    if (credit && credit.length > 0) {
-      return credit.map((c) => c.name || c.artist?.name).filter(Boolean).join(', ');
-    }
-  }
-
   return undefined;
 }
 
 /**
  * Extract author from various formats
  */
-function normalizeAuthor(data: Record<string, unknown>, source: DataSource): string | undefined {
-  if (source === 'openlibrary') {
-    const authors = data.authors as Array<{ name?: string; key?: string }> | undefined;
-    if (authors && authors.length > 0) {
-      return authors.map((a) => a.name).filter(Boolean).join(', ');
-    }
+function normalizeAuthor(data: Record<string, unknown>, _source: DataSource): string | undefined {
+  const authors = data.authors as Array<{ name?: string }> | string[] | undefined;
+  if (authors && authors.length > 0) {
+    return authors.map((a) => (typeof a === 'string' ? a : a.name)).filter(Boolean).join(', ');
   }
-
-  if (source === 'googlebooks') {
-    const authors = data.authors as string[] | undefined;
-    if (authors && authors.length > 0) {
-      return authors.join(', ');
-    }
-  }
-
   return undefined;
 }
 
@@ -530,9 +455,6 @@ class DataNormalizerClass {
     }
     if (data.id && source === 'spotify') {
       normalized.externalIds.spotify = String(data.id);
-    }
-    if (data.id && source === 'musicbrainz') {
-      normalized.externalIds.musicbrainz = String(data.id);
     }
     if (data.pageid && source === 'wikipedia') {
       normalized.externalIds.wikipedia = String(data.pageid);

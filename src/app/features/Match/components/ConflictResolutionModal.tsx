@@ -160,7 +160,7 @@ export function ConflictResolutionModal({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-black/60 backdrop-blur-xl z-50"
           />
 
           {/* Modal */}
@@ -266,14 +266,14 @@ export function ConflictResolutionModal({
                             onClick={() => setSelectedStrategy(option.id)}
                             className={`w-full flex items-start gap-3 p-3 rounded-lg border transition-all text-left ${
                               isSelected
-                                ? 'border-cyan-500 bg-cyan-900/20'
+                                ? 'border-brand bg-brand-muted/20'
                                 : 'border-gray-700 bg-gray-800/30 hover:border-gray-600'
                             }`}
                           >
                             <div
                               className={`p-2 rounded-lg ${
                                 isSelected
-                                  ? 'bg-cyan-600/20 text-cyan-400'
+                                  ? 'bg-brand-muted/20 text-brand-hover'
                                   : 'bg-gray-700/50 text-gray-400'
                               }`}
                             >
@@ -282,7 +282,7 @@ export function ConflictResolutionModal({
                             <div className="flex-1 min-w-0">
                               <div
                                 className={`font-medium ${
-                                  isSelected ? 'text-cyan-400' : 'text-gray-200'
+                                  isSelected ? 'text-brand-hover' : 'text-gray-200'
                                 }`}
                               >
                                 {option.label}
@@ -292,7 +292,7 @@ export function ConflictResolutionModal({
                               </div>
                             </div>
                             {isSelected && (
-                              <Check className="w-5 h-5 text-cyan-400 shrink-0" />
+                              <Check className="w-5 h-5 text-brand-hover shrink-0" />
                             )}
                           </button>
                         );
@@ -343,7 +343,7 @@ export function ConflictResolutionModal({
                   <button
                     onClick={handleResolve}
                     disabled={isResolving}
-                    className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 disabled:bg-gray-600 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+                    className="px-4 py-2 bg-brand-muted hover:bg-brand-muted disabled:bg-gray-600 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
                   >
                     {isResolving ? (
                       <>

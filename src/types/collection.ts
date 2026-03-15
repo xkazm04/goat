@@ -265,54 +265,6 @@ export function canHaveChildren(
 }
 
 /**
- * Build collection tree from flat list
- */
-export function buildCollectionTree(
-  collections: ListCollection[],
-  expandedIds: Set<string> = new Set()
-): CollectionTreeNode[] {
-  const nodeMap = new Map<string, CollectionTreeNode>();
-  const roots: CollectionTreeNode[] = [];
-
-  // Create nodes for all collections
-  collections.forEach(collection => {
-    nodeMap.set(collection.id, {
-      collection,
-      children: [],
-      depth: 0,
-      isExpanded: expandedIds.has(collection.id),
-    });
-  });
-
-  // Build tree structure
-  collections.forEach(collection => {
-    const node = nodeMap.get(collection.id)!;
-
-    if (collection.parentId) {
-      const parent = nodeMap.get(collection.parentId);
-      if (parent) {
-        node.depth = parent.depth + 1;
-        parent.children.push(node);
-      } else {
-        // Parent not found, treat as root
-        roots.push(node);
-      }
-    } else {
-      roots.push(node);
-    }
-  });
-
-  // Sort children by order
-  const sortByOrder = (a: CollectionTreeNode, b: CollectionTreeNode) =>
-    a.collection.order - b.collection.order;
-
-  roots.sort(sortByOrder);
-  nodeMap.forEach(node => node.children.sort(sortByOrder));
-
-  return roots;
-}
-
-/**
  * Generate a unique share slug from collection name
  */
 export function generateShareSlug(name: string, existingSlugs: string[] = []): string {

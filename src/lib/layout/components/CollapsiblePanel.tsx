@@ -237,7 +237,7 @@ export function CollapsiblePanel({
       <AnimatePresence>
         {showOverlay && effectiveState === 'expanded' && layout.isMobile && (
           <motion.div
-            className="fixed inset-0 bg-black/50 z-[9]"
+            className="fixed inset-0 bg-black/50 z-9"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -272,7 +272,7 @@ export function CollapsiblePanel({
           >
             {/* Header */}
             {header && (
-              <div className="flex-shrink-0 border-b border-border px-4 py-3">
+              <div className="shrink-0 border-b border-border px-4 py-3">
                 {header}
               </div>
             )}
@@ -282,7 +282,7 @@ export function CollapsiblePanel({
 
             {/* Footer */}
             {footer && (
-              <div className="flex-shrink-0 border-t border-border px-4 py-3">
+              <div className="shrink-0 border-t border-border px-4 py-3">
                 {footer}
               </div>
             )}
@@ -363,10 +363,10 @@ function CollapseHandle({
     <motion.button
       className={cn(
         'flex items-center justify-center',
-        'bg-background border border-border rounded-full shadow-sm',
+        'bg-background border border-border rounded-full shadow-xs',
         'hover:bg-accent hover:border-accent-foreground/20',
         'transition-colors duration-150',
-        'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
+        'focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2',
         isHorizontal ? 'w-6 h-12' : 'w-12 h-6'
       )}
       style={getHandleStyles()}

@@ -8,7 +8,6 @@ export interface ListSession {
   backlogGroups: BacklogGroupType[];
   selectedBacklogItem: string | null;
   selectedGridItem: string | null;
-  compareList: BacklogItemType[]; // Legacy field - kept for session compatibility, always empty
   createdAt: string;
   updatedAt: string;
   synced: boolean;

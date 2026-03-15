@@ -49,6 +49,10 @@ export type {
   ExpandedPreviewProps,
 } from './ExpandedPreview';
 
+// Card flip reveal
+export { CardFlipReveal } from './CardFlipReveal';
+export type { CardFlipRevealProps } from './CardFlipReveal';
+
 // Mini gallery
 export {
   MiniGallery,

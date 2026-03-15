@@ -74,7 +74,7 @@ export const AttributeRow = memo(function AttributeRow({
                 className={`
                   relative p-3 rounded-lg text-center transition-all
                   ${isWinner
-                    ? "bg-gradient-to-b from-emerald-500/15 to-emerald-500/5 border border-emerald-500/30"
+                    ? "bg-linear-to-b from-emerald-500/15 to-emerald-500/5 border border-emerald-500/30"
                     : "bg-slate-800/30 border border-slate-700/30"}
                 `}
                 animate={isWinner ? { scale: [1, 1.02, 1] } : {}}

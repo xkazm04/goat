@@ -82,7 +82,7 @@ const PullLine = memo(function PullLine({
 
   return (
     <motion.div
-      className="fixed pointer-events-none z-[100]"
+      className="fixed pointer-events-none z-dropdown"
       style={{
         left: from.x,
         top: from.y,
@@ -141,7 +141,7 @@ const IntensityIndicator = memo(function IntensityIndicator({
 
   return (
     <motion.div
-      className="fixed pointer-events-none z-[99]"
+      className="fixed pointer-events-none z-99"
       style={{
         left: position.x - size / 2,
         top: position.y - size / 2,
@@ -216,7 +216,7 @@ const TargetIndicator = memo(function TargetIndicator({
 
   return (
     <motion.div
-      className="fixed pointer-events-none z-[98]"
+      className="fixed pointer-events-none z-98"
       style={{
         left: field.center.x - size / 2,
         top: field.center.y - size / 2,
@@ -265,7 +265,7 @@ const FieldRadius = memo(function FieldRadius({
 }) {
   return (
     <motion.div
-      className="fixed pointer-events-none z-[97] rounded-full"
+      className="fixed pointer-events-none z-97 rounded-full"
       style={{
         left: field.center.x - field.radius,
         top: field.center.y - field.radius,
@@ -384,7 +384,7 @@ export const SnapPreviewIndicator = memo(function SnapPreviewIndicator({
 
   return (
     <motion.div
-      className="fixed pointer-events-none z-[95]"
+      className="fixed pointer-events-none z-95"
       style={{
         left: targetPosition.x - size / 2,
         top: targetPosition.y - size / 2,

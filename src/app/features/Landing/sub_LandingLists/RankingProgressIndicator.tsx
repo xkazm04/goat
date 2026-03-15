@@ -13,8 +13,6 @@ interface RankingProgressIndicatorProps {
   primaryColor?: string;
   /** Secondary color for the gradient */
   secondaryColor?: string;
-  /** Variant: 'arc' for circular or 'bar' for linear segmented */
-  variant?: "arc" | "bar";
   /** Size: 'sm' for compact, 'md' for default */
   size?: "sm" | "md";
   /** Show completion status text */
@@ -28,7 +26,7 @@ interface RankingProgressIndicatorProps {
  * Shows how many positions are filled in a list (e.g., 7/10 ranked).
  *
  * Features:
- * - Circular arc or segmented bar display
+ * - Segmented bar display
  * - Category-themed accent colors
  * - Subtle pulse animation when incomplete
  * - Opacity-based fill states for segments
@@ -38,7 +36,6 @@ export const RankingProgressIndicator = memo(function RankingProgressIndicator({
   total,
   primaryColor = "#06b6d4",
   secondaryColor = "#22d3ee",
-  variant = "bar",
   size = "sm",
   showText = true,
   testIdPrefix = "ranking-progress",
@@ -53,7 +50,7 @@ export const RankingProgressIndicator = memo(function RankingProgressIndicator({
   const isComplete = percentage >= 100;
   const isStarted = filled > 0;
 
-  // Generate segment data for the segmented bar variant
+  // Generate segment data for the segmented bar
   const segments = useMemo(() => {
     // Cap at 10 visible segments for readability
     const displaySegments = Math.min(total, 10);
@@ -75,67 +72,6 @@ export const RankingProgressIndicator = memo(function RankingProgressIndicator({
     });
   }, [filled, total]);
 
-  if (variant === "arc") {
-    return (
-      <ArcProgress
-        percentage={percentage}
-        filled={filled}
-        total={total}
-        primaryColor={primaryColor}
-        secondaryColor={secondaryColor}
-        size={size}
-        showText={showText}
-        isComplete={isComplete}
-        isStarted={isStarted}
-        prefersReducedMotion={prefersReducedMotion}
-        testIdPrefix={testIdPrefix}
-      />
-    );
-  }
-
-  return (
-    <SegmentedBar
-      segments={segments}
-      filled={filled}
-      total={total}
-      primaryColor={primaryColor}
-      secondaryColor={secondaryColor}
-      size={size}
-      showText={showText}
-      isComplete={isComplete}
-      isStarted={isStarted}
-      prefersReducedMotion={prefersReducedMotion}
-      testIdPrefix={testIdPrefix}
-    />
-  );
-});
-
-// Segmented bar variant
-const SegmentedBar = memo(function SegmentedBar({
-  segments,
-  filled,
-  total,
-  primaryColor,
-  secondaryColor,
-  size,
-  showText,
-  isComplete,
-  isStarted,
-  prefersReducedMotion,
-  testIdPrefix,
-}: {
-  segments: Array<{ index: number; fillLevel: number }>;
-  filled: number;
-  total: number;
-  primaryColor: string;
-  secondaryColor: string;
-  size: "sm" | "md";
-  showText: boolean;
-  isComplete: boolean;
-  isStarted: boolean;
-  prefersReducedMotion: boolean;
-  testIdPrefix: string;
-}) {
   const barHeight = size === "sm" ? "h-1" : "h-1.5";
   const gap = size === "sm" ? "gap-0.5" : "gap-1";
 
@@ -189,7 +125,7 @@ const SegmentedBar = memo(function SegmentedBar({
       {/* Progress text */}
       {showText && (
         <motion.div
-          className="flex items-center gap-1 flex-shrink-0"
+          className="flex items-center gap-1 shrink-0"
           initial={prefersReducedMotion ? {} : { opacity: 0, x: -4 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.3, delay: 0.2 }}
@@ -263,150 +199,6 @@ const SegmentedBar = memo(function SegmentedBar({
             </motion.svg>
           )}
         </motion.div>
-      )}
-    </div>
-  );
-});
-
-// Circular arc variant
-const ArcProgress = memo(function ArcProgress({
-  percentage,
-  filled,
-  total,
-  primaryColor,
-  secondaryColor,
-  size,
-  showText,
-  isComplete,
-  isStarted,
-  prefersReducedMotion,
-  testIdPrefix,
-}: {
-  percentage: number;
-  filled: number;
-  total: number;
-  primaryColor: string;
-  secondaryColor: string;
-  size: "sm" | "md";
-  showText: boolean;
-  isComplete: boolean;
-  isStarted: boolean;
-  prefersReducedMotion: boolean;
-  testIdPrefix: string;
-}) {
-  const svgSize = size === "sm" ? 28 : 36;
-  const strokeWidth = size === "sm" ? 3 : 4;
-  const radius = (svgSize - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (percentage / 100) * circumference;
-
-  return (
-    <div
-      className="flex items-center gap-2"
-      data-testid={`${testIdPrefix}-arc`}
-      role="progressbar"
-      aria-valuenow={filled}
-      aria-valuemin={0}
-      aria-valuemax={total}
-      aria-label={`Ranking progress: ${filled} of ${total} ranked`}
-    >
-      <div className="relative" style={{ width: svgSize, height: svgSize }}>
-        <svg
-          width={svgSize}
-          height={svgSize}
-          className="transform -rotate-90"
-        >
-          {/* Background circle */}
-          <circle
-            cx={svgSize / 2}
-            cy={svgSize / 2}
-            r={radius}
-            fill="none"
-            stroke="rgba(255, 255, 255, 0.1)"
-            strokeWidth={strokeWidth}
-          />
-
-          {/* Progress arc */}
-          <motion.circle
-            cx={svgSize / 2}
-            cy={svgSize / 2}
-            r={radius}
-            fill="none"
-            stroke={`url(#progress-gradient-${testIdPrefix})`}
-            strokeWidth={strokeWidth}
-            strokeLinecap="round"
-            strokeDasharray={circumference}
-            initial={prefersReducedMotion ? { strokeDashoffset } : { strokeDashoffset: circumference }}
-            animate={{ strokeDashoffset }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-            style={{
-              filter: isStarted ? `drop-shadow(0 0 4px ${primaryColor}50)` : undefined,
-            }}
-          />
-
-          {/* Gradient definition */}
-          <defs>
-            <linearGradient
-              id={`progress-gradient-${testIdPrefix}`}
-              x1="0%"
-              y1="0%"
-              x2="100%"
-              y2="0%"
-            >
-              <stop offset="0%" stopColor={primaryColor} />
-              <stop offset="100%" stopColor={secondaryColor} />
-            </linearGradient>
-          </defs>
-        </svg>
-
-        {/* Center text */}
-        {showText && size === "md" && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span
-              className="text-[10px] font-bold tabular-nums"
-              style={{ color: isComplete ? secondaryColor : primaryColor }}
-            >
-              {percentage}%
-            </span>
-          </div>
-        )}
-
-        {/* Pulse animation for incomplete */}
-        {!isComplete && isStarted && !prefersReducedMotion && (
-          <motion.div
-            className="absolute inset-0 rounded-full"
-            style={{
-              border: `1px solid ${primaryColor}`,
-            }}
-            animate={{
-              scale: [1, 1.15, 1],
-              opacity: [0.4, 0, 0.4],
-            }}
-            transition={{
-              duration: 2.5,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
-        )}
-      </div>
-
-      {/* Text label beside arc */}
-      {showText && (
-        <div className="flex flex-col">
-          <span
-            className="text-xs font-medium leading-none"
-            style={{
-              color: isComplete ? secondaryColor : isStarted ? primaryColor : "rgb(148, 163, 184)",
-            }}
-            data-testid={`${testIdPrefix}-label`}
-          >
-            {filled}/{total}
-          </span>
-          <span className="text-[10px] text-slate-500 leading-tight">
-            {isComplete ? "Complete" : "ranked"}
-          </span>
-        </div>
       )}
     </div>
   );

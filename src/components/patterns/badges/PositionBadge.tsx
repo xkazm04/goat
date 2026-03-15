@@ -38,23 +38,23 @@ interface TierStyle {
 
 const tierStyles: Record<PositionTier, TierStyle> = {
   gold: {
-    container: 'bg-gradient-to-br from-yellow-300 via-yellow-400 to-amber-500',
+    container: 'bg-linear-to-br from-yellow-300 via-yellow-400 to-amber-500',
     text: 'text-yellow-950 font-bold',
     shadow: 'shadow-lg shadow-yellow-500/40',
   },
   silver: {
-    container: 'bg-gradient-to-br from-slate-200 via-slate-300 to-zinc-400',
+    container: 'bg-linear-to-br from-slate-200 via-slate-300 to-zinc-400',
     text: 'text-slate-900 font-bold',
     shadow: 'shadow-lg shadow-slate-400/30',
   },
   bronze: {
-    container: 'bg-gradient-to-br from-orange-400 via-orange-500 to-amber-600',
+    container: 'bg-linear-to-br from-orange-400 via-orange-500 to-amber-600',
     text: 'text-orange-950 font-bold',
     shadow: 'shadow-lg shadow-orange-500/30',
   },
   top10: {
-    container: 'bg-cyan-500/20 border border-cyan-500/40',
-    text: 'text-cyan-400 font-semibold',
+    container: 'bg-brand/20 border border-brand/40',
+    text: 'text-brand-hover font-semibold',
   },
   standard: {
     container: 'bg-zinc-800/50 border border-zinc-700/50',
@@ -79,7 +79,7 @@ interface SizeConfig {
 const sizeConfigs: Record<BadgeSize, SizeConfig> = {
   xs: {
     container: 'h-4 px-1',
-    fontSize: 'text-[10px]',
+    fontSize: 'text-2xs',
     minWidth: 'min-w-[16px]',
   },
   sm: {
@@ -145,7 +145,7 @@ export const PositionBadge = React.memo(function PositionBadge({
     return (
       <span
         className={cn(
-          'font-mono tabular-nums',
+          'font-grotesk tabular-nums',
           tierStyle.text,
           sizeConfig.fontSize,
           className
@@ -168,7 +168,7 @@ export const PositionBadge = React.memo(function PositionBadge({
         className
       )}
     >
-      <span className={cn('tabular-nums', tierStyle.text)}>
+      <span className={cn('tabular-nums font-grotesk', tierStyle.text)}>
         {displayNumber}
       </span>
     </div>
@@ -247,7 +247,7 @@ export const PositionBadgeWithIcon = React.memo(function PositionBadgeWithIcon({
       )}
     >
       {showIcon && <Icon size={iconSizes[size]} className={tierStyle.text} />}
-      <span className={cn('tabular-nums', tierStyle.text)}>
+      <span className={cn('tabular-nums font-grotesk', tierStyle.text)}>
         {displayNumber}
       </span>
     </div>
@@ -315,7 +315,7 @@ export function PodiumBadge({
           tierStyle.shadow
         )}
       >
-        <span className={cn('text-lg font-bold', tierStyle.text)}>
+        <span className={cn('text-lg font-display', tierStyle.text)}>
           {ordinal}
         </span>
       </div>

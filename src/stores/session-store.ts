@@ -2,7 +2,15 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { GridItemType, BacklogItemType } from '@/types/match';
 import { ListSession, SessionProgress } from './item-store/types';
-import { SessionManager } from './item-store/session-manager';
+import {
+  createEmptySession,
+  updateSessionTimestamp,
+  markSessionSynced,
+  validateSession,
+  calculateProgress,
+  hasUnsavedChanges,
+  getSessionMetadata,
+} from './item-store/session-manager';
 import { BacklogGroup, BacklogItem } from '@/types/backlog-groups';
 import {
   NormalizedBacklogData,
@@ -122,7 +130,7 @@ export const useSessionStore = create<SessionStoreState>()(
       createSession: (listId: string, size: number = 150) => {
         sessionLogger.debug(`Creating session for list ${listId} with size ${size}`);
 
-        const session = SessionManager.createEmptySession(listId, size);
+        const session = createEmptySession(listId, size);
 
         set((state) => ({
           listSessions: {
@@ -157,11 +165,10 @@ export const useSessionStore = create<SessionStoreState>()(
         // The denormalization to BacklogGroupType[] is done lazily only when needed
         const backlogGroupsForStorage = denormalizeToBacklogGroupType(state.normalizedData);
 
-        const updatedSession = SessionManager.updateSessionTimestamp({
+        const updatedSession = updateSessionTimestamp({
           ...currentSession,
           backlogGroups: backlogGroupsForStorage,
           selectedBacklogItem: state.selectedBacklogItem,
-          compareList: [], // Legacy field - kept empty for session compatibility
         });
 
         set((state) => ({
@@ -204,7 +211,7 @@ export const useSessionStore = create<SessionStoreState>()(
           sessionLogger.warn('Failed to load offline session:', error);
         }
 
-        if (session && SessionManager.validateSession(session)) {
+        if (session && validateSession(session)) {
           // PERFORMANCE OPTIMIZATION: Migrate legacy format to normalized format
           // This conversion happens once on load, then normalized data is used for all operations
           const normalizedData = migrateFromLegacyFormat(session.backlogGroups || []);
@@ -377,7 +384,7 @@ export const useSessionStore = create<SessionStoreState>()(
         const targetSession = listId ? state.listSessions[listId] : null;
         const gridItems = targetSession ? targetSession.gridItems : [];
         
-        return SessionManager.calculateProgress(gridItems);
+        return calculateProgress(gridItems);
       },
 
       getAllSessions: () => {
@@ -393,7 +400,7 @@ export const useSessionStore = create<SessionStoreState>()(
         const session = state.listSessions[sessionId];
         if (!session) return false;
         
-        return SessionManager.hasUnsavedChanges(session);
+        return hasUnsavedChanges(session);
       },
 
       getSessionMetadata: (listId) => {
@@ -404,7 +411,7 @@ export const useSessionStore = create<SessionStoreState>()(
         const session = state.listSessions[sessionId];
         if (!session) return null;
         
-        return SessionManager.getSessionMetadata(session);
+        return getSessionMetadata(session);
       },
 
       // Integration hooks
@@ -462,7 +469,7 @@ export const useSessionStore = create<SessionStoreState>()(
           
           const session = state.listSessions[listId];
           if (session) {
-            const syncedSession = SessionManager.markSessionSynced(session);
+            const syncedSession = markSessionSynced(session);
             
             set((state) => ({
               listSessions: {

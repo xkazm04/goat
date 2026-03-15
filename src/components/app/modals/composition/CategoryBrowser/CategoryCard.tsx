@@ -81,7 +81,7 @@ const GridCard = memo(function GridCard({
       onClick={onClick}
     >
       <div
-        className="relative p-4 rounded-2xl overflow-hidden backdrop-blur-sm transition-all duration-300"
+        className="relative p-4 rounded-2xl overflow-hidden backdrop-blur-xs transition-all duration-300"
         style={{
           background: isSelected
             ? `linear-gradient(135deg, ${nodeColor.primary}50, ${nodeColor.secondary}40)`

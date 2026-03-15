@@ -6,8 +6,8 @@
  */
 
 import type { TransferableItem } from '@/lib/dnd/transfer-protocol';
-import type { BracketState, BracketSize } from '@/app/features/Match/lib/bracketGenerator';
-import type { SeedingStrategy } from '@/app/features/Match/lib/seedingEngine';
+import type { BracketState, BracketSize } from '@/app/features/Match/sub_MatchBracket/lib/bracketGenerator';
+import type { SeedingStrategy } from '@/app/features/Match/sub_MatchBracket/lib/seedingEngine';
 
 // ============================================================================
 // Core Ranking Types
@@ -265,6 +265,9 @@ export interface RankingStoreState {
 
   /** Bracket configuration */
   bracketConfig: BracketConfig | null;
+
+  /** Undo stack for bracket matchup votes */
+  bracketUndoStack: Array<{ bracketState: RankingBracketState; matchupId: string }>;
 
   // === Tier State ===
 

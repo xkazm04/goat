@@ -93,7 +93,7 @@ export function LazyLoadTrigger({
       data-testid={testId}
     >
       {isLoading && (
-        <div className="flex items-center gap-2 text-sm text-gray-400">
+        <div className="flex items-center gap-2 text-sm text-slate-400">
           <Loader2 className="w-4 h-4 animate-spin" />
           <span>{loadingMessage}</span>
         </div>

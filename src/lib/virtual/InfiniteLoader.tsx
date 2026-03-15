@@ -98,7 +98,7 @@ function DefaultLoadingIndicator() {
       exit={{ opacity: 0, y: -10 }}
       className="flex items-center justify-center gap-2 py-4"
     >
-      <Loader2 className="w-4 h-4 animate-spin text-cyan-400" />
+      <Loader2 className="w-4 h-4 animate-spin text-brand-hover" />
       <span className="text-sm text-gray-400">Loading more items...</span>
     </motion.div>
   );
@@ -141,7 +141,7 @@ function ErrorIndicator({
       {onRetry && (
         <button
           onClick={onRetry}
-          className="text-xs text-cyan-400 hover:text-cyan-300 underline"
+          className="text-xs text-brand-hover hover:text-brand-hover underline"
         >
           Retry
         </button>

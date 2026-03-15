@@ -10,6 +10,8 @@ export interface GridItemType {
   matchedWith?: string; // ID of the backlog item it's matched with
   backlogItemId?: string;
   tags?: string[];
+  item_year?: number;
+  item_year_to?: number;
   isDragPlaceholder?: boolean;
 }
 
@@ -63,7 +65,6 @@ export interface MatchSession {
   backlogGroups: BacklogGroupType[];
   selectedBacklogItem: string | null;
   selectedGridItem: string | null;
-  compareList: BacklogItemType[]; // Legacy field - kept for session compatibility, always empty
   createdAt: string;
   updatedAt: string;
   progress: {

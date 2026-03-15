@@ -153,8 +153,6 @@ if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
   (window as any).__backlogStore = {
     getState: () => useBacklogStore.getState(),
     clearCache: () => useBacklogStore.getState().clearCache(),
-    forceRefresh: () => useBacklogStore.getState().forceRefreshAll(),
-    debugImages: (limit?: number) => useBacklogStore.getState().debugImageUrls(limit),
     clearIndexedDB: async () => {
       try {
         const databases = await indexedDB.databases();

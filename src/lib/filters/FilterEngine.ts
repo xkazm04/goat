@@ -13,8 +13,10 @@ import type {
   FilterOperator,
   FilterStatistics,
   FieldDistribution,
+  SortConfig,
 } from './types';
 import { DEFAULT_FILTER_OPTIONS, EMPTY_FILTER_CONFIG } from './constants';
+import { getFieldValue as getNestedFieldValue } from './utils';
 
 /**
  * FilterEngine class - handles all filter operations
@@ -22,25 +24,30 @@ import { DEFAULT_FILTER_OPTIONS, EMPTY_FILTER_CONFIG } from './constants';
 export class FilterEngine<T extends Record<string, unknown>> {
   private options: Required<FilterEngineOptions>;
   private fieldCache: Map<string, Map<unknown, T[]>> = new Map();
+  private regexCache: Map<string, RegExp> = new Map();
+  private similarityCache: Map<string, number> = new Map();
+  private static readonly REGEX_CACHE_MAX = 100;
+  private static readonly SIMILARITY_CACHE_MAX = 500;
 
   constructor(options: FilterEngineOptions = {}) {
     this.options = { ...DEFAULT_FILTER_OPTIONS, ...options };
   }
 
   /**
-   * Apply filter configuration to items
+   * Apply filter configuration to items, with optional sorting
    */
-  apply(items: T[], config: FilterConfig): FilterResult<T> {
+  apply(items: T[], config: FilterConfig, sortConfig?: SortConfig | null): FilterResult<T> {
     const startTime = performance.now();
 
     // Early return for empty config
-    if (this.isEmptyConfig(config)) {
+    if (this.isEmptyConfig(config) && !sortConfig) {
       return {
         items,
         total: items.length,
         matched: items.length,
         executionTime: performance.now() - startTime,
         appliedFilters: [],
+        appliedSort: null,
       };
     }
 
@@ -48,9 +55,19 @@ export class FilterEngine<T extends Record<string, unknown>> {
     const enabledConditions = this.collectEnabledConditions(config);
 
     // Apply filters
-    const filteredItems = items.filter((item) =>
-      this.evaluateConfig(item, config)
-    );
+    let filteredItems: T[];
+    if (this.isEmptyConfig(config)) {
+      filteredItems = [...items];
+    } else {
+      filteredItems = items.filter((item) =>
+        this.evaluateConfig(item, config)
+      );
+    }
+
+    // Apply sort
+    if (sortConfig) {
+      filteredItems = this.sortItems(filteredItems, sortConfig);
+    }
 
     // Limit results if needed
     const finalItems =
@@ -64,7 +81,53 @@ export class FilterEngine<T extends Record<string, unknown>> {
       matched: filteredItems.length,
       executionTime: performance.now() - startTime,
       appliedFilters: enabledConditions,
+      appliedSort: sortConfig || null,
     };
+  }
+
+  /**
+   * Sort items by field and direction
+   */
+  sortItems(items: T[], sortConfig: SortConfig): T[] {
+    const { field, direction } = sortConfig;
+    const multiplier = direction === 'asc' ? 1 : -1;
+
+    return [...items].sort((a, b) => {
+      const aVal = this.getFieldValue(a, field);
+      const bVal = this.getFieldValue(b, field);
+
+      // Handle nulls/undefined - push to end
+      if (aVal == null && bVal == null) return 0;
+      if (aVal == null) return 1;
+      if (bVal == null) return -1;
+
+      // Numeric comparison
+      if (typeof aVal === 'number' && typeof bVal === 'number') {
+        return (aVal - bVal) * multiplier;
+      }
+
+      // Date comparison
+      if (aVal instanceof Date && bVal instanceof Date) {
+        return (aVal.getTime() - bVal.getTime()) * multiplier;
+      }
+
+      // String date comparison (ISO strings)
+      if (typeof aVal === 'string' && typeof bVal === 'string') {
+        const aDate = Date.parse(aVal);
+        const bDate = Date.parse(bVal);
+        if (!isNaN(aDate) && !isNaN(bDate) && aVal.includes('-')) {
+          return (aDate - bDate) * multiplier;
+        }
+      }
+
+      // Boolean comparison
+      if (typeof aVal === 'boolean' && typeof bVal === 'boolean') {
+        return ((aVal === bVal ? 0 : aVal ? -1 : 1)) * multiplier;
+      }
+
+      // Default: string comparison
+      return String(aVal).localeCompare(String(bVal)) * multiplier;
+    });
   }
 
   /**
@@ -188,15 +251,7 @@ export class FilterEngine<T extends Record<string, unknown>> {
    * Get nested field value from item
    */
   private getFieldValue(item: T, field: string): unknown {
-    const parts = field.split('.');
-    let value: unknown = item;
-
-    for (const part of parts) {
-      if (value === null || value === undefined) return undefined;
-      value = (value as Record<string, unknown>)[part];
-    }
-
-    return value;
+    return getNestedFieldValue(item, field);
   }
 
   /**
@@ -389,7 +444,17 @@ export class FilterEngine<T extends Record<string, unknown>> {
   private matchesRegex(fieldValue: unknown, filterValue: unknown): boolean {
     if (typeof fieldValue === 'string' && typeof filterValue === 'string') {
       try {
-        const regex = new RegExp(filterValue, this.options.caseSensitive ? '' : 'i');
+        const flags = this.options.caseSensitive ? '' : 'i';
+        const cacheKey = `${filterValue}\0${flags}`;
+        let regex = this.regexCache.get(cacheKey);
+        if (!regex) {
+          if (this.regexCache.size >= FilterEngine.REGEX_CACHE_MAX) {
+            const firstKey = this.regexCache.keys().next().value!;
+            this.regexCache.delete(firstKey);
+          }
+          regex = new RegExp(filterValue, flags);
+          this.regexCache.set(cacheKey, regex);
+        }
         return regex.test(fieldValue);
       } catch {
         return false;
@@ -402,13 +467,25 @@ export class FilterEngine<T extends Record<string, unknown>> {
    * Calculate string similarity (Levenshtein-based)
    */
   private calculateSimilarity(str1: string, str2: string): number {
+    const cacheKey = `${str1}\0${str2}`;
+    const cached = this.similarityCache.get(cacheKey);
+    if (cached !== undefined) return cached;
+
     const longer = str1.length > str2.length ? str1 : str2;
     const shorter = str1.length > str2.length ? str2 : str1;
 
     if (longer.length === 0) return 1.0;
 
     const editDistance = this.levenshteinDistance(longer, shorter);
-    return (longer.length - editDistance) / longer.length;
+    const result = (longer.length - editDistance) / longer.length;
+
+    if (this.similarityCache.size >= FilterEngine.SIMILARITY_CACHE_MAX) {
+      const firstKey = this.similarityCache.keys().next().value!;
+      this.similarityCache.delete(firstKey);
+    }
+    this.similarityCache.set(cacheKey, result);
+
+    return result;
   }
 
   /**
@@ -544,6 +621,8 @@ export class FilterEngine<T extends Record<string, unknown>> {
    */
   clearIndexes(): void {
     this.fieldCache.clear();
+    this.regexCache.clear();
+    this.similarityCache.clear();
   }
 
   /**
@@ -642,7 +721,3 @@ export function createFilterMemo<T extends Record<string, unknown>>(
   };
 }
 
-/**
- * Default filter engine instance
- */
-export const defaultFilterEngine = new FilterEngine();

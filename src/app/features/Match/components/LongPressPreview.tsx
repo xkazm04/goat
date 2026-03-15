@@ -219,8 +219,8 @@ export function LongPressPreview({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className={`fixed inset-0 z-[100] ${
-              backdropBlur ? "backdrop-blur-sm bg-black/40" : "bg-black/30"
+            className={`fixed inset-0 z-dropdown ${
+              backdropBlur ? "backdrop-blur-xs bg-black/40" : "bg-black/30"
             }`}
             onClick={handleBackdropClick}
             onTouchStart={handleBackdropClick as any}
@@ -233,14 +233,14 @@ export function LongPressPreview({
             animate={animationVariant.animate}
             exit={animationVariant.exit}
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            className="fixed z-[101] w-80 max-w-[calc(100vw-32px)] rounded-2xl overflow-hidden shadow-2xl"
+            className="fixed z-101 w-80 max-w-[calc(100vw-32px)] rounded-2xl overflow-hidden shadow-2xl"
             style={positionStyles}
             onTouchStart={handleTouchStart}
           >
             {/* Card Container */}
             <div className="bg-gray-900/95 backdrop-blur-xl border border-white/10">
               {/* Image Header */}
-              <div className="relative aspect-[16/10] overflow-hidden">
+              <div className="relative aspect-16/10 overflow-hidden">
                 <ProgressiveImage
                   src={item.imageUrl}
                   alt={item.title}
@@ -248,13 +248,13 @@ export function LongPressPreview({
                   autoFetchWiki={true}
                   className="w-full h-full object-cover"
                   fallbackComponent={
-                    <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
+                    <div className="w-full h-full bg-linear-to-br from-gray-800 to-gray-900 flex items-center justify-center">
                       <Info className="w-12 h-12 text-gray-600" />
                     </div>
                   }
                 />
                 {/* Gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-linear-to-t from-gray-900 via-transparent to-transparent" />
 
                 {/* Close button */}
                 <button
@@ -296,7 +296,7 @@ export function LongPressPreview({
                       </span>
                     )}
                     {item.metadata.category && (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-cyan-500/20 text-xs text-cyan-400">
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-brand/20 text-xs text-brand-hover">
                         <Award className="w-3 h-3" />
                         {item.metadata.category}
                       </span>
@@ -330,7 +330,7 @@ export function LongPressPreview({
                   {onSelect && (
                     <button
                       onClick={() => onSelect(item)}
-                      className="flex-1 py-2.5 px-4 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-white text-sm font-semibold transition-colors"
+                      className="flex-1 py-2.5 px-4 rounded-xl bg-brand hover:bg-brand-hover text-white text-sm font-semibold transition-colors"
                     >
                       Select
                     </button>

@@ -9,7 +9,7 @@ import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import type { FacetBreadcrumb, FacetSelection, Facet, HierarchicalFacet } from '../types';
-import { FILTER_ANIMATIONS } from '../../constants';
+import { FILTER_ANIMATIONS, FILTER_TIMING } from '../../constants';
 
 /**
  * FacetBreadcrumbs Props
@@ -138,7 +138,7 @@ export function FacetBreadcrumbs({
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ ...FILTER_ANIMATIONS.chip, delay: index * 0.03 }}
+            transition={{ ...FILTER_ANIMATIONS.chip, delay: index * FILTER_TIMING.staggerChildren }}
           >
             <BreadcrumbChip
               crumb={crumb}
@@ -315,7 +315,7 @@ export function GroupedFacetBreadcrumbs({
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ ...FILTER_ANIMATIONS.chip, delay: index * 0.05 }}
+            transition={{ ...FILTER_ANIMATIONS.chip, delay: index * FILTER_TIMING.stagger }}
           >
             <GroupedBreadcrumbChip
               facetId={group.facetId}

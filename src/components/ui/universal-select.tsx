@@ -54,8 +54,10 @@ export function UniversalSelect({
 }: UniversalSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const optionRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const sizeStyles = SIZE_STYLES[size];
 
   // Auto-enable search for 5+ options
@@ -85,22 +87,82 @@ export function UniversalSelect({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
-  // Focus search on open
+  // Focus search on open and reset highlight
   useEffect(() => {
-    if (isOpen && showSearch && searchInputRef.current) {
-      setTimeout(() => searchInputRef.current?.focus(), 50);
+    if (isOpen) {
+      setHighlightedIndex(-1);
+      if (showSearch && searchInputRef.current) {
+        setTimeout(() => searchInputRef.current?.focus(), 50);
+      }
     }
   }, [isOpen, showSearch]);
+
+  // Reset highlight when search changes
+  useEffect(() => {
+    setHighlightedIndex(-1);
+  }, [searchQuery]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
       setIsOpen(false);
       setSearchQuery('');
-    } else if (e.key === 'Enter' && !isOpen) {
-      e.preventDefault();
-      setIsOpen(true);
+      return;
     }
-  }, [isOpen]);
+
+    if (!isOpen) {
+      if (e.key === 'Enter' || e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        setIsOpen(true);
+      }
+      return;
+    }
+
+    const enabledIndices = filteredOptions
+      .map((opt, i) => (!opt.disabled ? i : -1))
+      .filter(i => i !== -1);
+
+    if (enabledIndices.length === 0) return;
+
+    const scrollToIndex = (index: number) => {
+      optionRefs.current[index]?.scrollIntoView({ block: 'nearest' });
+    };
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      const currentPos = enabledIndices.indexOf(highlightedIndex);
+      const nextIndex = currentPos < enabledIndices.length - 1
+        ? enabledIndices[currentPos + 1]
+        : enabledIndices[0];
+      setHighlightedIndex(nextIndex);
+      scrollToIndex(nextIndex);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      const currentPos = enabledIndices.indexOf(highlightedIndex);
+      const prevIndex = currentPos > 0
+        ? enabledIndices[currentPos - 1]
+        : enabledIndices[enabledIndices.length - 1];
+      setHighlightedIndex(prevIndex);
+      scrollToIndex(prevIndex);
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      const first = enabledIndices[0];
+      setHighlightedIndex(first);
+      scrollToIndex(first);
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      const last = enabledIndices[enabledIndices.length - 1];
+      setHighlightedIndex(last);
+      scrollToIndex(last);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (highlightedIndex >= 0 && highlightedIndex < filteredOptions.length) {
+        const option = filteredOptions[highlightedIndex];
+        if (!option.disabled) {
+          handleSelect(option.value);
+        }
+      }
+    }
+  }, [isOpen, filteredOptions, highlightedIndex]);
 
   const handleSelect = (optionValue: string) => {
     onChange(optionValue);
@@ -129,17 +191,17 @@ export function UniversalSelect({
         onClick={handleToggle}
         disabled={disabled}
         className={cn(
-          'w-full flex items-center justify-between gap-2 rounded-lg border transition-all',
-          'bg-gray-900/80 border-gray-700/50 text-gray-200',
-          'hover:bg-gray-800/80 hover:border-gray-600/50',
-          isOpen && 'border-gray-500/50 ring-1 ring-gray-500/20',
+          'w-full flex items-center justify-between gap-2 rounded-lg border transition-all focus-ring',
+          'bg-[var(--surface-deep)]/80 border-[var(--border-card-subtle)] text-gray-200',
+          'hover:bg-[var(--surface-card)]/80 hover:border-[var(--border-card-hover)]',
+          isOpen && 'border-[var(--border-card-hover)] ring-1 ring-[var(--border-card-hover)]',
           disabled && 'opacity-50 cursor-not-allowed',
           sizeStyles.trigger
         )}
       >
         {selectedOption ? (
           <div className="flex items-center gap-2 min-w-0 flex-1">
-            {selectedOption.icon && <span className="flex-shrink-0">{selectedOption.icon}</span>}
+            {selectedOption.icon && <span className="shrink-0">{selectedOption.icon}</span>}
             <span className="truncate">{selectedOption.label}</span>
           </div>
         ) : (
@@ -162,14 +224,14 @@ export function UniversalSelect({
             <div className="fixed inset-0 z-40" onClick={() => { setIsOpen(false); setSearchQuery(''); }} />
 
             <motion.div
-              className="absolute top-full left-0 right-0 mt-1 z-50 rounded-lg border shadow-xl overflow-hidden bg-gray-900 border-gray-700/50"
+              className="absolute top-full left-0 right-0 mt-1 z-50 rounded-lg border shadow-xl overflow-hidden bg-[var(--surface-deep)] border-[var(--border-card-subtle)]"
               initial={{ opacity: 0, y: -8, scale: 0.96 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -8, scale: 0.96 }}
               transition={{ duration: 0.15, ease: 'easeOut' }}
             >
               {showSearch && (
-                <div className="p-2 border-b border-gray-800/50">
+                <div className="p-2 border-b border-[var(--border-card-subtle)]">
                   <div className="relative">
                     <Search className={cn('absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500', sizeStyles.icon)} />
                     <input
@@ -179,9 +241,9 @@ export function UniversalSelect({
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder={searchPlaceholder}
                       className={cn(
-                        'w-full pl-8 pr-3 rounded-md border transition-all outline-none',
-                        'bg-gray-800/50 border-gray-700/50 text-gray-200 placeholder-gray-500',
-                        'focus:border-gray-600/50',
+                        'w-full pl-8 pr-3 rounded-md border transition-all outline-hidden',
+                        'bg-[var(--surface-overlay)] border-[var(--border-card-subtle)] text-gray-200 placeholder-gray-500',
+                        'focus:border-[var(--border-card-hover)]',
                         sizeStyles.search
                       )}
                     />
@@ -204,29 +266,34 @@ export function UniversalSelect({
                     No options found
                   </div>
                 ) : (
-                  filteredOptions.map((option) => {
+                  filteredOptions.map((option, index) => {
                     const isSelected = option.value === value;
                     const isDisabled = option.disabled;
+                    const isHighlighted = index === highlightedIndex;
 
                     return (
                       <button
                         key={option.value}
+                        ref={(el) => { optionRefs.current[index] = el; }}
                         type="button"
                         onClick={() => !isDisabled && handleSelect(option.value)}
+                        onMouseEnter={() => setHighlightedIndex(index)}
                         disabled={isDisabled}
                         className={cn(
                           'w-full flex items-center justify-between gap-2 transition-colors',
-                          'text-gray-200 hover:bg-gray-800/50',
-                          isSelected && 'bg-gray-800/30',
+                          'text-gray-200 hover:bg-[var(--surface-overlay)]',
+                          isSelected && 'bg-[var(--surface-card)]/30',
+                          isHighlighted && 'bg-cyan-500/15 border-l-2 border-cyan-400',
+                          !isHighlighted && 'border-l-2 border-transparent',
                           isDisabled && 'opacity-50 cursor-not-allowed',
                           sizeStyles.option
                         )}
                       >
                         <div className="flex items-center gap-2 min-w-0 flex-1">
-                          {option.icon && <span className="flex-shrink-0">{option.icon}</span>}
+                          {option.icon && <span className="shrink-0">{option.icon}</span>}
                           <span className="truncate">{option.label}</span>
                         </div>
-                        {isSelected && <Check className={cn(sizeStyles.icon, 'flex-shrink-0 text-cyan-400')} />}
+                        {isSelected && <Check className={cn(sizeStyles.icon, 'shrink-0 text-brand-hover')} />}
                       </button>
                     );
                   })

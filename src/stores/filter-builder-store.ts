@@ -15,6 +15,7 @@ import type {
   FilterPreset,
 } from '@/lib/filters/types';
 import { EMPTY_FILTER_CONFIG } from '@/lib/filters/constants';
+import { FilterEngine } from '@/lib/filters/FilterEngine';
 
 /**
  * Node types in the filter tree
@@ -146,6 +147,11 @@ interface FilterBuilderActions {
 }
 
 type FilterBuilderStore = FilterBuilderState & FilterBuilderActions;
+
+/**
+ * Shared FilterEngine instance for serialization
+ */
+const filterEngine = new FilterEngine<Record<string, unknown>>();
 
 /**
  * Generate unique ID
@@ -692,24 +698,17 @@ export const useFilterBuilderStore = create<FilterBuilderStore>()(
         return id;
       },
 
-      // Share
+      // Share (delegates to FilterEngine to avoid duplicating serialization logic)
       generateShareCode: () => {
         const config = get().toFilterConfig();
-        try {
-          return btoa(JSON.stringify(config));
-        } catch {
-          return '';
-        }
+        return filterEngine.serializeConfig(config);
       },
 
       loadFromShareCode: (code) => {
-        try {
-          const config = JSON.parse(atob(code)) as FilterConfig;
-          get().fromFilterConfig(config);
-          return true;
-        } catch {
-          return false;
-        }
+        const config = filterEngine.deserializeConfig(code);
+        if (!config) return false;
+        get().fromFilterConfig(config);
+        return true;
       },
 
       // Undo/redo

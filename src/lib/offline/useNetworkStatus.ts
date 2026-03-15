@@ -17,7 +17,8 @@ export interface UseNetworkStatusReturn {
   isSlow: boolean;
   effectiveType: string | null;
   statusText: string;
-  timeSinceChange: number;
+  /** Returns time since last network change on demand (no polling). */
+  getTimeSinceChange: () => number;
   probe: () => Promise<boolean>;
 }
 
@@ -37,8 +38,6 @@ export function useNetworkStatus(): UseNetworkStatusReturn {
     };
   });
 
-  const [timeSinceChange, setTimeSinceChange] = useState(0);
-
   useEffect(() => {
     const monitor = getNetworkMonitor();
 
@@ -47,20 +46,19 @@ export function useNetworkStatus(): UseNetworkStatusReturn {
       setNetworkState(state);
     });
 
-    // Update time since change periodically
-    const intervalId = setInterval(() => {
-      setTimeSinceChange(monitor.getTimeSinceLastChange());
-    }, 1000);
-
     return () => {
       unsubscribe();
-      clearInterval(intervalId);
     };
   }, []);
 
   const probe = useCallback(async (): Promise<boolean> => {
     const monitor = getNetworkMonitor();
     return monitor.probe();
+  }, []);
+
+  const getTimeSinceChange = useCallback((): number => {
+    const monitor = getNetworkMonitor();
+    return monitor.getTimeSinceLastChange();
   }, []);
 
   const statusText = useCallback((): string => {
@@ -75,7 +73,7 @@ export function useNetworkStatus(): UseNetworkStatusReturn {
     isSlow: networkState.status === 'slow',
     effectiveType: networkState.effectiveType,
     statusText: statusText(),
-    timeSinceChange,
+    getTimeSinceChange,
     probe,
   };
 }

@@ -132,7 +132,7 @@ function StreakCard({
               initial={{ width: 0 }}
               animate={{ width: `${Math.min(100, progress)}%` }}
               transition={{ duration: 0.5 }}
-              className="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full"
+              className="h-full bg-linear-to-r from-amber-500 to-orange-500 rounded-full"
             />
           </div>
         </div>

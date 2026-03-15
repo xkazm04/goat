@@ -104,7 +104,7 @@ export default function CollectionSharePage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-950">
         <motion.div
-          className="w-12 h-12 border-4 border-cyan-400/30 border-t-cyan-400 rounded-full"
+          className="w-12 h-12 border-4 border-brand-hover/30 border-t-brand-hover rounded-full"
           animate={{ rotate: 360 }}
           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
         />
@@ -119,7 +119,7 @@ export default function CollectionSharePage() {
         <div className="text-xl text-slate-400">{error || "Collection not found"}</div>
         <Link
           href="/"
-          className="mt-4 px-6 py-3 bg-cyan-600 hover:bg-cyan-500 rounded-xl font-medium transition-all duration-200 hover:shadow-lg hover:shadow-cyan-500/25 active:scale-95 text-white"
+          className="mt-4 px-6 py-3 bg-brand-muted hover:bg-brand rounded-xl font-medium transition-all duration-200 hover:shadow-lg hover:shadow-brand/25 active:scale-95 text-white"
         >
           Go Home
         </Link>
@@ -197,7 +197,7 @@ export default function CollectionSharePage() {
                 fill
                 className="object-cover opacity-20"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent" />
+              <div className="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-950/80 to-transparent" />
             </div>
           )}
 
@@ -324,7 +324,7 @@ export default function CollectionSharePage() {
                   >
                     <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700/50 transition-all hover:bg-slate-800/80 hover:border-slate-600/50 hover:shadow-xl hover:-translate-y-1">
                       <div className="flex items-start justify-between mb-3">
-                        <h3 className="font-semibold text-white group-hover:text-cyan-400 transition-colors line-clamp-2">
+                        <h3 className="font-semibold text-white group-hover:text-brand-hover transition-colors line-clamp-2">
                           {list.title}
                         </h3>
                         <span className="text-xs px-2 py-1 rounded-full bg-slate-700/50 text-slate-400 shrink-0 ml-2">
@@ -364,11 +364,11 @@ export default function CollectionSharePage() {
                     href={`/match/${list.id}`}
                     className="flex items-center gap-4 p-4 bg-slate-800/30 hover:bg-slate-800/60 rounded-xl border border-slate-700/30 hover:border-slate-600/50 transition-all group"
                   >
-                    <div className="w-10 h-10 rounded-lg bg-slate-700/50 flex items-center justify-center text-slate-400 group-hover:text-cyan-400 transition-colors">
+                    <div className="w-10 h-10 rounded-lg bg-slate-700/50 flex items-center justify-center text-slate-400 group-hover:text-brand-hover transition-colors">
                       <Layers className="w-5 h-5" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-white group-hover:text-cyan-400 transition-colors truncate">
+                      <h3 className="font-medium text-white group-hover:text-brand-hover transition-colors truncate">
                         {list.title}
                       </h3>
                       <p className="text-sm text-slate-500 capitalize">

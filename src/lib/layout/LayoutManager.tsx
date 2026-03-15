@@ -199,12 +199,6 @@ export function LayoutProvider({
         case 'double-tap':
           store.toggleSidebar();
           break;
-        case 'pinch-in':
-          // Could zoom out grid
-          break;
-        case 'pinch-out':
-          // Could zoom in grid
-          break;
         default:
           break;
       }

@@ -194,7 +194,7 @@ export function SmartFillPanel({
             <motion.div
               animate={{ rotate: 360 }}
               transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-              className="w-6 h-6 text-cyan-400"
+              className="w-6 h-6 text-brand-hover"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" />
@@ -213,7 +213,7 @@ export function SmartFillPanel({
             <div className="flex items-center gap-2">
               <div className="w-20 h-1.5 bg-gray-700 rounded-full overflow-hidden">
                 <motion.div
-                  className="h-full bg-gradient-to-r from-cyan-500 to-green-500"
+                  className="h-full bg-linear-to-r from-brand to-green-500"
                   initial={{ width: 0 }}
                   animate={{ width: `${progress}%` }}
                 />
@@ -294,7 +294,7 @@ function SmartFillToggleButton({
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
       onClick={onClick}
-      className="fixed bottom-24 right-8 z-50 flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-full shadow-lg shadow-cyan-500/20 text-white font-medium text-sm hover:shadow-cyan-500/40 transition-shadow"
+      className="fixed bottom-24 right-8 z-50 flex items-center gap-2 px-4 py-2.5 bg-linear-to-r from-brand-muted to-blue-600 rounded-full shadow-lg shadow-brand/20 text-white font-medium text-sm hover:shadow-brand/40 transition-shadow"
     >
       <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <path d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -407,7 +407,7 @@ function ItemSuggestionCard({
           whileTap={{ scale: 0.98 }}
           onClick={onPlace}
           disabled={selectedPosition === null}
-          className="flex-1 py-2 px-4 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 py-2 px-4 rounded-lg bg-linear-to-r from-brand-muted to-blue-600 text-white font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Place at #{selectedPosition !== null ? selectedPosition + 1 : "?"}
         </motion.button>
@@ -446,7 +446,7 @@ function PositionOption({
       className={`
         relative p-2 rounded-lg border-2 transition-all
         ${isSelected
-          ? "border-cyan-400 bg-cyan-400/20 ring-2 ring-cyan-400/50"
+          ? "border-brand-hover bg-brand-hover/20 ring-2 ring-brand-hover/50"
           : getDropZoneTailwindClasses(color, prediction.confidence >= 0.7)
         }
       `}
@@ -486,7 +486,7 @@ function SelectedPositionReasoning({
       <ul className="space-y-0.5">
         {prediction.reasons.slice(0, 2).map((reason, idx) => (
           <li key={idx} className="text-xs text-gray-300 flex items-start gap-1">
-            <span className="text-cyan-400 mt-0.5">•</span>
+            <span className="text-brand-hover mt-0.5">•</span>
             <span>{reason.description}</span>
           </li>
         ))}
@@ -516,7 +516,7 @@ function CompletedState({
       <motion.div
         animate={{ scale: [1, 1.2, 1] }}
         transition={{ duration: 0.5 }}
-        className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-green-500 to-cyan-500 flex items-center justify-center"
+        className="w-16 h-16 mx-auto mb-4 rounded-full bg-linear-to-r from-green-500 to-brand flex items-center justify-center"
       >
         <svg className="w-8 h-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
           <path d="M5 13l4 4L19 7" />
@@ -532,7 +532,7 @@ function CompletedState({
 
       <button
         onClick={onClose}
-        className="px-6 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-lg text-white font-medium"
+        className="px-6 py-2 bg-linear-to-r from-brand-muted to-blue-600 rounded-lg text-white font-medium"
       >
         Close Smart Fill
       </button>

@@ -189,14 +189,22 @@ export function getSeedingStrategyDescription(strategy: SeedingStrategy): string
   }
 }
 
-/**
- * Get all available seeding strategies
- */
-export function getAvailableSeedingStrategies(): {
+export interface SeedingStrategyInfo {
   id: SeedingStrategy;
   name: string;
   description: string;
-}[] {
+  disabled?: boolean;
+  disabledReason?: string;
+}
+
+/**
+ * Get all available seeding strategies
+ */
+export function getAvailableSeedingStrategies(options?: {
+  hasConsensusData?: boolean;
+}): SeedingStrategyInfo[] {
+  const hasConsensus = options?.hasConsensusData ?? false;
+
   return [
     {
       id: 'random',
@@ -222,6 +230,8 @@ export function getAvailableSeedingStrategies(): {
       id: 'consensus',
       name: getSeedingStrategyName('consensus'),
       description: getSeedingStrategyDescription('consensus'),
+      disabled: !hasConsensus,
+      disabledReason: !hasConsensus ? 'No community ranking data available' : undefined,
     },
   ];
 }

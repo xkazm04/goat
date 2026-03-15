@@ -1,4 +1,5 @@
 import { BacklogGroup, BacklogItem } from '@/types/backlog-groups';
+import { ItemIndex } from './item-index';
 
 export interface BacklogCache {
   [key: string]: { // key = category-subcategory
@@ -30,6 +31,8 @@ export interface PendingChange {
 export interface BacklogState {
   // Core data
   groups: BacklogGroup[];
+  /** Runtime-only index: itemId → index in groups[]. Not persisted. */
+  _itemIndex: ItemIndex;
   selectedGroupId: string | null;
   selectedItemId: string | null;
   activeItemId: string | null;
@@ -90,11 +93,6 @@ export interface BacklogState {
   getItemById: (itemId: string) => BacklogItem | null;
   getMatchedItemsCount: () => number;
   isItemUsed: (itemId: string) => boolean;
-  getCoalescerStats: () => Promise<any>;
-  resetCoalescerStats: () => Promise<void>;
-  forceRefreshAll: (category?: string) => Promise<void>;
-  debugImageUrls: (limit?: number) => { itemCount: number; withImage: number; withoutImage: number; samples: any[] };
-
   // Internal utilities
   startFastProgressiveLoading: (groups: any[]) => Promise<void>;
   updateLoadingProgress: () => void;

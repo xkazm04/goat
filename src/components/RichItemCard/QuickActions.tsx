@@ -115,7 +115,7 @@ const ACTION_ICONS: Record<QuickActionType, LucideIcon> = {
  * Color mapping for action types
  */
 const ACTION_COLORS: Record<QuickActionType, string> = {
-  'add-to-grid': 'hover:bg-cyan-500/20 hover:text-cyan-400',
+  'add-to-grid': 'hover:bg-brand/20 hover:text-brand-hover',
   compare: 'hover:bg-purple-500/20 hover:text-purple-400',
   preview: 'hover:bg-blue-500/20 hover:text-blue-400',
   favorite: 'hover:bg-pink-500/20 hover:text-pink-400',
@@ -194,11 +194,11 @@ const ActionButton = memo(function ActionButton({
       disabled={action.disabled}
       className={cn(
         'flex items-center justify-center rounded-lg',
-        'bg-gray-900/80 backdrop-blur-sm border border-gray-600/50',
+        'bg-gray-900/80 backdrop-blur-xs border border-gray-600/50',
         'text-gray-300 transition-colors',
         sizeConfig.button,
         colorClass,
-        action.active && 'bg-cyan-500/20 text-cyan-400 border-cyan-500/50',
+        action.active && 'bg-brand/20 text-brand-hover border-brand/50',
         action.disabled && 'opacity-50 cursor-not-allowed'
       )}
       title={`${action.label}${action.shortcut ? ` (${action.shortcut})` : ''}`}
@@ -257,7 +257,7 @@ export const QuickActions = memo(function QuickActions({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className={cn(
-          'absolute inset-0 bg-black/60 backdrop-blur-sm',
+          'absolute inset-0 bg-black/60 backdrop-blur-xs',
           'flex items-center justify-center',
           sizeConfig.gap,
           className
@@ -299,7 +299,7 @@ export const QuickActions = memo(function QuickActions({
         positionClass,
         sizeConfig.gap,
         sizeConfig.padding,
-        'rounded-lg bg-gray-900/60 backdrop-blur-sm',
+        'rounded-lg bg-gray-900/60 backdrop-blur-xs',
         className
       )}
       data-testid="quick-actions"

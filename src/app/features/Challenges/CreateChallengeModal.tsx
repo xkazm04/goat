@@ -133,7 +133,7 @@ export function CreateChallengeModal({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={handleClose}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-black/60 backdrop-blur-xl z-50"
           />
 
           {/* Modal */}
@@ -173,7 +173,7 @@ export function CreateChallengeModal({
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Enter challenge title"
-                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-600"
+                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder:text-zinc-500 focus:outline-hidden focus:border-zinc-600"
                 />
               </div>
 
@@ -187,7 +187,7 @@ export function CreateChallengeModal({
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Describe your challenge..."
                   rows={3}
-                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-600 resize-none"
+                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder:text-zinc-500 focus:outline-hidden focus:border-zinc-600 resize-none"
                 />
               </div>
 
@@ -244,7 +244,7 @@ export function CreateChallengeModal({
                       setTimeLimit(e.target.value ? parseInt(e.target.value, 10) : undefined)
                     }
                     placeholder="5"
-                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-600"
+                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder:text-zinc-500 focus:outline-hidden focus:border-zinc-600"
                   />
                 </div>
               )}

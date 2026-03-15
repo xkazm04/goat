@@ -44,6 +44,7 @@ import { FilterBlock, FilterBlockOverlay } from './FilterBlock';
 import { FilterGroup, FilterGroupOverlay, RootCombinatorToggle } from './FilterGroup';
 import { FilterPreview } from './FilterPreview';
 import { FilterSaver } from './FilterSaver';
+import { FILTER_TIMING } from '@/lib/filters/constants';
 import type { FilterConfig } from '@/lib/filters/types';
 
 interface FilterBuilderProps<T extends Record<string, unknown>> {
@@ -76,10 +77,10 @@ function FilterBuilderToolbar({
   return (
     <div className="flex items-center justify-between gap-4 mb-4 pb-4 border-b border-zinc-800">
       <div className="flex items-center gap-2">
-        <Filter size={20} className="text-cyan-400" />
+        <Filter size={20} className="text-brand-hover" />
         <span className="font-medium text-zinc-200">Filter Builder</span>
         {conditionCount > 0 && (
-          <span className="rounded-full bg-cyan-500/20 px-2 py-0.5 text-xs font-medium text-cyan-400">
+          <span className="rounded-full bg-brand/20 px-2 py-0.5 text-xs font-medium text-brand-hover">
             {conditionCount} condition{conditionCount !== 1 ? 's' : ''}
           </span>
         )}
@@ -94,8 +95,8 @@ function FilterBuilderToolbar({
             className={cn(
               'rounded p-1.5 transition-colors',
               canUndo
-                ? 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
-                : 'text-zinc-600 cursor-not-allowed'
+                ? 'text-zinc-400 hover:text-zinc-200 filter-hover'
+                : 'text-zinc-600 filter-disabled'
             )}
             title="Undo (Ctrl+Z)"
           >
@@ -107,8 +108,8 @@ function FilterBuilderToolbar({
             className={cn(
               'rounded p-1.5 transition-colors',
               canRedo
-                ? 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
-                : 'text-zinc-600 cursor-not-allowed'
+                ? 'text-zinc-400 hover:text-zinc-200 filter-hover'
+                : 'text-zinc-600 filter-disabled'
             )}
             title="Redo (Ctrl+Y)"
           >
@@ -121,7 +122,7 @@ function FilterBuilderToolbar({
           onClick={onAddCondition}
           className={cn(
             'flex items-center gap-2 rounded-md px-3 py-1.5 text-sm',
-            'bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 transition-colors'
+            'bg-brand/10 text-brand-hover hover:bg-brand/20 transition-colors'
           )}
         >
           <Plus size={14} />
@@ -195,7 +196,7 @@ function EmptyState({
           onClick={onAddCondition}
           className={cn(
             'flex items-center gap-2 rounded-md px-4 py-2',
-            'bg-cyan-500 text-white hover:bg-cyan-600 transition-colors'
+            'bg-brand text-white hover:bg-brand-muted transition-colors'
           )}
         >
           <Plus size={18} />
@@ -206,7 +207,7 @@ function EmptyState({
           onClick={onAddGroup}
           className={cn(
             'flex items-center gap-2 rounded-md px-4 py-2',
-            'bg-zinc-800 text-zinc-200 hover:bg-zinc-700 transition-colors'
+            'bg-zinc-800 text-zinc-200 filter-hover transition-colors'
           )}
         >
           <FolderPlus size={18} />
@@ -335,8 +336,8 @@ export function FilterBuilder<T extends Record<string, unknown>>({
     [setActiveNode]
   );
 
-  const handleDragOver = useCallback((event: DragOverEvent) => {
-    // Could add drop zone highlighting here
+  const handleDragOver = useCallback((_event: DragOverEvent) => {
+    // Drop zone highlighting handled by DropZoneIndicator components in FilterGroup
   }, []);
 
   const handleDragEnd = useCallback(
@@ -464,8 +465,8 @@ export function FilterBuilder<T extends Record<string, unknown>>({
             onClick={handleApply}
             className={cn(
               'flex items-center gap-2 rounded-md px-6 py-2',
-              'bg-cyan-500 text-white font-medium',
-              'hover:bg-cyan-600 transition-colors'
+              'bg-brand text-white font-medium',
+              'hover:bg-brand-muted transition-colors'
             )}
           >
             <Filter size={18} />

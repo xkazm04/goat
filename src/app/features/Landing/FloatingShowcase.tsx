@@ -11,8 +11,8 @@ import { useComposition } from "@/hooks/use-composition";
 import { usePlayList } from "@/hooks/use-play-list";
 import { TopList } from "@/types/top-lists";
 import { getCategoryColor } from "@/lib/helpers/getColors";
-import { useQueries } from "@tanstack/react-query";
-import { goatApi } from "@/lib/api";
+import { gradients } from "./shared/gradients";
+import { useListThumbnails } from "@/hooks/use-list-thumbnails";
 
 /**
  * FloatingShowcase - Hero section with category tables
@@ -67,7 +67,7 @@ const TableRow = memo(function TableRow({
         >
             {/* Winner Image */}
             <div
-                className="w-8 h-8 flex-shrink-0 rounded overflow-hidden relative"
+                className="w-8 h-8 shrink-0 rounded overflow-hidden relative"
                 style={{ background: '#0c0c12' }}
             >
                 {imageUrl && !isLoading ? (
@@ -106,7 +106,7 @@ const TableRow = memo(function TableRow({
 
             {/* Type badge */}
             <span
-                className="flex-shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded"
+                className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded"
                 style={{
                     background: `${colors.primary}20`,
                     color: colors.primary,
@@ -139,11 +139,10 @@ const CategoryTable = memo(function CategoryTable({
 
     return (
         <div
-            className="flex-1 min-w-0 rounded-lg overflow-hidden"
+            className="flex-1 min-w-0 rounded-lg overflow-hidden backdrop-blur-md"
             style={{
-                background: 'rgba(10, 10, 16, 0.8)',
+                background: gradients.cardSurface,
                 border: `1px solid ${colors.primary}20`,
-                backdropFilter: 'blur(8px)',
             }}
         >
             {/* Thin category header */}
@@ -262,41 +261,16 @@ export const FloatingShowcase = memo(function FloatingShowcase() {
         return groups;
     }, [allLists]);
 
-    // Fetch images for visible lists
-    const listsToFetch = useMemo(() => {
+    // Batch-fetch thumbnail images (replaces N+1 individual queries)
+    const thumbnailIds = useMemo(() => {
         return [
             ...categoryLists.sports.slice(0, 30),
             ...categoryLists.movies.slice(0, 30),
             ...categoryLists.games.slice(0, 30),
-        ];
+        ].map(l => l.id);
     }, [categoryLists]);
 
-    const imageQueries = useQueries({
-        queries: listsToFetch.map(list => ({
-            queryKey: ['list-image', list.id],
-            queryFn: async () => {
-                const data = await goatApi.lists.get(list.id);
-                const firstWithImage = data?.items?.find(item => item.image_url);
-                return { id: list.id, url: firstWithImage?.image_url || null };
-            },
-            staleTime: 1000 * 60 * 15,
-            gcTime: 1000 * 60 * 30,
-        })),
-    });
-
-    const imageMap = useMemo(() => {
-        const map: Record<string, { url: string | null; loading: boolean }> = {};
-        imageQueries.forEach((query, index) => {
-            const listId = listsToFetch[index]?.id;
-            if (listId) {
-                map[listId] = {
-                    url: query.data?.url ?? null,
-                    loading: query.isLoading,
-                };
-            }
-        });
-        return map;
-    }, [imageQueries, listsToFetch]);
+    const imageMap = useListThumbnails(thumbnailIds);
 
     const handleCustomize = useCallback((list: TopList) => {
         openWithSourceList(list);
@@ -316,7 +290,7 @@ export const FloatingShowcase = memo(function FloatingShowcase() {
 
             {/* Noise texture overlay */}
             <div
-                className="absolute inset-0 z-[1] pointer-events-none noise-texture"
+                className="absolute inset-0 z-1 pointer-events-none noise-texture"
                 aria-hidden="true"
             />
 
@@ -332,7 +306,7 @@ export const FloatingShowcase = memo(function FloatingShowcase() {
                     <div className="flex justify-end mb-4">
                         <button
                             onClick={() => openComposition()}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-cyan-400 hover:text-white hover:bg-cyan-500/20 border border-cyan-500/30 rounded-md transition-all"
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-brand-hover hover:text-white hover:bg-brand/20 border border-brand/30 rounded-md transition-all"
                         >
                             <Plus className="w-3.5 h-3.5" />
                             Create New

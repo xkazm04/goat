@@ -109,7 +109,7 @@ export function DragOverlayContent({
                 <motion.div
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="absolute top-1 right-1 bg-cyan-500/90 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md backdrop-blur-sm z-30"
+                    className="absolute top-1 right-1 bg-brand/90 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md backdrop-blur-xs z-30"
                     data-testid="position-preview"
                 >
                     #{previewPosition + 1}
@@ -146,7 +146,7 @@ export function DragTrail({ positions }: DragTrailProps) {
     if (validPositions.length < 2) return null;
 
     return (
-        <svg className="fixed inset-0 pointer-events-none z-[98]" data-testid="drag-trail">
+        <svg className="fixed inset-0 pointer-events-none z-98" data-testid="drag-trail">
             <defs>
                 <linearGradient id="trailGradient" x1="0%" y1="0%" x2="100%" y2="0%">
                     <stop offset="0%" stopColor="rgba(34, 211, 238, 0)" />
@@ -186,7 +186,7 @@ interface CursorGlowProps {
 export function CursorGlow({ glowX, glowY }: CursorGlowProps) {
     return (
         <motion.div
-            className="fixed pointer-events-none z-[99]"
+            className="fixed pointer-events-none z-99"
             style={{
                 left: glowX,
                 top: glowY,

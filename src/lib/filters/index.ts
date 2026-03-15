@@ -50,7 +50,6 @@ export {
 export {
   FilterEngine,
   createFilterMemo,
-  defaultFilterEngine,
 } from './FilterEngine';
 
 // Components
@@ -108,7 +107,6 @@ export {
   FullTextSearcher,
   createCollectionSearcher,
   highlightMatches,
-  defaultSearcher,
   DEFAULT_SEARCH_CONFIG,
 } from './FullTextSearcher';
 
@@ -123,7 +121,6 @@ export {
   SmartQueryParser,
   parseSmartQuery,
   configToQueryString,
-  defaultQueryParser,
   QUERY_TEMPLATES,
 } from './SmartQueryParser';
 
@@ -141,6 +138,8 @@ export {
   searchPresets,
   presetToQuickFilter,
   getPresetsAsQuickFilters,
+  getDefaultQuickFilters,
+  getPresetSearchKeywords,
   createDynamicPreset,
 } from './presets';
 
@@ -201,10 +200,8 @@ export {
   // Classes
   FacetExtractor,
   createCollectionFacetExtractor,
-  defaultFacetExtractor,
   FacetAggregator,
   createFacetAggregator,
-  defaultFacetAggregator,
   // Components
   FacetPanel,
   FacetBreadcrumbs,

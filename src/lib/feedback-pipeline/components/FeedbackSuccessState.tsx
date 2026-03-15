@@ -80,7 +80,7 @@ export function FeedbackSuccessState({
           {[...Array(8)].map((_, i) => (
             <motion.div
               key={i}
-              className="absolute left-1/2 top-1/2 w-2 h-2 rounded-full bg-gradient-to-r from-green-400 to-emerald-400"
+              className="absolute left-1/2 top-1/2 w-2 h-2 rounded-full bg-linear-to-r from-green-400 to-emerald-400"
               initial={{
                 x: 0,
                 y: 0,
@@ -127,7 +127,7 @@ export function FeedbackSuccessState({
         initial={{ opacity: 0, y: 5 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className={cn('font-semibold text-slate-200 mb-2', sizes.title)}
+        className={cn('font-semibold text-gray-200 mb-2', sizes.title)}
       >
         {title}
       </motion.h3>
@@ -137,7 +137,7 @@ export function FeedbackSuccessState({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
-          className={cn('text-slate-400 max-w-md mb-4', sizes.text)}
+          className={cn('text-gray-400 max-w-md mb-4', sizes.text)}
         >
           {message}
         </motion.p>

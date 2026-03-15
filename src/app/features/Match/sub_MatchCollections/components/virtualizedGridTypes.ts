@@ -25,6 +25,8 @@ export interface VirtualizedCollectionGridProps {
   itemWidth?: number;
   onItemClick?: (item: CollectionItem) => void;
   selectedItemId?: string;
+  /** Category string for selecting category-aware empty state illustrations */
+  category?: string;
 }
 
 export function generateSortCacheKey(groups: CollectionGroup[], consensusTimestamp: number | null): string {

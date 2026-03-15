@@ -69,13 +69,13 @@ function AdjustmentSlider({
           [&::-webkit-slider-thumb]:w-3.5
           [&::-webkit-slider-thumb]:h-3.5
           [&::-webkit-slider-thumb]:rounded-full
-          [&::-webkit-slider-thumb]:bg-cyan-500
+          [&::-webkit-slider-thumb]:bg-brand
           [&::-webkit-slider-thumb]:shadow-lg
           [&::-webkit-slider-thumb]:cursor-pointer
           [&::-moz-range-thumb]:w-3.5
           [&::-moz-range-thumb]:h-3.5
           [&::-moz-range-thumb]:rounded-full
-          [&::-moz-range-thumb]:bg-cyan-500
+          [&::-moz-range-thumb]:bg-brand
           [&::-moz-range-thumb]:border-0
           [&::-moz-range-thumb]:cursor-pointer"
       />
@@ -222,13 +222,13 @@ export function ImageEditor({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm"
+        className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl"
       >
         <div className="h-full flex flex-col">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
             <div className="flex items-center gap-2">
-              <SlidersHorizontal className="w-5 h-5 text-cyan-400" />
+              <SlidersHorizontal className="w-5 h-5 text-brand-hover" />
               <h2 className="text-lg font-semibold text-white">Edit Image</h2>
             </div>
             <div className="flex items-center gap-2">
@@ -281,7 +281,7 @@ export function ImageEditor({
                   className={cn(
                     "flex-1 py-3 text-sm font-medium transition-colors",
                     activeTab === 'adjust'
-                      ? "text-cyan-400 border-b-2 border-cyan-400"
+                      ? "text-brand-hover border-b-2 border-brand-hover"
                       : "text-gray-400 hover:text-white"
                   )}
                 >
@@ -295,7 +295,7 @@ export function ImageEditor({
                   className={cn(
                     "flex-1 py-3 text-sm font-medium transition-colors",
                     activeTab === 'filters'
-                      ? "text-cyan-400 border-b-2 border-cyan-400"
+                      ? "text-brand-hover border-b-2 border-brand-hover"
                       : "text-gray-400 hover:text-white"
                   )}
                 >
@@ -353,7 +353,7 @@ export function ImageEditor({
                           className={cn(
                             "relative aspect-square rounded-lg overflow-hidden transition-all",
                             adjustments.filter === filter.id
-                              ? "ring-2 ring-cyan-500 ring-offset-2 ring-offset-gray-900"
+                              ? "ring-2 ring-brand ring-offset-2 ring-offset-gray-900"
                               : "ring-1 ring-gray-700 hover:ring-gray-500"
                           )}
                         >
@@ -363,13 +363,13 @@ export function ImageEditor({
                             className="w-full h-full object-cover"
                             style={{ filter: filter.cssFilter }}
                           />
-                          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-1.5">
+                          <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/80 to-transparent p-1.5">
                             <span className="text-[10px] font-medium text-white">
                               {filter.name}
                             </span>
                           </div>
                           {adjustments.filter === filter.id && (
-                            <div className="absolute top-1 right-1 w-4 h-4 bg-cyan-500 rounded-full flex items-center justify-center">
+                            <div className="absolute top-1 right-1 w-4 h-4 bg-brand rounded-full flex items-center justify-center">
                               <Check className="w-2.5 h-2.5 text-white" />
                             </div>
                           )}
@@ -389,7 +389,7 @@ export function ImageEditor({
                     "w-full py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all",
                     isProcessing
                       ? "bg-gray-700 text-gray-400 cursor-wait"
-                      : "bg-cyan-500 hover:bg-cyan-400 text-gray-900"
+                      : "bg-brand hover:bg-brand-hover text-gray-900"
                   )}
                 >
                   {isProcessing ? (

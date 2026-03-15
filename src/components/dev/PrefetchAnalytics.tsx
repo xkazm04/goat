@@ -79,7 +79,7 @@ function PrefetchAnalyticsPanel({
 
   return (
     <div
-      className={`fixed ${positionClasses[position]} z-[9999] font-mono text-xs`}
+      className={`fixed ${positionClasses[position]} z-9999 font-mono text-xs`}
     >
       {/* Toggle button */}
       <button
@@ -93,7 +93,7 @@ function PrefetchAnalyticsPanel({
       {/* Panel */}
       {isOpen && analytics && network && queueStats && (
         <div className="mt-2 bg-gray-900/95 border border-gray-700 rounded-lg p-3 w-72 max-h-96 overflow-auto shadow-xl">
-          <div className="font-bold text-cyan-400 mb-2 flex items-center justify-between">
+          <div className="font-bold text-brand-hover mb-2 flex items-center justify-between">
             <span>Prefetch Analytics</span>
             <button
               onClick={() => PrefetchManager.resetAnalytics()}
@@ -146,7 +146,7 @@ function PrefetchAnalyticsPanel({
               <span>Failed:</span>
               <span className="text-right text-red-400">{analytics.failed}</span>
               <span>Cache Hits:</span>
-              <span className="text-right text-cyan-400">{analytics.hits}</span>
+              <span className="text-right text-brand-hover">{analytics.hits}</span>
               <span>Hit Rate:</span>
               <span className="text-right font-bold">
                 {analytics.hitRate.toFixed(1)}%

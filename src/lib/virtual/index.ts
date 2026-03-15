@@ -76,8 +76,6 @@ export type {
 // Performance monitoring
 export {
   PerformanceMonitor,
-  usePerformanceMetrics,
-  PerformanceProvider,
 } from './PerformanceMonitor';
 
 export type {

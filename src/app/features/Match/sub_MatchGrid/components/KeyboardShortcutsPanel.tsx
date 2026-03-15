@@ -30,9 +30,9 @@ const CATEGORY_CONFIG = {
     icon: Navigation,
     label: "Navigation",
     description: "Move focus between tiers and items",
-    color: "text-cyan-400",
-    bgColor: "bg-cyan-500/10",
-    borderColor: "border-cyan-500/30",
+    color: "text-brand-hover",
+    bgColor: "bg-brand/10",
+    borderColor: "border-brand/30",
   },
   assignment: {
     icon: Layers,
@@ -122,7 +122,7 @@ export const KeyboardShortcutsPanel = memo(function KeyboardShortcutsPanel({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-black/70 backdrop-blur-xl z-50"
             onClick={onClose}
             aria-hidden="true"
           />
@@ -138,8 +138,8 @@ export const KeyboardShortcutsPanel = memo(function KeyboardShortcutsPanel({
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
             className="fixed inset-4 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2
-              md:w-[700px] md:max-h-[85vh] z-50 overflow-hidden
-              bg-gradient-to-b from-slate-900 to-slate-950
+              md:w-lg md:max-h-[85vh] z-50 overflow-hidden
+              bg-linear-to-b from-slate-900 to-slate-950
               rounded-2xl border border-slate-700/50
               shadow-2xl shadow-black/50
               flex flex-col"
@@ -168,7 +168,7 @@ export const KeyboardShortcutsPanel = memo(function KeyboardShortcutsPanel({
                 onClick={onClose}
                 className="p-2 rounded-lg bg-slate-800/50 text-slate-400
                   hover:bg-rose-500/20 hover:text-rose-400 transition-colors
-                  focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  focus:outline-hidden focus:ring-2 focus:ring-brand"
                 aria-label="Close keyboard shortcuts panel"
               >
                 <X className="w-5 h-5" />
@@ -279,7 +279,7 @@ const ShortcutKeyDisplay = memo(function ShortcutKeyDisplay({
         <span key={index} className="flex items-center gap-1">
           {index > 0 && <span className="text-slate-600">+</span>}
           <kbd
-            className="min-w-[1.75rem] px-1.5 py-1 rounded-md text-center
+            className="min-w-7 px-1.5 py-1 rounded-md text-center
               bg-slate-800 border border-slate-700
               text-xs font-mono text-slate-200
               shadow-[0_2px_0_0_rgba(0,0,0,0.3),inset_0_1px_0_0_rgba(255,255,255,0.1)]"
@@ -339,11 +339,11 @@ export const KeyboardModeIndicator = memo(function KeyboardModeIndicator({
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 10, scale: 0.9 }}
           className={`fixed bottom-4 left-4 z-40 flex items-center gap-2 px-3 py-2
-            bg-slate-900/95 backdrop-blur-sm rounded-lg border border-cyan-500/50
-            shadow-lg shadow-cyan-500/20 ${className}`}
+            bg-slate-900/95 backdrop-blur-xs rounded-lg border border-brand/50
+            shadow-lg shadow-brand/20 ${className}`}
         >
-          <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-          <span className="text-xs font-medium text-cyan-400">Keyboard Mode</span>
+          <div className="w-2 h-2 rounded-full bg-brand-hover animate-pulse" />
+          <span className="text-xs font-medium text-brand-hover">Keyboard Mode</span>
           <kbd className="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] font-mono text-slate-400">
             K
           </kbd>

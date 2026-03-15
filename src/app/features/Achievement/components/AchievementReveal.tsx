@@ -455,7 +455,7 @@ export function AchievementToast({
           >
             {/* Icon */}
             <motion.div
-              className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+              className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
               style={{
                 background: tierConfig.gradient,
                 boxShadow: `0 0 20px ${tierConfig.glow}`,
@@ -478,7 +478,7 @@ export function AchievementToast({
 
             {/* Content */}
             <div className="text-left">
-              <p className="text-xs text-cyan-400 font-medium mb-0.5">
+              <p className="text-xs text-brand-hover font-medium mb-0.5">
                 Achievement Unlocked!
               </p>
               <p className="text-white font-bold">{achievement.title}</p>
@@ -486,7 +486,7 @@ export function AchievementToast({
             </div>
 
             {/* Sparkle */}
-            <Sparkles className="w-5 h-5 text-yellow-400 flex-shrink-0" />
+            <Sparkles className="w-5 h-5 text-yellow-400 shrink-0" />
           </motion.button>
 
           {/* Close button */}

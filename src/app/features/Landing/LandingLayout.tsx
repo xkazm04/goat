@@ -3,6 +3,7 @@
 import { Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { LandingMain } from './LandingMain';
+import { useLandingPrefetch } from './useLandingPrefetch';
 import {
     LazyFeaturedListsSection,
     LazyUserListsSection,
@@ -55,6 +56,10 @@ function ScrollRevealSection({
  * - Collections section
  */
 const LandingLayout = () => {
+    // Fire all landing page data fetches in parallel on mount
+    // Eliminates waterfall from lazy-loaded sections mounting progressively
+    useLandingPrefetch();
+
     return (
         <div className="min-h-screen relative" data-testid="landing-layout">
             {/* Global floating elements - ambient decoration */}

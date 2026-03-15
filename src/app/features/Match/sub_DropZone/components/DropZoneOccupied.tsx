@@ -90,7 +90,7 @@ export const DropZoneOccupied = memo(function DropZoneOccupied({
       {/* Medal Gradient Border - top 3 only, as inset box-shadow */}
       {medalType && (
         <div
-          className="absolute inset-0 rounded-xl z-[35] pointer-events-none"
+          className="absolute inset-0 rounded-xl z-35 pointer-events-none"
           style={{
             boxShadow: `inset 0 0 0 ${position === 0 ? 3 : 2}px ${
               medalType === 'gold' ? '#fbbf24' :
@@ -115,13 +115,13 @@ export const DropZoneOccupied = memo(function DropZoneOccupied({
           testId={`drop-zone-image-${position}`}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
           fallbackComponent={
-            <div className="w-full h-full bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center">
+            <div className="w-full h-full bg-linear-to-br from-slate-800 to-slate-900 flex items-center justify-center">
               <span className="text-xs text-gray-500 text-center px-2">{title}</span>
             </div>
           }
         />
         {/* Subtle gradient overlay for number visibility */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/20 pointer-events-none" />
+        <div className="absolute inset-0 bg-linear-to-b from-black/40 via-transparent to-black/20 pointer-events-none" />
       </motion.div>
 
       {/* Rank Number Overlay - Top center, above the image */}
@@ -147,7 +147,7 @@ export const DropZoneOccupied = memo(function DropZoneOccupied({
               />
             )}
             <span
-              className="text-sm font-black tracking-wide"
+              className="text-sm font-black font-grotesk tracking-wide"
               style={{ color: accentColor }}
             >
               {position + 1}

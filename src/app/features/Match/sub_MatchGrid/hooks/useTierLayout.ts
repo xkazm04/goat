@@ -3,7 +3,7 @@
  * Extracts tier logic for position-aware smart grid layout
  */
 
-import { useMemo, useCallback, useState } from 'react';
+import { useMemo, useCallback, useState, useRef } from 'react';
 import {
   TierDefinition,
   TierId,
@@ -128,41 +128,68 @@ export function useTierLayout(
     []
   );
 
-  // Calculate tier statistics
-  const tierStats = useMemo((): TierStats[] => {
-    return tiers.map(tier => {
+  // Ref to stabilize references when data hasn't changed
+  const derivedRef = useRef<{
+    tierStats: TierStats[];
+    overallFillPercentage: number;
+    itemsByTier: Map<TierId, Array<{ position: number; item: GridItemType | null }>>;
+  } | null>(null);
+
+  // Single-pass computation of tierStats, overallFillPercentage, and itemsByTier
+  const { tierStats, overallFillPercentage, itemsByTier } = useMemo(() => {
+    const newTierStats: TierStats[] = [];
+    const newItemsByTier = new Map<TierId, Array<{ position: number; item: GridItemType | null }>>();
+    let totalFilled = 0;
+    let totalSlots = 0;
+
+    for (const tier of tiers) {
       const tierItems: Array<{ position: number; item: GridItemType }> = [];
+      const allPositionItems: Array<{ position: number; item: GridItemType | null }> = [];
       let filledSlots = 0;
+      const slotCount = tier.range.end - tier.range.start;
 
       for (let pos = tier.range.start; pos < tier.range.end; pos++) {
-        const item = gridItems[pos];
+        const item = gridItems[pos] || null;
+        allPositionItems.push({ position: pos, item });
         if (item?.matched) {
           filledSlots++;
           tierItems.push({ position: pos, item });
         }
       }
 
-      const totalSlots = tier.range.end - tier.range.start;
-      const emptySlots = totalSlots - filledSlots;
-      const fillPercentage = totalSlots > 0 ? (filledSlots / totalSlots) * 100 : 0;
+      const emptySlots = slotCount - filledSlots;
+      const fillPercentage = slotCount > 0 ? (filledSlots / slotCount) * 100 : 0;
 
-      return {
+      newTierStats.push({
         tier,
-        totalSlots,
+        totalSlots: slotCount,
         filledSlots,
         emptySlots,
         fillPercentage,
         items: tierItems,
-      };
-    });
-  }, [tiers, gridItems]);
+      });
 
-  // Overall fill percentage
-  const overallFillPercentage = useMemo(() => {
-    const totalFilled = tierStats.reduce((sum, stat) => sum + stat.filledSlots, 0);
-    const totalSlots = tierStats.reduce((sum, stat) => sum + stat.totalSlots, 0);
-    return totalSlots > 0 ? (totalFilled / totalSlots) * 100 : 0;
-  }, [tierStats]);
+      newItemsByTier.set(tier.id, allPositionItems);
+      totalFilled += filledSlots;
+      totalSlots += slotCount;
+    }
+
+    const newOverallFill = totalSlots > 0 ? (totalFilled / totalSlots) * 100 : 0;
+
+    // Stabilize references
+    const prev = derivedRef.current;
+    const stableTierStats = prev && tierStatsEqual(prev.tierStats, newTierStats) ? prev.tierStats : newTierStats;
+    const stableOverall = prev ? prev.overallFillPercentage === newOverallFill ? prev.overallFillPercentage : newOverallFill : newOverallFill;
+    const stableItemsByTier = prev && itemsByTierEqual(prev.itemsByTier, newItemsByTier) ? prev.itemsByTier : newItemsByTier;
+
+    const result = {
+      tierStats: stableTierStats,
+      overallFillPercentage: stableOverall,
+      itemsByTier: stableItemsByTier,
+    };
+    derivedRef.current = result;
+    return result;
+  }, [tiers, gridItems]);
 
   // Toggle tier collapsed
   const toggleTierCollapsed = useCallback((tierId: TierId) => {
@@ -203,24 +230,6 @@ export function useTierLayout(
       return next;
     });
   }, [tiers]);
-
-  // Items grouped by tier
-  const itemsByTier = useMemo(() => {
-    const map = new Map<TierId, Array<{ position: number; item: GridItemType | null }>>();
-
-    tiers.forEach(tier => {
-      const items: Array<{ position: number; item: GridItemType | null }> = [];
-      for (let pos = tier.range.start; pos < tier.range.end; pos++) {
-        items.push({
-          position: pos,
-          item: gridItems[pos] || null,
-        });
-      }
-      map.set(tier.id, items);
-    });
-
-    return map;
-  }, [tiers, gridItems]);
 
   // Check if crossing tier boundary
   const isCrossingTier = useCallback(
@@ -291,6 +300,36 @@ export function useTierSlot(
     positionStyle,
     cssProperties,
   };
+}
+
+// Reference-stability helpers
+function tierStatsEqual(a: TierStats[], b: TierStats[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i].filledSlots !== b[i].filledSlots || a[i].totalSlots !== b[i].totalSlots) return false;
+    if (a[i].items.length !== b[i].items.length) return false;
+    for (let j = 0; j < a[i].items.length; j++) {
+      if (a[i].items[j].position !== b[i].items[j].position || a[i].items[j].item !== b[i].items[j].item) return false;
+    }
+  }
+  return true;
+}
+
+function itemsByTierEqual(
+  a: Map<TierId, Array<{ position: number; item: GridItemType | null }>>,
+  b: Map<TierId, Array<{ position: number; item: GridItemType | null }>>
+): boolean {
+  if (a.size !== b.size) return false;
+  let equal = true;
+  a.forEach((aItems, key) => {
+    if (!equal) return;
+    const bItems = b.get(key);
+    if (!bItems || aItems.length !== bItems.length) { equal = false; return; }
+    for (let i = 0; i < aItems.length; i++) {
+      if (aItems[i].position !== bItems[i].position || aItems[i].item !== bItems[i].item) { equal = false; return; }
+    }
+  });
+  return equal;
 }
 
 export default useTierLayout;

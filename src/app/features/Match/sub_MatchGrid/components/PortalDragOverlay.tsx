@@ -143,7 +143,7 @@ export function PortalDragOverlay({ item, targetPosition }: PortalDragOverlayPro
             position: "absolute",
             top: -4,
             right: -4,
-            backgroundColor: "#06b6d4", // cyan-500
+            backgroundColor: "#06b6d4", // brand
             color: "white",
             fontSize: 10,
             fontWeight: "bold",

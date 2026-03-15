@@ -67,7 +67,7 @@ export function GoatView({ gridItems, onRemove, getItemTitle }: GoatViewProps) {
             </motion.div>
 
             {/* Radial glow effect */}
-            <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/20 via-yellow-400/10 to-transparent blur-3xl -z-10" />
+            <div className="absolute inset-0 bg-linear-to-b from-yellow-500/20 via-yellow-400/10 to-transparent blur-3xl -z-10" />
 
             {/* The GOAT - Centered and Massive */}
             <div className="flex flex-col items-center gap-6">
@@ -78,7 +78,7 @@ export function GoatView({ gridItems, onRemove, getItemTitle }: GoatViewProps) {
                     className="flex items-center gap-3 mb-4"
                 >
                     <Crown className="w-8 h-8 text-yellow-400 drop-shadow-[0_0_20px_rgba(250,204,21,0.8)]" />
-                    <h3 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-yellow-200 to-yellow-400 tracking-wider">
+                    <h3 className="text-3xl font-black text-transparent bg-clip-text bg-linear-to-r from-yellow-400 via-yellow-200 to-yellow-400 tracking-wider">
                         THE G.O.A.T
                     </h3>
                     <Crown className="w-8 h-8 text-yellow-400 drop-shadow-[0_0_20px_rgba(250,204,21,0.8)]" />

@@ -27,11 +27,8 @@ import type {
 } from './types';
 import type { TopList } from '@/types/top-lists';
 import type { Blueprint } from '@/types/blueprint';
-import type {
-  Item,
-  ItemGroup,
-  PaginatedResponse,
-} from '@/lib/api/goat-api';
+import type { Item, PaginatedResponse } from '@/types/items';
+import type { ItemGroup } from '@/types/groups';
 
 // =============================================================================
 // Configuration

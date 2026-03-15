@@ -12,24 +12,55 @@ interface PodiumViewProps {
     getItemTitle: (item: any) => string;
 }
 
+const podiumContainer = {
+    hidden: { opacity: 0 },
+    show: {
+        opacity: 1,
+        transition: { staggerChildren: 0.15, delayChildren: 0.1 },
+    },
+} as const;
+
+const podiumItem = {
+    hidden: { opacity: 0, y: 50, scale: 0.85 },
+    show: { opacity: 1, y: 0, scale: 1, transition: { type: "spring" as const, stiffness: 100, damping: 14 } },
+};
+
 export function PodiumView({ gridItems, onRemove, getItemTitle }: PodiumViewProps) {
     return (
-        <div className="mb-16 relative py-8">
+        <motion.div
+            className="mb-16 relative py-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+        >
             {/* Background glow effect */}
-            <div className="absolute inset-0 bg-gradient-to-b from-cyan-500/5 via-yellow-500/5 to-transparent blur-3xl -z-10" />
+            <motion.div
+                className="absolute inset-0 bg-linear-to-b from-brand/5 via-yellow-500/5 to-transparent blur-3xl -z-10"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.6, duration: 0.8 }}
+            />
 
             {/* Spotlight effect for 1st place */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-gradient-to-b from-yellow-400/10 to-transparent blur-2xl -z-5" />
+            <motion.div
+                className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-linear-to-b from-yellow-400/10 to-transparent blur-2xl -z-5"
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.4, duration: 0.6 }}
+            />
 
             {/* Podium Container */}
-            <div className="flex justify-center items-end gap-0 pt-16">
+            <motion.div
+                className="flex justify-center items-end gap-0 pt-16"
+                variants={podiumContainer}
+                initial="hidden"
+                animate="show"
+            >
 
                 {/* 2nd Place */}
                 <motion.div
                     className="relative flex flex-col items-center"
-                    initial={{ opacity: 0, y: 40 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.15, type: "spring", stiffness: 100 }}
+                    variants={podiumItem}
                 >
                     {/* Medal icon */}
                     <motion.div
@@ -65,13 +96,13 @@ export function PodiumView({ gridItems, onRemove, getItemTitle }: PodiumViewProp
                         style={{ originY: 0 }}
                     >
                         {/* Top surface with shine */}
-                        <div className="h-4 bg-gradient-to-b from-slate-400/70 to-slate-600/60 rounded-t-lg border-t border-x border-slate-400/50" />
+                        <div className="h-4 bg-linear-to-b from-slate-400/70 to-slate-600/60 rounded-t-lg border-t border-x border-slate-400/50" />
 
                         {/* Main block body */}
-                        <div className="h-24 bg-gradient-to-b from-slate-600/70 via-slate-700/80 to-slate-800/90 border-x border-slate-600/40 relative overflow-hidden">
+                        <div className="h-24 bg-linear-to-b from-slate-600/70 via-slate-700/80 to-slate-800/90 border-x border-slate-600/40 relative overflow-hidden">
                             {/* Vertical highlight lines */}
-                            <div className="absolute left-2 top-0 bottom-0 w-px bg-gradient-to-b from-white/10 via-white/5 to-transparent" />
-                            <div className="absolute right-2 top-0 bottom-0 w-px bg-gradient-to-b from-white/10 via-white/5 to-transparent" />
+                            <div className="absolute left-2 top-0 bottom-0 w-px bg-linear-to-b from-white/10 via-white/5 to-transparent" />
+                            <div className="absolute right-2 top-0 bottom-0 w-px bg-linear-to-b from-white/10 via-white/5 to-transparent" />
 
                             {/* Number */}
                             <div className="absolute inset-0 flex items-center justify-center">
@@ -84,9 +115,7 @@ export function PodiumView({ gridItems, onRemove, getItemTitle }: PodiumViewProp
                 {/* 1st Place - Center, tallest */}
                 <motion.div
                     className="relative flex flex-col items-center z-20"
-                    initial={{ opacity: 0, y: 60 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0, type: "spring", stiffness: 100 }}
+                    variants={podiumItem}
                 >
                     {/* Trophy with glow */}
                     <motion.div
@@ -103,7 +132,7 @@ export function PodiumView({ gridItems, onRemove, getItemTitle }: PodiumViewProp
                                 animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
                                 transition={{ duration: 2, repeat: Infinity }}
                             >
-                                <div className="w-full h-full bg-yellow-300 rounded-full blur-sm" />
+                                <div className="w-full h-full bg-yellow-300 rounded-full blur-xs" />
                             </motion.div>
                         </div>
                     </motion.div>
@@ -132,16 +161,16 @@ export function PodiumView({ gridItems, onRemove, getItemTitle }: PodiumViewProp
                         style={{ originY: 0 }}
                     >
                         {/* Gold top surface with shine */}
-                        <div className="h-5 bg-gradient-to-b from-yellow-300/70 to-yellow-500/60 rounded-t-lg border-t border-x border-yellow-400/60 shadow-[inset_0_2px_4px_rgba(255,255,255,0.2)]" />
+                        <div className="h-5 bg-linear-to-b from-yellow-300/70 to-yellow-500/60 rounded-t-lg border-t border-x border-yellow-400/60 shadow-[inset_0_2px_4px_rgba(255,255,255,0.2)]" />
 
                         {/* Main block body with gold tint */}
-                        <div className="h-40 bg-gradient-to-b from-yellow-500/40 via-yellow-600/35 to-amber-900/50 border-x border-yellow-500/40 relative overflow-hidden">
+                        <div className="h-40 bg-linear-to-b from-yellow-500/40 via-yellow-600/35 to-amber-900/50 border-x border-yellow-500/40 relative overflow-hidden">
                             {/* Vertical highlight lines */}
-                            <div className="absolute left-3 top-0 bottom-0 w-px bg-gradient-to-b from-yellow-400/40 via-yellow-500/20 to-transparent" />
-                            <div className="absolute right-3 top-0 bottom-0 w-px bg-gradient-to-b from-yellow-400/40 via-yellow-500/20 to-transparent" />
+                            <div className="absolute left-3 top-0 bottom-0 w-px bg-linear-to-b from-yellow-400/40 via-yellow-500/20 to-transparent" />
+                            <div className="absolute right-3 top-0 bottom-0 w-px bg-linear-to-b from-yellow-400/40 via-yellow-500/20 to-transparent" />
 
                             {/* Center glow */}
-                            <div className="absolute inset-x-8 top-4 bottom-4 bg-gradient-to-b from-yellow-400/20 to-transparent rounded-full blur-xl" />
+                            <div className="absolute inset-x-8 top-4 bottom-4 bg-linear-to-b from-yellow-400/20 to-transparent rounded-full blur-xl" />
 
                             {/* Number */}
                             <div className="absolute inset-0 flex items-center justify-center">
@@ -154,9 +183,7 @@ export function PodiumView({ gridItems, onRemove, getItemTitle }: PodiumViewProp
                 {/* 3rd Place */}
                 <motion.div
                     className="relative flex flex-col items-center"
-                    initial={{ opacity: 0, y: 40 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.25, type: "spring", stiffness: 100 }}
+                    variants={podiumItem}
                 >
                     {/* Award icon */}
                     <motion.div
@@ -192,13 +219,13 @@ export function PodiumView({ gridItems, onRemove, getItemTitle }: PodiumViewProp
                         style={{ originY: 0 }}
                     >
                         {/* Bronze top surface */}
-                        <div className="h-3 bg-gradient-to-b from-orange-400/50 to-orange-600/45 rounded-t-lg border-t border-x border-orange-500/45" />
+                        <div className="h-3 bg-linear-to-b from-orange-400/50 to-orange-600/45 rounded-t-lg border-t border-x border-orange-500/45" />
 
                         {/* Main block body */}
-                        <div className="h-16 bg-gradient-to-b from-orange-600/40 via-orange-800/45 to-orange-900/50 border-x border-orange-600/35 relative overflow-hidden">
+                        <div className="h-16 bg-linear-to-b from-orange-600/40 via-orange-800/45 to-orange-900/50 border-x border-orange-600/35 relative overflow-hidden">
                             {/* Vertical highlight lines */}
-                            <div className="absolute left-2 top-0 bottom-0 w-px bg-gradient-to-b from-orange-400/15 via-orange-500/8 to-transparent" />
-                            <div className="absolute right-2 top-0 bottom-0 w-px bg-gradient-to-b from-orange-400/15 via-orange-500/8 to-transparent" />
+                            <div className="absolute left-2 top-0 bottom-0 w-px bg-linear-to-b from-orange-400/15 via-orange-500/8 to-transparent" />
+                            <div className="absolute right-2 top-0 bottom-0 w-px bg-linear-to-b from-orange-400/15 via-orange-500/8 to-transparent" />
 
                             {/* Number */}
                             <div className="absolute inset-0 flex items-center justify-center">
@@ -207,18 +234,18 @@ export function PodiumView({ gridItems, onRemove, getItemTitle }: PodiumViewProp
                         </div>
                     </motion.div>
                 </motion.div>
-            </div>
+            </motion.div>
 
             {/* Connected podium base / stage floor */}
             <motion.div
                 className="relative mx-auto max-w-4xl mt-0"
                 initial={{ opacity: 0, scaleX: 0.5 }}
                 animate={{ opacity: 1, scaleX: 1 }}
-                transition={{ delay: 0.4, duration: 0.4 }}
+                transition={{ delay: 0.6, duration: 0.4 }}
             >
-                <div className="h-3 bg-gradient-to-r from-transparent via-slate-700/50 to-transparent rounded-b-lg" />
-                <div className="h-1 bg-gradient-to-r from-transparent via-cyan-500/20 to-transparent blur-sm" />
+                <div className="h-3 bg-linear-to-r from-transparent via-slate-700/50 to-transparent rounded-b-lg" />
+                <div className="h-1 bg-linear-to-r from-transparent via-brand/20 to-transparent blur-xs" />
             </motion.div>
-        </div>
+        </motion.div>
     );
 }

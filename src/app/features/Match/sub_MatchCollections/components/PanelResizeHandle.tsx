@@ -18,19 +18,19 @@ export function PanelResizeHandle({ isResizing, onResizeStart }: PanelResizeHand
       className={cn(
         "absolute -top-3 left-0 right-0 h-6 cursor-ns-resize z-10",
         "flex items-center justify-center group",
-        isResizing && 'bg-gradient-to-b from-cyan-500/10 to-transparent'
+        isResizing && 'bg-linear-to-b from-brand/10 to-transparent'
       )}
       data-testid="panel-resize-handle"
     >
       <div className={cn(
         "flex items-center gap-1 px-3 py-1 rounded-full transition-all duration-200",
         isResizing
-          ? "bg-cyan-500/20 border border-cyan-500/30"
+          ? "bg-brand/20 border border-brand/30"
           : "bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/15"
       )}>
         <div className={cn(
           "w-8 h-0.5 rounded-full transition-all",
-          isResizing ? "bg-cyan-400" : "bg-white/30 group-hover:bg-white/50"
+          isResizing ? "bg-brand-hover" : "bg-white/30 group-hover:bg-white/50"
         )} />
       </div>
     </div>

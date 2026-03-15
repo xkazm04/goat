@@ -11,6 +11,7 @@ import { Sparkles, Star, Tag, Grid, Clock, Bookmark, Filter } from 'lucide-react
 import type { FilterConfig } from '@/lib/filters/types';
 import { cn } from '@/lib/utils';
 import { useFilterBuilderStore } from '@/stores/filter-builder-store';
+import { FILTER_TIMING } from '@/lib/filters/constants';
 
 /**
  * Template definition
@@ -207,10 +208,10 @@ const COLOR_VARIANTS: Record<string, { bg: string; border: string; text: string;
     iconBg: 'bg-orange-500/10',
   },
   cyan: {
-    bg: 'bg-cyan-500/5',
-    border: 'border-cyan-500/20 hover:border-cyan-500/40',
-    text: 'text-cyan-400',
-    iconBg: 'bg-cyan-500/10',
+    bg: 'bg-brand/5',
+    border: 'border-brand/20 hover:border-brand/40',
+    text: 'text-brand-hover',
+    iconBg: 'bg-brand/10',
   },
 };
 
@@ -279,7 +280,7 @@ export function FilterTemplates({
             key={template.id}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: FILTER_TEMPLATES.indexOf(template) * 0.05 }}
+            transition={{ delay: FILTER_TEMPLATES.indexOf(template) * FILTER_TIMING.stagger }}
           >
             <TemplateCard template={template} onSelect={handleSelect} />
           </motion.div>
@@ -312,7 +313,7 @@ export function TemplateQuickSelect({
               colors.bg,
               colors.border,
               colors.text,
-              'border hover:scale-105'
+              'border hover:scale-[1.02]'
             )}
             title={template.description}
           >

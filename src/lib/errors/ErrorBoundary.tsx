@@ -1,8 +1,8 @@
 'use client';
 
-import React, { Component, ReactNode, useEffect, useState } from 'react';
+import React, { Component, ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertCircle, RefreshCw, Home, Copy, ChevronDown, Bug } from 'lucide-react';
+import { AlertCircle, RefreshCw, Home, Copy, ChevronDown, Bug, LogIn, WifiOff, Timer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { GoatError, fromUnknown, isGoatError } from './GoatError';
 import type { ErrorCode, ErrorSeverity } from './types';
@@ -185,8 +185,8 @@ function ErrorFallbackUI({
   if (simplified) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[200px] p-8 text-center">
-        <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center mb-4">
-          <AlertCircle className="w-6 h-6 text-red-400" />
+        <div className="w-12 h-12 rounded-full bg-[var(--severity-error-bg)] flex items-center justify-center mb-4">
+          <AlertCircle className="w-6 h-6 text-[var(--severity-error-text)]" />
         </div>
         <h3 className="text-lg font-semibold text-slate-200 mb-2">
           {notification.title}
@@ -194,12 +194,7 @@ function ErrorFallbackUI({
         <p className="text-sm text-slate-400 mb-4 max-w-md">
           {notification.description}
         </p>
-        <button
-          onClick={resetError}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
-        >
-          Try Again
-        </button>
+        <ContextualRetryActions error={error} resetError={resetError} />
       </div>
     );
   }
@@ -208,10 +203,10 @@ function ErrorFallbackUI({
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="flex flex-col items-center justify-center min-h-[300px] p-8 bg-slate-900/50 rounded-lg border border-red-500/20"
+      className="flex flex-col items-center justify-center min-h-[300px] p-8 bg-[var(--severity-error-bg)] rounded-lg border border-[var(--severity-error-border)]"
     >
-      <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-4">
-        <AlertCircle className="w-8 h-8 text-red-400" />
+      <div className="w-16 h-16 rounded-full bg-[var(--severity-error-bg)] flex items-center justify-center mb-4">
+        <AlertCircle className="w-8 h-8 text-[var(--severity-error-text)]" />
       </div>
 
       <h3 className="text-xl font-semibold text-slate-200 mb-2">
@@ -232,15 +227,10 @@ function ErrorFallbackUI({
         </span>
       </div>
 
-      {/* Action buttons */}
-      <div className="flex gap-3 mb-4">
-        <button
-          onClick={resetError}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
-        >
-          <RefreshCw className="w-4 h-4" />
-          Try Again
-        </button>
+      {/* Context-aware action buttons */}
+      <ContextualRetryActions error={error} resetError={resetError} />
+
+      <div className="mt-2 mb-4">
         <button
           onClick={handleGoHome}
           className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
@@ -310,6 +300,171 @@ function ErrorFallbackUI({
         </div>
       )}
     </motion.div>
+  );
+}
+
+// ============================================================================
+// Contextual Retry Actions
+// ============================================================================
+
+const NETWORK_AUTO_RETRY_MS = 3000;
+const RATE_LIMIT_COOLDOWN_MS = 5000;
+
+interface ContextualRetryActionsProps {
+  error: GoatError;
+  resetError: () => void;
+}
+
+/**
+ * Renders context-aware retry UI based on error category:
+ * - Network: pulse animation + auto-retry after 3s
+ * - Auth: "Sign In" button with brand gradient
+ * - Rate limit: countdown progress bar before enabling retry
+ * - Default: standard "Try Again" button
+ */
+function ContextualRetryActions({ error, resetError }: ContextualRetryActionsProps) {
+  if (error.isCategory('network')) {
+    return <NetworkRetryAction resetError={resetError} />;
+  }
+
+  if (error.isCategory('authentication')) {
+    return <AuthRetryAction />;
+  }
+
+  if (error.isCategory('rate_limit')) {
+    return <RateLimitRetryAction resetError={resetError} />;
+  }
+
+  return (
+    <button
+      onClick={resetError}
+      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
+    >
+      <RefreshCw className="w-4 h-4" />
+      Try Again
+    </button>
+  );
+}
+
+/**
+ * Network error: pulsing retry icon with "Reconnecting..." text,
+ * auto-retries after 3 seconds.
+ */
+function NetworkRetryAction({ resetError }: { resetError: () => void }) {
+  const [autoRetrying, setAutoRetrying] = useState(true);
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  useEffect(() => {
+    if (!autoRetrying) return;
+    timerRef.current = setTimeout(() => {
+      resetError();
+    }, NETWORK_AUTO_RETRY_MS);
+    return () => clearTimeout(timerRef.current);
+  }, [autoRetrying, resetError]);
+
+  const handleManualRetry = useCallback(() => {
+    setAutoRetrying(false);
+    clearTimeout(timerRef.current);
+    resetError();
+  }, [resetError]);
+
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <button
+        onClick={handleManualRetry}
+        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
+      >
+        <WifiOff className="w-4 h-4" />
+        {autoRetrying ? (
+          <>
+            <RefreshCw className="w-4 h-4 animate-spin" />
+            Reconnecting…
+          </>
+        ) : (
+          'Retry Now'
+        )}
+      </button>
+      {autoRetrying && (
+        <span className="text-xs text-slate-500">
+          Auto-retrying in a few seconds…
+        </span>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Auth error: "Sign In" button styled with the primary brand gradient.
+ */
+function AuthRetryAction() {
+  const handleSignIn = useCallback(() => {
+    window.location.href = '/';
+  }, []);
+
+  return (
+    <button
+      onClick={handleSignIn}
+      className="px-5 py-2.5 bg-gradient-to-r from-brand to-purple-500 hover:from-brand-hover hover:to-purple-400 text-white font-semibold rounded-lg transition-all shadow-lg shadow-brand/25 flex items-center gap-2"
+    >
+      <LogIn className="w-4 h-4" />
+      Sign In
+    </button>
+  );
+}
+
+/**
+ * Rate limit error: countdown progress bar (scaleX) that
+ * enables the retry button once the cooldown elapses.
+ */
+function RateLimitRetryAction({ resetError }: { resetError: () => void }) {
+  const [remaining, setRemaining] = useState(RATE_LIMIT_COOLDOWN_MS);
+  const startRef = useRef(Date.now());
+  const rafRef = useRef<number>(0);
+  const cooledDown = remaining <= 0;
+
+  useEffect(() => {
+    startRef.current = Date.now();
+    const tick = () => {
+      const elapsed = Date.now() - startRef.current;
+      const left = Math.max(0, RATE_LIMIT_COOLDOWN_MS - elapsed);
+      setRemaining(left);
+      if (left > 0) {
+        rafRef.current = requestAnimationFrame(tick);
+      }
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, []);
+
+  const progress = 1 - remaining / RATE_LIMIT_COOLDOWN_MS;
+  const secondsLeft = Math.ceil(remaining / 1000);
+
+  return (
+    <div className="flex flex-col items-center gap-2 w-full max-w-[200px]">
+      <button
+        onClick={resetError}
+        disabled={!cooledDown}
+        className={cn(
+          'w-full px-4 py-2 font-medium rounded-lg transition-colors flex items-center justify-center gap-2',
+          cooledDown
+            ? 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer'
+            : 'bg-slate-700 text-slate-400 cursor-not-allowed'
+        )}
+      >
+        <Timer className="w-4 h-4" />
+        {cooledDown ? 'Try Again' : `Wait ${secondsLeft}s`}
+      </button>
+      {!cooledDown && (
+        <div className="w-full h-1 bg-slate-700 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-blue-500 rounded-full transition-none"
+            style={{ transform: `scaleX(${progress})`, transformOrigin: 'left' }}
+          />
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -402,7 +557,33 @@ export function AsyncBoundary({
 function DefaultLoadingFallback() {
   return (
     <div className="flex items-center justify-center min-h-[100px] p-4">
-      <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      <div className="flex flex-col items-center gap-3">
+        {/* GOAT trophy icon with shimmer effect */}
+        <div className="relative w-10 h-10">
+          {/* Pulsing glow ring */}
+          <div className="absolute inset-0 rounded-full bg-brand/20 animate-ping" style={{ animationDuration: '1.5s' }} />
+          {/* Trophy icon container */}
+          <div className="relative w-10 h-10 rounded-full bg-gradient-to-br from-brand/20 to-purple-500/20 border border-brand/30 flex items-center justify-center">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              className="w-5 h-5 text-brand-hover animate-pulse"
+              style={{ animationDuration: '2s' }}
+            >
+              <path
+                d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6m12 5h1.5a2.5 2.5 0 0 0 0-5H18M7 20h10M9 16h6M12 16V9m-4 0h8l-1 7H9L7 9z"
+                stroke="currentColor"
+                strokeWidth={1.5}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+        </div>
+        <span className="text-xs font-medium text-slate-500 tracking-wider uppercase" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+          Loading
+        </span>
+      </div>
     </div>
   );
 }

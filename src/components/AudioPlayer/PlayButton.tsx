@@ -77,11 +77,11 @@ export function PlayButton({
         disabled={isThisItemLoading}
         className={cn(
           'flex items-center gap-2 px-3 py-1.5 rounded-lg',
-          'bg-cyan-500/20 hover:bg-cyan-500/30',
-          'text-cyan-400 text-sm font-medium',
+          'bg-brand/20 hover:bg-brand/30',
+          'text-brand-hover text-sm font-medium',
           'transition-all duration-200',
           'disabled:opacity-50 disabled:cursor-not-allowed',
-          isThisItemPlaying && 'ring-2 ring-cyan-500/50',
+          isThisItemPlaying && 'ring-2 ring-brand/50',
           className
         )}
       >
@@ -101,13 +101,13 @@ export function PlayButton({
       disabled={isThisItemLoading}
       className={cn(
         'flex items-center justify-center rounded-full',
-        'bg-gradient-to-br from-cyan-500/30 to-cyan-600/20',
-        'text-cyan-400 hover:text-cyan-300',
-        'border border-cyan-500/30 hover:border-cyan-400/50',
+        'bg-linear-to-br from-brand/30 to-brand-muted/20',
+        'text-brand-hover hover:text-brand-hover',
+        'border border-brand/30 hover:border-brand-hover/50',
         'transition-all duration-200',
-        'hover:scale-105 hover:shadow-lg hover:shadow-cyan-500/20',
+        'hover:scale-105 hover:shadow-lg hover:shadow-brand/20',
         'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100',
-        isThisItemPlaying && 'ring-2 ring-cyan-400/50 bg-cyan-500/40',
+        isThisItemPlaying && 'ring-2 ring-brand-hover/50 bg-brand/40',
         sizeClasses[size],
         className
       )}
@@ -130,8 +130,8 @@ export function MusicIndicator({ className }: { className?: string }) {
     <div
       className={cn(
         'flex items-center justify-center w-5 h-5',
-        'rounded-full bg-cyan-500/20',
-        'text-cyan-400',
+        'rounded-full bg-brand/20',
+        'text-brand-hover',
         className
       )}
     >

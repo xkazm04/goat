@@ -26,6 +26,8 @@ import {
   ReferenceLine,
 } from "recharts";
 import { cn } from "@/lib/utils";
+import { SPRING, DURATION } from "@/lib/animations/motion-presets";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { PlaceholderImage } from "@/components/ui/placeholder-image";
 import { useItemPopupStore, PopupInstance } from "@/stores/item-popup-store";
 import type { ItemDetailResponse } from "@/types/item-details";
@@ -57,6 +59,7 @@ const getAccentColor = (medianPosition?: number) => {
  * - Premium shadows and glows
  */
 export function ItemDetailPopup({ popup, onQuickAssign }: ItemDetailPopupProps) {
+  const reducedMotion = useReducedMotion();
   const [data, setData] = useState<ItemDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -118,10 +121,10 @@ export function ItemDetailPopup({ popup, onQuickAssign }: ItemDetailPopupProps) 
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.9, y: 30 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
+      initial={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.9, y: 30 }}
+      animate={reducedMotion ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9, y: 30 }}
-      transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+      transition={SPRING.smooth}
       drag
       dragControls={dragControls}
       dragListener={false}
@@ -146,7 +149,7 @@ export function ItemDetailPopup({ popup, onQuickAssign }: ItemDetailPopupProps) 
     >
       {/* Outer glow effect */}
       <motion.div
-        className="absolute -inset-[1px] rounded-2xl pointer-events-none"
+        className="absolute -inset-px rounded-2xl pointer-events-none"
         animate={{
           boxShadow: isHovered
             ? `0 0 50px ${accent.color}30, 0 0 25px ${accent.color}20, 0 25px 50px rgba(0,0,0,0.5)`
@@ -157,7 +160,7 @@ export function ItemDetailPopup({ popup, onQuickAssign }: ItemDetailPopupProps) 
 
       {/* Glass background */}
       <div
-        className="absolute inset-0 rounded-2xl bg-gray-900/90 backdrop-blur-xl"
+        className="absolute inset-0 rounded-2xl bg-slate-900/90 backdrop-blur-xl"
         style={{
           boxShadow: `inset 0 0 40px ${accent.color}08`,
         }}
@@ -188,14 +191,14 @@ export function ItemDetailPopup({ popup, onQuickAssign }: ItemDetailPopupProps) 
           )}
         >
           <div className="flex items-center gap-2 min-w-0">
-            <GripHorizontal className="w-3.5 h-3.5 text-gray-600 flex-shrink-0" />
-            <span className="text-xs font-medium text-gray-400 truncate">
+            <GripHorizontal className="w-3.5 h-3.5 text-slate-600 shrink-0" />
+            <span className="text-xs font-medium text-slate-400 truncate font-grotesk">
               {loading ? 'Loading...' : data?.item.title || 'Details'}
             </span>
           </div>
           <button
             onClick={handleClose}
-            className="p-1 rounded-md text-gray-500 hover:text-white hover:bg-white/10 transition-colors"
+            className="p-1 rounded-md text-slate-500 hover:text-white hover:bg-white/10 transition-colors"
           >
             <X className="w-3.5 h-3.5" />
           </button>
@@ -210,7 +213,7 @@ export function ItemDetailPopup({ popup, onQuickAssign }: ItemDetailPopupProps) 
               <div className="w-10 h-10 rounded-full bg-rose-500/20 flex items-center justify-center mx-auto mb-2">
                 <X className="w-5 h-5 text-rose-400" />
               </div>
-              <p className="text-xs text-gray-400">{error}</p>
+              <p className="text-xs text-slate-400">{error}</p>
             </div>
           )}
 
@@ -230,7 +233,7 @@ export function ItemDetailPopup({ popup, onQuickAssign }: ItemDetailPopupProps) 
               </div>
 
               {/* Divider with gradient */}
-              <div className="mx-3 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+              <div className="mx-3 h-px bg-linear-to-r from-transparent via-white/10 to-transparent" />
 
               {/* Metadata & Rankings */}
               <div className="p-3 space-y-3">
@@ -239,7 +242,7 @@ export function ItemDetailPopup({ popup, onQuickAssign }: ItemDetailPopupProps) 
                 {/* Criteria Scoring Section */}
                 {currentList && (
                   <>
-                    <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+                    <div className="h-px bg-linear-to-r from-transparent via-white/10 to-transparent" />
                     <CriteriaScoringSection
                       itemId={popup.itemId}
                       listId={currentList.id}
@@ -268,7 +271,7 @@ function LoadingSkeleton({ accent }: { accent: string }) {
   return (
     <div className="p-3 space-y-3">
       <div
-        className="w-full aspect-[16/10] rounded-xl animate-pulse"
+        className="w-full aspect-16/10 rounded-xl animate-pulse"
         style={{ background: `linear-gradient(135deg, ${accent}10, ${accent}05)` }}
       />
       <div className="flex gap-2">
@@ -294,12 +297,12 @@ function HeroSection({ item, stats, accent, onQuickAssign }: HeroSectionProps) {
   return (
     <div className="relative m-3 rounded-xl overflow-hidden group">
       {/* Image */}
-      <div className="aspect-[16/10] w-full bg-gray-800">
+      <div className="aspect-16/10 w-full bg-slate-800">
         <PlaceholderImage src={item.image_url} alt={item.title} seed={item.title} />
       </div>
 
       {/* Multi-layer gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/30 to-transparent" />
+      <div className="absolute inset-0 bg-linear-to-t from-slate-900 via-slate-900/30 to-transparent" />
       <div
         className="absolute inset-0 opacity-30"
         style={{
@@ -339,7 +342,7 @@ function HeroSection({ item, stats, accent, onQuickAssign }: HeroSectionProps) {
             >
               #{stats.medianPosition}
             </span>
-            <span className="text-[9px] text-white/50 uppercase">median</span>
+            <span className="text-[9px] text-white/50 uppercase font-mono">median</span>
           </div>
         </motion.div>
       )}
@@ -350,7 +353,7 @@ function HeroSection({ item, stats, accent, onQuickAssign }: HeroSectionProps) {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={onQuickAssign}
-          className="absolute top-2 right-2 flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wide transition-all"
+          className="absolute top-2 right-2 flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wide transition-all"
           style={{
             background: `linear-gradient(135deg, ${accent.color}, ${accent.color}cc)`,
             color: '#000',
@@ -364,13 +367,13 @@ function HeroSection({ item, stats, accent, onQuickAssign }: HeroSectionProps) {
 
       {/* Title Overlay */}
       <div className="absolute bottom-0 left-0 right-0 p-3">
-        <h4 className="text-sm font-bold text-white mb-0.5 drop-shadow-lg line-clamp-1">
+        <h4 className="text-sm font-medium text-white mb-0.5 drop-shadow-lg line-clamp-1 font-grotesk">
           {item.title}
         </h4>
         <div className="flex items-center gap-1.5">
           {item.category && (
             <span
-              className="px-1.5 py-0.5 text-[9px] rounded-md font-medium backdrop-blur-sm"
+              className="px-1.5 py-0.5 text-[9px] rounded-md font-medium backdrop-blur-xs font-mono"
               style={{
                 background: `${accent.color}25`,
                 color: accent.color,
@@ -449,7 +452,7 @@ function StatCell({ icon, value, label, accent, highlight }: StatCellProps) {
     >
       <div style={{ color: highlight ? accent : 'rgba(255,255,255,0.4)' }}>{icon}</div>
       <span className="text-xs font-bold text-white mt-0.5">{value}</span>
-      <span className="text-[8px] text-gray-500 uppercase">{label}</span>
+      <span className="text-[9px] text-slate-500 uppercase font-mono">{label}</span>
     </div>
   );
 }
@@ -471,16 +474,16 @@ function MetadataRow({ item }: MetadataRowProps) {
         <div className="flex gap-2">
           {hasYear && (
             <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-white/5 border border-white/5 flex-1">
-              <Calendar className="w-3 h-3 text-gray-500" />
-              <span className="text-[10px] text-gray-400">
-                {item.item_year}{item.item_year_to && item.item_year_to !== item.item_year ? ` - ${item.item_year_to}` : ''}
+              <Calendar className="w-3 h-3 text-slate-500" />
+              <span className="text-xs text-slate-400 font-mono">
+                {item.item_year}{item.item_year_to && item.item_year_to !== item.item_year ? ` – ${item.item_year_to}` : ''}
               </span>
             </div>
           )}
           {hasGroup && (
             <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-white/5 border border-white/5 flex-1 min-w-0">
-              <Hash className="w-3 h-3 text-gray-500 flex-shrink-0" />
-              <span className="text-[10px] text-gray-400 truncate">{item.group_name}</span>
+              <Hash className="w-3 h-3 text-slate-500 shrink-0" />
+              <span className="text-xs text-slate-400 truncate">{item.group_name}</span>
             </div>
           )}
         </div>
@@ -488,7 +491,7 @@ function MetadataRow({ item }: MetadataRowProps) {
 
       {/* Description */}
       {item.description && (
-        <p className="text-[10px] text-gray-500 leading-relaxed line-clamp-2 px-1">
+        <p className="text-xs text-slate-500 leading-relaxed line-clamp-2 px-1 font-sans">
           {item.description}
         </p>
       )}
@@ -499,13 +502,13 @@ function MetadataRow({ item }: MetadataRowProps) {
           {item.tags.slice(0, 4).map((tag, i) => (
             <span
               key={i}
-              className="px-1.5 py-0.5 text-[8px] rounded bg-white/5 text-gray-500 border border-white/5"
+              className="glass-dock-badge px-1.5 py-0.5 text-xs font-semibold rounded-md"
             >
               {tag}
             </span>
           ))}
           {item.tags.length > 4 && (
-            <span className="text-[8px] text-gray-600 px-1">+{item.tags.length - 4}</span>
+            <span className="text-[9px] text-slate-600 px-1">+{item.tags.length - 4}</span>
           )}
         </div>
       )}
@@ -537,8 +540,8 @@ function RankingChart({ stats, accent }: RankingChartProps) {
       {/* Header with volatility badge */}
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-1.5">
-          <TrendingUp className="w-3 h-3 text-gray-500" />
-          <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">Distribution</span>
+          <TrendingUp className="w-3 h-3 text-slate-500" />
+          <span className="text-xs font-medium text-slate-400 uppercase tracking-wide">Distribution</span>
         </div>
         <span
           className="text-[9px] font-medium px-1.5 py-0.5 rounded"
@@ -607,9 +610,9 @@ function PercentileItem({
 }) {
   return (
     <div className="text-center px-2">
-      <p className="text-[8px] text-gray-500 uppercase">{label}</p>
+      <p className="text-[9px] text-slate-500 uppercase font-mono">{label}</p>
       <p
-        className={cn("text-[11px] font-bold", highlight ? "" : "text-gray-300")}
+        className={cn("text-xs font-bold", highlight ? "" : "text-slate-300")}
         style={highlight && color ? { color } : {}}
       >
         #{value}
@@ -627,13 +630,13 @@ function MiniTooltip({ active, payload, label, accent }: {
   if (!active || !payload?.[0]) return null;
   return (
     <div
-      className="px-2 py-1 rounded shadow-lg text-[10px]"
+      className="px-2 py-1 rounded shadow-lg text-xs"
       style={{
         background: 'rgba(15,23,42,0.95)',
         border: `1px solid ${accent}40`,
       }}
     >
-      <span className="text-gray-400">#{label}:</span>{' '}
+      <span className="text-slate-400">#{label}:</span>{' '}
       <span className="font-bold" style={{ color: accent }}>{payload[0].value}</span>
     </div>
   );

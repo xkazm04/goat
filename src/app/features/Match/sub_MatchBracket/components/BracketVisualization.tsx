@@ -21,12 +21,15 @@ interface BracketVisualizationProps {
 const COLORS = {
   connector: 'rgb(71, 85, 105)',
   connectorActive: 'rgb(34, 211, 238)',
+  connectorPending: 'rgba(34, 211, 238, 0.3)',
   matchupBg: 'rgba(30, 41, 59, 0.8)',
   matchupBgActive: 'rgba(8, 145, 178, 0.2)',
   matchupBorder: 'rgba(71, 85, 105, 0.5)',
   matchupBorderActive: 'rgba(34, 211, 238, 0.6)',
   seed: 'rgb(148, 163, 184)',
 };
+
+type ConnectorState = 'default' | 'active' | 'pending';
 
 /**
  * Single participant slot in a matchup
@@ -41,16 +44,27 @@ function ParticipantSlot({
 }) {
   if (!participant) {
     return (
-      <div className="h-7 flex items-center px-2 bg-slate-900/30 rounded">
-        <span className="text-[10px] text-slate-600 italic">TBD</span>
+      <div className="h-7 flex items-center gap-1.5 px-2 bg-slate-900/30 rounded">
+        {/* Question mark in bracket frame */}
+        <svg viewBox="0 0 16 16" fill="none" width={16} height={16} className="shrink-0">
+          <path d="M2 1h3v3H2zM11 1h3v3h-3zM2 12h3v3H2zM11 12h3v3h-3z" stroke="rgb(100,116,139)" strokeWidth="1.5" fill="none" />
+          <path d="M5 2.5h6M5 13.5h6" stroke="rgb(100,116,139)" strokeWidth="1.5" />
+          <text x="8" y="10.5" textAnchor="middle" fill="rgb(100,116,139)" fontSize="7" fontWeight="600" fontFamily="Space Grotesk, sans-serif">?</text>
+        </svg>
+        <span className="text-[10px] text-slate-600">TBD</span>
       </div>
     );
   }
 
   if (participant.isBye) {
     return (
-      <div className="h-7 flex items-center px-2 bg-slate-800/20 rounded border border-dashed border-slate-700/30">
-        <span className="text-[10px] text-slate-500 italic">BYE</span>
+      <div className="h-7 flex items-center gap-1.5 px-2 bg-slate-800/20 rounded border border-dashed border-slate-700/30">
+        {/* Dash with strikethrough */}
+        <svg viewBox="0 0 16 16" fill="none" width={16} height={16} className="shrink-0">
+          <line x1="3" y1="8" x2="13" y2="8" stroke="rgb(100,116,139)" strokeWidth="1.5" strokeLinecap="round" />
+          <line x1="2" y1="5" x2="14" y2="11" stroke="rgb(71,85,105)" strokeWidth="1" strokeDasharray="2 2" />
+        </svg>
+        <span className="text-[10px] text-slate-500">BYE</span>
       </div>
     );
   }
@@ -73,7 +87,7 @@ function ParticipantSlot({
       </span>
 
       {participant.item?.image_url && (
-        <div className="w-4 h-4 rounded overflow-hidden flex-shrink-0">
+        <div className="w-4 h-4 rounded overflow-hidden shrink-0">
           <img
             src={participant.item.image_url}
             alt=""
@@ -83,7 +97,7 @@ function ParticipantSlot({
       )}
 
       <span
-        className={`text-[10px] truncate flex-1 ${
+        className={`text-[11px] truncate flex-1 ${
           isWinner ? 'text-green-300 font-medium' : 'text-slate-300'
         }`}
       >
@@ -125,7 +139,7 @@ function MatchupCard({
       className={`
         relative rounded-lg p-1 transition-all duration-200
         ${canClick ? 'cursor-pointer' : 'cursor-default'}
-        ${isSelected ? 'ring-2 ring-cyan-400 ring-offset-1 ring-offset-slate-900' : ''}
+        ${isSelected ? 'ring-2 ring-brand-hover ring-offset-1 ring-offset-slate-900' : ''}
       `}
       style={{
         width,
@@ -141,7 +155,7 @@ function MatchupCard({
 
       <div className="flex items-center justify-center h-3 my-0.5">
         <div className="flex-1 h-px bg-slate-700/50" />
-        <span className="px-1.5 text-[8px] font-bold text-slate-500">VS</span>
+        <span className="px-1.5 text-[9px] font-bold font-grotesk text-slate-500">VS</span>
         <div className="flex-1 h-px bg-slate-700/50" />
       </div>
 
@@ -153,7 +167,7 @@ function MatchupCard({
 
       {canClick && (
         <motion.div
-          className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-cyan-400"
+          className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-brand-hover"
           animate={{ scale: [1, 1.2, 1] }}
           transition={{ duration: 1.5, repeat: Infinity }}
         />
@@ -165,10 +179,10 @@ function MatchupCard({
 function RoundHeader({ round, isCurrent }: { round: BracketRound; isCurrent: boolean }) {
   return (
     <div className="text-center mb-3">
-      <h3 className={`text-xs font-bold ${isCurrent ? 'text-cyan-400' : 'text-slate-400'}`}>
+      <h3 className={`text-[13px] font-bold font-grotesk ${isCurrent ? 'text-brand-hover' : 'text-slate-400'}`}>
         {round.name}
       </h3>
-      <div className={`text-[10px] mt-0.5 ${round.isComplete ? 'text-green-400' : 'text-slate-500'}`}>
+      <div className={`text-[9px] mt-0.5 ${round.isComplete ? 'text-green-400' : 'text-slate-500'}`}>
         {round.isComplete ? 'Done' : `${round.matchups.filter(m => m.isComplete).length}/${round.matchups.length}`}
       </div>
     </div>
@@ -193,7 +207,7 @@ function ChampionDisplay({ champion }: { champion: BracketParticipant }) {
         <Trophy className="w-12 h-12 text-yellow-400 drop-shadow-[0_0_15px_rgba(250,204,21,0.5)]" />
       </motion.div>
 
-      <div className="text-[10px] font-bold text-yellow-400 uppercase tracking-wider mb-1.5">
+      <div className="text-[13px] font-bold font-grotesk text-yellow-400 uppercase tracking-wider mb-1.5">
         Champion
       </div>
 
@@ -204,7 +218,7 @@ function ChampionDisplay({ champion }: { champion: BracketParticipant }) {
       )}
 
       <div className="text-sm font-bold text-white text-center max-w-[140px]">{title}</div>
-      <div className="mt-1 px-1.5 py-0.5 rounded bg-yellow-400/20 text-yellow-300 text-[10px]">
+      <div className="mt-1 px-1.5 py-0.5 rounded bg-yellow-400/20 text-yellow-300 text-[9px]">
         #{champion.seed}
       </div>
     </motion.div>
@@ -305,6 +319,12 @@ export function BracketVisualization({
         <div className="relative" style={{ width, height, minWidth: width }}>
           {/* Connector lines SVG */}
           <svg className="absolute inset-0 pointer-events-none" width={width} height={height}>
+            <defs>
+              <filter id="connector-glow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              </filter>
+            </defs>
             {bracket.rounds.slice(0, -1).map((round, r) => {
               const nextRound = bracket.rounds[r + 1];
               return round.matchups.map((matchup, m) => {
@@ -319,15 +339,62 @@ export function BracketVisualization({
                 const x2 = roundX[r + 1];
                 const midX = (x1 + x2) / 2;
 
-                const isActive = matchup.winner && (nextMatchup.participant1?.id === matchup.winner.id || nextMatchup.participant2?.id === matchup.winner?.id);
+                const hasAdvanced = matchup.winner && (nextMatchup.participant1?.id === matchup.winner.id || nextMatchup.participant2?.id === matchup.winner?.id);
+                const connectorState: ConnectorState = hasAdvanced
+                  ? nextMatchup.isComplete ? 'active' : 'pending'
+                  : 'default';
+
+                const pathD = `M ${x1} ${y1} H ${midX} V ${y2} H ${x2}`;
+
+                if (connectorState === 'active') {
+                  return (
+                    <motion.path
+                      key={`c-${matchup.id}`}
+                      d={pathD}
+                      fill="none"
+                      stroke={COLORS.connectorActive}
+                      strokeWidth={2}
+                      filter="url(#connector-glow)"
+                      initial={{ pathLength: 0 }}
+                      animate={{ pathLength: 1 }}
+                      transition={{ duration: 0.4, delay: r * 0.08 }}
+                    />
+                  );
+                }
+
+                if (connectorState === 'pending') {
+                  return (
+                    <g key={`c-${matchup.id}`}>
+                      <motion.path
+                        d={pathD}
+                        fill="none"
+                        stroke={COLORS.connectorPending}
+                        strokeWidth={1.5}
+                        initial={{ pathLength: 0 }}
+                        animate={{ pathLength: 1 }}
+                        transition={{ duration: 0.4, delay: r * 0.08 }}
+                      />
+                      <motion.path
+                        d={pathD}
+                        fill="none"
+                        stroke={COLORS.connectorActive}
+                        strokeWidth={1.5}
+                        strokeDasharray="6 4"
+                        initial={{ strokeDashoffset: 0 }}
+                        animate={{ strokeDashoffset: -20 }}
+                        transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
+                      />
+                    </g>
+                  );
+                }
 
                 return (
                   <motion.path
                     key={`c-${matchup.id}`}
-                    d={`M ${x1} ${y1} H ${midX} V ${y2} H ${x2}`}
+                    d={pathD}
                     fill="none"
-                    stroke={isActive ? COLORS.connectorActive : COLORS.connector}
-                    strokeWidth={isActive ? 1.5 : 1}
+                    stroke={COLORS.connector}
+                    strokeWidth={1}
                     initial={{ pathLength: 0 }}
                     animate={{ pathLength: 1 }}
                     transition={{ duration: 0.4, delay: r * 0.08 }}

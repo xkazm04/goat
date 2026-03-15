@@ -1,251 +1,186 @@
 # Coding Conventions
 
-**Analysis Date:** 2026-01-26
+**Analysis Date:** 2026-03-14
 
 ## Naming Patterns
 
 **Files:**
-- PascalCase for React components: `ConfigurableCollectionItem.tsx`, `SimpleMatchGrid.tsx`
-- camelCase for utilities and libraries: `grid-store.ts`, `session-store.ts`, `client.ts`
-- camelCase with hyphens for Zustand stores: `grid-store.ts`, `match-store.ts`, `use-list-store.ts`
-- kebab-case for API route directories: `/api/agent-bridge`, `/api/search-image`
-- lowercase for feature directories: `src/app/features/Match/`, `src/app/features/Collection/`
+- React components: PascalCase — `SimpleMatchGrid.tsx`, `CollectionPanel.tsx`, `LandingMain.tsx`
+- Hooks: camelCase prefixed with `use` — `useCollection.ts`, `useHydrationSafe.ts`, `useLoadingStateMachine.ts`
+- Zustand stores: camelCase with `-store` suffix — `grid-store.ts`, `match-store.ts`, `session-store.ts`
+- Utility/lib files: kebab-case — `api-error-handler.ts`, `lazy-store-accessor.ts`, `debug-config.ts`
+- Type files: kebab-case — `backlog-groups.ts`, `api-responses.ts`, `modal-props.ts`
+- API routes: `route.ts` inside folder path matching URL — `src/app/api/lists/route.ts`
+- Story files: `ComponentName.stories.tsx`
+
+**Directories:**
+- Feature directories: PascalCase — `Match/`, `Collection/`, `Landing/`
+- Sub-feature directories: `sub_` prefix + PascalCase — `sub_MatchGrid/`, `sub_MatchCollections/`, `sub_DropZone/`
+- Shared/lib subdirectories: lowercase or kebab-case — `hooks/`, `lib/`, `query-keys/`, `image-gen/`
+- Component subfolders within features: lowercase — `components/`, `hooks/`, `lib/`, `types/`
 
 **Functions:**
-- camelCase for all functions and methods: `handleDragEnd()`, `markItemAsUsed()`, `assignItemToGrid()`
-- Prefix event handlers with `handle`: `handleKeyboardShortcut()`, `handleDragMove()`
-- Prefix custom hooks with `use`: `useProgressiveWikiImage()`, `useGridStore()`, `useTouchGestures()`
-- Prefix configuration creators with `create`: `createGridItem()`, `createEmptyGridSlot()`, `createCollectionDragData()`
+- React components: PascalCase — `export function SimpleMatchGrid()`
+- Custom hooks: camelCase `use` prefix — `export function useCollection()`
+- Event handlers: `handle` prefix — `handleDragEnd`, `handleKeyboardShortcut`
+- Boolean predicates: `is`/`has`/`should` prefix — `isLoading`, `hasMore`, `shouldUseVirtualization`
+- Utility factories: descriptive camelCase — `createLazyStoreAccessor`, `createGridOnlyRouter`, `createEmptyGrid`
+- Logger instances: `[category]Logger` pattern — `gridLogger`, `matchLogger`
 
 **Variables:**
-- camelCase for all variables: `gridItems`, `selectedItemIndex`, `isLoading`, `showComparisonModal`
-- Boolean prefixes: `is*`, `show*`, `has*`, `enable*`, `can*` — e.g., `isLoading`, `showResultShareModal`, `hasFailed`, `enableSwipeGestures`
-- Constants in UPPER_SNAKE_CASE: `DEFAULT_FETCH_DELAY_MS`, `LOG_LEVELS`, `ERROR_MESSAGES`
+- camelCase throughout — `searchTerm`, `selectedGroupIds`, `currentListId`
+- Constants: SCREAMING_SNAKE_CASE — `CURATOR_MILESTONES`, `GRID_LIMITS`, `TUTORIAL_GRID`, `DEBOUNCE`
+- Private inner components (not exported): suffixed `Inner` — `SimpleMatchGridInner`
 
 **Types:**
-- PascalCase for all types and interfaces: `GridItemType`, `BacklogItem`, `CollectionItemProps`, `ValidationErrorCode`
-- Suffix interfaces with nothing; types sometimes use semantic names: `type ErrorCategory = 'validation' | 'auth' | ...`
-- Props interfaces suffix with `Props`: `ItemCardProps`, `ConfigurableCollectionItemProps`, `ButtonProps`
-- Store state interfaces suffix with `State`: `SessionStoreState`, `MatchStoreState`, `ValidationNotificationStore` (inconsistent but documented)
+- Interfaces: PascalCase with `I` NOT used — `GridItemType`, `UseCollectionOptions`, `ErrorLogEntry`
+- Type aliases: PascalCase — `RouteHandler`, `DragOperationRouter`, `LogCategory`
+- Props types: `ComponentNameProps` suffix — `ElevatedProps`, `SurfaceProps`, `GlowProps`, `ConfigurableCollectionItemProps`
+- Result types: `UseHookNameResult` — `UseCollectionResult`, `UseCollectionLazyLoadResult`
+- Options types: `UseHookNameOptions` — `UseCollectionOptions`, `UseIntersectionObserverOptions`
 
 ## Code Style
 
 **Formatting:**
-- No automatic formatter configured (Prettier not in dependencies)
-- ESLint configured with Next.js core rules and Storybook plugin
-- Config: `.eslintrc.json` extends `next/core-web-vitals` and `plugin:storybook/recommended`
-- 2-space indentation (observed in codebase)
-- Trailing commas in objects/arrays
+- No Prettier config detected; Next.js default formatting applies
+- Single quotes for imports in TypeScript: `import { create } from 'zustand'`
+- Double quotes in JSX attributes: `data-testid="featured-lists-section"`
+- Trailing commas in multi-line objects and arrays (observed in source)
+- Semicolons omitted in some files, present in others — no enforced rule
 
 **Linting:**
-- ESLint with Next.js rules (see `.eslintrc.json`)
-- Disabled during builds: `eslintignore: true` in next.config.js
-- Run with: `npm run lint`
-- No automatic formatting enforcement; style is implicit
-
-**Strict TypeScript:**
-- Enabled strict mode in `tsconfig.json`
-- All React components typed with interfaces
-- Generic types commonly used: `create<T>()`, `Promise<T>`, `ApiResponse<T>`
+- ESLint config: `src/.eslintrc.json` extends `next/core-web-vitals` and `plugin:storybook/recommended`
+- `eslint-disable @typescript-eslint/no-unused-vars` used in test/verification files
+- ESLint ignored during builds (`ignoreDuringBuilds: true` in `next.config.js`)
+- TypeScript strict mode enabled
 
 ## Import Organization
 
-**Order:**
-1. External packages: `import React from 'react'`, `import { create } from 'zustand'`
-2. Next.js modules: `import { NextRequest, NextResponse } from 'next/server'`
-3. Internal relative imports: `import { useSessionStore } from '@/stores/session-store'`
-4. Internal aliases: Always use `@/` path alias, never `../` relative imports
-5. Type imports: `import type { GridItemType } from '@/types/match'`
+**Order (observed pattern):**
+1. React and Next.js built-ins — `import { useState, useCallback } from "react"`
+2. Third-party libraries — `import { create } from 'zustand'`, `import { DndContext } from "@dnd-kit/core"`
+3. Internal `@/` aliases — stores, types, lib utilities
+4. Relative imports — `import { ViewSwitcher } from "./components/ViewSwitcher"`
 
 **Path Aliases:**
-- Primary alias: `@/*` maps to `./src/*` (defined in `tsconfig.json`)
-- Pattern: Always use `@/` for imports across the codebase
-- Examples: `@/stores/`, `@/components/`, `@/lib/`, `@/types/`, `@/hooks/`
+- `@/*` maps to `./src/*` (configured in `tsconfig.json`)
+- All cross-feature imports use `@/` — e.g., `import { useGridStore } from '@/stores/grid-store'`
+- Same-feature imports use relative paths — `import { getItemTitle } from "./lib/helpers"`
+
+**Barrel Files:**
+- Every feature has an `index.ts` that explicitly re-exports public API
+- Barrel files include both component exports and type exports — `export type { ... }` alongside `export { ... }`
+- Example: `src/app/features/Collection/index.ts`
 
 ## Error Handling
 
-**Patterns:**
-- Unified error framework in `src/lib/errors/` with typed error classes
-- Error hierarchy: `GoatError` (base), `ValidationError`, `AuthenticationError`, `AuthorizationError`, `NotFoundError`, `ConflictError`, `NetworkError`, `ServerError`
-- Factory functions: `fromUnknown()`, `fromHttpResponse()` for error conversion
-- Check type with: `isGoatError(error)`, `isRetriable(error)`
-- API routes wrap with: `withErrorHandler()` decorator from `src/lib/errors`
-- Supabase errors: `fromSupabaseError()` converts Supabase errors to GoatError
-- Example:
-  ```typescript
-  const { data, error } = await supabase.from('lists').select('*');
-  if (error) {
-    throw fromSupabaseError(error);
-  }
-  ```
+**API Routes:**
+- All route handlers wrapped in `withErrorHandler()` from `src/lib/errors/api-error-handler.ts`
+- Custom `GoatError` base class with subtypes: `ValidationError`, `AuthenticationError`, `AuthorizationError`, `NotFoundError`, `ConflictError`, `NetworkError`, `ServerError` — all in `src/lib/errors/GoatError.ts`
+- Standardized error response shape: `{ success: false, category, code, message, status, details: { traceId, timestamp, path } }`
+- Utility responders for common cases: `successResponse()`, `createdResponse()`, `notFound()`, `unauthorized()`, `badRequest()`
 
-**Validation:**
-- `assertRequired(value, fieldName)` checks required fields
-- `assertValid(condition, message)` generic validation
-- Validation errors recorded to `validationNotificationStore` via `emitValidationError(code)`
+**Client Components:**
+- `ErrorBoundary` and `AsyncBoundary` wrappers from `src/lib/errors/ErrorBoundary.tsx`
+- Feature-specific boundaries: e.g., `CollectionErrorBoundary` in `src/app/features/Collection/components/CollectionErrorBoundary.tsx`
+- Error notification store (`useErrorNotificationStore`) for toast-level feedback — `src/lib/errors/error-notification-store.ts`
+- Validation errors surfaced via `useValidationNotificationStore` in `src/stores/validation-notification-store.ts`
 
-**Error Tracking:**
-- Errors tracked via `trackError()` with: `code`, `category`, `severity`, `traceId`, `path`, `method`
+**Stores:**
+- Stores catch errors internally and emit via notification stores rather than throwing
+- Lazy store accessors (`createLazyStoreAccessor`) with retry logic handle circular dependency errors gracefully
 
 ## Logging
 
-**Framework:** Custom namespaced logger in `src/lib/logger.ts`
-
-**Creation:**
-- Create logger: `const gridLogger = createLogger('grid-store', '🔄')`
-- Namespace pattern: descriptive string + optional emoji prefix
-- Loggers used in stores: `gridLogger`, `sessionLogger`, `matchLogger`
+**Framework:** Custom category logger (`src/lib/logger/index.ts`)
 
 **Patterns:**
-- Dev-only logging (enabled only in `NODE_ENV === 'development'`)
-- Log methods: `.debug()`, `.info()`, `.warn()`, `.error()`, `.log()`
-- Usage:
-  ```typescript
-  gridLogger.debug('Item assigned:', itemId, position);
-  gridLogger.warn('Validation failed:', errorCode);
-  ```
-
-**Configuration:**
-- Toggle all logging: `loggerConfig.setEnabled(boolean)`
-- Set level: `loggerConfig.setLevel('debug' | 'info' | 'warn' | 'error')`
-- Filter by namespace: `loggerConfig.addNamespace('grid-store')`
+- Create a per-module logger: `const gridLogger = createCategoryLogger('grid')`
+- Four levels: `debug`, `info`, `warn`, `error`
+- Disabled by default in production; runtime toggle via `window.__DEBUG_GOAT__` in browser console
+- Structured calls: `logger.debug('Item assigned', { position: 5, item: itemData })`
+- Never use `console.log` directly in production code; use the category logger
 
 ## Comments
 
 **When to Comment:**
-- Complex algorithms (e.g., `computeGridStatistics()`, drag-drop sequence)
-- Non-obvious business logic (e.g., why validation happens at specific points)
-- Integration patterns (e.g., cross-store communication via `getState()`)
-- Workarounds and TODOs: comments explain why a pattern is necessary
+- Module-level JSDoc on stores, hooks, and lib files is standard — describes purpose, dependencies, and usage examples
+- Inline comments for non-obvious logic, especially in drag-and-drop handlers and store cross-references
+- `// ============================================================================` separator blocks used in larger files to divide logical sections
+- TODO comments are present in a few places (see `src/app/features/Collection/components/CollectionErrorBoundary.tsx`, `src/hooks/use-item-groups.ts`) but not systematically tracked
 
 **JSDoc/TSDoc:**
-- Used extensively for store state interfaces and hook return types
-- Example:
-  ```typescript
-  /**
-   * Drag Store - Single Source of Truth for Drag & Drop
-   *
-   * This store handles:
-   * - Backlog to grid assignment
-   * - Grid to grid move/swap
-   * - Session synchronization
-   */
-  ```
-- Function parameters rarely documented (types are self-explanatory)
-- Return types documented when complex
+- Full JSDoc on exported functions and hooks — `@param`, `@returns`, `@example` blocks used
+- Inline `/** ... */` on interface properties where non-obvious
+- Example: `src/lib/hooks/useHydrationSafe.ts` has complete JSDoc with `@example`
 
 ## Function Design
 
-**Size:** No hard limit, but stores tend to be 300-500 lines with multiple state slices and actions
+**Size:** Functions are generally single-responsibility; large orchestration functions (e.g., `initializeMatchSession`) are acceptable in stores where they coordinate multiple sub-systems
 
-**Parameters:**
-- Use object destructuring for multiple parameters (common in store actions)
-- Example: `assignItemToGrid({ itemId, position, gridSize })`
-- Single parameters: pass directly
-- Type them explicitly with TypeScript interfaces
+**Parameters:** Options objects for hooks with many parameters — `useCollection(options: UseCollectionOptions = {})`. Destructure with defaults at the top of the function body.
 
 **Return Values:**
-- Functions are void (store actions that update state)
-- Queries return typed data: `GridItemType[]`, `ListSession | null`, `Promise<T>`
-- Hooks return object with state + actions: `{ imageUrl, isFetching, refetch }`
-- Store selectors return single values or objects
+- Hooks return a typed result object — `UseCollectionResult`
+- API helpers return `NextResponse` via typed factory functions
+- Stores expose getters and setters directly on the store state interface
 
 ## Module Design
 
 **Exports:**
-- Default exports: rarely used; prefer named exports
-- Store exports: `export const useXStore = create<XStoreState>(...)` (const, not function)
-- Component exports: `export function ComponentName() { ... }` or `export const ComponentName = () => { ... }`
-- Type exports: `export type TypeName = ...` or `export interface InterfaceName { ... }`
+- Named exports preferred — `export function`, `export const`, `export type`
+- Default exports only for Next.js special files (`page.tsx`, `layout.tsx`, `route.ts`, config files)
+- Types exported alongside implementations in barrel files
 
-**Barrel Files:**
-- Used in components: `src/app/features/Match/sub_MatchCollections/components/index.ts`
-- Consolidates related exports: `export { Component1 } from './Component1'`
-
-**Zustand Store Pattern:**
+**Store Pattern:**
 ```typescript
-// Store name follows pattern: use[Feature]Store
-export const useGridStore = create<GridStoreState>()(
-  persist(
-    (set, get) => ({
-      // State
-      gridItems: [],
-      // Actions
-      assignItemToGrid: (itemId, position) => {
-        set(state => ({
-          gridItems: [...state.gridItems, ...]
-        }));
-      }
-    }),
-    { name: 'grid-store' }
-  )
+// Zustand store: define interface, then create
+interface MatchStoreState {
+  isLoading: boolean;
+  setIsLoading: (loading: boolean) => void;
+}
+
+export const useMatchStore = create<MatchStoreState>((set, get) => ({
+  isLoading: false,
+  setIsLoading: (loading) => set({ isLoading: loading }),
+}));
+```
+
+**Cross-store access:**
+```typescript
+// Use getState() to read other stores imperatively (not via hook)
+const sessionStore = useSessionStore.getState();
+sessionStore.updateSessionGridItems(newItems);
+```
+
+**Lazy circular dependency resolution:**
+```typescript
+// Use createLazyStoreAccessor for stores that would create circular imports
+const backlogStoreAccessor = createLazyStoreAccessor(
+  () => require('@/stores/backlog-store').useBacklogStore,
+  { storeName: 'backlog-store', maxRetries: 5, retryDelay: 20 }
 );
 ```
 
-**Cross-Store Communication:**
-- Access other stores via `useOtherStore.getState()` pattern (not subscription)
-- Example in `grid-store.ts`:
-  ```typescript
-  const sessionStore = useSessionStore.getState();
-  sessionStore.updateSessionGridItems(gridItems);
-  ```
-- Lazy accessors for circular dependencies: `createLazyStoreAccessor()` in `src/lib/stores/`
+**Client component directive:**
+- `"use client"` is placed at the very top of every file containing React hooks, event handlers, or browser APIs
+- Hooks files (`.ts`) also include `"use client"` when they use React hooks
 
-## Component Patterns
-
-**React Components:**
-- Functional components (no class components)
-- `"use client"` directive for client components in App Router
-- No default exports; named exports only
-- Destructure props with TypeScript interface
-
-**State Management:**
-- Zustand for app-wide state
-- React Query (TanStack Query) for server data
-- `useState` for local UI state
-- `useCallback` for event handlers to prevent re-renders
-- `useMemo` for expensive computations
-
-**Hooks:**
-- Custom hooks in `src/hooks/` directory
-- Hooks named with `use*` prefix
-- Return objects with named values (not arrays)
-- Example:
-  ```typescript
-  export function useProgressiveWikiImage(options) {
-    return {
-      imageUrl,
-      isFetching,
-      hasFailed,
-      refetch
-    };
-  }
-  ```
-
-## API Route Conventions
-
-**Location:** `src/app/api/[feature]/route.ts` or `src/app/api/[feature]/[resource]/route.ts`
-
-**Export Pattern:**
+**CVA pattern for component variants:**
 ```typescript
-export const GET = withErrorHandler(async (request: NextRequest) => {
-  // Handler logic
-  return successResponse(data);
+const buttonVariants = cva("base-classes", {
+  variants: { variant: { default: "...", outline: "..." } },
+  defaultVariants: { variant: "default" }
 });
+// className merged with cn() utility
+className={cn(buttonVariants({ variant, size, className }))}
 ```
 
-**Response Format:**
-- Success: `successResponse(data)` → `{ success: true, data }`
-- Created: `createdResponse(data)` → `{ success: true, data }` with 201 status
-- Errors: thrown as `GoatError` subclass, caught by `withErrorHandler`
-
-**Query Parameter Handling:**
-```typescript
-const searchParams = request.nextUrl.searchParams;
-const userId = searchParams.get('user_id');
-const limit = searchParams.get('limit') ? parseInt(...) : 100;
-```
+**data-testid attributes:**
+- Present on all interactive and structurally significant elements
+- Format: `kebab-case-description` for static elements — `"featured-lists-section"`
+- Format: `prefix-{id}` for dynamic elements — `"featured-list-item-{id}"`, `"collection-item-wrapper-{id}"`
 
 ---
 
-*Convention analysis: 2026-01-26*
+*Convention analysis: 2026-03-14*

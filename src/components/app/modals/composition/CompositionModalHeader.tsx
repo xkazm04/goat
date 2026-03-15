@@ -130,7 +130,7 @@ export function CompositionModalHeader({
             {/* Customize Button */}
             <button
               onClick={() => setIsExpanded(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-200 hover:scale-105 text-sm font-medium backdrop-blur-sm"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-200 hover:scale-105 text-sm font-medium backdrop-blur-xs"
               style={{
                 background: `linear-gradient(135deg, ${intent.color.primary}20, ${intent.color.secondary}20)`,
                 border: `1px solid ${intent.color.primary}40`,
@@ -165,7 +165,7 @@ export function CompositionModalHeader({
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="p-3 rounded-xl transition-all duration-200 hover:bg-slate-700/50 backdrop-blur-sm"
+          className="p-3 rounded-xl transition-all duration-200 hover:bg-slate-700/50 backdrop-blur-xs"
           disabled={isCreating}
           style={{
             boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.1)'

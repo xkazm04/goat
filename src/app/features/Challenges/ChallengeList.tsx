@@ -79,7 +79,7 @@ export function ChallengeList({
             placeholder="Search challenges..."
             value={filters.searchQuery}
             onChange={(e) => setFilters({ searchQuery: e.target.value })}
-            className="w-full px-4 py-2 pl-10 bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-700"
+            className="w-full px-4 py-2 pl-10 bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder:text-zinc-500 focus:outline-hidden focus:border-zinc-700"
           />
           <svg
             className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500"

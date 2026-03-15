@@ -104,7 +104,7 @@ export function CriteriaScoreInput({
       className={cn(
         'rounded-lg border border-border bg-card/50 transition-all duration-200',
         isInteracting && 'border-border/80 shadow-md',
-        !isInteracting && 'hover:border-border/80 hover:shadow-sm',
+        !isInteracting && 'hover:border-border/80 hover:shadow-xs',
         compact ? 'p-3' : 'p-4',
         className
       )}
@@ -117,7 +117,7 @@ export function CriteriaScoreInput({
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <motion.span
-            className="w-3 h-3 rounded-full shadow-sm"
+            className="w-3 h-3 rounded-full shadow-xs"
             style={{ backgroundColor: criterion.color ?? '#6366f1' }}
             animate={{
               scale: isInteracting ? 1.15 : 1,
@@ -205,7 +205,7 @@ export function CriteriaScoreInput({
                 className={cn(
                   'w-full px-2 py-1.5 text-xs rounded-md border border-border',
                   'bg-background resize-none transition-all duration-200',
-                  'focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-ring'
+                  'focus:outline-hidden focus:ring-2 focus:ring-ring/50 focus:border-ring'
                 )}
                 rows={2}
               />
@@ -425,7 +425,7 @@ function StarInput({
         return (
           <motion.button
             key={index}
-            className="p-0.5 transition-transform duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="p-0.5 transition-transform duration-150 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
             onClick={() => handleStarClick(index)}
             onMouseEnter={() => {
               setHoverIndex(index);
@@ -497,7 +497,7 @@ function NumericInput({
           'p-1.5 rounded-lg border border-border',
           'hover:bg-accent transition-all duration-150',
           'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100',
-          'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+          'focus:outline-hidden focus-visible:ring-2 focus-visible:ring-ring'
         )}
         onClick={handleDecrement}
         disabled={value <= criterion.minScore}
@@ -520,7 +520,7 @@ function NumericInput({
         className={cn(
           'w-16 text-center text-lg font-bold tabular-nums',
           'bg-transparent border border-border rounded-lg py-1 transition-all duration-200',
-          'focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-ring'
+          'focus:outline-hidden focus:ring-2 focus:ring-ring/50 focus:border-ring'
         )}
         onFocus={onInteractionStart}
         onBlur={onInteractionEnd}
@@ -532,7 +532,7 @@ function NumericInput({
           'p-1.5 rounded-lg border border-border',
           'hover:bg-accent transition-all duration-150',
           'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100',
-          'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+          'focus:outline-hidden focus-visible:ring-2 focus-visible:ring-ring'
         )}
         onClick={handleIncrement}
         disabled={value >= criterion.maxScore}

@@ -42,7 +42,6 @@ export function CardHeader({ title, subcategory, color, badge }: CardHeaderProps
               className="absolute inset-0 rounded-xl"
               style={{
                 background: `linear-gradient(135deg, ${color.primary}20, ${color.secondary}20)`,
-                backdropFilter: "blur(8px)",
               }}
             />
             <div className="relative z-10">
@@ -72,11 +71,10 @@ export function CardHeader({ title, subcategory, color, badge }: CardHeaderProps
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="px-2.5 py-1 rounded-full text-xs font-bold"
+            className="px-2.5 py-1 rounded-full text-xs font-bold backdrop-blur-sm"
             style={{
               background: `linear-gradient(135deg, ${color.primary}30, ${color.secondary}30)`,
               color: color.accent,
-              backdropFilter: "blur(4px)",
             }}
           >
             {badge}

@@ -6,6 +6,11 @@
  * Matches the StudioLayout structure for seamless transitions
  */
 
+import { SURFACE_ELEVATION } from '@/components/visual/depth/depth-tokens';
+
+const skeletonBlock = { backgroundColor: SURFACE_ELEVATION.raised };
+const headerBg = { backgroundColor: SURFACE_ELEVATION.sunken };
+
 /**
  * StudioSkeleton Component
  * Provides an accessible loading state that mirrors the StudioLayout structure.
@@ -14,19 +19,19 @@
 export function StudioSkeleton() {
   return (
     <div
-      className="min-h-screen bg-gray-950 animate-pulse"
+      className="min-h-screen bg-gray-950 animate-ambient-shimmer"
       role="status"
       aria-label="Loading studio"
     >
       {/* Header skeleton */}
-      <div className="h-16 bg-gray-900/50 border-b border-gray-800">
+      <div className="h-16 border-b border-gray-800" style={headerBg}>
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center gap-4">
           {/* Back button skeleton */}
-          <div className="w-10 h-10 bg-gray-800/50 rounded-lg" />
+          <div className="w-10 h-10 rounded-lg" style={skeletonBlock} />
           {/* Title skeleton */}
           <div className="flex-1">
-            <div className="h-6 w-48 bg-gray-800/50 rounded mb-2" />
-            <div className="h-4 w-64 bg-gray-800/30 rounded" />
+            <div className="h-6 w-48 rounded mb-2" style={skeletonBlock} />
+            <div className="h-4 w-64 rounded" style={{ backgroundColor: SURFACE_ELEVATION.default }} />
           </div>
         </div>
       </div>
@@ -35,14 +40,14 @@ export function StudioSkeleton() {
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-8">
           {/* Main content area skeleton */}
-          <div className="h-96 bg-gray-800/50 rounded-xl" />
+          <div className="h-96 rounded-xl" style={skeletonBlock} />
 
           {/* Sidebar skeleton */}
           <div className="space-y-4">
-            <div className="h-24 bg-gray-800/50 rounded-lg" />
-            <div className="h-32 bg-gray-800/50 rounded-lg" />
-            <div className="h-24 bg-gray-800/50 rounded-lg" />
-            <div className="h-24 bg-gray-800/50 rounded-lg" />
+            <div className="h-24 rounded-lg" style={skeletonBlock} />
+            <div className="h-32 rounded-lg" style={skeletonBlock} />
+            <div className="h-24 rounded-lg" style={skeletonBlock} />
+            <div className="h-24 rounded-lg" style={skeletonBlock} />
           </div>
         </div>
       </div>

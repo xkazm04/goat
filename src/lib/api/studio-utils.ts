@@ -127,7 +127,7 @@ export function handleStudioError(
   // Zod validation errors -> 400
   if (error instanceof z.ZodError) {
     return createErrorResponse('Invalid request', 400, {
-      details: error.errors,
+      details: error.issues,
       code: StudioErrorCodes.VALIDATION_ERROR,
     });
   }
@@ -192,7 +192,7 @@ export async function safeParseRequest<T extends z.ZodType>(
       return {
         success: false,
         response: createErrorResponse('Invalid request', 400, {
-          details: result.error.errors,
+          details: result.error.issues,
           code: StudioErrorCodes.VALIDATION_ERROR,
         }),
       };

@@ -1,6 +1,6 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
+import { HiddenGemIcon } from "@/components/icons/MicroIllustrations";
 
 interface SpotlightTooltipProps {
   visible: boolean;
@@ -17,11 +17,11 @@ export function SpotlightTooltip({ visible }: SpotlightTooltipProps) {
 
   return (
     <div
-      className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-cyan-500 to-purple-500 text-white px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap shadow-lg z-20 flex items-center gap-1.5"
+      className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-linear-to-r from-brand to-purple-500 text-white px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap shadow-lg z-20 flex items-center gap-1.5"
       data-testid="spotlight-tooltip"
       role="tooltip"
     >
-      <Sparkles className="w-3 h-3" />
+      <HiddenGemIcon size={14} />
       You found the hidden tag!
     </div>
   );

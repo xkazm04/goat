@@ -10,6 +10,20 @@ import type { ErrorResponse } from '@/lib/errors';
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
 /**
+ * Track a GoatError with request context (endpoint + method)
+ */
+function trackApiError(error: GoatError, endpoint: string, method: string): void {
+  trackError({
+    code: error.code,
+    category: error.category,
+    severity: error.severity,
+    traceId: error.traceId,
+    path: endpoint,
+    method,
+  });
+}
+
+/**
  * API Response type that includes error information
  */
 interface ApiResponse<T> {
@@ -57,16 +71,7 @@ export class ApiClient {
             details: errorData.details,
           });
 
-          // Track the error
-          trackError({
-            code: error.code,
-            category: error.category,
-            severity: error.severity,
-            traceId: error.traceId,
-            path: endpoint,
-            method: options.method || 'GET',
-          });
-
+          trackApiError(error, endpoint, options.method || 'GET');
           throw error;
         }
 
@@ -75,15 +80,7 @@ export class ApiClient {
           error: errorData.error || errorData.detail || errorData.message,
         });
 
-        trackError({
-          code: error.code,
-          category: error.category,
-          severity: error.severity,
-          traceId: error.traceId,
-          path: endpoint,
-          method: options.method || 'GET',
-        });
-
+        trackApiError(error, endpoint, options.method || 'GET');
         throw error;
       }
 
@@ -101,35 +98,19 @@ export class ApiClient {
         throw error;
       }
 
+      const method = options.method || 'GET';
+
       // Network errors (fetch failures)
       if (error instanceof TypeError && error.message.includes('fetch')) {
         const networkError = NetworkError.fromFetchError(error);
-
-        trackError({
-          code: networkError.code,
-          category: networkError.category,
-          severity: networkError.severity,
-          traceId: networkError.traceId,
-          path: endpoint,
-          method: options.method || 'GET',
-        });
-
+        trackApiError(networkError, endpoint, method);
         throw networkError;
       }
 
       // Check for AbortError (timeout)
       if (error instanceof Error && error.name === 'AbortError') {
         const timeoutError = new NetworkError('NETWORK_TIMEOUT', 'Request timed out');
-
-        trackError({
-          code: timeoutError.code,
-          category: timeoutError.category,
-          severity: timeoutError.severity,
-          traceId: timeoutError.traceId,
-          path: endpoint,
-          method: options.method || 'GET',
-        });
-
+        trackApiError(timeoutError, endpoint, method);
         throw timeoutError;
       }
 
@@ -138,16 +119,7 @@ export class ApiClient {
         error instanceof Error ? error.message : 'An unexpected error occurred',
         { cause: error instanceof Error ? error : undefined }
       );
-
-      trackError({
-        code: unknownError.code,
-        category: unknownError.category,
-        severity: unknownError.severity,
-        traceId: unknownError.traceId,
-        path: endpoint,
-        method: options.method || 'GET',
-      });
-
+      trackApiError(unknownError, endpoint, method);
       throw unknownError;
     }
   }

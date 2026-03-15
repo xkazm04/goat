@@ -32,10 +32,9 @@ export default function GlobalError({
     // Generate trace ID and timestamp
     const timestamp = Date.now().toString(36);
     const random = Math.random().toString(36).substring(2, 10);
-    setErrorInfo({
-      traceId: `goat-${timestamp}-${random}`,
-      timestamp: new Date().toISOString(),
-    });
+    const traceId = `goat-${timestamp}-${random}`;
+    const ts = new Date().toISOString();
+    setErrorInfo({ traceId, timestamp: ts });
 
     // Log error
     console.error('🚨 Global Error:', {
@@ -50,14 +49,14 @@ export default function GlobalError({
       (window as any).__GOAT_ERROR_TRACKER__({
         type: 'global_error',
         code: 'CLIENT_UNKNOWN_ERROR',
-        traceId: errorInfo.traceId,
+        traceId,
         name: error.name,
         message: error.message,
         digest: error.digest,
-        timestamp: errorInfo.timestamp,
+        timestamp: ts,
       });
     }
-  }, [error, errorInfo.traceId, errorInfo.timestamp]);
+  }, [error]);
 
   const handleCopyError = async () => {
     const errorReport = [

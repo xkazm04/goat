@@ -173,57 +173,9 @@ function ExampleGroupSelection() {
   );
 }
 
-// Example 5: Infinite scroll
-function ExampleInfiniteScroll() {
-  const collection = useCollection({
-    category: 'posts',
-    enableInfiniteScroll: true,
-    pageSize: 30
-  });
-
-  const loadMoreRef = React.useRef<HTMLDivElement>(null);
-
-  React.useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && collection.infiniteScroll?.hasNextPage) {
-          collection.infiniteScroll.fetchNextPage();
-        }
-      },
-      { threshold: 1.0 }
-    );
-
-    if (loadMoreRef.current) {
-      observer.observe(loadMoreRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, [collection.infiniteScroll]);
-
-  return (
-    <div>
-      <h1>Posts Feed</h1>
-
-      {collection.filteredItems.map((item) => (
-        <div key={item.id}>
-          <h3>{item.title}</h3>
-          <p>{item.description}</p>
-        </div>
-      ))}
-
-      <div ref={loadMoreRef}>
-        {collection.infiniteScroll?.isFetchingNextPage && (
-          <div>Loading more...</div>
-        )}
-      </div>
-    </div>
-  );
-}
-
 export {
   ExampleBasicUsage,
   ExamplePaginatedCollection,
   ExampleCollectionWithMutations,
   ExampleGroupSelection,
-  ExampleInfiniteScroll
 };

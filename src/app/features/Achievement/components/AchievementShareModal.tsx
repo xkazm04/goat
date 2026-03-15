@@ -148,7 +148,7 @@ export function AchievementShareModal({
         <>
           {/* Backdrop */}
           <motion.div
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-black/70 backdrop-blur-xl z-50"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -207,7 +207,7 @@ export function AchievementShareModal({
                   onClick={() => setActiveTab('customize')}
                   className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors ${
                     activeTab === 'customize'
-                      ? 'text-white border-b-2 border-cyan-400'
+                      ? 'text-white border-b-2 border-brand-hover'
                       : 'text-gray-400 hover:text-white'
                   }`}
                 >
@@ -218,7 +218,7 @@ export function AchievementShareModal({
                   onClick={() => setActiveTab('share')}
                   className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors ${
                     activeTab === 'share'
-                      ? 'text-white border-b-2 border-cyan-400'
+                      ? 'text-white border-b-2 border-brand-hover'
                       : 'text-gray-400 hover:text-white'
                   }`}
                   disabled={!shareUrl}
@@ -267,7 +267,7 @@ export function AchievementShareModal({
                               onClick={() => setConfig(c => ({ ...c, style: option.value }))}
                               className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                                 config.style === option.value
-                                  ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50'
+                                  ? 'bg-brand/20 text-brand-hover border border-brand/50'
                                   : 'bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10'
                               }`}
                             >
@@ -295,7 +295,7 @@ export function AchievementShareModal({
                               onChange={(e) =>
                                 setConfig(c => ({ ...c, [key]: e.target.checked }))
                               }
-                              className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-cyan-500 focus:ring-cyan-500"
+                              className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-brand focus:ring-brand"
                             />
                             <span className="text-sm text-gray-300">{label}</span>
                           </label>
@@ -354,8 +354,8 @@ export function AchievementShareModal({
                             border: '1px solid rgba(6, 182, 212, 0.2)',
                           }}
                         >
-                          <Link2 className="w-5 h-5 text-cyan-400 flex-shrink-0" />
-                          <span className="text-sm text-cyan-300 truncate flex-1">{shareUrl}</span>
+                          <Link2 className="w-5 h-5 text-brand-hover shrink-0" />
+                          <span className="text-sm text-brand-hover truncate flex-1">{shareUrl}</span>
                           <button
                             onClick={handleCopyLink}
                             className="p-1.5 rounded-md hover:bg-white/10 transition-colors"

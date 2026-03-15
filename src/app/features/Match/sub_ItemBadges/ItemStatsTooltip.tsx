@@ -131,7 +131,7 @@ export function ItemStatsTooltip({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 5, scale: 0.95 }}
             transition={{ duration: 0.15 }}
-            className="fixed z-[100] pointer-events-none"
+            className="fixed z-dropdown pointer-events-none"
             style={{
               left: position.x,
               top: position.y,
@@ -142,7 +142,7 @@ export function ItemStatsTooltip({
               {data.hasData ? (
                 <div className="flex items-center gap-2 text-xs">
                   {/* Avg Position */}
-                  <span className="flex items-center gap-1 text-cyan-400">
+                  <span className="flex items-center gap-1 text-brand-hover">
                     <TrendingUp className="w-3 h-3" />
                     #{data.averagePosition?.toFixed(1)}
                   </span>

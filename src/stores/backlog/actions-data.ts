@@ -1,6 +1,7 @@
 import { BacklogState } from './types';
-import { BacklogItem } from '@/types/backlog-groups';
+import { BacklogGroup, BacklogItem } from '@/types/backlog-groups';
 import { backlogLogger } from '@/lib/logger';
+import { rebuildItemIndex } from './item-index';
 
 // Maximum number of groups to load at once
 const MAX_CONCURRENT_LOADS = 30;
@@ -24,9 +25,14 @@ export const createDataActions = (
     const cachedData = state.cache[cacheKey];
     const now = Date.now();
     
-    const hasValidCache = cachedData && 
-                         Array.isArray(cachedData.groups) && 
-                         cachedData.groups.length > 0 && 
+    // Cache is valid only if groups exist, aren't expired, AND at least some items were loaded.
+    // Without the items check, a session that cached group metadata but failed to load items
+    // (e.g., due to a different error crashing the page) would serve empty groups forever.
+    const hasLoadedItems = cachedData?.groups?.some((g: any) => g.items && g.items.length > 0) ?? false;
+    const hasValidCache = cachedData &&
+                         Array.isArray(cachedData.groups) &&
+                         cachedData.groups.length > 0 &&
+                         hasLoadedItems &&
                          now - cachedData.loadedAt < CACHE_DURATION;
     
     backlogLogger.debug(`Initializing groups for ${cacheKey} (original: ${category})`);
@@ -49,6 +55,7 @@ export const createDataActions = (
       backlogLogger.debug(`Using cached groups for ${cacheKey}, ${cachedData.groups.length} groups`);
       set(state => {
         state.groups = cachedData.groups;
+        state._itemIndex = rebuildItemIndex(cachedData.groups);
         state.isLoading = false;
         state.error = null;
         // Set progress to complete for cached data
@@ -67,6 +74,7 @@ export const createDataActions = (
       backlogLogger.debug(`Using cached data for ${cacheKey} in offline mode`);
       set(state => {
         state.groups = cachedData.groups;
+        state._itemIndex = rebuildItemIndex(cachedData.groups);
         state.isLoading = false;
         state.loadingProgress = {
           totalGroups: cachedData.groups.length,
@@ -149,10 +157,11 @@ export const createDataActions = (
       
       // Update state and cache
       set(state => {
-        // Make a deep copy to avoid reference issues
-        const groupsCopy = JSON.parse(JSON.stringify(groups));
+        // Use structuredClone instead of JSON round-trip (faster, preserves non-JSON types)
+        const groupsCopy = structuredClone(groups) as BacklogGroup[];
 
         state.groups = groupsCopy;
+        state._itemIndex = rebuildItemIndex(groupsCopy);
         state.isLoading = false;
 
         // Initialize progress tracking with total groups known
@@ -193,6 +202,7 @@ export const createDataActions = (
         if (cachedData) {
           backlogLogger.warn('Falling back to cached data due to fetch error');
           state.groups = cachedData.groups;
+          state._itemIndex = rebuildItemIndex(cachedData.groups);
           state.error = new Error(`Failed to fetch fresh data: ${(error as Error).message}. Using cached data.`);
         }
       });
@@ -328,6 +338,10 @@ export const createDataActions = (
               ...state.groups[groupIndex],
               items: cachedGroup.items
             };
+            // Update item index for newly loaded items
+            for (const item of cachedGroup.items) {
+              state._itemIndex.set(item.id, groupIndex);
+            }
           }
         });
         
@@ -406,7 +420,12 @@ export const createDataActions = (
             items: itemsWithImages,
             item_count: itemsWithImages.length
           };
-          
+
+          // Update item index for newly loaded items
+          for (const item of itemsWithImages) {
+            state._itemIndex.set(item.id, groupIndex);
+          }
+
           // Update cache for this specific group
           const cacheKey = `${group.category}-${group.subcategory || ''}`;
           if (state.cache[cacheKey]) {

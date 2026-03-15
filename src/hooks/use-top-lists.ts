@@ -8,7 +8,6 @@ import {
 import { toast } from './use-toast';
 import { goatApi } from '@/lib/api';
 import { topListsKeys } from '@/lib/query-keys/top-lists';
-import { cacheInvalidation } from '@/lib/cache';
 import {
   TopList,
   ListWithItems,
@@ -149,7 +148,7 @@ export const useCreateListWithUser = (
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: goatApi.lists.createWithUser,
+    mutationFn: (data: CreateListRequest) => goatApi.lists.createWithUser(data),
     onSuccess: (data, variables) => {
       // Invalidate and refetch lists
       queryClient.invalidateQueries({ queryKey: topListsKeys.lists() });
@@ -158,9 +157,6 @@ export const useCreateListWithUser = (
       queryClient.invalidateQueries({
         queryKey: topListsKeys.userLists(data.user.id)
       });
-
-      // Also invalidate the API cache layer
-      cacheInvalidation.onListCreated(data.list.id);
 
       // Pre-populate the cache with the new list data
       queryClient.setQueryData(
@@ -194,7 +190,7 @@ export const useCreateList = (
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: goatApi.lists.create,
+    mutationFn: (data: CreateListRequest) => goatApi.lists.create(data),
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: topListsKeys.lists() });
 
@@ -225,9 +221,6 @@ export const useUpdateList = (
       );
       queryClient.invalidateQueries({ queryKey: topListsKeys.lists() });
 
-      // Invalidate API cache layer
-      cacheInvalidation.onListUpdated(variables.listId);
-
       showSuccessToast("Success", `List "${data.title}" updated successfully!`);
     },
     onError: (error) => showErrorToast("update list", error),
@@ -241,13 +234,10 @@ export const useDeleteList = (
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: goatApi.lists.delete,
+    mutationFn: (listId: string) => goatApi.lists.delete(listId),
     onSuccess: (_, listId) => {
       queryClient.removeQueries({ queryKey: topListsKeys.list(listId) });
       queryClient.invalidateQueries({ queryKey: topListsKeys.lists() });
-
-      // Invalidate API cache layer
-      cacheInvalidation.onListDeleted(listId);
 
       showSuccessToast("Success", "List deleted successfully!");
     },

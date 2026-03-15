@@ -319,21 +319,10 @@ export class QuotaManager {
       },
     });
 
-    // Strategy 3: Clear old resolved conflicts
-    this.addPruneStrategy({
-      name: 'old-conflicts',
-      priority: 3,
-      execute: async () => {
-        // This would need a method to clear old resolved conflicts
-        // For now, return 0 as placeholder
-        return 0;
-      },
-    });
-
-    // Strategy 4: Clear old sessions (not recently accessed)
+    // Strategy 3: Clear old sessions (not recently accessed)
     this.addPruneStrategy({
       name: 'old-sessions',
-      priority: 4,
+      priority: 3,
       execute: async () => {
         const before = await this.getEstimate();
         const sessions = await this.storage.getAllSessions();

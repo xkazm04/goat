@@ -59,10 +59,10 @@ export const tierConfigs: Record<ConsensusTier, Omit<TierConfig, 'tier'>> = {
     label: 'Top',
     icon: Medal,
     color: {
-      background: 'bg-cyan-500/20',
-      text: 'text-cyan-400',
-      border: 'border-cyan-500/30',
-      glow: 'shadow-cyan-500/20',
+      background: 'bg-brand/20',
+      text: 'text-brand-hover',
+      border: 'border-brand/30',
+      glow: 'shadow-brand/20',
     },
     minRank: 4,
     maxRank: 10,
@@ -115,13 +115,13 @@ interface SizeConfig {
 const sizeConfigs: Record<BadgeSize, SizeConfig> = {
   xs: {
     container: 'h-4 px-1.5',
-    fontSize: 'text-[9px]',
+    fontSize: 'text-2xs',
     iconSize: 8,
     gap: 'gap-0.5',
   },
   sm: {
     container: 'h-5 px-2',
-    fontSize: 'text-[10px]',
+    fontSize: 'text-2xs',
     iconSize: 10,
     gap: 'gap-1',
   },
@@ -206,12 +206,12 @@ export const TierIndicator = React.memo(function TierIndicator({
       animate={{ opacity: 1, scale: 1 }}
       transition={{ type: 'spring', stiffness: 300, damping: 20 }}
       className={cn(
-        'inline-flex items-center rounded-full backdrop-blur-sm',
+        'inline-flex items-center rounded-full backdrop-blur-xs',
         sizeConfig.container,
         sizeConfig.gap,
         colorConfig.background,
         colorConfig.border && `border ${colorConfig.border}`,
-        colorConfig.glow && `shadow-sm ${colorConfig.glow}`,
+        colorConfig.glow && `shadow-xs ${colorConfig.glow}`,
         position && positionStyles[position],
         position && 'z-10',
         className
@@ -254,7 +254,7 @@ export const TierBadge = React.memo(function TierBadge({
         sizeConfig.container.replace('px-2', '').replace('px-2.5', '').replace('px-3', ''),
         config.color.background,
         config.color.border && `border ${config.color.border}`,
-        config.color.glow && `shadow-sm ${config.color.glow}`,
+        config.color.glow && `shadow-xs ${config.color.glow}`,
         className
       )}
       title={showTooltip ? config.label : undefined}

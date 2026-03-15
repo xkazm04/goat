@@ -105,9 +105,9 @@ export function getTierConfig(tier: InventoryTier): TierConfig {
     case 'top':
       return {
         label: 'Top Pick',
-        color: 'text-cyan-400',
-        bgColor: 'bg-cyan-500/20',
-        borderColor: 'border-cyan-500/40',
+        color: 'text-brand-hover',
+        bgColor: 'bg-brand/20',
+        borderColor: 'border-brand/40',
         icon: 'medal',
       };
     case 'solid':

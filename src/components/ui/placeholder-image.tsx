@@ -222,7 +222,7 @@ export const PlaceholderImage = React.forwardRef<HTMLDivElement, PlaceholderImag
                 }}
               >
                 <svg
-                  className="w-5 h-5 text-cyan-500/50"
+                  className="w-5 h-5 text-brand/50"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"

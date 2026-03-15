@@ -21,7 +21,7 @@ export function FocusRingOverlay({
 
   return (
     <div
-      className="absolute inset-0 rounded-lg ring-2 ring-cyan-500 ring-offset-2 ring-offset-gray-900 pointer-events-none z-20"
+      className="absolute inset-0 rounded-lg ring-2 ring-brand ring-offset-2 ring-offset-slate-900 pointer-events-none z-20"
       aria-hidden="true"
       data-testid={`focus-ring-${itemId}`}
     />

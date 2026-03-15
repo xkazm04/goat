@@ -21,6 +21,7 @@ export interface TopItemCreate {
   category: string;
   subcategory?: string;
   group?: string;
+  group_id?: string;
   item_year?: number;
   item_year_to?: number;
   image_url?: string;

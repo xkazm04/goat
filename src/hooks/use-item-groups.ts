@@ -80,8 +80,6 @@ export interface ListSession {
   backlogGroups: StoredBacklogGroup[]; // Use the new self-contained group type
   selectedBacklogItem: string | null;  // ID of StoredBacklogItem
   selectedGridItem: string | null;     // ID of GridItem
-  // compareList can use StoredBacklogItem if comparison involves full item details
-  compareList: StoredBacklogItem[]; 
   createdAt: string;
   updatedAt: string;
   synced: boolean;

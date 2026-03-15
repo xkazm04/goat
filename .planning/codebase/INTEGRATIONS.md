@@ -1,257 +1,180 @@
 # External Integrations
 
-**Analysis Date:** 2026-01-26
+**Analysis Date:** 2026-03-14
 
 ## APIs & External Services
 
-**Authentication & User Identity:**
-- Clerk (legacy, being migrated to Supabase Auth)
-  - SDK: @clerk/nextjs 6.21.0
-  - Auth: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`
-  - Webhook integration at `src/app/api/webhooks/clerk/route.ts`
-  - Webhook validation via Svix library
-  - Syncs user profiles to Supabase PostgreSQL on user.created/updated/deleted events
+**AI / Machine Learning:**
+- Google Gemini (via `@google/genai` ^1.38.0) - AI item generation, image finding, YouTube lookup, item recommendations, structured output via JSON Schema
+  - SDK: `@google/genai`, client wrapper at `src/lib/providers/gemini.ts` and `src/lib/api/studio-utils.ts`
+  - Auth: `GEMINI_API_KEY` (server-only)
+  - Used in: `src/app/api/studio/generate/route.ts`, `src/app/api/studio/find-image/route.ts`, `src/app/api/studio/find-youtube/route.ts`, `src/app/api/recommendation/route.ts`
 
-**AI & Content Generation:**
-- Google Gemini API
-  - Client: @google/generative-ai 0.24.1
-  - Implementation: `src/lib/providers/gemini.ts`
-  - Auth: `GEMINI_API_KEY` (server-side only)
-  - Used for: Item recommendations with Google Search integration
-  - Model: gemini-flash-latest
-  - Endpoints:
-    - `/api/personalization/recommend` - Item recommendations
-    - `/api/generate-ai-image` - AI-enhanced image composition
+- OpenAI - AI image generation (provider option in `src/app/api/generate-ai-image/route.ts`)
+  - Auth: `OPENAI_API_KEY` (server-only)
+  - Status: Supported provider alongside Replicate and mock mode
 
-- Leonardo AI
-  - Service: Custom `src/lib/services/leonardo.ts`
-  - Auth: `LEONARDO_API_KEY`
-  - Models: Phoenix 1.0, Phoenix 0.9, Flux Speed, Flux Dev, Flux 2
-  - API versions: v1 and v2
-  - Base URLs:
-    - v1: https://cloud.leonardo.ai/api/rest/v1
-    - v2: https://cloud.leonardo.ai/api/rest/v2
-  - Features: Image generation with preset styles (Creative, Dynamic, Retro, Stock Photo, Cinematic, Sketch, Illustration)
+- Replicate - AI image generation (provider option)
+  - Auth: `REPLICATE_API_TOKEN` (server-only)
+  - Used in: `src/app/api/generate-ai-image/route.ts`
 
-- OpenAI DALL-E 3
-  - Integration: `src/app/api/generate-ai-image/route.ts`
-  - Auth: `OPENAI_API_KEY`
-  - Endpoint: https://api.openai.com/v1/images/generations
-  - Model: dall-e-3
-  - Output size: 1792x1024
+- Leonardo.ai - AI image generation (provider option)
+  - Auth: `LEONARDO_API_KEY` (server-only)
+  - Used in: `src/app/api/generate-ai-image/route.ts`
 
-- Replicate (Stable Diffusion)
-  - Integration: `src/app/api/generate-ai-image/route.ts`
-  - Auth: `REPLICATE_API_TOKEN`
-  - Endpoint: https://api.replicate.com/v1/predictions
-  - Model: stability-ai/sdxl (Stable Diffusion XL)
-  - Supports polling for async generation
+**Media & Content Data:**
+- TMDB (The Movie Database) - Movie and TV show metadata, primary source for `movies` and `tv` categories
+  - Base URL: `https://api.themoviedb.org/3`
+  - Auth: `TMDB_API_KEY` (server-only)
+  - Fetcher: `src/lib/enrichment/fetchers/TMDBFetcher.ts`
+
+- IGDB (Internet Game Database) - Video game metadata, primary source for `games` category
+  - Base URL: `https://api.igdb.com/v4`
+  - Auth: Twitch OAuth (`TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET`); token fetched from `https://id.twitch.tv/oauth2/token`
+  - Fetcher: `src/lib/enrichment/fetchers/IGDBFetcher.ts`
+
+- Spotify Web API - Music metadata (albums, artists, tracks), primary source for `music` category
+  - Base URL: `https://api.spotify.com/v1`
+  - Auth: OAuth client credentials (`SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`); token from `https://accounts.spotify.com/api/token`
+  - Fetcher: `src/lib/enrichment/fetchers/SpotifyFetcher.ts`
+
+- Wikipedia / MediaWiki API - General information, fallback for all categories, primary for `sports` and `general`
+  - Base URL: `https://en.wikipedia.org/w/api.php`
+  - Auth: None (free public API)
+  - Fetchers: `src/lib/enrichment/fetchers/WikipediaFetcher.ts`, `src/lib/api/wiki-images.ts`
+
+- Open Library - Books metadata (primary source for `books` category)
+  - Configured in enrichment routing: `src/lib/enrichment/SourceRouter.ts`
+  - Auth: None (free public API)
+
+- Google Books - Books metadata (fallback for `books` category)
+  - Configured in enrichment routing: `src/lib/enrichment/SourceRouter.ts`
+
+- MusicBrainz - Music metadata (fallback for `music` category)
+  - Configured in enrichment routing: `src/lib/enrichment/SourceRouter.ts`
+
+- YouTube - Music video lookup via Gemini Google Search integration
+  - Used in: `src/app/api/studio/find-youtube/route.ts`, `src/lib/youtube.ts`
+  - Auth: Indirectly via Gemini (no direct YouTube API key)
+
+**Enrichment Pipeline:**
+- Orchestrated by `src/lib/enrichment/EnrichmentPipeline.ts`
+- Enabled/disabled via `ENABLE_ENRICHMENT_PIPELINE` env flag
+- Sources routed by category in `src/lib/enrichment/SourceRouter.ts`
 
 ## Data Storage
 
 **Databases:**
-- Supabase (PostgreSQL)
-  - Connection: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-  - Server-side key: `SUPABASE_SERVICE_ROLE_KEY`
-  - Client: @supabase/supabase-js 2.76.1
-  - Client factory: `src/lib/supabase/client.ts` (browser client)
-  - Server factory: `src/lib/supabase/server.ts` (server-side with cookie support)
-  - Tables:
-    - `user_profiles` - User account data (synced from Clerk)
-      - Fields: clerk_id, display_name, email, avatar_url, is_premium, updated_at
-  - Features:
-    - Row Level Security (RLS) policies
-    - Connection pooler recommended for serverless (port 6543)
+- Supabase (PostgreSQL) - Primary data store for all application data
+  - Browser client: `src/lib/supabase/client.ts` (`createBrowserClient` from `@supabase/ssr`)
+  - Server client: `src/lib/supabase/server.ts` (`createServerClient` from `@supabase/ssr`)
+  - Connection (public): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+  - Connection (server): `SUPABASE_SERVICE_ROLE_KEY` (never exposed client-side)
+  - Types: `src/types/database.ts` (generated from Supabase schema)
+  - Migrations: `supabase/migrations/`
+
+**Client-Side Storage:**
+- IndexedDB - Offline session persistence, sync queue, backlog cache
+  - Managed by `src/lib/offline/OfflineStorage.ts`
+  - Stores: `sessions`, `syncQueue`, `metadata`, `conflicts`, `backlogCache`
+- localStorage - Zustand store persistence fallback; used by `persist` middleware in `src/stores/grid-store.ts` and `src/stores/session-store.ts`
+  - Safe storage wrapper: `src/lib/storage/create-safe-storage.ts`
 
 **File Storage:**
-- Supabase Storage buckets
-  - `list-images` - Generated ranking images
-  - `user-avatars` - User profile pictures
-  - Bucket names: `NEXT_PUBLIC_STORAGE_BUCKET_IMAGES`, `NEXT_PUBLIC_STORAGE_BUCKET_AVATARS`
-
-**Local Client Storage:**
-- localStorage/IndexedDB via Zustand persistence
-  - Grid state: `src/stores/grid-store.ts`
-  - Session state: `src/stores/session-store.ts`
-  - Backlog state: `src/stores/backlog-store.ts`
+- No dedicated file storage detected; images are sourced from external URLs (Wikipedia, Amazon Media, Wikia, etc.)
 
 **Caching:**
-- TanStack Query (React Query) with custom cache config
-  - Configuration: `src/lib/cache/query-cache-config.ts`
-  - API cache: `src/lib/cache/api-cache.ts`
-  - DevTools: Available in development mode
+- In-memory API cache via `src/lib/cache/` unified cache layer
+- TanStack Query cache for server state; config in `src/lib/cache/query-cache-config.ts`
 
 ## Authentication & Identity
 
 **Auth Provider:**
-- Clerk (legacy, being phased out)
-  - Implementation: `src/app/layout.tsx` uses ClerkProvider
-  - Hook: `src/hooks/use-clerk-user.ts`
-  - Webhook endpoint: `/api/webhooks/clerk`
-  - Webhook handler: Uses Svix for verification
+- Clerk (`@clerk/nextjs` ^6.21.0) - Current production auth
+  - Middleware: `middleware.ts` — protects `/match/*`, `/profile/*`, `/dashboard/*`
+  - Provider: `ClerkProvider` wraps entire app in `src/app/layout.tsx`
+  - User sync: Clerk → Supabase via webhook at `src/app/api/webhooks/clerk/route.ts`; syncs `user_profiles` table using `clerk_id` as foreign key
+  - Webhook verification: `svix` library; secret in `WEBHOOK_SECRET`
 
-- Supabase Auth (planned primary auth)
-  - Client hooks: `src/hooks/supabase-auth/client.ts`
-  - Server actions: `src/hooks/supabase-auth/actions.ts`
-  - Main hook: `src/hooks/useSupabaseAuth.ts`
-  - Supports OAuth via Supabase dashboard configuration:
-    - Google OAuth
-    - GitHub OAuth
-    - Other providers
-
-**Webhooks & Sync:**
-- Clerk → Supabase sync via `/api/webhooks/clerk/route.ts`
-  - Triggers:
-    - user.created - Create user_profiles entry
-    - user.updated - Update user_profiles
-    - user.deleted - Delete user_profiles
-  - Verification: Svix library with webhook secret
-  - Fallback: Prevents retries for non-critical errors
+**Planned Migration:**
+- Clerk → Supabase Auth migration noted in `.env.example` and `CLAUDE.md`
 
 ## Monitoring & Observability
 
 **Error Tracking:**
-- Custom error handling system
-  - Implementation: `src/lib/errors/GoatError.ts`
-  - Error handler: `src/lib/errors/api-error-handler.ts`
-  - Error analytics: `src/lib/errors/error-analytics.ts`
-  - Error boundary: `src/lib/errors/ErrorBoundary.tsx`
-  - Error toast UI: `src/lib/errors/ErrorNotificationToast.tsx`
-  - Error categories: Network, validation, authentication, server, client
-  - Severity levels: Critical, High, Medium, Low, Info
+- Custom error tracking via `src/lib/errors/` — `trackError()` captures error code, category, severity, traceId, path, and method
+- No third-party error monitoring service detected (no Sentry, Datadog, etc.)
 
 **Logs:**
-- Console logging for development
-  - API calls logged with 🌐 prefix
-  - Drag events logged with 🔄 prefix
-  - User sync logged with ✅ prefix
-- React Query DevTools in development (`NEXT_PUBLIC_ENABLE_REACT_QUERY_DEVTOOLS`)
-
-**Analytics (Planned):**
-- Configurable via env vars (not yet implemented):
-  - `NEXT_PUBLIC_GA_TRACKING_ID` - Google Analytics
-  - `NEXT_PUBLIC_SENTRY_DSN` - Sentry error tracking
+- `console.log` / `console.error` used throughout
+- Custom logger at `src/lib/logger/` (directory present)
 
 ## CI/CD & Deployment
 
 **Hosting:**
-- Vercel (Next.js optimized)
-- Alternative: Any Node.js-compatible environment
+- Vercel implied (Next.js App Router, `maxDuration` exports on API routes, PWA service worker headers in `next.config.js`)
 
 **CI Pipeline:**
-- Not configured/detected in codebase
-- ESLint available locally (`npm run lint`)
-
-**Build Configuration:**
-- Next.js Turbopack (configured in `next.config.js`)
-- Build command: `npm run build`
-- Dev command: `npm run dev`
-- Start command: `npm start`
-
-## PWA Configuration
-
-**Service Worker:**
-- Header configuration in `next.config.js`
-- Static headers:
-  - `/sw.js` - Service worker file with cache-control: max-age=0
-  - `/manifest.json` - PWA manifest with cache-control: immutable (1 year)
-
-**Offline Support:**
-- OfflineProvider in `src/app/layout.tsx`
-- Features: `showStatusIndicator`, `enableAutoSync`
-- Implementation: `src/lib/offline/`
+- None detected in codebase (no `.github/workflows/`, no CI config files)
 
 ## Environment Configuration
 
 **Required env vars:**
-```bash
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
+```
+# Public (client + server)
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+NEXT_PUBLIC_APP_URL
 
-# App
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-NODE_ENV=development
+# Server only
+SUPABASE_SERVICE_ROLE_KEY
+WEBHOOK_SECRET              # Clerk webhook verification (svix)
+GEMINI_API_KEY              # Google Gemini AI
 
-# Feature Flags
-NEXT_PUBLIC_ENABLE_SUPABASE=true
-NEXT_PUBLIC_ENABLE_LEGACY_API=false
+# Optional enrichment
+TMDB_API_KEY
+TWITCH_CLIENT_ID
+TWITCH_CLIENT_SECRET
+SPOTIFY_CLIENT_ID
+SPOTIFY_CLIENT_SECRET
+ENABLE_ENRICHMENT_PIPELINE  # Feature flag (boolean string)
 
-# AI APIs (optional - graceful fallback if missing)
-GEMINI_API_KEY=your-gemini-key
-LEONARDO_API_KEY=your-leonardo-key
-OPENAI_API_KEY=your-openai-key
-REPLICATE_API_TOKEN=your-replicate-token
+# Optional AI image generation
+OPENAI_API_KEY
+REPLICATE_API_TOKEN
+LEONARDO_API_KEY
 
-# Clerk (legacy, being removed)
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your-clerk-key
-CLERK_SECRET_KEY=your-clerk-secret
-WEBHOOK_SECRET=your-webhook-secret
-
-# File Storage
-NEXT_PUBLIC_STORAGE_BUCKET_IMAGES=list-images
-NEXT_PUBLIC_STORAGE_BUCKET_AVATARS=user-avatars
+# Clerk (injected by Clerk dashboard)
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY   # Set by Clerk
+CLERK_SECRET_KEY                    # Set by Clerk
 ```
 
 **Secrets location:**
-- Local development: `.env.local` (git-ignored)
-- Production: Platform secrets (Vercel Environment Variables, GitHub Secrets, etc.)
-- Never commit actual secrets - use `.env.example` as template
-
-**Security notes:**
-- `SUPABASE_SERVICE_ROLE_KEY` must never be exposed client-side
-- Use `NEXT_PUBLIC_` prefix only for safe, public values
-- Rotate keys if accidentally exposed
-- Enable Row Level Security (RLS) in Supabase
-
-## Image & Asset Handling
-
-**Remote Image Patterns:**
-- Configured in `next.config.js`:
-  - upload.wikimedia.org (Wikipedia Commons)
-  - m.media-amazon.com (Amazon images)
-  - static.wikia.nocookie.net (Wikia images)
-- Recommendation: Add Leonardo/OpenAI image URLs if storing generated images
+- `.env.local` (not committed); `.env.example` documents all vars
 
 ## Webhooks & Callbacks
 
 **Incoming:**
-- `/api/webhooks/clerk` - Clerk authentication events
-  - Receives: user.created, user.updated, user.deleted, session.created
-  - Validates: Svix HMAC signature verification
-  - Actions: Syncs to user_profiles table in Supabase
+- `POST /api/webhooks/clerk` — Receives Clerk user lifecycle events (`user.created`, `user.updated`, `user.deleted`); verifies signature with `svix`; syncs user profile to Supabase `user_profiles` table
+  - Route: `src/app/api/webhooks/clerk/route.ts`
 
 **Outgoing:**
-- Not configured (potential for future integrations)
-- Candidates: Result image sharing, achievement webhooks
+- None detected
 
-## Data Flow
+## Sharing & Embeds
 
-**User Authentication Flow:**
-1. User signs in via Clerk
-2. Clerk webhook triggered → `/api/webhooks/clerk/route.ts`
-3. User profile synced to `user_profiles` table in Supabase
-4. Client accesses Supabase via public anon key with RLS
-5. Server routes use service role key for privileged operations
+**Open Graph Images:**
+- Generated server-side at `src/lib/og/OGCardGenerator.ts`
+- Cached by `src/lib/og/CacheManager.ts`
+- Multiple layouts in `src/lib/og/card-layouts/`
+- Served via `src/app/api/og/[listId]/route.ts`
 
-**Image Generation Flow:**
-1. User requests image generation via `/api/generate-ai-image`
-2. Route dispatches to provider:
-   - Replicate (Stable Diffusion) - async polling
-   - OpenAI (DALL-E 3) - direct response
-   - Leonardo - async polling with API v1 or v2
-   - Mock - demo placeholders
-3. Generated images returned to client
-4. Images optionally stored in Supabase Storage
+**oEmbed:**
+- `src/app/api/oembed/route.ts` — Standard oEmbed endpoint for embedding ranked lists
 
-**List & Item Flow:**
-1. Client queries `/api/lists`, `/api/top/groups` via TanStack Query
-2. Server fetches from Supabase
-3. Results cached locally by React Query
-4. Zustand stores manage UI state (grid, session, backlog)
-5. State persisted to localStorage
+**Social Sharing Platforms:**
+- `src/lib/sharing/platforms/` — Twitter, Facebook, Reddit, LinkedIn, Discord, Telegram, WhatsApp, Instagram, email, native share API, and clipboard copy
 
 ---
 
-*Integration audit: 2026-01-26*
+*Integration audit: 2026-03-14*

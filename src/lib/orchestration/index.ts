@@ -122,14 +122,3 @@ export {
   type UseOrchestratorReturn,
 } from './useOrchestrator';
 
-// Drag handlers
-export {
-  handleDragEndOrchestrated,
-  handleDragStartOrchestrated,
-  handleDragCancelOrchestrated,
-  getDragState,
-  batchAssign,
-  batchSwap,
-  type OrchestratedDragResult,
-  type DragHandlerOptions,
-} from './dragHandlers';

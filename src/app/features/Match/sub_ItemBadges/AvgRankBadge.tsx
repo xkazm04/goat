@@ -71,9 +71,9 @@ export function AvgRankBadge({
     }
     if (avgRank <= 10) {
       return {
-        bg: 'from-cyan-500/70 to-blue-600/70',
+        bg: 'from-brand/70 to-blue-600/70',
         text: 'text-white font-medium',
-        ring: 'ring-cyan-400/40',
+        ring: 'ring-brand-hover/40',
       };
     }
     if (avgRank <= 25) {
@@ -99,7 +99,7 @@ export function AvgRankBadge({
       return { label: 'High confidence', color: 'text-emerald-400' };
     }
     if (total >= 50) {
-      return { label: 'Good confidence', color: 'text-cyan-400' };
+      return { label: 'Good confidence', color: 'text-brand-hover' };
     }
     if (total >= 20) {
       return { label: 'Moderate confidence', color: 'text-amber-400' };
@@ -141,7 +141,7 @@ export function AvgRankBadge({
             positionClasses,
             // Glassmorphism styling
             'backdrop-blur-md',
-            'bg-gradient-to-br',
+            'bg-linear-to-br',
             getBadgeStyle.bg,
             // Layout
             'flex items-center gap-1',
@@ -156,7 +156,7 @@ export function AvgRankBadge({
           data-testid={`avg-rank-badge-${itemId}`}
         >
           {/* Community icon */}
-          <Users className={cn('w-2.5 h-2.5 flex-shrink-0', getBadgeStyle.text)} />
+          <Users className={cn('w-2.5 h-2.5 shrink-0', getBadgeStyle.text)} />
 
           {/* Average rank display */}
           <span

@@ -7,6 +7,7 @@
 
 import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Lightbulb, Target, Search, PlusCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type {
   SmartFilterSuggestion,
@@ -19,8 +20,20 @@ import type {
 import {
   SUGGESTION_TYPES,
   FILTER_ANIMATIONS,
+  FILTER_TIMING,
+  FILTER_SCALE,
   PERFORMANCE_THRESHOLDS,
 } from '../constants';
+
+/**
+ * Lucide icon mapping for suggestion types
+ */
+const SUGGESTION_TYPE_ICONS: Record<string, React.ReactNode> = {
+  narrow: <Target size={14} />,
+  expand: <Search size={14} />,
+  alternative: <Lightbulb size={14} />,
+  complement: <PlusCircle size={14} />,
+};
 
 /**
  * SmartFilterSuggestions Props
@@ -101,14 +114,17 @@ function InlineSuggestions({
 }) {
   return (
     <div className={cn('flex items-center gap-2', className)}>
-      <span className="text-xs text-muted-foreground">💡 Try:</span>
+      <span className="flex items-center gap-1 text-xs text-muted-foreground">
+        <Lightbulb size={12} />
+        Try:
+      </span>
       <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
         <AnimatePresence mode="popLayout">
           {suggestions.map((suggestion, index) => (
             <motion.button
               key={suggestion.id}
               className={cn(
-                'flex-shrink-0 inline-flex items-center gap-1',
+                'shrink-0 inline-flex items-center gap-1',
                 'px-2 py-1 text-xs rounded-md',
                 'bg-accent/50 hover:bg-accent border border-border/50',
                 'transition-colors'
@@ -117,12 +133,12 @@ function InlineSuggestions({
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 10 }}
-              transition={{ delay: index * 0.05 }}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              transition={{ delay: index * FILTER_TIMING.stagger }}
+              whileHover={{ scale: FILTER_SCALE.hover }}
+              whileTap={{ scale: FILTER_SCALE.tap }}
               title={suggestion.description}
             >
-              <span>{SUGGESTION_TYPES[suggestion.type].icon}</span>
+              <span>{SUGGESTION_TYPE_ICONS[suggestion.type]}</span>
               <span>{suggestion.label}</span>
               <span className="text-muted-foreground">
                 (~{suggestion.estimatedMatches})
@@ -167,7 +183,7 @@ function PanelSuggestions({
       )}
     >
       <div className="flex items-center gap-2 mb-3">
-        <span className="text-lg">💡</span>
+        <Lightbulb size={18} className="text-amber-400" />
         <h4 className="text-sm font-medium">Smart Suggestions</h4>
       </div>
 
@@ -175,7 +191,7 @@ function PanelSuggestions({
         {Object.entries(grouped).map(([type, typeSuggestions]) => (
           <div key={type}>
             <div className="flex items-center gap-2 mb-2">
-              <span>{SUGGESTION_TYPES[type as keyof typeof SUGGESTION_TYPES]?.icon}</span>
+              <span>{SUGGESTION_TYPE_ICONS[type]}</span>
               <span className="text-xs font-medium text-muted-foreground">
                 {SUGGESTION_TYPES[type as keyof typeof SUGGESTION_TYPES]?.label}
               </span>
@@ -217,12 +233,12 @@ function PopoverSuggestions({
           'flex items-center gap-1.5 px-2 py-1 text-xs rounded-md',
           'bg-amber-500/10 text-amber-600 border border-amber-500/20',
           'hover:bg-amber-500/20 transition-colors',
-          suggestions.length === 0 && 'opacity-50 cursor-not-allowed'
+          suggestions.length === 0 && 'filter-disabled'
         )}
         onClick={() => setIsOpen(!isOpen)}
         disabled={suggestions.length === 0}
       >
-        <span>💡</span>
+        <Lightbulb size={12} />
         <span>{suggestions.length} suggestions</span>
       </button>
 
@@ -267,8 +283,8 @@ function PopoverSuggestions({
                       setIsOpen(false);
                     }}
                   >
-                    <span className="flex-shrink-0">
-                      {SUGGESTION_TYPES[suggestion.type].icon}
+                    <span className="shrink-0">
+                      {SUGGESTION_TYPE_ICONS[suggestion.type]}
                     </span>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium truncate">
@@ -278,7 +294,7 @@ function PopoverSuggestions({
                         ~{suggestion.estimatedMatches} matches
                       </div>
                     </div>
-                    <span className="flex-shrink-0 text-xs text-muted-foreground">
+                    <span className="shrink-0 text-xs text-muted-foreground">
                       {Math.round(suggestion.confidence * 100)}%
                     </span>
                   </button>
@@ -307,12 +323,12 @@ function SuggestionCard({
       className={cn(
         'w-full flex items-start gap-3 p-3 rounded-lg',
         'border border-border bg-muted/30',
-        'hover:bg-accent/50 hover:border-primary/30',
+        'filter-hover hover:border-primary/30',
         'transition-all text-left'
       )}
       onClick={onApply}
-      whileHover={{ scale: 1.01 }}
-      whileTap={{ scale: 0.99 }}
+      whileHover={{ scale: FILTER_SCALE.hover }}
+      whileTap={{ scale: FILTER_SCALE.tap }}
     >
       <div className="flex-1">
         <div className="text-sm font-medium">{suggestion.label}</div>
@@ -326,7 +342,7 @@ function SuggestionCard({
         )}
       </div>
 
-      <div className="flex-shrink-0 text-right">
+      <div className="shrink-0 text-right">
         <div className="text-sm font-medium text-primary">
           ~{suggestion.estimatedMatches}
         </div>

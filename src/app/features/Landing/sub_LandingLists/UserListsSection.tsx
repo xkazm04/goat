@@ -8,12 +8,13 @@ import { useUserLists, useDeleteList } from "@/hooks/use-top-lists";
 import { useTempUser } from "@/hooks/use-temp-user";
 import { usePlayList } from "@/hooks/use-play-list";
 import { toast } from "@/hooks/use-toast";
-import { ListCard } from "./ListCard";
+import { UserListCard } from "./UserListCard";
 import { ListGrid } from "@/components/ui/list-grid";
 import { listContainerVariants } from "../shared/animations";
 import { NeonArenaTheme } from "../shared/NeonArenaTheme";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { SectionHeader } from "./SectionHeader";
+import { ELEVATION, INSET, withInset } from "@/components/visual/depth";
 
 interface UserListsSectionProps {
   className?: string;
@@ -79,10 +80,7 @@ export function UserListsSection({ className }: UserListsSectionProps) {
                 className="relative group px-5 py-2.5 rounded-xl font-medium text-sm text-white overflow-hidden"
                 style={{
                   background: `linear-gradient(135deg, rgba(251, 191, 36, 0.9), rgba(245, 158, 11, 0.9))`,
-                  boxShadow: `
-                    0 8px 30px rgba(251, 191, 36, 0.3),
-                    inset 0 1px 0 rgba(255, 255, 255, 0.2)
-                  `,
+                  boxShadow: withInset(ELEVATION.high, INSET.glassHighlightStrong),
                 }}
                 whileHover={prefersReducedMotion ? {} : { scale: 1.03, y: -2 }}
                 whileTap={prefersReducedMotion ? {} : { scale: 0.98 }}
@@ -117,7 +115,7 @@ export function UserListsSection({ className }: UserListsSectionProps) {
             <ListGrid
               items={userLists}
               renderItem={(list) => (
-                <ListCard list={list} variant="user" onDelete={handleDeleteList} onPlay={handlePlayList} />
+                <UserListCard list={list} onDelete={handleDeleteList} onPlay={handlePlayList} />
               )}
               isLoading={isLoading}
               error={error ? new Error("Failed to load your lists") : null}
@@ -148,7 +146,7 @@ export function UserListsSection({ className }: UserListsSectionProps) {
                     className="px-6 py-3 rounded-xl font-medium text-white"
                     style={{
                       background: `linear-gradient(135deg, rgba(251, 191, 36, 0.9), rgba(245, 158, 11, 0.9))`,
-                      boxShadow: `0 8px 30px rgba(251, 191, 36, 0.25)`,
+                      boxShadow: ELEVATION.high,
                     }}
                     whileHover={prefersReducedMotion ? {} : { scale: 1.05 }}
                     whileTap={prefersReducedMotion ? {} : { scale: 0.98 }}

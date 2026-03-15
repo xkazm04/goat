@@ -50,8 +50,8 @@ const stateColors: Record<ExtendedFeedbackState, { bg: string; border: string; t
   'checking-cache': { bg: 'bg-gray-500/10', border: 'border-gray-500/30', text: 'text-gray-400' },
   generating: { bg: 'bg-purple-500/10', border: 'border-purple-500/30', text: 'text-purple-400' },
   complete: { bg: 'bg-green-500/10', border: 'border-green-500/30', text: 'text-green-400' },
-  dragging: { bg: 'bg-cyan-500/10', border: 'border-cyan-500/30', text: 'text-cyan-400' },
-  dropping: { bg: 'bg-cyan-500/10', border: 'border-cyan-500/30', text: 'text-cyan-400' },
+  dragging: { bg: 'bg-brand/10', border: 'border-brand/30', text: 'text-brand-hover' },
+  dropping: { bg: 'bg-brand/10', border: 'border-brand/30', text: 'text-brand-hover' },
   empty: { bg: 'bg-gray-800/50', border: 'border-gray-700', text: 'text-gray-500' },
 };
 

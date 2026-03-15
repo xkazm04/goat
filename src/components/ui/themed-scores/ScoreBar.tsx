@@ -4,14 +4,13 @@ import * as React from "react";
 import { motion } from "framer-motion";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
-
-// Score thresholds for sports theme color coding
-const SCORE_LOW_THRESHOLD = 33;
-const SCORE_MID_THRESHOLD = 66;
-
-// Animation configuration
-const ANIMATION_DURATION = 0.5;
-const ANIMATION_EASE = "easeOut";
+import {
+  SCORE_LOW_THRESHOLD,
+  SCORE_MID_THRESHOLD,
+  SCORE_ANIMATION_DURATION,
+  SCORE_ANIMATION_EASE,
+  formatScore,
+} from "@/lib/constants/scoring";
 
 const scoreBarVariants = cva(
   "relative overflow-hidden rounded-full transition-all duration-300",
@@ -41,10 +40,10 @@ const fillVariants = cva("absolute inset-y-0 left-0 rounded-full transition-all 
   variants: {
     theme: {
       sports: "", // Color determined by score level
-      movies: "bg-gradient-to-r from-yellow-600 to-yellow-400",
-      music: "bg-gradient-to-r from-purple-600 to-blue-400",
-      games: "bg-gradient-to-r from-green-600 to-emerald-400",
-      default: "bg-gradient-to-r from-cyan-600 to-cyan-400",
+      movies: "bg-linear-to-r from-yellow-600 to-yellow-400",
+      music: "bg-linear-to-r from-purple-600 to-blue-400",
+      games: "bg-linear-to-r from-green-600 to-emerald-400",
+      default: "bg-linear-to-r from-brand-muted to-brand-hover",
     },
   },
   defaultVariants: {
@@ -68,12 +67,12 @@ export interface ScoreBarProps
  */
 function getSportsGradient(score: number): string {
   if (score <= SCORE_LOW_THRESHOLD) {
-    return "bg-gradient-to-r from-red-600 to-red-400";
+    return "bg-linear-to-r from-red-600 to-red-400";
   }
   if (score <= SCORE_MID_THRESHOLD) {
-    return "bg-gradient-to-r from-yellow-600 to-yellow-400";
+    return "bg-linear-to-r from-yellow-600 to-yellow-400";
   }
-  return "bg-gradient-to-r from-green-600 to-green-400";
+  return "bg-linear-to-r from-green-600 to-green-400";
 }
 
 /**
@@ -124,7 +123,7 @@ export function ScoreBar({
           className={cn("h-full", fillClass)}
           initial={{ width: 0 }}
           animate={{ width: `${clampedValue}%` }}
-          transition={{ duration: ANIMATION_DURATION, ease: ANIMATION_EASE }}
+          transition={{ duration: SCORE_ANIMATION_DURATION, ease: SCORE_ANIMATION_EASE }}
         />
       ) : (
         <div
@@ -133,8 +132,8 @@ export function ScoreBar({
         />
       )}
       {showLabel && (
-        <span className="absolute inset-0 flex items-center justify-center text-[10px] font-medium text-white/90 tabular-nums drop-shadow-sm">
-          {clampedValue.toFixed(0)}
+        <span className="absolute inset-0 flex items-center justify-center text-[10px] font-medium text-white/90 tabular-nums drop-shadow-xs">
+          {formatScore(clampedValue)}
         </span>
       )}
     </div>

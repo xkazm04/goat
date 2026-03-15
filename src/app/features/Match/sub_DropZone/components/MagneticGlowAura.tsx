@@ -24,7 +24,7 @@ export interface MagneticGlowAuraProps {
 export const MagneticGlowAura = memo(function MagneticGlowAura({
   isActive,
   strength,
-  color = "22, 211, 238", // cyan-400 RGB values
+  color = "22, 211, 238", // brand-hover RGB values
   className = "",
   testId,
 }: MagneticGlowAuraProps) {
@@ -87,7 +87,7 @@ export const ValidDropIndicator = memo(function ValidDropIndicator({
           exit={{ opacity: 0, scale: 0.98 }}
           transition={{ duration: 0.2, ease: "easeOut" }}
           style={{
-            border: '2px solid rgb(34, 211, 238)', // cyan-400
+            border: '2px solid rgb(34, 211, 238)', // brand-hover
             boxShadow: `
               0 0 15px rgba(6, 182, 212, 0.4),
               0 0 30px rgba(6, 182, 212, 0.2),

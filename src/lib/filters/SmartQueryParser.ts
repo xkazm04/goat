@@ -22,6 +22,21 @@ import type {
   FilterCombinator,
 } from './types';
 import { EMPTY_FILTER_CONFIG } from './constants';
+import { getPresetSearchKeywords } from './presets';
+
+// Pre-compiled regex patterns used in hot parsing paths
+const RE_FIELD_COLON = /\w+:/;
+const RE_OR_COMBINATOR = /\bor\b/i;
+const RE_SPLIT_AND_OR = /\b(and|or)\b/i;
+const RE_FIELD_VALUE = /^(\w+)\s*[:=]\s*(.+)$/;
+const RE_COMPARISON = /^(\w+)\s*(>=?|<=?|!=|==?)\s*(.+)$/;
+const RE_NATURAL = /^(\w+)\s+(is|equals?|contains?|has|greater\s*than|less\s*than|above|below|after|before|with|without|starts?\s*with|ends?\s*with)\s+(.+)$/i;
+const RE_PLUS_PATTERN = /^(\d+)\+$/;
+const RE_BOOLEAN_TRUE = /^(true|yes)$/i;
+const RE_BOOLEAN_FALSE = /^(false|no)$/i;
+const RE_NUMBER = /^-?\d+(\.\d+)?$/;
+const RE_ISO_DATE = /^\d{4}-\d{2}-\d{2}/;
+const RE_QUOTES = /^["']|["']$/g;
 
 /**
  * Parsed query token
@@ -253,13 +268,13 @@ export class SmartQueryParser {
     const remainingTerms: string[] = [];
 
     // Check for OR combinator
-    if (/\bor\b/i.test(normalizedQuery)) {
+    if (RE_OR_COMBINATOR.test(normalizedQuery)) {
       combinator = 'OR';
     }
 
     // Split by OR/AND for processing
     const segments = normalizedQuery
-      .split(/\b(and|or)\b/i)
+      .split(RE_SPLIT_AND_OR)
       .filter((s) => s.trim() && !/^(and|or)$/i.test(s.trim()));
 
     for (const segment of segments) {
@@ -296,7 +311,7 @@ export class SmartQueryParser {
    */
   private parseSegment(segment: string): PatternMatch | null {
     // Try field:value pattern first
-    const fieldValueMatch = segment.match(/^(\w+)\s*[:=]\s*(.+)$/);
+    const fieldValueMatch = segment.match(RE_FIELD_VALUE);
     if (fieldValueMatch) {
       const [, fieldRaw, valueRaw] = fieldValueMatch;
       const field = this.resolveField(fieldRaw);
@@ -312,9 +327,7 @@ export class SmartQueryParser {
     }
 
     // Try comparison patterns: field > value, field >= value, etc.
-    const comparisonMatch = segment.match(
-      /^(\w+)\s*(>=?|<=?|!=|==?)\s*(.+)$/
-    );
+    const comparisonMatch = segment.match(RE_COMPARISON);
     if (comparisonMatch) {
       const [, fieldRaw, op, valueRaw] = comparisonMatch;
       const field = this.resolveField(fieldRaw);
@@ -331,9 +344,7 @@ export class SmartQueryParser {
     }
 
     // Try "field operator value" pattern
-    const naturalMatch = segment.match(
-      /^(\w+)\s+(is|equals?|contains?|has|greater\s*than|less\s*than|above|below|after|before|with|without|starts?\s*with|ends?\s*with)\s+(.+)$/i
-    );
+    const naturalMatch = segment.match(RE_NATURAL);
     if (naturalMatch) {
       const [, fieldRaw, opRaw, valueRaw] = naturalMatch;
       const field = this.resolveField(fieldRaw);
@@ -356,7 +367,7 @@ export class SmartQueryParser {
     }
 
     // Try "value+" pattern for year/rating (e.g., "2020+")
-    const plusMatch = segment.match(/^(\d+)\+$/);
+    const plusMatch = segment.match(RE_PLUS_PATTERN);
     if (plusMatch) {
       const numValue = parseInt(plusMatch[1], 10);
       // Determine if it's a year or rating
@@ -376,94 +387,25 @@ export class SmartQueryParser {
 
   /**
    * Parse special keywords like "unranked", "popular", etc.
+   * Keywords are derived from FILTER_PRESETS via getPresetSearchKeywords().
    */
   private parseSpecialKeywords(segment: string): PatternMatch | null {
-    const keywords: Record<string, PatternMatch> = {
-      unranked: {
-        field: 'ranking',
-        operator: 'is_empty',
-        value: null,
-        valueType: 'number',
-        confidence: 0.95,
-      },
-      ranked: {
-        field: 'ranking',
-        operator: 'is_not_empty',
-        value: null,
-        valueType: 'number',
-        confidence: 0.95,
-      },
-      'not placed': {
-        field: 'used',
-        operator: 'equals',
-        value: false,
-        valueType: 'boolean',
-        confidence: 0.95,
-      },
-      placed: {
-        field: 'used',
-        operator: 'equals',
-        value: true,
-        valueType: 'boolean',
-        confidence: 0.95,
-      },
-      'in grid': {
-        field: 'used',
-        operator: 'equals',
-        value: true,
-        valueType: 'boolean',
-        confidence: 0.95,
-      },
-      'not in grid': {
-        field: 'used',
-        operator: 'equals',
-        value: false,
-        valueType: 'boolean',
-        confidence: 0.95,
-      },
-      'recently added': {
-        field: 'created_at',
-        operator: 'greater_than',
-        value: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-        valueType: 'date',
-        confidence: 0.8,
-      },
-      popular: {
-        field: 'ranking',
-        operator: 'greater_equal',
-        value: 4,
-        valueType: 'number',
-        confidence: 0.7,
-      },
-      'top rated': {
-        field: 'ranking',
-        operator: 'equals',
-        value: 5,
-        valueType: 'number',
-        confidence: 0.9,
-      },
-      favorites: {
-        field: 'tags',
-        operator: 'contains',
-        value: 'favorite',
-        valueType: 'array',
-        confidence: 0.8,
-      },
-    };
+    const presetKeywords = getPresetSearchKeywords();
 
     const normalized = segment.toLowerCase().trim();
-    if (keywords[normalized]) {
-      return keywords[normalized];
+    const match = presetKeywords[normalized];
+    if (match) {
+      return match as PatternMatch;
     }
 
     // Check for negation: "not X"
     if (normalized.startsWith('not ')) {
       const rest = normalized.slice(4).trim();
-      const baseMatch = keywords[rest];
+      const baseMatch = presetKeywords[rest];
       if (baseMatch) {
         return {
-          ...baseMatch,
-          operator: this.negateOperator(baseMatch.operator),
+          ...(baseMatch as PatternMatch),
+          operator: this.negateOperator(baseMatch.operator as FilterOperator),
           confidence: baseMatch.confidence * 0.9,
         };
       }
@@ -527,23 +469,23 @@ export class SmartQueryParser {
     const trimmed = valueRaw.trim();
 
     // Remove quotes
-    const unquoted = trimmed.replace(/^["']|["']$/g, '');
+    const unquoted = trimmed.replace(RE_QUOTES, '');
 
     // Boolean
-    if (/^(true|yes)$/i.test(unquoted)) {
+    if (RE_BOOLEAN_TRUE.test(unquoted)) {
       return { value: true, valueType: 'boolean' };
     }
-    if (/^(false|no)$/i.test(unquoted)) {
+    if (RE_BOOLEAN_FALSE.test(unquoted)) {
       return { value: false, valueType: 'boolean' };
     }
 
     // Number
-    if (/^-?\d+(\.\d+)?$/.test(unquoted)) {
+    if (RE_NUMBER.test(unquoted)) {
       return { value: parseFloat(unquoted), valueType: 'number' };
     }
 
     // Date (ISO format or common patterns)
-    if (/^\d{4}-\d{2}-\d{2}/.test(unquoted)) {
+    if (RE_ISO_DATE.test(unquoted)) {
       return { value: new Date(unquoted).toISOString(), valueType: 'date' };
     }
 
@@ -700,9 +642,9 @@ export class SmartQueryParser {
 }
 
 /**
- * Default parser instance
+ * Module-private parser instance used by convenience functions below
  */
-export const defaultQueryParser = new SmartQueryParser();
+const defaultQueryParser = new SmartQueryParser();
 
 /**
  * Convenience function to parse a query

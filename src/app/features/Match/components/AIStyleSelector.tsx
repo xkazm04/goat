@@ -57,7 +57,7 @@ function StyleCard({ style, isSelected, isRecommended, onClick, compact }: Style
         "relative rounded-xl overflow-hidden transition-all duration-200",
         compact ? "h-20" : "h-28",
         isSelected
-          ? "ring-2 ring-cyan-500 ring-offset-2 ring-offset-gray-900 shadow-lg shadow-cyan-500/20"
+          ? "ring-2 ring-brand ring-offset-2 ring-offset-gray-900 shadow-lg shadow-brand/20"
           : "ring-1 ring-gray-700 hover:ring-gray-500"
       )}
       style={{
@@ -65,7 +65,7 @@ function StyleCard({ style, isSelected, isRecommended, onClick, compact }: Style
       }}
     >
       {/* Overlay for text readability */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+      <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/30 to-transparent" />
 
       {/* Content */}
       <div className="relative h-full flex flex-col justify-end p-2">
@@ -78,7 +78,7 @@ function StyleCard({ style, isSelected, isRecommended, onClick, compact }: Style
             </span>
           )}
           {isRecommended && !style.isPremium && (
-            <span className="px-1.5 py-0.5 text-[10px] font-medium bg-cyan-500/90 text-white rounded-full">
+            <span className="px-1.5 py-0.5 text-[10px] font-medium bg-brand/90 text-white rounded-full">
               Recommended
             </span>
           )}
@@ -102,7 +102,7 @@ function StyleCard({ style, isSelected, isRecommended, onClick, compact }: Style
       {isSelected && (
         <motion.div
           layoutId="style-selection"
-          className="absolute inset-0 border-2 border-cyan-400 rounded-xl pointer-events-none"
+          className="absolute inset-0 border-2 border-brand-hover rounded-xl pointer-events-none"
           initial={false}
           transition={{ type: "spring", stiffness: 500, damping: 30 }}
         />
@@ -195,7 +195,7 @@ export function AIStyleSelector({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Wand2 className="w-4 h-4 text-cyan-400" />
+          <Wand2 className="w-4 h-4 text-brand-hover" />
           <h3 className="text-sm font-semibold text-white">AI Art Style</h3>
         </div>
         {category && (
@@ -214,7 +214,7 @@ export function AIStyleSelector({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search styles..."
-            className="w-full pl-9 pr-4 py-2 text-sm bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500"
+            className="w-full pl-9 pr-4 py-2 text-sm bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-hidden focus:ring-2 focus:ring-brand/50 focus:border-brand"
           />
         </div>
       )}
@@ -222,7 +222,7 @@ export function AIStyleSelector({
       {/* Recommended Styles */}
       {recommended.length > 0 && (
         <div className="space-y-2">
-          <div className="flex items-center gap-1.5 text-xs text-cyan-400">
+          <div className="flex items-center gap-1.5 text-xs text-brand-hover">
             <Sparkles className="w-3 h-3" />
             <span>Recommended for {category || 'your category'}</span>
           </div>
@@ -324,7 +324,7 @@ export function AIStyleSelector({
                     value={customPrompt}
                     onChange={(e) => handleCustomPromptChange(e.target.value)}
                     placeholder="Add custom details... e.g., 'Include a trophy icon' or 'Use darker colors'"
-                    className="w-full h-20 px-3 py-2 text-sm bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 resize-none"
+                    className="w-full h-20 px-3 py-2 text-sm bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-hidden focus:ring-2 focus:ring-brand/50 focus:border-brand resize-none"
                     maxLength={500}
                   />
                   <div className="flex items-center justify-between text-[10px] text-gray-500">
@@ -345,7 +345,7 @@ export function AIStyleSelector({
       <div className="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
         <div className="flex items-start gap-3">
           <div
-            className="w-10 h-10 rounded-lg flex-shrink-0"
+            className="w-10 h-10 rounded-lg shrink-0"
             style={{ background: getAIStyleConfig(selectedStyle).thumbnailGradient }}
           />
           <div className="flex-1 min-w-0">

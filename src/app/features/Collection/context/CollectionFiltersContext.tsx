@@ -18,7 +18,7 @@
  */
 
 import React, { createContext, useContext, ReactNode } from 'react';
-import { CollectionFilter, CollectionGroup, CollectionItem, CollectionStats } from '../types';
+import { CollectionFilter, CollectionGroup, CollectionItem, ItemPanelStats } from '../types';
 
 export interface CollectionFiltersContextValue {
   // Filter state
@@ -33,7 +33,7 @@ export interface CollectionFiltersContextValue {
   groups: CollectionGroup[];
   filteredItems: CollectionItem[];
   selectedGroups: CollectionGroup[];
-  stats: CollectionStats;
+  stats: ItemPanelStats;
 
   // Filter actions
   setSearchTerm: (term: string) => void;

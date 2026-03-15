@@ -162,7 +162,7 @@ export function MobileFacetDrawer({
               </div>
 
               <button
-                className="p-2 hover:bg-accent rounded-lg transition-colors"
+                className="p-2 filter-hover rounded-lg transition-colors"
                 onClick={onClose}
                 aria-label="Close filters"
               >
@@ -210,7 +210,7 @@ export function MobileFacetDrawer({
               {/* Clear all */}
               {activeCount > 0 && (
                 <button
-                  className="flex-1 py-3 rounded-lg border border-border hover:bg-accent transition-colors"
+                  className="flex-1 py-3 rounded-lg border border-border filter-hover transition-colors"
                   onClick={onClearAll}
                 >
                   Clear all
@@ -222,7 +222,7 @@ export function MobileFacetDrawer({
                 className={cn(
                   'flex-1 py-3 rounded-lg transition-colors',
                   'bg-primary text-primary-foreground hover:bg-primary/90',
-                  activeCount === 0 && 'flex-[2]'
+                  activeCount === 0 && 'flex-2'
                 )}
                 onClick={handleApply}
               >

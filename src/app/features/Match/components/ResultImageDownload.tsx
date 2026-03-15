@@ -165,7 +165,7 @@ export function ResultImageDownload(props: ResultImageDownloadProps) {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={smoothTransition}
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/60 backdrop-blur-xl z-60 flex items-center justify-center p-4"
           onClick={onClose}
         >
           <motion.div
@@ -199,7 +199,7 @@ export function ResultImageDownload(props: ResultImageDownloadProps) {
               <motion.button
                 onClick={onClose}
                 className="text-gray-400 hover:text-white hover:bg-gray-800 transition-all duration-200 p-1.5 rounded-lg
-                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 active:scale-95"
+                  focus-ring active:scale-95"
                 aria-label="Close download dialog"
                 data-testid="download-close-btn"
                 whileHover={{ scale: 1.1 }}
@@ -227,7 +227,7 @@ export function ResultImageDownload(props: ResultImageDownloadProps) {
                       onClick={() => setSelectedOption(option)}
                       aria-pressed={selectedOption === option}
                       className={`w-full text-left p-3 rounded-lg transition-all duration-200
-                        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900
+                        focus-ring
                         ${
                         selectedOption === option
                           ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25'
@@ -287,13 +287,13 @@ export function ResultImageDownload(props: ResultImageDownloadProps) {
                   aria-checked={includeMetadata}
                   aria-label="Include metadata in image"
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-200
-                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-800
+                    focus-ring
                     ${includeMetadata ? 'bg-blue-600 shadow-md shadow-blue-500/30' : 'bg-gray-600 hover:bg-gray-500'}`}
                   data-testid="download-metadata-toggle"
                   whileTap={{ scale: 0.95 }}
                 >
                   <motion.span
-                    className="inline-block h-4 w-4 rounded-full bg-white shadow-sm"
+                    className="inline-block h-4 w-4 rounded-full bg-white shadow-xs"
                     animate={{
                       x: includeMetadata ? 24 : 4,
                     }}

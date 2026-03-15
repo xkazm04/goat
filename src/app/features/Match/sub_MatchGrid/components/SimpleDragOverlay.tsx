@@ -12,11 +12,13 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { PlaceholderImage } from "@/components/ui/placeholder-image";
+import { ImageFallback } from "@/components/ui/ImageFallback";
 
 interface DraggableItem {
   id?: string;
   title: string;
   image_url?: string | null;
+  category?: string | null;
 }
 
 interface SimpleDragOverlayProps {
@@ -55,18 +57,18 @@ export function SimpleDragOverlay({ item, targetPosition }: SimpleDragOverlayPro
         eager={true}
         blurAmount={10}
         fallbackComponent={
-          <div className="w-full h-full bg-gray-800 flex items-center justify-center">
-            <span className="text-[10px] text-gray-400 text-center px-1 truncate">
-              {item.title}
-            </span>
-          </div>
+          <ImageFallback
+            title={item.title}
+            category={item.category}
+            size="sm"
+          />
         }
       />
 
       {/* Target position badge */}
       {typeof targetPosition === "number" && (
         <div
-          className="absolute -top-1 -right-1 bg-cyan-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow-lg"
+          className="absolute -top-1 -right-1 bg-brand text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow-lg"
           data-testid="position-badge"
         >
           #{targetPosition + 1}

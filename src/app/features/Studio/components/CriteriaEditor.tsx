@@ -23,6 +23,7 @@ import {
   Wand2,
   BarChart3,
 } from 'lucide-react';
+import { SURFACE_ELEVATION } from '@/components/visual/depth/depth-tokens';
 import { cn } from '@/lib/utils';
 import { useStudioCriteria, useStudioMetadata, CriteriaMode } from '@/stores/studio-store';
 import {
@@ -242,7 +243,8 @@ interface EmptyStateProps {
 function EmptyState({ onEnablePreset, hasTemplate, templateName }: EmptyStateProps) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
-      <div className="w-20 h-20 rounded-2xl bg-gray-800/50 border border-gray-700/50 flex items-center justify-center mb-6">
+      <div className="w-20 h-20 rounded-2xl border border-gray-700/50 flex items-center justify-center mb-6"
+        style={{ backgroundColor: SURFACE_ELEVATION.raised }}>
         <BarChart3 className="w-10 h-10 text-gray-600" />
       </div>
       <h3 className="text-lg font-medium text-gray-300 mb-2">
@@ -336,7 +338,8 @@ function PresetView({ profile, onProfileChange, onCustomize }: PresetViewProps) 
       {/* Split Layout: Config (60%) | Preview (40%) */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* Left: Configuration (read-only for presets) */}
-        <div className="lg:col-span-3 bg-gray-900/50 rounded-xl p-4 border border-gray-800/50">
+        <div className="lg:col-span-3 rounded-xl p-4 border border-gray-800/50"
+          style={{ backgroundColor: SURFACE_ELEVATION.sunken }}>
           <CriteriaDisplayConfigurator
             criteria={profile.criteria}
             onCriteriaChange={handleCriteriaChange}
@@ -347,7 +350,8 @@ function PresetView({ profile, onProfileChange, onCustomize }: PresetViewProps) 
         </div>
 
         {/* Right: Preview */}
-        <div className="lg:col-span-2 bg-gray-900/50 rounded-xl p-4 border border-gray-800/50">
+        <div className="lg:col-span-2 rounded-xl p-4 border border-gray-800/50"
+          style={{ backgroundColor: SURFACE_ELEVATION.sunken }}>
           <CardPreviewPanel
             criteria={profile.criteria}
             criteriaColors={criteriaColors}
@@ -385,7 +389,7 @@ function CustomEditor({ profile, onProfileChange, suggestedTemplate }: CustomEdi
             weight: 50,
             minScore: 1,
             maxScore: 10,
-            displayConfig: { displayType: 'ring' },
+            displayConfig: { displayType: 'ring-3' },
           },
           {
             id: `criterion-${Date.now()}-2`,
@@ -458,7 +462,8 @@ function CustomEditor({ profile, onProfileChange, suggestedTemplate }: CustomEdi
       {/* Split Layout: Config (60%) | Preview (40%) */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* Left: Configuration */}
-        <div className="lg:col-span-3 bg-gray-900/50 rounded-xl p-4 border border-gray-800/50">
+        <div className="lg:col-span-3 rounded-xl p-4 border border-gray-800/50"
+          style={{ backgroundColor: SURFACE_ELEVATION.sunken }}>
           <CriteriaDisplayConfigurator
             criteria={profile.criteria}
             onCriteriaChange={handleCriteriaChange}
@@ -469,7 +474,8 @@ function CustomEditor({ profile, onProfileChange, suggestedTemplate }: CustomEdi
         </div>
 
         {/* Right: Preview */}
-        <div className="lg:col-span-2 bg-gray-900/50 rounded-xl p-4 border border-gray-800/50">
+        <div className="lg:col-span-2 rounded-xl p-4 border border-gray-800/50"
+          style={{ backgroundColor: SURFACE_ELEVATION.sunken }}>
           <CardPreviewPanel
             criteria={profile.criteria}
             criteriaColors={criteriaColors}

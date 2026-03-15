@@ -6,3 +6,4 @@
 export { CriteriaProfileSelector, InputModeSelector } from './CriteriaProfileSelector';
 export { CriteriaScoreInput } from './CriteriaScoreInput';
 export { ListSettingsModal } from './ListSettingsModal';
+export { ComparisonDrawer, ComparisonPinButton } from './ComparisonDrawer';

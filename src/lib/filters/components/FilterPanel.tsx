@@ -7,6 +7,7 @@
 
 import React, { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronDown, Check, X, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type {
   FilterCondition,
@@ -23,6 +24,8 @@ import {
   FILTER_COLORS,
   COMBINATOR_LABELS,
   FILTER_ANIMATIONS,
+  FILTER_TIMING,
+  FILTER_SCALE,
   DEFAULT_FILTER_FIELDS,
 } from '../constants';
 
@@ -149,8 +152,8 @@ export function FilterPanel({
         <button
           className={cn(
             'w-full flex items-center justify-between px-4 py-3',
-            'hover:bg-accent/50 transition-colors',
-            'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-inset'
+            'filter-hover transition-colors',
+            'focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-inset'
           )}
           onClick={toggleExpand}
         >
@@ -164,10 +167,10 @@ export function FilterPanel({
           </div>
           <motion.span
             animate={{ rotate: isExpanded ? 180 : 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: FILTER_TIMING.standard }}
             className="text-muted-foreground"
           >
-            ▼
+            <ChevronDown size={16} />
           </motion.span>
         </button>
       )}
@@ -205,7 +208,7 @@ export function FilterPanel({
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: 20 }}
-                      transition={{ delay: index * 0.05 }}
+                      transition={{ delay: index * FILTER_TIMING.stagger }}
                     >
                       <FilterConditionRow
                         condition={condition}
@@ -229,12 +232,12 @@ export function FilterPanel({
                     'flex items-center gap-1.5 px-3 py-1.5 text-sm',
                     'bg-accent hover:bg-accent/80 rounded-md transition-colors',
                     config.conditions.length >= maxConditions &&
-                      'opacity-50 cursor-not-allowed'
+                      'filter-disabled'
                   )}
                   onClick={handleAddCondition}
                   disabled={config.conditions.length >= maxConditions}
                 >
-                  <span>+</span>
+                  <Plus size={14} />
                   <span>Add Filter</span>
                 </button>
 
@@ -372,15 +375,15 @@ function FilterConditionRow({
         onClick={() => onUpdate({ enabled: !condition.enabled })}
         title={condition.enabled ? 'Disable filter' : 'Enable filter'}
       >
-        {condition.enabled && <span className="text-xs">✓</span>}
+        {condition.enabled && <Check size={10} />}
       </button>
 
       {/* Field selector */}
       <select
         className={cn(
-          'flex-shrink-0 px-2 py-1 text-sm bg-transparent rounded',
+          'shrink-0 px-2 py-1 text-sm bg-transparent rounded',
           'border border-transparent hover:border-border focus:border-ring',
-          'focus:outline-none cursor-pointer'
+          'focus:outline-hidden cursor-pointer'
         )}
         value={field.id}
         onChange={(e) => handleFieldChange(e.target.value)}
@@ -395,9 +398,9 @@ function FilterConditionRow({
       {/* Operator selector */}
       <select
         className={cn(
-          'flex-shrink-0 px-2 py-1 text-sm bg-transparent rounded',
+          'shrink-0 px-2 py-1 text-sm bg-transparent rounded',
           'border border-transparent hover:border-border focus:border-ring',
-          'focus:outline-none cursor-pointer'
+          'focus:outline-hidden cursor-pointer'
         )}
         value={condition.operator}
         onChange={(e) =>
@@ -427,14 +430,14 @@ function FilterConditionRow({
       {/* Remove button */}
       <button
         className={cn(
-          'flex-shrink-0 w-6 h-6 rounded flex items-center justify-center',
+          'shrink-0 w-6 h-6 rounded flex items-center justify-center',
           'text-muted-foreground hover:text-destructive hover:bg-destructive/10',
           'transition-colors'
         )}
         onClick={onRemove}
         title="Remove filter"
       >
-        ✕
+        <X size={14} />
       </button>
     </div>
   );
@@ -479,7 +482,7 @@ function FilterValueInput({
           className={cn(
             'w-20 px-2 py-1 text-sm rounded',
             'bg-background border border-border',
-            'focus:outline-none focus:ring-1 focus:ring-ring'
+            'focus:outline-hidden focus:ring-1 focus:ring-ring'
           )}
           value={rangeValue.min}
           min={range?.min}
@@ -494,7 +497,7 @@ function FilterValueInput({
           className={cn(
             'w-20 px-2 py-1 text-sm rounded',
             'bg-background border border-border',
-            'focus:outline-none focus:ring-1 focus:ring-ring'
+            'focus:outline-hidden focus:ring-1 focus:ring-ring'
           )}
           value={rangeValue.max}
           min={range?.min}
@@ -543,7 +546,7 @@ function FilterValueInput({
         className={cn(
           'flex-1 min-w-[120px] px-2 py-1 text-sm rounded',
           'bg-background border border-border',
-          'focus:outline-none focus:ring-1 focus:ring-ring'
+          'focus:outline-hidden focus:ring-1 focus:ring-ring'
         )}
         value={String(value || '')}
         onChange={(e) => onChange(e.target.value)}
@@ -565,7 +568,7 @@ function FilterValueInput({
         className={cn(
           'w-20 px-2 py-1 text-sm rounded',
           'bg-background border border-border',
-          'focus:outline-none focus:ring-1 focus:ring-ring'
+          'focus:outline-hidden focus:ring-1 focus:ring-ring'
         )}
         value={String(value)}
         onChange={(e) => onChange(e.target.value === 'true')}
@@ -584,7 +587,7 @@ function FilterValueInput({
         className={cn(
           'flex-1 min-w-[80px] px-2 py-1 text-sm rounded',
           'bg-background border border-border',
-          'focus:outline-none focus:ring-1 focus:ring-ring'
+          'focus:outline-hidden focus:ring-1 focus:ring-ring'
         )}
         value={value as number}
         min={range?.min}
@@ -603,7 +606,7 @@ function FilterValueInput({
         className={cn(
           'flex-1 min-w-[140px] px-2 py-1 text-sm rounded',
           'bg-background border border-border',
-          'focus:outline-none focus:ring-1 focus:ring-ring'
+          'focus:outline-hidden focus:ring-1 focus:ring-ring'
         )}
         value={value ? new Date(value as string).toISOString().split('T')[0] : ''}
         onChange={(e) => onChange(new Date(e.target.value))}
@@ -618,7 +621,7 @@ function FilterValueInput({
       className={cn(
         'flex-1 min-w-[120px] px-2 py-1 text-sm rounded',
         'bg-background border border-border',
-        'focus:outline-none focus:ring-1 focus:ring-ring'
+        'focus:outline-hidden focus:ring-1 focus:ring-ring'
       )}
       value={String(value || '')}
       placeholder={placeholder || 'Enter value...'}
@@ -668,8 +671,8 @@ export function FilterPill({
           : 'bg-muted/50 border-muted text-muted-foreground'
       )}
       onClick={onToggle}
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
+      whileHover={{ scale: FILTER_SCALE.hover }}
+      whileTap={{ scale: FILTER_SCALE.tap }}
     >
       {field.icon && <span>{field.icon}</span>}
       <span className="font-medium">{field.name}</span>
@@ -684,7 +687,7 @@ export function FilterPill({
           onRemove();
         }}
       >
-        ✕
+        <X size={12} />
       </button>
     </motion.div>
   );

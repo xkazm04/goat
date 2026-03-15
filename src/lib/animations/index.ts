@@ -6,3 +6,4 @@
  */
 
 export * from './scroll-triggers';
+export * from './motion-presets';

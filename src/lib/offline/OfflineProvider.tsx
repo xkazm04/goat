@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useMemo, ReactNode } from 'react';
 import { initializeOfflineSessionSync, triggerSync } from './sessionStoreIntegration';
 import { useServiceWorker, useServiceWorkerUpdate } from './useServiceWorker';
 import { useNetworkStatus } from './useNetworkStatus';
@@ -8,6 +8,8 @@ import { useOfflineSync, UseOfflineSyncReturn } from './useOfflineSync';
 import { ConflictRecord, ConflictResolutionStrategy } from './types';
 import { SyncStatusIndicator } from '@/app/features/Match/components/SyncStatusIndicator';
 import { ConflictResolutionModal } from '@/app/features/Match/components/ConflictResolutionModal';
+import { UnsavedChangesBanner } from './UnsavedChangesBanner';
+import { useUnsavedChangesGuard } from './useUnsavedChangesGuard';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RefreshCw, X } from 'lucide-react';
 
@@ -65,6 +67,9 @@ export function OfflineProvider({
   const [isInitialized, setIsInitialized] = useState(false);
   const [showConflictModal, setShowConflictModal] = useState(false);
   const [showUpdateBanner, setShowUpdateBanner] = useState(false);
+
+  // Unsaved changes guard (beforeunload + visibilitychange sync)
+  useUnsavedChangesGuard();
 
   // Network status
   const { isOnline, isOffline, isSlow } = useNetworkStatus();
@@ -143,7 +148,7 @@ export function OfflineProvider({
     [resolveConflict, conflicts.length]
   );
 
-  const contextValue: OfflineContextValue = {
+  const contextValue: OfflineContextValue = useMemo(() => ({
     isOnline,
     isOffline,
     isSlow,
@@ -158,11 +163,20 @@ export function OfflineProvider({
     retryFailed,
     hasUpdate,
     applyUpdate: handleApplyUpdate,
-  };
+  }), [
+    isOnline, isOffline, isSlow,
+    isSyncing, hasPendingChanges, syncState.pendingChanges, syncState.lastSyncedAt,
+    hasConflicts, conflicts,
+    handleResolveConflict, syncNow, retryFailed,
+    hasUpdate, handleApplyUpdate,
+  ]);
 
   return (
     <OfflineContext.Provider value={contextValue}>
       {children}
+
+      {/* Unsaved Changes Banner */}
+      <UnsavedChangesBanner />
 
       {/* Update Banner */}
       <AnimatePresence>

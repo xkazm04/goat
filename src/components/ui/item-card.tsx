@@ -17,12 +17,12 @@ const itemCardVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-gray-800 border border-gray-700 hover:border-cyan-500 hover:shadow-lg hover:shadow-cyan-500/20",
-        ghost: "bg-transparent hover:bg-gray-800/50",
-        solid: "bg-gray-900 border-2 border-gray-800 hover:border-cyan-400",
+        default: "bg-[var(--surface-card)] border border-[var(--border-card)] hover:border-brand hover:shadow-lg hover:shadow-brand/20",
+        ghost: "bg-transparent hover:bg-[var(--surface-overlay)]",
+        solid: "bg-[var(--surface-deep)] border-2 border-[var(--surface-card)] hover:border-brand-hover",
       },
       layout: {
-        grid: "aspect-[4/5]",
+        grid: "aspect-4/5",
         list: "flex items-center gap-3 p-2",
         compact: "aspect-video",
       },
@@ -122,6 +122,12 @@ export interface ItemCardProps
   /** Callback when image loads successfully */
   onImageLoad?: () => void;
 
+  /** Enable Letterboxd-style card flip to reveal back content */
+  enableFlip?: boolean;
+
+  /** Content to show on the back face of the card flip */
+  flipContent?: React.ReactNode;
+
   /** Optional score content to display (criteria score display) */
   scoreContent?: React.ReactNode;
 
@@ -141,8 +147,8 @@ export function ItemCardSkeleton({
 }) {
   if (layout === "list") {
     return (
-      <div className={cn("flex items-center gap-3 p-2 rounded-lg bg-gray-800/60 border border-gray-700/50", className)}>
-        <Skeleton className="w-12 h-12 rounded flex-shrink-0" />
+      <div className={cn("flex items-center gap-3 p-2 rounded-lg bg-[var(--surface-overlay)] border border-[var(--border-card-subtle)]", className)}>
+        <Skeleton className="w-12 h-12 rounded shrink-0" />
         <div className="flex-1 min-w-0 space-y-2">
           <Skeleton className="h-4 w-3/4" />
           <Skeleton className="h-3 w-1/2" />
@@ -153,8 +159,8 @@ export function ItemCardSkeleton({
 
   return (
     <div className={cn(
-      "rounded-lg overflow-hidden bg-gray-800 border border-gray-700",
-      layout === "grid" ? "aspect-[4/5]" : "aspect-video",
+      "rounded-lg overflow-hidden bg-[var(--surface-card)] border border-[var(--border-card)]",
+      layout === "grid" ? "aspect-4/5" : "aspect-video",
       className
     )}>
       <Skeleton className="w-full h-full" />
@@ -206,6 +212,8 @@ export const ItemCard = React.forwardRef<HTMLDivElement, ItemCardProps>(
       imagePlaceholder,
       onImageError,
       onImageLoad,
+      enableFlip = false,
+      flipContent,
       scoreContent,
       scorePosition,
       variant,
@@ -219,14 +227,32 @@ export const ItemCard = React.forwardRef<HTMLDivElement, ItemCardProps>(
     },
     ref
   ) => {
+    const [isFlipped, setIsFlipped] = React.useState(false);
+
     // Handle keyboard interaction (Enter/Space)
     const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (enableFlip && (e.key === "Enter" || e.key === " ")) {
+        e.preventDefault();
+        setIsFlipped((prev) => !prev);
+        return;
+      }
+      if (enableFlip && e.key === "Escape" && isFlipped) {
+        e.preventDefault();
+        setIsFlipped(false);
+        return;
+      }
       if (onClick && (e.key === "Enter" || e.key === " ")) {
         e.preventDefault();
         onClick(e as unknown as React.MouseEvent<HTMLDivElement>);
       }
       onKeyDown?.(e);
     };
+
+    const handleFlipClick = enableFlip
+      ? (e: React.MouseEvent<HTMLDivElement>) => {
+          setIsFlipped((prev) => !prev);
+        }
+      : onClick;
 
     // Show loading skeleton
     if (loading) {
@@ -252,7 +278,7 @@ export const ItemCard = React.forwardRef<HTMLDivElement, ItemCardProps>(
     // Common className
     const cardClassName = cn(
       itemCardVariants({ variant, layout, interactive, state }),
-      focusRing && "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900",
+      focusRing && "focus-ring",
       hoverEffectClasses[hoverEffect],
       className
     );
@@ -265,7 +291,7 @@ export const ItemCard = React.forwardRef<HTMLDivElement, ItemCardProps>(
           <>
             {/* Image thumbnail */}
             {imageComponent || (progressive ? (
-              <div className="w-12 h-12 rounded overflow-hidden flex-shrink-0 bg-gray-900">
+              <div className="w-12 h-12 rounded overflow-hidden shrink-0 bg-gray-900">
                 <ProgressiveImage
                   src={image}
                   placeholder={imagePlaceholder}
@@ -279,7 +305,7 @@ export const ItemCard = React.forwardRef<HTMLDivElement, ItemCardProps>(
                 />
               </div>
             ) : (
-              <div className="w-12 h-12 rounded overflow-hidden flex-shrink-0">
+              <div className="w-12 h-12 rounded overflow-hidden shrink-0">
                 <PlaceholderImage
                   src={image}
                   placeholder={imagePlaceholder}
@@ -294,7 +320,7 @@ export const ItemCard = React.forwardRef<HTMLDivElement, ItemCardProps>(
 
             {/* Content */}
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-white truncate">
+              <p className="text-sm font-heading text-white truncate">
                 {title}
               </p>
               {subtitle && (
@@ -306,7 +332,7 @@ export const ItemCard = React.forwardRef<HTMLDivElement, ItemCardProps>(
 
             {/* Actions */}
             {actions && (
-              <div className="flex-shrink-0">
+              <div className="shrink-0">
                 {actions}
               </div>
             )}
@@ -343,15 +369,15 @@ export const ItemCard = React.forwardRef<HTMLDivElement, ItemCardProps>(
 
             {/* Title overlay (default for grid/compact) */}
             {showOverlay && (
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/70 to-transparent p-2">
+              <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/90 via-black/70 to-transparent p-2">
                 <p className={cn(
-                  "font-semibold text-white truncate",
-                  layout === "grid" ? "text-[10px]" : "text-xs"
+                  "font-heading text-white truncate",
+                  layout === "grid" ? "text-2xs" : "text-xs"
                 )}>
                   {title}
                 </p>
                 {subtitle && (
-                  <p className="text-[9px] text-gray-400 truncate mt-0.5">
+                  <p className="text-2xs text-gray-400 truncate mt-0.5">
                     {subtitle}
                   </p>
                 )}
@@ -377,8 +403,8 @@ export const ItemCard = React.forwardRef<HTMLDivElement, ItemCardProps>(
               <div className={cn(
                 "absolute z-10 pointer-events-none",
                 scorePosition === "top-right" && "top-1 right-1",
-                scorePosition === "bottom" && "bottom-0 left-0 right-0 p-1 bg-gradient-to-t from-black/80 to-transparent",
-                !scorePosition && "bottom-0 left-0 right-0 p-1 bg-gradient-to-t from-black/80 to-transparent"
+                scorePosition === "bottom" && "bottom-0 left-0 right-0 p-1 bg-linear-to-t from-black/80 to-transparent",
+                !scorePosition && "bottom-0 left-0 right-0 p-1 bg-linear-to-t from-black/80 to-transparent"
               )}>
                 {scoreContent}
               </div>
@@ -386,7 +412,7 @@ export const ItemCard = React.forwardRef<HTMLDivElement, ItemCardProps>(
 
             {/* Hover indicator */}
             {hoverEffect !== "none" && (
-              <div className="absolute inset-0 bg-cyan-500/0 hover:bg-cyan-500/10 transition-colors pointer-events-none" />
+              <div className="absolute inset-0 bg-brand/0 hover:bg-brand/10 transition-colors pointer-events-none" />
             )}
           </>
         )}
@@ -401,9 +427,33 @@ export const ItemCard = React.forwardRef<HTMLDivElement, ItemCardProps>(
       tabIndex: interactive !== "static" ? tabIndex : undefined,
       'data-testid': testId || `item-card-${title.toLowerCase().replace(/\s+/g, "-")}`,
       className: cardClassName,
-      onClick,
+      onClick: handleFlipClick,
       onKeyDown: handleKeyDown,
     };
+
+    // Flip wrapper content
+    const flipWrappedContent = enableFlip && flipContent ? (
+      <div style={{ perspective: '800px' }} className="w-full h-full">
+        <motion.div
+          className="relative w-full h-full"
+          style={{ transformStyle: 'preserve-3d' }}
+          animate={{ rotateY: isFlipped ? 180 : 0 }}
+          transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+        >
+          {/* Front face */}
+          <div className="absolute inset-0" style={{ backfaceVisibility: 'hidden' }}>
+            {cardContent}
+          </div>
+          {/* Back face */}
+          <div
+            className="absolute inset-0 rounded-lg overflow-hidden bg-gray-900"
+            style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
+          >
+            {flipContent}
+          </div>
+        </motion.div>
+      </div>
+    ) : cardContent;
 
     // Return motion.div or regular div based on animated prop
     if (animated) {
@@ -415,14 +465,14 @@ export const ItemCard = React.forwardRef<HTMLDivElement, ItemCardProps>(
           animate={layout === "list" ? { opacity: 1, x: 0 } : { opacity: 1, scale: 1 }}
           transition={{ delay: animationDelay }}
         >
-          {cardContent}
+          {flipWrappedContent}
         </motion.div>
       );
     }
 
     return (
       <div ref={ref} {...commonWrapperProps}>
-        {cardContent}
+        {flipWrappedContent}
       </div>
     );
   }

@@ -1,273 +1,226 @@
 # Codebase Concerns
 
-**Analysis Date:** 2026-01-26
-
-## Tech Debt
-
-**Multiple Coordinated Zustand Stores Without Strict Sync Protocol:**
-- Issue: The application uses 7+ coordinated Zustand stores (match-store, grid-store, session-store, comparison-store, use-list-store, item-store, backlog-store) that cross-reference each other using `getState()`. There is no formal transaction system ensuring all stores stay synchronized atomically.
-- Files: `src/stores/match-store.ts`, `src/stores/grid-store.ts`, `src/stores/session-store.ts`, `src/stores/comparison-store.ts`
-- Impact: If a drag-and-drop operation fails mid-way (e.g., after grid-store updates but before session-store syncs), the stores can become inconsistent. No rollback mechanism exists. The GridOrchestrator exists but is not universally used.
-- Fix approach:
-  1. Enforce transaction wrapper for all multi-store mutations
-  2. Document store dependency graph in centralalized registry (`src/stores/registry.ts`)
-  3. Add pre/post-sync validation hooks to catch inconsistencies early
-  4. Consider event sourcing pattern for non-critical mutations
-
-**Lazy Imports With Circular Dependency Workarounds:**
-- Issue: Multiple stores use `createLazyStoreAccessor()` and `require()` at runtime to avoid circular dependencies (grid-store loading backlog-store, GlobalOrchestrator loading all stores). This is a code smell indicating the store architecture has tight coupling.
-- Files: `src/stores/grid-store.ts` (lines 48-50), `src/lib/orchestration/GlobalOrchestrator.ts` (lines 50-70)
-- Impact: Runtime module loading is error-prone and difficult to reason about. If a lazy-loaded store fails to load, the error may only surface when that action is triggered, not at app startup.
-- Fix approach:
-  1. Restructure stores into layers: UI stores (match, grid, comparison) → Session stores (session, item) → Data stores (backlog)
-  2. Use explicit dependency injection instead of lazy loading
-  3. Create store factory that initializes in correct order at app root
-
-**Uncleared Timers and Intervals Throughout Codebase:**
-- Issue: `setInterval` and `setTimeout` are used extensively but cleanup logic is inconsistent. Multiple locations use intervals without proper ref tracking or cleanup.
-- Files: `src/providers/BacklogProvider.tsx` (line 119, 122), `src/stores/activity-store.ts` (line 145), `src/stores/task-store.ts` (line 443), `src/lib/offline/SyncEngine.ts` (line 397), `src/components/RichItemCard/MiniGallery.tsx` (line 62)
-- Impact: Memory leaks accumulate over long sessions. Background sync, analytics, and auto-advance features may pile up multiple interval instances if components remount.
-- Fix approach:
-  1. Create `useInterval` hook with automatic cleanup
-  2. Audit all `setInterval` calls and replace with hook
-  3. Use `AbortController` for fetch-based polls
-  4. Add memory profiling test to catch interval leaks
-
-**Deprecated APIs and Legacy Code Patterns:**
-- Issue: Multiple deprecated wrappers exist for backward compatibility (`transfer-validator.ts`, `composition-to-api.ts`, `collection.ts`, several type transformers). These are technical debt that complicates the codebase.
-- Files: `src/lib/grid/transfer-validator.ts`, `src/types/list-intent-transformers.ts`, `src/lib/api/collection.ts`
-- Impact: New developers are confused about which API to use. Maintenance burden increases with duplicated logic.
-- Fix approach:
-  1. Create deprecation timeline (e.g., remove in next major version)
-  2. Add deprecation warnings to console in development
-  3. Systematically migrate usages from deprecated to new API
-  4. Remove deprecated code once migration is complete
-
-## Known Bugs
-
-**Race Condition in Item Assignment (Double-Drag):**
-- Symptoms: Rapid double-clicking drag operations can cause the same item to be assigned to multiple grid positions if the first `markItemAsUsed()` call hasn't completed before the second drag starts.
-- Files: `src/stores/grid-store.ts` (lines 68-87 define itemsBeingAssigned lock, but usage may not cover all race windows)
-- Trigger: User performs quick consecutive drag operations on the same item while connection is slow
-- Workaround: Lock is in place but needs verification that it covers the entire validation-assignment window
-- Fix: Add integration tests for rapid drag sequences; verify itemLock acquisition timing
-
-**Grid Position Indexing Off-by-One in UI Display:**
-- Symptoms: Grid positions sometimes display as 0-based internally but 1-based in UI, causing confusion in validation messages and position display.
-- Files: `src/stores/grid-store.ts`, `src/app/features/Match/` components
-- Trigger: Occurs when position validation messages are logged or when custom position setters bypass the conversion layer
-- Workaround: Comments in grid-store acknowledge this (lines 166-167)
-- Fix: Create strict position abstraction that handles conversion at boundaries only
-
-**Backlog Group Search Not Respecting Real-Time Updates:**
-- Symptoms: When backlog groups are updated in one store, the local search in session-store doesn't reflect changes until full re-sync.
-- Files: `src/stores/session-store.ts` (searchGroups function), `src/stores/backlog/actions-data.ts`
-- Trigger: User adds new items to a group while maintaining search filter - results remain filtered on old data
-- Workaround: Pressing refresh or switching lists forces re-sync
-- Fix: Add watchers between backlog-store updates and session-store search cache invalidation
-
-## Security Considerations
-
-**Service Role Key Exposed in Client Code:**
-- Risk: `SUPABASE_SERVICE_ROLE_KEY` is used directly in some API routes like `src/app/api/og/[listId]/route.tsx` (line 37) and `src/app/share/[code]/layout.tsx` (line 12). While these are server routes, any accidental client-side import could leak admin database access.
-- Files: `src/app/api/og/[listId]/route.tsx`, `src/app/share/[code]/layout.tsx`, `src/app/share/[code]/page.tsx`
-- Current mitigation: Routes are marked as server-only via `route.tsx`, but no build-time check prevents client-side usage
-- Recommendations:
-  1. Add lint rule to block `SUPABASE_SERVICE_ROLE_KEY` in `src/` directory (except API routes)
-  2. Use environment variable prefixing to separate server-only vars (`SERVER_ONLY_*`)
-  3. Document that service role keys must ONLY be used in `src/app/api/` routes
-  4. Add secret scanning to CI/CD pipeline
-
-**API Key Validation Mocked in Production:**
-- Risk: `validateApiKey()` function in `src/lib/api/public-api.ts` (line 230) is a mock that always returns true with hardcoded keys. This means public API endpoints have no actual authentication.
-- Files: `src/lib/api/public-api.ts` (lines 230-244)
-- Impact: Any request with a header matching hardcoded API keys will be accepted. No rate limiting. Public endpoints are exposed to abuse.
-- Recommendations:
-  1. Implement real database-backed API key validation
-  2. Add rate limiting with Redis or similar
-  3. Add request signing/HMAC validation
-  4. Log all API key usage for audit trails
-  5. Rotate keys regularly
-
-**No Input Sanitization on User-Generated Content:**
-- Risk: Item titles, descriptions, and group names are stored and displayed without sanitization. XSS vulnerability possible if list items contain malicious HTML/JavaScript.
-- Files: All API create/update endpoints (src/app/api/lists/*), collection components
-- Current mitigation: React by default escapes text content, but rich text features may bypass this
-- Recommendations:
-  1. Validate and sanitize all string inputs with DOMPurify before storage
-  2. Use Zod schemas with `.max()` and sanitization transforms
-  3. Audit rich-text editor integrations for XSS vulnerabilities
-  4. Add Content Security Policy headers
-
-## Performance Bottlenecks
-
-**1000+ Line Store Files (Grid and Ranking Stores):**
-- Problem: `src/stores/grid-store.ts` (1008 lines), `src/stores/ranking-store.ts` (746 lines), `src/lib/orchestration/GlobalOrchestrator.ts` (1010 lines) are monolithic. Every action on these stores triggers re-renders of all subscribers.
-- Files: `src/stores/grid-store.ts`, `src/stores/ranking-store.ts`, `src/lib/orchestration/GlobalOrchestrator.ts`
-- Cause: No granular selector system. Components subscribe to entire store state, so any grid mutation (even unrelated items) causes re-render.
-- Improvement path:
-  1. Split stores by concern (grid + rendering, grid + persistence, grid + validation)
-  2. Use Zustand's `subscribeWithSelector` to enable granular subscriptions
-  3. Benchmark before/after: measure re-render counts and execution time
-  4. Add React DevTools Profiler integration
-
-**Inefficient Backlog Normalization/Denormalization:**
-- Problem: Session-store maintains both normalized (`normalizedData`) and denormalized (`backlogGroups`) representations. Every denormalization is a full-tree traversal. Cache is single-entry.
-- Files: `src/stores/session-store.ts` (lines 71-83), `src/stores/item-store/normalized-session.ts`
-- Cause: Attempting to optimize storage while keeping UI-friendly format. Middle ground not achieved.
-- Improvement path:
-  1. Profile actual usage: how often is denormalization called?
-  2. If frequent, implement multi-entry LRU cache
-  3. If rare, just denormalize on demand (simpler code)
-  4. Consider memoization at component level instead of store level
-
-**No Pagination in Large Backlog Groups:**
-- Problem: Collection components load entire backlog group (potentially 1000+ items) into VirtualizedCollectionGrid. No pagination or cursor-based loading.
-- Files: `src/app/features/Collection/components/VirtualizedCollectionGrid.tsx`, `src/stores/backlog/actions-data.ts`
-- Cause: Virtualization handles rendering but all items are in memory
-- Improvement path:
-  1. Implement cursor-based pagination in backlog API
-  2. Load next batch only when user scrolls near end
-  3. Keep max 3 batches in memory at once
-  4. Add metrics to track batch load times
-
-**Excessive useEffect Dependencies Causing Render Cascades:**
-- Problem: Many useEffect hooks in backlog-related code use broad dependencies (`[state]`, `[backlogGroups]`) causing chain reactions of re-renders.
-- Files: `src/providers/BacklogProvider.tsx`, `src/stores/backlog/store.ts`
-- Cause: Defensive programming but overly broad
-- Improvement path:
-  1. Audit useEffect dependency arrays with ESLint plugin
-  2. Extract stable dependencies into useCallback/useMemo
-  3. Split effects into finer-grained dependencies
-
-## Fragile Areas
-
-**Drag & Drop State Management:**
-- Files: `src/stores/grid-store.ts`, `src/app/features/Match/MatchGrid/lib/dragHandlers.ts`, `src/lib/dnd/`
-- Why fragile: Multiple handlers (grid-store.handleDragEnd, dragHandlers, transfer-protocol) are loosely coordinated. The item lock mechanism (`itemsBeingAssigned`) is a Set in module scope without cleanup. Tests for edge cases (rapid drags, network failures during transfer) are minimal (34 test files total for 762 source files = ~4% coverage ratio).
-- Safe modification:
-  1. Add comprehensive drag-drop scenario tests before changing handlers
-  2. Use state machine pattern for drag lifecycle (idle → dragging → validating → assigned)
-  3. Document the full flow: DragEnd → grid-store.handleDragEnd → backlog-store.markItemAsUsed → session-store.updateSessionGridItems
-- Test coverage gaps: No tests for concurrent drag operations, network timeouts during drag, or store inconsistency recovery
-
-**Multi-Store Session Persistence:**
-- Files: `src/stores/session-store.ts`, `src/lib/offline/OfflineStorage.ts`, `src/lib/offline/SyncEngine.ts`
-- Why fragile: Session data is saved to IndexedDB and localStorage in separate operations. If app crashes between saves, different stores may be out of sync. IndexedDB quota can be silently exceeded.
-- Safe modification:
-  1. Add session integrity checks on app startup
-  2. Implement transaction log for offline operations
-  3. Monitor quota usage and gracefully degrade
-- Test coverage gaps: No tests for quota exhaustion, IndexedDB corruption, or multi-tab sync conflicts
-
-**Offline Mode Sync Queue:**
-- Files: `src/stores/backlog/actions-offline.ts` (line 72 TODO), `src/lib/offline/SyncEngine.ts`
-- Why fragile: TODO comment at line 72 indicates API calls to persist offline changes to backend are not implemented. Users think data is synced but it's only local.
-- Safe modification:
-  1. Complete the backend sync API
-  2. Add confirmation UI when syncing offline queue
-  3. Handle merge conflicts if local changes conflict with server state
-- Test coverage gaps: No integration tests for offline-to-online transition
-
-## Scaling Limits
-
-**Grid Size Hard Cap at 50:**
-- Current capacity: Max 50 positions per ranking (defined in grid-store.ts)
-- Limit: Grid component uses fixed-size array. Renders all 50 slots even if user only wants top 10. Memory footprint grows linearly.
-- Scaling path:
-  1. Make grid size dynamic based on list configuration
-  2. Only render visible slots (virtualization on grid itself, not just backlog)
-  3. Lazy-load position data as user drags to new areas
-
-**Image Loading Unbounded in Backlog:**
-- Current capacity: All items in group loaded with image URLs, images loaded on-demand
-- Limit: No image caching policy. Network requests spike on large groups. No CDN integration mentioned.
-- Scaling path:
-  1. Implement image request deduplication and caching
-  2. Use adaptive image quality based on device/network (adaptive-loader.ts has infrastructure)
-  3. Add CDN with image optimization (srcset generation)
-  4. Implement progressive image loading (placeholder → low quality → high quality)
-
-**Session Store Normalized Data Unbounded:**
-- Current capacity: Entire backlog for all categories can be stored in normalized format
-- Limit: No pruning strategy. Long-term sessions accumulate memory.
-- Scaling path:
-  1. Implement LRU cache with size limits on normalizedData
-  2. Lazy-load categories on demand
-  3. Periodically prune unused category data
-  4. Monitor heap size and alert when approaching limits
-
-## Dependencies at Risk
-
-**Clerk Authentication (Planned Migration to Supabase Auth):**
-- Risk: Project documentation mentions planned migration away from Clerk but code still uses Clerk extensively. Migration is incomplete.
-- Impact: Dual authentication systems may exist in production. Clerk-specific code may become unmaintained.
-- Migration plan:
-  1. Audit all Clerk imports across codebase
-  2. Create Supabase Auth equivalents for each Clerk endpoint
-  3. Add feature flags to toggle auth providers
-  4. Migrate users incrementally
-  5. Remove Clerk code once all users migrated
-
-**Next.js Image Optimization Disabled:**
-- Risk: `next.config.js` has `images: { unoptimized: true }`. This disables Next.js Image component optimization, negating the benefit of using `<Image>` over `<img>`.
-- Impact: No automatic WebP conversion, srcset generation, or lazy loading. Image payload is larger.
-- Alternative: Use external image optimization service or re-enable Next.js optimization
-
-**ESLint Disabled at Build Time:**
-- Risk: `tsconfig.json` has `ignoreDuringBuilds: true` for ESLint. Linting errors don't fail the build.
-- Impact: Lint violations can slip to production. CI/CD pipeline should catch these, but if CI is weak, technical debt accumulates.
-- Recommendation: Re-enable ESLint in builds, fix violations, then enforce in CI
-
-## Missing Critical Features
-
-**No Data Validation Schema Enforcement:**
-- Problem: API responses from Supabase are not validated against schemas. If backend schema changes, front-end can silently accept invalid data.
-- Blocks: Confidence in data integrity, ability to detect schema drift early
-- Implementation: Add Zod schemas for all API response types, validate at network boundary
-
-**No Error Recovery UI:**
-- Problem: When operations fail (failed drag, sync error, API timeout), error messages exist but no automatic retry or clear recovery path for users.
-- Blocks: Users confused about whether data was saved, can't easily recover from failed operations
-- Implementation: Add retry logic with exponential backoff, show retry button in error UI
-
-**No Audit Trail for Rankings:**
-- Problem: No record of when/how items were moved in grid. Users can't see history of changes.
-- Blocks: Collaborative features, ability to revert changes, accountability
-- Implementation: Add audit log store, log all grid mutations, provide UI to view/restore versions
-
-## Test Coverage Gaps
-
-**Drag & Drop System (Critical, High Risk):**
-- What's not tested: Concurrent drag operations, drag during network failure, rapid drag/drop sequences, drag with invalid items
-- Files: `src/stores/grid-store.ts`, `src/app/features/Match/MatchGrid/lib/dragHandlers.ts`
-- Risk: The most complex user interaction has minimal test coverage. Race conditions or edge cases could corrupt grid state silently.
-- Priority: **HIGH** - Add integration tests for drag scenarios before adding new drag features
-
-**Multi-Store State Consistency (Critical):**
-- What's not tested: Verifying that grid-store, session-store, backlog-store remain in sync after operations; rollback on partial failures
-- Files: `src/stores/`, `src/lib/orchestration/`
-- Risk: Store desynchronization could cause data loss or duplicate items
-- Priority: **HIGH** - Add invariant checks and consistency tests
-
-**Offline Mode (High):**
-- What's not tested: Offline-to-online transitions, sync queue merging, conflict resolution, quota exhaustion
-- Files: `src/lib/offline/`, `src/stores/backlog/actions-offline.ts`
-- Risk: Users may lose data during offline transitions or sync failures
-- Priority: **HIGH** - Add integration tests for offline scenarios
-
-**Error Handling in API Routes (Medium):**
-- What's not tested: API error responses, validation failures, service key leaks, malformed inputs
-- Files: `src/app/api/`
-- Risk: Silent failures or information leaks in error messages
-- Priority: **MEDIUM** - Add API unit tests with error scenarios
-
-**Performance & Memory (Medium):**
-- What's not tested: Large backlog groups (1000+ items), long-running sessions, memory leak detection, timer cleanup
-- Files: All stores, all components with setInterval/setTimeout
-- Risk: Performance degradation in production, memory exhaustion
-- Priority: **MEDIUM** - Add performance benchmarks and memory profiling tests
+**Analysis Date:** 2026-03-14
 
 ---
 
-*Concerns audit: 2026-01-26*
+## Tech Debt
+
+**Dual Auth System (Clerk + Supabase Auth in parallel):**
+- Issue: The app runs both Clerk and a Supabase Auth implementation simultaneously. `src/hooks/useSupabaseAuth.ts` and `src/hooks/supabase-auth/` exist alongside Clerk imports in API routes. `src/hooks/index.ts` line 173 explicitly notes this as "being migrated to useSupabaseAuth" but the migration is unfinished.
+- Files: `src/hooks/useSupabaseAuth.ts`, `src/hooks/supabase-auth/`, `src/app/api/challenges/[id]/submit/route.ts`, `src/app/api/challenges/[id]/invite/route.ts`
+- Impact: Engineers must know which auth system applies to which route. New API routes could mistakenly use no auth or the wrong auth. Auth bugs surface only for certain users.
+- Fix approach: Complete the Clerk → Supabase Auth migration. Pick one system and remove the other. See `.env.example` migration notes.
+
+**Deprecated `TransferProtocol` class still shipped:**
+- Issue: `src/lib/dnd/transfer-protocol.ts` is 657+ lines, more than half of which are marked `@deprecated` with "NOT CURRENTLY USED" comments. The class-based `TransferProtocol`, `createBacklogSource`, `createGridPositionReceiver`, `getGlobalTransferProtocol`, and factory functions are all dead code bundled in every build.
+- Files: `src/lib/dnd/transfer-protocol.ts` (lines 186-657)
+- Impact: Bundle bloat; confuses developers reading the file; risk of someone using deprecated paths.
+- Fix approach: Delete deprecated sections, keep only active exports (`extractGridPosition`, `createGridReceiverId`, `isGridReceiverId`, `toTransferableItem`, type definitions).
+
+**Deprecated sorting/type exports in `ranked-inventory.ts`:**
+- Issue: `src/types/ranked-inventory.ts` exports `SortCriteria`, `SortDirection`, `SortConfig`, `SORT_PRESETS`, `computeSortValue`, `sortItems` — all marked `@deprecated` pointing to `@/lib/sorting`. `src/types/composition-to-api.ts` is also marked deprecated.
+- Files: `src/types/ranked-inventory.ts`, `src/types/composition-to-api.ts`, `src/types/list-intent-transformers.ts`
+- Impact: Consumers may pick up the deprecated symbol instead of the canonical one. Dead code maintained across refactors.
+- Fix approach: Find all import sites with grep, update to `@/lib/sorting`, then remove the re-exports.
+
+**`ListIntent` migration still in-flight:**
+- Issue: `src/types/list-intent-transformers.ts` has four deprecated symbols (`ListIntentCompatHelper`, `buildListMetadata`, `getCompatiblePayload`, `buildCreateListPayload`) tagged "For migration only" and "For backward compatibility." The old shape is still actively imported.
+- Files: `src/types/list-intent-transformers.ts`, `src/types/composition-to-api.ts`
+- Impact: Two code paths for list creation; data shape mismatches possible in edge cases.
+- Fix approach: Audit callers, migrate to `ListIntent` + `listIntentToCreateRequest`, delete compat helpers.
+
+**`match-test` page accessible in production:**
+- Issue: `src/app/match-test/page.tsx` is a developer test harness for the grid ("Access at: /match-test?list={listId}"). It is not behind any auth check or environment guard.
+- Files: `src/app/match-test/page.tsx`
+- Impact: Exposes an unpolished, unstyled debug page to all users. Could be used to test unauthorized list access.
+- Fix approach: Add a `process.env.NODE_ENV !== 'production'` guard or delete the route if no longer needed.
+
+**`listGridCache` grows unboundedly in localStorage:**
+- Issue: `src/stores/grid-store.ts` `listGridCache` persists all per-list grid snapshots to localStorage under `grid-store`. Each new list adds an entry that is never evicted. A power user who opens many lists will accumulate megabytes of grid data in localStorage.
+- Files: `src/stores/grid-store.ts` (lines 147-149, 227-241, 908-937)
+- Impact: localStorage can hit its 5-10 MB browser quota. On quota exceeded, Zustand's persist middleware silently fails to save, causing session loss.
+- Fix approach: Implement an LRU eviction policy with a configurable max (e.g., 10 cached lists). Remove entries beyond the limit before persisting.
+
+**`GlobalOrchestrator` uses untyped `any` store references:**
+- Issue: `src/lib/orchestration/GlobalOrchestrator.ts` declares its `storeRefs` object with `any` for every store (`grid: any; session: any; comparison: any; ...`). Lazy `require()` calls lack type assertions.
+- Files: `src/lib/orchestration/GlobalOrchestrator.ts` (lines 38-45)
+- Impact: TypeScript cannot catch wrong method names or argument types when using orchestrated commands. Runtime errors will not surface until the code path is exercised.
+- Fix approach: Type each store reference with the imported store type (e.g., `grid: typeof import('@/stores/grid-store').useGridStore`).
+
+**`immerSet as any` cast in backlog store:**
+- Issue: `src/stores/backlog/store.ts` line 35 casts Immer's `set` to `any` as a workaround for middleware typing. This suppresses TypeScript for all mutation functions built on top of it.
+- Files: `src/stores/backlog/store.ts`, `src/stores/backlog/actions-data.ts`
+- Impact: Type errors in backlog actions are invisible at compile time.
+- Fix approach: Use proper Immer + Zustand types with `StateCreator<BacklogState, [["zustand/immer", never]], []>`.
+
+---
+
+## Known Bugs / Incomplete Features
+
+**`CompletionModalActions` "Save" is a stub:**
+- Symptoms: Clicking "Save to collection" on the completion modal logs to the console and does nothing.
+- Files: `src/components/app/modals/completion/CompletionModalActions.tsx` (lines 45-48)
+- Trigger: Complete a ranking list and open the completion modal.
+- Workaround: None; feature is absent.
+
+**`/api/consensus/submit` does not persist data:**
+- Symptoms: The endpoint accepts valid ranking submissions and returns `{ success: true }` but contains a comment saying "For now, just acknowledge the submission." No database writes occur.
+- Files: `src/app/api/consensus/submit/route.ts` (lines 60-77)
+- Trigger: Any client that submits a consensus ranking.
+- Workaround: None; all consensus submissions are silently dropped.
+
+**Offline sync is not implemented for backlog changes:**
+- Symptoms: `src/stores/backlog/actions-offline.ts` line 72 has a comment "TODO: Add API calls to persist to backend when implementing sync." Offline backlog edits are never sent to Supabase.
+- Files: `src/stores/backlog/actions-offline.ts`
+- Trigger: User makes backlog changes while offline; on reconnect, changes do not sync.
+- Workaround: None.
+
+**Export-image error shows no user feedback:**
+- Symptoms: When `captureAndDownload` throws, the error is logged to console but no toast, alert, or UI message is shown to the user.
+- Files: `src/components/app/modals/completion/CompletionModalActions.tsx` (line 41)
+- Trigger: Image export failure (e.g., html2canvas cross-origin issues).
+- Workaround: None visible to user.
+
+---
+
+## Security Considerations
+
+**Admin endpoint has no authentication:**
+- Risk: `POST /api/admin/search-image` invokes the Gemini API using the server's `GEMINI_API_KEY`. There is no authentication check — any anonymous caller can trigger API calls that consume Gemini quota/credits.
+- Files: `src/app/api/admin/search-image/route.ts`
+- Current mitigation: None.
+- Recommendations: Add `auth()` check from Clerk and verify the user has an admin role before proceeding.
+
+**Several write endpoints accept `userId` from the request body:**
+- Risk: `POST /api/lists` accepts `user_id` from `body.user_id` without verifying it matches the authenticated session. Same pattern in `POST /api/blueprints/[slugOrId]/clone` (uses `body.userId`). Any client can pass an arbitrary `user_id` to create or clone resources under another user's account.
+- Files: `src/app/api/lists/route.ts` (line 101), `src/app/api/blueprints/[slugOrId]/clone/route.ts` (line 57)
+- Current mitigation: None.
+- Recommendations: Derive `userId` from `auth()` (Clerk) or the Supabase session on the server; never trust a client-supplied user ID for ownership assignment.
+
+**`/api/consensus/submit` accepts a `userId` from the request body:**
+- Risk: The endpoint takes `userId` from the POST body to attribute submissions. There is no auth verification step — the comment even notes "1. Verify user authentication" as a TODO.
+- Files: `src/app/api/consensus/submit/route.ts` (lines 14, 61)
+- Current mitigation: None (endpoint is a stub so no data is persisted yet, but this will matter when implemented).
+- Recommendations: Before implementing persistence, add server-side auth verification and derive `userId` from the session.
+
+**Debug store exposed on `window` in all environments:**
+- Risk: `src/stores/backlog/store.ts` attaches `window.__backlogStore` with `clearCache`, `forceRefresh`, `debugImages`, and `clearIndexedDB` methods whenever `typeof window !== 'undefined'` — including in production builds. Any browser console user can invoke these methods.
+- Files: `src/stores/backlog/store.ts` (lines 151-173)
+- Current mitigation: None.
+- Recommendations: Wrap in `if (process.env.NODE_ENV !== 'production')`.
+
+**Gemini AI endpoint returns AI-suggested image URLs without allowlist enforcement at the fetch layer:**
+- Risk: `POST /api/studio/find-image` calls Gemini which can return arbitrary URLs. `isValidImageUrl` validates the URL format and a short CDN allowlist, but the URL is returned directly to the client which then fetches it. If Gemini hallucinates a non-allowlisted HTTPS URL with an image extension, it passes validation.
+- Files: `src/app/api/studio/find-image/route.ts` (lines 124, 206-228)
+- Current mitigation: `isValidImageUrl` partial allowlist check.
+- Recommendations: Enforce the CDN allowlist strictly (reject anything not from the listed hostnames) rather than falling back to the extension check.
+
+---
+
+## Performance Bottlenecks
+
+**`studio/generate` fetches Wikipedia images serially within `Promise.all`:**
+- Problem: `src/app/api/studio/generate/route.ts` wraps item image resolution in `Promise.all`, but each item can make up to 3 sequential `fetchWikipediaImage` calls (direct → URL-extracted title → title variations). For a 20-item list, worst-case means 60 serial Wikipedia API fetches inside the `maxDuration: 60` serverless timeout.
+- Files: `src/app/api/studio/generate/route.ts` (lines 164-237)
+- Cause: Sequential fallback strategy inside each parallel branch.
+- Improvement path: Cache Wikipedia image lookups (e.g., in Supabase or Redis). Reduce variation attempts to 1-2. Add a short-circuit timeout per item.
+
+**OG image route (`/api/og/[listId]`) is 1,056 lines:**
+- Problem: A single route file with 1,056 lines renders multiple complex OG image layouts using Satori/JSX. It has no caching headers or CDN caching strategy visible in the file.
+- Files: `src/app/api/og/[listId]/route.tsx`
+- Cause: All layout variants and rendering logic in one file; no edge caching.
+- Improvement path: Add `Cache-Control: public, max-age=86400` headers or use Next.js `revalidate`. Split layout variants into separate files already started at `src/lib/og/card-layouts/`.
+
+**`ranking-store.ts` is 1,410 lines — single store for five ranking modes:**
+- Problem: A single Zustand store manages Podium, GOAT, Rushmore, Bracket, and Tier List modes, plus bracket state, tier state, smart tier calculation, and all associated actions. Any state change triggers re-evaluation of subscribed components across all modes.
+- Files: `src/stores/ranking-store.ts`
+- Cause: Over-consolidation to achieve "single source of truth."
+- Improvement path: Split bracket and tier state into dedicated stores with selectors, referencing ranking-store only for the canonical `ranking[]` array.
+
+---
+
+## Fragile Areas
+
+**Multi-store synchronization relies on `getState()` side-effects:**
+- Files: `src/stores/grid-store.ts`, `src/stores/session-store.ts`, `src/stores/match-store.ts`
+- Why fragile: `grid-store` directly calls `useSessionStore.getState().updateSessionGridItems(...)` from inside its own `set()` callback. If session-store is not yet hydrated from IndexedDB when the first drag occurs, the sync silently fails. The lazy accessor retries up to 5 times with 20ms delay, but there is no guarantee the retry window closes before the user can drag.
+- Safe modification: Always check that session store's `getActiveSession()` returns a non-null value before writing. Add a readiness flag to session-store that grid-store can poll.
+- Test coverage: No tests for store interaction paths.
+
+**Lazy `require()` for circular dependency resolution:**
+- Files: `src/stores/grid-store.ts` (line 53), `src/lib/orchestration/GlobalOrchestrator.ts` (lines 53-58), `src/lib/orchestration/dragHandlers.ts` (lines 154, 248)
+- Why fragile: Dynamic `require()` calls at runtime bypass TypeScript module resolution. If a store is renamed or moved, the error only surfaces at runtime when the code path is exercised — not at build time.
+- Safe modification: Refactor to break the circular dependency at the module graph level (e.g., move shared types to a separate package), then use static imports.
+- Test coverage: No tests.
+
+**`@ts-ignore` in `adaptiveLoader.ts` for experimental browser APIs:**
+- Files: `src/app/features/Collection/lib/adaptiveLoader.ts` (lines 148, 159, 202, 252)
+- Why fragile: Four `@ts-ignore` suppressions cover `deviceMemory`, WebGL context types, Network Information API, and Memory API — all non-standard, Chrome-only APIs. No feature-detection wrappers or try/catch ensure graceful degradation when these APIs change or are absent.
+- Safe modification: Wrap each access in a `try/catch` with a sensible default. Use proper type augmentation (`interface Navigator { deviceMemory?: number; }`) instead of `@ts-ignore`.
+- Test coverage: None.
+
+---
+
+## Scaling Limits
+
+**LocalStorage / IndexedDB as the only persistence for session and backlog:**
+- Current capacity: Browser-dependent (typically 5-10 MB localStorage, ~250 MB IndexedDB quota).
+- Limit: `listGridCache` grows per list indefinitely; backlog cache can hold large item sets. On quota exhaustion, Zustand's persist silently fails.
+- Scaling path: Implement LRU eviction in `listGridCache` (see Tech Debt above). Add explicit quota checks using the Storage API (`navigator.storage.estimate()`) and warn the user before exhaustion.
+
+**`GlobalOrchestrator` transaction history is in-memory, unbounded:**
+- Current capacity: `private transactionHistory: Transaction[]` accumulates every command executed.
+- Limit: Long sessions (power users) will accumulate thousands of entries.
+- Scaling path: Add a max history length (e.g., 200 entries) with a rolling window, consistent with undo state limit.
+
+---
+
+## Dependencies at Risk
+
+**`gemini-3-flash-preview` model name in production API calls:**
+- Risk: `src/app/api/studio/generate/route.ts` and `src/app/api/studio/find-image/route.ts` use the model identifier `gemini-3-flash-preview`. Preview model versions can be deprecated with short notice by Google.
+- Impact: AI generation and image search features break entirely with a 404/400 from the Gemini API.
+- Migration plan: Pin to a stable GA model (e.g., `gemini-1.5-flash`) and track Gemini changelog for deprecations.
+
+**Clerk Auth dependency during Supabase Auth migration:**
+- Risk: The codebase is mid-migration from Clerk to Supabase Auth. Both are active dependencies. If the migration is abandoned, the parallel Supabase Auth implementation (`src/hooks/supabase-auth/`) becomes dead code. If Clerk is removed before migration is complete, authenticated API routes break.
+- Impact: Auth failures across challenge, invite, and leaderboard endpoints.
+- Migration plan: Complete migration end-to-end on a feature branch before removing Clerk.
+
+---
+
+## Missing Critical Features
+
+**Rate limiting on AI-powered endpoints:**
+- Problem: `/api/studio/generate`, `/api/studio/find-image`, `/api/generate-ai-image`, and `/api/admin/search-image` all make external AI API calls without rate limiting. Any user (or unauthenticated caller for the admin endpoint) can exhaust API quotas.
+- Blocks: Cost control and fair usage enforcement.
+
+**Error monitoring / observability:**
+- Problem: `src/app/features/Collection/components/CollectionErrorBoundary.tsx` line 73 notes "TODO: In production, send to monitoring service" — no error tracking service (Sentry, Datadog, etc.) is wired up. API routes use only `console.error`.
+- Blocks: Diagnosing production issues without user reports.
+
+---
+
+## Test Coverage Gaps
+
+**Core drag-and-drop logic has zero tests:**
+- What's not tested: `src/stores/grid-store.ts` `handleDragEnd`, `assignItemToGrid`, `moveGridItem`, `swapPositions`, and lock-based concurrency logic are entirely untested.
+- Files: `src/stores/grid-store.ts`, `src/lib/dnd/transfer-protocol.ts`
+- Risk: Regressions in the app's primary interaction model are caught only by manual testing.
+- Priority: High
+
+**Multi-store synchronization has zero tests:**
+- What's not tested: The sequence of grid-store → session-store → backlog-store synchronization that occurs on every drag operation has no test coverage.
+- Files: `src/stores/grid-store.ts`, `src/stores/session-store.ts`, `src/stores/backlog/store.ts`
+- Risk: Store sync bugs (e.g., session not updated, backlog item double-placed) are invisible until found in production.
+- Priority: High
+
+**Overall test file count: 1:**
+- What's not tested: The entire application has exactly one test file: `src/components/visual/__tests__/visual-components.test.tsx`. All stores, all API routes, all hooks, all utility libraries, and all feature components are untested.
+- Risk: Any refactoring or new feature can introduce regressions with no safety net.
+- Priority: High — establish at minimum unit tests for stores and API route handlers before further growth.
+
+---
+
+*Concerns audit: 2026-03-14*

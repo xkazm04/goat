@@ -5,7 +5,6 @@
  * - Single source of truth for TTL values
  * - Tag-based invalidation
  * - Request coalescing/deduplication
- * - Development metrics dashboard
  * - React Query integration
  */
 
@@ -23,12 +22,12 @@ export {
   // Cache tags for invalidation
   CACHE_TAGS,
   // Invalidation rules
-  INVALIDATION_RULES as UNIFIED_INVALIDATION_RULES,
+  INVALIDATION_RULES,
   // Type exports
-  type CacheTTL as UnifiedCacheTTL,
+  type CacheTTL,
   type CachePreset,
   type CacheTag,
-  type InvalidationEvent as UnifiedInvalidationEvent,
+  type InvalidationEvent,
   // Helper functions
   getStaleTime,
   getGcTime,
@@ -60,29 +59,3 @@ export {
   createCacheInvalidator,
   type UseCacheInvalidationReturn,
 } from './useCacheInvalidation';
-
-// =============================================================================
-// Legacy API Cache (Deprecated - migrate to React Query)
-// =============================================================================
-
-export {
-  APICache,
-  getGlobalAPICache,
-  createCacheKey,
-  CACHE_TTL,
-  type CacheConfig,
-  type CacheEntry,
-  type CacheOptions,
-  type CacheMetrics,
-  type CacheTTL,
-} from './api-cache';
-
-export {
-  CacheInvalidationManager,
-  getCacheInvalidationManager,
-  cacheInvalidation,
-  INVALIDATION_RULES,
-  type InvalidationRule,
-  type InvalidationTrigger,
-  type InvalidationEvent,
-} from './invalidation-strategies';

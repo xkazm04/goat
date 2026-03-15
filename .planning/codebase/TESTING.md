@@ -1,295 +1,243 @@
 # Testing Patterns
 
-**Analysis Date:** 2026-01-26
+**Analysis Date:** 2026-03-14
 
 ## Test Framework
 
 **Runner:**
-- Playwright Test (v1.57.0)
-- Config: `playwright.config.ts`
+- Playwright — E2E tests only
+- Config: `playwright.config.ts` (project root)
+- Version: `@playwright/test ^1.57.0`
+
+**No unit test runner detected** — Jest and Vitest are absent from `package.json`. The `src/components/visual/__tests__/visual-components.test.tsx` file is a TypeScript compile-time verification file, not a runtime test. The `src/lib/hooks/useLoadingStateMachine.test.md` is documentation of manual test scenarios, not automated tests.
 
 **Assertion Library:**
-- Playwright's native `expect()` API
+- Playwright's built-in `expect` from `@playwright/test`
 
 **Run Commands:**
 ```bash
-npm run test:e2e              # Run all E2E tests
-npm run test:e2e:ui          # Run with Playwright UI
-npm run test:e2e:headed      # Run with visible browser
+npm run test:e2e              # Run all E2E tests (headless Chromium)
+npm run test:e2e:ui           # Run with Playwright UI mode
+npm run test:e2e:headed       # Run with visible browser
+```
+
+**Storybook** (component development/visual testing):
+```bash
+npm run storybook             # Dev server on port 6006
+npm run build-storybook       # Build static Storybook
 ```
 
 ## Test File Organization
 
 **Location:**
-- E2E tests in `e2e/` directory at project root
-- Files: `e2e/[feature].spec.ts`
+- E2E tests: `e2e/` directory at project root (separate from `src/`)
+- Compile-time verification: `src/components/visual/__tests__/` (not runtime tests)
+- No co-located unit test files in `src/` — unit testing infrastructure is not set up
 
 **Naming:**
-- Pattern: `[feature].spec.ts` (e.g., `drag-drop-ranking.spec.ts`, `list-play-journey.spec.ts`)
+- E2E spec files: `kebab-case.spec.ts` — `drag-drop-ranking.spec.ts`, `list-play-journey.spec.ts`
+- Story files: `ComponentName.stories.tsx` — `Badge.stories.tsx`
 
 **Structure:**
 ```
-e2e/
-├── drag-drop-ranking.spec.ts    # Drag & drop workflows
-├── list-play-journey.spec.ts    # User journey from list selection to match
+goat/
+├── e2e/
+│   ├── drag-drop-ranking.spec.ts   # Core drag-drop workflow tests
+│   └── list-play-journey.spec.ts   # Landing → match navigation journey
+├── playwright.config.ts
+└── src/
+    ├── components/
+    │   └── visual/
+    │       └── __tests__/
+    │           └── visual-components.test.tsx  # TypeScript compile verification only
+    └── lib/
+        └── hooks/
+            ├── useLoadingStateMachine.test.md           # Manual test documentation
+            └── useLoadingStateMachine.test-scenarios.md # Manual test scenarios
 ```
 
 ## Test Structure
 
 **Suite Organization:**
 ```typescript
-test.describe("Feature Name", () => {
+import { test, expect } from "@playwright/test";
+
+test.describe("Drag-Drop Ranking Workflow", () => {
   test.beforeEach(async ({ page }) => {
-    // Setup - runs before each test
     await page.goto("/");
     await page.waitForLoadState("networkidle");
   });
 
-  test("should verify specific behavior", async ({ page }) => {
-    // Test steps
+  test("should drag item from collection to grid slot and persist on reload", async ({
+    page,
+  }) => {
+    // Arrange: navigate to page and wait for elements
+    const featuredSection = page.getByTestId("featured-lists-section");
+    await expect(featuredSection).toBeVisible({ timeout: 15000 });
+
+    // Act: perform interaction
+
+    // Assert: verify outcome
+    await expect(emptyIndicator).not.toBeVisible({ timeout: 5000 });
   });
 });
 ```
 
 **Patterns:**
-- `test.describe()` groups related tests
-- `test.beforeEach()` common setup (navigation, waits)
-- `async ({ page })` provides Playwright page fixture
-- `await` all navigation and waits
-- Timeout handling: explicit timeouts on waits (e.g., `{ timeout: 15000 }`)
+- `test.beforeEach` sets up navigation state shared across all tests in a describe block
+- Timeouts are explicit on each `expect` call — `{ timeout: 15000 }` for data-load waits, `{ timeout: 5000 }` for UI-state checks
+- `test.skip()` used conditionally when preconditions aren't met (e.g., insufficient items for a swap test)
+- Helper functions defined inline as `const dragAndDrop = async (source, target) => { ... }` within tests that need reuse
+- `page.waitForTimeout()` used sparingly for animation completion (500ms after drops, 300ms after drag init)
 
-**Example Test:**
+## Mocking
+
+**Framework:** None — Playwright tests run against a live dev server.
+
+**What is NOT mocked:**
+- Network requests — tests rely on the real Supabase backend responding to API calls
+- Authentication — tests operate as an unauthenticated user
+- Zustand stores — tested through real UI interactions and localStorage inspection
+
+**Indirect state verification via localStorage:**
 ```typescript
-test("should drag item from collection to grid slot and persist on reload", async ({ page }) => {
-  // Step 1: Navigate
-  await page.goto("/");
-  await page.waitForLoadState("networkidle");
-
-  // Step 2: Query elements
-  const featuredSection = page.getByTestId("featured-lists-section");
-  await expect(featuredSection).toBeVisible({ timeout: 15000 });
-
-  // Step 3: Extract data for verification
-  const testId = await firstListItem.getAttribute("data-testid");
-  const listId = testId?.replace("featured-list-item-", "");
-  expect(listId).toBeTruthy();
-
-  // Step 4: Interact
-  await firstListItem.click();
-  await page.waitForURL(`**/match-test?list=${listId}`, { timeout: 15000 });
-
-  // Step 5: Verify results
-  const gridItem = page.locator('[data-testid="grid-item-image-1"]').first();
-  await expect(gridItem).toBeVisible({ timeout: 5000 });
+// Verify Zustand persist state after navigation
+const listStoreData = await page.evaluate(() => {
+  const stored = localStorage.getItem("list-store");
+  return stored ? JSON.parse(stored) : null;
 });
+expect(listStoreData?.state?.currentList?.id).toBe(listId);
 ```
 
-## Waiting and Synchronization
+## Fixtures and Factories
 
-**Network Waits:**
-- `await page.waitForLoadState("networkidle")` — for initial page load
-- `await page.waitForLoadState("load")` — for DOM ready
-- `await page.waitForURL(pattern, { timeout })` — for navigation
-
-**Element Waits:**
-- `await expect(element).toBeVisible({ timeout: 15000 })` — wait for visibility
-- `await expect(element).not.toBeVisible()` — wait for invisibility
-- Explicit timeouts: `{ timeout: 15000 }` for slow data loads (15s on landing, 10s on subsequent)
-
-**Delay Synchronization:**
-- `await page.waitForTimeout(500)` for animations/state updates
-- Used after drag operations to let state settle
-
-## Selection Patterns
-
-**Test ID Selectors (Primary):**
-- Pattern: `data-testid="[feature]-[element]-[id]"`
-- Examples:
-  - `featured-lists-section` — container for featured lists
-  - `featured-list-item-{id}` — individual featured list
-  - `collection-panel` — collection sidebar
-  - `collection-item-wrapper-{id}` — collection item container
-  - `match-grid-slot-{position}` — grid position slot
-  - `grid-item-image-{position}` — item image in grid
-  - `grid-slot-empty-{position}` — empty slot indicator
-  - `remove-item-btn-{position}` — remove button on grid item
-
-**Locator Patterns:**
+**Test Data:**
+- No fixtures or factories — tests discover data dynamically from the live app
+- List IDs and item IDs extracted from `data-testid` attributes at runtime:
 ```typescript
-// Single element
-page.getByTestId("collection-panel")
-
-// Multiple with selector
-page.locator('[data-testid^="featured-list-item-"]').first()
-
-// Composite selectors
-page.locator(
-  '[data-testid="grid-item-image-1"], [data-testid="grid-item-title-1"]'
-).first()
-
-// Text selectors
-page.locator("text=Failed to load list")
+const testId = await firstListItem.getAttribute("data-testid");
+const listId = testId?.replace("featured-list-item-", "");
+expect(listId).toBeTruthy();
 ```
 
-## Drag & Drop Testing
+**Location:**
+- No static fixture files — all test data is runtime-discovered
 
-**Pattern:**
+## Coverage
+
+**Requirements:** None enforced — no coverage thresholds configured
+
+**View Coverage:**
+- Not configured (no unit test runner)
+
+## Test Types
+
+**Unit Tests:**
+- Not implemented. No Jest/Vitest setup exists.
+- The `src/components/visual/__tests__/visual-components.test.tsx` file performs TypeScript compile-time type checking only, not runtime behavior testing.
+
+**Integration Tests:**
+- Not explicitly separated; E2E tests cover integration scenarios (store sync, persistence, navigation handoffs)
+
+**E2E Tests (Playwright):**
+- Framework: Playwright with Chromium only
+- Base URL: `http://localhost:3000`
+- Runs against local dev server (`npm run dev`) started automatically by `webServer` config
+- CI behavior: retries 2x, single worker, fails build on `test.only`
+- Trace collected on first retry; screenshots on failure
+
+**Component Development (Storybook):**
+- One story file found: `src/components/patterns/badges/Badge.stories.tsx`
+- Pattern uses `Meta<typeof Component>` and `StoryObj<typeof Component>` from `@storybook/react`
+- Stories use `render:` function for complex multi-variant examples
+- `tags: ['autodocs']` enables automatic documentation generation
+
+## Common Patterns
+
+**Navigation + wait pattern (every E2E test):**
 ```typescript
-// 1. Get bounding boxes
-const sourceBox = await sourceElement.boundingBox();
-const targetBox = await targetElement.boundingBox();
+await page.goto("/");
+await page.waitForLoadState("networkidle");
+const section = page.getByTestId("featured-lists-section");
+await expect(section).toBeVisible({ timeout: 10000 });
+```
 
-if (sourceBox && targetBox) {
-  // 2. Calculate center points
-  const sourceCenter = {
-    x: sourceBox.x + sourceBox.width / 2,
-    y: sourceBox.y + sourceBox.height / 2,
-  };
-  const targetCenter = {
-    x: targetBox.x + targetBox.width / 2,
-    y: targetBox.y + targetBox.height / 2,
-  };
+**Dynamic testid-based element selection:**
+```typescript
+// Prefix matching for dynamic lists
+const firstListItem = page.locator('[data-testid^="featured-list-item-"]').first();
+// Exact testid for known elements
+const gridSlot1 = page.getByTestId("match-grid-slot-1");
+```
 
-  // 3. Move to source and press
-  await page.mouse.move(sourceCenter.x, sourceCenter.y);
-  await page.mouse.down();
-
-  // 4. Move in steps to trigger drag detection
-  const steps = 20;
-  for (let i = 1; i <= steps; i++) {
-    const progress = i / steps;
-    const x = sourceCenter.x + (targetCenter.x - sourceCenter.x) * progress;
-    const y = sourceCenter.y + (targetCenter.y - sourceCenter.y) * progress;
-    await page.mouse.move(x, y);
-    await page.waitForTimeout(20);  // Small delay for dnd-kit
-  }
-
-  // 5. Release
-  await page.mouse.up();
-  await page.waitForTimeout(500);  // Wait for state update
+**Multi-step drag simulation for dnd-kit:**
+```typescript
+await page.mouse.move(sourceCenter.x, sourceCenter.y);
+await page.mouse.down();
+const steps = 20;
+for (let i = 1; i <= steps; i++) {
+  const progress = i / steps;
+  await page.mouse.move(
+    sourceCenter.x + (targetCenter.x - sourceCenter.x) * progress,
+    sourceCenter.y + (targetCenter.y - sourceCenter.y) * progress
+  );
+  await page.waitForTimeout(20);
 }
+await page.mouse.up();
 ```
+Note: dnd-kit requires incremental mouse movement (not `dragTo`) to detect drag properly.
 
-**Key Points:**
-- Use `boundingBox()` to get element positions
-- Calculate center points (not corners) for more reliable detection
-- Move in steps (15-20 iterations) for dnd-kit to detect drag
-- Small delays (20ms) between moves
-- Wait 500ms after drop for state to settle
-
-## Test Data
-
-**Loading Test Data:**
-- Tests navigate to real endpoints (no mocking)
-- Featured lists loaded from API on landing page
-- Test expects at least one featured list available
-- Backlog items loaded from collection panel API
-
-**Skipping Tests:**
+**Conditional test skip:**
 ```typescript
+const itemCount = await collectionItems.count();
 if (itemCount < 2) {
-  test.skip();  // Skip if insufficient data
+  test.skip();
   return;
 }
 ```
 
-## Configuration
-
-**Config Location:** `playwright.config.ts`
-
-**Key Settings:**
-- `testDir: "./e2e"` — where to find tests
-- `fullyParallel: true` — run tests in parallel (except on CI)
-- `forbidOnly: true` on CI — fail if `test.only` left in code
-- `retries: 0` locally, `2` on CI — retry failures
-- `workers: undefined` locally (auto), `1` on CI — single worker on CI
-- `baseURL: "http://localhost:3000"` — test server URL
-- `webServer: { command: "npm run dev" }` — auto-start dev server
-
-**Timeout Settings:**
-- Default page timeout: not explicitly set (uses Playwright default ~30s)
-- Wait timeouts: explicit per-wait (e.g., `{ timeout: 15000 }`)
-- Test timeout: not set (uses default ~30s)
-
-**Reporters:**
-- `reporter: "html"` — generates HTML report in `playwright-report/`
-
-**Screenshots & Traces:**
-- `screenshot: "only-on-failure"` — capture on failure
-- `trace: "on-first-retry"` — trace on first retry
-
-## Test Examples
-
-**E2E Test: Drag-Drop Ranking** (`e2e/drag-drop-ranking.spec.ts`)
-- Verifies drag item from collection → grid slot
-- Checks persistence on page reload
-- Tests swap between slots
-- Tests removing items back to collection
-
-**E2E Test: List Play Journey** (`e2e/list-play-journey.spec.ts`)
-- Verifies featured lists render on landing
-- Tests clicking play button navigates to match interface
-- Confirms URL contains correct list ID
-- Verifies match grid loads after navigation
-
-## Unit Testing
-
-**Status:** No unit test framework configured (no Jest, Vitest, etc.)
-
-**Testing Strategy:**
-- E2E tests cover critical user journeys
-- No isolated unit tests for stores or utilities
-- Testing relies on Playwright E2E coverage
-
-**Recommendation for Future:**
-- Consider adding Vitest for store unit tests
-- Consider adding React Testing Library for component tests
-- Focus on async store actions and drag-drop logic
-
-## Mock/Stub Patterns
-
-**Current Approach:** No mocking
-
-**Live Testing:**
-- All tests hit real API endpoints
-- Tests depend on database state (featured lists, backlog)
-- No service worker mocking or fetch interception
-
-**If Needed:**
+**Negative assertions (verifying absence):**
 ```typescript
-// Playwright route interception
-await page.route('**/api/**', async (route) => {
-  await route.abort();  // Block or
-  await route.continue();  // Allow
-});
+const errorMessage = page.locator("text=Failed to load list");
+await expect(errorMessage).not.toBeVisible({ timeout: 5000 });
 ```
 
-## Coverage
+## Storybook Pattern
 
-**Requirements:** Not enforced
-
-**View Coverage:** Not applicable (no unit test coverage tooling)
-
-**Gaps:**
-- No testing for error handling paths
-- No testing for keyboard navigation
-- No testing for edge cases in drag-drop
-- No accessibility (a11y) testing
-
-## CI/CD Integration
-
-**Playwright Config for CI:**
 ```typescript
-forbidOnly: !!process.env.CI,
-retries: process.env.CI ? 2 : 0,
-workers: process.env.CI ? 1 : undefined,
+import type { Meta, StoryObj } from '@storybook/react';
+import { Badge } from './Badge';
+
+const meta: Meta<typeof Badge> = {
+  title: 'Patterns/Badges/Badge',   // Slash-separated path in Storybook sidebar
+  component: Badge,
+  parameters: { layout: 'centered' },
+  tags: ['autodocs'],
+  argTypes: { size: { control: 'select', options: ['xs', 'sm', 'md', 'lg'] } },
+};
+
+export default meta;
+type Story = StoryObj<typeof Badge>;
+
+export const Default: Story = { args: { children: 'Badge' } };
+
+export const MultiVariant: Story = {
+  render: () => (
+    <div className="flex gap-4">
+      <Badge size="xs">XS</Badge>
+      <Badge size="md">MD</Badge>
+    </div>
+  ),
+};
 ```
 
-**When CI Detected:**
-- Single worker (no parallelization)
-- Retries on failure (2 attempts)
-- Fails if `test.only` left in code
+## Gap Summary
+
+The codebase has **no unit test infrastructure**. There are no Jest/Vitest configs, no mock utilities, no test utilities for React components. The only automated tests are Playwright E2E tests covering user journeys. Adding unit tests would require:
+1. Installing Vitest or Jest with `@testing-library/react`
+2. Setting up mock factories for Zustand stores and TanStack Query
+3. Creating test utilities for the drag-and-drop system
 
 ---
 
-*Testing analysis: 2026-01-26*
+*Testing analysis: 2026-03-14*

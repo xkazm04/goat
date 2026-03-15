@@ -80,10 +80,10 @@ export const badgeColors = {
     border: 'border-zinc-700',
   },
   primary: {
-    background: 'bg-cyan-500/20',
-    text: 'text-cyan-400',
-    border: 'border-cyan-500/30',
-    glow: 'shadow-cyan-500/20',
+    background: 'bg-brand/20',
+    text: 'text-brand-hover',
+    border: 'border-brand/30',
+    glow: 'shadow-brand/20',
   },
   success: {
     background: 'bg-emerald-500/20',
@@ -104,19 +104,19 @@ export const badgeColors = {
     glow: 'shadow-rose-500/20',
   },
   gold: {
-    background: 'bg-gradient-to-r from-yellow-500/30 to-amber-500/30',
+    background: 'bg-linear-to-r from-yellow-500/30 to-amber-500/30',
     text: 'text-yellow-400',
     border: 'border-yellow-500/40',
     glow: 'shadow-yellow-500/30',
   },
   silver: {
-    background: 'bg-gradient-to-r from-slate-400/30 to-zinc-400/30',
+    background: 'bg-linear-to-r from-slate-400/30 to-zinc-400/30',
     text: 'text-slate-300',
     border: 'border-slate-400/40',
     glow: 'shadow-slate-400/20',
   },
   bronze: {
-    background: 'bg-gradient-to-r from-orange-600/30 to-amber-700/30',
+    background: 'bg-linear-to-r from-orange-600/30 to-amber-700/30',
     text: 'text-orange-400',
     border: 'border-orange-500/40',
     glow: 'shadow-orange-500/20',
@@ -197,10 +197,10 @@ export const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(
           return cn(
             color.background,
             color.text,
-            'glow' in color && 'glow' in color && color.glow && 'shadow-sm',
+            'glow' in color && color.glow && 'shadow-xs',
             'glow' in color ? color.glow : undefined
           );
-        case 'outline':
+        case 'outline-solid':
           return cn(
             'bg-transparent',
             color.text,
@@ -239,7 +239,7 @@ export const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(
         className={cn(
           'inline-flex items-center justify-center',
           'rounded-full font-medium',
-          'backdrop-blur-sm',
+          'backdrop-blur-xs',
           sizeConfig.height,
           sizeConfig.padding,
           sizeConfig.fontSize,
@@ -253,7 +253,7 @@ export const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(
         {/* Shimmer effect overlay */}
         {animation?.shimmer && (
           <div
-            className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent"
+            className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-linear-to-r from-transparent via-white/10 to-transparent"
             style={{
               animation: 'shimmer 2s infinite',
             }}

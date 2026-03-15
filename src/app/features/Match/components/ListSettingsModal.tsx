@@ -54,7 +54,7 @@ export function ListSettingsModal({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/70 backdrop-blur-xl z-50 flex items-center justify-center p-4"
           onClick={handleBackdropClick}
         >
           <motion.div
@@ -86,7 +86,7 @@ export function ListSettingsModal({
               <div className="flex items-center justify-between p-4 border-b border-slate-700/50">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-slate-800/50">
-                    <Settings className="w-5 h-5 text-cyan-400" />
+                    <Settings className="w-5 h-5 text-brand-hover" />
                   </div>
                   <div>
                     <h2 className="text-lg font-semibold text-white">
@@ -105,7 +105,7 @@ export function ListSettingsModal({
                   className={cn(
                     'p-2 rounded-lg transition-all duration-200',
                     'hover:bg-slate-700/50 hover:scale-105 text-slate-400 hover:text-white',
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400',
+                    'focus-ring',
                     'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100'
                   )}
                   aria-label="Close settings"
@@ -148,8 +148,8 @@ export function ListSettingsModal({
                     )}
                     {syncStatus === 'syncing' && (
                       <>
-                        <Loader2 className="w-3.5 h-3.5 text-cyan-400 animate-spin" />
-                        <span className="text-xs text-cyan-400">Saving...</span>
+                        <Loader2 className="w-3.5 h-3.5 text-brand-hover animate-spin" />
+                        <span className="text-xs text-brand-hover">Saving...</span>
                       </>
                     )}
                     {syncStatus === 'error' && (
@@ -169,9 +169,9 @@ export function ListSettingsModal({
                   disabled={syncStatus === 'syncing'}
                   className={cn(
                     'px-6 py-2.5 rounded-xl font-medium transition-all duration-200',
-                    'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30',
-                    'hover:bg-cyan-500/30 hover:border-cyan-500/50 hover:scale-[1.02] active:scale-[0.98]',
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400',
+                    'bg-brand/20 text-brand-hover border border-brand/30',
+                    'hover:bg-brand/30 hover:border-brand/50 hover:scale-[1.02] active:scale-[0.98]',
+                    'focus-ring',
                     'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100'
                   )}
                 >

@@ -24,6 +24,10 @@ export const ELEVATION = {
   medium: '0 4px 6px -1px rgb(0 0 0 / 0.15), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
   high: '0 10px 15px -3px rgb(0 0 0 / 0.15), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
   floating: '0 20px 25px -5px rgb(0 0 0 / 0.2), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
+  /** Heavy shadow for dropdowns, popovers, and overlay panels */
+  overlay: '0 20px 40px rgba(0, 0, 0, 0.4), 0 0 30px rgba(0, 0, 0, 0.2)',
+  /** Deepest shadow for command palettes and prominent modals */
+  modal: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
 } as const;
 
 /**
@@ -77,7 +81,7 @@ export const GLOW_COLOR = {
   silver: { r: 203, g: 213, b: 225 },  // slate-300 equivalent
   bronze: { r: 251, g: 146, b: 60 },   // orange-400 equivalent
   // Utility colors
-  primary: { r: 6, g: 182, b: 212 },   // cyan-500 - matches existing app accent
+  primary: { r: 6, g: 182, b: 212 },   // brand - matches existing app accent
   accent: { r: 147, g: 51, b: 234 },   // purple-600
 } as const;
 
@@ -144,6 +148,37 @@ export const SURFACE_ELEVATION = {
 export type SurfaceLevel = keyof typeof SURFACE_ELEVATION;
 
 // =============================================================================
+// INSET HIGHLIGHTS
+// =============================================================================
+
+/**
+ * Common inset effects for glass/frosted surfaces.
+ * Combine with ELEVATION for full depth: `${ELEVATION.high}, ${INSET.glassHighlight}`
+ */
+export const INSET = {
+  /** Subtle top-edge highlight for glass surfaces */
+  glassHighlight: 'inset 0 1px 0 rgba(255, 255, 255, 0.05)',
+  /** Stronger top-edge highlight for prominent surfaces */
+  glassHighlightStrong: 'inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+  /** Focused input glow ring (brand color) */
+  focusGlow: '0 0 20px rgba(6, 182, 212, 0.15)',
+} as const;
+
+export type InsetEffect = keyof typeof INSET;
+
+/**
+ * Combine an elevation shadow with an inset highlight.
+ * Convenience for the common `${ELEVATION.x}, ${INSET.glassHighlight}` pattern.
+ */
+export function withInset(
+  elevation: string,
+  inset: string = INSET.glassHighlight
+): string {
+  if (elevation === 'none') return inset;
+  return `${elevation}, ${inset}`;
+}
+
+// =============================================================================
 // COMBINED DEPTH PRESETS
 // =============================================================================
 
@@ -162,11 +197,21 @@ export const DEPTH_PRESET = {
   },
   modal: {
     surface: SURFACE_ELEVATION.overlay,
-    shadow: ELEVATION.high,
+    shadow: ELEVATION.modal,
   },
   drag: {
     surface: SURFACE_ELEVATION.overlay,
     shadow: ELEVATION.floating,
+  },
+  /** Dropdowns, popovers, hover cards */
+  dropdown: {
+    surface: SURFACE_ELEVATION.overlay,
+    shadow: withInset(ELEVATION.overlay),
+  },
+  /** Glass-style panels with inset highlight */
+  glassPanel: {
+    surface: SURFACE_ELEVATION.raised,
+    shadow: withInset(ELEVATION.high),
   },
 } as const;
 

@@ -13,7 +13,7 @@ import type { LucideIcon } from 'lucide-react';
 // =============================================================================
 
 export type BadgeSize = 'xs' | 'sm' | 'md' | 'lg';
-export type BadgeVariant = 'solid' | 'outline' | 'ghost' | 'gradient';
+export type BadgeVariant = 'solid' | 'outline-solid' | 'ghost' | 'gradient';
 export type BadgePosition = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center';
 
 export interface BadgeColor {

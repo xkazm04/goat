@@ -5,17 +5,17 @@
  * Uses Google Gemini API with Google Search tool
  */
 
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 
 // Initialize Gemini client
 function getGeminiClient() {
   const apiKey = process.env.GEMINI_API_KEY;
-  
+
   if (!apiKey) {
     throw new Error('GEMINI_API_KEY environment variable is not set');
   }
 
-  return new GoogleGenerativeAI(apiKey);
+  return new GoogleGenAI({ apiKey });
 }
 
 export interface ItemRecommendationRequest {
@@ -39,16 +39,16 @@ export interface ItemRecommendationResponse {
 export async function getItemRecommendation(
   request: ItemRecommendationRequest
 ): Promise<ItemRecommendationResponse> {
-  const model = getGeminiClient().getGenerativeModel({
-    model: 'gemini-flash-latest'
-  });
+  const client = getGeminiClient();
 
   const prompt = buildRecommendationPrompt(request);
 
   try {
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    const response = await client.models.generateContent({
+      model: 'gemini-2.0-flash',
+      contents: prompt,
+    });
+    const text = response.text ?? '';
 
     // Parse the response into structured output
     return parseRecommendationResponse(text, request);

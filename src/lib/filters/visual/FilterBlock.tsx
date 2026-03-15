@@ -11,7 +11,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GripVertical, X, ToggleLeft, ToggleRight } from 'lucide-react';
 import type { FilterCondition, FilterValueType, FilterOperator } from '@/lib/filters/types';
-import { FILTER_COLORS, OPERATOR_LABELS, TYPE_OPERATORS, DEFAULT_FILTER_FIELDS } from '@/lib/filters/constants';
+import { FILTER_COLORS, FILTER_TIMING, OPERATOR_LABELS, TYPE_OPERATORS, DEFAULT_FILTER_FIELDS } from '@/lib/filters/constants';
 import { cn } from '@/lib/utils';
 import { useFilterBuilderStore } from '@/stores/filter-builder-store';
 import { OperatorSelector } from './OperatorSelector';
@@ -125,21 +125,22 @@ export function FilterBlock({
     <motion.div
       ref={setNodeRef}
       style={style}
+      layoutId={nodeId}
       initial={{ opacity: 0, y: -10, scale: 0.95 }}
       animate={{
-        opacity: condition.enabled ? 1 : 0.5,
+        opacity: condition.enabled ? (isDraggingLocal ? 0.4 : 1) : 0.5,
         y: 0,
         scale: 1,
       }}
       exit={{ opacity: 0, y: -10, scale: 0.95 }}
-      transition={{ duration: 0.2, ease: 'easeOut' }}
+      transition={{ duration: 0.2, ease: 'easeOut', layout: { type: 'spring', stiffness: 350, damping: 30 } }}
       className={cn(
         'group relative flex items-center gap-2 rounded-lg border p-3',
-        'bg-zinc-900/50 backdrop-blur-sm',
-        'transition-all duration-200',
+        'bg-zinc-900/50 backdrop-blur-xs',
+        'transition-shadow duration-200',
         colors.border,
-        isSelected && 'ring-2 ring-cyan-500/50',
-        isDragging && 'shadow-lg shadow-cyan-500/20',
+        isSelected && 'ring-2 ring-brand/50',
+        isDraggingLocal && 'shadow-xl shadow-brand/20',
         !condition.enabled && 'opacity-50'
       )}
       onClick={handleSelect}
@@ -163,7 +164,7 @@ export function FilterBlock({
         onChange={(e) => handleFieldChange(e.target.value)}
         className={cn(
           'rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1.5 text-sm',
-          'text-zinc-200 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500',
+          'text-zinc-200 focus:border-brand focus:outline-hidden focus:ring-1 focus:ring-brand',
           'min-w-[100px]'
         )}
       >
@@ -188,7 +189,7 @@ export function FilterBlock({
             initial={{ opacity: 0, width: 0 }}
             animate={{ opacity: 1, width: 'auto' }}
             exit={{ opacity: 0, width: 0 }}
-            transition={{ duration: 0.15 }}
+            transition={{ duration: FILTER_TIMING.fast }}
             className="flex-1"
           >
             <ValueInput
@@ -267,12 +268,12 @@ export function FilterBlockOverlay({ condition }: { condition: FilterCondition }
     <div
       className={cn(
         'flex items-center gap-2 rounded-lg border p-3',
-        'bg-zinc-900/90 backdrop-blur-sm shadow-lg shadow-cyan-500/30',
+        'bg-zinc-900/90 backdrop-blur-xs shadow-lg shadow-brand/30',
         colors.border,
-        'ring-2 ring-cyan-500'
+        'ring-2 ring-brand'
       )}
     >
-      <GripVertical size={16} className="text-cyan-400" />
+      <GripVertical size={16} className="text-brand-hover" />
       <span className="text-sm text-zinc-300">
         {fieldDef.icon} {fieldDef.name}
       </span>

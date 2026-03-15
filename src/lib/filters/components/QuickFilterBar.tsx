@@ -7,9 +7,10 @@
 
 import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Search, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { QuickFilter, FilterConfig } from '../types';
-import { FILTER_ANIMATIONS, DEFAULT_QUICK_FILTERS } from '../constants';
+import { FILTER_ANIMATIONS, FILTER_TIMING, FILTER_SCALE, DEFAULT_QUICK_FILTERS } from '../constants';
 
 /**
  * QuickFilterBar Props
@@ -114,7 +115,7 @@ function DefaultQuickFilters({
       {showClearAll && activeFilters.length > 0 && onClear && (
         <motion.button
           className={cn(
-            'flex-shrink-0 px-2 py-1 text-xs',
+            'shrink-0 px-2 py-1 text-xs',
             'text-muted-foreground hover:text-foreground',
             'transition-colors'
           )}
@@ -211,11 +212,11 @@ function PillQuickFilters({
               'border',
               isActive
                 ? 'bg-primary text-primary-foreground border-primary'
-                : 'bg-background border-border hover:border-primary/50 hover:bg-accent/50'
+                : 'bg-background border-border hover:border-primary/50 filter-hover'
             )}
             onClick={() => onToggle(filter.id)}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            whileHover={{ scale: FILTER_SCALE.hover }}
+            whileTap={{ scale: FILTER_SCALE.tap }}
             layout
           >
             {filter.icon && <span>{filter.icon}</span>}
@@ -279,7 +280,7 @@ function QuickFilterChip({
   return (
     <motion.button
       className={cn(
-        'flex-shrink-0 inline-flex items-center gap-1.5',
+        'shrink-0 inline-flex items-center gap-1.5',
         'px-3 py-1.5 rounded-lg text-sm',
         'border transition-all',
         isActive
@@ -291,8 +292,8 @@ function QuickFilterChip({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 10 }}
       transition={{ delay: index * FILTER_ANIMATIONS.stagger.staggerChildren }}
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
+      whileHover={{ scale: FILTER_SCALE.hover }}
+      whileTap={{ scale: FILTER_SCALE.tap }}
       layout
     >
       {filter.icon && <span>{filter.icon}</span>}
@@ -348,9 +349,9 @@ export function QuickFilterGroup({
       >
         <motion.span
           animate={{ rotate: collapsed ? -90 : 0 }}
-          transition={{ duration: 0.2 }}
+          transition={{ duration: FILTER_TIMING.standard }}
         >
-          ▼
+          <ChevronDown size={14} />
         </motion.span>
         <span>{title}</span>
         {activeInGroup > 0 && (
@@ -428,15 +429,13 @@ export function SearchableQuickFilters({
           className={cn(
             'w-full px-3 py-2 pl-9 text-sm rounded-lg',
             'bg-background border border-border',
-            'focus:outline-none focus:ring-2 focus:ring-ring'
+            'focus:outline-hidden focus:ring-2 focus:ring-ring'
           )}
           placeholder={placeholder}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-          🔍
-        </span>
+        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
       </div>
 
       {/* Filters */}

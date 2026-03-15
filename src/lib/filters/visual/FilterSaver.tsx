@@ -31,6 +31,8 @@ import {
   useFilterBuilderActiveFilterId,
   type SavedFilter,
 } from '@/stores/filter-builder-store';
+import { GoatBookmark } from '@/components/illustrations/EmptyStateIllustrations';
+import { FILTER_TIMING } from '../constants';
 
 /**
  * SaveFilterDialog - Modal for saving a new filter
@@ -61,7 +63,7 @@ function SaveFilterDialog({
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/60 backdrop-blur-xl"
         onClick={onClose}
       />
 
@@ -95,7 +97,7 @@ function SaveFilterDialog({
               className={cn(
                 'w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm',
                 'text-zinc-200 placeholder-zinc-500',
-                'focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500'
+                'focus:border-brand focus:outline-hidden focus:ring-1 focus:ring-brand'
               )}
               autoFocus
             />
@@ -113,7 +115,7 @@ function SaveFilterDialog({
               className={cn(
                 'w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm',
                 'text-zinc-200 placeholder-zinc-500 resize-none',
-                'focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500'
+                'focus:border-brand focus:outline-hidden focus:ring-1 focus:ring-brand'
               )}
             />
           </div>
@@ -134,8 +136,8 @@ function SaveFilterDialog({
             disabled={!name.trim()}
             className={cn(
               'flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium',
-              'bg-cyan-500 text-white hover:bg-cyan-600',
-              'disabled:opacity-50 disabled:cursor-not-allowed'
+              'bg-brand text-white hover:bg-brand-muted',
+              'disabled:filter-disabled'
             )}
           >
             <Save size={16} />
@@ -183,7 +185,7 @@ function ShareDialog({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/60 backdrop-blur-xl"
         onClick={onClose}
       />
 
@@ -221,7 +223,7 @@ function ShareDialog({
             onClick={handleCopy}
             className={cn(
               'flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium',
-              'bg-cyan-500 text-white hover:bg-cyan-600',
+              'bg-brand text-white hover:bg-brand-muted',
               'min-w-[80px] justify-center'
             )}
           >
@@ -287,7 +289,7 @@ function SavedFilterCard({
       className={cn(
         'relative rounded-lg border p-3 transition-all cursor-pointer',
         isActive
-          ? 'border-cyan-500/50 bg-cyan-500/5'
+          ? 'border-brand/50 bg-brand/5'
           : 'border-zinc-700/50 bg-zinc-800/30 hover:bg-zinc-800/50'
       )}
       onClick={onLoad}
@@ -295,12 +297,12 @@ function SavedFilterCard({
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <Filter size={14} className={isActive ? 'text-cyan-400' : 'text-zinc-400'} />
-            <span className={cn('font-medium truncate', isActive ? 'text-cyan-300' : 'text-zinc-200')}>
+            <Filter size={14} className={isActive ? 'text-brand-hover' : 'text-zinc-400'} />
+            <span className={cn('font-medium truncate', isActive ? 'text-brand-hover' : 'text-zinc-200')}>
               {filter.name}
             </span>
             {isActive && (
-              <span className="text-xs bg-cyan-500/20 text-cyan-400 px-1.5 py-0.5 rounded">
+              <span className="text-xs bg-brand/20 text-brand-hover px-1.5 py-0.5 rounded">
                 Active
               </span>
             )}
@@ -327,7 +329,7 @@ function SavedFilterCard({
               e.stopPropagation();
               setShowMenu(!showMenu);
             }}
-            className="rounded p-1 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-700/50"
+            className="rounded p-1 text-zinc-500 hover:text-zinc-300 filter-hover"
           >
             <MoreHorizontal size={16} />
           </button>
@@ -346,7 +348,7 @@ function SavedFilterCard({
                     onDuplicate();
                     setShowMenu(false);
                   }}
-                  className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-700"
+                  className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-zinc-300 filter-hover"
                 >
                   <Copy size={12} />
                   Duplicate
@@ -357,7 +359,7 @@ function SavedFilterCard({
                     onDelete();
                     setShowMenu(false);
                   }}
-                  className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-red-400 hover:bg-zinc-700"
+                  className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-red-400 filter-hover"
                 >
                   <Trash2 size={12} />
                   Delete
@@ -442,7 +444,7 @@ export function FilterSaver({ className }: { className?: string }) {
           onClick={() => setShowSaveDialog(true)}
           className={cn(
             'flex items-center gap-2 rounded-md px-3 py-1.5 text-sm',
-            'bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20'
+            'bg-brand/10 text-brand-hover hover:bg-brand/20'
           )}
         >
           <Save size={14} />
@@ -453,7 +455,7 @@ export function FilterSaver({ className }: { className?: string }) {
           onClick={() => setShowFilters(!showFilters)}
           className={cn(
             'flex items-center gap-2 rounded-md px-3 py-1.5 text-sm',
-            'bg-zinc-800 text-zinc-300 hover:bg-zinc-700',
+            'bg-zinc-800 text-zinc-300 filter-hover',
             savedFilters.length > 0 && 'relative'
           )}
         >
@@ -470,7 +472,7 @@ export function FilterSaver({ className }: { className?: string }) {
           onClick={handleShare}
           className={cn(
             'flex items-center gap-2 rounded-md px-3 py-1.5 text-sm',
-            'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+            'bg-zinc-800 text-zinc-300 filter-hover'
           )}
         >
           <Share2 size={14} />
@@ -481,7 +483,7 @@ export function FilterSaver({ className }: { className?: string }) {
 
         <button
           onClick={handleExport}
-          className="rounded p-1.5 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800"
+          className="rounded p-1.5 text-zinc-500 hover:text-zinc-300 filter-hover"
           title="Export filter"
         >
           <Download size={14} />
@@ -489,7 +491,7 @@ export function FilterSaver({ className }: { className?: string }) {
 
         <button
           onClick={handleImport}
-          className="rounded p-1.5 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800"
+          className="rounded p-1.5 text-zinc-500 hover:text-zinc-300 filter-hover"
           title="Import filter"
         >
           <Upload size={14} />
@@ -497,7 +499,7 @@ export function FilterSaver({ className }: { className?: string }) {
 
         <button
           onClick={clearAll}
-          className="rounded p-1.5 text-zinc-500 hover:text-red-400 hover:bg-zinc-800"
+          className="rounded p-1.5 text-zinc-500 hover:text-red-400 filter-hover"
           title="Clear all"
         >
           <Trash2 size={14} />
@@ -532,9 +534,10 @@ export function FilterSaver({ className }: { className?: string }) {
 
       {/* Empty state */}
       {showFilters && savedFilters.length === 0 && (
-        <div className="rounded-lg border border-dashed border-zinc-700 p-4 text-center">
-          <p className="text-sm text-zinc-500">No saved filters yet</p>
-          <p className="text-xs text-zinc-600 mt-1">
+        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-zinc-700 bg-gradient-to-br from-brand/[0.04] to-purple-500/[0.04] p-6">
+          <GoatBookmark width={100} height={80} />
+          <p className="text-sm text-zinc-400 mt-2">No saved filters yet</p>
+          <p className="text-xs text-zinc-500 mt-1">
             Create conditions and click Save to store them
           </p>
         </div>
@@ -572,7 +575,7 @@ export function FilterActions({ className }: { className?: string }) {
     <div className={cn('flex items-center gap-1', className)}>
       <button
         onClick={() => setShowSave(true)}
-        className="rounded p-1.5 text-zinc-400 hover:text-cyan-400 hover:bg-zinc-800"
+        className="rounded p-1.5 text-zinc-400 hover:text-brand-hover filter-hover"
         title="Save filter"
       >
         <Save size={16} />
@@ -582,14 +585,14 @@ export function FilterActions({ className }: { className?: string }) {
           const code = generateShareCode();
           navigator.clipboard.writeText(code);
         }}
-        className="rounded p-1.5 text-zinc-400 hover:text-cyan-400 hover:bg-zinc-800"
+        className="rounded p-1.5 text-zinc-400 hover:text-brand-hover filter-hover"
         title="Copy share link"
       >
         <Link size={16} />
       </button>
       <button
         onClick={clearAll}
-        className="rounded p-1.5 text-zinc-400 hover:text-red-400 hover:bg-zinc-800"
+        className="rounded p-1.5 text-zinc-400 hover:text-red-400 filter-hover"
         title="Clear all"
       >
         <Trash2 size={16} />

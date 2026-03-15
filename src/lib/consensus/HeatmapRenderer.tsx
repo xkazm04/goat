@@ -300,13 +300,12 @@ export const HeatmapTooltip = memo(function HeatmapTooltip({
   return (
     <AnimatePresence>
       <motion.div
-        className="fixed z-50 p-3 rounded-xl shadow-xl pointer-events-none"
+        className="fixed z-50 p-3 rounded-xl shadow-xl pointer-events-none backdrop-blur-sm"
         style={{
           left: x + 10,
           top: y + 10,
           background: 'rgba(30, 41, 59, 0.95)',
           border: `1px solid ${cell.color}50`,
-          backdropFilter: 'blur(8px)',
         }}
         initial={{ opacity: 0, y: 5 }}
         animate={{ opacity: 1, y: 0 }}

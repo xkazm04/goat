@@ -36,7 +36,7 @@ export default function BlueprintPage() {
           animate={{ opacity: 1, scale: 1 }}
           className="text-center"
         >
-          <Loader2 className="w-12 h-12 text-cyan-400 animate-spin mx-auto mb-4" />
+          <Loader2 className="w-12 h-12 text-brand-hover animate-spin mx-auto mb-4" />
           <p className="text-white/70 text-lg">Loading blueprint...</p>
         </motion.div>
       </div>
@@ -60,7 +60,7 @@ export default function BlueprintPage() {
           </p>
           <button
             onClick={() => router.push("/")}
-            className="px-6 py-3 bg-cyan-500 hover:bg-cyan-400 text-white font-semibold rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-cyan-500/25 hover:scale-105 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+            className="px-6 py-3 bg-brand hover:bg-brand-hover text-white font-semibold rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-brand/25 hover:scale-105 active:scale-[0.98] focus-ring"
             data-testid="blueprint-not-found-home-btn"
           >
             Go to Home
@@ -164,7 +164,7 @@ export default function BlueprintPage() {
             )}
 
             {/* Loading indicator */}
-            <div className="flex items-center justify-center gap-3 py-4 rounded-xl bg-white/[0.02] border border-white/5">
+            <div className="flex items-center justify-center gap-3 py-4 rounded-xl bg-white/2 border border-white/5">
               <Loader2 className="w-5 h-5 animate-spin" style={{ color: blueprint.color.primary }} />
               <span className="text-white/70">Opening creation modal...</span>
             </div>
