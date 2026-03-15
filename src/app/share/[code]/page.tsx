@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { SharedRanking } from "@/types/share";
-import { ShareableListCard } from "@/app/features/Share/ShareableListCard";
 import { SocialButton } from "@/components/ui/SocialButton";
 import { AnimatedCounter } from "@/components/ui/AnimatedCounter";
 import {
@@ -34,6 +33,8 @@ export default function SharePage() {
   const [ranking, setRanking] = useState<SharedRanking | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const reducedMotion = prefersReducedMotion();
 
@@ -62,24 +63,9 @@ export default function SharePage() {
     }
   }, [code]);
 
-  const handleChallenge = async () => {
-    try {
-      // Call the challenge API
-      const response = await fetch(`/api/share/${code}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        // Redirect to create a new list with the same config
-        router.push(data.data.redirect_url);
-      }
-    } catch (err) {
-      console.error("Error challenging ranking:", err);
-    }
+  const handleStartRanking = () => {
+    if (!ranking) return;
+    router.push(`/?list=${ranking.list_id}`);
   };
 
   const handleShare = (platform: string) => {
@@ -108,8 +94,9 @@ export default function SharePage() {
         url = `https://wa.me/?text=${encodeURIComponent(`${text}\n\n${shareUrl}`)}`;
         break;
       case "discord":
-        // Discord uses the OG metadata when a URL is pasted
         navigator.clipboard.writeText(shareUrl);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
         return;
     }
 
@@ -126,16 +113,45 @@ export default function SharePage() {
 
     try {
       await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error("Failed to copy:", err);
     }
+  };
+
+  const handleNativeShare = async () => {
+    if (!ranking || !navigator.share) return;
+
+    const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+    const shareUrl = `${baseUrl}/share/${ranking.share_code}`;
+
+    try {
+      await navigator.share({
+        title: ranking.title,
+        text: `Check out my Top ${ranking.items.length} ${ranking.category} ranking!`,
+        url: shareUrl,
+      });
+    } catch (err) {
+      // User cancelled or share failed silently
+    }
+  };
+
+  // Attribution text
+  const getAttribution = () => {
+    if (!ranking) return "";
+    const count = ranking.items.length;
+    if (ranking.display_name) {
+      return `${ranking.display_name}'s Top ${count} ${ranking.category}`;
+    }
+    return `Someone ranked their Top ${count} ${ranking.category}`;
   };
 
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <motion.div
-          className="w-12 h-12 border-4 border-cyan-400/30 border-t-cyan-400 rounded-full"
+          className="w-12 h-12 border-4 border-brand-hover/30 border-t-brand-hover rounded-full"
           animate={{ rotate: 360 }}
           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
         />
@@ -169,7 +185,7 @@ export default function SharePage() {
         </motion.div>
         <motion.button
           onClick={() => router.push("/")}
-          className="mt-4 px-6 py-3 bg-cyan-600 hover:bg-cyan-500 rounded-xl font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/50"
+          className="mt-4 px-6 py-3 bg-brand-muted hover:bg-brand rounded-xl font-medium transition-all duration-200 focus-ring"
           data-testid="share-go-home-btn"
           initial={reducedMotion ? false : { opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -185,16 +201,16 @@ export default function SharePage() {
 
   return (
     <motion.div
-      className="min-h-screen py-12 px-4"
+      className="min-h-screen py-8 sm:py-12 px-4"
       variants={pageEntranceVariants}
       initial={reducedMotion ? false : "hidden"}
       animate="visible"
     >
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-2xl mx-auto">
         {/* Back button */}
         <motion.button
           onClick={() => router.push("/")}
-          className="mb-8 flex items-center gap-2 text-gray-400 hover:text-white transition-all duration-200"
+          className="mb-6 flex items-center gap-2 text-gray-400 hover:text-white transition-all duration-200 min-h-[44px]"
           data-testid="share-back-btn"
           initial={reducedMotion ? false : { opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -207,6 +223,19 @@ export default function SharePage() {
           Back to Home
         </motion.button>
 
+        {/* Attribution Header */}
+        <motion.div
+          className="mb-6"
+          initial={reducedMotion ? false : { opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+        >
+          <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+            {getAttribution()}
+          </h1>
+          <p className="text-gray-400 mt-1 text-sm">{ranking.title}</p>
+        </motion.div>
+
         {/* Main content */}
         <AnimatePresence mode="wait">
           <motion.div
@@ -214,67 +243,106 @@ export default function SharePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            {/* Shareable Card */}
-            <ShareableListCard
-              ranking={ranking}
-              onChallenge={handleChallenge}
-              onShare={handleShare}
-              onCopyLink={handleCopyLink}
-            />
-
-            {/* Stats with Animated Counters */}
+            {/* Ranking List Card */}
             <motion.div
-              className="mt-8 grid grid-cols-2 gap-4"
+              className="rounded-2xl overflow-hidden"
+              style={{
+                background: "linear-gradient(135deg, rgba(6, 182, 212, 0.06) 0%, rgba(139, 92, 246, 0.06) 100%)",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
+              }}
+            >
+              <div className="divide-y divide-white/5">
+                {ranking.items.map((item, index) => (
+                  <motion.div
+                    key={index}
+                    className="flex items-center gap-3 sm:gap-4 px-4 sm:px-6 py-3 hover:bg-white/[0.02] transition-colors"
+                    initial={reducedMotion ? false : { opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.25 + index * 0.03 }}
+                  >
+                    {/* Position */}
+                    <div
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold flex-shrink-0 ${
+                        item.position === 1
+                          ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
+                          : item.position === 2
+                          ? "bg-gray-300/20 text-gray-300 border border-gray-400/30"
+                          : item.position === 3
+                          ? "bg-amber-600/20 text-amber-500 border border-amber-600/30"
+                          : "bg-white/5 text-gray-400 border border-white/10"
+                      }`}
+                    >
+                      {item.position}
+                    </div>
+
+                    {/* Thumbnail */}
+                    {item.image_url && (
+                      <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-white/5">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={item.image_url}
+                          alt=""
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+
+                    {/* Title */}
+                    <span className={`text-sm sm:text-base ${item.position <= 3 ? "text-white font-semibold" : "text-gray-300"}`}>
+                      {item.title}
+                    </span>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Stats */}
+            <motion.div
+              className="mt-6 grid grid-cols-2 gap-3"
               initial={reducedMotion ? false : { opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
             >
-              <motion.div
-                className="rounded-xl p-6 text-center"
+              <div
+                className="rounded-xl p-4 text-center"
                 style={{
                   background: "linear-gradient(135deg, rgba(6, 182, 212, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%)",
                   border: "1px solid rgba(6, 182, 212, 0.15)",
-                  boxShadow: "0 4px 20px rgba(6, 182, 212, 0.05)",
                 }}
-                whileHover={{ scale: 1.02, boxShadow: "0 8px 30px rgba(6, 182, 212, 0.1)" }}
-                transition={{ duration: 0.2 }}
               >
                 <AnimatedCounter
                   value={ranking.view_count}
-                  className="text-3xl font-bold text-cyan-400"
+                  className="text-2xl font-bold text-brand-hover"
                   delay={0.5}
                 />
-                <div className="text-sm text-gray-400 mt-1">Views</div>
-              </motion.div>
-              <motion.div
-                className="rounded-xl p-6 text-center"
+                <div className="text-xs text-gray-400 mt-1">Views</div>
+              </div>
+              <div
+                className="rounded-xl p-4 text-center"
                 style={{
                   background: "linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%)",
                   border: "1px solid rgba(139, 92, 246, 0.15)",
-                  boxShadow: "0 4px 20px rgba(139, 92, 246, 0.05)",
                 }}
-                whileHover={{ scale: 1.02, boxShadow: "0 8px 30px rgba(139, 92, 246, 0.1)" }}
-                transition={{ duration: 0.2 }}
               >
                 <AnimatedCounter
                   value={ranking.challenge_count}
-                  className="text-3xl font-bold text-purple-400"
+                  className="text-2xl font-bold text-purple-400"
                   delay={0.6}
                 />
-                <div className="text-sm text-gray-400 mt-1">Challenges</div>
-              </motion.div>
+                <div className="text-xs text-gray-400 mt-1">Challenges</div>
+              </div>
             </motion.div>
 
-            {/* Share buttons section */}
+            {/* Share buttons */}
             <motion.div
-              className="mt-8"
+              className="mt-6"
               initial={reducedMotion ? false : { opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
             >
-              <h3 className="text-lg font-semibold text-white mb-4 tracking-tight">Share this ranking</h3>
+              <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Share this ranking</h3>
               <motion.div
-                className="grid grid-cols-3 sm:grid-cols-6 gap-3"
+                className="grid grid-cols-3 sm:grid-cols-6 gap-2"
                 variants={staggerContainerVariants}
                 initial={reducedMotion ? false : "hidden"}
                 animate="visible"
@@ -296,39 +364,102 @@ export default function SharePage() {
                   </motion.div>
                 ))}
               </motion.div>
+
+              {/* Copy link and native share */}
+              <div className="flex gap-2 mt-3">
+                <button
+                  onClick={handleCopyLink}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-sm text-gray-300 transition-all min-h-[44px]"
+                  data-testid="share-copy-link-btn"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                  </svg>
+                  {copied ? "Copied!" : "Copy Link"}
+                </button>
+                {typeof navigator !== "undefined" && "share" in navigator && (
+                  <button
+                    onClick={handleNativeShare}
+                    className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-sm text-gray-300 transition-all min-h-[44px]"
+                    data-testid="share-native-btn"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    Share
+                  </button>
+                )}
+              </div>
             </motion.div>
 
             {/* Challenge CTA */}
             <motion.div
-              className="mt-12 text-center"
+              className="mt-10 text-center"
               initial={reducedMotion ? false : { opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6 }}
             >
-              <motion.div
-                className="text-gray-400 mb-4"
-                initial={reducedMotion ? false : { opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.7 }}
-              >
-                Think you can do better?
-              </motion.div>
-              <motion.button
-                onClick={handleChallenge}
-                className="px-8 py-4 rounded-xl font-bold text-lg transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
-                style={{
-                  background: "linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%)",
-                  boxShadow: "0 8px 30px rgba(6, 182, 212, 0.35)",
-                }}
-                data-testid="share-challenge-cta-btn"
-                initial={reducedMotion ? false : { scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.8, type: "spring", stiffness: 400, damping: 20 }}
-                whileHover={{ scale: 1.05, boxShadow: "0 12px 40px rgba(6, 182, 212, 0.45)" }}
-                whileTap={{ scale: 0.98 }}
-              >
-                Challenge This Ranking
-              </motion.button>
+              <p className="text-gray-400 mb-4 text-lg">Think you can do better?</p>
+
+              {!showPreview ? (
+                <motion.button
+                  onClick={() => setShowPreview(true)}
+                  className="px-8 py-4 rounded-xl font-bold text-lg text-white transition-all duration-300 focus-ring min-h-[44px]"
+                  style={{
+                    background: "linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%)",
+                    boxShadow: "0 8px 30px rgba(6, 182, 212, 0.35)",
+                  }}
+                  data-testid="share-challenge-cta-btn"
+                  whileHover={{ scale: 1.05, boxShadow: "0 12px 40px rgba(6, 182, 212, 0.45)" }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  Make Your Own
+                </motion.button>
+              ) : (
+                <motion.div
+                  className="rounded-2xl p-6 text-left"
+                  style={{
+                    background: "linear-gradient(135deg, rgba(6, 182, 212, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%)",
+                    border: "1px solid rgba(6, 182, 212, 0.2)",
+                  }}
+                  initial={{ opacity: 0, y: 10, scale: 0.97 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                >
+                  <h4 className="text-lg font-bold text-white mb-2">{ranking.title}</h4>
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-cyan-500/15 text-cyan-400 border border-cyan-500/20">
+                      {ranking.category}
+                    </span>
+                    {ranking.subcategory && (
+                      <span className="px-3 py-1 rounded-full text-xs font-medium bg-purple-500/15 text-purple-400 border border-purple-500/20">
+                        {ranking.subcategory}
+                      </span>
+                    )}
+                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-white/5 text-gray-400 border border-white/10">
+                      {ranking.items.length} items
+                    </span>
+                    {ranking.time_period && (
+                      <span className="px-3 py-1 rounded-full text-xs font-medium bg-white/5 text-gray-400 border border-white/10">
+                        {ranking.time_period}
+                      </span>
+                    )}
+                  </div>
+                  <motion.button
+                    onClick={handleStartRanking}
+                    className="w-full px-6 py-3 rounded-xl font-bold text-white transition-all duration-300 focus-ring min-h-[44px]"
+                    style={{
+                      background: "linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%)",
+                      boxShadow: "0 4px 20px rgba(6, 182, 212, 0.3)",
+                    }}
+                    data-testid="share-start-ranking-btn"
+                    whileHover={{ scale: 1.02, boxShadow: "0 8px 30px rgba(6, 182, 212, 0.4)" }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    Start Ranking
+                  </motion.button>
+                </motion.div>
+              )}
             </motion.div>
           </motion.div>
         </AnimatePresence>
