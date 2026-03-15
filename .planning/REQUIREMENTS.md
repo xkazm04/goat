@@ -19,11 +19,11 @@ Requirements for production launch. Each maps to roadmap phases.
 
 ### Sharing & Results
 
-- [ ] **SHAR-01**: User can download a PNG image of their completed ranking
-- [ ] **SHAR-02**: Result image is sized correctly for social media (Instagram, Twitter/X)
+- [x] **SHAR-01**: User can download a PNG image of their completed ranking
+- [x] **SHAR-02**: Result image is sized correctly for social media (Instagram, Twitter/X)
 - [ ] **SHAR-03**: User can get a unique shareable URL for their completed ranking
 - [ ] **SHAR-04**: Shared link shows OG preview image when pasted in social media/messaging
-- [ ] **SHAR-05**: User can choose from 2-3 visual themes for their result image
+- [x] **SHAR-05**: User can choose from 2-3 visual themes for their result image
 
 ### Authentication & Accounts
 
@@ -115,11 +115,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CONT-03 | Phase 3 | Complete |
 | CONT-04 | Phase 3 | Complete |
 | CONT-05 | Phase 3 | Complete |
-| SHAR-01 | Phase 4 | Pending |
-| SHAR-02 | Phase 4 | Pending |
+| SHAR-01 | Phase 4 | Complete |
+| SHAR-02 | Phase 4 | Complete |
 | SHAR-03 | Phase 4 | Pending |
 | SHAR-04 | Phase 4 | Pending |
-| SHAR-05 | Phase 4 | Pending |
+| SHAR-05 | Phase 4 | Complete |
 | MOBL-01 | Phase 4 | Pending |
 | MOBL-02 | Phase 4 | Pending |
 | MOBL-03 | Phase 5 | Pending |
