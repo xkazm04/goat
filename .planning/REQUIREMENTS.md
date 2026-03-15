@@ -43,8 +43,8 @@ Requirements for production launch. Each maps to roadmap phases.
 
 ### Mobile & UI Polish
 
-- [ ] **MOBL-01**: Ranking grid is usable on mobile devices
-- [ ] **MOBL-02**: Result/sharing pages render correctly on mobile
+- [x] **MOBL-01**: Ranking grid is usable on mobile devices
+- [x] **MOBL-02**: Result/sharing pages render correctly on mobile
 - [ ] **MOBL-03**: All interactive components feel natural and polished
 - [ ] **MOBL-04**: Loading states, empty states, and error states are handled gracefully
 
@@ -120,8 +120,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SHAR-03 | Phase 4 | Pending |
 | SHAR-04 | Phase 4 | Pending |
 | SHAR-05 | Phase 4 | Complete |
-| MOBL-01 | Phase 4 | Pending |
-| MOBL-02 | Phase 4 | Pending |
+| MOBL-01 | Phase 4 | Complete |
+| MOBL-02 | Phase 4 | Complete |
 | MOBL-03 | Phase 5 | Pending |
 | MOBL-04 | Phase 5 | Pending |
 | PROD-01 | Phase 5 | Pending |
