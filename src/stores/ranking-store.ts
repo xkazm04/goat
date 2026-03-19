@@ -1,6 +1,13 @@
 /**
  * Unified Ranking Store - Single Source of Truth
  *
+ * OWNERSHIP CONTRACT:
+ *   Owns: ranking array, item-to-tier assignments, tier config & boundaries,
+ *         bracket state, smart tier calculation
+ *   Persists: localStorage (via Zustand persist middleware)
+ *   Sync: Self-contained — tiers derive from ranking[] internally.
+ *         NO other store may write tier assignments or ranking positions.
+ *
  * This store serves as the unified source of truth for all ranking data across
  * all modes (Podium, Goat, Rushmore, Bracket, Tier List). It manages:
  * - Core ranking array (the canonical ranking)
@@ -52,6 +59,7 @@ import {
 } from '@/app/features/Match/sub_MatchBracket/lib/bracketGenerator';
 import { seedParticipants, type SeedingStrategy } from '@/app/features/Match/sub_MatchBracket/lib/seedingEngine';
 import { backlogToTransferable } from '@/lib/dnd/type-guards';
+import { extractTitle } from '@/lib/items/item-utils';
 import {
   calculateTierBoundaries,
   createTiersFromBoundaries,
@@ -303,6 +311,8 @@ export const useRankingStore = create<RankingStore>()(
         bracketState: null,
         bracketConfig: null,
         bracketUndoStack: [] as Array<{ bracketState: RankingBracketState; matchupId: string }>,
+        /** Maximum number of undo entries kept in memory to prevent bloat */
+        bracketUndoMaxDepth: 15,
         tierState: initialTierState,
         tierConfig: DEFAULT_TIER_CONFIG,
         smartTierState: initialSmartTierState,
@@ -314,6 +324,12 @@ export const useRankingStore = create<RankingStore>()(
         initializeRanking: (size: number) => {
           const ranking = createEmptyRanking(size);
           const stats = computeStatistics(ranking);
+          const currentState = get();
+
+          // Clear custom thresholds if list size changed to prevent stale boundaries
+          const thresholds = currentState.smartTierState.configuration.customThresholds;
+          const thresholdsStale =
+            thresholds.length > 0 && thresholds[thresholds.length - 1] !== size;
 
           set({
             ranking,
@@ -321,7 +337,7 @@ export const useRankingStore = create<RankingStore>()(
             ...stats,
             tierState: {
               ...initialTierState,
-              tiers: get().tierConfig.tiers.map(t => ({
+              tiers: currentState.tierConfig.tiers.map(t => ({
                 ...t,
                 itemIds: [],
                 collapsed: false,
@@ -330,6 +346,15 @@ export const useRankingStore = create<RankingStore>()(
             // Reset bracket state when list changes
             bracketState: null,
             bracketConfig: null,
+            ...(thresholdsStale ? {
+              smartTierState: {
+                ...currentState.smartTierState,
+                configuration: {
+                  ...currentState.smartTierState.configuration,
+                  customThresholds: [],
+                },
+              },
+            } : {}),
           });
         },
 
@@ -486,9 +511,16 @@ export const useRankingStore = create<RankingStore>()(
               rankingSnapshot: state.bracketState.rankingSnapshot,
             };
 
+            const newStack = [...state.bracketUndoStack, undoEntry];
+            // Cap undo stack to prevent memory bloat in long tournaments
+            const maxDepth = state.bracketUndoMaxDepth;
+            const cappedStack = newStack.length > maxDepth
+              ? newStack.slice(newStack.length - maxDepth)
+              : newStack;
+
             return {
               bracketState,
-              bracketUndoStack: [...state.bracketUndoStack, undoEntry],
+              bracketUndoStack: cappedStack,
             };
           });
         },
@@ -538,6 +570,20 @@ export const useRankingStore = create<RankingStore>()(
                 }
                 return false;
               });
+
+              // Rebase remaining entries: clear the revoted matchup (and its cascades)
+              // from each snapshot so undoing an unrelated matchup doesn't silently
+              // restore the overridden vote result.
+              stack = stack.map(entry => {
+                // Check if this snapshot still has the revoted matchup completed
+                const hasRevotedResult = entry.bracketState.rounds.some(r =>
+                  r.matchups.some(m => m.id === matchupId && m.isComplete)
+                );
+                if (!hasRevotedResult) return entry;
+
+                const rebasedState = undoMatchupResult(entry.bracketState, matchupId);
+                return { ...entry, bracketState: rebasedState as RankingBracketState };
+              });
             }
 
             return { bracketState, bracketUndoStack: stack };
@@ -560,7 +606,7 @@ export const useRankingStore = create<RankingStore>()(
                 const item = rankedParticipants[i].item!;
                 const transferable: TransferableItem = {
                   id: item.id,
-                  title: item.title || item.name || 'Untitled',
+                  title: extractTitle(item) || 'Untitled',
                   description: item.description,
                   image_url: item.image_url,
                   tags: item.tags,
@@ -1040,9 +1086,16 @@ export const useRankingStore = create<RankingStore>()(
               ? 'pyramid'
               : 'equal';
 
-            const boundaries =
-              configuration.customThresholds.length > 0
-                ? configuration.customThresholds
+            // Validate custom thresholds against current list size.
+            // Stale thresholds (e.g. saved for a 50-item list but now 30 items)
+            // would reference out-of-range positions and corrupt tier assignment.
+            const customThresholds = configuration.customThresholds;
+            const customThresholdsValid =
+              customThresholds.length > 0 &&
+              customThresholds[customThresholds.length - 1] === listSize;
+
+            const boundaries = customThresholdsValid
+                ? customThresholds
                 : calculateTierBoundaries(listSize, preset.tierCount, algorithm);
 
             // Adjust preset to fit actual list size
@@ -1277,6 +1330,24 @@ export const useRankingStore = create<RankingStore>()(
           if (state && state.ranking) {
             const stats = computeStatistics(state.ranking);
             Object.assign(state, stats);
+
+            // Clear stale custom thresholds if they don't match current ranking size.
+            // This prevents phantom tiers when a list was resized between sessions.
+            const listSize = state.ranking.length;
+            const thresholds = state.smartTierState?.configuration?.customThresholds;
+            if (
+              thresholds &&
+              thresholds.length > 0 &&
+              thresholds[thresholds.length - 1] !== listSize
+            ) {
+              state.smartTierState = {
+                ...state.smartTierState,
+                configuration: {
+                  ...state.smartTierState.configuration,
+                  customThresholds: [],
+                },
+              };
+            }
           }
         },
       }

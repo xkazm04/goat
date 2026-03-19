@@ -1,22 +1,11 @@
 /**
  * Gemini AI Provider
- * 
+ *
  * Extracted provider for future use across the application
  * Uses Google Gemini API with Google Search tool
  */
 
-import { GoogleGenAI } from '@google/genai';
-
-// Initialize Gemini client
-function getGeminiClient() {
-  const apiKey = process.env.GEMINI_API_KEY;
-
-  if (!apiKey) {
-    throw new Error('GEMINI_API_KEY environment variable is not set');
-  }
-
-  return new GoogleGenAI({ apiKey });
-}
+import { getGeminiClient, GEMINI_MODEL_FLASH } from './gemini-client';
 
 export interface ItemRecommendationRequest {
   name: string;
@@ -42,18 +31,31 @@ export async function getItemRecommendation(
   const client = getGeminiClient();
 
   const prompt = buildRecommendationPrompt(request);
+  const callStart = performance.now();
 
   try {
     const response = await client.models.generateContent({
-      model: 'gemini-2.0-flash',
+      model: GEMINI_MODEL_FLASH,
       contents: prompt,
     });
+    const durationMs = Math.round(performance.now() - callStart);
     const text = response.text ?? '';
 
-    // Parse the response into structured output
-    return parseRecommendationResponse(text, request);
+    const result = parseRecommendationResponse(text, request);
+
+    console.log('[Gemini] recommendation_complete', JSON.stringify({
+      operation: 'gemini_recommendation',
+      item: request.name,
+      category: request.category,
+      duration_ms: durationMs,
+      confidence: result.confidence ?? null,
+      has_image: !!result.image_url,
+    }));
+
+    return result;
   } catch (error) {
-    console.error('Error getting item recommendation:', error);
+    const durationMs = Math.round(performance.now() - callStart);
+    console.error(`[Gemini] recommendation_error (${durationMs}ms):`, error);
     throw new Error(`Failed to get recommendation: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }

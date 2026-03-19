@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { CompletionModal } from "./modals/completion/CompletionModal";
 import ShowcaseDecor from "./decorations/ShowcaseDecor";
 import { getCenterTextStyles, getProgressLineStyles } from "@/lib/helpers/getCompletionStyles";
+import { DURATION } from '@/lib/animations/motion-presets';
 
 interface ProgressMainProps {
     text: string;
@@ -54,7 +55,7 @@ const ProgressMain = ({ text, showPercentage = true, className = "" }: ProgressM
                         initial={{ opacity: 0, scale: 0 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: 1.8, duration: 0.4 }}
-                        className="flex justify-center items-center gap-1 px-2 py-1 rounded-full text-xs"
+                        className="flex justify-center items-center gap-1 px-2 py-1 rounded-badge text-xs"
                     >
                         <span
                             style={{
@@ -80,14 +81,14 @@ const ProgressMain = ({ text, showPercentage = true, className = "" }: ProgressM
                     className={`flex items-center justify-center gap-4 mb-6 ${className}`}
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.8, duration: 0.6 }}
+                    transition={{ delay: 0.8, duration: DURATION.emphasis }}
                 >
                     {/* Left Progress Line */}
                     <motion.div
                         className="h-px flex-1 relative overflow-hidden"
                         initial={{ scaleX: 0 }}
                         animate={{ scaleX: 1 }}
-                        transition={{ delay: 1.2, duration: 0.8 }}
+                        transition={{ delay: 1.2, duration: DURATION.dramatic }}
                     >
                         {/* Background line */}
                         <div
@@ -125,7 +126,7 @@ const ProgressMain = ({ text, showPercentage = true, className = "" }: ProgressM
 
                     {/* Center Text Container */}
                     <motion.div
-                        className="text-xl z-30 font-semibold tracking-wider relative px-6 py-2 rounded-full flex items-center gap-3"
+                        className="text-xl z-30 font-semibold tracking-wider relative px-6 py-2 rounded-badge flex items-center gap-3"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{
                             opacity: 1,
@@ -140,7 +141,7 @@ const ProgressMain = ({ text, showPercentage = true, className = "" }: ProgressM
                         }}
                         transition={{
                             delay: 1,
-                            duration: 0.6,
+                            duration: DURATION.emphasis,
                             ...(isCompleted && {
                                 textShadow: {
                                     repeat: Infinity,
@@ -168,7 +169,7 @@ const ProgressMain = ({ text, showPercentage = true, className = "" }: ProgressM
                         className="h-px flex-1 relative overflow-hidden"
                         initial={{ scaleX: 0 }}
                         animate={{ scaleX: 1 }}
-                        transition={{ delay: 1.2, duration: 0.8 }}
+                        transition={{ delay: 1.2, duration: DURATION.dramatic }}
                     >
                         {/* Background line */}
                         <div

@@ -24,95 +24,25 @@
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import type { PositionBadgeProps, PositionTier, BadgeSize } from './types';
+import {
+  positionTierStyles,
+  positionBadgeSizeScale,
+  resolveTierFromPosition,
+} from '@/lib/tokens/badge-tokens';
+import type { PositionBadgeProps, BadgeSize } from './types';
 
-// =============================================================================
-// Tier Configuration
-// =============================================================================
+export { resolveTierFromPosition as getPositionTier } from '@/lib/tokens/badge-tokens';
 
-interface TierStyle {
-  container: string;
-  text: string;
-  shadow?: string;
-}
-
-const tierStyles: Record<PositionTier, TierStyle> = {
-  gold: {
-    container: 'bg-linear-to-br from-yellow-300 via-yellow-400 to-amber-500',
-    text: 'text-yellow-950 font-bold',
-    shadow: 'shadow-lg shadow-yellow-500/40',
-  },
-  silver: {
-    container: 'bg-linear-to-br from-slate-200 via-slate-300 to-zinc-400',
-    text: 'text-slate-900 font-bold',
-    shadow: 'shadow-lg shadow-slate-400/30',
-  },
-  bronze: {
-    container: 'bg-linear-to-br from-orange-400 via-orange-500 to-amber-600',
-    text: 'text-orange-950 font-bold',
-    shadow: 'shadow-lg shadow-orange-500/30',
-  },
-  top10: {
-    container: 'bg-brand/20 border border-brand/40',
-    text: 'text-brand-hover font-semibold',
-  },
-  standard: {
-    container: 'bg-zinc-800/50 border border-zinc-700/50',
-    text: 'text-zinc-400 font-medium',
-  },
-  minimal: {
-    container: 'bg-transparent',
-    text: 'text-zinc-500 font-mono',
-  },
-};
-
-// =============================================================================
-// Size Configuration
-// =============================================================================
-
-interface SizeConfig {
-  container: string;
-  fontSize: string;
-  minWidth: string;
-}
-
-const sizeConfigs: Record<BadgeSize, SizeConfig> = {
-  xs: {
-    container: 'h-4 px-1',
-    fontSize: 'text-2xs',
-    minWidth: 'min-w-[16px]',
-  },
-  sm: {
-    container: 'h-5 px-1.5',
-    fontSize: 'text-xs',
-    minWidth: 'min-w-[20px]',
-  },
-  md: {
-    container: 'h-6 px-2',
-    fontSize: 'text-sm',
-    minWidth: 'min-w-[24px]',
-  },
-  lg: {
-    container: 'h-8 px-2.5',
-    fontSize: 'text-base',
-    minWidth: 'min-w-[32px]',
-  },
-};
-
-// =============================================================================
-// Utility Functions
-// =============================================================================
+const tierStyles = positionTierStyles;
+const sizeConfigs = positionBadgeSizeScale;
 
 /**
- * Get tier based on position
+ * Clamp position to a safe non-negative integer.
+ * Returns 0 for NaN, negative, or non-finite values.
  */
-export function getPositionTier(position: number): PositionTier {
-  if (position === 0) return 'gold';
-  if (position === 1) return 'silver';
-  if (position === 2) return 'bronze';
-  if (position < 10) return 'top10';
-  if (position < 25) return 'standard';
-  return 'minimal';
+function safePosition(position: number): number {
+  if (!Number.isFinite(position) || position < 0) return 0;
+  return Math.floor(position);
 }
 
 /**
@@ -127,12 +57,13 @@ function getDisplayNumber(position: number): string {
 // =============================================================================
 
 export const PositionBadge = React.memo(function PositionBadge({
-  position,
+  position: rawPosition,
   size = 'sm',
   showTier = true,
   className,
 }: PositionBadgeProps) {
-  const tier = useMemo(() => getPositionTier(position), [position]);
+  const position = safePosition(rawPosition);
+  const tier = useMemo(() => resolveTierFromPosition(position), [position]);
   const displayNumber = useMemo(() => getDisplayNumber(position), [position]);
 
   const tierStyle = tierStyles[tier];
@@ -215,13 +146,14 @@ export interface PositionBadgeWithIconProps extends PositionBadgeProps {
 }
 
 export const PositionBadgeWithIcon = React.memo(function PositionBadgeWithIcon({
-  position,
+  position: rawPosition,
   size = 'sm',
   showTier = true,
   showIcon = false,
   className,
 }: PositionBadgeWithIconProps) {
-  const tier = useMemo(() => getPositionTier(position), [position]);
+  const position = safePosition(rawPosition);
+  const tier = useMemo(() => resolveTierFromPosition(position), [position]);
   const displayNumber = useMemo(() => getDisplayNumber(position), [position]);
 
   const tierStyle = tierStyles[tier];

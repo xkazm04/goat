@@ -34,8 +34,9 @@ import type {
   OperationResultHandler,
   ValidationErrorHandler,
 } from './types';
-import { isGridReceiverId, extractGridPosition } from '../transfer-protocol';
+import { isGridReceiverId, extractGridPosition, assertCanonicalGridId } from '../transfer-protocol';
 import { dndLogger } from '@/lib/logger';
+import { useUndoStore } from '@/stores/undo-store';
 
 // ============================================================================
 // Context Parsing Utilities
@@ -51,7 +52,8 @@ function parseSource(event: DragEndEvent): DragSource | null {
   const activeId = String(active.id);
   const data = active.data.current;
 
-  // Check if it's a grid item (by ID pattern)
+  // Check if it's a grid item (by ID pattern) — assert canonical format in dev
+  assertCanonicalGridId(activeId, 'DragOperationRouter.parseSource');
   if (isGridReceiverId(activeId)) {
     const position = extractGridPosition(activeId);
     return {
@@ -113,13 +115,14 @@ function parseTarget(event: DragEndEvent): DragTarget | null {
   const data = over.data.current;
   const dataType = data?.type as string | undefined;
 
-  // Grid slot detection
+  // Grid slot detection — assert canonical ID format in dev
+  assertCanonicalGridId(overId, 'DragOperationRouter.parseTarget');
   if (dataType === 'grid-slot' || isGridReceiverId(overId)) {
     const position = data?.position ?? extractGridPosition(overId);
     return {
       type: 'grid-slot',
       position: position ?? undefined,
-      isOccupied: data?.isOccupied ?? false,
+      isOccupied: data?.isOccupied ?? true,
       occupant: data?.occupant,
     };
   }
@@ -232,12 +235,25 @@ export class DragOperationRouter {
   private config: RouterConfig;
   private onResult?: OperationResultHandler;
   private onValidationError?: ValidationErrorHandler;
+  private opCounter = 0;
 
   constructor(config: RouterConfig = {}) {
     this.config = {
       debug: false,
       ...config,
     };
+  }
+
+  /**
+   * Generate a unique operation ID for correlation tracking.
+   * Uses crypto.randomUUID when available, falls back to a counter.
+   */
+  private generateOpId(): string {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID();
+    }
+    this.opCounter++;
+    return `op-${Date.now()}-${this.opCounter}`;
   }
 
   /**
@@ -293,12 +309,14 @@ export class DragOperationRouter {
     }
 
     const operationType = determineOperationType(source, target);
+    const opId = this.generateOpId();
 
     return {
       event,
       source,
       target,
       operationType,
+      opId,
     };
   }
 
@@ -310,8 +328,20 @@ export class DragOperationRouter {
    * and executes the appropriate operation.
    */
   handleDragEnd(event: DragEndEvent, stores: OperationStoreContext): DragOperationResult {
+    const debug = this.config.debug;
+    let totalStart = 0, parseStart = 0, parseDuration = 0;
+
+    if (debug) {
+      totalStart = performance.now();
+      parseStart = totalStart;
+    }
+
     // Parse the drag context
     const context = this.parseContext(event);
+
+    if (debug) {
+      parseDuration = performance.now() - parseStart;
+    }
 
     if (!context) {
       return {
@@ -323,8 +353,9 @@ export class DragOperationRouter {
       };
     }
 
-    if (this.config.debug) {
+    if (debug) {
       dndLogger.debug('Drag context parsed', {
+        opId: context.opId,
         operationType: context.operationType,
         source: context.source,
         target: context.target,
@@ -344,7 +375,7 @@ export class DragOperationRouter {
     const operation = this.operations.get(context.operationType);
 
     if (!operation) {
-      if (this.config.debug) {
+      if (debug) {
         dndLogger.warn(`No handler registered for operation: ${context.operationType}`);
       }
       return {
@@ -357,14 +388,28 @@ export class DragOperationRouter {
     }
 
     // Validate the operation
+    let validationDuration = 0, validationStart = 0;
+    if (debug) {
+      validationStart = performance.now();
+    }
+
     const validationResult = operation.validate(context, stores);
 
+    if (debug) {
+      validationDuration = performance.now() - validationStart;
+    }
+
     if (!validationResult.isValid) {
-      if (this.config.debug) {
+      if (debug) {
         dndLogger.debug('Operation validation failed', {
           operationType: context.operationType,
           errorCode: validationResult.errorCode,
         });
+        console.debug(
+          `[DnD Perf] opId=${context.opId} ${context.operationType} validation-rejected | ` +
+          `parse=${parseDuration.toFixed(2)}ms validation=${validationDuration.toFixed(2)}ms ` +
+          `total=${(performance.now() - totalStart).toFixed(2)}ms`
+        );
       }
 
       // Notify error handler
@@ -382,13 +427,35 @@ export class DragOperationRouter {
     }
 
     // Execute the operation
+    let executeDuration = 0, executeStart = 0;
+    if (debug) {
+      executeStart = performance.now();
+    }
+
     const result = operation.execute(context, stores);
 
-    if (this.config.debug) {
+    if (debug) {
+      executeDuration = performance.now() - executeStart;
+      const totalDuration = performance.now() - totalStart;
+      console.debug(
+        `[DnD Perf] opId=${context.opId} ${context.operationType} ${result.success ? 'ok' : 'failed'} | ` +
+        `parse=${parseDuration.toFixed(2)}ms validation=${validationDuration.toFixed(2)}ms ` +
+        `execute=${executeDuration.toFixed(2)}ms total=${totalDuration.toFixed(2)}ms`
+      );
       dndLogger.debug('Operation executed', {
+        opId: context.opId,
         operationType: context.operationType,
         success: result.success,
         action: result.action,
+      });
+    }
+
+    // Push successful operations onto undo stack
+    if (result.success && operation.rollback) {
+      useUndoStore.getState().push({
+        operation,
+        context,
+        result,
       });
     }
 

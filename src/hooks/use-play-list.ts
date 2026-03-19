@@ -11,7 +11,7 @@ import { TopList } from "@/types/top-lists";
  *
  * For regular lists (type !== 'award'):
  * - Sets current list in the store with all required properties
- * - Navigates to /match-test?list={id}
+ * - Navigates to /goat?list={id}
  *
  * For award lists:
  * - Navigates directly to /award?id={id}
@@ -44,7 +44,7 @@ export function usePlayList() {
       });
 
       // Navigate to match interface
-      router.push(`/match-test?list=${list.id}`);
+      router.push(`/goat?list=${list.id}`);
     },
     [router, setCurrentList]
   );

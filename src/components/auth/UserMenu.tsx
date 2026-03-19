@@ -2,7 +2,9 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LogOut, ChevronDown } from 'lucide-react';
+import { DURATION } from '@/lib/animations/motion-presets';
+import { LogOut, ChevronDown, BarChart3 } from 'lucide-react';
+import Link from 'next/link';
 import { useAuthUser } from '@/hooks/use-auth-user';
 
 /**
@@ -58,10 +60,11 @@ export function UserMenu() {
     <div ref={menuRef} className="relative">
       <button
         onClick={toggleMenu}
-        className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-700/50 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-hover"
+        className="flex items-center gap-2 p-1.5 rounded-container hover:bg-slate-700/50 transition-colors focus-ring-inset"
         aria-expanded={isOpen}
         aria-haspopup="true"
         aria-label="User menu"
+        data-testid="auth-user-menu-btn"
       >
         {avatarUrl ? (
           <img
@@ -86,8 +89,8 @@ export function UserMenu() {
             initial={{ opacity: 0, y: -4, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.95 }}
-            transition={{ duration: 0.15, ease: 'easeOut' }}
-            className="absolute right-0 top-full mt-2 w-56 rounded-xl overflow-hidden z-50"
+            transition={{ duration: DURATION.quick, ease: 'easeOut' }}
+            className="absolute right-0 top-full mt-2 w-56 rounded-container overflow-hidden z-dropdown"
             style={{
               background: 'rgba(15, 23, 42, 0.97)',
               border: '1px solid rgba(148, 163, 184, 0.15)',
@@ -109,10 +112,21 @@ export function UserMenu() {
 
             {/* Menu items */}
             <div className="p-1.5">
+              <Link
+                href="/analytics"
+                onClick={() => setIsOpen(false)}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-card text-sm text-slate-300 hover:text-white hover:bg-slate-700/50 transition-colors focus-ring-inset"
+                role="menuitem"
+                data-testid="auth-analytics-link"
+              >
+                <BarChart3 className="w-4 h-4" />
+                Creator Analytics
+              </Link>
               <button
                 onClick={handleSignOut}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-300 hover:text-white hover:bg-slate-700/50 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-hover"
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-card text-sm text-slate-300 hover:text-white hover:bg-slate-700/50 transition-colors focus-ring-inset"
                 role="menuitem"
+                data-testid="auth-sign-out-btn"
               >
                 <LogOut className="w-4 h-4" />
                 Sign out

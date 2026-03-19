@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, escapeIlikeWildcards } from '@/lib/supabase/server';
+import { getRequestId } from '@/lib/api/request-id';
 
 // HTTP Status codes
 const HTTP_STATUS_INTERNAL_SERVER_ERROR = 500;
@@ -12,6 +13,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ category: string }> }
 ) {
+  const requestId = getRequestId(request);
   try {
     const supabase = await createClient();
     const { category } = await params;
@@ -48,69 +50,59 @@ export async function GET(
     }
 
     if (search) {
-      query = query.ilike('name', `%${search}%`);
+      query = query.ilike('name', `%${escapeIlikeWildcards(search)}%`);
     }
 
     const { data: groups, error: groupsError } = await query;
 
     if (groupsError) {
-      console.error('Error fetching item groups:', groupsError);
+      console.error(`[${requestId}] Error fetching item groups:`, groupsError);
       return NextResponse.json(
-        { error: groupsError.message },
+        { error: groupsError.message, requestId },
         { status: HTTP_STATUS_INTERNAL_SERVER_ERROR }
       );
     }
 
-    // If we need to filter by item count, get counts for each group
-    if (minItemCount > 0 && groups && groups.length > 0) {
+    // Get item counts per group using individual count queries to avoid row-limit truncation
+    if (groups && groups.length > 0) {
       const groupIds = groups.map(g => g.id);
 
-      // Get item counts for all groups
-      const { data: itemCounts, error: countError } = await supabase
-        .from('items')
-        .select('group_id')
-        .in('group_id', groupIds)
-        .not('group_id', 'is', null);
-
-      if (countError) {
-        console.error('Error counting items:', countError);
-        return NextResponse.json(
-          { error: countError.message },
-          { status: HTTP_STATUS_INTERNAL_SERVER_ERROR }
-        );
+      // Count items per group using batch count queries (avoids Supabase default 1000-row limit)
+      const countMap = new Map<string, number>();
+      const BATCH_SIZE = 20;
+      for (let i = 0; i < groupIds.length; i += BATCH_SIZE) {
+        const batch = groupIds.slice(i, i + BATCH_SIZE);
+        const countPromises = batch.map(async (gid) => {
+          const { count, error } = await supabase
+            .from('items')
+            .select('*', { count: 'exact', head: true })
+            .eq('group_id', gid);
+          if (!error && count !== null) {
+            countMap.set(gid, count);
+          }
+        });
+        await Promise.all(countPromises);
       }
 
-      // Count items per group
-      const countMap = new Map<string, number>();
-      itemCounts?.forEach(item => {
-        if (item.group_id) {
-          const count = countMap.get(item.group_id) || 0;
-          countMap.set(item.group_id, count + 1);
-        }
-      });
-
-      // Filter groups by minimum item count and add item_count to response
-      const filteredGroups = groups
+      // Add item_count and optionally filter by minimum
+      const groupsWithCount = groups
         .map(group => ({
           ...group,
           item_count: countMap.get(group.id) || 0
-        }))
-        .filter(group => group.item_count >= minItemCount);
+        }));
+
+      const filteredGroups = minItemCount > 0
+        ? groupsWithCount.filter(group => group.item_count >= minItemCount)
+        : groupsWithCount;
 
       return NextResponse.json(filteredGroups);
     }
 
-    // If no min count filter, just add item_count: 0 to all groups
-    const groupsWithCount = groups?.map(group => ({
-      ...group,
-      item_count: 0
-    })) || [];
-
-    return NextResponse.json(groupsWithCount);
+    return NextResponse.json([]);
   } catch (error) {
-    console.error('Unexpected error in GET /api/top/groups/categories/[category]:', error);
+    console.error(`[${requestId}] Unexpected error in GET /api/top/groups/categories/[category]:`, error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', requestId },
       { status: HTTP_STATUS_INTERNAL_SERVER_ERROR }
     );
   }

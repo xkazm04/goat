@@ -4,7 +4,7 @@ import { test, expect } from "@playwright/test";
  * E2E Test: Drag-Drop Ranking Workflow
  *
  * Tests the core drag-and-drop ranking functionality:
- * 1. Navigate to match-test page with a list
+ * 1. Navigate to goat page with a list
  * 2. Wait for collection panel to load with items
  * 3. Drag an item from collection panel to grid slot
  * 4. Verify the slot shows the dropped item
@@ -23,7 +23,7 @@ test.describe("Drag-Drop Ranking Workflow", () => {
   test("should drag item from collection to grid slot and persist on reload", async ({
     page,
   }) => {
-    // Step 1: Navigate to match-test page with a featured list
+    // Step 1: Navigate to goat page with a featured list
     const featuredSection = page.getByTestId("featured-lists-section");
     await expect(featuredSection).toBeVisible({ timeout: 15000 });
 
@@ -39,7 +39,7 @@ test.describe("Drag-Drop Ranking Workflow", () => {
 
     // Click to navigate to match page
     await firstListItem.click();
-    await page.waitForURL(`**/match-test?list=${listId}`, { timeout: 15000 });
+    await page.waitForURL(`**/goat?list=${listId}`, { timeout: 15000 });
     await page.waitForLoadState("networkidle");
 
     // Step 2: Wait for collection panel to load
@@ -148,7 +148,7 @@ test.describe("Drag-Drop Ranking Workflow", () => {
   });
 
   test("should show drop zone highlighting during drag", async ({ page }) => {
-    // Navigate to match-test with a featured list
+    // Navigate to goat with a featured list
     const featuredSection = page.getByTestId("featured-lists-section");
     await expect(featuredSection).toBeVisible({ timeout: 15000 });
 
@@ -158,7 +158,7 @@ test.describe("Drag-Drop Ranking Workflow", () => {
     await expect(firstListItem).toBeVisible({ timeout: 15000 });
 
     await firstListItem.click();
-    await page.waitForURL(/\/match-test\?list=/, { timeout: 15000 });
+    await page.waitForURL(/\/goat\?list=/, { timeout: 15000 });
     await page.waitForLoadState("networkidle");
 
     // Wait for collection panel
@@ -212,7 +212,7 @@ test.describe("Drag-Drop Ranking Workflow", () => {
     // This test requires two items already placed in the grid
     // First, place two items, then verify swap functionality
 
-    // Navigate to match-test with a featured list
+    // Navigate to goat with a featured list
     const featuredSection = page.getByTestId("featured-lists-section");
     await expect(featuredSection).toBeVisible({ timeout: 15000 });
 
@@ -222,7 +222,7 @@ test.describe("Drag-Drop Ranking Workflow", () => {
     await expect(firstListItem).toBeVisible({ timeout: 15000 });
 
     await firstListItem.click();
-    await page.waitForURL(/\/match-test\?list=/, { timeout: 15000 });
+    await page.waitForURL(/\/goat\?list=/, { timeout: 15000 });
     await page.waitForLoadState("networkidle");
 
     // Wait for collection panel
@@ -324,7 +324,7 @@ test.describe("Drag-Drop Ranking Workflow", () => {
   test("should support removing item from grid back to collection", async ({
     page,
   }) => {
-    // Navigate to match-test with a featured list
+    // Navigate to goat with a featured list
     const featuredSection = page.getByTestId("featured-lists-section");
     await expect(featuredSection).toBeVisible({ timeout: 15000 });
 
@@ -334,7 +334,7 @@ test.describe("Drag-Drop Ranking Workflow", () => {
     await expect(firstListItem).toBeVisible({ timeout: 15000 });
 
     await firstListItem.click();
-    await page.waitForURL(/\/match-test\?list=/, { timeout: 15000 });
+    await page.waitForURL(/\/goat\?list=/, { timeout: 15000 });
     await page.waitForLoadState("networkidle");
 
     // Wait for collection panel

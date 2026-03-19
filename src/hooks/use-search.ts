@@ -8,7 +8,7 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { SearchEngine, type SearchOptions, type SearchResponse, type SearchResult, type SearchDomain } from '@/lib/search';
+import { SearchEngine, type SearchOptions, type SearchResponse, type SearchResult, type SearchDomain, type DomainStatus } from '@/lib/search';
 
 // =============================================================================
 // Query Keys
@@ -113,6 +113,8 @@ export interface UseQuickSearchReturn {
   isLoading: boolean;
   /** Error state */
   error: Error | null;
+  /** Domains that failed during search (empty when all succeed) */
+  failedDomains: Array<{ domain: SearchDomain; error: string }>;
 }
 
 export function useQuickSearch(
@@ -141,16 +143,24 @@ export function useQuickSearch(
 
   const { data, isLoading, error } = useQuery({
     queryKey: searchKeys.quickSearch(debouncedQuery),
-    queryFn: () => SearchEngine.quickSearch(debouncedQuery, { limit, domains }),
+    queryFn: () => SearchEngine.search(debouncedQuery, { limit, domains, includeSuggestions: false }),
     enabled: shouldSearch,
     staleTime: 15 * 1000, // 15 seconds
     gcTime: 2 * 60 * 1000, // 2 minutes
   });
 
+  const failedDomains = useMemo(() => {
+    if (!data?.domainStatus) return [];
+    return Object.entries(data.domainStatus)
+      .filter(([, s]) => s.status === 'error')
+      .map(([domain, s]) => ({ domain: domain as SearchDomain, error: s.error || 'Unknown error' }));
+  }, [data?.domainStatus]);
+
   return {
-    results: data || [],
+    results: data?.results.slice(0, 10) || [],
     isLoading: shouldSearch && isLoading,
     error: error as Error | null,
+    failedDomains,
   };
 }
 

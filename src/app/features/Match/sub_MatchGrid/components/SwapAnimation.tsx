@@ -6,6 +6,7 @@ import { calculateSwapPath, Vector2D, getPositionAwareSpringConfig, getFramerSpr
 import { triggerSwapSequence, isHapticSupported } from "../lib/hapticFeedback";
 import { PlaceholderImage } from "@/components/ui/placeholder-image";
 import { getPositionBadgeStyles, getPositionTier } from "../../components/PositionBadge";
+import { DURATION } from '@/lib/animations/motion-presets';
 
 /** Map position tier to an RGBA flash color */
 function getTierFlashColor(position: number): [number, number, number] {
@@ -307,7 +308,7 @@ function SwapItemCard({ item, isHighlighted }: SwapItemCardProps) {
 
   return (
     <div
-      className="w-24 h-24 rounded-xl overflow-hidden"
+      className="w-24 h-24 rounded-card overflow-hidden"
       style={{
         boxShadow: `
           0 10px 30px rgba(0, 0, 0, 0.4),
@@ -337,7 +338,7 @@ function SwapItemCard({ item, isHighlighted }: SwapItemCardProps) {
         const { containerClassName, textClassName, style } = getPositionBadgeStyles(item.position);
         return (
           <div
-            className={`absolute top-1 left-1 ${containerClassName} text-[10px] backdrop-blur-xs`}
+            className={`absolute top-1 left-1 ${containerClassName} text-2xs backdrop-blur-xs`}
             style={style}
           >
             <span className={textClassName}>#{item.position + 1}</span>
@@ -443,7 +444,7 @@ function PositionIndicator({ position, label, delay, gridPosition = 10 }: Positi
         scale: [0.8, 1, 1, 0.8],
       }}
       transition={{
-        duration: 0.6,
+        duration: DURATION.emphasis,
         delay: delay / 1000,
         times: [0, 0.2, 0.8, 1],
       }}

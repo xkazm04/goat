@@ -1,5 +1,6 @@
 'use client';
 
+import * as Sentry from '@sentry/nextjs';
 import { useEffect, useState } from 'react';
 import { AlertTriangle, RefreshCw, Home, Copy, ChevronDown } from 'lucide-react';
 
@@ -29,6 +30,9 @@ export default function GlobalError({
   });
 
   useEffect(() => {
+    // Report to Sentry
+    Sentry.captureException(error);
+
     // Generate trace ID and timestamp
     const timestamp = Date.now().toString(36);
     const random = Math.random().toString(36).substring(2, 10);

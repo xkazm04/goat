@@ -4,6 +4,7 @@ import { memo } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import type { CriterionDisplaySize } from '@/lib/criteria/types';
+import { DURATION } from '@/lib/animations/motion-presets';
 
 export interface BarScoreOverlayProps {
   /** Score value (0-10 or 0-100 depending on scale) */
@@ -30,20 +31,20 @@ export interface BarScoreOverlayProps {
 const SIZE_CONFIG = {
   sm: {
     height: 4,
-    labelSize: 'text-[7px]',
-    scoreSize: 'text-[8px]',
+    labelSize: 'text-3xs',
+    scoreSize: 'text-3xs',
     padding: 'py-0.5 px-1',
   },
   md: {
     height: 6,
-    labelSize: 'text-[8px]',
-    scoreSize: 'text-[9px]',
+    labelSize: 'text-3xs',
+    scoreSize: 'text-2xs',
     padding: 'py-0.5 px-1.5',
   },
   lg: {
     height: 8,
-    labelSize: 'text-[9px]',
-    scoreSize: 'text-[10px]',
+    labelSize: 'text-2xs',
+    scoreSize: 'text-2xs',
     padding: 'py-1 px-2',
   },
 };
@@ -83,7 +84,7 @@ export const BarScoreOverlay = memo(function BarScoreOverlay({
       style={{
         width,
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+        boxShadow: 'var(--elevation-card)',
       }}
     >
       {/* Label row */}
@@ -120,7 +121,7 @@ export const BarScoreOverlay = memo(function BarScoreOverlay({
           }}
           initial={animated ? { width: 0 } : { width: `${percentage}%` }}
           animate={{ width: `${percentage}%` }}
-          transition={{ duration: 0.6, ease: 'easeOut' }}
+          transition={{ duration: DURATION.emphasis, ease: 'easeOut' }}
         />
       </div>
 

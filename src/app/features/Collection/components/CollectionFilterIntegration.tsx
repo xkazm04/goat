@@ -17,18 +17,12 @@ import {
   getActiveFilterCount,
   getHasActiveFilters,
 } from '../hooks/useCollectionFilterState';
-import {
-  QuickFilterBar,
-  FilterPanel,
-  FilterPresetManager,
-  PresetQuickAccess,
-  FilterStatistics as FilterStatsDisplay,
-  type QuickFilter,
-  type FilterConfig,
-  type FilterFieldDefinition,
-  FILTER_ANIMATIONS,
-  DEFAULT_FILTER_FIELDS,
-} from '@/lib/filters';
+import { QuickFilterBar } from '@/lib/filters/components/QuickFilterBar';
+import { FilterPanel } from '@/lib/filters/components/FilterPanel';
+import { FilterPresetManager, PresetQuickAccess } from '@/lib/filters/components/FilterPresetManager';
+import { FilterStatistics as FilterStatsDisplay } from '@/lib/filters/components/FilterStatistics';
+import type { QuickFilter, FilterConfig, FilterFieldDefinition } from '@/lib/filters/types';
+import { FILTER_ANIMATIONS, DEFAULT_FILTER_FIELDS } from '@/lib/filters/constants';
 import type { CollectionItem } from '../types';
 
 /**

@@ -128,10 +128,10 @@ export function TrophyTab({
       </motion.div>
 
       {/* Title */}
-      <h2 className="text-[24px] font-black font-grotesk text-white mb-1">
+      <h2 className="text-2xl font-black font-grotesk text-white mb-1">
         Tournament Complete!
       </h2>
-      <p className="text-[13px] text-slate-400 mb-3">Your champion:</p>
+      <p className="text-sm text-slate-400 mb-3">Your champion:</p>
 
       {/* Champion image */}
       {champion?.item?.image_url && (
@@ -139,7 +139,7 @@ export function TrophyTab({
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.3 }}
-          className="w-20 h-20 rounded-lg overflow-hidden border-2 border-yellow-400/50 mx-auto mb-3 shadow-lg shadow-yellow-400/20"
+          className="w-20 h-20 rounded-card overflow-hidden border-2 border-yellow-400/50 mx-auto mb-3 shadow-lg shadow-yellow-400/20"
         >
           <img
             src={champion.item.image_url}
@@ -150,7 +150,7 @@ export function TrophyTab({
       )}
 
       {/* Champion name */}
-      <p className="text-[18px] font-bold font-grotesk text-yellow-400">
+      <p className="text-lg font-bold font-grotesk text-yellow-400">
         {championTitle}
       </p>
     </div>

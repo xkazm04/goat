@@ -76,6 +76,7 @@ interface AudioStoreState {
   _playerRef: YouTubePlayer | null;
   _setPlayerRef: (player: YouTubePlayer | null) => void;
   _playerElementId: string;
+  _playGeneration: number;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -101,6 +102,7 @@ export const useAudioStore = create<AudioStoreState>()(
       // Player reference
       _playerRef: null,
       _playerElementId: 'youtube-audio-player',
+      _playGeneration: 0,
 
       // ─────────────────────────────────────────────────────────
       // Playback Actions
@@ -115,7 +117,9 @@ export const useAudioStore = create<AudioStoreState>()(
           return;
         }
 
-        set({ isLoading: true, error: null, isPlayerVisible: true });
+        // Increment generation to cancel any in-flight play requests
+        const generation = state._playGeneration + 1;
+        set({ _playGeneration: generation, isLoading: true, error: null, isPlayerVisible: true });
 
         try {
           // Get YouTube URL (from item, cache, or API)
@@ -123,12 +127,15 @@ export const useAudioStore = create<AudioStoreState>()(
           let youtubeId = item.youtube_id;
 
           if (!youtubeUrl) {
-            youtubeUrl = state.getCachedUrl(item.id);
+            youtubeUrl = get().getCachedUrl(item.id);
           }
 
           if (!youtubeUrl) {
-            youtubeUrl = await state.fetchYouTubeUrl(item);
+            youtubeUrl = await get().fetchYouTubeUrl(item);
           }
+
+          // Bail out if a newer play() was called while we were fetching
+          if (get()._playGeneration !== generation) return;
 
           if (!youtubeUrl) {
             throw new Error('Could not find YouTube video for this item');
@@ -146,7 +153,11 @@ export const useAudioStore = create<AudioStoreState>()(
           // Load YouTube API if needed
           await loadYouTubeAPI();
 
+          // Bail out if a newer play() was called while we were loading the API
+          if (get()._playGeneration !== generation) return;
+
           // Update current item with YouTube info
+          // Keep isLoading: true — YouTubeEmbed clears it when player fires ready/playing
           const updatedItem: PlayableItem = {
             ...item,
             youtube_url: youtubeUrl,
@@ -157,17 +168,19 @@ export const useAudioStore = create<AudioStoreState>()(
             currentItem: updatedItem,
             currentTime: 0,
             duration: 0,
-            isLoading: false,
           });
 
           // Player creation/loading is handled by YouTubeEmbed component
           // It will call _setPlayerRef and manage the actual playback
 
         } catch (error) {
-          set({
-            isLoading: false,
-            error: error instanceof Error ? error.message : 'Failed to play',
-          });
+          // Only set error if this is still the active play request
+          if (get()._playGeneration === generation) {
+            set({
+              isLoading: false,
+              error: error instanceof Error ? error.message : 'Failed to play',
+            });
+          }
         }
       },
 

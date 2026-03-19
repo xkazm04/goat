@@ -11,6 +11,7 @@ import {
   DefaultScoreRenderer,
   type ScoreRendererProps,
 } from "./renderers";
+import { DURATION } from '@/lib/animations/motion-presets';
 
 export interface ThemedScoreDisplayProps {
   /** Weighted score value (0-100) */
@@ -46,7 +47,7 @@ const THEME_RENDERERS: Record<ThemeKey, RendererComponent> = {
 
 // Animation configuration for preview mode
 const PREVIEW_ANIMATION = {
-  duration: 0.2,
+  duration: DURATION.fast,
   ease: [0.16, 1, 0.3, 1] as const,
 };
 
@@ -166,7 +167,7 @@ function PreviewWrapper({
   if (!animated) {
     return (
       <div
-        className={`relative rounded-lg px-2 py-1.5 backdrop-blur-xs transition-all duration-200 ${className ?? ""}`}
+        className={`relative rounded-card px-2 py-1.5 backdrop-blur-xs transition-all duration-200 ${className ?? ""}`}
         style={{
           backgroundColor: bgColor,
           border: `1px solid ${borderColor}`,
@@ -179,7 +180,7 @@ function PreviewWrapper({
 
   return (
     <motion.div
-      className={`relative rounded-lg px-2 py-1.5 backdrop-blur-xs ${className ?? ""}`}
+      className={`relative rounded-card px-2 py-1.5 backdrop-blur-xs ${className ?? ""}`}
       style={{
         backgroundColor: bgColor,
         border: `1px solid ${borderColor}`,

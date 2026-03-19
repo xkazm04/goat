@@ -9,6 +9,7 @@ import React, { memo, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MagneticState, MagneticField } from "../lib/magneticPhysics";
 import { Point } from "../lib/spatialHash";
+import { DURATION } from '@/lib/animations/motion-presets';
 
 /**
  * Props for MagneticVisualizer
@@ -101,8 +102,8 @@ const PullLine = memo(function PullLine({
       }}
       exit={{ opacity: 0, scaleX: 0 }}
       transition={{
-        opacity: { duration: 0.15 },
-        scaleX: { duration: 0.2, ease: "easeOut" },
+        opacity: { duration: DURATION.quick },
+        scaleX: { duration: DURATION.fast, ease: "easeOut" },
       }}
     />
   );
@@ -156,11 +157,11 @@ const IntensityIndicator = memo(function IntensityIndicator({
       exit={{ scale: 0, opacity: 0 }}
       transition={{
         scale: {
-          duration: 0.8,
+          duration: DURATION.dramatic,
           repeat: Infinity,
           ease: "easeInOut",
         },
-        opacity: { duration: 0.2 },
+        opacity: { duration: DURATION.fast },
       }}
     >
       {/* Outer glow */}
@@ -279,7 +280,7 @@ const FieldRadius = memo(function FieldRadius({
         opacity: isActive ? 0.6 : 0.3,
       }}
       exit={{ scale: 0.8, opacity: 0 }}
-      transition={{ duration: 0.2 }}
+      transition={{ duration: DURATION.fast }}
     />
   );
 });
@@ -406,7 +407,7 @@ export const SnapPreviewIndicator = memo(function SnapPreviewIndicator({
       }}
     >
       <div
-        className="absolute inset-0 rounded-xl"
+        className="absolute inset-0 rounded-container"
         style={{
           background: color.bg,
           border: `2px solid ${color.border}`,

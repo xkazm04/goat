@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { DURATION } from '@/lib/animations/motion-presets';
 import { X, Trophy, Info, ChevronRight, Undo2, Scale } from 'lucide-react';
-import { BracketMatchup, BracketState } from '../../lib/bracketGenerator';
+import { BracketMatchup, BracketState, CompletedVote } from '../../lib/bracketGenerator';
 import { useBracketDimensions } from '../../lib/useBracketDimensions';
 import { VotingHistoryStrip } from '../VotingHistoryStrip';
 import { ComparisonModal } from '../../../ComparisonModal';
@@ -14,6 +15,7 @@ import { useMatchupKeyboard } from './useMatchupKeyboard';
 interface MatchupScreenProps {
   matchup: BracketMatchup;
   bracket: BracketState;
+  completedVotes?: CompletedVote[];
   onSelectWinner: (winnerId: string) => void;
   onClose: () => void;
   onSkip?: () => void;
@@ -32,6 +34,7 @@ interface MatchupScreenProps {
 export function MatchupScreen({
   matchup,
   bracket,
+  completedVotes,
   onSelectWinner,
   onClose,
   onSkip,
@@ -58,11 +61,20 @@ export function MatchupScreen({
   const handleSelect = useCallback((participantId: string) => {
     if (isConfirming) return;
     setSelectedWinnerId(participantId);
+    // Light haptic feedback on selection
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      navigator.vibrate(15);
+    }
   }, [isConfirming]);
 
   const handleConfirm = useCallback(() => {
     if (!selectedWinnerId || isConfirming) return;
     setIsConfirming(true);
+
+    // Haptic feedback on confirm (stronger pattern)
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      navigator.vibrate([30, 20, 50]);
+    }
 
     // Quick animation then submit
     setTimeout(() => {
@@ -90,6 +102,36 @@ export function MatchupScreen({
     onOpenCompare: () => setIsCompareOpen(true),
   });
 
+  // Swipe-to-vote gesture tracking
+  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (!touchStartRef.current || isConfirming) return;
+
+    const touch = e.changedTouches[0];
+    const dx = touch.clientX - touchStartRef.current.x;
+    const dy = touch.clientY - touchStartRef.current.y;
+    const dt = Date.now() - touchStartRef.current.time;
+    touchStartRef.current = null;
+
+    // Must be a quick, primarily horizontal swipe with enough distance
+    if (dt > 500 || Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx)) return;
+
+    // Swipe left = select left participant, swipe right = select right participant
+    const participant = dx < 0 ? matchup.participant1 : matchup.participant2;
+    if (participant) {
+      setSelectedWinnerId(participant.id);
+      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+        navigator.vibrate(20);
+      }
+    }
+  }, [matchup.participant1, matchup.participant2, isConfirming]);
+
   if (!matchup.participant1 || !matchup.participant2) {
     return null;
   }
@@ -99,23 +141,23 @@ export function MatchupScreen({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex flex-col backdrop-blur-xl"
+      className="fixed inset-0 z-modal flex flex-col backdrop-blur-xl"
       style={{
         background: 'linear-gradient(160deg, rgba(15, 23, 42, 0.98) 0%, rgba(30, 41, 59, 0.98) 100%)',
       }}
     >
       {/* Voting History - top strip */}
-      <VotingHistoryStrip bracket={bracket} onRevote={onRevote} />
+      <VotingHistoryStrip bracket={bracket} completedVotes={completedVotes} onRevote={onRevote} />
 
       {/* Header */}
-      <div className="shrink-0 relative px-4 py-3 border-b border-slate-800/50">
+      <div className="shrink-0 relative px-4 py-1.5 border-b border-slate-800/50">
         <div className="flex items-center justify-between max-w-5xl mx-auto">
           {/* Back & Undo buttons */}
           <div className="flex items-center gap-1">
             <button
               onClick={onClose}
               aria-label="Close matchup screen"
-              className="p-2 -ml-2 rounded-lg hover:bg-slate-800/50 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-hover focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+              className="p-2 -ml-2 rounded-card hover:bg-slate-800/50 transition-colors focus-ring"
             >
               <X className="w-5 h-5 text-slate-400" />
             </button>
@@ -125,7 +167,7 @@ export function MatchupScreen({
                 onClick={onUndo}
                 aria-label="Undo last vote"
                 title="Undo last vote (Ctrl+Z)"
-                className="p-2 rounded-lg hover:bg-slate-800/50 transition-colors text-slate-400 hover:text-amber-400 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-hover focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                className="p-2 rounded-card hover:bg-slate-800/50 transition-colors text-slate-400 hover:text-amber-400 focus-ring"
               >
                 <Undo2 className="w-5 h-5" />
               </button>
@@ -135,7 +177,7 @@ export function MatchupScreen({
               onClick={() => setIsCompareOpen(true)}
               aria-label="Compare items side-by-side"
               title="Compare items (C)"
-              className="p-2 rounded-lg hover:bg-slate-800/50 transition-colors text-slate-400 hover:text-brand-hover focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-hover focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+              className="p-2 rounded-card hover:bg-slate-800/50 transition-colors text-slate-400 hover:text-brand-hover focus-ring"
             >
               <Scale className="w-5 h-5" />
             </button>
@@ -143,10 +185,10 @@ export function MatchupScreen({
 
           {/* Round info */}
           <div className="text-center">
-            <div className="text-brand-hover text-[13px] font-semibold font-grotesk uppercase tracking-wider">
+            <div className="text-brand-hover text-sm font-semibold font-grotesk uppercase tracking-wider">
               {roundName}
             </div>
-            <div className="text-slate-500 text-[9px] sm:text-[11px]">
+            <div className="text-slate-500 text-2xs sm:text-xs">
               Match {matchNumber} / {totalMatchesInRound}
             </div>
           </div>
@@ -157,7 +199,7 @@ export function MatchupScreen({
               <button
                 onClick={onSkip}
                 aria-label="Skip to next matchup"
-                className="p-2 rounded-lg hover:bg-slate-800/50 transition-colors text-slate-500 hover:text-slate-300 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-hover focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                className="p-2 rounded-card hover:bg-slate-800/50 transition-colors text-slate-500 hover:text-slate-300 focus-ring"
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
@@ -166,8 +208,12 @@ export function MatchupScreen({
         </div>
       </div>
 
-      {/* Main matchup area */}
-      <div className="flex-1 flex items-center justify-center px-3 sm:px-6 py-1 overflow-hidden">
+      {/* Main matchup area - with swipe-to-vote on mobile */}
+      <div
+        className="flex-1 flex items-center justify-center px-3 sm:px-6 py-1 overflow-hidden"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
         <div
           className="flex items-center justify-center w-full"
           style={{ gap: dims.cardGap }}
@@ -198,7 +244,7 @@ export function MatchupScreen({
       </div>
 
       {/* Bottom actions */}
-      <div className="shrink-0 px-4 py-3 border-t border-slate-800/50 bg-slate-900/50">
+      <div className="shrink-0 px-4 py-1.5 border-t border-slate-800/50 bg-slate-900/50">
         <div className="max-w-lg mx-auto">
           <AnimatePresence mode="wait">
             {selectedWinnerId ? (
@@ -213,7 +259,7 @@ export function MatchupScreen({
                   onClick={handleClear}
                   disabled={isConfirming}
                   aria-label="Change selection"
-                  className="flex-1 px-4 py-2.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 font-medium transition-colors disabled:opacity-50 text-sm focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-hover focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                  className="flex-1 px-4 py-2.5 rounded-card bg-slate-700 hover:bg-slate-600 text-slate-300 font-medium transition-colors disabled:opacity-50 text-sm focus-ring"
                 >
                   Change
                 </button>
@@ -223,12 +269,12 @@ export function MatchupScreen({
                   disabled={isConfirming}
                   aria-label={isConfirming ? 'Advancing winner...' : 'Confirm selected winner'}
                   aria-busy={isConfirming}
-                  className="flex-2 px-6 py-2.5 rounded-lg bg-linear-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-green-500/30 text-sm sm:text-base focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-green-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                  className="flex-2 px-6 py-2.5 rounded-card bg-linear-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-green-500/30 text-sm sm:text-base focus-ring"
                 >
                   {isConfirming ? (
                     <motion.div
                       animate={{ rotate: 360 }}
-                      transition={{ duration: 0.5, repeat: Infinity, ease: 'linear' }}
+                      transition={{ duration: DURATION.slow, repeat: Infinity, ease: 'linear' }}
                     >
                       <Trophy className="w-4 h-4" />
                     </motion.div>
@@ -247,7 +293,7 @@ export function MatchupScreen({
                 className="flex items-center justify-center gap-2 text-slate-400 text-sm py-2"
               >
                 <Info className="w-4 h-4" />
-                <span>Tap a card to select the winner</span>
+                <span>{dims.isMobile ? 'Tap or swipe to select the winner' : 'Tap a card to select the winner'}</span>
               </motion.div>
             )}
           </AnimatePresence>
@@ -255,7 +301,7 @@ export function MatchupScreen({
 
         {/* Keyboard hints - desktop only */}
         {dims.isDesktop && (
-          <div className="mt-3 flex items-center justify-center gap-4 text-[10px] text-slate-600">
+          <div className="mt-1.5 flex items-center justify-center gap-4 text-2xs text-slate-600">
             <span>
               <kbd className="px-1 py-0.5 rounded bg-slate-800 text-slate-500">1</kbd> or{' '}
               <kbd className="px-1 py-0.5 rounded bg-slate-800 text-slate-500">2</kbd> select

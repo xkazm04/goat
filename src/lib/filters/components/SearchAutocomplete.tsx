@@ -19,17 +19,14 @@ import React, {
 } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Search,
   X,
   Clock,
-  Sparkles,
-  ArrowRight,
   ChevronRight,
-  Filter,
   Tag,
   Loader2,
   Hash,
 } from 'lucide-react';
+import { GoatSearch, GoatSparkles, GoatFilter } from '@/components/visual/GoatIcons';
 import { cn } from '@/lib/utils';
 import {
   useFilterIntegrationOptional,
@@ -75,9 +72,9 @@ interface SearchAutocompleteProps {
  * Type icons
  */
 const TYPE_ICONS: Record<AutocompleteSuggestion['type'], React.ReactNode> = {
-  history: <Clock size={14} className="text-zinc-500" />,
-  suggestion: <Sparkles size={14} className="text-brand-hover" />,
-  template: <Filter size={14} className="text-purple-400" />,
+  history: <Clock size={14} className="text-muted-foreground" />,
+  suggestion: <GoatSparkles size={14} className="text-primary" />,
+  template: <GoatFilter size={14} className="text-purple-400" />,
   item: <Tag size={14} className="text-emerald-400" />,
 };
 
@@ -366,9 +363,9 @@ export function SearchAutocomplete({
     <div ref={containerRef} className={cn('relative', className)}>
       {/* Input */}
       <div className="relative">
-        <Search
+        <GoatSearch
           size={18}
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
         />
         <input
           ref={inputRef}
@@ -379,9 +376,9 @@ export function SearchAutocomplete({
           onFocus={handleFocus}
           placeholder={placeholder}
           className={cn(
-            'w-full rounded-lg border border-zinc-700 bg-zinc-800/50 py-2.5 pl-10 pr-10',
-            'text-sm text-zinc-200 placeholder-zinc-500',
-            'focus:border-brand focus:outline-hidden focus:ring-1 focus:ring-brand',
+            'w-full rounded-control border border-border bg-muted/50 py-2.5 pl-10 pr-10',
+            'text-sm text-foreground placeholder:text-muted-foreground',
+            'focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary',
             'transition-all',
             inputClassName
           )}
@@ -397,12 +394,12 @@ export function SearchAutocomplete({
               transition={{ duration: 0.1 }}
               className={cn(
                 'absolute right-10 top-1/2 -translate-y-1/2',
-                'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium',
+                'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium',
                 liveCounts.isCalculating
-                  ? 'text-zinc-500'
+                  ? 'text-muted-foreground'
                   : liveCounts.totalMatches === 0
                   ? 'text-red-400 bg-red-500/10'
-                  : 'text-brand-hover bg-brand/10'
+                  : 'text-primary bg-primary/10'
               )}
             >
               {liveCounts.isCalculating ? (
@@ -410,7 +407,7 @@ export function SearchAutocomplete({
               ) : (
                 <>
                   <span>{liveCounts.totalMatches}</span>
-                  <span className="text-zinc-600">/ {liveCounts.totalItems}</span>
+                  <span className="text-muted-foreground">/ {liveCounts.totalItems}</span>
                 </>
               )}
             </motion.span>
@@ -419,7 +416,7 @@ export function SearchAutocomplete({
         {inputValue && (
           <button
             onClick={handleClear}
-            className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-1 text-zinc-500 hover:text-zinc-300"
+            className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground"
           >
             <X size={16} />
           </button>
@@ -440,8 +437,8 @@ export function SearchAutocomplete({
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: FILTER_TIMING.fast }}
             className={cn(
-              'absolute left-0 right-0 top-full z-50 mt-1',
-              'rounded-lg border border-zinc-700 bg-zinc-900 shadow-xl'
+              'absolute left-0 right-0 top-full z-dropdown mt-1',
+              'rounded-card border border-border bg-background shadow-xl'
             )}
           >
             <ul className="py-1">
@@ -454,15 +451,15 @@ export function SearchAutocomplete({
                       'flex w-full items-center gap-3 px-3 py-2 text-left',
                       'transition-colors',
                       index === selectedIndex
-                        ? 'bg-brand/10 text-brand-hover'
-                        : 'text-zinc-300 filter-hover'
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-foreground filter-hover'
                     )}
                   >
                     {TYPE_ICONS[suggestion.type]}
                     <div className="flex-1 min-w-0">
                       <p className="truncate text-sm">{suggestion.text}</p>
                       {suggestion.description && (
-                        <p className="truncate text-xs text-zinc-500">
+                        <p className="truncate text-xs text-muted-foreground">
                           {suggestion.description}
                         </p>
                       )}
@@ -480,18 +477,18 @@ export function SearchAutocomplete({
             </ul>
 
             {/* Keyboard hint */}
-            <div className="border-t border-zinc-800 px-3 py-1.5 text-xs text-zinc-500">
+            <div className="border-t border-border px-3 py-1.5 text-xs text-muted-foreground">
               <span className="inline-flex items-center gap-1">
-                <kbd className="rounded bg-zinc-800 px-1">↑</kbd>
-                <kbd className="rounded bg-zinc-800 px-1">↓</kbd>
+                <kbd className="rounded bg-muted px-1">↑</kbd>
+                <kbd className="rounded bg-muted px-1">↓</kbd>
                 navigate
               </span>
               <span className="ml-3 inline-flex items-center gap-1">
-                <kbd className="rounded bg-zinc-800 px-1">↵</kbd>
+                <kbd className="rounded bg-muted px-1">↵</kbd>
                 select
               </span>
               <span className="ml-3 inline-flex items-center gap-1">
-                <kbd className="rounded bg-zinc-800 px-1">esc</kbd>
+                <kbd className="rounded bg-muted px-1">esc</kbd>
                 close
               </span>
             </div>
@@ -544,9 +541,9 @@ export function CompactSearchInput({
 
   return (
     <div className={cn('relative', className)}>
-      <Search
+      <GoatSearch
         size={16}
-        className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-500"
+        className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
       />
       <input
         type="text"
@@ -555,15 +552,15 @@ export function CompactSearchInput({
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         className={cn(
-          'w-full rounded-md border border-zinc-700 bg-zinc-800/50 py-1.5 pl-8 pr-8',
-          'text-sm text-zinc-200 placeholder-zinc-500',
-          'focus:border-brand focus:outline-hidden'
+          'w-full rounded-control border border-border bg-muted/50 py-1.5 pl-8 pr-8',
+          'text-sm text-foreground placeholder:text-muted-foreground',
+          'focus:border-primary focus:outline-hidden'
         )}
       />
       {inputValue && (
         <button
           onClick={handleClear}
-          className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+          className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
         >
           <X size={14} />
         </button>
@@ -595,11 +592,11 @@ function LiveFacetCounts({
         facets.map((facet) => (
           <span
             key={`${field}-${facet.value}`}
-            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-zinc-800/50 text-zinc-500"
+            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-2xs bg-muted/50 text-muted-foreground"
           >
-            <Hash size={8} className="text-zinc-600" />
-            <span className="text-zinc-400">{facet.value}</span>
-            <span className="text-brand/70">{facet.count}</span>
+            <Hash size={8} className="text-muted-foreground" />
+            <span className="text-muted-foreground">{facet.value}</span>
+            <span className="text-primary/70">{facet.count}</span>
           </span>
         ))
       )}

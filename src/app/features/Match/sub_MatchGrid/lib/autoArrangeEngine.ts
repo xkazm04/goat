@@ -6,6 +6,7 @@
 import { GridItemType } from "@/types/match";
 import { TierDefinition, TierId, adjustTiersForSize, getTierForPosition } from "./tierConfig";
 import { SmartGridLayout, ItemMetadata, ArrangementStrategy } from "./smartGridLayout";
+import { timeSync } from "@/lib/perf/perfTimer";
 
 /**
  * Arrangement mode
@@ -72,29 +73,32 @@ export class AutoArrangeEngine {
     options: AutoArrangeEngineOptions
   ): ArrangeResult {
     const { mode, preservePodium = false, customSort } = options;
+    const itemCount = currentGrid.filter(i => i?.matched).length;
 
-    switch (mode) {
-      case 'auto':
-        return this.autoArrange(currentGrid, customSort);
-      case 'shuffle':
-        return this.shuffleArrange(currentGrid, preservePodium);
-      case 'compress':
-        return this.compressArrange(currentGrid, preservePodium);
-      case 'spread':
-        return this.spreadArrange(currentGrid);
-      case 'reverse':
-        return this.reverseArrange(currentGrid, preservePodium);
-      case 'tier-sort':
-        return this.tierSortArrange(currentGrid);
-      default:
-        return {
-          newGrid: currentGrid,
-          moveCount: 0,
-          moves: [],
-          success: false,
-          message: 'Unknown arrangement mode',
-        };
-    }
+    return timeSync('AutoArrangeEngine.arrange', { mode, itemCount, listSize: this.listSize }, () => {
+      switch (mode) {
+        case 'auto':
+          return this.autoArrange(currentGrid, customSort);
+        case 'shuffle':
+          return this.shuffleArrange(currentGrid, preservePodium);
+        case 'compress':
+          return this.compressArrange(currentGrid, preservePodium);
+        case 'spread':
+          return this.spreadArrange(currentGrid);
+        case 'reverse':
+          return this.reverseArrange(currentGrid, preservePodium);
+        case 'tier-sort':
+          return this.tierSortArrange(currentGrid);
+        default:
+          return {
+            newGrid: currentGrid,
+            moveCount: 0,
+            moves: [],
+            success: false,
+            message: 'Unknown arrangement mode',
+          };
+      }
+    });
   }
 
   /**
@@ -178,47 +182,36 @@ export class AutoArrangeEngine {
         ? Math.max(tier.range.start, 3)
         : tier.range.start;
 
-      // Collect items in this tier
-      const tierItems: Array<{ position: number; item: GridItemType }> = [];
+      // Collect items and their original positions in this tier separately
+      const tierItems: GridItemType[] = [];
+      const filledPositions: number[] = [];
       for (let i = startPos; i < tier.range.end; i++) {
         if (currentGrid[i]?.matched) {
-          tierItems.push({ position: i, item: currentGrid[i] });
+          tierItems.push(currentGrid[i]);
+          filledPositions.push(i);
         }
       }
 
-      // Shuffle using Fisher-Yates
+      // Shuffle items using Fisher-Yates (positions array stays fixed)
       for (let i = tierItems.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [tierItems[i], tierItems[j]] = [tierItems[j], tierItems[i]];
       }
 
-      // Get empty positions in tier
-      const emptyPositions: number[] = [];
-      for (let i = startPos; i < tier.range.end; i++) {
-        if (!currentGrid[i]?.matched) {
-          emptyPositions.push(i);
-        }
-      }
-
-      // Combine filled positions with empty for placement
-      const allPositions = tierItems
-        .map(ti => ti.position)
-        .concat(emptyPositions)
-        .slice(0, tierItems.length);
-
-      // Place shuffled items
-      tierItems.forEach((ti, idx) => {
-        const newPosition = allPositions[idx];
+      // Place shuffled items into the original filled positions
+      tierItems.forEach((item, idx) => {
+        const newPosition = filledPositions[idx];
+        const originalPosition = item.position;
         newGrid[newPosition] = {
-          ...ti.item,
+          ...item,
           position: newPosition,
         };
 
-        if (ti.position !== newPosition) {
+        if (originalPosition !== newPosition) {
           moves.push({
-            from: ti.position,
+            from: originalPosition,
             to: newPosition,
-            itemId: ti.item.backlogItemId || ti.item.id || String(ti.position),
+            itemId: item.backlogItemId || item.id || String(originalPosition),
           });
         }
       });

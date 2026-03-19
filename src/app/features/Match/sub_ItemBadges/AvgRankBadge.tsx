@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Users, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { DURATION } from '@/lib/animations/motion-presets';
 import { useItemConsensus } from '@/stores/consensus-store';
 
 interface AvgRankBadgeProps {
@@ -134,7 +135,7 @@ export function AvgRankBadge({
             opacity: 0,
             scale: 0.8,
             y: 4,
-            transition: { duration: 0.15 }
+            transition: { duration: DURATION.quick }
           }}
           className={cn(
             'absolute z-20',
@@ -146,7 +147,7 @@ export function AvgRankBadge({
             // Layout
             'flex items-center gap-1',
             'h-[20px] px-1.5',
-            'rounded-md',
+            'rounded-control',
             // Border and shadow
             'ring-1',
             getBadgeStyle.ring,
@@ -161,7 +162,7 @@ export function AvgRankBadge({
           {/* Average rank display */}
           <span
             className={cn(
-              'text-[9px] leading-none whitespace-nowrap',
+              'text-2xs leading-none whitespace-nowrap',
               getBadgeStyle.text
             )}
           >
@@ -172,7 +173,7 @@ export function AvgRankBadge({
           {totalRankings >= 10 && (
             <span
               className={cn(
-                'text-[8px] leading-none opacity-70 whitespace-nowrap',
+                'text-3xs leading-none opacity-70 whitespace-nowrap',
                 getBadgeStyle.text
               )}
               title={`Based on ${totalRankings} rankings - ${confidenceInfo?.label}`}

@@ -43,6 +43,17 @@ export {
 } from './useSupabaseMutation';
 
 /**
+ * Optimistic Mutation Hook
+ * Wraps TanStack Query mutations with automatic cache snapshot, optimistic
+ * updates, rollback on failure, and ErrorNotificationToast on error
+ */
+export {
+  useOptimisticMutation,
+  type OptimisticUpdate,
+  type UseOptimisticMutationOptions,
+} from './useOptimisticMutation';
+
+/**
  * Supabase Authentication Hook
  * Manages authentication state using Supabase's built-in auth methods
  */
@@ -90,6 +101,7 @@ export {
   useUserLists,
   usePredefinedLists,
   useListAnalytics,
+  useCreatorAnalytics,
   useVersionComparison,
   useCreateListWithUser,
   useCreateList,
@@ -142,6 +154,19 @@ export {
 export {
   useBacklogSelectors,
 } from './use-backlog-selectors';
+
+/**
+ * Selection Hook
+ * Single source of truth for item selection state.
+ * Re-exports from the authoritative SelectionCursor store.
+ */
+export {
+  useSelectionCursor,
+  useSelectedItemId,
+  useIsItemSelected,
+  type SelectionSource,
+  type SelectionCursor,
+} from '../stores/selection-cursor';
 
 /**
  * Toast Notifications Hook
@@ -253,6 +278,8 @@ export {
   useMotionProps,
   useMotionDuration,
   getMotionCapabilities,
+  prefersReducedMotion,
+  getCurrentMotionTier,
 } from './use-motion-preference';
 
 export type {
@@ -309,6 +336,18 @@ export {
   useItemScoring,
   useCriteriaConfigManager,
 } from './use-criteria-sync';
+
+// ========================================
+// Undo/Redo Hooks
+// ========================================
+
+/**
+ * Undo Keyboard Hook
+ * Global Ctrl+Z / Ctrl+Shift+Z handler for ranking operations
+ */
+export {
+  useUndoKeyboard,
+} from './use-undo-keyboard';
 
 // ========================================
 // Migration Notes

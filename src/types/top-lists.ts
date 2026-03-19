@@ -15,6 +15,8 @@ export interface TopList {
   items?: TopListItem[];
   type?: 'top' | 'award';
   parent_list_id?: string;
+  /** When true, signed-in users can add custom items to the backlog during ranking */
+  allow_custom_items?: boolean;
   // Engagement metrics
   engagementCount?: number;
   shareCount?: number;
@@ -58,6 +60,7 @@ export interface CreateListRequest {
   predefined?: boolean;
   type?: 'top' | 'award';
   parent_list_id?: string;
+  allow_custom_items?: boolean;
 }
 
 export interface UpdateListRequest {
@@ -69,6 +72,7 @@ export interface UpdateListRequest {
   time_period?: string;
   type?: 'top' | 'award';
   parent_list_id?: string;
+  allow_custom_items?: boolean;
 }
 
 export interface CreateListWithUserRequest {
@@ -103,6 +107,56 @@ export interface ListAnalytics {
   average_completion_time?: number;
   created_at: string;
   updated_at: string;
+}
+
+/** Extended analytics for the Creator Analytics Dashboard */
+export interface CreatorListAnalytics {
+  list_id: string;
+  title: string;
+  category: string;
+  size: number;
+  created_at: string;
+  /** Total share link views across all shared_rankings for this list */
+  total_views: number;
+  /** Number of shared_rankings created for this list */
+  share_count: number;
+  /** Number of unique users who ranked items in this list */
+  unique_rankers: number;
+  /** Total ranking activity events for this list */
+  total_activities: number;
+  /** Number of ranked items (list_items) */
+  items_ranked: number;
+  /** Views over time bucketed by day (last 30 days) */
+  views_over_time: { date: string; views: number }[];
+  /** Most interacted items by activity count */
+  top_items: {
+    item_id: string;
+    name: string;
+    image_url: string | null;
+    activity_count: number;
+    avg_position: number | null;
+  }[];
+  /** Consensus metrics */
+  consensus: {
+    /** How often rankers agree on positions (0-1) */
+    agreement_rate: number;
+    /** Items with most positional variance */
+    most_controversial: {
+      item_id: string;
+      name: string;
+      image_url: string | null;
+      position_variance: number;
+    }[];
+  };
+}
+
+/** Aggregated analytics across all of a creator's lists */
+export interface CreatorAnalyticsSummary {
+  total_lists: number;
+  total_views: number;
+  total_shares: number;
+  total_rankers: number;
+  lists: CreatorListAnalytics[];
 }
 
 export interface VersionComparison {

@@ -1,4 +1,4 @@
-import type { BacklogCache } from './types';
+import type { BacklogCache, BacklogState } from './types';
 import type { BacklogGroup } from '@/types/backlog-groups';
 
 /**
@@ -27,4 +27,28 @@ export function updateGroupInAllCaches(
       entry.loadedGroupIds.add(groupId);
     }
   }
+}
+
+/**
+ * Sync the matching cache entry's groups array directly from state.groups.
+ *
+ * Instead of independently re-iterating cache groups to apply the same mutation,
+ * this copies state.groups (already mutated) into the matching cache entry.
+ * Eliminates O(cache_keys * groups * items) redundant work.
+ *
+ * Determines the correct cache key from the target group's category.
+ * Must be called inside an immer `set()` block.
+ */
+export function syncCacheFromGroups(state: BacklogState, groupId: string): void {
+  // Find the group to determine its cache key
+  const group = state.groups.find(g => g.id === groupId);
+  if (!group) return;
+
+  const cacheKey = `${group.category}-${group.subcategory || ''}`;
+  const entry = state.cache[cacheKey];
+  if (!entry) return;
+
+  // Point cache.groups directly at state.groups (Immer handles immutability)
+  entry.groups = state.groups;
+  entry.lastUpdated = Date.now();
 }

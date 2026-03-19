@@ -59,13 +59,13 @@ export function CollectionToggleButton({
       aria-label="Open inventory panel"
       className={cn(
         // Base positioning and styles
-        "fixed bottom-6 left-1/2 z-40",
+        "fixed bottom-6 left-1/2 z-sticky",
         "bg-slate-900/90 dark:bg-slate-950/90 backdrop-blur-xl",
         "border border-brand/30 dark:border-brand-hover/20",
         "text-brand-hover dark:text-brand-hover",
-        "px-6 py-3 rounded-full",
-        "shadow-[0_0_20px_rgba(6,182,212,0.2)]",
-        "hover:shadow-[0_0_30px_rgba(6,182,212,0.4)]",
+        "px-6 py-3 rounded-badge",
+        "shadow-glow-brand-md",
+        "hover:shadow-glow-brand-lg",
         "hover:scale-105 active:scale-98",
         "flex items-center gap-2 font-bold tracking-wide",
         "transition-[transform,box-shadow] duration-200",

@@ -677,6 +677,266 @@ export function GoatBlocks({ className, width = 120, height = 96 }: Illustration
   );
 }
 
+/**
+ * Goat looking confused at an empty funnel - for "no filters matching" states
+ */
+export function GoatFilterEmpty({ className, width = 120, height = 96 }: IllustrationProps) {
+  return (
+    <svg
+      viewBox="0 0 120 96"
+      fill="none"
+      width={width}
+      height={height}
+      className={cn('opacity-80', className)}
+    >
+      <defs>
+        <radialGradient id="goat-filter-glow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.1" />
+          <stop offset="100%" stopColor="#a855f7" stopOpacity="0" />
+        </radialGradient>
+        <linearGradient id="goat-funnel-grad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.3" />
+          <stop offset="100%" stopColor="#a855f7" stopOpacity="0.15" />
+        </linearGradient>
+      </defs>
+      <circle cx="60" cy="48" r="45" fill="url(#goat-filter-glow)" />
+      {/* Funnel shape */}
+      <path d="M68 28l20 0-12 22v14" stroke="url(#goat-funnel-grad)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      <path d="M88 28l-8 0" stroke="#22d3ee" strokeOpacity="0.15" strokeWidth="1.5" />
+      <line x1="76" y1="64" x2="76" y2="70" stroke="#a855f7" strokeOpacity="0.15" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="2 3" />
+      {/* Goat head */}
+      <ellipse cx="42" cy="44" rx="10" ry="12" stroke="#22d3ee" strokeOpacity="0.2" strokeWidth="1.5" fill="none" />
+      {/* Horns */}
+      <path d="M34 36c-3-6-1-12 2-14" stroke="#a855f7" strokeOpacity="0.3" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+      <path d="M50 36c3-6 1-12-2-14" stroke="#a855f7" strokeOpacity="0.3" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+      {/* Eyes - confused look (one higher than the other) */}
+      <circle cx="38" cy="41" r="1.5" fill="#22d3ee" opacity="0.4" />
+      <circle cx="46" cy="43" r="1.5" fill="#22d3ee" opacity="0.4" />
+      {/* Confused eyebrow */}
+      <path d="M36 38c1-1.5 3-1.5 4 0" stroke="#22d3ee" strokeOpacity="0.2" strokeWidth="0.8" strokeLinecap="round" fill="none" />
+      {/* Nose */}
+      <ellipse cx="42" cy="48" rx="3" ry="2" stroke="#22d3ee" strokeOpacity="0.2" strokeWidth="1" fill="none" />
+      {/* Ears */}
+      <path d="M31 38c-4-2-6 0-5 3" stroke="#22d3ee" strokeOpacity="0.15" strokeWidth="1" strokeLinecap="round" fill="none" />
+      <path d="M53 38c4-2 6 0 5 3" stroke="#22d3ee" strokeOpacity="0.15" strokeWidth="1" strokeLinecap="round" fill="none" />
+      {/* Question mark above goat */}
+      <text x="54" y="24" fill="#a855f7" fillOpacity="0.3" fontSize="12" fontWeight="bold">?</text>
+      {/* Sparkles */}
+      <circle cx="20" cy="22" r="1.5" fill="#22d3ee" opacity="0.3">
+        <animate attributeName="opacity" values="0.3;0.08;0.3" dur="2.5s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="98" cy="55" r="1" fill="#a855f7" opacity="0.25">
+        <animate attributeName="opacity" values="0.25;0.05;0.25" dur="3.2s" repeatCount="indefinite" />
+      </circle>
+    </svg>
+  );
+}
+
+/**
+ * Goat shrugging next to a zero - for "zero results" states
+ */
+export function GoatZeroResults({ className, width = 120, height = 96 }: IllustrationProps) {
+  return (
+    <svg
+      viewBox="0 0 120 96"
+      fill="none"
+      width={width}
+      height={height}
+      className={cn('opacity-80', className)}
+    >
+      <defs>
+        <radialGradient id="goat-zero-glow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#a855f7" stopOpacity="0.08" />
+          <stop offset="100%" stopColor="#22d3ee" stopOpacity="0" />
+        </radialGradient>
+        <linearGradient id="goat-zero-num" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.25" />
+          <stop offset="100%" stopColor="#a855f7" stopOpacity="0.15" />
+        </linearGradient>
+      </defs>
+      <circle cx="60" cy="48" r="45" fill="url(#goat-zero-glow)" />
+      {/* Large zero counter */}
+      <ellipse cx="78" cy="46" rx="14" ry="18" stroke="url(#goat-zero-num)" strokeWidth="3" fill="none" />
+      <line x1="70" y1="34" x2="86" y2="58" stroke="#a855f7" strokeOpacity="0.12" strokeWidth="1.5" strokeLinecap="round" />
+      {/* Goat head */}
+      <ellipse cx="38" cy="44" rx="10" ry="12" stroke="#22d3ee" strokeOpacity="0.2" strokeWidth="1.5" fill="none" />
+      {/* Horns */}
+      <path d="M30 36c-3-6-1-12 2-14" stroke="#a855f7" strokeOpacity="0.3" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+      <path d="M46 36c3-6 1-12-2-14" stroke="#a855f7" strokeOpacity="0.3" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+      {/* Eyes */}
+      <circle cx="34" cy="42" r="1.5" fill="#22d3ee" opacity="0.4" />
+      <circle cx="42" cy="42" r="1.5" fill="#22d3ee" opacity="0.4" />
+      {/* Nose */}
+      <ellipse cx="38" cy="49" rx="3" ry="2" stroke="#22d3ee" strokeOpacity="0.2" strokeWidth="1" fill="none" />
+      {/* Ears */}
+      <path d="M27 38c-4-2-6 0-5 3" stroke="#22d3ee" strokeOpacity="0.15" strokeWidth="1" strokeLinecap="round" fill="none" />
+      <path d="M49 38c4-2 6 0 5 3" stroke="#22d3ee" strokeOpacity="0.15" strokeWidth="1" strokeLinecap="round" fill="none" />
+      {/* Shrug arms */}
+      <path d="M28 56c-6-2-10-6-10-10" stroke="#22d3ee" strokeOpacity="0.15" strokeWidth="1" strokeLinecap="round" fill="none" />
+      <path d="M48 56c6-2 10-6 10-10" stroke="#22d3ee" strokeOpacity="0.15" strokeWidth="1" strokeLinecap="round" fill="none" />
+      {/* Shrug tilde marks */}
+      <path d="M14 43c1-1.5 2.5-1.5 3.5 0s2.5 1.5 3.5 0" stroke="#a855f7" strokeOpacity="0.2" strokeWidth="0.8" strokeLinecap="round" fill="none" />
+      <path d="M55 43c1-1.5 2.5-1.5 3.5 0s2.5 1.5 3.5 0" stroke="#a855f7" strokeOpacity="0.2" strokeWidth="0.8" strokeLinecap="round" fill="none" />
+      {/* Sparkles */}
+      <circle cx="22" cy="20" r="1.5" fill="#22d3ee" opacity="0.3">
+        <animate attributeName="opacity" values="0.3;0.08;0.3" dur="2.8s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="100" cy="65" r="1" fill="#a855f7" opacity="0.25">
+        <animate attributeName="opacity" values="0.25;0.05;0.25" dur="3.5s" repeatCount="indefinite" />
+      </circle>
+    </svg>
+  );
+}
+
+/**
+ * Confused goat peeking around a broken picture frame - for popup load failures
+ * Brand palette: slate-800 body, #22d3ee accents, rose-400 highlights
+ */
+export function GoatBrokenFrame({ className, width = 120, height = 96 }: IllustrationProps) {
+  return (
+    <svg
+      viewBox="0 0 120 96"
+      fill="none"
+      width={width}
+      height={height}
+      className={cn('opacity-80', className)}
+    >
+      <defs>
+        <radialGradient id="goat-frame-glow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#fb7185" stopOpacity="0.08" />
+          <stop offset="100%" stopColor="#22d3ee" stopOpacity="0" />
+        </radialGradient>
+        <linearGradient id="goat-frame-border" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.3" />
+          <stop offset="100%" stopColor="#fb7185" stopOpacity="0.2" />
+        </linearGradient>
+      </defs>
+      <circle cx="60" cy="48" r="45" fill="url(#goat-frame-glow)" />
+      {/* Broken picture frame - top left shard */}
+      <path d="M52 22h30v10" stroke="url(#goat-frame-border)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      {/* Frame right side */}
+      <path d="M82 32v30" stroke="url(#goat-frame-border)" strokeWidth="2" strokeLinecap="round" fill="none" />
+      {/* Frame bottom - broken, offset */}
+      <path d="M82 62h-12" stroke="#22d3ee" strokeOpacity="0.2" strokeWidth="2" strokeLinecap="round" fill="none" />
+      <path d="M66 66l-14 0" stroke="#fb7185" strokeOpacity="0.2" strokeWidth="2" strokeLinecap="round" fill="none" />
+      {/* Frame left - cracked */}
+      <path d="M52 22v16" stroke="url(#goat-frame-border)" strokeWidth="2" strokeLinecap="round" fill="none" />
+      <path d="M52 38l-2 4 2 4" stroke="#fb7185" strokeOpacity="0.25" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      {/* Crack lines on frame */}
+      <path d="M64 22l3 6-2 4" stroke="#fb7185" strokeOpacity="0.15" strokeWidth="1" strokeLinecap="round" fill="none" />
+      {/* Fallen corner shard */}
+      <path d="M50 60l-4 8 8-2z" stroke="#fb7185" strokeOpacity="0.2" strokeWidth="1" fill="none" />
+      {/* Goat peeking from left side of frame */}
+      <ellipse cx="38" cy="42" rx="10" ry="12" stroke="#22d3ee" strokeOpacity="0.2" strokeWidth="1.5" fill="none" />
+      {/* Horns */}
+      <path d="M30 34c-3-6-1-12 2-14" stroke="#a855f7" strokeOpacity="0.3" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+      <path d="M46 34c3-6 1-12-2-14" stroke="#a855f7" strokeOpacity="0.3" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+      {/* Eyes - wide/confused */}
+      <circle cx="34" cy="39" r="2" stroke="#22d3ee" strokeOpacity="0.3" strokeWidth="1" fill="none" />
+      <circle cx="34" cy="39" r="0.8" fill="#22d3ee" opacity="0.5" />
+      <circle cx="42" cy="39" r="2" stroke="#22d3ee" strokeOpacity="0.3" strokeWidth="1" fill="none" />
+      <circle cx="42" cy="39" r="0.8" fill="#22d3ee" opacity="0.5" />
+      {/* Raised eyebrow */}
+      <path d="M40 35c1-2 3-2 4-0.5" stroke="#22d3ee" strokeOpacity="0.2" strokeWidth="0.8" strokeLinecap="round" fill="none" />
+      {/* Nose */}
+      <ellipse cx="38" cy="46" rx="3" ry="2" stroke="#22d3ee" strokeOpacity="0.2" strokeWidth="1" fill="none" />
+      {/* Ears */}
+      <path d="M27 36c-4-2-6 0-5 3" stroke="#22d3ee" strokeOpacity="0.15" strokeWidth="1" strokeLinecap="round" fill="none" />
+      <path d="M49 36c4-2 6 0 5 3" stroke="#22d3ee" strokeOpacity="0.15" strokeWidth="1" strokeLinecap="round" fill="none" />
+      {/* Question mark */}
+      <text x="30" y="26" fill="#fb7185" fillOpacity="0.3" fontSize="10" fontWeight="bold">?</text>
+      {/* Sparkles */}
+      <circle cx="20" cy="20" r="1.5" fill="#fb7185" opacity="0.3">
+        <animate attributeName="opacity" values="0.3;0.08;0.3" dur="2.5s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="95" cy="50" r="1" fill="#22d3ee" opacity="0.25">
+        <animate attributeName="opacity" values="0.25;0.05;0.25" dur="3s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="88" cy="76" r="1" fill="#a855f7" opacity="0.2">
+        <animate attributeName="opacity" values="0.2;0.05;0.2" dur="3.5s" repeatCount="indefinite" />
+      </circle>
+    </svg>
+  );
+}
+
+/**
+ * Goat holding a disconnected cable - for inspector load errors
+ * Brand palette: slate-800 body, #22d3ee accents, rose-400 highlights
+ */
+export function GoatDisconnected({ className, width = 120, height = 96 }: IllustrationProps) {
+  return (
+    <svg
+      viewBox="0 0 120 96"
+      fill="none"
+      width={width}
+      height={height}
+      className={cn('opacity-80', className)}
+    >
+      <defs>
+        <radialGradient id="goat-disc-glow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#fb7185" stopOpacity="0.08" />
+          <stop offset="100%" stopColor="#22d3ee" stopOpacity="0" />
+        </radialGradient>
+        <linearGradient id="goat-cable-left" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.35" />
+          <stop offset="100%" stopColor="#22d3ee" stopOpacity="0.15" />
+        </linearGradient>
+        <linearGradient id="goat-cable-right" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#fb7185" stopOpacity="0.15" />
+          <stop offset="100%" stopColor="#fb7185" stopOpacity="0.35" />
+        </linearGradient>
+      </defs>
+      <circle cx="60" cy="48" r="45" fill="url(#goat-disc-glow)" />
+      {/* Left cable segment (held by goat) */}
+      <path d="M48 52c4 2 8 6 10 6" stroke="url(#goat-cable-left)" strokeWidth="3" strokeLinecap="round" fill="none" />
+      {/* Cable plug end - left */}
+      <rect x="56" y="54" width="6" height="8" rx="1.5" stroke="#22d3ee" strokeOpacity="0.3" strokeWidth="1.5" fill="none" />
+      <line x1="59" y1="56" x2="59" y2="58" stroke="#22d3ee" strokeOpacity="0.2" strokeWidth="1" />
+      {/* Gap between plugs - disconnection sparks */}
+      <line x1="63" y1="57" x2="66" y2="55" stroke="#fb7185" strokeOpacity="0.4" strokeWidth="1" strokeLinecap="round" />
+      <line x1="63" y1="59" x2="66" y2="60" stroke="#fb7185" strokeOpacity="0.3" strokeWidth="0.8" strokeLinecap="round" />
+      <circle cx="64" cy="58" r="1" fill="#fb7185" opacity="0.3">
+        <animate attributeName="opacity" values="0.3;0.1;0.3" dur="1.5s" repeatCount="indefinite" />
+      </circle>
+      {/* Cable plug end - right */}
+      <rect x="67" y="54" width="6" height="8" rx="1.5" stroke="#fb7185" strokeOpacity="0.3" strokeWidth="1.5" fill="none" />
+      <line x1="70" y1="56" x2="70" y2="58" stroke="#fb7185" strokeOpacity="0.2" strokeWidth="1" />
+      {/* Right cable segment (dangling) */}
+      <path d="M73 58c4 0 8 4 12 10 4 6 10 8 14 6" stroke="url(#goat-cable-right)" strokeWidth="3" strokeLinecap="round" fill="none" />
+      {/* Goat head */}
+      <ellipse cx="38" cy="42" rx="10" ry="12" stroke="#22d3ee" strokeOpacity="0.2" strokeWidth="1.5" fill="none" />
+      {/* Horns */}
+      <path d="M30 34c-3-6-1-12 2-14" stroke="#a855f7" strokeOpacity="0.3" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+      <path d="M46 34c3-6 1-12-2-14" stroke="#a855f7" strokeOpacity="0.3" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+      {/* Eyes - worried look */}
+      <circle cx="34" cy="40" r="1.5" fill="#22d3ee" opacity="0.4" />
+      <circle cx="42" cy="40" r="1.5" fill="#22d3ee" opacity="0.4" />
+      {/* Worried eyebrows */}
+      <path d="M32 37c1-1 2.5-1.5 4-0.5" stroke="#22d3ee" strokeOpacity="0.2" strokeWidth="0.8" strokeLinecap="round" fill="none" />
+      <path d="M40 36.5c1.5-1 3-0.5 4 0.5" stroke="#22d3ee" strokeOpacity="0.2" strokeWidth="0.8" strokeLinecap="round" fill="none" />
+      {/* Nose */}
+      <ellipse cx="38" cy="47" rx="3" ry="2" stroke="#22d3ee" strokeOpacity="0.2" strokeWidth="1" fill="none" />
+      {/* Mouth - frown */}
+      <path d="M35 50c1.5 1.5 4.5 1.5 6 0" stroke="#22d3ee" strokeOpacity="0.12" strokeWidth="0.8" strokeLinecap="round" fill="none" />
+      {/* Ears */}
+      <path d="M27 36c-4-2-6 0-5 3" stroke="#22d3ee" strokeOpacity="0.15" strokeWidth="1" strokeLinecap="round" fill="none" />
+      <path d="M49 36c4-2 6 0 5 3" stroke="#22d3ee" strokeOpacity="0.15" strokeWidth="1" strokeLinecap="round" fill="none" />
+      {/* Hoof holding cable */}
+      <path d="M46 50c2 1 3 2 4 3" stroke="#22d3ee" strokeOpacity="0.15" strokeWidth="1" strokeLinecap="round" fill="none" />
+      {/* Sparkles */}
+      <circle cx="18" cy="22" r="1.5" fill="#22d3ee" opacity="0.3">
+        <animate attributeName="opacity" values="0.3;0.08;0.3" dur="2.5s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="100" cy="40" r="1" fill="#a855f7" opacity="0.25">
+        <animate attributeName="opacity" values="0.25;0.05;0.25" dur="3.2s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="25" cy="75" r="1" fill="#fb7185" opacity="0.2">
+        <animate attributeName="opacity" values="0.2;0.05;0.2" dur="3.8s" repeatCount="indefinite" />
+      </circle>
+    </svg>
+  );
+}
+
 export function CategorySlotIllustration({ category }: { category?: string }) {
   const cat = (category || '').toLowerCase();
 

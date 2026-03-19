@@ -67,7 +67,7 @@ const SIZE_CONFIG = {
   sm: {
     button: 'p-2',
     icon: 'w-4 h-4',
-    text: 'text-[10px]',
+    text: 'text-2xs',
     gap: 'gap-1',
   },
   md: {
@@ -120,7 +120,7 @@ export const SocialButton = memo(
         whileHover={disabled ? undefined : "hover"}
         whileTap={disabled ? undefined : "tap"}
         className={`
-          flex items-center justify-center rounded-xl
+          flex items-center justify-center rounded-container
           transition-all duration-200
           focus-ring
           disabled:opacity-50 disabled:cursor-not-allowed
@@ -201,7 +201,7 @@ export const CopyButton = memo(function CopyButton({
       whileHover="hover"
       whileTap="tap"
       className={`
-        flex items-center justify-center rounded-xl
+        flex items-center justify-center rounded-container
         transition-all duration-200
         focus-ring
         ${sizeConfig.button}

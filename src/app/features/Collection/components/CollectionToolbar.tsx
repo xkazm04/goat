@@ -1,13 +1,11 @@
 "use client";
 
 import { ChevronDown, ChevronUp, Grid3x3, List, Plus, Search, X, EyeOff, Filter, Save, Bookmark, MoreHorizontal } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { ItemPanelStats, CollectionGroup, CollectionItem } from "../types";
-import { useCollectionFiltersContext } from "../context/CollectionFiltersContext";
+import { ItemPanelStats, ItemCategory, CollectionItem } from "../types";
 import { useCollectionFilterState, getActiveFilterCount, getHasActiveFilters } from "../hooks/useCollectionFilterState";
-import { QuickFilterBar, type QuickFilter } from "@/lib/filters";
-import type { SmartFilterSuggestion, FilterConfig, FilterPreset } from "@/lib/filters/types";
+import { QuickFilterBar } from "@/lib/filters/components/QuickFilterBar";
+import type { QuickFilter, SmartFilterSuggestion, FilterConfig, FilterPreset } from "@/lib/filters/types";
 import type { CollectionFilterState } from "../hooks/useCollectionFilterState";
 import { UnrankedIcon, InGridIcon, TopRatedIcon, RecentIcon } from "@/components/icons/MicroIllustrations";
 
@@ -156,7 +154,7 @@ function generateCollectionSuggestions(items: CollectionItem[]): SmartFilterSugg
 // ─── Sub-Components ──────────────────────────────────────────────────────────
 
 interface CategoryBarProps {
-  groups: CollectionGroup[];
+  groups: ItemCategory[];
   selectedGroupIds: Set<string>;
   onToggleGroup: (groupId: string) => void;
   isInitialLoad: boolean;
@@ -165,71 +163,48 @@ interface CategoryBarProps {
 
 function CategoryBar({ groups, selectedGroupIds, onToggleGroup, isInitialLoad, highlightedGroups }: CategoryBarProps) {
   return (
-    <div className="w-full overflow-x-auto border-b border-slate-700/50 bg-slate-900/50" data-testid="collection-toolbar-categorybar">
+    <div className="w-full overflow-x-auto divider-gradient bg-slate-900/50" data-testid="collection-toolbar-categorybar">
       <div className="flex items-center gap-2 px-4 py-2 min-h-[48px]">
-        <AnimatePresence mode="popLayout">
-          {groups.map((group, index) => {
-            const isSelected = selectedGroupIds.has(group.id);
-            const itemCount = group.items?.length || 0;
-            const isHighlighted = highlightedGroups.has(group.id);
+        {groups.map((group, index) => {
+          const isSelected = selectedGroupIds.has(group.id);
+          const itemCount = group.items?.length || 0;
+          const isHighlighted = highlightedGroups.has(group.id);
 
-            return (
-              <motion.button
-                key={group.id}
-                onClick={() => onToggleGroup(group.id)}
-                initial={isInitialLoad ? {
-                  opacity: 0,
-                  y: -10,
-                  scale: 0.9
-                } : false}
-                animate={{
-                  opacity: 1,
-                  y: 0,
-                  scale: 1
-                }}
-                exit={{
-                  opacity: 0,
-                  scale: 0.9,
-                  transition: { duration: 0.2 }
-                }}
-                transition={{
-                  duration: 0.3,
-                  delay: isInitialLoad ? index * 0.05 : 0,
-                  ease: [0.25, 0.46, 0.45, 0.94]
-                }}
-                layout
-                layoutId={group.id}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                data-testid={`category-${group.id}-btn`}
-                aria-pressed={isSelected}
-                className={`
-                  shrink-0 px-3 py-1.5 rounded-full text-xs font-medium
-                  transition-all duration-200 whitespace-nowrap
-                  ${isSelected
-                    ? 'bg-brand/20 text-brand-hover border border-brand/40 shadow-lg shadow-brand/10'
-                    : 'bg-slate-800/60 text-slate-400 border border-slate-700/50 hover:bg-slate-800 hover:text-slate-300'
-                  }
-                  ${isHighlighted ? 'ring-2 ring-brand-hover/50 ring-offset-2 ring-offset-slate-900' : ''}
-                `}
-                style={{
-                  animation: isHighlighted ? 'highlight-pulse 0.8s cubic-bezier(0.4, 0, 0.2, 1)' : undefined
-                }}
-              >
-                <span className="font-semibold">{group.name}</span>
-                {itemCount > 0 && (
-                  <span className={`ml-1.5 px-1.5 py-0.5 rounded-full text-xs ${
-                    isSelected
-                      ? 'bg-brand/30 text-brand-hover'
-                      : 'bg-slate-700/50 text-slate-500'
-                  }`}>
-                    {itemCount}
-                  </span>
-                )}
-              </motion.button>
-            );
-          })}
-        </AnimatePresence>
+          return (
+            <button
+              key={group.id}
+              onClick={() => onToggleGroup(group.id)}
+              data-testid={`category-${group.id}-btn`}
+              aria-pressed={isSelected}
+              className={`
+                shrink-0 px-3 py-1.5 rounded-badge text-xs font-medium
+                transition-all duration-200 whitespace-nowrap
+                hover:scale-105 active:scale-95
+                ${isInitialLoad ? 'animate-[category-enter_0.3s_cubic-bezier(0.25,0.46,0.45,0.94)_both]' : ''}
+                ${isSelected
+                  ? 'bg-brand/20 text-brand-hover border border-brand/40 shadow-lg shadow-brand/10'
+                  : 'bg-slate-800/60 text-slate-400 border border-slate-700/50 hover:bg-slate-800 hover:text-slate-300'
+                }
+                ${isHighlighted ? 'ring-2 ring-brand-hover/50 ring-offset-2 ring-offset-slate-900' : ''}
+              `}
+              style={{
+                animationDelay: isInitialLoad ? `${index * 50}ms` : undefined,
+                animation: isHighlighted ? 'highlight-pulse 0.8s cubic-bezier(0.4, 0, 0.2, 1)' : undefined,
+              }}
+            >
+              <span className="font-semibold">{group.name}</span>
+              {itemCount > 0 && (
+                <span className={`ml-1.5 px-1.5 py-0.5 rounded-badge text-xs ${
+                  isSelected
+                    ? 'bg-brand/30 text-brand-hover'
+                    : 'bg-slate-700/50 text-slate-500'
+                }`}>
+                  {itemCount}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -251,11 +226,11 @@ function FilterSuggestions({ suggestions, hasActiveFilters, onApplySuggestion }:
         <button
           key={suggestion.id}
           onClick={() => onApplySuggestion(suggestion.config)}
-          className="shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:bg-amber-500/20 transition-colors"
+          className="shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-control text-xs bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:bg-amber-500/20 transition-colors"
           title={suggestion.description}
         >
           <span>{suggestion.label}</span>
-          <span className="text-[9px] font-mono text-amber-500/60">({suggestion.estimatedMatches})</span>
+          <span className="text-2xs font-mono text-amber-500/60">({suggestion.estimatedMatches})</span>
         </button>
       ))}
     </div>
@@ -341,7 +316,7 @@ function QuickFiltersSection({
   }, [filterStore, presetName]);
 
   return (
-    <div className="px-4 py-2 border-b border-slate-700/50 bg-slate-900/40" data-testid="collection-toolbar-quickfilters">
+    <div className="px-4 py-2 divider-gradient bg-slate-900/40" data-testid="collection-toolbar-quickfilters">
       {/* Quick Filters Row */}
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-1.5 text-xs text-slate-500">
@@ -370,18 +345,15 @@ function QuickFiltersSection({
         )}
         {hasActiveFilters && (
           <div className="flex items-center gap-1.5">
-            <motion.span
-              className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-brand/20 text-brand-hover border border-brand/30"
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
+            <span
+              className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-badge bg-brand/20 text-brand-hover border border-brand/30 animate-[category-enter_0.2s_ease-out_both]"
             >
               {activeFilterCount} active
-            </motion.span>
+            </span>
             {/* Save current filter as preset */}
             <button
               onClick={() => setShowSavePreset(true)}
-              className="p-1 text-slate-400 hover:text-brand-hover transition-colors"
+              className="p-1 text-slate-400 hover:text-brand-hover transition-colors touch-target"
               title="Save as preset"
             >
               <Save className="w-3.5 h-3.5" />
@@ -398,7 +370,7 @@ function QuickFiltersSection({
             <button
               key={preset.id}
               onClick={() => onLoadPreset(preset.id)}
-              className={`shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs border transition-all ${
+              className={`shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-control text-xs border transition-all ${
                 preset.id === activePresetId
                   ? 'bg-brand/20 border-brand/40 text-brand-hover'
                   : 'bg-slate-800/40 border-slate-700/50 text-slate-400 hover:border-slate-600 hover:text-slate-300'
@@ -408,7 +380,7 @@ function QuickFiltersSection({
               <span>{preset.name}</span>
               <button
                 onClick={(e) => { e.stopPropagation(); onDeletePreset(preset.id); }}
-                className="ml-1 text-slate-500 hover:text-red-400"
+                className="ml-1 text-slate-500 hover:text-red-400 touch-target-sm"
                 title="Remove preset"
               >
                 <X className="w-3 h-3" />
@@ -426,42 +398,37 @@ function QuickFiltersSection({
       />
 
       {/* Save Preset Inline Dialog */}
-      <AnimatePresence>
-        {showSavePreset && (
-          <motion.div
-            className="flex items-center gap-2 mt-2"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
+      {showSavePreset && (
+        <div
+          className="flex items-center gap-2 mt-2 animate-[category-enter_0.2s_ease-out_both]"
+        >
+          <input
+            type="text"
+            value={presetName}
+            onChange={(e) => setPresetName(e.target.value)}
+            placeholder="Preset name..."
+            className="flex-1 px-2 py-1.5 bg-slate-800/60 border border-slate-700/50 rounded text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-brand/50"
+            autoFocus
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleSavePreset();
+              if (e.key === 'Escape') setShowSavePreset(false);
+            }}
+          />
+          <button
+            onClick={handleSavePreset}
+            disabled={!presetName.trim()}
+            className="px-3 py-1.5 text-xs bg-brand/20 text-brand-hover border border-brand/30 rounded hover:bg-brand/30 disabled:opacity-50 transition-colors"
           >
-            <input
-              type="text"
-              value={presetName}
-              onChange={(e) => setPresetName(e.target.value)}
-              placeholder="Preset name..."
-              className="flex-1 px-2 py-1.5 bg-slate-800/60 border border-slate-700/50 rounded text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-brand/50"
-              autoFocus
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleSavePreset();
-                if (e.key === 'Escape') setShowSavePreset(false);
-              }}
-            />
-            <button
-              onClick={handleSavePreset}
-              disabled={!presetName.trim()}
-              className="px-3 py-1.5 text-xs bg-brand/20 text-brand-hover border border-brand/30 rounded hover:bg-brand/30 disabled:opacity-50 transition-colors"
-            >
-              Save
-            </button>
-            <button
-              onClick={() => setShowSavePreset(false)}
-              className="px-2 py-1.5 text-xs text-slate-400 hover:text-slate-300"
-            >
-              Cancel
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            Save
+          </button>
+          <button
+            onClick={() => setShowSavePreset(false)}
+            className="px-2 py-1.5 text-xs text-slate-400 hover:text-slate-300"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -483,7 +450,7 @@ interface CollectionToolbarProps {
   onViewModeChange?: (mode: 'grid' | 'list') => void;
 
   // Category bar section (optional - uses context by default)
-  groups?: CollectionGroup[];
+  groups?: ItemCategory[];
   selectedGroupIds?: Set<string>;
   onToggleGroup?: (groupId: string) => void;
 
@@ -585,14 +552,11 @@ export function CollectionToolbar({
   const [prevGroupIds, setPrevGroupIds] = useState<string[]>([]);
   const [highlightedGroups, setHighlightedGroups] = useState<Set<string>>(new Set());
 
-  // Use context if available, otherwise fall back to props
-  const context = useCollectionFiltersContext();
-
-  const groups = propGroups ?? context.groups;
-  const selectedGroupIds = propSelectedGroupIds ?? context.filter.selectedGroupIds;
-  const onToggleGroup = propOnToggleGroup ?? context.toggleGroup;
-  const searchValue = propSearchValue ?? context.filter.searchTerm;
-  const onSearchChange = propOnSearchChange ?? context.setSearchTerm;
+  const groups = propGroups ?? [];
+  const selectedGroupIds = propSelectedGroupIds ?? new Set<string>();
+  const onToggleGroup = propOnToggleGroup ?? (() => {});
+  const searchValue = propSearchValue ?? '';
+  const onSearchChange = propOnSearchChange ?? (() => {});
 
   // Detect group reordering and trigger highlight effect
   useEffect(() => {
@@ -627,7 +591,7 @@ export function CollectionToolbar({
   sections.push({
     key: 'header',
     element: (
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700 bg-slate-900/95 backdrop-blur-xs" data-testid="collection-toolbar-header">
+      <div className="flex items-center justify-between px-4 py-3 divider-gradient bg-slate-900/95 backdrop-blur-xs" data-testid="collection-toolbar-header">
         <div className="flex items-center gap-4">
           <div>
             <h3 className="text-sm font-semibold text-white flex items-center gap-2">
@@ -645,7 +609,7 @@ export function CollectionToolbar({
               )}
               {(stats.hiddenInGridCount ?? 0) > 0 && (
                 <span
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-badge text-xs font-medium bg-amber-500/20 text-amber-400 border border-amber-500/30"
                   title={`${stats.hiddenInGridCount} items are hidden because they are already in your ranking grid`}
                   data-testid="hidden-items-badge"
                 >
@@ -663,7 +627,7 @@ export function CollectionToolbar({
               onClick={onAddItem}
               data-testid="collection-add-item-btn"
               aria-label="Add new item"
-              className="p-2 bg-linear-to-r from-brand/20 to-blue-500/20 hover:from-brand/30 hover:to-blue-500/30 border border-brand/30 rounded-lg transition-all shadow-lg shadow-brand/10 flex items-center gap-1.5 text-brand-hover hover:text-brand-hover"
+              className="p-2 bg-linear-to-r from-brand/20 to-blue-500/20 hover:from-brand/30 hover:to-blue-500/30 border border-brand/30 rounded-control transition-all shadow-lg shadow-brand/10 flex items-center gap-1.5 text-brand-hover hover:text-brand-hover"
               title="Add new item"
             >
               <Plus className="w-4 h-4" />
@@ -671,7 +635,7 @@ export function CollectionToolbar({
           )}
 
           {onViewModeChange && (
-            <div className="flex items-center gap-1 bg-slate-800 rounded-lg p-1" data-testid="view-mode-toggle">
+            <div className="flex items-center gap-1 bg-slate-800 rounded-control p-1" data-testid="view-mode-toggle">
               <button
                 onClick={() => onViewModeChange('grid')}
                 data-testid="view-mode-grid-btn"
@@ -769,7 +733,7 @@ export function CollectionToolbar({
     sections.push({
       key: 'search',
       element: (
-        <div className="px-4 py-2 border-b border-slate-700/50 bg-slate-900/30" data-testid="collection-toolbar-search">
+        <div className="px-4 py-2 divider-gradient bg-slate-900/30" data-testid="collection-toolbar-search">
           <div className="relative">
             <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 transition-colors ${
               isSearchFocused ? 'text-brand-hover' : 'text-slate-500'
@@ -783,7 +747,7 @@ export function CollectionToolbar({
               placeholder={searchPlaceholder}
               data-testid="collection-search-input"
               aria-label="Search collection items"
-              className="w-full pl-10 pr-10 py-2 bg-slate-800/60 border border-slate-700/50 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-hidden focus:ring-2 focus:ring-brand/50 focus:border-brand/50 transition-all"
+              className="w-full pl-10 pr-10 py-2 bg-slate-800/60 border border-slate-700/50 rounded-control text-sm text-white placeholder-slate-500 focus:outline-hidden focus:ring-2 focus:ring-brand/50 focus:border-brand/50 transition-all"
             />
             {searchValue && (
               <button
@@ -813,7 +777,7 @@ export function CollectionToolbar({
         data-testid="collection-toggle-visibility-btn"
         aria-expanded={isVisible}
         aria-label={isVisible ? "Hide collection panel" : "Show collection panel"}
-        className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white px-4 py-1.5 rounded-t-lg border border-b-0 border-slate-700 transition-colors flex items-center gap-2 text-xs shadow-lg z-50"
+        className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white px-4 py-1.5 rounded-t-card border border-b-0 border-slate-700 transition-colors flex items-center gap-2 text-xs shadow-lg z-sticky"
       >
         {isVisible ? (
           <>
@@ -836,24 +800,19 @@ export function CollectionToolbar({
       {/* Collapsed sections with Show More toggle */}
       {hasCollapsedSections && (
         <>
-          <AnimatePresence initial={false}>
-            {isExpanded && collapsedSections.map((section) => (
-              <motion.div
-                key={section.key}
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                {section.element}
-              </motion.div>
-            ))}
-          </AnimatePresence>
+          {isExpanded && collapsedSections.map((section) => (
+            <div
+              key={section.key}
+              className="animate-[category-enter_0.2s_ease-out_both]"
+            >
+              {section.element}
+            </div>
+          ))}
 
           <button
             onClick={() => setIsExpanded(!isExpanded)}
             data-testid="collection-toolbar-show-more"
-            className="w-full flex items-center justify-center gap-1.5 px-4 py-1.5 text-xs text-slate-400 hover:text-slate-300 bg-slate-900/20 border-b border-slate-700/50 transition-colors hover:bg-slate-800/40"
+            className="w-full flex items-center justify-center gap-1.5 px-4 py-1.5 text-xs text-slate-400 hover:text-slate-300 bg-slate-900/20 divider-gradient transition-colors hover:bg-slate-800/40 touch-target"
           >
             <MoreHorizontal className="w-3.5 h-3.5" />
             {isExpanded ? 'Show Less' : `Show More (${collapsedSections.length})`}

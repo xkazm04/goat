@@ -7,7 +7,8 @@
 
 import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Lightbulb, Target, Search, PlusCircle } from 'lucide-react';
+import { PlusCircle } from 'lucide-react';
+import { GoatLightbulb, GoatTarget, GoatSearch } from '@/components/visual/GoatIcons';
 import { cn } from '@/lib/utils';
 import type {
   SmartFilterSuggestion,
@@ -29,9 +30,9 @@ import {
  * Lucide icon mapping for suggestion types
  */
 const SUGGESTION_TYPE_ICONS: Record<string, React.ReactNode> = {
-  narrow: <Target size={14} />,
-  expand: <Search size={14} />,
-  alternative: <Lightbulb size={14} />,
+  narrow: <GoatTarget size={14} />,
+  expand: <GoatSearch size={14} />,
+  alternative: <GoatLightbulb size={14} />,
   complement: <PlusCircle size={14} />,
 };
 
@@ -115,7 +116,7 @@ function InlineSuggestions({
   return (
     <div className={cn('flex items-center gap-2', className)}>
       <span className="flex items-center gap-1 text-xs text-muted-foreground">
-        <Lightbulb size={12} />
+        <GoatLightbulb size={12} />
         Try:
       </span>
       <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
@@ -125,7 +126,7 @@ function InlineSuggestions({
               key={suggestion.id}
               className={cn(
                 'shrink-0 inline-flex items-center gap-1',
-                'px-2 py-1 text-xs rounded-md',
+                'px-2 py-1 text-xs rounded-control',
                 'bg-accent/50 hover:bg-accent border border-border/50',
                 'transition-colors'
               )}
@@ -178,13 +179,13 @@ function PanelSuggestions({
   return (
     <div
       className={cn(
-        'p-4 rounded-lg border border-border bg-background',
+        'p-4 rounded-card border border-border bg-background',
         className
       )}
     >
       <div className="flex items-center gap-2 mb-3">
-        <Lightbulb size={18} className="text-amber-400" />
-        <h4 className="text-sm font-medium">Smart Suggestions</h4>
+        <GoatLightbulb size={18} className="text-amber-400" />
+        <h4 className="text-sm font-medium font-grotesk">Smart Suggestions</h4>
       </div>
 
       <div className="space-y-4">
@@ -230,7 +231,7 @@ function PopoverSuggestions({
     <div className={cn('relative', className)}>
       <button
         className={cn(
-          'flex items-center gap-1.5 px-2 py-1 text-xs rounded-md',
+          'flex items-center gap-1.5 px-2 py-1 text-xs rounded-control',
           'bg-amber-500/10 text-amber-600 border border-amber-500/20',
           'hover:bg-amber-500/20 transition-colors',
           suggestions.length === 0 && 'filter-disabled'
@@ -238,7 +239,7 @@ function PopoverSuggestions({
         onClick={() => setIsOpen(!isOpen)}
         disabled={suggestions.length === 0}
       >
-        <Lightbulb size={12} />
+        <GoatLightbulb size={12} />
         <span>{suggestions.length} suggestions</span>
       </button>
 
@@ -255,7 +256,7 @@ function PopoverSuggestions({
             <motion.div
               className={cn(
                 'absolute z-20 top-full mt-2 right-0 w-72',
-                'bg-background border border-border rounded-lg shadow-xl',
+                'bg-background border border-border rounded-card shadow-xl',
                 'overflow-hidden'
               )}
               initial={{ opacity: 0, y: -10, scale: 0.95 }}
@@ -264,7 +265,7 @@ function PopoverSuggestions({
               transition={FILTER_ANIMATIONS.transition}
             >
               <div className="p-3 border-b border-border">
-                <h4 className="text-sm font-medium">Smart Suggestions</h4>
+                <h4 className="text-sm font-medium font-grotesk">Smart Suggestions</h4>
                 <p className="text-xs text-muted-foreground">
                   Click to apply a suggestion
                 </p>
@@ -275,7 +276,7 @@ function PopoverSuggestions({
                   <button
                     key={suggestion.id}
                     className={cn(
-                      'w-full flex items-center gap-2 p-2 rounded-md',
+                      'w-full flex items-center gap-2 p-2 rounded-control',
                       'hover:bg-accent transition-colors text-left'
                     )}
                     onClick={() => {
@@ -321,7 +322,7 @@ function SuggestionCard({
   return (
     <motion.button
       className={cn(
-        'w-full flex items-start gap-3 p-3 rounded-lg',
+        'w-full flex items-start gap-3 p-3 rounded-card',
         'border border-border bg-muted/30',
         'filter-hover hover:border-primary/30',
         'transition-all text-left'
@@ -377,7 +378,7 @@ function SuggestionsLoading({
   return (
     <div
       className={cn(
-        'p-4 rounded-lg border border-border animate-pulse',
+        'p-4 rounded-card border border-border animate-pulse',
         className
       )}
     >

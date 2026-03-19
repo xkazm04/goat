@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Trophy, Crown, Mountain, Swords, ListOrdered } from 'lucide-react';
+import { DURATION } from '@/lib/animations/motion-presets';
 
 export type ViewMode = 'podium' | 'goat' | 'rushmore' | 'bracket' | 'tierlist';
 
@@ -20,7 +21,7 @@ const viewOptions = [
 
 export function ViewSwitcher({ currentView, onViewChange }: ViewSwitcherProps) {
     return (
-        <div className="flex items-center gap-2 p-1 rounded-xl bg-slate-900/50 backdrop-blur-xs border border-slate-800/50">
+        <div className="flex items-center gap-2 p-1 rounded-container bg-slate-900/50 backdrop-blur-xs border border-slate-800/50">
             {viewOptions.map((option) => {
                 const Icon = option.icon;
                 const isActive = currentView === option.id;
@@ -34,9 +35,9 @@ export function ViewSwitcher({ currentView, onViewChange }: ViewSwitcherProps) {
                         aria-label={`${option.label} view: ${option.description}`}
                         aria-pressed={isActive}
                         className={`
-              relative px-4 py-2 rounded-lg font-bold text-xs tracking-wide
+              relative px-4 py-2 rounded-control font-bold text-xs tracking-wide
               transition-all duration-200 flex items-center gap-2
-              focus-ring
+              focus-ring touch-target
               ${isActive
                                 ? 'bg-linear-to-r from-brand/20 to-blue-500/20 border border-brand/40 text-brand-hover shadow-lg shadow-brand/15'
                                 : 'bg-transparent border border-transparent text-gray-400 hover:bg-slate-800/50 hover:text-brand-hover'
@@ -54,8 +55,8 @@ export function ViewSwitcher({ currentView, onViewChange }: ViewSwitcherProps) {
                         {isActive && (
                             <motion.div
                                 layoutId="activeView"
-                                className="absolute inset-0 rounded-lg border border-brand-hover/40 shadow-[0_0_12px_rgba(34,211,238,0.15)]"
-                                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                                className="absolute inset-0 rounded-control border border-brand-hover/40 shadow-glow-brand-sm"
+                                transition={{ type: "spring", bounce: 0.2, duration: DURATION.emphasis }}
                             />
                         )}
                     </motion.button>

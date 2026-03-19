@@ -126,7 +126,7 @@ export const UnsavedChangesBanner: React.FC<UnsavedChangesBannerProps> = ({
         exit={{ opacity: 0, y: -40 }}
         transition={{ duration: 0.25, ease: 'easeOut' }}
         className={cn(
-          'fixed top-0 left-0 right-0 z-[60]',
+          'fixed top-0 left-0 right-0 z-toast',
           isError
             ? 'bg-red-600/95'
             : isOffline

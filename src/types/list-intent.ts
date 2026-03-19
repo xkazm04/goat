@@ -50,7 +50,8 @@ export type ListIntentSource =
   | 'preset'       // From showcase card
   | 'template'     // From template gallery
   | 'clone'        // From existing list
-  | 'blueprint';   // From shareable blueprint
+  | 'blueprint'    // From shareable blueprint
+  | 'fork';        // From forking a shared ranking
 
 /**
  * ListIntent - The core semantic type representing the user's list creation intent

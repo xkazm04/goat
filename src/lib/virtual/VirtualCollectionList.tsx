@@ -17,7 +17,6 @@ import React, {
   useState,
 } from 'react';
 import { useVirtualizer, VirtualItem as TanstackVirtualItem } from '@tanstack/react-virtual';
-import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 /**
@@ -414,20 +413,15 @@ function VirtualCollectionListInner<T>(
           [horizontal ? 'height' : 'width']: '100%',
         }}
       >
-        <AnimatePresence mode="popLayout">
-          {virtualItems.map((virtualRow) => {
+        {virtualItems.map((virtualRow) => {
             const item = items[virtualRow.index];
             if (!item) return null;
 
             return (
-              <motion.div
+              <div
                 key={item.id}
                 data-virtual-item
                 data-index={virtualRow.index}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15 }}
                 className="absolute left-0 top-0"
                 style={{
                   [horizontal ? 'left' : 'top']: `${virtualRow.start}px`,
@@ -436,15 +430,14 @@ function VirtualCollectionListInner<T>(
                 }}
               >
                 {renderItem(item, virtualRow.index, virtualRow)}
-              </motion.div>
+              </div>
             );
           })}
-        </AnimatePresence>
       </div>
 
       {/* Performance overlay (dev mode) */}
       {mergedPerformance.enableMonitoring && (
-        <div className="fixed bottom-4 right-4 bg-black/80 text-xs text-white p-2 rounded font-mono z-50">
+        <div className="fixed bottom-4 right-4 bg-black/80 text-xs text-white p-2 rounded font-mono z-toast">
           <div>FPS: {metrics.fps}</div>
           <div>Visible: {metrics.visibleCount}</div>
           <div>DOM: {metrics.domNodeCount}</div>

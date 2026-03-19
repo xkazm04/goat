@@ -8,6 +8,7 @@
 
 import React, { memo } from 'react';
 import { motion } from 'framer-motion';
+import { DURATION, EASE } from '@/lib/animations/motion-presets';
 import { cn } from '@/lib/utils';
 import { Star } from 'lucide-react';
 import { MetadataBadges, MetadataBadgeData } from './MetadataBadges';
@@ -117,13 +118,13 @@ const BackFaceContent = memo(function BackFaceContent({
           {item.tags.slice(0, 4).map((tag) => (
             <span
               key={tag}
-              className="px-1.5 py-0.5 text-[10px] bg-brand/10 text-brand-hover rounded-full border border-brand/20"
+              className="px-1.5 py-0.5 text-2xs bg-brand/10 text-brand-hover rounded-badge border border-brand/20"
             >
               {tag}
             </span>
           ))}
           {item.tags.length > 4 && (
-            <span className="px-1.5 py-0.5 text-[10px] text-gray-500">
+            <span className="px-1.5 py-0.5 text-2xs text-gray-500">
               +{item.tags.length - 4}
             </span>
           )}
@@ -157,8 +158,8 @@ export const CardFlipReveal = memo(function CardFlipReveal({
         style={{ transformStyle: 'preserve-3d' }}
         animate={{ rotateY: isFlipped ? 180 : 0 }}
         transition={{
-          duration: 0.5,
-          ease: [0.4, 0, 0.2, 1],
+          duration: DURATION.slow,
+          ease: EASE.inOut,
         }}
       >
         {/* Front face - transparent so the underlying card shows through */}
@@ -169,7 +170,7 @@ export const CardFlipReveal = memo(function CardFlipReveal({
 
         {/* Back face - metadata reveal */}
         <div
-          className="absolute inset-0 rounded-lg overflow-hidden bg-gray-900 border border-gray-700"
+          className="absolute inset-0 rounded-card overflow-hidden bg-gray-900 border border-gray-700"
           style={{
             backfaceVisibility: 'hidden',
             transform: 'rotateY(180deg)',

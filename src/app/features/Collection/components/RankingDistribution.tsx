@@ -10,7 +10,9 @@ import {
   ResponsiveContainer,
   Cell,
   ReferenceLine,
+  CartesianGrid,
 } from "recharts";
+import type { BarShapeProps } from "recharts";
 import { motion } from "framer-motion";
 import {
   BarChart3,
@@ -59,7 +61,7 @@ function StatCard({ icon, label, value, subtext, color = "text-brand-hover", tre
   const TrendIcon = trend === 'up' ? TrendingUp : trend === 'down' ? TrendingDown : Minus;
 
   return (
-    <div className="p-3 rounded-lg bg-slate-800/50 border border-slate-700/50">
+    <div className="p-3 rounded-card bg-slate-800/50 border border-slate-700/50">
       <div className="flex items-center gap-2 mb-1">
         <span className={cn("text-slate-400", color)}>{icon}</span>
         <span className="text-xs text-slate-500 uppercase tracking-wider">{label}</span>
@@ -85,14 +87,36 @@ function DistributionSkeleton() {
     <div className="space-y-4">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="p-3 rounded-lg bg-slate-800/30 animate-pulse">
+          <div key={i} className="p-3 rounded-card bg-slate-800/30 animate-pulse">
             <div className="h-3 w-16 bg-slate-700/50 rounded mb-2" />
             <div className="h-6 w-12 bg-slate-700/50 rounded" />
           </div>
         ))}
       </div>
-      <div className="h-40 bg-slate-800/30 rounded-lg animate-pulse" />
+      <div className="h-40 bg-slate-800/30 rounded-card animate-pulse" />
     </div>
+  );
+}
+
+/**
+ * Custom rounded-top bar shape with gradient fill
+ */
+function BrandedBarShape({ x, y, width, height, gradientId, fill }: {
+  x?: number; y?: number; width?: number; height?: number;
+  gradientId?: string; fill?: string;
+}) {
+  if (!x || !y || !width || !height || height <= 0) return null;
+  const r = Math.min(4, width / 2, height);
+  return (
+    <path
+      d={`M${x},${y + height}
+          V${y + r}
+          Q${x},${y} ${x + r},${y}
+          H${x + width - r}
+          Q${x + width},${y} ${x + width},${y + r}
+          V${y + height}Z`}
+      fill={gradientId ? `url(#${gradientId})` : fill}
+    />
   );
 }
 
@@ -103,8 +127,17 @@ function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload || !payload.length) return null;
 
   return (
-    <div className="bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-xl">
-      <p className="text-xs text-slate-400 mb-1">Position #{label}</p>
+    <div
+      className="rounded-card p-2 shadow-xl backdrop-blur-sm"
+      style={{
+        background: 'rgba(15,23,42,0.95)',
+        border: '1px solid rgba(34,211,238,0.3)',
+        boxShadow: 'var(--glow-brand-sm)',
+      }}
+    >
+      <p className="text-xs text-slate-400 mb-1" style={{ fontFamily: 'var(--font-family-mono)' }}>
+        Position #{label}
+      </p>
       <p className="text-sm font-semibold text-brand-hover">
         {payload[0].value} rankings
       </p>
@@ -255,18 +288,37 @@ export function RankingDistribution({
               data={chartData}
               margin={{ top: 5, right: 10, left: -20, bottom: 5 }}
             >
+              <defs>
+                <linearGradient id="dist-bar-grad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#22D3EE" stopOpacity={1} />
+                  <stop offset="100%" stopColor="#22D3EE" stopOpacity={0.7} />
+                </linearGradient>
+                <linearGradient id="dist-bar-grad-dim" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#22D3EE" stopOpacity={0.5} />
+                  <stop offset="100%" stopColor="#22D3EE" stopOpacity={0.25} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid
+                horizontal
+                vertical={false}
+                stroke="rgba(255,255,255,0.2)"
+                strokeDasharray="3 3"
+              />
               <XAxis
                 dataKey="position"
-                tick={{ fill: '#6B7280', fontSize: 10 }}
+                tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 9, fontFamily: 'var(--font-family-mono)' }}
                 tickLine={false}
-                axisLine={{ stroke: '#374151' }}
+                axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
               />
               <YAxis
-                tick={{ fill: '#6B7280', fontSize: 10 }}
+                tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 9, fontFamily: 'var(--font-family-mono)' }}
                 tickLine={false}
                 axisLine={false}
               />
-              <Tooltip content={<CustomTooltip />} />
+              <Tooltip
+                content={<CustomTooltip />}
+                cursor={{ fill: 'rgba(34,211,238,0.1)', stroke: '#22D3EE', strokeWidth: 1, strokeOpacity: 0.3 }}
+              />
               <ReferenceLine
                 x={Math.round(stats.medianPosition)}
                 stroke="#22D3EE"
@@ -275,8 +327,13 @@ export function RankingDistribution({
               />
               <Bar
                 dataKey="count"
-                radius={[2, 2, 0, 0]}
                 maxBarSize={20}
+                shape={(props: BarShapeProps) => (
+                  <BrandedBarShape
+                    x={props.x} y={props.y} width={props.width} height={props.height}
+                    gradientId={(props as BarShapeProps & { isMedian?: boolean }).isMedian ? 'dist-bar-grad' : 'dist-bar-grad-dim'}
+                  />
+                )}
               >
                 {chartData.map((entry, index) => (
                   <Cell

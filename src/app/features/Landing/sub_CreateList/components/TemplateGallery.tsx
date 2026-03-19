@@ -16,6 +16,7 @@ import { TopList } from "@/types/top-lists";
 import { ListTemplate, STARTER_TEMPLATES, topListToTemplate } from "@/types/templates";
 import { getCategoryColor } from "@/lib/helpers/getColors";
 import { useTopLists } from "@/hooks/use-top-lists";
+import { DURATION } from '@/lib/animations/motion-presets';
 
 interface TemplateGalleryProps {
   onSelectTemplate: (template: ListTemplate) => void;
@@ -104,7 +105,7 @@ export function TemplateGallery({ onSelectTemplate, onClose }: TemplateGalleryPr
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`
-                flex items-center gap-2 px-4 py-2.5 rounded-xl
+                flex items-center gap-2 px-4 py-2.5 rounded-card
                 transition-all duration-200 whitespace-nowrap
                 ${isActive
                   ? 'bg-brand/20 text-brand-hover border border-brand/40'
@@ -136,7 +137,7 @@ export function TemplateGallery({ onSelectTemplate, onClose }: TemplateGalleryPr
               {Array.from({ length: 4 }).map((_, i) => (
                 <div
                   key={i}
-                  className="h-24 rounded-xl overflow-hidden relative"
+                  className="h-24 rounded-card overflow-hidden relative"
                   style={{
                     background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.6), rgba(51, 65, 85, 0.4))',
                   }}
@@ -159,7 +160,7 @@ export function TemplateGallery({ onSelectTemplate, onClose }: TemplateGalleryPr
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: DURATION.fast }}
               className="grid grid-cols-1 sm:grid-cols-2 gap-3"
               data-testid="template-grid"
             >
@@ -175,7 +176,7 @@ export function TemplateGallery({ onSelectTemplate, onClose }: TemplateGalleryPr
                     transition={{ delay: index * 0.05 }}
                     onClick={() => handleTemplateClick(template)}
                     className={`
-                      relative group rounded-xl overflow-hidden cursor-pointer
+                      relative group rounded-card overflow-hidden cursor-pointer
                       border transition-all duration-200
                       ${isSelected
                         ? 'border-brand-hover ring-2 ring-brand-hover/30'
@@ -226,7 +227,7 @@ export function TemplateGallery({ onSelectTemplate, onClose }: TemplateGalleryPr
                       {/* Metadata row */}
                       <div className="flex items-center gap-2 mb-2">
                         <span
-                          className="text-xs px-2 py-0.5 rounded-full font-medium"
+                          className="text-xs px-2 py-0.5 rounded-badge font-medium"
                           style={{
                             background: `${colors.primary}20`,
                             color: colors.accent,

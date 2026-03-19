@@ -9,6 +9,7 @@ import {
   CATEGORY_TIME_MULTIPLIERS,
   calculateComparisons,
 } from "./types";
+import { DURATION } from '@/lib/animations/motion-presets';
 
 interface TimeEstimatorProps {
   size: number;
@@ -181,7 +182,7 @@ export const TimeEstimator = memo(function TimeEstimator({
 
   return (
     <motion.div
-      className="rounded-xl p-4"
+      className="rounded-card p-4"
       style={{
         background: "rgba(15, 23, 42, 0.5)",
         border: `1px solid ${color.primary}20`,
@@ -199,7 +200,7 @@ export const TimeEstimator = memo(function TimeEstimator({
           </span>
         </div>
         <motion.div
-          className="flex items-center gap-1.5 px-2 py-1 rounded-full"
+          className="flex items-center gap-1.5 px-2 py-1 rounded-badge"
           style={{
             background: `${difficultyConfig.color}20`,
             border: `1px solid ${difficultyConfig.color}40`,
@@ -255,7 +256,7 @@ export const TimeEstimator = memo(function TimeEstimator({
           }}
           initial={{ width: 0 }}
           animate={{ width: `${Math.min(100, (estimate.minutes / 40) * 100)}%` }}
-          transition={{ delay: 0.2, duration: 0.5 }}
+          transition={{ delay: 0.2, duration: DURATION.slow }}
         />
         {/* Markers */}
         <div className="absolute inset-0 flex justify-between px-1">
@@ -328,7 +329,7 @@ export const TimeBadge = memo(function TimeBadge({
 
   return (
     <motion.div
-      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs"
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-badge text-xs"
       style={{
         background: `${difficultyConfig.color}15`,
         border: `1px solid ${difficultyConfig.color}30`,

@@ -1,18 +1,24 @@
 "use client";
 
 import { memo, useMemo, useCallback, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { DURATION } from '@/lib/animations/motion-presets';
 import { Play, Plus } from "lucide-react";
 import { ShowcaseHeader } from "./ShowcaseHeader";
+import { OnboardingHero } from "./OnboardingHero";
 import ShowcaseDecor from "@/components/app/decorations/ShowcaseDecor";
 import { useAnimationPause } from "@/hooks/use-animation-pause";
 import { useFeaturedLists } from "@/hooks/use-top-lists";
 import { useComposition } from "@/hooks/use-composition";
 import { usePlayList } from "@/hooks/use-play-list";
+import { usePersonalizedWelcome } from "@/lib/personalization";
 import { TopList } from "@/types/top-lists";
 import { getCategoryColor } from "@/lib/helpers/getColors";
 import { gradients } from "./shared/gradients";
 import { useListThumbnails } from "@/hooks/use-list-thumbnails";
+import { GoatMascot } from "@/components/visual/GoatMascot";
+import { useInView } from "@/components/patterns/virtualization/useIntersectionObserver";
+import { CATEGORY_CONFIG, resolveDisplayCategory, type CategoryName } from "@/lib/config/category-config";
 
 /**
  * FloatingShowcase - Hero section with category tables
@@ -20,7 +26,8 @@ import { useListThumbnails } from "@/hooks/use-list-thumbnails";
  * Design: Three category tables side by side showing lists
  */
 
-const CATEGORIES = ['sports', 'movies', 'games'] as const;
+/** Showcase displays the first 3 categories from CATEGORY_CONFIG */
+const SHOWCASE_CATEGORIES = (Object.keys(CATEGORY_CONFIG) as CategoryName[]).slice(0, 3);
 
 interface TableRowProps {
     list: TopList;
@@ -63,7 +70,7 @@ const TableRow = memo(function TableRow({
                 background: isHovered ? `${colors.primary}10` : 'transparent',
             }}
             whileHover={{ x: 2 }}
-            transition={{ duration: 0.15 }}
+            transition={{ duration: DURATION.quick }}
         >
             {/* Winner Image */}
             <div
@@ -81,7 +88,7 @@ const TableRow = memo(function TableRow({
                     <div className="w-full h-full bg-slate-800 animate-pulse" />
                 ) : (
                     <div
-                        className="w-full h-full flex items-center justify-center text-[10px] font-bold opacity-30"
+                        className="w-full h-full flex items-center justify-center text-2xs font-bold opacity-30"
                         style={{ color: colors.primary }}
                     >
                         {list.title.substring(0, 2).toUpperCase()}
@@ -97,7 +104,7 @@ const TableRow = memo(function TableRow({
             {/* Title */}
             <div className="flex-1 min-w-0">
                 <p
-                    className="text-[11px] font-medium leading-tight truncate transition-colors"
+                    className="text-xs font-medium leading-tight truncate transition-colors"
                     style={{ color: isHovered ? colors.accent : '#e2e8f0' }}
                 >
                     {list.title}
@@ -106,7 +113,7 @@ const TableRow = memo(function TableRow({
 
             {/* Type badge */}
             <span
-                className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded"
+                className="shrink-0 text-2xs font-bold px-1.5 py-0.5 rounded"
                 style={{
                     background: `${colors.primary}20`,
                     color: colors.primary,
@@ -121,7 +128,6 @@ const TableRow = memo(function TableRow({
 interface CategoryTableProps {
     category: string;
     lists: TopList[];
-    imageMap: Record<string, { url: string | null; loading: boolean }>;
     onPlay: (list: TopList) => void;
     onCustomize: (list: TopList) => void;
     isLoading: boolean;
@@ -130,16 +136,24 @@ interface CategoryTableProps {
 const CategoryTable = memo(function CategoryTable({
     category,
     lists,
-    imageMap,
     onPlay,
     onCustomize,
     isLoading,
 }: CategoryTableProps) {
     const colors = useMemo(() => getCategoryColor(category), [category]);
 
+    // Only fetch thumbnails when this table scrolls into view
+    const { ref: inViewRef, inView } = useInView({ rootMargin: '200px', once: true });
+    const thumbnailIds = useMemo(
+        () => lists.slice(0, 30).map(l => l.id),
+        [lists]
+    );
+    const imageMap = useListThumbnails(inView ? thumbnailIds : []);
+
     return (
         <div
-            className="flex-1 min-w-0 rounded-lg overflow-hidden backdrop-blur-md"
+            ref={inViewRef}
+            className="flex-1 min-w-0 rounded-card overflow-hidden backdrop-blur-md"
             style={{
                 background: gradients.cardSurface,
                 border: `1px solid ${colors.primary}20`,
@@ -154,12 +168,12 @@ const CategoryTable = memo(function CategoryTable({
                 }}
             >
                 <span
-                    className="text-[10px] font-bold uppercase tracking-widest"
+                    className="text-2xs font-bold uppercase tracking-widest font-heading"
                     style={{ color: colors.primary }}
                 >
                     {category}
                 </span>
-                <span className="text-[9px] text-slate-500">
+                <span className="text-2xs text-slate-500 font-mono">
                     {lists.length} lists
                 </span>
             </div>
@@ -187,8 +201,9 @@ const CategoryTable = memo(function CategoryTable({
                         />
                     ))
                 ) : (
-                    <div className="px-3 py-8 text-center">
-                        <p className="text-xs text-slate-600">No lists in this category</p>
+                    <div className="px-3 py-6 text-center flex flex-col items-center">
+                        <GoatMascot variant="relaxing" size={72} />
+                        <p className="text-xs text-amber-200/60 mt-1">No lists in this category</p>
                     </div>
                 )}
             </div>
@@ -205,6 +220,7 @@ export const FloatingShowcase = memo(function FloatingShowcase() {
 
     const { openWithSourceList, openComposition } = useComposition();
     const { handlePlayList } = usePlayList();
+    const { isReturningUser } = usePersonalizedWelcome();
 
     const { data: featuredData, isLoading } = useFeaturedLists({
         popular_limit: 80,
@@ -239,38 +255,22 @@ export const FloatingShowcase = memo(function FloatingShowcase() {
         return combined;
     }, [featuredData]);
 
-    // Group by category
+    // Group by category using canonical config lookup (no substring matching)
     const categoryLists = useMemo(() => {
-        const groups: Record<string, TopList[]> = {
-            sports: [],
-            movies: [],
-            games: [],
-        };
+        const groups: Record<CategoryName, TopList[]> = {} as Record<CategoryName, TopList[]>;
+        for (const cat of SHOWCASE_CATEGORIES) {
+            groups[cat] = [];
+        }
 
         allLists.forEach(list => {
-            const cat = list.category.toLowerCase();
-            if (cat.includes('sport')) {
-                groups.sports.push(list);
-            } else if (cat.includes('movie') || cat.includes('film')) {
-                groups.movies.push(list);
-            } else if (cat.includes('game')) {
-                groups.games.push(list);
+            const resolved = resolveDisplayCategory(list.category);
+            if (resolved && resolved in groups) {
+                groups[resolved].push(list);
             }
         });
 
         return groups;
     }, [allLists]);
-
-    // Batch-fetch thumbnail images (replaces N+1 individual queries)
-    const thumbnailIds = useMemo(() => {
-        return [
-            ...categoryLists.sports.slice(0, 30),
-            ...categoryLists.movies.slice(0, 30),
-            ...categoryLists.games.slice(0, 30),
-        ].map(l => l.id);
-    }, [categoryLists]);
-
-    const imageMap = useListThumbnails(thumbnailIds);
 
     const handleCustomize = useCallback((list: TopList) => {
         openWithSourceList(list);
@@ -299,6 +299,21 @@ export const FloatingShowcase = memo(function FloatingShowcase() {
                 <ShowcaseHeader />
             </div>
 
+            {/* Onboarding hero for first-time users */}
+            <AnimatePresence>
+                {!isReturningUser && (
+                    <motion.div
+                        key="onboarding-hero"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0, height: 0, marginTop: 0, overflow: "hidden" }}
+                        transition={{ duration: DURATION.slow }}
+                    >
+                        <OnboardingHero />
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* Category Tables */}
             <div className="relative z-10 px-4 pb-8 pt-4">
                 <div className="max-w-6xl mx-auto">
@@ -306,7 +321,7 @@ export const FloatingShowcase = memo(function FloatingShowcase() {
                     <div className="flex justify-end mb-4">
                         <button
                             onClick={() => openComposition()}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-brand-hover hover:text-white hover:bg-brand/20 border border-brand/30 rounded-md transition-all"
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-brand-hover hover:text-white hover:bg-brand/20 border border-brand/30 rounded-control transition-all"
                         >
                             <Plus className="w-3.5 h-3.5" />
                             Create New
@@ -315,12 +330,11 @@ export const FloatingShowcase = memo(function FloatingShowcase() {
 
                     {/* Three tables side by side */}
                     <div className="flex gap-4">
-                        {CATEGORIES.map(category => (
+                        {SHOWCASE_CATEGORIES.map(category => (
                             <CategoryTable
                                 key={category}
                                 category={category}
                                 lists={categoryLists[category]}
-                                imageMap={imageMap}
                                 onPlay={handlePlayList}
                                 onCustomize={handleCustomize}
                                 isLoading={isLoading}

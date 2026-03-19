@@ -3,7 +3,8 @@
  */
 
 import { BacklogGroup, BacklogItem } from '@/types/backlog-groups';
-import { CollectionGroup, CollectionItem } from '@/app/features/Collection/types';
+import { ItemCategory, CollectionItem } from '@/app/features/Collection/types';
+import { extractTitle } from '@/lib/items/item-utils';
 
 /**
  * Convert BacklogItem to CollectionItem
@@ -11,7 +12,7 @@ import { CollectionGroup, CollectionItem } from '@/app/features/Collection/types
 export function backlogItemToCollectionItem(item: BacklogItem): CollectionItem {
   return {
     id: item.id,
-    title: item.title || item.name,
+    title: extractTitle(item),
     image_url: item.image_url,
     description: item.description,
     category: item.category,
@@ -30,9 +31,9 @@ export function backlogItemToCollectionItem(item: BacklogItem): CollectionItem {
 }
 
 /**
- * Convert BacklogGroup to CollectionGroup
+ * Convert BacklogGroup to ItemCategory
  */
-export function backlogGroupToCollectionGroup(group: BacklogGroup): CollectionGroup {
+export function backlogGroupToItemCategory(group: BacklogGroup): ItemCategory {
   return {
     id: group.id,
     name: group.name,
@@ -44,10 +45,10 @@ export function backlogGroupToCollectionGroup(group: BacklogGroup): CollectionGr
 }
 
 /**
- * Convert array of BacklogGroups to CollectionGroups
+ * Convert array of BacklogGroups to ItemCategories
  */
-export function backlogGroupsToCollectionGroups(groups: BacklogGroup[]): CollectionGroup[] {
-  return groups.map(backlogGroupToCollectionGroup);
+export function backlogGroupsToItemCategories(groups: BacklogGroup[]): ItemCategory[] {
+  return groups.map(backlogGroupToItemCategory);
 }
 
 

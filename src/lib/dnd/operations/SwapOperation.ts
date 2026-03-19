@@ -57,7 +57,14 @@ export class SwapOperation extends BaseGridOperation {
       toPosition,
     });
 
+    const gridMutationStart = performance.now();
     grid.moveGridItem(fromPosition, toPosition);
+    const gridMutationDuration = performance.now() - gridMutationStart;
+
+    console.debug(
+      `[DnD Perf] swap execute phases | ` +
+      `gridMutation=${gridMutationDuration.toFixed(2)}ms`
+    );
 
     dndLogger.info(`Successfully swapped items at positions ${fromPosition} and ${toPosition}`);
 

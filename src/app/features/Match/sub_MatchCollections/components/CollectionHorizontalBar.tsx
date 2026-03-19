@@ -1,11 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { CollectionGroup } from "@/app/features/Collection/types";
+import { ItemCategory } from "@/app/features/Collection/types";
+import { DURATION } from '@/lib/animations/motion-presets';
 
 interface CollectionHorizontalBarProps {
   /** Pre-filtered groups (used items already removed by parent) */
-  groups: CollectionGroup[];
+  groups: ItemCategory[];
   /** Pre-calculated available counts per group ID (from parent's centralized filtering) */
   groupAvailableCounts: Record<string, number>;
   activeTab: string | 'all';
@@ -44,15 +45,15 @@ export function CollectionHorizontalBar({
           onClick={() => onTabChange('all')}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className={`px-3 py-1.5 rounded-full text-xs font-bold tracking-wide transition-all duration-200 flex items-center gap-2 ${
+          className={`px-3 py-1.5 rounded-badge text-xs font-bold tracking-wide transition-all duration-200 flex items-center gap-2 ${
             activeTab === 'all'
-              ? 'bg-brand/20 text-brand-hover border border-brand/30 shadow-[0_0_10px_rgba(6,182,212,0.15)]'
+              ? 'bg-brand/20 text-brand-hover border border-brand/30 shadow-glow-brand-sm'
               : 'bg-slate-800/50 text-slate-400 border border-transparent hover:bg-slate-700/50 hover:text-white'
           }`}
           data-testid="category-all-items-chip"
         >
           <span>ALL</span>
-          <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+          <span className={`text-xs px-1.5 py-0.5 rounded-badge ${
             activeTab === 'all' ? 'bg-brand/30' : 'bg-white/10'
           }`}>
             {totalItemCount}
@@ -74,12 +75,12 @@ export function CollectionHorizontalBar({
               animate={{
                 opacity: 1,
                 scale: 1,
-                transition: { delay: 0.1 + index * 0.02, duration: 0.15 }
+                transition: { delay: 0.1 + index * 0.02, duration: DURATION.quick }
               }}
               onClick={() => onTabChange(group.id)}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className={`px-3 py-1.5 rounded-full text-xs transition-all duration-200 flex items-center gap-2 ${
+              className={`px-3 py-1.5 rounded-badge text-xs transition-all duration-200 flex items-center gap-2 ${
                 activeTab === group.id
                   ? 'bg-white/15 text-white border border-white/20'
                   : 'bg-slate-800/30 text-slate-500 border border-transparent hover:bg-slate-700/40 hover:text-slate-300'

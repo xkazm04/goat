@@ -4,6 +4,7 @@ import { memo, useDeferredValue } from "react";
 import { ChevronDown, ChevronUp, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CollectionSearchInput } from "./CollectionSearchInput";
+import { EnrichmentSourceBadges } from "@/components/visual/EnrichmentSourceBadges";
 
 export type GroupViewMode = 'sidebar' | 'horizontal' | 'minimal';
 
@@ -52,6 +53,7 @@ export const CompactCollectionHeader = memo(function CompactCollectionHeader({
         <span className="text-xs font-mono text-white/40 tabular-nums">
           {isFiltering ? `${filteredItemCount}/` : ''}{totalItems}
         </span>
+        <EnrichmentSourceBadges />
       </div>
 
       {/* Center: Enhanced Search with suggestions */}
@@ -68,14 +70,14 @@ export const CompactCollectionHeader = memo(function CompactCollectionHeader({
       {/* Right: Active category indicator + Minimize */}
       <div className="flex items-center gap-2 shrink-0">
         {activeCategory !== 'all' && (
-          <span className="text-xs px-2 py-0.5 rounded-full bg-brand/15 text-brand-hover/80 border border-brand/20">
+          <span className="text-xs px-2 py-0.5 rounded-badge bg-brand/15 text-brand-hover/80 border border-brand/20">
             {activeCategory}
           </span>
         )}
         <button
           onClick={onTogglePanel}
           className={cn(
-            "p-1.5 rounded-md transition-all duration-200",
+            "p-1.5 rounded-control transition-all duration-200",
             "text-white/40 hover:text-white/70 hover:bg-white/5"
           )}
           aria-label={isVisible ? "Minimize panel" : "Expand panel"}

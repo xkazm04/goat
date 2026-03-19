@@ -23,12 +23,10 @@ import { motion } from 'framer-motion';
 import {
   Undo2,
   Redo2,
-  Filter,
-  Sparkles,
   Plus,
-  FolderPlus,
   Keyboard,
 } from 'lucide-react';
+import { GoatFilter, GoatSparkles, GoatFolderGroup } from '@/components/visual/GoatIcons';
 import { cn } from '@/lib/utils';
 import {
   useFilterBuilderStore,
@@ -46,6 +44,7 @@ import { FilterPreview } from './FilterPreview';
 import { FilterSaver } from './FilterSaver';
 import { FILTER_TIMING } from '@/lib/filters/constants';
 import type { FilterConfig } from '@/lib/filters/types';
+import { useFilterBuilderSync } from '@/lib/filters/useFilterBuilderSync';
 
 interface FilterBuilderProps<T extends Record<string, unknown>> {
   items?: T[];
@@ -56,6 +55,13 @@ interface FilterBuilderProps<T extends Record<string, unknown>> {
   showPreview?: boolean;
   showSaver?: boolean;
   showToolbar?: boolean;
+  /**
+   * When true and a FilterIntegrationProvider is present in the tree,
+   * the builder auto-syncs its output into the provider on every change.
+   * Set to false to only push on explicit "Apply" clicks.
+   * @default false
+   */
+  syncWithProvider?: boolean;
   renderPreviewItem?: (item: T, index: number) => React.ReactNode;
 }
 
@@ -75,12 +81,12 @@ function FilterBuilderToolbar({
   const conditionCount = useFilterBuilderConditionCount();
 
   return (
-    <div className="flex items-center justify-between gap-4 mb-4 pb-4 border-b border-zinc-800">
+    <div className="flex items-center justify-between gap-4 mb-4 pb-4 border-b border-border">
       <div className="flex items-center gap-2">
-        <Filter size={20} className="text-brand-hover" />
-        <span className="font-medium text-zinc-200">Filter Builder</span>
+        <GoatFilter size={20} className="text-primary" />
+        <span className="font-medium text-foreground font-grotesk">Filter Builder</span>
         {conditionCount > 0 && (
-          <span className="rounded-full bg-brand/20 px-2 py-0.5 text-xs font-medium text-brand-hover">
+          <span className="rounded-badge bg-primary/20 px-2 py-0.5 text-xs font-medium text-primary">
             {conditionCount} condition{conditionCount !== 1 ? 's' : ''}
           </span>
         )}
@@ -95,8 +101,8 @@ function FilterBuilderToolbar({
             className={cn(
               'rounded p-1.5 transition-colors',
               canUndo
-                ? 'text-zinc-400 hover:text-zinc-200 filter-hover'
-                : 'text-zinc-600 filter-disabled'
+                ? 'text-muted-foreground hover:text-foreground filter-hover'
+                : 'text-muted-foreground filter-disabled'
             )}
             title="Undo (Ctrl+Z)"
           >
@@ -108,8 +114,8 @@ function FilterBuilderToolbar({
             className={cn(
               'rounded p-1.5 transition-colors',
               canRedo
-                ? 'text-zinc-400 hover:text-zinc-200 filter-hover'
-                : 'text-zinc-600 filter-disabled'
+                ? 'text-muted-foreground hover:text-foreground filter-hover'
+                : 'text-muted-foreground filter-disabled'
             )}
             title="Redo (Ctrl+Y)"
           >
@@ -121,8 +127,8 @@ function FilterBuilderToolbar({
         <button
           onClick={onAddCondition}
           className={cn(
-            'flex items-center gap-2 rounded-md px-3 py-1.5 text-sm',
-            'bg-brand/10 text-brand-hover hover:bg-brand/20 transition-colors'
+            'flex items-center gap-2 rounded-control px-3 py-1.5 text-sm',
+            'bg-primary/10 text-primary hover:bg-primary/20 transition-colors'
           )}
         >
           <Plus size={14} />
@@ -132,11 +138,11 @@ function FilterBuilderToolbar({
         <button
           onClick={onAddGroup}
           className={cn(
-            'flex items-center gap-2 rounded-md px-3 py-1.5 text-sm',
+            'flex items-center gap-2 rounded-control px-3 py-1.5 text-sm',
             'bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 transition-colors'
           )}
         >
-          <FolderPlus size={14} />
+          <GoatFolderGroup size={14} />
           Add Group
         </button>
       </div>
@@ -149,19 +155,19 @@ function FilterBuilderToolbar({
  */
 function KeyboardShortcuts() {
   return (
-    <div className="flex items-center gap-4 text-xs text-zinc-500 mt-4 pt-4 border-t border-zinc-800">
+    <div className="flex items-center gap-4 text-xs text-muted-foreground mt-4 pt-4 border-t border-border">
       <div className="flex items-center gap-1">
         <Keyboard size={12} />
         <span>Shortcuts:</span>
       </div>
       <span>
-        <kbd className="rounded bg-zinc-800 px-1">Ctrl+Z</kbd> Undo
+        <kbd className="rounded bg-muted px-1 font-mono">Ctrl+Z</kbd> Undo
       </span>
       <span>
-        <kbd className="rounded bg-zinc-800 px-1">Ctrl+Y</kbd> Redo
+        <kbd className="rounded bg-muted px-1 font-mono">Ctrl+Y</kbd> Redo
       </span>
       <span>
-        <kbd className="rounded bg-zinc-800 px-1">Del</kbd> Remove selected
+        <kbd className="rounded bg-muted px-1 font-mono">Del</kbd> Remove selected
       </span>
     </div>
   );
@@ -181,13 +187,13 @@ function EmptyState({
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-zinc-700 p-12"
+      className="flex flex-col items-center justify-center rounded-card border-2 border-dashed border-border p-12"
     >
-      <Sparkles size={48} className="text-zinc-600 mb-4" />
-      <h3 className="text-lg font-medium text-zinc-300 mb-2">
+      <GoatSparkles size={48} className="text-muted-foreground mb-4" />
+      <h3 className="text-lg font-medium text-foreground mb-2 font-grotesk">
         Build Your Filter
       </h3>
-      <p className="text-sm text-zinc-500 text-center max-w-md mb-6">
+      <p className="text-sm text-muted-foreground text-center max-w-md mb-6">
         Create powerful filters by adding conditions and groups. Drag and drop to
         reorganize, and combine with AND/OR logic.
       </p>
@@ -195,22 +201,22 @@ function EmptyState({
         <button
           onClick={onAddCondition}
           className={cn(
-            'flex items-center gap-2 rounded-md px-4 py-2',
-            'bg-brand text-white hover:bg-brand-muted transition-colors'
+            'flex items-center gap-2 rounded-control px-4 py-2',
+            'bg-primary text-primary-foreground hover:bg-primary/80 transition-colors'
           )}
         >
           <Plus size={18} />
           Add First Condition
         </button>
-        <span className="text-zinc-500">or</span>
+        <span className="text-muted-foreground">or</span>
         <button
           onClick={onAddGroup}
           className={cn(
-            'flex items-center gap-2 rounded-md px-4 py-2',
-            'bg-zinc-800 text-zinc-200 filter-hover transition-colors'
+            'flex items-center gap-2 rounded-control px-4 py-2',
+            'bg-muted text-foreground filter-hover transition-colors'
           )}
         >
-          <FolderPlus size={18} />
+          <GoatFolderGroup size={18} />
           Create Group
         </button>
       </div>
@@ -230,6 +236,7 @@ export function FilterBuilder<T extends Record<string, unknown>>({
   showPreview = true,
   showSaver = true,
   showToolbar = true,
+  syncWithProvider = false,
   renderPreviewItem,
 }: FilterBuilderProps<T>) {
   const {
@@ -244,6 +251,9 @@ export function FilterBuilder<T extends Record<string, unknown>>({
     toFilterConfig,
     selectedNodeId,
   } = useFilterBuilderStore();
+
+  // Bridge: sync builder output → FilterIntegrationProvider when opted in
+  const { applyNow: syncToProvider } = useFilterBuilderSync({ syncOnChange: syncWithProvider });
 
   const nodes = useFilterBuilderNodes();
   const rootIds = useFilterBuilderRootIds();
@@ -387,11 +397,13 @@ export function FilterBuilder<T extends Record<string, unknown>>({
   }, [addGroup]);
 
   const handleApply = useCallback(() => {
+    const config = toFilterConfig();
+    // Push to integration provider (no-op if not in provider tree)
+    syncToProvider();
     if (onApply) {
-      const config = toFilterConfig();
       onApply(config);
     }
-  }, [onApply, toFilterConfig]);
+  }, [onApply, toFilterConfig, syncToProvider]);
 
   const isEmpty = rootIds.length === 0;
 
@@ -427,7 +439,7 @@ export function FilterBuilder<T extends Record<string, unknown>>({
             onAddGroup={handleAddGroup}
           />
         ) : (
-          <div className="rounded-lg border border-zinc-700/50 bg-zinc-900/30 p-4">
+          <div className="rounded-card border border-border/50 bg-background/30 p-4">
             <FilterGroup nodeId="root" node={virtualRootNode} isRoot />
           </div>
         )}
@@ -464,12 +476,12 @@ export function FilterBuilder<T extends Record<string, unknown>>({
           <button
             onClick={handleApply}
             className={cn(
-              'flex items-center gap-2 rounded-md px-6 py-2',
-              'bg-brand text-white font-medium',
-              'hover:bg-brand-muted transition-colors'
+              'flex items-center gap-2 rounded-control px-6 py-2',
+              'bg-primary text-primary-foreground font-medium',
+              'hover:bg-primary/80 transition-colors'
             )}
           >
-            <Filter size={18} />
+            <GoatFilter size={18} />
             Apply Filters
           </button>
         </div>

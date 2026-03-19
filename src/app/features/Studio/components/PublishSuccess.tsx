@@ -13,6 +13,7 @@ import { useRouter } from 'next/navigation';
 import { Crown, ArrowRight, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useStudioStore } from '@/stores/studio-store';
+import { DURATION } from '@/lib/animations/motion-presets';
 
 interface PublishSuccessProps {
   listId: string;
@@ -31,7 +32,7 @@ export function PublishSuccess({ listId, listTitle, onDismiss }: PublishSuccessP
   }, []);
 
   const handleStartRanking = () => {
-    router.push(`/match-test?list=${listId}`);
+    router.push(`/goat?list=${listId}`);
   };
 
   const handleCreateAnother = () => {
@@ -45,7 +46,7 @@ export function PublishSuccess({ listId, listTitle, onDismiss }: PublishSuccessP
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center
+        className="fixed inset-0 z-modal flex items-center justify-center
           bg-black/80 backdrop-blur-xs"
       >
         {/* Screen pulse on entry */}
@@ -53,7 +54,7 @@ export function PublishSuccess({ listId, listTitle, onDismiss }: PublishSuccessP
           className="fixed inset-0 pointer-events-none"
           initial={{ opacity: 0 }}
           animate={{ opacity: [0, 0.15, 0] }}
-          transition={{ duration: 0.8, times: [0, 0.3, 1] }}
+          transition={{ duration: DURATION.dramatic, times: [0, 0.3, 1] }}
           style={{
             background: 'radial-gradient(circle at center, rgba(251, 191, 36, 0.4) 0%, transparent 70%)',
           }}
@@ -67,7 +68,7 @@ export function PublishSuccess({ listId, listTitle, onDismiss }: PublishSuccessP
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.2, type: 'spring', stiffness: 300 }}
-          className="relative max-w-md w-full mx-4 p-8 rounded-2xl text-center overflow-hidden"
+          className="relative max-w-md w-full mx-4 p-8 rounded-container text-center overflow-hidden"
           style={{
             background: 'linear-gradient(135deg, rgba(15, 15, 25, 0.98) 0%, rgba(25, 20, 10, 0.95) 100%)',
             border: '1px solid rgba(251, 191, 36, 0.2)',
@@ -94,7 +95,7 @@ export function PublishSuccess({ listId, listTitle, onDismiss }: PublishSuccessP
               className="absolute inset-0 rounded-full"
               initial={{ opacity: 0, scale: 0.5 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.5, duration: 0.6 }}
+              transition={{ delay: 0.5, duration: DURATION.emphasis }}
               style={{
                 background: 'radial-gradient(circle, rgba(251, 191, 36, 0.3) 0%, rgba(245, 158, 11, 0.1) 50%, transparent 70%)',
                 filter: 'blur(10px)',

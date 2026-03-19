@@ -1,10 +1,14 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
+import { enableMapSet } from 'immer';
+
+// Enable Immer support for Map and Set mutations (required for loadingGroupIds, _itemIndex, etc.)
+enableMapSet();
 import { createIndexedDBStorage } from '@/lib/storage/indexed-db-storage';
 import { createSafeStorage } from '@/lib/storage/create-safe-storage';
 import { BacklogState, SerializedBacklogCache } from './types';
-import { createDataActions } from './actions-data';
+import { createDataActions, countLoadedGroups } from './actions-data';
 import { createItemActions } from './actions-items';
 import { createOfflineActions } from './actions-offline';
 import { createUtilActions } from './actions-utils';
@@ -24,6 +28,20 @@ const safeStorage = isBrowser
       removeItem: async () => {}
     };
 
+// Memoization state for partialize – avoids re-sorting & re-serializing
+// the cache on every Zustand persist cycle when nothing changed.
+let _prevPartializeInputs: {
+  cache: BacklogState['cache'];
+  selectedGroupId: string | null;
+  selectedItemId: string | null;
+  pendingChanges: BacklogState['pendingChanges'];
+  syncDiagnostics: BacklogState['syncDiagnostics'];
+  lastSyncTimestamp: number;
+  isOfflineMode: boolean;
+  groups: BacklogState['groups'];
+} | null = null;
+let _prevPartializeResult: Record<string, unknown> | null = null;
+
 // Create store with safeguards for SSR
 export const useBacklogStore = create<BacklogState>()(
   persist(
@@ -35,6 +53,7 @@ export const useBacklogStore = create<BacklogState>()(
         // Initial state
         groups: [],
         _itemIndex: new Map(),
+        _loadedGroupsCount: 0,
         selectedGroupId: null,
         selectedItemId: null,
         activeItemId: null,
@@ -42,8 +61,16 @@ export const useBacklogStore = create<BacklogState>()(
         isLoading: false,
         loadingGroupIds: new Set<string>(),
         error: null,
+        _loadingGeneration: 0,
         isOfflineMode: false,
         pendingChanges: [],
+        syncDiagnostics: {
+          totalQueued: 0,
+          failedChanges: [],
+          lastSuccessfulSync: 0,
+          isSyncing: false,
+          dataLossRisk: 'none' as const,
+        },
         cache: {},
         lastSyncTimestamp: 0,
 
@@ -52,6 +79,13 @@ export const useBacklogStore = create<BacklogState>()(
           loadedGroups: 0,
           isLoading: false,
           percentage: 0
+        },
+
+        loadingErrors: [],
+
+        enrichmentSources: {
+          active: false,
+          sources: [],
         },
 
         // Import actions
@@ -67,12 +101,36 @@ export const useBacklogStore = create<BacklogState>()(
       partialize: (state) => {
         // Skip serialization in SSR
         if (!isBrowser) return {};
-        
+
+        // Fast path: if all persisted fields are referentially identical
+        // to the previous call, return the cached result (O(1)).
+        if (
+          _prevPartializeInputs &&
+          _prevPartializeResult &&
+          _prevPartializeInputs.cache === state.cache &&
+          _prevPartializeInputs.selectedGroupId === state.selectedGroupId &&
+          _prevPartializeInputs.selectedItemId === state.selectedItemId &&
+          _prevPartializeInputs.pendingChanges === state.pendingChanges &&
+          _prevPartializeInputs.syncDiagnostics === state.syncDiagnostics &&
+          _prevPartializeInputs.lastSyncTimestamp === state.lastSyncTimestamp &&
+          _prevPartializeInputs.isOfflineMode === state.isOfflineMode &&
+          _prevPartializeInputs.groups === state.groups
+        ) {
+          return _prevPartializeResult;
+        }
+
         // Create a serialization-friendly version of the state
         const serializedCache: SerializedBacklogCache = {};
-        
+
+        // Only persist the 10 most recently used cache entries to prevent IndexedDB bloat
+        const MAX_PERSISTED_CATEGORIES = 10;
+        const cacheKeys = Object.keys(state.cache)
+          .filter(key => state.cache[key])
+          .sort((a, b) => (state.cache[b]?.lastUpdated || 0) - (state.cache[a]?.lastUpdated || 0))
+          .slice(0, MAX_PERSISTED_CATEGORIES);
+
         // Convert each cache entry
-        Object.keys(state.cache).forEach(key => {
+        cacheKeys.forEach(key => {
           const cacheEntry = state.cache[key];
           if (cacheEntry) {
             serializedCache[key] = {
@@ -83,20 +141,38 @@ export const useBacklogStore = create<BacklogState>()(
             };
           }
         });
-        
-        // Log cache size for debugging
-        backlogLogger.debug(`Persisting cache: ${Object.keys(serializedCache).length} keys, ${JSON.stringify(serializedCache).length} bytes`);
-        
-        return {
+
+        // Log cache size for debugging (DEV only — avoids JSON.stringify in production)
+        if (process.env.NODE_ENV !== 'production') {
+          backlogLogger.debug(`Persisting cache: ${Object.keys(serializedCache).length} keys, ${JSON.stringify(serializedCache).length} bytes`);
+        }
+
+        const result = {
           selectedGroupId: state.selectedGroupId,
           selectedItemId: state.selectedItemId,
           cache: serializedCache,
           pendingChanges: state.pendingChanges,
+          syncDiagnostics: state.syncDiagnostics,
           lastSyncTimestamp: state.lastSyncTimestamp,
           isOfflineMode: state.isOfflineMode,
           // Also persist groups to have immediate data on load
           groups: state.groups
         };
+
+        // Cache inputs and result for next call
+        _prevPartializeInputs = {
+          cache: state.cache,
+          selectedGroupId: state.selectedGroupId,
+          selectedItemId: state.selectedItemId,
+          pendingChanges: state.pendingChanges,
+          syncDiagnostics: state.syncDiagnostics,
+          lastSyncTimestamp: state.lastSyncTimestamp,
+          isOfflineMode: state.isOfflineMode,
+          groups: state.groups,
+        };
+        _prevPartializeResult = result;
+
+        return result;
       },
       // Only enable persistence on the client side
       skipHydration: !isBrowser,
@@ -140,8 +216,9 @@ export const useBacklogStore = create<BacklogState>()(
         // Check if we have cached groups
         if (state.groups && state.groups.length > 0) {
           backlogLogger.debug(`Rehydrated with ${state.groups.length} groups from persistence`);
-          // Rebuild runtime item index from persisted groups
+          // Rebuild runtime item index and loaded-groups counter from persisted groups
           state._itemIndex = rebuildItemIndex(state.groups);
+          state._loadedGroupsCount = countLoadedGroups(state.groups);
         }
       }
     }

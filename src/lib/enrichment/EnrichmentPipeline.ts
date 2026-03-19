@@ -28,6 +28,7 @@ import {
   SpotifyFetcher,
   WikipediaFetcher,
 } from './fetchers';
+import { SourceLatencyTracker } from './SourceLatencyTracker';
 
 /**
  * Map of data sources to their fetchers
@@ -81,7 +82,7 @@ class EnrichmentPipelineClass {
   }
 
   /**
-   * Fetch from a single source with timeout
+   * Fetch from a single source with timeout and timing instrumentation
    */
   private async fetchFromSource(
     source: DataSource,
@@ -109,6 +110,8 @@ class EnrichmentPipelineClass {
       };
     }
 
+    const fetchStart = Date.now();
+
     // Create timeout promise
     const timeoutPromise = new Promise<RawSourceData>((resolve) => {
       setTimeout(() => {
@@ -117,6 +120,7 @@ class EnrichmentPipelineClass {
           rawData: {},
           fetchedAt: Date.now(),
           confidence: 0,
+          fetchDurationMs: Date.now() - fetchStart,
           error: `Timeout after ${this.config.sourceTimeoutMs}ms`,
         });
       }, this.config.sourceTimeoutMs);
@@ -124,13 +128,34 @@ class EnrichmentPipelineClass {
 
     // Race fetch against timeout
     try {
-      return await Promise.race([fetcher.fetch(input), timeoutPromise]);
+      const result = await Promise.race([fetcher.fetch(input), timeoutPromise]);
+      const durationMs = Date.now() - fetchStart;
+      result.fetchDurationMs = durationMs;
+
+      // Record latency for histogram tracking
+      SourceLatencyTracker.record(source, durationMs);
+
+      // Warn when a source exceeds 80% of the timeout threshold
+      const slowThreshold = this.config.sourceTimeoutMs * 0.8;
+      if (durationMs > slowThreshold) {
+        console.warn(
+          `[EnrichmentPipeline] Slow source: ${source} took ${durationMs}ms ` +
+          `(${Math.round((durationMs / this.config.sourceTimeoutMs) * 100)}% of ${this.config.sourceTimeoutMs}ms timeout) ` +
+          `for "${input.name}"`
+        );
+      }
+
+      return result;
     } catch (error) {
+      const durationMs = Date.now() - fetchStart;
+      SourceLatencyTracker.record(source, durationMs);
+
       return {
         source,
         rawData: {},
         fetchedAt: Date.now(),
         confidence: 0,
+        fetchDurationMs: durationMs,
         error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
@@ -200,7 +225,24 @@ class EnrichmentPipelineClass {
         (r) => !r.error && r.confidence > 0
       );
 
+      // Build per-source timing breakdown
+      const sourceTiming: Record<string, number> = {};
+      for (const r of sourceResults) {
+        sourceTiming[r.source] = r.fetchDurationMs ?? 0;
+      }
+
       if (successfulResults.length === 0) {
+        const durationMs = Date.now() - startedAt;
+        console.log('[EnrichmentPipeline] enrich_complete', JSON.stringify({
+          operation: 'enrich',
+          item: input.name,
+          category: input.category,
+          success: false,
+          duration_ms: durationMs,
+          sources_attempted: sourceResults.length,
+          sources_succeeded: 0,
+          source_timing: sourceTiming,
+        }));
         return {
           success: false,
           input,
@@ -210,7 +252,7 @@ class EnrichmentPipelineClass {
           timing: {
             startedAt,
             completedAt: Date.now(),
-            durationMs: Date.now() - startedAt,
+            durationMs,
           },
         };
       }
@@ -232,6 +274,21 @@ class EnrichmentPipelineClass {
         normalizedData.confidence >= this.config.minConfidence
       );
 
+      const completedAt = Date.now();
+      const durationMs = completedAt - startedAt;
+
+      console.log('[EnrichmentPipeline] enrich_complete', JSON.stringify({
+        operation: 'enrich',
+        item: input.name,
+        category: input.category,
+        success: hasMinimumData,
+        duration_ms: durationMs,
+        sources_attempted: sourceResults.length,
+        sources_succeeded: successfulResults.length,
+        has_image: !!normalizedData.selectedImage,
+        source_timing: sourceTiming,
+      }));
+
       return {
         success: hasMinimumData,
         input,
@@ -241,8 +298,8 @@ class EnrichmentPipelineClass {
         errors,
         timing: {
           startedAt,
-          completedAt: Date.now(),
-          durationMs: Date.now() - startedAt,
+          completedAt,
+          durationMs,
         },
       };
     } catch (error) {
@@ -272,10 +329,14 @@ class EnrichmentPipelineClass {
   async enrichBatch(request: BatchEnrichmentRequest): Promise<BatchEnrichmentResult> {
     const startedAt = Date.now();
 
-    // Apply request config overrides
-    if (request.config) {
-      this.configure(request.config);
-    }
+    // Use a local merged config instead of mutating the singleton instance
+    const savedConfig = this.config;
+    const batchConfig = request.config
+      ? { ...this.config, ...request.config }
+      : this.config;
+
+    // Temporarily apply batch config for the duration of this call
+    this.config = batchConfig;
 
     const results: EnrichmentResult[] = [];
     let successful = 0;
@@ -311,6 +372,9 @@ class EnrichmentPipelineClass {
     }
 
     const completedAt = Date.now();
+
+    // Restore original singleton config so batch overrides don't leak
+    this.config = savedConfig;
 
     return {
       total: items.length,

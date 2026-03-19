@@ -23,17 +23,20 @@ export const EASING = {
   decel: [0, 0.55, 0.45, 1] as const,
 } as const;
 
-/** Standard durations in seconds */
+/**
+ * Duration tiers (seconds) — aligned with design-tokens.css
+ *   --duration-instant · --duration-quick · --duration-normal · --duration-slow
+ */
 export const DURATION = {
-  /** Micro-interactions (hover, press) */
-  micro: 0.15,
-  /** Small feedback animations */
-  fast: 0.2,
-  /** Standard transitions */
+  /** 50 ms — focus rings, active/pressed, tap feedback */
+  instant: 0.05,
+  /** 150 ms — hover, toggle, small state changes */
+  quick: 0.15,
+  /** 300 ms — modal entry/exit, panel slide, standard transitions */
   normal: 0.3,
-  /** Page/modal transitions */
+  /** 500 ms — page transitions, stagger base, emphasis */
   slow: 0.5,
-  /** Celebration animations */
+  /** 800 ms — celebration animations (extended tier) */
   celebration: 0.8,
 } as const;
 
@@ -144,14 +147,14 @@ export const socialButtonVariants: Variants = {
   hover: {
     scale: 1.08,
     transition: {
-      duration: DURATION.fast,
+      duration: DURATION.quick,
       ease: EASING.easeOut,
     },
   },
   tap: {
     scale: 0.95,
     transition: {
-      duration: DURATION.micro,
+      duration: DURATION.quick,
     },
   },
 };
@@ -176,7 +179,7 @@ export const copyConfirmVariants: Variants = {
     opacity: 0,
     scale: 0.5,
     transition: {
-      duration: DURATION.fast,
+      duration: DURATION.quick,
     },
   },
 };
@@ -264,7 +267,7 @@ export const progressVariants: Variants = {
   visible: (progress: number) => ({
     scaleX: progress,
     transition: {
-      duration: DURATION.fast,
+      duration: DURATION.quick,
       ease: EASING.easeOut,
     },
   }),
@@ -289,7 +292,7 @@ export const smoothTransition: Transition = {
 
 /** Fast micro-interaction transition */
 export const microTransition: Transition = {
-  duration: DURATION.micro,
+  duration: DURATION.quick,
   ease: EASING.easeOut,
 };
 

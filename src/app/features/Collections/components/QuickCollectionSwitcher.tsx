@@ -2,6 +2,7 @@
 
 import { memo, useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { DURATION } from '@/lib/animations/motion-presets';
 import Link from "next/link";
 import {
   Folder,
@@ -90,7 +91,7 @@ export const QuickCollectionSwitcher = memo(function QuickCollectionSwitcher({
       {/* Trigger button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800/50 hover:bg-slate-800 border border-slate-700/50 text-sm text-slate-300 hover:text-white transition-colors"
+        className="flex items-center gap-2 px-3 py-2 rounded-control bg-slate-800/50 hover:bg-slate-800 border border-slate-700/50 text-sm text-slate-300 hover:text-white transition-colors"
       >
         <Folder className="w-4 h-4" />
         <span className="max-w-32 truncate">
@@ -108,8 +109,8 @@ export const QuickCollectionSwitcher = memo(function QuickCollectionSwitcher({
             initial={{ opacity: 0, y: -10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
-            transition={{ duration: 0.15 }}
-            className="absolute left-0 top-full mt-2 w-64 bg-slate-900 rounded-xl border border-slate-700/50 shadow-2xl overflow-hidden z-50"
+            transition={{ duration: DURATION.quick }}
+            className="absolute left-0 top-full mt-2 w-64 bg-slate-900 rounded-container border border-slate-700/50 shadow-2xl overflow-hidden z-dropdown"
           >
             {/* Search */}
             <div className="p-2 border-b border-slate-800">
@@ -120,7 +121,7 @@ export const QuickCollectionSwitcher = memo(function QuickCollectionSwitcher({
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Search collections..."
-                  className="w-full pl-9 pr-3 py-2 bg-slate-800/50 border border-slate-700/50 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-hidden focus:border-brand/50"
+                  className="w-full pl-9 pr-3 py-2 bg-slate-800/50 border border-slate-700/50 rounded-control text-sm text-white placeholder-slate-500 focus:outline-hidden focus:border-brand/50"
                   autoFocus
                 />
               </div>
@@ -137,7 +138,7 @@ export const QuickCollectionSwitcher = memo(function QuickCollectionSwitcher({
                     : "text-slate-300 hover:bg-slate-800/50"
                 }`}
               >
-                <div className="w-6 h-6 rounded-md flex items-center justify-center bg-slate-700/50">
+                <div className="w-6 h-6 rounded-control flex items-center justify-center bg-slate-700/50">
                   <Folder className="w-3.5 h-3.5" />
                 </div>
                 <span className="flex-1">All Lists</span>
@@ -161,7 +162,7 @@ export const QuickCollectionSwitcher = memo(function QuickCollectionSwitcher({
                   }`}
                 >
                   <div
-                    className="w-6 h-6 rounded-md flex items-center justify-center"
+                    className="w-6 h-6 rounded-control flex items-center justify-center"
                     style={{
                       backgroundColor: `${collection.color || "#06b6d4"}20`,
                     }}
@@ -202,7 +203,7 @@ export const QuickCollectionSwitcher = memo(function QuickCollectionSwitcher({
               {onCreateCollection ? (
                 <button
                   onClick={handleCreate}
-                  className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 text-sm text-slate-400 hover:text-white transition-colors"
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-control bg-slate-800/50 hover:bg-slate-700/50 text-sm text-slate-400 hover:text-white transition-colors"
                 >
                   <Plus className="w-4 h-4" />
                   New Collection
@@ -210,7 +211,7 @@ export const QuickCollectionSwitcher = memo(function QuickCollectionSwitcher({
               ) : (
                 <Link
                   href="/my-collections"
-                  className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 text-sm text-slate-400 hover:text-white transition-colors"
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-control bg-slate-800/50 hover:bg-slate-700/50 text-sm text-slate-400 hover:text-white transition-colors"
                   onClick={() => setIsOpen(false)}
                 >
                   <FolderPlus className="w-4 h-4" />

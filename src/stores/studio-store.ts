@@ -10,8 +10,10 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useShallow } from 'zustand/react/shallow';
 import { apiClient, getApiErrorMessage } from '@/lib/api/client';
-import type { EnrichedItem } from '@/types/studio';
+import type { EnrichedItem, ListTemplate } from '@/types/studio';
 import type { CriteriaProfile, ListCriteriaConfig } from '@/lib/criteria/types';
+import { getTemplateById } from '@/lib/criteria/templates';
+import { getListTemplateById } from '@/lib/templates/list-templates';
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -46,14 +48,50 @@ interface StreamErrorLine {
 type StreamLine = StreamMetaLine | StreamItemLine | StreamDoneLine | StreamErrorLine;
 
 // ─────────────────────────────────────────────────────────────
+// Generation concurrency control
+// ─────────────────────────────────────────────────────────────
+
+/** Active AbortController — aborted when a new generation starts */
+let activeAbortController: AbortController | null = null;
+
+/** Monotonically increasing nonce — guards stale set() calls */
+let generationNonce = 0;
+
+// ─────────────────────────────────────────────────────────────
+// Streaming batch buffer — collects items and flushes once per frame
+// ─────────────────────────────────────────────────────────────
+
+let streamBuffer: EnrichedItem[] = [];
+let streamRafId: number | null = null;
+let streamProgressMsg: string | null = null;
+
+// ─────────────────────────────────────────────────────────────
 // Store State Interface
 // ─────────────────────────────────────────────────────────────
 
 interface StudioState {
   // Form state
   topic: string;
-  listSize: number; // Final list size (Top N)
-  generateCount: number; // How many items to generate (can be higher)
+  /**
+   * Final ranked list size (the "N" in "Top N").
+   *
+   * This determines how many grid positions are available in the match
+   * interface. Only the top `listSize` items end up in the published
+   * ranked list. Items beyond this count serve as the backlog pool for
+   * ranking and are NOT discarded -- they give the user a larger pool
+   * to choose from when filling the grid.
+   */
+  listSize: number;
+  /**
+   * Total number of items to generate via the AI studio.
+   *
+   * This is intentionally larger than `listSize` because the extra items
+   * populate the backlog pool. For example, with listSize=10 and
+   * generateCount=30, the user ranks their top 10 from a pool of 30
+   * candidates. The remaining 20 items stay in the backlog and are
+   * available for swapping but are NOT discarded.
+   */
+  generateCount: number;
 
   // Generation state
   generatedItems: EnrichedItem[];
@@ -70,6 +108,9 @@ interface StudioState {
   criteriaMode: CriteriaMode;
   selectedProfileId: string | null;
   customProfile: CriteriaProfile | null;
+
+  // Template state
+  appliedTemplateId: string | null;
 
   // Publishing state
   isPublishing: boolean;
@@ -107,11 +148,20 @@ interface StudioState {
   setCustomProfile: (profile: CriteriaProfile | null) => void;
   getCriteriaConfig: () => ListCriteriaConfig | null;
 
+  // List settings
+  allowCustomItems: boolean;
+
+  // Actions - List settings
+  setAllowCustomItems: (allow: boolean) => void;
+
   // Actions - Publishing
   setPublishing: (isPublishing: boolean) => void;
   setPublishError: (error: string | null) => void;
   setPublishedListId: (id: string | null) => void;
   setShowSuccess: (show: boolean) => void;
+
+  // Actions - Template
+  applyTemplate: (templateId: string) => void;
 
   // Actions - Reset
   reset: () => void;
@@ -126,8 +176,8 @@ export const useStudioStore = create<StudioState>()(
     (set, get) => ({
   // Initial state - Form
   topic: '',
-  listSize: 10,
-  generateCount: 30,
+  listSize: 10,        // Default "Top 10" list
+  generateCount: 30,   // Generate 30 candidates; 20 extra serve as backlog pool
 
   // Initial state - Generation
   generatedItems: [],
@@ -145,6 +195,12 @@ export const useStudioStore = create<StudioState>()(
   selectedProfileId: null,
   customProfile: null,
 
+  // Initial state - Template
+  appliedTemplateId: null,
+
+  // Initial state - List settings
+  allowCustomItems: true,
+
   // Initial state - Publishing
   isPublishing: false,
   publishError: null,
@@ -159,8 +215,9 @@ export const useStudioStore = create<StudioState>()(
   // Generation action - uses streaming NDJSON to progressively append items
   // Also matches against existing DB items to reuse their IDs and images
   // Auto-fills title and description if empty using LLM suggestions
+  // Uses AbortController + nonce to cancel stale streams on re-invocation
   generateItems: async () => {
-    const { topic, generateCount, generatedItems, category, listTitle, listDescription } = get();
+    const { topic, generateCount, category } = get();
 
     // Validate topic
     if (!topic.trim()) {
@@ -168,11 +225,22 @@ export const useStudioStore = create<StudioState>()(
       return;
     }
 
+    // Abort any in-flight generation
+    if (activeAbortController) {
+      activeAbortController.abort();
+    }
+    const controller = new AbortController();
+    activeAbortController = controller;
+    const myNonce = ++generationNonce;
+
+    /** Guard: returns true if this generation is still the active one */
+    const isStale = () => myNonce !== generationNonce;
+
     // Start generation with progress message
     set({ isGenerating: true, error: null, generationProgress: 'Generating ideas...' });
 
     // Get existing item titles to exclude duplicates
-    const existingTitles = generatedItems.map((item) => item.title.toLowerCase().trim());
+    const existingTitles = get().generatedItems.map((item) => item.title.toLowerCase().trim());
 
     try {
       // Use streaming endpoint for progressive item reveal
@@ -185,6 +253,7 @@ export const useStudioStore = create<StudioState>()(
           category,
           excludeTitles: existingTitles.length > 0 ? existingTitles : undefined,
         }),
+        signal: controller.signal,
       });
 
       if (!response.ok) {
@@ -204,6 +273,12 @@ export const useStudioStore = create<StudioState>()(
         const { done, value } = await reader.read();
         if (done) break;
 
+        // If a newer generation has started, stop processing
+        if (isStale()) {
+          reader.cancel();
+          return;
+        }
+
         buffer += decoder.decode(value, { stream: true });
 
         // Process complete lines from buffer
@@ -211,6 +286,8 @@ export const useStudioStore = create<StudioState>()(
         buffer = lines.pop() || ''; // Keep incomplete line in buffer
 
         for (const line of lines) {
+          if (isStale()) return;
+
           const trimmed = line.trim();
           if (!trimmed) continue;
 
@@ -223,12 +300,14 @@ export const useStudioStore = create<StudioState>()(
 
           switch (parsed.type) {
             case 'meta': {
-              // Auto-fill title and description if empty
+              if (isStale()) return;
+              // Auto-fill title and description if empty (read fresh state)
+              const currentMeta = get();
               const metaUpdates: Partial<{ listTitle: string; listDescription: string }> = {};
-              if (!listTitle.trim() && parsed.suggested_title) {
+              if (!currentMeta.listTitle.trim() && parsed.suggested_title) {
                 metaUpdates.listTitle = parsed.suggested_title;
               }
-              if (!listDescription.trim() && parsed.suggested_description) {
+              if (!currentMeta.listDescription.trim() && parsed.suggested_description) {
                 metaUpdates.listDescription = parsed.suggested_description;
               }
               if (Object.keys(metaUpdates).length > 0) {
@@ -238,20 +317,44 @@ export const useStudioStore = create<StudioState>()(
             }
 
             case 'item': {
+              if (isStale()) return;
               const item = parsed.data;
+              const titleKey = item.title.toLowerCase().trim();
               // Filter duplicates (case-insensitive)
-              if (!existingTitles.includes(item.title.toLowerCase().trim())) {
+              if (!existingTitles.includes(titleKey)) {
+                existingTitles.push(titleKey);
                 newItems.push(item);
-                // Progressive append: update store immediately so UI shows each item
-                set({
-                  generatedItems: [...generatedItems, ...newItems],
-                  generationProgress: `Loading item ${parsed.index + 1}/${parsed.total}...`,
-                });
+                // Batch: buffer the item and schedule a single rAF flush
+                streamBuffer.push(item);
+                streamProgressMsg = `Loading item ${parsed.index + 1}/${parsed.total}...`;
+                if (streamRafId === null) {
+                  streamRafId = requestAnimationFrame(() => {
+                    streamRafId = null;
+                    const buffered = streamBuffer;
+                    const progress = streamProgressMsg;
+                    streamBuffer = [];
+                    streamProgressMsg = null;
+                    if (buffered.length > 0) {
+                      set({
+                        generatedItems: [...get().generatedItems, ...buffered],
+                        generationProgress: progress,
+                      });
+                    }
+                  });
+                }
               }
               break;
             }
 
             case 'done': {
+              if (isStale()) return;
+              // Flush any remaining buffered items before marking done
+              if (streamBuffer.length > 0) {
+                if (streamRafId !== null) { cancelAnimationFrame(streamRafId); streamRafId = null; }
+                set({ generatedItems: [...get().generatedItems, ...streamBuffer] });
+                streamBuffer = [];
+                streamProgressMsg = null;
+              }
               set({
                 isGenerating: false,
                 generationProgress: 'Generation complete!',
@@ -259,6 +362,7 @@ export const useStudioStore = create<StudioState>()(
 
               // Clear "Generation complete!" after 2 seconds
               setTimeout(() => {
+                if (isStale()) return;
                 const current = get();
                 if (current.generationProgress === 'Generation complete!') {
                   set({ generationProgress: null });
@@ -268,6 +372,14 @@ export const useStudioStore = create<StudioState>()(
             }
 
             case 'error': {
+              if (isStale()) return;
+              // Flush buffered items before reporting error
+              if (streamBuffer.length > 0) {
+                if (streamRafId !== null) { cancelAnimationFrame(streamRafId); streamRafId = null; }
+                set({ generatedItems: [...get().generatedItems, ...streamBuffer] });
+                streamBuffer = [];
+                streamProgressMsg = null;
+              }
               set({
                 error: `${parsed.message} Try a more specific topic, or rephrase your request.`,
                 isGenerating: false,
@@ -279,6 +391,16 @@ export const useStudioStore = create<StudioState>()(
         }
       }
 
+      if (isStale()) return;
+
+      // Flush any remaining buffered items after stream ends
+      if (streamBuffer.length > 0) {
+        if (streamRafId !== null) { cancelAnimationFrame(streamRafId); streamRafId = null; }
+        set({ generatedItems: [...get().generatedItems, ...streamBuffer] });
+        streamBuffer = [];
+        streamProgressMsg = null;
+      }
+
       // If we exited the loop without a done/error line, finalize
       const currentState = get();
       if (currentState.isGenerating) {
@@ -286,7 +408,7 @@ export const useStudioStore = create<StudioState>()(
       }
 
       // Match new items against DB (post-stream, same as before)
-      if (newItems.length > 0) {
+      if (newItems.length > 0 && !isStale()) {
         try {
           const matchResponse = await apiClient.post<{
             items: Array<{
@@ -307,6 +429,8 @@ export const useStudioStore = create<StudioState>()(
             category,
           });
 
+          if (isStale()) return;
+
           // Merge DB matches back into the items
           const currentItems = get().generatedItems;
           const updatedItems = currentItems.map((item) => {
@@ -324,16 +448,26 @@ export const useStudioStore = create<StudioState>()(
             return item;
           });
           set({ generatedItems: updatedItems });
-        } catch {
-          // Non-critical - continue without DB matching
+        } catch (err) {
+          console.warn('[Studio] DB match-items failed:', err instanceof Error ? err.message : err);
         }
       }
     } catch (error) {
+      // Ignore abort errors from intentional cancellation
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        return;
+      }
+      if (isStale()) return;
       set({
         error: getApiErrorMessage(error),
         isGenerating: false,
         generationProgress: null,
       });
+    } finally {
+      // Clean up controller reference if this is still the active one
+      if (activeAbortController === controller) {
+        activeAbortController = null;
+      }
     }
   },
 
@@ -428,10 +562,26 @@ export const useStudioStore = create<StudioState>()(
       };
     }
 
-    // For presets, we'll need to get the template - imported dynamically to avoid circular deps
-    // The actual template lookup happens in MetadataPanel when publishing
+    // For presets, resolve the template by ID
+    if (criteriaMode === 'preset') {
+      const template = getTemplateById(selectedProfileId);
+      if (template) {
+        const now = new Date().toISOString();
+        return {
+          profileId: template.id,
+          profileName: template.name,
+          criteria: template.criteria,
+          createdAt: now,
+          updatedAt: now,
+        };
+      }
+    }
+
     return null;
   },
+
+  // List settings actions
+  setAllowCustomItems: (allowCustomItems) => set({ allowCustomItems }),
 
   // Publishing actions
   setPublishing: (isPublishing) => set({ isPublishing }),
@@ -439,8 +589,45 @@ export const useStudioStore = create<StudioState>()(
   setPublishedListId: (publishedListId) => set({ publishedListId }),
   setShowSuccess: (showSuccess) => set({ showSuccess }),
 
+  // Template action — pre-fills form from a curated template
+  applyTemplate: (templateId: string) => {
+    const template = getListTemplateById(templateId);
+    if (!template) return;
+
+    // Convert starter items to EnrichedItem format
+    const seededItems: EnrichedItem[] = template.starterItems.map((item) => ({
+      title: item.title,
+      description: item.description,
+      wikipedia_url: item.wikipedia_url,
+      image_url: null,
+    }));
+
+    set({
+      topic: template.topic,
+      category: template.category,
+      listTitle: template.name,
+      listDescription: template.description,
+      listSize: template.listSize,
+      generateCount: template.generateCount,
+      generatedItems: seededItems,
+      appliedTemplateId: template.id,
+      // Apply criteria profile if the template specifies one
+      criteriaMode: template.criteriaProfileId ? 'preset' : 'none',
+      selectedProfileId: template.criteriaProfileId,
+      customProfile: null,
+      // Reset transient state
+      error: null,
+      generationProgress: null,
+    });
+  },
+
   // Full reset
-  reset: () =>
+  reset: () => {
+    // Abort any in-flight generation stream
+    if (activeAbortController) {
+      activeAbortController.abort();
+      activeAbortController = null;
+    }
     set({
       topic: '',
       listSize: 10,
@@ -455,11 +642,14 @@ export const useStudioStore = create<StudioState>()(
       criteriaMode: 'none',
       selectedProfileId: null,
       customProfile: null,
+      appliedTemplateId: null,
+      allowCustomItems: true,
       isPublishing: false,
       publishError: null,
       publishedListId: null,
       showSuccess: false,
-    }),
+    });
+  },
     }),
     {
       name: 'goat-studio-store',
@@ -473,6 +663,7 @@ export const useStudioStore = create<StudioState>()(
         criteriaMode: state.criteriaMode,
         selectedProfileId: state.selectedProfileId,
         customProfile: state.customProfile,
+        appliedTemplateId: state.appliedTemplateId,
       }),
     }
   )
@@ -592,6 +783,28 @@ export const useStudioPublishing = () =>
   );
 
 /**
+ * Template state selector - applied template info and applyTemplate action
+ */
+export const useStudioTemplate = () =>
+  useStudioStore(
+    useShallow((state) => ({
+      appliedTemplateId: state.appliedTemplateId,
+      applyTemplate: state.applyTemplate,
+    }))
+  );
+
+/**
+ * List settings selector - custom item creation toggle
+ */
+export const useStudioSettings = () =>
+  useStudioStore(
+    useShallow((state) => ({
+      allowCustomItems: state.allowCustomItems,
+      setAllowCustomItems: state.setAllowCustomItems,
+    }))
+  );
+
+/**
  * Actions selector - all actions without state
  */
 export const useStudioActions = () =>
@@ -612,6 +825,7 @@ export const useStudioActions = () =>
       setListDescription: state.setListDescription,
       setCategory: state.setCategory,
       suggestTitleFromTopic: state.suggestTitleFromTopic,
+      applyTemplate: state.applyTemplate,
       reset: state.reset,
     }))
   );

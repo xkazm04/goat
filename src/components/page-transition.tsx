@@ -7,7 +7,6 @@ import { ReactNode } from 'react';
 // Shared animation constants
 const SMOOTH_EASING = [0.25, 0.1, 0.25, 1] as const;
 const SLIDE_OFFSET = 8;
-const BLUR_AMOUNT = '4px';
 const ENTER_DURATION = 0.4;
 const EXIT_DURATION = 0.3;
 
@@ -19,12 +18,12 @@ const pageTransition: Variants = {
   initial: {
     opacity: 0,
     y: SLIDE_OFFSET,
-    filter: `blur(${BLUR_AMOUNT})`
+    scale: 0.99,
   },
   animate: {
     opacity: 1,
     y: 0,
-    filter: 'blur(0px)',
+    scale: 1,
     transition: {
       duration: ENTER_DURATION,
       ease: SMOOTH_EASING,
@@ -33,7 +32,7 @@ const pageTransition: Variants = {
   exit: {
     opacity: 0,
     y: -SLIDE_OFFSET,
-    filter: `blur(${BLUR_AMOUNT})`,
+    scale: 0.99,
     transition: {
       duration: EXIT_DURATION,
       ease: SMOOTH_EASING,
@@ -53,7 +52,7 @@ interface PageTransitionProps {
  *
  * Features:
  * - Fade in/out with subtle vertical slide
- * - Blur effect during transitions for polish
+ * - Subtle scale effect during transitions for polish
  * - Optimized timing to mask perceived load times
  * - Uses pathname as key to trigger transitions on route changes
  */

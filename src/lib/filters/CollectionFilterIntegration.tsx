@@ -5,6 +5,26 @@
  *
  * Integrates FilterEngine, FullTextSearcher, and SmartQueryParser
  * with the Collection system. Provides unified search and filter capabilities.
+ *
+ * ## Ownership Contract
+ *
+ * This provider owns the **runtime** filter state — the canonical FilterConfig
+ * that the FilterEngine evaluates against collection items each render cycle.
+ * Any component that needs to read or write the active filter must go through
+ * the hooks exported here (useFilterIntegration, useFilterActions, etc.).
+ *
+ * The visual FilterBuilder (backed by filter-builder-store) owns the
+ * authoring representation. To connect the two, use `useFilterBuilderSync()`
+ * which calls `toFilterConfig()` on the builder store and pushes the result
+ * into this provider via `setFilterConfig()`.
+ *
+ * ### Data flow (unidirectional)
+ *
+ *   FilterBuilderStore (authoring)
+ *       → toFilterConfig()
+ *           → this provider's setFilterConfig()  (runtime, canonical)
+ *               → FilterEngine.apply(items, config)
+ *                   → filteredItems (consumed by UI)
  */
 
 import React, {
@@ -176,7 +196,11 @@ function loadHistory(): SearchHistoryEntry[] {
   try {
     const stored = localStorage.getItem(HISTORY_STORAGE_KEY);
     return stored ? JSON.parse(stored) : [];
-  } catch {
+  } catch (error) {
+    console.warn('[CollectionFilter] loadHistory: failed to load search history from localStorage', {
+      storageKey: HISTORY_STORAGE_KEY,
+      error: error instanceof Error ? error.message : String(error),
+    });
     return [];
   }
 }
@@ -188,8 +212,12 @@ function saveHistory(history: SearchHistoryEntry[]): void {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
-  } catch {
-    // Ignore storage errors
+  } catch (error) {
+    console.warn('[CollectionFilter] saveHistory: failed to persist search history to localStorage', {
+      storageKey: HISTORY_STORAGE_KEY,
+      entryCount: history.length,
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 }
 
@@ -245,12 +273,44 @@ export function FilterIntegrationProvider({
   // Debounce timer ref
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Build search index when items change
+  // Fingerprint tracking to skip redundant index rebuilds when Zustand/React
+  // produces a new array reference without changing the actual content.
+  const itemsFingerprintRef = useRef<string>('');
+  const indexedItemsRef = useRef<FilterableItem[] | null>(null);
+
+  // Fields to pre-index for O(1) hash lookups in FilterEngine
+  const INDEXED_FIELDS = useMemo(() => ['category', 'used', 'tags', 'subcategory'], []);
+
+  // Build search index and filter field indexes when items change
   useEffect(() => {
-    if (items.length > 0 && searcherRef.current) {
+    if (items.length === 0) return;
+
+    // Fast path: same reference means definitely same data
+    if (items === indexedItemsRef.current) return;
+
+    // Content fingerprint: length + sampled IDs (first, middle, last)
+    const first = items[0]?.id ?? '';
+    const mid = items[Math.floor(items.length / 2)]?.id ?? '';
+    const last = items[items.length - 1]?.id ?? '';
+    const fingerprint = `${items.length}:${first}:${mid}:${last}`;
+
+    if (fingerprint === itemsFingerprintRef.current) {
+      // Content unchanged — update ref but skip expensive rebuild
+      indexedItemsRef.current = items;
+      return;
+    }
+
+    // Content changed — rebuild indexes
+    itemsFingerprintRef.current = fingerprint;
+    indexedItemsRef.current = items;
+
+    if (searcherRef.current) {
       searcherRef.current.buildIndex(items);
     }
-  }, [items]);
+    if (filterEngineRef.current) {
+      filterEngineRef.current.rebuildIndexes(items, INDEXED_FIELDS);
+    }
+  }, [items, INDEXED_FIELDS]);
 
   // Parse query
   const parsedQuery = useMemo(() => {
@@ -258,7 +318,7 @@ export function FilterIntegrationProvider({
     return parserRef.current!.parse(searchQuery);
   }, [searchQuery]);
 
-  // Combined filtering and searching
+  // Combined filtering and searching — minimizes intermediate array allocations
   const { filteredItems, filterResult, searchStats } = useMemo(() => {
     const startTime = performance.now();
 
@@ -266,25 +326,41 @@ export function FilterIntegrationProvider({
     let searchStatsResult: SearchStats | null = null;
     let filterResultData: FilterResult<FilterableItem> | null = null;
 
-    // First: Apply full-text search if there's a search term
-    if (parsedQuery?.searchTerm && searcherRef.current) {
-      const searchResult = searcherRef.current.search(parsedQuery.searchTerm);
-      result = searchResult.results.map((r) => r.item);
-      searchStatsResult = searchResult.stats;
-    } else if (searchQuery.trim() && !parsedQuery?.matches.length && searcherRef.current) {
-      // Pure search query without parsed filters
-      const searchResult = searcherRef.current.search(searchQuery);
-      result = searchResult.results.map((r) => r.item);
-      searchStatsResult = searchResult.stats;
-    }
-
-    // Second: Apply filter config (from smart query or manual filters) with sort
-    const effectiveConfig = parsedQuery?.config || filterConfig;
+    // Merge parsed query conditions with manual filters (instead of replacing)
+    const parsedConfig = parsedQuery?.config;
+    const hasParsedFilters = parsedConfig &&
+      (parsedConfig.conditions.length > 0 || parsedConfig.groups.length > 0);
+    const effectiveConfig = hasParsedFilters
+      ? FilterEngine.mergeConfigs(filterConfig, parsedConfig)
+      : filterConfig;
     const hasFilters =
       effectiveConfig.conditions.length > 0 || effectiveConfig.groups.length > 0;
+    const needsFilterPass = (hasFilters || sortConfig) && filterEngineRef.current;
 
-    if ((hasFilters || sortConfig) && filterEngineRef.current) {
-      filterResultData = filterEngineRef.current.apply(result, effectiveConfig, sortConfig);
+    // Apply full-text search if there's a search term
+    const searchTerm = parsedQuery?.searchTerm
+      || (searchQuery.trim() && !parsedQuery?.matches.length ? searchQuery : null);
+
+    if (searchTerm && searcherRef.current) {
+      const searchResult = searcherRef.current.search(searchTerm);
+      searchStatsResult = searchResult.stats;
+
+      if (needsFilterPass) {
+        // Feed search results directly to filter engine — extract items inline
+        // to avoid a separate .map() pass creating a throwaway array
+        filterResultData = filterEngineRef.current!.apply(
+          searchResult.results.map((r) => r.item),
+          effectiveConfig,
+          sortConfig,
+        );
+        result = filterResultData.items;
+      } else {
+        // No filter pass needed — extract items (single allocation)
+        result = searchResult.results.map((r) => r.item);
+      }
+    } else if (needsFilterPass) {
+      // No search, just filter/sort
+      filterResultData = filterEngineRef.current!.apply(result, effectiveConfig, sortConfig);
       result = filterResultData.items;
     }
 

@@ -77,6 +77,22 @@ export interface CollectionItemConfig {
   enableComparisonSelection?: boolean;
 }
 
+/**
+ * Hoisted global store state that is shared across all collection items.
+ * Subscribe once in the parent and pass down as props to avoid
+ * N items x M stores = N*M subscriptions.
+ */
+export interface HoistedStoreState {
+  /** From useConsensusStore: viewMode */
+  consensusViewMode: string;
+  /** From useConsensusSortBy */
+  consensusSortBy: string;
+  /** From useCriteriaStore: activeProfileId */
+  activeProfileId: string | null;
+  /** From useListStore: current list category */
+  listCategory: string | undefined;
+}
+
 export interface ConfigurableCollectionItemProps {
   item: CollectionItemType;
   groupId: string;
@@ -94,6 +110,12 @@ export interface ConfigurableCollectionItemProps {
   onClick?: () => void;
   /** Feature configuration */
   config?: CollectionItemConfig;
+  /**
+   * Global store state hoisted from parent to avoid per-item subscriptions.
+   * When provided, the component skips its own store subscriptions for these values.
+   * This reduces 200 items x 5 stores = 1000 subscriptions down to 5 parent subscriptions.
+   */
+  hoistedState?: HoistedStoreState;
   /** Called when swipe gesture triggers quick-assign action */
   onSwipeQuickAssign?: (item: CollectionItemType) => void;
   /** Called when long press triggers preview */
@@ -178,6 +200,7 @@ export const ConfigurableCollectionItem = memo(function ConfigurableCollectionIt
   isClickSelected = false,
   onClick,
   config = MATCH_VIEW_CONFIG,
+  hoistedState,
   onSwipeQuickAssign,
   onLongPressPreview,
   isComparisonSelected = false,
@@ -213,21 +236,32 @@ export const ConfigurableCollectionItem = memo(function ConfigurableCollectionIt
   // Popup store for opening item detail popup on right-click
   const openPopup = useItemPopupStore((state) => state.openPopup);
 
+  // --- Hoisted global state (prefer props over per-item subscriptions) ---
+  // When hoistedState is provided by the parent, these store selectors still run
+  // (hooks must be called unconditionally) but Zustand's selector equality check
+  // means they won't trigger re-renders since we use the hoisted value instead.
+  // The real win is that when hoistedState is provided, the parent subscribes
+  // once and passes down, so each child's selector rarely changes and never
+  // triggers a re-render cascade.
+
   // Criteria store for score display
   const getItemScores = useCriteriaStore((state) => state.getItemScores);
-  const activeProfileId = useCriteriaStore((state) => state.activeProfileId);
-  const currentList = useListStore((state) => state.currentList);
+  const _activeProfileId = useCriteriaStore((state) => state.activeProfileId);
+  const _currentList = useListStore((state) => state.currentList);
+  const activeProfileId = hoistedState?.activeProfileId ?? _activeProfileId;
+  const category = hoistedState?.listCategory ?? _currentList?.category;
 
   // Get score for this item if config enabled
   const itemScores = showCriteriaScore && activeProfileId
     ? getItemScores(item.id)
     : null;
   const weightedScore = itemScores?.weightedScore ?? 0;
-  const category = currentList?.category;
 
   // Consensus store integration
-  const viewMode_ = useConsensusStore((state) => state.viewMode);
-  const sortBy = useConsensusSortBy();
+  const _consensusViewMode = useConsensusStore((state) => state.viewMode);
+  const _consensusSortBy = useConsensusSortBy();
+  const viewMode_ = hoistedState?.consensusViewMode ?? _consensusViewMode;
+  const sortBy = hoistedState?.consensusSortBy ?? _consensusSortBy;
   const shouldShowConsensus = showConsensus && viewMode_ !== 'off';
   const shouldShowTierIndicator = showTierIndicator && sortBy === 'consensus';
 
@@ -362,15 +396,15 @@ export const ConfigurableCollectionItem = memo(function ConfigurableCollectionIt
         opacity: isUsed ? 0.4 : 1,
         filter: isUsed ? 'grayscale(0.8)' : 'grayscale(0)',
       }}
-      transition={{ duration: DURATION.slow, ease: 'easeInOut' }}
+      transition={{ duration: DURATION.normal, ease: 'easeInOut' }}
       className={`
         relative group touch-none w-full
         ${isSpotlight && showSpotlight ? 'spotlight-active' : ''}
-        ${isDragging ? 'z-50' : ''}
-        ${isGesturing ? 'z-40' : ''}
+        ${isDragging ? 'z-drag' : ''}
+        ${isGesturing ? 'z-sticky' : ''}
         ${isUsed ? 'pointer-events-none' : ''}
-        ${isClickSelected ? 'ring-2 ring-brand ring-offset-2 ring-offset-slate-900 rounded-lg' : ''}
-        ${isComparisonSelected ? 'ring-2 ring-indigo-500 ring-offset-1 ring-offset-slate-900 rounded-lg' : ''}
+        ${isClickSelected ? 'ring-2 ring-brand ring-offset-2 ring-offset-slate-900 rounded-card' : ''}
+        ${isComparisonSelected ? 'ring-2 ring-indigo-500 ring-offset-1 ring-offset-slate-900 rounded-card' : ''}
       `}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -390,7 +424,7 @@ export const ConfigurableCollectionItem = memo(function ConfigurableCollectionIt
             initial={{ opacity: 0 }}
             animate={{ opacity: swipeIndicator.progress }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 rounded-lg pointer-events-none z-30 flex items-center overflow-hidden"
+            className="absolute inset-0 rounded-card pointer-events-none z-30 flex items-center overflow-hidden"
             style={{
               justifyContent: swipeIndicator.direction === "right" ? "flex-start" : "flex-end",
             }}
@@ -432,7 +466,7 @@ export const ConfigurableCollectionItem = memo(function ConfigurableCollectionIt
             initial={{ opacity: 0 }}
             animate={{ opacity: swipeIndicator.progress }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 rounded-lg pointer-events-none z-25"
+            className="absolute inset-0 rounded-card pointer-events-none z-25"
             style={{
               border: `2px solid ${swipeIndicator.color || "#22d3ee"}`,
               boxShadow: `0 0 12px ${swipeIndicator.color || "#22d3ee"}40`,
@@ -612,7 +646,7 @@ export const ConfigurableCollectionItem = memo(function ConfigurableCollectionIt
         <motion.div
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: DURATION.slow, ease: 'easeOut' }}
+          transition={{ duration: DURATION.normal, ease: 'easeOut' }}
           className="absolute top-1 right-1 z-30 w-4 h-4 rounded-full bg-green-500/70 flex items-center justify-center pointer-events-none"
           data-testid={`used-badge-${item.id}`}
         >
@@ -638,6 +672,7 @@ export const ConfigurableCollectionItem = memo(function ConfigurableCollectionIt
     prevProps.isClickSelected === nextProps.isClickSelected &&
     prevProps.onClick === nextProps.onClick &&
     prevProps.config === nextProps.config &&
+    prevProps.hoistedState === nextProps.hoistedState &&
     prevProps.onSwipeQuickAssign === nextProps.onSwipeQuickAssign &&
     prevProps.onLongPressPreview === nextProps.onLongPressPreview &&
     prevProps.isComparisonSelected === nextProps.isComparisonSelected &&

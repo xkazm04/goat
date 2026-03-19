@@ -3,8 +3,12 @@
 import { memo, useCallback, useMemo } from 'react';
 import { SimpleDropZone } from '../../sub_DropZone/SimpleDropZone';
 import { useGridItemAtPosition, useGridStore } from '@/stores/grid-store';
+import { useBacklogStore } from '@/stores/backlog-store';
 import { getItemTitle } from '../lib/helpers';
 import { triggerHaptic } from '../lib/hapticFeedback';
+import { create } from 'zustand';
+import { useGridPinchZoom } from '../../hooks/useGridPinchZoom';
+import { RotateCcw } from 'lucide-react';
 
 interface GridSectionProps {
     title?: string;
@@ -15,10 +19,21 @@ interface GridSectionProps {
     onRemove: (position: number) => void;
 }
 
+/** Tiny store for grid click-to-move selection (avoids polluting main grid store) */
+const useClickMoveStore = create<{
+    selectedPosition: number | null;
+    setSelectedPosition: (pos: number | null) => void;
+}>((set) => ({
+    selectedPosition: null,
+    setSelectedPosition: (pos) => set({ selectedPosition: pos }),
+}));
+
+const clickToPlaceStyle = { boxShadow: 'var(--glow-brand-sm)', borderRadius: '0.75rem', cursor: 'pointer' } as const;
+const clickMoveSourceStyle = { boxShadow: 'var(--glow-brand-md)', borderRadius: '0.75rem', cursor: 'pointer' } as const;
+
 /**
  * Individual grid slot that subscribes only to its own position.
- * Re-renders only when the item at this specific position changes (O(1) per drag).
- * On mobile, supports tap-to-place: tapping an empty slot places the selected backlog item.
+ * Supports click-to-place (from backlog) and click-to-move (between grid slots).
  */
 const GridSlot = memo(function GridSlot({
     position,
@@ -29,27 +44,60 @@ const GridSlot = memo(function GridSlot({
 }) {
     const item = useGridItemAtPosition(position);
     const isOccupied = item?.matched ?? false;
-    const mobileSelectedItem = useGridStore((s) => s.mobileSelectedItem);
+    const backlogSelectedItem = useGridStore((s) => s.mobileSelectedItem);
+    const gridSelectedPos = useClickMoveStore((s) => s.selectedPosition);
 
     const handleRemove = useCallback(() => {
         onRemove(position);
     }, [onRemove, position]);
 
-    const handleTapSlot = useCallback(() => {
-        if (!isOccupied && mobileSelectedItem) {
+    const handleClickSlot = useCallback(() => {
+        // Priority 1: Backlog item selected → place/replace it here
+        if (backlogSelectedItem) {
             useGridStore.getState().handleMobileTapSlot(position);
             triggerHaptic('dropPositionRegular');
+            useClickMoveStore.getState().setSelectedPosition(null);
+            return;
         }
-    }, [position, isOccupied, mobileSelectedItem]);
 
-    // Show highlight ring when mobile selection is active and slot is empty
-    const showMobileHighlight = !isOccupied && mobileSelectedItem !== null;
+        const currentGridSelectedPos = useClickMoveStore.getState().selectedPosition;
+
+        // Priority 2: A grid item is already selected → move/swap it to this position
+        if (currentGridSelectedPos !== null) {
+            if (currentGridSelectedPos === position) {
+                // Clicked same slot → deselect
+                useClickMoveStore.getState().setSelectedPosition(null);
+                return;
+            }
+            // Move the grid item
+            const gridStore = useGridStore.getState();
+            const sourceItem = gridStore.gridItems[currentGridSelectedPos];
+            if (sourceItem?.matched) {
+                gridStore.moveGridItem(currentGridSelectedPos, position);
+                triggerHaptic('dropPositionRegular');
+            }
+            useClickMoveStore.getState().setSelectedPosition(null);
+            return;
+        }
+
+        // Priority 3: Nothing selected + slot is occupied → select this grid item for moving
+        if (isOccupied) {
+            useClickMoveStore.getState().setSelectedPosition(position);
+            return;
+        }
+    }, [position, isOccupied, backlogSelectedItem]);
+
+    // Determine highlight style
+    const isGridMoveSource = gridSelectedPos === position;
+    let slotStyle: React.CSSProperties | undefined;
+    if (isGridMoveSource) {
+        slotStyle = clickMoveSourceStyle;
+    } else if (backlogSelectedItem || gridSelectedPos !== null) {
+        slotStyle = clickToPlaceStyle;
+    }
 
     return (
-        <div
-            onClick={handleTapSlot}
-            className={showMobileHighlight ? 'ring-2 ring-brand-primary/60 rounded-lg transition-all' : ''}
-        >
+        <div onClick={handleClickSlot} style={slotStyle} data-testid={`grid-slot-${position}`}>
             <SimpleDropZone
                 position={position}
                 isOccupied={isOccupied}
@@ -70,6 +118,9 @@ export function GridSection({
     gap = 4,
     onRemove,
 }: GridSectionProps) {
+    const gridSize = endPosition - startPosition;
+    const { zoomState, enabled: pinchEnabled, containerRef, gridStyle, resetZoom, handlers: pinchHandlers } = useGridPinchZoom(gridSize);
+
     const positions = useMemo(() => {
         const arr: number[] = [];
         for (let i = startPosition; i < endPosition; i++) {
@@ -82,7 +133,7 @@ export function GridSection({
     const mobileColumns = Math.min(columns, 4);
 
     return (
-        <section className="relative">
+        <section className="relative" data-testid="grid-section">
             {title && (
                 <div className="flex items-center gap-2 sm:gap-4 mb-3 sm:mb-6">
                     <div className="h-px flex-1 bg-linear-to-r from-transparent via-white/8 to-white/12" />
@@ -90,20 +141,44 @@ export function GridSection({
                     <div className="h-px flex-1 bg-linear-to-r from-white/12 via-white/8 to-transparent" />
                 </div>
             )}
+
+            {/* Pinch zoom controls — only show for large grids when zoomed */}
+            {pinchEnabled && zoomState.scale !== 1.0 && (
+                <div className="flex items-center justify-end gap-1 mb-2">
+                    <span className="text-xs text-white/40 mr-1">{Math.round(zoomState.scale * 100)}%</span>
+                    <button
+                        onClick={resetZoom}
+                        className="p-1.5 rounded bg-white/5 hover:bg-white/10 text-white/50 transition-colors touch-target"
+                        aria-label="Reset zoom"
+                        data-testid="grid-reset-zoom-btn"
+                    >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                    </button>
+                </div>
+            )}
+
+            {/* Pinch-zoom container */}
             <div
-                className="grid"
-                style={{
-                    gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
-                    gap: `${gap * 4}px`,
-                }}
+                ref={containerRef}
+                className="overflow-hidden touch-pan-x"
+                {...(pinchEnabled ? pinchHandlers : {})}
             >
-                {positions.map((position) => (
-                    <GridSlot
-                        key={position}
-                        position={position}
-                        onRemove={onRemove}
-                    />
-                ))}
+                <div
+                    className="grid"
+                    style={{
+                        gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+                        gap: `${gap * 4}px`,
+                        ...gridStyle,
+                    }}
+                >
+                    {positions.map((position) => (
+                        <GridSlot
+                            key={position}
+                            position={position}
+                            onRemove={onRemove}
+                        />
+                    ))}
+                </div>
             </div>
             {/* Mobile-responsive override via CSS media query */}
             <style jsx>{`

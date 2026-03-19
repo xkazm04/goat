@@ -19,6 +19,7 @@
 
 import { BacklogItem } from '@/types/backlog-groups';
 import { GridItemType } from '@/types/match';
+import { extractTitle } from '@/lib/items/item-utils';
 
 // ============================================================================
 // Types
@@ -385,7 +386,7 @@ export class ValidationAuthority {
         isValid: false,
         errorCode: 'ITEM_LOCKED',
         errorMessage: 'This item is currently being moved. Please wait.',
-        debugInfo: { itemId, itemTitle: item.name || item.title },
+        debugInfo: { itemId, itemTitle: extractTitle(item) },
       };
     }
 
@@ -395,7 +396,7 @@ export class ValidationAuthority {
         isValid: false,
         errorCode: 'SOURCE_ALREADY_USED',
         errorMessage: 'This item is already placed on the grid. Remove it first to move it.',
-        debugInfo: { itemId, itemTitle: item.name || item.title },
+        debugInfo: { itemId, itemTitle: extractTitle(item) },
       };
     }
 

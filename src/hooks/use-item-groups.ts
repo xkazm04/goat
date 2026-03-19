@@ -1,9 +1,10 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { goatApi, GroupSearchParams, GroupCreateRequest } from '@/lib/api';
+import { useOptimisticMutation } from './useOptimisticMutation';
 import { toast } from '@/hooks/use-toast';
 import { GridItemType as OriginalGridItemType, BacklogItemType as OriginalBacklogItemType, BacklogGroupType as OriginalBacklogGroupType } from '@/types/match';
 import { BacklogGroup as ApiBacklogGroup, BacklogItem as ApiBacklogItem } from '@/types/backlog-groups';
-import { CACHE_TTL_MS, GC_TIME_MS } from '@/lib/cache/unified-cache';
+import { CACHE_TTL_MS, GC_TIME_MS, getRetryConfig } from '@/lib/cache/unified-cache';
 
 // Unified cache time constants - imported from unified-cache.ts
 const CACHE_TIMES = {
@@ -12,11 +13,8 @@ const CACHE_TIMES = {
   LONG: CACHE_TTL_MS.LONG,       // 15 minutes - for reference data
 } as const;
 
-// Retry configuration
-const RETRY_CONFIG = {
-  retry: 2,
-  retryDelay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 30000),
-} as const;
+// Retry configuration - centralized from unified-cache
+const RETRY_CONFIG = getRetryConfig('fast');
 
 // Common query options type
 interface BaseQueryOptions {
@@ -228,23 +226,17 @@ export function useGroupItems(
 
 // Mutation hook to create new group
 export function useCreateItemGroup() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
+  return useOptimisticMutation({
     mutationFn: (data: GroupCreateRequest) => goatApi.groups.create(data),
+    optimisticUpdates: [],
+    invalidateOnSettled: [itemGroupsKeys.all],
     onSuccess: (newGroup) => {
       toast({
         title: "Group Created",
         description: `"${newGroup.name}" has been created successfully.`,
       });
-
     },
-    onError: (error: Error) => {
-      toast({
-        title: "Creation Failed",
-        description: error.message || "Failed to create group",
-      });
-    },
+    notificationSource: 'group-create',
   });
 }
 

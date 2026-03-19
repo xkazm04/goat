@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useOptionalDropZoneHighlight } from "./DropZoneHighlightContext";
 import { useEffect, useState, useRef, useCallback } from "react";
+import { DURATION } from '@/lib/animations/motion-presets';
 
 interface ConnectorLine {
   id: number;
@@ -33,12 +34,14 @@ export function DropZoneConnectors() {
   const isDragging = highlightContext?.dragState.isDragging ?? false;
   const dragStateRef = useRef(highlightContext?.dragState);
   dragStateRef.current = highlightContext?.dragState;
+  const cursorPositionRef = highlightContext?.cursorPositionRef;
 
   const updateConnectors = useCallback(() => {
     const dragState = dragStateRef.current;
     if (!dragState) return;
 
-    const { cursorPosition, dropZonePositions, hoveredPosition } = dragState;
+    const { dropZonePositions, hoveredPosition } = dragState;
+    const cursorPosition = cursorPositionRef?.current ?? { x: 0, y: 0 };
     const maxDistance = 600; // Max distance for visibility
     const maxConnectors = 5; // Show up to 5 nearest connectors
 
@@ -156,11 +159,11 @@ export function DropZoneConnectors() {
                 }}
                 exit={{ opacity: 0, pathLength: 0 }}
                 transition={{
-                  opacity: { duration: 0.2 },
-                  pathLength: { duration: 0.3 },
+                  opacity: { duration: DURATION.fast },
+                  pathLength: { duration: DURATION.normal },
                   strokeDashoffset: connector.isHovered
                     ? { duration: 0 }
-                    : { duration: 0.8, repeat: Infinity, ease: "linear" },
+                    : { duration: DURATION.dramatic, repeat: Infinity, ease: "linear" },
                 }}
               />
 
@@ -180,7 +183,7 @@ export function DropZoneConnectors() {
                 transition={{
                   scale: connector.isHovered
                     ? { duration: 1, repeat: Infinity, ease: "easeInOut" }
-                    : { duration: 0.2 },
+                    : { duration: DURATION.fast },
                 }}
               />
             </g>

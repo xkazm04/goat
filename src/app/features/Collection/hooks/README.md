@@ -65,10 +65,10 @@ interface UseCollectionOptions {
 The hook returns a comprehensive object with:
 
 #### Data
-- `groups: CollectionGroup[]` - All groups
+- `groups: ItemCategory[]` - All groups
 - `items: CollectionItem[]` - All items (paginated or infinite)
 - `filteredItems: CollectionItem[]` - Items filtered by search and selected groups
-- `selectedGroups: CollectionGroup[]` - Currently selected groups
+- `selectedGroups: ItemCategory[]` - Currently selected groups
 - `stats: CollectionStats` - Computed statistics
 
 #### Loading States

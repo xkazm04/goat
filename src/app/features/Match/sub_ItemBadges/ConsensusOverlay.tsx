@@ -177,7 +177,7 @@ function MedianRankBadge({
       animate={{ scale: 1, rotate: 0 }}
       transition={{ type: 'spring', stiffness: 300, damping: 20 }}
       className={cn(
-        'min-w-[24px] h-5 px-1 rounded text-[10px] flex items-center justify-center',
+        'min-w-[24px] h-5 px-1 rounded text-2xs flex items-center justify-center',
         'backdrop-blur-xs shadow-lg',
         bgColor,
         textColor,
@@ -219,7 +219,7 @@ function VolatilityIndicator({
       initial={{ opacity: 0, x: 10 }}
       animate={{ opacity: 1, x: 0 }}
       className={cn(
-        'flex items-center gap-0.5 px-1 py-0.5 rounded text-[9px]',
+        'flex items-center gap-0.5 px-1 py-0.5 rounded text-2xs',
         'backdrop-blur-xs',
         bgColor,
         color

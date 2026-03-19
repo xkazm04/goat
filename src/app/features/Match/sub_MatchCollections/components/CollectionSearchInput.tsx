@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { DURATION } from "@/lib/animations/motion-presets";
 import { Search, X, Clock, TrendingUp, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { isInputElement } from "@/lib/utils/search";
@@ -204,7 +205,7 @@ export function CollectionSearchInput({
       <div className="relative">
         <div
           className={cn(
-            "flex items-center gap-2 h-7 px-2.5 rounded-md transition-all duration-200",
+            "flex items-center gap-2 h-7 px-2.5 rounded-control transition-all duration-200",
             "bg-white/5 border border-white/10",
             isFocused
               ? "bg-white/8 border-brand/30 ring-1 ring-brand/10"
@@ -240,7 +241,7 @@ export function CollectionSearchInput({
               <X className="w-3 h-3" />
             </button>
           )}
-          <kbd className="hidden sm:inline text-[9px] px-1 py-0.5 rounded bg-white/5 text-white/30 font-mono shrink-0">
+          <kbd className="hidden sm:inline text-2xs px-1 py-0.5 rounded bg-white/5 text-white/30 font-mono shrink-0">
             /
           </kbd>
         </div>
@@ -251,8 +252,8 @@ export function CollectionSearchInput({
               initial={{ opacity: 0, y: -4, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -4, scale: 0.98 }}
-              transition={{ duration: 0.15 }}
-              className="absolute top-full left-0 right-0 mt-1 z-50 py-1 rounded-lg bg-slate-900/95 backdrop-blur-xl border border-white/10 shadow-xl"
+              transition={{ duration: DURATION.quick }}
+              className="absolute top-full left-0 right-0 mt-1 z-dropdown py-1 rounded-card bg-slate-900/95 backdrop-blur-xl border border-white/10 shadow-xl"
               role="listbox"
             >
               {!value.trim() && recentSearches.length > 0 && (
@@ -308,7 +309,7 @@ export function CollectionSearchInput({
         className={`
           relative flex items-center gap-2 flex-1 min-w-[200px] max-w-xs
           bg-slate-800/60 dark:bg-slate-900/60
-          rounded-lg border transition-all duration-200
+          rounded-control border transition-all duration-200
           ${
             isFocused
               ? "border-brand/50 ring-1 ring-brand/20 bg-slate-800/80"
@@ -349,7 +350,7 @@ export function CollectionSearchInput({
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.15 }}
+              transition={{ duration: DURATION.quick }}
               onClick={handleClear}
               className="pr-2 text-slate-400 hover:text-white transition-colors"
               aria-label="Clear search"
@@ -363,11 +364,11 @@ export function CollectionSearchInput({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
+              transition={{ duration: DURATION.quick }}
               className="pr-2 flex items-center gap-0.5"
             >
               <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-xs font-mono text-slate-500 bg-slate-700/50 rounded border border-slate-600/30">
-                <span className="text-[9px]">/</span>
+                <span className="text-2xs">/</span>
               </kbd>
             </motion.div>
           )}
@@ -380,7 +381,7 @@ export function CollectionSearchInput({
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -10 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: DURATION.fast }}
             className={`
               text-xs font-mono px-2 py-1 rounded
               ${

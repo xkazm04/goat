@@ -1,6 +1,8 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
+import { SURFACE_ELEVATION, ELEVATION, INSET } from "@/components/visual/depth/depth-tokens";
+import { useModalAccessibility } from "@/hooks/use-modal-accessibility";
 import { CompletionModalHeader } from "./CompletionModalHeader";
 import { CompletionModalContent } from "./CompletionModalContent";
 import { CompletionModalActions } from "./CompletionModalActions";
@@ -26,6 +28,11 @@ export function CompletionModal({
   listTitle,
   completionData
 }: CompletionModalProps) {
+  const { modalRef, modalProps, handleKeyDown } = useModalAccessibility({
+    isOpen,
+    onClose,
+  });
+
   if (!isOpen) return null;
 
   return (
@@ -34,29 +41,21 @@ export function CompletionModal({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 modal-overlay"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-modal flex items-center justify-center p-4 modal-overlay"
         onClick={onClose}
         data-exclude-capture="true"
       >
         <motion.div
+          ref={modalRef}
+          {...modalProps}
+          onKeyDown={handleKeyDown}
           initial={{ scale: 0.8, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.8, opacity: 0, y: 20 }}
-          className="w-full max-w-2xl max-h-[90vh] rounded-2xl overflow-hidden"
+          className="w-full max-w-2xl max-h-[90vh] rounded-container overflow-hidden border border-gray-700/50"
           style={{
-            background: `
-              linear-gradient(135deg,
-                rgba(15, 23, 42, 0.95) 0%,
-                rgba(30, 41, 59, 0.98) 50%,
-                rgba(51, 65, 85, 0.95) 100%
-              )
-            `,
-            border: '2px solid rgba(16, 185, 129, 0.4)',
-            boxShadow: `
-              0 25px 50px -12px rgba(0, 0, 0, 0.8),
-              0 0 40px rgba(16, 185, 129, 0.2),
-              0 0 0 1px rgba(16, 185, 129, 0.3)
-            `
+            backgroundColor: SURFACE_ELEVATION.overlay,
+            boxShadow: `${ELEVATION.modal}, ${INSET.glassHighlight}`,
           }}
           onClick={(e) => e.stopPropagation()}
           data-modal="completion"

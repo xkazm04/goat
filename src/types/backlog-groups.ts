@@ -1,8 +1,22 @@
 // Backlog Groups and Items Types
+//
+// NAME vs TITLE CONTRACT:
+//   `name`  — canonical identifier, always set by the API / database.
+//   `title` — display label; defaults to `name` when not provided separately.
+//
+// When resolving a display string, always use `extractTitle()` from
+// `@/lib/items/core-utils` which applies the canonical fallback: name > title.
+// Do NOT write inline fallback chains (e.g. `item.title || item.name`).
+//
+// Intermediate/display-only types (GridItemType, TransferableItem,
+// CollectionItem) carry a single `title` field that is the *resolved*
+// display value produced by `extractTitle()`.
 
 export interface BacklogItem {
   id: string;
+  /** Canonical identifier — the source-of-truth label from the API. */
   name: string;
+  /** Display label — usually identical to `name`; kept for legacy compat. */
   title: string;
   description?: string;
   category: string;
@@ -21,6 +35,13 @@ export interface BacklogItem {
   // UI state properties
   matched?: boolean;
   matchedWith?: string;
+  /**
+   * Whether this item is currently placed in the match grid.
+   *
+   * Set by `backlogStore.markItemAsUsed()` (in `stores/backlog/actions-utils.ts`)
+   * during grid sync. Never returned by the API — this is purely client-side UI state.
+   * Defaults to `false` when undefined.
+   */
   used?: boolean;
 }
 
@@ -50,7 +71,9 @@ export interface BacklogGroupCreate {
 }
 
 export interface BacklogItemCreate {
+  /** Canonical identifier — required. */
   name: string;
+  /** Display label — optional; defaults to `name` at read-time via extractTitle(). */
   title?: string;
   description?: string;
   category: string;

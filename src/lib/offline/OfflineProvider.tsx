@@ -45,12 +45,27 @@ interface OfflineContextValue {
 
 const OfflineContext = createContext<OfflineContextValue | null>(null);
 
+const OFFLINE_DEFAULTS: OfflineContextValue = {
+  isOnline: true,
+  isOffline: false,
+  isSlow: false,
+  isSyncing: false,
+  hasPendingChanges: false,
+  pendingCount: 0,
+  lastSyncedAt: null,
+  hasConflicts: false,
+  conflicts: [],
+  resolveConflict: async () => {},
+  syncNow: async () => {},
+  retryFailed: async () => {},
+  hasUpdate: false,
+  applyUpdate: () => {},
+};
+
 export function useOffline(): OfflineContextValue {
   const context = useContext(OfflineContext);
-  if (!context) {
-    throw new Error('useOffline must be used within an OfflineProvider');
-  }
-  return context;
+  // Return safe defaults when provider hasn't mounted yet (deferred loading)
+  return context ?? OFFLINE_DEFAULTS;
 }
 
 interface OfflineProviderProps {
@@ -185,7 +200,7 @@ export function OfflineProvider({
             initial={{ opacity: 0, y: -50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -50 }}
-            className="fixed top-0 left-0 right-0 z-50 bg-blue-600 px-4 py-3"
+            className="fixed top-0 left-0 right-0 z-toast bg-blue-600 px-4 py-3"
           >
             <div className="max-w-7xl mx-auto flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -213,7 +228,7 @@ export function OfflineProvider({
 
       {/* Sync Status Indicator */}
       {showStatusIndicator && (
-        <div className="fixed bottom-4 right-4 z-40">
+        <div className="fixed bottom-4 right-4 z-sticky">
           <SyncStatusIndicator
             showDetails
             onConflictClick={() => setShowConflictModal(true)}

@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from 'framer-motion';
+import { DURATION } from '@/lib/animations/motion-presets';
 
 /**
  * Custom geometric lightning bolt SVG
@@ -115,7 +116,7 @@ export function VSDivider({ size }: { size: number }) {
           className="absolute top-1/2 -translate-y-1/2"
           style={{ left: -sparkSize * 0.8 }}
           animate={{ x: [-3, 3, -3], opacity: [0.5, 1, 0.5] }}
-          transition={{ duration: 0.6, repeat: Infinity }}
+          transition={{ duration: DURATION.emphasis, repeat: Infinity }}
         >
           <LightningBolt className={`text-yellow-400`} />
         </motion.div>
@@ -125,7 +126,7 @@ export function VSDivider({ size }: { size: number }) {
           className="absolute top-1/2 -translate-y-1/2 -scale-x-100"
           style={{ right: -sparkSize * 0.8 }}
           animate={{ x: [3, -3, 3], opacity: [0.5, 1, 0.5] }}
-          transition={{ duration: 0.6, repeat: Infinity, delay: 0.3 }}
+          transition={{ duration: DURATION.emphasis, repeat: Infinity, delay: 0.3 }}
         >
           <LightningBolt className={`text-yellow-400`} />
         </motion.div>

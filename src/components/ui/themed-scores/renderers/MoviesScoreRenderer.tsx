@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { formatScore } from "@/lib/constants/scoring";
 import { StarRating } from "@/components/ui/star-rating";
 import type { ScoreRendererProps } from "./types";
+import { DURATION } from '@/lib/animations/motion-presets';
 
 // Conversion factor from 0-100 score to 0-5 star scale
 const STAR_MAX = 5;
@@ -42,7 +43,7 @@ export function MoviesScoreRenderer({
       )}
       initial={animated ? { opacity: 0 } : false}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: DURATION.normal }}
     >
       <StarRating
         value={starValue}

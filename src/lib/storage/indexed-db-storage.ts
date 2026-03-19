@@ -1,3 +1,16 @@
+/**
+ * IndexedDB storage adapter for Zustand persist middleware.
+ *
+ * DATABASE: goat-app-storage (IndexedDB)
+ * OWNER: Zustand persist middleware (backlog-store)
+ *
+ * This is a generic key-value store used ONLY by Zustand's persist middleware
+ * for stores that need IndexedDB instead of localStorage (e.g., backlog-store
+ * which can exceed localStorage's ~5MB limit).
+ *
+ * NOT related to the offline sync engine's `goat-offline-db` database.
+ * See `src/lib/storage/storage-registry.ts` for the full architecture map.
+ */
 const DB_NAME = 'goat-app-storage';
 const STORE_NAME = 'zustand-store';
 const DB_VERSION = 1;

@@ -284,7 +284,7 @@ export const DownloadProgress = memo(function DownloadProgress({
           transition={
             reducedMotion
               ? { duration: 0 }
-              : { duration: DURATION.fast, ease: EASING.easeOut }
+              : { duration: DURATION.quick, ease: EASING.easeOut }
           }
         />
       </svg>

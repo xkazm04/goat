@@ -21,31 +21,71 @@ import { createGridItem } from '@/lib/grid';
 import { dndLogger } from '@/lib/logger';
 
 /**
- * Lock set for items currently being assigned to prevent race conditions.
- * When a user double-clicks drag rapidly, the second drag validates while
- * the first markItemAsUsed() is still pending. This lock prevents that
- * by making validation-assignment-marking atomic.
+ * LockManager - Provides timeout-based locking for items being assigned.
+ *
+ * Prevents race conditions from rapid double-drag by making
+ * validation-assignment-marking atomic. Locks auto-expire after a timeout
+ * so that a stuck lock from an unhandled error won't permanently block
+ * all subsequent assignments.
  */
-const itemsBeingAssigned = new Set<string>();
+class LockManager {
+  private locks = new Map<string, { acquiredAt: number; timer: ReturnType<typeof setTimeout> }>();
+  private defaultTimeoutMs: number;
 
-/**
- * Atomically attempt to acquire a lock for an item.
- * Returns true if lock acquired, false if item is already locked.
- */
-function acquireItemLock(itemId: string): boolean {
-  if (itemsBeingAssigned.has(itemId)) {
-    return false;
+  constructor(defaultTimeoutMs = 5000) {
+    this.defaultTimeoutMs = defaultTimeoutMs;
   }
-  itemsBeingAssigned.add(itemId);
-  return true;
+
+  /**
+   * Attempt to acquire a lock for an item.
+   * Returns true if lock acquired, false if item is already locked.
+   */
+  acquireLock(itemId: string, timeoutMs?: number): boolean {
+    const existing = this.locks.get(itemId);
+    if (existing) {
+      return false;
+    }
+
+    const timeout = timeoutMs ?? this.defaultTimeoutMs;
+    const timer = setTimeout(() => {
+      this.locks.delete(itemId);
+    }, timeout);
+
+    this.locks.set(itemId, { acquiredAt: Date.now(), timer });
+    return true;
+  }
+
+  /**
+   * Release the lock for an item after operation completes.
+   */
+  releaseLock(itemId: string): void {
+    const lock = this.locks.get(itemId);
+    if (lock) {
+      clearTimeout(lock.timer);
+      this.locks.delete(itemId);
+    }
+  }
+
+  /**
+   * Check if an item is currently locked (without acquiring).
+   */
+  isLocked(itemId: string): boolean {
+    return this.locks.has(itemId);
+  }
+
+  /**
+   * Clear all locks. Useful for testing and HMR recovery.
+   */
+  reset(): void {
+    for (const [, lock] of Array.from(this.locks)) {
+      clearTimeout(lock.timer);
+    }
+    this.locks.clear();
+  }
 }
 
-/**
- * Release the lock for an item after assignment completes.
- */
-function releaseItemLock(itemId: string): void {
-  itemsBeingAssigned.delete(itemId);
-}
+/** Singleton lock manager for assignment operations */
+const assignmentLocks = new LockManager(5000);
 
 /**
  * AssignOperation handles dropping items from backlog/collection onto grid slots
@@ -68,7 +108,7 @@ export class AssignOperation implements DragOperation {
     }
 
     // Try to acquire lock to prevent race conditions
-    if (!acquireItemLock(source.itemId)) {
+    if (!assignmentLocks.acquireLock(source.itemId)) {
       return {
         isValid: false,
         errorCode: 'SOURCE_ALREADY_USED',
@@ -93,13 +133,13 @@ export class AssignOperation implements DragOperation {
       {
         getItemById: backlog.getItemById,
         isItemUsed: backlog.isItemUsed,
-        isItemLocked: (id) => itemsBeingAssigned.has(id) && id !== source.itemId,
+        isItemLocked: (id) => assignmentLocks.isLocked(id) && id !== source.itemId,
       }
     );
 
     // If validation failed, release the lock
     if (!validationResult.isValid) {
-      releaseItemLock(source.itemId);
+      assignmentLocks.releaseLock(source.itemId);
 
       logValidationFailure(validationResult, {
         activeId: source.itemId,
@@ -125,11 +165,49 @@ export class AssignOperation implements DragOperation {
     const position = target.position!;
 
     try {
+      // Re-validate item availability to close TOCTOU gap.
+      // Between validate() and execute(), a keyboard shortcut or click handler
+      // could have assigned this item elsewhere (those paths bypass the LockManager).
+      if (backlog.isItemUsed(source.itemId)) {
+        assignmentLocks.releaseLock(source.itemId);
+        dndLogger.warn('TOCTOU: item marked used between validate and execute', {
+          itemId: source.itemId,
+          position,
+        });
+        return {
+          success: false,
+          operationType: 'assign',
+          action: 'reject',
+          errorCode: 'SOURCE_ALREADY_USED',
+          errorMessage: 'Item was assigned by another operation between validation and execution',
+        };
+      }
+
+      // Also verify item isn't already in the grid (belt-and-suspenders against duplicate placement)
+      const duplicatePosition = grid.gridItems.findIndex(
+        (slot) => slot && slot.matched && slot.backlogItemId === source.itemId
+      );
+      if (duplicatePosition !== -1) {
+        assignmentLocks.releaseLock(source.itemId);
+        dndLogger.warn('TOCTOU: item already in grid at another position', {
+          itemId: source.itemId,
+          existingPosition: duplicatePosition,
+          requestedPosition: position,
+        });
+        return {
+          success: false,
+          operationType: 'assign',
+          action: 'reject',
+          errorCode: 'SOURCE_ALREADY_USED',
+          errorMessage: `Item already placed at grid position ${duplicatePosition}`,
+        };
+      }
+
       // Get the item to assign
       const item = source.item || backlog.getItemById(source.itemId);
 
       if (!item) {
-        releaseItemLock(source.itemId);
+        assignmentLocks.releaseLock(source.itemId);
         return {
           success: false,
           operationType: 'assign',
@@ -151,16 +229,39 @@ export class AssignOperation implements DragOperation {
         position,
       });
 
+      // If target position is occupied, remove the existing item first and return it to backlog
+      const displacementStart = performance.now();
+      const existingItem = grid.gridItems[position];
+      if (existingItem && existingItem.matched && existingItem.backlogItemId) {
+        const displacedItemId = existingItem.backlogItemId;
+        grid.removeItemFromGrid(position);
+        backlog.markItemAsUsed(displacedItemId, false);
+        dndLogger.debug(`Displaced item ${displacedItemId} from position ${position}`);
+      }
+      const displacementDuration = performance.now() - displacementStart;
+
       // Create grid item using factory
       const gridItem = createGridItem(item, position);
 
       // ATOMIC OPERATION: Assign item to grid and mark as used together
       // This prevents race condition where item appears in multiple positions
+      const gridMutationStart = performance.now();
       grid.assignItemToGrid(gridItem, position);
+      const gridMutationDuration = performance.now() - gridMutationStart;
+
+      const backlogUpdateStart = performance.now();
       backlog.markItemAsUsed(source.itemId, true);
+      const backlogUpdateDuration = performance.now() - backlogUpdateStart;
 
       // Release lock after both operations complete
-      releaseItemLock(source.itemId);
+      assignmentLocks.releaseLock(source.itemId);
+
+      console.debug(
+        `[DnD Perf] assign execute phases | ` +
+        `displacement=${displacementDuration.toFixed(2)}ms ` +
+        `gridMutation=${gridMutationDuration.toFixed(2)}ms ` +
+        `backlogUpdate=${backlogUpdateDuration.toFixed(2)}ms`
+      );
 
       dndLogger.info(`Successfully assigned item to position ${position}`);
 
@@ -180,7 +281,7 @@ export class AssignOperation implements DragOperation {
         },
       };
     } catch (error) {
-      releaseItemLock(source.itemId);
+      assignmentLocks.releaseLock(source.itemId);
       dndLogger.error('Assign operation failed', error);
 
       return {

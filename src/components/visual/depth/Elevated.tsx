@@ -2,6 +2,7 @@
 
 import { forwardRef, type HTMLAttributes, type CSSProperties } from "react";
 import { motion, type HTMLMotionProps } from "framer-motion";
+import { DURATION, EASE } from '@/lib/animations/motion-presets';
 import { ELEVATION, type ElevationLevel } from "./depth-tokens";
 import { useMotionCapabilities } from "@/hooks/use-motion-preference";
 import { cn } from "@/lib/utils";
@@ -54,9 +55,6 @@ export const Elevated = forwardRef<HTMLDivElement, ElevatedProps>(
     const { allowInteraction } = useMotionCapabilities();
     const shouldAnimate = hoverLift && allowInteraction;
 
-    // Standard easing curve for smooth transitions
-    const easing: [number, number, number, number] = [0.4, 0, 0.2, 1];
-
     return (
       <motion.div
         ref={ref}
@@ -74,8 +72,8 @@ export const Elevated = forwardRef<HTMLDivElement, ElevatedProps>(
             : undefined
         }
         transition={{
-          duration: 0.2,
-          ease: easing,
+          duration: DURATION.quick,
+          ease: EASE.inOut,
         }}
         {...rest}
       >

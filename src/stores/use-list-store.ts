@@ -117,8 +117,16 @@ export const useListStore = create<ListStoreState>()(
           metadata: state.currentList.metadata
         } : null;
         
-        // Only update if changed
-        if (JSON.stringify(state._matchingContext) !== JSON.stringify(newContext)) {
+        // Only update if changed (shallow compare key fields instead of JSON.stringify)
+        const prev = state._matchingContext;
+        const changed = !prev !== !newContext
+          || (prev && newContext && (
+            prev.listId !== newContext.listId
+            || prev.title !== newContext.title
+            || prev.category !== newContext.category
+            || prev.subcategory !== newContext.subcategory
+          ));
+        if (changed) {
           set({ _matchingContext: newContext });
         }
       },

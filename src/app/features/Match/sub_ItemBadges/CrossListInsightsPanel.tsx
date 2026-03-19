@@ -19,6 +19,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useItemUniversalRating } from '@/hooks/use-ranking-graph';
 import type { CrossListInsight, RankingTrajectory } from '@/lib/ranking-graph/types';
+import { DURATION } from '@/lib/animations/motion-presets';
 
 interface CrossListInsightsPanelProps {
   itemId: string;
@@ -48,7 +49,7 @@ export function CrossListInsightsPanel({
 
   if (isLoading) {
     return (
-      <div className={cn('animate-pulse rounded-lg bg-white/5 p-3', className)}>
+      <div className={cn('animate-pulse rounded-card bg-white/5 p-3', className)}>
         <div className="h-4 w-32 rounded bg-white/10" />
         <div className="mt-2 h-3 w-48 rounded bg-white/5" />
       </div>
@@ -63,7 +64,7 @@ export function CrossListInsightsPanel({
     <motion.div
       layout
       className={cn(
-        'rounded-lg border border-white/10 bg-white/5 backdrop-blur-sm',
+        'rounded-card border border-white/10 bg-white/5 backdrop-blur-sm',
         'overflow-hidden',
         className
       )}
@@ -81,7 +82,7 @@ export function CrossListInsightsPanel({
               <span className="text-xs text-white/70">
                 ELO {rating.eloScore}
               </span>
-              <span className="text-[10px] text-white/40">
+              <span className="text-2xs text-white/40">
                 ({rating.listAppearances} lists)
               </span>
             </div>
@@ -105,13 +106,13 @@ export function CrossListInsightsPanel({
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: DURATION.fast }}
             className="overflow-hidden"
           >
             <div className="border-t border-white/10 p-3 space-y-3">
               {/* Confidence bar */}
               <div className="space-y-1">
-                <div className="flex items-center justify-between text-[10px]">
+                <div className="flex items-center justify-between text-2xs">
                   <span className="text-white/50">Confidence</span>
                   <span className="text-white/70">
                     {Math.round(rating.confidence * 100)}%
@@ -122,7 +123,7 @@ export function CrossListInsightsPanel({
                     className="h-full rounded-full bg-brand-hover"
                     initial={{ width: 0 }}
                     animate={{ width: `${rating.confidence * 100}%` }}
-                    transition={{ duration: 0.5, delay: 0.1 }}
+                    transition={{ duration: DURATION.slow, delay: 0.1 }}
                   />
                 </div>
               </div>
@@ -130,7 +131,7 @@ export function CrossListInsightsPanel({
               {/* Insights */}
               {insights.length > 0 && (
                 <div className="space-y-1.5">
-                  <span className="text-[10px] text-white/40 uppercase tracking-wider">
+                  <span className="text-2xs text-white/40 uppercase tracking-wider">
                     Insights
                   </span>
                   {insights.slice(0, 3).map((insight, i) => (
@@ -142,13 +143,13 @@ export function CrossListInsightsPanel({
               {/* Context breakdown (top 5) */}
               {rating.contextBreakdown.length > 0 && (
                 <div className="space-y-1.5">
-                  <span className="text-[10px] text-white/40 uppercase tracking-wider">
+                  <span className="text-2xs text-white/40 uppercase tracking-wider">
                     Across Lists
                   </span>
                   {rating.contextBreakdown.slice(0, 5).map(ctx => (
                     <div
                       key={ctx.listId}
-                      className="flex items-center justify-between text-[10px]"
+                      className="flex items-center justify-between text-2xs"
                     >
                       <span className="text-white/60 truncate max-w-[140px]">
                         {ctx.listTitle}
@@ -204,7 +205,7 @@ function TierBadgeInline({
       className={cn(
         'inline-flex items-center justify-center rounded font-bold leading-none',
         colorClass,
-        size === 'sm' ? 'text-[8px] px-1 py-0.5' : 'text-[10px] px-1.5 py-0.5'
+        size === 'sm' ? 'text-3xs px-1 py-0.5' : 'text-2xs px-1.5 py-0.5'
       )}
     >
       {tier}
@@ -238,7 +239,7 @@ function InsightRow({ insight }: { insight: CrossListInsight }) {
     <div className="flex items-start gap-1.5">
       <Icon className={cn('w-3 h-3 mt-0.5 shrink-0', color)} />
       <div className="min-w-0">
-        <p className="text-[10px] text-white/70 leading-tight">
+        <p className="text-2xs text-white/70 leading-tight">
           {insight.description}
         </p>
       </div>
@@ -249,8 +250,8 @@ function InsightRow({ insight }: { insight: CrossListInsight }) {
 function StatBox({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded bg-white/5 p-1.5 text-center">
-      <div className="text-[10px] font-medium text-white/80">{value}</div>
-      <div className="text-[8px] text-white/40">{label}</div>
+      <div className="text-2xs font-medium text-white/80">{value}</div>
+      <div className="text-3xs text-white/40">{label}</div>
     </div>
   );
 }

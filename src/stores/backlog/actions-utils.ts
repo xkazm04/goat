@@ -1,34 +1,11 @@
 import { BacklogState } from './types';
 import { BacklogItem, BacklogGroup } from '@/types/backlog-groups';
 import { backlogLogger } from '@/lib/logger';
-import { rebuildItemIndex } from './item-index';
+import { syncCacheFromGroups } from './cache-utils';
+import { useSelectionCursor } from '../selection-cursor';
 
 // Type for immer-compatible set function
 type ImmerSet = (fn: (state: BacklogState) => void) => void;
-
-// Helper to update item in groups array
-const updateItemInGroups = <T extends BacklogGroup>(
-  groups: T[],
-  itemId: string,
-  updater: (item: BacklogItem) => BacklogItem
-): { groups: T[]; found: boolean } => {
-  let found = false;
-  const updatedGroups = groups.map(group => {
-    if (!group.items || !Array.isArray(group.items)) return group;
-
-    const updatedItems = group.items.map(item => {
-      if (item.id === itemId) {
-        found = true;
-        return updater(item);
-      }
-      return item;
-    });
-
-    return updatedItems !== group.items ? { ...group, items: updatedItems } : group;
-  }) as T[];
-
-  return { groups: updatedGroups, found };
-};
 
 // Helper to find item across all groups
 const findItemInGroups = (groups: BacklogGroup[], itemId: string): BacklogItem | null => {
@@ -98,65 +75,55 @@ export const createUtilActions = (
     return item;
   },
 
-  // Mark item as used/unused - O(1) via index map for main groups
+  /**
+   * Authoritative setter for the `item.used` flag.
+   *
+   * Called during grid sync to mark items as placed (used=true) or available (used=false).
+   * The flag propagates to CollectionItem and NormalizedItem via transformers,
+   * and is consumed by `useCollectionFiltering` and `ConfigurableCollectionItem`
+   * to hide/dim placed items in the backlog panel.
+   *
+   * O(1) via index map for main groups, with linear-scan fallback.
+   */
   markItemAsUsed: (itemId: string, used: boolean) => {
     set(state => {
       backlogLogger.debug(`Marking item ${itemId} as ${used ? 'used' : 'unused'}`);
 
-      const updater = (item: BacklogItem) => ({ ...item, used });
-
       // Fast path: use index to find the exact group
       const groupIdx = state._itemIndex.get(itemId);
-      let found = false;
+      let targetGroupId: string | undefined;
 
       if (groupIdx !== undefined) {
         const group = state.groups[groupIdx];
         if (group?.items) {
           const itemIdx = group.items.findIndex(i => i.id === itemId);
           if (itemIdx !== -1) {
-            found = true;
-            const updatedItems = [...group.items];
-            updatedItems[itemIdx] = updater(updatedItems[itemIdx]);
-            state.groups[groupIdx] = { ...group, items: updatedItems };
-
-            // Update matching cache entry using group's category
-            const cacheKey = `${group.category}-${group.subcategory || ''}`;
-            if (state.cache[cacheKey]?.groups) {
-              const { groups: updatedCacheGroups } = updateItemInGroups(
-                state.cache[cacheKey].groups,
-                itemId,
-                updater
-              );
-              state.cache[cacheKey].groups = updatedCacheGroups;
-              state.cache[cacheKey].lastUpdated = Date.now();
-            }
+            group.items[itemIdx].used = used;
+            targetGroupId = group.id;
           }
         }
       }
 
       // Fallback: linear scan if index miss
-      if (!found) {
-        const { groups: updatedGroups, found: scanFound } = updateItemInGroups(state.groups, itemId, updater);
-        if (!scanFound) {
-          backlogLogger.warn(`Item ${itemId} not found for used status update`);
-          return;
-        }
-        state.groups = updatedGroups;
-        // Update all caches on fallback
-        Object.keys(state.cache).forEach(cacheKey => {
-          if (state.cache[cacheKey]?.groups) {
-            const { groups: updatedCacheGroups, found: cacheFound } = updateItemInGroups(
-              state.cache[cacheKey].groups,
-              itemId,
-              updater
-            );
-            if (cacheFound) {
-              state.cache[cacheKey].groups = updatedCacheGroups;
-              state.cache[cacheKey].lastUpdated = Date.now();
-            }
+      if (!targetGroupId) {
+        for (const group of state.groups) {
+          if (!group.items) continue;
+          const item = group.items.find(i => i.id === itemId);
+          if (item) {
+            item.used = used;
+            targetGroupId = group.id;
+            break;
           }
-        });
+        }
       }
+
+      if (!targetGroupId) {
+        backlogLogger.warn(`Item ${itemId} not found for used status update`);
+        return;
+      }
+
+      // Sync cache from state.groups (single reference, not re-iteration)
+      syncCacheFromGroups(state, targetGroupId);
     });
   },
 
@@ -169,9 +136,12 @@ export const createUtilActions = (
 
   // Clear all data
   clearAllData: () => {
+    // Clear the authoritative cursor first (outside immer)
+    useSelectionCursor.getState().clear();
     set(state => {
       state.groups = [];
       state._itemIndex = new Map();
+      state._loadedGroupsCount = 0;
       state.selectedGroupId = null;
       state.selectedItemId = null;
       state.activeItemId = null;
@@ -208,7 +178,7 @@ export const createUtilActions = (
   getStats: () => {
     const state = get();
     const totalGroups = state.groups.length;
-    const groupsWithItems = state.groups.filter(g => g.items && g.items.length > 0).length;
+    const groupsWithItems = state._loadedGroupsCount;
     const totalItems = state.groups.reduce((sum, group) => sum + (group.item_count || 0), 0);
 
     return {

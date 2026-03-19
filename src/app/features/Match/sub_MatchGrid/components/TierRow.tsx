@@ -12,6 +12,7 @@ import { BacklogItem } from '@/types/backlog-groups';
 import { createUnifiedTierRowDropData, createUnifiedTierDragData } from '@/lib/dnd/unified-protocol';
 import { useOptionalDropZoneHighlight } from './DropZoneHighlightContext';
 import { useCurrentList } from '@/stores/use-list-store';
+import { extractTitle } from '@/lib/items/item-utils';
 import { useAudioStore } from '@/stores/audio-store';
 import { TierEmptyIllustration } from '@/components/illustrations/TierEmptyIllustration';
 
@@ -100,7 +101,7 @@ const TierItem = memo(function TierItem({
       transition={{ type: 'spring', stiffness: 300, damping: 25 }}
       className={`
         relative group shrink-0
-        ${isDragging ? 'z-50' : 'z-10'}
+        ${isDragging ? 'z-drag' : 'z-10'}
       `}
       {...attributes}
       {...listeners}
@@ -108,7 +109,7 @@ const TierItem = memo(function TierItem({
       {/* Item card */}
       <div
         className={`
-          relative w-20 h-20 sm:w-24 sm:h-24 rounded-lg overflow-hidden
+          relative w-20 h-20 sm:w-24 sm:h-24 rounded-card overflow-hidden
           bg-slate-800/90 border border-slate-700/80
           transition-all duration-200 ease-out
           ${isDragging ? 'shadow-xl shadow-brand/30 scale-105 border-brand/50' : 'hover:-translate-y-0.5 hover:shadow-lg hover:shadow-slate-900/50'}
@@ -155,7 +156,7 @@ const TierItem = memo(function TierItem({
 
         {/* Year badge */}
         {item.item_year && !isMusicCategory && (
-          <span className="absolute top-1 right-1 z-10 text-[8px] leading-tight font-medium text-white/90 bg-black/50 rounded-full px-1 py-px pointer-events-none">
+          <span className="absolute top-1 right-1 z-10 text-3xs leading-tight font-medium text-white/90 bg-black/50 rounded-full px-1 py-px pointer-events-none">
             {item.item_year_to && item.item_year_to !== item.item_year
               ? `${item.item_year}–${item.item_year_to}`
               : item.item_year}
@@ -163,7 +164,7 @@ const TierItem = memo(function TierItem({
         )}
         {/* Music category: year badge in bottom-right to avoid play button */}
         {item.item_year && isMusicCategory && (
-          <span className="absolute bottom-6 right-0.5 z-10 text-[8px] leading-tight font-medium text-white/90 bg-black/50 rounded-full px-1 py-px pointer-events-none">
+          <span className="absolute bottom-6 right-0.5 z-10 text-3xs leading-tight font-medium text-white/90 bg-black/50 rounded-full px-1 py-px pointer-events-none">
             {item.item_year_to && item.item_year_to !== item.item_year
               ? `${item.item_year}–${item.item_year_to}`
               : item.item_year}
@@ -177,7 +178,7 @@ const TierItem = memo(function TierItem({
 
         {/* Title */}
         <div className="absolute bottom-0 left-0 right-0 p-1">
-          <p className="text-xs font-medium text-white truncate text-center">
+          <p className="text-tier-item font-medium text-white truncate text-center">
             {title}
           </p>
         </div>
@@ -217,7 +218,7 @@ const TierItem = memo(function TierItem({
               onRemove(item.id);
             }}
             aria-label={`Remove ${title} from tier`}
-            className="absolute top-1 left-1 w-5 h-5 rounded-full bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-red-500/80 focus-visible:opacity-100 focus-ring"
+            className="absolute top-1 left-1 w-5 h-5 rounded-full bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-red-500/80 focus-visible:opacity-100 focus-ring touch-target-sm"
           >
             <X className="w-3 h-3 text-white" aria-hidden="true" />
           </button>
@@ -244,7 +245,7 @@ const TierItem = memo(function TierItem({
               onDebate(item.id, title);
             }}
             aria-label={`Challenge placement of ${title}`}
-            className="absolute bottom-5 left-0.5 w-5 h-5 rounded-full bg-brand/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-brand focus-visible:opacity-100 focus-ring z-20"
+            className="absolute bottom-5 left-0.5 w-5 h-5 rounded-full bg-brand/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-brand focus-visible:opacity-100 focus-ring z-20 touch-target-sm"
           >
             <Sparkles className="w-3 h-3 text-white" aria-hidden="true" />
           </button>
@@ -342,7 +343,7 @@ export const TierRow = memo(forwardRef<HTMLDivElement, TierRowProps>(function Ti
     >
       {/* Tier label */}
       <div
-        className="shrink-0 w-16 sm:w-20 flex flex-col items-center justify-center cursor-pointer hover:brightness-110 transition-all duration-200"
+        className="shrink-0 w-16 sm:w-20 flex flex-col items-center justify-center cursor-pointer hover:brightness-110 transition-all duration-200 focus-ring"
         style={{
           background: tierBackground,
           borderRadius: '8px 0 0 8px',
@@ -359,7 +360,7 @@ export const TierRow = memo(forwardRef<HTMLDivElement, TierRowProps>(function Ti
         }}
       >
         <span
-          className="text-xl sm:text-2xl font-bold"
+          className="text-tier-label font-bold"
           style={{ color: tierTextColor }}
         >
           {tier.customLabel || tier.label}
@@ -436,7 +437,7 @@ export const TierRow = memo(forwardRef<HTMLDivElement, TierRowProps>(function Ti
               animate={{ opacity: 1 }}
               className={`
                 h-full flex items-center justify-center text-xs
-                border border-dashed border-slate-700/50 rounded-lg
+                border border-dashed border-slate-700/50 rounded-card
                 ${isHighlighted ? 'border-opacity-50' : ''}
               `}
               style={isHighlighted ? {
@@ -523,7 +524,7 @@ export function UnrankedPool({ items }: UnrankedPoolProps) {
       <div
         ref={setNodeRef}
         className={`
-          min-h-24 p-4 rounded-xl
+          min-h-24 p-4 rounded-container
           bg-slate-900/40 backdrop-blur-xs border-2 border-dashed
           ${isOver ? 'border-brand/50 bg-brand/5 shadow-inner shadow-brand/5' : 'border-slate-700/40'}
           ${showMagneticGlow ? 'border-brand/25 shadow-lg shadow-brand/5' : ''}

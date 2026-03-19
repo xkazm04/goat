@@ -2,6 +2,8 @@
 
 import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { SURFACE_ELEVATION, ELEVATION, INSET } from "@/components/visual/depth/depth-tokens";
+import { useModalAccessibility } from "@/hooks/use-modal-accessibility";
 import { useMatchStore } from "@/stores/match-store";
 import { useListStore } from "@/stores/use-list-store";
 import { useGridStore } from "@/stores/grid-store";
@@ -15,6 +17,7 @@ import {
   type ImageStyle,
   type ImageSizePreset,
 } from "../lib/constants/image-styles";
+import { DURATION } from '@/lib/animations/motion-presets';
 
 interface ShareModalProps {
   isOpen?: boolean;
@@ -56,10 +59,11 @@ const SOCIAL_PLATFORMS = [
 ];
 
 export function ShareModal({ isOpen: controlledIsOpen, onClose }: ShareModalProps) {
-  const { showResultShareModal, setShowResultShareModal } = useMatchStore();
-  const { currentList } = useListStore();
-  const { gridItems } = useGridStore();
-  const { broadcastCompletion } = useActivityStore();
+  const showResultShareModal = useMatchStore((s) => s.showResultShareModal);
+  const setShowResultShareModal = useMatchStore((s) => s.setShowResultShareModal);
+  const currentList = useListStore((s) => s.currentList);
+  const gridItems = useGridStore((s) => s.gridItems);
+  const broadcastCompletion = useActivityStore((s) => s.broadcastCompletion);
   const { tempUserId } = useTempUser();
 
   // Two-step flow state
@@ -92,6 +96,11 @@ export function ShareModal({ isOpen: controlledIsOpen, onClose }: ShareModalProp
     setShareError(null);
     setShowSizeDropdown(false);
   }, [onClose, setShowResultShareModal]);
+
+  const { modalRef, modalProps, labelId, handleKeyDown } = useModalAccessibility({
+    isOpen,
+    onClose: handleClose,
+  });
 
   // Get ranked items for sharing
   const rankedItems = gridItems
@@ -356,7 +365,7 @@ export function ShareModal({ isOpen: controlledIsOpen, onClose }: ShareModalProp
           <>
             {/* Backdrop */}
             <motion.div
-              className="fixed inset-0 bg-black/70 backdrop-blur-xl z-50"
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-modal"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -366,7 +375,10 @@ export function ShareModal({ isOpen: controlledIsOpen, onClose }: ShareModalProp
 
             {/* Modal */}
             <motion.div
-              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md max-h-[90vh] overflow-y-auto"
+              ref={modalRef}
+              {...modalProps}
+              onKeyDown={handleKeyDown}
+              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-modal w-full max-w-md max-h-[90vh] overflow-y-auto"
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -374,18 +386,10 @@ export function ShareModal({ isOpen: controlledIsOpen, onClose }: ShareModalProp
               data-testid="share-modal"
             >
               <div
-                className="relative rounded-2xl overflow-hidden"
+                className="relative rounded-container overflow-hidden border border-white/10"
                 style={{
-                  background: `linear-gradient(135deg,
-                    rgba(15, 20, 35, 0.98) 0%,
-                    rgba(20, 28, 48, 0.95) 50%,
-                    rgba(15, 20, 35, 0.98) 100%
-                  )`,
-                  boxShadow: `
-                    0 25px 50px -12px rgba(0, 0, 0, 0.5),
-                    0 0 100px rgba(6, 182, 212, 0.1),
-                    inset 0 1px 0 rgba(255, 255, 255, 0.05)
-                  `,
+                  backgroundColor: SURFACE_ELEVATION.overlay,
+                  boxShadow: `${ELEVATION.modal}, ${INSET.glassHighlight}`,
                 }}
               >
                 {/* Celebration effect */}
@@ -411,9 +415,25 @@ export function ShareModal({ isOpen: controlledIsOpen, onClose }: ShareModalProp
                 </button>
 
                 {/* Content */}
-                <div className="relative p-6">
+                <div className="relative px-5 py-4">
                   {/* Header */}
                   <div className="text-center mb-6">
+                    {/* Back button for step 2 */}
+                    {step === "preview" && (
+                      <button
+                        onClick={() => {
+                          setStep("theme");
+                          setCapturedImageUrl(null);
+                        }}
+                        className="absolute left-4 top-4 w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-colors z-10"
+                        data-testid="share-back-top-btn"
+                      >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                      </button>
+                    )}
+
                     <motion.div
                       className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4"
                       style={{
@@ -426,7 +446,7 @@ export function ShareModal({ isOpen: controlledIsOpen, onClose }: ShareModalProp
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     </motion.div>
-                    <h2 className="text-2xl font-bold text-white mb-2">
+                    <h2 id={labelId} className="text-2xl font-bold text-white mb-2">
                       {step === "theme" ? "Share Your Ranking" : "Preview & Download"}
                     </h2>
                     <p className="text-gray-400 text-sm">
@@ -434,6 +454,28 @@ export function ShareModal({ isOpen: controlledIsOpen, onClose }: ShareModalProp
                         ? `Choose a theme for your ${rankedItems.length} item ranking`
                         : "Download or share your ranking image"}
                     </p>
+
+                    {/* Step progress indicator */}
+                    <div className="flex items-center justify-center gap-2 mt-3">
+                      {[0, 1].map((i) => (
+                        <motion.div
+                          key={i}
+                          className="rounded-full"
+                          animate={{
+                            width: (i === 0 && step === "theme") || (i === 1 && step === "preview") ? 20 : 8,
+                            backgroundColor:
+                              (i === 0 && step === "theme") || (i === 1 && step === "preview")
+                                ? "rgb(6, 182, 212)"
+                                : "rgba(255, 255, 255, 0.2)",
+                          }}
+                          transition={{ duration: DURATION.fast }}
+                          style={{ height: 8 }}
+                        />
+                      ))}
+                      <span className="text-xs text-gray-500 ml-2">
+                        Step {step === "theme" ? 1 : 2} of 2
+                      </span>
+                    </div>
                   </div>
 
                   <AnimatePresence mode="wait">
@@ -443,6 +485,7 @@ export function ShareModal({ isOpen: controlledIsOpen, onClose }: ShareModalProp
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: 20 }}
+                        transition={{ duration: DURATION.fast }}
                         className="space-y-4"
                       >
                         {/* Theme picker */}
@@ -455,7 +498,7 @@ export function ShareModal({ isOpen: controlledIsOpen, onClose }: ShareModalProp
                                 <button
                                   key={theme}
                                   onClick={() => setSelectedTheme(theme)}
-                                  className={`relative rounded-xl p-3 text-center transition-all ${
+                                  className={`relative rounded-card p-3 text-center transition-all ${
                                     selectedTheme === theme
                                       ? "ring-2 ring-cyan-400 bg-white/10 scale-105"
                                       : "bg-white/5 hover:bg-white/10"
@@ -481,7 +524,7 @@ export function ShareModal({ isOpen: controlledIsOpen, onClose }: ShareModalProp
 
                         {/* Mini preview */}
                         <div
-                          className="rounded-xl p-4"
+                          className="rounded-card p-4"
                           style={{
                             background: `linear-gradient(135deg, ${themeConfig.colorPalette[0]}40, ${themeConfig.colorPalette[1]}40)`,
                             border: "1px solid rgba(255,255,255,0.05)",
@@ -505,7 +548,7 @@ export function ShareModal({ isOpen: controlledIsOpen, onClose }: ShareModalProp
                         <button
                           onClick={handleGeneratePreview}
                           disabled={isCapturing || rankedItems.length === 0}
-                          className="w-full flex items-center justify-center gap-3 px-4 py-4 rounded-xl font-semibold text-white transition-all hover:scale-[1.02] disabled:opacity-50"
+                          className="w-full flex items-center justify-center gap-3 px-4 py-4 rounded-card font-semibold text-white transition-all hover:scale-[1.02] disabled:opacity-50"
                           style={{
                             background: "linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%)",
                             boxShadow: "0 4px 20px rgba(6, 182, 212, 0.3)",
@@ -546,11 +589,12 @@ export function ShareModal({ isOpen: controlledIsOpen, onClose }: ShareModalProp
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: -20 }}
+                        transition={{ duration: DURATION.fast }}
                         className="space-y-4"
                       >
                         {/* Captured image preview */}
                         {capturedImageUrl && (
-                          <div className="rounded-xl overflow-hidden border border-white/10">
+                          <div className="rounded-card overflow-hidden border border-white/10">
                             <img
                               src={capturedImageUrl}
                               alt="Your ranking"
@@ -562,7 +606,7 @@ export function ShareModal({ isOpen: controlledIsOpen, onClose }: ShareModalProp
 
                         {/* Error message */}
                         {shareError && (
-                          <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                          <div className="p-3 rounded-card bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
                             {shareError}
                           </div>
                         )}
@@ -571,7 +615,7 @@ export function ShareModal({ isOpen: controlledIsOpen, onClose }: ShareModalProp
                         <button
                           onClick={handleCopyLink}
                           disabled={isGeneratingShare}
-                          className="w-full flex items-center justify-center gap-3 px-4 py-4 rounded-xl font-semibold text-white transition-all hover:scale-[1.02] disabled:opacity-50"
+                          className="w-full flex items-center justify-center gap-3 px-4 py-4 rounded-card font-semibold text-white transition-all hover:scale-[1.02] disabled:opacity-50"
                           style={{
                             background: "linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%)",
                             boxShadow: "0 4px 20px rgba(6, 182, 212, 0.3)",
@@ -609,7 +653,7 @@ export function ShareModal({ isOpen: controlledIsOpen, onClose }: ShareModalProp
                           <div className="flex gap-2">
                             <button
                               onClick={() => handleDownload()}
-                              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium text-white bg-green-600 hover:bg-green-500 transition-colors"
+                              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-card font-medium text-white bg-green-600 hover:bg-green-500 transition-colors"
                               data-testid="download-btn"
                             >
                               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -619,7 +663,7 @@ export function ShareModal({ isOpen: controlledIsOpen, onClose }: ShareModalProp
                             </button>
                             <button
                               onClick={() => setShowSizeDropdown(!showSizeDropdown)}
-                              className="px-3 py-3 rounded-xl font-medium text-white bg-gray-700 hover:bg-gray-600 transition-colors"
+                              className="px-3 py-3 rounded-card font-medium text-white bg-gray-700 hover:bg-gray-600 transition-colors"
                               data-testid="size-preset-btn"
                               title="Download for specific platform"
                             >
@@ -636,7 +680,7 @@ export function ShareModal({ isOpen: controlledIsOpen, onClose }: ShareModalProp
                                 initial={{ opacity: 0, y: -8 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -8 }}
-                                className="absolute top-full mt-2 right-0 w-56 rounded-xl overflow-hidden z-20"
+                                className="absolute top-full mt-2 right-0 w-56 rounded-container overflow-hidden z-20"
                                 style={{
                                   background: "rgba(20, 28, 48, 0.98)",
                                   border: "1px solid rgba(255,255,255,0.1)",
@@ -670,7 +714,7 @@ export function ShareModal({ isOpen: controlledIsOpen, onClose }: ShareModalProp
                               <button
                                 key={platform.id}
                                 onClick={() => handleSocialShare(platform.id)}
-                                className="flex flex-col items-center gap-1.5 p-3 rounded-xl transition-all hover:scale-105"
+                                className="flex flex-col items-center gap-1.5 p-3 rounded-card transition-all hover:scale-105"
                                 style={{
                                   background: `rgba(${platform.id === "twitter" ? "29, 161, 242" : platform.id === "facebook" ? "66, 103, 178" : platform.id === "reddit" ? "255, 69, 0" : platform.id === "whatsapp" ? "37, 211, 102" : "88, 101, 242"}, 0.15)`,
                                   border: `1px solid ${platform.color}40`,
@@ -680,25 +724,22 @@ export function ShareModal({ isOpen: controlledIsOpen, onClose }: ShareModalProp
                                 <svg className="w-5 h-5" style={{ color: platform.color }} viewBox="0 0 24 24" fill="currentColor">
                                   <path d={platform.icon} />
                                 </svg>
-                                <span className="text-[10px] text-gray-400">{platform.name}</span>
+                                <span className="text-2xs text-gray-400">{platform.name}</span>
                               </button>
                             ))}
                           </div>
                         </div>
 
-                        {/* Back button */}
+                        {/* Change theme link */}
                         <button
                           onClick={() => {
                             setStep("theme");
                             setCapturedImageUrl(null);
                           }}
-                          className="w-full text-gray-500 text-sm hover:text-gray-300 transition-colors flex items-center justify-center gap-2"
+                          className="w-full text-gray-500 text-sm hover:text-gray-300 transition-colors"
                           data-testid="share-back-btn"
                         >
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                          </svg>
-                          Back to Theme Picker
+                          Change theme
                         </button>
                       </motion.div>
                     )}

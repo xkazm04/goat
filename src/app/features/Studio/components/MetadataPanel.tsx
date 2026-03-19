@@ -10,9 +10,9 @@
  * Title and description are now in TopicInputForm.
  */
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, CheckCircle2, AlertCircle, Send, Save } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertCircle, Send, Save, UserPlus } from 'lucide-react';
 import {
   useStudioForm,
   useStudioMetadata,
@@ -20,6 +20,7 @@ import {
   useStudioPublishing,
   useStudioItems,
   useStudioCriteria,
+  useStudioSettings,
 } from '@/stores/studio-store';
 import { useCreateListWithUser } from '@/hooks/use-top-lists';
 import { apiClient } from '@/lib/api/client';
@@ -27,7 +28,6 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { SURFACE_ELEVATION, GLOW_PRESET } from '@/components/visual/depth/depth-tokens';
 import { DEFAULT_LIST_INTENT_COLOR } from '@/types/list-intent';
-import { getTemplateById } from '@/lib/criteria/templates';
 import { categoryToDbValue } from '@/lib/config/category-config';
 import type { CreateListRequest } from '@/types/list-intent-transformers';
 import type { ListCriteriaConfig } from '@/lib/criteria/types';
@@ -38,7 +38,8 @@ export function MetadataPanel() {
   const { listTitle, listDescription, category } = useStudioMetadata();
   const { canPublish, hasTitle, hasItems, itemCount } = useStudioValidation();
   const { generatedItems } = useStudioItems();
-  const { criteriaMode, selectedProfileId, customProfile } = useStudioCriteria();
+  const { getCriteriaConfig } = useStudioCriteria();
+  const { allowCustomItems, setAllowCustomItems } = useStudioSettings();
   const {
     isPublishing,
     publishError,
@@ -49,41 +50,11 @@ export function MetadataPanel() {
   } = useStudioPublishing();
   const { toast } = useToast();
   const [draftSaved, setDraftSaved] = useState(false);
+  const publishingRef = useRef(false);
 
   const createListMutation = useCreateListWithUser();
 
   const hasAnyItems = itemCount > 0;
-
-  // Build criteria config from selected profile
-  const buildCriteriaConfig = (): ListCriteriaConfig | null => {
-    if (criteriaMode === 'none' || !selectedProfileId) {
-      return null;
-    }
-
-    if (criteriaMode === 'custom' && customProfile) {
-      return {
-        profileId: customProfile.id,
-        profileName: customProfile.name,
-        criteria: customProfile.criteria,
-        createdAt: customProfile.createdAt,
-        updatedAt: customProfile.updatedAt,
-      };
-    }
-
-    const template = getTemplateById(selectedProfileId);
-    if (template) {
-      const now = new Date().toISOString();
-      return {
-        profileId: template.id,
-        profileName: template.name,
-        criteria: template.criteria,
-        createdAt: now,
-        updatedAt: now,
-      };
-    }
-
-    return null;
-  };
 
   const handleSaveDraft = () => {
     // Zustand state is already in memory; this acknowledges the draft is "saved"
@@ -98,7 +69,8 @@ export function MetadataPanel() {
   };
 
   const handlePublish = async () => {
-    if (!canPublish) return;
+    if (!canPublish || publishingRef.current) return;
+    publishingRef.current = true;
 
     setPublishing(true);
     setPublishError(null);
@@ -125,7 +97,7 @@ export function MetadataPanel() {
       }
 
       const tempUserId = `studio-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-      const criteriaConfig = buildCriteriaConfig();
+      const criteriaConfig = getCriteriaConfig();
 
       const request: CreateListRequest & { criteria_config?: ListCriteriaConfig } = {
         title: listTitle.trim(),
@@ -133,6 +105,7 @@ export function MetadataPanel() {
         size: listSize,
         time_period: 'all-time',
         description: listDescription.trim() || undefined,
+        allow_custom_items: allowCustomItems,
         user: {
           email: `temp-${tempUserId}@goat.app`,
           name: `User ${tempUserId.slice(-6)}`,
@@ -150,18 +123,59 @@ export function MetadataPanel() {
     } catch (error) {
       setPublishError(error instanceof Error ? error.message : 'Failed to publish');
     } finally {
+      publishingRef.current = false;
       setPublishing(false);
     }
   };
 
   return (
     <div className="space-y-4">
+      {/* List Settings */}
+      <div className="space-y-2">
+        <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+          List Settings
+        </span>
+        <div className="p-3 bg-gray-900/40 border border-gray-800/50 rounded-control">
+          <label className="flex items-center justify-between cursor-pointer group">
+            <div className="flex items-center gap-2">
+              <UserPlus className="w-4 h-4 text-gray-400 group-hover:text-gray-300 transition-colors" />
+              <div>
+                <span className="text-sm text-gray-300 group-hover:text-white transition-colors">
+                  Allow custom items
+                </span>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Signed-in users can suggest new items
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={allowCustomItems}
+              onClick={() => setAllowCustomItems(!allowCustomItems)}
+              className={cn(
+                'relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors duration-200',
+                'focus-ring-inset',
+                allowCustomItems ? 'bg-brand/60' : 'bg-gray-700'
+              )}
+            >
+              <span
+                className={cn(
+                  'pointer-events-none block h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200 mt-0.5',
+                  allowCustomItems ? 'translate-x-4 ml-0.5' : 'translate-x-0.5'
+                )}
+              />
+            </button>
+          </label>
+        </div>
+      </div>
+
       {/* Publish Readiness */}
       <div className="space-y-2">
         <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">
           Ready to Publish?
         </span>
-        <div className="space-y-2 p-3 bg-gray-900/40 border border-gray-800/50 rounded-lg">
+        <div className="space-y-2 p-3 bg-gray-900/40 border border-gray-800/50 rounded-control">
           {/* Title check */}
           <div className="flex items-center gap-2 text-sm">
             {hasTitle ? (
@@ -222,7 +236,7 @@ export function MetadataPanel() {
           onClick={handleSaveDraft}
           disabled={!hasAnyItems || isPublishing}
           className={cn(
-            'w-full h-9 text-sm font-medium rounded-lg transition-all duration-200',
+            'w-full h-9 text-sm font-medium rounded-control transition-all duration-200',
             'flex items-center justify-center gap-2',
             'border',
             hasAnyItems && !isPublishing
@@ -251,7 +265,7 @@ export function MetadataPanel() {
           whileHover={canPublish && !isPublishing ? { scale: 1.02 } : undefined}
           whileTap={canPublish && !isPublishing ? { scale: 0.98 } : undefined}
           className={cn(
-            'w-full h-10 text-sm font-medium rounded-lg transition-all duration-200',
+            'w-full h-10 text-sm font-medium rounded-control transition-all duration-200',
             'flex items-center justify-center gap-2',
             canPublish && !isPublishing
               ? 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 hover:text-amber-300 border border-amber-500/30 hover:border-amber-500/50'

@@ -68,7 +68,7 @@ export const StudioItemCard = memo(function StudioItemCard({ item, index, onRemo
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: `item-${index}` });
+  } = useSortable({ id: `item-${item.db_item_id || item.title}` });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -79,13 +79,14 @@ export const StudioItemCard = memo(function StudioItemCard({ item, index, onRemo
     <div
       ref={setNodeRef}
       style={style}
-      className={cn('relative', isDragging && 'z-50')}
+      className={cn('relative', isDragging && 'z-drag')}
+      data-testid={`studio-item-card-${index}`}
     >
       <Elevated
         level="medium"
         hoverLift
         className={cn(
-          'group relative aspect-3/4 rounded-xl overflow-hidden cursor-pointer border border-gray-700/30',
+          'group relative aspect-3/4 rounded-card overflow-hidden cursor-pointer border border-gray-700/30',
           isDragging && 'scale-105'
         )}
         initial={{ opacity: 0, scale: 0.95, y: 10 }}
@@ -98,7 +99,7 @@ export const StudioItemCard = memo(function StudioItemCard({ item, index, onRemo
             src={item.image_url}
             alt={item.title}
             itemTitle={item.title}
-            autoFetchWiki={true}
+            autoFetchWiki={!item.server_image_attempted}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             fallbackComponent={
               <div className="w-full h-full bg-linear-to-br from-slate-800 to-slate-900 flex items-center justify-center">
@@ -134,6 +135,7 @@ export const StudioItemCard = memo(function StudioItemCard({ item, index, onRemo
           className="absolute top-2 right-2 p-1.5 rounded-full bg-black/50 text-white/70 hover:text-red-400
             backdrop-blur-md border border-white/20 z-30 opacity-0 group-hover:opacity-100 transition-opacity"
           aria-label={`Remove ${item.title} from list`}
+          data-testid={`studio-item-remove-btn-${index}`}
         >
           <X className="w-3 h-3" />
         </motion.button>
@@ -146,9 +148,10 @@ export const StudioItemCard = memo(function StudioItemCard({ item, index, onRemo
           tabIndex={0}
           aria-label={`Drag to reorder ${item.title}. Currently at position ${index + 1}`}
           aria-roledescription="draggable item"
+          data-testid={`studio-item-drag-handle-${index}`}
           className="absolute bottom-12 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100
             cursor-grab active:cursor-grabbing transition-opacity z-20
-            bg-black/60 backdrop-blur-xs rounded-md p-1.5 border border-white/20
+            bg-black/60 backdrop-blur-xs rounded-control p-1.5 border border-white/20
             focus-visible:opacity-100 focus-ring"
         >
           <GripVertical className="w-4 h-4 text-white" />
@@ -205,7 +208,7 @@ export const StudioItemCard = memo(function StudioItemCard({ item, index, onRemo
 
         {/* Active Drag Overlay */}
         {isDragging && (
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px] flex items-center justify-center z-40 rounded-xl">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px] flex items-center justify-center z-sticky rounded-card">
             <div className="w-8 h-8 rounded-full border-2 border-white/30 border-t-white animate-spin" />
           </div>
         )}

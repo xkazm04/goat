@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { useLayoutPreset } from '../LayoutManager';
 import { LAYOUT_PRESETS, LAYOUT_ANIMATIONS } from '../constants';
 import type { LayoutPreset, LayoutPresetConfig } from '../types';
+import { DURATION } from '@/lib/animations/motion-presets';
 
 /**
  * LayoutPresetSelector Props
@@ -98,7 +99,7 @@ type InlineVariant = 'buttons' | 'cards' | 'compact';
 const VARIANT_CONTAINER: Record<InlineVariant, string> = {
   buttons: 'flex flex-wrap gap-2',
   cards: 'grid grid-cols-2 gap-3',
-  compact: 'inline-flex bg-muted rounded-lg p-1',
+  compact: 'inline-flex bg-muted rounded-card p-1',
 };
 
 function getItemClassName(
@@ -109,7 +110,7 @@ function getItemClassName(
     case 'buttons':
       return cn(
         'flex items-center gap-2 px-3 py-2',
-        'border rounded-lg transition-colors',
+        'border rounded-control transition-colors',
         isSelected
           ? 'bg-primary text-primary-foreground border-primary'
           : 'bg-background border-border hover:bg-accent'
@@ -117,14 +118,14 @@ function getItemClassName(
     case 'cards':
       return cn(
         'flex flex-col items-center gap-2 p-4',
-        'border rounded-xl transition-all',
+        'border rounded-card transition-all',
         isSelected
           ? 'bg-primary/10 border-primary ring-2 ring-primary'
           : 'bg-background border-border hover:bg-accent hover:border-accent-foreground/20'
       );
     case 'compact':
       return cn(
-        'relative px-3 py-1.5 rounded-md transition-colors',
+        'relative px-3 py-1.5 rounded-control transition-colors',
         isSelected
           ? 'text-primary-foreground'
           : 'text-muted-foreground hover:text-foreground'
@@ -241,7 +242,7 @@ function DropdownSelector({
       <button
         className={cn(
           'flex items-center gap-2 px-3 py-2',
-          'bg-background border border-border rounded-lg',
+          'bg-background border border-border rounded-control',
           'hover:bg-accent transition-colors',
           'focus:outline-hidden focus:ring-2 focus:ring-ring'
         )}
@@ -253,7 +254,7 @@ function DropdownSelector({
         <span className="text-sm font-medium">{currentPreset.name}</span>
         <motion.span
           animate={{ rotate: isOpen ? 180 : 0 }}
-          transition={{ duration: 0.2 }}
+          transition={{ duration: DURATION.fast }}
           className="text-muted-foreground"
         >
           ▼
@@ -274,7 +275,7 @@ function DropdownSelector({
             <motion.ul
               className={cn(
                 'absolute z-20 mt-1 w-64',
-                'bg-background border border-border rounded-lg shadow-lg',
+                'bg-background border border-border rounded-card shadow-lg',
                 'py-1 overflow-hidden'
               )}
               initial={{ opacity: 0, y: -10 }}
@@ -401,7 +402,7 @@ export function PresetPreview({
   return (
     <motion.button
       className={cn(
-        'flex flex-col gap-2 p-3 rounded-lg border transition-all',
+        'flex flex-col gap-2 p-3 rounded-card border transition-all',
         isActive
           ? 'border-primary bg-primary/5'
           : 'border-border hover:border-border/80 hover:bg-accent/50',
@@ -445,7 +446,7 @@ export function QuickLayoutSwitcher({
   };
 
   return (
-    <div className={cn('fixed z-50', positionClasses[position], className)}>
+    <div className={cn('fixed z-sticky', positionClasses[position], className)}>
       {/* Trigger */}
       <motion.button
         className={cn(
@@ -469,7 +470,7 @@ export function QuickLayoutSwitcher({
           <motion.div
             className={cn(
               'absolute w-48 p-2',
-              'bg-background border border-border rounded-lg shadow-xl',
+              'bg-background border border-border rounded-card shadow-xl',
               position.includes('bottom') ? 'bottom-14' : 'top-14',
               position.includes('right') ? 'right-0' : 'left-0'
             )}
@@ -482,7 +483,7 @@ export function QuickLayoutSwitcher({
               <motion.button
                 key={preset.id}
                 className={cn(
-                  'w-full flex items-center gap-2 px-3 py-2 rounded-md',
+                  'w-full flex items-center gap-2 px-3 py-2 rounded-control',
                   'hover:bg-accent transition-colors',
                   current === preset.id && 'bg-accent'
                 )}

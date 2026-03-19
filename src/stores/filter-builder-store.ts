@@ -1,6 +1,29 @@
 /**
  * Filter Builder Store
- * Zustand store for visual filter builder with drag-and-drop
+ * Zustand store for visual filter builder with drag-and-drop.
+ *
+ * ## Ownership Contract
+ *
+ * This store owns the **authoring** representation of filters — a tree of
+ * nodes optimised for drag-and-drop reordering and undo/redo. It is the
+ * source of truth while the user is building a filter in the visual
+ * FilterBuilder UI.
+ *
+ * It does NOT own the runtime filter state used to filter collection items.
+ * That responsibility belongs to the FilterIntegrationProvider (React Context)
+ * which holds its own `FilterConfig` and drives the FilterEngine.
+ *
+ * ### Data flow (unidirectional)
+ *
+ *   FilterBuilderStore (tree nodes)
+ *       → toFilterConfig()
+ *           → FilterIntegrationProvider.setFilterConfig()
+ *               → FilterEngine.apply()
+ *
+ * The bridge between these two is `useFilterBuilderSync()` from
+ * `@/lib/filters/useFilterBuilderSync`. Mount that hook in any component
+ * that renders the FilterBuilder inside a FilterIntegrationProvider to
+ * keep the runtime filter state in sync with the builder.
  */
 
 import { create } from 'zustand';

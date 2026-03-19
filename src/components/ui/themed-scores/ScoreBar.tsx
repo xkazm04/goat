@@ -132,7 +132,7 @@ export function ScoreBar({
         />
       )}
       {showLabel && (
-        <span className="absolute inset-0 flex items-center justify-center text-[10px] font-medium text-white/90 tabular-nums drop-shadow-xs">
+        <span className="absolute inset-0 flex items-center justify-center text-2xs font-medium text-white/90 tabular-nums drop-shadow-xs">
           {formatScore(clampedValue)}
         </span>
       )}

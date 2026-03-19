@@ -40,6 +40,8 @@ export const enrichedItemSchema = generatedItemSchema.extend({
   // Database item reference (if matched to existing item)
   db_item_id: z.string().nullable().optional(),
   db_matched: z.boolean().optional(),
+  // Server already attempted Wikipedia image lookup — skip redundant client-side fetch
+  server_image_attempted: z.boolean().optional(),
 });
 
 /** Response schema for /api/studio/generate */
@@ -57,6 +59,32 @@ export type GenerateRequest = z.infer<typeof generateRequestSchema>;
 export type GeneratedItem = z.infer<typeof generatedItemSchema>;
 export type EnrichedItem = z.infer<typeof enrichedItemSchema>;
 export type GenerateResponse = z.infer<typeof generateResponseSchema>;
+
+// ─────────────────────────────────────────────────────────────
+// List Template Types
+// ─────────────────────────────────────────────────────────────
+
+/** A starter item seeded into a template */
+export interface TemplateItem {
+  title: string;
+  description: string;
+  wikipedia_url: string | null;
+}
+
+/** A curated list template that pre-fills the Studio form */
+export interface ListTemplate {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  topic: string;
+  listSize: number;
+  generateCount: number;
+  criteriaProfileId: string | null;
+  starterItems: TemplateItem[];
+  tags: string[];
+  icon: string;
+}
 
 // ─────────────────────────────────────────────────────────────
 // Error Types

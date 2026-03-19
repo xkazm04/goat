@@ -5,7 +5,7 @@ export { CollectionHorizontalBar } from './CollectionHorizontalBar';
 export { VirtualizedCollectionGrid } from './VirtualizedCollectionGrid';
 export { CollectionToggleButton } from './CollectionToggleButton';
 export { CollectionSearchInput } from './CollectionSearchInput';
-export { highlightMatch, filterItemsByQuery } from '@/lib/utils/search';
+export { highlightMatch } from '@/lib/utils/search';
 export { useGridColumns, useGridDimensions } from './useGridColumns';
 
 // Re-export from sub_ItemBadges for backwards compatibility

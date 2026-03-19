@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import type { FeedbackProgressData } from '../types';
 import { cn } from '@/lib/utils';
+import { DURATION } from '@/lib/animations/motion-presets';
 
 interface FeedbackProgressProps {
   /** Progress data */
@@ -84,7 +85,7 @@ export function FeedbackProgress({
             className={cn('h-full rounded-full', variantClasses[variant])}
             initial={{ width: 0 }}
             animate={{ width: `${value}%` }}
-            transition={{ duration: 0.3, ease: 'easeOut' }}
+            transition={{ duration: DURATION.normal, ease: 'easeOut' }}
           />
         )}
       </div>

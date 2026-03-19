@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
+import { handleStudioError, StudioErrorCodes } from '@/lib/api/studio-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -68,17 +69,6 @@ export async function POST(request: NextRequest) {
       total: items.length,
     });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid request', details: error.issues },
-        { status: 400 }
-      );
-    }
-
-    console.error('[Save Items] Unexpected error:', error);
-    return NextResponse.json(
-      { error: 'Failed to save items' },
-      { status: 500 }
-    );
+    return handleStudioError(error, '[Save Items] Unexpected error', StudioErrorCodes.DATABASE_ERROR);
   }
 }

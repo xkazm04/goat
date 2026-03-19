@@ -50,6 +50,30 @@ export interface SyncEngineEvents {
   onQuotaWarning?: (usage: number, quota: number) => void;
 }
 
+/** Multi-subscriber event dispatcher for SyncEngine */
+class SyncEngineEventBus {
+  private subscribers = new Map<number, SyncEngineEvents>();
+  private nextId = 0;
+
+  subscribe(events: SyncEngineEvents): () => void {
+    const id = this.nextId++;
+    this.subscribers.set(id, events);
+    return () => { this.subscribers.delete(id); };
+  }
+
+  emit<K extends keyof SyncEngineEvents>(
+    event: K,
+    ...args: Parameters<NonNullable<SyncEngineEvents[K]>>
+  ): void {
+    Array.from(this.subscribers.values()).forEach((sub) => {
+      const handler = sub[event];
+      if (handler) {
+        (handler as (...a: unknown[]) => void)(...args);
+      }
+    });
+  }
+}
+
 export interface SyncResult {
   success: boolean;
   synced: number;
@@ -83,7 +107,9 @@ export class SyncEngine {
   private conflictResolver: ConflictResolver;
   private networkMonitor: NetworkMonitor;
   private quotaManager: QuotaManager;
-  private events: SyncEngineEvents = {};
+  private eventBus = new SyncEngineEventBus();
+  /** @deprecated Use subscribeEvents() instead */
+  private legacyEvents: SyncEngineEvents = {};
 
   private state: SyncState = {
     status: 'idle',
@@ -145,7 +171,7 @@ export class SyncEngine {
     // Initialize quota manager
     await this.quotaManager.initialize();
     this.quotaManager.onQuotaWarning((usage, quota) => {
-      this.events.onQuotaWarning?.(usage, quota);
+      this.emitEvent('onQuotaWarning', usage, quota);
     });
 
     // Register for Background Sync if available
@@ -211,7 +237,7 @@ export class SyncEngine {
     }
 
     this.lastSyncTime = Date.now();
-    this.events.onSyncStart?.();
+    this.emitEvent('onSyncStart');
     this.updateState({ status: 'syncing', error: null });
 
     try {
@@ -236,7 +262,7 @@ export class SyncEngine {
         duration: Date.now() - startTime,
       };
 
-      this.events.onSyncComplete?.(result);
+      this.emitEvent('onSyncComplete', result);
       this.updateState({
         status: result.conflicts > 0 ? 'conflict' : result.success ? 'synced' : 'error',
         lastSyncedAt: Date.now(),
@@ -307,7 +333,7 @@ export class SyncEngine {
 
   private updateState(partial: Partial<SyncState>): void {
     this.state = { ...this.state, ...partial };
-    this.events.onStateChange?.(this.state);
+    this.emitEvent('onStateChange', this.state);
   }
 
   private async loadInitialState(): Promise<void> {
@@ -334,12 +360,33 @@ export class SyncEngine {
   // Event Handlers
   // ============================================================================
 
+  /** @deprecated Use subscribeEvents() instead to avoid overwriting other callers' handlers */
   setEvents(events: SyncEngineEvents): void {
-    this.events = { ...this.events, ...events };
+    this.legacyEvents = { ...this.legacyEvents, ...events };
+  }
+
+  /**
+   * Subscribe to engine events. Returns an unsubscribe function.
+   * Multiple subscribers are supported without overwriting each other.
+   */
+  subscribeEvents(events: SyncEngineEvents): () => void {
+    return this.eventBus.subscribe(events);
+  }
+
+  /** Emit event to both legacy and multi-subscriber listeners */
+  private emitEvent<K extends keyof SyncEngineEvents>(
+    event: K,
+    ...args: Parameters<NonNullable<SyncEngineEvents[K]>>
+  ): void {
+    const legacyHandler = this.legacyEvents[event];
+    if (legacyHandler) {
+      (legacyHandler as (...a: unknown[]) => void)(...args);
+    }
+    this.eventBus.emit(event, ...args);
   }
 
   private handleNetworkChange(state: NetworkState): void {
-    this.events.onNetworkChange?.(state);
+    this.emitEvent('onNetworkChange', state);
 
     if (state.status === 'online' || state.status === 'slow') {
       // Coming online - trigger sync
@@ -362,7 +409,7 @@ export class SyncEngine {
   private handleSyncError(error: Error): void {
     console.error('[SyncEngine] Sync error:', error);
     this.updateState({ status: 'error', error: error.message });
-    this.events.onSyncError?.(error);
+    this.emitEvent('onSyncError', error);
   }
 
   private handleOperationSuccess(operation: SyncOperation): void {
@@ -379,7 +426,7 @@ export class SyncEngine {
       status: 'conflict',
       conflicts: [...this.state.conflicts, conflict],
     });
-    this.events.onConflict?.(conflict);
+    this.emitEvent('onConflict', conflict);
   }
 
   // ============================================================================

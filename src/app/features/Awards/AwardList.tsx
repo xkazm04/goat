@@ -10,9 +10,10 @@ import { motion } from "framer-motion";
 import { BacklogItem } from "@/types/backlog-groups";
 import { GridItemType } from "@/types/match";
 import { CollectionItem } from "../Collection/types";
-import { backlogGroupsToCollectionGroups } from "../Collection";
+import { backlogGroupsToItemCategories } from "../Collection";
 import { useBacklogStore } from "@/stores/backlog-store";
 import { Loader2, Trophy, Sparkles, Star, MousePointer2 } from "lucide-react";
+import { extractTitle } from '@/lib/items/item-utils';
 
 interface AwardListProps {
     parentListId: string;
@@ -293,7 +294,7 @@ export function AwardList({ parentListId, title = "Annual Awards", description }
                             <div className="inline-flex items-center justify-center mb-4">
                                 <div className="relative">
                                     <div className="absolute inset-0 bg-yellow-500/20 blur-2xl rounded-full" />
-                                    <div className="relative p-3 bg-linear-to-br from-yellow-500/20 to-orange-500/10 rounded-xl border border-yellow-500/30">
+                                    <div className="relative p-3 bg-linear-to-br from-yellow-500/20 to-orange-500/10 rounded-card border border-yellow-500/30">
                                         <Trophy className="w-8 h-8 text-yellow-500" />
                                     </div>
                                     <Sparkles className="absolute -top-1 -right-1 w-4 h-4 text-yellow-400 animate-pulse" />
@@ -312,15 +313,15 @@ export function AwardList({ parentListId, title = "Annual Awards", description }
 
                             {/* Stats bar */}
                             <div className="flex items-center justify-center gap-4 text-xs flex-wrap">
-                                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-900/60 rounded-full border border-white/5">
+                                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-900/60 rounded-badge border border-white/5">
                                     <Trophy className="w-3.5 h-3.5 text-yellow-500" />
                                     <span className="text-gray-400">{totalAwards} Categories</span>
                                 </div>
-                                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-900/60 rounded-full border border-white/5">
+                                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-900/60 rounded-badge border border-white/5">
                                     <Sparkles className="w-3.5 h-3.5 text-green-500" />
                                     <span className="text-gray-400">{awardedCount} Awarded</span>
                                 </div>
-                                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-900/60 rounded-full border border-white/5">
+                                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-900/60 rounded-badge border border-white/5">
                                     <Star className="w-3.5 h-3.5 text-blue-500" />
                                     <span className="text-gray-400">{totalCandidates} Nominees</span>
                                 </div>
@@ -331,7 +332,7 @@ export function AwardList({ parentListId, title = "Annual Awards", description }
                                 <motion.div
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-brand/20 rounded-full border border-brand/40"
+                                    className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-brand/20 rounded-badge border border-brand/40"
                                 >
                                     <MousePointer2 className="w-4 h-4 text-brand-hover" />
                                     <span className="text-sm text-brand-hover">
@@ -382,7 +383,7 @@ export function AwardList({ parentListId, title = "Annual Awards", description }
 
                 {/* Collection Panel - truly fixed outside everything */}
                 <SimpleCollectionPanel
-                    groups={backlogGroupsToCollectionGroups(groups)}
+                    groups={backlogGroupsToItemCategories(groups)}
                     onItemClick={(item) => setSelectedItem(item)}
                     selectedItemId={selectedItem?.id}
                 />

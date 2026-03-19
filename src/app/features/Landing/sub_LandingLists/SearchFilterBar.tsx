@@ -7,6 +7,7 @@ import { TopList } from "@/types/top-lists";
 import { ELEVATION, INSET, withInset } from "@/components/visual/depth";
 import { gradients } from "../shared/gradients";
 import { fuzzyMatch } from "@/lib/search/fuzzy";
+import { DURATION } from '@/lib/animations/motion-presets';
 
 export interface SearchFilterResult {
   list: TopList;
@@ -144,11 +145,11 @@ export function SearchFilterBar({
       className={`relative ${className}`}
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: DURATION.normal }}
     >
       {/* Search and Filter Container */}
       <div
-        className="flex flex-col sm:flex-row gap-3 p-4 rounded-2xl"
+        className="flex flex-col sm:flex-row gap-3 p-4 rounded-container"
         style={{
           background: gradients.panelSurface,
           boxShadow: withInset(ELEVATION.high),
@@ -159,7 +160,7 @@ export function SearchFilterBar({
         {/* Search Input */}
         <div className="relative flex-1">
           <div
-            className={`relative flex items-center rounded-xl transition-all duration-200 ${
+            className={`relative flex items-center rounded-card transition-all duration-200 ${
               isFocused ? "ring-2 ring-brand-hover/30" : ""
             }`}
             style={{
@@ -191,7 +192,7 @@ export function SearchFilterBar({
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.8 }}
                   onClick={clearSearch}
-                  className="mr-2 p-1 rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-600/50 transition-colors
+                  className="mr-2 p-1 rounded-control text-slate-400 hover:text-slate-200 hover:bg-slate-600/50 transition-colors
                     focus-ring"
                   data-testid="search-clear-btn"
                 >
@@ -234,7 +235,7 @@ export function SearchFilterBar({
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
                 onClick={clearAllFilters}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 bg-slate-700/50 hover:bg-slate-600/50 transition-colors flex items-center gap-1.5
+                className="px-3 py-1.5 rounded-control text-xs font-medium text-slate-400 hover:text-slate-200 bg-slate-700/50 hover:bg-slate-600/50 transition-colors flex items-center gap-1.5
                   focus-ring"
                 data-testid="filter-clear-all-btn"
               >
@@ -308,7 +309,7 @@ function FilterChip<T extends string | number>({
     <div ref={chipRef} className="relative">
       <motion.button
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-control text-xs font-medium transition-colors
           focus-ring
           ${
           isActive
@@ -330,7 +331,7 @@ function FilterChip<T extends string | number>({
             initial={{ opacity: 0, y: -5 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -5 }}
-            className="absolute top-full left-0 mt-1 min-w-[140px] rounded-lg z-50 overflow-hidden"
+            className="absolute top-full left-0 mt-1 min-w-[140px] rounded-card z-dropdown overflow-hidden"
             style={{
               background: gradients.dropdownSurface,
               boxShadow: ELEVATION.overlay,

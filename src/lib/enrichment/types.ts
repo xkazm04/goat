@@ -46,6 +46,7 @@ export interface RawSourceData {
   rawData: Record<string, unknown>;
   fetchedAt: number;
   confidence: number; // 0-1, how confident we are in the match
+  fetchDurationMs?: number;
   error?: string;
 }
 

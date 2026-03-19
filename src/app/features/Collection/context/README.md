@@ -172,9 +172,9 @@ interface CollectionFiltersContextValue {
   };
 
   // Computed data
-  groups: CollectionGroup[];
+  groups: ItemCategory[];
   filteredItems: CollectionItem[];
-  selectedGroups: CollectionGroup[];
+  selectedGroups: ItemCategory[];
   stats: CollectionStats;
 
   // Filter actions

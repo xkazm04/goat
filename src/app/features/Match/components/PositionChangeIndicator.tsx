@@ -12,9 +12,9 @@ interface PositionChangeIndicatorProps {
 }
 
 const sizeConfig = {
-  xs: { text: 'text-[9px]', arrow: 'text-[8px]', px: 'px-0.5', h: 'h-3', gap: 'gap-0' },
-  sm: { text: 'text-[10px]', arrow: 'text-[9px]', px: 'px-1', h: 'h-3.5', gap: 'gap-0.5' },
-  md: { text: 'text-xs', arrow: 'text-[10px]', px: 'px-1', h: 'h-4', gap: 'gap-0.5' },
+  xs: { text: 'text-2xs', arrow: 'text-3xs', px: 'px-0.5', h: 'h-3', gap: 'gap-0' },
+  sm: { text: 'text-2xs', arrow: 'text-2xs', px: 'px-1', h: 'h-3.5', gap: 'gap-0.5' },
+  md: { text: 'text-xs', arrow: 'text-2xs', px: 'px-1', h: 'h-4', gap: 'gap-0.5' },
 };
 
 /**

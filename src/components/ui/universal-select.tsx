@@ -1,15 +1,17 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Search, Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { DURATION } from '@/lib/animations/motion-presets';
 
 export interface SelectOption {
   value: string;
   label: string;
   disabled?: boolean;
   icon?: React.ReactNode;
+  group?: string;
 }
 
 interface UniversalSelectProps {
@@ -191,7 +193,7 @@ export function UniversalSelect({
         onClick={handleToggle}
         disabled={disabled}
         className={cn(
-          'w-full flex items-center justify-between gap-2 rounded-lg border transition-all focus-ring',
+          'w-full flex items-center justify-between gap-2 rounded-card border transition-all focus-ring',
           'bg-[var(--surface-deep)]/80 border-[var(--border-card-subtle)] text-gray-200',
           'hover:bg-[var(--surface-card)]/80 hover:border-[var(--border-card-hover)]',
           isOpen && 'border-[var(--border-card-hover)] ring-1 ring-[var(--border-card-hover)]',
@@ -221,14 +223,14 @@ export function UniversalSelect({
       <AnimatePresence>
         {isOpen && (
           <>
-            <div className="fixed inset-0 z-40" onClick={() => { setIsOpen(false); setSearchQuery(''); }} />
+            <div className="fixed inset-0 z-dropdown" onClick={() => { setIsOpen(false); setSearchQuery(''); }} />
 
             <motion.div
-              className="absolute top-full left-0 right-0 mt-1 z-50 rounded-lg border shadow-xl overflow-hidden bg-[var(--surface-deep)] border-[var(--border-card-subtle)]"
+              className="absolute top-full left-0 right-0 mt-1 z-dropdown rounded-card border shadow-xl overflow-hidden bg-[var(--surface-deep)] border-[var(--border-card-subtle)]"
               initial={{ opacity: 0, y: -8, scale: 0.96 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -8, scale: 0.96 }}
-              transition={{ duration: 0.15, ease: 'easeOut' }}
+              transition={{ duration: DURATION.quick, ease: 'easeOut' }}
             >
               {showSearch && (
                 <div className="p-2 border-b border-[var(--border-card-subtle)]">
@@ -241,7 +243,7 @@ export function UniversalSelect({
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder={searchPlaceholder}
                       className={cn(
-                        'w-full pl-8 pr-3 rounded-md border transition-all outline-hidden',
+                        'w-full pl-8 pr-3 rounded-control border transition-all outline-hidden',
                         'bg-[var(--surface-overlay)] border-[var(--border-card-subtle)] text-gray-200 placeholder-gray-500',
                         'focus:border-[var(--border-card-hover)]',
                         sizeStyles.search
@@ -270,10 +272,17 @@ export function UniversalSelect({
                     const isSelected = option.value === value;
                     const isDisabled = option.disabled;
                     const isHighlighted = index === highlightedIndex;
+                    const showGroupHeader = option.group &&
+                      (index === 0 || filteredOptions[index - 1]?.group !== option.group);
 
                     return (
+                      <React.Fragment key={option.value}>
+                      {showGroupHeader && (
+                        <div className="px-2.5 pt-2.5 pb-1 text-2xs font-semibold uppercase tracking-wider text-gray-500 select-none">
+                          {option.group}
+                        </div>
+                      )}
                       <button
-                        key={option.value}
                         ref={(el) => { optionRefs.current[index] = el; }}
                         type="button"
                         onClick={() => !isDisabled && handleSelect(option.value)}
@@ -295,6 +304,7 @@ export function UniversalSelect({
                         </div>
                         {isSelected && <Check className={cn(sizeStyles.icon, 'shrink-0 text-brand-hover')} />}
                       </button>
+                      </React.Fragment>
                     );
                   })
                 )}

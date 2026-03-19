@@ -120,6 +120,13 @@ export const gradients = {
   amberAccent: `linear-gradient(135deg, #fcd34d 0%, #f59e0b 100%)`,
   amberGlow: `radial-gradient(circle, rgba(251, 191, 36, 0.4) 0%, transparent 60%)`,
   amberBgGlow: `radial-gradient(ellipse at center, rgba(251, 191, 36, 0.2) 0%, rgba(245, 158, 11, 0.1) 30%, transparent 60%)`,
+
+  // Pre-rendered soft glow variants — simulate blur() without GPU rasterization cost
+  // These use wider, softer gradient stops instead of filter: blur()
+  amberGlowSoft: `radial-gradient(circle, rgba(251, 191, 36, 0.3) 0%, rgba(251, 191, 36, 0.12) 35%, transparent 70%)`,
+  amberBgGlowSoft: `radial-gradient(ellipse at center, rgba(251, 191, 36, 0.15) 0%, rgba(245, 158, 11, 0.06) 40%, transparent 70%)`,
+  amberLetterGlowSoft: `radial-gradient(circle, rgba(251, 191, 36, 0.25) 0%, rgba(251, 191, 36, 0.08) 40%, transparent 75%)`,
+  amberSubtitleGlowSoft: `radial-gradient(ellipse at center, rgba(251, 191, 36, 0.08) 0%, rgba(251, 191, 36, 0.03) 40%, transparent 75%)`,
   amberSubtitle: `linear-gradient(90deg, rgba(251, 191, 36, 0.6), #fbbf24, rgba(251, 191, 36, 0.6))`,
   amberSubtitleGlow: `radial-gradient(ellipse at center, rgba(251, 191, 36, 0.1) 0%, transparent 70%)`,
   amberRay: `linear-gradient(to bottom, rgba(251, 191, 36, 0.3), transparent)`,

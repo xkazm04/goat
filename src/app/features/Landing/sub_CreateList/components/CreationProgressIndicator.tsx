@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, Loader2 } from "lucide-react";
+import { DURATION } from '@/lib/animations/motion-presets';
 
 export type CreationStep = "validating" | "creating" | "loading" | "complete";
 
@@ -34,7 +35,7 @@ export function CreationProgressIndicator({
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.3 }}
+          transition={{ duration: DURATION.normal }}
           className="flex flex-col items-center gap-3"
           data-testid="creation-progress-indicator"
         >

@@ -2,10 +2,12 @@
 
 import React, { Component, ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertCircle, RefreshCw, Home, Copy, ChevronDown, Bug, LogIn, WifiOff, Timer } from 'lucide-react';
+import { RefreshCw, Home, Copy, ChevronDown, Bug, LogIn, WifiOff, Timer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { GoatError, fromUnknown, isGoatError } from './GoatError';
-import type { ErrorCode, ErrorSeverity } from './types';
+import type { ErrorCode, ErrorCategory, ErrorSeverity } from './types';
+import { ToppledTrophy } from '@/components/illustrations/EmptyStateIllustrations';
+import { GoatMascot } from '@/components/visual/GoatMascot';
 
 // ============================================================================
 // Types
@@ -185,10 +187,10 @@ function ErrorFallbackUI({
   if (simplified) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[200px] p-8 text-center">
-        <div className="w-12 h-12 rounded-full bg-[var(--severity-error-bg)] flex items-center justify-center mb-4">
-          <AlertCircle className="w-6 h-6 text-[var(--severity-error-text)]" />
+        <div className="mb-4">
+          <ErrorIllustration category={error.category} size={64} />
         </div>
-        <h3 className="text-lg font-semibold text-slate-200 mb-2">
+        <h3 className="text-lg font-semibold font-grotesk text-slate-200 mb-2">
           {notification.title}
         </h3>
         <p className="text-sm text-slate-400 mb-4 max-w-md">
@@ -203,13 +205,13 @@ function ErrorFallbackUI({
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="flex flex-col items-center justify-center min-h-[300px] p-8 bg-[var(--severity-error-bg)] rounded-lg border border-[var(--severity-error-border)]"
+      className="flex flex-col items-center justify-center min-h-[300px] p-8 bg-[var(--severity-error-bg)] rounded-card border border-[var(--severity-error-border)]"
     >
-      <div className="w-16 h-16 rounded-full bg-[var(--severity-error-bg)] flex items-center justify-center mb-4">
-        <AlertCircle className="w-8 h-8 text-[var(--severity-error-text)]" />
+      <div className="mb-4">
+        <ErrorIllustration category={error.category} size={96} />
       </div>
 
-      <h3 className="text-xl font-semibold text-slate-200 mb-2">
+      <h3 className="text-xl font-semibold font-grotesk text-slate-200 mb-2">
         {notification.title}
       </h3>
 
@@ -233,7 +235,7 @@ function ErrorFallbackUI({
       <div className="mt-2 mb-4">
         <button
           onClick={handleGoHome}
-          className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
+          className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-control transition-colors flex items-center gap-2"
         >
           <Home className="w-4 h-4" />
           Go Home
@@ -265,7 +267,7 @@ function ErrorFallbackUI({
                 exit={{ height: 0, opacity: 0 }}
                 className="overflow-hidden"
               >
-                <div className="bg-slate-900 rounded-lg p-4 border border-slate-700">
+                <div className="bg-slate-900 rounded-card p-4 border border-slate-700">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-xs font-semibold text-slate-400 uppercase">
                       Error Details
@@ -304,6 +306,21 @@ function ErrorFallbackUI({
 }
 
 // ============================================================================
+// Error Illustration Picker
+// ============================================================================
+
+function ErrorIllustration({ category, size }: { category: ErrorCategory; size: number }) {
+  switch (category) {
+    case 'not_found':
+      return <GoatMascot variant="searching" size={size} />;
+    case 'validation':
+      return <GoatMascot variant="confused" size={size} />;
+    default:
+      return <ToppledTrophy width={size} height={size} />;
+  }
+}
+
+// ============================================================================
 // Contextual Retry Actions
 // ============================================================================
 
@@ -338,7 +355,7 @@ function ContextualRetryActions({ error, resetError }: ContextualRetryActionsPro
   return (
     <button
       onClick={resetError}
-      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
+      className="px-4 py-2 bg-brand hover:bg-brand-hover text-white font-medium rounded-control transition-colors flex items-center gap-2"
     >
       <RefreshCw className="w-4 h-4" />
       Try Again
@@ -372,7 +389,7 @@ function NetworkRetryAction({ resetError }: { resetError: () => void }) {
     <div className="flex flex-col items-center gap-2">
       <button
         onClick={handleManualRetry}
-        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
+        className="px-4 py-2 bg-brand hover:bg-brand-hover text-white font-medium rounded-control transition-colors flex items-center gap-2"
       >
         <WifiOff className="w-4 h-4" />
         {autoRetrying ? (
@@ -404,7 +421,7 @@ function AuthRetryAction() {
   return (
     <button
       onClick={handleSignIn}
-      className="px-5 py-2.5 bg-gradient-to-r from-brand to-purple-500 hover:from-brand-hover hover:to-purple-400 text-white font-semibold rounded-lg transition-all shadow-lg shadow-brand/25 flex items-center gap-2"
+      className="px-5 py-2.5 bg-gradient-to-r from-brand to-purple-500 hover:from-brand-hover hover:to-purple-400 text-white font-semibold rounded-control transition-all shadow-lg shadow-brand/25 flex items-center gap-2"
     >
       <LogIn className="w-4 h-4" />
       Sign In
@@ -447,9 +464,9 @@ function RateLimitRetryAction({ resetError }: { resetError: () => void }) {
         onClick={resetError}
         disabled={!cooledDown}
         className={cn(
-          'w-full px-4 py-2 font-medium rounded-lg transition-colors flex items-center justify-center gap-2',
+          'w-full px-4 py-2 font-medium rounded-control transition-colors flex items-center justify-center gap-2',
           cooledDown
-            ? 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer'
+            ? 'bg-brand hover:bg-brand-hover text-white cursor-pointer'
             : 'bg-slate-700 text-slate-400 cursor-not-allowed'
         )}
       >
@@ -459,7 +476,7 @@ function RateLimitRetryAction({ resetError }: { resetError: () => void }) {
       {!cooledDown && (
         <div className="w-full h-1 bg-slate-700 rounded-full overflow-hidden">
           <div
-            className="h-full bg-blue-500 rounded-full transition-none"
+            className="h-full bg-brand rounded-full transition-none"
             style={{ transform: `scaleX(${progress})`, transformOrigin: 'left' }}
           />
         </div>

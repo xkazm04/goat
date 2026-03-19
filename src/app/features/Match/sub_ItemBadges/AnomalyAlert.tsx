@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { DURATION } from '@/lib/animations/motion-presets';
 import { AlertTriangle, TrendingUp, TrendingDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { RankingAnomaly } from '@/lib/ranking-graph/types';
@@ -71,7 +72,7 @@ export function AnomalyAlert({
             scale: 1,
             transition: { type: 'spring', stiffness: 400, damping: 25 },
           }}
-          exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.15 } }}
+          exit={{ opacity: 0, scale: 0.8, transition: { duration: DURATION.quick } }}
           className={cn(
             'absolute z-20',
             positionClasses,
@@ -80,7 +81,7 @@ export function AnomalyAlert({
             style.bg,
             'flex items-center gap-1',
             'h-[20px] px-1.5',
-            'rounded-md',
+            'rounded-control',
             'ring-1',
             style.ring,
             'shadow-lg shadow-black/30',
@@ -91,7 +92,7 @@ export function AnomalyAlert({
           data-testid={`anomaly-alert-${anomaly.itemId}`}
         >
           <Icon className={cn('w-2.5 h-2.5 shrink-0', style.text)} />
-          <span className={cn('text-[9px] leading-none whitespace-nowrap', style.text)}>
+          <span className={cn('text-2xs leading-none whitespace-nowrap', style.text)}>
             {label}
           </span>
         </motion.div>

@@ -84,7 +84,7 @@ function PrefetchAnalyticsPanel({
       {/* Toggle button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="bg-gray-800 border border-gray-700 text-gray-300 px-2 py-1 rounded hover:bg-gray-700 transition-colors"
+        className="bg-gray-800 border border-gray-700 text-gray-300 px-2 py-1 rounded-control hover:bg-gray-700 transition-colors"
         title="Prefetch Analytics"
       >
         📡 {isOpen ? '−' : '+'}
@@ -92,12 +92,12 @@ function PrefetchAnalyticsPanel({
 
       {/* Panel */}
       {isOpen && analytics && network && queueStats && (
-        <div className="mt-2 bg-gray-900/95 border border-gray-700 rounded-lg p-3 w-72 max-h-96 overflow-auto shadow-xl">
+        <div className="mt-2 bg-gray-900/95 border border-gray-700 rounded-card p-3 w-72 max-h-96 overflow-auto shadow-xl">
           <div className="font-bold text-brand-hover mb-2 flex items-center justify-between">
             <span>Prefetch Analytics</span>
             <button
               onClick={() => PrefetchManager.resetAnalytics()}
-              className="text-gray-500 hover:text-gray-300 text-[10px]"
+              className="text-gray-500 hover:text-gray-300 text-2xs"
             >
               Reset
             </button>
@@ -105,7 +105,7 @@ function PrefetchAnalyticsPanel({
 
           {/* Network Status */}
           <div className="mb-3">
-            <div className="text-gray-400 text-[10px] uppercase mb-1">Network</div>
+            <div className="text-gray-400 text-2xs uppercase mb-1">Network</div>
             <div className="grid grid-cols-2 gap-1 text-gray-300">
               <span>Type:</span>
               <span className="text-right">{network.connectionType}</span>
@@ -124,7 +124,7 @@ function PrefetchAnalyticsPanel({
 
           {/* Queue Status */}
           <div className="mb-3">
-            <div className="text-gray-400 text-[10px] uppercase mb-1">Queue</div>
+            <div className="text-gray-400 text-2xs uppercase mb-1">Queue</div>
             <div className="grid grid-cols-2 gap-1 text-gray-300">
               <span>Queued:</span>
               <span className="text-right">{queueStats.queued}</span>
@@ -137,7 +137,7 @@ function PrefetchAnalyticsPanel({
 
           {/* Prefetch Stats */}
           <div className="mb-3">
-            <div className="text-gray-400 text-[10px] uppercase mb-1">Prefetch Stats</div>
+            <div className="text-gray-400 text-2xs uppercase mb-1">Prefetch Stats</div>
             <div className="grid grid-cols-2 gap-1 text-gray-300">
               <span>Total Queued:</span>
               <span className="text-right">{analytics.totalQueued}</span>
@@ -161,12 +161,12 @@ function PrefetchAnalyticsPanel({
           {/* By Source */}
           {Object.keys(analytics.bySource).length > 0 && (
             <div className="mb-3">
-              <div className="text-gray-400 text-[10px] uppercase mb-1">By Source</div>
+              <div className="text-gray-400 text-2xs uppercase mb-1">By Source</div>
               <div className="space-y-1">
                 {Object.entries(analytics.bySource).map(([source, stats]) => (
                   <div key={source} className="flex items-center justify-between text-gray-300">
                     <span className="capitalize">{source}</span>
-                    <span className="text-[10px]">
+                    <span className="text-2xs">
                       Q:{stats.queued} C:{stats.completed} H:{stats.hits}
                     </span>
                   </div>
@@ -176,7 +176,7 @@ function PrefetchAnalyticsPanel({
           )}
 
           {/* Registered Elements */}
-          <div className="text-gray-400 text-[10px] border-t border-gray-700 pt-2 mt-2">
+          <div className="text-gray-400 text-2xs border-t border-gray-700 pt-2 mt-2">
             Hover: {HoverPrefetcher.getRegisteredCount()} |
             Scroll: {ScrollPrefetcher.getTrackedCount()}
           </div>

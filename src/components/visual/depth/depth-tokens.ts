@@ -28,6 +28,10 @@ export const ELEVATION = {
   overlay: '0 20px 40px rgba(0, 0, 0, 0.4), 0 0 30px rgba(0, 0, 0, 0.2)',
   /** Deepest shadow for command palettes and prominent modals */
   modal: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+  /** CSS custom-property-backed card shadow (from design-tokens.css) */
+  card: 'var(--elevation-card)',
+  /** CSS custom-property-backed modal shadow (from design-tokens.css) */
+  modalToken: 'var(--elevation-modal)',
 } as const;
 
 /**
@@ -125,6 +129,10 @@ export const GLOW_PRESET = {
   accentSubtle: getGlow('subtle', 'accent'),
   accentMedium: getGlow('medium', 'accent'),
   accentIntense: getGlow('intense', 'accent'),
+  // CSS custom-property-backed brand glows (from design-tokens.css)
+  brandSm: 'var(--glow-brand-sm)',
+  brandMd: 'var(--glow-brand-md)',
+  brandLg: 'var(--glow-brand-lg)',
 } as const;
 
 export type GlowPreset = keyof typeof GLOW_PRESET;

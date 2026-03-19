@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { TrendingUp, Users, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { DURATION } from '@/lib/animations/motion-presets';
 
 interface ConsensusData {
   hasData: boolean;
@@ -130,7 +131,7 @@ export function ItemStatsTooltip({
             initial={{ opacity: 0, y: 5, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 5, scale: 0.95 }}
-            transition={{ duration: 0.15 }}
+            transition={{ duration: DURATION.quick }}
             className="fixed z-dropdown pointer-events-none"
             style={{
               left: position.x,
@@ -138,7 +139,7 @@ export function ItemStatsTooltip({
               transform: 'translate(-50%, -100%)',
             }}
           >
-            <div className="px-2.5 py-1.5 rounded-lg bg-gray-900/95 backdrop-blur-xl border border-white/10 shadow-xl shadow-black/30 whitespace-nowrap">
+            <div className="px-2.5 py-1.5 rounded-card bg-gray-900/95 backdrop-blur-xl border border-white/10 shadow-xl shadow-black/30 whitespace-nowrap">
               {data.hasData ? (
                 <div className="flex items-center gap-2 text-xs">
                   {/* Avg Position */}

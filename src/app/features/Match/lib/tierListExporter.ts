@@ -5,6 +5,7 @@
 
 import { TierListTier } from './tierPresets';
 import { BacklogItemType } from '@/types/match';
+import { extractTitle } from '@/lib/items/item-utils';
 
 /**
  * Tier with resolved item data

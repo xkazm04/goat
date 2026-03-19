@@ -2,6 +2,7 @@
 layer(base);
 
 @import 'tailwindcss';
+@import './design-tokens.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -10,8 +11,19 @@ layer(base);
   --font-family-sans: 'Inter', sans-serif;
   --font-family-mono: 'JetBrains Mono', monospace;
 
+  --font-size-3xs: 0.5rem;
+  --font-size-3xs--line-height: 0.75rem;
+
   --font-size-2xs: 0.625rem;
   --font-size-2xs--line-height: 0.875rem;
+
+  /* Responsive typography scale for grid/tier components */
+  --font-size-grid-title: clamp(1.25rem, 3vw, 1.875rem);
+  --font-size-grid-title--line-height: 1.2;
+  --font-size-tier-label: clamp(1rem, 2.5vw, 1.5rem);
+  --font-size-tier-label--line-height: 1.2;
+  --font-size-tier-item: clamp(0.625rem, 1.5vw, 0.75rem);
+  --font-size-tier-item--line-height: 1.3;
 
   --container-xs: 320px;
   --container-sm: 400px;
@@ -20,6 +32,24 @@ layer(base);
   --container-xl: 900px;
   --container-2xl: 1200px;
 
+  /*
+   * Z-INDEX STACKING CONTEXT HIERARCHY
+   * ───────────────────────────────────
+   * Layer            Token           Value   Use for
+   * ─────────────    ──────────────  ─────   ──────────────────────────────────
+   * Base             z-base          0       Default layer, explicit base
+   * Raised           z-raised        10      Badges, labels, content above bg
+   * Dropdown         z-dropdown      100     Dropdown menus, select popups
+   * Sticky           z-sticky        200     Sticky headers, fixed panels, toolbars
+   * Modal            z-modal         300     Modal backdrops + dialog content
+   * Popover          z-popover       400     Popovers, tooltips over modals
+   * Toast            z-toast         500     Toast notifications, banners
+   * Overlay          z-overlay       600     Full-page overlays, loading screens
+   * Drag             z-drag          700     Drag overlays (highest interactive)
+   *
+   * LOCAL STACKING (z-0 through z-30) is used within components for
+   * sub-element layering and does not participate in global hierarchy.
+   */
   --z-index-base: 0;
   --z-index-raised: 10;
   --z-index-dropdown: 100;
@@ -79,9 +109,20 @@ layer(base);
   --color-chart-4: hsl(var(--chart-4));
   --color-chart-5: hsl(var(--chart-5));
 
+  /* Elevation & Glow shadow utilities (maps to shadow-* classes) */
+  --shadow-elevation-card: var(--elevation-card);
+  --shadow-elevation-modal: var(--elevation-modal);
+  --shadow-glow-brand-sm: var(--glow-brand-sm);
+  --shadow-glow-brand-md: var(--glow-brand-md);
+  --shadow-glow-brand-lg: var(--glow-brand-lg);
+
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
 
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
   @keyframes accordion-down {
     from {
       height: 0;
@@ -99,6 +140,57 @@ layer(base);
     }
   }
 }
+
+/* Semantic border-radius utilities mapped to design tokens */
+@utility rounded-container { border-radius: var(--radius-container); }
+@utility rounded-card { border-radius: var(--radius-card); }
+@utility rounded-control { border-radius: var(--radius-control); }
+@utility rounded-badge { border-radius: var(--radius-badge); }
+
+/* Top-corner-only variants for nested containers */
+@utility rounded-t-container {
+  border-top-left-radius: var(--radius-container);
+  border-top-right-radius: var(--radius-container);
+}
+@utility rounded-t-card {
+  border-top-left-radius: var(--radius-card);
+  border-top-right-radius: var(--radius-card);
+}
+@utility rounded-b-container {
+  border-bottom-left-radius: var(--radius-container);
+  border-bottom-right-radius: var(--radius-container);
+}
+@utility rounded-b-card {
+  border-bottom-left-radius: var(--radius-card);
+  border-bottom-right-radius: var(--radius-card);
+}
+@utility rounded-l-container {
+  border-top-left-radius: var(--radius-container);
+  border-bottom-left-radius: var(--radius-container);
+}
+@utility rounded-l-card {
+  border-top-left-radius: var(--radius-card);
+  border-bottom-left-radius: var(--radius-card);
+}
+@utility rounded-r-container {
+  border-top-right-radius: var(--radius-container);
+  border-bottom-right-radius: var(--radius-container);
+}
+@utility rounded-r-card {
+  border-top-right-radius: var(--radius-card);
+  border-bottom-right-radius: var(--radius-card);
+}
+
+/* Semantic z-index utilities mapped to design tokens */
+@utility z-base { z-index: var(--z-index-base); }
+@utility z-raised { z-index: var(--z-index-raised); }
+@utility z-dropdown { z-index: var(--z-index-dropdown); }
+@utility z-sticky { z-index: var(--z-index-sticky); }
+@utility z-modal { z-index: var(--z-index-modal); }
+@utility z-popover { z-index: var(--z-index-popover); }
+@utility z-toast { z-index: var(--z-index-toast); }
+@utility z-overlay { z-index: var(--z-index-overlay); }
+@utility z-drag { z-index: var(--z-index-drag); }
 
 @theme inline {
   @keyframes shimmer-slide {
@@ -256,10 +348,32 @@ layer(base);
     }
   }
 
+  /* Golden shimmer sweep for branded loading states */
+  @keyframes golden-shimmer {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+
   /* Tier row pulse during drag */
   @keyframes tierPulse {
     0%, 100% { outline: 2px solid transparent; transform: scale(1); }
     50% { outline: 2px solid currentColor; transform: scale(1.005); }
+  }
+
+  /* CategoryBar staggered entrance (replaces Framer Motion layout animations) */
+  @keyframes category-enter {
+    from {
+      opacity: 0;
+      transform: translateY(-10px) scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
   }
 
   /* PhysicsGridSlot CSS animations (replace Framer Motion infinite loops) */
@@ -274,7 +388,7 @@ layer(base);
   }
 
   @keyframes hover-glow {
-    0%, 100% { box-shadow: 0 0 20px rgba(34, 211, 238, 0.3); }
+    0%, 100% { box-shadow: var(--glow-brand-lg); }
     50% { box-shadow: 0 0 30px rgba(34, 211, 238, 0.5); }
   }
 
@@ -450,6 +564,45 @@ layer(base);
   will-change: background-position;
 }
 
+@utility animate-golden-shimmer {
+  /* Branded golden shimmer for AI generation loading */
+  background: linear-gradient(
+    90deg,
+    rgba(245, 158, 11, 0.05) 0%,
+    rgba(251, 191, 36, 0.15) 20%,
+    rgba(245, 158, 11, 0.25) 40%,
+    rgba(251, 191, 36, 0.15) 60%,
+    rgba(245, 158, 11, 0.05) 100%
+  );
+  background-size: 200% 100%;
+  animation: golden-shimmer 1.5s ease-in-out infinite;
+  will-change: background-position;
+}
+
+/* ===== STUDIO ANIMATIONS ===== */
+
+@keyframes shimmer-slow-sweep {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes progress-sweep {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@utility animate-shimmer-slow {
+  animation: shimmer-slow-sweep 3s ease-in-out infinite;
+  will-change: background-position;
+  background-size: 200% 100%;
+}
+
+@utility animate-progress-sweep {
+  animation: progress-sweep 1.5s ease-in-out infinite;
+  will-change: background-position;
+  background-size: 200% 100%;
+}
+
 /* ===== ANIMATION PAUSE SUPPORT ===== */
 /* Pause animations when page is not visible or element is off-screen */
 /* Uses JavaScript hooks (useAnimationPause) to toggle these classes */
@@ -570,8 +723,17 @@ layer(base);
 }
 
 @utility focus-ring {
-  /* Unified Focus Ring — use on all interactive elements */
-  @apply focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-hover focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--background))];
+  /* Unified Focus Ring — use on all interactive elements
+     Colors sourced from design-tokens.css: --focus-ring, --focus-offset */
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--focus-offset), 0 0 0 4px var(--focus-ring);
+  }
+}
+
+@utility focus-ring-inset {
+  /* Inset Focus Ring — for elements inside dark containers where ring-offset looks wrong */
+  @apply focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-hover;
 }
 
 @utility glass-dock-focus {
@@ -588,6 +750,45 @@ layer(base);
   /* Unified disabled state for all filter elements */
   @apply text-muted-foreground cursor-not-allowed opacity-50;
 }
+
+/* ===== INTERACTION STATE UTILITIES (from design-tokens.css) ===== */
+
+@utility hover-overlay {
+  /* Subtle hover overlay — use on buttons, cards, list items */
+  &:hover { background-color: var(--hover-overlay); }
+}
+
+@utility active-overlay {
+  /* Active/pressed overlay */
+  &:active { background-color: var(--active-overlay); }
+}
+
+@utility interaction-overlay {
+  /* Combined hover + active overlays */
+  &:hover { background-color: var(--hover-overlay); }
+  &:active { background-color: var(--active-overlay); }
+}
+
+@utility disabled-state {
+  /* Standard disabled appearance */
+  &:disabled, &[aria-disabled="true"] {
+    opacity: var(--disabled-opacity);
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+}
+
+@utility placeholder-muted {
+  /* Placeholder text using token */
+  &::placeholder { color: var(--placeholder-color); }
+}
+
+/* ===== ICON COLOR UTILITIES (from design-tokens.css) ===== */
+
+@utility icon-default { color: var(--icon-default); }
+@utility icon-muted { color: var(--icon-muted); }
+@utility icon-active { color: var(--icon-active); }
+@utility icon-danger { color: var(--icon-danger); }
 
 @utility glass-dock-card {
   /* Glass Dock - Card Item */
@@ -674,6 +875,10 @@ layer(base);
 @utility glass-dock-badge-active {
   background: rgb(var(--brand-rgb) / 0.2);
   color: var(--brand-hover);
+}
+
+@utility enrichment-badge-glow {
+  box-shadow: 0 0 6px rgb(6 182 212 / 0.3), 0 0 2px rgb(6 182 212 / 0.15);
 }
 
 @utility glass-dock-tooltip {
@@ -1272,6 +1477,21 @@ layer(base);
 }
 
 @layer utilities {
+  /* Gradient Divider — soft fade-in/out horizontal rule for glass-morphism UI */
+  .divider-gradient {
+    position: relative;
+  }
+  .divider-gradient::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, var(--border-card-subtle) 30%, var(--border-card-subtle) 70%, transparent 100%);
+    pointer-events: none;
+  }
+
   /* Glass Dock - Keyframes */
   @keyframes glass-skeleton-shimmer {
     0% {
@@ -1365,6 +1585,18 @@ layer(base);
     animation: showcase-light-ray 3s ease-in-out infinite;
   }
 
+  /* Gate all non-essential showcase animations behind prefers-reduced-motion */
+  @media (prefers-reduced-motion: reduce) {
+    .showcase-crown-float,
+    .showcase-glow-pulse,
+    .showcase-bg-glow,
+    .showcase-letter-glow,
+    .showcase-subtitle-sweep,
+    .showcase-light-ray {
+      animation: none;
+    }
+  }
+
   @keyframes ambient-shimmer {
     0% { transform: translateX(-100%); }
     100% { transform: translateX(300%); }
@@ -1372,5 +1604,207 @@ layer(base);
 
   .animate-ambient-shimmer {
     animation: ambient-shimmer 2s ease-in-out infinite;
+  }
+}
+
+/* ===== LIVING DESIGN TOKENS — RANKING PROGRESS SYSTEM ===== */
+/* CSS custom properties set by RankingProgressLayer react to grid fill state */
+/* Tiers: idle -> early -> mid -> hot -> complete */
+
+/* --- Tier-based badge color temperature shift --- */
+/* Badges within the ranking layer shift from cool cyan to warm gold */
+@layer utilities {
+  .ranking-progress-layer [data-position-badge] {
+    --badge-accent: hsl(
+      var(--rp-badge-hue, 187)
+      var(--rp-badge-sat, 72%)
+      var(--rp-badge-light, 56%)
+    );
+  }
+
+  /* Tier-specific ambient intensity overrides */
+  [data-ranking-tier="idle"] {
+    --rp-ambient-intensity: 0;
+  }
+
+  [data-ranking-tier="early"] {
+    --rp-ambient-intensity: 0.3;
+  }
+
+  [data-ranking-tier="mid"] {
+    --rp-ambient-intensity: 0.6;
+  }
+
+  [data-ranking-tier="hot"] {
+    --rp-ambient-intensity: 0.85;
+  }
+
+  [data-ranking-tier="complete"] {
+    --rp-ambient-intensity: 1;
+  }
+
+  /* Intensify glass dock cards within ranking layer based on tier */
+  [data-ranking-tier="mid"] .glass-dock-card:hover,
+  [data-ranking-tier="hot"] .glass-dock-card:hover,
+  [data-ranking-tier="complete"] .glass-dock-card:hover {
+    border-color: rgb(var(--brand-rgb) / calc(0.2 + var(--rp-ambient-intensity, 0) * 0.2));
+    box-shadow:
+      0 4px 12px rgba(0, 0, 0, 0.3),
+      0 0 0 1px rgb(var(--brand-rgb) / calc(0.1 + var(--rp-ambient-intensity, 0) * 0.15));
+  }
+
+  /* Glow intensifies on surfaces during hot/complete tiers */
+  [data-ranking-tier="hot"] .glass-dock-panel,
+  [data-ranking-tier="complete"] .glass-dock-panel {
+    box-shadow:
+      0 -4px 20px rgba(0, 0, 0, 0.5),
+      0 -1px 3px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06),
+      0 0 var(--rp-glow-spread, 20px) rgb(var(--brand-rgb) / var(--rp-glow-opacity, 0.2));
+  }
+}
+
+/* --- Completion Celebration Keyframes --- */
+@layer utilities {
+  @keyframes rp-celebration-border-spin {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 300% 50%; }
+  }
+
+  @keyframes rp-celebration-glow-pulse {
+    0%, 100% {
+      opacity: 0;
+      transform: scale(0.98);
+    }
+    15% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    60% {
+      opacity: 0.6;
+      transform: scale(1.01);
+    }
+  }
+
+  @keyframes rp-celebration-shimmer-sweep {
+    0% { transform: translateX(-100%) skewX(-15deg); }
+    100% { transform: translateX(200%) skewX(-15deg); }
+  }
+
+  @keyframes rp-celebration-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* Celebration overlay container */
+  .rp-celebration-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 50;
+    animation: rp-celebration-fade-in 0.3s ease-out;
+  }
+
+  /* Gold gradient border that spins around the viewport */
+  .rp-celebration-border {
+    position: absolute;
+    inset: 0;
+    border: 3px solid transparent;
+    border-radius: 0;
+    background:
+      linear-gradient(#050505, #050505) padding-box,
+      linear-gradient(
+        90deg,
+        #fbbf24, #f59e0b, #fbbf24, #22d3ee,
+        #fbbf24, #f59e0b, #fbbf24
+      ) border-box;
+    background-size: 300% 100%;
+    animation: rp-celebration-border-spin 2s linear infinite;
+    opacity: 0.8;
+  }
+
+  /* Intense glow pulse emanating from center */
+  .rp-celebration-glow {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      ellipse at center,
+      rgb(var(--brand-rgb) / 0.15) 0%,
+      rgba(251, 191, 36, 0.08) 40%,
+      transparent 70%
+    );
+    animation: rp-celebration-glow-pulse 3s ease-in-out;
+    will-change: opacity, transform;
+  }
+
+  /* Full-width shimmer sweep */
+  .rp-celebration-shimmer {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      105deg,
+      transparent 30%,
+      rgba(251, 191, 36, 0.12) 45%,
+      rgba(255, 255, 255, 0.08) 50%,
+      rgba(251, 191, 36, 0.12) 55%,
+      transparent 70%
+    );
+    animation: rp-celebration-shimmer-sweep 1.5s ease-out;
+    will-change: transform;
+  }
+
+  /* Respect reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    .rp-celebration-overlay,
+    .rp-celebration-border,
+    .rp-celebration-glow,
+    .rp-celebration-shimmer {
+      animation: none !important;
+    }
+
+    .rp-celebration-overlay {
+      display: none;
+    }
+  }
+
+  /* Also respect 3-tier motion system */
+  [data-motion-tier="reduced"] .rp-celebration-shimmer,
+  [data-motion-tier="reduced"] .rp-celebration-border {
+    animation: none !important;
+  }
+
+  [data-motion-tier="minimal"] .rp-celebration-overlay {
+    display: none !important;
+  }
+}
+
+/*
+ * WCAG 2.5.8 Touch Target Utility
+ * Enforces 44x44px minimum touch targets on coarse-pointer (touch) devices.
+ * Uses padding expansion to preserve visual design while enlarging hit areas.
+ */
+@layer utilities {
+  @media (pointer: coarse) {
+    .touch-target {
+      min-width: 44px;
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Smaller variant for tight layouts — still meets 44px via padding */
+    .touch-target-sm {
+      position: relative;
+    }
+    .touch-target-sm::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      min-width: 44px;
+      min-height: 44px;
+    }
   }
 }

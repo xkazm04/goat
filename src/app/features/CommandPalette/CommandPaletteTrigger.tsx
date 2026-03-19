@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Command, Keyboard } from "lucide-react";
 import { useCommandPalette } from "./useCommandPalette";
 import { ELEVATION } from "@/components/visual/depth";
+import { DURATION } from '@/lib/animations/motion-presets';
 
 interface CommandPaletteTriggerProps {
   className?: string;
@@ -27,7 +28,7 @@ export function CommandPaletteTrigger({
     return (
       <button
         onClick={openCommandPalette}
-        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10
+        className={`flex items-center gap-2 px-3 py-1.5 rounded-control bg-white/5 hover:bg-white/10
           border border-white/10 text-white/60 hover:text-white/80 transition-all text-sm ${className}`}
         data-testid="command-palette-trigger-inline"
       >
@@ -44,9 +45,9 @@ export function CommandPaletteTrigger({
     <motion.button
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 1, duration: 0.5 }}
+      transition={{ delay: 1, duration: DURATION.slow }}
       onClick={openCommandPalette}
-      className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl
+      className={`fixed bottom-6 right-6 z-sticky flex items-center gap-2 px-4 py-2.5 rounded-card
         bg-linear-to-r from-gray-900/90 to-gray-800/90 backdrop-blur-xs
         border border-white/10 text-white/70 hover:text-white hover:border-white/20
         transition-all hover:scale-105 group ${className}`}

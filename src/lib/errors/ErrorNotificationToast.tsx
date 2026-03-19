@@ -82,7 +82,7 @@ function ErrorToast({ notification, onDismiss }: ErrorToastProps) {
       exit={{ opacity: 0, y: -10, scale: 0.95 }}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
       className={cn(
-        'relative overflow-hidden rounded-lg border backdrop-blur-md shadow-lg',
+        'relative overflow-hidden rounded-card border backdrop-blur-md shadow-lg',
         styles.bg,
         styles.border
       )}
@@ -95,7 +95,7 @@ function ErrorToast({ notification, onDismiss }: ErrorToastProps) {
 
         {/* Content */}
         <div className="flex-1 min-w-0">
-          <h4 className="text-sm font-medium text-slate-200">
+          <h4 className="text-sm font-medium font-grotesk text-slate-200">
             {notification.title}
           </h4>
           <p className="mt-1 text-sm text-slate-400">
@@ -204,7 +204,7 @@ export function ErrorNotificationToastContainer({
   return (
     <div
       className={cn(
-        'fixed z-50 flex flex-col gap-2 w-full max-w-sm',
+        'fixed z-toast flex flex-col gap-2 w-full max-w-sm',
         positionClasses[position],
         className
       )}
@@ -296,7 +296,7 @@ export function InlineErrorDisplay({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               className={cn(
-                'flex items-center gap-3 p-3 rounded-lg border',
+                'flex items-center gap-3 p-3 rounded-card border',
                 styles.bg,
                 styles.border
               )}

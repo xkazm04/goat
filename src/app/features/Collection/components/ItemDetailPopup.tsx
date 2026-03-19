@@ -1,20 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { motion, AnimatePresence, useDragControls } from "framer-motion";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { motion, useDragControls } from "framer-motion";
 import {
   X,
   GripHorizontal,
-  Calendar,
-  Users,
-  Target,
-  Award,
-  Eye,
-  MousePointerClick,
-  Hash,
+  Lock,
+  Unlock,
   Plus,
   TrendingUp,
-  Sparkles,
 } from "lucide-react";
 import {
   BarChart,
@@ -25,14 +19,15 @@ import {
   Cell,
   ReferenceLine,
 } from "recharts";
+import type { BarShapeProps } from "recharts";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { SPRING, DURATION } from "@/lib/animations/motion-presets";
+import { SPRING } from "@/lib/animations/motion-presets";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
-import { PlaceholderImage } from "@/components/ui/placeholder-image";
+import { GoatBrokenFrame } from "@/components/illustrations/EmptyStateIllustrations";
 import { useItemPopupStore, PopupInstance } from "@/stores/item-popup-store";
 import type { ItemDetailResponse } from "@/types/item-details";
-import { CriteriaScoringSection } from './CriteriaScoringSection';
-import { useCurrentList } from '@/stores/use-list-store';
+import { DURATION } from '@/lib/animations/motion-presets';
 
 interface ItemDetailPopupProps {
   popup: PopupInstance;
@@ -41,7 +36,7 @@ interface ItemDetailPopupProps {
 
 // Accent color based on ranking position
 const getAccentColor = (medianPosition?: number) => {
-  if (!medianPosition) return { color: '#22d3ee', name: 'cyan' }; // Default cyan
+  if (!medianPosition) return { color: '#22d3ee', name: 'cyan' };
   if (medianPosition <= 1) return { color: '#FFD700', name: 'gold' };
   if (medianPosition <= 2) return { color: '#C0C0C0', name: 'silver' };
   if (medianPosition <= 3) return { color: '#CD7F32', name: 'bronze' };
@@ -50,13 +45,14 @@ const getAccentColor = (medianPosition?: number) => {
 };
 
 /**
- * ItemDetailPopup - Premium floating item detail popup
+ * ItemDetailPopup — Compact floating detail card for quick comparison.
  *
- * Redesigned with grid item aesthetics:
- * - Glassmorphism with multi-layer effects
- * - Position-aware accent colors
- * - Compact, space-efficient layout
- * - Premium shadows and glows
+ * Features:
+ * - Compact glassmorphism cards (~240px wide)
+ * - Image as transparent background with hover opacity
+ * - Lock to top row / unlock for free movement
+ * - Ranking distribution chart with real data
+ * - Quick-assign to grid
  */
 export function ItemDetailPopup({ popup, onQuickAssign }: ItemDetailPopupProps) {
   const reducedMotion = useReducedMotion();
@@ -66,9 +62,8 @@ export function ItemDetailPopup({ popup, onQuickAssign }: ItemDetailPopupProps) 
   const [isDragging, setIsDragging] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
-  const { closePopup, bringToFront } = useItemPopupStore();
+  const { closePopup, bringToFront, toggleLock } = useItemPopupStore();
   const dragControls = useDragControls();
-  const currentList = useCurrentList();
 
   // Accent color based on item's median ranking
   const accent = useMemo(() =>
@@ -102,6 +97,7 @@ export function ItemDetailPopup({ popup, onQuickAssign }: ItemDetailPopupProps) 
 
   const handleClose = useCallback(() => closePopup(popup.id), [closePopup, popup.id]);
   const handleFocus = useCallback(() => bringToFront(popup.id), [bringToFront, popup.id]);
+  const handleToggleLock = useCallback(() => toggleLock(popup.id), [toggleLock, popup.id]);
 
   const handleQuickAssign = useCallback(() => {
     if (onQuickAssign) {
@@ -119,13 +115,15 @@ export function ItemDetailPopup({ popup, onQuickAssign }: ItemDetailPopupProps) 
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [handleClose]);
 
+  const imageUrl = data?.item.image_url;
+
   return (
     <motion.div
-      initial={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.9, y: 30 }}
+      initial={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.92, y: 20 }}
       animate={reducedMotion ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.9, y: 30 }}
+      exit={{ opacity: 0, scale: 0.92, y: 20 }}
       transition={SPRING.smooth}
-      drag
+      drag={!popup.locked}
       dragControls={dragControls}
       dragListener={false}
       dragMomentum={false}
@@ -142,35 +140,54 @@ export function ItemDetailPopup({ popup, onQuickAssign }: ItemDetailPopupProps) 
         zIndex: popup.zIndex,
       }}
       className={cn(
-        "w-[340px] rounded-2xl overflow-hidden",
+        "w-[240px] rounded-container overflow-hidden",
         "flex flex-col",
-        isDragging && "cursor-grabbing"
+        isDragging && "cursor-grabbing",
+        popup.locked && "transition-all duration-300"
       )}
     >
       {/* Outer glow effect */}
       <motion.div
-        className="absolute -inset-px rounded-2xl pointer-events-none"
+        className="absolute -inset-px rounded-container pointer-events-none"
         animate={{
           boxShadow: isHovered
-            ? `0 0 50px ${accent.color}30, 0 0 25px ${accent.color}20, 0 25px 50px rgba(0,0,0,0.5)`
-            : `0 0 30px ${accent.color}15, 0 20px 40px rgba(0,0,0,0.4)`,
+            ? `0 0 30px ${accent.color}25, 0 0 15px ${accent.color}15, 0 15px 30px rgba(0,0,0,0.5)`
+            : `0 0 20px ${accent.color}10, 0 10px 25px rgba(0,0,0,0.4)`,
         }}
-        transition={{ duration: 0.3 }}
+        transition={{ duration: DURATION.normal }}
       />
 
-      {/* Glass background */}
+      {/* Background image — next/image fills the card */}
+      {imageUrl && (
+        <div
+          className="absolute inset-0 rounded-container overflow-hidden pointer-events-none transition-opacity duration-500"
+          style={{ opacity: isHovered ? 0.7 : 0.5 }}
+        >
+          <Image
+            src={imageUrl}
+            alt=""
+            fill
+            sizes="240px"
+            className="object-cover"
+            unoptimized
+          />
+        </div>
+      )}
+
+      {/* Glass tint for readability */}
       <div
-        className="absolute inset-0 rounded-2xl bg-slate-900/90 backdrop-blur-xl"
+        className="absolute inset-0 rounded-container pointer-events-none"
         style={{
-          boxShadow: `inset 0 0 40px ${accent.color}08`,
+          background: `linear-gradient(180deg, rgba(15,23,42,0.7) 0%, rgba(15,23,42,0.85) 100%)`,
+          boxShadow: `inset 0 0 30px ${accent.color}06`,
         }}
       />
 
       {/* Gradient border */}
       <div
-        className="absolute inset-0 rounded-2xl pointer-events-none"
+        className="absolute inset-0 rounded-container pointer-events-none"
         style={{
-          background: `linear-gradient(135deg, ${accent.color}40, transparent 50%, ${accent.color}20)`,
+          background: `linear-gradient(135deg, ${accent.color}35, transparent 50%, ${accent.color}15)`,
           mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
           maskComposite: 'exclude',
           WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
@@ -181,80 +198,82 @@ export function ItemDetailPopup({ popup, onQuickAssign }: ItemDetailPopupProps) 
 
       {/* Content wrapper */}
       <div className="relative flex flex-col">
-        {/* Draggable Header */}
+        {/* Header: drag handle + lock + close */}
         <div
-          onPointerDown={(e) => dragControls.start(e)}
+          onPointerDown={(e) => {
+            if (!popup.locked) dragControls.start(e);
+          }}
           className={cn(
-            "flex items-center justify-between px-3 py-2",
+            "flex items-center justify-between px-2 py-1.5",
             "border-b border-white/5",
-            "cursor-grab active:cursor-grabbing select-none"
+            !popup.locked && "cursor-grab active:cursor-grabbing",
+            "select-none"
           )}
         >
-          <div className="flex items-center gap-2 min-w-0">
-            <GripHorizontal className="w-3.5 h-3.5 text-slate-600 shrink-0" />
-            <span className="text-xs font-medium text-slate-400 truncate font-grotesk">
+          <div className="flex items-center gap-1.5 min-w-0">
+            {!popup.locked && <GripHorizontal className="w-3 h-3 text-slate-600 shrink-0" />}
+            {popup.locked && (
+              <div
+                className="w-1.5 h-1.5 rounded-full shrink-0"
+                style={{ background: accent.color }}
+              />
+            )}
+            <span className="text-2xs font-medium text-slate-400 truncate font-grotesk">
               {loading ? 'Loading...' : data?.item.title || 'Details'}
             </span>
           </div>
-          <button
-            onClick={handleClose}
-            className="p-1 rounded-md text-slate-500 hover:text-white hover:bg-white/10 transition-colors"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
+          <div className="flex items-center gap-0.5">
+            {/* Lock/Unlock button */}
+            <button
+              onClick={handleToggleLock}
+              className={cn(
+                "p-1 rounded-control transition-colors",
+                popup.locked
+                  ? "text-amber-400 hover:text-amber-300 hover:bg-amber-400/10"
+                  : "text-slate-500 hover:text-white hover:bg-white/10"
+              )}
+              title={popup.locked ? 'Unlock (free movement)' : 'Lock to top row'}
+            >
+              {popup.locked
+                ? <Lock className="w-3 h-3" />
+                : <Unlock className="w-3 h-3" />
+              }
+            </button>
+            <button
+              onClick={handleClose}
+              className="p-1 rounded-control text-slate-500 hover:text-white hover:bg-white/10 transition-colors"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </div>
         </div>
 
         {/* Main Content */}
-        <div className="overflow-y-auto max-h-[70vh]">
-          {loading && <LoadingSkeleton accent={accent.color} />}
+        <div className="overflow-y-auto max-h-[50vh]">
+          {loading && <CompactLoadingSkeleton accent={accent.color} />}
 
           {error && (
-            <div className="p-6 text-center">
-              <div className="w-10 h-10 rounded-full bg-rose-500/20 flex items-center justify-center mx-auto mb-2">
-                <X className="w-5 h-5 text-rose-400" />
-              </div>
-              <p className="text-xs text-slate-400">{error}</p>
+            <div className="p-4 flex flex-col items-center text-center">
+              <GoatBrokenFrame width={80} height={64} />
+              <p className="text-2xs text-slate-400 mt-1">{error}</p>
             </div>
           )}
 
           {data && !loading && (
             <>
-              {/* Hero Image with Overlays */}
-              <HeroSection
-                item={data.item}
+              {/* Promoted stat numbers */}
+              <CompactHero
                 stats={data.rankingStats}
                 accent={accent}
                 onQuickAssign={onQuickAssign ? handleQuickAssign : undefined}
               />
 
-              {/* Compact Stats Row */}
-              <div className="px-3 py-2">
-                <StatsRow item={data.item} stats={data.rankingStats} accent={accent} />
-              </div>
-
-              {/* Divider with gradient */}
-              <div className="mx-3 h-px bg-linear-to-r from-transparent via-white/10 to-transparent" />
-
-              {/* Metadata & Rankings */}
-              <div className="p-3 space-y-3">
-                <MetadataRow item={data.item} />
-
-                {/* Criteria Scoring Section */}
-                {currentList && (
-                  <>
-                    <div className="h-px bg-linear-to-r from-transparent via-white/10 to-transparent" />
-                    <CriteriaScoringSection
-                      itemId={popup.itemId}
-                      listId={currentList.id}
-                      accentColor={accent.color}
-                    />
-                  </>
-                )}
-
-                {data.rankingStats && (
-                  <RankingChart stats={data.rankingStats} accent={accent} />
-                )}
-              </div>
+              {/* Distribution chart */}
+              {data.rankingStats && (
+                <div className="px-2 pb-2">
+                  <CompactRankingChart stats={data.rankingStats} accent={accent} />
+                </div>
+              )}
             </>
           )}
         </div>
@@ -264,264 +283,98 @@ export function ItemDetailPopup({ popup, onQuickAssign }: ItemDetailPopupProps) 
 }
 
 // ============================================================================
-// Sub-components with premium styling
+// Compact sub-components
 // ============================================================================
 
-function LoadingSkeleton({ accent }: { accent: string }) {
+function CompactLoadingSkeleton({ accent }: { accent: string }) {
   return (
-    <div className="p-3 space-y-3">
+    <div className="p-2 space-y-2">
       <div
-        className="w-full aspect-16/10 rounded-xl animate-pulse"
+        className="w-full h-16 rounded-card animate-pulse"
         style={{ background: `linear-gradient(135deg, ${accent}10, ${accent}05)` }}
       />
-      <div className="flex gap-2">
-        {[1, 2, 3, 4].map(i => (
-          <div key={i} className="flex-1 h-12 rounded-lg bg-white/5 animate-pulse" />
-        ))}
-      </div>
-      <div className="h-20 rounded-lg bg-white/5 animate-pulse" />
+      <div className="h-14 rounded-card bg-white/5 animate-pulse" />
     </div>
   );
 }
 
-interface HeroSectionProps {
-  item: ItemDetailResponse['item'];
+interface CompactHeroProps {
   stats: ItemDetailResponse['rankingStats'];
   accent: { color: string; name: string };
   onQuickAssign?: () => void;
 }
 
-function HeroSection({ item, stats, accent, onQuickAssign }: HeroSectionProps) {
-  const isPodium = stats && stats.medianPosition <= 3;
+function CompactHero({ stats, accent, onQuickAssign }: CompactHeroProps) {
+  const totalRankings = stats?.totalRankings ?? 0;
+  const avgPosition = stats?.averagePosition ?? 0;
 
   return (
-    <div className="relative m-3 rounded-xl overflow-hidden group">
-      {/* Image */}
-      <div className="aspect-16/10 w-full bg-slate-800">
-        <PlaceholderImage src={item.image_url} alt={item.title} seed={item.title} />
+    <div className="px-2 pt-2.5 pb-2">
+      {/* Large stat numbers */}
+      <div className="flex items-stretch gap-2">
+        {/* Rankings count */}
+        <div className="flex-1 text-center py-1.5 rounded-card bg-white/[0.03] border border-white/[0.06]">
+          <p
+            className="text-2xl font-black tabular-nums leading-none font-heading"
+            style={{ color: accent.color }}
+          >
+            {totalRankings}
+          </p>
+          <p className="text-3xs text-slate-500 uppercase tracking-wider mt-1 font-mono">rankings</p>
+        </div>
+
+        {/* Average position */}
+        <div className="flex-1 text-center py-1.5 rounded-card bg-white/[0.03] border border-white/[0.06]">
+          <p className="text-2xl font-black tabular-nums leading-none text-white/90 font-heading">
+            {avgPosition > 0 ? `#${avgPosition.toFixed(1)}` : '--'}
+          </p>
+          <p className="text-3xs text-slate-500 uppercase tracking-wider mt-1 font-mono">avg rank</p>
+        </div>
       </div>
 
-      {/* Multi-layer gradient overlay */}
-      <div className="absolute inset-0 bg-linear-to-t from-slate-900 via-slate-900/30 to-transparent" />
-      <div
-        className="absolute inset-0 opacity-30"
-        style={{
-          background: `radial-gradient(ellipse at bottom, ${accent.color}20, transparent 70%)`,
-        }}
-      />
-
-      {/* Position Badge - Premium Style */}
-      {stats && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="absolute top-2 left-2"
-        >
-          <div
-            className={cn(
-              "flex items-center gap-1.5 px-2 py-1 rounded-lg backdrop-blur-md",
-              isPodium ? "border-2" : "border"
-            )}
-            style={{
-              background: isPodium
-                ? `linear-gradient(135deg, ${accent.color}30, ${accent.color}15)`
-                : `${accent.color}20`,
-              borderColor: `${accent.color}60`,
-              boxShadow: isPodium
-                ? `0 0 20px ${accent.color}40, inset 0 1px 0 ${accent.color}30`
-                : `0 0 10px ${accent.color}20`,
-            }}
-          >
-            {isPodium && <Sparkles className="w-3 h-3" style={{ color: accent.color }} />}
-            <span
-              className="text-xs font-black"
-              style={{
-                color: accent.color,
-                textShadow: isPodium ? `0 0 10px ${accent.color}60` : 'none',
-              }}
-            >
-              #{stats.medianPosition}
-            </span>
-            <span className="text-[9px] text-white/50 uppercase font-mono">median</span>
-          </div>
-        </motion.div>
-      )}
-
-      {/* Quick Add Button */}
+      {/* Quick assign */}
       {onQuickAssign && (
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+        <button
           onClick={onQuickAssign}
-          className="absolute top-2 right-2 flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wide transition-all"
+          className="mt-2 w-full flex items-center justify-center gap-1 py-1 rounded-control text-2xs font-bold uppercase tracking-wide transition-all hover:brightness-110"
           style={{
             background: `linear-gradient(135deg, ${accent.color}, ${accent.color}cc)`,
             color: '#000',
-            boxShadow: `0 2px 10px ${accent.color}50`,
           }}
         >
           <Plus className="w-3 h-3" />
-          Add
-        </motion.button>
-      )}
-
-      {/* Title Overlay */}
-      <div className="absolute bottom-0 left-0 right-0 p-3">
-        <h4 className="text-sm font-medium text-white mb-0.5 drop-shadow-lg line-clamp-1 font-grotesk">
-          {item.title}
-        </h4>
-        <div className="flex items-center gap-1.5">
-          {item.category && (
-            <span
-              className="px-1.5 py-0.5 text-[9px] rounded-md font-medium backdrop-blur-xs font-mono"
-              style={{
-                background: `${accent.color}25`,
-                color: accent.color,
-                border: `1px solid ${accent.color}30`,
-              }}
-            >
-              {item.category}
-            </span>
-          )}
-          {item.subcategory && (
-            <span className="text-[9px] text-white/40">/ {item.subcategory}</span>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-interface StatsRowProps {
-  item: ItemDetailResponse['item'];
-  stats: ItemDetailResponse['rankingStats'];
-  accent: { color: string; name: string };
-}
-
-function StatsRow({ item, stats, accent }: StatsRowProps) {
-  const viewCount = item.view_count || 0;
-  const selectionCount = item.selection_count || 0;
-
-  return (
-    <div className="grid grid-cols-4 gap-1.5">
-      <StatCell
-        icon={<Eye className="w-3 h-3" />}
-        value={formatCompact(viewCount)}
-        label="views"
-        accent={accent.color}
-      />
-      <StatCell
-        icon={<MousePointerClick className="w-3 h-3" />}
-        value={formatCompact(selectionCount)}
-        label="picks"
-        accent={accent.color}
-      />
-      <StatCell
-        icon={<Users className="w-3 h-3" />}
-        value={stats ? formatCompact(stats.totalRankings) : '-'}
-        label="ranked"
-        accent={accent.color}
-      />
-      <StatCell
-        icon={<Award className="w-3 h-3" />}
-        value={stats ? `${Math.round(stats.confidence * 100)}%` : '-'}
-        label="agree"
-        accent={accent.color}
-        highlight={!!(stats && stats.confidence > 0.7)}
-      />
-    </div>
-  );
-}
-
-interface StatCellProps {
-  icon: React.ReactNode;
-  value: string;
-  label: string;
-  accent: string;
-  highlight?: boolean;
-}
-
-function StatCell({ icon, value, label, accent, highlight }: StatCellProps) {
-  return (
-    <div
-      className="flex flex-col items-center py-2 px-1 rounded-lg transition-colors"
-      style={{
-        background: highlight ? `${accent}15` : 'rgba(255,255,255,0.03)',
-        border: `1px solid ${highlight ? accent + '30' : 'rgba(255,255,255,0.05)'}`,
-      }}
-    >
-      <div style={{ color: highlight ? accent : 'rgba(255,255,255,0.4)' }}>{icon}</div>
-      <span className="text-xs font-bold text-white mt-0.5">{value}</span>
-      <span className="text-[9px] text-slate-500 uppercase font-mono">{label}</span>
-    </div>
-  );
-}
-
-interface MetadataRowProps {
-  item: ItemDetailResponse['item'];
-}
-
-function MetadataRow({ item }: MetadataRowProps) {
-  const hasYear = item.item_year;
-  const hasGroup = item.group_name;
-
-  if (!hasYear && !hasGroup && !item.description) return null;
-
-  return (
-    <div className="space-y-2">
-      {/* Year & Collection */}
-      {(hasYear || hasGroup) && (
-        <div className="flex gap-2">
-          {hasYear && (
-            <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-white/5 border border-white/5 flex-1">
-              <Calendar className="w-3 h-3 text-slate-500" />
-              <span className="text-xs text-slate-400 font-mono">
-                {item.item_year}{item.item_year_to && item.item_year_to !== item.item_year ? ` – ${item.item_year_to}` : ''}
-              </span>
-            </div>
-          )}
-          {hasGroup && (
-            <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-white/5 border border-white/5 flex-1 min-w-0">
-              <Hash className="w-3 h-3 text-slate-500 shrink-0" />
-              <span className="text-xs text-slate-400 truncate">{item.group_name}</span>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Description */}
-      {item.description && (
-        <p className="text-xs text-slate-500 leading-relaxed line-clamp-2 px-1 font-sans">
-          {item.description}
-        </p>
-      )}
-
-      {/* Tags */}
-      {item.tags && item.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1">
-          {item.tags.slice(0, 4).map((tag, i) => (
-            <span
-              key={i}
-              className="glass-dock-badge px-1.5 py-0.5 text-xs font-semibold rounded-md"
-            >
-              {tag}
-            </span>
-          ))}
-          {item.tags.length > 4 && (
-            <span className="text-[9px] text-slate-600 px-1">+{item.tags.length - 4}</span>
-          )}
-        </div>
+          Add to Grid
+        </button>
       )}
     </div>
   );
 }
 
-interface RankingChartProps {
+interface CompactRankingChartProps {
   stats: NonNullable<ItemDetailResponse['rankingStats']>;
   accent: { color: string; name: string };
 }
 
-function RankingChart({ stats, accent }: RankingChartProps) {
+function BrandedBarShape({ x, y, width, height, gradientId }: {
+  x?: number; y?: number; width?: number; height?: number;
+  gradientId?: string;
+}) {
+  if (!x || !y || !width || !height || height <= 0) return null;
+  const r = Math.min(3, width / 2, height);
+  return (
+    <path
+      d={`M${x},${y + height}
+          V${y + r}
+          Q${x},${y} ${x + r},${y}
+          H${x + width - r}
+          Q${x + width},${y} ${x + width},${y + r}
+          V${y + height}Z`}
+      fill={gradientId ? `url(#${gradientId})` : undefined}
+    />
+  );
+}
+
+function CompactRankingChart({ stats, accent }: CompactRankingChartProps) {
   const chartData = useMemo(() => {
     return Object.keys(stats.distribution || {})
       .map(Number)
@@ -534,17 +387,18 @@ function RankingChart({ stats, accent }: RankingChartProps) {
   }, [stats]);
 
   const volatilityInfo = getVolatilityInfo(stats.volatility);
+  const gradientId = `compact-bar-${accent.name}`;
 
   return (
-    <div className="space-y-2">
-      {/* Header with volatility badge */}
-      <div className="flex items-center justify-between px-1">
-        <div className="flex items-center gap-1.5">
-          <TrendingUp className="w-3 h-3 text-slate-500" />
-          <span className="text-xs font-medium text-slate-400 uppercase tracking-wide">Distribution</span>
+    <div className="space-y-1">
+      {/* Header */}
+      <div className="flex items-center justify-between px-0.5">
+        <div className="flex items-center gap-1">
+          <TrendingUp className="w-2.5 h-2.5 text-slate-500" />
+          <span className="text-2xs font-medium text-slate-500 uppercase tracking-wide">Distribution</span>
         </div>
         <span
-          className="text-[9px] font-medium px-1.5 py-0.5 rounded"
+          className="text-3xs font-medium px-1 py-px rounded"
           style={{
             background: volatilityInfo.bgColor,
             color: volatilityInfo.color,
@@ -554,38 +408,63 @@ function RankingChart({ stats, accent }: RankingChartProps) {
         </span>
       </div>
 
-      {/* Percentile Bar */}
+      {/* Percentile row */}
       <div
-        className="flex items-center justify-between px-2 py-1.5 rounded-lg"
-        style={{ background: `${accent.color}08`, border: `1px solid ${accent.color}15` }}
+        className="flex items-center justify-between px-1.5 py-1 rounded-control text-center"
+        style={{ background: `${accent.color}06`, border: `1px solid ${accent.color}12` }}
       >
         <PercentileItem label="25th" value={stats.percentiles.p25} />
-        <div className="h-4 w-px bg-white/10" />
+        <div className="h-3 w-px bg-white/8" />
         <PercentileItem label="Med" value={stats.percentiles.p50} highlight color={accent.color} />
-        <div className="h-4 w-px bg-white/10" />
+        <div className="h-3 w-px bg-white/8" />
         <PercentileItem label="75th" value={stats.percentiles.p75} />
-        <div className="h-4 w-px bg-white/10" />
-        <PercentileItem label="Avg" value={stats.averagePosition.toFixed(1)} />
       </div>
 
       {/* Mini Chart */}
       {chartData.length > 0 && (
-        <div className="h-16 w-full">
+        <div className="h-14 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
-              <XAxis dataKey="position" hide />
-              <Tooltip content={<MiniTooltip accent={accent.color} />} />
+            <BarChart data={chartData} margin={{ top: 2, right: 2, left: 2, bottom: 10 }}>
+              <defs>
+                <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={accent.color} stopOpacity={1} />
+                  <stop offset="100%" stopColor={accent.color} stopOpacity={0.7} />
+                </linearGradient>
+                <linearGradient id={`${gradientId}-dim`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={accent.color} stopOpacity={0.4} />
+                  <stop offset="100%" stopColor={accent.color} stopOpacity={0.2} />
+                </linearGradient>
+              </defs>
+              <XAxis
+                dataKey="position"
+                tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 8, fontFamily: 'var(--font-family-mono)' }}
+                tickLine={false}
+                axisLine={false}
+              />
+              <Tooltip
+                content={<MiniTooltip accent={accent.color} />}
+                cursor={{ fill: `${accent.color}10` }}
+              />
               <ReferenceLine
                 x={Math.round(stats.medianPosition)}
                 stroke={accent.color}
                 strokeDasharray="2 2"
                 strokeWidth={1}
               />
-              <Bar dataKey="count" radius={[2, 2, 0, 0]} maxBarSize={12}>
+              <Bar
+                dataKey="count"
+                maxBarSize={10}
+                shape={(props: BarShapeProps) => (
+                  <BrandedBarShape
+                    x={props.x} y={props.y} width={props.width} height={props.height}
+                    gradientId={(props as BarShapeProps & { isMedian?: boolean }).isMedian ? gradientId : `${gradientId}-dim`}
+                  />
+                )}
+              >
                 {chartData.map((entry, index) => (
                   <Cell
                     key={`cell-${index}`}
-                    fill={entry.isMedian ? accent.color : `${accent.color}50`}
+                    fill={entry.isMedian ? accent.color : `${accent.color}40`}
                   />
                 ))}
               </Bar>
@@ -609,10 +488,10 @@ function PercentileItem({
   color?: string;
 }) {
   return (
-    <div className="text-center px-2">
-      <p className="text-[9px] text-slate-500 uppercase font-mono">{label}</p>
+    <div className="text-center px-1.5">
+      <p className="text-3xs text-slate-500 uppercase font-mono">{label}</p>
       <p
-        className={cn("text-xs font-bold", highlight ? "" : "text-slate-300")}
+        className={cn("text-2xs font-bold", highlight ? "" : "text-slate-300")}
         style={highlight && color ? { color } : {}}
       >
         #{value}
@@ -630,7 +509,7 @@ function MiniTooltip({ active, payload, label, accent }: {
   if (!active || !payload?.[0]) return null;
   return (
     <div
-      className="px-2 py-1 rounded shadow-lg text-xs"
+      className="px-1.5 py-0.5 rounded shadow-lg text-2xs"
       style={{
         background: 'rgba(15,23,42,0.95)',
         border: `1px solid ${accent}40`,
@@ -645,12 +524,6 @@ function MiniTooltip({ active, payload, label, accent }: {
 // ============================================================================
 // Utilities
 // ============================================================================
-
-function formatCompact(num: number): string {
-  if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
-  if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
-  return num.toString();
-}
 
 function getVolatilityInfo(volatility: number) {
   if (volatility < 2) return { label: 'Stable', color: '#10B981', bgColor: 'rgba(16,185,129,0.15)' };

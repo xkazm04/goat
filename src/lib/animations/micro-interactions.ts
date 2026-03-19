@@ -38,19 +38,24 @@ export const EASING = {
 } as const;
 
 /**
- * Standard durations in seconds
- * - instant: For immediate feedback (< 100ms)
- * - fast: For micro-interactions (100-200ms)
- * - normal: For standard transitions (200-300ms)
- * - slow: For dramatic effects (300-500ms)
- * - emphasis: For celebration animations (500-800ms)
+ * Duration tiers (seconds) — aligned with design-tokens.css
+ *   --duration-instant · --duration-quick · --duration-normal · --duration-slow
  */
 export const DURATION = {
-  instant: 0.08,
-  fast: 0.15,
-  normal: 0.25,
-  slow: 0.4,
+  /** 50 ms — focus rings, active/pressed, tap feedback */
+  instant: 0.05,
+  /** 150 ms — hover, toggle, small state changes */
+  quick: 0.15,
+  /** 200 ms — fade-in, collapse, subtle transitions */
+  fast: 0.2,
+  /** 300 ms — modal entry/exit, panel slide, standard transitions */
+  normal: 0.3,
+  /** 500 ms — page transitions, stagger base */
+  slow: 0.5,
+  /** 600 ms — celebration animations, extended entrances */
   emphasis: 0.6,
+  /** 800 ms — dramatic reveals, hero animations */
+  dramatic: 0.8,
 } as const;
 
 /**
@@ -152,7 +157,7 @@ export const buttonPressDeep: TargetAndTransition = {
 export const buttonHover: TargetAndTransition = {
   scale: SCALE.hover,
   transition: {
-    duration: DURATION.fast,
+    duration: DURATION.quick,
     ease: EASING.easeOut,
   },
 };
@@ -165,7 +170,7 @@ export const buttonHoverLift: TargetAndTransition = {
   scale: SCALE.hover,
   y: -2,
   transition: {
-    duration: DURATION.fast,
+    duration: DURATION.quick,
     ease: EASING.easeOut,
   },
 };
@@ -181,7 +186,7 @@ export const buttonVariants: Variants = {
   hover: {
     scale: SCALE.hover,
     transition: {
-      duration: DURATION.fast,
+      duration: DURATION.quick,
       ease: EASING.easeOut,
     },
   },
@@ -307,7 +312,7 @@ export const fieldFocusVariants: Variants = {
     borderColor: 'rgba(6, 182, 212, 0.5)',
     boxShadow: '0 0 0 3px rgba(6, 182, 212, 0.15)',
     transition: {
-      duration: DURATION.fast,
+      duration: DURATION.quick,
       ease: EASING.easeOut,
     },
   },
@@ -329,7 +334,7 @@ export const errorShakeVariants: Variants = {
   shake: {
     x: [-8, 8, -6, 6, -4, 4, -2, 2, 0],
     transition: {
-      duration: 0.5,
+      duration: DURATION.slow,
       ease: 'linear',
     },
   },
@@ -349,7 +354,7 @@ export const validationIndicatorVariants: Variants = {
     scale: 1,
     x: 0,
     transition: {
-      duration: DURATION.fast,
+      duration: DURATION.quick,
       ease: EASING.easeOut,
     },
   },
@@ -358,7 +363,7 @@ export const validationIndicatorVariants: Variants = {
     scale: 0.8,
     x: 5,
     transition: {
-      duration: DURATION.fast,
+      duration: DURATION.quick,
     },
   },
 };
@@ -450,7 +455,7 @@ export const dropdownVariants: Variants = {
     y: 0,
     scale: 1,
     transition: {
-      duration: DURATION.fast,
+      duration: DURATION.quick,
       ease: EASING.easeOut,
     },
   },
@@ -459,7 +464,7 @@ export const dropdownVariants: Variants = {
     y: -10,
     scale: 0.95,
     transition: {
-      duration: DURATION.fast,
+      duration: DURATION.quick,
       ease: EASING.easeInOut,
     },
   },
@@ -477,7 +482,7 @@ export const menuItemVariants: Variants = {
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     x: 4,
     transition: {
-      duration: DURATION.fast,
+      duration: DURATION.quick,
       ease: EASING.easeOut,
     },
   },
@@ -550,7 +555,7 @@ export const iconRotateVariants: Variants = {
   active: {
     rotate: 45,
     transition: {
-      duration: DURATION.fast,
+      duration: DURATION.quick,
       ease: EASING.snap,
     },
   },
@@ -604,7 +609,7 @@ export const tooltipVariants: Variants = {
     y: 0,
     scale: 1,
     transition: {
-      duration: DURATION.fast,
+      duration: DURATION.quick,
       ease: EASING.easeOut,
     },
   },

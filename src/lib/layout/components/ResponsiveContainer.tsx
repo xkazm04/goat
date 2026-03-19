@@ -9,7 +9,7 @@ import React, { useRef, useEffect, useState, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useLayout } from '../LayoutManager';
-import { BREAKPOINTS, LAYOUT_ANIMATIONS, LAYOUT_CSS_VARS } from '../constants';
+import { BREAKPOINTS, LAYOUT_ANIMATIONS, LAYOUT_CSS_VARS, getContainerBreakpoint } from '../constants';
 import type { Breakpoint } from '../types';
 
 /**
@@ -54,18 +54,8 @@ export function ResponsiveContainer({
 
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        const width = entry.contentRect.width;
-        let newBreakpoint: Breakpoint = 'desktop';
-
-        if (width < 400) {
-          newBreakpoint = 'mobile';
-        } else if (width < 700) {
-          newBreakpoint = 'tablet';
-        } else if (width < 1200) {
-          newBreakpoint = 'desktop';
-        } else {
-          newBreakpoint = 'ultrawide';
-        }
+        // Use centralized container breakpoints from layout/constants.ts
+        const newBreakpoint = getContainerBreakpoint(entry.contentRect.width);
 
         if (newBreakpoint !== containerBreakpoint) {
           setContainerBreakpoint(newBreakpoint);

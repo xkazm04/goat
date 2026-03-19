@@ -70,7 +70,7 @@ function TierEditor({
   };
 
   return (
-    <div className="flex items-center gap-3 p-2 rounded-lg bg-slate-800/50 border border-slate-700/50">
+    <div className="flex items-center gap-3 p-2 rounded-card bg-slate-800/50 border border-slate-700/50">
       {/* Color indicator/picker */}
       <div
         className="w-8 h-8 rounded cursor-pointer hover:ring-2 ring-white/30 transition-all"
@@ -98,7 +98,7 @@ function TierEditor({
               if (e.key === 'Enter') handleLabelSave();
               if (e.key === 'Escape') setIsEditing(false);
             }}
-            className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-sm text-white focus:outline-hidden focus:border-brand"
+            className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded-control text-sm text-white focus:outline-hidden focus:border-brand"
             autoFocus
           />
         ) : (
@@ -121,7 +121,7 @@ function TierEditor({
       {canRemove && (
         <button
           onClick={onRemove}
-          className="p-1 rounded hover:bg-red-500/20 text-slate-500 hover:text-red-400 transition-colors"
+          className="p-1 rounded-control hover:bg-red-500/20 text-slate-500 hover:text-red-400 transition-colors"
           title="Remove tier"
         >
           <Trash2 className="w-4 h-4" />
@@ -147,7 +147,7 @@ function PresetSelector({
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800 border border-slate-600 hover:border-slate-500 transition-colors text-sm"
+        className="flex items-center gap-2 px-3 py-2 rounded-control bg-slate-800 border border-slate-600 hover:border-slate-500 transition-colors text-sm"
       >
         <span className="text-slate-300">{currentPreset.name}</span>
         <ChevronDown
@@ -162,7 +162,7 @@ function PresetSelector({
           <>
             {/* Backdrop */}
             <div
-              className="fixed inset-0 z-40"
+              className="fixed inset-0 z-dropdown"
               onClick={() => setIsOpen(false)}
             />
 
@@ -171,7 +171,7 @@ function PresetSelector({
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="absolute top-full left-0 mt-1 w-64 bg-slate-800 border border-slate-600 rounded-lg shadow-xl z-50 overflow-hidden"
+              className="absolute top-full left-0 mt-1 w-64 bg-slate-800 border border-slate-600 rounded-card shadow-xl z-dropdown overflow-hidden"
             >
               {/* Categories */}
               {['General', 'Gaming', 'Sports', 'Entertainment', 'Music', 'Anime', 'Food'].map((category) => {
@@ -258,7 +258,7 @@ export function TierConfigurator({
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={`
-          flex items-center gap-2 px-3 py-2 rounded-lg
+          flex items-center gap-2 px-3 py-2 rounded-control
           transition-colors text-sm font-medium
           ${
             isOpen
@@ -278,14 +278,14 @@ export function TierConfigurator({
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 20 }}
-            className="fixed top-0 right-0 h-full w-full sm:w-80 bg-slate-900 border-l border-slate-700 shadow-2xl z-50 overflow-y-auto"
+            className="fixed top-0 right-0 h-full w-full sm:w-80 bg-slate-900 border-l border-slate-700 shadow-2xl z-sticky overflow-y-auto"
           >
             {/* Header */}
             <div className="sticky top-0 bg-slate-900 border-b border-slate-700 p-4 flex items-center justify-between">
               <h2 className="text-lg font-bold text-white">Customize Tiers</h2>
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+                className="p-1 rounded-control hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -315,7 +315,7 @@ export function TierConfigurator({
                   </label>
                   <button
                     onClick={handleAddTier}
-                    className="flex items-center gap-1 px-2 py-1 rounded text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+                    className="flex items-center gap-1 px-2 py-1 rounded-control text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
                   >
                     <Plus className="w-3 h-3" />
                     Add
@@ -339,7 +339,7 @@ export function TierConfigurator({
               <div className="space-y-2 pt-4 border-t border-slate-700">
                 <button
                   onClick={onTiersReset}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors text-sm"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-control bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors text-sm"
                 >
                   <RotateCcw className="w-4 h-4" />
                   Reset to Default
@@ -347,7 +347,7 @@ export function TierConfigurator({
 
                 <button
                   onClick={onExport}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-linear-to-r from-brand to-blue-600 hover:from-brand-hover hover:to-blue-500 text-white font-medium transition-all text-sm"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-control bg-linear-to-r from-brand to-blue-600 hover:from-brand-hover hover:to-blue-500 text-white font-medium transition-all text-sm"
                 >
                   <Download className="w-4 h-4" />
                   Export as Image
@@ -366,7 +366,7 @@ export function TierConfigurator({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setIsOpen(false)}
-            className="fixed inset-0 bg-black/50 z-40 sm:hidden"
+            className="fixed inset-0 bg-black/50 z-sticky sm:hidden"
           />
         )}
       </AnimatePresence>

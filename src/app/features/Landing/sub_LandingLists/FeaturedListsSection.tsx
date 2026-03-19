@@ -2,18 +2,24 @@
 
 import { useState, useCallback, useMemo, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Play } from "lucide-react";
+import { DURATION } from '@/lib/animations/motion-presets';
+import { Play } from "lucide-react";
+import { GoatSparkles } from "@/components/visual/GoatIcons";
 import { useFeaturedLists } from "@/hooks/use-top-lists";
 import { useComposition } from "@/hooks/use-composition";
 import { usePlayList } from "@/hooks/use-play-list";
+import { useBookmarks } from "@/hooks/use-bookmarks";
+import { useTempUser } from "@/hooks/use-temp-user";
 import { TopList } from "@/types/top-lists";
 import { SearchFilterBar, SearchFilterResult } from "./SearchFilterBar";
+import { BookmarkButton } from "./BookmarkButton";
 import { NeonArenaTheme } from "../shared/NeonArenaTheme";
 import { FEATURED_ORBS } from "../shared/NeonArenaBackground";
 import { SectionHeader } from "./SectionHeader";
 import { getCategoryColor } from "@/lib/helpers/getColors";
 import { useListThumbnails } from "@/hooks/use-list-thumbnails";
 import { ELEVATION, GLOW_PRESET, getGlow } from "@/components/visual/depth";
+import { GoatMascot } from "@/components/visual/GoatMascot";
 
 interface FeaturedListsSectionProps {
   className?: string;
@@ -28,6 +34,8 @@ interface MosaicCardProps {
   isLoading: boolean;
   onPlay: (list: TopList) => void;
   onCustomize: (list: TopList) => void;
+  isBookmarked: boolean;
+  onToggleBookmark: (listId: string) => void;
 }
 
 const MosaicCard = memo(function MosaicCard({
@@ -36,6 +44,8 @@ const MosaicCard = memo(function MosaicCard({
   isLoading,
   onPlay,
   onCustomize,
+  isBookmarked,
+  onToggleBookmark,
 }: MosaicCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const colors = useMemo(() => getCategoryColor(list.category), [list.category]);
@@ -51,7 +61,7 @@ const MosaicCard = memo(function MosaicCard({
 
   return (
     <motion.div
-      className="relative aspect-4/3 cursor-pointer overflow-hidden rounded-md group
+      className="relative aspect-4/3 cursor-pointer overflow-hidden rounded-control group
         focus-ring"
       tabIndex={0}
       role="button"
@@ -64,7 +74,7 @@ const MosaicCard = memo(function MosaicCard({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.96 }}
-      transition={{ duration: 0.25 }}
+      transition={{ duration: DURATION.quick }}
       style={{
         background: '#0e1117',
         boxShadow: isHovered
@@ -84,10 +94,10 @@ const MosaicCard = memo(function MosaicCard({
 
       {/* Hover glow overlay */}
       <motion.div
-        className="absolute inset-0 rounded-md pointer-events-none"
+        className="absolute inset-0 rounded-control pointer-events-none"
         initial={{ opacity: 0 }}
         animate={{ opacity: isHovered ? 1 : 0 }}
-        transition={{ duration: 0.3 }}
+        transition={{ duration: DURATION.normal }}
         style={{
           background: `radial-gradient(circle at center, rgba(251, 191, 36, 0.08) 0%, transparent 70%)`,
           boxShadow: isHovered ? `inset 0 0 30px rgba(251, 191, 36, 0.05)` : 'none',
@@ -104,7 +114,7 @@ const MosaicCard = memo(function MosaicCard({
           loading="lazy"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.3 }}
+          transition={{ duration: DURATION.normal }}
         />
       )}
 
@@ -127,6 +137,15 @@ const MosaicCard = memo(function MosaicCard({
         </div>
       )}
 
+      {/* Bookmark button - top right */}
+      <div className="absolute top-1.5 right-1.5 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+        <BookmarkButton
+          isBookmarked={isBookmarked}
+          onToggle={() => onToggleBookmark(list.id)}
+          size="sm"
+        />
+      </div>
+
       {/* Bottom info bar - always visible */}
       <div
         className="absolute bottom-0 left-0 right-0 p-2.5 transition-all duration-200"
@@ -139,7 +158,7 @@ const MosaicCard = memo(function MosaicCard({
         <p className="text-xs font-medium text-white/95 leading-snug line-clamp-2">
           {list.title}
         </p>
-        <p className="text-[10px] text-white/40 mt-0.5 capitalize">
+        <p className="text-2xs text-white/40 mt-0.5 capitalize">
           {list.category}
         </p>
       </div>
@@ -151,7 +170,7 @@ const MosaicCard = memo(function MosaicCard({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
+            transition={{ duration: DURATION.quick }}
             className="absolute inset-0 flex items-center justify-center z-10"
             style={{ background: 'rgba(0,0,0,0.5)' }}
           >
@@ -178,6 +197,8 @@ const MosaicCard = memo(function MosaicCard({
 export function FeaturedListsSection({ className }: FeaturedListsSectionProps) {
   const { openWithSourceList } = useComposition();
   const { handlePlayList } = usePlayList();
+  const { tempUserId } = useTempUser();
+  const { isBookmarked, toggleBookmark } = useBookmarks(tempUserId || "");
 
   // Search and filter state
   const [isSearchActive, setIsSearchActive] = useState(false);
@@ -251,7 +272,7 @@ export function FeaturedListsSection({ className }: FeaturedListsSectionProps) {
       <div className="max-w-7xl mx-auto relative">
         {/* Section header */}
         <SectionHeader
-          icon={Sparkles}
+          icon={GoatSparkles}
           title="Featured Rankings"
           subtitle="Discover the most popular lists from our community"
           testIdPrefix="featured-lists"
@@ -267,11 +288,11 @@ export function FeaturedListsSection({ className }: FeaturedListsSectionProps) {
 
         {/* Results count */}
         <div className="mb-6 flex items-center justify-between max-w-6xl mx-auto">
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-slate-500 font-mono">
             {displayLists.length} rankings
           </span>
           {isSearchActive && (
-            <span className="text-[10px] text-slate-500">
+            <span className="text-2xs text-slate-500">
               Showing search results
             </span>
           )}
@@ -284,7 +305,7 @@ export function FeaturedListsSection({ className }: FeaturedListsSectionProps) {
               Array.from({ length: 24 }).map((_, i) => (
                 <div
                   key={`skeleton-${i}`}
-                  className="aspect-4/3 rounded-md bg-slate-800/30 animate-pulse"
+                  className="aspect-4/3 rounded-control bg-slate-800/30 animate-pulse"
                 />
               ))
             ) : displayLists.length > 0 ? (
@@ -296,12 +317,15 @@ export function FeaturedListsSection({ className }: FeaturedListsSectionProps) {
                   isLoading={imageMap[list.id]?.loading ?? true}
                   onPlay={handlePlayList}
                   onCustomize={handleCustomize}
+                  isBookmarked={isBookmarked(list.id)}
+                  onToggleBookmark={toggleBookmark}
                 />
               ))
             ) : (
-              <div className="col-span-full py-20 text-center">
-                <p className="text-slate-500 text-sm mb-3">No rankings found</p>
-                <p className="text-xs text-slate-600">
+              <div className="col-span-full py-16 text-center flex flex-col items-center">
+                <GoatMascot variant="waving" size={100} />
+                <p className="text-amber-200/70 text-sm font-medium mt-3">No rankings found</p>
+                <p className="text-xs text-slate-500 mt-1">
                   Try adjusting your search or filters
                 </p>
               </div>

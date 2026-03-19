@@ -100,7 +100,7 @@ export function AudioPlayer() {
       {/* Mini-player UI */}
       <div
         className={cn(
-          'fixed bottom-0 left-0 right-0 z-50',
+          'fixed bottom-0 left-0 right-0 z-sticky',
           'bg-gray-900/95 backdrop-blur-xl',
           'border-t border-gray-800/50',
           'shadow-2xl shadow-black/50'
@@ -108,8 +108,14 @@ export function AudioPlayer() {
       >
         {/* Progress bar (clickable) */}
         <div
-          className="absolute top-0 left-0 right-0 h-1 bg-gray-800 cursor-pointer group"
+          className="absolute top-0 left-0 right-0 h-1 bg-gray-800 cursor-pointer group focus-ring"
           onClick={handleSeek}
+          role="slider"
+          tabIndex={0}
+          aria-label="Seek audio"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(progress)}
         >
           <div
             className="h-full bg-linear-to-r from-brand to-brand-hover transition-all duration-100"
@@ -126,7 +132,7 @@ export function AudioPlayer() {
         {/* Player content */}
         <div className="flex items-center gap-4 px-4 py-3">
           {/* Thumbnail */}
-          <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0 bg-gray-800">
+          <div className="relative w-12 h-12 rounded-card overflow-hidden shrink-0 bg-gray-800">
             {thumbnailUrl ? (
               <img
                 src={thumbnailUrl}
@@ -214,7 +220,7 @@ export function AudioPlayer() {
               {showVolumeSlider && (
                 <div
                   className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 p-3
-                    bg-gray-800 rounded-lg shadow-xl border border-gray-700"
+                    bg-gray-800 rounded-card shadow-xl border border-gray-700"
                 >
                   <input
                     type="range"
@@ -222,7 +228,7 @@ export function AudioPlayer() {
                     max="100"
                     value={isMuted ? 0 : volume}
                     onChange={handleVolumeChange}
-                    className="w-24 h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer
+                    className="w-24 h-1 bg-gray-700 rounded-card appearance-none cursor-pointer
                       [&::-webkit-slider-thumb]:appearance-none
                       [&::-webkit-slider-thumb]:w-3
                       [&::-webkit-slider-thumb]:h-3

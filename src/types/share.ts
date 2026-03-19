@@ -13,6 +13,7 @@ export interface SharedRanking {
   share_code: string;
   og_image_url?: string;
   view_count: number;
+  fork_count: number;
   challenge_count: number;
   created_at: string;
   updated_at: string;

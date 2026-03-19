@@ -211,6 +211,7 @@ class TMDBFetcherClass {
           source: 'tmdb',
           rawData: {},
           fetchedAt: Date.now(),
+          fetchDurationMs: Date.now() - startTime,
           confidence: 0,
           error: 'No matching movie found',
         };
@@ -240,6 +241,7 @@ class TMDBFetcherClass {
           cast,
         },
         fetchedAt: Date.now(),
+        fetchDurationMs: Date.now() - startTime,
         confidence: match.confidence,
       };
     } catch (error) {
@@ -247,6 +249,7 @@ class TMDBFetcherClass {
         source: 'tmdb',
         rawData: {},
         fetchedAt: Date.now(),
+        fetchDurationMs: Date.now() - startTime,
         confidence: 0,
         error: error instanceof Error ? error.message : 'Unknown error',
       };

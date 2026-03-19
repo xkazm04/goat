@@ -9,6 +9,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { DURATION } from '@/lib/animations/motion-presets';
 import { Plus, ChevronUp, Loader2, ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useStudioItems } from '@/stores/studio-store';
@@ -95,8 +96,8 @@ export function AddItemForm({ disabled = false }: AddItemFormProps) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.15 }}
-          className="w-full p-4 border-2 border-dashed border-gray-700/50 rounded-xl
+          transition={{ duration: DURATION.quick }}
+          className="w-full p-4 border-2 border-dashed border-gray-700/50 rounded-card
             text-gray-400 hover:text-amber-400 hover:border-amber-500/50
             hover:bg-amber-500/5 flex items-center justify-center gap-2
             transition-all duration-300 group disabled:opacity-50 disabled:cursor-not-allowed"
@@ -110,11 +111,11 @@ export function AddItemForm({ disabled = false }: AddItemFormProps) {
           initial={{ height: 0, opacity: 0 }}
           animate={{ height: 'auto', opacity: 1 }}
           exit={{ height: 0, opacity: 0 }}
-          transition={{ duration: 0.2, ease: 'easeOut' }}
+          transition={{ duration: DURATION.quick, ease: 'easeOut' }}
           className="overflow-hidden"
         >
           <div className="p-4 bg-linear-to-br from-gray-900/80 to-gray-900/40
-            border border-gray-700/50 rounded-xl space-y-4 backdrop-blur-xs">
+            border border-gray-700/50 rounded-card space-y-4 backdrop-blur-xs">
             <div className="flex items-center justify-between">
               <h4 className="text-sm font-medium text-white flex items-center gap-2">
                 <Plus className="w-4 h-4 text-amber-400" />
@@ -124,7 +125,7 @@ export function AddItemForm({ disabled = false }: AddItemFormProps) {
                 type="button"
                 onClick={() => setIsExpanded(false)}
                 className="text-gray-400 hover:text-white transition-colors p-1
-                  hover:bg-white/5 rounded-lg"
+                  hover:bg-white/5 rounded-control"
               >
                 <ChevronUp className="w-4 h-4" />
               </button>
@@ -140,7 +141,7 @@ export function AddItemForm({ disabled = false }: AddItemFormProps) {
                 autoFocus
                 disabled={isAddingItem}
                 className="w-full px-4 py-2.5 border border-gray-700/50
-                  rounded-lg text-white placeholder-gray-500 text-sm
+                  rounded-control text-white placeholder-gray-500 text-sm
                   focus:outline-hidden focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50
                   disabled:opacity-50 transition-all"
                 style={{ backgroundColor: SURFACE_ELEVATION.raised }}
@@ -153,7 +154,7 @@ export function AddItemForm({ disabled = false }: AddItemFormProps) {
                 rows={2}
                 disabled={isAddingItem}
                 className="w-full px-4 py-2.5 border border-gray-700/50
-                  rounded-lg text-white placeholder-gray-500 text-sm resize-none
+                  rounded-control text-white placeholder-gray-500 text-sm resize-none
                   focus:outline-hidden focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50
                   disabled:opacity-50 transition-all"
                 style={{ backgroundColor: SURFACE_ELEVATION.raised }}
@@ -173,7 +174,7 @@ export function AddItemForm({ disabled = false }: AddItemFormProps) {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  transition={{ duration: 0.15 }}
+                  transition={{ duration: DURATION.quick }}
                 >
                   <StudioError
                     message={imageError}

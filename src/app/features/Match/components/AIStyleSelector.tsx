@@ -54,7 +54,7 @@ function StyleCard({ style, isSelected, isRecommended, onClick, compact }: Style
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
       className={cn(
-        "relative rounded-xl overflow-hidden transition-all duration-200",
+        "relative rounded-container overflow-hidden transition-all duration-200",
         compact ? "h-20" : "h-28",
         isSelected
           ? "ring-2 ring-brand ring-offset-2 ring-offset-gray-900 shadow-lg shadow-brand/20"
@@ -72,13 +72,13 @@ function StyleCard({ style, isSelected, isRecommended, onClick, compact }: Style
         {/* Badges */}
         <div className="absolute top-1.5 right-1.5 flex gap-1">
           {style.isPremium && (
-            <span className="px-1.5 py-0.5 text-[10px] font-bold bg-amber-500/90 text-black rounded-full flex items-center gap-0.5">
+            <span className="px-1.5 py-0.5 text-2xs font-bold bg-amber-500/90 text-black rounded-badge flex items-center gap-0.5">
               <Crown className="w-2.5 h-2.5" />
               PRO
             </span>
           )}
           {isRecommended && !style.isPremium && (
-            <span className="px-1.5 py-0.5 text-[10px] font-medium bg-brand/90 text-white rounded-full">
+            <span className="px-1.5 py-0.5 text-2xs font-medium bg-brand/90 text-white rounded-badge">
               Recommended
             </span>
           )}
@@ -92,7 +92,7 @@ function StyleCard({ style, isSelected, isRecommended, onClick, compact }: Style
           {style.name}
         </h4>
         {!compact && (
-          <p className="text-[10px] text-gray-300 truncate">
+          <p className="text-2xs text-gray-300 truncate">
             {style.description}
           </p>
         )}
@@ -102,7 +102,7 @@ function StyleCard({ style, isSelected, isRecommended, onClick, compact }: Style
       {isSelected && (
         <motion.div
           layoutId="style-selection"
-          className="absolute inset-0 border-2 border-brand-hover rounded-xl pointer-events-none"
+          className="absolute inset-0 border-2 border-brand-hover rounded-container pointer-events-none"
           initial={false}
           transition={{ type: "spring", stiffness: 500, damping: 30 }}
         />
@@ -182,7 +182,7 @@ export function AIStyleSelector({
 
   if (!aiAvailable) {
     return (
-      <div className="p-4 rounded-xl bg-gray-800/50 border border-gray-700 text-center">
+      <div className="p-4 rounded-container bg-gray-800/50 border border-gray-700 text-center">
         <Sparkles className="w-8 h-8 mx-auto mb-2 text-gray-500" />
         <p className="text-sm text-gray-400">AI generation is not available</p>
         <p className="text-xs text-gray-500 mt-1">Using template-based generation</p>
@@ -214,7 +214,7 @@ export function AIStyleSelector({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search styles..."
-            className="w-full pl-9 pr-4 py-2 text-sm bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-hidden focus:ring-2 focus:ring-brand/50 focus:border-brand"
+            className="w-full pl-9 pr-4 py-2 text-sm bg-gray-800/50 border border-gray-700 rounded-card text-white placeholder-gray-500 focus:outline-hidden focus:ring-2 focus:ring-brand/50 focus:border-brand"
           />
         </div>
       )}
@@ -324,10 +324,10 @@ export function AIStyleSelector({
                     value={customPrompt}
                     onChange={(e) => handleCustomPromptChange(e.target.value)}
                     placeholder="Add custom details... e.g., 'Include a trophy icon' or 'Use darker colors'"
-                    className="w-full h-20 px-3 py-2 text-sm bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-hidden focus:ring-2 focus:ring-brand/50 focus:border-brand resize-none"
+                    className="w-full h-20 px-3 py-2 text-sm bg-gray-800/50 border border-gray-700 rounded-card text-white placeholder-gray-500 focus:outline-hidden focus:ring-2 focus:ring-brand/50 focus:border-brand resize-none"
                     maxLength={500}
                   />
-                  <div className="flex items-center justify-between text-[10px] text-gray-500">
+                  <div className="flex items-center justify-between text-2xs text-gray-500">
                     <span className="flex items-center gap-1">
                       <Info className="w-3 h-3" />
                       Describe additional elements or style tweaks
@@ -342,10 +342,10 @@ export function AIStyleSelector({
       )}
 
       {/* Selected Style Info */}
-      <div className="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
+      <div className="p-3 rounded-card bg-gray-800/30 border border-gray-700/50">
         <div className="flex items-start gap-3">
           <div
-            className="w-10 h-10 rounded-lg shrink-0"
+            className="w-10 h-10 rounded-card shrink-0"
             style={{ background: getAIStyleConfig(selectedStyle).thumbnailGradient }}
           />
           <div className="flex-1 min-w-0">

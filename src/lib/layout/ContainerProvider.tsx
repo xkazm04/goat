@@ -290,8 +290,8 @@ function ContainerDebugOverlay({
   return (
     <div
       className={cn(
-        'absolute top-1 right-1 z-50',
-        'rounded px-2 py-1 text-[10px] font-mono',
+        'absolute top-1 right-1 z-sticky',
+        'rounded px-2 py-1 text-2xs font-mono',
         'bg-black/80 text-white pointer-events-none',
         'opacity-80 hover:opacity-100 transition-opacity'
       )}

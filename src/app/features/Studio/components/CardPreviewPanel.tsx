@@ -7,6 +7,7 @@ import { ELEVATION, Glow } from '@/components/visual';
 import { SURFACE_ELEVATION } from '@/components/visual/depth/depth-tokens';
 import { PositionBadge } from '@/components/patterns/badges';
 import type { Criterion, CriterionScore } from '@/lib/criteria/types';
+import { DURATION } from '@/lib/animations/motion-presets';
 
 export interface CardPreviewPanelProps {
   /** Criteria to display on the preview card */
@@ -100,12 +101,12 @@ export const CardPreviewPanel = memo(function CardPreviewPanel({
             color="gold"
             intensity="subtle"
             asBackground
-            className="absolute inset-0 rounded-xl z-0 pointer-events-none"
+            className="absolute inset-0 rounded-card z-0 pointer-events-none"
           />
 
           {/* Gold Border - Position #1 */}
           <div
-            className="absolute inset-0 rounded-xl pointer-events-none z-35"
+            className="absolute inset-0 rounded-card pointer-events-none z-35"
             style={{
               boxShadow: 'inset 0 0 0 3px #fbbf24',
             }}
@@ -113,11 +114,11 @@ export const CardPreviewPanel = memo(function CardPreviewPanel({
 
           {/* Card container */}
           <motion.div
-            className="relative w-full h-full rounded-xl overflow-hidden border-2 border-white/10 group"
+            className="relative w-full h-full rounded-card overflow-hidden border-2 border-white/10 group"
             style={{ boxShadow: ELEVATION.medium, backgroundColor: SURFACE_ELEVATION.raised }}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: DURATION.normal }}
           >
             {/* Placeholder Image */}
             <div
@@ -142,7 +143,7 @@ export const CardPreviewPanel = memo(function CardPreviewPanel({
               className="absolute top-2 left-1/2 -translate-x-1/2 z-20"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1, duration: 0.3 }}
+              transition={{ delay: 0.1, duration: DURATION.normal }}
             >
               <PositionBadge position={0} size="sm" />
             </motion.div>
@@ -156,7 +157,7 @@ export const CardPreviewPanel = memo(function CardPreviewPanel({
           </motion.div>
 
           {/* Title below card */}
-          <p className="mt-2 text-[11px] font-medium text-white/90 text-center leading-tight">
+          <p className="mt-2 text-xs font-medium text-white/90 text-center leading-tight">
             Example Item
           </p>
         </div>

@@ -3,27 +3,16 @@
 import { useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Check, ChevronLeft, ChevronRight, Undo2 } from 'lucide-react';
-import { BracketState, isCompletedNonBye, getLoserFromMatchup } from '../lib/bracketGenerator';
+import { BracketState, CompletedVote, isCompletedNonBye, getLoserFromMatchup } from '../lib/bracketGenerator';
 
 interface VotingHistoryStripProps {
   bracket: BracketState;
+  /** Pre-computed votes from deriveBracketData. When provided, skips local iteration. */
+  completedVotes?: CompletedVote[];
   onRevote?: (matchupId: string) => void;
 }
 
-interface VoteResult {
-  id: string;
-  roundIndex: number;
-  winner: {
-    id: string;
-    title?: string;
-    image_url?: string | null;
-  };
-  loser: {
-    id: string;
-    title?: string;
-    image_url?: string | null;
-  };
-}
+type VoteResult = CompletedVote;
 
 /**
  * Compact vote display showing winner vs loser
@@ -39,7 +28,7 @@ function VoteCard({ vote, isNew, onRevote }: { vote: VoteResult; isNew: boolean;
       initial={isNew ? { opacity: 0, scale: 0.8, x: 20 } : false}
       animate={{ opacity: 1, scale: 1, x: 0 }}
       onClick={isClickable ? () => onRevote(vote.id) : undefined}
-      className={`relative shrink-0 flex items-center gap-px rounded-lg overflow-hidden bg-slate-800/40 border border-slate-700/30 ${
+      className={`relative shrink-0 snap-center flex items-center gap-px rounded-card overflow-hidden bg-slate-800/40 border border-slate-700/30 ${
         isClickable ? 'cursor-pointer hover:border-amber-500/50 hover:bg-slate-700/40 transition-colors group' : ''
       }`}
       role="listitem"
@@ -55,7 +44,7 @@ function VoteCard({ vote, isNew, onRevote }: { vote: VoteResult; isNew: boolean;
             className="w-full h-full object-cover"
           />
         ) : (
-          <div className="w-full h-full bg-slate-700 flex items-center justify-center text-[9px] text-slate-400 font-bold" aria-label={winnerName}>
+          <div className="w-full h-full bg-slate-700 flex items-center justify-center text-2xs text-slate-400 font-bold" aria-label={winnerName}>
             {vote.winner.title?.charAt(0)?.toUpperCase() || '?'}
           </div>
         )}
@@ -74,7 +63,7 @@ function VoteCard({ vote, isNew, onRevote }: { vote: VoteResult; isNew: boolean;
             className="w-full h-full object-cover grayscale opacity-40"
           />
         ) : (
-          <div className="w-full h-full bg-slate-800 flex items-center justify-center text-[9px] text-slate-700 font-bold" aria-label={loserName}>
+          <div className="w-full h-full bg-slate-800 flex items-center justify-center text-2xs text-slate-700 font-bold" aria-label={loserName}>
             {vote.loser.title?.charAt(0)?.toUpperCase() || '?'}
           </div>
         )}
@@ -86,7 +75,7 @@ function VoteCard({ vote, isNew, onRevote }: { vote: VoteResult; isNew: boolean;
 
       {/* Revote hover overlay */}
       {isClickable && (
-        <div className="absolute inset-0 flex items-center justify-center bg-amber-500/0 group-hover:bg-amber-500/20 transition-colors rounded-lg pointer-events-none">
+        <div className="absolute inset-0 flex items-center justify-center bg-amber-500/0 group-hover:bg-amber-500/20 transition-colors rounded-card pointer-events-none">
           <Undo2 className="w-3.5 h-3.5 text-amber-400 opacity-0 group-hover:opacity-100 transition-opacity" />
         </div>
       )}
@@ -98,20 +87,20 @@ function VoteCard({ vote, isNew, onRevote }: { vote: VoteResult; isNew: boolean;
  * Horizontal scrolling strip showing voting history
  * Displays at the top of the matchup screen
  */
-export function VotingHistoryStrip({ bracket, onRevote }: VotingHistoryStripProps) {
+export function VotingHistoryStrip({ bracket, completedVotes: preComputed, onRevote }: VotingHistoryStripProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const prevCountRef = useRef(0);
 
-  // Collect all completed matchups
-  const completedVotes = useMemo(() => {
-    const results: VoteResult[] = [];
+  // Use pre-computed votes when available; otherwise fall back to local derivation
+  const localVotes = useMemo(() => {
+    if (preComputed) return preComputed;
 
+    const results: VoteResult[] = [];
     for (const round of bracket.rounds) {
       for (const matchup of round.matchups) {
         if (!isCompletedNonBye(matchup)) continue;
 
         const loser = getLoserFromMatchup(matchup)!;
-
         results.push({
           id: matchup.id,
           roundIndex: matchup.roundIndex,
@@ -128,9 +117,10 @@ export function VotingHistoryStrip({ bracket, onRevote }: VotingHistoryStripProp
         });
       }
     }
-
     return results;
-  }, [bracket]);
+  }, [bracket, preComputed]);
+
+  const completedVotes = localVotes;
 
   // Auto-scroll to end when new vote is added
   useEffect(() => {
@@ -161,7 +151,7 @@ export function VotingHistoryStrip({ bracket, onRevote }: VotingHistoryStripProp
           <line x1="37" y1="17" x2="37" y2="8" stroke="rgb(100,116,139)" strokeWidth="1.5" strokeDasharray="2 2" />
           <path d="M34 11l3-3 3 3" stroke="rgb(100,116,139)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
         </svg>
-        <span className="text-[9px] sm:text-[11px] text-slate-600 uppercase tracking-wide">
+        <span className="text-2xs sm:text-xs text-slate-600 uppercase tracking-wide">
           Your voting history will appear here
         </span>
       </div>
@@ -173,10 +163,10 @@ export function VotingHistoryStrip({ bracket, onRevote }: VotingHistoryStripProp
       <div className="flex items-center h-12 sm:h-14">
         {/* Label */}
         <div className="shrink-0 px-3 sm:px-4 border-r border-slate-800/50 h-full flex items-center">
-          <span className="text-[9px] sm:text-[11px] font-bold uppercase text-slate-500 tracking-wide">
+          <span className="text-2xs sm:text-xs font-bold uppercase text-slate-500 tracking-wide">
             History
           </span>
-          <span className="ml-1.5 text-[9px] sm:text-[11px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">
+          <span className="ml-1.5 text-2xs sm:text-xs px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">
             {completedVotes.length}
           </span>
         </div>
@@ -186,7 +176,7 @@ export function VotingHistoryStrip({ bracket, onRevote }: VotingHistoryStripProp
           ref={scrollRef}
           role="list"
           aria-label={`Voting history: ${completedVotes.length} completed matchups`}
-          className="flex-1 overflow-x-auto scrollbar-none flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3"
+          className="flex-1 overflow-x-auto scrollbar-none flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 snap-x snap-mandatory"
         >
           <AnimatePresence mode="popLayout">
             {completedVotes.map((vote, index) => (

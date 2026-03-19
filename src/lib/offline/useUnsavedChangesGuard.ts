@@ -13,6 +13,9 @@ import { useEffect, useCallback, useRef } from 'react';
 import { getSyncEngine } from './SyncEngine';
 import { getNetworkMonitor } from './NetworkMonitor';
 import { getSyncQueue } from './SyncQueue';
+import { flushPendingSync } from './sessionStoreIntegration';
+import { flushPendingSessionSave } from '@/stores/session-store';
+import { flushPendingGridSync } from '@/stores/grid-store';
 
 export interface UseUnsavedChangesGuardOptions {
   /** Enable beforeunload warning (default: true) */
@@ -48,6 +51,19 @@ export function useUnsavedChangesGuard(
     if (!enableBeforeUnload || typeof window === 'undefined') return;
 
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      // Flush the grid store's microtask-debounced sync first so pending
+      // grid items reach the session store before it saves.
+      flushPendingGridSync();
+
+      // Flush the Zustand session store's debounced save so the latest
+      // grid/backlog state is persisted to localStorage before unload.
+      flushPendingSessionSave();
+
+      // Flush any debounced sync queue enqueue before the page unloads.
+      // The IndexedDB write already happened immediately in saveSessionToOffline,
+      // but the sync queue enqueue may still be pending.
+      flushPendingSync();
+
       try {
         const engine = getSyncEngine();
         const state = engine.getState();
@@ -74,6 +90,15 @@ export function useUnsavedChangesGuard(
     if (!enableVisibilitySync || typeof document === 'undefined') return;
 
     const handleVisibilityChange = async () => {
+      // When tab becomes hidden, flush any pending debounced saves
+      // so the data is up-to-date if the tab is later closed
+      if (document.visibilityState === 'hidden') {
+        flushPendingGridSync();
+        flushPendingSessionSave();
+        flushPendingSync();
+        return;
+      }
+
       // Only sync when tab becomes visible (user returns to tab)
       if (document.visibilityState !== 'visible') return;
       if (isSyncingOnFocusRef.current) return;

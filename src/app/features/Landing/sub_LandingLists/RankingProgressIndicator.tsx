@@ -2,7 +2,8 @@
 
 import { memo, useMemo } from "react";
 import { motion } from "framer-motion";
-import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import { DURATION } from '@/lib/animations/motion-presets';
+import { useSimpleAnimationPause } from "@/hooks/use-animation-pause";
 
 interface RankingProgressIndicatorProps {
   /** Number of filled/ranked positions */
@@ -40,7 +41,8 @@ export const RankingProgressIndicator = memo(function RankingProgressIndicator({
   showText = true,
   testIdPrefix = "ranking-progress",
 }: RankingProgressIndicatorProps) {
-  const prefersReducedMotion = useReducedMotion();
+  const { shouldAnimate, motionCapabilities } = useSimpleAnimationPause();
+  const prefersReducedMotion = !motionCapabilities.allowTransitions;
 
   const percentage = useMemo(() => {
     if (total === 0) return 0;
@@ -90,7 +92,7 @@ export const RankingProgressIndicator = memo(function RankingProgressIndicator({
         className={`flex ${gap} flex-1 min-w-0`}
         initial={prefersReducedMotion ? {} : { opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.3 }}
+        transition={{ duration: DURATION.normal }}
       >
         {segments.map(({ index, fillLevel }) => (
           <motion.div
@@ -113,7 +115,7 @@ export const RankingProgressIndicator = memo(function RankingProgressIndicator({
                 opacity: fillLevel > 0 ? 1 : 0,
               }}
               transition={{
-                duration: 0.4,
+                duration: DURATION.normal,
                 delay: index * 0.03,
                 ease: "easeOut"
               }}
@@ -128,7 +130,7 @@ export const RankingProgressIndicator = memo(function RankingProgressIndicator({
           className="flex items-center gap-1 shrink-0"
           initial={prefersReducedMotion ? {} : { opacity: 0, x: -4 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.3, delay: 0.2 }}
+          transition={{ duration: DURATION.normal, delay: 0.2 }}
         >
           <span
             className="text-xs font-medium tabular-nums"
@@ -155,14 +157,19 @@ export const RankingProgressIndicator = memo(function RankingProgressIndicator({
                 background: primaryColor,
                 boxShadow: `0 0 6px ${primaryColor}60`,
               }}
-              animate={{
+              animate={shouldAnimate ? {
                 scale: [1, 1.3, 1],
                 opacity: [0.6, 1, 0.6],
+              } : {
+                scale: 1,
+                opacity: 0.6,
               }}
-              transition={{
+              transition={shouldAnimate ? {
                 duration: 2,
                 repeat: Infinity,
                 ease: "easeInOut",
+              } : {
+                duration: DURATION.quick,
               }}
               data-testid={`${testIdPrefix}-pulse`}
             />
@@ -194,7 +201,7 @@ export const RankingProgressIndicator = memo(function RankingProgressIndicator({
                 fill="none"
                 initial={prefersReducedMotion ? {} : { pathLength: 0 }}
                 animate={{ pathLength: 1 }}
-                transition={{ duration: 0.3, delay: 0.1 }}
+                transition={{ duration: DURATION.normal, delay: 0.1 }}
               />
             </motion.svg>
           )}

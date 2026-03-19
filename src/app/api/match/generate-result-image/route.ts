@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { GEMINI_MODEL_REST } from '@/lib/providers/gemini-client';
+import { rateLimit, getRateLimitKey } from '@/lib/api/rate-limiter';
 import { GridItemType } from '@/types/match';
 import {
   LayoutEngine,
@@ -39,6 +41,10 @@ interface CompositionResult {
 }
 
 export async function POST(request: NextRequest) {
+  // Rate limit: 5 requests per minute per IP (expensive operation)
+  const limited = rateLimit(getRateLimitKey(request, 'generate-result-image'), 5, 60_000);
+  if (limited) return limited;
+
   try {
     const body: GenerateImageRequest = await request.json();
     const {
@@ -119,7 +125,7 @@ export async function POST(request: NextRequest) {
 
     // Call Gemini Flash API
     const geminiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL_REST}:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: {
@@ -208,10 +214,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error generating result image:', error);
     return NextResponse.json(
-      {
-        error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

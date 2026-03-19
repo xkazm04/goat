@@ -80,6 +80,7 @@ export type ErrorCode =
   | 'CLIENT_UNKNOWN_ERROR'
   | 'CLIENT_INVALID_STATE'
   | 'CLIENT_STORAGE_ERROR'
+  | 'CLIENT_EMPTY_RESPONSE'
 
   // Grid/Match specific (re-using validation codes)
   | 'GRID_SOURCE_NOT_FOUND'
@@ -324,6 +325,11 @@ export const ERROR_MESSAGES: Record<ErrorCode, { title: string; description: str
     title: 'Can\'t save locally',
     description: 'Your browser storage is full or restricted. Try clearing some space or check your privacy settings.',
     severity: 'warning',
+  },
+  CLIENT_EMPTY_RESPONSE: {
+    title: 'Empty response from server',
+    description: 'The server returned a success status but no data. This is likely a server-side issue — try again shortly.',
+    severity: 'error',
   },
 
   // Grid/Match specific

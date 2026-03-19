@@ -7,7 +7,8 @@
 
 import React, { useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Star, Tag, Grid, Clock, Bookmark, Filter } from 'lucide-react';
+import { Star, Tag, Grid, Clock, Bookmark } from 'lucide-react';
+import { GoatSparkles, GoatFilter } from '@/components/visual/GoatIcons';
 import type { FilterConfig } from '@/lib/filters/types';
 import { cn } from '@/lib/utils';
 import { useFilterBuilderStore } from '@/stores/filter-builder-store';
@@ -96,7 +97,7 @@ export const FILTER_TEMPLATES: FilterTemplate[] = [
     id: 'favorites-unplaced',
     name: 'Favorites Not Placed',
     description: 'High-rated items not yet in grid',
-    icon: <Sparkles size={18} />,
+    icon: <GoatSparkles size={18} />,
     color: 'purple',
     config: {
       rootCombinator: 'AND',
@@ -208,10 +209,10 @@ const COLOR_VARIANTS: Record<string, { bg: string; border: string; text: string;
     iconBg: 'bg-orange-500/10',
   },
   cyan: {
-    bg: 'bg-brand/5',
-    border: 'border-brand/20 hover:border-brand/40',
-    text: 'text-brand-hover',
-    iconBg: 'bg-brand/10',
+    bg: 'bg-primary/5',
+    border: 'border-primary/20 hover:border-primary/40',
+    text: 'text-primary',
+    iconBg: 'bg-primary/10',
   },
 };
 
@@ -231,18 +232,18 @@ function TemplateCard({
     <button
       onClick={() => onSelect(template.config)}
       className={cn(
-        'flex items-start gap-3 rounded-lg border p-3 text-left transition-all',
+        'flex items-start gap-3 rounded-card border p-3 text-left transition-all',
         colors.bg,
         colors.border,
         'hover:scale-[1.02]'
       )}
     >
-      <div className={cn('rounded-md p-2', colors.iconBg, colors.text)}>
+      <div className={cn('rounded-control p-2', colors.iconBg, colors.text)}>
         {template.icon}
       </div>
       <div className="flex-1 min-w-0">
         <h4 className={cn('font-medium', colors.text)}>{template.name}</h4>
-        <p className="text-xs text-zinc-500 mt-0.5">{template.description}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">{template.description}</p>
       </div>
     </button>
   );
@@ -270,8 +271,8 @@ export function FilterTemplates({
 
   return (
     <div className={cn('space-y-3', className)}>
-      <div className="flex items-center gap-2 text-sm text-zinc-400">
-        <Filter size={14} />
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <GoatFilter size={14} />
         <span>Quick Templates</span>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
@@ -309,7 +310,7 @@ export function TemplateQuickSelect({
             key={template.id}
             onClick={() => fromFilterConfig(template.config)}
             className={cn(
-              'flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs transition-all',
+              'flex items-center gap-1.5 rounded-badge px-2.5 py-1 text-xs transition-all',
               colors.bg,
               colors.border,
               colors.text,

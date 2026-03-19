@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from 'framer-motion';
+import { DURATION } from '@/lib/animations/motion-presets';
 import { Mountain } from 'lucide-react';
 import { SimpleDropZone } from '../../sub_DropZone/SimpleDropZone';
 import { GridItemType } from '@/types/match';
@@ -80,14 +81,14 @@ export function MountRushmoreView({ gridItems, onRemove, getItemTitle }: MountRu
             className="mb-16 relative"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: DURATION.normal }}
         >
             {/* Mountain silhouette effect */}
             <motion.div
                 className="absolute inset-0 bg-linear-to-b from-slate-700/10 to-transparent blur-2xl -z-10"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 0.5, duration: 0.6 }}
+                transition={{ delay: DURATION.slow, duration: DURATION.emphasis }}
             />
 
             <div className="flex flex-col items-center gap-8">
@@ -106,17 +107,17 @@ export function MountRushmoreView({ gridItems, onRemove, getItemTitle }: MountRu
                 </motion.div>
 
                 <motion.p
-                    className="text-slate-500 text-[10px] font-mono uppercase tracking-widest mb-4"
+                    className="text-slate-500 text-2xs font-mono uppercase tracking-widest mb-4"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.15, duration: 0.4 }}
+                    transition={{ delay: 0.15, duration: DURATION.normal }}
                 >
                     The Four Legends Carved in Stone
                 </motion.p>
 
                 {/* 4 Faces Side by Side */}
                 <motion.div
-                    className="grid grid-cols-4 gap-8 w-full max-w-6xl px-4"
+                    className="grid grid-cols-4 gap-8 w-full max-w-6xl px-4 auto-rows-[1fr]"
                     variants={rushmoreContainer}
                     initial="hidden"
                     animate="show"
@@ -131,7 +132,7 @@ export function MountRushmoreView({ gridItems, onRemove, getItemTitle }: MountRu
                                 key={position}
                                 variants={rushmoreCard}
                                 className={cn(
-                                    "relative aspect-square",
+                                    "relative aspect-[3/4]",
                                     position === 0 && "z-10"
                                 )}
                                 style={position === 0 ? {
@@ -144,13 +145,13 @@ export function MountRushmoreView({ gridItems, onRemove, getItemTitle }: MountRu
                                 </div>
 
                                 {/* Stone frame - outer glow */}
-                                <div className="absolute -inset-2 bg-linear-to-br from-slate-600/40 to-slate-900/50 rounded-xl blur-xs" />
+                                <div className="absolute -inset-2 bg-linear-to-br from-slate-600/40 to-slate-900/50 rounded-card blur-xs" />
                                 {/* Stone frame - inner carved effect */}
-                                <div className="absolute inset-0 rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.3),inset_0_-2px_4px_rgba(255,255,255,0.05)]" />
+                                <div className="absolute inset-0 rounded-card shadow-[inset_0_2px_4px_rgba(0,0,0,0.3),inset_0_-2px_4px_rgba(255,255,255,0.05)]" />
 
-                                <Elevated level="medium" hoverLift={false} className="w-full h-full rounded-xl">
+                                <Elevated level="medium" hoverLift={false} className="w-full h-full rounded-card">
                                     <div
-                                        className="rushmore-slot relative w-full h-full overflow-hidden rounded-xl"
+                                        className="rushmore-slot relative w-full h-full overflow-hidden rounded-card"
                                         style={{
                                             // Stone-carved filter: desaturate slightly, boost contrast, warm sepia tint
                                             filter: isOccupied
@@ -174,7 +175,7 @@ export function MountRushmoreView({ gridItems, onRemove, getItemTitle }: MountRu
                                         {/* Stone texture overlay - only on occupied slots */}
                                         {isOccupied && (
                                             <div
-                                                className="pointer-events-none absolute inset-0 rounded-xl z-10"
+                                                className="pointer-events-none absolute inset-0 rounded-card z-10"
                                                 style={{
                                                     background: `
                                                         repeating-conic-gradient(

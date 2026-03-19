@@ -18,6 +18,7 @@ import { useRankingStore } from '@/stores/ranking-store';
 import { useDebateStore } from '@/stores/debate-store';
 import { useDebate } from '@/hooks/use-debate';
 import { useCurrentListInfo } from '@/stores/use-list-store';
+import { extractTitle } from '@/lib/items/item-utils';
 import { useOptionalDropZoneHighlight } from './DropZoneHighlightContext';
 import { TierFocusProvider, useTierFocus } from './TierFocusProvider';
 import {
@@ -453,7 +454,7 @@ function TierListViewContent({
         {/* AI Debate Mode toggle */}
         <button
           onClick={() => setDebateEnabled(!debateEnabled)}
-          className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-control text-sm font-medium
             border transition-all duration-200 focus-ring
             ${debateEnabled
               ? 'bg-brand/20 text-brand border-brand/50 hover:bg-brand/30 shadow-sm shadow-brand/20'
@@ -469,7 +470,7 @@ function TierListViewContent({
         {/* Keyboard shortcuts hint */}
         <button
           onClick={onToggleKeyboardHelp}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium
+          className="flex items-center gap-1.5 px-3 py-2 rounded-control text-sm font-medium
             bg-slate-800/80 text-slate-300 border border-slate-600/80
             hover:border-slate-500 hover:bg-slate-700/80
             focus-ring
@@ -478,7 +479,7 @@ function TierListViewContent({
         >
           <Keyboard className="w-4 h-4" />
           <span className="hidden sm:inline">Shortcuts</span>
-          <kbd className="px-1 py-0.5 rounded bg-slate-700 text-[10px] font-mono text-slate-400">?</kbd>
+          <kbd className="px-1 py-0.5 rounded bg-slate-700 text-2xs font-mono text-slate-400">?</kbd>
         </button>
 
         {/* Customize button */}
@@ -548,7 +549,7 @@ function TierListViewContent({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
+            className="fixed inset-0 bg-black/80 flex items-center justify-center z-modal"
           >
             <div className="text-center">
               <div className="w-12 h-12 border-4 border-brand border-t-transparent rounded-full animate-spin mx-auto mb-4" />

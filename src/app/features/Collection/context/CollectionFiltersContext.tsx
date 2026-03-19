@@ -18,7 +18,7 @@
  */
 
 import React, { createContext, useContext, ReactNode } from 'react';
-import { CollectionFilter, CollectionGroup, CollectionItem, ItemPanelStats } from '../types';
+import { CollectionFilter, ItemCategory, CollectionItem, ItemPanelStats } from '../types';
 
 export interface CollectionFiltersContextValue {
   // Filter state
@@ -30,9 +30,9 @@ export interface CollectionFiltersContextValue {
   };
 
   // Computed data
-  groups: CollectionGroup[];
+  groups: ItemCategory[];
   filteredItems: CollectionItem[];
-  selectedGroups: CollectionGroup[];
+  selectedGroups: ItemCategory[];
   stats: ItemPanelStats;
 
   // Filter actions

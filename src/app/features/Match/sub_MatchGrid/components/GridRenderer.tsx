@@ -6,16 +6,44 @@
  * Uses React.memo for fine-grained render optimization
  */
 
-import React, { memo, useMemo, useCallback } from "react";
+import React, { memo, lazy, Suspense } from "react";
 import { GridItemType } from "@/types/match";
 import { ViewMode } from "./ViewSwitcher";
-import { PodiumView } from "./PodiumView";
-import { GoatView } from "./GoatView";
-import { MountRushmoreView } from "./MountRushmoreView";
+import { PodiumViewSkeleton, GoatViewSkeleton, MountRushmoreViewSkeleton } from "./ViewSkeletons";
 import { GridSection } from "./GridSection";
+import { SimpleDropZone } from "../../sub_DropZone/SimpleDropZone";
+
+// Lazy-load view components to keep them code-split
+const PodiumView = lazy(() => import("./PodiumView").then(m => ({ default: m.PodiumView })));
+const GoatView = lazy(() => import("./GoatView").then(m => ({ default: m.GoatView })));
+const MountRushmoreView = lazy(() => import("./MountRushmoreView").then(m => ({ default: m.MountRushmoreView })));
 import { TierSection } from "./TierSection";
 import { useTierLayout } from "../hooks/useTierLayout";
 import { getItemTitle } from "../lib/helpers";
+
+/**
+ * Shallow-compare two GridItemType arrays by value fields.
+ * Avoids re-renders when the array reference changes but data is identical.
+ */
+function areGridItemsEqual(prev: GridItemType[], next: GridItemType[]): boolean {
+  if (prev === next) return true;
+  if (prev.length !== next.length) return false;
+  for (let i = 0; i < prev.length; i++) {
+    const p = prev[i];
+    const n = next[i];
+    if (p === n) continue;
+    if (!p || !n) return false;
+    if (
+      p.id !== n.id ||
+      p.matched !== n.matched ||
+      p.image_url !== n.image_url ||
+      p.title !== n.title
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
 
 /**
  * GridRenderer props
@@ -38,44 +66,66 @@ interface GridRendererProps {
 /**
  * Memoized view selector component
  */
-const ViewSelector = memo(function ViewSelector({
-  viewMode,
-  gridItems,
-  onRemove,
-}: {
-  viewMode: ViewMode;
-  gridItems: GridItemType[];
-  onRemove: (position: number) => void;
-}) {
-  switch (viewMode) {
-    case "podium":
-      return (
-        <PodiumView
-          gridItems={gridItems}
-          onRemove={onRemove}
-          getItemTitle={getItemTitle}
-        />
-      );
-    case "goat":
-      return (
-        <GoatView
-          gridItems={gridItems}
-          onRemove={onRemove}
-          getItemTitle={getItemTitle}
-        />
-      );
-    case "rushmore":
-      return (
-        <MountRushmoreView
-          gridItems={gridItems}
-          onRemove={onRemove}
-          getItemTitle={getItemTitle}
-        />
-      );
-    default:
-      return null;
-  }
-});
+const viewSkeletons: Record<string, React.ReactNode> = {
+  podium: <PodiumViewSkeleton />,
+  goat: <GoatViewSkeleton />,
+  rushmore: <MountRushmoreViewSkeleton />,
+};
+
+export const ViewSelector = memo(
+  function ViewSelector({
+    viewMode,
+    gridItems,
+    onRemove,
+  }: {
+    viewMode: ViewMode;
+    gridItems: GridItemType[];
+    onRemove: (position: number) => void;
+  }) {
+    let content: React.ReactNode = null;
+    switch (viewMode) {
+      case "podium":
+        content = (
+          <PodiumView
+            gridItems={gridItems}
+            onRemove={onRemove}
+            getItemTitle={getItemTitle}
+          />
+        );
+        break;
+      case "goat":
+        content = (
+          <GoatView
+            gridItems={gridItems}
+            onRemove={onRemove}
+            getItemTitle={getItemTitle}
+          />
+        );
+        break;
+      case "rushmore":
+        content = (
+          <MountRushmoreView
+            gridItems={gridItems}
+            onRemove={onRemove}
+            getItemTitle={getItemTitle}
+          />
+        );
+        break;
+      default:
+        return null;
+    }
+
+    return (
+      <Suspense fallback={viewSkeletons[viewMode] ?? null}>
+        {content}
+      </Suspense>
+    );
+  },
+  (prev, next) =>
+    prev.viewMode === next.viewMode &&
+    prev.onRemove === next.onRemove &&
+    areGridItemsEqual(prev.gridItems, next.gridItems),
+);
 
 /**
  * Standard grid sections renderer
@@ -146,17 +196,18 @@ const StandardGridSections = memo(function StandardGridSections({
 /**
  * Tier-based grid sections renderer
  */
-const TierGridSections = memo(function TierGridSections({
-  gridItems,
-  listSize,
-  onRemove,
-  showHeaders,
-}: {
-  gridItems: GridItemType[];
-  listSize: number;
-  onRemove: (position: number) => void;
-  showHeaders: boolean;
-}) {
+const TierGridSections = memo(
+  function TierGridSections({
+    gridItems,
+    listSize,
+    onRemove,
+    showHeaders,
+  }: {
+    gridItems: GridItemType[];
+    listSize: number;
+    onRemove: (position: number) => void;
+    showHeaders: boolean;
+  }) {
   const {
     tiers,
     tierStats,
@@ -197,54 +248,61 @@ const TierGridSections = memo(function TierGridSections({
       })}
     </div>
   );
-});
+  },
+  (prev, next) =>
+    prev.listSize === next.listSize &&
+    prev.onRemove === next.onRemove &&
+    prev.showHeaders === next.showHeaders &&
+    areGridItemsEqual(prev.gridItems, next.gridItems),
+);
 
 /**
  * GridRenderer Component
  */
-export const GridRenderer = memo(function GridRenderer({
-  gridItems,
-  viewMode,
-  onRemove,
-  maxSize = 50,
-  useTierLayout: useTiers = false,
-  showTierHeaders = true,
-}: GridRendererProps) {
-  // Memoized remove handler to prevent unnecessary re-renders
-  const handleRemove = useCallback(
-    (position: number) => {
-      onRemove(position);
-    },
-    [onRemove]
-  );
-
-  return (
-    <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 relative z-10">
-      {/* View-specific top section (Podium, GOAT, Rushmore) */}
-      <ViewSelector
-        viewMode={viewMode}
-        gridItems={gridItems}
-        onRemove={handleRemove}
-      />
-
-      {/* Main grid sections */}
-      {useTiers ? (
-        <TierGridSections
-          gridItems={gridItems}
-          listSize={maxSize}
-          onRemove={handleRemove}
-          showHeaders={showTierHeaders}
-        />
-      ) : (
-        <StandardGridSections
-          gridItemsLength={gridItems.length}
+export const GridRenderer = memo(
+  function GridRenderer({
+    gridItems,
+    viewMode,
+    onRemove,
+    maxSize = 50,
+    useTierLayout: useTiers = false,
+    showTierHeaders = true,
+  }: GridRendererProps) {
+    return (
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 relative z-10">
+        {/* View-specific top section (Podium, GOAT, Rushmore) */}
+        <ViewSelector
           viewMode={viewMode}
-          onRemove={handleRemove}
+          gridItems={gridItems}
+          onRemove={onRemove}
         />
-      )}
-    </div>
-  );
-});
+
+        {/* Main grid sections */}
+        {useTiers ? (
+          <TierGridSections
+            gridItems={gridItems}
+            listSize={maxSize}
+            onRemove={onRemove}
+            showHeaders={showTierHeaders}
+          />
+        ) : (
+          <StandardGridSections
+            gridItemsLength={gridItems.length}
+            viewMode={viewMode}
+            onRemove={onRemove}
+          />
+        )}
+      </div>
+    );
+  },
+  (prev, next) =>
+    prev.viewMode === next.viewMode &&
+    prev.onRemove === next.onRemove &&
+    prev.maxSize === next.maxSize &&
+    prev.useTierLayout === next.useTierLayout &&
+    prev.showTierHeaders === next.showTierHeaders &&
+    areGridItemsEqual(prev.gridItems, next.gridItems),
+);
 
 /**
  * Memoized position slot for individual slot optimization
@@ -267,16 +325,13 @@ export const MemoizedPositionSlot = memo(
   }) {
     const isOccupied = item?.matched ?? false;
 
-    // Import SimpleDropZone dynamically to avoid circular dependency
-    const { SimpleDropZone } = require("../../sub_DropZone/SimpleDropZone");
-
     return (
       <SimpleDropZone
         position={position}
         isOccupied={isOccupied}
         occupiedBy={isOccupied ? getItemTitle(item) : undefined}
         imageUrl={isOccupied ? item?.image_url : undefined}
-        gridItem={isOccupied ? item : undefined}
+        gridItem={isOccupied && item ? item : undefined}
         onRemove={onRemove}
         tierAccent={tierAccent}
         tierGlow={tierGlow}

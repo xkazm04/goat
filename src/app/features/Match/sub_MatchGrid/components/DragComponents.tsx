@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import type { MotionValue } from 'framer-motion';
 import { PlaceholderImage } from '@/components/ui/placeholder-image';
+import { DURATION } from '@/lib/animations/motion-presets';
 
 /**
  * Represents a draggable item with image and title
@@ -52,10 +53,10 @@ export function DragOverlayContent({
                 rotate: rotation,
             }}
             transition={{
-                scale: isSnapping ? { duration: 0.3, ease: "easeOut" } : { duration: 0.15 },
+                scale: isSnapping ? { duration: DURATION.normal, ease: "easeOut" } : { duration: DURATION.quick },
                 rotate: { duration: 0.1 },
             }}
-            className="w-24 h-24 rounded-xl overflow-hidden"
+            className="w-24 h-24 rounded-card overflow-hidden"
             style={{
                 marginLeft: '-48px',
                 marginTop: '-48px',
@@ -69,24 +70,24 @@ export function DragOverlayContent({
         >
             {/* Glow border */}
             <motion.div
-                className="absolute inset-0 rounded-xl pointer-events-none z-20"
+                className="absolute inset-0 rounded-card pointer-events-none z-20"
                 animate={{
                     boxShadow: previewPosition !== null
                         ? "inset 0 0 15px rgba(34, 211, 238, 0.5), 0 0 20px rgba(34, 211, 238, 0.4)"
                         : "inset 0 0 0px transparent",
                 }}
-                transition={{ duration: 0.2 }}
+                transition={{ duration: DURATION.fast }}
             />
 
             {/* Border */}
             <motion.div
-                className="absolute inset-0 rounded-xl border-2 pointer-events-none z-10"
+                className="absolute inset-0 rounded-card border-2 pointer-events-none z-10"
                 animate={{
                     borderColor: previewPosition !== null
                         ? "rgba(34, 211, 238, 1)"
                         : "rgba(34, 211, 238, 0.6)",
                 }}
-                transition={{ duration: 0.15 }}
+                transition={{ duration: DURATION.quick }}
             />
 
             {/* Content */}
@@ -109,7 +110,7 @@ export function DragOverlayContent({
                 <motion.div
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="absolute top-1 right-1 bg-brand/90 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md backdrop-blur-xs z-30"
+                    className="absolute top-1 right-1 bg-brand/90 text-white text-2xs font-bold px-1.5 py-0.5 rounded-control backdrop-blur-xs z-30"
                     data-testid="position-preview"
                 >
                     #{previewPosition + 1}

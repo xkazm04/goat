@@ -1,22 +1,22 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect, useDeferredValue } from "react";
-import { CollectionGroup, CollectionItem as CollectionItemType } from "../types";
 import { CollectionToolbar } from "./CollectionToolbar";
-import { ConfigurableCollectionItem, COLLECTION_VIEW_CONFIG } from "./ConfigurableCollectionItem";
+import { ConfigurableCollectionItem, COLLECTION_VIEW_CONFIG, type HoistedStoreState } from "./ConfigurableCollectionItem";
 import { CollectionStats } from "./CollectionStats";
 import { AddItemModal } from "./AddItemModal";
 import { StickyContext } from "./StickyContext";
 import { useCollection } from "../hooks/useCollection";
 import { useCurrentList } from "@/stores/use-list-store";
-import { CollectionFiltersProvider } from "../context/CollectionFiltersContext";
+import { useListStore } from "@/stores/use-list-store";
+import { useConsensusStore, useConsensusSortBy } from "@/stores/consensus-store";
+import { useCriteriaStore } from "@/stores/criteria-store";
 import { CollectionErrorBoundary } from "./CollectionErrorBoundary";
 import { EmptyTrophyCase, NoSearchResults } from "@/components/illustrations/EmptyStateIllustrations";
 import { MasonryGrid } from "@/components/ui/masonry-grid";
 import { useItemStatsBatch } from "@/hooks/use-item-stats";
 
 interface CollectionPanelProps {
-  groups?: CollectionGroup[]; // Now optional - can be fetched via hook
   className?: string;
   category?: string;
   subcategory?: string;
@@ -36,7 +36,6 @@ interface CollectionPanelProps {
  * - Unified data fetching with caching and optimistic updates
  */
 function CollectionPanelInternal({
-  groups: externalGroups,
   className = "",
   category,
   subcategory,
@@ -51,6 +50,22 @@ function CollectionPanelInternal({
   const itemsAreaRef = useRef<HTMLDivElement>(null);
   const currentList = useCurrentList();
 
+  // Hoist global store subscriptions to parent level.
+  // Instead of each ConfigurableCollectionItem subscribing to these stores
+  // individually (200 items x 4 stores = 800 subscriptions), we subscribe
+  // once here and pass the values down as props.
+  const consensusViewMode = useConsensusStore((state) => state.viewMode);
+  const consensusSortBy = useConsensusSortBy();
+  const activeProfileId = useCriteriaStore((state) => state.activeProfileId);
+  const listCategory = useListStore((state) => state.currentList)?.category;
+
+  const hoistedState = useMemo<HoistedStoreState>(() => ({
+    consensusViewMode,
+    consensusSortBy,
+    activeProfileId,
+    listCategory,
+  }), [consensusViewMode, consensusSortBy, activeProfileId, listCategory]);
+
   // Use unified collection hook for data fetching and mutations
   const collection = useCollection({
     category: category || currentList?.category,
@@ -60,13 +75,8 @@ function CollectionPanelInternal({
     staleTime: 3 * 60 * 1000, // 3 minutes
   });
 
-  // Use external groups if provided (backward compatibility), otherwise use hook data
-  // Guard: Ensure groups is always a valid array
-  const groups = Array.isArray(externalGroups)
-    ? externalGroups
-    : Array.isArray(collection.groups)
-    ? collection.groups
-    : [];
+  // Single source of truth: useCollection hook owns all data
+  const groups = Array.isArray(collection.groups) ? collection.groups : [];
 
   // Guard: Ensure filteredItems is always a valid array
   // Use useDeferredValue to prevent search keystrokes from blocking input
@@ -95,41 +105,6 @@ function CollectionPanelInternal({
     // Invalidate cache to refetch fresh data
     collection.invalidateCache();
   };
-
-  // Prepare context value for provider - memoized to prevent unnecessary context propagation
-  const contextValue = useMemo(() => ({
-    filter: collection.filter,
-    groups,
-    filteredItems,
-    selectedGroups,
-    stats,
-    setSearchTerm: collection.setSearchTerm,
-    toggleGroup: collection.toggleGroup,
-    selectAllGroups: collection.selectAllGroups,
-    deselectAllGroups: collection.deselectAllGroups,
-    setSortBy: collection.setSortBy,
-    setSortOrder: collection.setSortOrder,
-    isLoading: collection.isLoading,
-    isError: collection.isError,
-    error: collection.error,
-    spotlightItemId: collection.spotlightItemId,
-  }), [
-    collection.filter,
-    groups,
-    filteredItems,
-    selectedGroups,
-    stats,
-    collection.setSearchTerm,
-    collection.toggleGroup,
-    collection.selectAllGroups,
-    collection.deselectAllGroups,
-    collection.setSortBy,
-    collection.setSortOrder,
-    collection.isLoading,
-    collection.isError,
-    collection.error,
-    collection.spotlightItemId,
-  ]);
 
   // Scroll tracking for sticky context (RAF-throttled)
   useEffect(() => {
@@ -168,7 +143,7 @@ function CollectionPanelInternal({
   }, []);
 
   return (
-    <CollectionFiltersProvider value={contextValue}>
+    <>
       {/* Sticky Context Indicator */}
       <StickyContext
         isVisible={showStickyContext && isVisible}
@@ -189,7 +164,7 @@ function CollectionPanelInternal({
         className={`
           fixed bottom-0 left-0 right-0
           glass-dock-panel
-          z-40
+          z-sticky
           transition-all duration-(--glass-transition-slow) ease-(--glass-easing)
           ${isVisible ? 'translate-y-0' : 'translate-y-full'}
           ${className}
@@ -210,6 +185,11 @@ function CollectionPanelInternal({
           onAddItem={() => setIsAddModalOpen(true)}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
+          groups={groups}
+          selectedGroupIds={collection.filter.selectedGroupIds}
+          onToggleGroup={collection.toggleGroup}
+          searchValue={collection.filter.searchTerm}
+          onSearchChange={collection.setSearchTerm}
           showCategoryBar={true}
           showSearch={true}
         />
@@ -239,7 +219,7 @@ function CollectionPanelInternal({
               </div>
               <button
                 onClick={() => collection.invalidateCache()}
-                className="px-4 py-2 text-sm bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition-all duration-(--glass-transition-normal) ease-(--glass-easing)
+                className="px-4 py-2 text-sm bg-slate-800 hover:bg-slate-700 text-white rounded-control transition-all duration-(--glass-transition-normal) ease-(--glass-easing)
                   glass-dock-focus hover:shadow-(--glass-shadow-elevated)"
                 aria-label="Retry loading items"
               >
@@ -299,6 +279,7 @@ function CollectionPanelInternal({
                             index={index}
                             isSpotlight={isSpotlight}
                             config={COLLECTION_VIEW_CONFIG}
+                            hoistedState={hoistedState}
                           />
                         );
                       })}
@@ -317,6 +298,7 @@ function CollectionPanelInternal({
                             index={index}
                             isSpotlight={isSpotlight}
                             config={COLLECTION_VIEW_CONFIG}
+                            hoistedState={hoistedState}
                           />
                         );
                       })}
@@ -367,7 +349,7 @@ function CollectionPanelInternal({
         onClose={() => setIsAddModalOpen(false)}
         onSuccess={handleAddItemSuccess}
       />
-    </CollectionFiltersProvider>
+    </>
   );
 }
 

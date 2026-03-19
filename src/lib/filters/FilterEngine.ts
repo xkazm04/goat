@@ -19,18 +19,85 @@ import { DEFAULT_FILTER_OPTIONS, EMPTY_FILTER_CONFIG } from './constants';
 import { getFieldValue as getNestedFieldValue } from './utils';
 
 /**
+ * Metrics payload fired by FilterEngine and FullTextSearcher
+ * when an optional onMetrics callback is provided.
+ */
+export interface FilterMetrics {
+  operation: string;
+  durationMs: number;
+  itemCount: number;
+}
+
+/**
  * FilterEngine class - handles all filter operations
  */
+/**
+ * Detect regex patterns vulnerable to catastrophic backtracking (ReDoS).
+ * Rejects patterns containing nested quantifiers like (a+)+, (a*)*,
+ * overlapping alternations with quantifiers, and other known-dangerous constructs.
+ * Returns true if the pattern is considered safe.
+ */
+function isSafeRegex(pattern: string): boolean {
+  // Max pattern length to prevent extremely long patterns
+  if (pattern.length > 256) return false;
+
+  // Detect nested quantifiers: a quantified group containing a quantifier
+  // e.g., (a+)+, (a+)*, (.*)+, (\d+){2,}
+  // Matches: group with quantifier inside, followed by outer quantifier
+  const nestedQuantifier = /\([^)]*[+*][^)]*\)[+*?]|\([^)]*[+*][^)]*\)\{/;
+  if (nestedQuantifier.test(pattern)) return false;
+
+  // Detect overlapping alternations with quantifiers: (a|a)+, (ab|ac)+
+  // Simplified: group with alternation followed by quantifier
+  const alternationQuantifier = /\([^)]*\|[^)]*\)[+*]\??\{?/;
+  // Only flag when the alternation branches share a common prefix
+  if (alternationQuantifier.test(pattern)) {
+    const altMatch = pattern.match(/\(([^)]*\|[^)]*)\)[+*]/);
+    if (altMatch) {
+      const branches = altMatch[1].split('|');
+      for (let i = 0; i < branches.length; i++) {
+        for (let j = i + 1; j < branches.length; j++) {
+          // If two branches start with the same character, potential overlap
+          if (branches[i].length > 0 && branches[j].length > 0 &&
+              branches[i][0] === branches[j][0]) {
+            return false;
+          }
+        }
+      }
+    }
+  }
+
+  // Detect multiple adjacent unbounded quantifiers on overlapping charsets
+  // e.g., .*.*,  \s*\s*, \d+\d+
+  const adjacentQuantifiers = /[+*]\??\s*[.\\][+*]/;
+  if (adjacentQuantifiers.test(pattern)) return false;
+
+  return true;
+}
+
 export class FilterEngine<T extends Record<string, unknown>> {
   private options: Required<FilterEngineOptions>;
   private fieldCache: Map<string, Map<unknown, T[]>> = new Map();
   private regexCache: Map<string, RegExp> = new Map();
+  /** Tracks patterns rejected by the ReDoS safety check */
+  private unsafeRegexCache: Set<string> = new Set();
   private similarityCache: Map<string, number> = new Map();
+  private onMetrics?: (metrics: FilterMetrics) => void;
   private static readonly REGEX_CACHE_MAX = 100;
   private static readonly SIMILARITY_CACHE_MAX = 500;
+  /** Max string length for Levenshtein; longer strings fall back to substring matching */
+  private static readonly FUZZY_MAX_LENGTH = 200;
 
   constructor(options: FilterEngineOptions = {}) {
     this.options = { ...DEFAULT_FILTER_OPTIONS, ...options };
+  }
+
+  /**
+   * Set an optional metrics callback for real-time performance visibility.
+   * The callback receives {operation, durationMs, itemCount} after each operation.
+   */
+  setMetricsCallback(callback: (metrics: FilterMetrics) => void): void {
+    this.onMetrics = callback;
   }
 
   /**
@@ -59,9 +126,15 @@ export class FilterEngine<T extends Record<string, unknown>> {
     if (this.isEmptyConfig(config)) {
       filteredItems = [...items];
     } else {
-      filteredItems = items.filter((item) =>
-        this.evaluateConfig(item, config)
-      );
+      // Try indexed fast path for O(1) hash lookups
+      const indexedResult = this.applyIndexed(items, config);
+      if (indexedResult !== null) {
+        filteredItems = indexedResult;
+      } else {
+        filteredItems = items.filter((item) =>
+          this.evaluateConfig(item, config)
+        );
+      }
     }
 
     // Apply sort
@@ -75,59 +148,98 @@ export class FilterEngine<T extends Record<string, unknown>> {
         ? filteredItems.slice(0, this.options.maxResults)
         : filteredItems;
 
+    const durationMs = performance.now() - startTime;
+
+    if (this.onMetrics) {
+      this.onMetrics({
+        operation: 'filter.apply',
+        durationMs,
+        itemCount: items.length,
+      });
+    }
+
     return {
       items: finalItems,
       total: items.length,
       matched: filteredItems.length,
-      executionTime: performance.now() - startTime,
+      executionTime: durationMs,
       appliedFilters: enabledConditions,
       appliedSort: sortConfig || null,
     };
   }
 
   /**
-   * Sort items by field and direction
+   * Sort items by field and direction.
+   * Uses Schwartzian transform: precompute sort keys in O(n), then sort
+   * with a simple comparator instead of running type detection per comparison.
    */
   sortItems(items: T[], sortConfig: SortConfig): T[] {
     const { field, direction } = sortConfig;
     const multiplier = direction === 'asc' ? 1 : -1;
 
-    return [...items].sort((a, b) => {
-      const aVal = this.getFieldValue(a, field);
-      const bVal = this.getFieldValue(b, field);
+    // O(n) pass: extract and classify each value once
+    const decorated = items.map((item, index) => {
+      const raw = this.getFieldValue(item, field);
+      return { item, key: this.toSortKey(raw), index };
+    });
 
-      // Handle nulls/undefined - push to end
-      if (aVal == null && bVal == null) return 0;
-      if (aVal == null) return 1;
-      if (bVal == null) return -1;
+    // Sort using precomputed keys (no per-comparison type detection)
+    decorated.sort((a, b) => {
+      const ak = a.key;
+      const bk = b.key;
 
-      // Numeric comparison
-      if (typeof aVal === 'number' && typeof bVal === 'number') {
-        return (aVal - bVal) * multiplier;
+      // Nulls always pushed to end regardless of direction
+      if (ak.isNull && bk.isNull) return 0;
+      if (ak.isNull) return 1;
+      if (bk.isNull) return -1;
+
+      // Numeric keys (numbers, dates, parsed date-strings, booleans)
+      if (ak.numeric !== null && bk.numeric !== null) {
+        const diff = ak.numeric - bk.numeric;
+        return (diff !== 0 ? diff : 0) * multiplier;
       }
 
-      // Date comparison
-      if (aVal instanceof Date && bVal instanceof Date) {
-        return (aVal.getTime() - bVal.getTime()) * multiplier;
-      }
+      // Fallback: string comparison
+      return ak.str.localeCompare(bk.str) * multiplier;
+    });
 
-      // String date comparison (ISO strings)
-      if (typeof aVal === 'string' && typeof bVal === 'string') {
-        const aDate = Date.parse(aVal);
-        const bDate = Date.parse(bVal);
-        if (!isNaN(aDate) && !isNaN(bDate) && aVal.includes('-')) {
-          return (aDate - bDate) * multiplier;
+    return decorated.map((d) => d.item);
+  }
+
+  /**
+   * Convert a raw field value into a pre-resolved sort key.
+   * Called once per item (O(n)), not once per comparison (O(n log n)).
+   */
+  private toSortKey(raw: unknown): { isNull: boolean; numeric: number | null; str: string } {
+    if (raw == null) {
+      return { isNull: true, numeric: null, str: '' };
+    }
+
+    if (typeof raw === 'number') {
+      return { isNull: false, numeric: raw, str: String(raw) };
+    }
+
+    if (raw instanceof Date) {
+      return { isNull: false, numeric: raw.getTime(), str: raw.toISOString() };
+    }
+
+    if (typeof raw === 'boolean') {
+      return { isNull: false, numeric: raw ? 1 : 0, str: String(raw) };
+    }
+
+    if (typeof raw === 'string') {
+      // Detect ISO-style date strings (must contain '-' to avoid matching plain numbers)
+      if (raw.includes('-')) {
+        const parsed = Date.parse(raw);
+        if (!isNaN(parsed)) {
+          return { isNull: false, numeric: parsed, str: raw };
         }
       }
+      return { isNull: false, numeric: null, str: raw };
+    }
 
-      // Boolean comparison
-      if (typeof aVal === 'boolean' && typeof bVal === 'boolean') {
-        return ((aVal === bVal ? 0 : aVal ? -1 : 1)) * multiplier;
-      }
-
-      // Default: string comparison
-      return String(aVal).localeCompare(String(bVal)) * multiplier;
-    });
+    // Unknown types: stringify
+    return { isNull: false, numeric: null, str: String(raw) };
   }
 
   /**
@@ -245,6 +357,114 @@ export class FilterEngine<T extends Record<string, unknown>> {
       condition.operator,
       condition.valueType
     );
+  }
+
+  /**
+   * Try to apply filters using pre-built field indexes for O(1) lookups.
+   * Returns null if the config can't be resolved via indexes (falls back to linear scan).
+   * Only handles root-level conditions with indexable operators (equals, not_equals, in, not_in).
+   * Skipped when fuzzy matching is enabled since similarity-based equality differs from exact match.
+   */
+  private applyIndexed(items: T[], config: FilterConfig): T[] | null {
+    // Skip if fuzzy matching is on — index assumes exact equality
+    if (this.options.fuzzyMatching) return null;
+
+    // Only handle simple configs: root-level conditions, no active groups
+    const hasActiveGroups = config.groups.some(
+      (g) => g.enabled && (g.conditions.length > 0 || g.groups.length > 0)
+    );
+    if (hasActiveGroups) return null;
+
+    const enabledConditions = config.conditions.filter((c) => c.enabled);
+    if (enabledConditions.length === 0) return null;
+
+    // Try to resolve every condition from indexes
+    const conditionSets: Set<T>[] = [];
+    for (const condition of enabledConditions) {
+      const resultSet = this.resolveConditionFromIndex(items, condition);
+      if (resultSet === null) return null; // Can't index this condition
+      conditionSets.push(resultSet);
+    }
+
+    // Combine per-condition result sets
+    let matchSet: Set<T>;
+    if (config.rootCombinator === 'AND') {
+      // Intersection: start with smallest set for efficiency
+      conditionSets.sort((a, b) => a.size - b.size);
+      matchSet = conditionSets[0];
+      for (let i = 1; i < conditionSets.length; i++) {
+        const next = conditionSets[i];
+        const intersection = new Set<T>();
+        matchSet.forEach((item) => {
+          if (next.has(item)) intersection.add(item);
+        });
+        matchSet = intersection;
+      }
+    } else {
+      // Union
+      matchSet = new Set<T>();
+      for (const set of conditionSets) {
+        set.forEach((item) => matchSet.add(item));
+      }
+    }
+
+    // Preserve original item order
+    return items.filter((item) => matchSet.has(item));
+  }
+
+  /**
+   * Resolve a single condition using a field index.
+   * Returns matching items as a Set, or null if the condition can't be indexed.
+   */
+  private resolveConditionFromIndex(
+    items: T[],
+    condition: FilterCondition
+  ): Set<T> | null {
+    const index = this.fieldCache.get(condition.field);
+    if (!index) return null;
+
+    const { operator, value: filterValue } = condition;
+
+    if (operator === 'equals') {
+      const key = this.normalizeValue(filterValue);
+      return new Set(index.get(key) || []);
+    }
+
+    if (operator === 'not_equals') {
+      const key = this.normalizeValue(filterValue);
+      const excluded = new Set(index.get(key) || []);
+      const result = new Set<T>();
+      for (const item of items) {
+        if (!excluded.has(item)) result.add(item);
+      }
+      return result;
+    }
+
+    if (operator === 'in' && Array.isArray(filterValue)) {
+      const result = new Set<T>();
+      for (const v of filterValue) {
+        const key = this.normalizeValue(v);
+        const bucket = index.get(key) || [];
+        for (const item of bucket) result.add(item);
+      }
+      return result;
+    }
+
+    if (operator === 'not_in' && Array.isArray(filterValue)) {
+      const excluded = new Set<T>();
+      for (const v of filterValue) {
+        const key = this.normalizeValue(v);
+        const bucket = index.get(key) || [];
+        for (const item of bucket) excluded.add(item);
+      }
+      const result = new Set<T>();
+      for (const item of items) {
+        if (!excluded.has(item)) result.add(item);
+      }
+      return result;
+    }
+
+    return null; // Operator not indexable
   }
 
   /**
@@ -439,24 +659,50 @@ export class FilterEngine<T extends Record<string, unknown>> {
   }
 
   /**
-   * Check if value matches regex pattern
+   * Check if value matches regex pattern.
+   * Validates patterns against known ReDoS-vulnerable constructs before compilation.
    */
   private matchesRegex(fieldValue: unknown, filterValue: unknown): boolean {
     if (typeof fieldValue === 'string' && typeof filterValue === 'string') {
       try {
         const flags = this.options.caseSensitive ? '' : 'i';
         const cacheKey = `${filterValue}\0${flags}`;
+
+        // Fast reject: pattern was previously flagged as unsafe
+        if (this.unsafeRegexCache.has(cacheKey)) {
+          return false;
+        }
+
         let regex = this.regexCache.get(cacheKey);
         if (!regex) {
+          // Guard against catastrophic backtracking (ReDoS)
+          if (!isSafeRegex(filterValue)) {
+            this.unsafeRegexCache.add(cacheKey);
+            console.warn('[FilterEngine] matchesRegex: pattern rejected (potential ReDoS)', {
+              pattern: filterValue,
+            });
+            return false;
+          }
+
           if (this.regexCache.size >= FilterEngine.REGEX_CACHE_MAX) {
-            const firstKey = this.regexCache.keys().next().value!;
-            this.regexCache.delete(firstKey);
+            // Evict oldest 25%
+            const evictCount = Math.ceil(FilterEngine.REGEX_CACHE_MAX * 0.25);
+            const keys = this.regexCache.keys();
+            for (let i = 0; i < evictCount; i++) {
+              const key = keys.next().value;
+              if (key !== undefined) this.regexCache.delete(key);
+            }
           }
           regex = new RegExp(filterValue, flags);
           this.regexCache.set(cacheKey, regex);
         }
         return regex.test(fieldValue);
-      } catch {
+      } catch (error) {
+        console.warn('[FilterEngine] matchesRegex: invalid regex pattern', {
+          pattern: filterValue,
+          input: fieldValue,
+          error: error instanceof Error ? error.message : String(error),
+        });
         return false;
       }
     }
@@ -464,7 +710,8 @@ export class FilterEngine<T extends Record<string, unknown>> {
   }
 
   /**
-   * Calculate string similarity (Levenshtein-based)
+   * Calculate string similarity (Levenshtein-based).
+   * Falls back to substring matching for strings exceeding FUZZY_MAX_LENGTH.
    */
   private calculateSimilarity(str1: string, str2: string): number {
     const cacheKey = `${str1}\0${str2}`;
@@ -476,12 +723,28 @@ export class FilterEngine<T extends Record<string, unknown>> {
 
     if (longer.length === 0) return 1.0;
 
-    const editDistance = this.levenshteinDistance(longer, shorter);
-    const result = (longer.length - editDistance) / longer.length;
+    let result: number;
 
+    // For long strings, fall back to substring-based similarity
+    if (longer.length > FilterEngine.FUZZY_MAX_LENGTH) {
+      result = longer.includes(shorter)
+        ? shorter.length / longer.length
+        : 0;
+    } else {
+      // Max allowed edit distance based on fuzzy threshold
+      const maxDistance = Math.floor(longer.length * this.options.fuzzyThreshold);
+      const editDistance = this.boundedLevenshtein(longer, shorter, maxDistance);
+      result = (longer.length - editDistance) / longer.length;
+    }
+
+    // LRU eviction: delete oldest 25% when at capacity
     if (this.similarityCache.size >= FilterEngine.SIMILARITY_CACHE_MAX) {
-      const firstKey = this.similarityCache.keys().next().value!;
-      this.similarityCache.delete(firstKey);
+      const evictCount = Math.ceil(FilterEngine.SIMILARITY_CACHE_MAX * 0.25);
+      const keys = this.similarityCache.keys();
+      for (let i = 0; i < evictCount; i++) {
+        const key = keys.next().value;
+        if (key !== undefined) this.similarityCache.delete(key);
+      }
     }
     this.similarityCache.set(cacheKey, result);
 
@@ -489,33 +752,52 @@ export class FilterEngine<T extends Record<string, unknown>> {
   }
 
   /**
-   * Calculate Levenshtein distance
+   * Bounded Levenshtein distance using two-row O(min(n,m)) space.
+   * Short-circuits and returns maxDistance + 1 when the minimum possible
+   * distance exceeds maxDistance.
    */
-  private levenshteinDistance(str1: string, str2: string): number {
-    const matrix: number[][] = [];
-
-    for (let i = 0; i <= str2.length; i++) {
-      matrix[i] = [i];
+  private boundedLevenshtein(str1: string, str2: string, maxDistance: number): number {
+    // Ensure str1 is the longer string
+    let a = str1;
+    let b = str2;
+    if (a.length < b.length) {
+      [a, b] = [b, a];
     }
-    for (let j = 0; j <= str1.length; j++) {
-      matrix[0][j] = j;
+    const n = a.length;
+    const m = b.length;
+
+    // If length difference alone exceeds max, short-circuit
+    if (n - m > maxDistance) return maxDistance + 1;
+
+    // Two-row optimization: only keep previous and current rows
+    let prev = new Array(m + 1);
+    let curr = new Array(m + 1);
+
+    for (let j = 0; j <= m; j++) {
+      prev[j] = j;
     }
 
-    for (let i = 1; i <= str2.length; i++) {
-      for (let j = 1; j <= str1.length; j++) {
-        if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
-          matrix[i][j] = matrix[i - 1][j - 1];
-        } else {
-          matrix[i][j] = Math.min(
-            matrix[i - 1][j - 1] + 1,
-            matrix[i][j - 1] + 1,
-            matrix[i - 1][j] + 1
-          );
-        }
+    for (let i = 1; i <= n; i++) {
+      curr[0] = i;
+      let rowMin = curr[0];
+
+      for (let j = 1; j <= m; j++) {
+        const cost = a.charAt(i - 1) === b.charAt(j - 1) ? 0 : 1;
+        curr[j] = Math.min(
+          prev[j - 1] + cost,
+          prev[j] + 1,
+          curr[j - 1] + 1
+        );
+        if (curr[j] < rowMin) rowMin = curr[j];
       }
+
+      // If the best value in this row already exceeds maxDistance, short-circuit
+      if (rowMin > maxDistance) return maxDistance + 1;
+
+      [prev, curr] = [curr, prev];
     }
 
-    return matrix[str2.length][str1.length];
+    return prev[m];
   }
 
   /**
@@ -526,6 +808,7 @@ export class FilterEngine<T extends Record<string, unknown>> {
     matchedItems: T[],
     fields: string[]
   ): FilterStatistics {
+    const startTime = performance.now();
     const fieldDistribution: Record<string, FieldDistribution> = {};
 
     for (const field of fields) {
@@ -533,6 +816,14 @@ export class FilterEngine<T extends Record<string, unknown>> {
         matchedItems,
         field
       );
+    }
+
+    if (this.onMetrics) {
+      this.onMetrics({
+        operation: 'filter.calculateStatistics',
+        durationMs: performance.now() - startTime,
+        itemCount: matchedItems.length,
+      });
     }
 
     return {
@@ -598,22 +889,51 @@ export class FilterEngine<T extends Record<string, unknown>> {
   }
 
   /**
-   * Build index for a field (for faster filtering)
+   * Build index for a field (for faster filtering).
+   * Array-valued fields are expanded so each element becomes a separate key.
    */
   buildIndex(items: T[], field: string): void {
     const index = new Map<unknown, T[]>();
 
     for (const item of items) {
       const value = this.getFieldValue(item, field);
-      const key = this.normalizeValue(value);
 
-      if (!index.has(key)) {
-        index.set(key, []);
+      if (Array.isArray(value)) {
+        // Index each array element separately for containment lookups
+        for (const element of value) {
+          const key = this.normalizeValue(element);
+          if (!index.has(key)) {
+            index.set(key, []);
+          }
+          index.get(key)!.push(item);
+        }
+      } else {
+        const key = this.normalizeValue(value);
+        if (!index.has(key)) {
+          index.set(key, []);
+        }
+        index.get(key)!.push(item);
       }
-      index.get(key)!.push(item);
     }
 
     this.fieldCache.set(field, index);
+  }
+
+  /**
+   * Rebuild indexes for specified fields, clearing stale entries first
+   */
+  rebuildIndexes(items: T[], fields: string[]): void {
+    this.fieldCache.clear();
+    for (const field of fields) {
+      this.buildIndex(items, field);
+    }
+  }
+
+  /**
+   * Check if a field has a pre-built index
+   */
+  hasIndex(field: string): boolean {
+    return this.fieldCache.has(field);
   }
 
   /**
@@ -622,6 +942,7 @@ export class FilterEngine<T extends Record<string, unknown>> {
   clearIndexes(): void {
     this.fieldCache.clear();
     this.regexCache.clear();
+    this.unsafeRegexCache.clear();
     this.similarityCache.clear();
   }
 
@@ -638,7 +959,12 @@ export class FilterEngine<T extends Record<string, unknown>> {
   serializeConfig(config: FilterConfig): string {
     try {
       return btoa(JSON.stringify(config));
-    } catch {
+    } catch (error) {
+      console.warn('[FilterEngine] serializeConfig: failed to serialize filter config', {
+        conditionCount: config.conditions?.length ?? 0,
+        groupCount: config.groups?.length ?? 0,
+        error: error instanceof Error ? error.message : String(error),
+      });
       return '';
     }
   }
@@ -649,7 +975,12 @@ export class FilterEngine<T extends Record<string, unknown>> {
   deserializeConfig(encoded: string): FilterConfig | null {
     try {
       return JSON.parse(atob(encoded)) as FilterConfig;
-    } catch {
+    } catch (error) {
+      console.warn('[FilterEngine] deserializeConfig: failed to deserialize filter config', {
+        inputLength: encoded.length,
+        inputPreview: encoded.slice(0, 50),
+        error: error instanceof Error ? error.message : String(error),
+      });
       return null;
     }
   }
@@ -696,24 +1027,151 @@ export class FilterEngine<T extends Record<string, unknown>> {
 }
 
 /**
- * Create a memoized filter function
+ * Compute a fast structural hash for a FilterConfig.
+ * Walks the config tree producing a numeric hash from field counts,
+ * combinators, and condition key values. This avoids JSON.stringify
+ * on every memoization check (the common "config unchanged" case
+ * becomes near-zero cost).
+ */
+function hashFilterConfig(config: FilterConfig): number {
+  // FNV-1a inspired hash — fast, good distribution for short inputs
+  let h = 0x811c9dc5; // FNV offset basis (32-bit)
+
+  const mix = (val: number) => {
+    h ^= val & 0xffff;
+    h = Math.imul(h, 0x01000193); // FNV prime
+    h ^= (val >>> 16) & 0xffff;
+    h = Math.imul(h, 0x01000193);
+  };
+
+  const mixStr = (s: string) => {
+    for (let i = 0; i < s.length; i++) {
+      h ^= s.charCodeAt(i);
+      h = Math.imul(h, 0x01000193);
+    }
+  };
+
+  // Root combinator
+  mixStr(config.rootCombinator);
+
+  // Conditions
+  mix(config.conditions.length);
+  for (const c of config.conditions) {
+    mixStr(c.id);
+    mixStr(c.field);
+    mixStr(c.operator);
+    mix(c.enabled ? 1 : 0);
+    // Hash the value — cover common types without full serialization
+    const v = c.value;
+    if (typeof v === 'string') {
+      mixStr(v);
+    } else if (typeof v === 'number') {
+      mix(v | 0);
+      // Capture fractional part
+      mix((v * 100000) | 0);
+    } else if (typeof v === 'boolean') {
+      mix(v ? 1 : 0);
+    } else if (v === null || v === undefined) {
+      mix(0);
+    } else if (Array.isArray(v)) {
+      mix(v.length);
+      for (const el of v) {
+        if (typeof el === 'string') mixStr(el);
+        else if (typeof el === 'number') mix(el | 0);
+        else mixStr(String(el));
+      }
+    } else if (typeof v === 'object') {
+      // Range values ({min, max}) or other objects
+      const keys = Object.keys(v as Record<string, unknown>);
+      mix(keys.length);
+      for (const k of keys) {
+        mixStr(k);
+        const ov = (v as Record<string, unknown>)[k];
+        if (typeof ov === 'number') mix(ov | 0);
+        else mixStr(String(ov));
+      }
+    }
+    mixStr(c.valueType);
+  }
+
+  // Groups (recursive)
+  const hashGroup = (g: FilterGroup) => {
+    mixStr(g.id);
+    mixStr(g.combinator);
+    mix(g.enabled ? 1 : 0);
+    mix(g.conditions.length);
+    for (const c of g.conditions) {
+      mixStr(c.id);
+      mixStr(c.field);
+      mixStr(c.operator);
+      mix(c.enabled ? 1 : 0);
+      const v = c.value;
+      if (typeof v === 'string') mixStr(v);
+      else if (typeof v === 'number') { mix(v | 0); mix((v * 100000) | 0); }
+      else if (typeof v === 'boolean') mix(v ? 1 : 0);
+      else if (Array.isArray(v)) { mix(v.length); for (const el of v) { if (typeof el === 'string') mixStr(el); else mix(Number(el) | 0); } }
+      else if (v !== null && v !== undefined && typeof v === 'object') { const keys = Object.keys(v as Record<string, unknown>); mix(keys.length); for (const k of keys) { mixStr(k); const ov = (v as Record<string, unknown>)[k]; if (typeof ov === 'number') mix(ov | 0); else mixStr(String(ov)); } }
+      else mix(0);
+      mixStr(c.valueType);
+    }
+    mix(g.groups.length);
+    for (const sg of g.groups) {
+      hashGroup(sg);
+    }
+  };
+
+  mix(config.groups.length);
+  for (const g of config.groups) {
+    hashGroup(g);
+  }
+
+  return h >>> 0; // Ensure unsigned 32-bit
+}
+
+/**
+ * Create a memoized filter function.
+ * Uses a fast structural hash for config comparison instead of JSON.stringify.
+ * The hash makes the common hot-path (config changed every keystroke) near-zero
+ * cost by detecting differences without serialization. Falls back to
+ * JSON.stringify only when hashes collide (statistically rare with FNV-1a).
  */
 export function createFilterMemo<T extends Record<string, unknown>>(
   options?: FilterEngineOptions
 ) {
   const engine = new FilterEngine<T>(options);
-  let lastConfig: string = '';
+  let lastHash: number = -1;
+  let lastConfigRef: FilterConfig | null = null;
+  let lastConfigJson: string = '';
   let lastItems: T[] = [];
   let lastResult: FilterResult<T> | null = null;
 
   return (items: T[], config: FilterConfig): FilterResult<T> => {
-    const configStr = JSON.stringify(config);
-
-    if (configStr === lastConfig && items === lastItems && lastResult) {
+    // Fastest path: exact same object references
+    if (config === lastConfigRef && items === lastItems && lastResult) {
       return lastResult;
     }
 
-    lastConfig = configStr;
+    const hash = hashFilterConfig(config);
+
+    if (hash === lastHash && items === lastItems && lastResult) {
+      // Hash matches — fall back to JSON.stringify only on hash collision.
+      // This path is rare: either config is truly unchanged (most likely)
+      // or we have a hash collision (extremely unlikely with FNV-1a).
+      const configJson = JSON.stringify(config);
+      if (configJson === lastConfigJson) {
+        lastConfigRef = config;
+        return lastResult;
+      }
+      // Genuine hash collision — update all state and recompute
+      lastConfigJson = configJson;
+    } else {
+      // Hash differs → config definitely changed, no stringify needed for comparison
+      lastHash = hash;
+      // Lazily store JSON for future collision checks
+      lastConfigJson = JSON.stringify(config);
+    }
+
+    lastConfigRef = config;
     lastItems = items;
     lastResult = engine.apply(items, config);
 

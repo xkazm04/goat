@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { DURATION } from '@/lib/animations/motion-presets';
 
 // Types
 export interface ConfettiParticle {
@@ -44,7 +45,7 @@ export function generateConfettiParticles(rankColor: string, position: number): 
       scale: 0.3 + Math.random() * 0.7,
       color: colors[Math.floor(Math.random() * colors.length)],
       delay: Math.random() * 0.15,
-      duration: 0.8 + Math.random() * 0.4,
+      duration: DURATION.dramatic + Math.random() * 0.4,
       shape: shapes[Math.floor(Math.random() * shapes.length)],
     });
   }
@@ -106,8 +107,8 @@ export function GlowPulseRing({ color, delay = 0 }: { color: string; delay?: num
     <motion.div
       initial={{ scale: 0.8, opacity: 0 }}
       animate={{ scale: [0.8, 1.3, 1.5], opacity: [0, 0.8, 0] }}
-      transition={{ duration: 0.6, delay, ease: "easeOut" }}
-      className="absolute -inset-2 rounded-xl pointer-events-none"
+      transition={{ duration: DURATION.emphasis, delay, ease: "easeOut" }}
+      className="absolute -inset-2 rounded-card pointer-events-none"
       style={{ border: `2px solid ${color}`, boxShadow: `0 0 20px ${color}` }}
       data-testid="glow-pulse-ring"
     />

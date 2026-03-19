@@ -8,6 +8,7 @@
 import type { TransferableItem } from '@/lib/dnd/transfer-protocol';
 import type { BracketState, BracketSize } from '@/app/features/Match/sub_MatchBracket/lib/bracketGenerator';
 import type { SeedingStrategy } from '@/app/features/Match/sub_MatchBracket/lib/seedingEngine';
+import { getTierForPositionGeneric, rangeFromInclusiveBoundary } from '@/lib/tiers/boundary';
 
 // ============================================================================
 // Core Ranking Types
@@ -269,6 +270,9 @@ export interface RankingStoreState {
   /** Undo stack for bracket matchup votes */
   bracketUndoStack: Array<{ bracketState: RankingBracketState; matchupId: string }>;
 
+  /** Maximum undo entries kept in memory (prevents bloat in long tournaments) */
+  bracketUndoMaxDepth: number;
+
   // === Tier State ===
 
   /** Current tier state */
@@ -491,16 +495,18 @@ export function computeTierBoundaries(
 }
 
 /**
- * Get the tier ID for a given position
+ * Get the tier ID for a given position.
+ * Note: TierBoundary in this file uses INCLUSIVE endPosition.
+ * Delegates to the canonical boundary lookup after converting to exclusive-end.
  */
 export function getTierForPosition(
   position: number,
   boundaries: TierBoundaries
 ): string | null {
-  for (const boundary of boundaries.boundaries) {
-    if (position >= boundary.startPosition && position <= boundary.endPosition) {
-      return boundary.tierId;
-    }
-  }
-  return null;
+  const result = getTierForPositionGeneric(
+    position,
+    boundaries.boundaries,
+    rangeFromInclusiveBoundary,
+  );
+  return result?.tierId ?? null;
 }

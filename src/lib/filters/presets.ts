@@ -193,6 +193,8 @@ export const FILTER_PRESETS: FilterPresetDefinition[] = [
   },
 
   // Recency presets
+  // NOTE: These use getter functions for date values so they compute fresh
+  // thresholds at access time rather than freezing at module import.
   {
     id: 'recently-added',
     name: 'Recently Added',
@@ -202,19 +204,21 @@ export const FILTER_PRESETS: FilterPresetDefinition[] = [
     color: 'purple',
     keywords: ['recent', 'new', 'latest', 'fresh'],
     searchAliases: ['recently added'],
-    config: {
-      rootCombinator: 'AND',
-      conditions: [
-        {
-          id: condId('recent'),
-          field: 'created_at',
-          operator: 'greater_than',
-          value: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-          valueType: 'date',
-          enabled: true,
-        },
-      ],
-      groups: [],
+    get config(): FilterConfig {
+      return {
+        rootCombinator: 'AND',
+        conditions: [
+          {
+            id: condId('recent'),
+            field: 'created_at',
+            operator: 'greater_than',
+            value: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+            valueType: 'date',
+            enabled: true,
+          },
+        ],
+        groups: [],
+      };
     },
   },
   {
@@ -225,19 +229,21 @@ export const FILTER_PRESETS: FilterPresetDefinition[] = [
     category: 'recency',
     color: 'cyan',
     keywords: ['month', 'current month'],
-    config: {
-      rootCombinator: 'AND',
-      conditions: [
-        {
-          id: condId('month'),
-          field: 'created_at',
-          operator: 'greater_than',
-          value: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString(),
-          valueType: 'date',
-          enabled: true,
-        },
-      ],
-      groups: [],
+    get config(): FilterConfig {
+      return {
+        rootCombinator: 'AND',
+        conditions: [
+          {
+            id: condId('month'),
+            field: 'created_at',
+            operator: 'greater_than',
+            value: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString(),
+            valueType: 'date',
+            enabled: true,
+          },
+        ],
+        groups: [],
+      };
     },
   },
 

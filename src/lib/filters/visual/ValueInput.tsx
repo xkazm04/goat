@@ -9,6 +9,7 @@ import React, { useCallback, useMemo } from 'react';
 import type { FilterOperator, FilterValueType, FilterValue } from '@/lib/filters/types';
 import { DEFAULT_FILTER_FIELDS } from '@/lib/filters/constants';
 import { cn } from '@/lib/utils';
+import { UniversalSelect } from '@/components/ui/universal-select';
 
 interface ValueInputProps {
   value: FilterValue;
@@ -106,9 +107,9 @@ export function ValueInput({
   );
 
   const baseInputClass = cn(
-    'rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1.5 text-sm',
-    'text-zinc-200 placeholder-zinc-500',
-    'focus:border-brand focus:outline-hidden focus:ring-1 focus:ring-brand',
+    'rounded-control border border-border bg-muted px-2 py-1.5 text-sm',
+    'text-foreground placeholder:text-muted-foreground',
+    'focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary',
     'min-w-[100px] flex-1',
     className
   );
@@ -125,7 +126,7 @@ export function ValueInput({
           placeholder="Min"
           className={cn(baseInputClass, 'w-20')}
         />
-        <span className="text-zinc-500">to</span>
+        <span className="text-muted-foreground">to</span>
         <input
           type="number"
           value={betweenValue.max}
@@ -139,22 +140,36 @@ export function ValueInput({
 
   // Render 'in' / 'not_in' input
   if (operator === 'in' || operator === 'not_in') {
-    // If we have field options, show multi-select
+    // If we have field options, show toggle buttons
     if (fieldOptions.length > 0) {
-      const arrayValue = Array.isArray(value) ? value : [];
+      const arrayValue = (Array.isArray(value) ? value : []) as string[];
       return (
-        <select
-          multiple
-          value={arrayValue.map(String)}
-          onChange={handleMultiSelectChange}
-          className={cn(baseInputClass, 'min-h-[60px]')}
-        >
-          {fieldOptions.map((opt) => (
-            <option key={opt.value} value={String(opt.value)}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
+        <div className="flex flex-wrap gap-1">
+          {fieldOptions.map((opt) => {
+            const optStr = String(opt.value);
+            const isActive = arrayValue.includes(optStr);
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => {
+                  const newValues = isActive
+                    ? arrayValue.filter((v) => v !== optStr)
+                    : [...arrayValue, optStr];
+                  onChange(newValues);
+                }}
+                className={cn(
+                  'px-2 py-0.5 text-xs rounded border transition-colors',
+                  isActive
+                    ? 'bg-primary text-primary-foreground border-primary'
+                    : 'bg-muted border-border text-muted-foreground hover:border-primary hover:text-foreground'
+                )}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
       );
     }
 
@@ -175,14 +190,17 @@ export function ValueInput({
   switch (valueType) {
     case 'boolean':
       return (
-        <select
+        <UniversalSelect
           value={String(value)}
-          onChange={handleBooleanChange}
-          className={baseInputClass}
-        >
-          <option value="true">True</option>
-          <option value="false">False</option>
-        </select>
+          onChange={(val) => onChange(val === 'true')}
+          options={[
+            { value: 'true', label: 'True' },
+            { value: 'false', label: 'False' },
+          ]}
+          size="sm"
+          searchable={false}
+          className="min-w-[100px] flex-1"
+        />
       );
 
     case 'number':
@@ -214,18 +232,21 @@ export function ValueInput({
     case 'enum':
       if (fieldOptions.length > 0) {
         return (
-          <select
+          <UniversalSelect
             value={String(value || '')}
-            onChange={handleSelectChange}
-            className={baseInputClass}
-          >
-            <option value="">Select...</option>
-            {fieldOptions.map((opt) => (
-              <option key={opt.value} value={String(opt.value)}>
-                {opt.icon} {opt.label}
-              </option>
-            ))}
-          </select>
+            onChange={(val) => onChange(val)}
+            options={[
+              { value: '', label: 'Select...' },
+              ...fieldOptions.map((opt) => ({
+                value: String(opt.value),
+                label: opt.label,
+                icon: opt.icon ? <span>{opt.icon}</span> : undefined,
+              })),
+            ]}
+            size="sm"
+            placeholder="Select..."
+            className="min-w-[100px] flex-1"
+          />
         );
       }
       // Fall through to string if no options
@@ -303,7 +324,7 @@ export function ValueDisplay({
   return (
     <span
       className={cn(
-        'truncate text-sm text-zinc-300',
+        'truncate text-sm text-foreground',
         className
       )}
     >

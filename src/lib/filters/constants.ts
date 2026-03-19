@@ -240,7 +240,7 @@ export const FILTER_COLORS = {
   boolean: { bg: 'bg-purple-500/10', border: 'border-purple-500/30', text: 'text-purple-500' },
   date: { bg: 'bg-orange-500/10', border: 'border-orange-500/30', text: 'text-orange-500' },
   array: { bg: 'bg-pink-500/10', border: 'border-pink-500/30', text: 'text-pink-500' },
-  enum: { bg: 'bg-brand/10', border: 'border-brand/30', text: 'text-brand' },
+  enum: { bg: 'bg-primary/10', border: 'border-primary/30', text: 'text-primary' },
 } as const;
 
 /**

@@ -319,7 +319,6 @@ export interface ComparisonStoreSnapshot {
 
 export interface MatchStoreSnapshot {
   keyboardMode: boolean;
-  selectedItemIndex: number;
   showComparisonModal: boolean;
   showResultShareModal: boolean;
 }

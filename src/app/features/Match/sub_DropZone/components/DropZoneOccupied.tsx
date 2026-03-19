@@ -9,6 +9,7 @@ import { ThemedScoreDisplay } from '@/components/ui/themed-scores';
 import { ScoreOverlayContainer } from '@/components/ui/score-overlays';
 import { getMedalGradient, type MedalType } from "../../lib/medalStyling";
 import type { Criterion, CriterionScore } from '@/lib/criteria/types';
+import { DURATION } from '@/lib/animations/motion-presets';
 
 export interface DropZoneOccupiedProps {
   /** Position in the grid (0-based) */
@@ -70,10 +71,8 @@ export const DropZoneOccupied = memo(function DropZoneOccupied({
 
   return (
     <motion.div
-      key="content"
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.9 }}
       transition={{ type: "spring", stiffness: 300, damping: 25 }}
       className="absolute inset-0"
     >
@@ -83,14 +82,14 @@ export const DropZoneOccupied = memo(function DropZoneOccupied({
           color="gold"
           intensity="subtle"
           asBackground
-          className="absolute inset-0 rounded-xl z-0 pointer-events-none"
+          className="absolute inset-0 rounded-card z-0 pointer-events-none"
         />
       )}
 
       {/* Medal Gradient Border - top 3 only, as inset box-shadow */}
       {medalType && (
         <div
-          className="absolute inset-0 rounded-xl z-35 pointer-events-none"
+          className="absolute inset-0 rounded-card z-35 pointer-events-none"
           style={{
             boxShadow: `inset 0 0 0 ${position === 0 ? 3 : 2}px ${
               medalType === 'gold' ? '#fbbf24' :
@@ -105,7 +104,7 @@ export const DropZoneOccupied = memo(function DropZoneOccupied({
         className="absolute inset-0"
         initial={{ scale: 1.1 }}
         animate={{ scale: 1 }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
+        transition={{ duration: DURATION.normal, ease: "easeOut" }}
       >
         <ProgressiveImage
           src={imageUrl}
@@ -130,10 +129,10 @@ export const DropZoneOccupied = memo(function DropZoneOccupied({
           className="absolute top-2 left-1/2 -translate-x-1/2 z-20"
           initial={{ opacity: 0, y: -10, scale: 0.8 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ delay: 0.1, duration: 0.3, type: "spring", stiffness: 300 }}
+          transition={{ delay: 0.1, duration: DURATION.normal, type: "spring", stiffness: 300 }}
         >
           <div
-            className="px-3 py-1 rounded-lg backdrop-blur-md border flex items-center gap-1.5 shadow-lg"
+            className="px-3 py-1 rounded-control backdrop-blur-md border flex items-center gap-1.5 shadow-lg"
             style={{
               backgroundColor: `${accentColor}25`,
               borderColor: `${accentColor}50`,
@@ -194,7 +193,7 @@ export const DropZoneOccupied = memo(function DropZoneOccupied({
 
       {/* Active Drag Overlay */}
       {isDragging && (
-        <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px] flex items-center justify-center z-40">
+        <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px] flex items-center justify-center z-sticky">
           <div className="w-8 h-8 rounded-full border-2 border-white/30 border-t-white animate-spin" />
         </div>
       )}

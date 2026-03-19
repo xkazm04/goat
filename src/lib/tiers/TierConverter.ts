@@ -4,6 +4,8 @@
  */
 
 import { TierDefinition } from './types';
+import { timeSync } from '@/lib/perf/perfTimer';
+import { getTierForPositionGeneric, rangeFromTierDef } from './boundary';
 
 /**
  * Item in a tier with optional order within tier
@@ -83,6 +85,15 @@ export class TierConverter {
    * Convert tier assignments to absolute positions
    */
   tierToPositions(assignments: TierAssignment[]): TierToPositionResult {
+    const itemCount = assignments.reduce((sum, a) => sum + a.items.length, 0);
+    return timeSync('TierConverter.tierToPositions', {
+      strategy: this.config.strategy,
+      tierCount: this.config.tiers.length,
+      itemCount,
+    }, () => this._tierToPositions(assignments));
+  }
+
+  private _tierToPositions(assignments: TierAssignment[]): TierToPositionResult {
     const positions: Array<{ itemId: string; position: number }> = [];
     const unmappedItems: string[] = [];
     const { strategy, tiers } = this.config;
@@ -107,10 +118,37 @@ export class TierConverter {
 
       switch (strategy) {
         case 'even-distribute': {
-          // Spread items evenly across the tier range
+          // Spread items evenly across the tier range with collision detection
           const spacing = itemCount > 1 ? (tierSize - 1) / (itemCount - 1) : 0;
+          const usedPositions = new Set<number>();
+
           sortedItems.forEach((item, i) => {
-            const position = tierStart + Math.round(i * spacing);
+            let position = tierStart + Math.round(i * spacing);
+
+            if (usedPositions.has(position)) {
+              // Find nearest available slot within tier range
+              let found = false;
+              for (let offset = 1; offset < tierSize; offset++) {
+                const above = position + offset;
+                if (above < tierEnd && !usedPositions.has(above)) {
+                  position = above;
+                  found = true;
+                  break;
+                }
+                const below = position - offset;
+                if (below >= tierStart && !usedPositions.has(below)) {
+                  position = below;
+                  found = true;
+                  break;
+                }
+              }
+              if (!found) {
+                unmappedItems.push(item.itemId);
+                return;
+              }
+            }
+
+            usedPositions.add(position);
             positions.push({ itemId: item.itemId, position });
           });
           break;
@@ -201,6 +239,15 @@ export class TierConverter {
   positionsToTiers(
     positions: Array<{ itemId: string; position: number }>
   ): PositionToTierResult {
+    return timeSync('TierConverter.positionsToTiers', {
+      tierCount: this.config.tiers.length,
+      itemCount: positions.length,
+    }, () => this._positionsToTiers(positions));
+  }
+
+  private _positionsToTiers(
+    positions: Array<{ itemId: string; position: number }>
+  ): PositionToTierResult {
     const { tiers } = this.config;
     const tierAssignments: TierAssignment[] = [];
     const itemsPerTier = new Map<string, string[]>();
@@ -236,15 +283,13 @@ export class TierConverter {
   }
 
   /**
-   * Get tier for a given position
+   * Get tier for a given position.
+   * Delegates to the canonical boundary lookup (exclusive-end convention).
    */
   private getTierForPosition(position: number): TierDefinition | null {
-    for (const tier of this.config.tiers) {
-      if (position >= tier.startPosition && position < tier.endPosition) {
-        return tier;
-      }
-    }
-    // Return last tier if position is at the very end
+    const result = getTierForPositionGeneric(position, this.config.tiers, rangeFromTierDef);
+    if (result) return result;
+    // Return last tier if position is at the very end (edge case)
     const lastTier = this.config.tiers[this.config.tiers.length - 1];
     if (lastTier && position === lastTier.endPosition) {
       return lastTier;

@@ -12,6 +12,7 @@ import type {
   GestureType,
   PipConfig,
 } from './types';
+import { DURATION } from '@/lib/animations/motion-presets';
 
 /**
  * Breakpoint configurations
@@ -52,12 +53,40 @@ export const BREAKPOINTS: Record<Breakpoint, BreakpointConfig> = {
 };
 
 /**
- * Get breakpoint from window width
+ * Get breakpoint from viewport width (used by LayoutManager and layout-store).
+ * Uses the canonical BREAKPOINTS thresholds above.
  */
 export function getBreakpointFromWidth(width: number): Breakpoint {
   if (width < BREAKPOINTS.tablet.minWidth) return 'mobile';
   if (width < BREAKPOINTS.desktop.minWidth) return 'tablet';
   if (width < BREAKPOINTS.ultrawide.minWidth) return 'desktop';
+  return 'ultrawide';
+}
+
+/**
+ * Container-level breakpoint thresholds.
+ *
+ * These are intentionally smaller than viewport breakpoints because they
+ * measure the width of an individual container element (e.g. a panel),
+ * not the full viewport. Used by ResponsiveContainer with ResizeObserver.
+ */
+export const CONTAINER_BREAKPOINTS = {
+  /** Container widths below this are considered mobile */
+  mobile: 400,
+  /** Container widths below this are considered tablet */
+  tablet: 700,
+  /** Container widths below this are considered desktop; above is ultrawide */
+  desktop: 1200,
+} as const;
+
+/**
+ * Get breakpoint from container element width.
+ * Uses CONTAINER_BREAKPOINTS which are smaller than viewport thresholds.
+ */
+export function getContainerBreakpoint(width: number): Breakpoint {
+  if (width < CONTAINER_BREAKPOINTS.mobile) return 'mobile';
+  if (width < CONTAINER_BREAKPOINTS.tablet) return 'tablet';
+  if (width < CONTAINER_BREAKPOINTS.desktop) return 'desktop';
   return 'ultrawide';
 }
 
@@ -198,7 +227,7 @@ export const LAYOUT_ANIMATIONS = {
     mass: 0.6,
   },
   transition: {
-    duration: 0.3,
+    duration: DURATION.normal,
     ease: [0.4, 0, 0.2, 1] as const,
   },
 };

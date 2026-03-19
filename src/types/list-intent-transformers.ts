@@ -38,6 +38,7 @@ export interface CreateListRequest {
   size: number;
   time_period: string;
   description?: string;
+  allow_custom_items?: boolean;
   user: {
     email: string;
     name?: string;

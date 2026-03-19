@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, escapeIlikeWildcards } from '@/lib/supabase/server';
 import {
   BlueprintRow,
   blueprintFromRow,
@@ -77,7 +77,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
     query = query.eq('is_featured', isFeatured === 'true');
   }
   if (search) {
-    query = query.ilike('title', `%${search}%`);
+    query = query.ilike('title', `%${escapeIlikeWildcards(search)}%`);
   }
 
   const { data, error } = await query;

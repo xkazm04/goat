@@ -6,6 +6,7 @@ import { getCategoryColor } from "@/lib/helpers/getColors";
 import { listItemVariants, modalBackdropVariants, modalContentVariants } from "../shared/animations";
 import { gradients } from "../shared/gradients";
 import { use3DTilt } from "@/hooks/use-3d-tilt";
+import { trackError } from "@/lib/errors/error-analytics";
 import { useIsTouchDevice } from "@/hooks/useMediaQuery";
 import { ELEVATION, withInset } from "@/components/visual/depth";
 import { ListPreviewPopover } from "./ListPreviewPopover";
@@ -60,8 +61,15 @@ export const UserListCard = memo(function UserListCard({
     try {
       await onDelete(list.id);
       setShowDeleteConfirm(false);
-    } catch {
-      // Error handled by parent
+    } catch (error) {
+      trackError({
+        code: 'CLIENT_UNKNOWN_ERROR',
+        category: 'client',
+        severity: 'error',
+        traceId: `user-list-card-delete-${list.id}-${Date.now()}`,
+        source: 'UserListCard',
+        context: { operation: 'delete', listId: list.id, message: error instanceof Error ? error.message : String(error) },
+      });
     } finally {
       setIsDeleting(false);
     }
@@ -80,7 +88,7 @@ export const UserListCard = memo(function UserListCard({
       ref={ref}
       layout
       variants={listItemVariants}
-      className="relative group rounded-xl overflow-hidden backdrop-blur-md"
+      className="relative group rounded-card overflow-hidden backdrop-blur-md"
       style={{
         ...tiltStyle,
         background: gradients.userCardSurface,
@@ -92,7 +100,7 @@ export const UserListCard = memo(function UserListCard({
     >
       {/* Colored accent glow */}
       <motion.div
-        className="absolute -inset-px rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+        className="absolute -inset-px rounded-card opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
         style={{
           background: `radial-gradient(circle at center, ${colors.primary}15 0%, transparent 70%)`,
         }}
@@ -124,7 +132,7 @@ export const UserListCard = memo(function UserListCard({
           {/* Category badge + progress */}
           <div className="shrink-0 flex flex-col gap-1.5">
             <motion.div
-              className="px-3 py-1.5 rounded-lg text-xs font-bold text-white"
+              className="px-3 py-1.5 rounded-control text-xs font-bold text-white"
               style={{
                 background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`,
                 boxShadow: ELEVATION.medium,
@@ -159,7 +167,7 @@ export const UserListCard = memo(function UserListCard({
           <div className="flex items-center gap-2 shrink-0">
             <motion.button
               onClick={handlePlay}
-              className="px-4 py-2 rounded-xl text-xs font-medium text-white flex items-center gap-2"
+              className="px-4 py-2 rounded-card text-xs font-medium text-white flex items-center gap-2"
               style={{
                 background: gradients.actionPlay,
                 boxShadow: ELEVATION.medium,
@@ -175,7 +183,7 @@ export const UserListCard = memo(function UserListCard({
             {onDelete && (
               <motion.button
                 onClick={handleShowDeleteConfirm}
-                className="p-2 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors
+                className="p-2 rounded-control text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors
                   focus-ring"
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
@@ -207,14 +215,14 @@ export const UserListCard = memo(function UserListCard({
               animate="visible"
               exit="exit"
               onClick={(e) => e.stopPropagation()}
-              className="mx-4 max-w-sm w-full p-5 rounded-2xl"
+              className="mx-4 max-w-sm w-full p-5 rounded-container"
               style={{
                 background: gradients.modalSurface,
                 boxShadow: withInset(ELEVATION.modal),
               }}
             >
               <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 rounded-xl bg-red-500/15">
+                <div className="p-2 rounded-card bg-red-500/15">
                   <AlertTriangle className="w-5 h-5 text-red-400" />
                 </div>
                 <h4 className="text-lg font-semibold text-white">Delete List?</h4>
@@ -227,7 +235,7 @@ export const UserListCard = memo(function UserListCard({
               <div className="flex gap-3">
                 <button
                   onClick={handleHideDeleteConfirm}
-                  className="flex-1 px-4 py-2.5 text-sm font-medium text-slate-400 hover:text-white rounded-xl hover:bg-white/5 transition-colors
+                  className="flex-1 px-4 py-2.5 text-sm font-medium text-slate-400 hover:text-white rounded-card hover:bg-white/5 transition-colors
                     focus-ring"
                   disabled={isDeleting}
                   data-testid={`user-list-delete-cancel-btn-${list.id}`}
@@ -237,7 +245,7 @@ export const UserListCard = memo(function UserListCard({
                 <motion.button
                   onClick={handleDelete}
                   disabled={isDeleting}
-                  className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium text-white
+                  className="flex-1 px-4 py-2.5 rounded-card text-sm font-medium text-white
                     focus-ring"
                   style={{
                     background: gradients.actionDelete,

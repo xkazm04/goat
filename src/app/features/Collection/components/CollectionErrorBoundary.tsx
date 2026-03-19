@@ -121,7 +121,7 @@ export class CollectionErrorBoundary extends Component<Props, State> {
 
     return (
       <div
-        className="fixed bottom-0 left-0 right-0 glass-dock-panel border-t border-amber-500/30 z-40 p-6 backdrop-blur-xl"
+        className="fixed bottom-0 left-0 right-0 glass-dock-panel border-t border-amber-500/30 z-sticky p-6 backdrop-blur-xl"
         data-testid="collection-error-boundary-fallback"
       >
         <div className="max-w-4xl mx-auto">
@@ -143,7 +143,7 @@ export class CollectionErrorBoundary extends Component<Props, State> {
 
           {/* Error Details (Development only) */}
           {isDevelopment && error && (
-            <div className="mb-4 p-4 bg-white/5 rounded-lg border border-white/10">
+            <div className="mb-4 p-4 bg-white/5 rounded-card border border-white/10">
               <div className="mb-2">
                 <span className="text-xs font-mono text-amber-400">
                   {error.name}: {error.message}
@@ -176,7 +176,7 @@ export class CollectionErrorBoundary extends Component<Props, State> {
           <div className="flex items-center gap-3">
             <button
               onClick={this.handleReset}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-brand to-blue-500 hover:from-brand-hover hover:to-blue-400 text-white rounded-lg transition-all text-sm font-medium shadow-lg shadow-brand/20"
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-brand to-blue-500 hover:from-brand-hover hover:to-blue-400 text-white rounded-control transition-all text-sm font-medium shadow-lg shadow-brand/20"
               data-testid="collection-error-retry-btn"
             >
               <RefreshCw className="w-4 h-4" />
@@ -184,7 +184,7 @@ export class CollectionErrorBoundary extends Component<Props, State> {
             </button>
             <button
               onClick={() => window.location.reload()}
-              className="px-4 py-2 bg-white/5 hover:bg-white/10 text-slate-300 rounded-lg transition-colors text-sm border border-white/10"
+              className="px-4 py-2 bg-white/5 hover:bg-white/10 text-slate-300 rounded-control transition-colors text-sm border border-white/10"
               data-testid="collection-error-reload-btn"
             >
               Reload Page
@@ -192,7 +192,7 @@ export class CollectionErrorBoundary extends Component<Props, State> {
           </div>
 
           {/* Help Text */}
-          <div className="mt-4 p-3 bg-white/5 rounded-lg border border-white/10">
+          <div className="mt-4 p-3 bg-white/5 rounded-card border border-white/10">
             <p className="text-xs text-slate-400">
               <strong className="text-slate-300">What to do:</strong> Try refreshing
               the page or clearing your browser cache. If the problem persists,

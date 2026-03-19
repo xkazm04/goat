@@ -4,6 +4,7 @@ import { memo } from "react";
 import { motion } from "framer-motion";
 import { DiffIndicator, ComparisonDot, getDiffStatus, type DiffStatus } from "./DiffIndicator";
 import type { AttributeComparisonResult } from "@/lib/comparison/attribute-comparators";
+import { DURATION } from '@/lib/animations/motion-presets';
 
 interface AttributeRowProps {
   attribute: AttributeComparisonResult;
@@ -72,13 +73,13 @@ export const AttributeRow = memo(function AttributeRow({
               <motion.div
                 key={i}
                 className={`
-                  relative p-3 rounded-lg text-center transition-all
+                  relative p-3 rounded-card text-center transition-all
                   ${isWinner
                     ? "bg-linear-to-b from-emerald-500/15 to-emerald-500/5 border border-emerald-500/30"
                     : "bg-slate-800/30 border border-slate-700/30"}
                 `}
                 animate={isWinner ? { scale: [1, 1.02, 1] } : {}}
-                transition={{ duration: 0.3, delay: index * 0.05 }}
+                transition={{ duration: DURATION.normal, delay: index * 0.05 }}
               >
                 <span
                   className={`text-sm font-medium ${isWinner ? "text-emerald-400" : "text-slate-300"}`}

@@ -9,6 +9,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { DURATION } from '@/lib/animations/motion-presets';
 import { cn } from '@/lib/utils';
 import {
   Cloud,
@@ -62,7 +63,7 @@ const StorageQuotaBar: React.FC<{ usagePercent: number }> = ({ usagePercent }) =
 
   return (
     <div className="w-full space-y-1">
-      <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+      <div className="flex items-center justify-between text-2xs text-muted-foreground">
         <span>Storage</span>
         <span>{clampedPercent.toFixed(0)}%</span>
       </div>
@@ -90,7 +91,7 @@ const StorageQuotaBar: React.FC<{ usagePercent: number }> = ({ usagePercent }) =
             fill={`url(#${gradientId})`}
             initial={{ width: 0 }}
             animate={{ width: clampedPercent }}
-            transition={{ duration: 0.6, ease: 'easeOut' }}
+            transition={{ duration: DURATION.emphasis, ease: 'easeOut' }}
           />
         </svg>
         {/* Goat-horn endpoint marker */}
@@ -98,7 +99,7 @@ const StorageQuotaBar: React.FC<{ usagePercent: number }> = ({ usagePercent }) =
           className="absolute top-1/2 -translate-y-1/2 pointer-events-none"
           initial={{ left: '0%' }}
           animate={{ left: `${clampedPercent}%` }}
-          transition={{ duration: 0.6, ease: 'easeOut' }}
+          transition={{ duration: DURATION.emphasis, ease: 'easeOut' }}
           style={{ marginLeft: -5 }}
         >
           <svg width="10" height="12" viewBox="0 0 10 12" fill="none">
@@ -150,7 +151,7 @@ const SyncProgressArc: React.FC<{ progress: number; size?: number }> = ({
         strokeDasharray={circumference}
         initial={{ strokeDashoffset: circumference }}
         animate={{ strokeDashoffset: dashOffset }}
-        transition={{ duration: 0.4, ease: 'easeOut' }}
+        transition={{ duration: DURATION.normal, ease: 'easeOut' }}
         transform={`rotate(-90 ${center} ${center})`}
       />
     </svg>
@@ -261,7 +262,7 @@ const NetworkTransitionToast: React.FC<{ networkStatus: NetworkState['status'] }
           transition={{ type: 'spring', stiffness: 400, damping: 25 }}
           className="absolute bottom-full mb-2 left-0 right-0 flex justify-center pointer-events-none"
         >
-          <div className="bg-background/95 backdrop-blur-sm rounded-xl px-4 py-2.5 shadow-xl border flex items-center gap-2.5">
+          <div className="bg-background/95 backdrop-blur-sm rounded-container px-4 py-2.5 shadow-xl border flex items-center gap-2.5">
             <SignalBars activeBars={config.bars} color={config.color} />
             <span className="text-xs font-medium text-foreground">{config.label}</span>
           </div>
@@ -307,7 +308,7 @@ export const SyncIndicator: React.FC<SyncIndicatorProps> = ({
 
   // Size configurations
   const sizeConfig = {
-    sm: { icon: 14, padding: 'p-1.5', text: 'text-xs', badge: 'text-[10px]' },
+    sm: { icon: 14, padding: 'p-1.5', text: 'text-xs', badge: 'text-2xs' },
     md: { icon: 18, padding: 'p-2', text: 'text-sm', badge: 'text-xs' },
     lg: { icon: 22, padding: 'p-2.5', text: 'text-base', badge: 'text-sm' },
   };
@@ -329,6 +330,8 @@ export const SyncIndicator: React.FC<SyncIndicatorProps> = ({
     let quotaManager: QuotaManager | null = null;
     let unsubscribeNetwork: (() => void) | null = null;
 
+    let unsubscribeEngine: (() => void) | null = null;
+
     const initialize = async () => {
       try {
         // Get instances
@@ -336,11 +339,11 @@ export const SyncIndicator: React.FC<SyncIndicatorProps> = ({
         networkMonitor = getNetworkMonitor();
         quotaManager = getQuotaManager();
 
-        // Initialize sync engine
+        // Initialize sync engine (idempotent)
         await syncEngine.initialize();
 
-        // Subscribe to sync state changes
-        syncEngine.setEvents({
+        // Subscribe to engine events (multi-subscriber safe)
+        unsubscribeEngine = syncEngine.subscribeEvents({
           onStateChange: setSyncState,
           onNetworkChange: setNetworkState,
         });
@@ -363,6 +366,9 @@ export const SyncIndicator: React.FC<SyncIndicatorProps> = ({
     initialize();
 
     return () => {
+      if (unsubscribeEngine) {
+        unsubscribeEngine();
+      }
       if (unsubscribeNetwork) {
         unsubscribeNetwork();
       }
@@ -425,7 +431,7 @@ export const SyncIndicator: React.FC<SyncIndicatorProps> = ({
   return (
     <div
       className={cn(
-        'fixed z-50',
+        'fixed z-toast',
         positionClasses[position],
         className
       )}
@@ -436,7 +442,7 @@ export const SyncIndicator: React.FC<SyncIndicatorProps> = ({
       <motion.div
         layout
         className={cn(
-          'bg-background/95 backdrop-blur-xs border rounded-lg shadow-lg',
+          'bg-background/95 backdrop-blur-xs border rounded-card shadow-lg',
           'transition-colors duration-200'
         )}
       >
@@ -446,7 +452,7 @@ export const SyncIndicator: React.FC<SyncIndicatorProps> = ({
           className={cn(
             'flex items-center gap-2 w-full',
             config.padding,
-            'hover:bg-muted/50 rounded-lg transition-colors'
+            'hover:bg-muted/50 rounded-card transition-colors'
           )}
         >
           {syncState.status === 'syncing' ? (
@@ -497,7 +503,7 @@ export const SyncIndicator: React.FC<SyncIndicatorProps> = ({
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: DURATION.quick }}
               className="overflow-hidden"
             >
               <div className={cn('border-t px-4 py-3 space-y-3', config.text)}>
@@ -592,7 +598,7 @@ export const SyncIndicator: React.FC<SyncIndicatorProps> = ({
                   onClick={handleSyncClick}
                   disabled={isOffline || syncState.status === 'syncing'}
                   className={cn(
-                    'w-full flex items-center justify-center gap-2 min-h-[36px] rounded-lg',
+                    'w-full flex items-center justify-center gap-2 min-h-[36px] rounded-card',
                     'bg-primary text-primary-foreground',
                     'hover:bg-primary/90 transition-colors',
                     'disabled:opacity-50 disabled:cursor-not-allowed',
@@ -637,28 +643,33 @@ export const SyncBadge: React.FC<SyncBadgeProps> = ({ className, onClick }) => {
   const [isOffline, setIsOffline] = useState(false);
 
   useEffect(() => {
+    let unsubscribeEngine: (() => void) | null = null;
+    let unsubscribeNetwork: (() => void) | null = null;
+
     const initialize = async () => {
       const syncEngine = getSyncEngine();
       const networkMonitor = getNetworkMonitor();
 
       await syncEngine.initialize();
 
-      syncEngine.setEvents({
+      // Subscribe via multi-subscriber pattern (no overwrite)
+      unsubscribeEngine = syncEngine.subscribeEvents({
         onStateChange: setSyncState,
       });
 
-      const unsubscribe = networkMonitor.subscribe((state) => {
+      unsubscribeNetwork = networkMonitor.subscribe((state) => {
         setIsOffline(state.status === 'offline');
       });
 
       setSyncState(syncEngine.getState());
-
-      return () => {
-        unsubscribe();
-      };
     };
 
     initialize();
+
+    return () => {
+      unsubscribeEngine?.();
+      unsubscribeNetwork?.();
+    };
   }, []);
 
   if (!syncState) return null;
@@ -671,7 +682,7 @@ export const SyncBadge: React.FC<SyncBadgeProps> = ({ className, onClick }) => {
     <button
       onClick={onClick}
       className={cn(
-        'relative flex items-center gap-1.5 px-2 py-1 rounded-full',
+        'relative flex items-center gap-1.5 px-2 py-1 rounded-badge',
         'bg-muted hover:bg-muted/80 transition-colors',
         'text-xs font-medium',
         className

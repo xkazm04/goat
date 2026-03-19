@@ -260,23 +260,62 @@ export function seedBracket(
   return processAutoAdvances(updatedBracket);
 }
 
+// ─── Index Helpers ──────────────────────────────────────────────────
+
+/**
+ * Build a Map index from matchup ID to matchup object for O(1) lookups.
+ * Use this before any operation that needs to locate matchups by ID.
+ */
+export function buildMatchupIndex(bracket: BracketState): Map<string, BracketMatchup> {
+  const index = new Map<string, BracketMatchup>();
+  for (const round of bracket.rounds) {
+    for (const matchup of round.matchups) {
+      index.set(matchup.id, matchup);
+    }
+  }
+  return index;
+}
+
+/**
+ * Build a reverse index from nextMatchupId to feeder matchups keyed by position.
+ * Enables O(1) "which matchup feeds into slot X of matchup Y?" lookups.
+ */
+function buildFeederIndex(bracket: BracketState): Map<string, { top?: BracketMatchup; bottom?: BracketMatchup }> {
+  const index = new Map<string, { top?: BracketMatchup; bottom?: BracketMatchup }>();
+  for (const round of bracket.rounds) {
+    for (const matchup of round.matchups) {
+      if (matchup.nextMatchupId) {
+        let entry = index.get(matchup.nextMatchupId);
+        if (!entry) {
+          entry = {};
+          index.set(matchup.nextMatchupId, entry);
+        }
+        entry[matchup.position] = matchup;
+      }
+    }
+  }
+  return index;
+}
+
 /**
  * Process automatic advances (from byes)
  */
 function processAutoAdvances(bracket: BracketState): BracketState {
   let updated = { ...bracket };
+  // Shallow copy rounds once; targeted index replacements below
+  updated.rounds = bracket.rounds.slice();
   let hasChanges = true;
 
   while (hasChanges) {
     hasChanges = false;
+    const matchupIndex = buildMatchupIndex(updated);
 
     for (let r = 0; r < updated.rounds.length - 1; r++) {
       const currentRound = updated.rounds[r];
-      const nextRound = updated.rounds[r + 1];
 
       for (const matchup of currentRound.matchups) {
         if (matchup.winner && matchup.nextMatchupId) {
-          const nextMatchup = nextRound.matchups.find(m => m.id === matchup.nextMatchupId);
+          const nextMatchup = matchupIndex.get(matchup.nextMatchupId);
 
           if (nextMatchup) {
             const slot = matchup.position === 'top' ? 'participant1' : 'participant2';
@@ -300,16 +339,16 @@ function processAutoAdvances(bracket: BracketState): BracketState {
                 updatedNextMatchup.isComplete = true;
               }
 
-              // Apply update
-              const nextRoundMatchups = nextRound.matchups.map(m =>
+              // Targeted round replacement instead of mapping all rounds
+              const nextRoundMatchups = updated.rounds[r + 1].matchups.map(m =>
                 m.id === nextMatchup.id ? updatedNextMatchup : m
               );
 
-              updated.rounds = updated.rounds.map((round, idx) =>
-                idx === r + 1
-                  ? { ...round, matchups: nextRoundMatchups, isComplete: nextRoundMatchups.every(m => m.isComplete) }
-                  : round
-              );
+              updated.rounds[r + 1] = {
+                ...updated.rounds[r + 1],
+                matchups: nextRoundMatchups,
+                isComplete: nextRoundMatchups.every(m => m.isComplete),
+              };
 
               hasChanges = true;
             }
@@ -348,38 +387,34 @@ export function recordMatchupResult(
 ): BracketState {
   let updated = { ...bracket };
 
-  // Find and update the matchup
-  for (let r = 0; r < updated.rounds.length; r++) {
+  // O(1) lookup via index instead of scanning all rounds
+  const index = buildMatchupIndex(updated);
+  const target = index.get(matchupId);
+
+  if (target) {
+    const r = target.roundIndex;
     const roundMatchups = updated.rounds[r].matchups;
-    const matchupIndex = roundMatchups.findIndex(m => m.id === matchupId);
+    const winner = target.participant1?.id === winnerId
+      ? target.participant1
+      : target.participant2;
 
-    if (matchupIndex !== -1) {
-      const matchup = roundMatchups[matchupIndex];
-      const winner = matchup.participant1?.id === winnerId
-        ? matchup.participant1
-        : matchup.participant2;
-
-      if (!winner) continue;
-
+    if (winner) {
       const updatedMatchup = {
-        ...matchup,
+        ...target,
         winner,
         isComplete: true,
       };
 
-      const updatedMatchups = roundMatchups.map((m, i) =>
-        i === matchupIndex ? updatedMatchup : m
+      const updatedMatchups = roundMatchups.map(m =>
+        m.id === matchupId ? updatedMatchup : m
       );
 
       const isRoundComplete = updatedMatchups.every(m => m.isComplete);
 
-      updated.rounds = updated.rounds.map((round, idx) =>
-        idx === r
-          ? { ...round, matchups: updatedMatchups, isComplete: isRoundComplete }
-          : round
-      );
-
-      break;
+      // Targeted round replacement instead of mapping all rounds
+      const newRounds = updated.rounds.slice();
+      newRounds[r] = { ...updated.rounds[r], matchups: updatedMatchups, isComplete: isRoundComplete };
+      updated.rounds = newRounds;
     }
   }
 
@@ -398,17 +433,12 @@ export function undoMatchupResult(
   bracket: BracketState,
   matchupId: string
 ): BracketState {
-  let updated = structuredClone(bracket);
+  // Build indexes from original bracket (read-only pass, no deep clone needed)
+  const matchupIndex = buildMatchupIndex(bracket);
+  const feederIdx = buildFeederIndex(bracket);
 
   // Find the matchup to undo
-  let targetMatchup: BracketMatchup | null = null;
-  for (const round of updated.rounds) {
-    const found = round.matchups.find(m => m.id === matchupId);
-    if (found) {
-      targetMatchup = found;
-      break;
-    }
-  }
+  const targetMatchup = matchupIndex.get(matchupId) ?? null;
 
   if (!targetMatchup || !targetMatchup.winner) return bracket;
 
@@ -419,67 +449,71 @@ export function undoMatchupResult(
   while (frontier.length > 0) {
     const nextFrontier: string[] = [];
     for (const id of frontier) {
-      // Find the matchup and its next matchup
-      for (const round of updated.rounds) {
-        const m = round.matchups.find(mu => mu.id === id);
-        if (m?.nextMatchupId) {
-          // Only cascade if the next matchup used a winner from one of our cleared matchups
-          const nextRound = updated.rounds[m.roundIndex + 1];
-          if (nextRound) {
-            const nextMatchup = nextRound.matchups.find(mu => mu.id === m.nextMatchupId);
-            if (nextMatchup && nextMatchup.isComplete) {
-              toClear.add(nextMatchup.id);
-              nextFrontier.push(nextMatchup.id);
-            }
-          }
+      const m = matchupIndex.get(id);
+      if (m?.nextMatchupId) {
+        const nextMatchup = matchupIndex.get(m.nextMatchupId);
+        if (nextMatchup && nextMatchup.isComplete) {
+          toClear.add(nextMatchup.id);
+          nextFrontier.push(nextMatchup.id);
         }
       }
     }
     frontier = nextFrontier;
   }
 
-  // Clear all affected matchups
-  for (let r = 0; r < updated.rounds.length; r++) {
-    updated.rounds[r].matchups = updated.rounds[r].matchups.map(m => {
-      if (toClear.has(m.id)) {
-        return { ...m, winner: null, isComplete: false };
+  // Determine which round indices need modification
+  const affectedRounds = new Set<number>();
+  toClear.forEach(id => {
+    const m = matchupIndex.get(id);
+    if (m) {
+      affectedRounds.add(m.roundIndex);
+      // Next round needs participant clearing
+      if (m.nextMatchupId) {
+        const next = matchupIndex.get(m.nextMatchupId);
+        if (next) affectedRounds.add(next.roundIndex);
       }
-      return m;
+    }
+  });
+
+  // Shallow copy bracket and rounds array; only clone affected rounds
+  const updated: BracketState = { ...bracket };
+  updated.rounds = bracket.rounds.slice();
+
+  affectedRounds.forEach(r => {
+    const round = updated.rounds[r];
+    let roundModified = false;
+
+    const newMatchups = round.matchups.map(m => {
+      const clearWinner = toClear.has(m.id);
+      let clearP1 = false;
+      let clearP2 = false;
+
+      if (r > 0) {
+        const feeders = feederIdx.get(m.id);
+        if (feeders?.top && toClear.has(feeders.top.id)) clearP1 = true;
+        if (feeders?.bottom && toClear.has(feeders.bottom.id)) clearP2 = true;
+      }
+
+      if (!clearWinner && !clearP1 && !clearP2) return m;
+
+      roundModified = true;
+      return {
+        ...m,
+        ...(clearWinner && { winner: null, isComplete: false }),
+        ...(clearP1 && { participant1: null }),
+        ...(clearP2 && { participant2: null }),
+        ...((clearP1 || clearP2) && { winner: null, isComplete: false }),
+      };
     });
 
-    // Also clear advanced participants in downstream matchups
-    // (participants that were placed by a now-cleared matchup)
-    if (r > 0) {
-      updated.rounds[r].matchups = updated.rounds[r].matchups.map(m => {
-        let p1 = m.participant1;
-        let p2 = m.participant2;
-
-        // Check if participant1 came from a cleared matchup
-        const feederTop = updated.rounds[r - 1]?.matchups.find(
-          fm => fm.nextMatchupId === m.id && fm.position === 'top'
-        );
-        if (feederTop && toClear.has(feederTop.id)) {
-          p1 = null;
-        }
-
-        // Check if participant2 came from a cleared matchup
-        const feederBottom = updated.rounds[r - 1]?.matchups.find(
-          fm => fm.nextMatchupId === m.id && fm.position === 'bottom'
-        );
-        if (feederBottom && toClear.has(feederBottom.id)) {
-          p2 = null;
-        }
-
-        if (p1 !== m.participant1 || p2 !== m.participant2) {
-          return { ...m, participant1: p1, participant2: p2, winner: null, isComplete: false };
-        }
-        return m;
-      });
+    if (roundModified) {
+      updated.rounds[r] = {
+        ...round,
+        matchups: newMatchups,
+        isComplete: newMatchups.every(m => m.isComplete),
+      };
     }
-
-    // Recalculate round completion
-    updated.rounds[r].isComplete = updated.rounds[r].matchups.every(m => m.isComplete);
-  }
+  });
 
   // Reset champion if final was cleared
   const finalRound = updated.rounds[updated.rounds.length - 1];
@@ -526,8 +560,18 @@ export function getPlayableMatchups(bracket: BracketState): BracketMatchup[] {
 }
 
 /**
- * Convert bracket results to a linear ranking
+ * Convert bracket results to a linear ranking.
  * Champion = 1st, Runner-up = 2nd, Semi-finalists = 3rd/4th, etc.
+ *
+ * **Tie groups**: In single-elimination brackets, losers from the same round
+ * are effectively tied — the bracket never compared them directly. For example,
+ * both semi-final losers share 3rd place, all quarter-final losers share 5th, etc.
+ * Within each tied group, participants are ordered by seed (lower seed = higher
+ * position) as a tiebreak, but this ordering is cosmetic — the bracket did not
+ * determine a meaningful difference between them.
+ *
+ * Use {@link computeRankingTies} to get display-rank metadata that reflects
+ * these tie groups.
  */
 export function bracketToRanking(bracket: BracketState): BracketParticipant[] {
   if (!bracket.isComplete || !bracket.champion) {
@@ -536,7 +580,7 @@ export function bracketToRanking(bracket: BracketState): BracketParticipant[] {
 
   const ranking: BracketParticipant[] = [];
 
-  // Process rounds in reverse order
+  // Process rounds in reverse order (final → first round)
   for (let r = bracket.rounds.length - 1; r >= 0; r--) {
     const round = bracket.rounds[r];
     const losers: BracketParticipant[] = [];
@@ -550,7 +594,10 @@ export function bracketToRanking(bracket: BracketState): BracketParticipant[] {
       }
     }
 
-    // Add losers to ranking (they're all tied at this level)
+    // Sort losers within this round by seed (lower seed = better rank).
+    // This is a cosmetic tiebreak — these participants are actually tied.
+    losers.sort((a, b) => a.seed - b.seed);
+
     ranking.push(...losers);
   }
 
@@ -558,6 +605,62 @@ export function bracketToRanking(bracket: BracketState): BracketParticipant[] {
   ranking.unshift(bracket.champion);
 
   return ranking.filter(p => !p.isBye);
+}
+
+/** Rank display metadata for a single position in the ranking. */
+export interface RankingTieInfo {
+  /** The display rank (tied positions share the same number, e.g. both semi-final losers show 3). */
+  displayRank: number;
+  /** Whether this position is part of a tied group (more than one participant at this rank). */
+  isTied: boolean;
+}
+
+/**
+ * Compute tied-rank metadata for a bracket ranking.
+ *
+ * In single-elimination, losers from the same round never faced each other,
+ * so they share a rank. This function returns one entry per ranking position
+ * with the appropriate display rank and a flag indicating ties.
+ *
+ * Tie groups follow standard tournament convention:
+ * - Rank 1: Champion (1 participant)
+ * - Rank 2: Runner-up (1 participant)
+ * - Rank 3: Semi-final losers (2 participants)
+ * - Rank 5: Quarter-final losers (4 participants)
+ * - Rank 9: Round-of-16 losers (8 participants), etc.
+ */
+export function computeRankingTies(bracket: BracketState): RankingTieInfo[] {
+  if (!bracket.isComplete || !bracket.champion) return [];
+
+  const ties: RankingTieInfo[] = [];
+
+  // Champion: rank 1, unique
+  ties.push({ displayRank: 1, isTied: false });
+
+  let nextRank = 2;
+
+  // Process rounds in reverse order (same traversal as bracketToRanking)
+  for (let r = bracket.rounds.length - 1; r >= 0; r--) {
+    const round = bracket.rounds[r];
+    let groupSize = 0;
+
+    for (const matchup of round.matchups) {
+      if (matchup.isComplete && matchup.winner) {
+        const loser = getLoserFromMatchup(matchup);
+        if (loser && !loser.isBye) {
+          groupSize++;
+        }
+      }
+    }
+
+    const isTied = groupSize > 1;
+    for (let i = 0; i < groupSize; i++) {
+      ties.push({ displayRank: nextRank, isTied });
+    }
+    nextRank += groupSize;
+  }
+
+  return ties;
 }
 
 /**
@@ -575,8 +678,8 @@ export function getBracketStats(bracket: BracketState): {
 
   for (const round of bracket.rounds) {
     for (const matchup of round.matchups) {
-      // Only count matchups that aren't pure byes
-      if (!matchup.participant1?.isBye || !matchup.participant2?.isBye) {
+      // Only count matchups where both participants are real (no byes)
+      if (!matchup.participant1?.isBye && !matchup.participant2?.isBye) {
         totalMatchups++;
         if (matchup.isComplete) {
           completedMatchups++;
@@ -609,12 +712,18 @@ export function getBracketSizeForItems(itemCount: number): BracketSize {
 // ─── Shared Utilities ─────────────────────────────────────────────────
 
 /**
- * Find a matchup by ID across all rounds
+ * Find a matchup by ID across all rounds.
+ * Pass a pre-built index (from {@link buildMatchupIndex}) for O(1) lookups
+ * when calling this in a loop; otherwise falls back to a linear scan.
  */
 export function findMatchupById(
   bracket: BracketState,
-  matchupId: string
+  matchupId: string,
+  index?: Map<string, BracketMatchup>
 ): BracketMatchup | null {
+  if (index) {
+    return index.get(matchupId) ?? null;
+  }
   for (const round of bracket.rounds) {
     const found = round.matchups.find(m => m.id === matchupId);
     if (found) return found;
@@ -656,6 +765,100 @@ export function isCompletedNonBye(matchup: BracketMatchup): boolean {
     !matchup.participant1.isBye &&
     !matchup.participant2.isBye
   );
+}
+
+// ─── Single-Pass Bracket Derivation ──────────────────────────────────
+
+/** Lightweight vote record produced by the single-pass derivation. */
+export interface CompletedVote {
+  id: string;
+  roundIndex: number;
+  winner: { id: string; title?: string; image_url?: string | null };
+  loser:  { id: string; title?: string; image_url?: string | null };
+}
+
+/** All commonly-needed bracket-derived data, computed in a single pass. */
+export interface BracketDerivedData {
+  stats: {
+    totalMatchups: number;
+    completedMatchups: number;
+    remainingMatchups: number;
+    progressPercentage: number;
+    currentRoundName: string;
+  };
+  playableMatchups: BracketMatchup[];
+  completedVotes: CompletedVote[];
+}
+
+/**
+ * Derive stats, playable matchups, and completed votes in one pass
+ * over the bracket's rounds. This replaces separate calls to
+ * getBracketStats + getPlayableMatchups + the VotingHistoryStrip iteration.
+ */
+export function deriveBracketData(bracket: BracketState): BracketDerivedData {
+  let totalMatchups = 0;
+  let completedMatchups = 0;
+  const playable: BracketMatchup[] = [];
+  const votes: CompletedVote[] = [];
+
+  const currentRoundIndex = bracket.currentRoundIndex;
+
+  for (const round of bracket.rounds) {
+    for (const matchup of round.matchups) {
+      // Stats: count non-pure-bye matchups
+      if (!matchup.participant1?.isBye || !matchup.participant2?.isBye) {
+        totalMatchups++;
+        if (matchup.isComplete) {
+          completedMatchups++;
+        }
+      }
+
+      // Playable: incomplete matchups in the current round with two real participants
+      if (
+        round.index === currentRoundIndex &&
+        !matchup.isComplete &&
+        matchup.participant1 &&
+        matchup.participant2 &&
+        !matchup.participant1.isBye &&
+        !matchup.participant2.isBye
+      ) {
+        playable.push(matchup);
+      }
+
+      // Completed votes: real (non-bye) completed matchups
+      if (isCompletedNonBye(matchup)) {
+        const loser = getLoserFromMatchup(matchup)!;
+        votes.push({
+          id: matchup.id,
+          roundIndex: matchup.roundIndex,
+          winner: {
+            id: matchup.winner!.id,
+            title: matchup.winner!.item?.title || matchup.winner!.item?.name,
+            image_url: matchup.winner!.item?.image_url,
+          },
+          loser: {
+            id: loser.id,
+            title: loser.item?.title || loser.item?.name,
+            image_url: loser.item?.image_url,
+          },
+        });
+      }
+    }
+  }
+
+  const currentRound = bracket.rounds[currentRoundIndex];
+
+  return {
+    stats: {
+      totalMatchups,
+      completedMatchups,
+      remainingMatchups: totalMatchups - completedMatchups,
+      progressPercentage: totalMatchups > 0 ? (completedMatchups / totalMatchups) * 100 : 0,
+      currentRoundName: currentRound?.name || 'Complete',
+    },
+    playableMatchups: playable,
+    completedVotes: votes,
+  };
 }
 
 // ─── Tournament Analytics ────────────────────────────────────────────
@@ -747,27 +950,60 @@ export function findClosestMatchups(bracket: BracketState): ClosestMatchup[] {
 }
 
 /**
- * Calculate full tournament analytics
+ * Calculate full tournament analytics in a single pass.
+ *
+ * Combines what was previously three separate bracket iterations
+ * (detectUpsets + findClosestMatchups + seed accuracy counting)
+ * into one traversal.
  */
 export function getTournamentAnalytics(
   bracket: BracketState
 ): TournamentAnalytics {
   let totalVotedMatchups = 0;
   let higherSeedWins = 0;
+  const upsets: UpsetResult[] = [];
+  const closestMatchups: ClosestMatchup[] = [];
 
   for (const round of bracket.rounds) {
+    const participantsInRound = bracket.size / Math.pow(2, round.index);
+    const roundName =
+      ROUND_NAMES[participantsInRound] || `Round of ${participantsInRound}`;
+
     for (const matchup of round.matchups) {
       if (!isCompletedNonBye(matchup)) continue;
 
       totalVotedMatchups++;
       const loser = getLoserFromMatchup(matchup)!;
+      const winnerSeed = matchup.winner!.seed;
+      const loserSeed = loser.seed;
 
-      // Higher seed = lower number wins
-      if (matchup.winner!.seed < loser.seed) {
+      // Seed accuracy
+      if (winnerSeed < loserSeed) {
         higherSeedWins++;
       }
+
+      // Upset detection (winner has worse seed = higher number)
+      if (winnerSeed > loserSeed) {
+        upsets.push({
+          matchup,
+          winnerSeed,
+          loserSeed,
+          seedDiff: winnerSeed - loserSeed,
+          roundName,
+        });
+      }
+
+      // Closest matchup tracking
+      closestMatchups.push({
+        matchup,
+        seedDiff: Math.abs(matchup.participant1!.seed - matchup.participant2!.seed),
+        roundName,
+      });
     }
   }
+
+  upsets.sort((a, b) => b.seedDiff - a.seedDiff);
+  closestMatchups.sort((a, b) => a.seedDiff - b.seedDiff);
 
   const seedAccuracyScore =
     totalVotedMatchups > 0
@@ -775,8 +1011,8 @@ export function getTournamentAnalytics(
       : 0;
 
   return {
-    upsets: detectUpsets(bracket),
-    closestMatchups: findClosestMatchups(bracket),
+    upsets,
+    closestMatchups,
     seedAccuracyScore,
     totalVotedMatchups,
     higherSeedWins,

@@ -59,13 +59,41 @@ export interface SyncQueueEvents {
   onQueueChange?: (state: SyncQueueState) => void;
 }
 
+/** Multi-subscriber event dispatcher for SyncQueue */
+class SyncQueueEventBus {
+  private subscribers = new Map<number, SyncQueueEvents>();
+  private nextId = 0;
+
+  subscribe(events: SyncQueueEvents): () => void {
+    const id = this.nextId++;
+    this.subscribers.set(id, events);
+    return () => { this.subscribers.delete(id); };
+  }
+
+  emit<K extends keyof SyncQueueEvents>(
+    event: K,
+    ...args: Parameters<NonNullable<SyncQueueEvents[K]>>
+  ): void {
+    Array.from(this.subscribers.values()).forEach((sub) => {
+      const handler = sub[event];
+      if (handler) {
+        (handler as (...a: unknown[]) => void)(...args);
+      }
+    });
+  }
+
+  get size(): number { return this.subscribers.size; }
+}
+
 export class SyncQueue {
   private config: OfflineConfig;
   private storage: OfflineStorage;
   private executor: SyncExecutor | null = null;
   private batchExecutor: BatchSyncExecutor | null = null;
   private conflictHandler: ConflictHandler | null = null;
-  private events: SyncQueueEvents = {};
+  private eventBus = new SyncQueueEventBus();
+  /** @deprecated Use subscribeEvents() instead — setEvents() overwrites previous callers */
+  private legacyEvents: SyncQueueEvents = {};
   private isProcessing = false;
   private processingPromise: Promise<void> | null = null;
   private retryTimeouts: Map<string, ReturnType<typeof setTimeout>> = new Map();
@@ -96,8 +124,29 @@ export class SyncQueue {
     this.conflictHandler = handler;
   }
 
+  /** @deprecated Use subscribeEvents() instead to avoid overwriting other callers' handlers */
   setEvents(events: SyncQueueEvents): void {
-    this.events = { ...this.events, ...events };
+    this.legacyEvents = { ...this.legacyEvents, ...events };
+  }
+
+  /**
+   * Subscribe to queue events. Returns an unsubscribe function.
+   * Multiple subscribers are supported without overwriting each other.
+   */
+  subscribeEvents(events: SyncQueueEvents): () => void {
+    return this.eventBus.subscribe(events);
+  }
+
+  /** Emit event to both legacy and multi-subscriber listeners */
+  private emit<K extends keyof SyncQueueEvents>(
+    event: K,
+    ...args: Parameters<NonNullable<SyncQueueEvents[K]>>
+  ): void {
+    const legacyHandler = this.legacyEvents[event];
+    if (legacyHandler) {
+      (legacyHandler as (...a: unknown[]) => void)(...args);
+    }
+    this.eventBus.emit(event, ...args);
   }
 
   // ============================================================================
@@ -208,7 +257,7 @@ export class SyncQueue {
     }
 
     this.isProcessing = true;
-    this.events.onSyncStart?.();
+    this.emit('onSyncStart');
 
     this.processingPromise = this.doProcessQueue();
 
@@ -242,9 +291,9 @@ export class SyncQueue {
       const now = Date.now();
       await this.storage.setMetadata('lastSyncTime', now);
       this._lastSyncTime = now;
-      this.events.onSyncComplete?.(successCount, failCount);
+      this.emit('onSyncComplete', successCount, failCount);
     } catch (error) {
-      this.events.onSyncError?.(error as Error);
+      this.emit('onSyncError', error as Error);
       throw error;
     }
   }
@@ -288,7 +337,7 @@ export class SyncQueue {
         if (result.success) {
           const completedOp: SyncOperation = { ...operation, status: 'completed' };
           await this.storage.updateOperation(completedOp);
-          this.events.onOperationSuccess?.(completedOp);
+          this.emit('onOperationSuccess', completedOp);
           this._pendingCount = Math.max(0, this._pendingCount - 1);
           addSuccess(1);
 
@@ -299,14 +348,15 @@ export class SyncQueue {
           const conflict = await this.conflictHandler(operation, result.serverData);
           if (conflict) {
             await this.storage.addConflict(conflict);
-            this.events.onConflictDetected?.(conflict);
+            this.emit('onConflictDetected', conflict);
+            const baseVersion = await this.getBaseVersion(operation);
             const conflictOp: SyncOperation = {
               ...operation,
               status: 'conflict',
               conflictData: {
                 localVersion: operation.payload,
                 serverVersion: result.serverData,
-                baseVersion: null,
+                baseVersion,
                 localTimestamp: operation.timestamp,
                 serverTimestamp: Date.now(),
               },
@@ -346,13 +396,15 @@ export class SyncQueue {
       const inProgressOp: SyncOperation = { ...operation, status: 'in_progress' };
       await this.storage.updateOperation(inProgressOp);
 
+      let shouldBreak = false;
+
       try {
         const result = await this.executor!(operation);
 
         if (result.success) {
           const completedOp: SyncOperation = { ...operation, status: 'completed' };
           await this.storage.updateOperation(completedOp);
-          this.events.onOperationSuccess?.(completedOp);
+          this.emit('onOperationSuccess', completedOp);
           this._pendingCount = Math.max(0, this._pendingCount - 1);
           addSuccess(1);
 
@@ -364,25 +416,30 @@ export class SyncQueue {
             const conflict = await this.conflictHandler(operation, result.serverData);
             if (conflict) {
               await this.storage.addConflict(conflict);
-              this.events.onConflictDetected?.(conflict);
+              this.emit('onConflictDetected', conflict);
+              const baseVersion = await this.getBaseVersion(operation);
               const conflictOp: SyncOperation = {
                 ...operation,
                 status: 'conflict',
                 conflictData: {
                   localVersion: operation.payload,
                   serverVersion: result.serverData,
-                  baseVersion: null,
+                  baseVersion,
                   localTimestamp: operation.timestamp,
                   serverTimestamp: Date.now(),
                 },
               };
               await this.storage.updateOperation(conflictOp);
               addFail(1);
+              // Conflict is handled, continue processing other ops
+              await this.notifyQueueChange();
               continue;
             }
           }
           await this.handleOperationFailure(operation, result.error ?? 'Unknown error');
           addFail(1);
+          // Break: let the backoff timer in handleOperationFailure schedule the retry
+          shouldBreak = true;
         }
       } catch (error) {
         await this.handleOperationFailure(
@@ -390,9 +447,13 @@ export class SyncQueue {
           error instanceof Error ? error.message : 'Unknown error'
         );
         addFail(1);
+        // Break: let the backoff timer in handleOperationFailure schedule the retry
+        shouldBreak = true;
       }
 
       await this.notifyQueueChange();
+
+      if (shouldBreak) break;
     }
   }
 
@@ -413,7 +474,7 @@ export class SyncQueue {
       await this.storage.updateOperation(failedOp);
       this._pendingCount = Math.max(0, this._pendingCount - 1);
       this._failedCount++;
-      this.events.onOperationFailed?.(failedOp, errorMessage);
+      this.emit('onOperationFailed', failedOp, errorMessage);
     } else {
       // Schedule retry with exponential backoff
       const updatedOp: SyncOperation = {
@@ -437,6 +498,16 @@ export class SyncQueue {
       }, delay);
 
       this.retryTimeouts.set(operation.id, timeoutId);
+    }
+  }
+
+  /** Look up the last-synced data snapshot for an entity to use as three-way merge base */
+  private async getBaseVersion(operation: SyncOperation): Promise<unknown> {
+    try {
+      const record = await this.storage.getSessionRecord(operation.entityId);
+      return record?.lastSyncedData ?? null;
+    } catch {
+      return null;
     }
   }
 
@@ -580,7 +651,7 @@ export class SyncQueue {
   }
 
   private async notifyQueueChange(): Promise<void> {
-    if (!this.events.onQueueChange) return;
+    if (!this.legacyEvents.onQueueChange && this.eventBus.size === 0) return;
     await this.ensureCountsInitialized();
     // Build lightweight state from in-memory counters — no IDB reads
     const state: SyncQueueState = {
@@ -590,7 +661,7 @@ export class SyncQueue {
       failedCount: this._failedCount,
       pendingCount: this._pendingCount,
     };
-    this.events.onQueueChange(state);
+    this.emit('onQueueChange', state);
   }
 
   async getPendingCount(): Promise<number> {

@@ -7,6 +7,7 @@
 
 import { useEffect, useCallback, useMemo } from "react";
 import { useGridStore } from "@/stores/grid-store";
+import { getTierForPositionGeneric, isTierTransitionGeneric, rangeFromTierDef } from "@/lib/tiers/boundary";
 import {
   useRankingStore,
   selectSmartTierConfiguration,
@@ -89,34 +90,21 @@ export function useTierIntegration(
     return () => clearTimeout(timeoutId);
   }, [autoCalculate, tiersEnabled, listSize, filledPositions, calculateSmartTiers, debounceMs]);
 
-  // Get tier for a specific position
+  // Get tier for a specific position (delegates to canonical boundary lookup)
   const getTierForPosition = useCallback(
     (position: number): TierDefinition | null => {
       if (!tiersEnabled || currentTiers.length === 0) return null;
-
-      for (const tier of currentTiers) {
-        if (position >= tier.startPosition && position < tier.endPosition) {
-          return tier;
-        }
-      }
-
-      return currentTiers[currentTiers.length - 1] || null;
+      return getTierForPositionGeneric(position, currentTiers, rangeFromTierDef)
+        ?? currentTiers[currentTiers.length - 1] ?? null;
     },
     [tiersEnabled, currentTiers]
   );
 
-  // Check if position is at a tier boundary
+  // Check if position is at a tier boundary (delegates to canonical boundary lookup)
   const isTierBoundary = useCallback(
     (position: number): boolean => {
       if (!tiersEnabled || currentTiers.length === 0) return false;
-
-      for (const tier of currentTiers.slice(0, -1)) {
-        if (tier.endPosition === position) {
-          return true;
-        }
-      }
-
-      return false;
+      return isTierTransitionGeneric(position, currentTiers, rangeFromTierDef);
     },
     [tiersEnabled, currentTiers]
   );

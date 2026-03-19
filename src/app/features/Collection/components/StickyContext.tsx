@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
+import { DURATION } from '@/lib/animations/motion-presets';
 
 interface StickyContextProps {
   isVisible: boolean;
@@ -28,10 +29,10 @@ export function StickyContext({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 20 }}
-          transition={{ duration: 0.2 }}
-          className="fixed bottom-[620px] left-4 z-50 pointer-events-none"
+          transition={{ duration: DURATION.fast }}
+          className="fixed bottom-[620px] left-4 z-sticky pointer-events-none"
         >
-          <div className="bg-slate-900/95 backdrop-blur-md border border-slate-700 rounded-lg px-4 py-2 shadow-2xl">
+          <div className="bg-slate-900/95 backdrop-blur-md border border-slate-700 rounded-card px-4 py-2 shadow-2xl">
             <div className="flex items-center gap-3">
               {/* Category icon */}
               <div className="w-8 h-8 rounded-full bg-brand/20 flex items-center justify-center">

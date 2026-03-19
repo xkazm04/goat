@@ -150,17 +150,23 @@ export const CACHE_PRESETS = {
 /**
  * Standardized cache tags for grouping related queries.
  * Used for coordinated invalidation across related data.
+ *
+ * Tags are matched via EXACT EQUALITY against query key parts.
+ * Values must correspond to actual query key root strings or sub-part strings.
+ *
+ * Query key roots: 'top-lists', 'top-items', 'collection', 'criteria',
+ *                  'list-collections', 'item-groups', 'item-stats'
  */
 export const CACHE_TAGS = {
-  // List-related
-  LISTS: 'lists',
-  LIST_DETAIL: 'list-detail',
+  // List-related — exact match against query key roots/sub-parts
+  LISTS: 'top-lists',
+  LIST_DETAIL: 'top-lists',
   FEATURED: 'featured',
-  USER_LISTS: 'user-lists',
+  USER_LISTS: 'top-lists',
 
   // Item-related
-  ITEMS: 'items',
-  GROUPS: 'groups',
+  ITEMS: 'top-items',
+  GROUPS: 'item-groups',
   CATEGORIES: 'categories',
 
   // Session-related
@@ -190,10 +196,10 @@ export const CACHE_TAGS = {
  */
 export const INVALIDATION_RULES = {
   /** When a list is created or updated */
-  'list.updated': [CACHE_TAGS.LISTS, CACHE_TAGS.USER_LISTS, CACHE_TAGS.FEATURED] as const,
+  'list.updated': [CACHE_TAGS.LISTS, CACHE_TAGS.FEATURED] as const,
 
   /** When a list is deleted */
-  'list.deleted': [CACHE_TAGS.LISTS, CACHE_TAGS.USER_LISTS, CACHE_TAGS.LIST_DETAIL, CACHE_TAGS.FEATURED] as const,
+  'list.deleted': [CACHE_TAGS.LISTS, CACHE_TAGS.FEATURED] as const,
 
   /** When items are ranked in a grid */
   'item.ranked': [CACHE_TAGS.CONSENSUS, CACHE_TAGS.GRID, CACHE_TAGS.SESSION, CACHE_TAGS.ANALYTICS] as const,
@@ -202,7 +208,7 @@ export const INVALIDATION_RULES = {
   'blueprint.created': [CACHE_TAGS.LISTS, CACHE_TAGS.FEATURED] as const,
 
   /** When user preferences change */
-  'user.updated': [CACHE_TAGS.USER_DATA, CACHE_TAGS.USER_LISTS, CACHE_TAGS.PREFERENCES] as const,
+  'user.updated': [CACHE_TAGS.USER_DATA, CACHE_TAGS.LISTS, CACHE_TAGS.PREFERENCES] as const,
 
   /** When backlog groups are modified */
   'groups.updated': [CACHE_TAGS.GROUPS, CACHE_TAGS.ITEMS] as const,
@@ -210,6 +216,76 @@ export const INVALIDATION_RULES = {
   /** Force refresh all data */
   'app.refresh': Object.values(CACHE_TAGS),
 } as const;
+
+// =============================================================================
+// Retry Configuration
+// =============================================================================
+
+/**
+ * Smart retry function that skips non-retriable client errors (4xx).
+ * Use as the `retry` option in React Query queries.
+ */
+export function createSmartRetry(maxRetries: number) {
+  return (failureCount: number, error: Error): boolean => {
+    if (error instanceof Error) {
+      const message = error.message.toLowerCase();
+      if (message.includes('401') || message.includes('403') || message.includes('404')) {
+        return false;
+      }
+    }
+    return failureCount < maxRetries;
+  };
+}
+
+/**
+ * Exponential backoff delay with configurable max.
+ * Use as the `retryDelay` option in React Query.
+ */
+export function createRetryDelay(baseDelay: number = 1000, maxDelay: number = 30000) {
+  return (attemptIndex: number): number => Math.min(baseDelay * 2 ** attemptIndex, maxDelay);
+}
+
+/**
+ * Pre-built retry configurations for common use cases.
+ * Spread directly into React Query options: `...getRetryConfig('standard')`
+ */
+export type RetryPreset = 'standard' | 'fast' | 'mutation' | 'batch' | 'none';
+
+export function getRetryConfig(preset: RetryPreset): {
+  retry: number | ((failureCount: number, error: Error) => boolean);
+  retryDelay?: number | ((attemptIndex: number) => number);
+} {
+  switch (preset) {
+    case 'standard':
+      // 3 retries, skip 4xx, up to 30s backoff — default for queries
+      return {
+        retry: createSmartRetry(3),
+        retryDelay: createRetryDelay(1000, 30000),
+      };
+    case 'fast':
+      // 2 retries, up to 10s backoff — criteria, time-sensitive queries
+      return {
+        retry: 2,
+        retryDelay: createRetryDelay(1000, 10000),
+      };
+    case 'mutation':
+      // 1 retry, flat 1s delay — write operations
+      return {
+        retry: 1,
+        retryDelay: 1000,
+      };
+    case 'batch':
+      // 1 retry, no custom delay — batch operations
+      return {
+        retry: 1,
+      };
+    case 'none':
+      // No retries
+      return {
+        retry: 0,
+      };
+  }
+}
 
 // =============================================================================
 // Type Exports

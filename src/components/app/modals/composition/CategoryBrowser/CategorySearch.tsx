@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Search, X, ChevronRight, Folder, Clock, TrendingUp } from "lucide-react";
 import { CategorySearchProps, CategoryNode, RecentCategory, STORAGE_KEYS } from "./types";
 import { searchTree, findNodeByPath, getPopularCategories } from "./categoryTree";
+import { DURATION } from '@/lib/animations/motion-presets';
 
 /**
  * Search Result Item
@@ -25,7 +26,7 @@ const SearchResultItem = memo(function SearchResultItem({
 
   return (
     <motion.button
-      className="w-full flex items-center gap-3 p-3 rounded-lg text-left group"
+      className="w-full flex items-center gap-3 p-3 rounded-card text-left group"
       style={{
         background: "transparent",
       }}
@@ -41,7 +42,7 @@ const SearchResultItem = memo(function SearchResultItem({
     >
       {/* Icon */}
       <div
-        className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+        className="w-8 h-8 rounded-control flex items-center justify-center shrink-0"
         style={{
           background: `linear-gradient(135deg, ${nodeColor.primary}30, ${nodeColor.secondary}20)`,
         }}
@@ -101,7 +102,7 @@ const RecentItem = memo(function RecentItem({
 
   return (
     <motion.button
-      className="flex items-center gap-2 px-3 py-2 rounded-lg"
+      className="flex items-center gap-2 px-3 py-2 rounded-control"
       style={{
         background: "rgba(51, 65, 85, 0.3)",
         border: "1px solid rgba(71, 85, 105, 0.2)",
@@ -206,7 +207,7 @@ export const CategorySearch = memo(function CategorySearch({
     <div className="relative w-full">
       {/* Search input */}
       <div
-        className="relative flex items-center gap-2 px-4 py-3 rounded-xl transition-all duration-200"
+        className="relative flex items-center gap-2 px-4 py-3 rounded-card transition-all duration-200"
         style={{
           background: isFocused
             ? `linear-gradient(135deg, ${color.primary}15, ${color.secondary}10)`
@@ -242,7 +243,7 @@ export const CategorySearch = memo(function CategorySearch({
               initial={{ opacity: 0, scale: 0 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0 }}
-              className="p-1 rounded-full hover:bg-slate-700/50"
+              className="p-1 rounded-full hover:bg-slate-700/50 focus-ring"
               onClick={handleClear}
             >
               <X className="w-4 h-4 text-slate-400" />
@@ -255,7 +256,7 @@ export const CategorySearch = memo(function CategorySearch({
       <AnimatePresence>
         {showDropdown && (
           <motion.div
-            className="absolute top-full left-0 right-0 mt-2 rounded-xl overflow-hidden z-50 backdrop-blur-md"
+            className="absolute top-full left-0 right-0 mt-2 rounded-card overflow-hidden z-dropdown backdrop-blur-md"
             style={{
               background: "rgba(15, 23, 42, 0.95)",
               border: `1px solid ${color.primary}30`,
@@ -264,7 +265,7 @@ export const CategorySearch = memo(function CategorySearch({
             initial={{ opacity: 0, y: -10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: DURATION.fast }}
           >
             {/* Search results */}
             {query.trim() && results.length > 0 && (

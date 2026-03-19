@@ -61,7 +61,7 @@ export function AchievementReveal({
         <>
           {/* Backdrop */}
           <motion.div
-            className="fixed inset-0 z-50"
+            className="fixed inset-0 z-modal"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -74,7 +74,7 @@ export function AchievementReveal({
 
           {/* Confetti/Particles */}
           {showConfetti && (
-            <div className="fixed inset-0 z-50 pointer-events-none overflow-hidden">
+            <div className="fixed inset-0 z-modal pointer-events-none overflow-hidden">
               {/* Center burst */}
               {[...Array(24)].map((_, i) => {
                 const angle = (i / 24) * Math.PI * 2;
@@ -193,7 +193,7 @@ export function AchievementReveal({
 
           {/* Main content */}
           <motion.div
-            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 flex flex-col items-center"
+            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-modal flex flex-col items-center"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -352,7 +352,7 @@ export function AchievementReveal({
               {onShare && (
                 <motion.button
                   onClick={onShare}
-                  className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white"
+                  className="flex items-center gap-2 px-6 py-3 rounded-card font-semibold text-white"
                   style={{
                     background: 'linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%)',
                     boxShadow: '0 4px 20px rgba(6, 182, 212, 0.3)',
@@ -375,7 +375,7 @@ export function AchievementReveal({
 
               <motion.button
                 onClick={onClose}
-                className="px-6 py-3 rounded-xl font-medium text-gray-400 hover:text-white transition-colors"
+                className="px-6 py-3 rounded-card font-medium text-gray-400 hover:text-white transition-colors"
                 style={{
                   background: 'rgba(255, 255, 255, 0.05)',
                   border: '1px solid rgba(255, 255, 255, 0.1)',
@@ -431,7 +431,7 @@ export function AchievementToast({
     <AnimatePresence>
       {isVisible && (
         <motion.div
-          className="fixed bottom-6 right-6 z-50"
+          className="fixed bottom-6 right-6 z-toast"
           initial={{ opacity: 0, y: 50, scale: 0.9 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 50, scale: 0.9 }}
@@ -440,7 +440,7 @@ export function AchievementToast({
         >
           <motion.button
             onClick={onClick}
-            className="flex items-center gap-4 p-4 rounded-2xl cursor-pointer"
+            className="flex items-center gap-4 p-4 rounded-container cursor-pointer"
             style={{
               background: `linear-gradient(135deg, rgba(15, 20, 35, 0.98) 0%, rgba(20, 28, 48, 0.95) 100%)`,
               boxShadow: `
@@ -455,7 +455,7 @@ export function AchievementToast({
           >
             {/* Icon */}
             <motion.div
-              className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+              className="w-12 h-12 rounded-card flex items-center justify-center shrink-0"
               style={{
                 background: tierConfig.gradient,
                 boxShadow: `0 0 20px ${tierConfig.glow}`,

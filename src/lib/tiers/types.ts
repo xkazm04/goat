@@ -116,7 +116,6 @@ export type TierAlgorithm =
   | 'equal'        // Equal division of positions
   | 'pyramid'      // Fewer items in top tiers
   | 'bell'         // Bell curve distribution
-  | 'kmeans'       // K-means clustering
   | 'percentile'   // Percentile-based
   | 'custom';      // User-defined
 

@@ -1,6 +1,156 @@
 import { GridItemType, BacklogItemType, BacklogGroupType } from '@/types/match';
+import { NormalizedBacklogData, NormalizedOps } from './normalized-session';
 
 export class GridOperations {
+  // ─────────────────────────────────────────────────────────────
+  // Normalized variants — O(1) backlog updates via NormalizedOps
+  // ─────────────────────────────────────────────────────────────
+
+  /**
+   * Assign backlog item to a grid position using normalized data — O(1) backlog update.
+   */
+  static assignItemNormalized(
+    gridItems: GridItemType[],
+    normalizedData: NormalizedBacklogData,
+    item: BacklogItemType,
+    position: number
+  ): { gridItems: GridItemType[]; normalizedData: NormalizedBacklogData } | null {
+    if (position < 0 || position >= gridItems.length || gridItems[position].matched) {
+      return null;
+    }
+
+    const updatedGridItems = [...gridItems];
+    updatedGridItems[position] = {
+      id: `grid-${position}`,
+      title: item.title,
+      description: item.description,
+      tags: item.tags || [],
+      position,
+      matched: true,
+      matchedWith: item.id,
+    };
+
+    // O(1) item update via NormalizedOps
+    const updatedNormalized = NormalizedOps.markItemMatched(normalizedData, item.id, `grid-${position}`);
+
+    return { gridItems: updatedGridItems, normalizedData: updatedNormalized };
+  }
+
+  /**
+   * Remove item from grid position using normalized data — O(1) backlog update.
+   */
+  static removeItemNormalized(
+    gridItems: GridItemType[],
+    normalizedData: NormalizedBacklogData,
+    position: number
+  ): { gridItems: GridItemType[]; normalizedData: NormalizedBacklogData } | null {
+    if (position < 0 || position >= gridItems.length || !gridItems[position].matched) {
+      return null;
+    }
+
+    const matchedItemId = gridItems[position].matchedWith;
+
+    const updatedGridItems = [...gridItems];
+    updatedGridItems[position] = {
+      id: `grid-${position}`,
+      title: '',
+      tags: [],
+      position,
+      matched: false,
+      matchedWith: undefined,
+    };
+
+    // O(1) item update via NormalizedOps
+    let updatedNormalized = normalizedData;
+    if (matchedItemId) {
+      updatedNormalized = NormalizedOps.markItemUnmatched(normalizedData, matchedItemId);
+    }
+
+    return { gridItems: updatedGridItems, normalizedData: updatedNormalized };
+  }
+
+  /**
+   * Move/swap grid items using normalized data — O(1) backlog update per affected item.
+   */
+  static moveItemNormalized(
+    gridItems: GridItemType[],
+    normalizedData: NormalizedBacklogData,
+    fromIndex: number,
+    toIndex: number
+  ): { gridItems: GridItemType[]; normalizedData: NormalizedBacklogData } | null {
+    if (
+      fromIndex < 0 || fromIndex >= gridItems.length ||
+      toIndex < 0 || toIndex >= gridItems.length ||
+      fromIndex === toIndex ||
+      !gridItems[fromIndex].matched
+    ) {
+      return null;
+    }
+
+    const updatedGridItems = [...gridItems];
+    const movingItem = updatedGridItems[fromIndex];
+    const targetItem = updatedGridItems[toIndex];
+    let updatedNormalized = normalizedData;
+
+    if (targetItem.matched) {
+      // Swap
+      [updatedGridItems[fromIndex], updatedGridItems[toIndex]] = [targetItem, movingItem];
+      updatedGridItems[fromIndex].id = `grid-${fromIndex}`;
+      updatedGridItems[fromIndex].position = fromIndex;
+      updatedGridItems[toIndex].id = `grid-${toIndex}`;
+      updatedGridItems[toIndex].position = toIndex;
+
+      // O(1) updates for both swapped backlog items
+      if (movingItem.matchedWith) {
+        updatedNormalized = NormalizedOps.updateItemFields(updatedNormalized, movingItem.matchedWith, { matched: true });
+      }
+      if (targetItem.matchedWith) {
+        updatedNormalized = NormalizedOps.updateItemFields(updatedNormalized, targetItem.matchedWith, { matched: true });
+      }
+    } else {
+      // Move to empty slot
+      updatedGridItems[toIndex] = { ...movingItem, id: `grid-${toIndex}`, position: toIndex };
+      updatedGridItems[fromIndex] = {
+        id: `grid-${fromIndex}`,
+        title: '',
+        tags: [],
+        position: fromIndex,
+        matched: false,
+        matchedWith: undefined,
+      };
+
+      // O(1) update — backlog item stays matched, no field change needed
+    }
+
+    return { gridItems: updatedGridItems, normalizedData: updatedNormalized };
+  }
+
+  /**
+   * Clear entire grid using normalized data — O(n) for all items (no groups iteration).
+   */
+  static clearGridNormalized(
+    gridItems: GridItemType[],
+    normalizedData: NormalizedBacklogData
+  ): { gridItems: GridItemType[]; normalizedData: NormalizedBacklogData } {
+    const clearedGridItems = gridItems.map((_, index) => ({
+      id: `grid-${index}`,
+      title: '',
+      tags: [],
+      position: index,
+      matched: false,
+      matchedWith: undefined,
+    }));
+
+    const updatedNormalized = NormalizedOps.clearAllMatched(normalizedData);
+
+    return { gridItems: clearedGridItems, normalizedData: updatedNormalized };
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Legacy variants — O(groups*items) backlog updates via array spreads
+  // Kept for backward compatibility with code using BacklogGroupType[]
+  // ─────────────────────────────────────────────────────────────
+
   static assignItemToGrid(
     gridItems: GridItemType[],
     backlogGroups: BacklogGroupType[],
@@ -11,19 +161,17 @@ export class GridOperations {
       return null;
     }
 
-    // Create optimized grid update
     const updatedGridItems = [...gridItems];
     updatedGridItems[position] = {
       id: `grid-${position}`,
       title: item.title,
       description: item.description,
       tags: item.tags || [],
-      position: position,
+      position,
       matched: true,
       matchedWith: item.id,
     };
 
-    // Create optimized backlog update
     const updatedBacklogGroups = backlogGroups.map(group => ({
       ...group,
       items: group.items.map(groupItem =>
@@ -33,10 +181,7 @@ export class GridOperations {
       )
     }));
 
-    return {
-      gridItems: updatedGridItems,
-      backlogGroups: updatedBacklogGroups
-    };
+    return { gridItems: updatedGridItems, backlogGroups: updatedBacklogGroups };
   }
 
   static removeItemFromGrid(
@@ -55,9 +200,9 @@ export class GridOperations {
       id: `grid-${position}`,
       title: '',
       tags: [],
-      position: position,
+      position,
       matched: false,
-      matchedWith: undefined
+      matchedWith: undefined,
     };
 
     const updatedBacklogGroups = backlogGroups.map(group => ({
@@ -69,13 +214,9 @@ export class GridOperations {
       )
     }));
 
-    return {
-      gridItems: updatedGridItems,
-      backlogGroups: updatedBacklogGroups
-    };
+    return { gridItems: updatedGridItems, backlogGroups: updatedBacklogGroups };
   }
 
-  // Enhanced move operation with optimized swapping
   static moveGridItem(
     gridItems: GridItemType[],
     backlogGroups: BacklogGroupType[],
@@ -95,34 +236,24 @@ export class GridOperations {
     const movingItem = updatedGridItems[fromIndex];
     const targetItem = updatedGridItems[toIndex];
 
-    // Handle swapping vs moving to empty slot
     if (targetItem.matched) {
-      // Swap the items
       [updatedGridItems[fromIndex], updatedGridItems[toIndex]] = [targetItem, movingItem];
-
-      // Update IDs and positions to match new positions
       updatedGridItems[fromIndex].id = `grid-${fromIndex}`;
       updatedGridItems[fromIndex].position = fromIndex;
       updatedGridItems[toIndex].id = `grid-${toIndex}`;
       updatedGridItems[toIndex].position = toIndex;
     } else {
-      // Move to empty slot
-      updatedGridItems[toIndex] = {
-        ...movingItem,
-        id: `grid-${toIndex}`,
-        position: toIndex
-      };
+      updatedGridItems[toIndex] = { ...movingItem, id: `grid-${toIndex}`, position: toIndex };
       updatedGridItems[fromIndex] = {
         id: `grid-${fromIndex}`,
         title: '',
         tags: [],
         position: fromIndex,
         matched: false,
-        matchedWith: undefined
+        matchedWith: undefined,
       };
     }
 
-    // Update backlog item references efficiently
     const updatedBacklogGroups = backlogGroups.map(group => ({
       ...group,
       items: group.items.map(item => {
@@ -149,7 +280,7 @@ export class GridOperations {
       tags: [],
       position: index,
       matched: false,
-      matchedWith: undefined
+      matchedWith: undefined,
     }));
 
     const clearedBacklogGroups = backlogGroups.map(group => ({
@@ -157,18 +288,19 @@ export class GridOperations {
       items: group.items.map(item => ({
         ...item,
         matched: false,
-        matchedWith: undefined
+        matchedWith: undefined,
       }))
     }));
 
-    return {
-      gridItems: clearedGridItems,
-      backlogGroups: clearedBacklogGroups
-    };
+    return { gridItems: clearedGridItems, backlogGroups: clearedBacklogGroups };
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // Query helpers (unchanged — work with either data format)
+  // ─────────────────────────────────────────────────────────────
+
   static getAvailableBacklogItems(backlogGroups: BacklogGroupType[]): BacklogItemType[] {
-    return backlogGroups.flatMap(group => 
+    return backlogGroups.flatMap(group =>
       group.items.filter(item => !item.matched)
     );
   }

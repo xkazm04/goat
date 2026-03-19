@@ -124,9 +124,9 @@ export const MINIMAL_ORBS: FloatingOrbConfig[] = [
 export const FEATURED_ORBS: FloatingOrbConfig[] = [
   {
     position: { x: 15, y: 20 },
-    size: 300,
-    opacity: 0.08,
-    blur: 48,
+    size: 250,
+    opacity: 0.04,
+    blur: 56,
     duration: 18,
     movement: { x: 40, y: -25 },
     scale: [1, 1.08],
@@ -135,9 +135,9 @@ export const FEATURED_ORBS: FloatingOrbConfig[] = [
   },
   {
     position: { x: 85, y: 70 },
-    size: 250,
-    opacity: 0.06,
-    blur: 48,
+    size: 200,
+    opacity: 0.03,
+    blur: 56,
     duration: 22,
     movement: { x: -35, y: 30 },
     scale: [1, 1.1],
@@ -147,9 +147,9 @@ export const FEATURED_ORBS: FloatingOrbConfig[] = [
   },
   {
     position: { x: 50, y: 90 },
-    size: 200,
-    opacity: 0.05,
-    blur: 48,
+    size: 160,
+    opacity: 0.025,
+    blur: 56,
     duration: 20,
     movement: { x: 20, y: -15 },
     scale: [1, 1.05],

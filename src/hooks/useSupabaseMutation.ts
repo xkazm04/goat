@@ -28,7 +28,7 @@
  *     onSuccess: (data) => {
  *       console.log('List created:', data);
  *     },
- *     invalidateTags: ['lists', 'user-lists'],
+ *     invalidateTags: [CACHE_TAGS.LISTS, CACHE_TAGS.USER_LISTS],
  *   }
  * );
  *
@@ -41,6 +41,7 @@ import { useMutation, useQueryClient, UseMutationOptions } from '@tanstack/react
 import { SupabaseClient } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
 import { invalidateByTags } from '@/lib/cache/query-cache-config';
+import { createRetryDelay } from '@/lib/cache/unified-cache';
 
 // =============================================================================
 // Types
@@ -187,7 +188,7 @@ export function useSupabaseMutation<TData = unknown, TVariables = unknown, TCont
       }
     },
     retry,
-    retryDelay: (attemptIndex) => Math.min(retryDelay * 2 ** attemptIndex, 30000),
+    retryDelay: createRetryDelay(retryDelay, 30000),
   };
 
   // Execute the mutation
@@ -349,7 +350,7 @@ export function createOptimisticUpdate<TData, TVariables>(
  *     if (error) throw error;
  *     return data;
  *   },
- *   { invalidateTags: ['lists'] }
+ *   { invalidateTags: [CACHE_TAGS.LISTS] }
  * );
  *
  * // Usage

@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { useCriteriaStore } from '@/stores/criteria-store';
 import { mapCategoryToTemplate, getTemplatesForCategory } from '@/lib/criteria/templates';
 import type { CriteriaProfile } from '@/lib/criteria/types';
+import { DURATION } from '@/lib/animations/motion-presets';
 
 interface CriteriaTemplateSectionProps {
   /** Current list category (e.g., "Sports", "Movies") */
@@ -64,7 +65,7 @@ export function CriteriaTemplateSection({
       <motion.button
         onClick={handleToggleExpand}
         className={cn(
-          'w-full flex items-center justify-between p-4 rounded-xl transition-all duration-200',
+          'w-full flex items-center justify-between p-4 rounded-card transition-all duration-200',
           'bg-slate-800/30 hover:bg-slate-800/50 border border-slate-700/50',
           isExpanded && 'bg-slate-800/50 border-slate-600/50'
         )}
@@ -72,7 +73,7 @@ export function CriteriaTemplateSection({
         whileTap={{ scale: 0.995 }}
       >
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-purple-500/10 transition-transform duration-200 group-hover:scale-105">
+          <div className="p-2 rounded-control bg-purple-500/10 transition-transform duration-200 group-hover:scale-105">
             <Sparkles className="w-4 h-4 text-purple-400" />
           </div>
           <div className="text-left">
@@ -80,7 +81,7 @@ export function CriteriaTemplateSection({
               <span className="text-sm font-medium text-white">
                 Rating Criteria
               </span>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-slate-700/50 text-slate-400 transition-colors duration-200">
+              <span className="text-xs px-2 py-0.5 rounded-badge bg-slate-700/50 text-slate-400 transition-colors duration-200">
                 Optional
               </span>
             </div>
@@ -102,7 +103,7 @@ export function CriteriaTemplateSection({
                 e.stopPropagation();
                 handleSelectProfile(null);
               }}
-              className="p-1 rounded-md hover:bg-slate-700/50 text-slate-400 hover:text-white transition-colors"
+              className="p-1 rounded-control hover:bg-slate-700/50 text-slate-400 hover:text-white transition-colors"
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
             >
@@ -111,7 +112,7 @@ export function CriteriaTemplateSection({
           )}
           <motion.div
             animate={{ rotate: isExpanded ? 180 : 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: DURATION.fast }}
           >
             <ChevronDown className="w-5 h-5 text-slate-400" />
           </motion.div>
@@ -125,7 +126,7 @@ export function CriteriaTemplateSection({
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: DURATION.fast }}
             className="overflow-hidden"
           >
             <div className="pt-3 pb-1 px-1">
@@ -171,7 +172,7 @@ function TemplateCard({ profile, isSelected, onSelect }: TemplateCardProps) {
     <motion.button
       onClick={onSelect}
       className={cn(
-        'relative p-4 rounded-xl text-left transition-all duration-200',
+        'relative p-4 rounded-card text-left transition-all duration-200',
         'border group',
         isSelected
           ? 'bg-purple-500/10 border-purple-500/50 shadow-[0_0_20px_rgba(168,85,247,0.15)]'
@@ -195,7 +196,7 @@ function TemplateCard({ profile, isSelected, onSelect }: TemplateCardProps) {
         // None / Skip Option
         <>
           <div className="flex items-center gap-2 mb-2">
-            <div className="p-1.5 rounded-md bg-slate-700/50">
+            <div className="p-1.5 rounded-control bg-slate-700/50">
               <X className="w-3.5 h-3.5 text-slate-400" />
             </div>
             <span className="text-sm font-medium text-white">None / Skip</span>
@@ -208,7 +209,7 @@ function TemplateCard({ profile, isSelected, onSelect }: TemplateCardProps) {
         // Template Option
         <>
           <div className="flex items-center gap-2 mb-2">
-            <div className="p-1.5 rounded-md bg-purple-500/10">
+            <div className="p-1.5 rounded-control bg-purple-500/10">
               <Star className="w-3.5 h-3.5 text-purple-400" />
             </div>
             <span className="text-sm font-medium text-white">{profile.name}</span>
@@ -217,11 +218,11 @@ function TemplateCard({ profile, isSelected, onSelect }: TemplateCardProps) {
             {profile.description}
           </p>
           <div className="flex items-center gap-2">
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-700/50 text-slate-400 transition-colors duration-200">
+            <span className="text-2xs px-1.5 py-0.5 rounded bg-slate-700/50 text-slate-400 transition-colors duration-200">
               {profile.criteria.length} criteria
             </span>
             {profile.category !== 'universal' && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 capitalize transition-colors duration-200">
+              <span className="text-2xs px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 capitalize transition-colors duration-200">
                 {profile.category}
               </span>
             )}

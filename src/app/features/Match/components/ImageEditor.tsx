@@ -222,7 +222,7 @@ export function ImageEditor({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl"
+        className="fixed inset-0 z-modal bg-black/60 backdrop-blur-sm"
       >
         <div className="h-full flex flex-col">
           {/* Header */}
@@ -236,7 +236,7 @@ export function ImageEditor({
                 onClick={handleReset}
                 disabled={!hasChanges}
                 className={cn(
-                  "p-2 rounded-lg transition-colors",
+                  "p-2 rounded-control transition-colors",
                   hasChanges
                     ? "text-gray-300 hover:text-white hover:bg-gray-800"
                     : "text-gray-600 cursor-not-allowed"
@@ -247,7 +247,7 @@ export function ImageEditor({
               </button>
               <button
                 onClick={onCancel}
-                className="p-2 rounded-lg text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"
+                className="p-2 rounded-control text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -263,7 +263,7 @@ export function ImageEditor({
                   ref={imageRef}
                   src={imageUrl}
                   alt="Edit preview"
-                  className="max-w-full max-h-[60vh] md:max-h-[70vh] rounded-lg shadow-2xl"
+                  className="max-w-full max-h-[60vh] md:max-h-[70vh] rounded-card shadow-2xl"
                   style={{ filter: getCssFilter() }}
                   crossOrigin="anonymous"
                 />
@@ -351,7 +351,7 @@ export function ImageEditor({
                           key={filter.id}
                           onClick={() => updateAdjustment('filter', filter.id)}
                           className={cn(
-                            "relative aspect-square rounded-lg overflow-hidden transition-all",
+                            "relative aspect-square rounded-control overflow-hidden transition-all",
                             adjustments.filter === filter.id
                               ? "ring-2 ring-brand ring-offset-2 ring-offset-gray-900"
                               : "ring-1 ring-gray-700 hover:ring-gray-500"
@@ -364,7 +364,7 @@ export function ImageEditor({
                             style={{ filter: filter.cssFilter }}
                           />
                           <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/80 to-transparent p-1.5">
-                            <span className="text-[10px] font-medium text-white">
+                            <span className="text-2xs font-medium text-white">
                               {filter.name}
                             </span>
                           </div>
@@ -386,7 +386,7 @@ export function ImageEditor({
                   onClick={handleApply}
                   disabled={isProcessing}
                   className={cn(
-                    "w-full py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all",
+                    "w-full py-3 rounded-control font-semibold flex items-center justify-center gap-2 transition-all",
                     isProcessing
                       ? "bg-gray-700 text-gray-400 cursor-wait"
                       : "bg-brand hover:bg-brand-hover text-gray-900"
@@ -412,7 +412,7 @@ export function ImageEditor({
                 <button
                   onClick={onCancel}
                   disabled={isProcessing}
-                  className="w-full py-3 rounded-lg font-medium text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                  className="w-full py-3 rounded-control font-medium text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
                 >
                   Cancel
                 </button>

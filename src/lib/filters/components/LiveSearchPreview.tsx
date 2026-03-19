@@ -140,7 +140,7 @@ function BadgePreview({
         transition={{ duration: 0.1 }}
         className={cn(
           'inline-flex items-center justify-center',
-          'px-1.5 py-0.5 rounded-full text-[10px] font-medium',
+          'px-1.5 py-0.5 rounded-badge text-2xs font-medium',
           counts.totalMatches === 0
             ? 'bg-red-500/20 text-red-400'
             : 'bg-brand/20 text-brand-hover',
@@ -175,7 +175,7 @@ function DetailedPreview({
       animate={{ opacity: 1, height: 'auto' }}
       exit={{ opacity: 0, height: 0 }}
       className={cn(
-        'rounded-lg border border-zinc-700/50 bg-zinc-900/50 p-2',
+        'rounded-card border border-zinc-700/50 bg-zinc-900/50 p-2',
         className
       )}
     >
@@ -205,14 +205,14 @@ function DetailedPreview({
           {Object.entries(counts.facetCounts).map(([field, facets]) =>
             facets.length > 0 ? (
               <div key={field}>
-                <span className="text-[10px] text-zinc-600 uppercase tracking-wider">
+                <span className="text-2xs text-zinc-600 uppercase tracking-wider">
                   {field}
                 </span>
                 <div className="flex flex-wrap gap-1 mt-0.5">
                   {facets.map((facet) => (
                     <span
                       key={facet.value}
-                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] bg-zinc-800 text-zinc-400"
+                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs bg-zinc-800 text-zinc-400"
                     >
                       <span>{facet.value}</span>
                       <span className="text-zinc-600">{facet.count}</span>

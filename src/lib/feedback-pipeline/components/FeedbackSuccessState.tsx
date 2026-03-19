@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { Check, Sparkles, Trophy, Star, PartyPopper } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { DURATION } from '@/lib/animations/motion-presets';
 
 interface FeedbackSuccessStateProps {
   /** Success title */
@@ -93,7 +94,7 @@ export function FeedbackSuccessState({
                 opacity: [0, 1, 0],
               }}
               transition={{
-                duration: 0.8,
+                duration: DURATION.dramatic,
                 delay: 0.1,
                 ease: 'easeOut',
               }}
@@ -105,7 +106,7 @@ export function FeedbackSuccessState({
       <motion.div
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
-        transition={{ type: 'spring', duration: 0.5, bounce: 0.5 }}
+        transition={{ type: 'spring', duration: DURATION.slow, bounce: 0.5 }}
         className={cn(
           'rounded-full flex items-center justify-center mb-4',
           sizes.icon
@@ -153,7 +154,7 @@ export function FeedbackSuccessState({
           {actionText && onAction && (
             <button
               onClick={onAction}
-              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
+              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-control transition-colors flex items-center gap-2"
               data-testid="success-primary-action"
             >
               {actionText}
@@ -162,7 +163,7 @@ export function FeedbackSuccessState({
           {secondaryActionText && onSecondaryAction && (
             <button
               onClick={onSecondaryAction}
-              className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors"
+              className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-control transition-colors"
               data-testid="success-secondary-action"
             >
               {secondaryActionText}

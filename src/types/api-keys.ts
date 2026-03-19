@@ -108,7 +108,7 @@ export const API_TIER_FEATURES: Record<ApiKeyTier, {
  */
 export interface WidgetConfig {
   /** Widget type */
-  type: 'ranking' | 'item' | 'comparison' | 'badge';
+  type: 'ranking' | 'item' | 'comparison' | 'badge' | 'interactive';
 
   /** Theme */
   theme: 'light' | 'dark' | 'auto';

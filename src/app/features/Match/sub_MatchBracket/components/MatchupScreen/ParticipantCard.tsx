@@ -51,8 +51,7 @@ export function ParticipantCard({
         whileHover={!isDisabled ? { scale: 1.02, y: -2 } : {}}
         whileTap={!isDisabled ? { scale: 0.98 } : {}}
         className={`
-          relative w-full rounded-xl overflow-hidden transition-all duration-300
-          focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-hover focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900
+          relative w-full rounded-container overflow-hidden transition-all duration-300 focus-ring
           ${isSelected
             ? 'ring-3 ring-green-400 ring-offset-2 ring-offset-slate-900 shadow-2xl shadow-green-500/40'
             : 'ring-1 ring-slate-600/50 hover:ring-brand-hover/50 shadow-xl'
@@ -69,7 +68,7 @@ export function ParticipantCard({
         <div
           className={`
             absolute top-2 ${position === 'left' ? 'left-2' : 'right-2'} z-10
-            px-1.5 py-0.5 rounded text-[10px] sm:text-xs font-bold
+            px-1.5 py-0.5 rounded text-2xs sm:text-xs font-bold
             ${isSelected ? 'bg-green-500 text-white' : 'bg-slate-700/90 text-slate-300'}
           `}
         >
@@ -134,13 +133,20 @@ export function ParticipantCard({
             </div>
           )}
 
-          {/* Tags - only on larger screens */}
-          {!isMobile && item.tags && item.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-1.5">
-              {item.tags.slice(0, 2).map((tag, i) => (
+          {/* Description snippet */}
+          {item.description && (
+            <p className="text-2xs sm:text-xs text-slate-500 line-clamp-1 mt-0.5">
+              {item.description}
+            </p>
+          )}
+
+          {/* Tags */}
+          {item.tags && item.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1">
+              {item.tags.slice(0, isMobile ? 1 : 3).map((tag, i) => (
                 <span
                   key={i}
-                  className="px-1.5 py-0.5 rounded bg-slate-700/50 text-[10px] text-slate-400"
+                  className="px-1.5 py-0.5 rounded bg-slate-700/50 text-2xs text-slate-400"
                 >
                   {tag}
                 </span>

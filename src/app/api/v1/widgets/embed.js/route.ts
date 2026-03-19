@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
   // GOAT Widget Embed Script v1.0
   var GOAT = window.GOAT || {};
 
-  GOAT.version = '1.0.0';
+  GOAT.version = '1.1.0';
   GOAT.baseUrl = '${process.env.NEXT_PUBLIC_APP_URL || 'https://goat.app'}';
   GOAT.apiUrl = GOAT.baseUrl + '/api/v1';
   GOAT.widgets = [];
@@ -236,6 +236,53 @@ export async function GET(request: NextRequest) {
       .goat-volatility-moderate { background: rgba(34, 211, 238, 0.2); color: #22d3ee; }
       .goat-volatility-contested { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
       .goat-volatility-polarizing { background: rgba(251, 113, 133, 0.2); color: #fb7185; }
+      .goat-sortable-item {
+        cursor: grab;
+        user-select: none;
+        transition: background 0.15s, opacity 0.15s, transform 0.15s;
+      }
+      .goat-sortable-item:active { cursor: grabbing; }
+      .goat-sortable-item.goat-dragging {
+        opacity: 0.4;
+      }
+      .goat-sortable-item.goat-drag-over {
+        border-top: 2px solid var(--goat-accent);
+        padding-top: 8px;
+      }
+      .goat-drag-handle {
+        font-size: 16px;
+        color: var(--goat-muted);
+        cursor: grab;
+        flex-shrink: 0;
+        width: 20px;
+        text-align: center;
+      }
+      .goat-submit-btn {
+        width: 100%;
+        padding: 10px 16px;
+        background: var(--goat-accent);
+        color: #111827;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: opacity 0.15s;
+      }
+      .goat-submit-btn:hover { opacity: 0.9; }
+      .goat-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+      .goat-submit-status {
+        text-align: center;
+        font-size: 12px;
+        padding: 8px 0;
+      }
+      .goat-submit-success { color: #10b981; }
+      .goat-submit-error { color: #ef4444; }
+      .goat-interactive-footer {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
     \`;
     document.head.appendChild(styles);
   }
@@ -378,6 +425,211 @@ export async function GET(request: NextRequest) {
     container.appendChild(badge);
   }
 
+  // Submit rankings to API
+  function submitRanking(config, items) {
+    var url = GOAT.apiUrl + '/rankings/submit';
+    return fetch(url, {
+      method: 'POST',
+      headers: {
+        'X-API-Key': config.apiKey || '',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        category: config.category,
+        items: items.map(function(item, idx) {
+          return { itemId: item.id, rank: idx + 1 };
+        }),
+        sessionId: config.sessionId || null,
+        widgetId: config.widgetId || null
+      })
+    })
+    .then(function(res) {
+      if (!res.ok) throw new Error('Submit failed');
+      return res.json();
+    });
+  }
+
+  // Fetch aggregate results
+  function fetchAggregate(config) {
+    var url = GOAT.apiUrl + '/rankings/aggregate?';
+    var params = new URLSearchParams({
+      category: config.category || '',
+      limit: (config.limit || GOAT.defaults.limit).toString()
+    });
+    if (config.widgetId) params.append('widgetId', config.widgetId);
+
+    return fetch(url + params.toString(), {
+      headers: {
+        'X-API-Key': config.apiKey || '',
+        'Accept': 'application/json'
+      }
+    })
+    .then(function(res) {
+      if (!res.ok) throw new Error('Aggregate fetch failed');
+      return res.json();
+    });
+  }
+
+  // Render interactive ranking widget
+  function renderInteractiveWidget(container, data, config) {
+    var theme = config.theme || GOAT.defaults.theme;
+    var rankings = (data.rankings || []).slice(0, config.limit || 5);
+    var sortedItems = rankings.map(function(item) {
+      return { id: item.id, name: item.name, imageUrl: item.imageUrl };
+    });
+    var submitted = false;
+
+    var widget = createElement('div', {
+      className: 'goat-widget goat-widget-' + theme,
+      'data-testid': 'goat-interactive-widget'
+    });
+
+    var widgetContainer = createElement('div', { className: 'goat-widget-container' });
+
+    // Header
+    var header = createElement('div', { className: 'goat-widget-header' }, [
+      createElement('h3', { className: 'goat-widget-title' },
+        'Rank your Top ' + sortedItems.length + ' ' + (config.category || '')),
+      createElement('a', {
+        className: 'goat-widget-powered',
+        href: GOAT.baseUrl,
+        target: '_blank',
+        rel: 'noopener noreferrer'
+      }, 'Powered by GOAT')
+    ]);
+
+    // Sortable list
+    var list = createElement('ul', {
+      className: 'goat-widget-list goat-sortable-list',
+      'data-testid': 'goat-sortable-list'
+    });
+
+    var dragSrcIdx = null;
+
+    function rebuildList() {
+      list.innerHTML = '';
+      sortedItems.forEach(function(item, idx) {
+        var rankClass = 'goat-widget-rank ';
+        if (idx === 0) rankClass += 'goat-widget-rank-1';
+        else if (idx === 1) rankClass += 'goat-widget-rank-2';
+        else if (idx === 2) rankClass += 'goat-widget-rank-3';
+        else rankClass += 'goat-widget-rank-default';
+
+        var li = createElement('li', {
+          className: 'goat-widget-item goat-sortable-item',
+          draggable: !submitted ? 'true' : 'false',
+          'data-idx': idx.toString()
+        }, [
+          createElement('span', { className: 'goat-drag-handle' }, '≡'),
+          createElement('span', { className: rankClass }, '#' + (idx + 1)),
+          item.imageUrl ? createElement('img', {
+            className: 'goat-widget-image',
+            src: item.imageUrl,
+            alt: item.name,
+            loading: 'lazy'
+          }) : null,
+          createElement('span', { className: 'goat-widget-name' }, item.name)
+        ]);
+
+        if (!submitted) {
+          li.addEventListener('dragstart', function(e) {
+            dragSrcIdx = idx;
+            e.dataTransfer.effectAllowed = 'move';
+            li.classList.add('goat-dragging');
+          });
+          li.addEventListener('dragend', function() {
+            li.classList.remove('goat-dragging');
+            dragSrcIdx = null;
+            var dragging = list.querySelectorAll('.goat-drag-over');
+            dragging.forEach(function(el) { el.classList.remove('goat-drag-over'); });
+          });
+          li.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            li.classList.add('goat-drag-over');
+          });
+          li.addEventListener('dragleave', function() {
+            li.classList.remove('goat-drag-over');
+          });
+          li.addEventListener('drop', function(e) {
+            e.preventDefault();
+            li.classList.remove('goat-drag-over');
+            var targetIdx = idx;
+            if (dragSrcIdx !== null && dragSrcIdx !== targetIdx) {
+              var moved = sortedItems.splice(dragSrcIdx, 1)[0];
+              sortedItems.splice(targetIdx, 0, moved);
+              rebuildList();
+            }
+          });
+        }
+
+        list.appendChild(li);
+      });
+    }
+
+    rebuildList();
+
+    // Submit button
+    var submitBtn = createElement('button', {
+      className: 'goat-submit-btn',
+      'data-testid': 'goat-submit-ranking'
+    }, 'Submit My Ranking');
+
+    // Status text
+    var statusEl = createElement('div', {
+      className: 'goat-submit-status',
+      style: { display: 'none' }
+    });
+
+    submitBtn.addEventListener('click', function() {
+      if (submitted) return;
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting...';
+      submitRanking(config, sortedItems)
+        .then(function() {
+          submitted = true;
+          submitBtn.style.display = 'none';
+          statusEl.style.display = 'block';
+          statusEl.textContent = 'Ranking submitted! Thanks for voting.';
+          statusEl.className = 'goat-submit-status goat-submit-success';
+          rebuildList();
+          // Show aggregate after short delay
+          setTimeout(function() {
+            fetchAggregate(config)
+              .then(function(aggData) {
+                if (aggData.consensus && aggData.consensus.length > 0) {
+                  statusEl.textContent = 'Ranking submitted! ' +
+                    aggData.totalSubmissions + ' total votes. Current #1: ' +
+                    aggData.consensus[0].name;
+                }
+              })
+              .catch(function() {});
+          }, 500);
+        })
+        .catch(function() {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Submit My Ranking';
+          statusEl.style.display = 'block';
+          statusEl.textContent = 'Failed to submit. Please try again.';
+          statusEl.className = 'goat-submit-status goat-submit-error';
+        });
+    });
+
+    // Footer
+    var footer = createElement('div', { className: 'goat-widget-footer goat-interactive-footer' }, [
+      submitBtn,
+      statusEl
+    ]);
+
+    widgetContainer.appendChild(header);
+    widgetContainer.appendChild(list);
+    widgetContainer.appendChild(footer);
+    widget.appendChild(widgetContainer);
+
+    container.innerHTML = '';
+    container.appendChild(widget);
+  }
+
   // Render error
   function renderError(container, message, theme) {
     var widget = createElement('div', {
@@ -422,6 +674,14 @@ export async function GET(request: NextRequest) {
         })
         .catch(function(err) {
           renderError(container, 'Failed to load badge', config.theme);
+        });
+    } else if (config.type === 'interactive') {
+      fetchRankings(config)
+        .then(function(data) {
+          renderInteractiveWidget(container, data, config);
+        })
+        .catch(function(err) {
+          renderError(container, 'Failed to load interactive ranking', config.theme);
         });
     } else {
       fetchRankings(config)

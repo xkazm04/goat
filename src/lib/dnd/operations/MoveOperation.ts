@@ -60,7 +60,14 @@ export class MoveOperation extends BaseGridOperation {
       toPosition,
     });
 
+    const gridMutationStart = performance.now();
     grid.moveGridItem(fromPosition, toPosition);
+    const gridMutationDuration = performance.now() - gridMutationStart;
+
+    console.debug(
+      `[DnD Perf] move execute phases | ` +
+      `gridMutation=${gridMutationDuration.toFixed(2)}ms`
+    );
 
     dndLogger.info(`Successfully moved item from position ${fromPosition} to ${toPosition}`);
 

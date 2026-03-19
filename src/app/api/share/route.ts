@@ -3,12 +3,16 @@ import { createClient } from '@supabase/supabase-js';
 import { CreateSharedRankingRequest, SharedRanking } from '@/types/share';
 import { getOGCacheManager } from '@/lib/og/CacheManager';
 import type { OGCardLayout } from '@/lib/og/types';
-
-// Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+import { requireAuth } from '@/lib/supabase/server';
 
 function getSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error('Missing Supabase configuration for share API');
+  }
+
   return createClient(supabaseUrl, supabaseServiceKey);
 }
 
@@ -44,8 +48,13 @@ function suggestLayout(items: Array<{ image_url?: string }>): OGCardLayout {
 // POST - Create a new shared ranking
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireAuth();
+    if (auth.error) return auth.error;
+
     const body: CreateSharedRankingRequest = await request.json();
-    const { list_id, user_id, display_name, title, category, subcategory, time_period, items } = body;
+    const { list_id, display_name, title, category, subcategory, time_period, items } = body;
+    // Use authenticated user's ID
+    const user_id = auth.userId;
 
     // Validate request
     if (!title || !category || !items || items.length === 0) {
@@ -114,7 +123,7 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error('Error creating shared ranking:', error);
       return NextResponse.json(
-        { error: 'Failed to create shared ranking', details: error.message },
+        { error: 'Failed to create shared ranking' },
         { status: 500 }
       );
     }
@@ -149,7 +158,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const code = searchParams.get('code');
     const userId = searchParams.get('user_id');
-    const limit = parseInt(searchParams.get('limit') || '10');
+    const limit = Math.max(1, Math.min(parseInt(searchParams.get('limit') || '10'), 50));
 
     const supabase = getSupabaseClient();
 

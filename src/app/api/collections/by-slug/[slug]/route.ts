@@ -7,6 +7,7 @@ import {
   successResponse,
   NotFoundError,
 } from '@/lib/errors';
+import { withTiming } from '@/lib/api/request-timing';
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic';
@@ -18,7 +19,7 @@ export const dynamic = 'force-dynamic';
  * - include_stats: Include computed statistics
  * - include_lists: Include full list data for contained lists
  */
-export const GET = withErrorHandler(
+export const GET = withTiming(withErrorHandler(
   async (
     request: NextRequest,
     context?: { params?: Promise<Record<string, string>> }
@@ -102,4 +103,4 @@ export const GET = withErrorHandler(
 
     return successResponse(collection);
   }
-);
+), 'collections/by-slug');

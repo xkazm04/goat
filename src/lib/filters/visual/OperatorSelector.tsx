@@ -9,6 +9,7 @@ import React, { useMemo } from 'react';
 import type { FilterOperator, FilterValueType } from '@/lib/filters/types';
 import { OPERATOR_LABELS, TYPE_OPERATORS } from '@/lib/filters/constants';
 import { cn } from '@/lib/utils';
+import { UniversalSelect } from '@/components/ui/universal-select';
 
 interface OperatorSelectorProps {
   valueType: FilterValueType;
@@ -78,27 +79,29 @@ export function OperatorSelector({
     return groups;
   }, [availableOperators]);
 
+  // Build flat options with group labels for UniversalSelect
+  const selectOptions = useMemo(() => {
+    return groupedOperators.flatMap((group) =>
+      group.operators.map((op) => ({
+        value: op,
+        label: OPERATOR_LABELS[op],
+        icon: <span className="font-mono text-xs opacity-70">{OPERATOR_ICONS[op]}</span>,
+        group: group.label,
+      }))
+    );
+  }, [groupedOperators]);
+
   return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value as FilterOperator)}
-      className={cn(
-        'rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1.5 text-sm',
-        'text-zinc-200 focus:border-brand focus:outline-hidden focus:ring-1 focus:ring-brand',
-        'min-w-[120px]',
-        className
-      )}
-    >
-      {groupedOperators.map((group) => (
-        <optgroup key={group.label} label={group.label}>
-          {group.operators.map((op) => (
-            <option key={op} value={op}>
-              {OPERATOR_ICONS[op]} {OPERATOR_LABELS[op]}
-            </option>
-          ))}
-        </optgroup>
-      ))}
-    </select>
+    <div className={cn('min-w-[140px]', className)}>
+      <UniversalSelect
+        value={value}
+        onChange={(val) => onChange(val as FilterOperator)}
+        options={selectOptions}
+        size="sm"
+        searchable={false}
+        placeholder="Operator..."
+      />
+    </div>
   );
 }
 
@@ -116,7 +119,7 @@ export function OperatorBadge({
     <span
       className={cn(
         'inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-mono',
-        'bg-zinc-800 text-zinc-400 border border-zinc-700',
+        'bg-muted text-muted-foreground border border-border',
         className
       )}
     >

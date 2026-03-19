@@ -28,6 +28,8 @@ import {
   isGoatError,
 } from '@/lib/errors';
 import { getGlobalCircuitBreaker } from './CircuitBreaker';
+import { withCoalescing } from '@/lib/cache/query-cache-config';
+import { generateRequestId } from './request-id';
 
 // =============================================================================
 // Types - Lists
@@ -44,6 +46,7 @@ import type {
   VersionComparison,
   ListCreationResponse,
   FeaturedListsResponse,
+  CreatorAnalyticsSummary,
 } from '@/types/top-lists';
 
 // =============================================================================
@@ -147,28 +150,36 @@ export type {
 } from '@/types/users';
 
 // =============================================================================
+// Server Response Shapes
+// =============================================================================
+
+/** Server-side paginated response from /api/top/items (format: 'paginated') */
+interface ServerPaginatedResponse<T> {
+  items: T[];
+  total: number;
+  limit: number;
+  offset: number;
+  has_more: boolean;
+}
+
+// =============================================================================
 // Request Infrastructure
 // =============================================================================
 
+/**
+ * Per-request configuration.
+ *
+ * **Retry ownership**: React Query owns all retry logic (see unified-cache.ts
+ * `getRetryConfig`). GoatAPI intentionally does NOT retry — a single failed
+ * fetch surfaces immediately so React Query can apply its own backoff/retry
+ * strategy without multiplicative retry storms.
+ */
 interface RequestConfig {
-  /** Retry configuration */
-  retry?: {
-    maxAttempts?: number;
-    baseDelay?: number;
-    maxDelay?: number;
-  };
   /** Request timeout in ms */
   timeout?: number;
   /** Signal for request cancellation */
   signal?: AbortSignal;
 }
-
-// Default retry configuration
-const DEFAULT_RETRY = {
-  maxAttempts: 3,
-  baseDelay: 1000,
-  maxDelay: 30000,
-};
 
 /**
  * Clean parameters - remove undefined/null/empty values
@@ -184,58 +195,8 @@ function cleanParams<T extends object>(params: T): Record<string, unknown> {
 }
 
 /**
- * Sleep for retry backoff
- */
-function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-/**
- * Execute request with retry logic
- */
-async function executeWithRetry<T>(
-  fn: () => Promise<T>,
-  config: RequestConfig['retry'] = {}
-): Promise<T> {
-  const { maxAttempts, baseDelay, maxDelay } = { ...DEFAULT_RETRY, ...config };
-  let lastError: unknown;
-
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    try {
-      return await fn();
-    } catch (error) {
-      lastError = error;
-
-      // Don't retry if error is not retriable
-      if (isGoatError(error) && !error.isRetriable()) {
-        throw error;
-      }
-
-      // Don't retry on last attempt
-      if (attempt === maxAttempts) {
-        throw error;
-      }
-
-      // Calculate backoff delay with jitter
-      const delay = Math.min(
-        baseDelay * Math.pow(2, attempt - 1) + Math.random() * 1000,
-        maxDelay
-      );
-
-      console.log(`🔄 Retry attempt ${attempt}/${maxAttempts} in ${Math.round(delay)}ms`);
-      await sleep(delay);
-    }
-  }
-
-  throw lastError;
-}
-
-/**
- * Execute request with caching and deduplication
- */
-/**
- * Execute request with retry logic.
- * Deduplication is handled by React Query at the hook level via queryKey matching.
+ * Execute request with retry logic and GET request coalescing.
+ * Identical in-flight GET requests share a single network call via withCoalescing.
  */
 async function request<T>(
   endpoint: string,
@@ -243,15 +204,21 @@ async function request<T>(
   data?: unknown,
   config: RequestConfig = {}
 ): Promise<T> {
+  const requestId = generateRequestId();
   const circuitBreaker = getGlobalCircuitBreaker();
 
   // Circuit breaker: fail fast if endpoint is unhealthy
   if (!circuitBreaker.canRequest(endpoint)) {
-    throw new GoatError('NETWORK_CONNECTION_REFUSED', `Circuit open for ${endpoint} — failing fast`, {
-      category: 'network',
-      status: 503,
-      details: { context: { circuitState: 'OPEN', endpoint } },
-    });
+    // If HALF_OPEN, wait for probe to complete instead of failing immediately
+    const probeResult = await circuitBreaker.waitForProbe(endpoint);
+    if (!probeResult) {
+      console.warn(`[${requestId}] Circuit open for ${endpoint} — failing fast`);
+      throw new GoatError('NETWORK_CONNECTION_REFUSED', `Circuit open for ${endpoint} — failing fast`, {
+        category: 'network',
+        status: 503,
+        details: { context: { circuitState: 'OPEN', endpoint, requestId } },
+      });
+    }
   }
 
   const requestFn = async (): Promise<T> => {
@@ -271,12 +238,22 @@ async function request<T>(
     }
   };
 
+  const executeFn = () => requestFn();
+
   try {
-    const result = await executeWithRetry(requestFn, config.retry);
+    // Coalesce identical in-flight GET requests to avoid duplicate network calls
+    const result = method === 'GET'
+      ? await withCoalescing<T>(
+          `${method}:${endpoint}:${data ? JSON.stringify(data) : ''}`,
+          executeFn
+        )
+      : await executeFn();
+
     circuitBreaker.recordSuccess(endpoint);
     return result;
   } catch (error) {
     circuitBreaker.recordFailure(endpoint, error);
+    console.error(`[${requestId}] ${method} ${endpoint} failed:`, isGoatError(error) ? error.code : error);
     throw error;
   }
 }
@@ -350,6 +327,13 @@ const listsApi = {
    */
   getAnalytics: (listId: string, config?: RequestConfig): Promise<ListAnalytics> => {
     return request<ListAnalytics>(`/lists/${listId}/analytics`, 'GET', undefined, config);
+  },
+
+  /**
+   * Get creator analytics summary for all lists owned by a user
+   */
+  getCreatorAnalytics: (userId: string, config?: RequestConfig): Promise<CreatorAnalyticsSummary> => {
+    return request<CreatorAnalyticsSummary>(`/lists/analytics?user_id=${encodeURIComponent(userId)}`, 'GET', undefined, config);
   },
 
   /**
@@ -465,6 +449,22 @@ const groupsApi = {
   },
 
   /**
+   * Bulk-fetch items for multiple groups in a single request.
+   * Returns a map of groupId → items array.
+   */
+  getBulkItems: (
+    groupIds: string[],
+    config?: RequestConfig
+  ): Promise<Record<string, GroupItem[]>> => {
+    return request<Record<string, GroupItem[]>>(
+      '/top/groups/bulk-items',
+      'GET',
+      { group_ids: groupIds.join(',') },
+      config
+    );
+  },
+
+  /**
    * Get group name suggestions for autocomplete
    */
   getSuggestions: (
@@ -487,7 +487,11 @@ const groupsApi = {
 
 const itemsApi = {
   /**
-   * Search items with filters
+   * Search items with filters.
+   *
+   * The /api/top/items endpoint returns the server 'paginated' format
+   * ({ items, total, limit, offset, has_more }). This method transforms
+   * it into the client-side PaginatedResponse<Item> shape.
    */
   search: (params?: ItemSearchParams, config?: RequestConfig): Promise<PaginatedResponse<Item>> => {
     const queryParams = cleanParams({
@@ -499,19 +503,30 @@ const itemsApi = {
       limit: params?.limit,
     });
 
-    return request<PaginatedResponse<Item>>('/top/items', 'GET', queryParams, config).then(response => {
-      // Handle both wrapped and unwrapped responses
+    return request<ServerPaginatedResponse<Item> | Item[]>('/top/items', 'GET', queryParams, config).then(response => {
+      // Fallback: if the server ever returns a raw array, wrap it
       if (Array.isArray(response)) {
         return {
-          data: response as unknown as Item[],
-          total: (response as unknown as Item[]).length,
+          data: response,
+          total: response.length,
           page: 1,
-          pageSize: (response as unknown as Item[]).length,
+          pageSize: response.length,
           totalPages: 1,
           hasMore: false,
         };
       }
-      return response;
+
+      // Transform server paginated format to client PaginatedResponse
+      const pageSize = response.limit || 50;
+      const page = Math.floor(response.offset / pageSize) + 1;
+      return {
+        data: response.items,
+        total: response.total,
+        page,
+        pageSize,
+        totalPages: Math.ceil(response.total / pageSize),
+        hasMore: response.has_more,
+      };
     });
   },
 

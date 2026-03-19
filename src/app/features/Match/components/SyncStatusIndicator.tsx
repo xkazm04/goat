@@ -11,7 +11,9 @@ import {
   WifiOff,
   Loader2,
 } from 'lucide-react';
-import { useNetworkStatus, useOfflineSync, syncStatusColors } from '@/lib/offline';
+import { useNetworkStatus } from '@/lib/offline/useNetworkStatus';
+import { useOfflineSync } from '@/lib/offline/useOfflineSync';
+import { syncStatusColors } from '@/lib/offline/sync-status-colors';
 import { SyncStatus } from '@/lib/offline/types';
 import { SyncErrorIllustration, classifySyncError } from '@/components/illustrations/SyncErrorIllustrations';
 
@@ -110,7 +112,7 @@ export function SyncStatusIndicator({
             initial={{ opacity: 0, y: -50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -50 }}
-            className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 shadow-lg flex items-center gap-3"
+            className="fixed top-4 left-1/2 -translate-x-1/2 z-toast bg-gray-900 border border-gray-700 rounded-card px-4 py-3 shadow-lg flex items-center gap-3"
           >
             <WifiOff className={`w-5 h-5 ${syncStatusColors.offline.text}`} />
             <div>
@@ -129,7 +131,7 @@ export function SyncStatusIndicator({
           onClick={() => setIsExpanded(!isExpanded)}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-colors ${
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-badge transition-colors ${
             isOffline ? syncStatusColors.offline.bgMuted : config.bgColor
           }`}
         >
@@ -184,7 +186,7 @@ export function SyncStatusIndicator({
               initial={{ opacity: 0, y: -10, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.95 }}
-              className="absolute top-full right-0 mt-2 w-64 bg-gray-900 border border-gray-700 rounded-lg shadow-xl z-50 overflow-hidden"
+              className="absolute top-full right-0 mt-2 w-64 bg-gray-900 border border-gray-700 rounded-card shadow-xl z-dropdown overflow-hidden"
             >
               {/* Header */}
               <div className="px-4 py-3 border-b border-gray-700">
@@ -267,7 +269,7 @@ export function SyncStatusIndicator({
                     setIsExpanded(false);
                   }}
                   disabled={isOffline || isSyncing}
-                  className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded transition-colors text-sm"
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-control transition-colors text-sm"
                 >
                   <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
                   {isSyncing ? 'Syncing...' : 'Sync Now'}
@@ -281,7 +283,7 @@ export function SyncStatusIndicator({
       {/* Click outside to close */}
       {isExpanded && (
         <div
-          className="fixed inset-0 z-40"
+          className="fixed inset-0 z-dropdown"
           onClick={() => setIsExpanded(false)}
         />
       )}

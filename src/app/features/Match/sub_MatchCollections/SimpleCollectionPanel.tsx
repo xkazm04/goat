@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef, useDeferredValue } from "react";
 import { createPortal } from "react-dom";
-import { CollectionGroup, CollectionItem } from "@/app/features/Collection/types";
+import { useDndMonitor } from "@dnd-kit/core";
+import { ItemCategory, CollectionItem } from "@/app/features/Collection/types";
 import { useQuickSelect } from "@/app/features/Collection/hooks/useQuickSelect";
 import { cn } from "@/lib/utils";
 import {
@@ -21,7 +22,7 @@ import { usePanelResize } from "./hooks/usePanelResize";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 interface SimpleCollectionPanelProps {
-  groups: CollectionGroup[];
+  groups: ItemCategory[];
   onItemClick?: (item: CollectionItem) => void;
   selectedItemId?: string;
 }
@@ -43,9 +44,17 @@ export function SimpleCollectionPanel({ groups, onItemClick, selectedItemId }: S
   const gridContainerRef = useRef<HTMLDivElement>(null);
 
   // Custom hooks
-  const { panelHeight, isResizing, handleResizeStart } = usePanelResize();
+  const { panelHeight, isResizing, isDndActive, handleResizeStart, setDndActive } = usePanelResize();
+
+  // Track DnD state to disable resize during drag operations
+  useDndMonitor({
+    onDragStart: () => setDndActive(true),
+    onDragEnd: () => setDndActive(false),
+    onDragCancel: () => setDndActive(false),
+  });
   const gridDimensions = useGridDimensions(gridContainerRef, {
     minColumns: 3, maxColumns: 10, minItemWidth: 120, gap: 8, aspectRatio: 4 / 5,
+    paused: isDndActive,
   });
 
   const {
@@ -58,6 +67,18 @@ export function SimpleCollectionPanel({ groups, onItemClick, selectedItemId }: S
 
   // SSR safety
   useEffect(() => { setMounted(true); }, []);
+
+  // Broadcast panel height as CSS custom property for dynamic grid padding
+  useEffect(() => {
+    if (mounted && isVisible) {
+      document.documentElement.style.setProperty('--collection-panel-height', `${panelHeight + 20}px`);
+    } else if (mounted) {
+      document.documentElement.style.setProperty('--collection-panel-height', '0px');
+    }
+    return () => {
+      document.documentElement.style.removeProperty('--collection-panel-height');
+    };
+  }, [mounted, isVisible, panelHeight]);
 
   // Animation state machine
   useEffect(() => {
@@ -134,17 +155,18 @@ export function SimpleCollectionPanel({ groups, onItemClick, selectedItemId }: S
       {shouldRenderPanel && (
         <div
           className={cn(
-            "fixed bottom-0 left-0 right-0 z-50",
+            "fixed bottom-0 left-0 right-0 z-sticky",
             animState === 'entering' && "animate-[collection-panel-slide-in_0.3s_ease-out_forwards]",
             animState === 'exiting' && "animate-[collection-panel-slide-out_0.25s_ease-in_forwards]"
           )}
-          style={{ height: panelHeight }}
+          style={{ height: panelHeight, '--panel-height': `${panelHeight}px` } as React.CSSProperties}
           onAnimationEnd={handleAnimationEnd}
           data-testid="collection-panel"
+          data-panel-height={panelHeight}
         >
-          <PanelResizeHandle isResizing={isResizing} onResizeStart={handleResizeStart} />
+          <PanelResizeHandle isResizing={isResizing} isDndActive={isDndActive} onResizeStart={handleResizeStart} />
 
-          <div className="w-full h-full glass-dock-panel flex flex-col overflow-hidden rounded-t-xl">
+          <div className="w-full h-full glass-dock-panel flex flex-col overflow-hidden rounded-t-container">
             <CompactCollectionHeader
               totalItems={totalItemCount}
               filteredItemCount={filteredItemCount}

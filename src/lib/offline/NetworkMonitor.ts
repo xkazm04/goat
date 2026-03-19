@@ -252,11 +252,6 @@ export class NetworkMonitor {
 
     return () => {
       this.listeners.delete(listener);
-
-      // Clean up if no listeners left
-      if (this.listeners.size === 0) {
-        this.destroy();
-      }
     };
   }
 

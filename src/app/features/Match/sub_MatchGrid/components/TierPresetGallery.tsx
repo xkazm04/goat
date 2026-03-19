@@ -51,7 +51,7 @@ function TierPreview({ preset }: { preset: CustomTierPreset }) {
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ delay: i * 0.05 }}
-          className="w-7 h-7 rounded-md flex items-center justify-center text-[10px] font-bold shadow-xs"
+          className="w-7 h-7 rounded-control flex items-center justify-center text-2xs font-bold shadow-xs"
           style={{
             background: tier.color.gradient,
             color: tier.color.text,
@@ -92,7 +92,7 @@ function PresetCard({
       whileTap={{ scale: 0.98 }}
       onClick={onSelect}
       className={`
-        relative w-full p-4 rounded-xl border text-left transition-all
+        relative w-full p-4 rounded-card border text-left transition-all
         focus-ring
         ${isSelected
           ? 'bg-brand/10 border-brand/50 ring-2 ring-brand/30'
@@ -113,7 +113,7 @@ function PresetCard({
       <div className="flex items-start gap-3 mb-3">
         <div
           className={`
-            w-10 h-10 rounded-lg flex items-center justify-center
+            w-10 h-10 rounded-card flex items-center justify-center
             ${isSelected ? 'bg-brand/20 text-brand-hover' : 'bg-slate-700/50 text-slate-400'}
           `}
         >
@@ -158,7 +158,7 @@ function CategoryTabs({
   onSelect: (category: string) => void;
 }) {
   return (
-    <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-slate-700">
+    <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-slate-700 snap-x snap-mandatory">
       {categories.map((category) => {
         const Icon = CATEGORY_ICONS[category] || Sparkles;
         const isSelected = selected === category;
@@ -168,7 +168,7 @@ function CategoryTabs({
             key={category}
             onClick={() => onSelect(category)}
             className={`
-              flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all
+              flex items-center gap-1.5 px-3 py-1.5 rounded-control text-sm font-medium whitespace-nowrap transition-all snap-center
               ${isSelected
                 ? 'bg-brand/20 text-brand-hover border border-brand/30'
                 : 'bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 border border-transparent'
@@ -240,7 +240,7 @@ export function TierPresetGallery({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xl p-4"
+        className="fixed inset-0 z-modal flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
         onClick={onClose}
       >
         <motion.div
@@ -250,7 +250,7 @@ export function TierPresetGallery({
           role="dialog"
           aria-modal="true"
           aria-labelledby="tier-preset-title"
-          className="w-full max-w-4xl max-h-[85vh] bg-slate-900 rounded-2xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col"
+          className="w-full max-w-4xl max-h-[85vh] bg-slate-900 rounded-container border border-slate-700 shadow-2xl overflow-hidden flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
@@ -265,7 +265,7 @@ export function TierPresetGallery({
             </div>
             <button
               onClick={onClose}
-              className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+              className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-control transition-colors"
               aria-label="Close"
             >
               <X className="w-5 h-5" />
@@ -282,7 +282,7 @@ export function TierPresetGallery({
                 placeholder="Search presets..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-hidden focus:border-brand focus:ring-1 focus:ring-brand"
+                className="w-full pl-10 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-control text-white placeholder-slate-500 focus:outline-hidden focus:border-brand focus:ring-1 focus:ring-brand"
               />
             </div>
 
@@ -329,7 +329,7 @@ export function TierPresetGallery({
                 </div>
                 <button
                   onClick={handleApply}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-brand hover:bg-brand-hover text-white font-medium rounded-lg transition-colors"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-brand hover:bg-brand-hover text-white font-medium rounded-control transition-colors"
                 >
                   Apply Preset
                   <ChevronRight className="w-4 h-4" />
@@ -342,7 +342,7 @@ export function TierPresetGallery({
                 </p>
                 <button
                   onClick={onClose}
-                  className="px-4 py-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
+                  className="px-4 py-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-control transition-colors"
                 >
                   Cancel
                 </button>
@@ -373,7 +373,7 @@ export function TierPresetSelector({
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors group"
+        className="flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-card transition-colors group"
       >
         {currentPreset ? (
           <>
@@ -381,7 +381,7 @@ export function TierPresetSelector({
               {currentPreset.tiers.slice(0, 4).map((t) => (
                 <div
                   key={t.id}
-                  className="w-4 h-4 rounded text-[8px] font-bold flex items-center justify-center"
+                  className="w-4 h-4 rounded text-3xs font-bold flex items-center justify-center"
                   style={{
                     background: t.color.gradient,
                     color: t.color.text,

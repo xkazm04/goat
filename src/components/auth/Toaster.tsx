@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { DURATION } from '@/lib/animations/motion-presets';
 
 /**
  * Toast renderer -- renders toast notifications from the use-toast.ts store.
@@ -14,7 +15,7 @@ export function Toaster() {
   const { toasts, dismiss } = useToast();
 
   return (
-    <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none">
+    <div className="fixed bottom-4 right-4 z-toast flex flex-col gap-2 pointer-events-none">
       <AnimatePresence mode="popLayout">
         {toasts
           .filter((t) => t.open)
@@ -45,8 +46,8 @@ function ToastItem({
       initial={{ opacity: 0, y: 16, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: -8, scale: 0.95 }}
-      transition={{ duration: 0.2, ease: 'easeOut' }}
-      className="pointer-events-auto w-80 rounded-xl px-4 py-3 shadow-2xl"
+      transition={{ duration: DURATION.fast, ease: 'easeOut' }}
+      className="pointer-events-auto w-80 rounded-container px-4 py-3 shadow-2xl"
       style={{
         background: 'rgba(15, 23, 42, 0.97)',
         border: '1px solid rgba(16, 185, 129, 0.3)',
@@ -65,7 +66,7 @@ function ToastItem({
         </div>
         <button
           onClick={onDismiss}
-          className="shrink-0 p-1 rounded-md text-slate-500 hover:text-slate-300 transition-colors"
+          className="shrink-0 p-1 rounded-control text-slate-500 hover:text-slate-300 transition-colors"
           aria-label="Dismiss notification"
         >
           <X className="w-3.5 h-3.5" />

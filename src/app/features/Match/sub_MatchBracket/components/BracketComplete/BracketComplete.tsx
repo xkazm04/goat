@@ -11,6 +11,7 @@ import {
 import { TrophyTab, useConfettiParticles } from './TrophyTab';
 import { StandingsTab } from './StandingsTab';
 import { StatsTab } from './StatsTab';
+import { DURATION } from '@/lib/animations/motion-presets';
 
 interface BracketCompleteProps {
   bracket: BracketState;
@@ -47,16 +48,16 @@ export function BracketComplete({
       animate={{ opacity: 1, scale: 1 }}
       className="w-full max-w-md mx-auto px-4 text-center"
     >
-      <div className="bg-slate-800/80 border border-slate-700 rounded-2xl p-5 backdrop-blur-xs">
+      <div className="bg-slate-800/80 border border-slate-700 rounded-container p-5 backdrop-blur-xs">
         {/* Tab bar */}
-        <div className="flex gap-1 mb-4 bg-slate-900/60 rounded-lg p-1">
+        <div className="flex gap-1 mb-4 bg-slate-900/60 rounded-card p-1">
           {TABS.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium transition-all ${
+                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-control text-xs font-medium transition-all ${
                   isActive
                     ? 'bg-slate-700 text-white shadow-sm'
                     : 'text-slate-400 hover:text-slate-300'
@@ -76,12 +77,12 @@ export function BracketComplete({
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.15 }}
+            transition={{ duration: DURATION.quick }}
           >
             {activeTab === 'trophy' && (
               <TrophyTab bracket={bracket} particles={particles} />
             )}
-            {activeTab === 'standings' && <StandingsTab ranking={ranking} />}
+            {activeTab === 'standings' && <StandingsTab ranking={ranking} bracket={bracket} />}
             {activeTab === 'stats' && <StatsTab analytics={analytics} />}
           </motion.div>
         </AnimatePresence>
@@ -90,14 +91,14 @@ export function BracketComplete({
         <div className="flex gap-2 mt-5">
           <button
             onClick={onRestart}
-            className="flex-1 px-4 py-2.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 font-medium transition-colors flex items-center justify-center gap-2 text-sm"
+            className="flex-1 px-4 py-2.5 rounded-card bg-slate-700 hover:bg-slate-600 text-slate-300 font-medium transition-colors flex items-center justify-center gap-2 text-sm"
           >
             <RotateCcw className="w-4 h-4" />
             New Bracket
           </button>
           <button
             onClick={onApplyRanking}
-            className="flex-1 px-4 py-2.5 rounded-lg bg-linear-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-bold transition-all flex items-center justify-center gap-2 text-sm shadow-lg shadow-green-500/30"
+            className="flex-1 px-4 py-2.5 rounded-card bg-linear-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-bold transition-all flex items-center justify-center gap-2 text-sm shadow-lg shadow-green-500/30"
           >
             <Check className="w-4 h-4" />
             Apply

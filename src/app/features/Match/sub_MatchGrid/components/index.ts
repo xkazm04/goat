@@ -6,15 +6,12 @@
  */
 
 // Core view components
+// PodiumView, GoatView, MountRushmoreView are lazy-loaded via React.lazy in GridRenderer
 export { ViewSwitcher } from './ViewSwitcher';
 export type { ViewMode } from './ViewSwitcher';
-export { PodiumView } from './PodiumView';
-export { GoatView } from './GoatView';
-export { MountRushmoreView } from './MountRushmoreView';
 export { TierListView } from './TierListView';
 export { TierRow, UnrankedPool } from './TierRow';
 export { TierConfigurator } from './TierConfigurator';
-export { TierBoundarySlider } from './TierBoundarySlider';
 export { GridSection } from './GridSection';
 export { MatchGridHeader } from './MatchGridHeader';
 
@@ -44,6 +41,6 @@ export {
 } from './AnimationController';
 
 // Grid rendering components
-export { GridRenderer, MemoizedPositionSlot } from './GridRenderer';
+export { GridRenderer, ViewSelector, MemoizedPositionSlot } from './GridRenderer';
 export { TierSection } from './TierSection';
 

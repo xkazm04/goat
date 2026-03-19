@@ -7,32 +7,18 @@
  */
 
 import { NextResponse } from 'next/server';
-import { GoogleGenAI } from '@google/genai';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import type { StudioApiError } from '@/types/studio';
+
+// Re-export centralized Gemini client so existing imports keep working
+export { getGeminiClient } from '@/lib/providers/gemini-client';
 
 // ============================================================================
 // Client Factories (Lazy Singletons)
 // ============================================================================
 
-let geminiClient: GoogleGenAI | null = null;
 let supabaseClient: SupabaseClient | null = null;
-
-/**
- * Get or create Gemini AI client (lazy singleton)
- * @throws Error if GEMINI_API_KEY is not configured
- */
-export function getGeminiClient(): GoogleGenAI {
-  if (!geminiClient) {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      throw new StudioConfigError('GEMINI_API_KEY not configured');
-    }
-    geminiClient = new GoogleGenAI({ apiKey });
-  }
-  return geminiClient;
-}
 
 /**
  * Get or create Supabase client (lazy singleton)
@@ -93,6 +79,7 @@ export const StudioErrorCodes = {
   GENERATION_ERROR: 'GENERATION_ERROR',
   YOUTUBE_SEARCH_ERROR: 'YOUTUBE_SEARCH_ERROR',
   MATCH_ERROR: 'MATCH_ERROR',
+  IMAGE_SEARCH_ERROR: 'IMAGE_SEARCH_ERROR',
   DATABASE_ERROR: 'DATABASE_ERROR',
   UNKNOWN_ERROR: 'UNKNOWN_ERROR',
 } as const;

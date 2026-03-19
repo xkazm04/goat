@@ -20,6 +20,7 @@ import { goatApi } from "@/lib/api";
 import { topListsKeys } from "@/lib/query-keys/top-lists";
 import { listCollectionKeys } from "@/lib/query-keys/list-collections";
 import { CACHE_TTL_MS } from "@/lib/cache/unified-cache";
+import { trackError } from "@/lib/errors/error-analytics";
 
 const FEATURED_PARAMS = {
   popular_limit: 80,
@@ -77,8 +78,15 @@ export function useLandingPrefetch() {
     }
 
     // All prefetches run in parallel - no need to await
-    Promise.all(prefetches).catch(() => {
-      // Silently ignore prefetch errors - components will retry on mount
+    Promise.all(prefetches).catch((error) => {
+      trackError({
+        code: 'NETWORK_TIMEOUT',
+        category: 'network',
+        severity: 'warning',
+        traceId: `landing-prefetch-${Date.now()}`,
+        source: 'useLandingPrefetch',
+        context: { operation: 'prefetchAll', message: error instanceof Error ? error.message : String(error) },
+      });
     });
   }, [queryClient]);
 }

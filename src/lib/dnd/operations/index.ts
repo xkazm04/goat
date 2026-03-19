@@ -63,6 +63,7 @@ export { SwapOperation } from './SwapOperation';
 
 // Tier Operations
 export {
+  BaseTierOperation,
   TierAssignOperation,
   TierMoveOperation,
   TierTransferOperation,
@@ -70,7 +71,18 @@ export {
   RankFromPoolOperation,
   TierToGridOperation,
   GridToTierOperation,
-} from './TierOperations';
+} from './tier';
+
+// Validation Helpers
+export {
+  requireStore,
+  requireGridSlotTarget,
+  requireTierTarget,
+  requirePositionInBounds,
+  requireSourceGridPosition,
+  requireAvailableBacklogItem,
+  validateAll,
+} from './validation-helpers';
 
 // Result Handler
 export {
@@ -101,7 +113,7 @@ import {
   RankFromPoolOperation,
   TierToGridOperation,
   GridToTierOperation,
-} from './TierOperations';
+} from './tier';
 import { DragResultHandler, type ValidationErrorEmitter } from './DragResultHandler';
 import type { RouterConfig } from './types';
 

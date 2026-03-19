@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import type { SortConfig, SortDirection, FilterFieldDefinition } from '../types';
 import { DEFAULT_FILTER_FIELDS } from '../constants';
 import { useFilterIntegrationOptional } from '../CollectionFilterIntegration';
+import { DURATION } from '@/lib/animations/motion-presets';
 
 /**
  * Default sort options derived from sortable fields
@@ -165,7 +166,7 @@ function DefaultSortSelector({
     <div className={cn('relative', className)}>
       <button
         className={cn(
-          'flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-colors',
+          'flex items-center gap-2 px-3 py-2 rounded-card border text-sm transition-colors',
           sortConfig
             ? 'border-brand/50 bg-brand/10 text-brand-hover'
             : 'border-zinc-700 bg-zinc-800/50 text-zinc-400 hover:border-zinc-600'
@@ -210,12 +211,12 @@ function DefaultSortSelector({
             <motion.div
               className={cn(
                 'absolute z-20 top-full mt-1 right-0 w-48',
-                'bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl overflow-hidden'
+                'bg-zinc-900 border border-zinc-700 rounded-card shadow-xl overflow-hidden'
               )}
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
-              transition={{ duration: 0.15 }}
+              transition={{ duration: DURATION.quick }}
             >
               <div className="py-1">
                 {options.map((option) => {
@@ -305,7 +306,7 @@ function CompactSortSelector({
       {sortConfig && (
         <button
           className={cn(
-            'p-1 rounded text-zinc-400 hover:text-zinc-200 transition-colors'
+            'p-1 rounded text-zinc-400 hover:text-zinc-200 transition-colors touch-target'
           )}
           onClick={() =>
             onSelect(sortConfig.field) // toggles direction
@@ -350,7 +351,7 @@ function InlineSortSelector({
               key={option.field}
               className={cn(
                 'shrink-0 inline-flex items-center gap-1',
-                'px-2 py-1 rounded text-xs border transition-colors',
+                'px-2 py-1 rounded text-xs border transition-colors touch-target',
                 isActive
                   ? 'bg-brand/10 border-brand/50 text-brand-hover'
                   : 'border-zinc-700 text-zinc-400 hover:border-zinc-600'
@@ -370,7 +371,7 @@ function InlineSortSelector({
         })}
         {sortConfig && (
           <button
-            className="shrink-0 p-1 text-zinc-500 hover:text-zinc-300 transition-colors"
+            className="shrink-0 p-1 text-zinc-500 hover:text-zinc-300 transition-colors touch-target"
             onClick={onClear}
             title="Clear sort"
           >

@@ -218,7 +218,7 @@ export function QuickShareMenu({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 10 }}
-      className={`bg-zinc-900 border border-zinc-800 rounded-xl p-4 ${className}`}
+      className={`bg-zinc-900 border border-zinc-800 rounded-container p-4 ${className}`}
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
@@ -246,7 +246,7 @@ export function QuickShareMenu({
               whileTap={{ scale: 0.95 }}
               onClick={() => handleShare(platform)}
               disabled={isSharing !== null}
-              className={`flex flex-col items-center gap-2 p-3 rounded-lg transition-colors ${
+              className={`flex flex-col items-center gap-2 p-3 rounded-card transition-colors ${
                 isSharing === platform
                   ? 'bg-zinc-800 opacity-50 cursor-wait'
                   : 'hover:bg-zinc-800'
@@ -272,7 +272,7 @@ export function QuickShareMenu({
           <button
             onClick={handleCopyLink}
             disabled={isSharing !== null}
-            className={`w-full flex items-center justify-center gap-2 py-3 rounded-lg transition-colors ${
+            className={`w-full flex items-center justify-center gap-2 py-3 rounded-card transition-colors ${
               copied
                 ? 'bg-emerald-500/20 text-emerald-400'
                 : 'bg-zinc-800 hover:bg-zinc-700 text-white'
@@ -316,7 +316,7 @@ export function QuickShareButton({
     <div className={`relative ${className}`}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+        className="p-2 rounded-card hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
       >
         <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <circle cx="18" cy="5" r="3" />
@@ -336,11 +336,11 @@ export function QuickShareButton({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsOpen(false)}
-              className="fixed inset-0 z-40"
+              className="fixed inset-0 z-dropdown"
             />
 
             {/* Menu */}
-            <div className="absolute right-0 top-full mt-2 z-50">
+            <div className="absolute right-0 top-full mt-2 z-dropdown">
               <QuickShareMenu
                 content={content}
                 onShare={(result) => {

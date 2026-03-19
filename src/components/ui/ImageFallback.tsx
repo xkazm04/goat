@@ -53,7 +53,7 @@ export interface ImageFallbackProps {
 }
 
 const SIZE_CONFIG = {
-  xs: { text: "text-[10px]", container: "" },
+  xs: { text: "text-2xs", container: "" },
   sm: { text: "text-xs", container: "" },
   md: { text: "text-sm", container: "" },
   lg: { text: "text-base", container: "" },

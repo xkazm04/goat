@@ -1,6 +1,7 @@
 "use client";
 
 import { memo, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Play, Clock } from "lucide-react";
 import { useSessionStore } from "@/stores/session-store";
@@ -8,6 +9,7 @@ import { RankingProgressIndicator } from "./RankingProgressIndicator";
 import { usePlayList } from "@/hooks/use-play-list";
 import { useFeaturedLists } from "@/hooks/use-top-lists";
 import { useListThumbnails } from "@/hooks/use-list-thumbnails";
+import { toast } from "@/hooks/use-toast";
 import { TopList } from "@/types/top-lists";
 
 interface InProgressList {
@@ -36,6 +38,7 @@ function timeAgo(dateStr: string): string {
  */
 export const ContinueRankingBar = memo(function ContinueRankingBar() {
   const listSessions = useSessionStore((state) => state.listSessions);
+  const router = useRouter();
   const { handlePlayList } = usePlayList();
 
   // Get featured lists to resolve names/metadata
@@ -102,18 +105,27 @@ export const ContinueRankingBar = memo(function ContinueRankingBar() {
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center gap-2 mb-3">
           <Play className="w-4 h-4 text-brand-hover fill-current" />
-          <h2 className="text-sm font-semibold text-white">Continue Ranking</h2>
-          <span className="text-[10px] text-slate-500">{inProgressLists.length} in progress</span>
+          <h2 className="text-sm font-semibold text-white font-heading">Continue Ranking</h2>
+          <span className="text-2xs text-slate-500">{inProgressLists.length} in progress</span>
         </div>
 
-        <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1">
+        <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1 snap-x snap-mandatory">
           {inProgressLists.map((item, index) => (
             <motion.button
               key={item.listId}
               onClick={() => {
-                if (item.list) handlePlayList(item.list);
+                if (item.list) {
+                  handlePlayList(item.list);
+                } else {
+                  // Orphaned session: list was deleted or is no longer accessible
+                  toast({
+                    title: "List Unavailable",
+                    description: "This list may have been deleted. Navigating to your session data.",
+                  });
+                  router.push(`/goat?list=${item.listId}`);
+                }
               }}
-              className="shrink-0 flex items-center gap-3 px-3 py-2.5 rounded-lg bg-gray-900/80 border border-gray-700/50 hover:border-brand/30 hover:bg-gray-900 transition-all group min-w-[240px] max-w-[300px]"
+              className="shrink-0 snap-center flex items-center gap-3 px-3 py-2.5 rounded-card bg-gray-900/80 border border-gray-700/50 hover:border-brand/30 hover:bg-gray-900 transition-all group min-w-[240px] max-w-[300px]"
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.05 }}
@@ -121,7 +133,7 @@ export const ContinueRankingBar = memo(function ContinueRankingBar() {
               whileTap={{ scale: 0.98 }}
             >
               {/* Thumbnail */}
-              <div className="w-10 h-10 shrink-0 rounded-md overflow-hidden bg-gray-800">
+              <div className="w-10 h-10 shrink-0 rounded-control overflow-hidden bg-gray-800">
                 {imageMap[item.listId]?.url ? (
                   <img
                     src={imageMap[item.listId].url!}
@@ -147,7 +159,7 @@ export const ContinueRankingBar = memo(function ContinueRankingBar() {
                     size="sm"
                     showText={false}
                   />
-                  <span className="text-[10px] text-slate-400 tabular-nums">
+                  <span className="text-2xs text-slate-400 tabular-nums font-mono">
                     {item.filled}/{item.total}
                   </span>
                 </div>
@@ -156,7 +168,7 @@ export const ContinueRankingBar = memo(function ContinueRankingBar() {
               {/* Time ago */}
               <div className="flex items-center gap-1 shrink-0">
                 <Clock className="w-3 h-3 text-gray-500" />
-                <span className="text-[10px] text-gray-500">{timeAgo(item.updatedAt)}</span>
+                <span className="text-2xs text-gray-500">{timeAgo(item.updatedAt)}</span>
               </div>
             </motion.button>
           ))}

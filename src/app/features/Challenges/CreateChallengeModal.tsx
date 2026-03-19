@@ -6,10 +6,19 @@
  */
 
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Trophy } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import {
+  GlassModal,
+  GlassModalHeader,
+  GlassModalBody,
+  GlassModalFooter,
+  GLASS_INPUT_CLASS,
+  GLASS_BUTTON_PRIMARY,
+  GLASS_BUTTON_SECONDARY,
+} from '@/components/ui/glass-modal';
 import { useChallengeStore } from '@/stores/challenge-store';
 import {
-  CHALLENGE_TEMPLATES,
   type ChallengeType,
   type ChallengeConfig,
 } from '@/lib/challenges/types';
@@ -124,186 +133,160 @@ export function CreateChallengeModal({
   };
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          {/* Backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={handleClose}
-            className="fixed inset-0 bg-black/60 backdrop-blur-xl z-50"
+    <GlassModal open={isOpen} onClose={handleClose} size="sm:w-[512px]">
+      <GlassModalHeader
+        icon={Trophy}
+        title="Create Challenge"
+        onClose={handleClose}
+      />
+
+      <GlassModalBody className="space-y-4">
+        {/* Title */}
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1.5">
+            Challenge Title
+          </label>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Enter challenge title"
+            className={GLASS_INPUT_CLASS}
           />
+        </div>
 
-          {/* Modal */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="fixed inset-4 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-full md:max-w-lg bg-zinc-900 border border-zinc-800 rounded-xl z-50 overflow-hidden flex flex-col max-h-[90vh]"
+        {/* Description */}
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1.5">
+            Description (optional)
+          </label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Describe your challenge..."
+            rows={3}
+            className={`${GLASS_INPUT_CLASS} resize-none`}
+          />
+        </div>
+
+        {/* Challenge Type */}
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1.5">
+            Challenge Type
+          </label>
+          <div className="space-y-2">
+            {CHALLENGE_TYPES.map((type) => (
+              <button
+                key={type.value}
+                onClick={() => setSelectedType(type.value)}
+                className={cn(
+                  'w-full p-3 text-left rounded-card border transition-colors',
+                  selectedType === type.value
+                    ? 'bg-gray-800/60 border-white/15'
+                    : 'bg-gray-900/40 border-white/[0.08] hover:border-white/10'
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className={cn(
+                      'w-4 h-4 rounded-full border-2 flex items-center justify-center',
+                      selectedType === type.value
+                        ? 'border-amber-500'
+                        : 'border-gray-600'
+                    )}
+                  >
+                    {selectedType === type.value && (
+                      <div className="w-2 h-2 rounded-full bg-amber-500" />
+                    )}
+                  </div>
+                  <div>
+                    <div className="font-medium text-white">{type.label}</div>
+                    <div className="text-sm text-gray-400">{type.description}</div>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Time Limit (for speed ranking) */}
+        {selectedType === 'speed_ranking' && (
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1.5">
+              Time Limit (minutes)
+            </label>
+            <input
+              type="number"
+              min={1}
+              max={60}
+              value={timeLimit || ''}
+              onChange={(e) =>
+                setTimeLimit(e.target.value ? parseInt(e.target.value, 10) : undefined)
+              }
+              placeholder="5"
+              className={GLASS_INPUT_CLASS}
+            />
+          </div>
+        )}
+
+        {/* Visibility */}
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1.5">
+            Visibility
+          </label>
+          <div className="flex gap-2">
+            {[
+              { value: 'public', label: 'Public' },
+              { value: 'link_only', label: 'Link Only' },
+              { value: 'invite_only', label: 'Invite Only' },
+            ].map((option) => (
+              <button
+                key={option.value}
+                onClick={() =>
+                  setVisibility(option.value as typeof visibility)
+                }
+                className={cn(
+                  'flex-1 py-2 text-sm rounded-control border transition-colors',
+                  visibility === option.value
+                    ? 'bg-gray-800/60 border-white/15 text-white'
+                    : 'bg-gray-900/40 border-white/[0.08] text-gray-400 hover:border-white/10'
+                )}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Error */}
+        {error && (
+          <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-card text-red-400 text-sm">
+            {error}
+          </div>
+        )}
+      </GlassModalBody>
+
+      <GlassModalFooter>
+        <div className="flex gap-3">
+          <button
+            onClick={handleClose}
+            className={cn(GLASS_BUTTON_SECONDARY, 'flex-1')}
           >
-            {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-zinc-800">
-              <h2 className="text-lg font-semibold text-white">Create Challenge</h2>
-              <button
-                onClick={handleClose}
-                className="p-1 text-zinc-400 hover:text-white transition-colors"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            {/* Content */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {/* Title */}
-              <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-1.5">
-                  Challenge Title
-                </label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Enter challenge title"
-                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder:text-zinc-500 focus:outline-hidden focus:border-zinc-600"
-                />
-              </div>
-
-              {/* Description */}
-              <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-1.5">
-                  Description (optional)
-                </label>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Describe your challenge..."
-                  rows={3}
-                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder:text-zinc-500 focus:outline-hidden focus:border-zinc-600 resize-none"
-                />
-              </div>
-
-              {/* Challenge Type */}
-              <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-1.5">
-                  Challenge Type
-                </label>
-                <div className="space-y-2">
-                  {CHALLENGE_TYPES.map((type) => (
-                    <button
-                      key={type.value}
-                      onClick={() => setSelectedType(type.value)}
-                      className={`w-full p-3 text-left rounded-lg border transition-colors ${
-                        selectedType === type.value
-                          ? 'bg-zinc-800 border-zinc-600'
-                          : 'bg-zinc-900 border-zinc-800 hover:border-zinc-700'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                            selectedType === type.value
-                              ? 'border-emerald-500'
-                              : 'border-zinc-600'
-                          }`}
-                        >
-                          {selectedType === type.value && (
-                            <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                          )}
-                        </div>
-                        <div>
-                          <div className="font-medium text-white">{type.label}</div>
-                          <div className="text-sm text-zinc-400">{type.description}</div>
-                        </div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Time Limit (for speed ranking) */}
-              {selectedType === 'speed_ranking' && (
-                <div>
-                  <label className="block text-sm font-medium text-zinc-300 mb-1.5">
-                    Time Limit (minutes)
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={60}
-                    value={timeLimit || ''}
-                    onChange={(e) =>
-                      setTimeLimit(e.target.value ? parseInt(e.target.value, 10) : undefined)
-                    }
-                    placeholder="5"
-                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder:text-zinc-500 focus:outline-hidden focus:border-zinc-600"
-                  />
-                </div>
-              )}
-
-              {/* Visibility */}
-              <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-1.5">
-                  Visibility
-                </label>
-                <div className="flex gap-2">
-                  {[
-                    { value: 'public', label: 'Public' },
-                    { value: 'link_only', label: 'Link Only' },
-                    { value: 'invite_only', label: 'Invite Only' },
-                  ].map((option) => (
-                    <button
-                      key={option.value}
-                      onClick={() =>
-                        setVisibility(option.value as typeof visibility)
-                      }
-                      className={`flex-1 py-2 text-sm rounded-lg border transition-colors ${
-                        visibility === option.value
-                          ? 'bg-zinc-700 border-zinc-600 text-white'
-                          : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700'
-                      }`}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Error */}
-              {error && (
-                <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
-                  {error}
-                </div>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="p-4 border-t border-zinc-800 flex gap-3">
-              <button
-                onClick={handleClose}
-                className="flex-1 py-2 text-zinc-400 hover:text-white transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSubmit}
-                disabled={isSubmitting}
-                className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white font-medium rounded-lg transition-colors"
-              >
-                {isSubmitting ? 'Creating...' : 'Create Challenge'}
-              </button>
-            </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className={cn(
+              GLASS_BUTTON_PRIMARY,
+              'flex-1',
+              'disabled:opacity-50 disabled:cursor-not-allowed'
+            )}
+          >
+            {isSubmitting ? 'Creating...' : 'Create Challenge'}
+          </button>
+        </div>
+      </GlassModalFooter>
+    </GlassModal>
   );
 }

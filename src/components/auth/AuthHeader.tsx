@@ -29,13 +29,14 @@ export function AuthHeader() {
   if (isLoading) return null;
 
   return (
-    <>
+    <div data-testid="auth-header">
       {isAuthenticated ? (
         <UserMenu />
       ) : isGuest ? (
         <button
           onClick={handleOpenModal}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700/50 hover:border-slate-600/50 transition-all duration-200 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-hover"
+          data-testid="auth-sign-in-btn"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-card text-sm font-medium text-slate-300 hover:text-white bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700/50 hover:border-slate-600/50 transition-all duration-200 focus-ring-inset"
         >
           <LogIn className="w-4 h-4" />
           Sign in
@@ -43,6 +44,6 @@ export function AuthHeader() {
       ) : null}
 
       <AuthModal isOpen={showModal} onClose={handleCloseModal} />
-    </>
+    </div>
   );
 }

@@ -4,6 +4,7 @@ import { memo, useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sliders, ChevronDown, ChevronUp } from "lucide-react";
 import { ListSize, SIZE_OPTIONS, getNearestSize } from "./types";
+import { DURATION } from '@/lib/animations/motion-presets';
 
 interface CustomSizeSliderProps {
   value: number;
@@ -109,7 +110,7 @@ export const CustomSizeSlider = memo(function CustomSizeSlider({
     <div className="w-full">
       {/* Toggle button */}
       <motion.button
-        className="w-full flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer"
+        className="w-full flex items-center justify-between px-3 py-2 rounded-control cursor-pointer"
         style={{
           background: expanded ? `${color.primary}20` : "rgba(51, 65, 85, 0.3)",
           border: `1px solid ${expanded ? color.primary : "rgba(71, 85, 105, 0.3)"}40`,
@@ -125,7 +126,7 @@ export const CustomSizeSlider = memo(function CustomSizeSlider({
         <div className="flex items-center gap-2">
           {!isOnPreset && (
             <span
-              className="text-xs px-2 py-0.5 rounded-full"
+              className="text-xs px-2 py-0.5 rounded-badge"
               style={{
                 background: `${color.accent}20`,
                 color: color.accent,
@@ -149,7 +150,7 @@ export const CustomSizeSlider = memo(function CustomSizeSlider({
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: DURATION.fast }}
             className="overflow-hidden"
           >
             <div className="pt-4 pb-2 px-1">
@@ -281,7 +282,7 @@ export const CustomSizeSlider = memo(function CustomSizeSlider({
               <div className="flex items-center justify-between mt-4">
                 <div className="flex gap-1">
                   <motion.button
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium"
+                    className="px-3 py-1.5 rounded-control text-xs font-medium"
                     style={{
                       background: "rgba(51, 65, 85, 0.4)",
                       color: "rgba(148, 163, 184, 0.8)",
@@ -297,7 +298,7 @@ export const CustomSizeSlider = memo(function CustomSizeSlider({
                     - {step}
                   </motion.button>
                   <motion.button
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium"
+                    className="px-3 py-1.5 rounded-control text-xs font-medium"
                     style={{
                       background: "rgba(51, 65, 85, 0.4)",
                       color: "rgba(148, 163, 184, 0.8)",
@@ -317,7 +318,7 @@ export const CustomSizeSlider = memo(function CustomSizeSlider({
                 {/* Reset to nearest preset */}
                 {!isOnPreset && (
                   <motion.button
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium"
+                    className="px-3 py-1.5 rounded-control text-xs font-medium"
                     style={{
                       background: `${color.accent}20`,
                       color: color.accent,
@@ -336,7 +337,7 @@ export const CustomSizeSlider = memo(function CustomSizeSlider({
               {/* Custom value warning */}
               {!isOnPreset && (
                 <motion.div
-                  className="mt-3 p-2 rounded-lg text-xs"
+                  className="mt-3 p-2 rounded-control text-xs"
                   style={{
                     background: "rgba(251, 191, 36, 0.1)",
                     border: "1px solid rgba(251, 191, 36, 0.2)",
@@ -408,7 +409,7 @@ export const SizeNumberInput = memo(function SizeNumberInput({
         onChange={(e) => setInputValue(e.target.value)}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
-        className="w-16 px-2 py-1 rounded-lg text-center text-sm font-medium bg-slate-800/50 border border-slate-700/50 text-white focus:outline-hidden focus:border-brand/50"
+        className="w-16 px-2 py-1 rounded-control text-center text-sm font-medium bg-slate-800/50 border border-slate-700/50 text-white focus:outline-hidden focus:border-brand/50"
         style={{
           background: "rgba(30, 41, 59, 0.5)",
           borderColor: `${color.primary}30`,

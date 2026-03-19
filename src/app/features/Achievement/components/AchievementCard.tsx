@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { DURATION } from "@/lib/animations/motion-presets";
 import { Trophy, Star, Users, Compass, Flag, Sparkles, LucideIcon } from "lucide-react";
 import {
   Achievement,
@@ -110,7 +111,7 @@ export function AchievementCard({
 
   return (
     <motion.div
-      className={`relative overflow-hidden rounded-2xl ${className}`}
+      className={`relative overflow-hidden rounded-container ${className}`}
       style={{
         background: stylePreset.background,
         boxShadow: `
@@ -121,7 +122,7 @@ export function AchievementCard({
       }}
       initial={config.animated ? { opacity: 0, y: 20 } : false}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
+      transition={{ duration: DURATION.slow }}
       data-testid="achievement-card"
     >
       {/* Tier glow effect */}
@@ -169,7 +170,7 @@ export function AchievementCard({
         <div className="flex items-start justify-between mb-4">
           {/* Category badge */}
           <div
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-control"
             style={{
               background: `${categoryConfig.color}20`,
               border: `1px solid ${categoryConfig.color}40`,
@@ -207,7 +208,7 @@ export function AchievementCard({
             transition={{ duration: 2, repeat: Infinity }}
           >
             <div
-              className="w-20 h-20 rounded-2xl flex items-center justify-center"
+              className="w-20 h-20 rounded-container flex items-center justify-center"
               style={{
                 background: tierConfig.gradient,
                 boxShadow: `0 0 30px ${tierConfig.glow}`,
@@ -410,7 +411,7 @@ export function AchievementCardCompact({
   return (
     <motion.button
       onClick={onClick}
-      className={`flex items-center gap-3 p-3 rounded-xl transition-all ${className}`}
+      className={`flex items-center gap-3 p-3 rounded-card transition-all ${className}`}
       style={{
         background: 'rgba(255, 255, 255, 0.03)',
         border: `1px solid ${achievement.unlocked ? tierConfig.borderColor : 'rgba(255, 255, 255, 0.05)'}`,
@@ -421,7 +422,7 @@ export function AchievementCardCompact({
     >
       {/* Icon */}
       <div
-        className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+        className="w-12 h-12 rounded-card flex items-center justify-center shrink-0"
         style={{
           background: achievement.unlocked ? tierConfig.gradient : 'rgba(255, 255, 255, 0.05)',
           opacity: achievement.unlocked ? 1 : 0.5,

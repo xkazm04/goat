@@ -14,6 +14,7 @@ import {
   STAGGER,
   prefersReducedMotion,
 } from "@/lib/animations/sharing";
+import { DURATION } from '@/lib/animations/motion-presets';
 
 interface ShareableListCardProps {
   ranking: SharedRanking;
@@ -101,7 +102,7 @@ export const ShareableListCard = memo(function ShareableListCard({
 
   return (
     <motion.div
-      className="relative rounded-2xl overflow-hidden group"
+      className="relative rounded-container overflow-hidden group"
       style={{
         background: `linear-gradient(135deg,
           rgba(15, 20, 35, 0.98) 0%,
@@ -158,7 +159,7 @@ export const ShareableListCard = memo(function ShareableListCard({
               transition={{ delay: 0.2 }}
             >
               <span
-                className="px-3 py-1 rounded-lg text-sm font-medium"
+                className="px-3 py-1 rounded-control text-sm font-medium"
                 style={{
                   background: "rgba(6, 182, 212, 0.2)",
                   border: "1px solid rgba(6, 182, 212, 0.3)",
@@ -169,7 +170,7 @@ export const ShareableListCard = memo(function ShareableListCard({
                 {subcategory && ` • ${subcategory}`}
               </span>
               <span
-                className="px-3 py-1 rounded-lg text-sm font-medium"
+                className="px-3 py-1 rounded-control text-sm font-medium"
                 style={{
                   background: "rgba(139, 92, 246, 0.2)",
                   border: "1px solid rgba(139, 92, 246, 0.3)",
@@ -236,7 +237,7 @@ export const ShareableListCard = memo(function ShareableListCard({
             return (
               <motion.div
                 key={index}
-                className="flex items-center gap-4 rounded-xl p-3 transition-all duration-200 hover:scale-[1.01]"
+                className="flex items-center gap-4 rounded-card p-3 transition-all duration-200 hover:scale-[1.01]"
                 style={{
                   background: style.bg,
                   border: `1px solid ${style.border}`,
@@ -246,7 +247,7 @@ export const ShareableListCard = memo(function ShareableListCard({
                 custom={index}
                 transition={{
                   delay: index * STAGGER.normal,
-                  duration: 0.3,
+                  duration: DURATION.normal,
                 }}
                 whileHover={{ x: 4 }}
                 data-testid={`ranking-item-${item.position}`}
@@ -341,7 +342,7 @@ export const ShareableListCard = memo(function ShareableListCard({
           {onChallenge && (
             <motion.button
               onClick={onChallenge}
-              className="flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 focus-ring"
+              className="flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-card font-semibold text-white transition-all duration-200 focus-ring"
               style={{
                 background: "linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%)",
                 boxShadow: "0 6px 24px rgba(6, 182, 212, 0.35)",

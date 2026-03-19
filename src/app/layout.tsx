@@ -1,14 +1,15 @@
+// Import dev CSS variable contract check (development only)
+if (process.env.NODE_ENV === 'development') {
+  import('./dev-css-var-check').then(mod => mod.checkCssVariableContract());
+}
 import './globals.css';
 import type { Metadata } from 'next';
 import { Inter, Space_Grotesk } from 'next/font/google';
 import { QueryProvider } from '@/providers/query-provider';
 import { BacklogProvider } from '@/providers/BacklogProvider';
-import { PrefetchProvider } from '@/providers/prefetch-provider';
+import { DeferredProviders } from '@/providers/DeferredProviders';
 import { PageTransition } from '@/components/page-transition';
 import { ThemeProvider } from '@/components/theme/theme-provider';
-import { CommandPaletteProvider } from '@/app/features/CommandPalette';
-import { ItemDetailPopupProvider } from '@/app/features/Collection/components/ItemDetailPopupProvider';
-import { OfflineProvider } from '@/lib/offline';
 import { AuthHeader, Toaster } from '@/components/auth';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -88,9 +89,7 @@ export default function RootLayout({
           >
             <BacklogProvider>
               <QueryProvider>
-                <PrefetchProvider>
-                  <OfflineProvider showStatusIndicator enableAutoSync>
-                    <CommandPaletteProvider>
+                <DeferredProviders>
                     {/* Skip to main content link for keyboard users */}
                     <a
                       href="#main-content"
@@ -100,7 +99,7 @@ export default function RootLayout({
                     </a>
                     <div className="min-h-screen bg-linear-to-b from-gray-900 to-gray-800/95 text-gray-100 w-full flex flex-col">
                       {/* Auth header -- sign in button or user menu */}
-                      <div className="fixed top-4 right-4 z-50">
+                      <div className="fixed top-4 right-4 z-toast">
                         <AuthHeader />
                       </div>
                       <main id="main-content" className="gradient-to-b" tabIndex={-1}>
@@ -108,10 +107,7 @@ export default function RootLayout({
                       </main>
                     </div>
                     <Toaster />
-                    <ItemDetailPopupProvider />
-                    </CommandPaletteProvider>
-                  </OfflineProvider>
-                </PrefetchProvider>
+                </DeferredProviders>
               </QueryProvider>
             </BacklogProvider>
           </ThemeProvider>

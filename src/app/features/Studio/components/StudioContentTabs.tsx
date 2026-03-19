@@ -3,15 +3,14 @@
 /**
  * StudioContentTabs
  *
- * Tabbed container switching between Generated Items and Rating Criteria views.
- * Full-width component providing space for rich criteria visualization.
+ * Glass-morphism tabbed container for Generated Items and Rating Criteria.
  */
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { DURATION } from '@/lib/animations/motion-presets';
 import { ListOrdered, BarChart3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Surface } from '@/components/visual';
 import { StudioItemsView } from './StudioItemsView';
 import { CriteriaEditor } from './CriteriaEditor';
 import { useStudioCriteria, useStudioItems } from '@/stores/studio-store';
@@ -37,9 +36,14 @@ export function StudioContentTabs() {
   const hasCriteria = criteriaMode !== 'none';
 
   return (
-    <Surface variant="glass" className="rounded-2xl overflow-hidden">
+    <div
+      className="rounded-container overflow-hidden border border-white/[0.06] backdrop-blur-xl"
+      style={{
+        background: 'linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 50%, rgba(255,255,255,0.02) 100%)',
+      }}
+    >
       {/* Tab Header */}
-      <div className="flex items-center border-b border-gray-800/50 bg-gray-900/30">
+      <div className="flex items-center border-b border-white/[0.04] bg-white/[0.02]">
         {TABS.map((tab) => (
           <button
             key={tab.id}
@@ -54,7 +58,7 @@ export function StudioContentTabs() {
             {tab.icon}
             <span>{tab.label}</span>
             {tab.id === 'items' && generatedItems.length > 0 && (
-              <span className="ml-1.5 px-1.5 py-0.5 text-xs rounded-full bg-gray-800 text-gray-400">
+              <span className="ml-1.5 px-1.5 py-0.5 text-xs rounded-badge bg-white/[0.06] text-gray-400">
                 {generatedItems.length}
               </span>
             )}
@@ -64,7 +68,10 @@ export function StudioContentTabs() {
             {activeTab === tab.id && (
               <motion.div
                 layoutId="activeTab"
-                className="absolute bottom-0 left-0 right-0 h-0.5 bg-linear-to-r from-amber-500 to-orange-500"
+                className="absolute bottom-0 left-0 right-0 h-0.5"
+                style={{
+                  background: 'linear-gradient(90deg, rgba(251,191,36,0.6), rgba(245,158,11,0.8), rgba(251,191,36,0.6))',
+                }}
                 transition={{ type: 'spring', stiffness: 500, damping: 30 }}
               />
             )}
@@ -81,7 +88,7 @@ export function StudioContentTabs() {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: DURATION.quick }}
             >
               <StudioItemsView />
             </motion.div>
@@ -92,14 +99,14 @@ export function StudioContentTabs() {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: DURATION.quick }}
             >
               <CriteriaEditor />
             </motion.div>
           )}
         </AnimatePresence>
       </div>
-    </Surface>
+    </div>
   );
 }
 

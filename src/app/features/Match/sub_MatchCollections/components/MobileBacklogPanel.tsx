@@ -1,12 +1,17 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { motion, useMotionValue, useTransform, animate, PanInfo } from "framer-motion";
-import { GripHorizontal, ChevronUp } from "lucide-react";
+import { motion, animate, PanInfo } from "framer-motion";
+import { useDraggable } from "@dnd-kit/core";
+import { GripHorizontal, ChevronUp, LayoutGrid, List } from "lucide-react";
 import { CollectionItem } from "@/app/features/Collection/types";
 import { useGridStore, type MobileSelectedItem } from "@/stores/grid-store";
+import { useBacklogStore } from "@/stores/backlog-store";
+import { createCollectionDragData } from "@/lib/dnd";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import { SwipeableBacklogItem } from "./SwipeableBacklogItem";
+import { triggerHaptic } from "@/app/features/Match/sub_MatchGrid/lib/hapticFeedback";
 
 /** Panel snap states */
 type PanelState = "collapsed" | "half" | "full";
@@ -22,13 +27,71 @@ interface MobileBacklogPanelProps {
 }
 
 /**
+ * Draggable mobile backlog item.
+ * Supports both drag-and-drop and tap-to-place workflows.
+ */
+function DraggableMobileItem({
+  item,
+  isSelected,
+  onTap,
+}: {
+  item: CollectionItem;
+  isSelected: boolean;
+  onTap: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: `mobile-backlog-${item.id}`,
+    data: createCollectionDragData(item, 'mobile-backlog'),
+  });
+
+  return (
+    <button
+      ref={setNodeRef}
+      onClick={onTap}
+      {...attributes}
+      {...listeners}
+      className={cn(
+        "flex flex-col items-center gap-1 p-2 rounded-card transition-all touch-manipulation",
+        "bg-white/5 hover:bg-white/10 active:scale-95",
+        isSelected && "ring-2 ring-brand-primary scale-105 bg-brand-primary/10",
+        isDragging && "opacity-50 scale-95"
+      )}
+    >
+      <div className="w-12 h-12 rounded-control overflow-hidden bg-white/10 shrink-0">
+        {item.image_url ? (
+          <Image
+            src={item.image_url}
+            alt={item.title}
+            width={48}
+            height={48}
+            className="w-full h-full object-cover"
+            unoptimized
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-white/30 text-xs">
+            ?
+          </div>
+        )}
+      </div>
+      <span className="text-xs text-white/70 truncate w-full text-center leading-tight">
+        {item.title}
+      </span>
+    </button>
+  );
+}
+
+/**
  * MobileBacklogPanel
  * A bottom sheet for browsing and selecting backlog items on mobile devices.
  * Three states: collapsed (peek bar), half-expanded, full-expanded.
- * Tapping an item selects it for tap-to-place, then auto-collapses the panel.
+ * Supports both drag-and-drop and tap-to-place workflows.
  */
+/** View mode for the panel: grid (default drag-drop) or swipe (Tinder-style) */
+type BacklogViewMode = "grid" | "swipe";
+
 export function MobileBacklogPanel({ items, totalCount }: MobileBacklogPanelProps) {
   const [panelState, setPanelState] = useState<PanelState>("collapsed");
+  const [viewMode, setViewMode] = useState<BacklogViewMode>("swipe");
   const mobileSelectedItem = useGridStore((s) => s.mobileSelectedItem);
   const setMobileSelectedItem = useGridStore((s) => s.setMobileSelectedItem);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -48,7 +111,7 @@ export function MobileBacklogPanel({ items, totalCount }: MobileBacklogPanelProp
   const fullHeight = Math.round(viewportHeight * FULL_HEIGHT_RATIO);
 
   // Motion value for the panel y offset (0 = current snap position)
-  const y = useMotionValue(0);
+  const y = useRef(0);
 
   // Get current height based on panel state
   const getHeight = useCallback(
@@ -109,11 +172,8 @@ export function MobileBacklogPanel({ items, totalCount }: MobileBacklogPanelProp
 
         setPanelState(nearest);
       }
-
-      // Reset y motion value
-      animate(y, 0, { type: "spring", stiffness: 300, damping: 30 });
     },
-    [panelState, getHeight, halfHeight, fullHeight, y]
+    [panelState, getHeight, halfHeight, fullHeight]
   );
 
   // Handle item tap for selection
@@ -136,6 +196,36 @@ export function MobileBacklogPanel({ items, totalCount }: MobileBacklogPanelProp
     [mobileSelectedItem, setMobileSelectedItem]
   );
 
+  // Swipe-to-rank: assign item to next open slot
+  const handleSwipeAssign = useCallback((item: CollectionItem): boolean => {
+    const { gridItems, maxGridSize, assignItemToGrid } = useGridStore.getState();
+    const backlogState = useBacklogStore.getState();
+
+    // Resolve to BacklogItem (required by assignItemToGrid)
+    const backlogItem = backlogState.getItemById(item.id);
+    if (!backlogItem) return false;
+
+    // Find next empty slot
+    let position: number | null = null;
+    for (let i = 0; i < maxGridSize; i++) {
+      if (!gridItems[i]?.matched) {
+        position = i;
+        break;
+      }
+    }
+    if (position === null) return false;
+
+    assignItemToGrid(backlogItem, position);
+    backlogState.markItemAsUsed(item.id, true);
+    triggerHaptic(position < 3 ? "dropPosition3" : "dropPositionRegular");
+    return true;
+  }, []);
+
+  // Swipe-to-dismiss: just skip (no permanent action)
+  const handleSwipeDismiss = useCallback((_item: CollectionItem) => {
+    triggerHaptic("buttonPress");
+  }, []);
+
   // Toggle panel state on handle tap
   const handleToggle = useCallback(() => {
     setPanelState((prev) => {
@@ -147,7 +237,7 @@ export function MobileBacklogPanel({ items, totalCount }: MobileBacklogPanelProp
 
   return (
     <motion.div
-      className="fixed bottom-0 left-0 right-0 z-40 bg-gray-900 rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.5)]"
+      className="fixed bottom-0 left-0 right-0 z-sticky bg-gray-900 rounded-t-container shadow-[0_-4px_20px_rgba(0,0,0,0.5)]"
       style={{ height: currentHeight }}
       animate={{ height: currentHeight }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
@@ -159,7 +249,6 @@ export function MobileBacklogPanel({ items, totalCount }: MobileBacklogPanelProp
         dragConstraints={{ top: -(fullHeight - COLLAPSED_HEIGHT), bottom: 0 }}
         dragElastic={0.1}
         onDragEnd={handleDragEnd}
-        style={{ y }}
         onClick={handleToggle}
       >
         <div className="w-12 h-1 rounded-full bg-white/30 mb-1" />
@@ -172,12 +261,37 @@ export function MobileBacklogPanel({ items, totalCount }: MobileBacklogPanelProp
               panelState !== "collapsed" && "rotate-180"
             )}
           />
+          {/* View mode toggle */}
+          {panelState !== "collapsed" && (
+            <div className="flex ml-auto gap-0.5 bg-white/5 rounded-control p-0.5">
+              <button
+                onClick={(e) => { e.stopPropagation(); setViewMode("swipe"); }}
+                className={cn(
+                  "p-1 rounded transition-colors",
+                  viewMode === "swipe" ? "bg-white/15 text-white" : "text-white/40"
+                )}
+                aria-label="Swipe view"
+              >
+                <List className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); setViewMode("grid"); }}
+                className={cn(
+                  "p-1 rounded transition-colors",
+                  viewMode === "grid" ? "bg-white/15 text-white" : "text-white/40"
+                )}
+                aria-label="Grid view"
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
         </div>
       </motion.div>
 
       {/* Selected item indicator */}
       {mobileSelectedItem && (
-        <div className="mx-3 mb-2 px-3 py-1.5 bg-brand-primary/20 border border-brand-primary/40 rounded-lg flex items-center gap-2 text-sm text-brand-primary">
+        <div className="mx-3 mb-2 px-3 py-1.5 bg-brand-primary/20 border border-brand-primary/40 rounded-card flex items-center gap-2 text-sm text-brand-primary">
           <span className="truncate">Tap a grid slot to place: <strong>{mobileSelectedItem.title}</strong></span>
           <button
             onClick={() => setMobileSelectedItem(null)}
@@ -188,6 +302,13 @@ export function MobileBacklogPanel({ items, totalCount }: MobileBacklogPanelProp
         </div>
       )}
 
+      {/* Swipe hint banner (shown once in swipe mode) */}
+      {panelState !== "collapsed" && viewMode === "swipe" && (
+        <div className="mx-3 mb-1 px-3 py-1 bg-white/5 rounded-control text-xs text-white/40 text-center">
+          ← Swipe left to rank · Swipe right to skip →
+        </div>
+      )}
+
       {/* Scrollable content area */}
       {panelState !== "collapsed" && (
         <div
@@ -195,42 +316,34 @@ export function MobileBacklogPanel({ items, totalCount }: MobileBacklogPanelProp
           className="flex-1 overflow-y-auto overscroll-contain px-3 pb-4"
           style={{ maxHeight: currentHeight - 70 }}
         >
-          <div className="grid grid-cols-3 gap-2">
-            {items.map((item) => {
-              const isSelected = mobileSelectedItem?.id === item.id;
-              return (
-                <button
+          {viewMode === "swipe" ? (
+            /* Swipe list view — vertical list with swipe gestures */
+            <div className="flex flex-col gap-1.5">
+              {items.map((item) => (
+                <SwipeableBacklogItem
                   key={item.id}
-                  onClick={() => handleItemTap(item)}
-                  className={cn(
-                    "flex flex-col items-center gap-1 p-2 rounded-lg transition-all",
-                    "bg-white/5 hover:bg-white/10 active:scale-95",
-                    isSelected && "ring-2 ring-brand-primary scale-105 bg-brand-primary/10"
-                  )}
-                >
-                  <div className="w-12 h-12 rounded-md overflow-hidden bg-white/10 shrink-0">
-                    {item.image_url ? (
-                      <Image
-                        src={item.image_url}
-                        alt={item.title}
-                        width={48}
-                        height={48}
-                        className="w-full h-full object-cover"
-                        unoptimized
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-white/30 text-xs">
-                        ?
-                      </div>
-                    )}
-                  </div>
-                  <span className="text-xs text-white/70 truncate w-full text-center leading-tight">
-                    {item.title}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+                  item={item}
+                  isSelected={mobileSelectedItem?.id === item.id}
+                  isUsed={false}
+                  onTap={() => handleItemTap(item)}
+                  onSwipeLeft={handleSwipeAssign}
+                  onSwipeRight={handleSwipeDismiss}
+                />
+              ))}
+            </div>
+          ) : (
+            /* Grid view — original drag-and-drop grid */
+            <div className="grid grid-cols-3 gap-2">
+              {items.map((item) => (
+                <DraggableMobileItem
+                  key={item.id}
+                  item={item}
+                  isSelected={mobileSelectedItem?.id === item.id}
+                  onTap={() => handleItemTap(item)}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
     </motion.div>

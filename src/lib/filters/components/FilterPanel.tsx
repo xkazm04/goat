@@ -9,6 +9,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Check, X, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { UniversalSelect } from '@/components/ui/universal-select';
 import type {
   FilterCondition,
   FilterGroup,
@@ -143,7 +144,7 @@ export function FilterPanel({
   return (
     <div
       className={cn(
-        'border border-border rounded-lg bg-background overflow-hidden',
+        'border border-border rounded-card bg-background overflow-hidden',
         className
       )}
     >
@@ -160,7 +161,7 @@ export function FilterPanel({
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">Filters</span>
             {activeCount > 0 && (
-              <span className="px-2 py-0.5 text-xs bg-primary text-primary-foreground rounded-full">
+              <span className="px-2 py-0.5 text-xs bg-primary text-primary-foreground rounded-badge">
                 {activeCount}
               </span>
             )}
@@ -230,7 +231,7 @@ export function FilterPanel({
                 <button
                   className={cn(
                     'flex items-center gap-1.5 px-3 py-1.5 text-sm',
-                    'bg-accent hover:bg-accent/80 rounded-md transition-colors',
+                    'bg-accent hover:bg-accent/80 rounded-control transition-colors',
                     config.conditions.length >= maxConditions &&
                       'filter-disabled'
                   )}
@@ -276,7 +277,7 @@ function CombinatorToggle({
   size = 'sm',
 }: CombinatorToggleProps) {
   return (
-    <div className="inline-flex bg-muted rounded-md p-0.5">
+    <div className="inline-flex bg-muted rounded-control p-0.5">
       {(['AND', 'OR'] as const).map((combinator) => (
         <button
           key={combinator}
@@ -351,7 +352,7 @@ function FilterConditionRow({
   return (
     <div
       className={cn(
-        'flex items-center gap-2 p-2 rounded-lg border transition-all',
+        'flex items-center gap-2 p-2 rounded-card border transition-all',
         condition.enabled
           ? `${colors.bg} ${colors.border}`
           : 'bg-muted/30 border-muted opacity-60'
@@ -379,40 +380,33 @@ function FilterConditionRow({
       </button>
 
       {/* Field selector */}
-      <select
-        className={cn(
-          'shrink-0 px-2 py-1 text-sm bg-transparent rounded',
-          'border border-transparent hover:border-border focus:border-ring',
-          'focus:outline-hidden cursor-pointer'
-        )}
-        value={field.id}
-        onChange={(e) => handleFieldChange(e.target.value)}
-      >
-        {fields.map((f) => (
-          <option key={f.id} value={f.id}>
-            {f.icon} {f.name}
-          </option>
-        ))}
-      </select>
+      <div className="shrink-0 min-w-[110px]">
+        <UniversalSelect
+          value={field.id}
+          onChange={handleFieldChange}
+          options={fields.map((f) => ({
+            value: f.id,
+            label: f.name,
+            icon: <span>{f.icon}</span>,
+          }))}
+          size="sm"
+          searchable={false}
+        />
+      </div>
 
       {/* Operator selector */}
-      <select
-        className={cn(
-          'shrink-0 px-2 py-1 text-sm bg-transparent rounded',
-          'border border-transparent hover:border-border focus:border-ring',
-          'focus:outline-hidden cursor-pointer'
-        )}
-        value={condition.operator}
-        onChange={(e) =>
-          onUpdate({ operator: e.target.value as FilterOperator })
-        }
-      >
-        {operators.map((op) => (
-          <option key={op} value={op}>
-            {OPERATOR_LABELS[op]}
-          </option>
-        ))}
-      </select>
+      <div className="shrink-0 min-w-[120px]">
+        <UniversalSelect
+          value={condition.operator}
+          onChange={(val) => onUpdate({ operator: val as FilterOperator })}
+          options={operators.map((op) => ({
+            value: op,
+            label: OPERATOR_LABELS[op],
+          }))}
+          size="sm"
+          searchable={false}
+        />
+      </div>
 
       {/* Value input */}
       {!['is_empty', 'is_not_empty'].includes(condition.operator) && (
@@ -542,40 +536,39 @@ function FilterValueInput({
   // Select for enum type with options
   if (type === 'enum' && options) {
     return (
-      <select
-        className={cn(
-          'flex-1 min-w-[120px] px-2 py-1 text-sm rounded',
-          'bg-background border border-border',
-          'focus:outline-hidden focus:ring-1 focus:ring-ring'
-        )}
-        value={String(value || '')}
-        onChange={(e) => onChange(e.target.value)}
-      >
-        <option value="">Select...</option>
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
+      <div className="flex-1 min-w-[120px]">
+        <UniversalSelect
+          value={String(value || '')}
+          onChange={(val) => onChange(val)}
+          options={[
+            { value: '', label: 'Select...' },
+            ...options.map((opt) => ({
+              value: String(opt.value),
+              label: opt.label,
+            })),
+          ]}
+          size="sm"
+          placeholder="Select..."
+        />
+      </div>
     );
   }
 
   // Boolean toggle
   if (type === 'boolean') {
     return (
-      <select
-        className={cn(
-          'w-20 px-2 py-1 text-sm rounded',
-          'bg-background border border-border',
-          'focus:outline-hidden focus:ring-1 focus:ring-ring'
-        )}
-        value={String(value)}
-        onChange={(e) => onChange(e.target.value === 'true')}
-      >
-        <option value="true">Yes</option>
-        <option value="false">No</option>
-      </select>
+      <div className="w-24">
+        <UniversalSelect
+          value={String(value)}
+          onChange={(val) => onChange(val === 'true')}
+          options={[
+            { value: 'true', label: 'Yes' },
+            { value: 'false', label: 'No' },
+          ]}
+          size="sm"
+          searchable={false}
+        />
+      </div>
     );
   }
 
@@ -664,7 +657,7 @@ export function FilterPill({
   return (
     <motion.div
       className={cn(
-        'inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs',
+        'inline-flex items-center gap-1 px-2 py-1 rounded-badge text-xs',
         'border transition-all cursor-pointer',
         condition.enabled
           ? `${colors.bg} ${colors.border} ${colors.text}`

@@ -2,7 +2,7 @@
 
 import { useCallback } from "react";
 import { ItemInspector, RelatedItem } from "./ItemInspector";
-import { useInspectorStore } from "@/stores/inspector-store";
+import { useItemPopupStore } from "@/stores/item-popup-store";
 import { useGridStore } from "@/stores/grid-store";
 import { gridLogger } from "@/lib/logger";
 
@@ -12,14 +12,17 @@ import { gridLogger } from "@/lib/logger";
  * A provider component that renders the ItemInspector modal.
  * Should be placed in a layout file to be available globally.
  *
- * The inspector can be opened from anywhere using the useInspectorStore:
+ * The inspector can be opened from anywhere using useItemPopupStore:
  * ```tsx
- * const openInspector = useInspectorStore((state) => state.openInspector);
+ * const openInspector = useItemPopupStore((state) => state.openInspector);
  * openInspector(itemId);
  * ```
  */
 export function ItemInspectorProvider() {
-  const { itemId, isOpen, closeInspector, openInspector } = useInspectorStore();
+  const itemId = useItemPopupStore((state) => state.inspectorItemId);
+  const isOpen = useItemPopupStore((state) => state.inspectorIsOpen);
+  const closeInspector = useItemPopupStore((state) => state.closeInspector);
+  const openInspector = useItemPopupStore((state) => state.openInspector);
   const assignItemToGrid = useGridStore((state) => state.assignItemToGrid);
   const getNextAvailableGridPosition = useGridStore((state) => state.getNextAvailableGridPosition);
 

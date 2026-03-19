@@ -4,6 +4,18 @@
  * Local hook that manages quick filter toggles, preset persistence,
  * and filter config for collection components. Replaces the global
  * filter-store with component-scoped state + localStorage for presets.
+ *
+ * ## Ownership note
+ *
+ * This hook owns a **component-local** FilterConfig used exclusively by
+ * the Collection panel's quick-filter UI (CollectionFilterIntegration
+ * component in `src/app/features/Collection/components/`). It is
+ * independent of the visual FilterBuilder store and the
+ * FilterIntegrationProvider context.
+ *
+ * If you need the canonical runtime filter state shared across the
+ * component tree, use the FilterIntegrationProvider and its hooks
+ * (useFilterIntegration, useFilterActions, etc.) instead.
  */
 
 import { useState, useCallback, useMemo, useRef } from 'react';

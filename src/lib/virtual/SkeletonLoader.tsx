@@ -9,6 +9,7 @@
 import React, { memo, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { DURATION } from '@/lib/animations/motion-presets';
 
 /**
  * Skeleton variant types
@@ -131,7 +132,7 @@ export const SkeletonCard = memo(function SkeletonCard({
   return (
     <div
       className={cn(
-        'bg-gray-800/50 rounded-lg p-3 space-y-3',
+        'bg-gray-800/50 rounded-card p-3 space-y-3',
         className
       )}
     >
@@ -184,7 +185,7 @@ export const SkeletonListItem = memo(function SkeletonListItem({
   return (
     <div
       className={cn(
-        'flex items-center gap-3 p-3 bg-gray-800/30 rounded-lg',
+        'flex items-center gap-3 p-3 bg-gray-800/30 rounded-card',
         className
       )}
     >
@@ -357,7 +358,7 @@ export const SkeletonList = memo(function SkeletonList({
           key={index}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: index * 0.03, duration: 0.2 }}
+          transition={{ delay: index * 0.03, duration: DURATION.fast }}
         >
           {item}
         </motion.div>

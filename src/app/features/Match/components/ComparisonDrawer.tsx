@@ -22,6 +22,7 @@ import { useBacklogStore } from '@/stores/backlog-store';
 import { Pin, X, Plus } from 'lucide-react';
 import type { BacklogItemType } from '@/types/match';
 import type { BacklogItem } from '@/types/backlog-groups';
+import { extractTitle } from '@/lib/items/item-utils';
 
 // ─── ComparisonDrawer ────────────────────────────────────────────────────────
 
@@ -130,12 +131,12 @@ const ComparisonDrawerContent = memo(function ComparisonDrawerContent({
 
       {/* Footer actions */}
       <div className="flex items-center justify-between px-3 py-1.5 border-t border-border bg-muted/30">
-        <span className="text-[10px] text-muted-foreground">
+        <span className="text-2xs text-muted-foreground">
           Pin items to compare side-by-side
         </span>
         <button
           onClick={onClear}
-          className="text-[10px] text-muted-foreground hover:text-destructive transition-colors"
+          className="text-2xs text-muted-foreground hover:text-destructive transition-colors"
         >
           Clear all
         </button>
@@ -207,7 +208,7 @@ const ComparisonCard = memo(function ComparisonCard({
 
         {/* Year badge */}
         {item.item_year && (
-          <span className="absolute bottom-1 left-1 text-[9px] px-1 py-0.5 rounded bg-black/50 text-white/80 backdrop-blur-sm">
+          <span className="absolute bottom-1 left-1 text-2xs px-1 py-0.5 rounded bg-black/50 text-white/80 backdrop-blur-sm">
             {item.item_year}
           </span>
         )}
@@ -215,11 +216,11 @@ const ComparisonCard = memo(function ComparisonCard({
 
       {/* Info */}
       <div className="px-1.5 py-1 flex-1 min-h-0">
-        <p className="text-[11px] font-medium leading-tight line-clamp-2 text-foreground">
+        <p className="text-xs font-medium leading-tight line-clamp-2 text-foreground">
           {title}
         </p>
         {item.category && (
-          <p className="text-[9px] text-muted-foreground mt-0.5 truncate">
+          <p className="text-2xs text-muted-foreground mt-0.5 truncate">
             {item.category}
           </p>
         )}
@@ -231,7 +232,7 @@ const ComparisonCard = memo(function ComparisonCard({
         disabled={!canAssign}
         className={cn(
           'flex items-center justify-center gap-1 w-full py-1',
-          'text-[10px] font-medium border-t border-border/40',
+          'text-2xs font-medium border-t border-border/40',
           'transition-colors',
           canAssign
             ? 'text-cyan-400 hover:bg-cyan-500/10 hover:text-cyan-300'

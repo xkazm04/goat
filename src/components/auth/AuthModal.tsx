@@ -3,6 +3,8 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
+import { SURFACE_ELEVATION, ELEVATION, INSET } from '@/components/visual/depth/depth-tokens';
+import { DURATION } from '@/lib/animations/motion-presets';
 import { useAuthUser } from '@/hooks/use-auth-user';
 import { toast } from '@/hooks/use-toast';
 
@@ -69,8 +71,8 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          transition={{ duration: DURATION.quick }}
+          className="fixed inset-0 z-modal flex items-center justify-center p-4"
           onClick={onClose}
           role="dialog"
           aria-modal="true"
@@ -84,21 +86,18 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
             initial={{ scale: 0.9, opacity: 0, y: 12 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 12 }}
-            transition={{ duration: 0.25, ease: 'easeOut' }}
-            className="relative w-full max-w-sm rounded-2xl p-8 text-center"
+            transition={{ duration: DURATION.quick, ease: 'easeOut' }}
+            className="relative w-full max-w-sm rounded-container p-8 text-center border border-gray-700/50"
             style={{
-              background:
-                'linear-gradient(135deg, rgba(15, 23, 42, 0.97) 0%, rgba(30, 41, 59, 0.98) 100%)',
-              border: '1px solid rgba(148, 163, 184, 0.15)',
-              boxShadow:
-                '0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(148, 163, 184, 0.1)',
+              backgroundColor: SURFACE_ELEVATION.overlay,
+              boxShadow: `${ELEVATION.modal}, ${INSET.glassHighlight}`,
             }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close button */}
             <button
               onClick={onClose}
-              className="absolute top-3 right-3 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700/50 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-hover"
+              className="absolute top-3 right-3 p-1.5 rounded-control text-slate-400 hover:text-white hover:bg-slate-700/50 transition-colors focus-ring-inset"
               aria-label="Close sign-in modal"
             >
               <X className="w-4 h-4" />
@@ -116,7 +115,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
             <button
               onClick={handleSignIn}
               disabled={isLoading || isSigningInRef.current}
-              className="w-full flex items-center justify-center gap-3 px-6 py-3 rounded-xl bg-white text-gray-800 font-medium text-sm hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-hover focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+              className="w-full flex items-center justify-center gap-3 px-6 py-3 rounded-card bg-white text-gray-800 font-medium text-sm hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
             >
               {/* Google icon SVG */}
               <svg viewBox="0 0 24 24" className="w-5 h-5 shrink-0" aria-hidden="true">

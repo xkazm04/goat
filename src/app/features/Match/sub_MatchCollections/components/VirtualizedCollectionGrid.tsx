@@ -3,12 +3,14 @@
 import React, { useMemo, useRef, useCallback } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { motion, AnimatePresence } from "framer-motion";
+import { DURATION } from "@/lib/animations/motion-presets";
 import { TrendingUp, Sparkles } from "lucide-react";
 import { CategoryEmptyState } from "@/components/illustrations/EmptyStateIllustrations";
 import { CollectionItem } from "@/app/features/Collection/types";
-import { ConfigurableCollectionItem, MATCH_VIEW_CONFIG } from "@/app/features/Collection/components/ConfigurableCollectionItem";
+import { ConfigurableCollectionItem, MATCH_VIEW_CONFIG, type HoistedStoreState } from "@/app/features/Collection/components/ConfigurableCollectionItem";
 import { useConsensusStore, useConsensusSortBy } from "@/stores/consensus-store";
 import { useListStore } from "@/stores/use-list-store";
+import { useCriteriaStore } from "@/stores/criteria-store";
 import { QuickSelectBadge } from "../../sub_ItemBadges/QuickSelectBadge";
 import { ItemStatsTooltip } from "../../sub_ItemBadges/ItemStatsTooltip";
 import { createSortComparator, type SortConfig } from "@/lib/sorting";
@@ -40,8 +42,18 @@ export function VirtualizedCollectionGrid({
   const parentRef = useRef<HTMLDivElement>(null);
   const listCategory = useListStore((s) => s.currentList?.category);
   const sortBy = useConsensusSortBy();
+  const consensusViewMode = useConsensusStore((s) => s.viewMode);
   const consensusLastFetched = useConsensusStore((s) => s.lastFetched);
   const hasConsensusData = useConsensusStore((s) => Object.keys(s.consensusData).length > 0);
+  const activeProfileId = useCriteriaStore((s) => s.activeProfileId);
+
+  // Hoist global store state to avoid per-item subscriptions in ConfigurableCollectionItem
+  const hoistedState = useMemo<HoistedStoreState>(() => ({
+    consensusViewMode,
+    consensusSortBy: sortBy,
+    activeProfileId,
+    listCategory,
+  }), [consensusViewMode, sortBy, activeProfileId, listCategory]);
 
   const sortCacheKey = useMemo(
     () => generateSortCacheKey(displayGroups, consensusLastFetched),
@@ -83,7 +95,7 @@ export function VirtualizedCollectionGrid({
     return (
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1, transition: { delay: 0.3, duration: 0.2 } }}
+        animate={{ opacity: 1, scale: 1, transition: { delay: 0.3, duration: DURATION.fast } }}
         className="h-full flex flex-col items-center justify-center text-slate-500 gap-3"
         data-testid="virtualized-collection-grid-empty"
       >
@@ -109,7 +121,7 @@ export function VirtualizedCollectionGrid({
 
       <div
         ref={parentRef}
-        className="overflow-auto glass-dock-focus scrollbar-thin scrollbar-thumb-white/15 scrollbar-track-white/[0.02] rounded-lg"
+        className="overflow-auto glass-dock-focus scrollbar-thin scrollbar-thumb-white/15 scrollbar-track-white/[0.02] rounded-card"
         style={{ height: containerHeight, willChange: 'scroll-position', background: 'linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.2) 100%)' }}
       >
         <div style={{ height: `${rowVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
@@ -141,6 +153,7 @@ export function VirtualizedCollectionGrid({
                             searchQuery={searchQuery} isClickSelected={isClickSelected}
                             onClick={onItemClick ? () => handleItemClick(flatItem.item) : undefined}
                             config={MATCH_VIEW_CONFIG}
+                            hoistedState={hoistedState}
                           />
                           <AnimatePresence>
                             {quickSelectNum != null && (
@@ -150,7 +163,7 @@ export function VirtualizedCollectionGrid({
                           {(selected || isClickSelected) && (
                             <motion.div
                               initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-                              className="absolute inset-0 rounded-lg glass-dock-selection-ring pointer-events-none z-10"
+                              className="absolute inset-0 rounded-card glass-dock-selection-ring pointer-events-none z-10"
                             />
                           )}
                         </div>

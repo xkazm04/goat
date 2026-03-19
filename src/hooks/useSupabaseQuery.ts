@@ -32,6 +32,8 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
 import {
   getCacheSettings,
+  createSmartRetry,
+  createRetryDelay,
   type CachePreset,
 } from '@/lib/cache/unified-cache';
 
@@ -166,18 +168,11 @@ export function useSupabaseQuery<T = unknown>(
     refetchInterval,
     staleTime: finalStaleTime,
     gcTime: finalGcTime,
-    retry: (failureCount, error) => {
-      // Don't retry on client errors (4xx)
-      if (error instanceof Error) {
-        const message = error.message.toLowerCase();
-        if (message.includes('401') || message.includes('403') || message.includes('404')) {
-          return false;
-        }
-      }
-      return failureCount < retry;
-    },
-    retryDelay: (attemptIndex) => Math.min(retryDelay * 2 ** attemptIndex, 30000),
+    retry: createSmartRetry(retry),
+    retryDelay: createRetryDelay(retryDelay, 30000),
     initialData,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    placeholderData: placeholderData as any,
     select,
   });
 

@@ -17,13 +17,13 @@ function StatCard({
   color: string;
 }) {
   return (
-    <div className="bg-slate-800/60 border border-slate-700/50 rounded-lg p-3 text-center">
+    <div className="bg-slate-800/60 border border-slate-700/50 rounded-card p-3 text-center">
       <Icon className={`w-4 h-4 mx-auto mb-1 ${color}`} />
-      <p className="text-[18px] font-bold font-grotesk text-white">
+      <p className="text-lg font-bold font-grotesk text-white">
         {value}
       </p>
-      <p className="text-[9px] text-slate-400 font-medium">{label}</p>
-      <p className="text-[9px] text-slate-500 mt-0.5">{sublabel}</p>
+      <p className="text-2xs text-slate-400 font-medium">{label}</p>
+      <p className="text-2xs text-slate-500 mt-0.5">{sublabel}</p>
     </div>
   );
 }
@@ -65,7 +65,7 @@ export function StatsTab({ analytics }: { analytics: TournamentAnalytics }) {
               return (
                 <div
                   key={i}
-                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-amber-500/10 border border-amber-500/20 text-xs"
+                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-control bg-amber-500/10 border border-amber-500/20 text-xs"
                 >
                   <span className="text-amber-400 font-bold shrink-0">
                     #{upset.winnerSeed}
@@ -98,18 +98,18 @@ export function StatsTab({ analytics }: { analytics: TournamentAnalytics }) {
               return (
                 <div
                   key={i}
-                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-cyan-500/10 border border-cyan-500/20 text-xs"
+                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-control bg-cyan-500/10 border border-cyan-500/20 text-xs"
                 >
                   <span className="text-slate-300 truncate flex-1 text-right">
                     {p1Name}
                   </span>
-                  <span className="text-cyan-400 font-bold text-[9px] shrink-0">
+                  <span className="text-cyan-400 font-bold text-2xs shrink-0">
                     VS
                   </span>
                   <span className="text-slate-300 truncate flex-1">
                     {p2Name}
                   </span>
-                  <span className="text-slate-600 text-[9px] shrink-0">
+                  <span className="text-slate-600 text-2xs shrink-0">
                     {closest.roundName}
                   </span>
                 </div>

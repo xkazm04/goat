@@ -22,6 +22,7 @@ import { isResultImageGeneratorOpen } from '@/types/modal-props';
 import type { AIStylePreset, GenerationProgress } from '../lib/ai/types';
 import { generateAIImage, getCachedGeneration } from '../lib/aiImageGenerator';
 import { DEFAULT_AI_STYLE } from '../lib/ai/stylePresets';
+import { DURATION } from '@/lib/animations/motion-presets';
 
 // @zumer/snapdom is dynamically imported when needed for DOM-to-image capture
 
@@ -79,7 +80,7 @@ function ProgressiveLoadingState({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="absolute inset-0 z-10 flex items-center justify-center bg-black/50 backdrop-blur-xs rounded-xl"
+      className="absolute inset-0 z-10 flex items-center justify-center bg-black/50 backdrop-blur-xs rounded-container"
       data-testid="progressive-loading-overlay"
     >
       <div className="flex flex-col items-center justify-center text-center py-10 px-6 max-w-sm">
@@ -98,7 +99,7 @@ function ProgressiveLoadingState({
 
         {/* Mode indicator */}
         {mode === 'ai' && (
-          <span className="px-2 py-0.5 text-[10px] font-bold bg-purple-500/30 text-purple-300 rounded-full mb-2">
+          <span className="px-2 py-0.5 text-2xs font-bold bg-purple-500/30 text-purple-300 rounded-badge mb-2">
             AI POWERED
           </span>
         )}
@@ -110,7 +111,7 @@ function ProgressiveLoadingState({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: DURATION.fast }}
             className="font-medium text-white text-base mb-2"
             data-testid="generation-step-label"
           >
@@ -138,7 +139,7 @@ function ProgressiveLoadingState({
               }
               transition={
                 index === currentStepIndex
-                  ? { duration: 0.6, repeat: Infinity }
+                  ? { duration: DURATION.emphasis, repeat: Infinity }
                   : {}
               }
               data-testid={`step-indicator-${step.id}`}
@@ -153,7 +154,7 @@ function ProgressiveLoadingState({
               className="h-full rounded-full bg-brand"
               initial={{ width: 0 }}
               animate={{ width: `${progressPercent}%` }}
-              transition={{ duration: 0.3, ease: 'easeOut' }}
+              transition={{ duration: DURATION.normal, ease: 'easeOut' }}
             />
           </div>
         </div>
@@ -175,7 +176,7 @@ function ProgressiveLoadingState({
         <button
           onClick={onCancel}
           disabled={isCancelling}
-          className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:text-white bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:text-white bg-gray-800 hover:bg-gray-700 rounded-card transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           data-testid="cancel-generation-btn"
         >
           <X className="w-4 h-4" />
@@ -481,10 +482,10 @@ export function ResultImageGenerator(props: ResultImageGeneratorProps) {
           <div className="flex items-center gap-2 mb-3">
             <span className="text-sm font-semibold text-gray-300">Generation Mode</span>
           </div>
-          <div className="flex gap-2 p-1 bg-gray-800/50 rounded-xl">
+          <div className="flex gap-2 p-1 bg-gray-800/50 rounded-container">
             <button
               onClick={() => handleModeChange('template')}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-card text-sm font-medium transition-all ${
                 generationMode === 'template'
                   ? 'bg-blue-600 text-white shadow-lg'
                   : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
@@ -493,11 +494,11 @@ export function ResultImageGenerator(props: ResultImageGeneratorProps) {
             >
               <ImageIcon className="w-4 h-4" />
               Template
-              <span className="text-[10px] opacity-70">(Fast)</span>
+              <span className="text-2xs opacity-70">(Fast)</span>
             </button>
             <button
               onClick={() => handleModeChange('ai')}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-card text-sm font-medium transition-all ${
                 generationMode === 'ai'
                   ? 'bg-linear-to-r from-purple-600 to-pink-600 text-white shadow-lg'
                   : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
@@ -506,7 +507,7 @@ export function ResultImageGenerator(props: ResultImageGeneratorProps) {
             >
               <Wand2 className="w-4 h-4" />
               AI Art
-              <span className="text-[10px] opacity-70">(Unique)</span>
+              <span className="text-2xs opacity-70">(Unique)</span>
             </button>
           </div>
         </div>
@@ -529,7 +530,7 @@ export function ResultImageGenerator(props: ResultImageGeneratorProps) {
                       <button
                         key={style}
                         onClick={() => handleStyleChange(style)}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                        className={`px-4 py-2 rounded-card text-sm font-medium transition-all ${
                           selectedStyle === style
                             ? 'bg-blue-600 text-white shadow-lg scale-105'
                             : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
@@ -591,27 +592,27 @@ export function ResultImageGenerator(props: ResultImageGeneratorProps) {
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              transition={{ type: 'spring', duration: 0.6 }}
+              transition={{ type: 'spring', duration: DURATION.emphasis }}
               data-testid="generated-image-container"
             >
               <img
                 src={generatedImageUrl}
                 alt="Generated ranking"
-                className="w-full rounded-lg shadow-2xl"
+                className="w-full rounded-card shadow-2xl"
                 data-testid="generated-image"
               />
             </motion.div>
           ) : (
             <div
               ref={canvasRef}
-              className="bg-linear-to-br rounded-lg shadow-xl p-8"
+              className="bg-linear-to-br rounded-card shadow-xl p-8"
               style={{
                 backgroundImage: `linear-gradient(135deg, ${styleConfig.colorPalette[0]}, ${styleConfig.colorPalette[1]})`,
               }}
               data-testid="image-preview"
             >
               {/* Preview of the image to be generated */}
-              <div className="bg-white/10 backdrop-blur-md rounded-lg p-6 text-white">
+              <div className="bg-white/10 backdrop-blur-md rounded-card p-6 text-white">
                 <h1 className="text-3xl font-bold mb-2 text-center">{listMetadata.title}</h1>
                 <p className="text-sm opacity-80 text-center mb-6">
                   {listMetadata.category} • Top {matchedItems.length}
@@ -621,7 +622,7 @@ export function ResultImageGenerator(props: ResultImageGeneratorProps) {
                   {matchedItems.slice(0, 10).map((item, index) => (
                     <div
                       key={item.id}
-                      className="flex items-center gap-3 bg-white/10 rounded-lg p-3"
+                      className="flex items-center gap-3 bg-white/10 rounded-card p-3"
                     >
                       <span className="text-2xl font-bold opacity-60 min-w-[40px]">
                         {index + 1}
@@ -652,7 +653,7 @@ export function ResultImageGenerator(props: ResultImageGeneratorProps) {
               <div className="flex gap-2">
                 <button
                   onClick={handleDownload}
-                  className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-card flex items-center justify-center gap-2 transition-colors"
                   data-testid="download-btn"
                 >
                   <Download className="w-5 h-5" />
@@ -660,7 +661,7 @@ export function ResultImageGenerator(props: ResultImageGeneratorProps) {
                 </button>
                 <button
                   onClick={handleEditImage}
-                  className="px-4 bg-purple-600 hover:bg-purple-500 text-white font-semibold py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"
+                  className="px-4 bg-purple-600 hover:bg-purple-500 text-white font-semibold py-3 rounded-card flex items-center justify-center gap-2 transition-colors"
                   data-testid="edit-btn"
                   title="Edit image"
                 >
@@ -668,7 +669,7 @@ export function ResultImageGenerator(props: ResultImageGeneratorProps) {
                 </button>
                 <button
                   onClick={generateImage}
-                  className="px-4 bg-gray-700 hover:bg-gray-600 text-white font-semibold py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"
+                  className="px-4 bg-gray-700 hover:bg-gray-600 text-white font-semibold py-3 rounded-card flex items-center justify-center gap-2 transition-colors"
                   data-testid="remix-btn"
                   title="Generate new variation"
                 >
@@ -687,7 +688,7 @@ export function ResultImageGenerator(props: ResultImageGeneratorProps) {
                     <button
                       key={platform.name}
                       onClick={() => handleShare(platform.name)}
-                      className="bg-gray-700 hover:bg-gray-600 text-white font-medium py-3 rounded-lg transition-colors text-sm"
+                      className="bg-gray-700 hover:bg-gray-600 text-white font-medium py-3 rounded-card transition-colors text-sm"
                       style={{ borderBottom: `3px solid ${platform.color}` }}
                       data-testid={`share-btn-${platform.name.toLowerCase()}`}
                     >
@@ -701,7 +702,7 @@ export function ResultImageGenerator(props: ResultImageGeneratorProps) {
             <button
               onClick={generateImage}
               disabled={isProcessing || matchedItems.length === 0}
-              className={`w-full text-white font-semibold py-3 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:bg-gray-700 disabled:cursor-not-allowed ${
+              className={`w-full text-white font-semibold py-3 rounded-card flex items-center justify-center gap-2 transition-colors disabled:bg-gray-700 disabled:cursor-not-allowed ${
                 generationMode === 'ai'
                   ? 'bg-linear-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500'
                   : 'bg-blue-600 hover:bg-blue-700'

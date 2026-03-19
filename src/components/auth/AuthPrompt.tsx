@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { DURATION } from '@/lib/animations/motion-presets';
 import { X, UserPlus } from 'lucide-react';
 import { AuthModal } from './AuthModal';
 
@@ -65,15 +66,15 @@ export function AuthPrompt({ onDismiss }: AuthPromptProps) {
             initial={{ opacity: 0, y: 12, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.97 }}
-            transition={{ duration: 0.3, ease: 'easeOut' }}
-            className="relative rounded-xl p-4 mt-4 flex items-center gap-4"
+            transition={{ duration: DURATION.normal, ease: 'easeOut' }}
+            className="relative rounded-container p-4 mt-4 flex items-center gap-4"
             style={{
               background:
                 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(15, 23, 42, 0.9) 100%)',
               border: '1px solid rgba(16, 185, 129, 0.2)',
             }}
           >
-            <div className="shrink-0 p-2 rounded-lg bg-emerald-500/10">
+            <div className="shrink-0 p-2 rounded-control bg-emerald-500/10">
               <UserPlus className="w-5 h-5 text-emerald-400" />
             </div>
 
@@ -89,13 +90,13 @@ export function AuthPrompt({ onDismiss }: AuthPromptProps) {
             <div className="flex items-center gap-2 shrink-0">
               <button
                 onClick={handleOpenAuth}
-                className="px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 text-xs font-medium hover:bg-emerald-500/30 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-400"
+                className="px-3 py-1.5 rounded-control bg-emerald-500/20 text-emerald-300 text-xs font-medium hover:bg-emerald-500/30 transition-colors focus-ring-inset"
               >
                 Continue with Google
               </button>
               <button
                 onClick={handleDismiss}
-                className="p-1.5 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-slate-700/50 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-slate-400"
+                className="p-1.5 rounded-control text-slate-500 hover:text-slate-300 hover:bg-slate-700/50 transition-colors focus-ring-inset"
                 aria-label="Dismiss sign-up prompt"
               >
                 <X className="w-3.5 h-3.5" />

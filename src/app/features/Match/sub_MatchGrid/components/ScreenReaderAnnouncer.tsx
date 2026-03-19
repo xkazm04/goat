@@ -151,9 +151,9 @@ export const SkipLinks = memo(function SkipLinks({
   return (
     <nav
       aria-label="Skip links"
-      className="sr-only focus-within:not-sr-only focus-within:absolute focus-within:top-2 focus-within:left-2 focus-within:z-50"
+      className="sr-only focus-within:not-sr-only focus-within:absolute focus-within:top-2 focus-within:left-2 focus-within:z-modal"
     >
-      <ul className="flex flex-col gap-1 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-xl">
+      <ul className="flex flex-col gap-1 bg-slate-900 border border-slate-700 rounded-card p-2 shadow-xl">
         <li>
           <button
             onClick={() => onSkipToTier(tiers[0]?.id)}
@@ -229,7 +229,7 @@ export const FocusIndicator = memo(function FocusIndicator({
 
   return (
     <div
-      className={`absolute inset-0 pointer-events-none rounded-lg ${ringStyles[variant]} ${className}`}
+      className={`absolute inset-0 pointer-events-none rounded-card ${ringStyles[variant]} ${className}`}
       style={{
         boxShadow: variant === "item"
           ? "0 0 0 2px #22d3ee, 0 0 12px rgba(34, 211, 238, 0.5)"

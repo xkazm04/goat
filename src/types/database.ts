@@ -123,6 +123,7 @@ export interface Database {
           parent_list_id: string | null;
           predefined: boolean;
           criteria_config: ListCriteriaConfig | null;
+          allow_custom_items: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -142,6 +143,7 @@ export interface Database {
           parent_list_id?: string | null;
           predefined?: boolean;
           criteria_config?: ListCriteriaConfig | null;
+          allow_custom_items?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -161,6 +163,7 @@ export interface Database {
           parent_list_id?: string | null;
           predefined?: boolean;
           criteria_config?: ListCriteriaConfig | null;
+          allow_custom_items?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -345,6 +348,7 @@ export interface Database {
           items: Json;
           image_url: string | null;
           view_count: number;
+          fork_count: number;
           user_id: string | null;
           created_at: string;
           expires_at: string | null;
@@ -359,6 +363,7 @@ export interface Database {
           items: Json;
           image_url?: string | null;
           view_count?: number;
+          fork_count?: number;
           user_id?: string | null;
           created_at?: string;
           expires_at?: string | null;
@@ -373,6 +378,7 @@ export interface Database {
           items?: Json;
           image_url?: string | null;
           view_count?: number;
+          fork_count?: number;
           user_id?: string | null;
           created_at?: string;
           expires_at?: string | null;
@@ -609,6 +615,71 @@ export interface Database {
       };
 
       /**
+       * Ranking activity events for item timeline
+       */
+      ranking_activities: {
+        Row: {
+          id: string;
+          item_id: string;
+          list_id: string | null;
+          user_id: string | null;
+          action: 'assign' | 'move' | 'swap' | 'remove' | 'rank_change';
+          position_before: number | null;
+          position_after: number | null;
+          list_title: string | null;
+          metadata: Record<string, unknown> | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          item_id: string;
+          list_id?: string | null;
+          user_id?: string | null;
+          action: 'assign' | 'move' | 'swap' | 'remove' | 'rank_change';
+          position_before?: number | null;
+          position_after?: number | null;
+          list_title?: string | null;
+          metadata?: Record<string, unknown> | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          item_id?: string;
+          list_id?: string | null;
+          user_id?: string | null;
+          action?: 'assign' | 'move' | 'swap' | 'remove' | 'rank_change';
+          position_before?: number | null;
+          position_after?: number | null;
+          list_title?: string | null;
+          metadata?: Record<string, unknown> | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'ranking_activities_item_id_fkey';
+            columns: ['item_id'];
+            isOneToOne: false;
+            referencedRelation: 'items';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'ranking_activities_list_id_fkey';
+            columns: ['list_id'];
+            isOneToOne: false;
+            referencedRelation: 'lists';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'ranking_activities_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
+
+      /**
        * List collections for organizing lists into folders
        */
       list_collections: {
@@ -677,12 +748,122 @@ export interface Database {
           }
         ];
       };
+
+      /**
+       * Bookmark folders for organizing saved lists
+       */
+      bookmark_folders: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          icon: string | null;
+          color: string | null;
+          is_smart: boolean;
+          smart_rule: string | null;
+          order: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          icon?: string | null;
+          color?: string | null;
+          is_smart?: boolean;
+          smart_rule?: string | null;
+          order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          name?: string;
+          icon?: string | null;
+          color?: string | null;
+          is_smart?: boolean;
+          smart_rule?: string | null;
+          order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'bookmark_folders_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
+
+      /**
+       * User bookmarks for saving discovered lists
+       */
+      user_bookmarks: {
+        Row: {
+          id: string;
+          user_id: string;
+          list_id: string;
+          folder_id: string | null;
+          notes: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          list_id: string;
+          folder_id?: string | null;
+          notes?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          list_id?: string;
+          folder_id?: string | null;
+          notes?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'user_bookmarks_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_bookmarks_list_id_fkey';
+            columns: ['list_id'];
+            isOneToOne: false;
+            referencedRelation: 'lists';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_bookmarks_folder_id_fkey';
+            columns: ['folder_id'];
+            isOneToOne: false;
+            referencedRelation: 'bookmark_folders';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      replace_list_items: {
+        Args: {
+          target_list_id: string;
+          new_items?: Json;
+        };
+        Returns: string;
+      };
     };
     Enums: {
       [_ in never]: never;
@@ -756,6 +937,9 @@ export type TopGroupRow = TableRow<'top_groups'>;
 
 /** List collection row from the list_collections table */
 export type ListCollectionRow = TableRow<'list_collections'>;
+
+/** Ranking activity row from the ranking_activities table */
+export type RankingActivityRow = TableRow<'ranking_activities'>;
 
 // =============================================================================
 // Insert Type Aliases

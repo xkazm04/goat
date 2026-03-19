@@ -30,14 +30,14 @@ const ViewToggle = memo(function ViewToggle({
 }) {
   return (
     <div
-      className="flex items-center gap-1 p-1 rounded-lg"
+      className="flex items-center gap-1 p-1 rounded-control"
       style={{
         background: "rgba(30, 41, 59, 0.6)",
         border: "1px solid rgba(71, 85, 105, 0.3)",
       }}
     >
       <motion.button
-        className="p-1.5 rounded-md transition-colors"
+        className="p-1.5 rounded-control transition-colors"
         style={{
           background: variant === "grid" ? `${color.primary}30` : "transparent",
           color: variant === "grid" ? color.accent : "rgba(148, 163, 184, 0.6)",
@@ -49,7 +49,7 @@ const ViewToggle = memo(function ViewToggle({
         <Grid3X3 className="w-4 h-4" />
       </motion.button>
       <motion.button
-        className="p-1.5 rounded-md transition-colors"
+        className="p-1.5 rounded-control transition-colors"
         style={{
           background: variant === "list" ? `${color.primary}30` : "transparent",
           color: variant === "list" ? color.accent : "rgba(148, 163, 184, 0.6)",
@@ -89,7 +89,7 @@ const NavigationHeader = memo(function NavigationHeader({
         <AnimatePresence>
           {canGoBack && (
             <motion.button
-              className="flex items-center gap-1 px-2 py-1.5 rounded-lg"
+              className="flex items-center gap-1 px-2 py-1.5 rounded-control"
               style={{
                 background: "rgba(51, 65, 85, 0.4)",
                 border: "1px solid rgba(71, 85, 105, 0.3)",
@@ -110,7 +110,7 @@ const NavigationHeader = memo(function NavigationHeader({
         {/* Home button */}
         {currentNode.level > 0 && (
           <motion.button
-            className="p-1.5 rounded-lg"
+            className="p-1.5 rounded-control"
             style={{
               background: "rgba(51, 65, 85, 0.3)",
               border: "1px solid rgba(71, 85, 105, 0.2)",
@@ -141,7 +141,7 @@ const NavigationHeader = memo(function NavigationHeader({
           </h2>
           {currentNode.trending && (
             <span
-              className="px-1.5 py-0.5 text-[10px] rounded-full font-medium"
+              className="px-1.5 py-0.5 text-2xs rounded-badge font-medium"
               style={{
                 background: "rgba(239, 68, 68, 0.2)",
                 color: "#ef4444",
@@ -451,7 +451,7 @@ export const CategoryBrowser = memo(function CategoryBrowser({
       <AnimatePresence>
         {(selectedCategory || selectedSubcategory) && (
           <motion.div
-            className="mt-6 p-4 rounded-xl"
+            className="mt-6 p-4 rounded-card"
             style={{
               background: `linear-gradient(135deg, ${color.primary}15, ${color.secondary}10)`,
               border: `1px solid ${color.primary}30`,

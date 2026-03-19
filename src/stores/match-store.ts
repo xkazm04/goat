@@ -1,14 +1,17 @@
 import { create } from 'zustand';
+import { useShallow } from 'zustand/react/shallow';
 import { useSessionStore } from './session-store';
 import { useGridStore } from './grid-store';
 import { useComparisonStore } from './comparison-store';
 import { useListStore } from './use-list-store';
 import { useValidationNotificationStore } from './validation-notification-store';
 import { usePlacementStore, SmartFillMode } from './placement-store';
+import { useSelectionCursor } from './selection-cursor';
+import { useUndoStore } from './undo-store';
 import { ValidationErrorCode } from '@/lib/validation';
 import { matchLogger } from '@/lib/logger';
 import { BacklogItem } from '@/types/backlog-groups';
-import { DEBOUNCE } from '@/lib/timing';
+import { DEBOUNCE, TIMEOUT, withTimeout, TimeoutError } from '@/lib/timing';
 
 // Re-export ValidationNotification type from the dedicated store for backwards compatibility
 export type { ValidationNotification } from './validation-notification-store';
@@ -18,13 +21,14 @@ export type { ValidationErrorCode as TransferValidationErrorCode } from '@/lib/v
 interface MatchStoreState {
   // Match-specific UI state
   isLoading: boolean;
+  isInitializing: boolean;
+  backlogError: string | null;
   showComparisonModal: boolean;
   showResultShareModal: boolean;
   showSmartFillPanel: boolean;
 
   // Keyboard shortcuts state
   keyboardMode: boolean;
-  selectedItemIndex: number; // Track which item is selected via keyboard
 
   // Actions - UI State
   setIsLoading: (loading: boolean) => void;
@@ -72,11 +76,12 @@ interface MatchStoreState {
 export const useMatchStore = create<MatchStoreState>((set, get) => ({
   // UI State
   isLoading: false,
+  isInitializing: false,
+  backlogError: null,
   showComparisonModal: false,
   showResultShareModal: false,
   showSmartFillPanel: false,
   keyboardMode: false,
-  selectedItemIndex: 0,
 
   // UI Actions
   setIsLoading: (loading) => set({ isLoading: loading }),
@@ -104,55 +109,36 @@ export const useMatchStore = create<MatchStoreState>((set, get) => ({
 
   setKeyboardMode: (enabled) => {
     set({ keyboardMode: enabled });
-    
+
     if (enabled) {
       // Reset selection when entering keyboard mode
       get().selectNextAvailableItem();
     } else {
-      // Clear selection when exiting keyboard mode
-      const sessionStore = useSessionStore.getState();
-      sessionStore.setSelectedBacklogItem(null);
-      set({ selectedItemIndex: 0 });
+      // Clear selection atomically via cursor
+      useSelectionCursor.getState().clear();
     }
   },
   
-  // Keyboard Navigation
+  // Keyboard Navigation — delegates to SelectionCursor.selectNext/selectPrev
   navigateBacklogItems: (direction) => {
-    const state = get();
-    const sessionStore = useSessionStore.getState();
-    
-    if (!state.keyboardMode) return;
-    
-    const availableItems = sessionStore.getAvailableBacklogItems();
-    if (availableItems.length === 0) return;
-    
-    let newIndex = state.selectedItemIndex;
-    
+    if (!get().keyboardMode) return;
+
+    const availableItems = useSessionStore.getState().getAvailableBacklogItems();
+    const cursor = useSelectionCursor.getState();
+
     if (direction === 'down') {
-      newIndex = (state.selectedItemIndex + 1) % availableItems.length;
-    } else if (direction === 'up') {
-      newIndex = state.selectedItemIndex === 0 
-        ? availableItems.length - 1 
-        : state.selectedItemIndex - 1;
-    }
-    
-    set({ selectedItemIndex: newIndex });
-    
-    // Update selected item in session store
-    const selectedItem = availableItems[newIndex];
-    if (selectedItem) {
-      sessionStore.setSelectedBacklogItem(selectedItem.id);
+      cursor.selectNext(availableItems, 'keyboard');
+    } else {
+      cursor.selectPrev(availableItems, 'keyboard');
     }
   },
   
   selectNextAvailableItem: () => {
     const sessionStore = useSessionStore.getState();
     const availableItems = sessionStore.getAvailableBacklogItems();
-    
+
     if (availableItems.length > 0) {
-      const firstItem = availableItems[0];
-      sessionStore.setSelectedBacklogItem(firstItem.id);
-      set({ selectedItemIndex: 0 });
+      useSelectionCursor.getState().select(availableItems[0].id, 'auto');
     }
   },
   
@@ -161,8 +147,9 @@ export const useMatchStore = create<MatchStoreState>((set, get) => ({
     const state = get();
     const sessionStore = useSessionStore.getState();
     const gridStore = useGridStore.getState();
-    
-    const selectedItemId = sessionStore.selectedBacklogItem;
+    const cursor = useSelectionCursor.getState();
+
+    const selectedItemId = cursor.itemId;
     if (!selectedItemId) return;
     
     // Find the selected backlog item
@@ -241,9 +228,10 @@ export const useMatchStore = create<MatchStoreState>((set, get) => ({
     const state = get();
     const placementStore = usePlacementStore.getState();
     const sessionStore = useSessionStore.getState();
+    const cursor = useSelectionCursor.getState();
 
     // Get the current item and top suggestion
-    const selectedItemId = sessionStore.selectedBacklogItem;
+    const selectedItemId = cursor.itemId;
     if (!selectedItemId) return;
 
     const backlogItem = sessionStore.getAvailableBacklogItems()
@@ -259,7 +247,13 @@ export const useMatchStore = create<MatchStoreState>((set, get) => ({
 
   // Match Session Management
   initializeMatchSession: async () => {
-    set({ isLoading: true });
+    // Guard against concurrent calls (e.g. double-click on Play)
+    if (get().isInitializing) {
+      matchLogger.warn('initializeMatchSession already in progress, skipping concurrent call');
+      return;
+    }
+
+    set({ isLoading: true, isInitializing: true, backlogError: null });
 
     try {
       const listStore = useListStore.getState();
@@ -294,22 +288,40 @@ export const useMatchStore = create<MatchStoreState>((set, get) => ({
       // 3. Trigger backlog loading if groups are not already loaded
       // This is critical: without this, backlog items never appear in the collection panel
       try {
-        const { useBacklogStore } = await import('@/stores/backlog-store');
+        const { useBacklogStore } = await withTimeout(
+          import('@/stores/backlog-store'),
+          TIMEOUT.BACKLOG_INIT,
+          'backlog-store-import',
+        );
         const backlogState = useBacklogStore.getState();
 
         if (!backlogState.groups || backlogState.groups.length === 0) {
           matchLogger.debug(`Loading backlog groups for category: ${currentList.category}`);
-          await backlogState.initializeGroups(
-            currentList.category,
-            currentList.subcategory,
-            false // don't force refresh if cache is valid
+          await withTimeout(
+            backlogState.initializeGroups(
+              currentList.category,
+              currentList.subcategory,
+              false // don't force refresh if cache is valid
+            ),
+            TIMEOUT.BACKLOG_INIT,
+            'backlog-initialize-groups',
           );
           matchLogger.debug('Backlog groups loaded successfully');
         } else {
           matchLogger.debug(`Backlog already has ${backlogState.groups.length} groups loaded`);
         }
       } catch (backlogError) {
-        matchLogger.error('Failed to load backlog groups:', backlogError);
+        const isTimeout = backlogError instanceof TimeoutError;
+        matchLogger.error(
+          isTimeout ? `Backlog loading timed out (${(backlogError as TimeoutError).operation})` : 'Failed to load backlog groups:',
+          backlogError,
+        );
+        const errorMessage = isTimeout
+          ? 'Backlog loading timed out. Please try again.'
+          : backlogError instanceof Error
+            ? backlogError.message
+            : 'Failed to load backlog items. Please try refreshing the page.';
+        set({ backlogError: errorMessage });
         // Non-fatal: session and grid are still initialized, user can retry
       }
 
@@ -323,27 +335,31 @@ export const useMatchStore = create<MatchStoreState>((set, get) => ({
 
     } catch (error) {
       matchLogger.error('Failed to initialize match session:', error);
+      set({
+        backlogError: error instanceof Error
+          ? error.message
+          : 'Failed to initialize match session. Please try refreshing the page.',
+      });
     } finally {
-      set({ isLoading: false });
+      set({ isLoading: false, isInitializing: false });
     }
   },
   
   resetMatchSession: () => {
-    const sessionStore = useSessionStore.getState();
     const gridStore = useGridStore.getState();
     const comparisonStore = useComparisonStore.getState();
 
     // Clear all stores
     gridStore.clearGrid();
     comparisonStore.clearAll();
-    sessionStore.setSelectedBacklogItem(null);
+    useSelectionCursor.getState().clear();
+    useUndoStore.getState().clear();
 
     // Reset match store state
     set({
       showComparisonModal: false,
       showResultShareModal: false,
       keyboardMode: false,
-      selectedItemIndex: 0
     });
 
     matchLogger.debug('Match session reset');
@@ -359,7 +375,12 @@ export const useMatchStore = create<MatchStoreState>((set, get) => ({
   // Keyboard Shortcuts Handler
   handleKeyboardShortcut: (key) => {
     const state = get();
-    
+
+    // Block shortcuts during loading or when modals are open
+    // Allow 'c' to close comparison modal, and 'Escape' always passes through
+    if (state.isLoading && key !== 'Escape') return;
+    if (state.showComparisonModal && key !== 'c' && key !== 'Escape') return;
+
     switch (key) {
       case 'k':
         // Toggle keyboard mode
@@ -431,23 +452,26 @@ export const useMatchStore = create<MatchStoreState>((set, get) => ({
   // Utilities
   getSelectedBacklogItem: () => {
     const sessionStore = useSessionStore.getState();
-    const selectedId = sessionStore.selectedBacklogItem;
-    
-    if (!selectedId) return null;
-    
+    const cursor = useSelectionCursor.getState();
+
+    if (!cursor.itemId) return null;
+
     return sessionStore.getAvailableBacklogItems()
-      .find(item => item.id === selectedId) || null;
+      .find(item => item.id === cursor.itemId) || null;
   },
-  
+
   getKeyboardNavigationState: () => {
-    const state = get();
-    const sessionStore = useSessionStore.getState();
-    const availableItems = sessionStore.getAvailableBacklogItems();
+    const availableItems = useSessionStore.getState().getAvailableBacklogItems();
+    const cursor = useSelectionCursor.getState();
+
+    // Derive index on-demand from the cursor — never stale
+    const rawIndex = cursor.indexIn(availableItems);
+    const selectedIndex = rawIndex === -1 ? 0 : rawIndex;
 
     return {
-      selectedIndex: state.selectedItemIndex,
+      selectedIndex,
       totalItems: availableItems.length,
-      selectedItem: availableItems[state.selectedItemIndex] || null
+      selectedItem: availableItems[selectedIndex] || null
     };
   },
 
@@ -457,39 +481,47 @@ export const useMatchStore = create<MatchStoreState>((set, get) => ({
 }));
 
 // Selector hooks for better performance
-export const useMatchUI = () => useMatchStore((state) => ({
-  isLoading: state.isLoading,
-  showComparisonModal: state.showComparisonModal,
-  showResultShareModal: state.showResultShareModal,
-  keyboardMode: state.keyboardMode
-}));
+export const useMatchUI = () => useMatchStore(
+  useShallow((state) => ({
+    isLoading: state.isLoading,
+    backlogError: state.backlogError,
+    showComparisonModal: state.showComparisonModal,
+    showResultShareModal: state.showResultShareModal,
+    keyboardMode: state.keyboardMode
+  }))
+);
 
-export const useMatchKeyboard = () => useMatchStore((state) => ({
-  keyboardMode: state.keyboardMode,
-  selectedItemIndex: state.selectedItemIndex,
-  navigationState: state.getKeyboardNavigationState(),
-  selectedItem: state.getSelectedBacklogItem()
-}));
+export const useMatchKeyboard = () => useMatchStore(
+  useShallow((state) => ({
+    keyboardMode: state.keyboardMode,
+    navigationState: state.getKeyboardNavigationState(),
+    selectedItem: state.getSelectedBacklogItem()
+  }))
+);
 
-export const useMatchActions = () => useMatchStore((state) => ({
-  initializeMatchSession: state.initializeMatchSession,
-  resetMatchSession: state.resetMatchSession,
-  saveMatchProgress: state.saveMatchProgress,
-  handleKeyboardShortcut: state.handleKeyboardShortcut,
-  quickAssignToPosition: state.quickAssignToPosition,
-  setKeyboardMode: state.setKeyboardMode,
-  startSmartFill: state.startSmartFill,
-  stopSmartFill: state.stopSmartFill,
-  toggleSmartFill: state.toggleSmartFill,
-  smartPlaceItem: state.smartPlaceItem,
-}));
+export const useMatchActions = () => useMatchStore(
+  useShallow((state) => ({
+    initializeMatchSession: state.initializeMatchSession,
+    resetMatchSession: state.resetMatchSession,
+    saveMatchProgress: state.saveMatchProgress,
+    handleKeyboardShortcut: state.handleKeyboardShortcut,
+    quickAssignToPosition: state.quickAssignToPosition,
+    setKeyboardMode: state.setKeyboardMode,
+    startSmartFill: state.startSmartFill,
+    stopSmartFill: state.stopSmartFill,
+    toggleSmartFill: state.toggleSmartFill,
+    smartPlaceItem: state.smartPlaceItem,
+  }))
+);
 
 // Selector for smart fill panel
-export const useSmartFillPanel = () => useMatchStore((state) => ({
-  showSmartFillPanel: state.showSmartFillPanel,
-  setShowSmartFillPanel: state.setShowSmartFillPanel,
-  toggleSmartFill: state.toggleSmartFill,
-}));
+export const useSmartFillPanel = () => useMatchStore(
+  useShallow((state) => ({
+    showSmartFillPanel: state.showSmartFillPanel,
+    setShowSmartFillPanel: state.setShowSmartFillPanel,
+    toggleSmartFill: state.toggleSmartFill,
+  }))
+);
 
 // Selector for validation notifications - re-exported from validation-notification-store
 // This maintains backwards compatibility for existing consumers

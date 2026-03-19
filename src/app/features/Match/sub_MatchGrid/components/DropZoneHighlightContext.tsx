@@ -50,13 +50,14 @@ interface DragState {
   activeItemData: ActiveItemData | null;
   hoveredPosition: number | null;
   dropZonePositions: Map<number, DropZonePosition>;
-  cursorPosition: { x: number; y: number };
   magneticState: MagneticState;
   dragError: DragError | null;
 }
 
 interface DropZoneHighlightContextValue {
   dragState: DragState;
+  /** Cursor position stored in a ref to avoid re-rendering consumers on every mouse move */
+  cursorPositionRef: React.RefObject<{ x: number; y: number }>;
   setIsDragging: (isDragging: boolean, itemId?: string | null, itemData?: ActiveItemData | null) => void;
   setHoveredPosition: (position: number | null) => void;
   registerDropZone: (position: number, element: HTMLElement) => void;
@@ -76,10 +77,12 @@ export function DropZoneHighlightProvider({ children }: { children: ReactNode })
     activeItemData: null,
     hoveredPosition: null,
     dropZonePositions: new Map(),
-    cursorPosition: { x: 0, y: 0 },
     magneticState: { targetId: null, strength: 0 },
     dragError: null,
   });
+
+  // Cursor position stored in ref to avoid re-rendering all consumers on every mouse move
+  const cursorPositionRef = useRef({ x: 0, y: 0 });
 
   const dropZoneRefs = useRef<Map<number, HTMLElement>>(new Map());
   // Use ref to track registered positions to avoid unnecessary state updates
@@ -104,10 +107,8 @@ export function DropZoneHighlightProvider({ children }: { children: ReactNode })
   }, []);
 
   const updateCursorPosition = useCallback((x: number, y: number) => {
-    setDragState((prev) => {
-      if (prev.cursorPosition.x === x && prev.cursorPosition.y === y) return prev;
-      return { ...prev, cursorPosition: { x, y } };
-    });
+    cursorPositionRef.current.x = x;
+    cursorPositionRef.current.y = y;
   }, []);
 
   const updateMagneticState = useCallback((targetId: string | null, strength: number) => {
@@ -172,17 +173,31 @@ export function DropZoneHighlightProvider({ children }: { children: ReactNode })
   }, []);
 
   const getClosestDropZones = useCallback((count = 3): DropZonePosition[] => {
-    const { cursorPosition, dropZonePositions } = dragState;
+    const cursor = cursorPositionRef.current;
+    const dropZonePositions = dragState.dropZonePositions;
 
-    const sortedByDistance = Array.from(dropZonePositions.values())
-      .map((zone) => ({
-        ...zone,
-        distance: Math.hypot(zone.x - cursorPosition.x, zone.y - cursorPosition.y),
-      }))
-      .sort((a, b) => a.distance - b.distance);
+    // Partial sort: only find the N closest instead of sorting all 50
+    const zones = Array.from(dropZonePositions.values());
+    const result: (DropZonePosition & { distance: number })[] = [];
 
-    return sortedByDistance.slice(0, count);
-  }, [dragState]);
+    for (const zone of zones) {
+      const distance = Math.hypot(zone.x - cursor.x, zone.y - cursor.y);
+      if (result.length < count) {
+        result.push({ ...zone, distance });
+        // Keep result sorted by distance (small array, insertion sort is fine)
+        for (let i = result.length - 1; i > 0 && result[i].distance < result[i - 1].distance; i--) {
+          [result[i], result[i - 1]] = [result[i - 1], result[i]];
+        }
+      } else if (distance < result[result.length - 1].distance) {
+        result[result.length - 1] = { ...zone, distance };
+        for (let i = result.length - 1; i > 0 && result[i].distance < result[i - 1].distance; i--) {
+          [result[i], result[i - 1]] = [result[i - 1], result[i]];
+        }
+      }
+    }
+
+    return result;
+  }, [dragState.dropZonePositions]);
 
   // Store callbacks in a ref to provide stable references
   const callbacksRef = useRef({
@@ -211,6 +226,7 @@ export function DropZoneHighlightProvider({ children }: { children: ReactNode })
   if (!valueRef.current) {
     valueRef.current = {
       dragState,
+      cursorPositionRef,
       setIsDragging: (...args) => callbacksRef.current.setIsDragging(...args),
       setHoveredPosition: (...args) => callbacksRef.current.setHoveredPosition(...args),
       registerDropZone: (...args) => callbacksRef.current.registerDropZone(...args),

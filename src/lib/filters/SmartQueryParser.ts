@@ -59,6 +59,15 @@ interface PatternMatch {
 }
 
 /**
+ * Info about a segment that could not be parsed as a structured filter
+ */
+export interface UnresolvedSegment {
+  raw: string;
+  attemptedPatterns: string[];
+  fallback: 'full_text_search';
+}
+
+/**
  * Query parsing result
  */
 export interface ParseResult {
@@ -66,6 +75,7 @@ export interface ParseResult {
   searchTerm: string; // Remaining text for full-text search
   matches: PatternMatch[];
   suggestions: QuerySuggestion[];
+  unresolvedSegments: UnresolvedSegment[];
 }
 
 /**
@@ -239,6 +249,9 @@ export class SmartQueryParser {
   private fieldAliases: Record<string, string>;
   private knownValues: Record<string, string[]>;
 
+  /** Tracks how many query segments could not be parsed across all instances */
+  static unrecognizedCount = 0;
+
   constructor(
     customAliases?: Record<string, string>,
     knownValues?: Record<string, string[]>
@@ -256,6 +269,7 @@ export class SmartQueryParser {
       searchTerm: '',
       matches: [],
       suggestions: [],
+      unresolvedSegments: [],
     };
 
     if (!query.trim()) {
@@ -285,7 +299,28 @@ export class SmartQueryParser {
         result.matches.push(match);
         conditions.push(this.matchToCondition(match));
       } else {
-        // This segment is a search term
+        // Segment failed all parse attempts — falls through to full-text search
+        const unresolved: UnresolvedSegment = {
+          raw: trimmed,
+          attemptedPatterns: [
+            'field:value',
+            'comparison (>=, <=, >, <, !=, ==)',
+            'natural language (field operator value)',
+            'special keywords',
+            'plus pattern (e.g. 2020+)',
+          ],
+          fallback: 'full_text_search',
+        };
+        result.unresolvedSegments.push(unresolved);
+        SmartQueryParser.unrecognizedCount++;
+
+        if (process.env.NODE_ENV !== 'production') {
+          console.debug(
+            '[SmartQueryParser] Unresolved segment:',
+            JSON.stringify(unresolved)
+          );
+        }
+
         remainingTerms.push(trimmed);
       }
     }
@@ -624,6 +659,15 @@ export class SmartQueryParser {
     }
 
     return parts.join(` ${config.rootCombinator} `);
+  }
+
+  /**
+   * Reset the global unrecognized-segment counter (useful for tests or periodic reporting)
+   */
+  static resetUnrecognizedCount(): number {
+    const prev = SmartQueryParser.unrecognizedCount;
+    SmartQueryParser.unrecognizedCount = 0;
+    return prev;
   }
 
   /**

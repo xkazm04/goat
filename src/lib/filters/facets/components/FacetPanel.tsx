@@ -17,6 +17,7 @@ import type {
   FacetActions,
 } from '../types';
 import { FILTER_ANIMATIONS, FILTER_TIMING } from '../../constants';
+import { DURATION } from '@/lib/animations/motion-presets';
 
 /**
  * FacetPanel Props
@@ -211,7 +212,7 @@ function FacetSection({
   return (
     <div
       className={cn(
-        'border border-border rounded-lg overflow-hidden',
+        'border border-border rounded-card overflow-hidden',
         compact ? 'text-sm' : ''
       )}
     >
@@ -228,7 +229,7 @@ function FacetSection({
         <div className="flex items-center gap-2">
           <span className="font-medium">{facet.definition.label}</span>
           {selectedCount > 0 && (
-            <span className="px-1.5 py-0.5 text-xs bg-primary text-primary-foreground rounded-full">
+            <span className="px-1.5 py-0.5 text-xs bg-primary text-primary-foreground rounded-badge">
               {selectedCount}
             </span>
           )}
@@ -462,7 +463,7 @@ function HierarchicalFacetSection({
   return (
     <div
       className={cn(
-        'border border-border rounded-lg overflow-hidden',
+        'border border-border rounded-card overflow-hidden',
         compact ? 'text-sm' : ''
       )}
     >
@@ -479,7 +480,7 @@ function HierarchicalFacetSection({
         <div className="flex items-center gap-2">
           <span className="font-medium">{facet.definition.label}</span>
           {selectedCount > 0 && (
-            <span className="px-1.5 py-0.5 text-xs bg-primary text-primary-foreground rounded-full">
+            <span className="px-1.5 py-0.5 text-xs bg-primary text-primary-foreground rounded-badge">
               {selectedCount}
             </span>
           )}
@@ -629,7 +630,7 @@ function HierarchicalNodeItem({
           >
             <motion.span
               animate={{ rotate: isExpanded ? 90 : 0 }}
-              transition={{ duration: 0.15 }}
+              transition={{ duration: DURATION.quick }}
               className="text-xs"
             >
               ▶
@@ -685,7 +686,7 @@ function HierarchicalNodeItem({
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.15 }}
+            transition={{ duration: DURATION.quick }}
             className="overflow-hidden"
           >
             <div className="space-y-0.5 mt-0.5">

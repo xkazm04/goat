@@ -4,20 +4,23 @@ import { cn } from "@/lib/utils";
 
 interface PanelResizeHandleProps {
   isResizing: boolean;
+  isDndActive?: boolean;
   onResizeStart: (e: React.MouseEvent | React.TouchEvent) => void;
 }
 
 /**
  * Styled resize handle for the collection panel.
+ * Disables itself during active DnD operations to prevent interference.
  */
-export function PanelResizeHandle({ isResizing, onResizeStart }: PanelResizeHandleProps) {
+export function PanelResizeHandle({ isResizing, isDndActive, onResizeStart }: PanelResizeHandleProps) {
   return (
     <div
-      onMouseDown={onResizeStart}
-      onTouchStart={onResizeStart}
+      onMouseDown={isDndActive ? undefined : onResizeStart}
+      onTouchStart={isDndActive ? undefined : onResizeStart}
       className={cn(
-        "absolute -top-3 left-0 right-0 h-6 cursor-ns-resize z-10",
+        "absolute -top-3 left-0 right-0 h-6 z-10",
         "flex items-center justify-center group",
+        isDndActive ? "pointer-events-none" : "cursor-ns-resize",
         isResizing && 'bg-linear-to-b from-brand/10 to-transparent'
       )}
       data-testid="panel-resize-handle"

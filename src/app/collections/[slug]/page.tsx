@@ -164,7 +164,7 @@ export default function CollectionSharePage() {
               <button className="p-2 rounded-lg bg-slate-800/50 hover:bg-slate-800 border border-slate-700/50 text-slate-300 transition-all">
                 <Share2 className="w-4 h-4" />
               </button>
-              <div className="absolute right-0 top-full mt-2 py-2 w-40 bg-slate-800 rounded-lg border border-slate-700 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+              <div className="absolute right-0 top-full mt-2 py-2 w-40 bg-slate-800 rounded-lg border border-slate-700 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-dropdown">
                 {["twitter", "facebook", "linkedin"].map((platform) => (
                   <button
                     key={platform}

@@ -13,6 +13,8 @@ interface UseGridColumnsOptions {
   gap?: number;
   /** Aspect ratio width:height (e.g., 3/4 means width/height = 0.75) */
   aspectRatio?: number;
+  /** Pause ResizeObserver (e.g., during drag when container won't resize) */
+  paused?: boolean;
 }
 
 interface GridDimensions {
@@ -56,6 +58,7 @@ export function useGridDimensions(
     minItemWidth = 64,
     gap = 8,
     aspectRatio = 3 / 4,
+    paused = false,
   } = options;
 
   const [containerWidth, setContainerWidth] = useState(0);
@@ -78,6 +81,16 @@ export function useGridDimensions(
 
     // If no container yet, try again on next render
     if (!container) {
+      return;
+    }
+
+    // Disconnect observer while paused (e.g., during drag - container won't resize)
+    if (paused) {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+        observerRef.current = null;
+        observedElementRef.current = null;
+      }
       return;
     }
 

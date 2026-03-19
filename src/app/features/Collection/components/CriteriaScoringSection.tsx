@@ -165,7 +165,7 @@ export function CriteriaScoringSection({
   return (
     <Collapsible.Root open={isOpen} onOpenChange={setIsOpen}>
       <div
-        className="rounded-lg overflow-hidden transition-all duration-200 hover:shadow-md backdrop-blur-sm"
+        className="rounded-card overflow-hidden transition-all duration-200 hover:shadow-md backdrop-blur-sm"
         style={{
           background: 'rgba(255, 255, 255, 0.05)',
           border: '1px solid rgba(255, 255, 255, 0.1)',
@@ -177,7 +177,7 @@ export function CriteriaScoringSection({
             className={cn(
               'w-full flex items-center justify-between px-3 py-2',
               'hover:bg-white/5 transition-all duration-200',
-              'focus:outline-hidden focus-visible:ring-2 focus-visible:ring-white/20'
+              'focus-ring-inset'
             )}
           >
             <div className="flex items-center gap-2">
@@ -201,7 +201,7 @@ export function CriteriaScoringSection({
                   <AnimatePresence>
                     {thresholdCrossed && !isReducedMotion && (
                       <motion.div
-                        className="absolute inset-0 rounded-md"
+                        className="absolute inset-0 rounded-control"
                         style={{ backgroundColor: accentColor }}
                         initial={{ opacity: 0.6, scale: 1 }}
                         animate={{ opacity: 0, scale: 1.5 }}
@@ -348,7 +348,7 @@ function LiveScorePreview({
 
   return (
     <motion.div
-      className="mb-3 p-2 rounded-lg flex items-center justify-between"
+      className="mb-3 p-2 rounded-card flex items-center justify-between"
       style={{
         background: `linear-gradient(135deg, ${accentColor}10 0%, ${accentColor}05 100%)`,
         border: `1px solid ${accentColor}20`,
@@ -383,7 +383,7 @@ function LiveScorePreview({
           }}
           initial={animated ? { scale: 0.8, opacity: 0 } : false}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: DURATION.fast }}
+          transition={{ duration: DURATION.quick }}
         >
           {qualityConfig.label}
         </motion.span>

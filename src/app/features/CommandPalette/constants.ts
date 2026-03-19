@@ -1,8 +1,4 @@
 import {
-  Trophy,
-  Music,
-  Gamepad2,
-  BookOpen,
   List,
   Film,
   FolderOpen,
@@ -11,6 +7,7 @@ import {
 } from "lucide-react";
 import { createElement } from "react";
 import type { SearchDomain } from "@/lib/search";
+import { GoatTrophy, GoatMusic, GoatGamepad, GoatBook } from "@/components/visual/GoatIcons";
 
 // =============================================================================
 // Category constants (shared across CommandPalette features)
@@ -24,10 +21,10 @@ export const CATEGORY_COLORS: Record<string, { primary: string; secondary: strin
 };
 
 export const CATEGORY_ICONS: Record<string, React.ReactNode> = {
-  Sports: createElement(Trophy, { className: "w-4 h-4" }),
-  Music: createElement(Music, { className: "w-4 h-4" }),
-  Games: createElement(Gamepad2, { className: "w-4 h-4" }),
-  Stories: createElement(BookOpen, { className: "w-4 h-4" }),
+  Sports: createElement(GoatTrophy, { className: "w-4 h-4" }),
+  Music: createElement(GoatMusic, { className: "w-4 h-4" }),
+  Games: createElement(GoatGamepad, { className: "w-4 h-4" }),
+  Stories: createElement(GoatBook, { className: "w-4 h-4" }),
 };
 
 // =============================================================================

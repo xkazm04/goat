@@ -3,6 +3,7 @@
 import { memo, ReactNode } from "react";
 import { motion, AnimatePresence, Variants } from "framer-motion";
 import { NavigationAnimatorProps } from "./types";
+import { DURATION } from '@/lib/animations/motion-presets';
 
 /**
  * Animation variants for navigation transitions
@@ -39,14 +40,14 @@ const fadeVariants: Variants = {
  */
 const scaleVariants: Record<string, Variants> = {
   forward: {
-    initial: { scale: 0.9, opacity: 0, filter: "blur(4px)" },
-    animate: { scale: 1, opacity: 1, filter: "blur(0px)" },
-    exit: { scale: 1.1, opacity: 0, filter: "blur(4px)" },
+    initial: { scale: 0.9, opacity: 0 },
+    animate: { scale: 1, opacity: 1 },
+    exit: { scale: 1.1, opacity: 0 },
   },
   backward: {
-    initial: { scale: 1.1, opacity: 0, filter: "blur(4px)" },
-    animate: { scale: 1, opacity: 1, filter: "blur(0px)" },
-    exit: { scale: 0.9, opacity: 0, filter: "blur(4px)" },
+    initial: { scale: 1.1, opacity: 0 },
+    animate: { scale: 1, opacity: 1 },
+    exit: { scale: 0.9, opacity: 0 },
   },
   none: {
     initial: { opacity: 0 },
@@ -142,7 +143,7 @@ export const FadeNavigator = memo(function FadeNavigator({
         animate="animate"
         exit="exit"
         transition={{
-          duration: 0.2,
+          duration: DURATION.fast,
           ease: "easeOut",
         }}
         className="w-full"

@@ -24,7 +24,7 @@ These stores are tightly coupled and require atomic operations:
 9. **filter-store** - Advanced multi-filter system
 10. **layout-store** - Adaptive responsive layout
 11. **heatmap-store** - Consensus heatmap visualization
-12. **inspector-store** - Item inspector panel state
+12. **item-popup-store** - Floating popups + inspector panel (unified)
 
 ### Support Stores
 13. **validation-notification-store** - Validation error notifications

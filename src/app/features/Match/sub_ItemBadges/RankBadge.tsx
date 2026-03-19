@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Star, TrendingUp, Hash } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { DURATION } from '@/lib/animations/motion-presets';
 
 interface RankBadgeProps {
   /** Average ranking score (0-5 stars) or numeric rank */
@@ -162,7 +163,7 @@ export function RankBadge({
             delay: entranceDelay,
           },
         }}
-        exit={{ scale: 0, opacity: 0, transition: { duration: 0.15 } }}
+        exit={{ scale: 0, opacity: 0, transition: { duration: DURATION.quick } }}
         className={cn(
           // Position in top-left corner
           'absolute top-1 left-1 z-10',
@@ -173,7 +174,7 @@ export function RankBadge({
           // Layout
           'flex items-center gap-0.5',
           'min-w-[22px] h-[18px] px-1',
-          'rounded-md',
+          'rounded-control',
           // Border and shadow
           'ring-1',
           style.ring,
@@ -189,7 +190,7 @@ export function RankBadge({
             animate={{
               opacity: 0,
               scale: 1.5,
-              transition: { duration: 0.6, ease: 'easeOut' },
+              transition: { duration: DURATION.emphasis, ease: 'easeOut' },
             }}
             className={cn(
               'absolute inset-0 rounded-md',
@@ -206,7 +207,7 @@ export function RankBadge({
         {/* Value */}
         <span
           className={cn(
-            'text-[9px] leading-none whitespace-nowrap',
+            'text-2xs leading-none whitespace-nowrap',
             style.text
           )}
         >

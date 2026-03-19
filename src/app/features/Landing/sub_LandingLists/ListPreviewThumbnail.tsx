@@ -4,18 +4,17 @@ import { useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import {
-  Trophy,
-  Music,
-  Gamepad2,
-  BookOpen,
   Image as ImageIcon,
-  LucideIcon
 } from "lucide-react";
+import { GoatTrophy, GoatMusic, GoatGamepad, GoatBook } from "@/components/visual/GoatIcons";
 import { useQuery } from "@tanstack/react-query";
 import { goatApi } from "@/lib/api";
 import { topListsKeys } from "@/lib/query-keys/top-lists";
 import { getCategoryColor } from "@/lib/helpers/getColors";
 import { TopListItem } from "@/types/top-lists";
+import { DURATION } from '@/lib/animations/motion-presets';
+
+type IconComponent = React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
 
 interface ListPreviewThumbnailProps {
   /** List ID to fetch preview images from */
@@ -32,16 +31,16 @@ interface ListPreviewThumbnailProps {
   testIdPrefix?: string;
 }
 
-// Category-specific icons for placeholders
-const CATEGORY_ICONS: Record<string, LucideIcon> = {
-  sports: Trophy,
-  music: Music,
-  games: Gamepad2,
-  stories: BookOpen,
+// Category-specific branded icons for placeholders
+const CATEGORY_ICONS: Record<string, IconComponent> = {
+  sports: GoatTrophy,
+  music: GoatMusic,
+  games: GoatGamepad,
+  stories: GoatBook,
 };
 
 // Get icon for category with fallback
-const getCategoryIcon = (category: string): LucideIcon => {
+const getCategoryIcon = (category: string): IconComponent => {
   return CATEGORY_ICONS[category.toLowerCase()] || ImageIcon;
 };
 
@@ -51,28 +50,28 @@ const SIZE_CONFIG = {
     container: "w-10 h-10",
     iconSize: "w-4 h-4",
     gap: "gap-0.5",
-    borderRadius: "rounded-lg",
+    borderRadius: "rounded-control",
     imageClass: "w-[calc(50%-1px)] h-[calc(50%-1px)]",
   },
   md: {
     container: "w-14 h-14",
     iconSize: "w-5 h-5",
     gap: "gap-0.5",
-    borderRadius: "rounded-xl",
+    borderRadius: "rounded-card",
     imageClass: "w-[calc(50%-1px)] h-[calc(50%-1px)]",
   },
   lg: {
     container: "w-20 h-20",
     iconSize: "w-7 h-7",
     gap: "gap-1",
-    borderRadius: "rounded-xl",
+    borderRadius: "rounded-card",
     imageClass: "w-[calc(50%-2px)] h-[calc(50%-2px)]",
   },
   row: {
     container: "w-full h-16 sm:h-20",
     iconSize: "w-5 h-5",
     gap: "gap-1",
-    borderRadius: "rounded-md",
+    borderRadius: "rounded-control",
     imageClass: "h-full flex-1 min-w-0", // Flex 1 to fill width, row layout
   },
 };
@@ -98,7 +97,7 @@ function MosaicImage({ item, index, sizeConfig, testIdPrefix, listId }: MosaicIm
       className={`${sizeConfig.imageClass} ${sizeConfig.borderRadius} overflow-hidden relative`}
       initial={{ opacity: 0, scale: 0.8 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: index * 0.05, duration: 0.2 }}
+      transition={{ delay: index * 0.05, duration: DURATION.fast }}
       data-testid={`${testIdPrefix}-image-${index}-${listId}`}
     >
       <Image

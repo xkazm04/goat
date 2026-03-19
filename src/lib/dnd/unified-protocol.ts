@@ -13,6 +13,7 @@ import type { GridItemType } from '@/types/match';
 import type { BacklogItem } from '@/types/backlog-groups';
 import type { CollectionItem } from '@/app/features/Collection/types';
 import { backlogToTransferable, gridToTransferable, collectionToTransferable } from './type-guards';
+import { GRID_ID_PREFIX, createGridReceiverId, isGridReceiverId, extractGridPosition } from './transfer-protocol';
 
 // ============================================================================
 // Unified Source Types
@@ -297,17 +298,20 @@ export function createUnifiedUnrankedPoolDropData(): UnifiedDropData {
 // ============================================================================
 
 /**
- * Standard ID patterns for drop targets
+ * Standard ID patterns for drop targets.
+ * Grid slots use the canonical "grid-{n}" format (via createGridReceiverId).
  */
 export const DROP_ID_PATTERNS = {
-  gridSlot: (position: number) => `grid-slot-${position}`,
+  gridSlot: (position: number) => createGridReceiverId(position),
   tierRow: (tierId: string) => `tier-row-${tierId}`,
   tierItem: (itemId: string) => `tier-item-${itemId}`,
   unrankedPool: 'unranked-pool',
 } as const;
 
 /**
- * Parse a drop target ID to extract type and metadata
+ * Parse a drop target ID to extract type and metadata.
+ * Canonical grid format is "grid-{n}". Legacy "grid-slot-{n}" and "drop-{n}"
+ * are still parsed for backwards compatibility but log dev warnings.
  */
 export function parseDropTargetId(id: string): {
   type: UnifiedDropType | 'unknown';
@@ -315,7 +319,17 @@ export function parseDropTargetId(id: string): {
   tierId?: string;
   itemId?: string;
 } {
+  // Canonical grid ID: "grid-{n}" (must check before legacy "grid-slot-")
+  if (isGridReceiverId(id)) {
+    const position = extractGridPosition(id);
+    return { type: 'grid-slot', position: position ?? undefined };
+  }
+
+  // Legacy: "grid-slot-{n}" — still parsed, but warn in dev
   if (id.startsWith('grid-slot-')) {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn(`[DnD] Legacy grid ID "${id}" detected. Use createGridReceiverId(position) for "grid-{n}" format.`);
+    }
     const position = parseInt(id.slice(10), 10);
     return { type: 'grid-slot', position: isNaN(position) ? undefined : position };
   }
@@ -332,8 +346,11 @@ export function parseDropTargetId(id: string): {
     return { type: 'unranked-pool' };
   }
 
-  // Fallback: check for legacy patterns
+  // Legacy: "drop-{n}" — still parsed, but warn in dev
   if (id.startsWith('drop-')) {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn(`[DnD] Legacy grid ID "${id}" detected. Use createGridReceiverId(position) for "grid-{n}" format.`);
+    }
     const position = parseInt(id.slice(5), 10);
     return { type: 'grid-slot', position: isNaN(position) ? undefined : position };
   }
@@ -342,10 +359,11 @@ export function parseDropTargetId(id: string): {
 }
 
 /**
- * Check if an ID matches a grid slot pattern
+ * Check if an ID matches any grid slot pattern (canonical or legacy).
+ * Prefer isGridReceiverId() for checking canonical "grid-{n}" IDs only.
  */
 export function isGridSlotId(id: string): boolean {
-  return id.startsWith('grid-slot-') || id.startsWith('drop-');
+  return isGridReceiverId(id) || id.startsWith('grid-slot-') || id.startsWith('drop-');
 }
 
 /**

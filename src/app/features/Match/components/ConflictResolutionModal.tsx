@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useModalAccessibility } from '@/hooks/use-modal-accessibility';
 import {
   AlertTriangle,
   X,
@@ -100,6 +101,11 @@ export function ConflictResolutionModal({
   const [selectedStrategy, setSelectedStrategy] =
     useState<ConflictResolutionStrategy>('server_wins');
 
+  const { modalRef, modalProps, labelId, handleKeyDown } = useModalAccessibility({
+    isOpen,
+    onClose,
+  });
+
   const currentConflict = conflicts[currentIndex] || null;
   const previews = useMemo(
     () => (currentConflict ? extractConflictPreview(currentConflict) : []),
@@ -160,25 +166,28 @@ export function ConflictResolutionModal({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/60 backdrop-blur-xl z-50"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-modal"
           />
 
           {/* Modal */}
           <motion.div
+            ref={modalRef}
+            {...modalProps}
+            onKeyDown={handleKeyDown}
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="fixed inset-x-4 top-1/2 -translate-y-1/2 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-full md:max-w-lg z-50"
+            className="fixed inset-x-4 top-1/2 -translate-y-1/2 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-full md:max-w-lg z-modal"
           >
-            <div className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl overflow-hidden">
+            <div className="bg-gray-900 border border-gray-700 rounded-container shadow-2xl overflow-hidden">
               {/* Header */}
               <div className="px-6 py-4 border-b border-gray-700 flex items-center justify-between bg-orange-900/20">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-orange-600/20 rounded-lg">
+                  <div className="p-2 bg-orange-600/20 rounded-control">
                     <AlertTriangle className="w-5 h-5 text-orange-400" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-semibold text-white">
+                    <h2 id={labelId} className="text-lg font-semibold text-white">
                       Resolve Conflict
                     </h2>
                     <p className="text-sm text-gray-400">
@@ -190,7 +199,7 @@ export function ConflictResolutionModal({
                 </div>
                 <button
                   onClick={onClose}
-                  className="p-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-gray-800"
+                  className="p-2 text-gray-400 hover:text-white transition-colors rounded-control hover:bg-gray-800"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -200,7 +209,7 @@ export function ConflictResolutionModal({
               {currentConflict && (
                 <div className="p-6 space-y-6">
                   {/* Conflict Info */}
-                  <div className="bg-gray-800/50 rounded-lg p-4">
+                  <div className="bg-gray-800/50 rounded-card p-4">
                     <div className="flex items-center justify-between text-sm mb-3">
                       <span className="text-gray-400">Conflict Type</span>
                       <span className="text-orange-400 font-medium capitalize">
@@ -225,7 +234,7 @@ export function ConflictResolutionModal({
                         {previews.map((preview) => (
                           <div
                             key={preview.field}
-                            className="bg-gray-800/30 rounded-lg p-3"
+                            className="bg-gray-800/30 rounded-card p-3"
                           >
                             <div className="text-xs text-gray-400 mb-2">
                               {preview.label}
@@ -264,14 +273,14 @@ export function ConflictResolutionModal({
                           <button
                             key={option.id}
                             onClick={() => setSelectedStrategy(option.id)}
-                            className={`w-full flex items-start gap-3 p-3 rounded-lg border transition-all text-left ${
+                            className={`w-full flex items-start gap-3 p-3 rounded-card border transition-all text-left ${
                               isSelected
                                 ? 'border-brand bg-brand-muted/20'
                                 : 'border-gray-700 bg-gray-800/30 hover:border-gray-600'
                             }`}
                           >
                             <div
-                              className={`p-2 rounded-lg ${
+                              className={`p-2 rounded-control ${
                                 isSelected
                                   ? 'bg-brand-muted/20 text-brand-hover'
                                   : 'bg-gray-700/50 text-gray-400'
@@ -313,7 +322,7 @@ export function ConflictResolutionModal({
                           setCurrentIndex(Math.max(0, currentIndex - 1))
                         }
                         disabled={currentIndex === 0}
-                        className="p-2 text-gray-400 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed rounded-lg hover:bg-gray-700 transition-colors"
+                        className="p-2 text-gray-400 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed rounded-control hover:bg-gray-700 transition-colors"
                       >
                         <ChevronLeft className="w-4 h-4" />
                       </button>
@@ -324,7 +333,7 @@ export function ConflictResolutionModal({
                           )
                         }
                         disabled={currentIndex === conflicts.length - 1}
-                        className="p-2 text-gray-400 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed rounded-lg hover:bg-gray-700 transition-colors"
+                        className="p-2 text-gray-400 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed rounded-control hover:bg-gray-700 transition-colors"
                       >
                         <ChevronRight className="w-4 h-4" />
                       </button>
@@ -343,7 +352,7 @@ export function ConflictResolutionModal({
                   <button
                     onClick={handleResolve}
                     disabled={isResolving}
-                    className="px-4 py-2 bg-brand-muted hover:bg-brand-muted disabled:bg-gray-600 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+                    className="px-4 py-2 bg-brand-muted hover:bg-brand-muted disabled:bg-gray-600 text-white rounded-control font-medium transition-colors flex items-center gap-2"
                   >
                     {isResolving ? (
                       <>

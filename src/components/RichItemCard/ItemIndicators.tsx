@@ -194,13 +194,13 @@ const SIZE_CONFIG = {
   xs: {
     container: 'w-4 h-4',
     icon: 'w-2.5 h-2.5',
-    text: 'text-[8px]',
+    text: 'text-3xs',
     gap: 'gap-0.5',
   },
   sm: {
     container: 'w-5 h-5',
     icon: 'w-3 h-3',
-    text: 'text-[10px]',
+    text: 'text-2xs',
     gap: 'gap-1',
   },
   md: {
@@ -268,7 +268,7 @@ const Indicator = memo(function Indicator({
         'flex items-center justify-center rounded-full border backdrop-blur-xs',
         sizeConfig.container,
         config.bgColor,
-        showLabel && 'rounded-md px-1.5'
+        showLabel && 'rounded-control px-1.5'
       )}
       title={config.label}
     >

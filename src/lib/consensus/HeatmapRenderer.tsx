@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { DURATION } from "@/lib/animations/motion-presets";
 import {
   HeatmapCell,
   HeatmapConfig,
@@ -177,7 +178,7 @@ const HeatmapOverlay = memo(function HeatmapOverlay({
         return (
           <motion.div
             key={cell.itemId || cell.position}
-            className="absolute rounded-lg pointer-events-auto"
+            className="absolute rounded-card pointer-events-auto"
             style={{
               left: x,
               top: y,
@@ -187,7 +188,7 @@ const HeatmapOverlay = memo(function HeatmapOverlay({
             }}
             initial={animateTransitions ? { opacity: 0, scale: 0.8 } : false}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3, delay: cell.position * 0.01 }}
+            transition={{ duration: DURATION.normal, delay: cell.position * 0.01 }}
             onMouseEnter={() => onCellHover?.(cell)}
             onMouseLeave={() => onCellHover?.(null)}
             onClick={() => onCellClick?.(cell)}
@@ -200,7 +201,7 @@ const HeatmapOverlay = memo(function HeatmapOverlay({
             {/* Intensity label */}
             {showLabels && (
               <div
-                className="absolute bottom-0 right-0 text-[8px] px-1 rounded-tl"
+                className="absolute bottom-0 right-0 text-3xs px-1 rounded-tl"
                 style={{
                   background: 'rgba(0, 0, 0, 0.7)',
                   color: cell.color,
@@ -226,7 +227,7 @@ const HeatmapBadge = memo(function HeatmapBadge({
 }) {
   return (
     <motion.div
-      className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] shadow-lg z-10"
+      className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-2xs shadow-lg z-10"
       style={{
         background: badge.color,
         color: 'white',
@@ -268,7 +269,7 @@ export const HeatmapLegend = memo(function HeatmapLegend({
   const currentLabels = labels[mode] || labels.consensus;
 
   return (
-    <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-slate-800/50">
+    <div className="flex items-center gap-3 px-3 py-2 rounded-card bg-slate-800/50">
       <span className="text-xs text-slate-400">{currentLabels.low}</span>
       <div
         className="h-3 w-32 rounded-full"
@@ -300,7 +301,7 @@ export const HeatmapTooltip = memo(function HeatmapTooltip({
   return (
     <AnimatePresence>
       <motion.div
-        className="fixed z-50 p-3 rounded-xl shadow-xl pointer-events-none backdrop-blur-sm"
+        className="fixed z-toast p-3 rounded-card shadow-xl pointer-events-none backdrop-blur-sm"
         style={{
           left: x + 10,
           top: y + 10,

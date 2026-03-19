@@ -244,7 +244,7 @@ export function useListCreation(
 
       // Navigate
       if (autoNavigate && result.listId) {
-        router.push(`/match-test?list=${result.listId}`);
+        router.push(`/goat?list=${result.listId}`);
       }
 
       // Callback

@@ -13,10 +13,56 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, requireAuth } from '@/lib/supabase/server';
 import type { SyncOperation, OperationType } from '@/lib/offline/types';
 import type { ListSession } from '@/stores/item-store/types';
 import type { GridItemType } from '@/types/match';
+
+// ============================================================================
+// Structured Logging
+// ============================================================================
+
+function generateTraceId(): string {
+  return `sync_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+type LogLevel = 'info' | 'warn' | 'error';
+
+interface LogEntry {
+  level: LogLevel;
+  traceId: string;
+  route: string;
+  event: string;
+  durationMs?: number;
+  operationType?: OperationType | string;
+  operationId?: string;
+  entityId?: string;
+  success?: boolean;
+  error?: string;
+  operationCount?: number;
+  typeBreakdown?: Record<string, number>;
+  successCount?: number;
+  failureCount?: number;
+  [key: string]: unknown;
+}
+
+function syncLog(entry: LogEntry): void {
+  const output = JSON.stringify(entry);
+  switch (entry.level) {
+    case 'error':
+      console.error(output);
+      break;
+    case 'warn':
+      console.warn(output);
+      break;
+    default:
+      console.log(output);
+  }
+}
+
+// ============================================================================
+// Types
+// ============================================================================
 
 interface SyncRequest {
   operations: SyncOperation[];
@@ -35,21 +81,50 @@ interface SyncResponse {
   syncedAt: number;
 }
 
+// ============================================================================
+// Helpers
+// ============================================================================
+
 /**
- * Extract matched items from grid for syncing to list_items
- * Uses backlogItemId which contains the actual item ID
+ * Extract matched items from grid for syncing to list_items.
+ * Uses matchedWith which grid-operations populates with the backlog item ID.
  */
 function extractMatchedItems(gridItems: GridItemType[]): Array<{
-  itemId: string;
+  item_id: string;
   ranking: number;
 }> {
   return gridItems
-    .filter((item) => item.matched && item.backlogItemId)
+    .filter((item) => item.matched && item.matchedWith)
     .map((item) => ({
-      itemId: item.backlogItemId!,
+      item_id: item.matchedWith!,
       ranking: item.position,
     }));
 }
+
+/**
+ * Atomically replace list items using a database transaction via RPC.
+ * Prevents data loss from partial sync failures where delete succeeds but insert fails.
+ */
+async function atomicReplaceListItems(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  listId: string,
+  matchedItems: Array<{ item_id: string; ranking: number }>
+): Promise<{ updatedAt: string | null; error: string | null }> {
+  const { data, error } = await supabase.rpc('replace_list_items', {
+    target_list_id: listId,
+    new_items: JSON.stringify(matchedItems),
+  });
+
+  if (error) {
+    return { updatedAt: null, error: error.message };
+  }
+
+  return { updatedAt: data, error: null };
+}
+
+// ============================================================================
+// Operation Processors
+// ============================================================================
 
 /**
  * Process UPDATE_SESSION operation
@@ -101,50 +176,25 @@ async function processUpdateSession(
     // Extract matched items from the session
     const matchedItems = extractMatchedItems(session.gridItems);
 
-    // Delete existing list_items
-    await supabase.from('list_items').delete().eq('list_id', listId);
+    // Atomically replace list items (delete + insert + timestamp in one transaction)
+    const { updatedAt, error: replaceError } = await atomicReplaceListItems(
+      supabase,
+      listId,
+      matchedItems
+    );
 
-    // Insert new rankings
-    if (matchedItems.length > 0) {
-      const listItemsToInsert = matchedItems.map((item) => ({
-        list_id: listId,
-        item_id: item.itemId,
-        ranking: item.ranking,
-      }));
-
-      const { error: insertError } = await supabase
-        .from('list_items')
-        .insert(listItemsToInsert);
-
-      if (insertError) {
-        return {
-          operationId: operation.id,
-          success: false,
-          error: `Failed to insert list items: ${insertError.message}`,
-        };
-      }
-    }
-
-    // Update list timestamp
-    const { data: updatedList, error: updateError } = await supabase
-      .from('lists')
-      .update({ updated_at: new Date().toISOString() })
-      .eq('id', listId)
-      .select('updated_at')
-      .single();
-
-    if (updateError) {
+    if (replaceError || !updatedAt) {
       return {
         operationId: operation.id,
         success: false,
-        error: `Failed to update list: ${updateError.message}`,
+        error: `Failed to replace list items: ${replaceError || 'No timestamp returned'}`,
       };
     }
 
     return {
       operationId: operation.id,
       success: true,
-      serverVersion: new Date(updatedList.updated_at).getTime(),
+      serverVersion: new Date(updatedAt).getTime(),
     };
   } catch (error) {
     return {
@@ -184,49 +234,25 @@ async function processUpdateGrid(
     // Extract matched items
     const matchedItems = extractMatchedItems(gridItems);
 
-    // Delete existing and insert new
-    await supabase.from('list_items').delete().eq('list_id', listId);
+    // Atomically replace list items (delete + insert + timestamp in one transaction)
+    const { updatedAt, error: replaceError } = await atomicReplaceListItems(
+      supabase,
+      listId,
+      matchedItems
+    );
 
-    if (matchedItems.length > 0) {
-      const listItemsToInsert = matchedItems.map((item) => ({
-        list_id: listId,
-        item_id: item.itemId,
-        ranking: item.ranking,
-      }));
-
-      const { error: insertError } = await supabase
-        .from('list_items')
-        .insert(listItemsToInsert);
-
-      if (insertError) {
-        return {
-          operationId: operation.id,
-          success: false,
-          error: `Failed to insert list items: ${insertError.message}`,
-        };
-      }
-    }
-
-    // Update timestamp
-    const { data: updatedList, error: updateError } = await supabase
-      .from('lists')
-      .update({ updated_at: new Date().toISOString() })
-      .eq('id', listId)
-      .select('updated_at')
-      .single();
-
-    if (updateError) {
+    if (replaceError || !updatedAt) {
       return {
         operationId: operation.id,
         success: false,
-        error: `Failed to update list: ${updateError.message}`,
+        error: `Failed to replace list items: ${replaceError || 'No timestamp returned'}`,
       };
     }
 
     return {
       operationId: operation.id,
       success: true,
-      serverVersion: new Date(updatedList.updated_at).getTime(),
+      serverVersion: new Date(updatedAt).getTime(),
     };
   } catch (error) {
     return {
@@ -269,47 +295,77 @@ async function processDeleteSession(
 }
 
 /**
- * Process a single sync operation
+ * Process a single sync operation with timing and structured logging
  */
 async function processOperation(
   operation: SyncOperation,
-  supabase: Awaited<ReturnType<typeof createClient>>
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  traceId: string
 ): Promise<SyncOperationResult> {
+  const opStart = performance.now();
+  let result: SyncOperationResult;
+
   switch (operation.type) {
     case 'UPDATE_SESSION':
-      return processUpdateSession(operation, supabase);
+      result = await processUpdateSession(operation, supabase);
+      break;
 
     case 'UPDATE_GRID':
-      return processUpdateGrid(operation, supabase);
+      result = await processUpdateGrid(operation, supabase);
+      break;
 
     case 'DELETE_SESSION':
-      return processDeleteSession(operation, supabase);
+      result = await processDeleteSession(operation, supabase);
+      break;
 
     case 'CREATE_SESSION':
       // CREATE_SESSION is a no-op server-side - sessions are client-only
-      // The actual list creation happens via the lists API
-      return {
+      result = {
         operationId: operation.id,
         success: true,
         serverVersion: Date.now(),
       };
+      break;
 
     case 'UPDATE_BACKLOG':
       // UPDATE_BACKLOG is client-only - backlog state doesn't sync to server
-      return {
+      result = {
         operationId: operation.id,
         success: true,
         serverVersion: Date.now(),
       };
+      break;
 
     default:
-      return {
+      result = {
         operationId: operation.id,
         success: false,
         error: `Unknown operation type: ${operation.type}`,
       };
+      break;
   }
+
+  const durationMs = Math.round((performance.now() - opStart) * 100) / 100;
+
+  syncLog({
+    level: result.success ? 'info' : 'error',
+    traceId,
+    route: '/api/sync',
+    event: 'operation_complete',
+    operationType: operation.type,
+    operationId: operation.id,
+    entityId: operation.entityId,
+    success: result.success,
+    durationMs,
+    ...(result.error ? { error: result.error } : {}),
+  });
+
+  return result;
 }
+
+// ============================================================================
+// Route Handlers
+// ============================================================================
 
 /**
  * POST /api/sync
@@ -317,26 +373,100 @@ async function processOperation(
  * Process sync operations from the client
  */
 export async function POST(request: NextRequest) {
+  const traceId = generateTraceId();
+  const batchStart = performance.now();
+
   try {
+    const auth = await requireAuth();
+    if (auth.error) {
+      syncLog({
+        level: 'warn',
+        traceId,
+        route: '/api/sync',
+        event: 'auth_rejected',
+      });
+      return auth.error;
+    }
+
     const supabase = await createClient();
 
     // Parse request body
     const body: SyncRequest = await request.json();
 
     if (!body.operations || !Array.isArray(body.operations)) {
+      syncLog({
+        level: 'warn',
+        traceId,
+        route: '/api/sync',
+        event: 'invalid_request',
+        error: 'operations array required',
+      });
       return NextResponse.json(
         { error: 'Invalid request: operations array required' },
         { status: 400 }
       );
     }
 
-    // Process operations in order (respect dependencies)
-    const results: SyncOperationResult[] = [];
-
-    for (const operation of body.operations) {
-      const result = await processOperation(operation, supabase);
-      results.push(result);
+    // Build type breakdown for the batch
+    const typeBreakdown: Record<string, number> = {};
+    for (const op of body.operations) {
+      typeBreakdown[op.type] = (typeBreakdown[op.type] || 0) + 1;
     }
+
+    syncLog({
+      level: 'info',
+      traceId,
+      route: '/api/sync',
+      event: 'batch_start',
+      operationCount: body.operations.length,
+      typeBreakdown,
+    });
+
+    // Group operations by entityId so independent entities can run in parallel,
+    // while operations on the same entity run sequentially to preserve order
+    // (e.g., CREATE then UPDATE on the same list).
+    const operationsByEntity = new Map<string, { index: number; op: SyncOperation }[]>();
+
+    for (let i = 0; i < body.operations.length; i++) {
+      const op = body.operations[i];
+      const key = op.entityId;
+      if (!operationsByEntity.has(key)) {
+        operationsByEntity.set(key, []);
+      }
+      operationsByEntity.get(key)!.push({ index: i, op });
+    }
+
+    // Process each entity group in parallel; within a group, process sequentially
+    const indexedResults: { index: number; result: SyncOperationResult }[] = [];
+
+    await Promise.all(
+      Array.from(operationsByEntity.values()).map(async (group) => {
+        for (const { index, op } of group) {
+          const result = await processOperation(op, supabase, traceId);
+          indexedResults.push({ index, result });
+        }
+      })
+    );
+
+    // Restore original operation order
+    indexedResults.sort((a, b) => a.index - b.index);
+    const results = indexedResults.map((r) => r.result);
+
+    const successCount = results.filter((r) => r.success).length;
+    const failureCount = results.length - successCount;
+    const totalDurationMs = Math.round((performance.now() - batchStart) * 100) / 100;
+
+    syncLog({
+      level: failureCount > 0 ? 'warn' : 'info',
+      traceId,
+      route: '/api/sync',
+      event: 'batch_complete',
+      operationCount: results.length,
+      successCount,
+      failureCount,
+      typeBreakdown,
+      durationMs: totalDurationMs,
+    });
 
     const response: SyncResponse = {
       results,
@@ -345,13 +475,19 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error('[Sync API] Error:', error);
+    const totalDurationMs = Math.round((performance.now() - batchStart) * 100) / 100;
+
+    syncLog({
+      level: 'error',
+      traceId,
+      route: '/api/sync',
+      event: 'batch_error',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      durationMs: totalDurationMs,
+    });
 
     return NextResponse.json(
-      {
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }
@@ -363,12 +499,22 @@ export async function POST(request: NextRequest) {
  * Get sync status and server versions for conflict detection
  */
 export async function GET(request: NextRequest) {
+  const traceId = generateTraceId();
+  const start = performance.now();
+
   try {
     const supabase = await createClient();
     const searchParams = request.nextUrl.searchParams;
     const listIds = searchParams.get('listIds')?.split(',') || [];
 
     if (listIds.length === 0) {
+      syncLog({
+        level: 'warn',
+        traceId,
+        route: '/api/sync',
+        event: 'invalid_request',
+        error: 'listIds query parameter required',
+      });
       return NextResponse.json(
         { error: 'listIds query parameter required' },
         { status: 400 }
@@ -393,18 +539,35 @@ export async function GET(request: NextRequest) {
       {} as Record<string, number>
     );
 
+    const durationMs = Math.round((performance.now() - start) * 100) / 100;
+
+    syncLog({
+      level: 'info',
+      traceId,
+      route: '/api/sync',
+      event: 'get_versions',
+      operationCount: listIds.length,
+      durationMs,
+    });
+
     return NextResponse.json({
       versions,
       serverTime: Date.now(),
     });
   } catch (error) {
-    console.error('[Sync API] GET Error:', error);
+    const durationMs = Math.round((performance.now() - start) * 100) / 100;
+
+    syncLog({
+      level: 'error',
+      traceId,
+      route: '/api/sync',
+      event: 'get_versions_error',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      durationMs,
+    });
 
     return NextResponse.json(
-      {
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

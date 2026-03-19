@@ -70,6 +70,12 @@ export class RankingEngineImpl implements IRankingEngine {
   private undoStack: PositionAssignment[][] = [];
   private redoStack: PositionAssignment[][] = [];
   private maxHistorySize = 50;
+  private batchDepth = 0;
+  private static readonly MAX_BATCH_DEPTH = 3;
+
+  // Dual-index Maps for O(1) assignment lookups
+  private positionMap: Map<number, PositionAssignment> = new Map();
+  private itemIdMap: Map<string, PositionAssignment> = new Map();
 
   constructor(
     listId: string,
@@ -91,6 +97,15 @@ export class RankingEngineImpl implements IRankingEngine {
     }
   }
 
+  private rebuildIndexes(): void {
+    this.positionMap.clear();
+    this.itemIdMap.clear();
+    for (const a of this.ranking.assignments) {
+      this.positionMap.set(a.position, a);
+      this.itemIdMap.set(a.itemId, a);
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // Core State
   // ---------------------------------------------------------------------------
@@ -107,13 +122,13 @@ export class RankingEngineImpl implements IRankingEngine {
   }
 
   getItemAtPosition(position: number): RankedItem | null {
-    const assignment = this.ranking.assignments.find(a => a.position === position);
+    const assignment = this.positionMap.get(position);
     if (!assignment) return null;
     return this.assignmentToRankedItem(assignment);
   }
 
   getPositionForItem(itemId: string): number | null {
-    const assignment = this.ranking.assignments.find(a => a.itemId === itemId);
+    const assignment = this.itemIdMap.get(itemId);
     return assignment?.position ?? null;
   }
 
@@ -151,8 +166,7 @@ export class RankingEngineImpl implements IRankingEngine {
     }
 
     // Check if position is already occupied
-    const existingAtPosition = this.ranking.assignments.find(a => a.position === position);
-    if (existingAtPosition) {
+    if (this.positionMap.has(position)) {
       return {
         success: false,
         operation,
@@ -162,7 +176,7 @@ export class RankingEngineImpl implements IRankingEngine {
     }
 
     // Check if item is already assigned
-    const existingItem = this.ranking.assignments.find(a => a.itemId === itemId);
+    const existingItem = this.itemIdMap.get(itemId);
     if (existingItem) {
       return {
         success: false,
@@ -184,6 +198,8 @@ export class RankingEngineImpl implements IRankingEngine {
     };
 
     this.ranking.assignments.push(assignment);
+    this.positionMap.set(position, assignment);
+    this.itemIdMap.set(itemId, assignment);
     this.ranking.updatedAt = Date.now();
 
     return {
@@ -209,8 +225,8 @@ export class RankingEngineImpl implements IRankingEngine {
     }
 
     // Find item at source position
-    const sourceIndex = this.ranking.assignments.findIndex(a => a.position === fromPosition);
-    if (sourceIndex === -1) {
+    const sourceAssignment = this.positionMap.get(fromPosition);
+    if (!sourceAssignment) {
       return {
         success: false,
         operation,
@@ -220,8 +236,7 @@ export class RankingEngineImpl implements IRankingEngine {
     }
 
     // Check if target is occupied
-    const targetIndex = this.ranking.assignments.findIndex(a => a.position === toPosition);
-    if (targetIndex !== -1) {
+    if (this.positionMap.has(toPosition)) {
       // Target occupied - this should be a swap instead
       return this.swap(fromPosition, toPosition);
     }
@@ -230,11 +245,16 @@ export class RankingEngineImpl implements IRankingEngine {
     this.pushUndo();
 
     // Move the item
-    this.ranking.assignments[sourceIndex] = {
-      ...this.ranking.assignments[sourceIndex],
+    const sourceIndex = this.ranking.assignments.indexOf(sourceAssignment);
+    const newAssignment: PositionAssignment = {
+      ...sourceAssignment,
       position: toPosition,
       timestamp: Date.now(),
     };
+    this.ranking.assignments[sourceIndex] = newAssignment;
+    this.positionMap.delete(fromPosition);
+    this.positionMap.set(toPosition, newAssignment);
+    this.itemIdMap.set(newAssignment.itemId, newAssignment);
     this.ranking.updatedAt = Date.now();
 
     return {
@@ -260,11 +280,11 @@ export class RankingEngineImpl implements IRankingEngine {
     }
 
     // Find items at both positions
-    const indexA = this.ranking.assignments.findIndex(a => a.position === positionA);
-    const indexB = this.ranking.assignments.findIndex(a => a.position === positionB);
+    const assignmentA = this.positionMap.get(positionA);
+    const assignmentB = this.positionMap.get(positionB);
 
     // At least one must be occupied
-    if (indexA === -1 && indexB === -1) {
+    if (!assignmentA && !assignmentB) {
       return {
         success: false,
         operation,
@@ -277,19 +297,22 @@ export class RankingEngineImpl implements IRankingEngine {
     this.pushUndo();
 
     // Perform swap
-    if (indexA !== -1) {
-      this.ranking.assignments[indexA] = {
-        ...this.ranking.assignments[indexA],
-        position: positionB,
-        timestamp: Date.now(),
-      };
+    this.positionMap.delete(positionA);
+    this.positionMap.delete(positionB);
+
+    if (assignmentA) {
+      const indexA = this.ranking.assignments.indexOf(assignmentA);
+      const newA: PositionAssignment = { ...assignmentA, position: positionB, timestamp: Date.now() };
+      this.ranking.assignments[indexA] = newA;
+      this.positionMap.set(positionB, newA);
+      this.itemIdMap.set(newA.itemId, newA);
     }
-    if (indexB !== -1) {
-      this.ranking.assignments[indexB] = {
-        ...this.ranking.assignments[indexB],
-        position: positionA,
-        timestamp: Date.now(),
-      };
+    if (assignmentB) {
+      const indexB = this.ranking.assignments.indexOf(assignmentB);
+      const newB: PositionAssignment = { ...assignmentB, position: positionA, timestamp: Date.now() };
+      this.ranking.assignments[indexB] = newB;
+      this.positionMap.set(positionA, newB);
+      this.itemIdMap.set(newB.itemId, newB);
     }
     this.ranking.updatedAt = Date.now();
 
@@ -304,8 +327,8 @@ export class RankingEngineImpl implements IRankingEngine {
   remove(position: number): OperationResult {
     const operation: RankingOperation = { type: 'remove', position };
 
-    const index = this.ranking.assignments.findIndex(a => a.position === position);
-    if (index === -1) {
+    const assignment = this.positionMap.get(position);
+    if (!assignment) {
       return {
         success: false,
         operation,
@@ -318,7 +341,10 @@ export class RankingEngineImpl implements IRankingEngine {
     this.pushUndo();
 
     // Remove the assignment
+    const index = this.ranking.assignments.indexOf(assignment);
     this.ranking.assignments.splice(index, 1);
+    this.positionMap.delete(position);
+    this.itemIdMap.delete(assignment.itemId);
     this.ranking.updatedAt = Date.now();
 
     return {
@@ -336,6 +362,8 @@ export class RankingEngineImpl implements IRankingEngine {
     this.pushUndo();
 
     this.ranking.assignments = [];
+    this.positionMap.clear();
+    this.itemIdMap.clear();
     this.ranking.updatedAt = Date.now();
 
     return {
@@ -349,53 +377,69 @@ export class RankingEngineImpl implements IRankingEngine {
   batch(operations: RankingOperation[]): OperationResult {
     const batchOp: RankingOperation = { type: 'batch', operations };
 
+    // Guard against unbounded recursive nesting
+    if (this.batchDepth >= RankingEngineImpl.MAX_BATCH_DEPTH) {
+      return {
+        success: false,
+        operation: batchOp,
+        newState: this.ranking.assignments,
+        error: `Batch nesting depth exceeded maximum of ${RankingEngineImpl.MAX_BATCH_DEPTH}`,
+      };
+    }
+
     // Save state for undo (single undo point for entire batch)
     this.pushUndo();
 
-    for (const op of operations) {
-      let result: OperationResult;
+    this.batchDepth++;
+    try {
+      for (const op of operations) {
+        let result: OperationResult;
 
-      switch (op.type) {
-        case 'assign':
-          result = this.executeWithoutUndo(() => this.assign(op.itemId, op.position));
-          break;
-        case 'move':
-          result = this.executeWithoutUndo(() => this.move(op.fromPosition, op.toPosition));
-          break;
-        case 'swap':
-          result = this.executeWithoutUndo(() => this.swap(op.positionA, op.positionB));
-          break;
-        case 'remove':
-          result = this.executeWithoutUndo(() => this.remove(op.position));
-          break;
-        case 'clear':
-          result = this.executeWithoutUndo(() => this.clear());
-          break;
-        case 'batch':
-          result = this.executeWithoutUndo(() => this.batch(op.operations));
-          break;
-        default:
-          continue;
+        switch (op.type) {
+          case 'assign':
+            result = this.executeWithoutUndo(() => this.assign(op.itemId, op.position));
+            break;
+          case 'move':
+            result = this.executeWithoutUndo(() => this.move(op.fromPosition, op.toPosition));
+            break;
+          case 'swap':
+            result = this.executeWithoutUndo(() => this.swap(op.positionA, op.positionB));
+            break;
+          case 'remove':
+            result = this.executeWithoutUndo(() => this.remove(op.position));
+            break;
+          case 'clear':
+            result = this.executeWithoutUndo(() => this.clear());
+            break;
+          case 'batch':
+            result = this.executeWithoutUndo(() => this.batch(op.operations));
+            break;
+          default:
+            continue;
+        }
+
+        if (!result.success) {
+          // Rollback
+          this.ranking.assignments = this.undoStack.pop() || [];
+          this.rebuildIndexes();
+          return {
+            success: false,
+            operation: batchOp,
+            newState: this.ranking.assignments,
+            error: result.error,
+          };
+        }
       }
 
-      if (!result.success) {
-        // Rollback
-        this.ranking.assignments = this.undoStack.pop() || [];
-        return {
-          success: false,
-          operation: batchOp,
-          newState: this.ranking.assignments,
-          error: result.error,
-        };
-      }
+      return {
+        success: true,
+        operation: batchOp,
+        previousState: this.undoStack[this.undoStack.length - 1],
+        newState: [...this.ranking.assignments],
+      };
+    } finally {
+      this.batchDepth--;
     }
-
-    return {
-      success: true,
-      operation: batchOp,
-      previousState: this.undoStack[this.undoStack.length - 1],
-      newState: [...this.ranking.assignments],
-    };
   }
 
   // ---------------------------------------------------------------------------
@@ -418,6 +462,7 @@ export class RankingEngineImpl implements IRankingEngine {
 
     this.redoStack.push(currentState);
     this.ranking.assignments = previousState;
+    this.rebuildIndexes();
     this.ranking.updatedAt = Date.now();
 
     return {
@@ -436,6 +481,7 @@ export class RankingEngineImpl implements IRankingEngine {
 
     this.undoStack.push(currentState);
     this.ranking.assignments = nextState;
+    this.rebuildIndexes();
     this.ranking.updatedAt = Date.now();
 
     return {
@@ -622,6 +668,7 @@ export class RankingEngineImpl implements IRankingEngine {
       timestamp: Date.now(),
       source: 'direct' as const,
     }));
+    this.rebuildIndexes();
     this.ranking.updatedAt = Date.now();
   }
 
@@ -642,6 +689,7 @@ export class RankingEngineImpl implements IRankingEngine {
       timestamp: Date.now(),
       source: 'tier' as const,
     }));
+    this.rebuildIndexes();
     this.ranking.updatedAt = Date.now();
   }
 
@@ -679,6 +727,7 @@ export class RankingEngineImpl implements IRankingEngine {
       timestamp: Date.now(),
       source: 'bracket' as const,
     }));
+    this.rebuildIndexes();
     this.ranking.updatedAt = Date.now();
   }
 
@@ -694,9 +743,51 @@ export class RankingEngineImpl implements IRankingEngine {
   }
 
   deserialize(data: string): void {
-    const parsed = JSON.parse(data);
-    this.ranking = parsed.ranking;
-    this.items = new Map(parsed.items);
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(data);
+    } catch {
+      throw new Error(
+        `RankingEngine.deserialize: corrupted data (${data.length} chars): ${data.slice(0, 100)}`
+      );
+    }
+
+    // Schema validation
+    if (!parsed || typeof parsed !== 'object') {
+      throw new Error('RankingEngine.deserialize: expected an object');
+    }
+
+    const obj = parsed as Record<string, unknown>;
+
+    // Validate ranking shape
+    const ranking = obj.ranking;
+    if (!ranking || typeof ranking !== 'object') {
+      throw new Error('RankingEngine.deserialize: missing or invalid "ranking" field');
+    }
+    const r = ranking as Record<string, unknown>;
+    if (typeof r.id !== 'string' || typeof r.listId !== 'string' ||
+        typeof r.size !== 'number' || !Array.isArray(r.assignments) ||
+        typeof r.createdAt !== 'number' || typeof r.updatedAt !== 'number') {
+      throw new Error('RankingEngine.deserialize: ranking schema mismatch');
+    }
+
+    // Validate assignments
+    for (const assignment of r.assignments) {
+      if (!assignment || typeof assignment !== 'object' ||
+          typeof (assignment as Record<string, unknown>).itemId !== 'string' ||
+          typeof (assignment as Record<string, unknown>).position !== 'number') {
+        throw new Error('RankingEngine.deserialize: invalid assignment entry');
+      }
+    }
+
+    // Validate items array (array of [key, value] entries for Map)
+    if (!Array.isArray(obj.items)) {
+      throw new Error('RankingEngine.deserialize: missing or invalid "items" field');
+    }
+
+    this.ranking = ranking as Ranking;
+    this.items = new Map(obj.items as [string, RankableItem][]);
+    this.rebuildIndexes();
     this.undoStack = [];
     this.redoStack = [];
   }

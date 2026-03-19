@@ -37,6 +37,8 @@ export interface ItemDetailResponse {
   recentRankings: RecentRankingData[];
   /** External links */
   externalLinks: ExternalLinkData[];
+  /** Activity timeline with ranking history */
+  activityTimeline?: ActivityTimelineData;
 }
 
 /**
@@ -84,4 +86,35 @@ export interface ExternalLinkData {
   type: 'wikipedia' | 'imdb' | 'spotify' | 'youtube' | 'custom';
   url: string;
   label: string;
+}
+
+/**
+ * Activity event for the item timeline
+ */
+export interface ActivityEvent {
+  id: string;
+  action: 'assign' | 'move' | 'swap' | 'remove' | 'rank_change';
+  position_before: number | null;
+  position_after: number | null;
+  list_title: string | null;
+  list_id: string | null;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+}
+
+/**
+ * Rank trajectory data point for sparkline
+ */
+export interface TrajectoryPoint {
+  date: string;
+  position: number;
+}
+
+/**
+ * Activity timeline data returned by the API
+ */
+export interface ActivityTimelineData {
+  events: ActivityEvent[];
+  trajectory: TrajectoryPoint[];
+  totalEvents: number;
 }

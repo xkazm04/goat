@@ -25,13 +25,41 @@ export const SPRING = {
 } satisfies Record<string, Transition>;
 
 // ---------------------------------------------------------------------------
-// Duration presets (for opacity / color transitions)
+// Duration presets (seconds) — 4-tier scale
+// Mirrors CSS custom properties in design-tokens.css:
+//   --duration-instant · --duration-quick · --duration-normal · --duration-slow
 // ---------------------------------------------------------------------------
 
 export const DURATION = {
-  fast: 0.15,
-  normal: 0.2,
-  slow: 0.3,
+  /** 50 ms — focus rings, active/pressed, tap feedback */
+  instant: 0.05,
+  /** 150 ms — hover, toggle, small state changes */
+  quick: 0.15,
+  /** 200 ms — fade-in, collapse, subtle transitions */
+  fast: 0.2,
+  /** 300 ms — modal entry/exit, panel slide, standard transitions */
+  normal: 0.3,
+  /** 500 ms — page transitions, stagger base */
+  slow: 0.5,
+  /** 600 ms — celebration animations, extended entrances */
+  emphasis: 0.6,
+  /** 800 ms — dramatic reveals, hero animations */
+  dramatic: 0.8,
+} as const;
+
+// ---------------------------------------------------------------------------
+// Easing presets — cubic-bezier curves for Framer Motion `ease` prop
+// ---------------------------------------------------------------------------
+
+export const EASE = {
+  /** Quick departure, smooth arrival — entrances & exits */
+  out: [0.16, 1, 0.3, 1] as [number, number, number, number],
+  /** Smooth throughout — transforms & state changes */
+  inOut: [0.4, 0, 0.2, 1] as [number, number, number, number],
+  /** Bouncy, playful overshoot */
+  spring: [0.34, 1.56, 0.64, 1] as [number, number, number, number],
+  /** Gradual deceleration — settling animations */
+  decel: [0.0, 0.0, 0.2, 1] as [number, number, number, number],
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -75,7 +103,7 @@ export function prefersReducedMotion(): boolean {
  */
 export function safeTransition(transition: Transition): Transition {
   if (prefersReducedMotion()) {
-    return { duration: DURATION.fast };
+    return { duration: DURATION.quick };
   }
   return transition;
 }

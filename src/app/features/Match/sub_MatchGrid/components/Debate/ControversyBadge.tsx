@@ -74,9 +74,9 @@ export const ControversyBadge = memo(function ControversyBadge({
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ scale: 1.05 }}
       className={`
-        inline-flex items-center gap-1 px-2 py-0.5 rounded-full
+        inline-flex items-center gap-1 px-2 py-0.5 rounded-badge
         ${style.bg} ${style.text} shadow-md ${style.glow}
-        text-[10px] font-bold uppercase tracking-wide
+        text-2xs font-bold uppercase tracking-wide
         cursor-pointer transition-shadow
       `}
       aria-label={`Controversy: ${label}. Click to debate.`}

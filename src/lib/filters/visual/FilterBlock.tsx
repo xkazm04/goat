@@ -9,13 +9,17 @@ import React, { useCallback, useMemo } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { motion, AnimatePresence } from 'framer-motion';
-import { GripVertical, X, ToggleLeft, ToggleRight } from 'lucide-react';
+import { X, ToggleLeft, ToggleRight } from 'lucide-react';
+import { GoatGrip } from '@/components/visual/GoatIcons';
 import type { FilterCondition, FilterValueType, FilterOperator } from '@/lib/filters/types';
 import { FILTER_COLORS, FILTER_TIMING, OPERATOR_LABELS, TYPE_OPERATORS, DEFAULT_FILTER_FIELDS } from '@/lib/filters/constants';
 import { cn } from '@/lib/utils';
+import { UniversalSelect } from '@/components/ui/universal-select';
+import type { SelectOption } from '@/components/ui/universal-select';
 import { useFilterBuilderStore } from '@/stores/filter-builder-store';
 import { OperatorSelector } from './OperatorSelector';
 import { ValueInput } from './ValueInput';
+import { DURATION } from '@/lib/animations/motion-presets';
 
 interface FilterBlockProps {
   nodeId: string;
@@ -133,14 +137,14 @@ export function FilterBlock({
         scale: 1,
       }}
       exit={{ opacity: 0, y: -10, scale: 0.95 }}
-      transition={{ duration: 0.2, ease: 'easeOut', layout: { type: 'spring', stiffness: 350, damping: 30 } }}
+      transition={{ duration: DURATION.fast, ease: 'easeOut', layout: { type: 'spring', stiffness: 350, damping: 30 } }}
       className={cn(
-        'group relative flex items-center gap-2 rounded-lg border p-3',
-        'bg-zinc-900/50 backdrop-blur-xs',
+        'group relative flex items-center gap-2 rounded-card border p-3',
+        'bg-background/50 backdrop-blur-xs',
         'transition-shadow duration-200',
         colors.border,
-        isSelected && 'ring-2 ring-brand/50',
-        isDraggingLocal && 'shadow-xl shadow-brand/20',
+        isSelected && 'ring-2 ring-primary/50',
+        isDraggingLocal && 'shadow-xl shadow-primary/20',
         !condition.enabled && 'opacity-50'
       )}
       onClick={handleSelect}
@@ -151,29 +155,28 @@ export function FilterBlock({
         {...listeners}
         className={cn(
           'flex cursor-grab items-center justify-center rounded p-1',
-          'text-zinc-500 hover:text-zinc-300',
+          'text-muted-foreground hover:text-foreground',
           'active:cursor-grabbing'
         )}
       >
-        <GripVertical size={16} />
+        <GoatGrip size={16} />
       </div>
 
       {/* Field selector */}
-      <select
-        value={condition.field}
-        onChange={(e) => handleFieldChange(e.target.value)}
-        className={cn(
-          'rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1.5 text-sm',
-          'text-zinc-200 focus:border-brand focus:outline-hidden focus:ring-1 focus:ring-brand',
-          'min-w-[100px]'
-        )}
-      >
-        {DEFAULT_FILTER_FIELDS.map((f) => (
-          <option key={f.field} value={f.field}>
-            {f.icon} {f.name}
-          </option>
-        ))}
-      </select>
+      <div onClick={(e) => e.stopPropagation()} className="min-w-[120px]">
+        <UniversalSelect
+          value={condition.field}
+          onChange={handleFieldChange}
+          options={DEFAULT_FILTER_FIELDS.map((f) => ({
+            value: f.field,
+            label: f.name,
+            icon: <span>{f.icon}</span>,
+          }))}
+          size="sm"
+          searchable={false}
+          placeholder="Field..."
+        />
+      </div>
 
       {/* Operator selector */}
       <OperatorSelector
@@ -224,7 +227,7 @@ export function FilterBlock({
           'rounded p-1 transition-colors',
           condition.enabled
             ? 'text-emerald-500 hover:text-emerald-400'
-            : 'text-zinc-500 hover:text-zinc-400'
+            : 'text-muted-foreground hover:text-muted-foreground'
         )}
         title={condition.enabled ? 'Disable condition' : 'Enable condition'}
       >
@@ -238,7 +241,7 @@ export function FilterBlock({
           handleRemove();
         }}
         className={cn(
-          'rounded p-1 text-zinc-500 transition-colors',
+          'rounded p-1 text-muted-foreground transition-colors',
           'hover:bg-red-500/20 hover:text-red-400'
         )}
         title="Remove condition"
@@ -249,7 +252,7 @@ export function FilterBlock({
       {/* Depth indicator */}
       {depth > 0 && (
         <div
-          className="absolute -left-3 top-1/2 h-px w-3 bg-zinc-600"
+          className="absolute -left-3 top-1/2 h-px w-3 bg-border"
           style={{ transform: 'translateY(-50%)' }}
         />
       )}
@@ -267,21 +270,21 @@ export function FilterBlockOverlay({ condition }: { condition: FilterCondition }
   return (
     <div
       className={cn(
-        'flex items-center gap-2 rounded-lg border p-3',
-        'bg-zinc-900/90 backdrop-blur-xs shadow-lg shadow-brand/30',
+        'flex items-center gap-2 rounded-card border p-3',
+        'bg-background/90 backdrop-blur-xs shadow-lg shadow-primary/30',
         colors.border,
-        'ring-2 ring-brand'
+        'ring-2 ring-primary'
       )}
     >
-      <GripVertical size={16} className="text-brand-hover" />
-      <span className="text-sm text-zinc-300">
+      <GoatGrip size={16} className="text-primary" />
+      <span className="text-sm text-foreground">
         {fieldDef.icon} {fieldDef.name}
       </span>
-      <span className="text-xs text-zinc-500">
+      <span className="text-xs text-muted-foreground">
         {OPERATOR_LABELS[condition.operator]}
       </span>
       {condition.value !== null && condition.value !== '' && (
-        <span className="truncate text-sm text-zinc-400">
+        <span className="truncate text-sm text-muted-foreground">
           {String(condition.value)}
         </span>
       )}

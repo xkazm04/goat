@@ -23,15 +23,18 @@ import { parseListQuery, generateListTitle, getExampleQueries } from "./lib/pars
 import { useTopLists, useUserLists } from "@/hooks/use-top-lists";
 import { useQuickSearch, useSearchHistory } from "@/hooks/use-search";
 import type { SearchResult, SearchDomain } from "@/lib/search";
+import { trackError } from "@/lib/errors/error-analytics";
 import { useTempUser } from "@/hooks/use-temp-user";
 import { useCommandPaletteStore } from "./useCommandPalette";
 import { useListStore } from "@/stores/use-list-store";
 import { toast } from "@/hooks/use-toast";
 import { CATEGORY_CONFIG } from "@/lib/config/category-config";
+import { GoatMascot } from "@/components/visual/GoatMascot";
 import { TopList } from "@/types/top-lists";
 import { createListIntent } from "@/types/list-intent";
 import { listCreationService } from "@/services/list-creation-service";
 import { ELEVATION } from "@/components/visual/depth";
+import { DURATION } from "@/lib/animations/motion-presets";
 import { fuzzyMatch } from "@/lib/search/fuzzy";
 import {
   CATEGORY_COLORS,
@@ -158,7 +161,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   }, [cleanQuery]);
 
   // API-backed universal search (searches lists, items, groups, blueprints, users)
-  const { results: apiResults, isLoading: isSearchLoading } = useQuickSearch(searchQuery, {
+  const { results: apiResults, isLoading: isSearchLoading, failedDomains } = useQuickSearch(searchQuery, {
     enabled: isOpen && !isCreateCommand && searchQuery.length > 0,
     domains: filterDomain ? [filterDomain] : undefined,
     limit: 12,
@@ -255,8 +258,15 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     if (storedLists) {
       try {
         setRecentLists(JSON.parse(storedLists).slice(0, MAX_RECENT_LISTS));
-      } catch {
-        // Ignore parse errors
+      } catch (error) {
+        trackError({
+          code: 'CLIENT_STORAGE_ERROR',
+          category: 'client',
+          severity: 'warning',
+          traceId: `command-palette-parse-${Date.now()}`,
+          source: 'CommandPalette',
+          context: { operation: 'parseRecentLists', message: error instanceof Error ? error.message : String(error) },
+        });
       }
     }
   }, []);
@@ -313,7 +323,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     addToHistory(query);
     setCurrentList(list);
     onClose();
-    router.push(`/match-test?list=${list.id}`);
+    router.push(`/goat?list=${list.id}`);
   }, [saveRecentList, addToHistory, query, setCurrentList, onClose, router]);
 
   // Navigate to an API search result
@@ -333,7 +343,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       handleNavigateToList(fullList);
     } else {
       onClose();
-      router.push(`/match-test?list=${entry.id}`);
+      router.push(`/goat?list=${entry.id}`);
     }
   }, [allLists, handleNavigateToList, onClose, router]);
 
@@ -379,7 +389,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
 
       setCurrentList(enhancedListData);
       onClose();
-      router.push(`/match-test?list=${result.listId}`);
+      router.push(`/goat?list=${result.listId}`);
     } else {
       toast({
         title: "Creation Failed",
@@ -495,13 +505,13 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       <button
         key={`${result.domain}-${result.id}`}
         onClick={() => handleNavigateToResult(result)}
-        className={`w-full px-3 py-2.5 rounded-lg text-left flex items-center gap-3 transition-colors group ${
+        className={`w-full px-3 py-2.5 rounded-card text-left flex items-center gap-3 transition-colors group ${
           isSelected ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/5"
         }`}
         data-testid={`command-palette-result-${index}`}
       >
         <div
-          className="p-1.5 rounded-md shrink-0"
+          className="p-1.5 rounded-control shrink-0"
           style={{ background: `${domainColor}20` }}
         >
           <span style={{ color: domainColor }}>{DOMAIN_ICONS[result.domain]}</span>
@@ -510,14 +520,14 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium truncate">{result.title}</span>
             {result.domain === 'lists' && result.metadata?.isUserList && (
-              <span className="px-1.5 py-0.5 rounded bg-brand/20 text-brand-hover text-[10px] shrink-0">
+              <span className="px-1.5 py-0.5 rounded bg-brand/20 text-brand-hover text-2xs shrink-0">
                 Yours
               </span>
             )}
           </div>
           {result.subtitle && (
             <div className="flex items-center gap-1.5 text-xs text-white/40">
-              <span className="px-1.5 py-0.5 rounded text-[10px]" style={{ background: `${domainColor}20`, color: domainColor }}>
+              <span className="px-1.5 py-0.5 rounded text-2xs" style={{ background: `${domainColor}20`, color: domainColor }}>
                 {DOMAIN_LABELS[result.domain]}
               </span>
               <span>{result.subtitle}</span>
@@ -542,7 +552,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       <button
         key={list.id}
         onClick={() => handleNavigateToList(list)}
-        className={`w-full px-3 py-2.5 rounded-lg text-left flex items-center gap-3 transition-colors group ${
+        className={`w-full px-3 py-2.5 rounded-card text-left flex items-center gap-3 transition-colors group ${
           isSelected
             ? "bg-white/10 text-white"
             : "text-white/70 hover:bg-white/5"
@@ -550,7 +560,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         data-testid={`command-palette-list-${index}`}
       >
         <div
-          className="p-1.5 rounded-md shrink-0"
+          className="p-1.5 rounded-control shrink-0"
           style={{ background: `${listColor.primary}20` }}
         >
           {CATEGORY_ICONS[list.category] || <List className="w-4 h-4" />}
@@ -566,7 +576,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
               </>
             )}
             {isUserList && (
-              <span className="ml-2 px-1.5 py-0.5 rounded bg-brand/20 text-brand-hover text-[10px]">
+              <span className="ml-2 px-1.5 py-0.5 rounded bg-brand/20 text-brand-hover text-2xs">
                 Your list
               </span>
             )}
@@ -588,8 +598,8 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.15 }}
-          className="fixed inset-0 bg-black/70 backdrop-blur-xl z-dropdown flex items-start justify-center pt-[12vh]"
+          transition={{ duration: DURATION.quick }}
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-dropdown flex items-start justify-center pt-[12vh]"
           onClick={onClose}
           data-testid="command-palette-backdrop"
         >
@@ -597,13 +607,13 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
             initial={{ opacity: 0, scale: 0.95, y: -20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -20 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
+            transition={{ duration: DURATION.quick, ease: "easeOut" }}
             className="w-full max-w-2xl mx-4"
             onClick={(e) => e.stopPropagation()}
             data-testid="command-palette-container"
           >
             <div
-              className="rounded-2xl overflow-hidden"
+              className="rounded-container overflow-hidden"
               style={{
                 background: `linear-gradient(135deg, rgba(15, 20, 35, 0.98) 0%, rgba(25, 35, 55, 0.98) 100%)`,
                 boxShadow: ELEVATION.modal,
@@ -650,7 +660,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                   <div className="px-4 py-2 border-b border-white/5 flex items-center gap-2">
                     <span className="text-xs text-white/40">Filtering by:</span>
                     <span
-                      className="px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1.5"
+                      className="px-2 py-1 rounded-badge text-xs font-medium flex items-center gap-1.5"
                       style={{
                         background: `${DOMAIN_COLORS[filterDomain]}20`,
                         color: DOMAIN_COLORS[filterDomain],
@@ -676,7 +686,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                         <button
                           key={cat}
                           onClick={() => setCategoryFilter(isActive ? undefined : cat)}
-                          className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 shrink-0 ${
+                          className={`px-2.5 py-1 rounded-badge text-xs font-medium transition-all flex items-center gap-1.5 shrink-0 ${
                             isActive
                               ? "text-white"
                               : "text-white/50 hover:text-white/80"
@@ -697,7 +707,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                       <button
                         key={domain}
                         onClick={() => setQuery(`/${domain.slice(0, -1)} `)}
-                        className="px-2.5 py-1 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 shrink-0 text-white/50 hover:text-white/80"
+                        className="px-2.5 py-1 rounded-badge text-xs font-medium transition-all flex items-center gap-1.5 shrink-0 text-white/50 hover:text-white/80"
                         style={{ background: "rgba(255,255,255,0.05)" }}
                       >
                         {DOMAIN_ICONS[domain]}
@@ -721,7 +731,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div
-                          className="p-2 rounded-lg"
+                          className="p-2 rounded-control"
                           style={{ background: `${categoryColor.primary}20` }}
                         >
                           <Plus className="w-4 h-4" style={{ color: categoryColor.primary }} />
@@ -742,7 +752,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                         </div>
                       </div>
                       <div
-                        className="text-xs px-2 py-1 rounded-full"
+                        className="text-xs px-2 py-1 rounded-badge"
                         style={{
                           background: `${categoryColor.primary}20`,
                           color: categoryColor.primary,
@@ -772,7 +782,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                               <button
                                 key={`suggestion-${i}`}
                                 onClick={() => handleCreateList(suggestion)}
-                                className={`w-full px-3 py-2.5 rounded-lg text-left flex items-center gap-3 transition-colors ${
+                                className={`w-full px-3 py-2.5 rounded-card text-left flex items-center gap-3 transition-colors ${
                                   selectedIndex === i
                                     ? "bg-white/10 text-white"
                                     : "text-white/70 hover:bg-white/5"
@@ -789,6 +799,11 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                     ) : useApiSearch ? (
                       // API search results (grouped by domain)
                       <>
+                        {failedDomains.length > 0 && (
+                          <div className="mx-3 mb-2 px-3 py-2 rounded-card bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300/80">
+                            {failedDomains.map(d => DOMAIN_LABELS[d.domain] || d.domain).join(', ')} results unavailable
+                          </div>
+                        )}
                         {apiResults.length > 0 ? (
                           <>
                             {apiResults.map((result, i) =>
@@ -796,10 +811,10 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                             )}
                           </>
                         ) : !isSearchLoading ? (
-                          <div className="px-3 py-6 text-center text-white/40">
-                            <Search className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                            <p className="text-sm">No results for "{searchQuery}"</p>
-                            <p className="text-xs mt-1">Try "new {searchQuery}" to create a list</p>
+                          <div className="px-3 py-6 text-center flex flex-col items-center text-white/40">
+                            <GoatMascot variant="searching" size={80} />
+                            <p className="text-sm text-amber-200/70 mt-1">No results for &ldquo;{searchQuery}&rdquo;</p>
+                            <p className="text-xs text-slate-500 mt-1">Try &ldquo;new {searchQuery}&rdquo; to create a list</p>
                           </div>
                         ) : null}
 
@@ -808,7 +823,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                           <div className="border-t border-white/5 mt-2 pt-2">
                             <button
                               onClick={() => handleCreateList()}
-                              className={`w-full px-3 py-2.5 rounded-lg text-left flex items-center gap-3 transition-colors ${
+                              className={`w-full px-3 py-2.5 rounded-card text-left flex items-center gap-3 transition-colors ${
                                 selectedIndex === apiResults.length
                                   ? "bg-white/10 text-white"
                                   : "text-white/70 hover:bg-white/5"
@@ -816,7 +831,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                               data-testid="command-palette-create-new"
                             >
                               <div
-                                className="p-1.5 rounded-md"
+                                className="p-1.5 rounded-control"
                                 style={{ background: `${categoryColor.primary}20` }}
                               >
                                 <Plus className="w-4 h-4" style={{ color: categoryColor.primary }} />
@@ -855,7 +870,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                         <div className="border-t border-white/5 mt-2 pt-2">
                           <button
                             onClick={() => handleCreateList()}
-                            className={`w-full px-3 py-2.5 rounded-lg text-left flex items-center gap-3 transition-colors ${
+                            className={`w-full px-3 py-2.5 rounded-card text-left flex items-center gap-3 transition-colors ${
                               selectedIndex === filteredLists.length
                                 ? "bg-white/10 text-white"
                                 : "text-white/70 hover:bg-white/5"
@@ -863,7 +878,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                             data-testid="command-palette-create-new"
                           >
                             <div
-                              className="p-1.5 rounded-md"
+                              className="p-1.5 rounded-control"
                               style={{ background: `${categoryColor.primary}20` }}
                             >
                               <Plus className="w-4 h-4" style={{ color: categoryColor.primary }} />
@@ -894,7 +909,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                             <button
                               key={`recent-list-${entry.id}`}
                               onClick={() => handleNavigateToRecentList(entry)}
-                              className={`w-full px-3 py-2.5 rounded-lg text-left flex items-center gap-3 transition-colors group ${
+                              className={`w-full px-3 py-2.5 rounded-card text-left flex items-center gap-3 transition-colors group ${
                                 selectedIndex === i
                                   ? "bg-white/10 text-white"
                                   : "text-white/70 hover:bg-white/5"
@@ -902,7 +917,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                               data-testid={`command-palette-recent-list-${i}`}
                             >
                               <div
-                                className="p-1.5 rounded-md shrink-0"
+                                className="p-1.5 rounded-control shrink-0"
                                 style={{ background: `${listColor.primary}20` }}
                               >
                                 {CATEGORY_ICONS[entry.category] || <List className="w-4 h-4" />}
@@ -944,7 +959,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                             <button
                               key={`history-${i}`}
                               onClick={() => setQuery(entry.query)}
-                              className={`w-full px-3 py-2.5 rounded-lg text-left flex items-center gap-3 transition-colors ${
+                              className={`w-full px-3 py-2.5 rounded-card text-left flex items-center gap-3 transition-colors ${
                                 selectedIndex === idx
                                   ? "bg-white/10 text-white"
                                   : "text-white/70 hover:bg-white/5"
@@ -955,7 +970,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                               <span className="flex-1">{entry.query}</span>
                               {entry.domain && (
                                 <span
-                                  className="px-1.5 py-0.5 rounded text-[10px]"
+                                  className="px-1.5 py-0.5 rounded text-2xs"
                                   style={{
                                     background: `${DOMAIN_COLORS[entry.domain]}20`,
                                     color: DOMAIN_COLORS[entry.domain],
@@ -982,7 +997,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                         <button
                           key={`example-${i}`}
                           onClick={() => setQuery(`new ${example}`)}
-                          className={`w-full px-3 py-2.5 rounded-lg text-left flex items-center gap-3 transition-colors ${
+                          className={`w-full px-3 py-2.5 rounded-card text-left flex items-center gap-3 transition-colors ${
                             selectedIndex === idx
                               ? "bg-white/10 text-white"
                               : "text-white/70 hover:bg-white/5"
@@ -1011,19 +1026,19 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                     <span>navigate</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white/60 font-mono text-[10px]">
+                    <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white/60 font-mono text-2xs">
                       Enter
                     </kbd>
                     <span>{(useApiSearch && apiResults.length > 0) || filteredLists.length > 0 ? "select" : "create"}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white/60 font-mono text-[10px]">
+                    <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white/60 font-mono text-2xs">
                       /list
                     </kbd>
                     <span>filter by type</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white/60 font-mono text-[10px]">
+                    <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white/60 font-mono text-2xs">
                       Esc
                     </kbd>
                     <span>close</span>
@@ -1034,7 +1049,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                   <button
                     onClick={() => handleCreateList()}
                     disabled={isCreating || !isLoaded}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                    className={`flex items-center gap-2 px-4 py-2 rounded-control font-medium text-sm transition-all ${
                       isCreating
                         ? "opacity-50 cursor-not-allowed"
                         : "hover:scale-105"

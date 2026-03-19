@@ -18,6 +18,7 @@ import {
   batchComputeRatings,
   type RawListAppearance,
 } from './UniversalRatingEngine';
+import { extractTitle } from '@/lib/items/item-utils';
 import {
   generateCrossListInsights,
   detectAnomalies,
@@ -293,7 +294,7 @@ export async function getGraphOverview(
 
   const ratingsInput = (items as Array<{ id: string; name: string; title?: string }>).map(item => ({
     itemId: item.id,
-    itemName: item.title || item.name,
+    itemName: extractTitle(item),
     appearances: appearances[item.id] || [],
   }));
 

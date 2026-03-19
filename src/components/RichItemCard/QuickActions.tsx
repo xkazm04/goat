@@ -24,6 +24,7 @@ import {
   ArrowDown,
   type LucideIcon,
 } from 'lucide-react';
+import { DURATION } from '@/lib/animations/motion-presets';
 
 /**
  * Built-in action types
@@ -193,7 +194,7 @@ const ActionButton = memo(function ActionButton({
       }}
       disabled={action.disabled}
       className={cn(
-        'flex items-center justify-center rounded-lg',
+        'flex items-center justify-center rounded-card',
         'bg-gray-900/80 backdrop-blur-xs border border-gray-600/50',
         'text-gray-300 transition-colors',
         sizeConfig.button,
@@ -293,13 +294,13 @@ export const QuickActions = memo(function QuickActions({
       initial={{ opacity: 0, y: position === 'top' ? -10 : 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: position === 'top' ? -10 : 10 }}
-      transition={{ duration: 0.15 }}
+      transition={{ duration: DURATION.quick }}
       className={cn(
         'flex z-20',
         positionClass,
         sizeConfig.gap,
         sizeConfig.padding,
-        'rounded-lg bg-gray-900/60 backdrop-blur-xs',
+        'rounded-card bg-gray-900/60 backdrop-blur-xs',
         className
       )}
       data-testid="quick-actions"

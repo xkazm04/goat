@@ -2,18 +2,17 @@
 
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { GridItemType } from "@/types/match";
-import { AnimatePresence } from "framer-motion";
+
 import { X } from "lucide-react";
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, memo } from "react";
 import { DropCelebration } from "./components/DropCelebration";
 import { DropZoneOccupied } from "./components/DropZoneOccupied";
 import { DropZoneEmpty, RankNumberBackground, HoloGridPattern } from "./components/DropZoneEmpty";
-import { MagneticGlowAura, ValidDropIndicator, SnapConfirmationGlow } from "./components/MagneticGlowAura";
+import { ValidDropIndicator, SnapConfirmationGlow } from "./components/MagneticGlowAura";
 import { DropZoneCard, ActiveSelectionRing, HoverGlowBorder, ItemTitle } from "./components/DropZoneCard";
-import { useMagneticSnap } from "./hooks/useMagneticSnap";
 import { getMedalGradient, MEDAL_HINT_COLORS } from "../lib/medalStyling";
 import { useOptionalDropZoneHighlight } from "../sub_MatchGrid/components/DropZoneHighlightContext";
-import { createGridDragData, createGridSlotDropData } from "@/lib/dnd";
+import { createGridDragData, createGridSlotDropData, createGridReceiverId } from "@/lib/dnd";
 import { getRankConfig, isPodiumPosition } from "../lib/rankConfig";
 import { useCriteriaStore, useActiveProfile } from '@/stores/criteria-store';
 import { useListStore } from '@/stores/use-list-store';
@@ -38,7 +37,7 @@ interface SimpleDropZoneProps {
  * A futuristic, glass-morphic drop zone with neon accents and dynamic states.
  * Decomposed into focused sub-components for maintainability.
  */
-export function SimpleDropZone({
+export const SimpleDropZone = memo(function SimpleDropZone({
   position, isOccupied, occupiedBy, imageUrl, gridItem,
   onRemove, dropId, tierAccent, tierGlow, showBadge = true,
 }: SimpleDropZoneProps) {
@@ -52,10 +51,9 @@ export function SimpleDropZone({
   // Position change tracking (Billboard-style movement indicators)
   const positionChange = usePositionChange(gridItem?.backlogItemId);
 
-  // Global drag state from highlight context
+  // Global drag state from highlight context (read only what's needed to avoid re-renders)
   const highlightContext = useOptionalDropZoneHighlight();
-  const isGlobalDragging = highlightContext?.dragState.isDragging ?? false;
-  const cursorPosition = highlightContext?.dragState.cursorPosition ?? { x: 0, y: 0 };
+  const isGlobalDragActive = highlightContext?.dragState.isDragging ?? false;
 
   // Criteria score and display config
   const getItemScores = useCriteriaStore((s) => s.getItemScores);
@@ -75,26 +73,24 @@ export function SimpleDropZone({
   const criteria = activeProfile?.criteria;
   const criteriaScores = itemScoresData?.scores;
 
-  // Register drop zone with highlight context
+  // Register drop zone with highlight context (only on mount/unmount, not during drag)
   useEffect(() => {
     const register = highlightContext?.registerDropZone;
     const unregister = highlightContext?.unregisterDropZone;
     if (!register || !unregister || !containerRef.current) return;
     const el = containerRef.current;
     register(position, el);
-    const ro = new ResizeObserver(() => register(position, el));
-    ro.observe(el);
-    return () => { ro.disconnect(); unregister(position); };
+    return () => { unregister(position); };
   }, [position, highlightContext?.registerDropZone, highlightContext?.unregisterDropZone]);
 
   // DnD hooks
   const { attributes, listeners, setNodeRef: setDragRef, transform, isDragging } = useDraggable({
-    id: gridItem?.id || `empty-${dropId || position}`,
+    id: gridItem?.id || `empty-${dropId || createGridReceiverId(position)}`,
     disabled: !isOccupied || !gridItem,
     data: gridItem ? createGridDragData(gridItem) : undefined,
   });
   const { isOver, setNodeRef: setDropRef } = useDroppable({
-    id: dropId || `drop-${position}`,
+    id: dropId || createGridReceiverId(position),
     data: createGridSlotDropData(position, isOccupied, gridItem),
   });
   const setNodeRef = (n: HTMLElement | null) => { setDragRef(n); setDropRef(n); };
@@ -117,9 +113,6 @@ export function SimpleDropZone({
 
   const accentColor = tierAccent || rankConfig.color;
   const style = transform ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0) scale(1.05)`, zIndex: 100 } : undefined;
-  const showValidDrop = isGlobalDragging && !isOccupied && !isDragging;
-  const shouldDim = isGlobalDragging && isOccupied && !isDragging;
-  const { strength, isInRange } = useMagneticSnap({ isDragging: isGlobalDragging, isValidDropTarget: showValidDrop, cursorPosition, containerRef });
   const medalType = getMedalGradient(position);
 
   return (
@@ -127,23 +120,25 @@ export function SimpleDropZone({
       {/* Header row above card: Badge (center) + Change indicator + Remove button (right) */}
       {isOccupied && (
         <div className="flex items-center justify-center h-6 mb-1 relative">
-          {/* Centered position badge + change indicator */}
-          <div className="flex items-center gap-1">
-            <div
-              className="px-2.5 py-0.5 rounded-md backdrop-blur-md border flex items-center gap-1 shadow-md text-xs font-bold"
-              style={{
-                backgroundColor: `${accentColor}20`,
-                borderColor: `${accentColor}40`,
-                color: accentColor,
-              }}
-            >
-              {isTop3 && rankConfig.icon && (
-                <rankConfig.icon className="w-3 h-3" style={{ color: accentColor }} />
-              )}
-              #{position + 1}
+          {/* Centered position badge + change indicator (hidden when showBadge is false) */}
+          {showBadge && (
+            <div className="flex items-center gap-1">
+              <div
+                className="px-2.5 py-0.5 rounded-control backdrop-blur-md border flex items-center gap-1 shadow-md text-xs font-bold"
+                style={{
+                  backgroundColor: `${accentColor}20`,
+                  borderColor: `${accentColor}40`,
+                  color: accentColor,
+                }}
+              >
+                {isTop3 && rankConfig.icon && (
+                  <rankConfig.icon className="w-3 h-3" style={{ color: accentColor }} />
+                )}
+                #{position + 1}
+              </div>
+              <PositionChangeIndicator change={positionChange} size="xs" />
             </div>
-            <PositionChangeIndicator change={positionChange} size="xs" />
-          </div>
+          )}
           {/* Remove button - absolute right */}
           {onRemove && (
             <button
@@ -163,8 +158,8 @@ export function SimpleDropZone({
         isOver={isOver}
         isTop3={isTop3}
         justDropped={justDropped}
-        showValidDropZoneHighlight={showValidDrop}
-        shouldDimFilledSlot={shouldDim}
+        showValidDropZoneHighlight={false}
+        shouldDimFilledSlot={false}
         accentColor={accentColor}
         medalType={medalType}
         medalHintColor={medalType ? MEDAL_HINT_COLORS[medalType] : undefined}
@@ -173,32 +168,34 @@ export function SimpleDropZone({
         attributes={attributes}
         listeners={listeners}
       >
-        <ValidDropIndicator isActive={showValidDrop} testId={`valid-drop-zone-indicator-${position}`} />
+        <ValidDropIndicator isActive={isOver && !isOccupied} testId={`valid-drop-zone-indicator-${position}`} />
         <InvalidDropIndicator isActive={hasError} />
-        <MagneticGlowAura isActive={isInRange} strength={strength} testId={`magnetic-glow-${position}`} />
         <HoloGridPattern accentColor={accentColor} isVisible={!isOccupied} />
         <RankNumberBackground position={position} accentColor={accentColor} isOver={isOver} isOccupied={isOccupied} />
-        <AnimatePresence mode="wait">
-          {isOccupied && occupiedBy ? (
-            <DropZoneOccupied
-              position={position} title={occupiedBy} imageUrl={imageUrl} isTop3={isTop3}
-              accentColor={accentColor} icon={rankConfig.icon ?? undefined} onRemove={undefined}
-              isDragging={isDragging} weightedScore={weightedScore} category={category} showBadge={false}
-              criteria={criteria} criteriaScores={criteriaScores}
-            />
-          ) : (
-            <DropZoneEmpty position={position} isTop3={isTop3} isOver={isOver} accentColor={accentColor} />
-          )}
-        </AnimatePresence>
+        {isOccupied && occupiedBy ? (
+          <DropZoneOccupied
+            position={position} title={occupiedBy} imageUrl={imageUrl} isTop3={isTop3}
+            accentColor={accentColor} icon={rankConfig.icon ?? undefined} onRemove={undefined}
+            isDragging={isDragging} weightedScore={weightedScore} category={category} showBadge={false}
+            criteria={criteria} criteriaScores={criteriaScores}
+          />
+        ) : (
+          <DropZoneEmpty position={position} isTop3={isTop3} isOver={isOver} accentColor={accentColor} />
+        )}
         <HoverGlowBorder accentColor={accentColor} />
         <ActiveSelectionRing isActive={isOver} accentColor={accentColor} />
-        <SnapConfirmationGlow isActive={justDropped} accentColor={accentColor} testId="snap-glow" />
-        <DropCelebration isActive={showCelebration} isPodium={isTop3} rankColor={accentColor} position={position} />
+        {/* Skip decorative effects during drag - they can't be active and save component overhead across 50 slots */}
+        {!isGlobalDragActive && (
+          <>
+            <SnapConfirmationGlow isActive={justDropped} accentColor={accentColor} testId="snap-glow" />
+            <DropCelebration isActive={showCelebration} isPodium={isTop3} rankColor={accentColor} position={position} />
+          </>
+        )}
       </DropZoneCard>
       <ItemTitle isOccupied={isOccupied} title={occupiedBy} />
     </div>
   );
-}
+});
 
 /**
  * InvalidDropIndicator
@@ -210,7 +207,7 @@ function InvalidDropIndicator({ isActive }: { isActive: boolean }) {
 
   return (
     <div
-      className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none"
+      className="absolute inset-0 z-sticky flex items-center justify-center pointer-events-none"
       style={{ animation: 'invalid-drop-pulse 600ms ease-out forwards' }}
       data-testid="invalid-drop-indicator"
     >

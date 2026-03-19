@@ -131,12 +131,12 @@ const ListCreateButton = ({ intent, createListMutation, onSuccess, onClose }: Pr
                 success: true,
                 listId: result.listId,
                 message: `Successfully created "${result.list.title}"!`,
-                redirectUrl: `/match-test?list=${result.listId}`
+                redirectUrl: `/goat?list=${result.listId}`
             };
             onSuccess?.(compositionResult);
             onClose();
 
-            router.push(`/match-test?list=${result.listId}`);
+            router.push(`/goat?list=${result.listId}`);
         } else {
             // Handle error
             setCreationStep(null);
@@ -184,7 +184,7 @@ const ListCreateButton = ({ intent, createListMutation, onSuccess, onClose }: Pr
                         {[0, 1, 2].map((i) => (
                             <motion.div
                                 key={`pulse-${i}`}
-                                className="absolute inset-0 rounded-2xl pointer-events-none"
+                                className="absolute inset-0 rounded-container pointer-events-none"
                                 style={{
                                     border: '2px solid',
                                     borderColor: intent.color.primary,
@@ -227,9 +227,7 @@ const ListCreateButton = ({ intent, createListMutation, onSuccess, onClose }: Pr
                 aria-busy={isPending}
                 aria-label={isPending ? "Creating list..." : "Create list"}
                 className={`
-                    relative rounded-2xl
-                    focus:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2
-                    focus-visible:ring-amber-400/80 focus-visible:ring-offset-slate-900
+                    relative rounded-container focus-ring
                     ${isButtonDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}
                 `}
                 variants={ctaButtonVariants}
@@ -249,7 +247,7 @@ const ListCreateButton = ({ intent, createListMutation, onSuccess, onClose }: Pr
                 <AnimatePresence>
                     {showSuccess && (
                         <motion.div
-                            className="absolute inset-0 flex items-center justify-center z-10 rounded-2xl"
+                            className="absolute inset-0 flex items-center justify-center z-10 rounded-container"
                             style={{ backgroundColor: `${intent.color.primary}20` }}
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}

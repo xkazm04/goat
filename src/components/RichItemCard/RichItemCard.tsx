@@ -1,9 +1,33 @@
 'use client';
 
 /**
- * RichItemCard
- * Enhanced card component with expandable preview, quick actions,
- * metadata badges, and visual indicators.
+ * RichItemCard - Feature-rich item card with built-in interactivity and metadata display.
+ *
+ * USE THIS WHEN:
+ * - Displaying items in browse/explore contexts where users benefit from previews
+ * - You want hover-to-expand, quick action overlays, metadata badges, or mini galleries
+ *   without wiring them up manually
+ * - You need Letterboxd-style card flip to reveal detailed metadata
+ * - You want auto-generated badges from item data (rating, year, genre)
+ * - Accessibility and keyboard shortcuts are important (1-9 for quick actions,
+ *   Enter/Space to expand/flip, Escape to dismiss, arrow keys for gallery)
+ *
+ * DO NOT USE WHEN:
+ * - Rendering items inside the match grid or drag-and-drop zones -- use ItemCard
+ *   (@/components/ui/item-card) for its lighter weight and drag state support
+ * - You need maximum render performance in large virtualized lists (RichItemCard
+ *   carries more internal state and event handlers)
+ *
+ * HOW IT DIFFERS FROM ItemCard:
+ * - RichItemCard is a **superset** of ItemCard's visual capabilities, but uses a
+ *   different data contract (RichItemData object vs individual props).
+ * - RichItemCard manages its own hover/expand/flip/gallery state internally.
+ * - ItemCard is a thin wrapper; RichItemCard is a self-contained interactive widget.
+ *
+ * REQUIRED PROPS: item (RichItemData with id and title)
+ * KEY OPTIONAL PROPS: config (RichItemCardConfig), quickActions, badges, indicators,
+ *   viewMode, isDragging, isSelected, onClick, onQuickAction, renderExpandedContent,
+ *   renderFlipContent
  */
 
 import React, {
@@ -15,6 +39,7 @@ import React, {
   useMemo,
 } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { DURATION } from '@/lib/animations/motion-presets';
 import { cn } from '@/lib/utils';
 import { QuickActions, QuickActionConfig } from './QuickActions';
 import { MetadataBadges, MetadataBadgeData } from './MetadataBadges';
@@ -336,20 +361,20 @@ export const RichItemCard = memo(function RichItemCard({
     <motion.div
       ref={containerRef}
       className={cn(
-        'relative group rounded-lg overflow-hidden',
+        'relative group rounded-card overflow-hidden',
         'bg-[var(--surface-card)] border border-[var(--border-card)]',
         'transition-colors duration-200',
         isHovered && 'border-brand/50',
         isSelected && 'ring-2 ring-brand',
         isDragging && 'opacity-50 scale-95',
-        isFocused && 'ring-2 ring-brand-hover ring-offset-2 ring-offset-[hsl(var(--background))]',
+        'focus-ring',
         viewMode === 'grid' ? 'aspect-4/5' : 'flex items-center gap-3 p-2',
         className
       )}
       style={{ contain: 'layout style paint' }}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.02, duration: 0.2 }}
+      transition={{ delay: index * 0.02, duration: DURATION.quick }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onClick={handleClick}
@@ -397,7 +422,7 @@ export const RichItemCard = memo(function RichItemCard({
             className="w-full h-full object-cover"
             initial={false}
             animate={{ scale: isHovered ? 1.05 : 1 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: DURATION.normal }}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-gray-600">

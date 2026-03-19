@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { DURATION } from '@/lib/animations/motion-presets';
 import { Globe, TrendingUp, TrendingDown, Minus, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUniversalRatingBadge } from '@/hooks/use-ranking-graph';
@@ -111,7 +112,7 @@ export function UniversalRatingBadge({
             opacity: 0,
             scale: 0.8,
             y: -4,
-            transition: { duration: 0.15 },
+            transition: { duration: DURATION.quick },
           }}
           className={cn(
             'absolute z-20',
@@ -121,7 +122,7 @@ export function UniversalRatingBadge({
             tierStyle.bg,
             'flex items-center gap-1',
             'h-[20px] px-1.5',
-            'rounded-md',
+            'rounded-control',
             'ring-1',
             tierStyle.ring,
             'shadow-lg shadow-black/30',
@@ -132,7 +133,7 @@ export function UniversalRatingBadge({
           title={`Universal ELO: ${badge.eloScore} | Across ${badge.listCount} lists | Confidence: ${Math.round(badge.confidence * 100)}%`}
         >
           <Globe className={cn('w-2.5 h-2.5 shrink-0', tierStyle.text)} />
-          <span className={cn('text-[9px] leading-none whitespace-nowrap', tierStyle.text)}>
+          <span className={cn('text-2xs leading-none whitespace-nowrap', tierStyle.text)}>
             {badge.tier}
           </span>
           {badge.confidence >= 0.7 && (

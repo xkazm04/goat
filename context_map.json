@@ -70,8 +70,8 @@
         "logic": [
           "src/stores/match-store.ts",
           "src/stores/session-store.ts",
-          "src/lib/match/use-orchestrator.ts",
-          "src/lib/match/orchestrator.ts",
+          "src/lib/orchestration/GlobalOrchestrator.ts",
+          "src/lib/orchestration/useOrchestrator.ts",
           "src/lib/hooks/useHydrationSafe.ts",
           "src/lib/hooks/useLoadingStateMachine.ts"
         ],

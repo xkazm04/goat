@@ -44,7 +44,7 @@ function AwardListSkeleton() {
           <div className="inline-flex items-center justify-center mb-4">
             <div className="relative">
               <div className="absolute inset-0 bg-yellow-500/20 blur-2xl rounded-full" />
-              <div className="relative p-3 bg-linear-to-br from-yellow-500/20 to-orange-500/10 rounded-xl border border-yellow-500/30">
+              <div className="relative p-3 bg-linear-to-br from-yellow-500/20 to-orange-500/10 rounded-card border border-yellow-500/30">
                 <Trophy className="w-8 h-8 text-yellow-500 animate-pulse" />
               </div>
             </div>
@@ -75,7 +75,7 @@ function AwardListSkeleton() {
           {[1, 2, 3, 4].map((i) => (
             <div
               key={i}
-              className="bg-gray-900/50 border border-gray-800/50 rounded-xl p-4 animate-pulse"
+              className="bg-gray-900/50 border border-gray-800/50 rounded-card p-4 animate-pulse"
               style={{ animationDelay: `${i * 50}ms` }}
             >
               <div className="flex items-center gap-4">
@@ -108,8 +108,8 @@ function AwardListSkeleton() {
       </div>
 
       {/* Loading indicator */}
-      <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-50">
-        <div className="bg-gray-900/90 backdrop-blur-xs rounded-xl px-6 py-4 flex items-center gap-3">
+      <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-modal">
+        <div className="bg-gray-900/90 backdrop-blur-xs rounded-card px-6 py-4 flex items-center gap-3">
           <Loader2 className="w-5 h-5 text-yellow-500 animate-spin" />
           <span className="text-sm text-gray-300">Loading awards...</span>
         </div>

@@ -4,6 +4,7 @@ import { memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronRight, Home, Folder } from "lucide-react";
 import { BreadcrumbNavProps, CategoryNode } from "./types";
+import { DURATION } from '@/lib/animations/motion-presets';
 
 /**
  * Breadcrumb Item Component
@@ -30,10 +31,10 @@ const BreadcrumbItem = memo(function BreadcrumbItem({
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 10 }}
-      transition={{ delay: index * 0.05, duration: 0.2 }}
+      transition={{ delay: index * 0.05, duration: DURATION.fast }}
     >
       <motion.button
-        className={`flex items-center gap-1.5 px-2 py-1 rounded-lg transition-all duration-200 ${
+        className={`flex items-center gap-1.5 px-2 py-1 rounded-control transition-all duration-200 ${
           isLast ? "cursor-default" : "cursor-pointer"
         }`}
         style={{
@@ -99,7 +100,7 @@ export const BreadcrumbNav = memo(function BreadcrumbNav({
 
   return (
     <motion.nav
-      className="flex items-center flex-wrap gap-0.5 p-2 rounded-xl"
+      className="flex items-center flex-wrap gap-0.5 p-2 rounded-card"
       style={{
         background: "rgba(15, 23, 42, 0.4)",
         border: "1px solid rgba(71, 85, 105, 0.2)",
@@ -146,7 +147,7 @@ export const CompactBreadcrumb = memo(function CompactBreadcrumb({
       {/* Back button */}
       {parent && (
         <motion.button
-          className="flex items-center gap-1 px-2 py-1 rounded-lg"
+          className="flex items-center gap-1 px-2 py-1 rounded-control"
           style={{
             background: "rgba(51, 65, 85, 0.4)",
             border: "1px solid rgba(71, 85, 105, 0.3)",
@@ -164,7 +165,7 @@ export const CompactBreadcrumb = memo(function CompactBreadcrumb({
 
       {/* Current location */}
       <div
-        className="flex items-center gap-1.5 px-2 py-1 rounded-lg"
+        className="flex items-center gap-1.5 px-2 py-1 rounded-control"
         style={{
           background: `linear-gradient(135deg, ${nodeColor.primary}20, ${nodeColor.secondary}10)`,
           border: `1px solid ${nodeColor.primary}30`,
@@ -203,7 +204,7 @@ export const CollapsibleBreadcrumb = memo(function CollapsibleBreadcrumb({
 
   return (
     <motion.nav
-      className="flex items-center gap-0.5 p-2 rounded-xl"
+      className="flex items-center gap-0.5 p-2 rounded-card"
       style={{
         background: "rgba(15, 23, 42, 0.4)",
         border: "1px solid rgba(71, 85, 105, 0.2)",
@@ -233,7 +234,7 @@ export const CollapsibleBreadcrumb = memo(function CollapsibleBreadcrumb({
                   animate={{ opacity: 1 }}
                 >
                   <button
-                    className="flex items-center gap-1 px-2 py-1 rounded-lg text-slate-400 hover:text-slate-200"
+                    className="flex items-center gap-1 px-2 py-1 rounded-control text-slate-400 hover:text-slate-200"
                     style={{
                       background: "rgba(51, 65, 85, 0.3)",
                       border: "1px solid rgba(71, 85, 105, 0.2)",
@@ -243,7 +244,7 @@ export const CollapsibleBreadcrumb = memo(function CollapsibleBreadcrumb({
                   </button>
 
                   {/* Dropdown */}
-                  <div className="absolute top-full left-0 mt-1 py-1 rounded-lg bg-slate-800 border border-slate-700 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                  <div className="absolute top-full left-0 mt-1 py-1 rounded-card bg-slate-800 border border-slate-700 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-dropdown">
                     {hiddenBreadcrumbs.map((hidden) => (
                       <button
                         key={hidden.id}

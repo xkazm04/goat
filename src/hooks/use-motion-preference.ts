@@ -263,3 +263,31 @@ export function useMotionDuration(fullDuration: number, reducedDuration?: number
     }
   }, [tier, fullDuration, reducedDuration]);
 }
+
+/**
+ * Non-hook utility to check if reduced motion is preferred.
+ *
+ * Use this in non-React contexts (utility functions, animation helpers,
+ * event handlers) instead of directly calling `window.matchMedia(...)`.
+ * Respects the user's in-app motion tier stored in localStorage,
+ * falling back to the system `prefers-reduced-motion` media query.
+ *
+ * For React components, prefer the `useMotionPreference()` hook instead.
+ *
+ * @returns true if the effective motion tier is "reduced" or "minimal"
+ */
+export function prefersReducedMotion(): boolean {
+  if (typeof window === "undefined") return false;
+  const tier = getSnapshot();
+  return tier !== "full";
+}
+
+/**
+ * Non-hook utility to get the current motion tier.
+ *
+ * Same logic as the hook but callable outside React components.
+ * Checks localStorage preference first, then system media query.
+ */
+export function getCurrentMotionTier(): MotionTier {
+  return getSnapshot();
+}

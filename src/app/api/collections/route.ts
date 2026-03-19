@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, requireAuth, sanitizeFilterValue, escapeIlikeWildcards } from '@/lib/supabase/server';
 import type { ListCollectionRow } from '@/types/database';
 import { transformCollectionRow, generateShareSlug } from '@/types/collection';
 import {
@@ -9,6 +9,8 @@ import {
   createdResponse,
   assertRequired,
 } from '@/lib/errors';
+import { cachedFetch } from '@/lib/cache/server-cache';
+import { withTiming } from '@/lib/api/request-timing';
 
 // Force dynamic rendering for this route since it uses cookies
 export const dynamic = 'force-dynamic';
@@ -27,7 +29,7 @@ export const dynamic = 'force-dynamic';
  * - limit: Max results (default 100)
  * - offset: Pagination offset (default 0)
  */
-export const GET = withErrorHandler(async (request: NextRequest) => {
+export const GET = withTiming(withErrorHandler(async (request: NextRequest) => {
   const supabase = await createClient();
   const searchParams = request.nextUrl.searchParams;
 
@@ -39,54 +41,70 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
   const search = searchParams.get('search');
   const sortBy = searchParams.get('sort_by') || 'order';
   const sortOrder = searchParams.get('sort_order') || 'asc';
-  const limit = searchParams.get('limit')
-    ? parseInt(searchParams.get('limit')!)
-    : 100;
-  const offset = searchParams.get('offset')
-    ? parseInt(searchParams.get('offset')!)
-    : 0;
+  const limit = Math.max(1, Math.min(
+    parseInt(searchParams.get('limit') || '100'),
+    500
+  ));
+  const offset = Math.max(0, parseInt(searchParams.get('offset') || '0'));
 
-  // Build query
-  let query = supabase
-    .from('list_collections')
-    .select('*')
-    .order(
-      sortBy === 'created'
-        ? 'created_at'
-        : sortBy === 'modified'
-          ? 'updated_at'
-          : sortBy === 'name'
-            ? 'name'
-            : 'order',
-      { ascending: sortOrder === 'asc' }
-    )
-    .range(offset, offset + limit - 1);
+  // Cache simple collection lookups (no stats, no children, no search).
+  // User-specific data is keyed per user with a shorter TTL.
+  const isSimpleQuery = !includeStats && !includeChildren && !search;
+  /** TTL for collection lookups: 2 minutes */
+  const COLLECTIONS_CACHE_TTL = 2 * 60 * 1000;
+  const cacheKey = isSimpleQuery
+    ? `collections:${userId || 'all'}:${parentId || 'root'}:${sortBy}:${sortOrder}:${limit}:${offset}`
+    : '';
 
-  // Apply filters
-  if (userId) {
-    query = query.eq('user_id', userId);
-  }
+  const fetchCollections = async () => {
+    // Build query
+    let query = supabase
+      .from('list_collections')
+      .select('*')
+      .order(
+        sortBy === 'created'
+          ? 'created_at'
+          : sortBy === 'modified'
+            ? 'updated_at'
+            : sortBy === 'name'
+              ? 'name'
+              : 'order',
+        { ascending: sortOrder === 'asc' }
+      )
+      .range(offset, offset + limit - 1);
 
-  // Handle parent_id filter (null means root collections)
-  if (parentId === 'null' || parentId === '') {
-    query = query.is('parent_id', null);
-  } else if (parentId) {
-    query = query.eq('parent_id', parentId);
-  }
+    // Apply filters
+    if (userId) {
+      query = query.eq('user_id', userId);
+    }
 
-  // Search by name or description
-  if (search) {
-    query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
-  }
+    // Handle parent_id filter (null means root collections)
+    if (parentId === 'null' || parentId === '') {
+      query = query.is('parent_id', null);
+    } else if (parentId) {
+      query = query.eq('parent_id', parentId);
+    }
 
-  const { data, error } = await query;
+    // Search by name or description
+    if (search) {
+      query = query.or(`name.ilike.%${sanitizeFilterValue(escapeIlikeWildcards(search))}%,description.ilike.%${sanitizeFilterValue(escapeIlikeWildcards(search))}%`);
+    }
 
-  if (error) {
-    throw fromSupabaseError(error);
-  }
+    const { data, error } = await query;
 
-  // Transform to camelCase
-  let collections = (data || []).map(transformCollectionRow);
+    if (error) {
+      throw fromSupabaseError(error);
+    }
+
+    return (data || []).map(transformCollectionRow);
+  };
+
+  // Use cache for simple queries, bypass for complex ones
+  let collections = isSimpleQuery
+    ? await cachedFetch(cacheKey, COLLECTIONS_CACHE_TTL, fetchCollections)
+    : await fetchCollections();
+
+  const warnings: string[] = [];
 
   // If including stats, fetch list data for each collection
   if (includeStats && collections.length > 0) {
@@ -94,53 +112,73 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
     const uniqueListIds = Array.from(new Set(allListIds));
 
     if (uniqueListIds.length > 0) {
-      const { data: listsData } = await supabase
+      const { data: listsData, error: statsError } = await supabase
         .from('lists')
         .select('id, total_items, updated_at')
         .in('id', uniqueListIds);
 
-      const listsMap = new Map(
-        (listsData || []).map((l) => [l.id, l])
-      );
+      if (statsError) {
+        console.error('[collections] Stats query failed', {
+          query: 'lists.stats',
+          listIds: uniqueListIds.slice(0, 5),
+          listIdCount: uniqueListIds.length,
+          error: statsError.message,
+          code: statsError.code,
+        });
+        warnings.push('stats_unavailable');
+      } else {
+        const listsMap = new Map(
+          (listsData || []).map((l) => [l.id, l])
+        );
 
-      collections = collections.map((collection) => {
-        const collectionLists = collection.listIds
-          .map((id) => listsMap.get(id))
-          .filter(Boolean);
+        collections = collections.map((collection) => {
+          const collectionLists = collection.listIds
+            .map((id) => listsMap.get(id))
+            .filter(Boolean);
 
-        return {
-          ...collection,
-          stats: {
-            listCount: collection.listIds.length,
-            totalItems: collectionLists.reduce(
-              (sum, l) => sum + (l?.total_items || 0),
-              0
-            ),
-            completedLists: 0, // Would need additional logic to determine
-            lastActivity:
-              collectionLists.length > 0
-                ? collectionLists.reduce((latest, l) =>
-                    l && l.updated_at > (latest || '')
-                      ? l.updated_at
-                      : latest,
-                    null as string | null
-                  )
-                : null,
-          },
-        };
-      });
+          return {
+            ...collection,
+            stats: {
+              listCount: collection.listIds.length,
+              totalItems: collectionLists.reduce(
+                (sum, l) => sum + (l?.total_items || 0),
+                0
+              ),
+              completedLists: 0, // Would need additional logic to determine
+              lastActivity:
+                collectionLists.length > 0
+                  ? collectionLists.reduce((latest, l) =>
+                      l && l.updated_at > (latest || '')
+                        ? l.updated_at
+                        : latest,
+                      null as string | null
+                    )
+                  : null,
+            },
+          };
+        });
+      }
     }
   }
 
   // If including children, recursively fetch nested collections
   if (includeChildren && collections.length > 0) {
     const collectionIds = collections.map((c) => c.id);
-    const { data: childrenData } = await supabase
+    const { data: childrenData, error: childrenError } = await supabase
       .from('list_collections')
       .select('*')
       .in('parent_id', collectionIds);
 
-    if (childrenData && childrenData.length > 0) {
+    if (childrenError) {
+      console.error('[collections] Children query failed', {
+        query: 'list_collections.children',
+        parentIds: collectionIds.slice(0, 5),
+        parentIdCount: collectionIds.length,
+        error: childrenError.message,
+        code: childrenError.code,
+      });
+      warnings.push('children_unavailable');
+    } else if (childrenData && childrenData.length > 0) {
       const childrenByParent = new Map<string, typeof collections>();
 
       childrenData.forEach((child) => {
@@ -158,8 +196,11 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
     }
   }
 
-  return successResponse(collections);
-});
+  return successResponse({
+    data: collections,
+    ...(warnings.length > 0 && { _warnings: warnings }),
+  });
+}), 'collections');
 
 /**
  * POST /api/collections - Create a new collection
@@ -174,13 +215,18 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
  * - is_public: Whether collection is publicly viewable
  * - user_id: Owner user ID (required)
  */
-export const POST = withErrorHandler(async (request: NextRequest) => {
+export const POST = withTiming(withErrorHandler(async (request: NextRequest) => {
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
+
   const supabase = await createClient();
   const body = await request.json();
 
   // Validate required fields
   assertRequired(body.name, 'name');
-  assertRequired(body.user_id, 'user_id');
+
+  // Use authenticated user's ID — ignore client-provided user_id
+  body.user_id = auth.userId;
 
   // If parent_id is provided, validate it exists and check nesting depth
   if (body.parent_id) {
@@ -233,30 +279,50 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     shareSlug = generateShareSlug(body.name, slugs);
   }
 
-  // Insert the new collection
-  const { data, error } = await supabase
-    .from('list_collections')
-    .insert([
-      {
-        name: body.name,
-        description: body.description || null,
-        cover_image: body.cover_image || body.coverImage || null,
-        color: body.color || null,
-        icon: body.icon || null,
-        parent_id: body.parent_id || body.parentId || null,
-        user_id: body.user_id,
-        list_ids: body.list_ids || body.listIds || [],
-        is_public: body.is_public || body.isPublic || false,
-        share_slug: shareSlug,
-        order: nextOrder,
-      },
-    ])
-    .select()
-    .single();
+  // Insert with retry-on-conflict for slug collisions.
+  // Two concurrent requests can read the same set of slugs and generate
+  // identical slugs. We rely on a database unique constraint on share_slug
+  // and retry with a random suffix up to 3 times.
+  const MAX_SLUG_RETRIES = 3;
 
-  if (error) {
+  for (let attempt = 0; attempt <= MAX_SLUG_RETRIES; attempt++) {
+    const { data, error } = await supabase
+      .from('list_collections')
+      .insert([
+        {
+          name: body.name,
+          description: body.description || null,
+          cover_image: body.cover_image || body.coverImage || null,
+          color: body.color || null,
+          icon: body.icon || null,
+          parent_id: body.parent_id || body.parentId || null,
+          user_id: body.user_id,
+          list_ids: body.list_ids || body.listIds || [],
+          is_public: body.is_public || body.isPublic || false,
+          share_slug: shareSlug,
+          order: nextOrder,
+        },
+      ])
+      .select()
+      .single();
+
+    if (!error) {
+      return createdResponse(transformCollectionRow(data));
+    }
+
+    // PostgreSQL unique violation: code 23505
+    const isUniqueViolation = error.code === '23505' && shareSlug;
+    if (isUniqueViolation && attempt < MAX_SLUG_RETRIES) {
+      // Regenerate slug with random suffix
+      const randomSuffix = Math.random().toString(36).slice(2, 8);
+      const slugBase: string = shareSlug!.replace(/-[a-z0-9]{6}$/, ''); // strip previous suffix if present
+      shareSlug = `${slugBase}-${randomSuffix}`;
+      continue;
+    }
+
     throw fromSupabaseError(error);
   }
 
-  return createdResponse(transformCollectionRow(data));
-});
+  // Should not reach here, but satisfy TypeScript
+  throw fromSupabaseError({ message: 'Failed to create collection after retries', code: 'SLUG_COLLISION' });
+}), 'collections');

@@ -3,6 +3,8 @@
  * Centralized tier definitions with visual properties for position-aware smart grid
  */
 
+import { getTierForPositionGeneric, isAtBoundaryGeneric, rangeFromTierConfig } from '@/lib/tiers/boundary';
+
 /**
  * Tier identifiers
  */
@@ -186,10 +188,11 @@ export const DEFAULT_TIERS: TierDefinition[] = [
 ];
 
 /**
- * Get tier for a given position
+ * Get tier for a given position.
+ * Delegates to the canonical boundary lookup (exclusive-end convention).
  */
 export function getTierForPosition(position: number, tiers: TierDefinition[] = DEFAULT_TIERS): TierDefinition | null {
-  return tiers.find(tier => position >= tier.range.start && position < tier.range.end) || null;
+  return getTierForPositionGeneric(position, tiers, rangeFromTierConfig) || null;
 }
 
 /**
@@ -201,10 +204,11 @@ export function getTierIdForPosition(position: number, tiers: TierDefinition[] =
 }
 
 /**
- * Check if position is at a tier boundary (last position in tier)
+ * Check if position is at a tier boundary (last position in tier).
+ * Delegates to the canonical boundary utility.
  */
 export function isAtTierBoundary(position: number, tiers: TierDefinition[] = DEFAULT_TIERS): boolean {
-  return tiers.some(tier => position === tier.range.end - 1);
+  return isAtBoundaryGeneric(position, tiers, rangeFromTierConfig);
 }
 
 /**

@@ -25,103 +25,16 @@
 import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { badgeSizeScale, badgeColors } from '@/lib/tokens/badge-tokens';
 import type {
   BaseBadgeProps,
-  BadgeSize,
   BadgeVariant,
-  BadgeColor,
-  BadgeSizeConfig,
   BadgeAnimation,
 } from './types';
 
-// =============================================================================
-// Size Configurations
-// =============================================================================
+export { badgeColors } from '@/lib/tokens/badge-tokens';
 
-const sizeConfigs: Record<BadgeSize, BadgeSizeConfig> = {
-  xs: {
-    height: 'h-4',
-    padding: 'px-1.5',
-    fontSize: 'text-[10px]',
-    iconSize: 10,
-    gap: 'gap-0.5',
-  },
-  sm: {
-    height: 'h-5',
-    padding: 'px-2',
-    fontSize: 'text-xs',
-    iconSize: 12,
-    gap: 'gap-1',
-  },
-  md: {
-    height: 'h-6',
-    padding: 'px-2.5',
-    fontSize: 'text-sm',
-    iconSize: 14,
-    gap: 'gap-1.5',
-  },
-  lg: {
-    height: 'h-8',
-    padding: 'px-3',
-    fontSize: 'text-base',
-    iconSize: 16,
-    gap: 'gap-2',
-  },
-};
-
-// =============================================================================
-// Default Colors
-// =============================================================================
-
-export const badgeColors = {
-  default: {
-    background: 'bg-zinc-800',
-    text: 'text-zinc-200',
-    border: 'border-zinc-700',
-  },
-  primary: {
-    background: 'bg-brand/20',
-    text: 'text-brand-hover',
-    border: 'border-brand/30',
-    glow: 'shadow-brand/20',
-  },
-  success: {
-    background: 'bg-emerald-500/20',
-    text: 'text-emerald-400',
-    border: 'border-emerald-500/30',
-    glow: 'shadow-emerald-500/20',
-  },
-  warning: {
-    background: 'bg-amber-500/20',
-    text: 'text-amber-400',
-    border: 'border-amber-500/30',
-    glow: 'shadow-amber-500/20',
-  },
-  danger: {
-    background: 'bg-rose-500/20',
-    text: 'text-rose-400',
-    border: 'border-rose-500/30',
-    glow: 'shadow-rose-500/20',
-  },
-  gold: {
-    background: 'bg-linear-to-r from-yellow-500/30 to-amber-500/30',
-    text: 'text-yellow-400',
-    border: 'border-yellow-500/40',
-    glow: 'shadow-yellow-500/30',
-  },
-  silver: {
-    background: 'bg-linear-to-r from-slate-400/30 to-zinc-400/30',
-    text: 'text-slate-300',
-    border: 'border-slate-400/40',
-    glow: 'shadow-slate-400/20',
-  },
-  bronze: {
-    background: 'bg-linear-to-r from-orange-600/30 to-amber-700/30',
-    text: 'text-orange-400',
-    border: 'border-orange-500/40',
-    glow: 'shadow-orange-500/20',
-  },
-} satisfies Record<string, BadgeColor>;
+const sizeConfigs = badgeSizeScale;
 
 // =============================================================================
 // Animation Presets
@@ -223,7 +136,11 @@ export const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(
             'glow' in color && color.glow
           );
         default:
-          return '';
+          // Fallback to solid styling for unknown variant types
+          return cn(
+            color.background,
+            color.text
+          );
       }
     }, [variant, color]);
 
@@ -238,7 +155,7 @@ export const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(
         ref={ref}
         className={cn(
           'inline-flex items-center justify-center',
-          'rounded-full font-medium',
+          'rounded-badge font-medium',
           'backdrop-blur-xs',
           sizeConfig.height,
           sizeConfig.padding,

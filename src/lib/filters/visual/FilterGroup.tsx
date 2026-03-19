@@ -11,13 +11,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronDown,
   ChevronRight,
-  GripVertical,
   Plus,
   X,
   ToggleLeft,
   ToggleRight,
-  FolderPlus,
 } from 'lucide-react';
+import { GoatGrip, GoatFolderGroup } from '@/components/visual/GoatIcons';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import type { FilterCombinator } from '@/lib/filters/types';
@@ -47,15 +46,15 @@ function CombinatorToggle({
   disabled?: boolean;
 }) {
   return (
-    <div className="inline-flex rounded-md border border-zinc-700 bg-zinc-800/50 p-0.5">
+    <div className="inline-flex rounded-control border border-border bg-muted/50 p-0.5">
       <button
         onClick={() => onChange('AND')}
         disabled={disabled}
         className={cn(
           'rounded px-2 py-0.5 text-xs font-medium transition-all',
           value === 'AND'
-            ? 'bg-brand/20 text-brand-hover shadow-xs'
-            : 'text-zinc-500 hover:text-zinc-300',
+            ? 'bg-primary/20 text-primary shadow-xs'
+            : 'text-muted-foreground hover:text-foreground',
           disabled && 'filter-disabled'
         )}
       >
@@ -68,7 +67,7 @@ function CombinatorToggle({
           'rounded px-2 py-0.5 text-xs font-medium transition-all',
           value === 'OR'
             ? 'bg-orange-500/20 text-orange-400 shadow-xs'
-            : 'text-zinc-500 hover:text-zinc-300',
+            : 'text-muted-foreground hover:text-foreground',
           disabled && 'filter-disabled'
         )}
       >
@@ -107,15 +106,15 @@ function DropZoneIndicator({ parentId, index }: { parentId: string; index: numbe
         className={cn(
           'rounded-full mx-6 transition-colors',
           isOver
-            ? 'bg-brand shadow-[0_0_8px_rgba(var(--brand-rgb,99,102,241),0.4)]'
-            : 'bg-zinc-700/50'
+            ? 'bg-primary shadow-[0_0_8px_rgba(var(--brand-rgb,99,102,241),0.4)]'
+            : 'bg-border/50'
         )}
       />
       {isOver && (
         <motion.div
           initial={{ opacity: 0, scaleX: 0.8 }}
           animate={{ opacity: 1, scaleX: 1 }}
-          className="absolute inset-x-4 -top-1 -bottom-1 rounded-md border-2 border-dashed border-brand/30 bg-brand/5 pointer-events-none"
+          className="absolute inset-x-4 -top-1 -bottom-1 rounded-md border-2 border-dashed border-primary/30 bg-primary/5 pointer-events-none"
         />
       )}
     </div>
@@ -266,10 +265,10 @@ export function FilterGroup({
       exit={{ opacity: 0, y: -10, scale: 0.95 }}
       transition={{ duration: FILTER_TIMING.standard, layout: { type: 'spring', stiffness: 350, damping: 30 } }}
       className={cn(
-        'rounded-lg border transition-shadow',
-        isRoot ? 'border-transparent' : 'border-zinc-700/50 bg-zinc-900/30',
-        isOver && 'ring-2 ring-brand/50 shadow-lg shadow-brand/10',
-        isDragging && 'shadow-xl shadow-brand/20',
+        'rounded-card border transition-shadow',
+        isRoot ? 'border-transparent' : 'border-border/50 bg-background/30',
+        isOver && 'ring-2 ring-primary/50 shadow-lg shadow-primary/10',
+        isDragging && 'shadow-xl shadow-primary/20',
         !isEnabled && 'opacity-60'
       )}
     >
@@ -288,19 +287,19 @@ export function FilterGroup({
             {...attributes}
             {...listeners}
             className={cn(
-              'cursor-grab rounded p-1 text-zinc-500 hover:text-zinc-300',
+              'cursor-grab rounded p-1 text-muted-foreground hover:text-foreground',
               'active:cursor-grabbing'
             )}
             onClick={(e) => e.stopPropagation()}
           >
-            <GripVertical size={16} />
+            <GoatGrip size={16} />
           </div>
         )}
 
         {/* Expand/collapse */}
         <button
           onClick={handleToggleExpand}
-          className="rounded p-0.5 text-zinc-500 hover:text-zinc-300"
+          className="rounded p-0.5 text-muted-foreground hover:text-foreground"
         >
           {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
         </button>
@@ -313,12 +312,12 @@ export function FilterGroup({
         />
 
         {/* Group label / counts */}
-        <span className="flex-1 text-xs text-zinc-400">
+        <span className="flex-1 text-xs text-muted-foreground">
           {!isRoot && (
             <>
               Group
               {children.length > 0 && (
-                <span className="ml-2 text-zinc-500">
+                <span className="ml-2 text-muted-foreground">
                   ({conditionCount} condition{conditionCount !== 1 ? 's' : ''}
                   {groupCount > 0 && `, ${groupCount} group${groupCount !== 1 ? 's' : ''}`})
                 </span>
@@ -326,7 +325,7 @@ export function FilterGroup({
             </>
           )}
           {isRoot && children.length === 0 && (
-            <span className="text-zinc-500 italic">
+            <span className="text-muted-foreground italic">
               Add conditions or groups to start filtering
             </span>
           )}
@@ -337,8 +336,8 @@ export function FilterGroup({
           onClick={handleAddCondition}
           className={cn(
             'flex items-center gap-1 rounded px-2 py-1 text-xs',
-            'bg-brand/10 text-brand-hover',
-            'hover:bg-brand/20 transition-colors'
+            'bg-primary/10 text-primary',
+            'hover:bg-primary/20 transition-colors'
           )}
           title="Add condition"
         >
@@ -355,7 +354,7 @@ export function FilterGroup({
           )}
           title="Add nested group"
         >
-          <FolderPlus size={14} />
+          <GoatFolderGroup size={14} />
           <span className="hidden sm:inline">Group</span>
         </button>
 
@@ -367,7 +366,7 @@ export function FilterGroup({
               'rounded p-1 transition-colors',
               isEnabled
                 ? 'text-emerald-500 hover:text-emerald-400'
-                : 'text-zinc-500 hover:text-zinc-400'
+                : 'text-muted-foreground hover:text-muted-foreground'
             )}
             title={isEnabled ? 'Disable group' : 'Enable group'}
           >
@@ -380,7 +379,7 @@ export function FilterGroup({
           <button
             onClick={handleRemove}
             className={cn(
-              'rounded p-1 text-zinc-500 transition-colors',
+              'rounded p-1 text-muted-foreground transition-colors',
               'hover:bg-red-500/20 hover:text-red-400'
             )}
             title="Remove group"
@@ -404,7 +403,7 @@ export function FilterGroup({
               className={cn(
                 'flex flex-col gap-2',
                 isRoot ? 'p-0' : 'p-3 pt-1',
-                depth > 0 && 'border-l-2 border-zinc-700/30 ml-4'
+                depth > 0 && 'border-l-2 border-border/30 ml-4'
               )}
             >
               {/* Top drop zone */}
@@ -418,12 +417,12 @@ export function FilterGroup({
                       <span
                         className={cn(
                           'text-xs font-medium',
-                          combinator === 'AND' ? 'text-brand/60' : 'text-orange-500/60'
+                          combinator === 'AND' ? 'text-primary/60' : 'text-orange-500/60'
                         )}
                       >
                         {combinator}
                       </span>
-                      <div className="flex-1 h-px bg-zinc-800" />
+                      <div className="flex-1 h-px bg-border" />
                     </div>
                   )}
 
@@ -450,9 +449,9 @@ export function FilterGroup({
 
               {/* Empty state */}
               {children.length === 0 && !isOver && (
-                <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-zinc-700 bg-gradient-to-br from-brand/[0.04] to-purple-500/[0.04] p-4">
+                <div className="flex flex-col items-center justify-center rounded-card border border-dashed border-border bg-gradient-to-br from-primary/[0.04] to-purple-500/[0.04] p-4">
                   <GoatBlocks width={80} height={64} />
-                  <span className="text-xs text-zinc-500 mt-1">
+                  <span className="text-xs text-muted-foreground mt-1">
                     {isRoot
                       ? 'Click "Condition" or "Group" to add filters'
                       : 'This group is empty. Add conditions or nested groups.'}
@@ -474,23 +473,23 @@ export function FilterGroupOverlay({ combinator, childCount }: { combinator: Fil
   return (
     <div
       className={cn(
-        'flex items-center gap-2 rounded-lg border border-zinc-700 p-3',
-        'bg-zinc-900/90 backdrop-blur-xs shadow-lg shadow-brand/30',
-        'ring-2 ring-brand'
+        'flex items-center gap-2 rounded-card border border-border p-3',
+        'bg-background/90 backdrop-blur-xs shadow-lg shadow-primary/30',
+        'ring-2 ring-primary'
       )}
     >
-      <GripVertical size={16} className="text-brand-hover" />
+      <GoatGrip size={16} className="text-primary" />
       <span
         className={cn(
           'rounded px-1.5 py-0.5 text-xs font-medium',
           combinator === 'AND'
-            ? 'bg-brand/20 text-brand-hover'
+            ? 'bg-primary/20 text-primary'
             : 'bg-orange-500/20 text-orange-400'
         )}
       >
         {combinator}
       </span>
-      <span className="text-sm text-zinc-400">
+      <span className="text-sm text-muted-foreground">
         Group ({childCount} item{childCount !== 1 ? 's' : ''})
       </span>
     </div>
@@ -505,9 +504,9 @@ export function RootCombinatorToggle() {
 
   return (
     <div className="flex items-center gap-3">
-      <span className="text-xs text-zinc-400">Match</span>
+      <span className="text-xs text-muted-foreground">Match</span>
       <CombinatorToggle value={rootCombinator} onChange={setRootCombinator} />
-      <span className="text-xs text-zinc-500">
+      <span className="text-xs text-muted-foreground">
         {COMBINATOR_LABELS[rootCombinator].description}
       </span>
     </div>

@@ -15,6 +15,49 @@ import {
   AlgorithmConfig,
 } from './types';
 import { TIER_COLORS, TIER_DESCRIPTIONS, getBestPresetForSize, TIER_PRESETS } from './constants';
+import { timeSync } from '@/lib/perf/perfTimer';
+import { getTierForPositionGeneric, rangeFromTierDef } from './boundary';
+
+/**
+ * Deduplicate boundaries and ensure each tier has at least width 1.
+ * When listSize < tierCount, rounding can produce duplicate boundaries
+ * which create zero-width tiers. This collapses duplicates and spreads
+ * boundaries so every tier spans at least one position.
+ */
+function ensureMinimumWidthBoundaries(boundaries: number[], listSize: number): number[] {
+  if (boundaries.length < 2) return boundaries;
+
+  // Deduplicate while preserving order
+  const deduped = [boundaries[0]];
+  for (let i = 1; i < boundaries.length; i++) {
+    if (boundaries[i] !== deduped[deduped.length - 1]) {
+      deduped.push(boundaries[i]);
+    }
+  }
+
+  // If we lost tiers due to dedup but still have room, spread them out
+  // ensuring each tier gets at least width 1
+  if (deduped.length < boundaries.length && listSize >= 2) {
+    const targetCount = Math.min(boundaries.length, listSize + 1); // boundaries = tierCount + 1
+    const result = [0];
+    const innerCount = targetCount - 2; // boundaries between 0 and listSize
+    for (let i = 1; i <= innerCount; i++) {
+      const pos = Math.round((i / (innerCount + 1)) * listSize);
+      // Ensure strictly increasing
+      const prev = result[result.length - 1];
+      result.push(Math.max(prev + 1, pos));
+    }
+    // Clamp last inner boundary to be < listSize
+    if (result.length > 1 && result[result.length - 1] >= listSize) {
+      // If we can't fit all tiers, just use what we have from dedup
+      return deduped;
+    }
+    result.push(listSize);
+    return result;
+  }
+
+  return deduped;
+}
 
 /**
  * Calculate tier boundaries using specified algorithm
@@ -25,22 +68,31 @@ export function calculateTierBoundaries(
   algorithm: TierAlgorithm = 'equal',
   params: Record<string, number> = {}
 ): number[] {
-  switch (algorithm) {
-    case 'equal':
-      return calculateEqualBoundaries(listSize, tierCount);
-    case 'pyramid':
-      return calculatePyramidBoundaries(listSize, tierCount);
-    case 'bell':
-      return calculateBellBoundaries(listSize, tierCount);
-    case 'kmeans':
-      return calculateKMeansBoundaries(listSize, tierCount, params.iterations || 10);
-    case 'percentile':
-      return calculatePercentileBoundaries(listSize, tierCount, params);
-    case 'custom':
-      return params.boundaries ? (params.boundaries as unknown as number[]) : calculateEqualBoundaries(listSize, tierCount);
-    default:
-      return calculateEqualBoundaries(listSize, tierCount);
-  }
+  return timeSync('TierCalculator.calculateBoundaries', { algorithm, listSize, tierCount }, () => {
+    let boundaries: number[];
+    switch (algorithm) {
+      case 'equal':
+        boundaries = calculateEqualBoundaries(listSize, tierCount);
+        break;
+      case 'pyramid':
+        boundaries = calculatePyramidBoundaries(listSize, tierCount);
+        break;
+      case 'bell':
+        boundaries = calculateBellBoundaries(listSize, tierCount);
+        break;
+      case 'percentile':
+        boundaries = calculatePercentileBoundaries(listSize, tierCount, params);
+        break;
+      case 'custom':
+        boundaries = params.boundaries ? (params.boundaries as unknown as number[]) : calculateEqualBoundaries(listSize, tierCount);
+        break;
+      default:
+        boundaries = calculateEqualBoundaries(listSize, tierCount);
+        break;
+    }
+    // Deduplicate and ensure each tier has at least width 1 for small lists
+    return ensureMinimumWidthBoundaries(boundaries, listSize);
+  });
 }
 
 /**
@@ -117,62 +169,6 @@ function calculateBellBoundaries(listSize: number, tierCount: number): number[] 
 }
 
 /**
- * K-means inspired clustering for natural boundaries
- * Simulates finding "natural" breaks in the ranking
- */
-function calculateKMeansBoundaries(
-  listSize: number,
-  tierCount: number,
-  iterations: number = 10
-): number[] {
-  // Initialize centroids evenly
-  let centroids: number[] = [];
-  for (let i = 0; i < tierCount; i++) {
-    centroids.push(((i + 0.5) / tierCount) * listSize);
-  }
-
-  // Simulate K-means iterations
-  for (let iter = 0; iter < iterations; iter++) {
-    // Calculate new centroids based on cluster assignments
-    const clusters: number[][] = Array(tierCount).fill(null).map(() => []);
-
-    // Assign each position to nearest centroid
-    for (let pos = 0; pos < listSize; pos++) {
-      let nearestIdx = 0;
-      let nearestDist = Math.abs(pos - centroids[0]);
-
-      for (let c = 1; c < centroids.length; c++) {
-        const dist = Math.abs(pos - centroids[c]);
-        if (dist < nearestDist) {
-          nearestDist = dist;
-          nearestIdx = c;
-        }
-      }
-      clusters[nearestIdx].push(pos);
-    }
-
-    // Update centroids
-    for (let c = 0; c < tierCount; c++) {
-      if (clusters[c].length > 0) {
-        centroids[c] = clusters[c].reduce((a, b) => a + b, 0) / clusters[c].length;
-      }
-    }
-  }
-
-  // Convert centroids to boundaries (midpoints between centroids)
-  centroids.sort((a, b) => a - b);
-  const boundaries: number[] = [0];
-
-  for (let i = 0; i < centroids.length - 1; i++) {
-    const boundary = Math.round((centroids[i] + centroids[i + 1]) / 2);
-    boundaries.push(Math.min(boundary, listSize));
-  }
-  boundaries.push(listSize);
-
-  return boundaries;
-}
-
-/**
  * Percentile-based boundaries
  * Allows custom percentile splits
  */
@@ -228,7 +224,7 @@ export function createTiersFromBoundaries(
  * Adjust preset tiers to fit a specific list size
  */
 export function adjustPresetToSize(preset: TierPreset, listSize: number): TierPreset {
-  const scaleFactor = listSize / preset.listSizeRange.max;
+  const scaleFactor = preset.listSizeRange.max > 0 ? listSize / preset.listSizeRange.max : 1;
 
   const adjustedTiers = preset.tiers.map((tier, index) => {
     const isLast = index === preset.tiers.length - 1;
@@ -247,15 +243,12 @@ export function adjustPresetToSize(preset: TierPreset, listSize: number): TierPr
 }
 
 /**
- * Get tier for a specific position
+ * Get tier for a specific position.
+ * Delegates to the canonical boundary lookup (exclusive-end convention).
  */
 export function getTierForPosition(position: number, tiers: TierDefinition[]): TierDefinition | null {
-  for (const tier of tiers) {
-    if (position >= tier.startPosition && position < tier.endPosition) {
-      return tier;
-    }
-  }
-  return tiers[tiers.length - 1] || null;
+  return getTierForPositionGeneric(position, tiers, rangeFromTierDef)
+    ?? tiers[tiers.length - 1] ?? null;
 }
 
 /**
@@ -419,18 +412,7 @@ export function generateTierSuggestions(
     algorithm: 'pyramid',
   });
 
-  // Algorithm 3: K-means clustering
-  if (filledPositions.length >= tierCount) {
-    const kmeansBoundaries = calculateTierBoundaries(listSize, tierCount, 'kmeans', { iterations: 15 });
-    suggestions.push({
-      boundaries: kmeansBoundaries,
-      confidence: 80,
-      reasoning: 'K-means finds natural groupings based on position clusters',
-      algorithm: 'kmeans',
-    });
-  }
-
-  // Algorithm 4: Percentile-based
+  // Algorithm 3: Percentile-based
   const percentileBoundaries = calculateTierBoundaries(listSize, tierCount, 'percentile');
   suggestions.push({
     boundaries: percentileBoundaries,
@@ -458,36 +440,38 @@ export function smartCalculateTiers(
   summary: TierSummary;
   suggestions: TierSuggestion[];
 } {
-  // Get best preset for size
-  const basePreset = getBestPresetForSize(listSize);
+  return timeSync('TierCalculator.smartCalculate', { listSize, itemCount: filledPositions.length }, () => {
+    // Get best preset for size
+    const basePreset = getBestPresetForSize(listSize);
 
-  // Adjust to actual list size
-  const adjustedPreset = adjustPresetToSize(basePreset, listSize);
+    // Adjust to actual list size
+    const adjustedPreset = adjustPresetToSize(basePreset, listSize);
 
-  // Get suggestions
-  const suggestions = generateTierSuggestions(
-    listSize,
-    filledPositions.map(p => p.position),
-    adjustedPreset.tierCount
-  );
+    // Get suggestions
+    const suggestions = generateTierSuggestions(
+      listSize,
+      filledPositions.map(p => p.position),
+      adjustedPreset.tierCount
+    );
 
-  // Use the best suggestion (highest confidence)
-  const bestSuggestion = suggestions[0];
-  const tiers = createTiersFromBoundaries(bestSuggestion.boundaries, adjustedPreset);
+    // Use the best suggestion (highest confidence)
+    const bestSuggestion = suggestions[0];
+    const tiers = createTiersFromBoundaries(bestSuggestion.boundaries, adjustedPreset);
 
-  // Assign items to tiers
-  const tieredItems = assignTiersToItems(filledPositions, tiers);
+    // Assign items to tiers
+    const tieredItems = assignTiersToItems(filledPositions, tiers);
 
-  // Calculate summary
-  const summary = calculateTierSummary(tiers, tieredItems, listSize);
+    // Calculate summary
+    const summary = calculateTierSummary(tiers, tieredItems, listSize);
 
-  return {
-    preset: adjustedPreset,
-    tiers,
-    tieredItems,
-    summary,
-    suggestions,
-  };
+    return {
+      preset: adjustedPreset,
+      tiers,
+      tieredItems,
+      summary,
+      suggestions,
+    };
+  });
 }
 
 /**

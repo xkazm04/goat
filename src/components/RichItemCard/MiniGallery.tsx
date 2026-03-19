@@ -192,7 +192,7 @@ export const MiniGallery = memo(function MiniGallery({
       )}
 
       {/* Image counter */}
-      <div className="absolute top-1 right-1 px-1.5 py-0.5 rounded bg-black/60 text-[10px] text-white/80 font-medium">
+      <div className="absolute top-1 right-1 px-1.5 py-0.5 rounded bg-black/60 text-2xs text-white/80 font-medium">
         {activeIndex + 1}/{images.length}
       </div>
     </motion.div>

@@ -11,6 +11,7 @@ import { ChevronDown, ChevronUp, Sparkles } from "lucide-react";
 import { SimpleDropZone } from "../../sub_DropZone/SimpleDropZone";
 import { GridItemType } from "@/types/match";
 import { TierDefinition, TierId, getTierCSSProperties } from "../lib/tierConfig";
+import { DURATION } from "@/lib/animations/motion-presets";
 
 interface TierSectionProps {
   /** Tier configuration */
@@ -53,10 +54,10 @@ const TierProgressBar = memo(function TierProgressBar({
           style={{ backgroundColor: accentColor }}
           initial={{ width: 0 }}
           animate={{ width: `${percentage}%` }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
+          transition={{ duration: DURATION.slow, ease: "easeOut" }}
         />
       </div>
-      <span className="text-[10px] text-white/40 tabular-nums w-8 text-right">
+      <span className="text-2xs text-white/40 tabular-nums w-8 text-right">
         {Math.round(percentage)}%
       </span>
     </div>
@@ -123,7 +124,11 @@ const TierHeader = memo(function TierHeader({
 
         {/* Stats badge */}
         {stats && (
-          <span className="text-[10px] text-white/40 ml-1">
+          <span
+            className="text-2xs text-white/40 ml-1"
+            role="status"
+            aria-label={`${stats.filledSlots} of ${stats.totalSlots} positions filled`}
+          >
             {stats.filledSlots}/{stats.totalSlots}
           </span>
         )}
@@ -132,7 +137,7 @@ const TierHeader = memo(function TierHeader({
         {canCollapse && (
           <motion.div
             animate={{ rotate: isCollapsed ? 0 : 180 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: DURATION.quick }}
           >
             <ChevronDown className="w-4 h-4 text-white/40" />
           </motion.div>
@@ -174,7 +179,7 @@ const CollapsedPreview = memo(function CollapsedPreview({
 
   return (
     <motion.div
-      className="flex items-center gap-2 px-4 py-3 rounded-lg cursor-pointer"
+      className="flex items-center gap-2 px-4 py-3 rounded-card cursor-pointer"
       style={{
         background: `linear-gradient(90deg, ${tier.style.accentColor}10, transparent)`,
         border: `1px solid ${tier.style.accentColor}20`,
@@ -188,7 +193,7 @@ const CollapsedPreview = memo(function CollapsedPreview({
         {filledItems.slice(0, 5).map(({ position, item }) => (
           <motion.div
             key={position}
-            className="w-8 h-8 rounded-md border-2 overflow-hidden"
+            className="w-8 h-8 rounded-control border-2 overflow-hidden"
             style={{
               borderColor: tier.style.accentColor,
               boxShadow: `0 0 8px ${tier.style.glowColor}`,
@@ -213,7 +218,7 @@ const CollapsedPreview = memo(function CollapsedPreview({
         ))}
         {filledItems.length > 5 && (
           <div
-            className="w-8 h-8 rounded-md border-2 flex items-center justify-center text-[10px] font-bold"
+            className="w-8 h-8 rounded-control border-2 flex items-center justify-center text-2xs font-bold"
             style={{
               borderColor: tier.style.accentColor,
               backgroundColor: tier.style.accentColor + "20",
@@ -265,7 +270,7 @@ export const TierSection = memo(function TierSection({
     >
       {/* Background glow effect */}
       <div
-        className="absolute inset-0 pointer-events-none rounded-2xl opacity-30"
+        className="absolute inset-0 pointer-events-none rounded-container opacity-30"
         style={{
           background: `radial-gradient(ellipse at top, ${tier.style.glowColor}, transparent 70%)`,
         }}
@@ -287,7 +292,7 @@ export const TierSection = memo(function TierSection({
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: DURATION.normal }}
           >
             <CollapsedPreview
               tier={tier}
@@ -301,7 +306,7 @@ export const TierSection = memo(function TierSection({
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: DURATION.normal }}
           >
             <div
               className="grid"

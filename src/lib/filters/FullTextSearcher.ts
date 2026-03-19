@@ -4,6 +4,8 @@
  */
 
 import Fuse, { FuseResult, IFuseOptions, FuseResultMatch } from 'fuse.js';
+import { extractTitle } from '@/lib/items/item-utils';
+import type { FilterMetrics } from './FilterEngine';
 
 // Pre-compiled regex for extended syntax detection
 const RE_EXTENDED_FIELD = /\w+:/;
@@ -87,9 +89,18 @@ export class FullTextSearcher<T extends Record<string, unknown>> {
   private items: T[] = [];
   private config: FullTextSearchConfig;
   private lastBuildTime: number = 0;
+  private onMetrics?: (metrics: FilterMetrics) => void;
 
   constructor(config: Partial<FullTextSearchConfig> = {}) {
     this.config = { ...DEFAULT_SEARCH_CONFIG, ...config };
+  }
+
+  /**
+   * Set an optional metrics callback for real-time performance visibility.
+   * The callback receives {operation, durationMs, itemCount} after each operation.
+   */
+  setMetricsCallback(callback: (metrics: FilterMetrics) => void): void {
+    this.onMetrics = callback;
   }
 
   /**
@@ -117,6 +128,14 @@ export class FullTextSearcher<T extends Record<string, unknown>> {
 
     this.fuse = new Fuse(items, fuseOptions);
     this.lastBuildTime = performance.now() - startTime;
+
+    if (this.onMetrics) {
+      this.onMetrics({
+        operation: 'fullTextSearch.buildIndex',
+        durationMs: this.lastBuildTime,
+        itemCount: items.length,
+      });
+    }
   }
 
   /**
@@ -162,13 +181,22 @@ export class FullTextSearcher<T extends Record<string, unknown>> {
     }
 
     const results = fuseResults.map((result) => this.transformResult(result));
+    const durationMs = performance.now() - startTime;
+
+    if (this.onMetrics) {
+      this.onMetrics({
+        operation: 'fullTextSearch.search',
+        durationMs,
+        itemCount: this.items.length,
+      });
+    }
 
     return {
       results,
       stats: {
         totalItems: this.items.length,
         matchedItems: results.length,
-        executionTime: performance.now() - startTime,
+        executionTime: durationMs,
         query,
       },
     };

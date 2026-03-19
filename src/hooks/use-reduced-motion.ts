@@ -37,6 +37,11 @@ function getServerSnapshot(): boolean {
  * Uses useSyncExternalStore for optimal performance - no re-render on mount
  * unless the preference actually changes.
  *
+ * @deprecated Prefer `useMotionPreference()` from `@/hooks/use-motion-preference`
+ * which provides a 3-tier system (full/reduced/minimal) with capability flags.
+ * This hook only checks the system media query and does not respect the user's
+ * in-app motion tier stored in localStorage.
+ *
  * @returns boolean - true if the user prefers reduced motion
  *
  * @example
@@ -51,6 +56,9 @@ export function useReducedMotion(): boolean {
 /**
  * Returns animation props that respect reduced motion preference
  * Useful for Framer Motion components
+ *
+ * @deprecated Prefer `useMotionProps()` from `@/hooks/use-motion-preference`
+ * which supports 3 tiers and per-tier animation configs.
  *
  * @param animationProps - The animation props to use when motion is allowed
  * @returns The animation props or empty object if reduced motion is preferred

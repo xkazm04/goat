@@ -4,6 +4,7 @@ import { memo } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import type { CriterionDisplaySize } from '@/lib/criteria/types';
+import { DURATION } from '@/lib/animations/motion-presets';
 
 export interface LabelScoreOverlayProps {
   /** Score value (0-10 or 0-100 depending on scale) */
@@ -26,20 +27,20 @@ export interface LabelScoreOverlayProps {
 const SIZE_CONFIG = {
   sm: {
     padding: 'px-1.5 py-0.5',
-    scoreSize: 'text-[9px]',
-    nameSize: 'text-[7px]',
+    scoreSize: 'text-2xs',
+    nameSize: 'text-3xs',
     gap: 'gap-0.5',
   },
   md: {
     padding: 'px-2 py-1',
-    scoreSize: 'text-[10px]',
-    nameSize: 'text-[8px]',
+    scoreSize: 'text-2xs',
+    nameSize: 'text-3xs',
     gap: 'gap-1',
   },
   lg: {
     padding: 'px-2.5 py-1.5',
     scoreSize: 'text-xs',
-    nameSize: 'text-[9px]',
+    nameSize: 'text-2xs',
     gap: 'gap-1',
   },
 };
@@ -85,19 +86,19 @@ export const LabelScoreOverlay = memo(function LabelScoreOverlay({
   return (
     <motion.div
       className={cn(
-        'flex items-center rounded-full backdrop-blur-md border border-white/10 shadow-lg',
+        'flex items-center rounded-badge backdrop-blur-md border border-white/10 shadow-lg',
         config.padding,
         config.gap,
         className
       )}
       style={{
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        boxShadow: `0 2px 8px rgba(0, 0, 0, 0.3), 0 0 8px ${accentColor}20`,
+        boxShadow: `var(--elevation-card), 0 0 8px ${accentColor}20`,
         borderColor: `${accentColor}30`,
       }}
       initial={animated ? { opacity: 0, scale: 0.8 } : {}}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.3, ease: 'easeOut' }}
+      transition={{ duration: DURATION.normal, ease: 'easeOut' }}
     >
       {/* Score */}
       <span

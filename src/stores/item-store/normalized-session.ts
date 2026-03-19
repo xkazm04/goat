@@ -40,10 +40,14 @@ export interface NormalizedGroupMeta {
 
 /**
  * Normalized storage format for items - stored in a flat map by ID
+ *
+ * See NAME vs TITLE CONTRACT in `@/types/backlog-groups.ts`.
  */
 export interface NormalizedItem {
   id: string;
+  /** Resolved display label (produced by extractTitle: name > title). */
   title: string;
+  /** Canonical identifier from the API. */
   name: string;
   description: string;
   category: string;
@@ -55,6 +59,12 @@ export interface NormalizedItem {
   updated_at?: string;
   tags: string[];
   matched: boolean;
+  /**
+   * Whether this item is currently placed in the match grid.
+   *
+   * Propagated from `BacklogItem.used` via `backlogToNormalized` transformer.
+   * See `backlogStore.markItemAsUsed()` for the authoritative setter.
+   */
   used?: boolean;
   groupId: string; // Reference back to parent group
 }
@@ -231,8 +241,8 @@ export function migrateFromLegacyFormat(groups: BacklogGroupType[]): NormalizedB
       // BacklogItemType has slightly different shape, adapt it
       const backlogItem: BacklogItem = {
         id: item.id,
-        name: item.name || item.title || '',
-        title: item.title || '',
+        name: extractTitle(item),
+        title: extractTitle(item),
         description: item.description,
         category: item.category || group.category || 'general',
         subcategory: item.subcategory || group.subcategory,
@@ -253,7 +263,7 @@ export function migrateFromLegacyFormat(groups: BacklogGroupType[]): NormalizedB
     const normalizedGroup: NormalizedGroupMeta = {
       id: group.id,
       name: group.name,
-      title: group.title || group.name,
+      title: extractTitle(group),
       description: group.description,
       category: group.category || 'general',
       subcategory: group.subcategory,
@@ -439,6 +449,62 @@ export const NormalizedOps = {
     };
 
     return denormalizeToBacklogGroup(filteredData);
+  },
+
+  /**
+   * Mark a single item as matched — O(1) lookup by itemId
+   */
+  markItemMatched(data: NormalizedBacklogData, itemId: string, matchedWith: string): NormalizedBacklogData {
+    const item = data.itemsById[itemId];
+    if (!item) return data;
+    return {
+      ...data,
+      itemsById: {
+        ...data.itemsById,
+        [itemId]: { ...item, matched: true, used: true },
+      },
+    };
+  },
+
+  /**
+   * Mark a single item as unmatched — O(1) lookup by itemId
+   */
+  markItemUnmatched(data: NormalizedBacklogData, itemId: string): NormalizedBacklogData {
+    const item = data.itemsById[itemId];
+    if (!item) return data;
+    return {
+      ...data,
+      itemsById: {
+        ...data.itemsById,
+        [itemId]: { ...item, matched: false, used: false },
+      },
+    };
+  },
+
+  /**
+   * Update an item's field(s) — O(1)
+   */
+  updateItemFields(data: NormalizedBacklogData, itemId: string, updates: Partial<NormalizedItem>): NormalizedBacklogData {
+    const item = data.itemsById[itemId];
+    if (!item) return data;
+    return {
+      ...data,
+      itemsById: {
+        ...data.itemsById,
+        [itemId]: { ...item, ...updates },
+      },
+    };
+  },
+
+  /**
+   * Clear all matched/used flags — O(n) where n is total items
+   */
+  clearAllMatched(data: NormalizedBacklogData): NormalizedBacklogData {
+    const updatedItems: Record<string, NormalizedItem> = {};
+    for (const [id, item] of Object.entries(data.itemsById)) {
+      updatedItems[id] = { ...item, matched: false, used: false };
+    }
+    return { ...data, itemsById: updatedItems };
   },
 
   /**

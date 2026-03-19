@@ -8,22 +8,19 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Save,
   FolderOpen,
   Share2,
   Copy,
   Check,
   Trash2,
-  Edit2,
-  Link,
   Download,
   Upload,
   X,
   Clock,
-  Filter,
-  Star,
   MoreHorizontal,
+  Link,
 } from 'lucide-react';
+import { GoatSave, GoatFilter } from '@/components/visual/GoatIcons';
 import { cn } from '@/lib/utils';
 import {
   useFilterBuilderStore,
@@ -60,7 +57,7 @@ function SaveFilterDialog({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-modal flex items-center justify-center">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-xl"
@@ -72,13 +69,13 @@ function SaveFilterDialog({
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="relative z-10 w-full max-w-md rounded-lg border border-zinc-700 bg-zinc-900 p-6 shadow-xl"
+        className="relative z-10 w-full max-w-md rounded-card border border-border bg-background p-6 shadow-xl"
       >
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-zinc-100">Save Filter</h3>
+          <h3 className="text-lg font-semibold text-foreground font-grotesk">Save Filter</h3>
           <button
             onClick={onClose}
-            className="rounded p-1 text-zinc-400 hover:text-zinc-200"
+            className="rounded p-1 text-muted-foreground hover:text-foreground"
           >
             <X size={20} />
           </button>
@@ -86,7 +83,7 @@ function SaveFilterDialog({
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-zinc-400 mb-1">
+            <label className="block text-sm font-medium text-muted-foreground mb-1">
               Filter Name *
             </label>
             <input
@@ -95,16 +92,16 @@ function SaveFilterDialog({
               onChange={(e) => setName(e.target.value)}
               placeholder="My Custom Filter"
               className={cn(
-                'w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm',
-                'text-zinc-200 placeholder-zinc-500',
-                'focus:border-brand focus:outline-hidden focus:ring-1 focus:ring-brand'
+                'w-full rounded-control border border-border bg-muted px-3 py-2 text-sm',
+                'text-foreground placeholder:text-muted-foreground',
+                'focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary'
               )}
               autoFocus
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-400 mb-1">
+            <label className="block text-sm font-medium text-muted-foreground mb-1">
               Description (optional)
             </label>
             <textarea
@@ -113,9 +110,9 @@ function SaveFilterDialog({
               placeholder="Describe what this filter does..."
               rows={3}
               className={cn(
-                'w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm',
-                'text-zinc-200 placeholder-zinc-500 resize-none',
-                'focus:border-brand focus:outline-hidden focus:ring-1 focus:ring-brand'
+                'w-full rounded-control border border-border bg-muted px-3 py-2 text-sm',
+                'text-foreground placeholder:text-muted-foreground resize-none',
+                'focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary'
               )}
             />
           </div>
@@ -125,8 +122,8 @@ function SaveFilterDialog({
           <button
             onClick={onClose}
             className={cn(
-              'rounded-md px-4 py-2 text-sm font-medium',
-              'text-zinc-400 hover:text-zinc-200'
+              'rounded-control px-4 py-2 text-sm font-medium',
+              'text-muted-foreground hover:text-foreground'
             )}
           >
             Cancel
@@ -135,12 +132,12 @@ function SaveFilterDialog({
             onClick={handleSave}
             disabled={!name.trim()}
             className={cn(
-              'flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium',
-              'bg-brand text-white hover:bg-brand-muted',
+              'flex items-center gap-2 rounded-control px-4 py-2 text-sm font-medium',
+              'bg-primary text-primary-foreground hover:bg-primary/80',
               'disabled:filter-disabled'
             )}
           >
-            <Save size={16} />
+            <GoatSave size={16} />
             Save Filter
           </button>
         </div>
@@ -183,7 +180,7 @@ function ShareDialog({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-modal flex items-center justify-center">
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-xl"
         onClick={onClose}
@@ -193,19 +190,19 @@ function ShareDialog({
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="relative z-10 w-full max-w-md rounded-lg border border-zinc-700 bg-zinc-900 p-6 shadow-xl"
+        className="relative z-10 w-full max-w-md rounded-card border border-border bg-background p-6 shadow-xl"
       >
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-zinc-100">Share Filter</h3>
+          <h3 className="text-lg font-semibold text-foreground font-grotesk">Share Filter</h3>
           <button
             onClick={onClose}
-            className="rounded p-1 text-zinc-400 hover:text-zinc-200"
+            className="rounded p-1 text-muted-foreground hover:text-foreground"
           >
             <X size={20} />
           </button>
         </div>
 
-        <p className="text-sm text-zinc-400 mb-4">
+        <p className="text-sm text-muted-foreground mb-4">
           Share this URL to let others use your filter configuration
         </p>
 
@@ -215,15 +212,15 @@ function ShareDialog({
             value={shareUrl}
             readOnly
             className={cn(
-              'flex-1 rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm',
-              'text-zinc-300 font-mono truncate'
+              'flex-1 rounded-control border border-border bg-muted px-3 py-2 text-sm',
+              'text-foreground font-mono truncate'
             )}
           />
           <button
             onClick={handleCopy}
             className={cn(
-              'flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium',
-              'bg-brand text-white hover:bg-brand-muted',
+              'flex items-center gap-2 rounded-control px-4 py-2 text-sm font-medium',
+              'bg-primary text-primary-foreground hover:bg-primary/80',
               'min-w-[80px] justify-center'
             )}
           >
@@ -241,8 +238,8 @@ function ShareDialog({
           </button>
         </div>
 
-        <div className="mt-4 pt-4 border-t border-zinc-800">
-          <p className="text-xs text-zinc-500">
+        <div className="mt-4 pt-4 border-t border-border">
+          <p className="text-xs text-muted-foreground">
             Note: The filter configuration is encoded in the URL. Anyone with this
             link can apply the same filter to their view.
           </p>
@@ -287,34 +284,34 @@ function SavedFilterCard({
   return (
     <div
       className={cn(
-        'relative rounded-lg border p-3 transition-all cursor-pointer',
+        'relative rounded-card border p-3 transition-all cursor-pointer',
         isActive
-          ? 'border-brand/50 bg-brand/5'
-          : 'border-zinc-700/50 bg-zinc-800/30 hover:bg-zinc-800/50'
+          ? 'border-primary/50 bg-primary/5'
+          : 'border-border/50 bg-muted/30 hover:bg-muted/50'
       )}
       onClick={onLoad}
     >
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <Filter size={14} className={isActive ? 'text-brand-hover' : 'text-zinc-400'} />
-            <span className={cn('font-medium truncate', isActive ? 'text-brand-hover' : 'text-zinc-200')}>
+            <GoatFilter size={14} className={isActive ? 'text-primary' : 'text-muted-foreground'} />
+            <span className={cn('font-medium truncate', isActive ? 'text-primary' : 'text-foreground')}>
               {filter.name}
             </span>
             {isActive && (
-              <span className="text-xs bg-brand/20 text-brand-hover px-1.5 py-0.5 rounded">
+              <span className="text-xs bg-primary/20 text-primary px-1.5 py-0.5 rounded">
                 Active
               </span>
             )}
           </div>
 
           {filter.description && (
-            <p className="text-xs text-zinc-500 mt-1 line-clamp-2">
+            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
               {filter.description}
             </p>
           )}
 
-          <div className="flex items-center gap-3 mt-2 text-xs text-zinc-500">
+          <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
             <span>{conditionCount} condition{conditionCount !== 1 ? 's' : ''}</span>
             <span className="flex items-center gap-1">
               <Clock size={10} />
@@ -329,7 +326,7 @@ function SavedFilterCard({
               e.stopPropagation();
               setShowMenu(!showMenu);
             }}
-            className="rounded p-1 text-zinc-500 hover:text-zinc-300 filter-hover"
+            className="rounded p-1 text-muted-foreground hover:text-foreground filter-hover"
           >
             <MoreHorizontal size={16} />
           </button>
@@ -340,7 +337,7 @@ function SavedFilterCard({
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="absolute right-0 top-8 z-10 w-36 rounded-md border border-zinc-700 bg-zinc-800 py-1 shadow-lg"
+                className="absolute right-0 top-8 z-10 w-36 rounded-card border border-border bg-muted py-1 shadow-lg"
               >
                 <button
                   onClick={(e) => {
@@ -348,7 +345,7 @@ function SavedFilterCard({
                     onDuplicate();
                     setShowMenu(false);
                   }}
-                  className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-zinc-300 filter-hover"
+                  className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-foreground filter-hover"
                 >
                   <Copy size={12} />
                   Duplicate
@@ -443,26 +440,26 @@ export function FilterSaver({ className }: { className?: string }) {
         <button
           onClick={() => setShowSaveDialog(true)}
           className={cn(
-            'flex items-center gap-2 rounded-md px-3 py-1.5 text-sm',
-            'bg-brand/10 text-brand-hover hover:bg-brand/20'
+            'flex items-center gap-2 rounded-control px-3 py-1.5 text-sm',
+            'bg-primary/10 text-primary hover:bg-primary/20'
           )}
         >
-          <Save size={14} />
+          <GoatSave size={14} />
           Save
         </button>
 
         <button
           onClick={() => setShowFilters(!showFilters)}
           className={cn(
-            'flex items-center gap-2 rounded-md px-3 py-1.5 text-sm',
-            'bg-zinc-800 text-zinc-300 filter-hover',
+            'flex items-center gap-2 rounded-control px-3 py-1.5 text-sm',
+            'bg-muted text-foreground filter-hover',
             savedFilters.length > 0 && 'relative'
           )}
         >
           <FolderOpen size={14} />
           Load
           {savedFilters.length > 0 && (
-            <span className="ml-1 rounded-full bg-zinc-700 px-1.5 text-xs">
+            <span className="ml-1 rounded-badge bg-muted px-1.5 text-xs">
               {savedFilters.length}
             </span>
           )}
@@ -471,19 +468,19 @@ export function FilterSaver({ className }: { className?: string }) {
         <button
           onClick={handleShare}
           className={cn(
-            'flex items-center gap-2 rounded-md px-3 py-1.5 text-sm',
-            'bg-zinc-800 text-zinc-300 filter-hover'
+            'flex items-center gap-2 rounded-control px-3 py-1.5 text-sm',
+            'bg-muted text-foreground filter-hover'
           )}
         >
           <Share2 size={14} />
           Share
         </button>
 
-        <div className="h-4 w-px bg-zinc-700" />
+        <div className="h-4 w-px bg-border" />
 
         <button
           onClick={handleExport}
-          className="rounded p-1.5 text-zinc-500 hover:text-zinc-300 filter-hover"
+          className="rounded p-1.5 text-muted-foreground hover:text-foreground filter-hover"
           title="Export filter"
         >
           <Download size={14} />
@@ -491,7 +488,7 @@ export function FilterSaver({ className }: { className?: string }) {
 
         <button
           onClick={handleImport}
-          className="rounded p-1.5 text-zinc-500 hover:text-zinc-300 filter-hover"
+          className="rounded p-1.5 text-muted-foreground hover:text-foreground filter-hover"
           title="Import filter"
         >
           <Upload size={14} />
@@ -499,7 +496,7 @@ export function FilterSaver({ className }: { className?: string }) {
 
         <button
           onClick={clearAll}
-          className="rounded p-1.5 text-zinc-500 hover:text-red-400 filter-hover"
+          className="rounded p-1.5 text-muted-foreground hover:text-red-400 filter-hover"
           title="Clear all"
         >
           <Trash2 size={14} />
@@ -515,8 +512,8 @@ export function FilterSaver({ className }: { className?: string }) {
             exit={{ height: 0, opacity: 0 }}
             className="overflow-hidden"
           >
-            <div className="space-y-2 pt-2 border-t border-zinc-800">
-              <div className="text-xs text-zinc-500 px-1">Saved Filters</div>
+            <div className="space-y-2 pt-2 border-t border-border">
+              <div className="text-xs text-muted-foreground px-1 font-grotesk">Saved Filters</div>
               {savedFilters.map((filter) => (
                 <SavedFilterCard
                   key={filter.id}
@@ -534,10 +531,10 @@ export function FilterSaver({ className }: { className?: string }) {
 
       {/* Empty state */}
       {showFilters && savedFilters.length === 0 && (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-zinc-700 bg-gradient-to-br from-brand/[0.04] to-purple-500/[0.04] p-6">
+        <div className="flex flex-col items-center justify-center rounded-card border border-dashed border-border bg-gradient-to-br from-primary/[0.04] to-purple-500/[0.04] p-6">
           <GoatBookmark width={100} height={80} />
-          <p className="text-sm text-zinc-400 mt-2">No saved filters yet</p>
-          <p className="text-xs text-zinc-500 mt-1">
+          <p className="text-sm text-muted-foreground mt-2">No saved filters yet</p>
+          <p className="text-xs text-muted-foreground mt-1">
             Create conditions and click Save to store them
           </p>
         </div>
@@ -575,24 +572,24 @@ export function FilterActions({ className }: { className?: string }) {
     <div className={cn('flex items-center gap-1', className)}>
       <button
         onClick={() => setShowSave(true)}
-        className="rounded p-1.5 text-zinc-400 hover:text-brand-hover filter-hover"
+        className="rounded p-1.5 text-muted-foreground hover:text-primary filter-hover"
         title="Save filter"
       >
-        <Save size={16} />
+        <GoatSave size={16} />
       </button>
       <button
         onClick={() => {
           const code = generateShareCode();
           navigator.clipboard.writeText(code);
         }}
-        className="rounded p-1.5 text-zinc-400 hover:text-brand-hover filter-hover"
+        className="rounded p-1.5 text-muted-foreground hover:text-primary filter-hover"
         title="Copy share link"
       >
         <Link size={16} />
       </button>
       <button
         onClick={clearAll}
-        className="rounded p-1.5 text-zinc-400 hover:text-red-400 filter-hover"
+        className="rounded p-1.5 text-muted-foreground hover:text-red-400 filter-hover"
         title="Clear all"
       >
         <Trash2 size={16} />

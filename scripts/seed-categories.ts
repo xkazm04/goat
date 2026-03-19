@@ -14,7 +14,7 @@
  */
 
 import { createClient } from "@supabase/supabase-js";
-import { GoogleGenAI } from "@google/genai";
+import { getGeminiClient, GEMINI_MODEL_FLASH } from "@/lib/providers/gemini-client";
 
 // ---------------------------------------------------------------------------
 // Configuration
@@ -69,8 +69,7 @@ function getSupabase() {
 // ---------------------------------------------------------------------------
 
 async function generateTitles(categoryName: string): Promise<string[]> {
-  const apiKey = requireEnv("GEMINI_API_KEY");
-  const client = new GoogleGenAI({ apiKey });
+  const client = getGeminiClient();
 
   const prompt = `Generate a JSON array of exactly 120 well-known video game titles for the category "${categoryName}".
 Rules:
@@ -83,7 +82,7 @@ Rules:
 Example format: ["Game Title 1", "Game Title 2", ...]`;
 
   const response = await client.models.generateContent({
-    model: "gemini-2.0-flash",
+    model: GEMINI_MODEL_FLASH,
     contents: prompt,
     config: {
       responseMimeType: "application/json",

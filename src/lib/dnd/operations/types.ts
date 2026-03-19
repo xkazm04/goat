@@ -80,6 +80,8 @@ export interface DragContext {
   target: DragTarget;
   /** Determined operation type */
   operationType: DragOperationType;
+  /** Correlation ID for tracing this operation across the pipeline */
+  opId: string;
 }
 
 // ============================================================================
@@ -96,6 +98,8 @@ export interface DragOperationResult {
   operationType: DragOperationType;
   /** Action taken (assign, move, swap, etc.) */
   action: TransferAction;
+  /** Correlation ID for tracing from UI error toast to log entry */
+  opId?: string;
   /** Error code if operation failed */
   errorCode?: ValidationErrorCode;
   /** Error message if operation failed */
@@ -110,6 +114,8 @@ export interface DragOperationResult {
     toTierId?: string;
     wasSwap?: boolean;
     displacedItem?: TransferableItem;
+    /** Item ID involved in the operation (included in error results for diagnostics) */
+    itemId?: string;
   };
 }
 

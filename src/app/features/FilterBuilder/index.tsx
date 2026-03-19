@@ -39,7 +39,7 @@ const SAMPLE_ITEMS = [
  */
 function MovieItemRenderer(item: typeof SAMPLE_ITEMS[0], index: number) {
   return (
-    <div className="flex items-center gap-3 rounded-md bg-zinc-800/50 p-2">
+    <div className="flex items-center gap-3 rounded-control bg-zinc-800/50 p-2">
       <div className="flex h-10 w-10 items-center justify-center rounded bg-linear-to-br from-brand/20 to-purple-500/20 text-lg">
         {item.ranking >= 5 ? '🏆' : item.ranking >= 4 ? '⭐' : '🎬'}
       </div>
@@ -91,7 +91,7 @@ export function FilterBuilderPage() {
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
       {/* Header */}
-      <header className="border-b border-zinc-800 bg-zinc-900/50 backdrop-blur-xs sticky top-0 z-40">
+      <header className="border-b border-zinc-800 bg-zinc-900/50 backdrop-blur-xs sticky top-0 z-sticky">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -124,7 +124,7 @@ export function FilterBuilderPage() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-8 rounded-xl border border-brand/20 bg-linear-to-r from-brand/5 to-purple-500/5 p-6"
+            className="mb-8 rounded-card border border-brand/20 bg-linear-to-r from-brand/5 to-purple-500/5 p-6"
           >
             <h2 className="text-lg font-semibold text-zinc-100 mb-2">
               Build Complex Filters Visually
@@ -175,7 +175,7 @@ export function FilterBuilderPage() {
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
-              className="mt-8 rounded-lg border border-zinc-700 bg-zinc-900/50 p-4"
+              className="mt-8 rounded-card border border-zinc-700 bg-zinc-900/50 p-4"
             >
               <h3 className="text-sm font-medium text-zinc-300 mb-2">
                 Applied Configuration (JSON)

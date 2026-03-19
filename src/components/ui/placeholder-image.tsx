@@ -4,6 +4,7 @@ import * as React from "react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { DURATION } from '@/lib/animations/motion-presets';
 
 // Animation timing constants
 const BLUR_EXIT_DURATION = 0.4;
@@ -207,7 +208,7 @@ export const PlaceholderImage = React.forwardRef<HTMLDivElement, PlaceholderImag
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: DURATION.normal }}
             className="absolute inset-0 flex items-center justify-center"
             style={{
               background: "linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.95))",
@@ -216,7 +217,7 @@ export const PlaceholderImage = React.forwardRef<HTMLDivElement, PlaceholderImag
           >
             <div className="text-center">
               <div
-                className="w-10 h-10 mx-auto mb-2 rounded-lg flex items-center justify-center"
+                className="w-10 h-10 mx-auto mb-2 rounded-card flex items-center justify-center"
                 style={{
                   background: "linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(34, 211, 238, 0.1))",
                 }}

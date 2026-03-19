@@ -78,7 +78,7 @@ export function AverageRankingBadge({
       >
         <div
           className={cn(
-            "flex items-center gap-1 px-2 py-1 rounded-md backdrop-blur-md",
+            "flex items-center gap-1 px-2 py-1 rounded-control backdrop-blur-md",
             "bg-linear-to-r shadow-lg border border-white/20",
             badgeColor
           )}
@@ -97,7 +97,7 @@ export function AverageRankingBadge({
     <motion.div
       initial={reducedMotion ? false : { opacity: 0, scale: 0.8, y: -10 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
-      transition={{ duration: DURATION.slow, delay: 0.1 }}
+      transition={{ duration: DURATION.normal, delay: 0.1 }}
       className={cn(
         "absolute z-10 pointer-events-none",
         positionClasses[position],
@@ -107,7 +107,7 @@ export function AverageRankingBadge({
     >
       <div
         className={cn(
-          "flex flex-col gap-1 px-2.5 py-1.5 rounded-lg backdrop-blur-md",
+          "flex flex-col gap-1 px-2.5 py-1.5 rounded-card backdrop-blur-md",
           "bg-linear-to-r shadow-xl border border-white/30",
           badgeColor
         )}

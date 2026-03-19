@@ -6,16 +6,8 @@
  * advisor with real-world knowledge.
  */
 
-import { GoogleGenAI } from '@google/genai';
+import { getGeminiClient, GEMINI_MODEL_FLASH } from '@/lib/providers/gemini-client';
 import type { DebateChallengeRequest, DebateChallengeResponse } from './types';
-
-function getGeminiClient() {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error('GEMINI_API_KEY environment variable is not set');
-  }
-  return new GoogleGenAI({ apiKey });
-}
 
 /**
  * Build the debate prompt for Gemini
@@ -151,7 +143,7 @@ export async function generateDebateChallenge(
 
   try {
     const response = await client.models.generateContent({
-      model: 'gemini-2.0-flash',
+      model: GEMINI_MODEL_FLASH,
       contents: prompt,
     });
 

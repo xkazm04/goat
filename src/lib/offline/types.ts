@@ -27,6 +27,8 @@ export interface SessionRecord {
   lastModified: number;
   lastSynced: number | null;
   isDirty: boolean;
+  /** Snapshot of session data at last successful sync — used as base for three-way merge */
+  lastSyncedData?: ListSession | null;
 }
 
 export interface MetadataRecord {

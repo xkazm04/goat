@@ -1,8 +1,10 @@
 /**
  * useOfflineSync - React hook for offline sync management
  *
- * Provides a unified interface for managing offline data synchronization,
- * including queue status, conflict handling, and sync triggers.
+ * Subscribes read-only to SyncEngine state. SyncEngine is the single
+ * orchestrator that owns periodic sync intervals, network listeners,
+ * and SyncQueue event handlers. This hook never calls setEvents()
+ * on singletons directly.
  */
 
 'use client';
@@ -10,13 +12,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   SyncState,
-  SyncQueueState,
   ConflictRecord,
   ConflictResolutionStrategy,
 } from './types';
 import { getOfflineStorage } from './OfflineStorage';
 import { getSyncQueue } from './SyncQueue';
 import { getNetworkMonitor } from './NetworkMonitor';
+import { getSyncEngine } from './SyncEngine';
 import { ListSession } from '@/stores/item-store/types';
 
 export interface UseOfflineSyncReturn {
@@ -42,7 +44,6 @@ export interface UseOfflineSyncReturn {
 }
 
 const SYNC_DEBOUNCE_MS = 500;
-const AUTO_SYNC_INTERVAL_MS = 30000; // 30 seconds
 
 export function useOfflineSync(): UseOfflineSyncReturn {
   const [syncState, setSyncState] = useState<SyncState>({
@@ -57,121 +58,41 @@ export function useOfflineSync(): UseOfflineSyncReturn {
 
   const [isOnline, setIsOnline] = useState(true);
   const syncDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const autoSyncIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isInitializedRef = useRef(false);
 
-  // Initialize sync infrastructure
+  // Initialize: subscribe to SyncEngine as read-only consumer
   useEffect(() => {
     if (isInitializedRef.current) return;
     isInitializedRef.current = true;
 
-    const storage = getOfflineStorage();
-    const syncQueue = getSyncQueue();
+    const syncEngine = getSyncEngine();
     const networkMonitor = getNetworkMonitor();
 
-    // Set up sync queue events (React state handlers)
-    syncQueue.setEvents({
-      onSyncStart: () => {
-        setSyncState((prev) => ({
-          ...prev,
-          status: 'syncing',
-          currentOperation: 'Starting sync...',
-        }));
+    // Initialize SyncEngine (idempotent — safe to call multiple times)
+    syncEngine.initialize().then(() => {
+      // Set initial state from engine
+      const engineState = syncEngine.getState();
+      setSyncState(engineState);
+    });
+
+    // Subscribe to SyncEngine state changes (read-only, no overwrite)
+    const unsubscribeEngine = syncEngine.subscribeEvents({
+      onStateChange: (state) => {
+        setSyncState(state);
       },
-      onSyncComplete: (successful, failed) => {
-        setSyncState((prev) => ({
-          ...prev,
-          status: failed > 0 ? 'error' : 'synced',
-          lastSyncedAt: Date.now(),
-          currentOperation: null,
-          error: failed > 0 ? `${failed} operations failed` : null,
-        }));
-      },
-      onSyncError: (error) => {
-        setSyncState((prev) => ({
-          ...prev,
-          status: 'error',
-          error: error.message,
-          currentOperation: null,
-        }));
-      },
-      onOperationSuccess: (operation) => {
-        setSyncState((prev) => ({
-          ...prev,
-          currentOperation: `Synced ${operation.entityType}`,
-        }));
-      },
-      onOperationFailed: (operation, error) => {
-        console.error('[OfflineSync] Operation failed:', operation.id, error);
-      },
-      onConflictDetected: (conflict) => {
-        setSyncState((prev) => ({
-          ...prev,
-          status: 'conflict',
-          conflicts: [...prev.conflicts, conflict],
-        }));
-      },
-      onQueueChange: (queueState: SyncQueueState) => {
-        setSyncState((prev) => ({
-          ...prev,
-          pendingChanges: queueState.pendingCount,
-          status:
-            queueState.pendingCount > 0 && prev.status === 'synced'
-              ? 'pending'
-              : prev.status,
-        }));
+      onNetworkChange: (state) => {
+        setIsOnline(state.status !== 'offline');
       },
     });
 
-    // Subscribe to network status
+    // Subscribe to network status for the isOnline flag
     const unsubscribeNetwork = networkMonitor.subscribe((state) => {
-      const wasOffline = !isOnline;
-      const nowOnline = state.status !== 'offline';
-
-      setIsOnline(nowOnline);
-
-      // Trigger sync when coming back online
-      if (wasOffline && nowOnline) {
-        console.log('[OfflineSync] Back online, triggering sync');
-        syncQueue.processQueue();
-      }
-    });
-
-    // Set up auto-sync interval
-    autoSyncIntervalRef.current = setInterval(() => {
-      if (networkMonitor.isOnline()) {
-        syncQueue.processQueue();
-      }
-    }, AUTO_SYNC_INTERVAL_MS);
-
-    // Load initial queue state
-    syncQueue.getState().then((queueState) => {
-      setSyncState((prev) => ({
-        ...prev,
-        pendingChanges: queueState.pendingCount,
-        lastSyncedAt: queueState.lastProcessedAt,
-      }));
-    });
-
-    // Load unresolved conflicts
-    storage.getUnresolvedConflicts().then((conflicts) => {
-      if (conflicts.length > 0) {
-        setSyncState((prev) => ({
-          ...prev,
-          status: 'conflict',
-          conflicts,
-        }));
-      }
+      setIsOnline(state.status !== 'offline');
     });
 
     return () => {
+      unsubscribeEngine();
       unsubscribeNetwork();
-      if (autoSyncIntervalRef.current) {
-        clearInterval(autoSyncIntervalRef.current);
-      }
-      if (syncDebounceRef.current) {
-        clearTimeout(syncDebounceRef.current);
-      }
     };
   }, []);
 
@@ -185,13 +106,6 @@ export function useOfflineSync(): UseOfflineSyncReturn {
 
     // Queue for sync
     await syncQueue.enqueueSessionUpdate(session.listId, session);
-
-    // Update state
-    setSyncState((prev) => ({
-      ...prev,
-      status: 'pending',
-      pendingChanges: prev.pendingChanges + 1,
-    }));
 
     // Debounced sync trigger
     if (syncDebounceRef.current) {
@@ -212,9 +126,9 @@ export function useOfflineSync(): UseOfflineSyncReturn {
     return storage.getSession(listId);
   }, []);
 
-  // Manual sync trigger
+  // Manual sync trigger — delegate to SyncEngine
   const syncNow = useCallback(async (): Promise<void> => {
-    const syncQueue = getSyncQueue();
+    const syncEngine = getSyncEngine();
 
     if (!getNetworkMonitor().isOnline()) {
       setSyncState((prev) => ({
@@ -224,57 +138,22 @@ export function useOfflineSync(): UseOfflineSyncReturn {
       return;
     }
 
-    await syncQueue.processQueue();
+    await syncEngine.sync();
   }, []);
 
-  // Resolve conflict
+  // Resolve conflict — delegate to SyncEngine
   const resolveConflict = useCallback(
     async (
       conflictId: string,
       strategy: ConflictResolutionStrategy,
       mergedData?: unknown
     ): Promise<void> => {
-      const storage = getOfflineStorage();
-      const syncQueue = getSyncQueue();
-
-      // Find the conflict
-      const conflicts = await storage.getUnresolvedConflicts();
-      const conflict = conflicts.find((c) => c.id === conflictId);
-
-      if (!conflict) {
-        throw new Error(`Conflict ${conflictId} not found`);
-      }
-
-      // Determine resolved data
-      let resolvedData: unknown;
-      if (strategy === 'local_wins') {
-        resolvedData = conflict.localData;
-      } else if (strategy === 'server_wins') {
-        resolvedData = conflict.serverData;
-      } else if (strategy === 'merge' && mergedData) {
-        resolvedData = mergedData;
-      } else {
-        throw new Error('Invalid resolution strategy or missing merged data');
-      }
-
-      // Resolve in storage
-      await storage.resolveConflict(conflictId, strategy, resolvedData);
-
-      // Resolve in sync queue if there's an associated operation
-      if (conflict.operationId) {
-        await syncQueue.resolveConflict(
-          conflict.operationId,
-          strategy as 'local_wins' | 'server_wins' | 'merge',
-          mergedData
-        );
-      }
-
-      // Update state
-      setSyncState((prev) => ({
-        ...prev,
-        conflicts: prev.conflicts.filter((c) => c.id !== conflictId),
-        status: prev.conflicts.length === 1 ? 'pending' : 'conflict',
-      }));
+      const syncEngine = getSyncEngine();
+      await syncEngine.resolveConflict(
+        conflictId,
+        strategy as 'local_wins' | 'server_wins' | 'merge',
+        mergedData
+      );
     },
     []
   );
@@ -289,12 +168,6 @@ export function useOfflineSync(): UseOfflineSyncReturn {
   const clearSyncQueue = useCallback(async (): Promise<void> => {
     const syncQueue = getSyncQueue();
     await syncQueue.clearAll();
-
-    setSyncState((prev) => ({
-      ...prev,
-      pendingChanges: 0,
-      status: 'idle',
-    }));
   }, []);
 
   return {

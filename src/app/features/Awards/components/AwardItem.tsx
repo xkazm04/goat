@@ -8,6 +8,7 @@ import { TopList } from "@/types/top-lists";
 import { ProgressiveImage } from "@/components/ui/progressive-image";
 import { useState, useEffect } from "react";
 import { useClickAssign } from "../AwardList";
+import { DURATION } from '@/lib/animations/motion-presets';
 
 interface AwardCandidate {
   id: string;
@@ -91,7 +92,7 @@ export function AwardItem({
     >
       {/* Main Card */}
       <div className={`
-        relative overflow-hidden rounded-2xl
+        relative overflow-hidden rounded-container
         bg-linear-to-br from-gray-900/95 via-gray-900/90 to-gray-950/95
         border transition-all duration-300
         ${isOver ? 'border-yellow-500/50 shadow-[0_0_40px_rgba(234,179,8,0.15)]' : 'border-white/5 shadow-xl shadow-black/50'}
@@ -112,7 +113,7 @@ export function AwardItem({
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3 min-w-0">
               {/* Trophy Icon */}
-              <div className="shrink-0 p-2 bg-linear-to-br from-yellow-500/20 to-orange-500/10 rounded-xl border border-yellow-500/20">
+              <div className="shrink-0 p-2 bg-linear-to-br from-yellow-500/20 to-orange-500/10 rounded-card border border-yellow-500/20">
                 <Trophy className="w-5 h-5 text-yellow-500" />
               </div>
 
@@ -128,9 +129,9 @@ export function AwardItem({
             </div>
 
             {/* Category Badge */}
-            <div className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 bg-yellow-500/10 rounded-full border border-yellow-500/20">
+            <div className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 bg-yellow-500/10 rounded-badge border border-yellow-500/20">
               <Award className="w-3 h-3 text-yellow-500" />
-              <span className="text-[10px] font-semibold text-yellow-500 uppercase tracking-wider">
+              <span className="text-2xs font-semibold text-yellow-500 uppercase tracking-wider">
                 Award
               </span>
             </div>
@@ -144,11 +145,11 @@ export function AwardItem({
             {/* Candidates Section (5 slots) */}
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
+                <span className="text-2xs font-semibold text-gray-500 uppercase tracking-wider">
                   Nominees
                 </span>
                 <div className="flex-1 h-px bg-linear-to-r from-gray-700/50 to-transparent" />
-                <span className="text-[10px] text-gray-600">
+                <span className="text-2xs text-gray-600">
                   {candidates.filter(c => c.title).length}/5
                 </span>
               </div>
@@ -188,7 +189,7 @@ export function AwardItem({
                 animate={{
                   scale: isOver ? 1.02 : justAwarded ? [1, 1.05, 1] : 1,
                 }}
-                transition={{ duration: 0.3 }}
+                transition={{ duration: DURATION.normal }}
                 className={`relative ${showClickHint ? 'cursor-pointer' : ''}`}
               >
                 {/* Winner Display Box - 2X SIZE: w-56 h-72 (was w-28 h-36) */}
@@ -294,7 +295,7 @@ export function AwardItem({
                                   x: (Math.random() - 0.5) * 120,
                                   y: (Math.random() - 0.5) * 120
                                 }}
-                                transition={{ duration: 0.8, delay: i * 0.08 }}
+                                transition={{ duration: DURATION.dramatic, delay: i * 0.08 }}
                                 className="absolute top-1/2 left-1/2 pointer-events-none"
                               >
                                 <Sparkles className="w-4 h-4 text-yellow-400" />
@@ -318,7 +319,7 @@ export function AwardItem({
                             scale: isOver || showClickHint ? 1.2 : 1,
                             opacity: isOver || showClickHint ? 1 : 0.3,
                           }}
-                          transition={{ duration: 0.2 }}
+                          transition={{ duration: DURATION.fast }}
                           className="mb-4"
                         >
                           <Trophy className={`w-16 h-16 ${isOver ? 'text-yellow-500' : showClickHint ? 'text-brand' : 'text-gray-600'}`} />
@@ -408,7 +409,7 @@ function CandidateSlot({
       transition={{ delay: index * 0.05 }}
       whileHover={isEmpty ? { scale: 1.05, borderColor: 'rgba(234, 179, 8, 0.3)' } : { scale: 1.03 }}
       className={`
-        relative aspect-3/4 rounded-lg overflow-hidden
+        relative aspect-3/4 rounded-card overflow-hidden
         transition-all duration-200
         ${isEmpty
           ? 'bg-gray-800/30 border border-dashed border-gray-700/50'
@@ -423,7 +424,7 @@ function CandidateSlot({
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <Plus className={`w-4 h-4 ${isOver ? 'text-yellow-500' : showClickHint ? 'text-brand' : 'text-gray-600'}`} />
           {(isOver || showClickHint) && (
-            <span className={`text-[8px] mt-1 ${isOver ? 'text-yellow-500' : 'text-brand'}`}>
+            <span className={`text-3xs mt-1 ${isOver ? 'text-yellow-500' : 'text-brand'}`}>
               {isOver ? 'Drop' : 'Click'}
             </span>
           )}
@@ -444,12 +445,12 @@ function CandidateSlot({
 
           {/* Nominee number badge */}
           <div className="absolute top-1 left-1 w-4 h-4 rounded-full bg-black/60 border border-white/20 flex items-center justify-center">
-            <span className="text-[8px] font-bold text-white">{index + 1}</span>
+            <span className="text-3xs font-bold text-white">{index + 1}</span>
           </div>
 
           {/* Title */}
           <div className="absolute bottom-0 left-0 right-0 p-1.5">
-            <p className="text-[8px] font-medium text-white truncate leading-tight">
+            <p className="text-3xs font-medium text-white truncate leading-tight">
               {candidate.title}
             </p>
           </div>

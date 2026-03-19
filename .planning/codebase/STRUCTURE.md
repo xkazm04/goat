@@ -54,7 +54,7 @@ goat/
 │   │   ├── layout-store.ts       # Layout preferences
 │   │   ├── audio-store.ts        # Audio player state
 │   │   ├── activity-store.ts     # Activity feed state
-│   │   └── inspector-store.ts    # Item inspector panel state
+│   │   └── item-popup-store.ts   # Floating popups + inspector panel (unified)
 │   ├── lib/                      # Shared logic, utilities, hooks, and domain modules
 │   │   ├── api/                  # GoatAPI client, batching, caching, deduplication
 │   │   ├── dnd/                  # Drag-and-drop: TransferProtocol, DragOperationRouter, operations

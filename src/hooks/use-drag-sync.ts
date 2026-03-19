@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useGridStore } from "@/stores/grid-store";
-import { useCompositionModalStore } from "@/stores/composition-modal-store";
 import { DragEndEvent, DragMoveEvent, DragStartEvent } from "@dnd-kit/core";
 
 interface DragState {
@@ -45,9 +44,8 @@ export function useDragSync(options: UseDragSyncOptions = {}) {
     time: Date.now(),
   });
 
-  // Grid store actions
-  const gridStore = useGridStore();
-  const compositionStore = useCompositionModalStore();
+  // Grid store and composition store are synced via handleDragEnd callbacks,
+  // no full-store subscription needed here.
 
   /**
    * Handle drag start
@@ -207,7 +205,6 @@ export function useDragSync(options: UseDragSyncOptions = {}) {
  */
 export function useGridSync() {
   const gridItems = useGridStore((state) => state.gridItems);
-  const compositionStore = useCompositionModalStore();
 
   // Sync matched count to composition store
   useEffect(() => {

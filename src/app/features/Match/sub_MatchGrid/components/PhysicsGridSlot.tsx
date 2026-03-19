@@ -15,6 +15,7 @@ import { DropZoneIndicator } from "@/lib/placement/DropZoneScorer";
 import { useCurrentList } from "@/stores/use-list-store";
 import { CategorySlotIllustration } from "@/components/illustrations/EmptyStateIllustrations";
 import { ImageFallback } from "@/components/ui/ImageFallback";
+import { DURATION } from '@/lib/animations/motion-presets';
 
 interface PhysicsGridSlotProps {
   position: number;
@@ -103,7 +104,7 @@ export function PhysicsGridSlot({
 
   // Only compute spring config when physics is enabled
   const framerConfig = useMemo(() => {
-    if (!enablePhysics) return { type: "spring" as const, duration: 0.2 };
+    if (!enablePhysics) return { type: "spring" as const, duration: DURATION.fast };
     const springConfig = getPositionAwareSpringConfig(position);
     return getFramerSpringConfig(springConfig);
   }, [enablePhysics, position]);
@@ -195,20 +196,20 @@ export function PhysicsGridSlot({
         opacity: { delay: position * 0.02 },
         scale: justDropped
           ? {
-            duration: 0.8,
+            duration: DURATION.dramatic,
             ease: [0.34, 1.56, 0.64, 1],
             times: justDropped ? bounceKeyframes.map((_, i, arr) => i / (arr.length - 1)) : undefined,
           }
           : {
             ...framerConfig,
-            duration: 0.2,
+            duration: DURATION.fast,
           },
-        rotate: { duration: 0.6, ease: "easeOut" },
+        rotate: { duration: DURATION.emphasis, ease: "easeOut" },
       }}
       onClick={handleClick}
       className={`
         ${sizeClasses[size]}
-        relative rounded-lg border-2 transition-colors duration-200
+        relative rounded-card border-2 transition-colors duration-200
         ${isOver
           ? "border-blue-500 bg-blue-500/10"
           : "border-gray-700 bg-gray-800/50"
@@ -227,7 +228,7 @@ export function PhysicsGridSlot({
       {/* Gravity Well Glow Effect - CSS animation replaces FM infinite loop */}
       {gravityInfluence > 0 && enablePhysics && (
         <div
-          className="absolute inset-0 rounded-lg pointer-events-none z-0 animate-gravity-glow"
+          className="absolute inset-0 rounded-card pointer-events-none z-0 animate-gravity-glow"
           style={{
             boxShadow: `0 0 ${gravityGlowPx}px rgba(34, 211, 238, ${gravityInfluence * 0.5})`,
           }}
@@ -238,7 +239,7 @@ export function PhysicsGridSlot({
       {/* Position Resistance Indicator */}
       {isOccupied && resistanceLevel > 0.1 && enablePhysics && (
         <div
-          className="absolute -inset-1 rounded-xl pointer-events-none z-0"
+          className="absolute -inset-1 rounded-card pointer-events-none z-0"
           style={{
             opacity: resistanceLevel * 0.3,
             border: `${1 + resistanceLevel * 2}px solid rgba(147, 51, 234, ${resistanceLevel * 0.5})`,
@@ -272,7 +273,7 @@ export function PhysicsGridSlot({
 
       {/* Year badge on occupied slot */}
       {isOccupied && gridItem?.item_year && (
-        <span className="absolute top-1 right-1 z-20 text-[8px] leading-tight font-medium text-white/90 bg-black/50 rounded-full px-1 py-px pointer-events-none">
+        <span className="absolute top-1 right-1 z-20 text-3xs leading-tight font-medium text-white/90 bg-black/50 rounded-full px-1 py-px pointer-events-none">
           {gridItem.item_year_to && gridItem.item_year_to !== gridItem.item_year
             ? `${gridItem.item_year}–${gridItem.item_year_to}`
             : gridItem.item_year}
@@ -336,13 +337,13 @@ export function PhysicsGridSlot({
       {/* Swap Animation Overlay */}
       {isSwapping && (
         <motion.div
-          className="absolute inset-0 rounded-lg pointer-events-none z-30"
+          className="absolute inset-0 rounded-card pointer-events-none z-30"
           initial={{ opacity: 0 }}
           animate={{
             opacity: [0, 0.5, 0],
             scale: [1, 1.1, 1],
           }}
-          transition={{ duration: 0.3 }}
+          transition={{ duration: DURATION.normal }}
           style={{
             background: "radial-gradient(circle, rgba(34, 211, 238, 0.3) 0%, transparent 70%)",
             border: "2px solid rgba(34, 211, 238, 0.5)",
@@ -362,7 +363,7 @@ export function PhysicsGridSlot({
       {/* Hover Target Zone Indicator - CSS animation replaces FM infinite loop */}
       {isOver && !isOccupied && (
         <div
-          className="absolute inset-0 rounded-lg pointer-events-none z-20 animate-hover-glow"
+          className="absolute inset-0 rounded-card pointer-events-none z-20 animate-hover-glow"
           style={{
             border: "2px dashed rgba(34, 211, 238, 0.7)",
           }}

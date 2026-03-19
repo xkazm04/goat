@@ -10,14 +10,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronDown,
   ChevronUp,
-  Filter,
-  ListFilter,
   CheckCircle2,
   XCircle,
   Clock,
   BarChart3,
 } from 'lucide-react';
+import { GoatFilter, GoatListFilter } from '@/components/visual/GoatIcons';
 import type { FilterResult, FilterConfig } from '@/lib/filters/types';
+import { extractTitle } from '@/lib/items/item-utils';
 import { FILTER_TIMING } from '@/lib/filters/constants';
 import { FilterEngine } from '@/lib/filters/FilterEngine';
 import { cn } from '@/lib/utils';
@@ -46,9 +46,9 @@ function DefaultItemRenderer<T extends Record<string, unknown>>(
   const hasImage = typeof item.image === 'string' && item.image.length > 0;
 
   return (
-    <div className="flex items-center gap-3 rounded-md bg-zinc-800/50 p-2">
+    <div className="flex items-center gap-3 rounded-control bg-muted/50 p-2">
       {hasImage && (
-        <div className="h-10 w-10 shrink-0 overflow-hidden rounded bg-zinc-700">
+        <div className="h-10 w-10 shrink-0 overflow-hidden rounded bg-muted">
           <img
             src={item.image as string}
             alt={title}
@@ -57,9 +57,9 @@ function DefaultItemRenderer<T extends Record<string, unknown>>(
         </div>
       )}
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-zinc-200">{title}</p>
+        <p className="truncate text-sm font-medium text-foreground">{title}</p>
         {subtitle && (
-          <p className="truncate text-xs text-zinc-500">{subtitle}</p>
+          <p className="truncate text-xs text-muted-foreground">{subtitle}</p>
         )}
       </div>
       {item.ranking !== undefined && (
@@ -89,23 +89,23 @@ function FilterStats({
 
   return (
     <div className="grid grid-cols-4 gap-2">
-      <div className="rounded-md bg-zinc-800/50 p-2 text-center">
-        <div className="text-lg font-bold text-brand-hover">{result.total}</div>
-        <div className="text-xs text-zinc-500">Total</div>
+      <div className="rounded-control bg-muted/50 p-2 text-center">
+        <div className="text-lg font-bold text-primary font-mono tabular-nums">{result.total}</div>
+        <div className="text-xs text-muted-foreground">Total</div>
       </div>
-      <div className="rounded-md bg-zinc-800/50 p-2 text-center">
-        <div className="text-lg font-bold text-emerald-400">{result.matched}</div>
-        <div className="text-xs text-zinc-500">Matched</div>
+      <div className="rounded-control bg-muted/50 p-2 text-center">
+        <div className="text-lg font-bold text-emerald-400 font-mono tabular-nums">{result.matched}</div>
+        <div className="text-xs text-muted-foreground">Matched</div>
       </div>
-      <div className="rounded-md bg-zinc-800/50 p-2 text-center">
-        <div className="text-lg font-bold text-zinc-300">{matchPercentage}%</div>
-        <div className="text-xs text-zinc-500">Match Rate</div>
+      <div className="rounded-control bg-muted/50 p-2 text-center">
+        <div className="text-lg font-bold text-foreground font-mono tabular-nums">{matchPercentage}%</div>
+        <div className="text-xs text-muted-foreground">Match Rate</div>
       </div>
-      <div className="rounded-md bg-zinc-800/50 p-2 text-center">
-        <div className="text-lg font-bold text-purple-400">
+      <div className="rounded-control bg-muted/50 p-2 text-center">
+        <div className="text-lg font-bold text-purple-400 font-mono">
           {executionTime.toFixed(1)}ms
         </div>
-        <div className="text-xs text-zinc-500">Time</div>
+        <div className="text-xs text-muted-foreground">Time</div>
       </div>
     </div>
   );
@@ -147,8 +147,8 @@ function ActiveFiltersSummary({ config }: { config: FilterConfig }) {
 
   if (activeConditions.length === 0) {
     return (
-      <div className="flex items-center gap-2 text-xs text-zinc-500">
-        <Filter size={14} />
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <GoatFilter size={14} />
         <span>No active filters</span>
       </div>
     );
@@ -156,17 +156,17 @@ function ActiveFiltersSummary({ config }: { config: FilterConfig }) {
 
   return (
     <div className="flex flex-wrap items-center gap-1">
-      <Filter size={14} className="text-brand-hover" />
+      <GoatFilter size={14} className="text-primary" />
       {activeConditions.slice(0, 3).map((cond, i) => (
         <span
           key={i}
-          className="rounded bg-zinc-800 px-1.5 py-0.5 text-xs text-zinc-400"
+          className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground font-mono"
         >
           {cond}
         </span>
       ))}
       {activeConditions.length > 3 && (
-        <span className="text-xs text-zinc-500">
+        <span className="text-xs text-muted-foreground">
           +{activeConditions.length - 3} more
         </span>
       )}
@@ -206,7 +206,7 @@ export function FilterPreview<T extends Record<string, unknown>>({
   return (
     <div
       className={cn(
-        'rounded-lg border border-zinc-700/50 bg-zinc-900/50',
+        'rounded-card border border-border/50 bg-background/50',
         className
       )}
     >
@@ -220,9 +220,9 @@ export function FilterPreview<T extends Record<string, unknown>>({
         )}
       >
         <div className="flex items-center gap-3">
-          <ListFilter size={18} className="text-brand-hover" />
-          <span className="font-medium text-zinc-200">Preview Results</span>
-          <span className="rounded-full bg-brand/20 px-2 py-0.5 text-xs font-medium text-brand-hover">
+          <GoatListFilter size={18} className="text-primary" />
+          <span className="font-medium text-foreground font-grotesk">Preview Results</span>
+          <span className="rounded-badge bg-primary/20 px-2 py-0.5 text-xs font-medium text-primary">
             {result.matched} / {result.total}
           </span>
         </div>
@@ -230,9 +230,9 @@ export function FilterPreview<T extends Record<string, unknown>>({
         <div className="flex items-center gap-2">
           <ActiveFiltersSummary config={config} />
           {isPreviewOpen ? (
-            <ChevronUp size={18} className="text-zinc-400" />
+            <ChevronUp size={18} className="text-muted-foreground" />
           ) : (
-            <ChevronDown size={18} className="text-zinc-400" />
+            <ChevronDown size={18} className="text-muted-foreground" />
           )}
         </div>
       </button>
@@ -247,7 +247,7 @@ export function FilterPreview<T extends Record<string, unknown>>({
             transition={{ duration: FILTER_TIMING.standard }}
             className="overflow-hidden"
           >
-            <div className="border-t border-zinc-800 p-3 space-y-4">
+            <div className="border-t border-border p-3 space-y-4">
               {/* Statistics */}
               <FilterStats result={result} executionTime={result.executionTime} />
 
@@ -255,11 +255,11 @@ export function FilterPreview<T extends Record<string, unknown>>({
               {previewItems.length > 0 ? (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-zinc-500">
+                    <span className="text-xs text-muted-foreground">
                       Showing {previewItems.length} of {result.matched} matches
                     </span>
                     {hasMoreItems && (
-                      <span className="text-xs text-zinc-500">
+                      <span className="text-xs text-muted-foreground">
                         +{result.matched - maxPreviewItems} more
                       </span>
                     )}
@@ -278,10 +278,10 @@ export function FilterPreview<T extends Record<string, unknown>>({
                   </div>
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-zinc-700 bg-gradient-to-br from-brand/[0.04] to-purple-500/[0.04] p-6">
+                <div className="flex flex-col items-center justify-center rounded-card border border-dashed border-border bg-gradient-to-br from-primary/[0.04] to-purple-500/[0.04] p-6">
                   <GoatSearching width={100} height={80} />
-                  <p className="text-sm text-zinc-400 mt-2">No items match your filters</p>
-                  <p className="text-xs text-zinc-500 mt-1">
+                  <p className="text-sm text-muted-foreground mt-2">No items match your filters</p>
+                  <p className="text-xs text-muted-foreground mt-1">
                     Try adjusting your conditions or using OR instead of AND
                   </p>
                 </div>
@@ -289,8 +289,8 @@ export function FilterPreview<T extends Record<string, unknown>>({
 
               {/* Applied filters summary */}
               {result.appliedFilters.length > 0 && (
-                <div className="rounded-md bg-zinc-800/30 p-2">
-                  <div className="flex items-center gap-2 text-xs text-zinc-500 mb-2">
+                <div className="rounded-control bg-muted/30 p-2">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
                     <BarChart3 size={12} />
                     <span>Applied Filters</span>
                   </div>
@@ -302,7 +302,7 @@ export function FilterPreview<T extends Record<string, unknown>>({
                           'inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs',
                           filter.enabled
                             ? 'bg-emerald-500/10 text-emerald-400'
-                            : 'bg-zinc-700 text-zinc-500'
+                            : 'bg-muted text-muted-foreground'
                         )}
                       >
                         {filter.enabled ? (
@@ -347,17 +347,17 @@ export function FilterPreviewBadge<T extends Record<string, unknown>>({
   return (
     <div
       className={cn(
-        'inline-flex items-center gap-2 rounded-full px-3 py-1',
-        hasFilters ? 'bg-brand/10' : 'bg-zinc-800/50',
+        'inline-flex items-center gap-2 rounded-badge px-3 py-1',
+        hasFilters ? 'bg-primary/10' : 'bg-muted/50',
         className
       )}
     >
-      <Filter size={14} className={hasFilters ? 'text-brand-hover' : 'text-zinc-500'} />
-      <span className={cn('text-sm', hasFilters ? 'text-brand-hover' : 'text-zinc-500')}>
+      <GoatFilter size={14} className={hasFilters ? 'text-primary' : 'text-muted-foreground'} />
+      <span className={cn('text-sm', hasFilters ? 'text-primary' : 'text-muted-foreground')}>
         {result.matched} / {result.total}
       </span>
       {hasFilters && (
-        <span className="rounded-full bg-brand/20 px-1.5 py-0.5 text-xs font-medium text-brand-hover">
+        <span className="rounded-badge bg-primary/20 px-1.5 py-0.5 text-xs font-medium text-primary">
           {result.appliedFilters.length}
         </span>
       )}

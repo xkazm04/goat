@@ -79,7 +79,7 @@ export const CollectionCard = memo(function CollectionCard({
   if (variant === "minimal") {
     return (
       <motion.div
-        className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${
+        className={`flex items-center gap-3 p-3 rounded-container cursor-pointer transition-all ${
           isSelected
             ? "bg-slate-700/50 border-brand/50"
             : "bg-slate-800/30 hover:bg-slate-800/60 border-transparent"
@@ -89,7 +89,7 @@ export const CollectionCard = memo(function CollectionCard({
         whileTap={{ scale: 0.98 }}
       >
         <div
-          className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+          className="w-8 h-8 rounded-control flex items-center justify-center shrink-0"
           style={{ backgroundColor: `${color}20` }}
         >
           <Folder className="w-4 h-4" style={{ color }} />
@@ -109,7 +109,7 @@ export const CollectionCard = memo(function CollectionCard({
     return (
       <motion.div
         ref={ref}
-        className={`relative p-4 rounded-xl cursor-pointer group ${
+        className={`relative p-4 rounded-container cursor-pointer group ${
           isSelected
             ? "ring-2 ring-brand"
             : "ring-1 ring-slate-700/50 hover:ring-slate-600"
@@ -124,7 +124,7 @@ export const CollectionCard = memo(function CollectionCard({
       >
         <div className="flex items-center gap-3">
           <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center"
+            className="w-10 h-10 rounded-card flex items-center justify-center"
             style={{
               background: `linear-gradient(135deg, ${color} 0%, ${color}80 100%)`,
               boxShadow: `0 4px 16px ${color}40`,
@@ -154,7 +154,7 @@ export const CollectionCard = memo(function CollectionCard({
   return (
     <motion.div
       ref={ref}
-      className={`relative overflow-hidden rounded-2xl cursor-pointer group ${
+      className={`relative overflow-hidden rounded-container cursor-pointer group ${
         isSelected ? "ring-2 ring-brand" : ""
       }`}
       style={{
@@ -199,7 +199,7 @@ export const CollectionCard = memo(function CollectionCard({
         />
 
         {/* Visibility badge */}
-        <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/40 backdrop-blur-xs text-xs text-white/80">
+        <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-badge bg-black/40 backdrop-blur-xs text-xs text-white/80">
           {collection.isPublic ? (
             <>
               <Globe className="w-3 h-3" />
@@ -219,11 +219,11 @@ export const CollectionCard = memo(function CollectionCard({
             <div className="relative">
               <button
                 onClick={(e) => e.stopPropagation()}
-                className="p-2 rounded-lg bg-black/40 backdrop-blur-xs hover:bg-black/60 text-white/80 transition-colors"
+                className="p-2 rounded-control bg-black/40 backdrop-blur-xs hover:bg-black/60 text-white/80 transition-colors"
               >
                 <MoreHorizontal className="w-4 h-4" />
               </button>
-              <div className="absolute left-0 top-full mt-1 py-1 w-32 bg-slate-800 rounded-lg border border-slate-700 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+              <div className="absolute left-0 top-full mt-1 py-1 w-32 bg-slate-800 rounded-card border border-slate-700 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-dropdown">
                 {onEdit && (
                   <button
                     onClick={handleEdit}
@@ -279,7 +279,7 @@ export const CollectionCard = memo(function CollectionCard({
 
         {/* Hover glow */}
         <motion.div
-          className="absolute inset-0 rounded-2xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+          className="absolute inset-0 rounded-container pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"
           style={{
             boxShadow: `inset 0 0 30px ${color}08, 0 0 40px ${color}10`,
           }}

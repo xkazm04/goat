@@ -1,18 +1,18 @@
 "use client";
 
-import { useMemo } from "react";
-import { CollectionGroup, CollectionItem } from "@/app/features/Collection/types";
-import { filterItemsByQuery } from "@/lib/utils/search";
+import { useMemo, useRef } from "react";
+import { ItemCategory, CollectionItem } from "@/app/features/Collection/types";
+import { FullTextSearcher } from "@/lib/filters/FullTextSearcher";
 
 interface FilteringResult {
   /** Groups with used items already filtered out */
-  availableGroups: CollectionGroup[];
+  availableGroups: ItemCategory[];
   /** Per-group available counts */
   groupAvailableCounts: Record<string, number>;
   /** Total available items across all groups */
   totalItemCount: number;
   /** Display groups: filtered by active tab + search query (includes used items for dimming) */
-  displayGroups: CollectionGroup[];
+  displayGroups: ItemCategory[];
   /** Count of items after search filter */
   filteredItemCount: number;
   /** Flat array of filtered items for quick-select (excludes used items) */
@@ -27,23 +27,57 @@ interface FilteringResult {
  * Centralized filtering hook for collection items.
  * Filters out used items, applies tab/search filters, and calculates counts.
  */
+/** Searcher config tuned for CollectionItem fields */
+const COLLECTION_SEARCH_CONFIG = {
+  keys: [
+    { name: 'title', weight: 2 },
+    { name: 'description', weight: 1 },
+    { name: 'category', weight: 1.5 },
+    { name: 'subcategory', weight: 1 },
+    { name: 'tags', weight: 1.5 },
+  ],
+  threshold: 0.3,
+  includeMatches: false,
+  includeScore: false,
+  ignoreLocation: true,
+};
+
 export function useCollectionFiltering(
-  groups: CollectionGroup[],
+  groups: ItemCategory[],
   activeTab: string | 'all',
   searchQuery: string
 ): FilteringResult {
+  const searcherRef = useRef<FullTextSearcher<Record<string, unknown>>>(
+    new FullTextSearcher(COLLECTION_SEARCH_CONFIG)
+  );
+
   return useMemo(() => {
+    // Dev-only: warn when items lack the `used` flag so grid-store sync issues surface early
+    if (process.env.NODE_ENV === 'development') {
+      for (const group of groups) {
+        if (!group.items) continue;
+        const missing = group.items.filter(item => typeof item.used !== 'boolean');
+        if (missing.length > 0) {
+          console.warn(
+            `[useCollectionFiltering] ${missing.length} item(s) in group "${group.name}" lack an explicit \`used\` flag. ` +
+            `This may indicate backlogStore.markItemAsUsed() was not called during grid sync. ` +
+            `Items without the flag default to available (used=false).`
+          );
+          break; // Warn once per render, not per group
+        }
+      }
+    }
+
     // Step 1: Build available-only groups for counts, and all-items groups for display
     const groupsWithAvailable = groups.map(group => {
       const availableItems = (group.items || []).filter(item => !item.used);
       return { ...group, items: availableItems };
     });
 
-    // All-items groups: keep used items but sort them to the end
+    // All-items groups: exclude used items entirely to prevent duplicate mapping
     const allItemsGroups = groups.map(group => {
-      const items = group.items || [];
-      const sorted = [...items].sort((a, b) => (a.used ? 1 : 0) - (b.used ? 1 : 0));
-      return { ...group, items: sorted };
+      const items = (group.items || []).filter(item => !item.used);
+      return { ...group, items };
     });
 
     // Step 2: Calculate per-group available counts (excludes used)
@@ -73,7 +107,10 @@ export function useCollectionFiltering(
       const groupNameMatch = (group.name || '').toLowerCase().includes(normalizedQuery);
       nameMatches[group.id] = groupNameMatch;
 
-      const matchingItems = filterItemsByQuery(group.items || [], searchQuery);
+      const searcher = searcherRef.current;
+      const matchingItems = (group.items || []).filter(item =>
+        searcher.matches(item as unknown as Record<string, unknown>, searchQuery)
+      );
       matchCounts[group.id] = matchingItems.length;
 
       // If the group name matches, show all items; otherwise only matching items

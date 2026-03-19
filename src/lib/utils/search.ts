@@ -39,25 +39,6 @@ export function highlightMatch(text: string, query: string): React.ReactNode {
   });
 }
 
-/**
- * Filter items by search query
- * Matches against item title, description, and tags (case-insensitive)
- */
-export function filterItemsByQuery<
-  T extends { title: string; description?: string; tags?: string[] }
->(items: T[], query: string): T[] {
-  if (!query.trim()) return items;
-
-  const normalizedQuery = query.toLowerCase().trim();
-  return items.filter(
-    (item) =>
-      item.title.toLowerCase().includes(normalizedQuery) ||
-      (item.description &&
-        item.description.toLowerCase().includes(normalizedQuery)) ||
-      (item.tags &&
-        item.tags.some((tag) => tag.toLowerCase().includes(normalizedQuery)))
-  );
-}
 
 /**
  * Helper to check if event target is an input element

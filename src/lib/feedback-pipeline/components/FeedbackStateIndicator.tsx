@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, Check, X, Sparkles, AlertTriangle, Crown } from 'lucide-react';
 import type { ExtendedFeedbackState, StateIndicatorConfig, FeedbackVisuals } from '../types';
 import { cn } from '@/lib/utils';
+import { DURATION } from '@/lib/animations/motion-presets';
 
 interface FeedbackStateIndicatorProps {
   /** Current state to display */
@@ -79,9 +80,9 @@ export function FeedbackStateIndicator({
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        transition={{ duration: 0.2 }}
+        transition={{ duration: DURATION.fast }}
         className={cn(
-          'rounded-xl border p-6',
+          'rounded-container border p-6',
           colors.bg,
           colors.border,
           className
@@ -128,7 +129,7 @@ export function FeedbackStateIndicator({
               {stateConfig?.actionText && stateConfig?.onAction && (
                 <button
                   onClick={stateConfig.onAction}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-control transition-colors"
                   data-testid="feedback-primary-action"
                 >
                   {stateConfig.actionText}
@@ -137,7 +138,7 @@ export function FeedbackStateIndicator({
               {stateConfig?.secondaryActionText && stateConfig?.onSecondaryAction && (
                 <button
                   onClick={stateConfig.onSecondaryAction}
-                  className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors"
+                  className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-control transition-colors"
                   data-testid="feedback-secondary-action"
                 >
                   {stateConfig.secondaryActionText}

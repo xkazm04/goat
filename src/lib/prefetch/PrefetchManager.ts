@@ -71,6 +71,9 @@ const DEFAULT_CONFIG: PrefetchConfig = {
   debug: process.env.NODE_ENV === 'development',
 };
 
+/** Max entries in prefetchedKeys before eviction kicks in */
+const MAX_PREFETCHED_KEYS = 500;
+
 class PrefetchManagerClass {
   private static instance: PrefetchManagerClass | null = null;
   private queryClient: QueryClient | null = null;
@@ -186,6 +189,11 @@ class PrefetchManagerClass {
       return false;
     }
 
+    // Evict stale/overflow entries to prevent unbounded growth
+    if (this.prefetchedKeys.size >= MAX_PREFETCHED_KEYS) {
+      this.evictStalePrefetchKeys();
+    }
+
     // Check if already cached and fresh
     const cacheKey = JSON.stringify(target.queryKey);
     const existingData = this.queryClient.getQueryData(target.queryKey);
@@ -287,6 +295,37 @@ class PrefetchManagerClass {
   private updateHitRate(): void {
     const { completed, hits } = this.analytics;
     this.analytics.hitRate = completed > 0 ? (hits / completed) * 100 : 0;
+  }
+
+  /**
+   * Evict expired entries from prefetchedKeys, then drop oldest if still over cap.
+   */
+  private evictStalePrefetchKeys(): void {
+    const now = Date.now();
+    const expiryThreshold = CACHE_TTL_MS.STANDARD;
+    const expiredKeys: string[] = [];
+
+    // First pass: collect expired entries
+    this.prefetchedKeys.forEach((info, key) => {
+      if (now - info.timestamp > expiryThreshold) {
+        this.analytics.unused++;
+        expiredKeys.push(key);
+      }
+    });
+    expiredKeys.forEach((key) => this.prefetchedKeys.delete(key));
+
+    // Second pass: if still over cap, drop oldest entries
+    if (this.prefetchedKeys.size > MAX_PREFETCHED_KEYS) {
+      const entries: Array<[string, { timestamp: number }]> = [];
+      this.prefetchedKeys.forEach((info, key) => entries.push([key, info]));
+      entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
+
+      const removeCount = this.prefetchedKeys.size - MAX_PREFETCHED_KEYS;
+      for (let i = 0; i < removeCount; i++) {
+        this.analytics.unused++;
+        this.prefetchedKeys.delete(entries[i][0]);
+      }
+    }
   }
 
   /**

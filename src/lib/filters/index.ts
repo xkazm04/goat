@@ -1,9 +1,12 @@
 /**
- * Advanced Multi-Filter System
- * Module exports for the filter engine and components
+ * Filter System — Public API
+ *
+ * Core pipeline: FilterEngine, SmartQueryParser, FullTextSearcher (~1,500 lines)
+ * UI components: import from './components/*' or './visual/*' directly
+ * Faceted search: import from '@/lib/faceted-search'
  */
 
-// Types
+// ── Core types ──────────────────────────────────────────────────────────
 export type {
   FilterOperator,
   FilterValueType,
@@ -24,11 +27,44 @@ export type {
   FilterState,
   FilterActions,
   FilterStore,
+  SortConfig,
+  SortDirection,
 } from './types';
 
 export { FILTER_STORAGE_KEYS } from './types';
 
-// Constants
+// ── Core engine ─────────────────────────────────────────────────────────
+export { FilterEngine, createFilterMemo } from './FilterEngine';
+
+// ── Full-text search ────────────────────────────────────────────────────
+export {
+  FullTextSearcher,
+  createCollectionSearcher,
+  highlightMatches,
+  DEFAULT_SEARCH_CONFIG,
+} from './FullTextSearcher';
+
+export type {
+  FullTextSearchConfig,
+  SearchResultItem,
+  SearchStats,
+} from './FullTextSearcher';
+
+// ── Smart query parser ──────────────────────────────────────────────────
+export {
+  SmartQueryParser,
+  parseSmartQuery,
+  configToQueryString,
+  QUERY_TEMPLATES,
+} from './SmartQueryParser';
+
+export type {
+  ParseResult,
+  QuerySuggestion,
+  UnresolvedSegment,
+} from './SmartQueryParser';
+
+// ── Constants ───────────────────────────────────────────────────────────
 export {
   OPERATOR_LABELS,
   TYPE_OPERATORS,
@@ -37,6 +73,8 @@ export {
   EMPTY_FILTER_CONFIG,
   DEFAULT_FILTER_OPTIONS,
   FILTER_ANIMATIONS,
+  FILTER_TIMING,
+  FILTER_SCALE,
   FILTER_COLORS,
   COMBINATOR_LABELS,
   SUGGESTION_TYPES,
@@ -46,41 +84,57 @@ export {
   PERFORMANCE_THRESHOLDS,
 } from './constants';
 
-// Filter Engine
+// ── Integration provider ────────────────────────────────────────────────
 export {
-  FilterEngine,
-  createFilterMemo,
-} from './FilterEngine';
+  FilterIntegrationProvider,
+  useFilterIntegration,
+  useFilterIntegrationOptional,
+  useFilterActions,
+  useFilterState,
+  useSearch,
+  useFilters,
+  useSmartQuery,
+  useSort,
+} from './CollectionFilterIntegration';
 
-// Components
+export type {
+  FilterableItem,
+  SearchHistoryEntry,
+  FilterIntegrationState,
+  FilterIntegrationActions,
+  FilterIntegrationContextValue,
+  FilterIntegrationProviderProps,
+} from './CollectionFilterIntegration';
+
+// ── Filter builder sync ─────────────────────────────────────────────────
+export { useFilterBuilderSync } from './useFilterBuilderSync';
+
+// ── Presets ─────────────────────────────────────────────────────────────
 export {
-  FilterPanel,
-  FilterPill,
-} from './components/FilterPanel';
+  FILTER_PRESETS,
+  PRESET_CATEGORIES,
+  getPresetsByCategory,
+  getPresetById,
+  searchPresets,
+  presetToQuickFilter,
+  getPresetsAsQuickFilters,
+  getDefaultQuickFilters,
+  getPresetSearchKeywords,
+  createDynamicPreset,
+} from './presets';
 
-export {
-  FilterPresetManager,
-  PresetQuickAccess,
-} from './components/FilterPresetManager';
+export type { PresetCategory, FilterPresetDefinition } from './presets';
 
-export {
-  QuickFilterBar,
-  QuickFilterGroup,
-  SearchableQuickFilters,
-} from './components/QuickFilterBar';
+// ── UI components (commonly used, kept for convenience) ─────────────────
+export { FilterPanel, FilterPill } from './components/FilterPanel';
+export { FilterPresetManager, PresetQuickAccess } from './components/FilterPresetManager';
+export { QuickFilterBar, QuickFilterGroup, SearchableQuickFilters } from './components/QuickFilterBar';
+export { FilterStatistics, MatchCountBadge, FilterSummary } from './components/FilterStatistics';
+export { SmartFilterSuggestions, generateSmartSuggestions } from './components/SmartFilterSuggestions';
+export { SearchAutocomplete, CompactSearchInput } from './components/SearchAutocomplete';
+export { FilterResultsCounter, FilterCountBadge, SearchResultSummary } from './components/FilterResultsCounter';
 
-export {
-  FilterStatistics,
-  MatchCountBadge,
-  FilterSummary,
-} from './components/FilterStatistics';
-
-export {
-  SmartFilterSuggestions,
-  generateSmartSuggestions,
-} from './components/SmartFilterSuggestions';
-
-// Visual Filter Builder
+// ── Visual filter builder (re-export for convenience) ───────────────────
 export {
   FilterBuilder,
   CompactFilterBuilder,
@@ -102,87 +156,9 @@ export {
   FILTER_TEMPLATES,
 } from './visual';
 
-// Full-Text Search
+// ── Faceted search (re-export for backward compatibility) ───────────────
+// Prefer importing directly from '@/lib/faceted-search'
 export {
-  FullTextSearcher,
-  createCollectionSearcher,
-  highlightMatches,
-  DEFAULT_SEARCH_CONFIG,
-} from './FullTextSearcher';
-
-export type {
-  FullTextSearchConfig,
-  SearchResultItem,
-  SearchStats,
-} from './FullTextSearcher';
-
-// Smart Query Parser
-export {
-  SmartQueryParser,
-  parseSmartQuery,
-  configToQueryString,
-  QUERY_TEMPLATES,
-} from './SmartQueryParser';
-
-export type {
-  ParseResult,
-  QuerySuggestion,
-} from './SmartQueryParser';
-
-// Filter Presets
-export {
-  FILTER_PRESETS,
-  PRESET_CATEGORIES,
-  getPresetsByCategory,
-  getPresetById,
-  searchPresets,
-  presetToQuickFilter,
-  getPresetsAsQuickFilters,
-  getDefaultQuickFilters,
-  getPresetSearchKeywords,
-  createDynamicPreset,
-} from './presets';
-
-export type {
-  PresetCategory,
-  FilterPresetDefinition,
-} from './presets';
-
-// Collection Filter Integration
-export {
-  FilterIntegrationProvider,
-  useFilterIntegration,
-  useFilterIntegrationOptional,
-  useSearch,
-  useFilters,
-  useSmartQuery,
-} from './CollectionFilterIntegration';
-
-export type {
-  FilterableItem,
-  SearchHistoryEntry,
-  FilterIntegrationState,
-  FilterIntegrationActions,
-  FilterIntegrationContextValue,
-  FilterIntegrationProviderProps,
-} from './CollectionFilterIntegration';
-
-// Search Autocomplete Component
-export {
-  SearchAutocomplete,
-  CompactSearchInput,
-} from './components/SearchAutocomplete';
-
-// Filter Results Counter Component
-export {
-  FilterResultsCounter,
-  FilterCountBadge,
-  SearchResultSummary,
-} from './components/FilterResultsCounter';
-
-// Faceted Navigation
-export {
-  // Types
   type FacetValue,
   type FacetDefinition,
   type Facet,
@@ -193,29 +169,25 @@ export {
   type FacetBreadcrumb,
   type FacetExtractionConfig,
   type FacetAggregationResult,
-  type FacetActions,
+  type FacetActions as FacetActionsType,
   type FacetAggregationOptions,
-  // Constants
+  type FacetCacheStats,
+  type FacetContextState,
+  type FacetContextValue,
+  type FacetProviderProps,
   DEFAULT_FACET_DEFINITIONS,
-  // Classes
   FacetExtractor,
   createCollectionFacetExtractor,
   FacetAggregator,
   createFacetAggregator,
-  // Components
   FacetPanel,
   FacetBreadcrumbs,
   GroupedFacetBreadcrumbs,
   MobileFacetDrawer,
   MobileFilterButton,
   useMobileFacetDrawer,
-  // Hook
   useFacets,
-  // Context
   FacetProvider,
   useFacetContext,
   useFacetContextOptional,
-  type FacetContextState,
-  type FacetContextValue,
-  type FacetProviderProps,
 } from './facets';

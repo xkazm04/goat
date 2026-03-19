@@ -72,6 +72,7 @@ export { useNetworkStatus } from './useNetworkStatus';
 export {
   initializeOfflineSessionSync,
   forceSaveToOffline,
+  flushPendingSync,
   deleteFromOffline,
   getOfflineSession,
   hasUnsyncedChanges,

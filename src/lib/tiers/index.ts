@@ -107,3 +107,22 @@ export type {
   TierRowDropData,
   TierItemDragData,
 } from './TierRow';
+
+// Boundary convention utilities
+export {
+  CANONICAL_CONVENTION,
+  INCLUSIVE_END_CONVENTION,
+  getTierForPositionGeneric,
+  isAtBoundaryGeneric,
+  isTierTransitionGeneric,
+  rangeFromTierDef,
+  rangeFromTierConfig,
+  rangeFromInclusiveBoundary,
+  inclusiveToExclusive,
+  exclusiveToInclusive,
+} from './boundary';
+
+export type {
+  BoundaryConvention,
+  TierRange,
+} from './boundary';

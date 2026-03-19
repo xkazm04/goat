@@ -3,6 +3,7 @@
 import { memo, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ListSize, GridSlot, RankingFormat, getSizeOption } from "./types";
+import { DURATION } from '@/lib/animations/motion-presets';
 
 interface GridPreviewProps {
   size: ListSize | number;
@@ -144,7 +145,7 @@ export const GridPreview = memo(function GridPreview({
               exit={{ opacity: 0, scale: 0 }}
               transition={{
                 delay: index * 0.01,
-                duration: 0.2,
+                duration: DURATION.fast,
                 type: "spring",
                 stiffness: 300,
                 damping: 20,
@@ -185,7 +186,7 @@ export const GridPreview = memo(function GridPreview({
                   scale: slot.isHighlighted ? [1, 1.1, 1] : 1,
                 }}
                 transition={{
-                  duration: 0.6,
+                  duration: DURATION.emphasis,
                   repeat: slot.isHighlighted ? Infinity : 0,
                   repeatDelay: 1,
                 }}
@@ -194,7 +195,7 @@ export const GridPreview = memo(function GridPreview({
               {/* Position number (optional) */}
               {showNumbers && !compact && (
                 <div
-                  className="absolute inset-0 flex items-center justify-center text-[8px] font-bold"
+                  className="absolute inset-0 flex items-center justify-center text-3xs font-bold"
                   style={{
                     color: slot.isActive ? "white" : "rgba(148, 163, 184, 0.6)",
                   }}
@@ -219,7 +220,7 @@ export const GridPreview = memo(function GridPreview({
                   className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-20"
                 >
                   <div
-                    className="px-2 py-1 rounded text-[8px] font-medium text-white whitespace-nowrap"
+                    className="px-2 py-1 rounded text-3xs font-medium text-white whitespace-nowrap"
                     style={{
                       background: color.primary,
                       boxShadow: `0 2px 8px ${color.primary}60`,
@@ -310,7 +311,7 @@ export const MiniGridPreview = memo(function MiniGridPreview({
       ))}
       {size > displayCols * displayRows && (
         <div
-          className="absolute bottom-0 right-0 text-[6px]"
+          className="absolute bottom-0 right-0 text-3xs"
           style={{ color: color.accent }}
         >
           +{size - displayCols * displayRows}

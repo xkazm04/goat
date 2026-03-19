@@ -2,6 +2,7 @@
 // Consistent, smooth animations across the Landing module
 
 import { Variants } from "framer-motion";
+import { DURATION } from "@/lib/animations/motion-presets";
 
 // Card animations
 export const cardVariants: Variants = {
@@ -33,7 +34,7 @@ export const cardVariants: Variants = {
   tap: {
     scale: 0.98,
     transition: {
-      duration: 0.1,
+      duration: DURATION.instant,
     },
   },
 };
@@ -54,15 +55,15 @@ export const listContainerVariants: Variants = {
 export const staggerContainer: Variants = listContainerVariants;
 
 export const listItemVariants: Variants = {
-  hidden: { 
-    opacity: 0, 
+  hidden: {
+    opacity: 0,
     x: -20,
-    filter: "blur(4px)",
+    scale: 0.95,
   },
   visible: {
     opacity: 1,
     x: 0,
-    filter: "blur(0px)",
+    scale: 1,
     transition: {
       type: "spring",
       stiffness: 120,
@@ -81,7 +82,7 @@ export const fadeInUp: Variants = {
     opacity: 1,
     y: 0,
     transition: {
-      duration: 0.5,
+      duration: DURATION.slow,
       ease: [0.25, 0.46, 0.45, 0.94],
     },
   },
@@ -96,7 +97,7 @@ export const fadeInScale: Variants = {
     opacity: 1,
     scale: 1,
     transition: {
-      duration: 0.4,
+      duration: DURATION.normal,
       ease: [0.25, 0.46, 0.45, 0.94],
     },
   },
@@ -107,11 +108,11 @@ export const modalBackdropVariants: Variants = {
   hidden: { opacity: 0 },
   visible: { 
     opacity: 1,
-    transition: { duration: 0.2 },
+    transition: { duration: DURATION.quick },
   },
   exit: { 
     opacity: 0,
-    transition: { duration: 0.15 },
+    transition: { duration: DURATION.quick },
   },
 };
 
@@ -135,7 +136,7 @@ export const modalContentVariants: Variants = {
     opacity: 0,
     scale: 0.95,
     y: 20,
-    transition: { duration: 0.15 },
+    transition: { duration: DURATION.quick },
   },
 };
 
@@ -180,14 +181,14 @@ export const textRevealVariants: Variants = {
   hidden: {
     opacity: 0,
     y: 20,
-    filter: "blur(8px)",
+    scale: 0.97,
   },
   visible: {
     opacity: 1,
     y: 0,
-    filter: "blur(0px)",
+    scale: 1,
     transition: {
-      duration: 0.6,
+      duration: DURATION.emphasis,
       ease: [0.25, 0.46, 0.45, 0.94],
     },
   },

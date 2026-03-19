@@ -1,8 +1,20 @@
 /**
  * OfflineStorage - IndexedDB wrapper with versioning
  *
+ * DATABASE: goat-offline-db (IndexedDB)
+ * OWNER: Offline sync engine (sessions, sync queue, conflicts, backlog cache)
+ *
  * Provides a robust IndexedDB-based storage system for offline session persistence
  * with automatic versioning, migration support, and fallback to localStorage.
+ *
+ * ARCHITECTURE NOTE:
+ * This is the SECONDARY storage for session data. The PRIMARY source for UI
+ * hydration is Zustand persist (localStorage). This database adds sync metadata
+ * (version, isDirty, lastSynced) needed by the sync engine and stores the
+ * sync queue, conflict records, and backlog cache.
+ *
+ * NOT related to `goat-app-storage` (used by Zustand persist for backlog-store).
+ * See `src/lib/storage/storage-registry.ts` for the full architecture map.
  */
 
 import {
@@ -50,6 +62,8 @@ export class OfflineStorage {
   private dbPromise: Promise<IDBDatabase> | null = null;
   private listeners: Set<StorageEventListener> = new Set();
   private isInitialized = false;
+  // Per-key mutex chains to serialize read-write operations and prevent lost updates
+  private writeLocks: Map<string, Promise<void>> = new Map();
 
   constructor(config: Partial<OfflineConfig> = {}) {
     this.config = { ...DEFAULT_OFFLINE_CONFIG, ...config };
@@ -152,6 +166,23 @@ export class OfflineStorage {
     }
   }
 
+  /**
+   * Serialize async operations per key to prevent read-write races.
+   * Each call waits for the previous call with the same key to finish.
+   */
+  private withLock(key: string, fn: () => Promise<void>): Promise<void> {
+    const prev = this.writeLocks.get(key) ?? Promise.resolve();
+    const next = prev.then(fn, fn); // run fn even if previous rejected
+    this.writeLocks.set(key, next);
+    // Clean up reference when chain settles to avoid unbounded growth
+    next.finally(() => {
+      if (this.writeLocks.get(key) === next) {
+        this.writeLocks.delete(key);
+      }
+    });
+    return next;
+  }
+
   private async getDB(): Promise<IDBDatabase> {
     if (!this.isInitialized) {
       await this.initialize();
@@ -167,39 +198,49 @@ export class OfflineStorage {
   // ============================================================================
 
   async saveSession(session: ListSession): Promise<void> {
-    const db = await this.getDB();
+    return this.withLock(`session:${session.listId}`, async () => {
+      const db = await this.getDB();
+      const now = Date.now();
 
-    const existingRecord = await this.getSessionRecord(session.listId);
-    const now = Date.now();
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction(STORES.SESSIONS, 'readwrite');
+        const store = transaction.objectStore(STORES.SESSIONS);
+        const getRequest = store.get(session.listId);
 
-    const record: SessionRecord = {
-      id: session.listId,
-      listId: session.listId,
-      data: session,
-      version: existingRecord ? existingRecord.version + 1 : 1,
-      localVersion: existingRecord ? existingRecord.localVersion + 1 : 1,
-      serverVersion: existingRecord?.serverVersion ?? 0,
-      lastModified: now,
-      lastSynced: existingRecord?.lastSynced ?? null,
-      isDirty: true,
-    };
+        getRequest.onerror = () =>
+          reject(new Error(`Failed to read session for save: ${getRequest.error?.message}`));
 
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(STORES.SESSIONS, 'readwrite');
-      const store = transaction.objectStore(STORES.SESSIONS);
-      const request = store.put(record);
+        getRequest.onsuccess = () => {
+          const existingRecord = getRequest.result as SessionRecord | undefined;
 
-      request.onerror = () =>
-        reject(new Error(`Failed to save session: ${request.error?.message}`));
+          const record: SessionRecord = {
+            id: session.listId,
+            listId: session.listId,
+            data: session,
+            version: existingRecord ? existingRecord.version + 1 : 1,
+            localVersion: existingRecord ? existingRecord.localVersion + 1 : 1,
+            serverVersion: existingRecord?.serverVersion ?? 0,
+            lastModified: now,
+            lastSynced: existingRecord?.lastSynced ?? null,
+            isDirty: true,
+            lastSyncedData: existingRecord?.lastSyncedData ?? null,
+          };
 
-      request.onsuccess = () => {
-        this.emit({
-          type: 'session_saved',
-          timestamp: now,
-          data: { listId: session.listId, version: record.version },
-        });
-        resolve();
-      };
+          const putRequest = store.put(record);
+
+          putRequest.onerror = () =>
+            reject(new Error(`Failed to save session: ${putRequest.error?.message}`));
+
+          putRequest.onsuccess = () => {
+            this.emit({
+              type: 'session_saved',
+              timestamp: now,
+              data: { listId: session.listId, version: record.version },
+            });
+            resolve();
+          };
+        };
+      });
     });
   }
 
@@ -264,29 +305,41 @@ export class OfflineStorage {
     listId: string,
     serverVersion: number
   ): Promise<void> {
-    const db = await this.getDB();
-    const record = await this.getSessionRecord(listId);
+    return this.withLock(`session:${listId}`, async () => {
+      const db = await this.getDB();
 
-    if (!record) {
-      throw new Error(`Session ${listId} not found`);
-    }
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction(STORES.SESSIONS, 'readwrite');
+        const store = transaction.objectStore(STORES.SESSIONS);
+        const getRequest = store.get(listId);
 
-    const updatedRecord: SessionRecord = {
-      ...record,
-      serverVersion,
-      lastSynced: Date.now(),
-      isDirty: false,
-    };
+        getRequest.onerror = () =>
+          reject(new Error(`Failed to read session for sync: ${getRequest.error?.message}`));
 
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(STORES.SESSIONS, 'readwrite');
-      const store = transaction.objectStore(STORES.SESSIONS);
-      const request = store.put(updatedRecord);
+        getRequest.onsuccess = () => {
+          const record = getRequest.result as SessionRecord | undefined;
 
-      request.onerror = () =>
-        reject(new Error(`Failed to mark session synced: ${request.error?.message}`));
+          if (!record) {
+            reject(new Error(`Session ${listId} not found`));
+            return;
+          }
 
-      request.onsuccess = () => resolve();
+          const updatedRecord: SessionRecord = {
+            ...record,
+            serverVersion,
+            lastSynced: Date.now(),
+            isDirty: false,
+            lastSyncedData: structuredClone(record.data),
+          };
+
+          const putRequest = store.put(updatedRecord);
+
+          putRequest.onerror = () =>
+            reject(new Error(`Failed to mark session synced: ${putRequest.error?.message}`));
+
+          putRequest.onsuccess = () => resolve();
+        };
+      });
     });
   }
 
@@ -793,6 +846,7 @@ export class OfflineStorage {
       this.db = null;
       this.dbPromise = null;
     }
+    this.writeLocks.clear();
     this.isInitialized = false;
   }
 }

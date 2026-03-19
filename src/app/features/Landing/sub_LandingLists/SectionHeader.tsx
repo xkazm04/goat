@@ -7,7 +7,7 @@ import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { ELEVATION, INSET, withInset } from "@/components/visual/depth";
 
 interface SectionHeaderProps {
-  icon: LucideIcon;
+  icon: LucideIcon | React.ComponentType<{ className?: string }>;
   title: string;
   subtitle: string;
   /** Gradient colors in format "rgba(r, g, b, a)" for start and end */
@@ -50,7 +50,7 @@ export function SectionHeader({
     >
       <div className="flex items-center gap-4">
         <motion.div
-          className="relative p-3 rounded-2xl"
+          className="relative p-3 rounded-container"
           style={{
             background: `linear-gradient(135deg, ${gradientColors.start}, ${gradientColors.end})`,
             boxShadow: withInset(ELEVATION.high, INSET.glassHighlightStrong),
@@ -62,7 +62,7 @@ export function SectionHeader({
         </motion.div>
         <div>
           <h2
-            className="text-3xl font-bold tracking-tight flex"
+            className="text-3xl font-bold tracking-tight flex font-heading"
             data-testid={testIdPrefix ? `${testIdPrefix}-section-title` : undefined}
           >
             {title.split("").map((char, i) => (

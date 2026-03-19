@@ -165,7 +165,7 @@ export function ResultImageDownload(props: ResultImageDownloadProps) {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={smoothTransition}
-          className="fixed inset-0 bg-black/60 backdrop-blur-xl z-60 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-60 flex items-center justify-center p-4"
           onClick={onClose}
         >
           <motion.div
@@ -174,7 +174,7 @@ export function ResultImageDownload(props: ResultImageDownloadProps) {
             animate="visible"
             exit={{ scale: 0.9, y: 20, opacity: 0 }}
             transition={smoothTransition}
-            className="bg-gray-900 rounded-xl max-w-md w-full shadow-2xl shadow-black/50 border border-gray-700/80 relative overflow-hidden"
+            className="bg-gray-900 rounded-container max-w-md w-full shadow-2xl shadow-black/50 border border-gray-700/80 relative overflow-hidden"
             onClick={(e) => e.stopPropagation()}
             data-testid="download-modal"
           >
@@ -198,7 +198,7 @@ export function ResultImageDownload(props: ResultImageDownloadProps) {
               </motion.h3>
               <motion.button
                 onClick={onClose}
-                className="text-gray-400 hover:text-white hover:bg-gray-800 transition-all duration-200 p-1.5 rounded-lg
+                className="text-gray-400 hover:text-white hover:bg-gray-800 transition-all duration-200 p-1.5 rounded-card
                   focus-ring active:scale-95"
                 aria-label="Close download dialog"
                 data-testid="download-close-btn"
@@ -226,7 +226,7 @@ export function ResultImageDownload(props: ResultImageDownloadProps) {
                       key={`${option.format}-${option.quality}`}
                       onClick={() => setSelectedOption(option)}
                       aria-pressed={selectedOption === option}
-                      className={`w-full text-left p-3 rounded-lg transition-all duration-200
+                      className={`w-full text-left p-3 rounded-card transition-all duration-200
                         focus-ring
                         ${
                         selectedOption === option
@@ -269,7 +269,7 @@ export function ResultImageDownload(props: ResultImageDownloadProps) {
 
               {/* Metadata Option */}
               <motion.div
-                className="flex items-center justify-between p-3 bg-gray-800/80 rounded-lg border border-gray-700/50"
+                className="flex items-center justify-between p-3 bg-gray-800/80 rounded-card border border-gray-700/50"
                 data-testid="download-metadata-option"
                 initial={reducedMotion ? false : { opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -308,7 +308,7 @@ export function ResultImageDownload(props: ResultImageDownloadProps) {
 
               {/* File Info */}
               <motion.div
-                className="bg-gray-800/80 rounded-lg p-4 space-y-2.5 text-sm border border-gray-700/50"
+                className="bg-gray-800/80 rounded-card p-4 space-y-2.5 text-sm border border-gray-700/50"
                 data-testid="download-file-info"
                 initial={reducedMotion ? false : { opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -340,7 +340,7 @@ export function ResultImageDownload(props: ResultImageDownloadProps) {
               <motion.button
                 onClick={handleDownload}
                 disabled={downloading || downloaded}
-                className={`w-full font-semibold py-3 rounded-lg flex items-center justify-center gap-2 transition-colors relative overflow-hidden ${
+                className={`w-full font-semibold py-3 rounded-card flex items-center justify-center gap-2 transition-colors relative overflow-hidden ${
                   downloaded
                     ? 'bg-green-600 text-white shadow-lg shadow-green-500/30'
                     : downloading
@@ -358,7 +358,7 @@ export function ResultImageDownload(props: ResultImageDownloadProps) {
                     style={{ originX: 0 }}
                     initial={{ scaleX: 0 }}
                     animate={{ scaleX: downloadProgress }}
-                    transition={{ duration: DURATION.fast, ease: EASING.easeOut }}
+                    transition={{ duration: DURATION.quick, ease: EASING.easeOut }}
                   />
                 )}
 

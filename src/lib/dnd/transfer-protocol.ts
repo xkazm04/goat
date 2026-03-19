@@ -165,12 +165,15 @@ export interface TransferContext<T extends TransferableItem = TransferableItem> 
 // Utility Functions
 // ============================================================================
 
+/** Canonical grid slot ID prefix. All grid IDs use "grid-{position}" format. */
+export const GRID_ID_PREFIX = 'grid-';
+
 /**
  * Extract position from a grid receiver ID (e.g., 'grid-5' -> 5)
  */
 export function extractGridPosition(receiverId: string): number | null {
-  if (!receiverId.startsWith('grid-')) return null;
-  const position = parseInt(receiverId.replace('grid-', ''), 10);
+  if (!isGridReceiverId(receiverId)) return null;
+  const position = parseInt(receiverId.slice(GRID_ID_PREFIX.length), 10);
   return isNaN(position) ? null : position;
 }
 
@@ -178,14 +181,33 @@ export function extractGridPosition(receiverId: string): number | null {
  * Create a grid receiver ID from a position
  */
 export function createGridReceiverId(position: number): string {
-  return `grid-${position}`;
+  return `${GRID_ID_PREFIX}${position}`;
 }
 
 /**
- * Check if an ID is a grid receiver ID
+ * Check if an ID is a canonical grid receiver ID ("grid-{n}").
+ * Excludes legacy "grid-slot-" and "drop-" patterns.
  */
 export function isGridReceiverId(id: string): boolean {
-  return id.startsWith('grid-');
+  if (!id.startsWith(GRID_ID_PREFIX)) return false;
+  // Exclude "grid-slot-*" which would false-match on the "grid-" prefix
+  if (id.startsWith('grid-slot-')) return false;
+  return true;
+}
+
+/**
+ * Assert that a droppable ID uses the canonical grid format in development.
+ * Logs a warning for legacy "grid-slot-" or "drop-" patterns.
+ */
+export function assertCanonicalGridId(id: string, context?: string): void {
+  if (process.env.NODE_ENV !== 'development') return;
+
+  if (id.startsWith('grid-slot-') || (/^drop-\d+$/.test(id))) {
+    console.warn(
+      `[DnD] Non-canonical grid ID "${id}" detected${context ? ` in ${context}` : ''}. ` +
+      `Use createGridReceiverId(position) to generate "grid-{n}" IDs.`
+    );
+  }
 }
 
 /**

@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import type { DebateThread, DebateMessage } from '@/lib/debate/types';
 import { getControversyLevel, getControversyLabel } from '@/lib/debate/types';
+import { DURATION } from '@/lib/animations/motion-presets';
 
 interface DebatePanelProps {
   thread: DebateThread | null;
@@ -72,7 +73,7 @@ export const DebatePanel = memo(function DebatePanel({
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: 300 }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        className="fixed right-0 top-0 bottom-0 w-full sm:w-96 z-50 flex flex-col
+        className="fixed right-0 top-0 bottom-0 w-full sm:w-96 z-sticky flex flex-col
           bg-slate-900/98 backdrop-blur-xl border-l border-slate-700/60 shadow-2xl"
       >
         {/* Header */}
@@ -97,7 +98,7 @@ export const DebatePanel = memo(function DebatePanel({
           </div>
 
           {/* Item context */}
-          <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-800/80">
+          <div className="flex items-center gap-2 p-2 rounded-card bg-slate-800/80">
             <span className="text-sm font-medium text-white truncate">
               {thread.itemName}
             </span>
@@ -107,7 +108,7 @@ export const DebatePanel = memo(function DebatePanel({
             </span>
             {thread.controversyScore > 0 && (
               <span className={`
-                ml-auto text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-full
+                ml-auto text-2xs font-bold uppercase px-1.5 py-0.5 rounded-badge
                 ${level === 'volcanic' || level === 'hot' ? 'bg-red-500/20 text-red-400' :
                   level === 'moderate' ? 'bg-amber-500/20 text-amber-400' :
                   'bg-blue-500/20 text-blue-400'}
@@ -134,7 +135,7 @@ export const DebatePanel = memo(function DebatePanel({
               <div className="w-6 h-6 rounded-full bg-brand/20 flex items-center justify-center shrink-0">
                 <Sparkles className="w-3 h-3 text-brand" />
               </div>
-              <div className="bg-slate-800/80 rounded-2xl rounded-tl-sm px-4 py-3">
+              <div className="bg-slate-800/80 rounded-container rounded-tl-sm px-4 py-3">
                 <div className="flex gap-1">
                   <span className="w-2 h-2 rounded-full bg-brand/60 animate-bounce" style={{ animationDelay: '0ms' }} />
                   <span className="w-2 h-2 rounded-full bg-brand/60 animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -174,7 +175,7 @@ export const DebatePanel = memo(function DebatePanel({
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Make your case..."
                 disabled={isLoading}
-                className="flex-1 px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-600/60
+                className="flex-1 px-4 py-2.5 rounded-container bg-slate-800 border border-slate-600/60
                   text-sm text-white placeholder-slate-500
                   focus:outline-none focus:border-brand/50 focus:ring-1 focus:ring-brand/30
                   disabled:opacity-50 transition-all"
@@ -182,7 +183,7 @@ export const DebatePanel = memo(function DebatePanel({
               <button
                 type="submit"
                 disabled={!input.trim() || isLoading}
-                className="w-10 h-10 rounded-xl bg-brand hover:bg-brand-hover
+                className="w-10 h-10 rounded-container bg-brand hover:bg-brand-hover
                   flex items-center justify-center transition-colors
                   disabled:opacity-30 disabled:cursor-not-allowed"
                 aria-label="Send reply"
@@ -196,16 +197,16 @@ export const DebatePanel = memo(function DebatePanel({
               <div className="flex gap-2 mt-3">
                 <button
                   onClick={onAccept}
-                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg
+                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-card
                     bg-green-500/15 text-green-400 text-xs font-medium
-                    hover:bg-green-500/25 transition-colors border border-green-500/20"
+                    hover:bg-green-500/25 transition-colors border border-green-500/20 rounded-card"
                 >
                   <ThumbsUp className="w-3 h-3" />
                   Accept suggestion
                 </button>
                 <button
                   onClick={onDismiss}
-                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg
+                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-card
                     bg-slate-700/50 text-slate-400 text-xs font-medium
                     hover:bg-slate-700/80 transition-colors border border-slate-600/30"
                 >
@@ -255,7 +256,7 @@ const MessageBubble = memo(function MessageBubble({ message }: { message: Debate
       )}
       <div
         className={`
-          max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed
+          max-w-[85%] rounded-container px-4 py-2.5 text-sm leading-relaxed
           ${isAI
             ? 'bg-slate-800/80 text-slate-200 rounded-tl-sm'
             : 'bg-brand/20 text-white rounded-tr-sm ml-auto'
@@ -285,11 +286,11 @@ function KeyFactsSection({ thread }: { thread: DebateThread }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ delay: 0.3 }}
-      className="mx-8 p-2.5 rounded-lg bg-slate-800/40 border border-slate-700/30"
+      className="mx-8 p-2.5 rounded-card bg-slate-800/40 border border-slate-700/30"
     >
       <div className="flex items-center gap-1.5 mb-1.5">
         <Flame className="w-3 h-3 text-amber-400" />
-        <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">
+        <span className="text-2xs font-bold text-amber-400 uppercase tracking-wider">
           Challenge Strength
         </span>
       </div>
@@ -297,7 +298,7 @@ function KeyFactsSection({ thread }: { thread: DebateThread }) {
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: `${thread.challengeStrength}%` }}
-          transition={{ duration: 0.8, ease: 'easeOut' }}
+          transition={{ duration: DURATION.dramatic, ease: 'easeOut' }}
           className={`h-full rounded-full ${
             thread.challengeStrength > 70 ? 'bg-red-500' :
             thread.challengeStrength > 40 ? 'bg-amber-500' :
@@ -305,7 +306,7 @@ function KeyFactsSection({ thread }: { thread: DebateThread }) {
           }`}
         />
       </div>
-      <p className="text-[10px] text-slate-500 mt-1">
+      <p className="text-2xs text-slate-500 mt-1">
         {thread.challengeStrength > 70
           ? 'The AI strongly disagrees with this placement'
           : thread.challengeStrength > 40
@@ -331,7 +332,7 @@ function QuickReply({
   return (
     <button
       onClick={onClick}
-      className="shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full
+      className="shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-badge
         bg-slate-800/80 text-slate-400 text-xs font-medium
         hover:bg-slate-700 hover:text-slate-300 transition-colors
         border border-slate-700/50"

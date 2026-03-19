@@ -18,6 +18,20 @@ import { DEFAULT_FACET_DEFINITIONS } from './types';
 import { getFieldValue as getNestedFieldValue } from '../utils';
 
 /**
+ * Cache performance statistics for the inverted index
+ */
+export interface FacetCacheStats {
+  /** Number of times the cached index was reused (reference or fingerprint match) */
+  hits: number;
+  /** Number of times the index had to be rebuilt */
+  misses: number;
+  /** Total number of index rebuilds (same as misses, explicit for clarity) */
+  rebuilds: number;
+  /** Timestamp (ms) of the last rebuild, or null if never rebuilt */
+  lastRebuildTime: number | null;
+}
+
+/**
  * Options for facet aggregation
  */
 export interface FacetAggregationOptions {
@@ -67,6 +81,16 @@ export class FacetAggregator<T extends Record<string, unknown>> {
   private invertedIndex: Map<string, Map<string | number | boolean, Set<number>>> | null = null;
   /** Reference to items used to build the current inverted index */
   private indexedItems: T[] | null = null;
+  /** Content fingerprint for staleness detection (avoids false cache hits on new array refs) */
+  private indexedItemsFingerprint: string = '';
+  /** Cache hit/miss/rebuild counters */
+  private cacheStats: FacetCacheStats = { hits: 0, misses: 0, rebuilds: 0, lastRebuildTime: null };
+  /** Timestamps of recent rebuilds for burst detection */
+  private recentRebuildTimestamps: number[] = [];
+  /** Max rebuilds within 1 second before logging a warning */
+  private static readonly REBUILD_BURST_THRESHOLD = 3;
+  /** Window (ms) for burst detection */
+  private static readonly REBUILD_BURST_WINDOW = 1000;
 
   constructor(
     options: Partial<FacetAggregationOptions> = {},
@@ -80,13 +104,44 @@ export class FacetAggregator<T extends Record<string, unknown>> {
   }
 
   /**
+   * Compute a lightweight fingerprint from items array for staleness detection.
+   * Uses length + sampled item IDs (first, middle, last) — O(1) and catches
+   * additions, removals, and most reorders without hashing every item.
+   */
+  private computeItemsFingerprint(items: T[]): string {
+    if (items.length === 0) return '0';
+    const first = String((items[0] as Record<string, unknown>).id ?? '');
+    const mid = String((items[Math.floor(items.length / 2)] as Record<string, unknown>).id ?? '');
+    const last = String((items[items.length - 1] as Record<string, unknown>).id ?? '');
+    return `${items.length}:${first}:${mid}:${last}`;
+  }
+
+  /**
    * Build or reuse the inverted index for the given items.
-   * The index is cached by items array reference — it rebuilds only when items change.
+   * Uses content-based fingerprinting instead of reference equality to detect
+   * stale data from Zustand/React re-renders that produce new array references.
    */
   private ensureInvertedIndex(items: T[]): void {
-    if (this.indexedItems === items && this.invertedIndex) return;
+    // Fast path: same reference means definitely same data
+    if (this.indexedItems === items && this.invertedIndex) {
+      this.cacheStats.hits++;
+      return;
+    }
+    // Content check: avoid rebuild when array ref changed but content is the same
+    const fingerprint = this.computeItemsFingerprint(items);
+    if (fingerprint === this.indexedItemsFingerprint && this.invertedIndex) {
+      this.cacheStats.hits++;
+      return;
+    }
+    // Cache miss — rebuild the inverted index
     this.invertedIndex = this.extractor.buildInvertedIndex(items);
     this.indexedItems = items;
+    this.indexedItemsFingerprint = fingerprint;
+
+    this.cacheStats.misses++;
+    this.cacheStats.rebuilds++;
+    this.cacheStats.lastRebuildTime = Date.now();
+    this.detectRebuildBurst();
   }
 
   /**
@@ -289,8 +344,9 @@ export class FacetAggregator<T extends Record<string, unknown>> {
   applyFacetFilters(items: T[], selections: FacetSelection[]): T[] {
     if (selections.length === 0) return items;
 
-    // Use inverted index if available for these items
-    if (this.indexedItems === items && this.invertedIndex) {
+    // Use inverted index if available for these items (fingerprint-based check)
+    const fingerprint = this.computeItemsFingerprint(items);
+    if (fingerprint === this.indexedItemsFingerprint && this.invertedIndex) {
       const indices = this.computeFilteredIndices(items, selections);
       return items.filter((_, i) => indices.has(i));
     }
@@ -498,6 +554,34 @@ export class FacetAggregator<T extends Record<string, unknown>> {
     this.extractor.updateConfig({ fields: definitions });
     this.invertedIndex = null;
     this.indexedItems = null;
+    this.indexedItemsFingerprint = '';
+  }
+
+  /**
+   * Return a snapshot of cache hit/miss/rebuild statistics.
+   */
+  getCacheStats(): Readonly<FacetCacheStats> {
+    return { ...this.cacheStats };
+  }
+
+  /**
+   * Detect rapid rebuilds that suggest unnecessary new array references
+   * from Zustand/React re-renders.
+   */
+  private detectRebuildBurst(): void {
+    const now = Date.now();
+    this.recentRebuildTimestamps.push(now);
+    // Prune timestamps outside the window
+    this.recentRebuildTimestamps = this.recentRebuildTimestamps.filter(
+      (t) => now - t <= FacetAggregator.REBUILD_BURST_WINDOW
+    );
+    if (this.recentRebuildTimestamps.length >= FacetAggregator.REBUILD_BURST_THRESHOLD) {
+      console.warn(
+        `[FacetAggregator] ${this.recentRebuildTimestamps.length} index rebuilds within 1 s — ` +
+          'Zustand/React may be producing unnecessary new array references. ' +
+          `Stats: ${JSON.stringify(this.cacheStats)}`
+      );
+    }
   }
 }
 
