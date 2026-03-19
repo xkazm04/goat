@@ -1,11 +1,13 @@
 "use client";
 
-import { forwardRef, type HTMLAttributes, type CSSProperties } from "react";
 import { motion, type HTMLMotionProps } from "framer-motion";
-import { DURATION, EASE } from '@/lib/animations/motion-presets';
-import { ELEVATION, type ElevationLevel } from "./depth-tokens";
+import { forwardRef, type CSSProperties } from "react";
+
 import { useMotionCapabilities } from "@/hooks/use-motion-preference";
+import { DURATION, EASE } from '@/lib/animations/motion-presets';
 import { cn } from "@/lib/utils";
+
+import { ELEVATION, type ElevationLevel } from "./depth-tokens";
 
 /**
  * Props for the Elevated component

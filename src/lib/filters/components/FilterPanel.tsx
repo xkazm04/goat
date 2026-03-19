@@ -5,20 +5,13 @@
  * Expandable UI for filter configuration
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Check, X, Plus } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import React, { useState, useCallback, useMemo } from 'react';
+
 import { UniversalSelect } from '@/components/ui/universal-select';
-import type {
-  FilterCondition,
-  FilterGroup,
-  FilterConfig,
-  FilterFieldDefinition,
-  FilterOperator,
-  FilterValue,
-  FilterCombinator,
-} from '../types';
+import { cn } from '@/lib/utils';
+
 import {
   OPERATOR_LABELS,
   TYPE_OPERATORS,
@@ -29,6 +22,16 @@ import {
   FILTER_SCALE,
   DEFAULT_FILTER_FIELDS,
 } from '../constants';
+
+import type {
+  FilterCondition,
+  FilterGroup,
+  FilterConfig,
+  FilterFieldDefinition,
+  FilterOperator,
+  FilterValue,
+  FilterCombinator,
+} from '../types';
 
 /**
  * FilterPanel Props

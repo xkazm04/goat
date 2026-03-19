@@ -1,8 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
+
 import { SCORE_ANIMATION_EASE, formatScore } from "@/lib/constants/scoring";
+import { cn } from "@/lib/utils";
+
 import type { ScoreRendererProps } from "./types";
 
 // Animation configuration

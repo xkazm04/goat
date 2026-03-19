@@ -8,8 +8,9 @@
 
 'use client';
 
-import { memo, useEffect, useState, useRef } from 'react';
 import { motion, useSpring, useTransform, useInView } from 'framer-motion';
+import { memo, useEffect, useState, useRef } from 'react';
+
 import { DURATION, EASING, prefersReducedMotion } from '@/lib/animations/sharing';
 
 export interface AnimatedCounterProps {

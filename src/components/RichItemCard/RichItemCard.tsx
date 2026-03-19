@@ -30,6 +30,7 @@
  *   renderFlipContent
  */
 
+import { motion, AnimatePresence } from 'framer-motion';
 import React, {
   memo,
   useState,
@@ -38,15 +39,16 @@ import React, {
   useEffect,
   useMemo,
 } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+
 import { DURATION } from '@/lib/animations/motion-presets';
 import { cn } from '@/lib/utils';
-import { QuickActions, QuickActionConfig } from './QuickActions';
-import { MetadataBadges, MetadataBadgeData } from './MetadataBadges';
-import { ExpandedPreview } from './ExpandedPreview';
+
 import { CardFlipReveal } from './CardFlipReveal';
-import { MiniGallery } from './MiniGallery';
+import { ExpandedPreview } from './ExpandedPreview';
 import { ItemIndicators, ItemIndicatorState } from './ItemIndicators';
+import { MetadataBadges, MetadataBadgeData } from './MetadataBadges';
+import { MiniGallery } from './MiniGallery';
+import { QuickActions, QuickActionConfig } from './QuickActions';
 
 /**
  * Item data structure for RichItemCard

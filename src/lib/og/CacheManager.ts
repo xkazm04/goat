@@ -3,14 +3,15 @@
  * Handles caching of generated OG images with automatic invalidation
  */
 
+import { hashData } from './OGCardGenerator';
+import { DEFAULT_CACHE_CONFIG } from './types';
+
 import type {
   OGCacheEntry,
   OGCacheConfig,
   OGMetadata,
   RegenerationEvent,
 } from './types';
-import { DEFAULT_CACHE_CONFIG } from './types';
-import { hashData } from './OGCardGenerator';
 
 /**
  * In-memory cache storage

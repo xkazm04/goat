@@ -1,9 +1,12 @@
 'use client';
 
-import { Suspense } from 'react';
 import { motion } from 'framer-motion';
+import { Suspense } from 'react';
+
+import { ParallaxSection, ParallaxLayer, FloatingElements, FloatingPresets } from '@/components/3d';
+import { useScrollTrigger, scrollAnimationVariants } from '@/lib/animations';
+
 import { LandingMain } from './LandingMain';
-import { useLandingPrefetch } from './useLandingPrefetch';
 import {
     LazyFeaturedListsSection,
     LazyUserListsSection,
@@ -12,8 +15,7 @@ import {
     UserListsSkeleton,
     CollectionsSkeleton
 } from './sub_LandingLists/LazyListSections';
-import { ParallaxSection, ParallaxLayer, FloatingElements, FloatingPresets } from '@/components/3d';
-import { useScrollTrigger, scrollAnimationVariants } from '@/lib/animations';
+import { useLandingPrefetch } from './useLandingPrefetch';
 
 /**
  * ScrollRevealSection - Wrapper that reveals content on scroll

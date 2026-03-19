@@ -6,11 +6,14 @@
  * on the back face when tapped or hovered.
  */
 
-import React, { memo } from 'react';
 import { motion } from 'framer-motion';
+import { Star } from 'lucide-react';
+import React, { memo } from 'react';
+
 import { DURATION, EASE } from '@/lib/animations/motion-presets';
 import { cn } from '@/lib/utils';
-import { Star } from 'lucide-react';
+
+
 import { MetadataBadges, MetadataBadgeData } from './MetadataBadges';
 import { RichItemData } from './RichItemCard';
 

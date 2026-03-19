@@ -8,19 +8,21 @@
  * Phase 2 (Expanded): Full form with all fields, pre-filled by LLM where possible
  */
 
-import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { DURATION } from '@/lib/animations/motion-presets';
 import { Sparkles, Zap, ListOrdered, Wand2, Tag, FileText, Type, CheckCircle2, Crown, LayoutTemplate, ChevronDown, ChevronUp } from 'lucide-react';
+import { useState } from 'react';
+
 import { Button } from '@/components/ui/button';
 import { UniversalSelect } from '@/components/ui/universal-select';
+import { INSET } from '@/components/visual/depth/depth-tokens';
 import { useToast } from '@/hooks/use-toast';
-import { SURFACE_ELEVATION, INSET } from '@/components/visual/depth/depth-tokens';
-import { useStudioForm, useStudioGeneration, useStudioMetadata, useStudioValidation, useStudioTemplate } from '@/stores/studio-store';
-import { cn } from '@/lib/utils';
+import { DURATION } from '@/lib/animations/motion-presets';
 import { CATEGORIES } from '@/lib/config/category-config';
-import { StudioError } from './StudioError';
+import { cn } from '@/lib/utils';
+import { useStudioForm, useStudioGeneration, useStudioMetadata, useStudioValidation, useStudioTemplate } from '@/stores/studio-store';
+
 import { AddItemForm } from './AddItemForm';
+import { StudioError } from './StudioError';
 import { TemplateGallery } from './TemplateGallery';
 
 /**

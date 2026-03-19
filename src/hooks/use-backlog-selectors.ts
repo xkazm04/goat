@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
+import { shallow } from 'zustand/shallow';
+
 import { useBacklogStore } from '@/stores/backlog-store';
 import { BacklogGroup } from '@/types/backlog-groups';
-import { shallow } from 'zustand/shallow';
 
 /**
  * A safe hook to access backlog store state without infinite loops

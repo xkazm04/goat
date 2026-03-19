@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Check, ChevronLeft, ChevronRight, Undo2 } from 'lucide-react';
+import { X, Check, Undo2 } from 'lucide-react';
+import { useMemo, useRef, useEffect } from 'react';
+
 import { BracketState, CompletedVote, isCompletedNonBye, getLoserFromMatchup } from '../lib/bracketGenerator';
 
 interface VotingHistoryStripProps {

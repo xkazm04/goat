@@ -1,7 +1,8 @@
 "use client";
 
-import { memo, forwardRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { memo, forwardRef } from "react";
+
 import {
   SOCIAL_COLORS,
   type SocialPlatform,

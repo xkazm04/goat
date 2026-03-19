@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+
 import {
   getChallengeManager,
   getInvitationSystem,
@@ -13,6 +13,7 @@ import {
   type CreateChallengeInput,
   type RankedItem,
 } from '@/lib/challenges';
+import { createClient } from '@/lib/supabase/server';
 
 /**
  * GET /api/challenges

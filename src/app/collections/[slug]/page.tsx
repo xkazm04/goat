@@ -1,10 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import Link from "next/link";
-import Image from "next/image";
 import {
   ArrowLeft,
   Folder,
@@ -15,8 +11,12 @@ import {
   Check,
   Calendar,
   Layers,
-  MoreHorizontal,
 } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState, useCallback } from "react";
+
 import type { ListCollection, CollectionStats } from "@/types/collection";
 import type { TopList } from "@/types/top-lists";
 

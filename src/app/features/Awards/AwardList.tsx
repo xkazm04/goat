@@ -1,19 +1,24 @@
 "use client";
 
-import { useState, useCallback, useEffect, createContext, useContext } from "react";
 import { DndContext, DragOverlay, DragEndEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
-import { useTopLists } from "@/hooks/use-top-lists";
-import { AwardItem } from "./components/AwardItem";
-import { SimpleCollectionPanel } from "../Match/sub_MatchCollections/SimpleCollectionPanel";
-import { DragOverlayContent } from "../Match/sub_MatchGrid/components/DragComponents";
 import { motion } from "framer-motion";
+import { Loader2, Trophy, Sparkles, Star, MousePointer2 } from "lucide-react";
+import { useState, useCallback, useEffect, createContext, useContext } from "react";
+
+import { useTopLists } from "@/hooks/use-top-lists";
+import { useBacklogStore } from "@/stores/backlog-store";
 import { BacklogItem } from "@/types/backlog-groups";
 import { GridItemType } from "@/types/match";
-import { CollectionItem } from "../Collection/types";
+
 import { backlogGroupsToItemCategories } from "../Collection";
-import { useBacklogStore } from "@/stores/backlog-store";
-import { Loader2, Trophy, Sparkles, Star, MousePointer2 } from "lucide-react";
-import { extractTitle } from '@/lib/items/item-utils';
+import { AwardItem } from "./components/AwardItem";
+import { CollectionItem } from "../Collection/types";
+import { SimpleCollectionPanel } from "../Match/sub_MatchCollections/SimpleCollectionPanel";
+import { DragOverlayContent } from "../Match/sub_MatchGrid/components/DragComponents";
+
+
+
+
 
 interface AwardListProps {
     parentListId: string;

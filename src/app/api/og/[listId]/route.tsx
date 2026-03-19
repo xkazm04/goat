@@ -5,9 +5,23 @@
  * GET /api/og/[listId]?layout=list&platform=twitter
  */
 
+import { createClient } from '@supabase/supabase-js';
 import { ImageResponse } from 'next/og';
 import { NextRequest } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+
+import {
+  getMedalColor,
+  getMedalGradient,
+  getMedalBorder,
+  truncateText,
+} from '@/lib/og/OGCardGenerator';
+import {
+  DEFAULT_THEME,
+  VIBRANT_THEME,
+  PLATFORM_DIMENSIONS,
+  DEFAULT_OG_OPTIONS,
+} from '@/lib/og/types';
+
 import type {
   OGCardLayout,
   SocialPlatform,
@@ -15,20 +29,7 @@ import type {
   OGCardOptions,
   OGCardTheme,
 } from '@/lib/og/types';
-import {
-  DEFAULT_THEME,
-  VIBRANT_THEME,
-  PLATFORM_DIMENSIONS,
-  DEFAULT_OG_OPTIONS,
-} from '@/lib/og/types';
-import {
-  getMedalColor,
-  getMedalGradient,
-  getMedalBorder,
-  truncateText,
-  hashData,
-} from '@/lib/og/OGCardGenerator';
-import { getOGCacheManager } from '@/lib/og/CacheManager';
+
 
 export const runtime = 'edge';
 

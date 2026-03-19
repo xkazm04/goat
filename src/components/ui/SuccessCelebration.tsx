@@ -7,9 +7,10 @@
 
 'use client';
 
-import { memo, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, Download, Share2 } from 'lucide-react';
+import { memo, useEffect, useState } from 'react';
+
 import {
   DURATION,
   EASING,

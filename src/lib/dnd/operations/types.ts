@@ -5,11 +5,11 @@
  * These types define the contract for all drag operations across the application.
  */
 
-import type { DragEndEvent } from '@dnd-kit/core';
-import type { TransferableItem, TransferResult, TransferAction } from '../transfer-protocol';
-import type { GridItemType } from '@/types/match';
-import type { BacklogItem } from '@/types/backlog-groups';
+import type { TransferableItem, TransferAction } from '../transfer-protocol';
 import type { ValidationErrorCode, ValidationResult } from '@/lib/validation';
+import type { BacklogItem } from '@/types/backlog-groups';
+import type { GridItemType } from '@/types/match';
+import type { DragEndEvent } from '@dnd-kit/core';
 
 // ============================================================================
 // Operation Types

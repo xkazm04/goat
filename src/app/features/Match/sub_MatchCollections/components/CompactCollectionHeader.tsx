@@ -1,10 +1,13 @@
 "use client";
 
-import { memo, useDeferredValue } from "react";
 import { ChevronDown, ChevronUp, Layers } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { CollectionSearchInput } from "./CollectionSearchInput";
+import { memo } from "react";
+
 import { EnrichmentSourceBadges } from "@/components/visual/EnrichmentSourceBadges";
+import { cn } from "@/lib/utils";
+
+import { CollectionSearchInput } from "./CollectionSearchInput";
+
 
 export type GroupViewMode = 'sidebar' | 'horizontal' | 'minimal';
 

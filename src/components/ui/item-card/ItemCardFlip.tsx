@@ -1,7 +1,8 @@
 "use client";
 
-import * as React from "react";
 import { motion } from "framer-motion";
+import * as React from "react";
+
 import { DURATION } from "@/lib/animations/motion-presets";
 
 export interface ItemCardFlipProps {

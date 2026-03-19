@@ -4,6 +4,11 @@
  * Supports multiple layouts, themes, and platform optimizations
  */
 
+import {
+  DEFAULT_OG_OPTIONS,
+  PLATFORM_DIMENSIONS,
+} from './types';
+
 import type {
   OGCardData,
   OGCardOptions,
@@ -12,11 +17,6 @@ import type {
   OGMetadata,
   SocialPlatform,
   CardDimensions,
-} from './types';
-import {
-  DEFAULT_THEME,
-  DEFAULT_OG_OPTIONS,
-  PLATFORM_DIMENSIONS,
 } from './types';
 
 /**

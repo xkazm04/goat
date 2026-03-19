@@ -1,17 +1,19 @@
 "use client";
 
-import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, Play, Settings2, ChevronDown, Zap } from 'lucide-react';
-import {
-  SURFACE_ELEVATION,
-  INSET,
-} from '@/components/visual/depth/depth-tokens';
+import { useState } from 'react';
+
 import {
   GLASS_BUTTON_PRIMARY,
   GLASS_BUTTON_SECONDARY,
   GLASS_SECTION_CLASS,
 } from '@/components/ui/glass-modal';
+import {
+  SURFACE_ELEVATION,
+  INSET,
+} from '@/components/visual/depth/depth-tokens';
+
 import {
   BracketSize,
   SeedingStrategy,

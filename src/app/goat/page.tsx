@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { useEffect, Suspense } from 'react';
+
 import { useTopList } from '@/hooks/use-top-lists';
-import { useListStore } from '@/stores/use-list-store';
-import { useGridStore } from '@/stores/grid-store';
-import { useBacklogStore } from '@/stores/backlog-store';
-import { useSessionStore } from '@/stores/session-store';
 import { BacklogProvider } from '@/providers/BacklogProvider';
+import { useBacklogStore } from '@/stores/backlog-store';
+import { useGridStore } from '@/stores/grid-store';
+import { useSessionStore } from '@/stores/session-store';
+import { useListStore } from '@/stores/use-list-store';
+
 // Lazy-load the match grid to defer loading of @dnd-kit (~25KB gzipped)
 import { LazySimpleMatchGrid } from '../features/Match/sub_MatchGrid/LazySimpleMatchGrid';
 

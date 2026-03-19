@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+
 import { BracketMatchup } from '../../lib/bracketGenerator';
 
 interface UseMatchupKeyboardOptions {

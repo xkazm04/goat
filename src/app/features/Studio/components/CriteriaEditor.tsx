@@ -13,7 +13,6 @@
  * - Custom: Create your own criteria with display config
  */
 
-import { useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles,
@@ -23,16 +22,21 @@ import {
   Wand2,
   BarChart3,
 } from 'lucide-react';
+import { useMemo, useEffect, useCallback } from 'react';
+
 import { SURFACE_ELEVATION } from '@/components/visual/depth/depth-tokens';
-import { cn } from '@/lib/utils';
-import { useStudioCriteria, useStudioMetadata, CriteriaMode } from '@/stores/studio-store';
 import {
   mapCategoryToTemplate,
   getSuggestedTemplate,
 } from '@/lib/criteria/templates';
-import type { CriteriaProfile, Criterion } from '@/lib/criteria/types';
-import { CriteriaDisplayConfigurator } from './CriteriaDisplayConfigurator';
+import { cn } from '@/lib/utils';
+import { useStudioCriteria, useStudioMetadata, CriteriaMode } from '@/stores/studio-store';
+
 import { CardPreviewPanel } from './CardPreviewPanel';
+import { CriteriaDisplayConfigurator } from './CriteriaDisplayConfigurator';
+
+import type { CriteriaProfile, Criterion } from '@/lib/criteria/types';
+
 
 // Colors for criteria
 const CRITERION_COLORS = [

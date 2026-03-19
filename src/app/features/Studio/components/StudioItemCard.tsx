@@ -8,18 +8,21 @@
  * and DB match indicator.
  */
 
-import { memo, useState, useCallback, useRef } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { motion } from 'framer-motion';
 import { X, Database, GripVertical } from 'lucide-react';
-import type { EnrichedItem } from '@/types/studio';
-import { cn } from '@/lib/utils';
+import { memo, useState, useCallback, useRef } from 'react';
+
+
+import { springConfig } from '@/app/features/Landing/shared/animations';
 import { PlayButton } from '@/components/AudioPlayer';
+import { PositionBadge } from '@/components/patterns/badges';
 import { ProgressiveImage } from '@/components/ui/progressive-image';
 import { Elevated } from '@/components/visual';
-import { springConfig } from '@/app/features/Landing/shared/animations';
-import { PositionBadge } from '@/components/patterns/badges';
+import { cn } from '@/lib/utils';
+
+import type { EnrichedItem } from '@/types/studio';
 
 interface StudioItemCardProps {
   item: EnrichedItem;

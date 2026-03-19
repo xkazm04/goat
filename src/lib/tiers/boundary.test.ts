@@ -20,7 +20,6 @@ import {
   rangeFromInclusiveBoundary,
   inclusiveToExclusive,
   exclusiveToInclusive,
-  type TierRange,
 } from './boundary';
 
 // ---------------------------------------------------------------------------

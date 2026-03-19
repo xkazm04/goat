@@ -1,7 +1,8 @@
 "use client";
 
-import { ItemPanelStats as StatsType } from "../types";
 import { StatsCard, Metric } from "@/components/ui";
+
+import { ItemPanelStats as StatsType } from "../types";
 
 interface CollectionStatsProps {
   stats: StatsType;

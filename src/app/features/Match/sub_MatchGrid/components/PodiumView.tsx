@@ -1,16 +1,19 @@
 "use client";
 
-import { useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Trophy, Medal, Award } from 'lucide-react';
-import { SimpleDropZone } from '../../sub_DropZone/SimpleDropZone';
-import { GridItemType } from '@/types/match';
+import { useCallback } from 'react';
+
+
 import { Elevated } from '@/components/visual';
-import { useGridStore } from '@/stores/grid-store';
-import { triggerHaptic } from '../lib/hapticFeedback';
 import { useAnimationPause } from '@/hooks/use-animation-pause';
 import { DURATION } from '@/lib/animations/motion-presets';
-import { STAGGER, ENTRANCE, ENTRANCE_DURATION, SPRING_CONFIG, GLOW_SHADOWS, CONNECTOR, CSS_TIMING } from '@/lib/animations/motion-tokens';
+import { STAGGER, ENTRANCE, ENTRANCE_DURATION, SPRING_CONFIG, GLOW_SHADOWS, CONNECTOR } from '@/lib/animations/motion-tokens';
+import { useGridStore } from '@/stores/grid-store';
+import { GridItemType } from '@/types/match';
+
+import { SimpleDropZone } from '../../sub_DropZone/SimpleDropZone';
+import { triggerHaptic } from '../lib/hapticFeedback';
 
 interface PodiumViewProps {
     gridItems: (GridItemType | null)[];

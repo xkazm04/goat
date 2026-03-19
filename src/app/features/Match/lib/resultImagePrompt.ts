@@ -1,4 +1,5 @@
 import { GridItemType } from '@/types/match';
+
 import {
   ImageStyle,
   StyleConfig,

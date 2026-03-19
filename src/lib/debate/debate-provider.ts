@@ -7,6 +7,7 @@
  */
 
 import { getGeminiClient, GEMINI_MODEL_FLASH } from '@/lib/providers/gemini-client';
+
 import type { DebateChallengeRequest, DebateChallengeResponse } from './types';
 
 /**

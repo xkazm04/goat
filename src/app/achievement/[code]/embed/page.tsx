@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+
 import { AchievementEmbed } from '@/app/features/Achievement/components/AchievementEmbed';
 
 // Embed page for iframes - lightweight version

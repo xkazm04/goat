@@ -1,21 +1,24 @@
 "use client";
 
-import { useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Grid3X3 } from "lucide-react";
-import { GoatTrophy, GoatMusic, GoatGamepad, GoatBook } from "@/components/visual/GoatIcons";
-import { FloatingShowcase } from "./FloatingShowcase";
-import { NeonArenaTheme } from "./shared";
+import { useMemo } from "react";
+
 import { CommandPaletteTrigger } from "@/app/features/CommandPalette";
 import { useCommandPaletteStore } from "@/app/features/CommandPalette/useCommandPalette";
+import { GoatTrophy, GoatMusic, GoatGamepad, GoatBook } from "@/components/visual/GoatIcons";
+import { usePlayList } from "@/hooks/use-play-list";
+import { useFeaturedLists } from "@/hooks/use-top-lists";
+import { DURATION } from '@/lib/animations/motion-presets';
+import { CATEGORY_CONFIG, resolveDisplayCategory, type CategoryName } from "@/lib/config/category-config";
+import { getCategoryColor } from "@/lib/helpers/getColors";
+
+import { FloatingShowcase } from "./FloatingShowcase";
+import { NeonArenaTheme } from "./shared";
 import { ContinueRankingBar } from "./sub_LandingLists/ContinueRankingBar";
 import { SavedListsSection } from "./sub_LandingLists/SavedListsSection";
 import { SectionHeader } from "./sub_LandingLists/SectionHeader";
-import { CATEGORY_CONFIG, resolveDisplayCategory, type CategoryName } from "@/lib/config/category-config";
-import { useFeaturedLists } from "@/hooks/use-top-lists";
-import { usePlayList } from "@/hooks/use-play-list";
-import { getCategoryColor } from "@/lib/helpers/getColors";
-import { DURATION } from '@/lib/animations/motion-presets';
+
 
 // Minimum number of lists in a category before it's considered "ready"
 const MIN_CATEGORY_ITEMS = 50;

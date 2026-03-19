@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { DURATION } from '@/lib/animations/motion-presets';
 import { LogOut, ChevronDown, BarChart3 } from 'lucide-react';
 import Link from 'next/link';
+import { useState, useCallback, useRef, useEffect } from 'react';
+
 import { useAuthUser } from '@/hooks/use-auth-user';
+import { DURATION } from '@/lib/animations/motion-presets';
 
 /**
  * Avatar dropdown with sign-out for authenticated users.

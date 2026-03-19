@@ -1,7 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import type { ListRow } from '@/types/database';
-import type { ListCriteriaConfig } from '@/lib/criteria/types';
+import { NextRequest } from 'next/server';
+
 import {
   withErrorHandler,
   fromSupabaseError,
@@ -9,6 +7,10 @@ import {
   createdResponse,
   assertRequired,
 } from '@/lib/errors';
+import { createClient } from '@/lib/supabase/server';
+
+import type { ListCriteriaConfig } from '@/lib/criteria/types';
+import type { ListRow } from '@/types/database';
 
 /**
  * Transform list response from snake_case DB format to camelCase frontend format

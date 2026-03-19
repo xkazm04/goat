@@ -7,10 +7,12 @@
  * Features enhanced visual feedback with criterion color propagation
  */
 
-import React, { useCallback, useState, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Star, Minus, Plus, MessageSquare } from 'lucide-react';
+import React, { useCallback, useState, useRef, useMemo } from 'react';
+
 import { cn } from '@/lib/utils';
+
 import type { Criterion, ScoreInputMode, CriterionScore } from '@/lib/criteria/types';
 
 // Animation configuration

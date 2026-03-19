@@ -1,13 +1,14 @@
 "use client";
 
-import { ReactNode } from "react";
 import * as HoverCard from "@radix-ui/react-hover-card";
 import { motion, AnimatePresence } from "framer-motion";
-import { Hash, Calendar, BarChart3, Loader2, Star, Clock } from "lucide-react";
+import { Hash, Calendar, Loader2, Star, Clock } from "lucide-react";
+import { ReactNode } from "react";
+
+import { ELEVATION, withInset } from "@/components/visual/depth";
 import { useListPreview } from "@/hooks/use-list-preview";
-import { getCategoryColor } from "@/lib/helpers/getColors";
-import { ELEVATION, INSET, withInset } from "@/components/visual/depth";
 import { DURATION } from '@/lib/animations/motion-presets';
+import { getCategoryColor } from "@/lib/helpers/getColors";
 
 interface ListPreviewPopoverProps {
   listId: string;

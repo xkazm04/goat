@@ -9,6 +9,7 @@
  */
 
 import { useRef, useCallback, useState } from "react";
+
 import { triggerHaptic } from "../sub_MatchGrid/lib/hapticFeedback";
 
 export interface GridZoomState {

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import { createClient } from '@/lib/supabase/server';
+
 import type { ItemUpdate } from '@/types/database';
 
 // Force dynamic rendering

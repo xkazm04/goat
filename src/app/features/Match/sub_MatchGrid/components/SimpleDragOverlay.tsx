@@ -10,9 +10,9 @@
  * - Subtle visual feedback without complexity
  */
 
-import { motion, AnimatePresence } from "framer-motion";
-import { PlaceholderImage } from "@/components/ui/placeholder-image";
+
 import { ImageFallback } from "@/components/ui/ImageFallback";
+import { PlaceholderImage } from "@/components/ui/placeholder-image";
 
 interface DraggableItem {
   id?: string;

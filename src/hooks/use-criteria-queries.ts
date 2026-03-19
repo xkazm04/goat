@@ -12,7 +12,7 @@ import {
   UseQueryOptions,
   UseMutationOptions,
 } from '@tanstack/react-query';
-import { criteriaKeys } from '@/lib/query-keys/criteria';
+
 import {
   fetchListCriteria,
   saveListCriteria,
@@ -21,14 +21,16 @@ import {
   saveItemScores,
   batchSaveItemScores,
 } from '@/lib/api/criteria';
+import { CACHE_TTL_MS, GC_TIME_MS, getRetryConfig } from '@/lib/cache/unified-cache';
+import { emitErrorNotification } from '@/lib/errors/error-notification-store';
+import { criteriaKeys } from '@/lib/query-keys/criteria';
+
 import type {
   ListCriteriaConfig,
   ListItemCriteriaScores,
   CriterionScore,
   ItemCriteriaScores,
 } from '@/lib/criteria/types';
-import { CACHE_TTL_MS, GC_TIME_MS, getRetryConfig } from '@/lib/cache/unified-cache';
-import { emitErrorNotification } from '@/lib/errors/error-notification-store';
 
 // =============================================================================
 // Types

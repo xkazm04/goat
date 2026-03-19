@@ -23,6 +23,7 @@
  */
 
 import { useRef, useCallback, useMemo, useState, useEffect } from 'react';
+
 import type { Vector2D, MagneticConfig, UseMagneticSnapReturn } from './types';
 
 export interface MagneticSnapConfig extends MagneticConfig {

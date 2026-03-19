@@ -1,25 +1,27 @@
 "use client";
 
-import React, { useMemo, useRef, useCallback } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { motion, AnimatePresence } from "framer-motion";
-import { DURATION } from "@/lib/animations/motion-presets";
 import { TrendingUp, Sparkles } from "lucide-react";
-import { CategoryEmptyState } from "@/components/illustrations/EmptyStateIllustrations";
-import { CollectionItem } from "@/app/features/Collection/types";
+import React, { useMemo, useRef, useCallback } from "react";
+
 import { ConfigurableCollectionItem, MATCH_VIEW_CONFIG, type HoistedStoreState } from "@/app/features/Collection/components/ConfigurableCollectionItem";
-import { useConsensusStore, useConsensusSortBy } from "@/stores/consensus-store";
-import { useListStore } from "@/stores/use-list-store";
-import { useCriteriaStore } from "@/stores/criteria-store";
-import { QuickSelectBadge } from "../../sub_ItemBadges/QuickSelectBadge";
-import { ItemStatsTooltip } from "../../sub_ItemBadges/ItemStatsTooltip";
+import { CollectionItem } from "@/app/features/Collection/types";
+import { CategoryEmptyState } from "@/components/illustrations/EmptyStateIllustrations";
+import { DURATION } from "@/lib/animations/motion-presets";
 import { createSortComparator, type SortConfig } from "@/lib/sorting";
+import { useConsensusStore, useConsensusSortBy } from "@/stores/consensus-store";
+import { useCriteriaStore } from "@/stores/criteria-store";
+import { useListStore } from "@/stores/use-list-store";
+
 import {
   VirtualizedCollectionGridProps,
   generateSortCacheKey,
   flattenGroups,
   chunkIntoRows,
 } from "./virtualizedGridTypes";
+import { ItemStatsTooltip } from "../../sub_ItemBadges/ItemStatsTooltip";
+import { QuickSelectBadge } from "../../sub_ItemBadges/QuickSelectBadge";
 
 /**
  * Virtualized grid display for collection items.

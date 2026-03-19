@@ -7,6 +7,8 @@
  * animations, backdrop blur, and escape key handling.
  */
 
+import { motion, AnimatePresence } from 'framer-motion';
+import { X } from 'lucide-react';
 import {
   memo,
   useState,
@@ -15,11 +17,10 @@ import {
   useRef,
   type ReactNode,
 } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
+
 import { useMotionCapabilities } from '@/hooks/use-motion-preference';
-import { X } from 'lucide-react';
 import { DURATION } from '@/lib/animations/motion-presets';
+import { cn } from '@/lib/utils';
 
 // =============================================================================
 // Types

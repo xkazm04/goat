@@ -5,8 +5,8 @@
  * Premium sticky header with gradient accent line and G.O.A.T. branding.
  */
 
-import Link from 'next/link';
 import { ArrowLeft, Crown, Sparkles } from 'lucide-react';
+import Link from 'next/link';
 
 export interface StudioHeaderProps {
   title?: string;

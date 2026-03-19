@@ -7,6 +7,8 @@
  */
 
 import { useRef, useCallback, useEffect, useState, useMemo } from "react";
+
+import { useIsTouchDevice } from "@/hooks/useMediaQuery";
 import {
   GestureRecognizer,
   GestureData,
@@ -22,8 +24,8 @@ import {
   ActionResult,
   createSwipeActionHandler,
 } from "@/lib/gestures/SwipeActionHandler";
+
 import { PreviewItem } from "../components/LongPressPreview";
-import { useIsTouchDevice } from "@/hooks/useMediaQuery";
 
 /**
  * Haptic feedback utilities

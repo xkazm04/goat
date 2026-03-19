@@ -1,5 +1,6 @@
-import { useBacklogStore } from './store';
 import { useShallow } from 'zustand/react/shallow';
+
+import { useBacklogStore } from './store';
 import { useSelectionCursor } from '../selection-cursor';
 
 // Selector hooks with memoization to prevent unnecessary renders

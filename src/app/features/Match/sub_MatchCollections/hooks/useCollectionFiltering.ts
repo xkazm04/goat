@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef } from "react";
+
 import { ItemCategory, CollectionItem } from "@/app/features/Collection/types";
 import { FullTextSearcher } from "@/lib/filters/FullTextSearcher";
 

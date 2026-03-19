@@ -1,14 +1,17 @@
 "use client";
 
-import { memo, useCallback, useMemo } from 'react';
-import { SimpleDropZone } from '../../sub_DropZone/SimpleDropZone';
-import { useGridItemAtPosition, useGridStore } from '@/stores/grid-store';
-import { useBacklogStore } from '@/stores/backlog-store';
-import { getItemTitle } from '../lib/helpers';
-import { triggerHaptic } from '../lib/hapticFeedback';
-import { create } from 'zustand';
-import { useGridPinchZoom } from '../../hooks/useGridPinchZoom';
 import { RotateCcw } from 'lucide-react';
+import { memo, useCallback, useMemo } from 'react';
+import { create } from 'zustand';
+
+import { useGridItemAtPosition, useGridStore } from '@/stores/grid-store';
+
+import { useGridPinchZoom } from '../../hooks/useGridPinchZoom';
+import { SimpleDropZone } from '../../sub_DropZone/SimpleDropZone';
+import { triggerHaptic } from '../lib/hapticFeedback';
+import { getItemTitle } from '../lib/helpers';
+
+
 
 interface GridSectionProps {
     title?: string;

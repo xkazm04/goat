@@ -1,5 +1,6 @@
-import { useCallback } from 'react';
 import { User, Session, AuthError, SupabaseClient } from '@supabase/supabase-js';
+import { useCallback } from 'react';
+
 import type { OAuthProvider } from './types';
 
 interface AuthActionDeps {

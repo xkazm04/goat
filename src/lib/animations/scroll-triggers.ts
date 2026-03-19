@@ -15,9 +15,11 @@ import {
   useCallback,
   useMemo,
 } from 'react';
-import type { Variants, Transition } from 'framer-motion';
+
 import { useMotionCapabilities } from '@/hooks/use-motion-preference';
 import { DURATION } from '@/lib/animations/motion-presets';
+
+import type { Variants, Transition } from 'framer-motion';
 
 // =============================================================================
 // Types

@@ -2,9 +2,11 @@
 
 import { motion } from "framer-motion";
 import { LucideIcon } from "lucide-react";
-import { springConfig } from "../shared/animations";
-import { useReducedMotion } from "@/hooks/use-reduced-motion";
+
 import { ELEVATION, INSET, withInset } from "@/components/visual/depth";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
+
+import { springConfig } from "../shared/animations";
 
 interface SectionHeaderProps {
   icon: LucideIcon | React.ComponentType<{ className?: string }>;

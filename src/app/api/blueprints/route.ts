@@ -1,12 +1,6 @@
 import { NextRequest } from 'next/server';
-import { createClient, escapeIlikeWildcards } from '@/lib/supabase/server';
-import {
-  BlueprintRow,
-  blueprintFromRow,
-  generateBlueprintSlug,
-  CreateBlueprintRequest,
-} from '@/types/blueprint';
 import { v4 as uuidv4 } from 'uuid';
+
 import {
   withErrorHandler,
   fromSupabaseError,
@@ -14,6 +8,13 @@ import {
   successResponse,
   createdResponse,
 } from '@/lib/errors';
+import { createClient, escapeIlikeWildcards } from '@/lib/supabase/server';
+import {
+  BlueprintRow,
+  blueprintFromRow,
+  generateBlueprintSlug,
+  CreateBlueprintRequest,
+} from '@/types/blueprint';
 
 // Force dynamic rendering for this route since it uses cookies
 export const dynamic = 'force-dynamic';

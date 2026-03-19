@@ -1,9 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { CreateSharedRankingRequest, SharedRanking } from '@/types/share';
-import { getOGCacheManager } from '@/lib/og/CacheManager';
-import type { OGCardLayout } from '@/lib/og/types';
+import { NextRequest, NextResponse } from 'next/server';
+
 import { requireAuth } from '@/lib/supabase/server';
+import { CreateSharedRankingRequest } from '@/types/share';
+
+import type { OGCardLayout } from '@/lib/og/types';
+
 
 function getSupabaseClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;

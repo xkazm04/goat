@@ -9,16 +9,19 @@
  * - Animated generation skeleton with gradient sweep
  */
 
-import { DndContext, closestCenter, DragEndEvent } from '@dnd-kit/core';
+import { DndContext, closestCenter, DragEndEvent , useSensor, useSensors, PointerSensor } from '@dnd-kit/core';
 import { SortableContext, rectSortingStrategy } from '@dnd-kit/sortable';
-import { useSensor, useSensors, PointerSensor } from '@dnd-kit/core';
 import { AnimatePresence, motion } from 'framer-motion';
-import { DURATION } from '@/lib/animations/motion-presets';
-import { SURFACE_ELEVATION } from '@/components/visual/depth/depth-tokens';
-import { useStudioItems, useStudioGeneration, useStudioValidation, useStudioStore } from '@/stores/studio-store';
-import { StudioItemCard } from './StudioItemCard';
 import { GripVertical, Database, Crown } from 'lucide-react';
+
+import { SURFACE_ELEVATION } from '@/components/visual/depth/depth-tokens';
 import { GoatMascot } from '@/components/visual/GoatMascot';
+import { DURATION } from '@/lib/animations/motion-presets';
+import { useStudioItems, useStudioGeneration, useStudioValidation, useStudioStore } from '@/stores/studio-store';
+
+import { StudioItemCard } from './StudioItemCard';
+
+
 
 const DEFAULT_GRID_CLASS = 'grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3';
 

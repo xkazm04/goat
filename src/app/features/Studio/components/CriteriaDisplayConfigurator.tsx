@@ -1,6 +1,5 @@
 'use client';
 
-import { memo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Circle,
@@ -10,8 +9,11 @@ import {
   Plus,
   Trash2,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { memo, useCallback } from 'react';
+
 import { SURFACE_ELEVATION } from '@/components/visual/depth/depth-tokens';
+import { cn } from '@/lib/utils';
+
 import type {
   Criterion,
   CriterionDisplayType,

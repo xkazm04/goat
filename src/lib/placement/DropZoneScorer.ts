@@ -7,8 +7,9 @@
  * - Efficient caching for performance
  */
 
-import { GridItemType } from '@/types/match';
 import { BacklogItem } from '@/types/backlog-groups';
+import { GridItemType } from '@/types/match';
+
 import {
   PlacementPredictor,
   PositionPrediction,

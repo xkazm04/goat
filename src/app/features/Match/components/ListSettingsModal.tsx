@@ -5,9 +5,9 @@
  * Modal for editing list settings including criteria configuration after list creation
  */
 
-import { useCallback } from 'react';
 import { Settings, Star, Loader2, Check, AlertCircle } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { useCallback } from 'react';
+
 import {
   GlassModal,
   GlassModalHeader,
@@ -15,8 +15,11 @@ import {
   GlassModalFooter,
   GLASS_BUTTON_PRIMARY,
 } from '@/components/ui/glass-modal';
+import { cn } from '@/lib/utils';
 import { useCriteriaStore, useSyncStatus } from '@/stores/criteria-store';
+
 import { CriteriaProfileSelector } from './CriteriaProfileSelector';
+
 import type { CriteriaProfile } from '@/lib/criteria/types';
 
 interface ListSettingsModalProps {

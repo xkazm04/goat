@@ -5,17 +5,19 @@
  * Floating item detail panel component
  */
 
+import { motion, PanInfo, useDragControls, AnimatePresence } from 'framer-motion';
 import React, {
   useRef,
   useState,
   useCallback,
-  useEffect,
   type ReactNode,
 } from 'react';
-import { motion, PanInfo, useDragControls, AnimatePresence } from 'framer-motion';
+
 import { cn } from '@/lib/utils';
-import { usePictureInPicture, useLayout } from '../LayoutManager';
+
 import { LAYOUT_ANIMATIONS, LAYOUT_Z_INDEX, DEFAULT_PIP_CONFIG } from '../constants';
+import { usePictureInPicture, useLayout } from '../LayoutManager';
+
 import type { PipConfig } from '../types';
 
 /**

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { DURATION } from "@/lib/animations/motion-presets";
 import { Search, X, Clock, TrendingUp, Trash2 } from "lucide-react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+
+import { DURATION } from "@/lib/animations/motion-presets";
 import { cn } from "@/lib/utils";
 import { isInputElement } from "@/lib/utils/search";
 

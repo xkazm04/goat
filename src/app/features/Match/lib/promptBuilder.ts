@@ -5,8 +5,9 @@
  * Builds prompts based on style presets, category themes, and user customization.
  */
 
-import type { AIGenerationRequest, AIStylePreset, CategoryTheme } from './ai/types';
 import { getAIStyleConfig, mapCategoryToTheme } from './ai/stylePresets';
+
+import type { AIGenerationRequest, CategoryTheme } from './ai/types';
 
 /**
  * Built prompt result

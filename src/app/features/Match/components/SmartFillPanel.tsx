@@ -1,16 +1,17 @@
 "use client";
 
-import { useState, useCallback, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useState, useCallback, useEffect, useMemo } from "react";
+
 import { DURATION } from "@/lib/animations/motion-presets";
-import { BacklogItem } from "@/types/backlog-groups";
-import { GridItemType } from "@/types/match";
+import { getDropZoneTailwindClasses } from "@/lib/placement/DropZoneScorer";
 import {
   getPlacementPredictor,
   PlacementPrediction,
   PositionPrediction,
 } from "@/lib/placement/PlacementPredictor";
-import { getDropZoneTailwindClasses } from "@/lib/placement/DropZoneScorer";
+import { BacklogItem } from "@/types/backlog-groups";
+import { GridItemType } from "@/types/match";
 
 /**
  * Smart fill mode state

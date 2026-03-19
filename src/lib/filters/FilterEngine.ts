@@ -3,6 +3,9 @@
  * Core filtering logic with combinators for advanced multi-filter system
  */
 
+import { DEFAULT_FILTER_OPTIONS } from './constants';
+import { getFieldValue as getNestedFieldValue } from './utils';
+
 import type {
   FilterCondition,
   FilterGroup,
@@ -15,8 +18,6 @@ import type {
   FieldDistribution,
   SortConfig,
 } from './types';
-import { DEFAULT_FILTER_OPTIONS, EMPTY_FILTER_CONFIG } from './constants';
-import { getFieldValue as getNestedFieldValue } from './utils';
 
 /**
  * Metrics payload fired by FilterEngine and FullTextSearcher

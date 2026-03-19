@@ -1,9 +1,11 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useOptionalDropZoneHighlight } from "./DropZoneHighlightContext";
 import { useEffect, useState, useRef, useCallback } from "react";
+
 import { DURATION } from '@/lib/animations/motion-presets';
+
+import { useOptionalDropZoneHighlight } from "./DropZoneHighlightContext";
 
 interface ConnectorLine {
   id: number;

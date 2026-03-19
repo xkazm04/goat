@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useCallback } from 'react';
 import { LogIn } from 'lucide-react';
+import { useState, useCallback } from 'react';
+
 import { useAuthUser } from '@/hooks/use-auth-user';
+
 import { AuthModal } from './AuthModal';
 import { UserMenu } from './UserMenu';
 

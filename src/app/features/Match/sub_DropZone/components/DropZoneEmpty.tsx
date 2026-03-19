@@ -1,6 +1,7 @@
 "use client";
 
 import { memo } from "react";
+
 import { CSS_TIMING } from '@/lib/animations/motion-tokens';
 
 export interface DropZoneEmptyProps {

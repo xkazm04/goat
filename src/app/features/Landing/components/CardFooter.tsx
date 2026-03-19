@@ -2,8 +2,10 @@
 
 import { motion } from "framer-motion";
 import { Star } from "lucide-react";
-import type { CardColor } from "../types";
+
 import { DURATION } from '@/lib/animations/motion-presets';
+
+import type { CardColor } from "../types";
 
 interface CardFooterProps {
   author: string;

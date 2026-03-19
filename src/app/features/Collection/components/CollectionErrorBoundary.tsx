@@ -1,7 +1,8 @@
 "use client";
 
-import React, { Component, ReactNode } from "react";
 import { RefreshCw } from "lucide-react";
+import React, { Component, ReactNode } from "react";
+
 import { ToppledTrophy } from "@/components/illustrations/EmptyStateIllustrations";
 
 interface Props {

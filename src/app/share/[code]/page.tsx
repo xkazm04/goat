@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { DURATION } from "@/lib/animations/motion-presets";
-import { SharedRanking } from "@/types/share";
-import { SocialButton } from "@/components/ui/SocialButton";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+
 import { AnimatedCounter } from "@/components/ui/AnimatedCounter";
+import { SocialButton } from "@/components/ui/SocialButton";
 import { useForkRanking } from "@/hooks/use-fork-ranking";
+import { DURATION } from "@/lib/animations/motion-presets";
 import {
   pageEntranceVariants,
   staggerContainerVariants,
@@ -16,6 +16,7 @@ import {
   prefersReducedMotion,
   type SocialPlatform,
 } from "@/lib/animations/sharing";
+import { SharedRanking } from "@/types/share";
 
 // Platform data for social share buttons
 const socialPlatforms: { id: SocialPlatform; name: string }[] = [

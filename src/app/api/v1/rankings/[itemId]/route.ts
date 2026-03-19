@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import type { PublicRankingItem } from '@/types/api-keys';
+
 import {
   extractApiKey,
   validateApiKey,
@@ -10,6 +9,9 @@ import {
   handleCors,
   toPublicRankingItem,
 } from '@/lib/api/public-api';
+import { createClient } from '@/lib/supabase/server';
+
+import type { PublicRankingItem } from '@/types/api-keys';
 
 export const dynamic = 'force-dynamic';
 

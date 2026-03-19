@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+
 import { GridItemType } from '@/types/match';
 
 const STORAGE_KEY_PREFIX = 'goat-position-history-';

@@ -6,6 +6,17 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useShallow } from 'zustand/react/shallow';
+
+import {
+  fetchListCriteria,
+  saveListCriteria,
+  fetchListItemScores,
+  saveItemScores,
+  batchSaveItemScores,
+} from '@/lib/api/criteria';
+import { calculateWeightedScore } from '@/lib/criteria/calculateWeightedScore';
+import { ALL_TEMPLATES } from '@/lib/criteria/templates';
+
 import type {
   CriteriaProfile,
   Criterion,
@@ -17,15 +28,6 @@ import type {
   ListCriteriaConfig,
   ListItemCriteriaScores,
 } from '@/lib/criteria/types';
-import { ALL_TEMPLATES } from '@/lib/criteria/templates';
-import { calculateWeightedScore } from '@/lib/criteria/calculateWeightedScore';
-import {
-  fetchListCriteria,
-  saveListCriteria,
-  fetchListItemScores,
-  saveItemScores,
-  batchSaveItemScores,
-} from '@/lib/api/criteria';
 
 /**
  * Generate unique ID

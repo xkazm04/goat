@@ -6,11 +6,14 @@
  * Drop this into the app shell alongside other layout providers.
  */
 
-import React, { type ReactNode, useCallback, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import React, { type ReactNode, useCallback, useMemo } from 'react';
+
 import { cn } from '@/lib/utils';
 import { useLayoutStore } from '@/stores/layout-store';
+
 import { DetachableWindow } from './DetachableWindow';
+
 import type { DetachedWindowConfig } from '../types';
 
 /**

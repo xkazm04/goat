@@ -9,10 +9,12 @@
  */
 
 import { QueryClient } from '@tanstack/react-query';
-import { BandwidthDetector, type PrefetchStrategy, type NetworkConditions } from './BandwidthDetector';
-import { PriorityQueue, type PrefetchPriority, type PrefetchRequest } from './PriorityQueue';
-import { PredictionEngine, type UserBehaviorEvent } from './PredictionEngine';
+
 import { CACHE_TTL_MS } from '@/lib/cache/unified-cache';
+
+import { BandwidthDetector, type PrefetchStrategy, type NetworkConditions } from './BandwidthDetector';
+import { PredictionEngine, type UserBehaviorEvent } from './PredictionEngine';
+import { PriorityQueue, type PrefetchPriority, type PrefetchRequest } from './PriorityQueue';
 
 export interface PrefetchConfig {
   /** Whether prefetching is enabled */

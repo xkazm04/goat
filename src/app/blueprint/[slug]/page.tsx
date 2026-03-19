@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Loader2, AlertCircle, Sparkles, Users, Clock } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect } from "react";
+
 import { useBlueprint } from "@/hooks/use-blueprints";
 import { useComposition } from "@/hooks/use-composition";
 import { getCategoryIcon } from "@/lib/constants/showCaseExamples";

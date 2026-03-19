@@ -6,6 +6,7 @@
  * Integrates with CollectionFilterIntegration for unified filtering
  */
 
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import React, {
   createContext,
   useContext,
@@ -16,7 +17,10 @@ import React, {
   useEffect,
   ReactNode,
 } from 'react';
-import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+
+import { FacetAggregator, createFacetAggregator } from './FacetAggregator';
+import { DEFAULT_FACET_DEFINITIONS } from './types';
+
 import type {
   Facet,
   FacetSelection,
@@ -25,8 +29,7 @@ import type {
   FacetActions,
   FacetAggregationResult,
 } from './types';
-import { DEFAULT_FACET_DEFINITIONS } from './types';
-import { FacetAggregator, createFacetAggregator } from './FacetAggregator';
+
 
 /**
  * Facet context state

@@ -8,8 +8,10 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useShallow } from 'zustand/react/shallow';
-import { loadYouTubeAPI, extractYouTubeId } from '@/lib/youtube';
+
 import { apiClient } from '@/lib/api';
+import { loadYouTubeAPI, extractYouTubeId } from '@/lib/youtube';
+
 import type { YouTubePlayer } from '@/types/youtube';
 
 // ─────────────────────────────────────────────────────────────

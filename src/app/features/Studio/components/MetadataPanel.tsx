@@ -10,9 +10,16 @@
  * Title and description are now in TopicInputForm.
  */
 
-import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, CheckCircle2, AlertCircle, Send, Save, UserPlus } from 'lucide-react';
+import { useState, useRef } from 'react';
+
+import { SURFACE_ELEVATION, GLOW_PRESET } from '@/components/visual/depth/depth-tokens';
+import { useToast } from '@/hooks/use-toast';
+import { useCreateListWithUser } from '@/hooks/use-top-lists';
+import { apiClient } from '@/lib/api/client';
+import { categoryToDbValue } from '@/lib/config/category-config';
+import { cn } from '@/lib/utils';
 import {
   useStudioForm,
   useStudioMetadata,
@@ -22,16 +29,12 @@ import {
   useStudioCriteria,
   useStudioSettings,
 } from '@/stores/studio-store';
-import { useCreateListWithUser } from '@/hooks/use-top-lists';
-import { apiClient } from '@/lib/api/client';
-import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
-import { SURFACE_ELEVATION, GLOW_PRESET } from '@/components/visual/depth/depth-tokens';
 import { DEFAULT_LIST_INTENT_COLOR } from '@/types/list-intent';
-import { categoryToDbValue } from '@/lib/config/category-config';
-import type { CreateListRequest } from '@/types/list-intent-transformers';
-import type { ListCriteriaConfig } from '@/lib/criteria/types';
+
 import { StudioError } from './StudioError';
+
+import type { ListCriteriaConfig } from '@/lib/criteria/types';
+import type { CreateListRequest } from '@/types/list-intent-transformers';
 
 export function MetadataPanel() {
   const { listSize } = useStudioForm();

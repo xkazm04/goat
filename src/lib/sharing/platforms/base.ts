@@ -4,7 +4,6 @@
  */
 
 import type {
-  SharePlatform,
   ShareContent,
   OptimizedContent,
   PlatformConfig,

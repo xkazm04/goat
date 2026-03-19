@@ -5,14 +5,18 @@
  * Chip-based common filters for quick access
  */
 
-import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
+import React, { useMemo } from 'react';
+
+import { GoatFilterEmpty } from '@/components/illustrations/EmptyStateIllustrations';
 import { GoatSearch } from '@/components/visual/GoatIcons';
 import { cn } from '@/lib/utils';
-import { GoatFilterEmpty } from '@/components/illustrations/EmptyStateIllustrations';
-import type { QuickFilter, FilterConfig } from '../types';
+
 import { FILTER_ANIMATIONS, FILTER_TIMING, FILTER_SCALE, DEFAULT_QUICK_FILTERS } from '../constants';
+
+import type { QuickFilter } from '../types';
+
 
 /**
  * QuickFilterBar Props

@@ -8,12 +8,13 @@
  * unified factory functions that work across all modes.
  */
 
-import type { TransferableItem } from './transfer-protocol';
-import type { GridItemType } from '@/types/match';
-import type { BacklogItem } from '@/types/backlog-groups';
-import type { CollectionItem } from '@/app/features/Collection/types';
+import { createGridReceiverId, isGridReceiverId, extractGridPosition } from './transfer-protocol';
 import { backlogToTransferable, gridToTransferable, collectionToTransferable } from './type-guards';
-import { GRID_ID_PREFIX, createGridReceiverId, isGridReceiverId, extractGridPosition } from './transfer-protocol';
+
+import type { TransferableItem } from './transfer-protocol';
+import type { CollectionItem } from '@/app/features/Collection/types';
+import type { BacklogItem } from '@/types/backlog-groups';
+import type { GridItemType } from '@/types/match';
 
 // ============================================================================
 // Unified Source Types

@@ -1,21 +1,21 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Cloud,
-  CloudOff,
   RefreshCw,
   AlertTriangle,
   CheckCircle,
   WifiOff,
   Loader2,
 } from 'lucide-react';
-import { useNetworkStatus } from '@/lib/offline/useNetworkStatus';
-import { useOfflineSync } from '@/lib/offline/useOfflineSync';
+import { useState, useEffect } from 'react';
+
+import { SyncErrorIllustration, classifySyncError } from '@/components/illustrations/SyncErrorIllustrations';
 import { syncStatusColors } from '@/lib/offline/sync-status-colors';
 import { SyncStatus } from '@/lib/offline/types';
-import { SyncErrorIllustration, classifySyncError } from '@/components/illustrations/SyncErrorIllustrations';
+import { useNetworkStatus } from '@/lib/offline/useNetworkStatus';
+import { useOfflineSync } from '@/lib/offline/useOfflineSync';
 
 interface SyncStatusIndicatorProps {
   className?: string;

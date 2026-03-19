@@ -2,13 +2,16 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
+
 import { SURFACE_ELEVATION, ELEVATION, INSET } from '@/components/visual/depth/depth-tokens';
-import type { ExtendedFeedbackState, StateIndicatorConfig, FeedbackProgressData } from '../types';
-import { FeedbackStateIndicator } from './FeedbackStateIndicator';
-import { FeedbackProgress } from './FeedbackProgress';
-import { cn } from '@/lib/utils';
 import { useModalAccessibility } from '@/hooks/use-modal-accessibility';
 import { DURATION } from '@/lib/animations/motion-presets';
+import { cn } from '@/lib/utils';
+
+import { FeedbackProgress } from './FeedbackProgress';
+import { FeedbackStateIndicator } from './FeedbackStateIndicator';
+
+import type { ExtendedFeedbackState, StateIndicatorConfig, FeedbackProgressData } from '../types';
 
 interface FeedbackModalProps {
   /** Whether the modal is open */

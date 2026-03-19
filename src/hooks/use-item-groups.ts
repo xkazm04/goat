@@ -1,10 +1,13 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { goatApi, GroupSearchParams, GroupCreateRequest } from '@/lib/api';
-import { useOptimisticMutation } from './useOptimisticMutation';
+import { useQuery } from '@tanstack/react-query';
+
 import { toast } from '@/hooks/use-toast';
-import { GridItemType as OriginalGridItemType, BacklogItemType as OriginalBacklogItemType, BacklogGroupType as OriginalBacklogGroupType } from '@/types/match';
+import { goatApi, GroupSearchParams, GroupCreateRequest } from '@/lib/api';
+import { CACHE_TTL_MS, getRetryConfig } from '@/lib/cache/unified-cache';
 import { BacklogGroup as ApiBacklogGroup, BacklogItem as ApiBacklogItem } from '@/types/backlog-groups';
-import { CACHE_TTL_MS, GC_TIME_MS, getRetryConfig } from '@/lib/cache/unified-cache';
+import { GridItemType as OriginalGridItemType } from '@/types/match';
+
+import { useOptimisticMutation } from './useOptimisticMutation';
+
 
 // Unified cache time constants - imported from unified-cache.ts
 const CACHE_TIMES = {

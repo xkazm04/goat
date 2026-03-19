@@ -2,8 +2,9 @@
 
 import { motion } from 'framer-motion';
 import { Check, Sparkles, Trophy, Star, PartyPopper } from 'lucide-react';
-import { cn } from '@/lib/utils';
+
 import { DURATION } from '@/lib/animations/motion-presets';
+import { cn } from '@/lib/utils';
 
 interface FeedbackSuccessStateProps {
   /** Success title */

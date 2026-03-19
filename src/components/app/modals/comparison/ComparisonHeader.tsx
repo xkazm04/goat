@@ -1,5 +1,4 @@
 import { X, Grid3X3, List, Columns2, Users } from "lucide-react";
-import { motion } from "framer-motion";
 
 interface ComparisonHeaderProps {
   onClose: () => void;

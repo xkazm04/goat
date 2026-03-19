@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import {
   X,
@@ -11,17 +10,19 @@ import {
   Check,
   RotateCcw,
   Save,
-  Eye,
-  EyeOff,
 } from 'lucide-react';
+import { useState, useCallback, useRef, useEffect } from 'react';
+
 import { useRankingStore } from '@/stores/ranking-store';
-import type { TierDefinition, TierColor } from '@/types/ranking';
+
 import {
   TIER_COLOR_PALETTES,
   createTierColor,
   SYSTEM_TIER_PRESETS,
   type CustomTierPreset,
 } from '../../lib/tierPresets';
+
+import type { TierDefinition } from '@/types/ranking';
 
 interface TierConfigEditorProps {
   isOpen: boolean;

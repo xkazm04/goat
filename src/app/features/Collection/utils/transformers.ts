@@ -2,9 +2,9 @@
  * Utility functions for Collection feature
  */
 
-import { BacklogGroup, BacklogItem } from '@/types/backlog-groups';
 import { ItemCategory, CollectionItem } from '@/app/features/Collection/types';
 import { extractTitle } from '@/lib/items/item-utils';
+import { BacklogGroup, BacklogItem } from '@/types/backlog-groups';
 
 /**
  * Convert BacklogItem to CollectionItem

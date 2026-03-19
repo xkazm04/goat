@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles,
@@ -11,14 +10,18 @@ import {
   Wand2,
   Info,
 } from "lucide-react";
+import { useState, useMemo, useCallback } from "react";
+
 import { cn } from "@/lib/utils";
-import type { AIStylePreset, CategoryTheme } from "../lib/ai/types";
+
 import {
   AI_STYLE_PRESET_LIST,
   getRecommendedStyles,
   getAIStyleConfig,
   mapCategoryToTheme,
 } from "../lib/ai/stylePresets";
+
+import type { AIStylePreset, CategoryTheme } from "../lib/ai/types";
 
 export interface AIStyleSelectorProps {
   /** Currently selected style */

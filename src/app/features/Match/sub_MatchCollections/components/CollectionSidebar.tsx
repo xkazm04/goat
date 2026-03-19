@@ -1,9 +1,10 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
+
 import { ItemCategory } from "@/app/features/Collection/types";
-import { highlightMatch } from "@/lib/utils/search";
 import { DURATION } from '@/lib/animations/motion-presets';
+import { highlightMatch } from "@/lib/utils/search";
 
 interface CollectionSidebarProps {
   /** Pre-filtered groups (used items already removed by parent) */

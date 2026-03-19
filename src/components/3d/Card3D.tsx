@@ -9,6 +9,13 @@
  */
 
 import {
+  motion,
+  useMotionValue,
+  useSpring,
+  useTransform,
+  type MotionStyle,
+} from 'framer-motion';
+import {
   memo,
   useRef,
   useCallback,
@@ -16,15 +23,9 @@ import {
   type ReactNode,
   type HTMLAttributes,
 } from 'react';
-import {
-  motion,
-  useMotionValue,
-  useSpring,
-  useTransform,
-  type MotionStyle,
-} from 'framer-motion';
-import { cn } from '@/lib/utils';
+
 import { useMotionCapabilities } from '@/hooks/use-motion-preference';
+import { cn } from '@/lib/utils';
 
 // =============================================================================
 // Types

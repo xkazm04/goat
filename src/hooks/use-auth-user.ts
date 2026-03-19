@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef } from 'react';
+
 import { useSupabaseAuth } from '@/hooks/supabase-auth';
 import { useTempUser } from '@/hooks/use-temp-user';
 

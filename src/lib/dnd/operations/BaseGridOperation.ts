@@ -8,6 +8,9 @@
  * - Rollback via reverse moveGridItem
  */
 
+import { dndLogger } from '@/lib/logger';
+import { getValidationAuthority } from '@/lib/validation';
+
 import type {
   DragOperation,
   DragContext,
@@ -16,8 +19,6 @@ import type {
   OperationStoreContext,
 } from './types';
 import type { ValidationResult } from '@/lib/validation';
-import { getValidationAuthority } from '@/lib/validation';
-import { dndLogger } from '@/lib/logger';
 
 /**
  * Abstract base for grid-to-grid operations (move and swap).

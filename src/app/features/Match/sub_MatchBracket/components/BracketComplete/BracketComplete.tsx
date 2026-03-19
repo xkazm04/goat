@@ -1,17 +1,19 @@
 "use client";
 
-import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RotateCcw, Check, Trophy, List, BarChart3 } from 'lucide-react';
+import { useState, useMemo } from 'react';
+
+import { DURATION } from '@/lib/animations/motion-presets';
+
+import { StandingsTab } from './StandingsTab';
+import { StatsTab } from './StatsTab';
+import { TrophyTab, useConfettiParticles } from './TrophyTab';
 import {
   BracketState,
   bracketToRanking,
   getTournamentAnalytics,
 } from '../../lib/bracketGenerator';
-import { TrophyTab, useConfettiParticles } from './TrophyTab';
-import { StandingsTab } from './StandingsTab';
-import { StatsTab } from './StatsTab';
-import { DURATION } from '@/lib/animations/motion-presets';
 
 interface BracketCompleteProps {
   bracket: BracketState;

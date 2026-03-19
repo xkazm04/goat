@@ -8,10 +8,11 @@
  * Provides visual feedback with background color, icon, and spring-back animation.
  */
 
-import { useCallback, useRef } from "react";
 import { motion, useMotionValue, useTransform, animate } from "framer-motion";
 import { Check, X } from "lucide-react";
 import Image from "next/image";
+import { useCallback, useRef } from "react";
+
 import { CollectionItem } from "@/app/features/Collection/types";
 import { cn } from "@/lib/utils";
 

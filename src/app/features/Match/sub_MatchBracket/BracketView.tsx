@@ -1,14 +1,23 @@
 "use client";
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { DURATION } from '@/lib/animations/motion-presets';
 import { RotateCcw, Play } from 'lucide-react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useShallow } from 'zustand/react/shallow';
+
 import { BracketDrawingLoader } from '@/components/illustrations/BracketDrawingLoader';
-import { GridItemType } from '@/types/match';
+import { DURATION } from '@/lib/animations/motion-presets';
+import { useRankingStore } from '@/stores/ranking-store';
 import { BacklogItem } from '@/types/backlog-groups';
+import { GridItemType } from '@/types/match';
+
 import {
-  BracketState,
+  BracketSetup,
+  BracketComplete,
+  BracketVisualization,
+  MatchupScreen,
+} from './components';
+import {
   BracketMatchup,
   BracketSize,
   deriveBracketData,
@@ -16,16 +25,9 @@ import {
   getBracketSizeForItems,
   findMatchupById,
   SeedingStrategy,
-  CompletedVote,
 } from './lib';
-import {
-  BracketSetup,
-  BracketComplete,
-  BracketVisualization,
-  MatchupScreen,
-} from './components';
-import { useRankingStore } from '@/stores/ranking-store';
-import { useShallow } from 'zustand/react/shallow';
+
+
 
 interface BracketViewProps {
   gridItems: GridItemType[];

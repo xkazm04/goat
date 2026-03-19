@@ -1,20 +1,21 @@
 "use client";
 
-import { memo, useCallback, useMemo, forwardRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, useSortable, horizontalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ChevronRight, X, Play, Pause, Sparkles } from 'lucide-react';
-import { ControversyBadge } from './Debate/ControversyBadge';
-import { TierListTier } from '../../lib/tierPresets';
-import { BacklogItem } from '@/types/backlog-groups';
-import { createUnifiedTierRowDropData, createUnifiedTierDragData } from '@/lib/dnd/unified-protocol';
-import { useOptionalDropZoneHighlight } from './DropZoneHighlightContext';
-import { useCurrentList } from '@/stores/use-list-store';
-import { extractTitle } from '@/lib/items/item-utils';
-import { useAudioStore } from '@/stores/audio-store';
+import { memo, useCallback, useMemo, forwardRef } from 'react';
+
 import { TierEmptyIllustration } from '@/components/illustrations/TierEmptyIllustration';
+import { createUnifiedTierRowDropData, createUnifiedTierDragData } from '@/lib/dnd/unified-protocol';
+import { useAudioStore } from '@/stores/audio-store';
+import { useCurrentList } from '@/stores/use-list-store';
+import { BacklogItem } from '@/types/backlog-groups';
+
+import { ControversyBadge } from './Debate/ControversyBadge';
+import { useOptionalDropZoneHighlight } from './DropZoneHighlightContext';
+import { TierListTier } from '../../lib/tierPresets';
 
 interface TierItemProps {
   item: BacklogItem;

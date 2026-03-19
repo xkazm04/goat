@@ -1,11 +1,13 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
+
 import { SURFACE_ELEVATION, ELEVATION, INSET } from "@/components/visual/depth/depth-tokens";
 import { useModalAccessibility } from "@/hooks/use-modal-accessibility";
-import { CompletionModalHeader } from "./CompletionModalHeader";
-import { CompletionModalContent } from "./CompletionModalContent";
+
 import { CompletionModalActions } from "./CompletionModalActions";
+import { CompletionModalContent } from "./CompletionModalContent";
+import { CompletionModalHeader } from "./CompletionModalHeader";
 
 interface CompletionData {
   totalItems: number;

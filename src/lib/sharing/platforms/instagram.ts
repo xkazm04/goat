@@ -5,6 +5,7 @@
  */
 
 import { BasePlatformAdapter } from './base';
+
 import type {
   ShareContent,
   OptimizedContent,

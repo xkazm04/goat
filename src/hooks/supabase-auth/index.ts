@@ -1,7 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
 import { User, Session, AuthError } from '@supabase/supabase-js';
-import type { UseSupabaseAuthOptions, UseSupabaseAuthReturn } from './types';
-import { useSupabaseClient } from './client';
+import { useState, useEffect, useRef } from 'react';
+
 import {
   useSignIn,
   useSignUp,
@@ -13,6 +12,10 @@ import {
   useUpdateProfile,
   useRefreshSession,
 } from './actions';
+import { useSupabaseClient } from './client';
+
+import type { UseSupabaseAuthOptions, UseSupabaseAuthReturn } from './types';
+
 
 // Re-export types
 export * from './types';

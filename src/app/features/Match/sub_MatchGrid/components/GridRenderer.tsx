@@ -7,17 +7,19 @@
  */
 
 import React, { memo, lazy, Suspense } from "react";
+
 import { GridItemType } from "@/types/match";
-import { ViewMode } from "./ViewSwitcher";
-import { PodiumViewSkeleton, GoatViewSkeleton, MountRushmoreViewSkeleton } from "./ViewSkeletons";
+
 import { GridSection } from "./GridSection";
+import { TierSection } from "./TierSection";
+import { PodiumViewSkeleton, GoatViewSkeleton, MountRushmoreViewSkeleton } from "./ViewSkeletons";
+import { ViewMode } from "./ViewSwitcher";
 import { SimpleDropZone } from "../../sub_DropZone/SimpleDropZone";
 
 // Lazy-load view components to keep them code-split
 const PodiumView = lazy(() => import("./PodiumView").then(m => ({ default: m.PodiumView })));
 const GoatView = lazy(() => import("./GoatView").then(m => ({ default: m.GoatView })));
 const MountRushmoreView = lazy(() => import("./MountRushmoreView").then(m => ({ default: m.MountRushmoreView })));
-import { TierSection } from "./TierSection";
 import { useTierLayout } from "../hooks/useTierLayout";
 import { getItemTitle } from "../lib/helpers";
 

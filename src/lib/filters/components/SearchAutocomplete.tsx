@@ -10,13 +10,6 @@
  * - Smart query suggestions
  */
 
-import React, {
-  useState,
-  useCallback,
-  useRef,
-  useEffect,
-  KeyboardEvent,
-} from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -26,16 +19,24 @@ import {
   Loader2,
   Hash,
 } from 'lucide-react';
+import React, {
+  useState,
+  useCallback,
+  useRef,
+  useEffect,
+  KeyboardEvent,
+} from 'react';
+
 import { GoatSearch, GoatSparkles, GoatFilter } from '@/components/visual/GoatIcons';
 import { cn } from '@/lib/utils';
+
 import {
   useFilterIntegrationOptional,
-  type FilterIntegrationContextValue,
   type FilterableItem,
 } from '../CollectionFilterIntegration';
-import { useLiveSearchCounts } from '../hooks/useLiveSearchCounts';
-import { QUERY_TEMPLATES, type QuerySuggestion } from '../SmartQueryParser';
 import { FILTER_TIMING } from '../constants';
+import { useLiveSearchCounts } from '../hooks/useLiveSearchCounts';
+import { QUERY_TEMPLATES } from '../SmartQueryParser';
 
 /**
  * Suggestion item with type indicator

@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
-import { createClient, requireAuth, sanitizeFilterValue, escapeIlikeWildcards } from '@/lib/supabase/server';
-import type { ListCollectionRow } from '@/types/database';
-import { transformCollectionRow, generateShareSlug } from '@/types/collection';
+
+import { withTiming } from '@/lib/api/request-timing';
+import { cachedFetch } from '@/lib/cache/server-cache';
 import {
   withErrorHandler,
   fromSupabaseError,
@@ -9,8 +9,10 @@ import {
   createdResponse,
   assertRequired,
 } from '@/lib/errors';
-import { cachedFetch } from '@/lib/cache/server-cache';
-import { withTiming } from '@/lib/api/request-timing';
+import { createClient, requireAuth, sanitizeFilterValue, escapeIlikeWildcards } from '@/lib/supabase/server';
+import { transformCollectionRow, generateShareSlug } from '@/types/collection';
+
+import type { ListCollectionRow } from '@/types/database';
 
 // Force dynamic rendering for this route since it uses cookies
 export const dynamic = 'force-dynamic';

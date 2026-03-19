@@ -1,10 +1,12 @@
 "use client";
 
-import { useCallback } from "react";
 import { AnimatePresence } from "framer-motion";
-import { useItemPopupStore } from "@/stores/item-popup-store";
-import { useGridStore } from "@/stores/grid-store";
+import { useCallback } from "react";
+
 import { useBacklogStore } from "@/stores/backlog-store";
+import { useGridStore } from "@/stores/grid-store";
+import { useItemPopupStore } from "@/stores/item-popup-store";
+
 import { ItemDetailPopup } from "./ItemDetailPopup";
 
 /**

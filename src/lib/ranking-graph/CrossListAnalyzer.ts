@@ -11,7 +11,6 @@ import type {
   RankingAnomaly,
   PlacementSuggestion,
 } from './types';
-import { eloToTier } from './UniversalRatingEngine';
 
 // =============================================================================
 // Cross-List Insights

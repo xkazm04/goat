@@ -1,18 +1,19 @@
 "use client";
 
-import { useState } from "react";
-import Image from "next/image";
+import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
   Image as ImageIcon,
 } from "lucide-react";
+import Image from "next/image";
+import { useState } from "react";
+
 import { GoatTrophy, GoatMusic, GoatGamepad, GoatBook } from "@/components/visual/GoatIcons";
-import { useQuery } from "@tanstack/react-query";
-import { goatApi } from "@/lib/api";
-import { topListsKeys } from "@/lib/query-keys/top-lists";
-import { getCategoryColor } from "@/lib/helpers/getColors";
-import { TopListItem } from "@/types/top-lists";
 import { DURATION } from '@/lib/animations/motion-presets';
+import { goatApi } from "@/lib/api";
+import { getCategoryColor } from "@/lib/helpers/getColors";
+import { topListsKeys } from "@/lib/query-keys/top-lists";
+import { TopListItem } from "@/types/top-lists";
 
 type IconComponent = React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
 

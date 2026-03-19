@@ -18,7 +18,11 @@
  * (useFilterIntegration, useFilterActions, etc.) instead.
  */
 
-import { useState, useCallback, useMemo, useRef } from 'react';
+import { useState, useCallback, useRef } from 'react';
+
+import { EMPTY_FILTER_CONFIG } from '@/lib/filters/constants';
+import { FilterEngine } from '@/lib/filters/FilterEngine';
+
 import type {
   FilterConfig,
   FilterCondition,
@@ -30,8 +34,6 @@ import type {
   QuickFilter,
   SortConfig,
 } from '@/lib/filters/types';
-import { EMPTY_FILTER_CONFIG } from '@/lib/filters/constants';
-import { FilterEngine } from '@/lib/filters/FilterEngine';
 
 /**
  * Storage key for persisted presets

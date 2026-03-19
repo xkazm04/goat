@@ -7,6 +7,7 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+
 import { fetchItemImage } from "@/lib/api/wiki-images";
 import { wikiImageLogger } from "@/lib/logger";
 

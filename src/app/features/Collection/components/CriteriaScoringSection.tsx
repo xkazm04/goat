@@ -7,15 +7,17 @@
  * Features live themed score preview with micro-interactions
  */
 
-import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import * as Collapsible from '@radix-ui/react-collapsible';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BarChart3, ChevronDown, Check, Sparkles } from 'lucide-react';
-import * as Collapsible from '@radix-ui/react-collapsible';
-import { cn } from '@/lib/utils';
-import { SPRING, DURATION, prefersReducedMotion } from '@/lib/animations/motion-presets';
-import { useCriteriaStore, useSyncStatus, useCriteriaSync } from '@/stores/criteria-store';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+
 import { BulkCriteriaScoreInput } from '@/app/features/Match/components/CriteriaScoreInput';
 import { MiniThemedPreview } from '@/components/ui/ScorePreviewOverlay';
+import { SPRING, DURATION, prefersReducedMotion } from '@/lib/animations/motion-presets';
+import { cn } from '@/lib/utils';
+import { useCriteriaStore, useSyncStatus, useCriteriaSync } from '@/stores/criteria-store';
+
 import type { CriterionScore } from '@/lib/criteria/types';
 
 // Score quality thresholds

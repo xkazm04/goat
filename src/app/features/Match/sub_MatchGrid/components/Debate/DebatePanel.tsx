@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -12,9 +11,13 @@ import {
   Sparkles,
   ArrowRight,
 } from 'lucide-react';
-import type { DebateThread, DebateMessage } from '@/lib/debate/types';
-import { getControversyLevel, getControversyLabel } from '@/lib/debate/types';
+import { useState, useRef, useEffect, useCallback, memo } from 'react';
+
+
 import { DURATION } from '@/lib/animations/motion-presets';
+import { getControversyLevel, getControversyLabel } from '@/lib/debate/types';
+
+import type { DebateThread, DebateMessage } from '@/lib/debate/types';
 
 interface DebatePanelProps {
   thread: DebateThread | null;

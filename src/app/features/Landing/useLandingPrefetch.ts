@@ -14,13 +14,14 @@
  * TanStack Query serves data from cache.
  */
 
-import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
+
 import { goatApi } from "@/lib/api";
-import { topListsKeys } from "@/lib/query-keys/top-lists";
-import { listCollectionKeys } from "@/lib/query-keys/list-collections";
 import { CACHE_TTL_MS } from "@/lib/cache/unified-cache";
 import { trackError } from "@/lib/errors/error-analytics";
+import { listCollectionKeys } from "@/lib/query-keys/list-collections";
+import { topListsKeys } from "@/lib/query-keys/top-lists";
 
 const FEATURED_PARAMS = {
   popular_limit: 80,

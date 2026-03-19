@@ -6,6 +6,8 @@
  * Integrates seamlessly with VirtualCollectionList for efficient data loading.
  */
 
+import { motion, AnimatePresence } from 'framer-motion';
+import { Loader2 } from 'lucide-react';
 import React, {
   memo,
   useRef,
@@ -15,9 +17,9 @@ import React, {
   forwardRef,
   useImperativeHandle,
 } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+
 import { cn } from '@/lib/utils';
-import { Loader2 } from 'lucide-react';
+
 
 /**
  * Infinite loader state

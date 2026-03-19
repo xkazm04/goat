@@ -1,17 +1,21 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
-import { motion, animate, PanInfo } from "framer-motion";
 import { useDraggable } from "@dnd-kit/core";
+import { motion, PanInfo } from "framer-motion";
 import { GripHorizontal, ChevronUp, LayoutGrid, List } from "lucide-react";
+import Image from "next/image";
+import { useState, useCallback, useEffect, useRef } from "react";
+
 import { CollectionItem } from "@/app/features/Collection/types";
-import { useGridStore, type MobileSelectedItem } from "@/stores/grid-store";
-import { useBacklogStore } from "@/stores/backlog-store";
+import { triggerHaptic } from "@/app/features/Match/sub_MatchGrid/lib/hapticFeedback";
 import { createCollectionDragData } from "@/lib/dnd";
 import { cn } from "@/lib/utils";
-import Image from "next/image";
+import { useBacklogStore } from "@/stores/backlog-store";
+import { useGridStore, type MobileSelectedItem } from "@/stores/grid-store";
+
+
 import { SwipeableBacklogItem } from "./SwipeableBacklogItem";
-import { triggerHaptic } from "@/app/features/Match/sub_MatchGrid/lib/hapticFeedback";
+
 
 /** Panel snap states */
 type PanelState = "collapsed" | "half" | "full";

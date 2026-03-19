@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+
 import type { TrajectoryPoint } from "@/types/item-details";
 
 interface MiniTrajectoryChartProps {

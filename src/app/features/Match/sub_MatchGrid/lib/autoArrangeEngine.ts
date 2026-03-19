@@ -3,10 +3,11 @@
  * Intelligent item placement algorithm for smart grid
  */
 
-import { GridItemType } from "@/types/match";
-import { TierDefinition, TierId, adjustTiersForSize, getTierForPosition } from "./tierConfig";
-import { SmartGridLayout, ItemMetadata, ArrangementStrategy } from "./smartGridLayout";
 import { timeSync } from "@/lib/perf/perfTimer";
+import { GridItemType } from "@/types/match";
+
+import { SmartGridLayout } from "./smartGridLayout";
+import { TierDefinition, TierId, adjustTiersForSize } from "./tierConfig";
 
 /**
  * Arrangement mode

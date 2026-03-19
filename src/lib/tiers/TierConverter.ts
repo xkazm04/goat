@@ -3,9 +3,10 @@
  * Converts between tier-based rankings and position-based rankings
  */
 
-import { TierDefinition } from './types';
 import { timeSync } from '@/lib/perf/perfTimer';
+
 import { getTierForPositionGeneric, rangeFromTierDef } from './boundary';
+import { TierDefinition } from './types';
 
 /**
  * Item in a tier with optional order within tier

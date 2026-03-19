@@ -22,37 +22,36 @@
  * ```
  */
 
-import { apiClient } from './client';
+import { withCoalescing } from '@/lib/cache/query-cache-config';
 import {
   GoatError,
   isGoatError,
 } from '@/lib/errors';
+
 import { getGlobalCircuitBreaker } from './CircuitBreaker';
-import { withCoalescing } from '@/lib/cache/query-cache-config';
+import { apiClient } from './client';
 import { generateRequestId } from './request-id';
 
 // =============================================================================
 // Types - Lists
 // =============================================================================
 
-import type {
-  TopList,
-  ListWithItems,
-  ListAnalytics,
-  CreateListRequest,
-  UpdateListRequest,
-  CloneListRequest,
-  SearchListsParams,
-  VersionComparison,
-  ListCreationResponse,
-  FeaturedListsResponse,
-  CreatorAnalyticsSummary,
-} from '@/types/top-lists';
 
 // =============================================================================
 // Types - Groups & Items (from @/types/groups)
 // =============================================================================
 
+import type {
+  Blueprint,
+  CreateBlueprintRequest,
+  UpdateBlueprintRequest,
+  SearchBlueprintsParams,
+  BlueprintShareResponse,
+} from '@/types/blueprint';
+import type {
+  ItemConsensusWithClusters,
+  ConsensusAPIResponse,
+} from '@/types/consensus';
 import type {
   ItemGroup,
   ItemGroupWithItems,
@@ -86,7 +85,10 @@ import type {
   ItemStat,
   ItemStatsResponse,
   ItemStatsParams,
-} from '@/types/items';
+
+  ItemResearchRequest,
+  ItemResearchResponse,
+  ItemValidationRequest} from '@/types/items';
 
 export type {
   Item,
@@ -103,33 +105,30 @@ export type {
 // Types - Blueprints
 // =============================================================================
 
-import type {
-  Blueprint,
-  CreateBlueprintRequest,
-  UpdateBlueprintRequest,
-  SearchBlueprintsParams,
-  BlueprintShareResponse,
-} from '@/types/blueprint';
 
 // =============================================================================
 // Types - Consensus
 // =============================================================================
 
-import type {
-  ItemConsensus,
-  ItemConsensusWithClusters,
-  ConsensusAPIResponse,
-} from '@/types/consensus';
 
 // =============================================================================
 // Types - Research & Users (from @/types/items, @/types/users)
 // =============================================================================
 
+
 import type {
-  ItemResearchRequest,
-  ItemResearchResponse,
-  ItemValidationRequest,
-} from '@/types/items';
+  TopList,
+  ListWithItems,
+  ListAnalytics,
+  CreateListRequest,
+  UpdateListRequest,
+  CloneListRequest,
+  SearchListsParams,
+  VersionComparison,
+  ListCreationResponse,
+  FeaturedListsResponse,
+  CreatorAnalyticsSummary,
+} from '@/types/top-lists';
 
 export type {
   ItemResearchRequest,

@@ -1,4 +1,5 @@
 import { GridItemType, BacklogItemType, BacklogGroupType } from '@/types/match';
+
 import { NormalizedBacklogData, NormalizedOps } from './normalized-session';
 
 export class GridOperations {

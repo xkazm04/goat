@@ -17,9 +17,9 @@
  * - Easy to modify validation rules in one place
  */
 
+import { extractTitle } from '@/lib/items/item-utils';
 import { BacklogItem } from '@/types/backlog-groups';
 import { GridItemType } from '@/types/match';
-import { extractTitle } from '@/lib/items/item-utils';
 
 // ============================================================================
 // Types

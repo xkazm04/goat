@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useCallback, useRef } from 'react';
-import { useBacklogStore } from '@/stores/backlog-store';
+
 import { createBacklogCoalescer } from '@/lib/utils/request-coalescer';
+import { useBacklogStore } from '@/stores/backlog-store';
 
 // Create a singleton coalescer instance for this provider
 let coalescerInstance: ReturnType<typeof createBacklogCoalescer> | null = null;

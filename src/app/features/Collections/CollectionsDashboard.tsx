@@ -1,10 +1,7 @@
 "use client";
 
-import { memo, useState, useCallback, useEffect } from "react";
-import { motion } from "framer-motion";
-import { CollectionSidebar } from "./components/CollectionSidebar";
-import { CollectionView } from "./components/CollectionView";
-import { CollectionManager } from "./components/CollectionManager";
+import { memo, useState, useCallback } from "react";
+
 import {
   useUserCollections,
   useCollectionOperations,
@@ -14,12 +11,16 @@ import {
   useCollectionActions,
 } from "@/stores/collection-store";
 import { useCurrentUser, useUserLists } from "@/stores/use-list-store";
+
+import { CollectionManager } from "./components/CollectionManager";
+import { CollectionSidebar } from "./components/CollectionSidebar";
+import { CollectionView } from "./components/CollectionView";
+
 import type {
   ListCollection,
   CreateCollectionRequest,
   UpdateCollectionRequest,
 } from "@/types/collection";
-import type { TopList } from "@/types/top-lists";
 
 interface CollectionsDashboardProps {
   className?: string;

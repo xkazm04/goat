@@ -9,11 +9,13 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useShallow } from 'zustand/react/shallow';
+
 import { apiClient, getApiErrorMessage } from '@/lib/api/client';
-import type { EnrichedItem, ListTemplate } from '@/types/studio';
-import type { CriteriaProfile, ListCriteriaConfig } from '@/lib/criteria/types';
 import { getTemplateById } from '@/lib/criteria/templates';
 import { getListTemplateById } from '@/lib/templates/list-templates';
+
+import type { CriteriaProfile, ListCriteriaConfig } from '@/lib/criteria/types';
+import type { EnrichedItem } from '@/types/studio';
 
 // ─────────────────────────────────────────────────────────────
 // Types

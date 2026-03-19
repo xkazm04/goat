@@ -37,11 +37,12 @@
  * ```
  */
 
-import { useMutation, useQueryClient, UseMutationOptions } from '@tanstack/react-query';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { createClient } from '@/lib/supabase/client';
+import { useMutation, useQueryClient, UseMutationOptions } from '@tanstack/react-query';
+
 import { invalidateByTags } from '@/lib/cache/query-cache-config';
 import { createRetryDelay } from '@/lib/cache/unified-cache';
+import { createClient } from '@/lib/supabase/client';
 
 // =============================================================================
 // Types

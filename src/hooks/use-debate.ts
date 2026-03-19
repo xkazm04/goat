@@ -6,7 +6,9 @@
  */
 
 import { useCallback } from 'react';
+
 import { useDebateStore } from '@/stores/debate-store';
+
 import type { DebateChallengeRequest, DebateChallengeResponse } from '@/lib/debate/types';
 
 interface UseDebateOptions {

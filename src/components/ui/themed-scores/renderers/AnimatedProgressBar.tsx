@@ -1,11 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
+
 import {
   SCORE_ANIMATION_DURATION,
   SCORE_ANIMATION_EASE,
 } from "@/lib/constants/scoring";
+import { cn } from "@/lib/utils";
 
 export interface AnimatedProgressBarProps {
   /** Fill percentage (0-100) */

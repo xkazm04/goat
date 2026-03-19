@@ -5,18 +5,15 @@
  * and proper ordering to ensure data consistency during background sync.
  */
 
+import { OfflineStorage, getOfflineStorage } from './OfflineStorage';
 import {
   SyncOperation,
   OperationType,
-  OperationStatus,
   SyncQueueState,
   OfflineConfig,
   DEFAULT_OFFLINE_CONFIG,
-  ConflictData,
   ConflictRecord,
-  ConflictType,
 } from './types';
-import { OfflineStorage, getOfflineStorage } from './OfflineStorage';
 
 // Generate unique operation IDs
 function generateOperationId(): string {

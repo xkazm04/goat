@@ -3,19 +3,21 @@
 import { useDroppable } from "@dnd-kit/core";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { DropCelebration } from "../../sub_DropZone/components/DropCelebration";
-import { createGridSlotDropData } from "@/lib/dnd";
-import { getRankColor, isPodiumPosition } from "../../lib/rankConfig";
-import { getPositionAwareSpringConfig, getFramerSpringConfig } from "../lib/physicsEngine";
-import { triggerHaptic, isHapticSupported } from "../lib/hapticFeedback";
-import { PositionBadge } from "../../components/PositionBadge";
-import { SlotSuggestionOverlay, QuickPlaceIndicator } from "../../components/SuggestionOverlay";
-import { useIndicatorAtPosition, useIsDragging as usePlacementDragging } from "@/stores/placement-store";
-import { DropZoneIndicator } from "@/lib/placement/DropZoneScorer";
-import { useCurrentList } from "@/stores/use-list-store";
+
 import { CategorySlotIllustration } from "@/components/illustrations/EmptyStateIllustrations";
 import { ImageFallback } from "@/components/ui/ImageFallback";
 import { DURATION } from '@/lib/animations/motion-presets';
+import { createGridSlotDropData } from "@/lib/dnd";
+import { DropZoneIndicator } from "@/lib/placement/DropZoneScorer";
+import { useIndicatorAtPosition, useIsDragging as usePlacementDragging } from "@/stores/placement-store";
+import { useCurrentList } from "@/stores/use-list-store";
+
+import { PositionBadge } from "../../components/PositionBadge";
+import { SlotSuggestionOverlay, QuickPlaceIndicator } from "../../components/SuggestionOverlay";
+import { getRankColor, isPodiumPosition } from "../../lib/rankConfig";
+import { DropCelebration } from "../../sub_DropZone/components/DropCelebration";
+import { triggerHaptic, isHapticSupported } from "../lib/hapticFeedback";
+import { getPositionAwareSpringConfig, getFramerSpringConfig } from "../lib/physicsEngine";
 
 interface PhysicsGridSlotProps {
   position: number;

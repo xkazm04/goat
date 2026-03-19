@@ -12,24 +12,23 @@
  * - Providing overview/leaderboard data
  */
 
+import { extractTitle } from '@/lib/items/item-utils';
+
+import {
+  generateCrossListInsights,
+  detectAnomalies,
+  generatePlacementSuggestions,
+} from './CrossListAnalyzer';
 import {
   computeUniversalRating,
   computeTrajectory,
   batchComputeRatings,
   type RawListAppearance,
 } from './UniversalRatingEngine';
-import { extractTitle } from '@/lib/items/item-utils';
-import {
-  generateCrossListInsights,
-  detectAnomalies,
-  generatePlacementSuggestions,
-} from './CrossListAnalyzer';
+
 import type {
   UniversalRating,
   CrossListInsight,
-  RankingTrajectory,
-  RankingAnomaly,
-  PlacementSuggestion,
   UniversalRatingResponse,
   CrossListSuggestionsResponse,
   RankingGraphOverviewResponse,
@@ -74,7 +73,6 @@ export async function fetchItemAppearances(
   supabase: { from: (table: string) => unknown }
 ): Promise<RawListAppearance[]> {
   // Query list_items joined with lists
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const client = supabase as any;
   const { data, error } = await client
     .from('list_items')
@@ -115,7 +113,6 @@ export async function fetchBatchAppearances(
   itemIds: string[],
   supabase: { from: (table: string) => unknown }
 ): Promise<Record<string, RawListAppearance[]>> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const batchClient = supabase as any;
   const { data, error } = await batchClient
     .from('list_items')
@@ -264,7 +261,6 @@ export async function getGraphOverview(
   category?: string
 ): Promise<RankingGraphOverviewResponse> {
   // Fetch top items from database
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const client = supabase as any;
   let query = client
     .from('top_items')

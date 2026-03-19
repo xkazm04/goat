@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore, useCallback } from "react";
+import { useSyncExternalStore } from "react";
 
 // Cached media query for reduced motion
 let mediaQuery: MediaQueryList | null = null;

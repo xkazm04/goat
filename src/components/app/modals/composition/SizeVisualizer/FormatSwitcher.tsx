@@ -1,10 +1,13 @@
 "use client";
 
-import { memo } from "react";
 import { motion } from "framer-motion";
 import { List, Layers, GitBranch, Lock } from "lucide-react";
-import { RankingFormat, FORMAT_CONFIGS } from "./types";
+import { memo } from "react";
+
 import { DURATION } from '@/lib/animations/motion-presets';
+
+import { RankingFormat, FORMAT_CONFIGS } from "./types";
+
 
 interface FormatSwitcherProps {
   selectedFormat: RankingFormat;

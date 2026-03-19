@@ -18,10 +18,12 @@
  *   {!isDetached && <PanelContent />}
  */
 
-import React, { useCallback, useMemo, type ReactNode } from 'react';
 import { motion } from 'framer-motion';
+import React, { useCallback, type ReactNode } from 'react';
+
 import { cn } from '@/lib/utils';
 import { useLayoutStore } from '@/stores/layout-store';
+
 import type { DetachedWindowConfig, DockEdge } from '../types';
 
 /**

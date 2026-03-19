@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense } from 'react';
+
 import { StudioLayout, StudioSkeleton } from '@/app/features/Studio';
 
 /**

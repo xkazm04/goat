@@ -7,7 +7,6 @@ import {
   UserProfile,
   BehaviorEvent,
   CategoryInterest,
-  BehaviorEventType,
   STORAGE_KEYS,
   EVENT_WEIGHTS,
   INTEREST_DECAY,

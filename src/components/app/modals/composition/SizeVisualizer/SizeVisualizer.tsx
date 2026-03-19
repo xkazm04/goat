@@ -1,23 +1,24 @@
 "use client";
 
-import { memo, useState, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronRight } from "lucide-react";
+import { memo, useState, useCallback, useMemo } from "react";
+
+import { DURATION } from '@/lib/animations/motion-presets';
+
+import { CustomSizeSlider } from "./CustomSizeSlider";
+import { FormatSwitcher } from "./FormatSwitcher";
+import { GridPreview, MiniGridPreview } from "./GridPreview";
+import { MorphAnimator, useMorphAnimation } from "./MorphAnimator";
+import { SizeRecommender, RecommendationBadge } from "./SizeRecommender";
+import { TimeEstimator, TimeBadge } from "./TimeEstimator";
 import {
   ListSize,
   RankingFormat,
   SizeVisualizerProps,
   SIZE_OPTIONS,
-  getNearestSize,
   getExampleItems,
 } from "./types";
-import { GridPreview, MiniGridPreview } from "./GridPreview";
-import { MorphAnimator, useMorphAnimation } from "./MorphAnimator";
-import { TimeEstimator, TimeBadge } from "./TimeEstimator";
-import { SizeRecommender, RecommendationBadge } from "./SizeRecommender";
-import { CustomSizeSlider } from "./CustomSizeSlider";
-import { FormatSwitcher, FormatBadge } from "./FormatSwitcher";
-import { DURATION } from '@/lib/animations/motion-presets';
 
 /**
  * Main Size Visualizer Component

@@ -1,8 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useRouter } from "next/navigation";
 import {
   Search,
   Command,
@@ -16,26 +14,27 @@ import {
   Plus,
   List,
   Filter,
-  Hash,
   Loader2,
 } from "lucide-react";
-import { parseListQuery, generateListTitle, getExampleQueries } from "./lib/parseListQuery";
-import { useTopLists, useUserLists } from "@/hooks/use-top-lists";
-import { useQuickSearch, useSearchHistory } from "@/hooks/use-search";
-import type { SearchResult, SearchDomain } from "@/lib/search";
-import { trackError } from "@/lib/errors/error-analytics";
-import { useTempUser } from "@/hooks/use-temp-user";
-import { useCommandPaletteStore } from "./useCommandPalette";
-import { useListStore } from "@/stores/use-list-store";
-import { toast } from "@/hooks/use-toast";
-import { CATEGORY_CONFIG } from "@/lib/config/category-config";
+import { useRouter } from "next/navigation";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+
+
 import { GoatMascot } from "@/components/visual/GoatMascot";
 import { TopList } from "@/types/top-lists";
 import { createListIntent } from "@/types/list-intent";
 import { listCreationService } from "@/services/list-creation-service";
 import { ELEVATION } from "@/components/visual/depth";
+import { useQuickSearch, useSearchHistory } from "@/hooks/use-search";
+import { useTempUser } from "@/hooks/use-temp-user";
+import { toast } from "@/hooks/use-toast";
+import { useTopLists, useUserLists } from "@/hooks/use-top-lists";
 import { DURATION } from "@/lib/animations/motion-presets";
+import { CATEGORY_CONFIG } from "@/lib/config/category-config";
+import { trackError } from "@/lib/errors/error-analytics";
 import { fuzzyMatch } from "@/lib/search/fuzzy";
+import { useListStore } from "@/stores/use-list-store";
+
 import {
   CATEGORY_COLORS,
   CATEGORY_ICONS,
@@ -44,6 +43,10 @@ import {
   DOMAIN_COLORS,
   DOMAIN_FILTERS,
 } from "./constants";
+import { parseListQuery, generateListTitle, getExampleQueries } from "./lib/parseListQuery";
+import { useCommandPaletteStore } from "./useCommandPalette";
+
+import type { SearchResult, SearchDomain } from "@/lib/search";
 
 // Recent list storage key
 const RECENT_LISTS_KEY = "command-palette-recent-lists";

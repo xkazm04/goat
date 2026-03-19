@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { BracketParticipant, BracketState, computeRankingTies } from '../../lib/bracketGenerator';
+import { useMemo } from 'react';
+
 import { getRankStyle } from './rankStyles';
+import { BracketParticipant, BracketState, computeRankingTies } from '../../lib/bracketGenerator';
 
 interface StandingsTabProps {
   ranking: BracketParticipant[];

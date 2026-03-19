@@ -1,7 +1,8 @@
 "use client";
 
-import { ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ReactNode } from 'react';
+
 import { ShimmerSkeleton } from './shimmer-skeleton';
 
 // Default values

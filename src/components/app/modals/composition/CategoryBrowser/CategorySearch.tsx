@@ -1,11 +1,13 @@
 "use client";
 
-import { memo, useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, X, ChevronRight, Folder, Clock, TrendingUp } from "lucide-react";
-import { CategorySearchProps, CategoryNode, RecentCategory, STORAGE_KEYS } from "./types";
-import { searchTree, findNodeByPath, getPopularCategories } from "./categoryTree";
+import { memo, useState, useCallback, useRef, useEffect } from "react";
+
 import { DURATION } from '@/lib/animations/motion-presets';
+
+import { searchTree, findNodeByPath, getPopularCategories } from "./categoryTree";
+import { CategorySearchProps, CategoryNode, RecentCategory, STORAGE_KEYS } from "./types";
 
 /**
  * Search Result Item

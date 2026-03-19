@@ -6,7 +6,6 @@ import {
   Area,
   ResponsiveContainer,
   Tooltip,
-  XAxis,
 } from "recharts";
 
 interface SparklineChartProps {

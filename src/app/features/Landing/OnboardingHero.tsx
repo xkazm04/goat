@@ -1,12 +1,14 @@
 "use client";
 
-import { memo, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { DURATION } from "@/lib/animations/motion-presets";
 import { ArrowRight } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { memo, useCallback } from "react";
+
 import { GoatTrophy, GoatMusic, GoatGamepad } from "@/components/visual/GoatIcons";
+import { DURATION } from "@/lib/animations/motion-presets";
 import { getCategoryColor } from "@/lib/helpers/getColors";
+
 import { gradients } from "./shared/gradients";
 
 /**

@@ -1,8 +1,11 @@
+import { dndLogger } from '@/lib/logger';
+
+import { requireGridSlotTarget, requirePositionInBounds, validateAll } from '../validation-helpers';
+import { BaseTierOperation } from './BaseTierOperation';
+
 import type { DragContext, DragOperationResult, OperationStoreContext } from '../types';
 import type { ValidationResult } from '@/lib/validation';
-import { requireGridSlotTarget, requirePositionInBounds, validateAll } from '../validation-helpers';
-import { dndLogger } from '@/lib/logger';
-import { BaseTierOperation } from './BaseTierOperation';
+
 
 /**
  * Handles moving items from tier to grid

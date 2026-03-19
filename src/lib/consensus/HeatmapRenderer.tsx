@@ -1,5 +1,6 @@
 "use client";
 
+import { motion, AnimatePresence } from "framer-motion";
 import {
   memo,
   useRef,
@@ -8,8 +9,9 @@ import {
   useMemo,
   useState,
 } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+
 import { DURATION } from "@/lib/animations/motion-presets";
+
 import {
   HeatmapCell,
   HeatmapConfig,

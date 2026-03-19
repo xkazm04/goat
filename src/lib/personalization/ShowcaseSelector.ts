@@ -3,9 +3,9 @@
  * Dynamic content picker for the personalized showcase
  */
 
-import { PersonalizationEngine, ContentItem, getPersonalizationEngine } from './PersonalizationEngine';
 import { ContextAnalyzer, getContextAnalyzer } from './ContextAnalyzer';
 import { InterestTracker, getInterestTracker } from './InterestTracker';
+import { PersonalizationEngine, ContentItem, getPersonalizationEngine } from './PersonalizationEngine';
 import {
   PersonalizedShowcaseItem,
   PersonalizationConfig,

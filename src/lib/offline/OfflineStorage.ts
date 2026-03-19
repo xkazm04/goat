@@ -17,6 +17,8 @@
  * See `src/lib/storage/storage-registry.ts` for the full architecture map.
  */
 
+import { ListSession } from '@/stores/item-store/types';
+
 import {
   OfflineConfig,
   DEFAULT_OFFLINE_CONFIG,
@@ -27,7 +29,6 @@ import {
   StorageEvent,
   StorageEventListener,
 } from './types';
-import { ListSession } from '@/stores/item-store/types';
 
 // Database store names
 const STORES = {

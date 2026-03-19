@@ -1,8 +1,9 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useShallow } from 'zustand/react/shallow';
-import { TopList } from '@/types/top-lists';
+
 import { listLogger } from '@/lib/logger';
+import { TopList } from '@/types/top-lists';
 
 export interface ListConfiguration extends TopList {
   metadata?: {

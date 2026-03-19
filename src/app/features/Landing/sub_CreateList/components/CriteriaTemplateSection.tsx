@@ -1,13 +1,16 @@
 'use client';
 
-import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Star, ChevronDown, Check, Sparkles, X } from 'lucide-react';
+import { useState, useMemo } from 'react';
+
+import { DURATION } from '@/lib/animations/motion-presets';
+import { mapCategoryToTemplate, getTemplatesForCategory } from '@/lib/criteria/templates';
 import { cn } from '@/lib/utils';
 import { useCriteriaStore } from '@/stores/criteria-store';
-import { mapCategoryToTemplate, getTemplatesForCategory } from '@/lib/criteria/templates';
+
 import type { CriteriaProfile } from '@/lib/criteria/types';
-import { DURATION } from '@/lib/animations/motion-presets';
+
 
 interface CriteriaTemplateSectionProps {
   /** Current list category (e.g., "Sports", "Movies") */

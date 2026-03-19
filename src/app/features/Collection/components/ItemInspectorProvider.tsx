@@ -1,10 +1,12 @@
 "use client";
 
 import { useCallback } from "react";
-import { ItemInspector, RelatedItem } from "./ItemInspector";
-import { useItemPopupStore } from "@/stores/item-popup-store";
-import { useGridStore } from "@/stores/grid-store";
+
 import { gridLogger } from "@/lib/logger";
+import { useGridStore } from "@/stores/grid-store";
+import { useItemPopupStore } from "@/stores/item-popup-store";
+
+import { ItemInspector, RelatedItem } from "./ItemInspector";
 
 /**
  * ItemInspectorProvider

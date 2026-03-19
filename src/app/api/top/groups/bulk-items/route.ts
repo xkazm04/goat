@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { cachedFetch } from '@/lib/cache/server-cache';
+
 import { getRequestId } from '@/lib/api/request-id';
+import { cachedFetch } from '@/lib/cache/server-cache';
+import { createClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
 

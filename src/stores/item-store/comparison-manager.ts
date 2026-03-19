@@ -1,4 +1,5 @@
 import { BacklogItemType } from '@/types/match';
+
 import { ComparisonState } from './types';
 
 export function createInitialComparisonState(): ComparisonState {

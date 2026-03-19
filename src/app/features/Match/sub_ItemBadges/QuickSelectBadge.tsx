@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Keyboard } from "lucide-react";
+
 import { DURATION } from "@/lib/animations/motion-presets";
 
 interface QuickSelectBadgeProps {

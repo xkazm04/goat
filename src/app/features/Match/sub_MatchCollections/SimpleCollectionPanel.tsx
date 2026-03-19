@@ -1,11 +1,14 @@
 "use client";
 
+import { useDndMonitor } from "@dnd-kit/core";
 import { useState, useEffect, useCallback, useRef, useDeferredValue } from "react";
 import { createPortal } from "react-dom";
-import { useDndMonitor } from "@dnd-kit/core";
-import { ItemCategory, CollectionItem } from "@/app/features/Collection/types";
+
 import { useQuickSelect } from "@/app/features/Collection/hooks/useQuickSelect";
+import { ItemCategory, CollectionItem } from "@/app/features/Collection/types";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { cn } from "@/lib/utils";
+
 import {
   CollectionSidebar,
   VirtualizedCollectionGrid,
@@ -13,13 +16,12 @@ import {
   QuickSelectStatusBar,
   useGridDimensions,
 } from "./components";
-import { CompactCollectionHeader } from "./components/CompactCollectionHeader";
-import { PanelResizeHandle } from "./components/PanelResizeHandle";
 import { AddCustomItemForm } from "./components/AddCustomItemForm";
+import { CompactCollectionHeader } from "./components/CompactCollectionHeader";
 import { MobileBacklogPanel } from "./components/MobileBacklogPanel";
+import { PanelResizeHandle } from "./components/PanelResizeHandle";
 import { useCollectionFiltering } from "./hooks/useCollectionFiltering";
 import { usePanelResize } from "./hooks/usePanelResize";
-import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 interface SimpleCollectionPanelProps {
   groups: ItemCategory[];

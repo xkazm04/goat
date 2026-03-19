@@ -7,8 +7,9 @@
  * Note: IGDB requires Twitch OAuth authentication.
  */
 
-import type { RawSourceData, EnrichmentInput } from '../types';
 import { calculateSimilarity } from '../utils/string-similarity';
+
+import type { RawSourceData, EnrichmentInput } from '../types';
 
 const IGDB_API_BASE = 'https://api.igdb.com/v4';
 const TWITCH_TOKEN_URL = 'https://id.twitch.tv/oauth2/token';

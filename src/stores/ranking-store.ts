@@ -24,8 +24,52 @@
 
 import { create } from 'zustand';
 import { persist, subscribeWithSelector } from 'zustand/middleware';
-import type { TransferableItem } from '@/lib/dnd/transfer-protocol';
+
+import {
+  createEmptyBracket,
+  seedBracket,
+  recordMatchupResult,
+  undoMatchupResult,
+  bracketToRanking,
+} from '@/app/features/Match/sub_MatchBracket/lib/bracketGenerator';
+import { seedParticipants } from '@/app/features/Match/sub_MatchBracket/lib/seedingEngine';
+import { backlogToTransferable } from '@/lib/dnd/type-guards';
 import { GRID_LIMITS } from '@/lib/grid/constants';
+import { extractTitle } from '@/lib/items/item-utils';
+import { tierLogger } from '@/lib/logger';
+import {
+  getBestPresetForSize,
+  DEFAULT_TIER_CONFIGURATION,
+} from '@/lib/tiers/constants';
+import {
+  calculateTierBoundaries,
+  createTiersFromBoundaries,
+  assignTiersToItems,
+  calculateTierSummary,
+  extractBoundaries,
+  generateTierSuggestions,
+  adjustPresetToSize,
+} from '@/lib/tiers/TierCalculator';
+import {
+  createEmptyRanking,
+  createRankedItem,
+  createEmptyRankedItem,
+  DEFAULT_TIER_CONFIG,
+  computeTierBoundaries,
+  getTierForPosition,
+} from '@/types/ranking';
+
+import type { TransferableItem } from '@/lib/dnd/transfer-protocol';
+import type {
+  TierDefinition,
+  TieredItem,
+  TierBoundary as TierBoundaryType,
+  TierSummary,
+  TierSuggestion,
+  TierAlgorithm,
+  TierPreset,
+  TierConfiguration,
+} from '@/lib/tiers/types';
 import type { BacklogItem } from '@/types/backlog-groups';
 import type {
   RankingMode,
@@ -38,52 +82,7 @@ import type {
   TierWithItems,
   TierDefinition as BaseTierDefinition,
   RankingStoreState,
-  TierBoundaries,
 } from '@/types/ranking';
-import {
-  createEmptyRanking,
-  createRankedItem,
-  createEmptyRankedItem,
-  DEFAULT_TIER_CONFIG,
-  computeTierBoundaries,
-  getTierForPosition,
-} from '@/types/ranking';
-import {
-  createEmptyBracket,
-  seedBracket,
-  recordMatchupResult,
-  undoMatchupResult,
-  bracketToRanking,
-  type BracketState,
-  type BracketSize,
-} from '@/app/features/Match/sub_MatchBracket/lib/bracketGenerator';
-import { seedParticipants, type SeedingStrategy } from '@/app/features/Match/sub_MatchBracket/lib/seedingEngine';
-import { backlogToTransferable } from '@/lib/dnd/type-guards';
-import { extractTitle } from '@/lib/items/item-utils';
-import {
-  calculateTierBoundaries,
-  createTiersFromBoundaries,
-  assignTiersToItems,
-  calculateTierSummary,
-  extractBoundaries,
-  generateTierSuggestions,
-  adjustPresetToSize,
-} from '@/lib/tiers/TierCalculator';
-import {
-  getBestPresetForSize,
-  DEFAULT_TIER_CONFIGURATION,
-} from '@/lib/tiers/constants';
-import type {
-  TierDefinition,
-  TieredItem,
-  TierBoundary as TierBoundaryType,
-  TierSummary,
-  TierSuggestion,
-  TierAlgorithm,
-  TierPreset,
-  TierConfiguration,
-} from '@/lib/tiers/types';
-import { tierLogger } from '@/lib/logger';
 
 // ============================================================================
 // Helper Functions

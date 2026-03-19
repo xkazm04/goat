@@ -9,6 +9,17 @@
  * 5. Returns unified enrichment result
  */
 
+import { DataNormalizer } from './DataNormalizer';
+import {
+  TMDBFetcher,
+  IGDBFetcher,
+  SpotifyFetcher,
+  WikipediaFetcher,
+} from './fetchers';
+import { ImageSelector } from './ImageSelector';
+import { SourceLatencyTracker } from './SourceLatencyTracker';
+import { SourceRouter } from './SourceRouter';
+
 import type {
   EnrichmentInput,
   EnrichmentResult,
@@ -19,16 +30,6 @@ import type {
   DataSource,
   EnrichmentCategory,
 } from './types';
-import { SourceRouter } from './SourceRouter';
-import { DataNormalizer } from './DataNormalizer';
-import { ImageSelector } from './ImageSelector';
-import {
-  TMDBFetcher,
-  IGDBFetcher,
-  SpotifyFetcher,
-  WikipediaFetcher,
-} from './fetchers';
-import { SourceLatencyTracker } from './SourceLatencyTracker';
 
 /**
  * Map of data sources to their fetchers

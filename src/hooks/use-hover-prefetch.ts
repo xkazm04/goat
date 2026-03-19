@@ -20,16 +20,16 @@
 'use client';
 
 import { useRef, useEffect, useCallback } from 'react';
+
+import { goatApi } from '@/lib/api/goat-api';
+import { CACHE_TTL_MS } from '@/lib/cache/unified-cache';
 import {
   HoverPrefetcher,
   type HoverPrefetchConfig,
-  type HoverTargetType,
 } from '@/lib/prefetch/HoverPrefetcher';
 import { type PrefetchTarget } from '@/lib/prefetch/PrefetchManager';
-import { topListsKeys } from '@/lib/query-keys/top-lists';
 import { collectionKeys } from '@/lib/query-keys/collection';
-import { goatApi } from '@/lib/api/goat-api';
-import { CACHE_TTL_MS } from '@/lib/cache/unified-cache';
+import { topListsKeys } from '@/lib/query-keys/top-lists';
 
 export interface UseHoverPrefetchOptions extends Omit<HoverPrefetchConfig, 'targets'> {
   /** Custom targets override */

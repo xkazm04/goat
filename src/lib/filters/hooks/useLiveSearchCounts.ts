@@ -7,6 +7,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
+
 import type { FilterableItem } from '../CollectionFilterIntegration';
 
 /**

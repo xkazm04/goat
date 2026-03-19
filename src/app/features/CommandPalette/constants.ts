@@ -6,8 +6,10 @@ import {
   User,
 } from "lucide-react";
 import { createElement } from "react";
-import type { SearchDomain } from "@/lib/search";
+
 import { GoatTrophy, GoatMusic, GoatGamepad, GoatBook } from "@/components/visual/GoatIcons";
+
+import type { SearchDomain } from "@/lib/search";
 
 // =============================================================================
 // Category constants (shared across CommandPalette features)

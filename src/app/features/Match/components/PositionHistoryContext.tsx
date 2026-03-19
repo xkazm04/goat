@@ -1,7 +1,9 @@
 'use client';
 
-import React, { createContext, useContext, useMemo } from 'react';
+import React, { createContext, useContext } from 'react';
+
 import { GridItemType } from '@/types/match';
+
 import { usePositionHistory, type PositionChange } from '../hooks/usePositionHistory';
 
 type PositionChanges = Record<string, PositionChange>;

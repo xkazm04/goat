@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo, useTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, X, Clock, Hash, Filter, ChevronDown } from "lucide-react";
-import { TopList } from "@/types/top-lists";
+import { useState, useRef, useEffect, useMemo, useTransition } from "react";
+
 import { ELEVATION, INSET, withInset } from "@/components/visual/depth";
-import { gradients } from "../shared/gradients";
-import { fuzzyMatch } from "@/lib/search/fuzzy";
 import { DURATION } from '@/lib/animations/motion-presets';
+import { fuzzyMatch } from "@/lib/search/fuzzy";
+import { TopList } from "@/types/top-lists";
+
+import { gradients } from "../shared/gradients";
 
 export interface SearchFilterResult {
   list: TopList;

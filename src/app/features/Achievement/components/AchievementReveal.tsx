@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trophy, Star, Sparkles, X } from "lucide-react";
-import { Achievement, TIER_CONFIG, CATEGORY_CONFIG } from "@/types/achievement";
+import { useState, useEffect } from "react";
+
+import { Achievement, TIER_CONFIG } from "@/types/achievement";
+
 import { AchievementCard } from "./AchievementCard";
 
 interface AchievementRevealProps {

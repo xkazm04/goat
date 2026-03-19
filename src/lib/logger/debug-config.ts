@@ -141,7 +141,6 @@ function createDebugAPI(): DebugAPI {
     enable: (category: LogCategory) => {
       debugConfig.enabled = true;
       debugConfig.categories.add(category);
-      // eslint-disable-next-line no-console
       console.log(`[GOAT Debug] Enabled category: ${category}`);
     },
 
@@ -150,7 +149,6 @@ function createDebugAPI(): DebugAPI {
       if (debugConfig.categories.size === 0) {
         debugConfig.enabled = false;
       }
-      // eslint-disable-next-line no-console
       console.log(`[GOAT Debug] Disabled category: ${category}`);
     },
 
@@ -158,14 +156,12 @@ function createDebugAPI(): DebugAPI {
       debugConfig.enabled = true;
       debugConfig.categories.clear();
       debugConfig.categories.add('*');
-      // eslint-disable-next-line no-console
       console.log('[GOAT Debug] All categories enabled');
     },
 
     disableAll: () => {
       debugConfig.enabled = false;
       debugConfig.categories.clear();
-      // eslint-disable-next-line no-console
       console.log('[GOAT Debug] All logging disabled');
     },
 
@@ -175,13 +171,11 @@ function createDebugAPI(): DebugAPI {
         if (debugConfig.categories.size === 0) {
           debugConfig.enabled = false;
         }
-        // eslint-disable-next-line no-console
         console.log(`[GOAT Debug] Disabled: ${category}`);
         return false;
       } else {
         debugConfig.enabled = true;
         debugConfig.categories.add(category);
-        // eslint-disable-next-line no-console
         console.log(`[GOAT Debug] Enabled: ${category}`);
         return true;
       }
@@ -189,13 +183,11 @@ function createDebugAPI(): DebugAPI {
 
     setLevel: (level: LogLevel) => {
       debugConfig.level = level;
-      // eslint-disable-next-line no-console
       console.log(`[GOAT Debug] Log level set to: ${level}`);
     },
 
     setTimestamps: (enabled: boolean) => {
       debugConfig.timestamps = enabled;
-      // eslint-disable-next-line no-console
       console.log(`[GOAT Debug] Timestamps: ${enabled ? 'enabled' : 'disabled'}`);
     },
 
@@ -204,9 +196,7 @@ function createDebugAPI(): DebugAPI {
         ? ['* (all)']
         : Array.from(debugConfig.categories);
 
-      // eslint-disable-next-line no-console
       console.log('%c[GOAT Debug Status]', 'color: #22c55e; font-weight: bold');
-      // eslint-disable-next-line no-console
       console.table({
         enabled: debugConfig.enabled,
         level: debugConfig.level,
@@ -216,9 +206,7 @@ function createDebugAPI(): DebugAPI {
     },
 
     categories: () => {
-      // eslint-disable-next-line no-console
       console.log('%c[GOAT Debug] Available categories:', 'color: #22c55e');
-      // eslint-disable-next-line no-console
       console.log(ALL_CATEGORIES.join(', '));
       return ALL_CATEGORIES;
     },
@@ -250,7 +238,6 @@ export function initializeDebugAPI(): void {
   const api = createDebugAPI();
   window.__DEBUG_GOAT__ = api;
 
-  // eslint-disable-next-line no-console
   console.log(
     '%c[GOAT Debug] Debug API initialized. Use window.__DEBUG_GOAT__.status() for help.',
     'color: #22c55e; font-style: italic'
@@ -277,7 +264,6 @@ export function createLogger(category: LogCategory): Logger {
     if (!shouldLog(category, level)) return;
     const ts = formatTimestamp();
     const prefix = `${ts}[${category}]`;
-    // eslint-disable-next-line no-console
     const consoleFn = level === 'error' ? console.error
       : level === 'warn' ? console.warn
       : level === 'info' ? console.info

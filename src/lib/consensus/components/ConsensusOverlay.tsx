@@ -1,6 +1,5 @@
 "use client";
 
-import { memo, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Flame,
@@ -8,13 +7,15 @@ import {
   TrendingUp,
   Eye,
   EyeOff,
-  Settings,
   BarChart3,
   ChevronDown,
   Sparkles,
   Target,
   Zap,
 } from "lucide-react";
+import { memo, useState } from "react";
+
+import { HeatmapLegend } from "../HeatmapRenderer";
 import {
   HeatmapViewMode,
   HeatmapConfig,
@@ -22,7 +23,6 @@ import {
   ItemConsensus,
   UserVsCommunityComparison,
 } from "../types";
-import { HeatmapLegend } from "../HeatmapRenderer";
 
 /**
  * Mode selector option

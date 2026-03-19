@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -15,6 +14,8 @@ import {
   Sparkles,
   ChevronRight,
 } from 'lucide-react';
+import { useState, useCallback, useMemo } from 'react';
+
 import {
   SYSTEM_TIER_PRESETS,
   getCustomPresetsByCategory as getPresetsByCategory,

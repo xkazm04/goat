@@ -1,8 +1,11 @@
 import { useMemo, useRef } from 'react';
-import { GridItemType } from '@/types/match';
-import { BacklogItem } from '@/types/backlog-groups';
-import { TierListTier } from '../../lib/tierPresets';
+
 import { mapsEqual, arraysEqual, arrayMapsEqual } from '@/lib/utils/deep-equal';
+import { BacklogItem } from '@/types/backlog-groups';
+import { GridItemType } from '@/types/match';
+
+import { TierListTier } from '../../lib/tierPresets';
+
 
 interface TierItemGroupsInput {
   backlogItems: BacklogItem[];

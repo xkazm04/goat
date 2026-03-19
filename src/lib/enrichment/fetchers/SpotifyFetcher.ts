@@ -7,8 +7,9 @@
  * Note: Spotify requires OAuth client credentials flow.
  */
 
-import type { RawSourceData, EnrichmentInput } from '../types';
 import { calculateSimilarity } from '../utils/string-similarity';
+
+import type { RawSourceData, EnrichmentInput } from '../types';
 
 const SPOTIFY_API_BASE = 'https://api.spotify.com/v1';
 const SPOTIFY_TOKEN_URL = 'https://accounts.spotify.com/api/token';

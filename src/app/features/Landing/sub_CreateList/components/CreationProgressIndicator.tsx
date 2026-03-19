@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, Loader2 } from "lucide-react";
+
 import { DURATION } from '@/lib/animations/motion-presets';
 
 export type CreationStep = "validating" | "creating" | "loading" | "complete";

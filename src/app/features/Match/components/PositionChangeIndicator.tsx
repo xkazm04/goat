@@ -1,7 +1,8 @@
 'use client';
 
-import { memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { memo } from 'react';
+
 import type { PositionChange } from '../hooks/usePositionHistory';
 
 interface PositionChangeIndicatorProps {

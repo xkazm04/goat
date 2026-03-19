@@ -6,8 +6,9 @@
  * Hero state: centered with ambient glow. Active state: compact with item count.
  */
 
-import { TopicInputForm } from './TopicInputForm';
 import { useStudioGeneration, useStudioItems } from '@/stores/studio-store';
+
+import { TopicInputForm } from './TopicInputForm';
 
 export function StudioFormPanel() {
   const { isGenerating } = useStudioGeneration();

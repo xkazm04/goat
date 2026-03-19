@@ -1,11 +1,14 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
-import { formatScore } from "@/lib/constants/scoring";
+
 import { StarRating } from "@/components/ui/star-rating";
-import type { ScoreRendererProps } from "./types";
 import { DURATION } from '@/lib/animations/motion-presets';
+import { formatScore } from "@/lib/constants/scoring";
+import { cn } from "@/lib/utils";
+
+import type { ScoreRendererProps } from "./types";
+
 
 // Conversion factor from 0-100 score to 0-5 star scale
 const STAR_MAX = 5;

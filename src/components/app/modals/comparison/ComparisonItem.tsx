@@ -1,9 +1,10 @@
 "use client";
 
-import { BacklogItemType } from "@/types/match";
 import { motion } from "framer-motion";
 import { Star, Gamepad2, Trophy, X, ArrowUpRight, Check, Grid3X3 } from "lucide-react";
 import { useState } from "react";
+
+import { BacklogItemType } from "@/types/match";
 
 interface ComparisonItemProps {
   item: BacklogItemType;

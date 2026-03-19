@@ -1,8 +1,10 @@
 "use client";
 
 import { memo } from "react";
-import { gradients } from "./gradients";
+
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
+
+import { gradients } from "./gradients";
 
 export interface FloatingOrbConfig {
   /** Position as percentage (0-100) */

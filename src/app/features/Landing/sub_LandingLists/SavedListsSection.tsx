@@ -1,27 +1,28 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bookmark,
   FolderPlus,
-  ChevronRight,
   Clock,
   Trash2,
   X,
 } from "lucide-react";
+import { useState, useCallback, useMemo } from "react";
+
+import { ELEVATION } from "@/components/visual/depth";
 import { useBookmarks, type Bookmark as BookmarkType, type BookmarkFolder } from "@/hooks/use-bookmarks";
-import { useTempUser } from "@/hooks/use-temp-user";
-import { usePlayList } from "@/hooks/use-play-list";
 import { useListThumbnails } from "@/hooks/use-list-thumbnails";
-import { NeonArenaTheme } from "../shared/NeonArenaTheme";
+import { usePlayList } from "@/hooks/use-play-list";
+import { useTempUser } from "@/hooks/use-temp-user";
+import { DURATION } from "@/lib/animations/motion-presets";
+import { getCategoryColor } from "@/lib/helpers/getColors";
+import { TopList } from "@/types/top-lists";
+
 import { SectionHeader } from "./SectionHeader";
 import { listContainerVariants, listItemVariants } from "../shared/animations";
 import { gradients } from "../shared/gradients";
-import { getCategoryColor } from "@/lib/helpers/getColors";
-import { ELEVATION } from "@/components/visual/depth";
-import { DURATION } from "@/lib/animations/motion-presets";
-import { TopList } from "@/types/top-lists";
+import { NeonArenaTheme } from "../shared/NeonArenaTheme";
 
 interface SavedListsSectionProps {
   className?: string;

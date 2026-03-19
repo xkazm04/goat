@@ -1,8 +1,11 @@
+import { dndLogger } from '@/lib/logger';
+
+import { requireStore } from '../validation-helpers';
+import { BaseTierOperation } from './BaseTierOperation';
+
 import type { DragContext, DragOperationResult, OperationStoreContext } from '../types';
 import type { ValidationResult } from '@/lib/validation';
-import { requireStore } from '../validation-helpers';
-import { dndLogger } from '@/lib/logger';
-import { BaseTierOperation } from './BaseTierOperation';
+
 
 /**
  * Handles moving items between different tiers

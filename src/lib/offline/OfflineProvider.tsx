@@ -1,17 +1,19 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, useCallback, useMemo, ReactNode } from 'react';
-import { initializeOfflineSessionSync, triggerSync } from './sessionStoreIntegration';
-import { useServiceWorker, useServiceWorkerUpdate } from './useServiceWorker';
-import { useNetworkStatus } from './useNetworkStatus';
-import { useOfflineSync, UseOfflineSyncReturn } from './useOfflineSync';
-import { ConflictRecord, ConflictResolutionStrategy } from './types';
-import { SyncStatusIndicator } from '@/app/features/Match/components/SyncStatusIndicator';
-import { ConflictResolutionModal } from '@/app/features/Match/components/ConflictResolutionModal';
-import { UnsavedChangesBanner } from './UnsavedChangesBanner';
-import { useUnsavedChangesGuard } from './useUnsavedChangesGuard';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RefreshCw, X } from 'lucide-react';
+import { createContext, useContext, useEffect, useState, useCallback, useMemo, ReactNode } from 'react';
+
+import { ConflictResolutionModal } from '@/app/features/Match/components/ConflictResolutionModal';
+import { SyncStatusIndicator } from '@/app/features/Match/components/SyncStatusIndicator';
+
+import { initializeOfflineSessionSync, triggerSync } from './sessionStoreIntegration';
+import { ConflictRecord, ConflictResolutionStrategy } from './types';
+import { UnsavedChangesBanner } from './UnsavedChangesBanner';
+import { useNetworkStatus } from './useNetworkStatus';
+import { useOfflineSync } from './useOfflineSync';
+import { useServiceWorkerUpdate } from './useServiceWorker';
+import { useUnsavedChangesGuard } from './useUnsavedChangesGuard';
 
 interface OfflineContextValue {
   // Network status

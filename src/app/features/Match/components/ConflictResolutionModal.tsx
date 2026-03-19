@@ -1,8 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useModalAccessibility } from '@/hooks/use-modal-accessibility';
 import {
   AlertTriangle,
   X,
@@ -13,6 +11,9 @@ import {
   ChevronRight,
   Check,
 } from 'lucide-react';
+import { useState, useMemo } from 'react';
+
+import { useModalAccessibility } from '@/hooks/use-modal-accessibility';
 import { ConflictRecord, ConflictResolutionStrategy } from '@/lib/offline/types';
 
 interface ConflictResolutionModalProps {

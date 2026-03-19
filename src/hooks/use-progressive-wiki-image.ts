@@ -6,6 +6,7 @@
  */
 
 import { useEffect, useState, useCallback, useRef } from "react";
+
 import { useWikiImageStore } from "@/stores/wiki-image-store";
 
 // Default fetch delay to avoid rate limiting

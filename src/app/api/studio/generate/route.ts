@@ -15,11 +15,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { zodToJsonSchema } from 'zod-to-json-schema';
-import { fetchWikipediaImage } from '@/lib/api/wiki-images';
-import { EnrichmentPipeline } from '@/lib/enrichment';
-import { createClient } from '@/lib/supabase/server';
+
 import { rateLimit, getRateLimitKey } from '@/lib/api/rate-limiter';
-import { getGeminiClient, GEMINI_MODEL_PRIMARY } from '@/lib/providers/gemini-client';
 import {
   handleStudioError,
   extractWikiTitle,
@@ -27,10 +24,15 @@ import {
   extractYearFromTitle,
   StudioErrorCodes,
 } from '@/lib/api/studio-utils';
+import { fetchWikipediaImage } from '@/lib/api/wiki-images';
+import { EnrichmentPipeline } from '@/lib/enrichment';
+import { getGeminiClient, GEMINI_MODEL_PRIMARY } from '@/lib/providers/gemini-client';
+import { createClient } from '@/lib/supabase/server';
 import {
   generateRequestSchema,
   geminiResponseSchema,
 } from '@/types/studio';
+
 import type { GeneratedItem } from '@/types/studio';
 
 export const dynamic = 'force-dynamic';

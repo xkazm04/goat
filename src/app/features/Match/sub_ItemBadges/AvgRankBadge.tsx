@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, TrendingUp, TrendingDown, Minus } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Users } from 'lucide-react';
+import { useMemo } from 'react';
+
 import { DURATION } from '@/lib/animations/motion-presets';
+import { cn } from '@/lib/utils';
 import { useItemConsensus } from '@/stores/consensus-store';
 
 interface AvgRankBadgeProps {

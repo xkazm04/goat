@@ -2,9 +2,12 @@
 
 import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
-import { FeedbackProgress } from './FeedbackProgress';
-import type { FeedbackProgressData } from '../types';
+
 import { cn } from '@/lib/utils';
+
+import { FeedbackProgress } from './FeedbackProgress';
+
+import type { FeedbackProgressData } from '../types';
 
 interface FeedbackLoadingStateProps {
   /** Loading message */

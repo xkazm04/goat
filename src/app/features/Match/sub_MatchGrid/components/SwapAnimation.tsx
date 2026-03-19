@@ -2,11 +2,13 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState, useMemo } from "react";
-import { calculateSwapPath, Vector2D, getPositionAwareSpringConfig, getFramerSpringConfig } from "../lib/physicsEngine";
-import { triggerSwapSequence, isHapticSupported } from "../lib/hapticFeedback";
+
 import { PlaceholderImage } from "@/components/ui/placeholder-image";
-import { getPositionBadgeStyles, getPositionTier } from "../../components/PositionBadge";
 import { DURATION } from '@/lib/animations/motion-presets';
+
+import { getPositionBadgeStyles, getPositionTier } from "../../components/PositionBadge";
+import { triggerSwapSequence, isHapticSupported } from "../lib/hapticFeedback";
+import { calculateSwapPath, Vector2D, getPositionAwareSpringConfig, getFramerSpringConfig } from "../lib/physicsEngine";
 
 /** Map position tier to an RGBA flash color */
 function getTierFlashColor(position: number): [number, number, number] {

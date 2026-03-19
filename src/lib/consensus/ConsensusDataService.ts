@@ -7,12 +7,10 @@ import {
   ItemConsensus,
   CommunityRanking,
   ConsensusLevel,
-  ConsensusTrend,
   UserVsCommunityComparison,
   HeatmapCell,
   HeatIntensity,
   ConsensusBadge,
-  ConsensusBadgeType,
   CONSENSUS_THRESHOLDS,
   DEFAULT_HEATMAP_COLORS,
 } from './types';

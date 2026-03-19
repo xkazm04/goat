@@ -3,14 +3,15 @@
  * Extracts facetable values from item collections
  */
 
+import { DEFAULT_FACET_DEFINITIONS } from './types';
+import { createFieldAccessor as createNestedFieldAccessor } from './utils';
+
 import type {
   FacetDefinition,
   FacetValue,
   HierarchicalFacetNode,
   FacetExtractionConfig,
 } from './types';
-import { DEFAULT_FACET_DEFINITIONS } from './types';
-import { createFieldAccessor as createNestedFieldAccessor } from './utils';
 
 /**
  * Raw extracted facet data before aggregation

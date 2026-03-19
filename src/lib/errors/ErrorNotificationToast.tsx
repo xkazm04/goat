@@ -10,8 +10,11 @@ import {
   Copy,
 } from 'lucide-react';
 import { useState } from 'react';
+
 import { cn } from '@/lib/utils';
+
 import { useErrorNotifications, type ErrorNotification } from './error-notification-store';
+
 import type { ErrorSeverity } from './types';
 
 // ============================================================================

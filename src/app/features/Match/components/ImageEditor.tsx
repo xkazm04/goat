@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Sun,
@@ -8,14 +7,15 @@ import {
   Droplets,
   Sparkles,
   RotateCcw,
-  Download,
   X,
   Check,
-  Crop,
   Palette,
   SlidersHorizontal,
 } from "lucide-react";
+import { useState, useCallback, useRef, useEffect } from "react";
+
 import { cn } from "@/lib/utils";
+
 import type { ImageFilter } from "../lib/ai/types";
 
 export interface ImageEditorProps {

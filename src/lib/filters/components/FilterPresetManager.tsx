@@ -5,21 +5,23 @@
  * Save/load filter combinations
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Pencil, Trash2, AlertTriangle } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+
+import { GoatBookmark } from '@/components/illustrations/EmptyStateIllustrations';
 import { GoatSave, GoatTarget } from '@/components/visual/GoatIcons';
 import { cn } from '@/lib/utils';
-import type { FilterPreset, FilterConfig } from '../types';
+
 import {
   PRESET_ICONS,
   PRESET_COLORS,
   FILTER_ANIMATIONS,
   FILTER_TIMING,
   FILTER_SCALE,
-  EMPTY_FILTER_CONFIG,
 } from '../constants';
-import { GoatBookmark } from '@/components/illustrations/EmptyStateIllustrations';
+
+import type { FilterPreset, FilterConfig } from '../types';
 
 /**
  * FilterPresetManager Props

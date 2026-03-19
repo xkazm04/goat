@@ -1,8 +1,10 @@
 "use client";
 
-import { useMemo } from 'react';
 import { motion } from 'framer-motion';
+import { useMemo } from 'react';
+
 import { GoatCrownTrophy } from '@/components/illustrations/GoatCrownTrophy';
+
 import { BracketState } from '../../lib/bracketGenerator';
 
 /** Confetti particle colors from brand palette */

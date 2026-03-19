@@ -7,7 +7,6 @@
  * Shows visual feedback for active filters and search.
  */
 
-import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Clock,
@@ -16,12 +15,15 @@ import {
   TrendingUp,
   Loader2,
 } from 'lucide-react';
+import React, { useMemo } from 'react';
+
+import { GoatZeroResults } from '@/components/illustrations/EmptyStateIllustrations';
 import { GoatFilter, GoatSearch } from '@/components/visual/GoatIcons';
 import { cn } from '@/lib/utils';
-import { GoatZeroResults } from '@/components/illustrations/EmptyStateIllustrations';
+
 import { useFilterIntegrationOptional } from '../CollectionFilterIntegration';
+
 import type { FilterConfig } from '../types';
-import { FILTER_TIMING } from '../constants';
 
 /**
  * Props for FilterResultsCounter

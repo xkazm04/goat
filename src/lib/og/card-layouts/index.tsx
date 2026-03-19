@@ -7,11 +7,12 @@ export { ListLayout } from './ListLayout';
 export { GridLayout } from './GridLayout';
 export { FeaturedLayout } from './FeaturedLayout';
 
-import type { OGCardLayout, OGCardData, OGCardOptions, OGCardTheme } from '../types';
 import { DEFAULT_THEME } from '../types';
-import { ListLayout } from './ListLayout';
-import { GridLayout } from './GridLayout';
 import { FeaturedLayout } from './FeaturedLayout';
+import { GridLayout } from './GridLayout';
+import { ListLayout } from './ListLayout';
+
+import type { OGCardLayout, OGCardData, OGCardOptions, OGCardTheme } from '../types';
 
 /**
  * Get the appropriate layout component for the given layout type

@@ -2,9 +2,11 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, Check, X, Sparkles, AlertTriangle, Crown } from 'lucide-react';
-import type { ExtendedFeedbackState, StateIndicatorConfig, FeedbackVisuals } from '../types';
-import { cn } from '@/lib/utils';
+
 import { DURATION } from '@/lib/animations/motion-presets';
+import { cn } from '@/lib/utils';
+
+import type { ExtendedFeedbackState, StateIndicatorConfig, FeedbackVisuals } from '../types';
 
 interface FeedbackStateIndicatorProps {
   /** Current state to display */

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { Sparkles, Loader2 } from "lucide-react";
+import { useState } from "react";
+
 import {
   GlassModal,
   GlassModalHeader,
@@ -9,9 +10,9 @@ import {
   GlassModalFooter,
   GLASS_INPUT_CLASS,
 } from "@/components/ui/glass-modal";
-import { useCurrentList } from "@/stores/use-list-store";
-import { topItemsApi } from "@/lib/api/top-items";
 import { toast } from "@/hooks/use-toast";
+import { topItemsApi } from "@/lib/api/top-items";
+import { useCurrentList } from "@/stores/use-list-store";
 
 interface AddItemModalProps {
   isOpen: boolean;

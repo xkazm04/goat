@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import { createClient } from '@/lib/supabase/server';
-import type { ItemDetailResponse, ActivityTimelineData, ActivityEvent, TrajectoryPoint } from '@/types/item-details';
+
 import type { TypedSupabaseClient } from '@/lib/supabase/types';
 import type { ItemRow } from '@/types/database';
+import type { ItemDetailResponse, ActivityTimelineData, ActivityEvent, TrajectoryPoint } from '@/types/item-details';
 
 
 // Force dynamic rendering

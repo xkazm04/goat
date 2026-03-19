@@ -6,14 +6,16 @@
  * Glass-morphism tabbed container for Generated Items and Rating Criteria.
  */
 
-import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { DURATION } from '@/lib/animations/motion-presets';
 import { ListOrdered, BarChart3 } from 'lucide-react';
+import { useState } from 'react';
+
+import { DURATION } from '@/lib/animations/motion-presets';
 import { cn } from '@/lib/utils';
-import { StudioItemsView } from './StudioItemsView';
-import { CriteriaEditor } from './CriteriaEditor';
 import { useStudioCriteria, useStudioItems } from '@/stores/studio-store';
+
+import { CriteriaEditor } from './CriteriaEditor';
+import { StudioItemsView } from './StudioItemsView';
 
 type TabId = 'items' | 'criteria';
 

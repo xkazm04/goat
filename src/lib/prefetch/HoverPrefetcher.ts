@@ -12,8 +12,8 @@
  * - Custom prefetch targets per element type
  */
 
-import { PrefetchManager, type PrefetchTarget } from './PrefetchManager';
 import { PredictionEngine } from './PredictionEngine';
+import { PrefetchManager, type PrefetchTarget } from './PrefetchManager';
 import { RoutePreloader } from './RoutePreloader';
 
 export type HoverTargetType = 'list-card' | 'category' | 'blueprint' | 'link' | 'custom';

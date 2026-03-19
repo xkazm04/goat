@@ -8,9 +8,9 @@
  * the awards page is accessed. This reduces the initial bundle size.
  */
 
-import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
 import { Loader2, Trophy } from 'lucide-react';
+import dynamic from 'next/dynamic';
 
 interface LazyAwardListProps {
   parentListId: string;

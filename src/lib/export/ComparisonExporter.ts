@@ -1,5 +1,5 @@
-import type { BacklogItemType } from "@/types/match";
 import type { FullComparisonResult } from "@/lib/comparison/attribute-comparators";
+import type { BacklogItemType } from "@/types/match";
 
 /**
  * Export options for comparison images

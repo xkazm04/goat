@@ -5,22 +5,24 @@
  * Animated show/hide panel with gesture support
  */
 
+import { motion, AnimatePresence, PanInfo, useAnimation } from 'framer-motion';
 import React, {
   useRef,
   useCallback,
-  useEffect,
   useState,
   type ReactNode,
 } from 'react';
-import { motion, AnimatePresence, PanInfo, useAnimation } from 'framer-motion';
+
 import { cn } from '@/lib/utils';
-import { useLayout, useSidebarState } from '../LayoutManager';
+
 import {
   LAYOUT_ANIMATIONS,
   LAYOUT_Z_INDEX,
   GESTURE_THRESHOLDS,
   SIDEBAR_CONSTRAINTS,
 } from '../constants';
+import { useLayout, useSidebarState } from '../LayoutManager';
+
 import type { PanelState, SidebarPosition } from '../types';
 
 /**

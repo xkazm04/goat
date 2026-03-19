@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, useDragControls } from "framer-motion";
 import {
   X,
@@ -10,6 +9,8 @@ import {
   Plus,
   TrendingUp,
 } from "lucide-react";
+import Image from "next/image";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   BarChart,
   Bar,
@@ -19,15 +20,15 @@ import {
   Cell,
   ReferenceLine,
 } from "recharts";
-import type { BarShapeProps } from "recharts";
-import Image from "next/image";
-import { cn } from "@/lib/utils";
-import { SPRING } from "@/lib/animations/motion-presets";
-import { useReducedMotion } from "@/hooks/use-reduced-motion";
+
 import { GoatBrokenFrame } from "@/components/illustrations/EmptyStateIllustrations";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import { SPRING , DURATION } from "@/lib/animations/motion-presets";
+import { cn } from "@/lib/utils";
 import { useItemPopupStore, PopupInstance } from "@/stores/item-popup-store";
+
 import type { ItemDetailResponse } from "@/types/item-details";
-import { DURATION } from '@/lib/animations/motion-presets';
+import type { BarShapeProps } from "recharts";
 
 interface ItemDetailPopupProps {
   popup: PopupInstance;

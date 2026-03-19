@@ -8,10 +8,12 @@
  * for isDragging/item identity changes, never for coordinates.
  */
 
+import { useDndMonitor } from "@dnd-kit/core";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
-import { useDndMonitor } from "@dnd-kit/core";
+
 import { PlaceholderImage } from "@/components/ui/placeholder-image";
+
 import { useOptionalDropZoneHighlight } from "./DropZoneHighlightContext";
 
 interface DraggableItem {

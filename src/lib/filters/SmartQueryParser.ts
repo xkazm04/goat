@@ -13,16 +13,16 @@
  * - "unranked items" → ranking is empty
  */
 
+import { EMPTY_FILTER_CONFIG } from './constants';
+import { getPresetSearchKeywords } from './presets';
+
 import type {
   FilterConfig,
   FilterCondition,
-  FilterGroup,
   FilterOperator,
   FilterValueType,
   FilterCombinator,
 } from './types';
-import { EMPTY_FILTER_CONFIG } from './constants';
-import { getPresetSearchKeywords } from './presets';
 
 // Pre-compiled regex patterns used in hot parsing paths
 const RE_FIELD_COLON = /\w+:/;

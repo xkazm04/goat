@@ -1,16 +1,18 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { DURATION } from '@/lib/animations/motion-presets';
 import { Plus, ChevronUp, Loader2, Sparkles, Search, Check, X, LogIn } from 'lucide-react';
-import { topItemsApi, type TopItem } from '@/lib/api/top-items';
+import { useState, useRef } from 'react';
+
+import { useAuthUser } from '@/hooks/use-auth-user';
+import { DURATION } from '@/lib/animations/motion-presets';
 import { apiClient } from '@/lib/api/client';
+import { topItemsApi, type TopItem } from '@/lib/api/top-items';
 import { useBacklogStore } from '@/stores/backlog-store';
 import { useCurrentList } from '@/stores/use-list-store';
-import { useAuthUser } from '@/hooks/use-auth-user';
+
 import type { BacklogItem } from '@/types/backlog-groups';
-import { cn } from '@/lib/utils';
+
 
 interface AddCustomItemFormProps {
   category: string;

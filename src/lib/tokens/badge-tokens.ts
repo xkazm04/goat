@@ -7,7 +7,7 @@
  */
 
 import { Trophy, Medal, Star, Circle } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+
 import type {
   BadgeColor,
   BadgeSize,
@@ -15,6 +15,7 @@ import type {
   PositionTier,
   ConsensusTier,
 } from '@/components/patterns/badges/types';
+import type { LucideIcon } from 'lucide-react';
 
 // =============================================================================
 // Size Scale

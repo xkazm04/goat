@@ -1,8 +1,9 @@
 "use client";
 
-import { memo, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Sparkles, TrendingUp, Target, Award } from "lucide-react";
+import { Sparkles, Target, Award } from "lucide-react";
+import { memo, useMemo } from "react";
+
 import { ListSize, SizeRecommendation, SIZE_OPTIONS } from "./types";
 
 interface SizeRecommenderProps {

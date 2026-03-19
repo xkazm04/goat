@@ -1,10 +1,11 @@
 "use client";
 
+import { motion, AnimatePresence } from "framer-motion";
 import * as React from "react";
 import { useState, useEffect } from "react";
-import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
+
 import { useProgressiveWikiImage } from "@/hooks/use-progressive-wiki-image";
+import { cn } from "@/lib/utils";
 
 // Animation timing constants
 const PLACEHOLDER_EXIT_DURATION = 0.3;

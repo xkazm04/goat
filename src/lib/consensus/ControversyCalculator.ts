@@ -6,8 +6,6 @@
 import {
   ItemConsensus,
   ConsensusLevel,
-  CommunityRanking,
-  ConsensusTrend,
 } from './types';
 
 /**

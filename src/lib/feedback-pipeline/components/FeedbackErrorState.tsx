@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { AlertCircle, RefreshCw, Home, X } from 'lucide-react';
+
 import { cn } from '@/lib/utils';
 
 interface FeedbackErrorStateProps {

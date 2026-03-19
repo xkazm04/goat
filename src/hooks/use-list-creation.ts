@@ -12,29 +12,30 @@
  * - Store updates
  */
 
-import { useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { useTempUser } from './use-temp-user';
-import { useListStore } from '@/stores/use-list-store';
-import { toast } from './use-toast';
-import {
-  ListCreationService,
-  listCreationService,
-  CreationStep,
-  ListCreationResult,
-  ListCreationOptions,
-} from '@/services/list-creation-service';
-import {
-  ListIntent,
-  createListIntent,
-  updateListIntent,
-} from '@/types/list-intent';
+import { useState, useCallback, useRef } from 'react';
+
 import {
   validateListIntentComplete,
   ListIntentValidationResult,
   ValidationContext,
 } from '@/lib/validation/list-intent-validator';
-import { listIntentToMetadata } from '@/types/list-intent-transformers';
+import {
+  ListCreationService,
+  listCreationService,
+  CreationStep,
+  ListCreationResult,
+} from '@/services/list-creation-service';
+import { useListStore } from '@/stores/use-list-store';
+import {
+  ListIntent,
+  createListIntent,
+  updateListIntent,
+} from '@/types/list-intent';
+
+import { useTempUser } from './use-temp-user';
+import { toast } from './use-toast';
+
 
 // ============================================================================
 // Types

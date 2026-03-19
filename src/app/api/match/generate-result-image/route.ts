@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GEMINI_MODEL_REST } from '@/lib/providers/gemini-client';
+
 import { rateLimit, getRateLimitKey } from '@/lib/api/rate-limiter';
-import { GridItemType } from '@/types/match';
 import {
   LayoutEngine,
   BalanceOptimizer,
@@ -14,6 +13,8 @@ import {
   type BalanceAnalysis,
   type ColorHarmony,
 } from '@/lib/image-gen';
+import { GEMINI_MODEL_REST } from '@/lib/providers/gemini-client';
+import { GridItemType } from '@/types/match';
 
 interface GenerateImageRequest {
   gridItems: GridItemType[];

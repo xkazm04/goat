@@ -8,8 +8,10 @@
  */
 
 import { useEffect, useRef, useCallback } from 'react';
+
 import { loadYouTubeAPI } from '@/lib/youtube';
 import { useAudioStore } from '@/stores/audio-store';
+
 import type { YouTubePlayer } from '@/types/youtube';
 
 export function YouTubeEmbed() {

@@ -5,13 +5,13 @@
  * Uses normalized position data to create a global rating that is context-agnostic.
  */
 
-import type { TierLabel, ExtendedTierLabel } from '@/lib/tiers/types';
 import type {
   UniversalRating,
   ContextRating,
   RankingTrajectory,
   TrajectoryPoint,
 } from './types';
+import type { TierLabel, ExtendedTierLabel } from '@/lib/tiers/types';
 
 // =============================================================================
 // ELO Constants

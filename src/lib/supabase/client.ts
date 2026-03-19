@@ -1,4 +1,5 @@
 import { createBrowserClient } from '@supabase/ssr'
+
 import type { Database } from '@/types/database'
 
 // Module-level singleton for the browser Supabase client.

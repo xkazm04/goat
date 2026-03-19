@@ -1,16 +1,18 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useState } from "react";
-import SetupListSize from "./SetupListSize";
-import SetupTimePeriod from "./SetupTimePeriod";
-import SetupCategory from "./SetupCategory";
+
 import {
   CATEGORIES,
   getSubcategories,
   getDefaultSubcategory,
   categoryHasSubcategories,
 } from "@/lib/config/category-config";
+
+import SetupCategory from "./SetupCategory";
+import SetupListSize from "./SetupListSize";
+import SetupTimePeriod from "./SetupTimePeriod";
 
 interface CompositionModalLeftContentProps {
   selectedCategory: string;

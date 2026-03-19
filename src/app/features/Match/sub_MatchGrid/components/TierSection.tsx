@@ -5,13 +5,16 @@
  * Collapsible section with tier-aware styling and statistics
  */
 
-import { memo, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ChevronUp, Sparkles } from "lucide-react";
-import { SimpleDropZone } from "../../sub_DropZone/SimpleDropZone";
-import { GridItemType } from "@/types/match";
-import { TierDefinition, TierId, getTierCSSProperties } from "../lib/tierConfig";
+import { memo, useRef, useMemo } from "react";
+
 import { DURATION } from "@/lib/animations/motion-presets";
+import { GridItemType } from "@/types/match";
+
+import { SimpleDropZone } from "../../sub_DropZone/SimpleDropZone";
+import { TierDefinition, getTierCSSProperties } from "../lib/tierConfig";
+
 
 interface TierSectionProps {
   /** Tier configuration */

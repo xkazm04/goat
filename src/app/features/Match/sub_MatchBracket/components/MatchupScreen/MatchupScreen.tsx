@@ -1,16 +1,19 @@
 "use client";
 
-import { useState, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { DURATION } from '@/lib/animations/motion-presets';
 import { X, Trophy, Info, ChevronRight, Undo2, Scale } from 'lucide-react';
+import { useState, useCallback, useMemo, useRef } from 'react';
+
+import { DURATION } from '@/lib/animations/motion-presets';
+
+
+import { ComparisonModal } from '../../../ComparisonModal';
 import { BracketMatchup, BracketState, CompletedVote } from '../../lib/bracketGenerator';
 import { useBracketDimensions } from '../../lib/useBracketDimensions';
 import { VotingHistoryStrip } from '../VotingHistoryStrip';
-import { ComparisonModal } from '../../../ComparisonModal';
 import { ParticipantCard } from './ParticipantCard';
-import { VSDivider } from './VSDivider';
 import { useMatchupKeyboard } from './useMatchupKeyboard';
+import { VSDivider } from './VSDivider';
 
 interface MatchupScreenProps {
   matchup: BracketMatchup;

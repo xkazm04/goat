@@ -5,13 +5,17 @@
  * Quick layout switching component
  */
 
-import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence, type TargetAndTransition } from 'framer-motion';
-import { cn } from '@/lib/utils';
-import { useLayoutPreset } from '../LayoutManager';
-import { LAYOUT_PRESETS, LAYOUT_ANIMATIONS } from '../constants';
-import type { LayoutPreset, LayoutPresetConfig } from '../types';
+import React, { useState, useCallback } from 'react';
+
 import { DURATION } from '@/lib/animations/motion-presets';
+import { cn } from '@/lib/utils';
+
+import { LAYOUT_PRESETS, LAYOUT_ANIMATIONS } from '../constants';
+import { useLayoutPreset } from '../LayoutManager';
+
+import type { LayoutPreset, LayoutPresetConfig } from '../types';
+
 
 /**
  * LayoutPresetSelector Props

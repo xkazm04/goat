@@ -5,17 +5,20 @@
  * Responsive facet UI for mobile devices - slides up from bottom
  */
 
-import React, { useCallback, useEffect, useState } from 'react';
 import { motion, AnimatePresence, useDragControls, PanInfo } from 'framer-motion';
+import React, { useCallback, useEffect, useState } from 'react';
+
 import { cn } from '@/lib/utils';
+
+import { FacetBreadcrumbs } from './FacetBreadcrumbs';
+import { FacetPanel } from './FacetPanel';
+
 import type {
   Facet,
   FacetSelection,
   HierarchicalFacet,
   FacetActions,
 } from '../types';
-import { FacetPanel } from './FacetPanel';
-import { FacetBreadcrumbs } from './FacetBreadcrumbs';
 
 /**
  * MobileFacetDrawer Props

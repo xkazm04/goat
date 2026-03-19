@@ -5,14 +5,16 @@
  * Adds: target must be empty (not occupied).
  */
 
+import { dndLogger } from '@/lib/logger';
+
+import { BaseGridOperation } from './BaseGridOperation';
+
 import type {
   DragContext,
   DragOperationResult,
   OperationStoreContext,
 } from './types';
 import type { ValidationResult } from '@/lib/validation';
-import { BaseGridOperation } from './BaseGridOperation';
-import { dndLogger } from '@/lib/logger';
 
 /**
  * MoveOperation handles moving grid items to empty slots

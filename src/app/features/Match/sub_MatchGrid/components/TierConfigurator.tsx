@@ -1,11 +1,9 @@
 "use client";
 
-import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Settings,
   X,
-  Palette,
   Type,
   ChevronDown,
   Check,
@@ -13,16 +11,19 @@ import {
   Trash2,
   RotateCcw,
   Download,
-  Share2,
 } from 'lucide-react';
+import { useState, useCallback } from 'react';
+
+
+import { TIER_COLORS } from '@/lib/tiers/constants';
+import { ExtendedTierLabel } from '@/lib/tiers/types';
+
 import {
   TierListTier,
   TierListPreset,
   TIER_LIST_PRESETS,
   createCustomTier,
 } from '../../lib/tierPresets';
-import { TIER_COLORS, TIER_DESCRIPTIONS } from '@/lib/tiers/constants';
-import { ExtendedTierLabel } from '@/lib/tiers/types';
 
 interface TierConfiguratorProps {
   currentPreset: TierListPreset;

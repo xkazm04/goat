@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+
 import { AchievementCard } from '@/app/features/Achievement';
 
 // Generate metadata for Open Graph sharing

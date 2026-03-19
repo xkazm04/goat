@@ -6,8 +6,9 @@
  */
 
 import { useEffect, useCallback, useMemo } from "react";
-import { useGridStore } from "@/stores/grid-store";
+
 import { getTierForPositionGeneric, isTierTransitionGeneric, rangeFromTierDef } from "@/lib/tiers/boundary";
+import { useGridStore } from "@/stores/grid-store";
 import {
   useRankingStore,
   selectSmartTierConfiguration,
@@ -16,10 +17,10 @@ import {
   selectSmartTierSummary,
   selectIsSmartTierCalculating,
   selectSmartTiersEnabled,
-  selectSmartTierBoundaries,
   useSmartTierForPosition,
   useIsSmartTierBoundary,
 } from "@/stores/ranking-store";
+
 import type { TierDefinition, TieredItem, TierSummary } from "@/lib/tiers/types";
 
 interface TierIntegrationOptions {

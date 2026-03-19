@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { transformCollectionRow, generateShareSlug } from '@/types/collection';
+
+import { withTiming } from '@/lib/api/request-timing';
 import {
   withErrorHandler,
   fromSupabaseError,
@@ -8,7 +8,8 @@ import {
   noContentResponse,
   NotFoundError,
 } from '@/lib/errors';
-import { withTiming } from '@/lib/api/request-timing';
+import { createClient } from '@/lib/supabase/server';
+import { transformCollectionRow, generateShareSlug } from '@/types/collection';
 
 // Force dynamic rendering for this route since it uses cookies
 export const dynamic = 'force-dynamic';

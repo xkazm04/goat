@@ -2,7 +2,10 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState, useMemo } from "react";
+
 import { useMotionCapabilities } from "@/hooks/use-motion-preference";
+import { DURATION } from '@/lib/animations/motion-presets';
+
 import {
   generateConfettiParticles,
   generateSparkles,
@@ -10,7 +13,6 @@ import {
   SparkleParticleComponent,
   GlowPulseRing,
 } from "./celebrationParticles";
-import { DURATION } from '@/lib/animations/motion-presets';
 
 interface DropCelebrationProps {
   isActive: boolean;

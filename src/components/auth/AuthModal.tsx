@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
+import { useEffect, useRef, useCallback } from 'react';
+
 import { SURFACE_ELEVATION, ELEVATION, INSET } from '@/components/visual/depth/depth-tokens';
-import { DURATION } from '@/lib/animations/motion-presets';
 import { useAuthUser } from '@/hooks/use-auth-user';
 import { toast } from '@/hooks/use-toast';
+import { DURATION } from '@/lib/animations/motion-presets';
 
 interface AuthModalProps {
   isOpen: boolean;

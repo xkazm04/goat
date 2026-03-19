@@ -1,7 +1,23 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { GridItemType, BacklogItemType, BacklogGroupType } from '@/types/match';
-import { ListSession, SessionProgress } from './item-store/types';
+
+import { GRID_LIMITS } from '@/lib/grid/constants';
+import { sessionLogger } from '@/lib/logger';
+import { saveSessionToOffline, getOfflineSession } from '@/lib/offline/sessionStoreIntegration';
+import { reconcileSessionSources } from '@/lib/storage/storage-registry';
+import { DEBOUNCE } from '@/lib/timing';
+import { BacklogGroup, BacklogItem } from '@/types/backlog-groups';
+import { GridItemType, BacklogGroupType } from '@/types/match';
+
+import {
+  NormalizedBacklogData,
+  normalizeBacklogGroups,
+  denormalizeToBacklogGroup,
+  denormalizeToBacklogGroupType,
+  migrateFromLegacyFormat,
+  createEmptyNormalizedData,
+  NormalizedOps
+} from './item-store/normalized-session';
 import {
   createEmptySession,
   updateSessionTimestamp,
@@ -11,23 +27,9 @@ import {
   hasUnsavedChanges,
   getSessionMetadata,
 } from './item-store/session-manager';
-import { BacklogGroup, BacklogItem } from '@/types/backlog-groups';
-import {
-  NormalizedBacklogData,
-  normalizeBacklogGroups,
-  denormalizeToBacklogGroup,
-  denormalizeToBacklogGroupType,
-  migrateFromLegacyFormat,
-  isNormalizedData,
-  createEmptyNormalizedData,
-  NormalizedOps
-} from './item-store/normalized-session';
-import { saveSessionToOffline, getOfflineSession } from '@/lib/offline/sessionStoreIntegration';
-import { reconcileSessionSources } from '@/lib/storage/storage-registry';
+import { ListSession, SessionProgress } from './item-store/types';
 import { useSelectionCursor } from './selection-cursor';
-import { sessionLogger } from '@/lib/logger';
-import { GRID_LIMITS } from '@/lib/grid/constants';
-import { DEBOUNCE } from '@/lib/timing';
+
 
 interface SessionStoreState {
   // Hydration readiness flag - true once persist middleware has rehydrated from storage

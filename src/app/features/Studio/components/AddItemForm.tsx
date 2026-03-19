@@ -7,16 +7,19 @@
  * Automatically finds images via Wikipedia/Gemini API.
  */
 
-import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { DURATION } from '@/lib/animations/motion-presets';
 import { Plus, ChevronUp, Loader2, ImageIcon } from 'lucide-react';
+import { useState } from 'react';
+
 import { Button } from '@/components/ui/button';
-import { useStudioItems } from '@/stores/studio-store';
-import { apiClient } from '@/lib/api/client';
-import type { EnrichedItem } from '@/types/studio';
 import { SURFACE_ELEVATION } from '@/components/visual/depth/depth-tokens';
+import { DURATION } from '@/lib/animations/motion-presets';
+import { apiClient } from '@/lib/api/client';
+import { useStudioItems } from '@/stores/studio-store';
+
 import { StudioError } from './StudioError';
+
+import type { EnrichedItem } from '@/types/studio';
 
 interface FindImageResponse {
   image_url: string | null;

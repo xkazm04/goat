@@ -5,18 +5,19 @@
  * Drag-to-resize panels component
  */
 
+import { motion, PanInfo, useMotionValue, useTransform } from 'framer-motion';
 import React, {
   useRef,
   useCallback,
-  useEffect,
   useState,
   type ReactNode,
 } from 'react';
-import { motion, PanInfo, useMotionValue, useTransform } from 'framer-motion';
+
 import { cn } from '@/lib/utils';
-import { useLayout } from '../LayoutManager';
+
 import { SIDEBAR_CONSTRAINTS, LAYOUT_ANIMATIONS } from '../constants';
-import type { ResizeEvent } from '../types';
+import { useLayout } from '../LayoutManager';
+
 
 /**
  * ResizableHandle Props

@@ -1,11 +1,13 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { DURATION } from '@/lib/animations/motion-presets';
 import { Sparkles } from "lucide-react";
+
 import { GoatCrown } from "@/components/visual/GoatIcons";
-import { usePersonalizedWelcome } from "@/lib/personalization";
 import { useAnimationPause } from "@/hooks/use-animation-pause";
+import { DURATION } from '@/lib/animations/motion-presets';
+import { usePersonalizedWelcome } from "@/lib/personalization";
+
 import { gradients } from "./shared/gradients";
 
 // Individual letter configuration for staggered animation

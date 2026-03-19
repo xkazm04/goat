@@ -5,11 +5,14 @@
  * Active filter trail showing all selected facet values
  */
 
-import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import React, { useMemo } from 'react';
+
 import { cn } from '@/lib/utils';
-import type { FacetBreadcrumb, FacetSelection, Facet, HierarchicalFacet } from '../types';
+
 import { FILTER_ANIMATIONS, FILTER_TIMING } from '../../constants';
+
+import type { FacetBreadcrumb, FacetSelection, Facet, HierarchicalFacet } from '../types';
 
 /**
  * FacetBreadcrumbs Props

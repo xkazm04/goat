@@ -1,9 +1,10 @@
 "use client";
 
-import { ListIntent } from "@/types/list-intent";
 import { X, Sparkles, User, MessageCircle, Settings } from "lucide-react";
-import { ShimmerBtn } from "@/components/app/button/AnimButtons";
+
 import { CreationProgressIndicator, CreationStep } from "@/app/features/Landing/sub_CreateList/components/CreationProgressIndicator";
+import { ShimmerBtn } from "@/components/app/button/AnimButtons";
+import { ListIntent } from "@/types/list-intent";
 
 interface CompositionModalHeaderProps {
   onClose: () => void;

@@ -1,6 +1,7 @@
 "use client";
 
 import { Zap, Target, TrendingDown } from 'lucide-react';
+
 import { TournamentAnalytics, getLoserFromMatchup, getParticipantTitle } from '../../lib/bracketGenerator';
 
 function StatCard({

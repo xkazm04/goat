@@ -1,6 +1,5 @@
 "use client";
 
-import { memo, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -10,8 +9,9 @@ import {
   MousePointerClick,
   HelpCircle,
 } from "lucide-react";
+import { memo, useEffect, useRef } from "react";
+
 import {
-  TIER_KEYBOARD_SHORTCUTS,
   getShortcutsByCategory,
   formatShortcutKey,
   type KeyboardShortcut,

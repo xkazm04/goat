@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useCallback } from "react";
 import { useMotionValue, useSpring, useTransform, MotionValue } from "framer-motion";
+import { useRef, useCallback } from "react";
 
 interface Use3DTiltOptions {
   /** Maximum rotation in degrees (default: 10) */

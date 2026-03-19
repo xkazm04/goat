@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
-import { useIntersectionObserver } from '../hooks/useIntersectionObserver';
+import { useEffect, useRef } from 'react';
+
 import { LAZY_LOAD_CONFIG } from '../constants/lazyLoadConfig';
+import { useIntersectionObserver } from '../hooks/useIntersectionObserver';
 
 interface LazyLoadTriggerProps {
   /**

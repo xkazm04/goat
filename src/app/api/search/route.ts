@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { createClient, sanitizeFilterValue, escapeIlikeWildcards } from '@/lib/supabase/server';
+
 import {
   withErrorHandler,
   successResponse,
@@ -12,6 +12,8 @@ import {
   popularityBoost,
   combineScores,
 } from '@/lib/search';
+import { createClient, sanitizeFilterValue, escapeIlikeWildcards } from '@/lib/supabase/server';
+
 import type { SearchDomain, SearchFacet, DomainStatus } from '@/lib/search';
 
 // Force dynamic rendering for this route

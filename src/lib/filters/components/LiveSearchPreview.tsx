@@ -6,11 +6,14 @@
  * as the user types in the search bar.
  */
 
-import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, Search, Hash } from 'lucide-react';
+import React from 'react';
+
 import { cn } from '@/lib/utils';
+
 import { useLiveSearchCounts, type LiveSearchCounts } from '../hooks/useLiveSearchCounts';
+
 import type { FilterableItem } from '../CollectionFilterIntegration';
 
 /**

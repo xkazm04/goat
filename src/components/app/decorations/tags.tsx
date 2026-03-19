@@ -1,4 +1,5 @@
 import { motion } from "framer-motion"
+
 import { DURATION } from '@/lib/animations/motion-presets';
 
 type Props = {

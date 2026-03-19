@@ -6,12 +6,12 @@
  */
 
 import { create } from 'zustand';
+
 import type {
   DebateState,
   DebateActions,
   DebateThread,
   DebateMessage,
-  DebateChallengeResponse,
 } from '@/lib/debate/types';
 
 function generateId(): string {

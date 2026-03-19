@@ -4,10 +4,12 @@
  */
 
 import { useMemo, useCallback, useState, useRef } from 'react';
+
+import { GridItemType } from '@/types/match';
+
 import {
   TierDefinition,
   TierId,
-  DEFAULT_TIERS,
   getTierForPosition,
   getTierIdForPosition,
   isAtTierBoundary,
@@ -15,7 +17,6 @@ import {
   getTierCSSProperties,
   getPositionStyle,
 } from '../lib/tierConfig';
-import { GridItemType } from '@/types/match';
 
 /**
  * Tier statistics for a single tier

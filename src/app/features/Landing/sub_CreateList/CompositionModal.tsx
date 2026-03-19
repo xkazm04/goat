@@ -1,42 +1,40 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useModalAccessibility } from "@/hooks/use-modal-accessibility";
-import { useRouter } from "next/navigation";
 import { Copy, ArrowLeft, Share2, Check, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState, useRef } from "react";
+
 import { CompositionModalHeader } from "@/components/app/modals/composition/CompositionModalHeader";
 import { CompositionModalLeftContent } from "@/components/app/modals/composition/CompositionModalLeftContent";
 import { CompositionModalRightContent } from "@/components/app/modals/composition/CompositionModalRightContent";
 import { SURFACE_ELEVATION, ELEVATION, INSET } from "@/components/visual/depth/depth-tokens";
-import { useCreateListWithUser } from "@/hooks/use-top-lists";
-import { useTempUser } from "@/hooks/use-temp-user";
-import { useListStore } from "@/stores/use-list-store";
-import { toast } from "@/hooks/use-toast";
-import ListCreateButton from "../ListCreateButton";
-import { useComposition } from "@/hooks/use-composition";
-import { modalBackdropVariants, modalContentVariants } from "../shared/animations";
-import { getInitialSubcategory } from "@/lib/config/category-config";
-import { CreationStep } from "./components/CreationProgressIndicator";
-import { TemplateGallery } from "./components/TemplateGallery";
-import { CriteriaTemplateSection } from "./components/CriteriaTemplateSection";
-import { ListTemplate } from "@/types/templates";
 import { useCreateBlueprint, copyBlueprintShareUrl } from "@/hooks/use-blueprints";
+import { useComposition } from "@/hooks/use-composition";
+import { useModalAccessibility } from "@/hooks/use-modal-accessibility";
+import { useTempUser } from "@/hooks/use-temp-user";
+import { toast } from "@/hooks/use-toast";
+import { useCreateListWithUser } from "@/hooks/use-top-lists";
+import {
+  successCheckVariants,
+} from "@/lib/animations/micro-interactions";
+import { getInitialSubcategory } from "@/lib/config/category-config";
+import { trackError } from "@/lib/errors/error-analytics";
+import { listCreationService, CreationStep as ServiceCreationStep } from "@/services/list-creation-service";
+import { useListStore } from "@/stores/use-list-store";
 import { CompositionResult } from "@/types/composition-to-api";
 import {
   listIntentToMetadata,
   listIntentToBlueprintRequest,
 } from "@/types/list-intent-transformers";
-import { ListIntent } from "@/types/list-intent";
-import { listCreationService, CreationStep as ServiceCreationStep } from "@/services/list-creation-service";
-import { trackError } from "@/lib/errors/error-analytics";
-import {
-  buttonVariants,
-  successCheckVariants,
-  DURATION,
-  SCALE,
-  prefersReducedMotion,
-} from "@/lib/animations/micro-interactions";
+import { ListTemplate } from "@/types/templates";
+
+import ListCreateButton from "../ListCreateButton";
+import { modalBackdropVariants, modalContentVariants } from "../shared/animations";
+import { CreationStep } from "./components/CreationProgressIndicator";
+import { CriteriaTemplateSection } from "./components/CriteriaTemplateSection";
+import { TemplateGallery } from "./components/TemplateGallery";
+
 
 interface CompositionModalProps {
   initialAuthor?: string;

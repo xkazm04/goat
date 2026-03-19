@@ -1,14 +1,20 @@
 "use client";
 
 import { motion } from 'framer-motion';
-import { DURATION } from '@/lib/animations/motion-presets';
 import { Mountain } from 'lucide-react';
-import { SimpleDropZone } from '../../sub_DropZone/SimpleDropZone';
-import { GridItemType } from '@/types/match';
-import { PositionBadge } from '../../components/PositionBadge';
-import { Elevated } from '@/components/visual';
-import { cn } from '@/lib/utils';
 import { useState, useEffect, useRef } from 'react';
+
+import { Elevated } from '@/components/visual';
+import { DURATION } from '@/lib/animations/motion-presets';
+import { cn } from '@/lib/utils';
+import { GridItemType } from '@/types/match';
+
+import { PositionBadge } from '../../components/PositionBadge';
+import { SimpleDropZone } from '../../sub_DropZone/SimpleDropZone';
+
+
+
+
 
 interface MountRushmoreViewProps {
     gridItems: (GridItemType | null)[];

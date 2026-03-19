@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Search, Check, X } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+
 import { DURATION } from '@/lib/animations/motion-presets';
+import { cn } from '@/lib/utils';
 
 export interface SelectOption {
   value: string;

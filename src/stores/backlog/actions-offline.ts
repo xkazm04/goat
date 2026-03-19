@@ -1,6 +1,7 @@
-import { BacklogState, FailedChange, PendingChange } from './types';
 import { backlogLogger } from '@/lib/logger';
 import { getSyncQueue } from '@/lib/offline/SyncQueue';
+
+import { BacklogState, FailedChange, PendingChange } from './types';
 
 // Type for immer-compatible set function
 type ImmerSet = (fn: (state: BacklogState) => void) => void;

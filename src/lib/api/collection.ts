@@ -25,10 +25,11 @@
  * - collectionApi.getItem()         -> goatApi.items.get()
  */
 
-import { apiClient } from './client';
 import { CollectionItem, ItemCategory } from '@/app/features/Collection/types';
-import { apiLogger } from '@/lib/logger';
 import { extractTitle } from '@/lib/items/item-utils';
+import { apiLogger } from '@/lib/logger';
+
+import { apiClient } from './client';
 
 export interface CollectionApiParams {
   category?: string;

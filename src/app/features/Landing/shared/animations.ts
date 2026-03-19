@@ -2,6 +2,7 @@
 // Consistent, smooth animations across the Landing module
 
 import { Variants } from "framer-motion";
+
 import { DURATION } from "@/lib/animations/motion-presets";
 
 // Card animations

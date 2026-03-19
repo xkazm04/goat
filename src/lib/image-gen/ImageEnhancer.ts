@@ -10,7 +10,6 @@ import type {
   EnhancementOptions,
   CropRegion,
   FocalPoint,
-  ExtractedColors,
 } from './types';
 
 /**

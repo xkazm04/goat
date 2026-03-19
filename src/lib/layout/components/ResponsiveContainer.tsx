@@ -5,11 +5,14 @@
  * Breakpoint-aware wrapper component with CSS container queries
  */
 
-import React, { useRef, useEffect, useState, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import React, { useRef, useEffect, useState, type ReactNode } from 'react';
+
 import { cn } from '@/lib/utils';
+
+import { BREAKPOINTS, LAYOUT_ANIMATIONS, getContainerBreakpoint } from '../constants';
 import { useLayout } from '../LayoutManager';
-import { BREAKPOINTS, LAYOUT_ANIMATIONS, LAYOUT_CSS_VARS, getContainerBreakpoint } from '../constants';
+
 import type { Breakpoint } from '../types';
 
 /**

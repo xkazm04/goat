@@ -1,9 +1,11 @@
 "use client";
 
 import { motion } from 'framer-motion';
-import type { MotionValue } from 'framer-motion';
+
 import { PlaceholderImage } from '@/components/ui/placeholder-image';
 import { DURATION } from '@/lib/animations/motion-presets';
+
+import type { MotionValue } from 'framer-motion';
 
 /**
  * Represents a draggable item with image and title

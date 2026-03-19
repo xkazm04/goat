@@ -5,11 +5,12 @@
  * storage system, enabling seamless offline-first session persistence.
  */
 
-import { getOfflineStorage } from './OfflineStorage';
-import { getSyncQueue, BatchSyncExecutor, SyncExecutorResult } from './SyncQueue';
+import { ListSession } from '@/stores/item-store/types';
+
 import { getConflictResolver } from './ConflictResolver';
 import { getNetworkMonitor } from './NetworkMonitor';
-import { ListSession } from '@/stores/item-store/types';
+import { getOfflineStorage } from './OfflineStorage';
+import { getSyncQueue, BatchSyncExecutor, SyncExecutorResult } from './SyncQueue';
 import { SyncOperation } from './types';
 
 // Debounce time for sync queue enqueue (IndexedDB save is always immediate)

@@ -1,16 +1,19 @@
 "use client";
 
-import { memo, useMemo } from "react";
-import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Play, Clock } from "lucide-react";
-import { useSessionStore } from "@/stores/session-store";
-import { RankingProgressIndicator } from "./RankingProgressIndicator";
-import { usePlayList } from "@/hooks/use-play-list";
-import { useFeaturedLists } from "@/hooks/use-top-lists";
+import { useRouter } from "next/navigation";
+import { memo, useMemo } from "react";
+
+
 import { useListThumbnails } from "@/hooks/use-list-thumbnails";
+import { usePlayList } from "@/hooks/use-play-list";
 import { toast } from "@/hooks/use-toast";
+import { useFeaturedLists } from "@/hooks/use-top-lists";
+import { useSessionStore } from "@/stores/session-store";
 import { TopList } from "@/types/top-lists";
+
+import { RankingProgressIndicator } from "./RankingProgressIndicator";
 
 interface InProgressList {
   listId: string;

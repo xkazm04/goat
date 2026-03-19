@@ -15,6 +15,7 @@ import React, {
   useRef,
   ReactNode,
 } from "react";
+
 import { TIMING, ANIMATION_VARIANTS } from "../../lib/PhysicsConfig";
 
 /**

@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   ArrowRight,
   ArrowUpDown,
@@ -11,8 +10,11 @@ import {
   TrendingDown,
   Activity,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useState, useEffect, useMemo } from "react";
+
 import { DURATION } from "@/lib/animations/motion-presets";
+import { cn } from "@/lib/utils";
+
 import type { ActivityTimelineData, ActivityEvent, TrajectoryPoint } from "@/types/item-details";
 
 interface ActivityTimelineProps {

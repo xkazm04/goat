@@ -1,15 +1,18 @@
 "use client";
 
-import { memo, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Clock, Zap, Brain, Coffee } from "lucide-react";
+import { memo, useMemo } from "react";
+
+import { DURATION } from '@/lib/animations/motion-presets';
+
 import {
   TimeEstimate,
   TimeEstimateFactor,
   CATEGORY_TIME_MULTIPLIERS,
   calculateComparisons,
 } from "./types";
-import { DURATION } from '@/lib/animations/motion-presets';
+
 
 interface TimeEstimatorProps {
   size: number;

@@ -1,21 +1,21 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Clock,
   ChevronDown,
   ChevronUp,
   RefreshCw,
-  Trash2,
   AlertCircle,
   CheckCircle,
   Loader2,
-  X,
   Upload,
 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+
 import { useOffline } from '@/lib/offline/OfflineProvider';
 import { getSyncQueue } from '@/lib/offline/SyncQueue';
+
 import type { SyncOperation, OperationStatus } from '@/lib/offline/types';
 
 interface PendingChangesPanelProps {

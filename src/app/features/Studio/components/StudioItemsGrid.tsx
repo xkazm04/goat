@@ -7,9 +7,10 @@
  * Re-exports StudioContentTabs as the main component.
  */
 
-import { StudioContentTabs } from './StudioContentTabs';
-import { PublishSuccess } from './PublishSuccess';
 import { useStudioPublishing, useStudioStore } from '@/stores/studio-store';
+
+import { PublishSuccess } from './PublishSuccess';
+import { StudioContentTabs } from './StudioContentTabs';
 
 export function StudioItemsGrid() {
   const { showSuccess, publishedListId, setShowSuccess } = useStudioPublishing();

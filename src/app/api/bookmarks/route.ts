@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+
+import { withTiming } from '@/lib/api/request-timing';
 import {
   withErrorHandler,
   fromSupabaseError,
@@ -7,7 +8,7 @@ import {
   createdResponse,
   assertRequired,
 } from '@/lib/errors';
-import { withTiming } from '@/lib/api/request-timing';
+import { createClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
 

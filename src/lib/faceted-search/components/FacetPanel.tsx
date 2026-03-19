@@ -5,9 +5,14 @@
  * Sidebar facet display with dynamic counts and drill-down
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useCallback, useMemo } from 'react';
+
+import { DURATION } from '@/lib/animations/motion-presets';
 import { cn } from '@/lib/utils';
+
+import { FACET_ANIMATIONS, FACET_TIMING } from '../constants';
+
 import type {
   Facet,
   FacetValue,
@@ -16,8 +21,6 @@ import type {
   HierarchicalFacetNode,
   FacetActions,
 } from '../types';
-import { FACET_ANIMATIONS, FACET_TIMING } from '../constants';
-import { DURATION } from '@/lib/animations/motion-presets';
 
 /**
  * FacetPanel Props

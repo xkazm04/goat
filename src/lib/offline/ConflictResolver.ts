@@ -5,6 +5,9 @@
  * with automatic resolution strategies and manual resolution support.
  */
 
+import { ListSession } from '@/stores/item-store/types';
+import { GridItemType, BacklogGroupType } from '@/types/match';
+
 import {
   ConflictRecord,
   ConflictType,
@@ -12,8 +15,6 @@ import {
   ConflictResolutionResult,
   SyncOperation,
 } from './types';
-import { ListSession } from '@/stores/item-store/types';
-import { GridItemType, BacklogGroupType } from '@/types/match';
 
 // Generate unique conflict ID
 function generateConflictId(): string {

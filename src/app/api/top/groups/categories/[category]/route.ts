@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient, escapeIlikeWildcards } from '@/lib/supabase/server';
+
 import { getRequestId } from '@/lib/api/request-id';
+import { createClient, escapeIlikeWildcards } from '@/lib/supabase/server';
 
 // HTTP Status codes
 const HTTP_STATUS_INTERNAL_SERVER_ERROR = 500;

@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Star, TrendingUp, Hash } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { useEffect, useState, useRef } from 'react';
+
 import { DURATION } from '@/lib/animations/motion-presets';
+import { cn } from '@/lib/utils';
 
 interface RankBadgeProps {
   /** Average ranking score (0-5 stars) or numeric rank */

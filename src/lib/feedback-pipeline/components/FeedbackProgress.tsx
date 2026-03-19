@@ -1,9 +1,11 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import type { FeedbackProgressData } from '../types';
-import { cn } from '@/lib/utils';
+
 import { DURATION } from '@/lib/animations/motion-presets';
+import { cn } from '@/lib/utils';
+
+import type { FeedbackProgressData } from '../types';
 
 interface FeedbackProgressProps {
   /** Progress data */

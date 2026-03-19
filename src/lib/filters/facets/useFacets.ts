@@ -5,18 +5,20 @@
  * React hook for managing faceted navigation state
  */
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+import { useState, useCallback, useMemo, useEffect } from 'react';
+
+
+import { createFacetAggregator } from './FacetAggregator';
+import { DEFAULT_FACET_DEFINITIONS } from './types';
+
 import type {
   Facet,
   FacetSelection,
-  FacetState,
   FacetActions,
   FacetDefinition,
   HierarchicalFacet,
 } from './types';
-import { FacetAggregator, createFacetAggregator } from './FacetAggregator';
-import { DEFAULT_FACET_DEFINITIONS } from './types';
 
 /**
  * Hook options

@@ -12,24 +12,22 @@
  * - Debug tools for transaction history
  */
 
+import { getCommandDescription } from './commands';
 import {
   OrchestratorCommand,
   OrchestratorConfig,
   DEFAULT_ORCHESTRATOR_CONFIG,
   Transaction,
-  TransactionStatus,
   ExecutionResult,
   StateSnapshot,
   UndoState,
   UndoEntry,
-  Middleware,
   MiddlewareConfig,
   GridCommand,
   SessionCommand,
   ComparisonCommand,
   MatchUICommand,
 } from './types';
-import { getCommandDescription } from './commands';
 
 // =============================================================================
 // Store References (lazy initialization)

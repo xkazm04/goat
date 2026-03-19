@@ -1,7 +1,9 @@
 "use client";
 
 import { motion } from "framer-motion";
+
 import { getSubcategoryIcon } from "@/lib/helpers/getIcons";
+
 import type { CardColor } from "../types";
 
 interface CardHeaderProps {

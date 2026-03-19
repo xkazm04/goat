@@ -1,11 +1,13 @@
 import { NextRequest } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+
+import { cachedFetch } from '@/lib/cache/server-cache';
 import {
   withErrorHandler,
   fromSupabaseError,
   successResponse,
 } from '@/lib/errors';
-import { cachedFetch } from '@/lib/cache/server-cache';
+import { createClient } from '@/lib/supabase/server';
+
 import type { FeaturedListsData, ListData } from '@/types/api-responses';
 
 // Force dynamic rendering for this route since it uses cookies

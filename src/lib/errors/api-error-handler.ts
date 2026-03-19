@@ -10,6 +10,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+
 import {
   GoatError,
   ValidationError,
@@ -19,7 +20,8 @@ import {
   fromUnknown,
   isGoatError,
 } from './GoatError';
-import type { ErrorResponse, ErrorCode, ErrorDetails } from './types';
+
+import type { ErrorResponse, ErrorCode } from './types';
 
 // ============================================================================
 // Types

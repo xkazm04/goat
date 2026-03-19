@@ -6,16 +6,16 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+
+import { extractTitle } from '@/lib/items/item-utils';
+import { getVolatilityLevel } from '@/types/consensus';
+
 import type {
-  ApiKey,
   ApiKeyTier,
-  API_TIER_LIMITS,
   API_TIER_FEATURES,
   PublicRankingItem,
   WidgetConfig,
 } from '@/types/api-keys';
-import { getVolatilityLevel } from '@/types/consensus';
-import { extractTitle } from '@/lib/items/item-utils';
 
 /**
  * Extract API key from request headers

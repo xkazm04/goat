@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import { createClient } from '@/lib/supabase/server';
+
+import type { TypedSupabaseClient } from '@/lib/supabase/types';
 import type {
   ItemConsensusWithClusters,
   ConsensusAPIResponse,
   PeerCluster,
 } from '@/types/consensus';
-import type { TypedSupabaseClient } from '@/lib/supabase/types';
-import type { TopItemRow } from '@/types/database';
 
 /**
  * GET /api/consensus

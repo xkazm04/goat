@@ -5,16 +5,15 @@
  * Handles API communication, caching, and fallback logic.
  */
 
+import { getAIStyleConfig } from './ai/stylePresets';
+import { buildSDPrompt, buildDALLEPrompt, sanitizeCustomPrompt } from './promptBuilder';
+
 import type {
   AIGenerationRequest,
   AIGenerationResponse,
-  GeneratedImage,
   GenerationProgress,
-  GenerationStatus,
   GenerationHistoryEntry,
 } from './ai/types';
-import { buildSDPrompt, buildDALLEPrompt, sanitizeCustomPrompt } from './promptBuilder';
-import { getAIStyleConfig } from './ai/stylePresets';
 
 /**
  * AI provider configuration

@@ -21,7 +21,11 @@
  * ```
  */
 
-import type { DragEndEvent } from '@dnd-kit/core';
+import { dndLogger } from '@/lib/logger';
+import { useUndoStore } from '@/stores/undo-store';
+
+import { isGridReceiverId, extractGridPosition, assertCanonicalGridId } from '../transfer-protocol';
+
 import type {
   DragOperation,
   DragOperationType,
@@ -34,9 +38,7 @@ import type {
   OperationResultHandler,
   ValidationErrorHandler,
 } from './types';
-import { isGridReceiverId, extractGridPosition, assertCanonicalGridId } from '../transfer-protocol';
-import { dndLogger } from '@/lib/logger';
-import { useUndoStore } from '@/stores/undo-store';
+import type { DragEndEvent } from '@dnd-kit/core';
 
 // ============================================================================
 // Context Parsing Utilities

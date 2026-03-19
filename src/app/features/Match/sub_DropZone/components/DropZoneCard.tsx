@@ -1,11 +1,16 @@
 "use client";
 
-import { memo, forwardRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { memo, forwardRef } from "react";
+
+import { DURATION, EASE } from "@/lib/animations/motion-presets";
+
+import { MedalType } from "../../lib/medalStyling";
+
 import type { DraggableAttributes } from "@dnd-kit/core";
 import type { SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities";
-import { MedalType } from "../../lib/medalStyling";
-import { DURATION, EASE } from "@/lib/animations/motion-presets";
+
+
 
 export interface DropZoneCardProps {
   /** Position in the grid (0-based) */

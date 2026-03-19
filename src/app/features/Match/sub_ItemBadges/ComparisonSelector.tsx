@@ -1,6 +1,5 @@
 "use client";
 
-import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   GitCompare,
@@ -8,9 +7,11 @@ import {
   Plus,
   Check,
   ChevronRight,
-  Trash2,
 } from "lucide-react";
+import { memo, useEffect, useState } from "react";
+
 import { useComparison } from "@/hooks/use-comparison";
+
 import type { BacklogItemType } from "@/types/match";
 
 interface ComparisonSelectorProps {

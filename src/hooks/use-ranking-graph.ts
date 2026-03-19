@@ -9,13 +9,13 @@
 'use client';
 
 import { useCallback, useEffect, useMemo } from 'react';
+
 import { useRankingGraphStore } from '@/stores/ranking-graph-store';
+
 import type {
   UniversalRating,
   CrossListInsight,
   RankingTrajectory,
-  RankingAnomaly,
-  PlacementSuggestion,
 } from '@/lib/ranking-graph/types';
 
 /**

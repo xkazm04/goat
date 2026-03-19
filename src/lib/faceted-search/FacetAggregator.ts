@@ -5,6 +5,10 @@
  * instead of re-extracting all facets from all items on every selection change.
  */
 
+import { FacetExtractor, createCollectionFacetExtractor } from './FacetExtractor';
+import { DEFAULT_FACET_DEFINITIONS } from './types';
+import { getFieldValue as getNestedFieldValue } from './utils';
+
 import type {
   Facet,
   FacetDefinition,
@@ -13,9 +17,6 @@ import type {
   HierarchicalFacet,
   FacetAggregationResult,
 } from './types';
-import { FacetExtractor, createCollectionFacetExtractor } from './FacetExtractor';
-import { DEFAULT_FACET_DEFINITIONS } from './types';
-import { getFieldValue as getNestedFieldValue } from './utils';
 
 /**
  * Cache performance statistics for the inverted index

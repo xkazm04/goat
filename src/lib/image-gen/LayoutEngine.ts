@@ -10,7 +10,6 @@ import type {
   LayoutCell,
   LayoutItem,
   LayoutOptions,
-  LayoutPosition,
   AutoLayoutCriteria,
 } from './types';
 

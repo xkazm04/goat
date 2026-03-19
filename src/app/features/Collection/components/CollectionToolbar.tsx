@@ -2,12 +2,16 @@
 
 import { ChevronDown, ChevronUp, Grid3x3, List, Plus, Search, X, EyeOff, Filter, Save, Bookmark, MoreHorizontal } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { ItemPanelStats, ItemCategory, CollectionItem } from "../types";
-import { useCollectionFilterState, getActiveFilterCount, getHasActiveFilters } from "../hooks/useCollectionFilterState";
-import { QuickFilterBar } from "@/lib/filters/components/QuickFilterBar";
-import type { QuickFilter, SmartFilterSuggestion, FilterConfig, FilterPreset } from "@/lib/filters/types";
-import type { CollectionFilterState } from "../hooks/useCollectionFilterState";
+
 import { UnrankedIcon, InGridIcon, TopRatedIcon, RecentIcon } from "@/components/icons/MicroIllustrations";
+import { QuickFilterBar } from "@/lib/filters/components/QuickFilterBar";
+
+import { useCollectionFilterState, getActiveFilterCount, getHasActiveFilters } from "../hooks/useCollectionFilterState";
+import { ItemPanelStats, ItemCategory, CollectionItem } from "../types";
+
+import type { CollectionFilterState } from "../hooks/useCollectionFilterState";
+import type { QuickFilter, SmartFilterSuggestion, FilterConfig, FilterPreset } from "@/lib/filters/types";
+
 
 /**
  * Collection-specific quick filters for common filtering patterns

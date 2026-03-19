@@ -1,8 +1,6 @@
 "use client";
 
-import { memo, useCallback, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { DURATION } from '@/lib/animations/motion-presets';
 import {
   Folder,
   FolderPlus,
@@ -17,13 +15,16 @@ import {
   Globe,
   Lock,
 } from "lucide-react";
+import { memo, useCallback, useState } from "react";
+
+import { DURATION } from '@/lib/animations/motion-presets';
 import {
   useCollectionTree,
-  useCollectionStore,
   useCollectionActions,
 } from "@/stores/collection-store";
-import type { ListCollection, CollectionTreeNode } from "@/types/collection";
 import { DEFAULT_COLLECTIONS } from "@/types/collection";
+
+import type { ListCollection, CollectionTreeNode } from "@/types/collection";
 
 interface CollectionSidebarProps {
   onSelectCollection: (collection: ListCollection | null) => void;

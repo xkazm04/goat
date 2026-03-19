@@ -13,7 +13,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+
 import { createClient, requireAuth } from '@/lib/supabase/server';
+
 import type { SyncOperation, OperationType } from '@/lib/offline/types';
 import type { ListSession } from '@/stores/item-store/types';
 import type { GridItemType } from '@/types/match';

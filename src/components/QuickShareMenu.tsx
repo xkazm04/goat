@@ -5,10 +5,13 @@
  * One-click platform picker for sharing
  */
 
-import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { SharePlatform, ShareContent, ShareResult } from '@/lib/sharing/types';
+import { useState, useCallback } from 'react';
+
 import { getShareManager } from '@/lib/sharing';
+
+import type { SharePlatform, ShareContent, ShareResult } from '@/lib/sharing/types';
+
 
 /**
  * Platform icon component

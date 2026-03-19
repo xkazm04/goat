@@ -9,10 +9,7 @@
  * Grid-specific utilities (validation, logging) are preserved here.
  */
 
-import { GridItemType } from '@/types/match';
-import { BacklogItem } from '@/types/backlog-groups';
-import { TransferableItem, createGridReceiverId, isGridReceiverId } from '@/lib/dnd';
-import { gridLogger, validationLogger } from '@/lib/logger';
+import { TransferableItem } from '@/lib/dnd';
 import {
   normalizeImageUrl,
   extractTitle,
@@ -26,6 +23,9 @@ import {
   type CreateGridItemOptions,
   type ItemValidation,
 } from '@/lib/items';
+import { gridLogger, validationLogger } from '@/lib/logger';
+import { BacklogItem } from '@/types/backlog-groups';
+import { GridItemType } from '@/types/match';
 
 // ============================================================================
 // Types

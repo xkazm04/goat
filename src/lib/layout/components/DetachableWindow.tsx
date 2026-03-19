@@ -7,18 +7,20 @@
  * window management (minimize/maximize/restore), and edge docking.
  */
 
+import { motion, PanInfo, useDragControls } from 'framer-motion';
 import React, {
   useRef,
   useState,
   useCallback,
-  useEffect,
   type ReactNode,
 } from 'react';
-import { motion, PanInfo, useDragControls, AnimatePresence } from 'framer-motion';
+
 import { cn } from '@/lib/utils';
 import { useLayoutStore } from '@/stores/layout-store';
+
 import { LAYOUT_ANIMATIONS } from '../constants';
-import type { DetachedWindowConfig, DockEdge } from '../types';
+
+import type { DockEdge } from '../types';
 
 /**
  * DetachableWindow Props

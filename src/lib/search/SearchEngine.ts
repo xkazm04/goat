@@ -6,12 +6,14 @@
  */
 
 import { goatApi } from '@/lib/api';
+
 import {
   fuzzyMatchFields,
   recencyBoost,
   popularityBoost,
   combineScores,
 } from './fuzzy';
+
 import type {
   SearchDomain,
   SearchOptions,
@@ -24,12 +26,11 @@ import type {
   ItemSearchResult,
   GroupSearchResult,
   BlueprintSearchResult,
-  SEARCH_DOMAINS,
 } from './types';
-import type { TopList } from '@/types/top-lists';
 import type { Blueprint } from '@/types/blueprint';
-import type { Item, PaginatedResponse } from '@/types/items';
 import type { ItemGroup } from '@/types/groups';
+import type { Item } from '@/types/items';
+import type { TopList } from '@/types/top-lists';
 
 // =============================================================================
 // Configuration

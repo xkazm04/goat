@@ -7,8 +7,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { NetworkState, NetworkStatus } from './types';
+
 import { getNetworkMonitor } from './NetworkMonitor';
+import { NetworkState, NetworkStatus } from './types';
 
 export interface UseNetworkStatusReturn {
   status: NetworkStatus;

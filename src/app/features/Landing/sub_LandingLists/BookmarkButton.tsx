@@ -1,8 +1,9 @@
 "use client";
 
-import { memo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bookmark } from "lucide-react";
+import { memo, useCallback } from "react";
+
 import { DURATION } from "@/lib/animations/motion-presets";
 
 interface BookmarkButtonProps {

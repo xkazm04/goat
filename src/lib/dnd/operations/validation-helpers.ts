@@ -5,13 +5,12 @@
  * the checks it needs without duplicating code.
  */
 
-import type { ValidationResult } from '@/lib/validation';
 import type {
   DragTarget,
   DragSource,
   OperationStoreContext,
-  TierStoreContext,
 } from './types';
+import type { ValidationResult } from '@/lib/validation';
 
 /**
  * Require that a store context property is present (non-nullish).

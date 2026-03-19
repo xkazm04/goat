@@ -37,12 +37,14 @@ import React, {
   useRef,
   ReactNode,
 } from 'react';
-import { FilterEngine } from './FilterEngine';
-import { FullTextSearcher, createCollectionSearcher, type SearchResultItem, type SearchStats } from './FullTextSearcher';
-import { SmartQueryParser, parseSmartQuery, type ParseResult, type QuerySuggestion } from './SmartQueryParser';
-import { FILTER_PRESETS, type FilterPresetDefinition, searchPresets } from './presets';
-import type { FilterConfig, FilterCondition, FilterCombinator, FilterResult, SortConfig } from './types';
+
 import { EMPTY_FILTER_CONFIG } from './constants';
+import { FilterEngine } from './FilterEngine';
+import { FullTextSearcher, createCollectionSearcher, type SearchStats } from './FullTextSearcher';
+import { FILTER_PRESETS, type FilterPresetDefinition, searchPresets } from './presets';
+import { SmartQueryParser, type ParseResult, type QuerySuggestion } from './SmartQueryParser';
+
+import type { FilterConfig, FilterCondition, FilterCombinator, FilterResult, SortConfig } from './types';
 
 /**
  * Collection item type (matches Collection types)

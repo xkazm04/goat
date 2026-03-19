@@ -1,10 +1,5 @@
 import { NextRequest } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import type {
-  ListItemCriteriaScores,
-  ListCriteriaConfig,
-  CriterionScore,
-} from '@/lib/criteria/types';
+
 import { calculateWeightedScore } from '@/lib/criteria/calculateWeightedScore';
 import {
   withErrorHandler,
@@ -12,6 +7,13 @@ import {
   notFound,
   successResponse,
 } from '@/lib/errors';
+import { createClient } from '@/lib/supabase/server';
+
+import type {
+  ListItemCriteriaScores,
+  ListCriteriaConfig,
+  CriterionScore,
+} from '@/lib/criteria/types';
 
 export const dynamic = 'force-dynamic';
 

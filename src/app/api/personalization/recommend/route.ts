@@ -4,6 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+
 import { showcaseData } from '@/lib/constants/showCaseExamples';
 
 /**

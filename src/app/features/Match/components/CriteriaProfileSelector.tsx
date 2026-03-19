@@ -5,7 +5,6 @@
  * Component for selecting, creating, and managing criteria profiles
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Check,
@@ -15,16 +14,17 @@ import {
   Trash2,
   Share2,
   Download,
-  Upload,
-  Settings,
   Star,
   Edit2,
 } from 'lucide-react';
+import React, { useState, useCallback, useMemo } from 'react';
+
+import { DURATION } from '@/lib/animations/motion-presets';
+import { mapCategoryToTemplate } from '@/lib/criteria/templates';
 import { cn } from '@/lib/utils';
 import { useCriteriaStore } from '@/stores/criteria-store';
+
 import type { CriteriaProfile, Criterion, ScoreInputMode } from '@/lib/criteria/types';
-import { mapCategoryToTemplate, getTemplatesForCategory } from '@/lib/criteria/templates';
-import { DURATION } from '@/lib/animations/motion-presets';
 
 /**
  * CriteriaProfileSelector Props

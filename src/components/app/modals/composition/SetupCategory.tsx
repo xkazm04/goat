@@ -1,9 +1,11 @@
 "use client";
 
-import { memo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Grid3X3, ListOrdered, Sparkles } from "lucide-react";
+import { Grid3X3, ListOrdered } from "lucide-react";
+import { memo, useState } from "react";
+
 import { SubcategoryDefinition } from "@/lib/config/category-config";
+
 import { CategoryBrowser } from "./CategoryBrowser";
 
 type Props = {

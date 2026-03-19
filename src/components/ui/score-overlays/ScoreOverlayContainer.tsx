@@ -1,16 +1,19 @@
 'use client';
 
 import { memo, useMemo } from 'react';
+
 import { cn } from '@/lib/utils';
+
+import { BarScoreOverlay } from './BarScoreOverlay';
+import { LabelScoreOverlay } from './LabelScoreOverlay';
+import { RingScoreOverlay } from './RingScoreOverlay';
+
 import type {
   Criterion,
   CriterionScore,
   CriterionDisplayPosition,
   CriterionDisplayType,
 } from '@/lib/criteria/types';
-import { RingScoreOverlay } from './RingScoreOverlay';
-import { BarScoreOverlay } from './BarScoreOverlay';
-import { LabelScoreOverlay } from './LabelScoreOverlay';
 
 export interface ScoreOverlayContainerProps {
   /** Criteria with display configurations */

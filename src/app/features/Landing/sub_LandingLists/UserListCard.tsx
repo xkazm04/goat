@@ -1,19 +1,21 @@
-import { useState, memo, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Play, Trash2, AlertTriangle } from "lucide-react";
-import { TopList } from "@/types/top-lists";
-import { getCategoryColor } from "@/lib/helpers/getColors";
-import { listItemVariants, modalBackdropVariants, modalContentVariants } from "../shared/animations";
-import { gradients } from "../shared/gradients";
-import { use3DTilt } from "@/hooks/use-3d-tilt";
-import { trackError } from "@/lib/errors/error-analytics";
-import { useIsTouchDevice } from "@/hooks/useMediaQuery";
+import { useState, memo, useCallback, useMemo } from "react";
+
 import { ELEVATION, withInset } from "@/components/visual/depth";
+import { use3DTilt } from "@/hooks/use-3d-tilt";
+import { useIsTouchDevice } from "@/hooks/useMediaQuery";
+import { trackError } from "@/lib/errors/error-analytics";
+import { getCategoryColor } from "@/lib/helpers/getColors";
+import { TopList } from "@/types/top-lists";
+
+import { ListItemContent } from "./ListItemContent";
 import { ListPreviewPopover } from "./ListPreviewPopover";
 import { ListPreviewThumbnail } from "./ListPreviewThumbnail";
-import { ListItemContent } from "./ListItemContent";
 import { RankingProgressIndicator } from "./RankingProgressIndicator";
 import { useListProgress } from "./useListProgress";
+import { listItemVariants, modalBackdropVariants, modalContentVariants } from "../shared/animations";
+import { gradients } from "../shared/gradients";
 
 interface UserListCardProps {
   list: TopList;

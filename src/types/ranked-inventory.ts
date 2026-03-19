@@ -14,10 +14,11 @@
  * - Seamless transition between unranked and ranked states
  */
 
+import { resolveTierFromRank } from '@/lib/tokens/badge-tokens';
+
 import type { ItemConsensusWithClusters } from './consensus';
 import type { CollectionItem } from '@/app/features/Collection/types';
 import type { SortCriteria, SortDirection } from '@/lib/sorting';
-import { resolveTierFromRank } from '@/lib/tokens/badge-tokens';
 
 /**
  * Inventory position state - where an item exists in the ranked system

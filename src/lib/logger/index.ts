@@ -111,10 +111,8 @@ function logInternal(
         : console.log;
 
   if (data !== undefined) {
-    // eslint-disable-next-line no-console
     consoleFn(formattedMessage, data);
   } else {
-    // eslint-disable-next-line no-console
     consoleFn(formattedMessage);
   }
 }

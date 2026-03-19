@@ -1,10 +1,13 @@
 "use client";
 
-import { memo } from "react";
 import { motion } from "framer-motion";
 import { ChevronRight, TrendingUp, Sparkles, Folder } from "lucide-react";
-import { CategoryCardProps, CategoryNode } from "./types";
+import { memo } from "react";
+
 import { DURATION } from '@/lib/animations/motion-presets';
+
+import { CategoryCardProps } from "./types";
+
 
 /**
  * Popularity Badge Component

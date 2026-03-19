@@ -1,16 +1,10 @@
 import { create } from 'zustand';
-import { ListTemplate } from '@/types/templates';
-import { TopList } from '@/types/top-lists';
+
 import { Blueprint } from '@/types/blueprint';
 import {
   ListIntent,
-  ListIntentColor,
-  ListIntentTimePeriod,
-  ListIntentSource,
-  createListIntent,
   updateListIntent,
   DEFAULT_LIST_INTENT,
-  DEFAULT_LIST_INTENT_COLOR,
 } from '@/types/list-intent';
 import {
   listTemplateToIntent,
@@ -18,6 +12,8 @@ import {
   blueprintToIntent,
   showcasePresetToIntent,
 } from '@/types/list-intent-transformers';
+import { ListTemplate } from '@/types/templates';
+import { TopList } from '@/types/top-lists';
 
 export type CompositionMode = 'create' | 'template' | 'clone' | 'blueprint';
 
@@ -245,7 +241,6 @@ export const useCompositionModalStore = create<CompositionModalState>((set, get)
     // Start from default, then overlay preserved fields from current intent
     const newIntent = { ...DEFAULT_LIST_INTENT };
     for (const field of preservedFields) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (newIntent as any)[field] = currentIntent[field];
     }
 

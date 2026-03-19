@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import { motion } from "framer-motion";
 import { Download, Share2, Pencil, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 interface CompletionModalActionsProps {
   onClose: () => void;

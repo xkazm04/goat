@@ -10,8 +10,6 @@
  * NOTE: Uses ItemTransformer for core conversion logic.
  */
 
-import { BacklogGroup, BacklogItem } from '@/types/backlog-groups';
-import { BacklogGroupType, BacklogItemType } from '@/types/match';
 import {
   backlogToNormalized,
   normalizedToBacklog,
@@ -19,6 +17,8 @@ import {
   extractTitle,
   normalizeImageUrl,
 } from '@/lib/items';
+import { BacklogGroup, BacklogItem } from '@/types/backlog-groups';
+import { BacklogGroupType, BacklogItemType } from '@/types/match';
 
 /**
  * Normalized storage format for groups - stores metadata separately from items

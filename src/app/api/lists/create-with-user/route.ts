@@ -1,12 +1,12 @@
 import { NextRequest } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { v4 as uuidv4 } from 'uuid';
+
 import {
   withErrorHandler,
   fromSupabaseError,
   assertRequired,
   createdResponse,
 } from '@/lib/errors';
+import { createClient } from '@/lib/supabase/server';
 
 // Force dynamic rendering for this route since it uses cookies
 export const dynamic = 'force-dynamic';

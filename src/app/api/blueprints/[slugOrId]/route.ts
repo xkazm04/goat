@@ -1,10 +1,5 @@
 import { NextRequest } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import {
-  BlueprintRow,
-  blueprintFromRow,
-  UpdateBlueprintRequest,
-} from '@/types/blueprint';
+
 import {
   withErrorHandler,
   fromSupabaseError,
@@ -12,6 +7,12 @@ import {
   forbidden,
   successResponse,
 } from '@/lib/errors';
+import { createClient } from '@/lib/supabase/server';
+import {
+  BlueprintRow,
+  blueprintFromRow,
+  UpdateBlueprintRequest,
+} from '@/types/blueprint';
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic';

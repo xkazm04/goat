@@ -1,13 +1,16 @@
 'use client';
 
-import React, { Component, ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RefreshCw, Home, Copy, ChevronDown, Bug, LogIn, WifiOff, Timer } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { GoatError, fromUnknown, isGoatError } from './GoatError';
-import type { ErrorCode, ErrorCategory, ErrorSeverity } from './types';
+import React, { Component, ReactNode, useCallback, useEffect, useRef, useState } from 'react';
+
 import { ToppledTrophy } from '@/components/illustrations/EmptyStateIllustrations';
 import { GoatMascot } from '@/components/visual/GoatMascot';
+import { cn } from '@/lib/utils';
+
+import { GoatError, fromUnknown, isGoatError } from './GoatError';
+
+import type { ErrorCategory } from './types';
 
 // ============================================================================
 // Types

@@ -1,13 +1,15 @@
 'use client';
 
-import { memo, useState, useMemo, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { memo, useState, useMemo, useCallback, useEffect } from 'react';
+
+import { PositionBadge } from '@/components/patterns/badges';
 import { ScoreOverlayContainer } from '@/components/ui/score-overlays';
 import { ELEVATION, Glow } from '@/components/visual';
 import { SURFACE_ELEVATION } from '@/components/visual/depth/depth-tokens';
-import { PositionBadge } from '@/components/patterns/badges';
-import type { Criterion, CriterionScore } from '@/lib/criteria/types';
 import { DURATION } from '@/lib/animations/motion-presets';
+
+import type { Criterion, CriterionScore } from '@/lib/criteria/types';
 
 export interface CardPreviewPanelProps {
   /** Criteria to display on the preview card */

@@ -22,8 +22,9 @@
  */
 
 import { useMutation, useQueryClient, type QueryKey } from '@tanstack/react-query';
-import { emitErrorNotification } from '@/lib/errors/error-notification-store';
+
 import { invalidateByTags } from '@/lib/cache/query-cache-config';
+import { emitErrorNotification } from '@/lib/errors/error-notification-store';
 
 // =============================================================================
 // Types
@@ -38,7 +39,6 @@ export interface OptimisticUpdate<TVariables> {
   /** The query key to snapshot and optimistically update */
   queryKey: QueryKey;
   /** Function that produces the optimistic cache value */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   updater: (currentData: any, variables: TVariables) => unknown;
 }
 

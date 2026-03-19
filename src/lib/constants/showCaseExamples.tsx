@@ -1,5 +1,7 @@
 import { Trophy, Music, Gamepad2, Film, Book, LucideIcon } from "lucide-react";
+
 import { Blueprint, BlueprintColor } from "@/types/blueprint";
+
 import type { ShowcaseCardData, TimePeriod } from "@/app/features/Landing/types";
 
 // Display-specific properties for showcase cards (not stored in database)

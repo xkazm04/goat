@@ -1,8 +1,10 @@
 "use client";
 
-import { cn } from "@/lib/utils";
 import { formatScore } from "@/lib/constants/scoring";
+import { cn } from "@/lib/utils";
+
 import { AnimatedProgressBar } from "./AnimatedProgressBar";
+
 import type { ScoreRendererProps } from "./types";
 
 // Level calculation constants

@@ -1,7 +1,8 @@
-import { BacklogState } from './types';
-import { BacklogItem, BacklogGroup } from '@/types/backlog-groups';
 import { backlogLogger } from '@/lib/logger';
+import { BacklogItem, BacklogGroup } from '@/types/backlog-groups';
+
 import { syncCacheFromGroups } from './cache-utils';
+import { BacklogState } from './types';
 import { useSelectionCursor } from '../selection-cursor';
 
 // Type for immer-compatible set function

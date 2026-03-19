@@ -1,5 +1,15 @@
 "use client";
 
+import { motion } from "framer-motion";
+import {
+  BarChart3,
+  Users,
+  Target,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Award,
+} from "lucide-react";
 import { useMemo } from "react";
 import {
   BarChart,
@@ -12,18 +22,11 @@ import {
   ReferenceLine,
   CartesianGrid,
 } from "recharts";
-import type { BarShapeProps } from "recharts";
-import { motion } from "framer-motion";
-import {
-  BarChart3,
-  Users,
-  Target,
-  TrendingUp,
-  TrendingDown,
-  Minus,
-  Award,
-} from "lucide-react";
+
 import { cn } from "@/lib/utils";
+
+import type { BarShapeProps } from "recharts";
+
 
 export interface RankingStats {
   totalRankings: number;

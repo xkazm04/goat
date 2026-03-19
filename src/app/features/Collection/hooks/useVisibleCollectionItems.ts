@@ -17,7 +17,9 @@
  */
 
 import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
+
 import { useGridStore, GridStoreState } from '@/stores/grid-store';
+
 import { CollectionItem } from '../types';
 
 /**

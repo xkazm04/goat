@@ -12,7 +12,9 @@
  */
 
 import { create } from 'zustand';
+
 import { GoatError, fromUnknown, isGoatError } from './GoatError';
+
 import type { ErrorCode, ErrorSeverity } from './types';
 
 // ============================================================================

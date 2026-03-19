@@ -2,9 +2,10 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useCallback } from 'react';
+
 import { toast } from '@/hooks/use-toast';
-import { bookmarkKeys } from '@/lib/query-keys/bookmarks';
 import { CACHE_TTL_MS } from '@/lib/cache/unified-cache';
+import { bookmarkKeys } from '@/lib/query-keys/bookmarks';
 import { TopList } from '@/types/top-lists';
 
 // Types

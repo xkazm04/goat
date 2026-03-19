@@ -3,12 +3,15 @@
 import { useDroppable } from "@dnd-kit/core";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trophy, X, Sparkles, Crown, Award, Plus, Share2 } from "lucide-react";
+import { useState, useEffect } from "react";
+
+import { ProgressiveImage } from "@/components/ui/progressive-image";
+import { DURATION } from '@/lib/animations/motion-presets';
 import { GridItemType } from "@/types/match";
 import { TopList } from "@/types/top-lists";
-import { ProgressiveImage } from "@/components/ui/progressive-image";
-import { useState, useEffect } from "react";
+
 import { useClickAssign } from "../AwardList";
-import { DURATION } from '@/lib/animations/motion-presets';
+
 
 interface AwardCandidate {
   id: string;

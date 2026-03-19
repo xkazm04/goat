@@ -1,9 +1,12 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { DURATION } from '@/lib/animations/motion-presets';
 import { X, UserPlus } from 'lucide-react';
+import { useState, useCallback, useEffect } from 'react';
+
+import { DURATION } from '@/lib/animations/motion-presets';
+
+
 import { AuthModal } from './AuthModal';
 
 const DISMISSED_KEY = 'goat-auth-prompt-dismissed';

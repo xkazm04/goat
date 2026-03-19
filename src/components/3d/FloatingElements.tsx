@@ -8,10 +8,11 @@
  * preferences.
  */
 
-import { memo, useMemo, type ReactNode } from 'react';
 import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
+import { memo, useMemo, type ReactNode } from 'react';
+
 import { useMotionCapabilities } from '@/hooks/use-motion-preference';
+import { cn } from '@/lib/utils';
 
 // =============================================================================
 // Types

@@ -1,8 +1,9 @@
 "use client";
 
-import { memo } from 'react';
 import { motion } from 'framer-motion';
 import { Flame, Zap, MessageCircle } from 'lucide-react';
+import { memo } from 'react';
+
 import { getControversyLevel, getControversyLabel } from '@/lib/debate/types';
 
 interface ControversyBadgeProps {

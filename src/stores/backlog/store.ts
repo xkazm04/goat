@@ -1,20 +1,21 @@
+import { enableMapSet } from 'immer';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import { enableMapSet } from 'immer';
 
 // Enable Immer support for Map and Set mutations (required for loadingGroupIds, _itemIndex, etc.)
 enableMapSet();
-import { createIndexedDBStorage } from '@/lib/storage/indexed-db-storage';
+import { backlogLogger } from '@/lib/logger';
 import { createSafeStorage } from '@/lib/storage/create-safe-storage';
-import { BacklogState, SerializedBacklogCache } from './types';
+import { createIndexedDBStorage } from '@/lib/storage/indexed-db-storage';
+
 import { createDataActions, countLoadedGroups } from './actions-data';
 import { createItemActions } from './actions-items';
 import { createOfflineActions } from './actions-offline';
 import { createUtilActions } from './actions-utils';
-import { arrayToSet, setToArray } from '../../lib/set-utils';
-import { backlogLogger } from '@/lib/logger';
 import { rebuildItemIndex } from './item-index';
+import { BacklogState, SerializedBacklogCache } from './types';
+import { arrayToSet, setToArray } from '../../lib/set-utils';
 
 // Helper to check if we're in a browser environment
 const isBrowser = typeof window !== 'undefined';

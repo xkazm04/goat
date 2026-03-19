@@ -1,8 +1,11 @@
 "use client";
 
+import { motion } from "framer-motion";
 import * as React from "react";
-import { motion, AnimatePresence } from "framer-motion";
+
+import { DURATION } from '@/lib/animations/motion-presets';
 import { mapCategoryToTheme, type ThemeKey } from "@/lib/criteria/theme-mapping";
+
 import {
   SportsScoreRenderer,
   MoviesScoreRenderer,
@@ -11,7 +14,7 @@ import {
   DefaultScoreRenderer,
   type ScoreRendererProps,
 } from "./renderers";
-import { DURATION } from '@/lib/animations/motion-presets';
+
 
 export interface ThemedScoreDisplayProps {
   /** Weighted score value (0-100) */

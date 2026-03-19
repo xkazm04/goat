@@ -1,5 +1,6 @@
-import { useCallback } from 'react';
 import { SupabaseClient } from '@supabase/supabase-js';
+import { useCallback } from 'react';
+
 import { createClient } from '@/lib/supabase/client';
 
 /**

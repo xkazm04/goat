@@ -1,6 +1,7 @@
 "use client";
 
 import { Calendar, Tag, FolderOpen, Clock, Hash, Info } from "lucide-react";
+
 import { NoMetadata } from "@/components/illustrations/EmptyStateIllustrations";
 import { cn } from "@/lib/utils";
 

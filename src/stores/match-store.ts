@@ -1,17 +1,20 @@
 import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
-import { useSessionStore } from './session-store';
-import { useGridStore } from './grid-store';
+
+import { matchLogger } from '@/lib/logger';
+import { DEBOUNCE, TIMEOUT, withTimeout, TimeoutError } from '@/lib/timing';
+import { ValidationErrorCode } from '@/lib/validation';
+import { BacklogItem } from '@/types/backlog-groups';
+
 import { useComparisonStore } from './comparison-store';
-import { useListStore } from './use-list-store';
-import { useValidationNotificationStore } from './validation-notification-store';
+import { useGridStore } from './grid-store';
 import { usePlacementStore, SmartFillMode } from './placement-store';
 import { useSelectionCursor } from './selection-cursor';
+import { useSessionStore } from './session-store';
 import { useUndoStore } from './undo-store';
-import { ValidationErrorCode } from '@/lib/validation';
-import { matchLogger } from '@/lib/logger';
-import { BacklogItem } from '@/types/backlog-groups';
-import { DEBOUNCE, TIMEOUT, withTimeout, TimeoutError } from '@/lib/timing';
+import { useListStore } from './use-list-store';
+import { useValidationNotificationStore } from './validation-notification-store';
+
 
 // Re-export ValidationNotification type from the dedicated store for backwards compatibility
 export type { ValidationNotification } from './validation-notification-store';

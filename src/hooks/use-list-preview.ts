@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, useCallback } from 'react';
+
 import { goatApi } from '@/lib/api';
 import { topListsKeys } from '@/lib/query-keys/top-lists';
 import { ListWithItems } from '@/types/top-lists';

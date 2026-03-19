@@ -1,15 +1,18 @@
 "use client";
 
-import { memo, useMemo } from "react";
 import { motion } from "framer-motion";
 import { X, LucideIcon } from "lucide-react";
+import { memo, useMemo } from "react";
+
 import { ProgressiveImage } from "@/components/ui/progressive-image";
-import { Glow } from '@/components/visual';
-import { ThemedScoreDisplay } from '@/components/ui/themed-scores';
 import { ScoreOverlayContainer } from '@/components/ui/score-overlays';
-import { getMedalGradient, type MedalType } from "../../lib/medalStyling";
-import type { Criterion, CriterionScore } from '@/lib/criteria/types';
+import { ThemedScoreDisplay } from '@/components/ui/themed-scores';
+import { Glow } from '@/components/visual';
 import { DURATION } from '@/lib/animations/motion-presets';
+
+import { getMedalGradient } from "../../lib/medalStyling";
+
+import type { Criterion, CriterionScore } from '@/lib/criteria/types';
 
 export interface DropZoneOccupiedProps {
   /** Position in the grid (0-based) */

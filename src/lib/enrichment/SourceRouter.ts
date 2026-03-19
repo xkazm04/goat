@@ -5,12 +5,13 @@
  * Routes requests to the most appropriate sources for each content type.
  */
 
+import { resolveApiCategory } from '@/lib/config/category-config';
+
 import type {
   EnrichmentCategory,
   DataSource,
   SourceRoutingConfig,
 } from './types';
-import { resolveApiCategory } from '@/lib/config/category-config';
 
 /**
  * Source routing configuration by category

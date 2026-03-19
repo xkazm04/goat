@@ -1,6 +1,8 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import { Star, Trophy, Heart, Sparkles, Award } from 'lucide-react';
+
 import { Badge, BadgeGroup, PositionedBadge, badgeColors } from './Badge';
+
+import type { Meta, StoryObj } from '@storybook/react';
 
 const meta: Meta<typeof Badge> = {
   title: 'Patterns/Badges/Badge',

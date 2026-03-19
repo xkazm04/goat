@@ -6,9 +6,7 @@
  * Provides fast access to common operations without full navigation.
  */
 
-import React, { memo, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
 import {
   Plus,
   Scale,
@@ -24,7 +22,10 @@ import {
   ArrowDown,
   type LucideIcon,
 } from 'lucide-react';
+import React, { memo, useCallback } from 'react';
+
 import { DURATION } from '@/lib/animations/motion-presets';
+import { cn } from '@/lib/utils';
 
 /**
  * Built-in action types

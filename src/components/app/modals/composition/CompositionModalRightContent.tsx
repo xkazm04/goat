@@ -1,7 +1,9 @@
 "use client";
 
-import { categoryPreviews } from "@/lib/constants/catPreview";
 import Image from "next/image";
+
+import { categoryPreviews } from "@/lib/constants/catPreview";
+
 import SetupPreview from "./SetupPreview";
 
 interface CompositionModalRightContentProps {

@@ -14,15 +14,17 @@ import React, {
   useRef,
   type ReactNode,
 } from 'react';
+
 import { useLayoutStore } from '@/stores/layout-store';
+
 import {
   BREAKPOINTS,
   getBreakpointFromWidth,
   LAYOUT_PRESETS,
-  SIDEBAR_CONSTRAINTS,
   getRecommendedPreset,
   isTouchDevice,
 } from './constants';
+
 import type {
   Breakpoint,
   LayoutPreset,

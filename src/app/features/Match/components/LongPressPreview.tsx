@@ -6,10 +6,11 @@
  * Shows expanded item information with smooth entrance animation
  */
 
-import { useRef, useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { createPortal } from "react-dom";
 import { X, Star, Calendar, Info, ExternalLink, Award } from "lucide-react";
+import { useRef, useEffect, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
+
 import { ProgressiveImage } from "@/components/ui/progressive-image";
 import { DURATION } from '@/lib/animations/motion-presets';
 

@@ -1,24 +1,26 @@
 "use client";
 
-import { memo, useMemo, useCallback, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { DURATION } from '@/lib/animations/motion-presets';
 import { Play, Plus } from "lucide-react";
-import { ShowcaseHeader } from "./ShowcaseHeader";
-import { OnboardingHero } from "./OnboardingHero";
+import { memo, useMemo, useCallback, useState } from "react";
+
 import ShowcaseDecor from "@/components/app/decorations/ShowcaseDecor";
+import { useInView } from "@/components/patterns/virtualization/useIntersectionObserver";
+import { GoatMascot } from "@/components/visual/GoatMascot";
 import { useAnimationPause } from "@/hooks/use-animation-pause";
-import { useFeaturedLists } from "@/hooks/use-top-lists";
 import { useComposition } from "@/hooks/use-composition";
-import { usePlayList } from "@/hooks/use-play-list";
-import { usePersonalizedWelcome } from "@/lib/personalization";
-import { TopList } from "@/types/top-lists";
-import { getCategoryColor } from "@/lib/helpers/getColors";
 import { gradients } from "./shared/gradients";
 import { useListThumbnails } from "@/hooks/use-list-thumbnails";
-import { GoatMascot } from "@/components/visual/GoatMascot";
-import { useInView } from "@/components/patterns/virtualization/useIntersectionObserver";
+import { usePlayList } from "@/hooks/use-play-list";
+import { useFeaturedLists } from "@/hooks/use-top-lists";
+import { DURATION } from '@/lib/animations/motion-presets';
 import { CATEGORY_CONFIG, resolveDisplayCategory, type CategoryName } from "@/lib/config/category-config";
+import { getCategoryColor } from "@/lib/helpers/getColors";
+import { usePersonalizedWelcome } from "@/lib/personalization";
+import { TopList } from "@/types/top-lists";
+
+import { OnboardingHero } from "./OnboardingHero";
+import { ShowcaseHeader } from "./ShowcaseHeader";
 
 /**
  * FloatingShowcase - Hero section with category tables

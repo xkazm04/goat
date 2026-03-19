@@ -22,14 +22,14 @@
  * ```
  */
 
-import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
+import React, { useMemo } from 'react';
+
 import { badgeSizeScale, badgeColors } from '@/lib/tokens/badge-tokens';
+import { cn } from '@/lib/utils';
+
 import type {
   BaseBadgeProps,
-  BadgeVariant,
-  BadgeAnimation,
 } from './types';
 
 export { badgeColors } from '@/lib/tokens/badge-tokens';

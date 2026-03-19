@@ -5,10 +5,12 @@
  * across all ranking modes (Podium, Goat, Rushmore, Bracket, Tier List).
  */
 
-import type { TransferableItem } from '@/lib/dnd/transfer-protocol';
+import { getTierForPositionGeneric, rangeFromInclusiveBoundary } from '@/lib/tiers/boundary';
+
 import type { BracketState, BracketSize } from '@/app/features/Match/sub_MatchBracket/lib/bracketGenerator';
 import type { SeedingStrategy } from '@/app/features/Match/sub_MatchBracket/lib/seedingEngine';
-import { getTierForPositionGeneric, rangeFromInclusiveBoundary } from '@/lib/tiers/boundary';
+import type { TransferableItem } from '@/lib/dnd/transfer-protocol';
+
 
 // ============================================================================
 // Core Ranking Types

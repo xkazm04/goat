@@ -11,6 +11,7 @@
  */
 
 import dynamic from 'next/dynamic';
+
 import type { CompositionResult } from '@/types/composition-to-api';
 
 interface CompositionModalProps {

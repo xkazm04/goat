@@ -6,9 +6,10 @@
 
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { SearchEngine, type SearchOptions, type SearchResponse, type SearchResult, type SearchDomain, type DomainStatus } from '@/lib/search';
+
+import { SearchEngine, type SearchOptions, type SearchResponse, type SearchResult, type SearchDomain } from '@/lib/search';
 
 // =============================================================================
 // Query Keys

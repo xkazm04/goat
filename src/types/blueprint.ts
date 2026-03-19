@@ -2,7 +2,6 @@
 // A Blueprint is a shareable list configuration that can be created by users,
 // shared via URL, stored in the database, and loaded dynamically
 
-import { LucideIcon } from 'lucide-react';
 
 // Color scheme for visual theming
 export interface BlueprintColor {

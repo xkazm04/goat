@@ -6,8 +6,9 @@
  */
 
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+
 import { getGlobalCircuitBreaker } from '@/lib/api/CircuitBreaker';
+import { createClient } from '@/lib/supabase/server';
 
 type DependencyStatus = 'healthy' | 'degraded' | 'unhealthy';
 

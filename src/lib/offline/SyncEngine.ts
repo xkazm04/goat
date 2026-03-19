@@ -5,11 +5,11 @@
  * background sync API support, and selective sync capabilities.
  */
 
-import { getOfflineStorage, OfflineStorage } from './OfflineStorage';
-import { getSyncQueue, SyncQueue, SyncExecutor, ConflictHandler } from './SyncQueue';
 import { getConflictResolver, ConflictResolver } from './ConflictResolver';
 import { getNetworkMonitor, NetworkMonitor } from './NetworkMonitor';
+import { getOfflineStorage, OfflineStorage } from './OfflineStorage';
 import { getQuotaManager, QuotaManager } from './QuotaManager';
+import { getSyncQueue, SyncQueue, SyncExecutor, ConflictHandler } from './SyncQueue';
 import {
   SyncState,
   SyncStatus,

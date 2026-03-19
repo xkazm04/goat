@@ -1,37 +1,38 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Keyboard, Sparkles } from 'lucide-react';
-import { GridItemType } from '@/types/match';
-import { BacklogItem } from '@/types/backlog-groups';
-import {
-  TierListTier,
-  TierListPreset,
-  PRESET_CLASSIC,
-} from '../../lib/tierPresets';
-import { TierRow } from './TierRow';
-import { TierConfigurator } from './TierConfigurator';
-import { DebatePanel } from './Debate/DebatePanel';
-import { exportTierListImage } from '../../lib/tierListExporter';
-import { useRankingStore } from '@/stores/ranking-store';
-import { useDebateStore } from '@/stores/debate-store';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+
 import { useDebate } from '@/hooks/use-debate';
+import { useDebateStore } from '@/stores/debate-store';
+import { useRankingStore } from '@/stores/ranking-store';
 import { useCurrentListInfo } from '@/stores/use-list-store';
-import { extractTitle } from '@/lib/items/item-utils';
+import { BacklogItem } from '@/types/backlog-groups';
+import { GridItemType } from '@/types/match';
+
+import { DebatePanel } from './Debate/DebatePanel';
 import { useOptionalDropZoneHighlight } from './DropZoneHighlightContext';
-import { TierFocusProvider, useTierFocus } from './TierFocusProvider';
+import {
+  KeyboardShortcutsPanel,
+  KeyboardModeIndicator,
+} from './KeyboardShortcutsPanel';
 import {
   ScreenReaderAnnouncer,
   SkipLinks,
   TierInstructions,
 } from './ScreenReaderAnnouncer';
+import { TierConfigurator } from './TierConfigurator';
+import { TierFocusProvider, useTierFocus } from './TierFocusProvider';
+import { TierRow } from './TierRow';
+import { exportTierListImage } from '../../lib/tierListExporter';
 import {
-  KeyboardShortcutsPanel,
-  KeyboardModeIndicator,
-} from './KeyboardShortcutsPanel';
-import { useTierKeyboardNavigation } from '../hooks/useTierKeyboardNavigation';
+  TierListTier,
+  TierListPreset,
+  PRESET_CLASSIC,
+} from '../../lib/tierPresets';
 import { useTierItemGroups } from '../hooks/useTierItemGroups';
+import { useTierKeyboardNavigation } from '../hooks/useTierKeyboardNavigation';
 
 interface TierListViewProps {
   gridItems: GridItemType[];

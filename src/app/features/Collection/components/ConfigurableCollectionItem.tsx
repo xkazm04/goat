@@ -1,32 +1,36 @@
 "use client";
 
-import { useMemo, useState, useCallback, useEffect, useRef, memo } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { motion, AnimatePresence } from "framer-motion";
-import { ItemCard } from "@/components/ui/item-card";
-import { SPRING, DURATION } from "@/lib/animations/motion-presets";
-import { StarRating } from "@/components/ui/star-rating";
-import { CollectionItem as CollectionItemType } from "../types";
-import { useProgressiveWikiImage } from "@/hooks/use-progressive-wiki-image";
+import { ArrowRight, ArrowLeft, PlusCircle, Eye, Trash2, Check } from "lucide-react";
+import { useMemo, useState, useCallback, useEffect, useRef, memo } from "react";
+
+import { PreviewItem } from "@/app/features/Match/components/LongPressPreview";
+import { useTouchGestures, GestureItemData } from "@/app/features/Match/hooks/useTouchGestures";
+import { AvgRankBadge } from "@/app/features/Match/sub_ItemBadges/AvgRankBadge";
+import { SelectionCheckbox } from "@/app/features/Match/sub_ItemBadges/ComparisonSelector";
 import { ConsensusOverlay } from "@/app/features/Match/sub_ItemBadges/ConsensusOverlay";
 import { RankBadge } from "@/app/features/Match/sub_ItemBadges/RankBadge";
-import { AvgRankBadge } from "@/app/features/Match/sub_ItemBadges/AvgRankBadge";
 import { TierIndicator } from "@/app/features/Match/sub_ItemBadges/TierIndicator";
+import { ItemCard } from "@/components/ui/item-card";
+import { StarRating } from "@/components/ui/star-rating";
+import { useProgressiveWikiImage } from "@/hooks/use-progressive-wiki-image";
+import { SPRING, DURATION } from "@/lib/animations/motion-presets";
+import { CollectionItem as CollectionItemType } from "../types";
+
+
 import { AverageRankingBadge } from "./AverageRankingBadge";
 import { DragHandleIndicator } from "./DragHandleIndicator";
 import { FocusRingOverlay } from "./FocusRingOverlay";
 import { SpotlightTooltip } from "./SpotlightTooltip";
+
 import { useConsensusStore, useConsensusSortBy } from "@/stores/consensus-store";
 import { highlightMatch } from "@/lib/utils/search";
 import { createCollectionDragData } from "@/lib/dnd";
 import { ThemedScoreDisplay } from "@/components/ui/themed-scores";
 import { useCriteriaStore } from "@/stores/criteria-store";
 import { useListStore } from "@/stores/use-list-store";
-import { useTouchGestures, GestureItemData } from "@/app/features/Match/hooks/useTouchGestures";
-import { PreviewItem } from "@/app/features/Match/components/LongPressPreview";
-import { ArrowRight, ArrowLeft, PlusCircle, Eye, Trash2, Check } from "lucide-react";
 import { useItemPopupStore } from "@/stores/item-popup-store";
-import { SelectionCheckbox } from "@/app/features/Match/sub_ItemBadges/ComparisonSelector";
 
 /**
  * Swipe action icon mapping

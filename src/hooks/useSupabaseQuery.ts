@@ -26,16 +26,17 @@
  * ```
  */
 
-import { useState } from 'react';
-import { useQuery, useInfiniteQuery, UseQueryOptions } from '@tanstack/react-query';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { createClient } from '@/lib/supabase/client';
+import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+
 import {
   getCacheSettings,
   createSmartRetry,
   createRetryDelay,
   type CachePreset,
 } from '@/lib/cache/unified-cache';
+import { createClient } from '@/lib/supabase/client';
 
 // =============================================================================
 // Types
@@ -171,7 +172,6 @@ export function useSupabaseQuery<T = unknown>(
     retry: createSmartRetry(retry),
     retryDelay: createRetryDelay(retryDelay, 30000),
     initialData,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     placeholderData: placeholderData as any,
     select,
   });

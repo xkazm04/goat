@@ -4,8 +4,9 @@
  * Uses CSS clamp() for smooth scaling between breakpoints
  */
 
-import type { ContainerBreakpoint } from './ContainerProvider';
 import { CONTAINER_BREAKPOINTS } from './ContainerProvider';
+
+import type { ContainerBreakpoint } from './ContainerProvider';
 
 /**
  * Fluid typography scale configuration

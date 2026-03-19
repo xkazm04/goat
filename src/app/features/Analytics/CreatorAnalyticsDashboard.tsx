@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
   BarChart3,
@@ -10,6 +9,7 @@ import {
   TrendingUp,
   ChevronDown,
 } from "lucide-react";
+import { useMemo, useState } from "react";
 import {
   BarChart,
   Bar,
@@ -19,10 +19,14 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import { cn } from "@/lib/utils";
+
 import { useCreatorAnalytics } from "@/hooks/use-top-lists";
-import type { CreatorAnalyticsSummary } from "@/types/top-lists";
+import { cn } from "@/lib/utils";
+
 import { ListAnalyticsCard } from "./ListAnalyticsCard";
+
+import type { CreatorAnalyticsSummary } from "@/types/top-lists";
+
 
 interface CreatorAnalyticsDashboardProps {
   userId: string;

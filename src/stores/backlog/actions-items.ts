@@ -1,8 +1,9 @@
-import { BacklogState, PendingChange } from './types';
-import { BacklogItem } from '@/types/backlog-groups';
 import { backlogLogger } from '@/lib/logger';
-import { replaceGroupInIndex } from './item-index';
+import { BacklogItem } from '@/types/backlog-groups';
+
 import { syncCacheFromGroups } from './cache-utils';
+import { replaceGroupInIndex } from './item-index';
+import { BacklogState, PendingChange } from './types';
 import { useSelectionCursor } from '../selection-cursor';
 
 // Type for immer-compatible set function

@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, type ReactNode } from 'react';
 import dynamic from 'next/dynamic';
+import { useState, useEffect, type ReactNode } from 'react';
 
 const CommandPaletteProvider = dynamic(
   () => import('@/app/features/CommandPalette/CommandPaletteProvider').then(m => ({ default: m.CommandPaletteProvider })),

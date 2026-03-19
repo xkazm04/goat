@@ -5,14 +5,17 @@
  * UI for selecting sort field and direction, composes with active filters
  */
 
-import React, { useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowUpDown, ArrowUp, ArrowDown, X } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import type { SortConfig, SortDirection, FilterFieldDefinition } from '../types';
-import { DEFAULT_FILTER_FIELDS } from '../constants';
-import { useFilterIntegrationOptional } from '../CollectionFilterIntegration';
+import React, { useCallback, useMemo } from 'react';
+
 import { DURATION } from '@/lib/animations/motion-presets';
+import { cn } from '@/lib/utils';
+
+import { useFilterIntegrationOptional } from '../CollectionFilterIntegration';
+import { DEFAULT_FILTER_FIELDS } from '../constants';
+
+import type { SortConfig, SortDirection, FilterFieldDefinition } from '../types';
 
 /**
  * Default sort options derived from sortable fields

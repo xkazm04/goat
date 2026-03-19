@@ -7,13 +7,17 @@
  * Also includes type guards, validation, and batch operations.
  */
 
-import type { BacklogItem } from '@/types/backlog-groups';
-import type { GridItemType, BacklogItemType } from '@/types/match';
+import { createGridReceiverId, isGridReceiverId } from '@/lib/dnd/transfer-protocol';
+
+import { normalizeImageUrl, extractTitle, safeString, safeStringArray } from './item-utils';
+
 import type { TransferableItem } from '@/lib/dnd/transfer-protocol';
 import type { NormalizedItem } from '@/stores/item-store/normalized-session';
+import type { BacklogItem } from '@/types/backlog-groups';
+import type { GridItemType, BacklogItemType } from '@/types/match';
 import type { RankedItem, RankingMode } from '@/types/ranking';
-import { createGridReceiverId, isGridReceiverId } from '@/lib/dnd/transfer-protocol';
-import { normalizeImageUrl, extractTitle, safeString, safeStringArray } from './item-utils';
+
+
 
 // ============================================================================
 // Type Guards

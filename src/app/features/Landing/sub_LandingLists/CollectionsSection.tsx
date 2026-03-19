@@ -1,19 +1,23 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
-import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { FolderPlus, Folder, FolderOpen, ChevronRight } from "lucide-react";
-import { useUserCollections } from "@/hooks/use-collections";
+import { useRouter } from "next/navigation";
+import { useCallback, useMemo } from "react";
+
 import { CollectionCard } from "@/app/features/Collections";
 import { ListGrid } from "@/components/ui/list-grid";
+import { ELEVATION, INSET, withInset } from "@/components/visual/depth";
+import { useUserCollections } from "@/hooks/use-collections";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import { useCurrentUser } from "@/stores/use-list-store";
+
+import { SectionHeader } from "./SectionHeader";
 import { listContainerVariants } from "../shared/animations";
 import { NeonArenaTheme } from "../shared/NeonArenaTheme";
-import { useReducedMotion } from "@/hooks/use-reduced-motion";
-import { SectionHeader } from "./SectionHeader";
+
 import type { ListCollection } from "@/types/collection";
-import { useCurrentUser } from "@/stores/use-list-store";
-import { ELEVATION, INSET, withInset } from "@/components/visual/depth";
+
 
 interface CollectionsSectionProps {
   className?: string;

@@ -1,14 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { RefreshCw, Home, WifiOff, CloudOff } from 'lucide-react';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
+
 import { GoatMascot } from '@/components/icons/GoatMascot';
-import { useBacklogStore } from '@/stores/backlog/store';
-import { syncStatusColors } from '@/lib/offline/sync-status-colors';
-import { Surface } from '@/components/visual/depth/Surface';
 import { Shimmer } from '@/components/visual/decorations/Shimmer';
+import { Surface } from '@/components/visual/depth/Surface';
+import { syncStatusColors } from '@/lib/offline/sync-status-colors';
+import { useBacklogStore } from '@/stores/backlog/store';
 
 const staggerContainer = {
   hidden: { opacity: 0 },

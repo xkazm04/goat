@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { nanoid } from 'nanoid';
+import { NextRequest, NextResponse } from 'next/server';
 
 // POST /api/achievement/share - Create a shareable achievement link
 export async function POST(request: NextRequest) {

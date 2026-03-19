@@ -1,20 +1,22 @@
 'use client';
 
 import { useEffect, useMemo } from 'react';
+
+import { sortItemIds, type SortConfig } from '@/lib/sorting';
 import { useConsensusStore, useItemConsensus } from '@/stores/consensus-store';
-import type {
-  ItemConsensusWithClusters,
-  VolatilityLevel,
-  ConsensusBadge,
-  ConsensusViewMode,
-} from '@/types/consensus';
 import {
   getVolatilityLevel,
   getVolatilityColor,
   getVolatilityBgColor,
   getConsensusBadges,
 } from '@/types/consensus';
-import { sortItemIds, type SortConfig } from '@/lib/sorting';
+
+import type {
+  ItemConsensusWithClusters,
+  VolatilityLevel,
+  ConsensusBadge,
+  ConsensusViewMode,
+} from '@/types/consensus';
 
 interface UseConsensusOptions {
   category: string;

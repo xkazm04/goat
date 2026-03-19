@@ -7,6 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+
 import { createLogger } from '@/lib/logger/debug-config';
 
 // Force dynamic rendering
@@ -20,7 +21,6 @@ const batchLogger = createLogger('api');
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type RouteModule = Record<string, any>;
 
 interface BatchRequest {

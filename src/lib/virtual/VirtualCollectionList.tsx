@@ -6,9 +6,9 @@
  * Uses @tanstack/react-virtual for efficient virtualization.
  */
 
+import { useVirtualizer, VirtualItem as TanstackVirtualItem } from '@tanstack/react-virtual';
 import React, {
   memo,
-  useMemo,
   useCallback,
   useRef,
   useEffect,
@@ -16,7 +16,7 @@ import React, {
   useImperativeHandle,
   useState,
 } from 'react';
-import { useVirtualizer, VirtualItem as TanstackVirtualItem } from '@tanstack/react-virtual';
+
 import { cn } from '@/lib/utils';
 
 /**

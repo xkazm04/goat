@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import type { OEmbedResponse } from '@/lib/embed';
+
 import { WIDGET_DIMENSIONS, generateIframeEmbed, DEFAULT_WIDGET_CONFIG } from '@/lib/embed';
+
+import type { OEmbedResponse } from '@/lib/embed';
 
 /**
  * Parse list ID from a GOAT ranking URL

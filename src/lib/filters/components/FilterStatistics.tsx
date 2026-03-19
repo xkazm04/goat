@@ -5,11 +5,14 @@
  * Real-time match counts and filter statistics
  */
 
-import React, { useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
+import React from 'react';
+
 import { cn } from '@/lib/utils';
-import type { FilterStatistics as FilterStatsType, FieldDistribution } from '../types';
+
 import { FILTER_ANIMATIONS, FILTER_TIMING } from '../constants';
+
+import type { FilterStatistics as FilterStatsType, FieldDistribution } from '../types';
 
 /**
  * FilterStatistics Props

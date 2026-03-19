@@ -136,53 +136,6 @@ export interface AIImageHistoryResponse {
 }
 
 /**
- * Convert database record to client format
- */
-export function toClientAIImage(db: AIGeneratedImage): AIGeneratedImageClient {
-  return {
-    id: db.id,
-    listId: db.list_id,
-    userId: db.user_id,
-    listTitle: db.list_title,
-    category: db.category,
-    stylePreset: db.style_preset,
-    customPrompt: db.custom_prompt,
-    provider: db.provider,
-    imageUrl: db.image_url,
-    thumbnailUrl: db.thumbnail_url,
-    width: db.width,
-    height: db.height,
-    itemsHash: db.items_hash,
-    itemsSnapshot: db.items_snapshot,
-    generationTimeMs: db.generation_time_ms,
-    isFavorited: db.is_favorited,
-    downloadCount: db.download_count,
-    shareCount: db.share_count,
-    createdAt: new Date(db.created_at),
-    expiresAt: new Date(db.expires_at),
-  };
-}
-
-/**
- * Generate items hash for cache lookup
- */
-export function generateItemsHash(items: AIImageItemSnapshot[]): string {
-  const sortedIds = items
-    .sort((a, b) => a.position - b.position)
-    .map(i => `${i.position}:${i.itemId}`)
-    .join('|');
-
-  // Simple hash function (for real use, consider crypto.subtle.digest)
-  let hash = 0;
-  for (let i = 0; i < sortedIds.length; i++) {
-    const char = sortedIds.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32bit integer
-  }
-  return Math.abs(hash).toString(16).padStart(16, '0');
-}
-
-/**
  * Social media dimensions presets
  */
 export const SOCIAL_DIMENSIONS = {

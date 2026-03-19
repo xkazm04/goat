@@ -1,10 +1,14 @@
 "use client";
 
-import { memo } from "react";
 import { motion } from "framer-motion";
-import { DiffIndicator, ComparisonDot, getDiffStatus, type DiffStatus } from "./DiffIndicator";
-import type { AttributeComparisonResult } from "@/lib/comparison/attribute-comparators";
+import { memo } from "react";
+
 import { DURATION } from '@/lib/animations/motion-presets';
+
+import { DiffIndicator, ComparisonDot, getDiffStatus } from "./DiffIndicator";
+
+import type { AttributeComparisonResult } from "@/lib/comparison/attribute-comparators";
+
 
 interface AttributeRowProps {
   attribute: AttributeComparisonResult;

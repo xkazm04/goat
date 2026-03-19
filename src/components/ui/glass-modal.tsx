@@ -15,17 +15,18 @@
  *   </GlassModal>
  */
 
-import { type ReactNode, type ComponentType, useCallback, createContext, useContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { DURATION } from '@/lib/animations/motion-presets';
+import { type ReactNode, type ComponentType, useCallback, createContext, useContext } from 'react';
+
 import {
   SURFACE_ELEVATION,
   ELEVATION,
   INSET,
 } from '@/components/visual/depth/depth-tokens';
 import { useModalAccessibility } from '@/hooks/use-modal-accessibility';
+import { DURATION } from '@/lib/animations/motion-presets';
+import { cn } from '@/lib/utils';
 
 const GlassModalLabelContext = createContext<string | undefined>(undefined);
 

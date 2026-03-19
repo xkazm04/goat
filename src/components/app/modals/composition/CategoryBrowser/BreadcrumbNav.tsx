@@ -1,10 +1,13 @@
 "use client";
 
-import { memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronRight, Home, Folder } from "lucide-react";
-import { BreadcrumbNavProps, CategoryNode } from "./types";
+import { memo } from "react";
+
 import { DURATION } from '@/lib/animations/motion-presets';
+
+import { BreadcrumbNavProps, CategoryNode } from "./types";
+
 
 /**
  * Breadcrumb Item Component

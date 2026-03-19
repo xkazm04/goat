@@ -6,10 +6,11 @@
  * Provides smooth loading states while content is being fetched.
  */
 
-import React, { memo, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
+import React, { memo, useMemo } from 'react';
+
 import { DURATION } from '@/lib/animations/motion-presets';
+import { cn } from '@/lib/utils';
 
 /**
  * Skeleton variant types

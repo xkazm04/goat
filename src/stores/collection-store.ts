@@ -1,12 +1,14 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+
+import { createLogger } from '@/lib/logger';
+
 import type {
   ListCollection,
   CollectionStats,
   ListCollectionWithStats,
   CollectionTreeNode,
 } from '@/types/collection';
-import { createLogger } from '@/lib/logger';
 
 const collectionLogger = createLogger('collection-store');
 

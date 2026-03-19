@@ -1,13 +1,14 @@
 import { NextRequest } from 'next/server';
-import { createClient, requireAuth } from '@/lib/supabase/server';
-import type { CreatorListAnalytics, CreatorAnalyticsSummary } from '@/types/top-lists';
+
 import {
   withErrorHandler,
   fromSupabaseError,
   successResponse,
   assertRequired,
-  unauthorized,
 } from '@/lib/errors';
+import { createClient } from '@/lib/supabase/server';
+
+import type { CreatorListAnalytics, CreatorAnalyticsSummary } from '@/types/top-lists';
 
 export const dynamic = 'force-dynamic';
 

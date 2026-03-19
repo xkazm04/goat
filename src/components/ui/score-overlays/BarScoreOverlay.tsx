@@ -1,10 +1,13 @@
 'use client';
 
-import { memo } from 'react';
 import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
-import type { CriterionDisplaySize } from '@/lib/criteria/types';
+import { memo } from 'react';
+
 import { DURATION } from '@/lib/animations/motion-presets';
+import { cn } from '@/lib/utils';
+
+import type { CriterionDisplaySize } from '@/lib/criteria/types';
+
 
 export interface BarScoreOverlayProps {
   /** Score value (0-10 or 0-100 depending on scale) */

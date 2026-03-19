@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Crown, Inbox, Search, Sparkles, Plus } from 'lucide-react';
+
 import { cn } from '@/lib/utils';
 
 interface FeedbackEmptyStateProps {

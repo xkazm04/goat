@@ -101,8 +101,9 @@ export {
 // Pre-configured Router Factory
 // ============================================================================
 
-import { DragOperationRouter } from './DragOperationRouter';
 import { AssignOperation } from './AssignOperation';
+import { DragOperationRouter } from './DragOperationRouter';
+import { DragResultHandler, type ValidationErrorEmitter } from './DragResultHandler';
 import { MoveOperation } from './MoveOperation';
 import { SwapOperation } from './SwapOperation';
 import {
@@ -114,7 +115,7 @@ import {
   TierToGridOperation,
   GridToTierOperation,
 } from './tier';
-import { DragResultHandler, type ValidationErrorEmitter } from './DragResultHandler';
+
 import type { RouterConfig } from './types';
 
 /**

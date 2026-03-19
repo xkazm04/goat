@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
+
 import { DURATION } from '@/lib/animations/motion-presets';
 
 interface StickyContextProps {

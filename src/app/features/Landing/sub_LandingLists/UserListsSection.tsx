@@ -1,21 +1,24 @@
 "use client";
 
-import { useCallback } from "react";
-import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
-import { GoatCrown, GoatSparkles } from "@/components/visual/GoatIcons";
-import { useUserLists, useDeleteList } from "@/hooks/use-top-lists";
-import { useTempUser } from "@/hooks/use-temp-user";
-import { usePlayList } from "@/hooks/use-play-list";
-import { toast } from "@/hooks/use-toast";
-import { UserListCard } from "./UserListCard";
+import { useRouter } from "next/navigation";
+import { useCallback } from "react";
+
 import { ListGrid } from "@/components/ui/list-grid";
-import { listContainerVariants } from "../shared/animations";
-import { NeonArenaTheme } from "../shared/NeonArenaTheme";
+import { GoatCrown, GoatSparkles } from "@/components/visual/GoatIcons";
+import { usePlayList } from "@/hooks/use-play-list";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import { useTempUser } from "@/hooks/use-temp-user";
+import { toast } from "@/hooks/use-toast";
+import { useUserLists, useDeleteList } from "@/hooks/use-top-lists";
+
 import { SectionHeader } from "./SectionHeader";
+import { UserListCard } from "./UserListCard";
+import { listContainerVariants } from "../shared/animations";
 import { gradients } from "../shared/gradients";
+import { NeonArenaTheme } from "../shared/NeonArenaTheme";
+
 
 interface UserListsSectionProps {
   className?: string;

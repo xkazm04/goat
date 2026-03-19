@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient, requireAuth, sanitizeFilterValue, escapeIlikeWildcards } from '@/lib/supabase/server';
-import type { ItemInsert } from '@/types/database';
+
 import { getRequestId } from '@/lib/api/request-id';
+import { createClient, requireAuth, sanitizeFilterValue, escapeIlikeWildcards } from '@/lib/supabase/server';
+
+import type { ItemInsert } from '@/types/database';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';

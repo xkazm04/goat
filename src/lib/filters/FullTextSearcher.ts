@@ -4,7 +4,7 @@
  */
 
 import Fuse, { FuseResult, IFuseOptions, FuseResultMatch } from 'fuse.js';
-import { extractTitle } from '@/lib/items/item-utils';
+
 import type { FilterMetrics } from './FilterEngine';
 
 // Pre-compiled regex for extended syntax detection

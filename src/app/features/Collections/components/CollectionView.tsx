@@ -1,9 +1,6 @@
 "use client";
 
-import { memo, useMemo, useState, useCallback } from "react";
-import { motion, AnimatePresence, Reorder } from "framer-motion";
-import { useReducedMotion } from "@/hooks/use-reduced-motion";
-import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Grid,
   List,
@@ -17,7 +14,12 @@ import {
   ExternalLink,
   GripVertical,
 } from "lucide-react";
+import Link from "next/link";
+import { memo, useMemo, useState, useCallback } from "react";
+
 import { EmptyTrophyCase, NoSearchResults } from "@/components/illustrations/EmptyStateIllustrations";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
+
 import type { ListCollection, CollectionStats } from "@/types/collection";
 import type { TopList } from "@/types/top-lists";
 

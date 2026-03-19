@@ -1,25 +1,30 @@
 "use client";
 
-import { useState, useCallback, useMemo, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { DURATION } from '@/lib/animations/motion-presets';
 import { Play } from "lucide-react";
+import { useState, useCallback, useMemo, memo } from "react";
+
+import { ELEVATION, GLOW_PRESET } from "@/components/visual/depth";
 import { GoatSparkles } from "@/components/visual/GoatIcons";
-import { useFeaturedLists } from "@/hooks/use-top-lists";
-import { useComposition } from "@/hooks/use-composition";
-import { usePlayList } from "@/hooks/use-play-list";
-import { useBookmarks } from "@/hooks/use-bookmarks";
-import { useTempUser } from "@/hooks/use-temp-user";
-import { TopList } from "@/types/top-lists";
-import { SearchFilterBar, SearchFilterResult } from "./SearchFilterBar";
-import { BookmarkButton } from "./BookmarkButton";
-import { NeonArenaTheme } from "../shared/NeonArenaTheme";
-import { FEATURED_ORBS } from "../shared/NeonArenaBackground";
-import { SectionHeader } from "./SectionHeader";
-import { getCategoryColor } from "@/lib/helpers/getColors";
-import { useListThumbnails } from "@/hooks/use-list-thumbnails";
-import { ELEVATION, GLOW_PRESET, getGlow } from "@/components/visual/depth";
 import { GoatMascot } from "@/components/visual/GoatMascot";
+import { useBookmarks } from "@/hooks/use-bookmarks";
+import { useComposition } from "@/hooks/use-composition";
+import { useListThumbnails } from "@/hooks/use-list-thumbnails";
+import { usePlayList } from "@/hooks/use-play-list";
+import { useFeaturedLists } from "@/hooks/use-top-lists";
+import { DURATION } from '@/lib/animations/motion-presets';
+
+
+import { useTempUser } from "@/hooks/use-temp-user";
+import { getCategoryColor } from "@/lib/helpers/getColors";
+import { TopList } from "@/types/top-lists";
+
+import { BookmarkButton } from "./BookmarkButton";
+import { SearchFilterBar, SearchFilterResult } from "./SearchFilterBar";
+import { SectionHeader } from "./SectionHeader";
+import { FEATURED_ORBS } from "../shared/NeonArenaBackground";
+import { NeonArenaTheme } from "../shared/NeonArenaTheme";
+
 
 interface FeaturedListsSectionProps {
   className?: string;
@@ -30,6 +35,7 @@ interface FeaturedListsSectionProps {
  */
 interface MosaicCardProps {
   list: TopList;
+  index: number;
   imageUrl: string | null;
   isLoading: boolean;
   onPlay: (list: TopList) => void;
@@ -40,6 +46,7 @@ interface MosaicCardProps {
 
 const MosaicCard = memo(function MosaicCard({
   list,
+  index,
   imageUrl,
   isLoading,
   onPlay,
@@ -63,6 +70,7 @@ const MosaicCard = memo(function MosaicCard({
     <motion.div
       className="relative aspect-4/3 cursor-pointer overflow-hidden rounded-control group
         focus-ring"
+      data-testid={`featured-list-item-${index}`}
       tabIndex={0}
       role="button"
       aria-label={`Play ${list.title}`}
@@ -309,10 +317,11 @@ export function FeaturedListsSection({ className }: FeaturedListsSectionProps) {
                 />
               ))
             ) : displayLists.length > 0 ? (
-              displayLists.map((list) => (
+              displayLists.map((list, index) => (
                 <MosaicCard
                   key={list.id}
                   list={list}
+                  index={index}
                   imageUrl={imageMap[list.id]?.url ?? null}
                   isLoading={imageMap[list.id]?.loading ?? true}
                   onPlay={handlePlayList}

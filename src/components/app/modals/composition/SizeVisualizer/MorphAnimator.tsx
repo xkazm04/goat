@@ -1,8 +1,9 @@
 "use client";
 
-import { memo, useEffect, useState, useRef, useCallback } from "react";
 import { motion, useSpring, useTransform, AnimatePresence } from "framer-motion";
-import { ListSize, MorphState, getSizeOption } from "./types";
+import { memo, useEffect, useState, useCallback } from "react";
+
+import { ListSize, MorphState } from "./types";
 
 interface MorphAnimatorProps {
   fromSize: ListSize | number;

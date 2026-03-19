@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Trophy } from 'lucide-react';
+
 import { BracketParticipant } from '../../lib/bracketGenerator';
 import { useBracketDimensions } from '../../lib/useBracketDimensions';
 

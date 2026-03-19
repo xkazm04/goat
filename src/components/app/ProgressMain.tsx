@@ -1,11 +1,14 @@
 import { motion } from "framer-motion";
+import { useMemo, useState } from "react";
+
+import { DURATION } from '@/lib/animations/motion-presets';
+import { getCenterTextStyles, getProgressLineStyles } from "@/lib/helpers/getCompletionStyles";
 import { useGridStore } from "@/stores/grid-store";
 import { useCurrentList } from "@/stores/use-list-store";
-import { useMemo, useState } from "react";
-import { CompletionModal } from "./modals/completion/CompletionModal";
+
 import ShowcaseDecor from "./decorations/ShowcaseDecor";
-import { getCenterTextStyles, getProgressLineStyles } from "@/lib/helpers/getCompletionStyles";
-import { DURATION } from '@/lib/animations/motion-presets';
+import { CompletionModal } from "./modals/completion/CompletionModal";
+
 
 interface ProgressMainProps {
     text: string;

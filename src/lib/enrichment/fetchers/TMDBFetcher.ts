@@ -5,8 +5,9 @@
  * Primary source for movies and TV shows.
  */
 
-import type { RawSourceData, EnrichmentInput } from '../types';
 import { calculateSimilarity } from '../utils/string-similarity';
+
+import type { RawSourceData, EnrichmentInput } from '../types';
 
 const TMDB_API_BASE = 'https://api.themoviedb.org/3';
 

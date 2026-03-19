@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Blueprint, CreateBlueprintRequest, UpdateBlueprintRequest, SearchBlueprintsParams } from '@/types/blueprint';
+
 import { CACHE_TTL_MS, GC_TIME_MS } from '@/lib/cache/unified-cache';
+import { Blueprint, CreateBlueprintRequest, UpdateBlueprintRequest, SearchBlueprintsParams } from '@/types/blueprint';
 
 // Query keys for blueprint caching
 export const blueprintKeys = {

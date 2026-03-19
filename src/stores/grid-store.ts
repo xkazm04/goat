@@ -18,12 +18,11 @@
  * Session-store handles session persistence, backlog-store handles backlog groups.
  * Components should use useMatchGridState().handleDragEnd which delegates here.
  */
+import { DragEndEvent } from '@dnd-kit/core';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { GridItemType } from '@/types/match';
-import { BacklogItem } from '@/types/backlog-groups';
-import { DragEndEvent } from '@dnd-kit/core';
-import { useSessionStore } from './session-store';
+
+import { logActivity } from '@/lib/activity/activity-logger';
 import {
   TransferableItem,
   TransferResult,
@@ -41,15 +40,18 @@ import {
   createEmptyGrid,
 } from '@/lib/grid';
 import { GRID_LIMITS, TUTORIAL_GRID } from '@/lib/grid/constants';
+import { extractTitle } from '@/lib/items/item-utils';
+import { gridLogger } from '@/lib/logger';
+import { createLazyStoreAccessor } from '@/lib/stores/lazy-store-accessor';
 import {
   getValidationAuthority,
   logValidationFailure,
   ValidationErrorCode,
 } from '@/lib/validation';
-import { createLazyStoreAccessor } from '@/lib/stores/lazy-store-accessor';
-import { gridLogger } from '@/lib/logger';
-import { extractTitle } from '@/lib/items/item-utils';
-import { logActivity } from '@/lib/activity/activity-logger';
+import { BacklogItem } from '@/types/backlog-groups';
+import { GridItemType } from '@/types/match';
+import { useSessionStore } from './session-store';
+
 
 /**
  * Resize a grid to the target size, rescuing matched items that would be

@@ -6,9 +6,10 @@
  * - Zod validation error handling
  */
 
-import { NextResponse } from 'next/server';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { NextResponse } from 'next/server';
 import { z } from 'zod';
+
 import type { StudioApiError } from '@/types/studio';
 
 // Re-export centralized Gemini client so existing imports keep working

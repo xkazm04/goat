@@ -5,6 +5,7 @@
  */
 
 import { StateCreator } from 'zustand';
+
 import { GridItemType } from '@/types/match';
 
 /**

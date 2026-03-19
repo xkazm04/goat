@@ -1,7 +1,7 @@
 "use client";
 
-import { useAuthUser } from "@/hooks/use-auth-user";
 import { CreatorAnalyticsDashboard } from "@/app/features/Analytics";
+import { useAuthUser } from "@/hooks/use-auth-user";
 
 export default function AnalyticsPage() {
   const { userId, isLoading } = useAuthUser();

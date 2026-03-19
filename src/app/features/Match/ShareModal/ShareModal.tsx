@@ -1,15 +1,18 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useState, useCallback, useRef } from "react";
+
 import { SURFACE_ELEVATION, ELEVATION, INSET } from "@/components/visual/depth/depth-tokens";
 import { useModalAccessibility } from "@/hooks/use-modal-accessibility";
+import { useTempUser } from "@/hooks/use-temp-user";
+import { DURATION } from '@/lib/animations/motion-presets';
+import { useActivityStore } from "@/stores/activity-store";
+import { useGridStore } from "@/stores/grid-store";
 import { useMatchStore } from "@/stores/match-store";
 import { useListStore } from "@/stores/use-list-store";
-import { useGridStore } from "@/stores/grid-store";
-import { useActivityStore } from "@/stores/activity-store";
-import { useTempUser } from "@/hooks/use-temp-user";
 import { CreateSharedRankingRequest, SharedRankingItem } from "@/types/share";
+
 import {
   SHARE_THEME_KEYS,
   getStyleConfig,
@@ -17,7 +20,7 @@ import {
   type ImageStyle,
   type ImageSizePreset,
 } from "../lib/constants/image-styles";
-import { DURATION } from '@/lib/animations/motion-presets';
+
 
 interface ShareModalProps {
   isOpen?: boolean;

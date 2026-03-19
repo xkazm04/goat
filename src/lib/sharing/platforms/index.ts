@@ -19,19 +19,19 @@ export { EmailAdapter, emailAdapter } from './email';
 export { NativeShareAdapter, nativeShareAdapter, isWebShareAvailable, canShareFiles } from './native';
 export { CopyAdapter, copyAdapter } from './copy';
 
+import { copyAdapter } from './copy';
+import { discordAdapter } from './discord';
+import { emailAdapter } from './email';
+import { facebookAdapter } from './facebook';
+import { instagramAdapter } from './instagram';
+import { linkedinAdapter } from './linkedin';
+import { nativeShareAdapter } from './native';
+import { redditAdapter } from './reddit';
+import { telegramAdapter } from './telegram';
+import { twitterAdapter } from './twitter';
 import type { SharePlatform } from '../types';
 import type { BasePlatformAdapter } from './base';
-import { twitterAdapter } from './twitter';
-import { instagramAdapter } from './instagram';
-import { redditAdapter } from './reddit';
-import { discordAdapter } from './discord';
 import { whatsappAdapter } from './whatsapp';
-import { telegramAdapter } from './telegram';
-import { facebookAdapter } from './facebook';
-import { linkedinAdapter } from './linkedin';
-import { emailAdapter } from './email';
-import { nativeShareAdapter } from './native';
-import { copyAdapter } from './copy';
 
 /**
  * Map of all platform adapters

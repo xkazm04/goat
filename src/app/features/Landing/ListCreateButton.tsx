@@ -1,17 +1,9 @@
-import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useTempUser } from "@/hooks/use-temp-user";
-import { useListStore } from "@/stores/use-list-store";
 import { useRouter } from "next/navigation";
-import { CompositionResult } from "@/types/composition-to-api";
+import { useState, useCallback } from "react";
+
 import { ShimmerBtn } from "@/components/app/button/AnimButtons";
-import { ListIntent } from "@/types/list-intent";
-import { listIntentToMetadata } from "@/types/list-intent-transformers";
-import { CreationProgressIndicator, CreationStep } from "./sub_CreateList/components/CreationProgressIndicator";
-import {
-  listCreationService,
-  CreationStep as ServiceCreationStep,
-} from "@/services/list-creation-service";
+import { useTempUser } from "@/hooks/use-temp-user";
 import { toast } from "@/hooks/use-toast";
 import {
   ctaButtonVariants,
@@ -20,6 +12,17 @@ import {
   confettiVariants,
   prefersReducedMotion,
 } from "@/lib/animations/micro-interactions";
+import {
+  listCreationService,
+  CreationStep as ServiceCreationStep,
+} from "@/services/list-creation-service";
+import { useListStore } from "@/stores/use-list-store";
+import { CompositionResult } from "@/types/composition-to-api";
+import { ListIntent } from "@/types/list-intent";
+import { listIntentToMetadata } from "@/types/list-intent-transformers";
+
+import { CreationProgressIndicator, CreationStep } from "./sub_CreateList/components/CreationProgressIndicator";
+
 
 // Confetti colors
 const CONFETTI_COLORS = [

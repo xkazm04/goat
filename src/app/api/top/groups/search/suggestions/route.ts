@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import { createClient, escapeIlikeWildcards } from '@/lib/supabase/server';
 
 // Force dynamic rendering for this route since it uses cookies

@@ -1,8 +1,11 @@
-import { BacklogState, LoadingErrorType, LoadingError } from './types';
-import { BacklogGroup, BacklogItem } from '@/types/backlog-groups';
-import { backlogLogger } from '@/lib/logger';
-import { rebuildItemIndex } from './item-index';
 import { resolveApiCategory } from '@/lib/config/category-config';
+import { backlogLogger } from '@/lib/logger';
+import { BacklogGroup, BacklogItem } from '@/types/backlog-groups';
+
+import { rebuildItemIndex } from './item-index';
+import { BacklogState, LoadingErrorType } from './types';
+
+
 
 /**
  * Classify an error into a structured type based on its characteristics.

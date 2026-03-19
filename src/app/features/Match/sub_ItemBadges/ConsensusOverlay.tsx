@@ -11,10 +11,12 @@ import {
   TrendingUp,
   Activity,
 } from 'lucide-react';
+
 import { useItemConsensusUI } from '@/hooks/use-consensus';
-import { useConsensusStore } from '@/stores/consensus-store';
-import type { ConsensusBadge, ConsensusViewMode } from '@/types/consensus';
 import { cn } from '@/lib/utils';
+import { useConsensusStore } from '@/stores/consensus-store';
+
+import type { ConsensusBadge, ConsensusViewMode } from '@/types/consensus';
 
 interface ConsensusOverlayProps {
   itemId: string;

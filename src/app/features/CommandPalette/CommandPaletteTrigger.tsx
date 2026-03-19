@@ -2,9 +2,11 @@
 
 import { motion } from "framer-motion";
 import { Command, Keyboard } from "lucide-react";
-import { useCommandPalette } from "./useCommandPalette";
+
 import { ELEVATION } from "@/components/visual/depth";
 import { DURATION } from '@/lib/animations/motion-presets';
+
+import { useCommandPalette } from "./useCommandPalette";
 
 interface CommandPaletteTriggerProps {
   className?: string;

@@ -6,10 +6,7 @@
  * Shows rating, year, genre, and other metadata as compact badges.
  */
 
-import React, { memo, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { DURATION } from '@/lib/animations/motion-presets';
-import { cn } from '@/lib/utils';
 import {
   Star,
   Calendar,
@@ -22,6 +19,11 @@ import {
   Zap,
   type LucideIcon,
 } from 'lucide-react';
+import React, { memo, useMemo } from 'react';
+
+import { DURATION } from '@/lib/animations/motion-presets';
+import { cn } from '@/lib/utils';
+
 
 /**
  * Built-in badge types

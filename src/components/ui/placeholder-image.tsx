@@ -1,10 +1,11 @@
 "use client";
 
+import { motion, AnimatePresence } from "framer-motion";
 import * as React from "react";
 import { useState, useEffect, useRef, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
+
 import { DURATION } from '@/lib/animations/motion-presets';
+import { cn } from "@/lib/utils";
 
 // Animation timing constants
 const BLUR_EXIT_DURATION = 0.4;

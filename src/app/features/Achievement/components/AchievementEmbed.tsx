@@ -1,7 +1,7 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { Trophy, Star, ExternalLink } from "lucide-react";
+
 import { Achievement, TIER_CONFIG, CATEGORY_CONFIG } from "@/types/achievement";
 
 interface AchievementEmbedProps {

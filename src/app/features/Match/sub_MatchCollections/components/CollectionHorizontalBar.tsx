@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+
 import { ItemCategory } from "@/app/features/Collection/types";
 import { DURATION } from '@/lib/animations/motion-presets';
 

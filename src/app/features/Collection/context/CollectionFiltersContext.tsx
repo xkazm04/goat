@@ -18,7 +18,8 @@
  */
 
 import React, { createContext, useContext, ReactNode } from 'react';
-import { CollectionFilter, ItemCategory, CollectionItem, ItemPanelStats } from '../types';
+
+import { ItemCategory, CollectionItem, ItemPanelStats } from '../types';
 
 export interface CollectionFiltersContextValue {
   // Filter state

@@ -21,6 +21,7 @@
  */
 
 import { useRef, useCallback, useMemo } from 'react';
+
 import type { Vector2D, GravityWell, UseGravityWellsReturn } from './types';
 
 export interface GravityWellsConfig {

@@ -1,9 +1,6 @@
 "use client";
 
-import { memo, useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { DURATION } from '@/lib/animations/motion-presets';
-import Link from "next/link";
 import {
   Folder,
   FolderPlus,
@@ -12,12 +9,17 @@ import {
   Search,
   Plus,
 } from "lucide-react";
+import Link from "next/link";
+import { memo, useState, useCallback, useRef, useEffect } from "react";
+
+import { useUserCollections } from "@/hooks/use-collections";
+import { DURATION } from '@/lib/animations/motion-presets';
 import {
   useCollections,
   useCollectionActions,
   useCollectionStore,
 } from "@/stores/collection-store";
-import { useUserCollections } from "@/hooks/use-collections";
+
 import type { ListCollection } from "@/types/collection";
 
 interface QuickCollectionSwitcherProps {

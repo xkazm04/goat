@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
 import { Layers } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+
 import { cn } from "@/lib/utils";
 
 interface CollectionToggleButtonProps {

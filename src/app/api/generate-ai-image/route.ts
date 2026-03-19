@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import type { AIGenerationRequest, AIGenerationResponse, GeneratedImage } from '@/app/features/Match/lib/ai/types';
 
 // Force dynamic rendering

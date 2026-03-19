@@ -1,9 +1,12 @@
 "use client";
 
-import { memo, ReactNode } from "react";
 import { motion, AnimatePresence, Variants } from "framer-motion";
-import { NavigationAnimatorProps } from "./types";
+import { memo, ReactNode } from "react";
+
 import { DURATION } from '@/lib/animations/motion-presets';
+
+import { NavigationAnimatorProps } from "./types";
+
 
 /**
  * Animation variants for navigation transitions

@@ -1,8 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
-import { useTierFocus } from "../components/TierFocusProvider";
+
 import { useRankingStore } from "@/stores/ranking-store";
+
+import { useTierFocus } from "../components/TierFocusProvider";
+
 import type { BacklogItem } from "@/types/backlog-groups";
 
 /**

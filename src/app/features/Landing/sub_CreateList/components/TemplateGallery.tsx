@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles,
@@ -12,11 +11,12 @@ import {
   Copy,
   Check
 } from "lucide-react";
-import { TopList } from "@/types/top-lists";
-import { ListTemplate, STARTER_TEMPLATES, topListToTemplate } from "@/types/templates";
-import { getCategoryColor } from "@/lib/helpers/getColors";
+import { useState } from "react";
+
 import { useTopLists } from "@/hooks/use-top-lists";
 import { DURATION } from '@/lib/animations/motion-presets';
+import { getCategoryColor } from "@/lib/helpers/getColors";
+import { ListTemplate, STARTER_TEMPLATES, topListToTemplate } from "@/types/templates";
 
 interface TemplateGalleryProps {
   onSelectTemplate: (template: ListTemplate) => void;

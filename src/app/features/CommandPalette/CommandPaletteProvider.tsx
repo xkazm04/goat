@@ -1,7 +1,7 @@
 "use client";
 
-import { useCommandPaletteKeyboard, useCommandPaletteStore } from "./useCommandPalette";
 import { CommandPalette } from "./CommandPalette";
+import { useCommandPaletteKeyboard, useCommandPaletteStore } from "./useCommandPalette";
 
 /**
  * Provider component that enables the global command palette

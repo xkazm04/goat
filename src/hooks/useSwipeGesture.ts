@@ -4,6 +4,7 @@
  */
 
 import { useRef, useCallback, useEffect } from 'react';
+
 import type { SwipeConfig, SwipeCallbacks, TouchPosition, SwipeEvent, SwipeDirection } from './useSwipeGesture.types';
 
 const DEFAULT_CONFIG: Required<SwipeConfig> = {

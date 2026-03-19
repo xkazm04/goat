@@ -6,10 +6,12 @@
  * Provides quick navigation through multiple item images.
  */
 
-import React, { memo, useCallback, useRef, useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { memo, useCallback, useRef, useEffect, useState } from 'react';
+
+import { cn } from '@/lib/utils';
+
 
 /**
  * Props for MiniGallery component

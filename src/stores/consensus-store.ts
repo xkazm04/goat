@@ -1,4 +1,11 @@
 import { create } from 'zustand';
+
+import { consensusLogger } from '@/lib/logger';
+import {
+  sortItemIds as unifiedSortItemIds,
+  fromLegacySortBy,
+} from '@/lib/sorting';
+
 import type {
   ConsensusState,
   ConsensusViewMode,
@@ -10,12 +17,6 @@ import type {
   InventorySortOrder,
   InventorySortConfig,
 } from '@/types/ranked-inventory';
-import {
-  type SortConfig,
-  sortItemIds as unifiedSortItemIds,
-  fromLegacySortBy,
-} from '@/lib/sorting';
-import { consensusLogger } from '@/lib/logger';
 
 interface ConsensusStoreActions {
   /** Set the consensus view mode */

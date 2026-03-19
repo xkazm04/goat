@@ -1,12 +1,13 @@
 "use client";
 
-import { memo, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { memo, useMemo } from "react";
+
+import { DURATION } from '@/lib/animations/motion-presets';
 import {
   DropZoneIndicator,
   getDropZoneTailwindClasses,
 } from "@/lib/placement/DropZoneScorer";
-import { DURATION } from '@/lib/animations/motion-presets';
 
 /**
  * Props for position suggestion badge

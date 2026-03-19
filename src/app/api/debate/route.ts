@@ -5,7 +5,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+
 import { generateDebateChallenge } from '@/lib/debate/debate-provider';
+
 import type { DebateChallengeRequest } from '@/lib/debate/types';
 
 export const dynamic = 'force-dynamic';

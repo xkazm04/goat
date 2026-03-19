@@ -8,11 +8,12 @@
  * Includes threshold crossing animations and score quality indicators.
  */
 
-import { memo, useMemo, useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, useSpring, useTransform } from 'framer-motion';
-import { cn } from '@/lib/utils';
-import { mapCategoryToTheme, type ThemeKey } from '@/lib/criteria/theme-mapping';
+import { memo, useState, useEffect, useRef } from 'react';
+
 import { DURATION } from '@/lib/animations/motion-presets';
+import { mapCategoryToTheme, type ThemeKey } from '@/lib/criteria/theme-mapping';
+import { cn } from '@/lib/utils';
 
 // Animation configuration
 const ANIMATION_DURATION = 0.2;

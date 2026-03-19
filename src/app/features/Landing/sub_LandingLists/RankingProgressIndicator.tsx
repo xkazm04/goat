@@ -1,9 +1,10 @@
 "use client";
 
-import { memo, useMemo } from "react";
 import { motion } from "framer-motion";
-import { DURATION } from '@/lib/animations/motion-presets';
+import { memo, useMemo } from "react";
+
 import { useSimpleAnimationPause } from "@/hooks/use-animation-pause";
+import { DURATION } from '@/lib/animations/motion-presets';
 
 interface RankingProgressIndicatorProps {
   /** Number of filled/ranked positions */

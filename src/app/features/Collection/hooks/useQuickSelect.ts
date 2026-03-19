@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import { CollectionItem } from '../types';
-import { useGridStore } from '@/stores/grid-store';
+
 import { useBacklogStore } from '@/stores/backlog-store';
+import { useGridStore } from '@/stores/grid-store';
+
+import { CollectionItem } from '../types';
 
 /**
  * Quick-select mode states

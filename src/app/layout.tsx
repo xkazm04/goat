@@ -3,14 +3,16 @@ if (process.env.NODE_ENV === 'development') {
   import('./dev-css-var-check').then(mod => mod.checkCssVariableContract());
 }
 import './globals.css';
-import type { Metadata } from 'next';
 import { Inter, Space_Grotesk } from 'next/font/google';
-import { QueryProvider } from '@/providers/query-provider';
-import { BacklogProvider } from '@/providers/BacklogProvider';
-import { DeferredProviders } from '@/providers/DeferredProviders';
+
+import { AuthHeader, Toaster } from '@/components/auth';
 import { PageTransition } from '@/components/page-transition';
 import { ThemeProvider } from '@/components/theme/theme-provider';
-import { AuthHeader, Toaster } from '@/components/auth';
+import { BacklogProvider } from '@/providers/BacklogProvider';
+import { DeferredProviders } from '@/providers/DeferredProviders';
+import { QueryProvider } from '@/providers/query-provider';
+
+import type { Metadata } from 'next';
 
 const inter = Inter({ subsets: ['latin'] });
 const spaceGrotesk = Space_Grotesk({

@@ -5,10 +5,10 @@ import {
   UseQueryOptions,
   UseMutationOptions,
 } from '@tanstack/react-query';
-import { toast } from './use-toast';
-import { useOptimisticMutation } from './useOptimisticMutation';
+
 import { goatApi } from '@/lib/api';
-import { topListsKeys } from '@/lib/query-keys/top-lists';
+import { CACHE_TTL_MS , CACHE_TAGS } from '@/lib/cache/unified-cache';
+import { topListsKeys , FeaturedListsParams } from '@/lib/query-keys/top-lists';
 import {
   TopList,
   ListWithItems,
@@ -22,9 +22,10 @@ import {
   FeaturedListsResponse,
   CreatorAnalyticsSummary,
 } from '@/types/top-lists';
-import { FeaturedListsParams } from '@/lib/query-keys/top-lists';
-import { CACHE_TTL_MS } from '@/lib/cache/unified-cache';
-import { CACHE_TAGS } from '@/lib/cache/unified-cache';
+
+
+import { toast } from './use-toast';
+import { useOptimisticMutation } from './useOptimisticMutation';
 
 // Unified cache times - imported from unified-cache.ts for consistency
 const CACHE_TIMES = {

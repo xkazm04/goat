@@ -5,7 +5,9 @@
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { BREAKPOINTS, getBreakpointFromWidth } from '@/lib/layout/constants';
+
+import { getBreakpointFromWidth } from '@/lib/layout/constants';
+
 import type {
   Breakpoint,
   LayoutPreset,
@@ -20,7 +22,6 @@ import type {
   LayoutActions,
   DetachedWindowConfig,
   DockEdge,
-  LAYOUT_STORAGE_KEYS,
 } from '@/lib/layout/types';
 
 /**

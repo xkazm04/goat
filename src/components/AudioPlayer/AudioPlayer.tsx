@@ -7,8 +7,6 @@
  * Portal-rendered to escape CSS transforms.
  */
 
-import { useState, useEffect, useCallback } from 'react';
-import { createPortal } from 'react-dom';
 import {
   Play,
   Pause,
@@ -19,6 +17,11 @@ import {
   Music,
   AlertCircle,
 } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
+
+import { cn } from '@/lib/utils';
+import { formatDuration, getYouTubeThumbnail } from '@/lib/youtube';
 import {
   useAudioStore,
   useAudioPlayback,
@@ -26,9 +29,9 @@ import {
   useAudioVolume,
   useAudioPlayer,
 } from '@/stores/audio-store';
-import { formatDuration, getYouTubeThumbnail } from '@/lib/youtube';
+
 import { YouTubeEmbed } from './YouTubeEmbed';
-import { cn } from '@/lib/utils';
+
 
 export function AudioPlayer() {
   const [mounted, setMounted] = useState(false);

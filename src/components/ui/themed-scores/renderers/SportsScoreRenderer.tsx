@@ -1,12 +1,14 @@
 "use client";
 
-import { cn } from "@/lib/utils";
 import {
   SCORE_LOW_THRESHOLD,
   SCORE_MID_THRESHOLD,
   formatScore,
 } from "@/lib/constants/scoring";
+import { cn } from "@/lib/utils";
+
 import { AnimatedProgressBar } from "./AnimatedProgressBar";
+
 import type { ScoreRendererProps } from "./types";
 
 /**

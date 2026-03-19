@@ -5,19 +5,13 @@
  * Context-aware filter hints based on current results
  */
 
-import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PlusCircle } from 'lucide-react';
+import React, { useMemo } from 'react';
+
 import { GoatLightbulb, GoatTarget, GoatSearch } from '@/components/visual/GoatIcons';
 import { cn } from '@/lib/utils';
-import type {
-  SmartFilterSuggestion,
-  FilterConfig,
-  FilterStatistics,
-  FilterFieldDefinition,
-  FilterCondition,
-  FieldDistribution,
-} from '../types';
+
 import {
   SUGGESTION_TYPES,
   FILTER_ANIMATIONS,
@@ -25,6 +19,13 @@ import {
   FILTER_SCALE,
   PERFORMANCE_THRESHOLDS,
 } from '../constants';
+
+import type {
+  SmartFilterSuggestion,
+  FilterConfig,
+  FilterStatistics,
+  FilterFieldDefinition,
+} from '../types';
 
 /**
  * Lucide icon mapping for suggestion types

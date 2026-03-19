@@ -1,15 +1,18 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { DURATION } from "@/lib/animations/motion-presets";
+import { Star } from "lucide-react";
+
 import { SURFACE_ELEVATION, ELEVATION, INSET } from "@/components/visual/depth/depth-tokens";
 import { useModalAccessibility } from "@/hooks/use-modal-accessibility";
-import { Star } from "lucide-react";
+import { DURATION } from "@/lib/animations/motion-presets";
 import { useComparisonStore } from "@/stores/comparison-store";
 import { useGridStore } from "@/stores/grid-store";
-import { ComparisonItem } from "./ComparisonItem";
-import { ComparisonHeader } from "./ComparisonHeader";
+
 import { ComparisonActions } from "./ComparisonActions";
+import { ComparisonHeader } from "./ComparisonHeader";
+import { ComparisonItem } from "./ComparisonItem";
+
 import type { StoreConnectedComparisonModalProps } from "@/types/modal-props";
 
 /**

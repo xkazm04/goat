@@ -8,22 +8,26 @@
  * specifically tailored for collection items.
  */
 
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Filter, X, ChevronDown, Bookmark, Sparkles } from 'lucide-react';
+import { Filter, ChevronDown, Bookmark, Sparkles } from 'lucide-react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
+
+
+import { FilterPanel } from '@/lib/filters/components/FilterPanel';
+import { FilterPresetManager } from '@/lib/filters/components/FilterPresetManager';
+import { FilterStatistics as FilterStatsDisplay } from '@/lib/filters/components/FilterStatistics';
+import { QuickFilterBar } from '@/lib/filters/components/QuickFilterBar';
+import { FILTER_ANIMATIONS } from '@/lib/filters/constants';
 import { cn } from '@/lib/utils';
+
 import {
   useCollectionFilterState,
   getActiveFilterCount,
   getHasActiveFilters,
 } from '../hooks/useCollectionFilterState';
-import { QuickFilterBar } from '@/lib/filters/components/QuickFilterBar';
-import { FilterPanel } from '@/lib/filters/components/FilterPanel';
-import { FilterPresetManager, PresetQuickAccess } from '@/lib/filters/components/FilterPresetManager';
-import { FilterStatistics as FilterStatsDisplay } from '@/lib/filters/components/FilterStatistics';
-import type { QuickFilter, FilterConfig, FilterFieldDefinition } from '@/lib/filters/types';
-import { FILTER_ANIMATIONS, DEFAULT_FILTER_FIELDS } from '@/lib/filters/constants';
+
 import type { CollectionItem } from '../types';
+import type { QuickFilter, FilterConfig, FilterFieldDefinition } from '@/lib/filters/types';
 
 /**
  * Collection-specific quick filters

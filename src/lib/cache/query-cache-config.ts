@@ -9,8 +9,10 @@
  */
 
 import { QueryClient, QueryCache, MutationCache } from '@tanstack/react-query';
-import { CACHE_TTL_MS, GC_TIME_MS, INVALIDATION_RULES, getRetryConfig, type InvalidationEvent } from './unified-cache';
+
 import { createLogger } from '@/lib/logger/debug-config';
+
+import { CACHE_TTL_MS, GC_TIME_MS, INVALIDATION_RULES, getRetryConfig, type InvalidationEvent } from './unified-cache';
 
 const log = createLogger('cache');
 

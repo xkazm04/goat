@@ -9,20 +9,22 @@
  * and the comparison store for item state management.
  */
 
-import React, { memo, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
+import { Pin, X, Plus } from 'lucide-react';
+import React, { memo, useCallback, useMemo } from 'react';
+
 import { PictureInPicture } from '@/lib/layout';
+import { cn } from '@/lib/utils';
+import { useBacklogStore } from '@/stores/backlog-store';
 import {
   useComparisonStore,
   MAX_COMPARISON_ITEMS,
 } from '@/stores/comparison-store';
 import { useGridStore } from '@/stores/grid-store';
-import { useBacklogStore } from '@/stores/backlog-store';
-import { Pin, X, Plus } from 'lucide-react';
-import type { BacklogItemType } from '@/types/match';
+
 import type { BacklogItem } from '@/types/backlog-groups';
-import { extractTitle } from '@/lib/items/item-utils';
+import type { BacklogItemType } from '@/types/match';
+
 
 // ─── ComparisonDrawer ────────────────────────────────────────────────────────
 

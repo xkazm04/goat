@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
+
 import { goatApi, ItemStatsParams } from '@/lib/api';
 
 // Cache time constants

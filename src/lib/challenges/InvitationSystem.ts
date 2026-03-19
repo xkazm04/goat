@@ -4,7 +4,6 @@
  */
 
 import {
-  Challenge,
   ChallengeInvitation,
   ChallengeParticipant,
   ParticipantStatus,

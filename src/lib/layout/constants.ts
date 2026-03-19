@@ -3,16 +3,16 @@
  * Configuration values for the layout management system
  */
 
+import { DURATION } from '@/lib/animations/motion-presets';
+
 import type {
   Breakpoint,
   BreakpointConfig,
   LayoutPreset,
   LayoutPresetConfig,
   GestureConfig,
-  GestureType,
   PipConfig,
 } from './types';
-import { DURATION } from '@/lib/animations/motion-presets';
 
 /**
  * Breakpoint configurations

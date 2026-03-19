@@ -13,8 +13,6 @@
  * 3. Type definitions are correct
  */
 
-/* eslint-disable @typescript-eslint/no-unused-vars */
-
 import React from 'react';
 
 // Import all Phase 2 exports to verify they exist
@@ -28,28 +26,14 @@ import {
   SURFACE_ELEVATION,
   DEPTH_PRESET,
   getGlow,
-  // Type exports
-  type ElevationLevel,
-  type ElevationLayeredLevel,
-  type GlowIntensity,
-  type GlowColor,
-  type GlowPreset,
-  type SurfaceLevel,
-  type DepthPreset,
   // Depth components
   Elevated,
   Surface,
-  type ElevatedProps,
-  type SurfaceProps,
   // Decoration components
   Glow,
   Shimmer,
   GradientBorder,
   GRADIENT_PRESETS,
-  type GlowProps,
-  type ShimmerProps,
-  type GradientBorderProps,
-  type GradientPreset,
 } from '@/components/visual';
 
 // =============================================================================

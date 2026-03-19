@@ -3,9 +3,10 @@
 import { motion } from 'framer-motion';
 import { ArrowLeft, Share2 } from 'lucide-react';
 import Link from 'next/link';
+
+import { DURATION } from '@/lib/animations/motion-presets';
 import { useGridStore } from '@/stores/grid-store';
 import { useMatchStore } from '@/stores/match-store';
-import { DURATION } from '@/lib/animations/motion-presets';
 
 interface MatchGridHeaderProps {
     title?: string;

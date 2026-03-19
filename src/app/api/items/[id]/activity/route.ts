@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import { createClient } from '@/lib/supabase/server';
+
 import type { ActivityTimelineData, ActivityEvent, TrajectoryPoint } from '@/types/item-details';
 
 export const dynamic = 'force-dynamic';

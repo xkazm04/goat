@@ -5,13 +5,15 @@
  * A droppable tier container for tier-based ranking mode
  */
 
-import React, { useCallback, useMemo, useRef } from 'react';
 import { useDroppable, useDraggable } from '@dnd-kit/core';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
-import { TierDefinition } from './types';
-import { TierItem, TierAssignment } from './TierConverter';
 import { ChevronUp, ChevronDown, X, GripVertical } from 'lucide-react';
+import React, { useMemo, useRef } from 'react';
+
+import { cn } from '@/lib/utils';
+
+import { TierDefinition } from './types';
+
 
 /**
  * Drop data for tier rows

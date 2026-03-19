@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient, requireAuth, escapeIlikeWildcards } from '@/lib/supabase/server';
-import { cachedFetch } from '@/lib/cache/server-cache';
+
 import { getRequestId } from '@/lib/api/request-id';
+import { cachedFetch } from '@/lib/cache/server-cache';
+import { createClient, requireAuth, escapeIlikeWildcards } from '@/lib/supabase/server';
 
 // Force dynamic rendering for this route since it uses cookies
 export const dynamic = 'force-dynamic';

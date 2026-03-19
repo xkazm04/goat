@@ -10,12 +10,14 @@
 'use client';
 
 import { useEffect, useCallback, useRef } from 'react';
-import { getSyncEngine } from './SyncEngine';
-import { getNetworkMonitor } from './NetworkMonitor';
-import { getSyncQueue } from './SyncQueue';
-import { flushPendingSync } from './sessionStoreIntegration';
-import { flushPendingSessionSave } from '@/stores/session-store';
+
 import { flushPendingGridSync } from '@/stores/grid-store';
+import { flushPendingSessionSave } from '@/stores/session-store';
+
+import { getNetworkMonitor } from './NetworkMonitor';
+import { flushPendingSync } from './sessionStoreIntegration';
+import { getSyncEngine } from './SyncEngine';
+
 
 export interface UseUnsavedChangesGuardOptions {
   /** Enable beforeunload warning (default: true) */

@@ -158,7 +158,6 @@ export function enableSyncDriftAssertions(): () => void {
   // Subscribe to ranking changes (ranking-store uses subscribeWithSelector)
   unsubRanking = useRankingStore.subscribe(() => runDriftChecks());
 
-  // eslint-disable-next-line no-console
   console.log('[Store Sync] Dev-mode drift assertions enabled');
 
   return () => {

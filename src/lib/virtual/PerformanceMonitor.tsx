@@ -6,6 +6,8 @@
  * Useful for development and debugging virtual scroll performance.
  */
 
+import { motion, AnimatePresence } from 'framer-motion';
+import { Activity, Cpu, Layers, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import React, {
   memo,
   useRef,
@@ -13,9 +15,9 @@ import React, {
   useState,
   useCallback,
 } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+
 import { cn } from '@/lib/utils';
-import { Activity, Cpu, Layers, Clock, ChevronDown, ChevronUp } from 'lucide-react';
+
 
 /**
  * Performance metrics structure

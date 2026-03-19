@@ -7,17 +7,18 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { BacklogItem } from '@/types/backlog-groups';
-import { GridItemType } from '@/types/match';
+
+import {
+  getDropZoneScorer,
+  DropZoneIndicator,
+} from '@/lib/placement/DropZoneScorer';
 import {
   getPlacementPredictor,
   PlacementPrediction,
   UserPatterns,
 } from '@/lib/placement/PlacementPredictor';
-import {
-  getDropZoneScorer,
-  DropZoneIndicator,
-} from '@/lib/placement/DropZoneScorer';
+import { BacklogItem } from '@/types/backlog-groups';
+import { GridItemType } from '@/types/match';
 
 /**
  * Smart fill mode state
@@ -382,12 +383,7 @@ export const usePlacementStore = create<PlacementStoreState>()(
 );
 
 // Selector hooks for performance
-export const useSmartFillMode = () => usePlacementStore((state) => state.smartFillMode);
 export const useIsDragging = () => usePlacementStore((state) => state.isDragging);
-export const useDropZoneIndicators = () => usePlacementStore((state) => state.dropZoneIndicators);
-export const useCurrentPrediction = () => usePlacementStore((state) => state.currentPrediction);
-export const useQuickPlaceEnabled = () => usePlacementStore((state) => state.quickPlaceEnabled);
-export const useQuickPlaceSuggestions = () => usePlacementStore((state) => state.quickPlaceSuggestions);
 
 /**
  * Hook to get the indicator for a specific position
@@ -396,14 +392,4 @@ export function useIndicatorAtPosition(position: number): DropZoneIndicator | nu
   return usePlacementStore((state) =>
     state.dropZoneIndicators.find(i => i.position === position) || null
   );
-}
-
-/**
- * Hook to check if a position is a top suggestion
- */
-export function useIsTopSuggestion(position: number): boolean {
-  return usePlacementStore((state) => {
-    if (!state.currentPrediction) return false;
-    return state.currentPrediction.topSuggestion?.position === position;
-  });
 }

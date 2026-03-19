@@ -3,6 +3,7 @@
  * Scores and selects content based on user interests, context, and exploration
  */
 
+import { InterestTracker, getInterestTracker } from './InterestTracker';
 import {
   PersonalizationConfig,
   PersonalizationContext,
@@ -13,7 +14,6 @@ import {
   CategoryInterest,
   InterestCategory,
 } from './types';
-import { InterestTracker, getInterestTracker } from './InterestTracker';
 
 /**
  * Content item interface for scoring

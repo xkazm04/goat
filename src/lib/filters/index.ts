@@ -106,9 +106,6 @@ export type {
   FilterIntegrationProviderProps,
 } from './CollectionFilterIntegration';
 
-// ── Filter builder sync ─────────────────────────────────────────────────
-export { useFilterBuilderSync } from './useFilterBuilderSync';
-
 // ── Presets ─────────────────────────────────────────────────────────────
 export {
   FILTER_PRESETS,
@@ -133,28 +130,6 @@ export { FilterStatistics, MatchCountBadge, FilterSummary } from './components/F
 export { SmartFilterSuggestions, generateSmartSuggestions } from './components/SmartFilterSuggestions';
 export { SearchAutocomplete, CompactSearchInput } from './components/SearchAutocomplete';
 export { FilterResultsCounter, FilterCountBadge, SearchResultSummary } from './components/FilterResultsCounter';
-
-// ── Visual filter builder (re-export for convenience) ───────────────────
-export {
-  FilterBuilder,
-  CompactFilterBuilder,
-  FilterBlock,
-  FilterBlockOverlay,
-  FilterGroup as FilterGroupComponent,
-  FilterGroupOverlay,
-  RootCombinatorToggle,
-  FilterPreview,
-  FilterPreviewBadge,
-  FilterSaver,
-  FilterActions as FilterActionsToolbar,
-  OperatorSelector,
-  OperatorBadge,
-  ValueInput,
-  ValueDisplay,
-  FilterTemplates,
-  TemplateQuickSelect,
-  FILTER_TEMPLATES,
-} from './visual';
 
 // ── Faceted search (re-export for backward compatibility) ───────────────
 // Prefer importing directly from '@/lib/faceted-search'

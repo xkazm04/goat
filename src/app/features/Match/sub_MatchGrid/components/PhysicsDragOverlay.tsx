@@ -1,10 +1,12 @@
 "use client";
 
-import { motion, useSpring, useTransform, AnimatePresence } from "framer-motion";
+import { motion, useSpring } from "framer-motion";
 import { useMemo } from "react";
+
 import { PlaceholderImage } from "@/components/ui/placeholder-image";
-import { getSpeed, getDirection, Vector2D } from "../lib/physicsEngine";
 import { DURATION } from '@/lib/animations/motion-presets';
+
+import { getSpeed, getDirection, Vector2D } from "../lib/physicsEngine";
 
 interface DraggableItem {
   id?: string;

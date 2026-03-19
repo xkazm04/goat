@@ -1,9 +1,12 @@
 "use client";
 
-import { memo, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ListSize, GridSlot, RankingFormat, getSizeOption } from "./types";
+import { memo, useMemo } from "react";
+
 import { DURATION } from '@/lib/animations/motion-presets';
+
+import { ListSize, GridSlot, RankingFormat, getSizeOption } from "./types";
+
 
 interface GridPreviewProps {
   size: ListSize | number;

@@ -1,8 +1,6 @@
 "use client";
 
-import { memo, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import {
   X,
   Folder,
@@ -13,6 +11,11 @@ import {
   ChevronDown,
   Loader2,
 } from "lucide-react";
+import { memo, useState, useCallback } from "react";
+
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
+
+
 import type { ListCollection, CreateCollectionRequest, UpdateCollectionRequest } from "@/types/collection";
 
 interface CollectionManagerProps {

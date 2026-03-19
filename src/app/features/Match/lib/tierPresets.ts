@@ -3,6 +3,8 @@
  * Category-specific tier configurations for the tier list view
  */
 
+import { TIER_COLORS, TIER_DESCRIPTIONS } from '@/lib/tiers/constants';
+
 import type { TierLabel, ExtendedTierLabel } from '@/lib/tiers/types';
 import type {
   TierColor,
@@ -10,7 +12,6 @@ import type {
   TierLabel as RankingTierLabel,
   ExtendedTierLabel as RankingExtendedTierLabel,
 } from '@/types/ranking';
-import { TIER_COLORS, TIER_DESCRIPTIONS } from '@/lib/tiers/constants';
 
 /**
  * Tier configuration for the tier list view

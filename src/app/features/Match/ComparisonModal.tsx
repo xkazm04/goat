@@ -1,16 +1,19 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Crown, Star, Gamepad2, Trophy, ChevronRight, BarChart3, Settings } from "lucide-react";
+import { useState, useCallback, useMemo } from "react";
+
 import { FeedbackModal, FeedbackEmptyState } from "@/lib/feedback-pipeline";
-import type { ComparisonModalProps } from "@/types/modal-props";
-import { isComparisonModalOpen } from "@/types/modal-props";
+import { cn } from "@/lib/utils";
 import { useCriteriaStore } from "@/stores/criteria-store";
+import { isComparisonModalOpen } from "@/types/modal-props";
+
 import { CriteriaProfileSelector, InputModeSelector } from "./components/CriteriaProfileSelector";
 import { BulkCriteriaScoreInput } from "./components/CriteriaScoreInput";
+
 import type { CriterionScore } from "@/lib/criteria/types";
-import { cn } from "@/lib/utils";
+import type { ComparisonModalProps } from "@/types/modal-props";
 
 const getItemIcon = (title: string) => {
   const lower = title.toLowerCase();

@@ -9,6 +9,7 @@
  */
 
 import { BacklogItemType } from '@/types/match';
+
 import { BracketParticipant, BracketSize } from './bracketGenerator';
 
 export type SeedingStrategy = 'random' | 'alphabetical' | 'year' | 'consensus' | 'reverse-alphabetical';

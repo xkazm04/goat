@@ -7,13 +7,14 @@
  * Features golden trophy animation, brand-palette confetti, and G.O.A.T. logo flash.
  */
 
-import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useRouter } from 'next/navigation';
 import { Crown, ArrowRight, Plus } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+
 import { Button } from '@/components/ui/button';
-import { useStudioStore } from '@/stores/studio-store';
 import { DURATION } from '@/lib/animations/motion-presets';
+import { useStudioStore } from '@/stores/studio-store';
 
 interface PublishSuccessProps {
   listId: string;

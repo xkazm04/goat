@@ -1,9 +1,12 @@
 "use client";
 
-import * as React from "react";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
-import type { ThemeProviderProps } from "next-themes";
+import * as React from "react";
+
 import { checkExperimentalDarkSupport } from "@/lib/theme-support";
+
+import type { ThemeProviderProps } from "next-themes";
+
 
 /**
  * Enhanced ThemeProvider that includes fallback support for experimental-dark theme.

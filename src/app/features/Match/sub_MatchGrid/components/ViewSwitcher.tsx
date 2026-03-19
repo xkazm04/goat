@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Trophy, Crown, Mountain, Swords, ListOrdered } from 'lucide-react';
+
 import { DURATION } from '@/lib/animations/motion-presets';
 
 export type ViewMode = 'podium' | 'goat' | 'rushmore' | 'bracket' | 'tierlist';

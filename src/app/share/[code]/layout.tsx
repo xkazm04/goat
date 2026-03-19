@@ -1,5 +1,6 @@
-import { Metadata } from "next";
 import { createClient } from "@supabase/supabase-js";
+import { Metadata } from "next";
+
 import type { OGCardLayout } from "@/lib/og/types";
 
 interface LayoutProps {

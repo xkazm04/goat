@@ -16,8 +16,8 @@
  * reduces initial bundle size.
  */
 
-import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
+import dynamic from 'next/dynamic';
 
 // Loading skeleton for list sections
 function ListSectionSkeleton() {

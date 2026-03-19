@@ -1,10 +1,14 @@
+import { dndLogger } from '@/lib/logger';
+
+import { backlogToTransferable } from '../../type-guards';
+import { requireStore, requireTierTarget, validateAll } from '../validation-helpers';
+import { BaseTierOperation } from './BaseTierOperation';
+
 import type { DragContext, DragOperationResult, OperationStoreContext } from '../types';
 import type { ValidationResult } from '@/lib/validation';
 import type { BacklogItem } from '@/types/backlog-groups';
-import { backlogToTransferable } from '../../type-guards';
-import { requireStore, requireTierTarget, requireAvailableBacklogItem, validateAll } from '../validation-helpers';
-import { dndLogger } from '@/lib/logger';
-import { BaseTierOperation } from './BaseTierOperation';
+
+
 
 /**
  * Handles assigning items from backlog/collection to a tier

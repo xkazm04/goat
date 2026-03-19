@@ -2,9 +2,12 @@
 
 import { motion } from "framer-motion";
 import { Eye, Share2, Users, Activity, Award, AlertTriangle } from "lucide-react";
+
 import { cn } from "@/lib/utils";
-import type { CreatorListAnalytics } from "@/types/top-lists";
+
 import { SparklineChart } from "./SparklineChart";
+
+import type { CreatorListAnalytics } from "@/types/top-lists";
 
 interface ListAnalyticsCardProps {
   analytics: CreatorListAnalytics;

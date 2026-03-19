@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import type { AnalyticsResponse } from '@/types/api-keys';
+
 import {
   extractApiKey,
   validateApiKey,
@@ -9,6 +8,9 @@ import {
   apiError,
   handleCors,
 } from '@/lib/api/public-api';
+import { createClient } from '@/lib/supabase/server';
+
+import type { AnalyticsResponse } from '@/types/api-keys';
 
 export const dynamic = 'force-dynamic';
 

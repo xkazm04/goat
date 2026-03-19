@@ -1,9 +1,10 @@
 "use client";
 
-import { CSSProperties, ReactNode, useMemo, useEffect, useState, useCallback } from "react";
-import { cn } from "@/lib/utils";
+import { CSSProperties, ReactNode, useMemo, useEffect, useState } from "react";
+
 import { useRankingProgress, type ProgressTier } from "@/hooks/use-ranking-progress";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import { cn } from "@/lib/utils";
 
 interface RankingProgressLayerProps {
   children: ReactNode;

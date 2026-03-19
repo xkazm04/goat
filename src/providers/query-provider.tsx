@@ -9,6 +9,7 @@
 
 import { QueryClientProvider } from '@tanstack/react-query';
 import { lazy, Suspense, useState } from 'react';
+
 import { createQueryClient } from '@/lib/cache/query-cache-config';
 
 /**

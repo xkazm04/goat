@@ -9,9 +9,10 @@
  * Uses the shared GlassModal shell for consistent styling across the app.
  */
 
-import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { LayoutTemplate, Search, ChevronRight, Sparkles } from 'lucide-react';
+import { useState, useMemo } from 'react';
+
 import {
   GlassModal,
   GlassModalHeader,
@@ -22,9 +23,10 @@ import {
   GLASS_PILL_INACTIVE,
 } from '@/components/ui/glass-modal';
 import { SURFACE_ELEVATION } from '@/components/visual/depth/depth-tokens';
-import { cn } from '@/lib/utils';
-import { ALL_LIST_TEMPLATES } from '@/lib/templates/list-templates';
 import { CATEGORIES } from '@/lib/config/category-config';
+import { ALL_LIST_TEMPLATES } from '@/lib/templates/list-templates';
+import { cn } from '@/lib/utils';
+
 import type { ListTemplate } from '@/types/studio';
 
 interface TemplateGalleryProps {
@@ -127,6 +129,7 @@ export function TemplateGallery({ open, onClose, onSelect }: TemplateGalleryProp
 
   return (
     <GlassModal open={open} onClose={onClose}>
+      <div data-testid="template-gallery" />
       <GlassModalHeader
         icon={LayoutTemplate}
         title="Template Gallery"

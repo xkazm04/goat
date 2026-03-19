@@ -9,9 +9,11 @@
  */
 
 import { useRef, useCallback, useState } from "react";
-import { useGridStore } from "@/stores/grid-store";
-import { useBacklogStore } from "@/stores/backlog-store";
+
 import { CollectionItem } from "@/app/features/Collection/types";
+import { useBacklogStore } from "@/stores/backlog-store";
+import { useGridStore } from "@/stores/grid-store";
+
 import {
   triggerHaptic,
   getDropPositionPattern,

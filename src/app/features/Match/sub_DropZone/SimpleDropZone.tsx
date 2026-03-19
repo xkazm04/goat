@@ -1,23 +1,26 @@
 "use client";
 
 import { useDraggable, useDroppable } from "@dnd-kit/core";
-import { GridItemType } from "@/types/match";
-
 import { X } from "lucide-react";
 import { useState, useEffect, useRef, useMemo, memo } from "react";
-import { DropCelebration } from "./components/DropCelebration";
-import { DropZoneOccupied } from "./components/DropZoneOccupied";
-import { DropZoneEmpty, RankNumberBackground, HoloGridPattern } from "./components/DropZoneEmpty";
-import { ValidDropIndicator, SnapConfirmationGlow } from "./components/MagneticGlowAura";
-import { DropZoneCard, ActiveSelectionRing, HoverGlowBorder, ItemTitle } from "./components/DropZoneCard";
-import { getMedalGradient, MEDAL_HINT_COLORS } from "../lib/medalStyling";
-import { useOptionalDropZoneHighlight } from "../sub_MatchGrid/components/DropZoneHighlightContext";
+
 import { createGridDragData, createGridSlotDropData, createGridReceiverId } from "@/lib/dnd";
-import { getRankConfig, isPodiumPosition } from "../lib/rankConfig";
 import { useCriteriaStore, useActiveProfile } from '@/stores/criteria-store';
 import { useListStore } from '@/stores/use-list-store';
-import { usePositionChange } from "../components/PositionHistoryContext";
+import { GridItemType } from "@/types/match";
+
+
+import { DropCelebration } from "./components/DropCelebration";
+import { DropZoneCard, ActiveSelectionRing, HoverGlowBorder, ItemTitle } from "./components/DropZoneCard";
+import { DropZoneEmpty, RankNumberBackground, HoloGridPattern } from "./components/DropZoneEmpty";
+import { DropZoneOccupied } from "./components/DropZoneOccupied";
+import { ValidDropIndicator, SnapConfirmationGlow } from "./components/MagneticGlowAura";
 import { PositionChangeIndicator } from "../components/PositionChangeIndicator";
+import { usePositionChange } from "../components/PositionHistoryContext";
+import { getMedalGradient, MEDAL_HINT_COLORS } from "../lib/medalStyling";
+import { getRankConfig, isPodiumPosition } from "../lib/rankConfig";
+import { useOptionalDropZoneHighlight } from "../sub_MatchGrid/components/DropZoneHighlightContext";
+
 
 interface SimpleDropZoneProps {
   position: number;

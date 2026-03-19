@@ -13,13 +13,15 @@
 
 import { useQuery, useMutation, useQueryClient, QueryKey } from '@tanstack/react-query';
 import { useMemo, useCallback, useState, useEffect, useRef } from 'react';
+
 import { collectionApi, CollectionApiParams, CollectionItemCreate, CollectionItemUpdate } from '@/lib/api/collection';
+import { trackError } from '@/lib/errors/error-analytics';
+import { fromUnknown } from '@/lib/errors/GoatError';
 import { collectionKeys } from '@/lib/query-keys/collection';
+
 import { CollectionItem, ItemCategory, ItemPanelStats } from '../types';
 import { useVisibleCollectionItems, PlacementStats } from './useVisibleCollectionItems';
 import { useEasterEggSpotlight } from '../utils/easterEgg';
-import { trackError } from '@/lib/errors/error-analytics';
-import { fromUnknown } from '@/lib/errors/GoatError';
 
 // ============================================================================
 // Dev-mode cache operation instrumentation
@@ -37,7 +39,6 @@ function logCacheOp(
   extra?: { hadExistingData?: boolean; context?: string }
 ): void {
   if (!isDev) return;
-  // eslint-disable-next-line no-console
   console.debug(
     `[Collection Cache] ${op}`,
     {
@@ -75,7 +76,6 @@ function logMutationError(
   });
 
   if (isDev) {
-    // eslint-disable-next-line no-console
     console.error(
       `[Collection Mutation] ${mutationName} failed`,
       {

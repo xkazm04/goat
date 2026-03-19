@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+
 import {
   getChallengeManager,
   getInvitationSystem,
@@ -12,6 +12,7 @@ import {
   getStreakTracker,
   type RankedItem,
 } from '@/lib/challenges';
+import { createClient } from '@/lib/supabase/server';
 
 interface RouteContext {
   params: Promise<{ id: string }>;

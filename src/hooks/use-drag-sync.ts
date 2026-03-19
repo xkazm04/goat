@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useGridStore } from "@/stores/grid-store";
 import { DragEndEvent, DragMoveEvent, DragStartEvent } from "@dnd-kit/core";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+import { useGridStore } from "@/stores/grid-store";
 
 interface DragState {
   isDragging: boolean;

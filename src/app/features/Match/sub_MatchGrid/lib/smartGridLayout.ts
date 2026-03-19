@@ -4,6 +4,7 @@
  */
 
 import { GridItemType } from "@/types/match";
+
 import { TierDefinition, TierId, getTierForPosition, adjustTiersForSize } from "./tierConfig";
 
 /**

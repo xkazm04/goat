@@ -1,10 +1,13 @@
 "use client";
 
-import { memo, useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sliders, ChevronDown, ChevronUp } from "lucide-react";
-import { ListSize, SIZE_OPTIONS, getNearestSize } from "./types";
+import { memo, useState, useCallback, useRef, useEffect } from "react";
+
 import { DURATION } from '@/lib/animations/motion-presets';
+
+import { ListSize, SIZE_OPTIONS, getNearestSize } from "./types";
+
 
 interface CustomSizeSliderProps {
   value: number;

@@ -6,13 +6,16 @@
  * Shows full item information with actions and metadata.
  */
 
-import React, { memo, useCallback, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { X } from 'lucide-react';
+import React, { memo, useCallback, useRef, useEffect } from 'react';
+
 import { DURATION } from '@/lib/animations/motion-presets';
 import { cn } from '@/lib/utils';
-import { X } from 'lucide-react';
-import { QuickActions, QuickActionConfig } from './QuickActions';
+
+
 import { MetadataBadges, MetadataBadgeData } from './MetadataBadges';
+import { QuickActions, QuickActionConfig } from './QuickActions';
 import { RichItemData } from './RichItemCard';
 
 /**

@@ -7,13 +7,14 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { extractYouTubeId } from '@/lib/youtube';
-import { getGeminiClient, GEMINI_MODEL_PRIMARY } from '@/lib/providers/gemini-client';
+
+import { rateLimit, getRateLimitKey } from '@/lib/api/rate-limiter';
 import {
   handleStudioError,
   StudioErrorCodes,
 } from '@/lib/api/studio-utils';
-import { rateLimit, getRateLimitKey } from '@/lib/api/rate-limiter';
+import { getGeminiClient, GEMINI_MODEL_PRIMARY } from '@/lib/providers/gemini-client';
+import { extractYouTubeId } from '@/lib/youtube';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;

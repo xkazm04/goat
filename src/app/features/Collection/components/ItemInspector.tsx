@@ -1,25 +1,24 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
   ExternalLink,
-  Clock,
-  Share2,
   ChevronDown,
   ChevronUp,
-  Play,
   Plus,
 } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+
 import { EmptyTrophyCase, GoatDisconnected } from "@/components/illustrations/EmptyStateIllustrations";
-import { cn } from "@/lib/utils";
-import { SPRING, DURATION } from "@/lib/animations/motion-presets";
-import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { PlaceholderImage } from "@/components/ui/placeholder-image";
-import { MetadataGrid } from "./MetadataGrid";
-import { RankingDistribution, RankingStats } from "./RankingDistribution";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import { SPRING, DURATION } from "@/lib/animations/motion-presets";
+import { cn } from "@/lib/utils";
+
 import { ActivityTimeline } from "./ActivityTimeline";
+import { MetadataGrid } from "./MetadataGrid";
+import { RankingDistribution } from "./RankingDistribution";
 
 // Inline type for related items (RelatedItemsCarousel was removed)
 export interface RelatedItem {

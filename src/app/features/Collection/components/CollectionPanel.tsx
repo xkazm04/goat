@@ -1,20 +1,24 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect, useDeferredValue } from "react";
-import { CollectionToolbar } from "./CollectionToolbar";
-import { ConfigurableCollectionItem, COLLECTION_VIEW_CONFIG, type HoistedStoreState } from "./ConfigurableCollectionItem";
-import { CollectionStats } from "./CollectionStats";
-import { AddItemModal } from "./AddItemModal";
-import { StickyContext } from "./StickyContext";
-import { useCollection } from "../hooks/useCollection";
-import { useCurrentList } from "@/stores/use-list-store";
-import { useListStore } from "@/stores/use-list-store";
-import { useConsensusStore, useConsensusSortBy } from "@/stores/consensus-store";
-import { useCriteriaStore } from "@/stores/criteria-store";
-import { CollectionErrorBoundary } from "./CollectionErrorBoundary";
+
 import { EmptyTrophyCase, NoSearchResults } from "@/components/illustrations/EmptyStateIllustrations";
 import { MasonryGrid } from "@/components/ui/masonry-grid";
 import { useItemStatsBatch } from "@/hooks/use-item-stats";
+import { useConsensusStore, useConsensusSortBy } from "@/stores/consensus-store";
+import { useCriteriaStore } from "@/stores/criteria-store";
+import { useCurrentList , useListStore } from "@/stores/use-list-store";
+
+import { AddItemModal } from "./AddItemModal";
+import { CollectionErrorBoundary } from "./CollectionErrorBoundary";
+import { CollectionStats } from "./CollectionStats";
+import { CollectionToolbar } from "./CollectionToolbar";
+import { ConfigurableCollectionItem, COLLECTION_VIEW_CONFIG, type HoistedStoreState } from "./ConfigurableCollectionItem";
+import { StickyContext } from "./StickyContext";
+import { useCollection } from "../hooks/useCollection";
+
+
+
 
 interface CollectionPanelProps {
   className?: string;

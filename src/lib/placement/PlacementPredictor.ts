@@ -8,8 +8,8 @@
  * - Community ranking data (when available)
  */
 
-import { GridItemType } from '@/types/match';
 import { BacklogItem } from '@/types/backlog-groups';
+import { GridItemType } from '@/types/match';
 
 /**
  * Prediction result for a single position

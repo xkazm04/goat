@@ -1,11 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useItemStat } from "@/hooks/use-item-stats";
 import { TrendingUp, Award, BarChart3 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { DURATION } from "@/lib/animations/motion-presets";
+
+import { useItemStat } from "@/hooks/use-item-stats";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import { DURATION } from "@/lib/animations/motion-presets";
+import { cn } from "@/lib/utils";
 
 interface AverageRankingBadgeProps {
   itemId: string;

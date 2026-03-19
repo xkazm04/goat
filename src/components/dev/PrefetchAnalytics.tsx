@@ -10,10 +10,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { PrefetchManager, type PrefetchAnalytics as Analytics } from '@/lib/prefetch/PrefetchManager';
+
 import { BandwidthDetector, type NetworkConditions } from '@/lib/prefetch/BandwidthDetector';
-import { ScrollPrefetcher } from '@/lib/prefetch/ScrollPrefetcher';
 import { HoverPrefetcher } from '@/lib/prefetch/HoverPrefetcher';
+import { PrefetchManager, type PrefetchAnalytics as Analytics } from '@/lib/prefetch/PrefetchManager';
+import { ScrollPrefetcher } from '@/lib/prefetch/ScrollPrefetcher';
 
 interface PrefetchAnalyticsProps {
   /** Position of the panel */

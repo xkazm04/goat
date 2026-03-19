@@ -9,6 +9,10 @@
  * Then assigns the item to the grid position.
  */
 
+import { createGridItem } from '@/lib/grid';
+import { dndLogger } from '@/lib/logger';
+import { getValidationAuthority, logValidationFailure } from '@/lib/validation';
+
 import type {
   DragOperation,
   DragContext,
@@ -16,9 +20,6 @@ import type {
   OperationStoreContext,
 } from './types';
 import type { ValidationResult } from '@/lib/validation';
-import { getValidationAuthority, logValidationFailure } from '@/lib/validation';
-import { createGridItem } from '@/lib/grid';
-import { dndLogger } from '@/lib/logger';
 
 /**
  * LockManager - Provides timeout-based locking for items being assigned.

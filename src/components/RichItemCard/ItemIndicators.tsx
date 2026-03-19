@@ -6,9 +6,7 @@
  * Shows ranked, favorite, new, and other status indicators.
  */
 
-import React, { memo, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
 import {
   Check,
   Heart,
@@ -22,6 +20,10 @@ import {
   AlertCircle,
   type LucideIcon,
 } from 'lucide-react';
+import React, { memo, useMemo } from 'react';
+
+import { cn } from '@/lib/utils';
+
 
 /**
  * Indicator types

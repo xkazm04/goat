@@ -12,11 +12,6 @@ export { QuickSelectBadge, QuickSelectStatusBar } from './QuickSelectBadge';
 export { ConsensusOverlay } from './ConsensusOverlay';
 export { ItemStatsTooltip } from './ItemStatsTooltip';
 
-// Cross-list intelligence
-export { UniversalRatingBadge } from './UniversalRatingBadge';
-export { CrossListInsightsPanel } from './CrossListInsightsPanel';
-export { AnomalyAlert } from './AnomalyAlert';
-
 // Comparison components
 export { SelectionCheckbox, ComparisonSelector } from './ComparisonSelector';
 export { AttributeRow } from './AttributeRow';

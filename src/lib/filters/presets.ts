@@ -3,7 +3,7 @@
  * Predefined filter configurations for common use cases
  */
 
-import type { FilterConfig, FilterCondition, QuickFilter } from './types';
+import type { FilterConfig, QuickFilter } from './types';
 
 /**
  * Preset category for grouping

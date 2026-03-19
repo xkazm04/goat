@@ -1,6 +1,7 @@
 // Lazy-load the award list to defer loading of @dnd-kit (~25KB gzipped)
-import { LazyAwardList } from "@/app/features/Awards/LazyAwardList";
 import { Suspense } from "react";
+
+import { LazyAwardList } from "@/app/features/Awards/LazyAwardList";
 
 interface PageProps {
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>;

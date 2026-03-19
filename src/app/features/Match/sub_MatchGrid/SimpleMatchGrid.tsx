@@ -1,38 +1,43 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { DndContext, DragEndEvent, DragMoveEvent, PointerSensor, TouchSensor, useSensor, useSensors, pointerWithin, type Announcements, type ScreenReaderInstructions } from "@dnd-kit/core";
-import { backlogGroupsToItemCategories } from "../../Collection";
-import { SimpleCollectionPanel } from "../sub_MatchCollections/SimpleCollectionPanel";
-import { CollectionItem } from "../../Collection/types";
-import { BacklogItem } from "@/types/backlog-groups";
-import { GridItemType } from "@/types/match";
-import { useGridStore, getGridDragRouter } from "@/stores/grid-store";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
+
+import { CompletionModal } from "@/components/app/modals/completion/CompletionModal";
+import { AudioPlayer } from "@/components/AudioPlayer";
+import { AuthPrompt } from "@/components/auth";
+import { RankingProgressLayer } from "@/components/visual/RankingProgressLayer";
+import { useAuthUser } from "@/hooks/use-auth-user";
+import { createStandardRouter, type OperationStoreContext } from "@/lib/dnd";
 import { useBacklogStore } from "@/stores/backlog-store";
+import { useGridStore } from "@/stores/grid-store";
+import { BacklogItem } from "@/types/backlog-groups";
+import { backlogGroupsToItemCategories } from "../../Collection";
+import { CollectionItem } from "../../Collection/types";
+import { SimpleCollectionPanel } from "../sub_MatchCollections/SimpleCollectionPanel";
 import { useCurrentList } from "@/stores/use-list-store";
 import { useMatchStore } from "@/stores/match-store";
 import { useRankingStore } from "@/stores/ranking-store";
+
 import { LazyShareModal } from "../components/LazyModals";
-import { CompletionModal } from "@/components/app/modals/completion/CompletionModal";
-import { createStandardRouter, type OperationStoreContext } from "@/lib/dnd";
+
 
 // Import modular components
-import { ViewSwitcher, ViewMode } from "./components/ViewSwitcher";
-import { BracketView } from "../sub_MatchBracket";
-import { TierListView } from "./components/TierListView";
-import { GridSection } from "./components/GridSection";
+import { DropZoneHighlightProvider, useDropZoneHighlight } from "./components/DropZoneHighlightContext";
 import { ViewSelector } from "./components/GridRenderer";
+import { GridSection } from "./components/GridSection";
 import { MatchGridHeader } from "./components/MatchGridHeader";
 import { PortalDragOverlay } from "./components/PortalDragOverlay";
-import { DropZoneHighlightProvider, useDropZoneHighlight } from "./components/DropZoneHighlightContext";
+import { TierListView } from "./components/TierListView";
+import { ViewSwitcher, ViewMode } from "./components/ViewSwitcher";
+import { BracketView } from "../sub_MatchBracket";
 import { StandaloneAnnouncer } from "./components/ScreenReaderAnnouncer";
-import { AudioPlayer } from "@/components/AudioPlayer";
+
+
 import { ComparisonDrawer } from "../components/ComparisonDrawer";
 import { PositionHistoryProvider } from "../components/PositionHistoryContext";
-import { useAuthUser } from "@/hooks/use-auth-user";
+
 import { useUndoKeyboard } from "@/hooks/use-undo-keyboard";
-import { AuthPrompt } from "@/components/auth";
-import { RankingProgressLayer } from "@/components/visual/RankingProgressLayer";
 
 /**
  * "Neon Arena" Match Grid

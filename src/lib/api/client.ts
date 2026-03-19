@@ -5,8 +5,10 @@ import {
   isGoatError,
   trackError,
 } from '@/lib/errors';
-import type { ErrorResponse } from '@/lib/errors';
+
 import { generateRequestId, REQUEST_ID_HEADER } from './request-id';
+
+import type { ErrorResponse } from '@/lib/errors';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 

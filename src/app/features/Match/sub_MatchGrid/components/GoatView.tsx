@@ -1,11 +1,13 @@
 "use client";
 
 import { motion } from 'framer-motion';
-import { SimpleDropZone } from '../../sub_DropZone/SimpleDropZone';
-import { GridItemType } from '@/types/match';
+
 import { Elevated } from '@/components/visual';
 import { useAnimationPause } from '@/hooks/use-animation-pause';
 import { DURATION } from '@/lib/animations/motion-presets';
+import { GridItemType } from '@/types/match';
+
+import { SimpleDropZone } from '../../sub_DropZone/SimpleDropZone';
 
 interface GoatViewProps {
     gridItems: (GridItemType | null)[];

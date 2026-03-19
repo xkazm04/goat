@@ -1,8 +1,11 @@
 "use client";
 
-import { useMemo, useRef, useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useMemo, useRef, useEffect, useState, useCallback } from 'react';
+
+import { STAGGER, ENTRANCE, ENTRANCE_DURATION, CONNECTOR, CELEBRATION, SPRING_CONFIG, GLOW_SHADOWS } from '@/lib/animations/motion-tokens';
+
 import {
   BracketState,
   BracketMatchup,
@@ -10,7 +13,6 @@ import {
   BracketRound,
 } from '../lib/bracketGenerator';
 import { useBracketDimensions } from '../lib/useBracketDimensions';
-import { STAGGER, ENTRANCE, ENTRANCE_DURATION, CONNECTOR, CELEBRATION, SPRING_CONFIG, GLOW_SHADOWS } from '@/lib/animations/motion-tokens';
 
 interface BracketVisualizationProps {
   bracket: BracketState;

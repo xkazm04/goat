@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { X, Link2, Check, Download, Settings2, Eye } from "lucide-react";
+import { useState, useCallback } from "react";
+
 import { SURFACE_ELEVATION, ELEVATION, INSET } from "@/components/visual/depth/depth-tokens";
 import { useModalAccessibility } from "@/hooks/use-modal-accessibility";
-import { X, Link2, Check, Download, Settings2, Eye } from "lucide-react";
 import {
   Achievement,
   AchievementCardConfig,
@@ -12,6 +13,7 @@ import {
   ACHIEVEMENT_SHARE_PLATFORMS,
   TIER_CONFIG,
 } from "@/types/achievement";
+
 import { AchievementCard } from "./AchievementCard";
 
 interface AchievementShareModalProps {

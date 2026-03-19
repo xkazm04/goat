@@ -18,7 +18,6 @@ export function checkCssVariableContract() {
     (v) => getComputedStyle(root).getPropertyValue(v).trim() === ''
   );
   if (missing.length > 0) {
-    // eslint-disable-next-line no-console
     console.warn('[design-tokens] Missing required CSS variables:', missing);
   }
 }

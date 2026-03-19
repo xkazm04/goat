@@ -1,10 +1,13 @@
 "use client";
 
-import { memo, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Eye, EyeOff } from "lucide-react";
-import { SizeVisualizer, ListSize, SIZE_OPTIONS } from "./SizeVisualizer";
+import { memo, useState, useCallback } from "react";
+
 import { DURATION } from '@/lib/animations/motion-presets';
+
+import { SizeVisualizer, ListSize } from "./SizeVisualizer";
+
 
 type Props = {
   hierarchyOptions: { value: string; label: string; description: string }[];

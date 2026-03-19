@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Trophy,
@@ -12,6 +11,8 @@ import {
   Sparkles,
   Lock,
 } from "lucide-react";
+import { useState, useMemo } from "react";
+
 import {
   Achievement,
   AchievementCategory,
@@ -20,7 +21,8 @@ import {
   TIER_CONFIG,
   CATEGORY_CONFIG,
 } from "@/types/achievement";
-import { AchievementCard, AchievementCardCompact } from "./AchievementCard";
+
+import { AchievementCard } from "./AchievementCard";
 import { AchievementShareModal } from "./AchievementShareModal";
 
 interface AchievementShowcaseProps {

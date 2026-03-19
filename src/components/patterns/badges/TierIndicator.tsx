@@ -26,14 +26,16 @@
  * ```
  */
 
-import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
+import React, { useMemo } from 'react';
+
 import {
   consensusTierConfigs,
   badgeSizeScale,
   resolveTierFromRank,
 } from '@/lib/tokens/badge-tokens';
+import { cn } from '@/lib/utils';
+
 import type {
   TierIndicatorProps,
   ConsensusTier,

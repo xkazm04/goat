@@ -1,5 +1,7 @@
 import { useCallback } from "react";
+
 import { useComposition } from "@/hooks/use-composition";
+
 import type { ShowcaseCardData } from "../types";
 
 /**

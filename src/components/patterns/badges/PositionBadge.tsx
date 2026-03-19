@@ -21,14 +21,17 @@
  * ```
  */
 
-import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
+import { Trophy, Medal, Award, Star, Circle , Crown } from 'lucide-react';
+import React, { useMemo } from 'react';
+
 import {
   positionTierStyles,
   positionBadgeSizeScale,
   resolveTierFromPosition,
 } from '@/lib/tokens/badge-tokens';
+import { cn } from '@/lib/utils';
+
 import type { PositionBadgeProps, BadgeSize } from './types';
 
 export { resolveTierFromPosition as getPositionTier } from '@/lib/tokens/badge-tokens';
@@ -129,7 +132,6 @@ export const PositionBadge = React.memo(function PositionBadge({
 // Position Badge with Icon
 // =============================================================================
 
-import { Trophy, Medal, Award, Star, Circle } from 'lucide-react';
 
 const tierIcons = {
   gold: Trophy,
@@ -199,7 +201,7 @@ export interface PodiumBadgeProps {
   className?: string;
 }
 
-import { Crown } from 'lucide-react';
+
 
 export function PodiumBadge({
   position,

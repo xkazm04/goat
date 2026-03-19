@@ -1,11 +1,12 @@
 'use client';
 
-import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Trophy, Medal, Star, Circle } from 'lucide-react';
+import { useMemo } from 'react';
+
 import { cn } from '@/lib/utils';
 import { useItemConsensus } from '@/stores/consensus-store';
-import { getTierFromRank, getTierConfig, type InventoryTier } from '@/types/ranked-inventory';
+import { getTierFromRank, getTierConfig } from '@/types/ranked-inventory';
 
 interface TierIndicatorProps {
   /** The item ID to fetch tier for */

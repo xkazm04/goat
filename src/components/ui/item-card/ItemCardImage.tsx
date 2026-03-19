@@ -1,8 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { ProgressiveImage } from "../progressive-image";
+
 import { PlaceholderImage } from "../placeholder-image";
+import { ProgressiveImage } from "../progressive-image";
 
 export interface ItemCardImageProps {
   /** Image URL */

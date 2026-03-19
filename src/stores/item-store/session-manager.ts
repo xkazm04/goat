@@ -1,5 +1,6 @@
-import { ListSession, SessionProgress } from './types';
 import { GridItemType } from '@/types/match';
+
+import { ListSession, SessionProgress } from './types';
 
 export function createEmptySession(listId: string, size: number): ListSession {
   const gridItems = Array.from({ length: size }, (_, index) => ({

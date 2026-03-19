@@ -8,13 +8,16 @@
  * Inspired by Todoist's unsynced indicator pattern.
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
 import { CloudOff, RefreshCw, Loader2, X, AlertTriangle } from 'lucide-react';
-import { SyncState } from './types';
-import { getSyncEngine } from './SyncEngine';
+import React, { useState, useEffect, useCallback } from 'react';
+
+import { cn } from '@/lib/utils';
+
+
 import { getNetworkMonitor } from './NetworkMonitor';
+import { getSyncEngine } from './SyncEngine';
+import { SyncState } from './types';
 
 export interface UnsavedChangesBannerProps {
   /** Minimum pending changes before showing banner (default: 1) */

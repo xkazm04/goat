@@ -6,17 +6,17 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+
 import { listCollectionKeys, getCollectionInvalidationKeys } from "@/lib/query-keys/list-collections";
+import { useCollectionStore } from "@/stores/collection-store";
+import { useCurrentUser } from "@/stores/use-list-store";
 import {
-  transformCollectionRow,
   type ListCollection,
   type CreateCollectionRequest,
   type UpdateCollectionRequest,
   type CollectionQueryParams,
   type ListCollectionWithStats,
 } from "@/types/collection";
-import { useCollectionStore } from "@/stores/collection-store";
-import { useCurrentUser } from "@/stores/use-list-store";
 
 // API functions
 async function fetchUserCollections(

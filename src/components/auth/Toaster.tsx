@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
+import { useEffect } from 'react';
+
 import { useToast } from '@/hooks/use-toast';
 import { DURATION } from '@/lib/animations/motion-presets';
 

@@ -1,7 +1,8 @@
 "use client";
 
 import { memo, useEffect, useRef, useState } from "react";
-import { useTierFocus, type Announcement } from "./TierFocusProvider";
+
+import { useTierFocus } from "./TierFocusProvider";
 
 /**
  * ScreenReaderAnnouncer - Live region for screen reader announcements

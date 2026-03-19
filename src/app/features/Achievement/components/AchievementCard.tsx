@@ -1,8 +1,9 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { DURATION } from "@/lib/animations/motion-presets";
 import { Trophy, Star, Users, Compass, Flag, Sparkles, LucideIcon } from "lucide-react";
+
+import { DURATION } from "@/lib/animations/motion-presets";
 import {
   Achievement,
   AchievementCardConfig,

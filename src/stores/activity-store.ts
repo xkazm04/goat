@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { useShallow } from 'zustand/react/shallow';
+
 import { activityLogger } from '@/lib/logger';
 
 export interface ActivityItem {
@@ -243,17 +243,3 @@ export const useActivityStore = create<ActivityStoreState>((set, get) => ({
   },
 }));
 
-// Selector hooks
-export const useActivities = () => useActivityStore((state) => state.activities);
-export const useActivityLoading = () => useActivityStore((state) => state.isLoading);
-export const useActivityInitialized = () => useActivityStore((state) => state.isInitialized);
-export const useActivityActions = () => useActivityStore(
-  useShallow((state) => ({
-    addActivity: state.addActivity,
-    fetchRecentActivities: state.fetchRecentActivities,
-    startPolling: state.startPolling,
-    stopPolling: state.stopPolling,
-    broadcastCompletion: state.broadcastCompletion,
-    initializeDemoActivities: state.initializeDemoActivities,
-  }))
-);

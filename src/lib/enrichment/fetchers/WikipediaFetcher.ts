@@ -8,8 +8,9 @@
  * No API key required - uses the free MediaWiki API.
  */
 
-import type { RawSourceData, EnrichmentInput } from '../types';
 import { calculateSimilarity } from '../utils/string-similarity';
+
+import type { RawSourceData, EnrichmentInput } from '../types';
 
 const WIKIPEDIA_API_BASE = 'https://en.wikipedia.org/w/api.php';
 

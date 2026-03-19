@@ -11,6 +11,9 @@
  * 4. ListIntent → Metadata (for list store and session)
  */
 
+import { getDefaultSubcategory, getInitialSubcategory } from '@/lib/config/category-config';
+
+import { Blueprint } from './blueprint';
 import {
   ListIntent,
   ListIntentColor,
@@ -21,8 +24,6 @@ import {
 } from './list-intent';
 import { ListTemplate } from './templates';
 import { TopList } from './top-lists';
-import { Blueprint } from './blueprint';
-import { getDefaultSubcategory, getInitialSubcategory } from '@/lib/config/category-config';
 
 // ============================================================================
 // API Request Types

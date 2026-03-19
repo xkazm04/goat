@@ -3,13 +3,14 @@
  * Optimizes content for each platform
  */
 
+import { getPlatformAdapter } from './platforms';
+
 import type {
   SharePlatform,
   ShareContent,
   OptimizedContent,
   ImageFormat,
 } from './types';
-import { getPlatformAdapter } from './platforms';
 
 /**
  * UTM parameters for tracking

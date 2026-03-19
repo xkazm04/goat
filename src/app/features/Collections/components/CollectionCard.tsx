@@ -1,9 +1,6 @@
 "use client";
 
-import { memo, useCallback } from "react";
 import { motion } from "framer-motion";
-import Link from "next/link";
-import Image from "next/image";
 import {
   Folder,
   MoreHorizontal,
@@ -12,8 +9,13 @@ import {
   Lock,
   Layers,
 } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { memo, useCallback } from "react";
+
 import { use3DTilt } from "@/hooks/use-3d-tilt";
 import { SPRING } from "@/lib/animations/motion-presets";
+
 import type { ListCollection, CollectionStats } from "@/types/collection";
 
 interface CollectionCardProps {

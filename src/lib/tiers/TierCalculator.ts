@@ -3,6 +3,10 @@
  * Algorithms for automatic tier boundary detection and classification
  */
 
+import { timeSync } from '@/lib/perf/perfTimer';
+
+import { getTierForPositionGeneric, rangeFromTierDef } from './boundary';
+import { getBestPresetForSize } from './constants';
 import {
   TierDefinition,
   TierPreset,
@@ -12,11 +16,7 @@ import {
   TierStats,
   TierAlgorithm,
   TierSuggestion,
-  AlgorithmConfig,
 } from './types';
-import { TIER_COLORS, TIER_DESCRIPTIONS, getBestPresetForSize, TIER_PRESETS } from './constants';
-import { timeSync } from '@/lib/perf/perfTimer';
-import { getTierForPositionGeneric, rangeFromTierDef } from './boundary';
 
 /**
  * Deduplicate boundaries and ensure each tier has at least width 1.

@@ -1,9 +1,9 @@
 "use client";
 
-import * as React from "react";
-import { motion } from "framer-motion";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
+import * as React from "react";
+
 import {
   SCORE_LOW_THRESHOLD,
   SCORE_MID_THRESHOLD,
@@ -11,6 +11,7 @@ import {
   SCORE_ANIMATION_EASE,
   formatScore,
 } from "@/lib/constants/scoring";
+import { cn } from "@/lib/utils";
 
 const scoreBarVariants = cva(
   "relative overflow-hidden rounded-full transition-all duration-300",

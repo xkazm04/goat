@@ -1,8 +1,8 @@
 'use client';
 
 import * as Sentry from '@sentry/nextjs';
-import { useEffect, useState } from 'react';
 import { AlertTriangle, RefreshCw, Home, Copy, ChevronDown } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 /**
  * Global Error Handler for Next.js App Router

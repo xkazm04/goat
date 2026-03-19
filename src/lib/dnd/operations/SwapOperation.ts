@@ -5,14 +5,16 @@
  * Adds: warning if target is unexpectedly empty.
  */
 
+import { dndLogger } from '@/lib/logger';
+
+import { BaseGridOperation } from './BaseGridOperation';
+
 import type {
   DragContext,
   DragOperationResult,
   OperationStoreContext,
 } from './types';
 import type { ValidationResult } from '@/lib/validation';
-import { BaseGridOperation } from './BaseGridOperation';
-import { dndLogger } from '@/lib/logger';
 
 /**
  * SwapOperation handles swapping two grid items

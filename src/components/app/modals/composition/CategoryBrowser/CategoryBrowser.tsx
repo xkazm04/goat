@@ -1,20 +1,20 @@
 "use client";
 
-import { memo, useState, useCallback, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Grid3X3, List, ChevronLeft, Sparkles, Home } from "lucide-react";
+import { memo, useState, useCallback, useEffect, useMemo } from "react";
+
+import { BreadcrumbNav } from "./BreadcrumbNav";
+import { CategoryCard } from "./CategoryCard";
+import { CategorySearch } from "./CategorySearch";
+import { getCategoryTree, getAncestors, findNodeByName } from "./categoryTree";
+import { SlideNavigator, StaggerContainer, StaggerItem } from "./NavigationAnimator";
 import {
   CategoryBrowserProps,
   CategoryNode,
   CardVariant,
   NavigationState,
-  STORAGE_KEYS,
 } from "./types";
-import { getCategoryTree, getAncestors, findNodeByName } from "./categoryTree";
-import { CategoryCard } from "./CategoryCard";
-import { BreadcrumbNav, CompactBreadcrumb } from "./BreadcrumbNav";
-import { CategorySearch } from "./CategorySearch";
-import { SlideNavigator, StaggerContainer, StaggerItem } from "./NavigationAnimator";
 
 /**
  * View Toggle Component

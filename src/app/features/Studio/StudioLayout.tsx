@@ -12,14 +12,17 @@
  */
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { DURATION } from '@/lib/animations/motion-presets';
-import { StudioHeader } from './components/StudioHeader';
-import { StudioFormPanel } from './components/StudioFormPanel';
-import { StudioSidebar } from './components/StudioSidebar';
-import { StudioItemsGrid } from './components/StudioItemsGrid';
+
 import { NeonArenaTheme, FEATURED_ORBS } from '@/app/features/Landing/shared';
 import { AudioPlayer } from '@/components/AudioPlayer';
+import { DURATION } from '@/lib/animations/motion-presets';
 import { useStudioItems, useStudioGeneration } from '@/stores/studio-store';
+
+import { StudioFormPanel } from './components/StudioFormPanel';
+import { StudioHeader } from './components/StudioHeader';
+import { StudioItemsGrid } from './components/StudioItemsGrid';
+import { StudioSidebar } from './components/StudioSidebar';
+
 
 export interface StudioLayoutProps {
   headerProps?: {
