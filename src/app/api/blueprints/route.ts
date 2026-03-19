@@ -142,7 +142,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
   const blueprint = blueprintFromRow(data as unknown as BlueprintRow);
 
   // Generate share URL
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://goat.app';
   const shareUrl = `${baseUrl}/blueprint/${blueprint.slug}`;
 
   return createdResponse({ blueprint, shareUrl });

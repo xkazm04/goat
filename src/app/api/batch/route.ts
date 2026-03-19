@@ -239,7 +239,8 @@ function validateRequest(request: BatchRequest): string | null {
 
 async function executeRequest(
   request: BatchRequest,
-  parentHeaders: Headers
+  parentHeaders: Headers,
+  origin: string
 ): Promise<BatchResponse> {
   const startTime = Date.now();
 
@@ -273,8 +274,8 @@ async function executeRequest(
       };
     }
 
-    // Build a synthetic URL
-    let url = `http://localhost${request.endpoint}`;
+    // Build a synthetic URL using the parent request's origin
+    let url = `${origin}${request.endpoint}`;
     if (request.method === 'GET' && request.data && typeof request.data === 'object') {
       const params = new URLSearchParams();
       for (const [key, value] of Object.entries(request.data)) {
@@ -388,6 +389,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   try {
     const body = await request.json();
+    const requestOrigin = new URL(request.url).origin;
     const requests = body.requests as BatchRequest[] | undefined;
 
     if (!requests || !Array.isArray(requests)) {
@@ -447,7 +449,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }, CONFIG.aggregateTimeout);
 
     const promises = sortedRequests.map(async (req, index) => {
-      const result = await executeRequest(req, request.headers);
+      const result = await executeRequest(req, request.headers, requestOrigin);
       if (!aggregateController.signal.aborted) {
         responses[index] = result;
         completed.add(index);
