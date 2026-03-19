@@ -233,26 +233,6 @@ export {
 // ========================================
 
 /**
- * Loading State Machine Hook
- * Manages complex loading states with error handling and recovery
- */
-export {
-  useLoadingStateMachine,
-  categorizeHttpError,
-  createRetryRecoveryAction,
-  isLoadingState,
-  isErrorState,
-  isSuccessState,
-  isIdleState,
-  type LoadingState,
-  type LoadingAction,
-  type LoadingStateType,
-  type ErrorType,
-  type ErrorMetadata,
-  type UseLoadingStateMachineReturn,
-} from './useLoadingStateMachine';
-
-/**
  * Swipe Gesture Hook
  * Mobile-optimized swipe gesture detection with velocity and distance tracking
  */

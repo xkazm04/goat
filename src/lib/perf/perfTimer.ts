@@ -5,7 +5,7 @@
 
 const SLOW_THRESHOLD_MS = 100;
 
-export interface PerfEntry {
+interface PerfEntry {
   label: string;
   elapsedMs: number;
   meta: Record<string, string | number>;
