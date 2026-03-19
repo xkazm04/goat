@@ -7,9 +7,12 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createLogger } from '@/lib/logger/debug-config';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
+
+const batchLogger = createLogger('api');
 
 // =============================================================================
 // Types
@@ -503,15 +506,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     };
 
     const successCount = responses.filter((r) => r.success).length;
-    console.log(
-      `📦 [Batch API] Processed ${requests.length} requests in ${result.totalTime}ms ` +
-        `(${successCount} success, ${requests.length - successCount - timedOutCount} failed` +
+    batchLogger.info(
+      `Batch: ${requests.length} requests in ${result.totalTime}ms ` +
+        `(${successCount} ok, ${requests.length - successCount - timedOutCount} failed` +
         `${timedOutCount > 0 ? `, ${timedOutCount} timed out` : ''}) [direct]`
     );
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error('[Batch API] Error:', error);
+    batchLogger.error('[Batch API] Error:', error);
 
     return NextResponse.json(
       {

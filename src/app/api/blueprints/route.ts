@@ -141,7 +141,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
 
   const blueprint = blueprintFromRow(data as unknown as BlueprintRow);
 
-  // Generate share URL
+  /** Base URL for share links — falls back to production domain when env var is unset */
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://goat.app';
   const shareUrl = `${baseUrl}/blueprint/${blueprint.slug}`;
 
