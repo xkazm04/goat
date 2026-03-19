@@ -76,6 +76,7 @@ const CATEGORY_EMOJI: Record<LogCategory, string> = {
   heatmap: '🗺️',
   list: '📋',
   api: '🌐',
+  cache: '🗄️',
   '*': '⚡',
 };
 

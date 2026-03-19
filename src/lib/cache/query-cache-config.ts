@@ -10,6 +10,9 @@
 
 import { QueryClient, QueryCache, MutationCache } from '@tanstack/react-query';
 import { CACHE_TTL_MS, GC_TIME_MS, INVALIDATION_RULES, getRetryConfig, type InvalidationEvent } from './unified-cache';
+import { createLogger } from '@/lib/logger/debug-config';
+
+const log = createLogger('cache');
 
 // =============================================================================
 // Cache Metrics
@@ -90,12 +93,10 @@ export function createQueryClient(): QueryClient {
         metrics.misses++;
       }
 
-      if (isDev) {
-        console.log(`[QueryCache] ✅ ${query.queryHash}`, {
-          staleTime: (query.options as { staleTime?: number }).staleTime,
-          dataAge: Date.now() - query.state.dataUpdatedAt,
-        });
-      }
+      log.debug(`[QueryCache] ✅ ${query.queryHash}`, {
+        staleTime: (query.options as { staleTime?: number }).staleTime,
+        dataAge: Date.now() - query.state.dataUpdatedAt,
+      });
     },
     onError: (error, query) => {
       metrics.errors++;
@@ -108,11 +109,9 @@ export function createQueryClient(): QueryClient {
     onSuccess: (_data, _variables, _context, mutation) => {
       metrics.mutations++;
 
-      if (isDev) {
-        console.log(`[MutationCache] ✅ Mutation completed`, {
-          key: mutation.options.mutationKey,
-        });
-      }
+      log.debug(`[MutationCache] ✅ Mutation completed`, {
+        key: mutation.options.mutationKey,
+      });
     },
     onError: (error, _variables, _context, mutation) => {
       metrics.errors++;
@@ -189,7 +188,7 @@ export function invalidateByEvent(
   const tags = INVALIDATION_RULES[event];
 
   if (!tags || tags.length === 0) {
-    console.warn(`[QueryCache] No invalidation rules for event: ${event}`);
+    log.warn(`[QueryCache] No invalidation rules for event: ${event}`);
     return;
   }
 
@@ -203,7 +202,7 @@ export function invalidateByEvent(
       query.queryKey.some((part) => typeof part === 'string' && tagSet.has(part)),
   });
 
-  console.log(`[QueryCache] Invalidated by event: ${event}`, { tags: Array.from(tagSet), context });
+  log.debug(`[QueryCache] Invalidated by event: ${event}`, { tags: Array.from(tagSet), context });
 }
 
 /**
@@ -224,7 +223,7 @@ export function invalidateByTags(
       query.queryKey.some((part) => typeof part === 'string' && tagSet.has(part)),
   });
 
-  console.log(`[QueryCache] Invalidated by tags:`, Array.from(tagSet));
+  log.debug(`[QueryCache] Invalidated by tags:`, Array.from(tagSet));
 }
 
 /**
@@ -243,7 +242,7 @@ export function invalidateByPrefix(
     },
   });
 
-  console.log(`[QueryCache] Invalidated by prefix: ${prefix}`);
+  log.debug(`[QueryCache] Invalidated by prefix: ${prefix}`);
 }
 
 // =============================================================================
@@ -263,7 +262,7 @@ export function withCoalescing<T>(
   const existing = pendingRequests.get(key) as Promise<T> | undefined;
 
   if (existing) {
-    console.log(`[Coalescing] Reusing in-flight request: ${key}`);
+    log.debug(`[Coalescing] Reusing in-flight request: ${key}`);
     return existing;
   }
 
