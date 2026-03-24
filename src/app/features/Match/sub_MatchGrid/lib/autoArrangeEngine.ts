@@ -74,7 +74,7 @@ export class AutoArrangeEngine {
     options: AutoArrangeEngineOptions
   ): ArrangeResult {
     const { mode, preservePodium = false, customSort } = options;
-    const itemCount = currentGrid.filter(i => i?.matched).length;
+    const itemCount = currentGrid.filter(i => i?.context.matched).length;
 
     return timeSync('AutoArrangeEngine.arrange', { mode, itemCount, listSize: this.listSize }, () => {
       switch (mode) {
@@ -114,7 +114,7 @@ export class AutoArrangeEngine {
     // Collect all filled items
     const filledItems: Array<{ position: number; item: GridItemType }> = [];
     for (let i = 0; i < currentGrid.length; i++) {
-      if (currentGrid[i]?.matched) {
+      if (currentGrid[i]?.context.matched) {
         filledItems.push({ position: i, item: currentGrid[i] });
       }
     }
@@ -134,8 +134,8 @@ export class AutoArrangeEngine {
       filledItems.sort((a, b) => customSort(a.item, b.item));
     } else {
       filledItems.sort((a, b) => {
-        const scoreA = (a.item.image_url ? 10 : 0) + (a.item.title ? 5 : 0) + (50 - a.position);
-        const scoreB = (b.item.image_url ? 10 : 0) + (b.item.title ? 5 : 0) + (50 - b.position);
+        const scoreA = (a.item.item?.image_url ? 10 : 0) + (a.item.item?.title ? 5 : 0) + (50 - a.position);
+        const scoreB = (b.item.item?.image_url ? 10 : 0) + (b.item.item?.title ? 5 : 0) + (50 - b.position);
         return scoreB - scoreA;
       });
     }
@@ -143,7 +143,7 @@ export class AutoArrangeEngine {
     // Build new grid directly — empty slots + sorted items in one pass
     const newGrid: GridItemType[] = Array(this.listSize);
     for (let i = 0; i < this.listSize; i++) {
-      newGrid[i] = { position: i, matched: false } as GridItemType;
+      newGrid[i] = { id: `grid-${i}`, position: i, item: null, context: { source: 'grid', matched: false } } as GridItemType;
     }
 
     for (let i = 0; i < filledItems.length && i < this.listSize; i++) {
@@ -154,7 +154,7 @@ export class AutoArrangeEngine {
         moves.push({
           from: originalPosition,
           to: i,
-          itemId: item.backlogItemId || item.id || String(originalPosition),
+          itemId: item.item?.id || item.id || String(originalPosition),
         });
       }
     }
@@ -187,7 +187,7 @@ export class AutoArrangeEngine {
       const tierItems: GridItemType[] = [];
       const filledPositions: number[] = [];
       for (let i = startPos; i < tier.range.end; i++) {
-        if (currentGrid[i]?.matched) {
+        if (currentGrid[i]?.context.matched) {
           tierItems.push(currentGrid[i]);
           filledPositions.push(i);
         }
@@ -212,7 +212,7 @@ export class AutoArrangeEngine {
           moves.push({
             from: originalPosition,
             to: newPosition,
-            itemId: item.backlogItemId || item.id || String(originalPosition),
+            itemId: item.item?.id || item.id || String(originalPosition),
           });
         }
       });
@@ -236,8 +236,10 @@ export class AutoArrangeEngine {
   ): ArrangeResult {
     const moves: Array<{ from: number; to: number; itemId: string }> = [];
     const newGrid = Array(this.listSize).fill(null).map((_, i) => ({
+      id: `grid-${i}`,
       position: i,
-      matched: false,
+      item: null,
+      context: { source: 'grid' as const, matched: false },
     })) as GridItemType[];
 
     // Collect all filled items preserving order
@@ -247,7 +249,7 @@ export class AutoArrangeEngine {
     // Preserve podium if needed
     if (preservePodium) {
       for (let i = 0; i < 3; i++) {
-        if (currentGrid[i]?.matched) {
+        if (currentGrid[i]?.context.matched) {
           newGrid[i] = { ...currentGrid[i], position: i };
         }
       }
@@ -255,7 +257,7 @@ export class AutoArrangeEngine {
 
     // Collect remaining items
     for (let i = startIndex; i < this.listSize; i++) {
-      if (currentGrid[i]?.matched) {
+      if (currentGrid[i]?.context.matched) {
         filledItems.push(currentGrid[i]);
       }
     }
@@ -274,7 +276,7 @@ export class AutoArrangeEngine {
         moves.push({
           from: originalPosition,
           to: targetPosition,
-          itemId: item.backlogItemId || item.id || String(originalPosition),
+          itemId: item.item?.id || item.id || String(originalPosition),
         });
       }
 
@@ -296,14 +298,16 @@ export class AutoArrangeEngine {
   private spreadArrange(currentGrid: GridItemType[]): ArrangeResult {
     const moves: Array<{ from: number; to: number; itemId: string }> = [];
     const newGrid = Array(this.listSize).fill(null).map((_, i) => ({
+      id: `grid-${i}`,
       position: i,
-      matched: false,
+      item: null,
+      context: { source: 'grid' as const, matched: false },
     })) as GridItemType[];
 
     // Collect all filled items
     const filledItems: GridItemType[] = [];
     currentGrid.forEach(item => {
-      if (item?.matched) {
+      if (item?.context.matched) {
         filledItems.push(item);
       }
     });
@@ -349,7 +353,7 @@ export class AutoArrangeEngine {
           moves.push({
             from: originalPosition,
             to: targetPosition,
-            itemId: item.backlogItemId || item.id || String(originalPosition),
+            itemId: item.item?.id || item.id || String(originalPosition),
           });
         }
 
@@ -381,7 +385,7 @@ export class AutoArrangeEngine {
     // Collect filled items (reversed)
     const filledItems: Array<{ position: number; item: GridItemType }> = [];
     for (let i = this.listSize - 1; i >= startIndex; i--) {
-      if (currentGrid[i]?.matched) {
+      if (currentGrid[i]?.context.matched) {
         filledItems.push({ position: i, item: currentGrid[i] });
       }
     }
@@ -389,7 +393,7 @@ export class AutoArrangeEngine {
     // Get positions to fill
     const targetPositions: number[] = [];
     for (let i = startIndex; i < this.listSize; i++) {
-      if (currentGrid[i]?.matched) {
+      if (currentGrid[i]?.context.matched) {
         targetPositions.push(i);
       }
     }
@@ -408,7 +412,7 @@ export class AutoArrangeEngine {
         moves.push({
           from: fi.position,
           to: targetPosition,
-          itemId: fi.item.backlogItemId || fi.item.id || String(fi.position),
+          itemId: fi.item.item?.id || fi.item.id || String(fi.position),
         });
       }
     });
@@ -435,7 +439,7 @@ export class AutoArrangeEngine {
       const tierPositions: number[] = [];
 
       for (let i = tier.range.start; i < tier.range.end; i++) {
-        if (currentGrid[i]?.matched) {
+        if (currentGrid[i]?.context.matched) {
           tierItems.push(currentGrid[i]);
           tierPositions.push(i);
         }
@@ -443,8 +447,8 @@ export class AutoArrangeEngine {
 
       // Sort by title
       tierItems.sort((a, b) => {
-        const titleA = a.title || '';
-        const titleB = b.title || '';
+        const titleA = a.item?.title || '';
+        const titleB = b.item?.title || '';
         return titleA.localeCompare(titleB);
       });
 
@@ -462,7 +466,7 @@ export class AutoArrangeEngine {
           moves.push({
             from: originalPosition,
             to: targetPosition,
-            itemId: item.backlogItemId || item.id || String(originalPosition),
+            itemId: item.item?.id || item.id || String(originalPosition),
           });
         }
       });
@@ -489,7 +493,7 @@ export class AutoArrangeEngine {
       const tier = this.tiers.find(t => t.id === preferredTier);
       if (tier) {
         for (let i = tier.range.start; i < tier.range.end; i++) {
-          if (!currentGrid[i]?.matched) {
+          if (!currentGrid[i]?.context.matched) {
             return i;
           }
         }
@@ -498,7 +502,7 @@ export class AutoArrangeEngine {
 
     // Otherwise find first empty position
     for (let i = 0; i < this.listSize; i++) {
-      if (!currentGrid[i]?.matched) {
+      if (!currentGrid[i]?.context.matched) {
         return i;
       }
     }
@@ -517,7 +521,7 @@ export class AutoArrangeEngine {
     estimatedMoves: number;
     description: string;
   } {
-    const filledCount = currentGrid.filter(i => i?.matched).length;
+    const filledCount = currentGrid.filter(i => i?.context.matched).length;
 
     const descriptions: Record<ArrangeMode, string> = {
       auto: `Automatically sort ${filledCount} items by relevance`,
@@ -531,7 +535,7 @@ export class AutoArrangeEngine {
     // Get affected positions (all filled positions)
     const affectedPositions: number[] = [];
     currentGrid.forEach((item, pos) => {
-      if (item?.matched) {
+      if (item?.context.matched) {
         affectedPositions.push(pos);
       }
     });

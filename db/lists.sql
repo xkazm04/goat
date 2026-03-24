@@ -4,7 +4,7 @@ create table public.lists (
   category public.category_enum not null,
   subcategory character varying(100) null,
   user_id uuid null,
-  predefined boolean null default false,
+  predefined boolean not null default false,
   size integer null default 50,
   time_period character varying(50) null default 'all'::character varying,
   parent_list_id uuid null,

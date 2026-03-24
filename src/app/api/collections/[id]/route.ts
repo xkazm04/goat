@@ -8,7 +8,7 @@ import {
   noContentResponse,
   NotFoundError,
 } from '@/lib/errors';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, requireAuth } from '@/lib/supabase/server';
 import { transformCollectionRow, generateShareSlug } from '@/types/collection';
 
 // Force dynamic rendering for this route since it uses cookies
@@ -178,11 +178,15 @@ export const PUT = withTiming(withErrorHandler(
       }
 
       if (newParentId !== null) {
-        // Check if new parent exists
+        // Check if new parent exists and belongs to the authenticated user
+        const auth = await requireAuth();
+        if (auth.error) return auth.error;
+
         const { data: parent, error: parentError } = await supabase
           .from('list_collections')
           .select('id, parent_id')
           .eq('id', newParentId)
+          .eq('user_id', auth.userId)
           .single();
 
         if (parentError || !parent) {

@@ -62,6 +62,23 @@ export const EASE = {
   decel: [0.0, 0.0, 0.2, 1] as [number, number, number, number],
 } as const;
 
+/**
+ * Easing presets — verbose key alias of EASE for self-documenting usage.
+ * Canonical curves live in EASE above; prefer EASE for new code.
+ */
+export const EASING = {
+  /** Quick departure, smooth arrival — entrances & exits */
+  easeOut: EASE.out,
+  /** Smooth throughout — transforms & state changes */
+  easeInOut: EASE.inOut,
+  /** Bouncy, playful overshoot */
+  spring: EASE.spring,
+  /** Gradual deceleration — settling animations */
+  decel: EASE.decel,
+  /** Sharp snap — icon rotations, toggles */
+  snap: [0.68, -0.55, 0.27, 1.55] as [number, number, number, number],
+} as const;
+
 // ---------------------------------------------------------------------------
 // Common entrance/exit variant sets
 // ---------------------------------------------------------------------------

@@ -183,9 +183,10 @@ export function isGridItem(item: unknown): item is GridItemType {
   const obj = item as Record<string, unknown>;
   return (
     typeof obj.id === 'string' &&
-    typeof obj.title === 'string' &&
     typeof obj.position === 'number' &&
-    typeof obj.matched === 'boolean'
+    obj.context !== null &&
+    typeof obj.context === 'object' &&
+    typeof (obj.context as Record<string, unknown>).matched === 'boolean'
   );
 }
 

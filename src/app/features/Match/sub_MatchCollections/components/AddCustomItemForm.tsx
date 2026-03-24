@@ -258,7 +258,7 @@ export function AddCustomItemForm({ category, subcategory, groupId }: AddCustomI
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.12 }}
+            transition={{ duration: DURATION.instant }}
             className="w-full py-1.5 px-3 border border-dashed border-white/10 rounded-control
               text-slate-500 hover:text-brand-hover hover:border-brand/30
               hover:bg-brand/5 flex items-center justify-center gap-1.5

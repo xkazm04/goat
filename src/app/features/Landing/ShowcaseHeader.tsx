@@ -238,7 +238,7 @@ export function ShowcaseHeader() {
             transition={{ delay: 2, duration: DURATION.slow }}
           >
             <Sparkles className="w-4 h-4 text-brand-hover" />
-            <span className="text-sm text-white/60 tracking-wide">
+            <span className="text-sm text-slate-300 tracking-wide">
               {subtitle}
             </span>
             <Sparkles className="w-4 h-4 text-brand-hover" />

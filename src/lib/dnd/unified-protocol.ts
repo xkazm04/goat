@@ -252,7 +252,7 @@ export function createUnifiedGridSlotDropData(
     type: 'grid-slot',
     position,
     isOccupied,
-    occupant: occupant && occupant.matched ? gridToTransferable(occupant) || undefined : undefined,
+    occupant: occupant && occupant.context.matched ? gridToTransferable(occupant) || undefined : undefined,
   };
 }
 

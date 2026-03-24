@@ -7,7 +7,7 @@ import { useState, useCallback, useMemo, memo } from "react";
 import { ELEVATION, GLOW_PRESET } from "@/components/visual/depth";
 import { GoatSparkles } from "@/components/visual/GoatIcons";
 import { GoatMascot } from "@/components/visual/GoatMascot";
-import { useBookmarks } from "@/hooks/use-bookmarks";
+// import { useBookmarks } from "@/hooks/use-bookmarks"; // disabled until API is ready
 import { useComposition } from "@/hooks/use-composition";
 import { useListThumbnails } from "@/hooks/use-list-thumbnails";
 import { usePlayList } from "@/hooks/use-play-list";
@@ -206,7 +206,9 @@ export function FeaturedListsSection({ className }: FeaturedListsSectionProps) {
   const { openWithSourceList } = useComposition();
   const { handlePlayList } = usePlayList();
   const { tempUserId } = useTempUser();
-  const { isBookmarked, toggleBookmark } = useBookmarks(tempUserId || "");
+  // Bookmarks disabled until API is ready
+  const isBookmarked = (_id: string) => false;
+  const toggleBookmark = (_id: string) => {};
 
   // Search and filter state
   const [isSearchActive, setIsSearchActive] = useState(false);

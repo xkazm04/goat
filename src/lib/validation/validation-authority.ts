@@ -250,7 +250,7 @@ export class ValidationAuthority {
 
       // Check source has an item
       const sourceItem = gridContext.gridItems[fromPosition];
-      if (!sourceItem || !sourceItem.matched) {
+      if (!sourceItem || !sourceItem.context.matched) {
         return {
           isValid: false,
           errorCode: 'SOURCE_NOT_FOUND',
@@ -316,15 +316,15 @@ export class ValidationAuthority {
 
     // Check if occupied
     const targetSlot = gridItems[position];
-    if (targetSlot && targetSlot.matched) {
+    if (targetSlot && targetSlot.context.matched) {
       return {
         isValid: false,
         errorCode: 'TARGET_POSITION_OCCUPIED',
         errorMessage: `Position ${position + 1} already has an item. Drop on an empty slot or swap items.`,
         debugInfo: {
           position,
-          occupyingItem: targetSlot.title,
-          occupyingItemId: targetSlot.backlogItemId,
+          occupyingItem: targetSlot.item?.title ?? '',
+          occupyingItemId: targetSlot.item?.id,
         },
       };
     }
@@ -429,7 +429,7 @@ export class ValidationAuthority {
     if (!boundsResult.isValid) return false;
 
     const slot = gridContext.gridItems[position];
-    return slot && slot.matched;
+    return slot && slot.context.matched;
   }
 }
 

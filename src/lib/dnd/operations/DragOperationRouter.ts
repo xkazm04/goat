@@ -1,23 +1,20 @@
 /**
  * DragOperationRouter - Unified Router for All Drag Operations
  *
- * This router inspects drag events and routes them to the appropriate
- * operation handler. It provides a single entry point for all drag-and-drop
- * logic across the application.
+ * For grid operations (assign, move, swap), the router decomposes drag events
+ * into algebraic primitive sequences (Place, Remove, Swap) and executes them
+ * directly — no class hierarchy needed.
+ *
+ * For tier operations, the router delegates to registered DragOperation class
+ * instances (unchanged).
  *
  * Usage:
  * ```typescript
  * const router = new DragOperationRouter();
- * router.registerOperation(new AssignOperation());
- * router.registerOperation(new MoveOperation());
+ * // Register tier operations (grid ops are handled by primitives)
+ * router.registerOperation(new TierAssignOperation());
  *
- * // In component
- * const handleDragEnd = (event: DragEndEvent) => {
- *   const result = router.handleDragEnd(event, storeContext);
- *   if (!result.success) {
- *     showError(result.errorCode);
- *   }
- * };
+ * const result = router.handleDragEnd(event, storeContext);
  * ```
  */
 
@@ -25,6 +22,14 @@ import { dndLogger } from '@/lib/logger';
 import { useUndoStore } from '@/stores/undo-store';
 
 import { isGridReceiverId, extractGridPosition, assertCanonicalGridId } from '../transfer-protocol';
+import {
+  planAssign,
+  planMove,
+  planSwap,
+  isPlan,
+  executePlan,
+  createUndoableOperation,
+} from './grid-plans';
 
 import type {
   DragOperation,
@@ -39,6 +44,12 @@ import type {
   ValidationErrorHandler,
 } from './types';
 import type { DragEndEvent } from '@dnd-kit/core';
+
+// ============================================================================
+// Grid operation types handled via algebraic primitives
+// ============================================================================
+
+const GRID_PRIMITIVE_OPS = new Set<DragOperationType>(['assign', 'move', 'swap']);
 
 // ============================================================================
 // Context Parsing Utilities
@@ -230,7 +241,12 @@ function determineOperationType(source: DragSource, target: DragTarget): DragOpe
 // ============================================================================
 
 /**
- * Router that coordinates all drag-and-drop operations
+ * Router that coordinates all drag-and-drop operations.
+ *
+ * Grid operations (assign, move, swap) are decomposed into algebraic primitives
+ * (Place, Remove, Swap) and executed directly.
+ *
+ * Tier operations are delegated to registered DragOperation class instances.
  */
 export class DragOperationRouter {
   private operations: Map<DragOperationType, DragOperation> = new Map();
@@ -248,7 +264,6 @@ export class DragOperationRouter {
 
   /**
    * Generate a unique operation ID for correlation tracking.
-   * Uses crypto.randomUUID when available, falls back to a counter.
    */
   private generateOpId(): string {
     if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -259,7 +274,7 @@ export class DragOperationRouter {
   }
 
   /**
-   * Register a drag operation handler
+   * Register a drag operation handler (used for tier operations)
    */
   registerOperation(operation: DragOperation): void {
     this.operations.set(operation.type, operation);
@@ -290,10 +305,13 @@ export class DragOperationRouter {
   }
 
   /**
-   * Get registered operation types
+   * Get registered operation types (includes built-in grid primitives)
    */
   getRegisteredOperations(): DragOperationType[] {
-    return Array.from(this.operations.keys());
+    return [
+      ...Array.from(GRID_PRIMITIVE_OPS),
+      ...Array.from(this.operations.keys()),
+    ];
   }
 
   /**
@@ -323,11 +341,11 @@ export class DragOperationRouter {
   }
 
   /**
-   * Handle a drag end event
+   * Handle a drag end event.
    *
-   * This is the main entry point for processing drag operations.
-   * It parses the event, determines the operation type, validates,
-   * and executes the appropriate operation.
+   * Grid operations (assign, move, swap) are decomposed into algebraic
+   * primitives and executed directly. Tier operations delegate to registered
+   * class instances.
    */
   handleDragEnd(event: DragEndEvent, stores: OperationStoreContext): DragOperationResult {
     const debug = this.config.debug;
@@ -373,7 +391,139 @@ export class DragOperationRouter {
       };
     }
 
-    // Find the operation handler
+    // ================================================================
+    // Grid operations: decompose into algebraic primitives
+    // ================================================================
+    if (GRID_PRIMITIVE_OPS.has(context.operationType)) {
+      return this.handleGridOperation(context, stores, debug, totalStart, parseDuration);
+    }
+
+    // ================================================================
+    // Tier operations: delegate to registered class instances
+    // ================================================================
+    return this.handleTierOperation(context, stores, debug, totalStart, parseDuration);
+  }
+
+  /**
+   * Handle grid operations via algebraic primitive decomposition.
+   */
+  private handleGridOperation(
+    context: DragContext,
+    stores: OperationStoreContext,
+    debug: boolean | undefined,
+    totalStart: number,
+    parseDuration: number
+  ): DragOperationResult {
+    let planDuration = 0, planStart = 0;
+    if (debug) {
+      planStart = performance.now();
+    }
+
+    // Decompose the drag event into a primitive plan
+    let planResult;
+    switch (context.operationType) {
+      case 'assign':
+        planResult = planAssign(context, stores);
+        break;
+      case 'move':
+        planResult = planMove(context, stores);
+        break;
+      case 'swap':
+        planResult = planSwap(context, stores);
+        break;
+      default:
+        return {
+          success: false,
+          operationType: context.operationType,
+          action: 'reject',
+          errorCode: 'UNKNOWN_ERROR',
+          errorMessage: `Unknown grid operation: ${context.operationType}`,
+        };
+    }
+
+    if (debug) {
+      planDuration = performance.now() - planStart;
+    }
+
+    // If planning returned a validation failure, report it
+    if (!isPlan(planResult)) {
+      if (debug) {
+        dndLogger.debug('Grid operation plan failed', {
+          operationType: context.operationType,
+          errorCode: planResult.errorCode,
+        });
+        console.debug(
+          `[DnD Perf] opId=${context.opId} ${context.operationType} plan-rejected | ` +
+          `parse=${parseDuration.toFixed(2)}ms plan=${planDuration.toFixed(2)}ms ` +
+          `total=${(performance.now() - totalStart).toFixed(2)}ms`
+        );
+      }
+
+      if (this.onValidationError && planResult.errorCode) {
+        this.onValidationError(planResult.errorCode, context);
+      }
+
+      return {
+        success: false,
+        operationType: context.operationType,
+        action: 'reject',
+        errorCode: planResult.errorCode,
+        errorMessage: planResult.errorMessage,
+      };
+    }
+
+    // Execute the primitive plan
+    let executeDuration = 0, executeStart = 0;
+    if (debug) {
+      executeStart = performance.now();
+    }
+
+    const result = executePlan(planResult, stores);
+
+    if (debug) {
+      executeDuration = performance.now() - executeStart;
+      const totalDuration = performance.now() - totalStart;
+      console.debug(
+        `[DnD Perf] opId=${context.opId} ${context.operationType} ${result.success ? 'ok' : 'failed'} | ` +
+        `parse=${parseDuration.toFixed(2)}ms plan=${planDuration.toFixed(2)}ms ` +
+        `execute=${executeDuration.toFixed(2)}ms total=${totalDuration.toFixed(2)}ms`
+      );
+      dndLogger.debug('Grid operation executed via primitives', {
+        opId: context.opId,
+        operationType: context.operationType,
+        primitiveCount: planResult.primitives.length,
+        success: result.success,
+      });
+    }
+
+    // Push successful operations onto undo stack
+    if (result.success) {
+      const undoableOp = createUndoableOperation(planResult, context);
+      useUndoStore.getState().push({
+        operation: undoableOp,
+        context,
+        result,
+      });
+    }
+
+    // Notify result handler
+    if (this.onResult) {
+      this.onResult(result, context);
+    }
+
+    return result;
+  }
+
+  /**
+   * Handle tier operations via registered class instances.
+   */
+  private handleTierOperation(
+    context: DragContext,
+    stores: OperationStoreContext,
+    debug: boolean | undefined,
+    totalStart: number,
+    parseDuration: number
+  ): DragOperationResult {
     const operation = this.operations.get(context.operationType);
 
     if (!operation) {
@@ -389,7 +539,7 @@ export class DragOperationRouter {
       };
     }
 
-    // Validate the operation
+    // Validate
     let validationDuration = 0, validationStart = 0;
     if (debug) {
       validationStart = performance.now();
@@ -403,7 +553,7 @@ export class DragOperationRouter {
 
     if (!validationResult.isValid) {
       if (debug) {
-        dndLogger.debug('Operation validation failed', {
+        dndLogger.debug('Tier operation validation failed', {
           operationType: context.operationType,
           errorCode: validationResult.errorCode,
         });
@@ -414,7 +564,6 @@ export class DragOperationRouter {
         );
       }
 
-      // Notify error handler
       if (this.onValidationError && validationResult.errorCode) {
         this.onValidationError(validationResult.errorCode, context);
       }
@@ -428,7 +577,7 @@ export class DragOperationRouter {
       };
     }
 
-    // Execute the operation
+    // Execute
     let executeDuration = 0, executeStart = 0;
     if (debug) {
       executeStart = performance.now();
@@ -444,7 +593,7 @@ export class DragOperationRouter {
         `parse=${parseDuration.toFixed(2)}ms validation=${validationDuration.toFixed(2)}ms ` +
         `execute=${executeDuration.toFixed(2)}ms total=${totalDuration.toFixed(2)}ms`
       );
-      dndLogger.debug('Operation executed', {
+      dndLogger.debug('Tier operation executed', {
         opId: context.opId,
         operationType: context.operationType,
         success: result.success,
@@ -473,7 +622,7 @@ export class DragOperationRouter {
    * Check if the router can handle a particular operation type
    */
   canHandle(operationType: DragOperationType): boolean {
-    return this.operations.has(operationType);
+    return GRID_PRIMITIVE_OPS.has(operationType) || this.operations.has(operationType);
   }
 }
 

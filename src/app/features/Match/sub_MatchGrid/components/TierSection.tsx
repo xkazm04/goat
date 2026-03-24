@@ -178,7 +178,7 @@ const CollapsedPreview = memo(function CollapsedPreview({
   items: Array<{ position: number; item: GridItemType | null }>;
   onExpand: () => void;
 }) {
-  const filledItems = items.filter((i) => i.item?.matched);
+  const filledItems = items.filter((i) => i.item?.context.matched);
 
   return (
     <motion.div
@@ -205,9 +205,9 @@ const CollapsedPreview = memo(function CollapsedPreview({
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: position * 0.05 }}
           >
-            {item?.image_url ? (
+            {item?.item?.image_url ? (
               <img
-                src={item.image_url}
+                src={item.item.image_url}
                 alt=""
                 className="w-full h-full object-cover"
               />
@@ -320,7 +320,7 @@ export const TierSection = memo(function TierSection({
             >
               <AnimatePresence>
                 {items.map(({ position, item }, idx) => {
-                  const isOccupied = item?.matched;
+                  const isOccupied = item?.context.matched;
 
                   return (
                     <motion.div
@@ -343,7 +343,7 @@ export const TierSection = memo(function TierSection({
                         position={position}
                         isOccupied={!!isOccupied}
                         occupiedBy={isOccupied ? getItemTitle(item) : undefined}
-                        imageUrl={isOccupied ? item.image_url : undefined}
+                        imageUrl={isOccupied ? item.item?.image_url : undefined}
                         gridItem={isOccupied ? item : undefined}
                         onRemove={() => onRemove(position)}
                         // Pass tier styling

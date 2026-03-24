@@ -2,15 +2,21 @@
  * Item Transforms
  *
  * All item conversion functions organized as a typed pipeline:
- *   DB -> Backlog -> Transferable -> Grid -> Ranked
+ *   DB -> Backlog -> BaseItem -> PlacedItem (Grid/Ranked)
  *
  * Also includes type guards, validation, and batch operations.
+ *
+ * With the PlacedItem unification, many conversions are simplified:
+ * - GridItemType = PlacedItem (same type)
+ * - RankedItem = PlacedItem (same type)
+ * - TransferableItem = BaseItem (same type)
  */
 
 import { createGridReceiverId, isGridReceiverId } from '@/lib/dnd/transfer-protocol';
 
 import { normalizeImageUrl, extractTitle, safeString, safeStringArray } from './item-utils';
 
+import type { BaseItem, PlacedItem, PlacedItemSource } from '@/types/placed-item';
 import type { TransferableItem } from '@/lib/dnd/transfer-protocol';
 import type { NormalizedItem } from '@/stores/item-store/normalized-session';
 import type { BacklogItem } from '@/types/backlog-groups';
@@ -39,22 +45,25 @@ export function isBacklogItemLike(
 }
 
 /**
- * Check if source object has GridItemType-like properties
+ * Check if source object has PlacedItem-like properties (replaces isGridItemLike)
  */
 export function isGridItemLike(
   source: unknown
-): source is { id: string; position: number; matched: boolean } {
+): source is PlacedItem {
   if (!source || typeof source !== 'object') return false;
   const obj = source as Record<string, unknown>;
   return (
     typeof obj.id === 'string' &&
     typeof obj.position === 'number' &&
-    typeof obj.matched === 'boolean'
+    'context' in obj &&
+    typeof obj.context === 'object' &&
+    obj.context !== null &&
+    typeof (obj.context as Record<string, unknown>).matched === 'boolean'
   );
 }
 
 /**
- * Check if source object has TransferableItem-like properties
+ * Check if source object has BaseItem-like properties (replaces isTransferableItemLike)
  */
 export function isTransferableItemLike(
   source: unknown
@@ -152,13 +161,13 @@ export function normalizedToBacklogItemType(
 }
 
 // ============================================================================
-// Pipeline: Backlog -> Transferable
+// Pipeline: -> BaseItem (replaces -> Transferable)
 // ============================================================================
 
 /**
- * Convert BacklogItem to TransferableItem
+ * Convert BacklogItem to BaseItem (TransferableItem)
  */
-export function backlogToTransferable(item: BacklogItem): TransferableItem {
+export function backlogToTransferable(item: BacklogItem): BaseItem {
   return {
     id: item.id,
     title: extractTitle(item),
@@ -167,13 +176,15 @@ export function backlogToTransferable(item: BacklogItem): TransferableItem {
     tags: item.tags ?? [],
     category: item.category,
     subcategory: item.subcategory,
+    item_year: item.item_year,
+    item_year_to: item.item_year_to,
   };
 }
 
 /**
- * Convert NormalizedItem to TransferableItem
+ * Convert NormalizedItem to BaseItem (TransferableItem)
  */
-export function normalizedToTransferable(item: NormalizedItem): TransferableItem {
+export function normalizedToTransferable(item: NormalizedItem): BaseItem {
   return {
     id: item.id,
     title: extractTitle(item),
@@ -182,19 +193,26 @@ export function normalizedToTransferable(item: NormalizedItem): TransferableItem
     tags: item.tags ?? [],
     category: item.category,
     subcategory: item.subcategory,
+    item_year: item.item_year,
+    item_year_to: item.item_year_to,
   };
 }
 
 /**
- * Convert any supported item type to TransferableItem
+ * Convert any supported item type to BaseItem (TransferableItem)
  * Auto-detects the source type
  */
-export function toTransferable(source: unknown): TransferableItem | null {
+export function toTransferable(source: unknown): BaseItem | null {
   if (!source || typeof source !== 'object') return null;
 
   const obj = source as Record<string, unknown>;
 
   if (typeof obj.id !== 'string') return null;
+
+  // If it's a PlacedItem, extract the inner item
+  if (isGridItemLike(source)) {
+    return (source as PlacedItem).item;
+  }
 
   return {
     id: obj.id,
@@ -209,71 +227,73 @@ export function toTransferable(source: unknown): TransferableItem | null {
 }
 
 // ============================================================================
-// Pipeline: -> Grid
+// Pipeline: -> Grid (PlacedItem)
 // ============================================================================
 
 /**
- * Options for creating a GridItemType
+ * Options for creating a PlacedItem (GridItemType)
  */
 export interface CreateGridItemOptions {
-  /** Whether to preserve the original ID instead of generating grid-{position} */
-  preserveId?: boolean;
   /** Override the matched state */
   matched?: boolean;
+  /** Source context */
+  source?: PlacedItemSource;
 }
 
 /**
- * Convert BacklogItem to GridItemType at a specific position
+ * Convert BacklogItem to PlacedItem (GridItemType) at a specific position
  */
 export function backlogToGrid(
   item: BacklogItem,
   position: number,
   options: CreateGridItemOptions = {}
 ): GridItemType {
-  const { preserveId = false, matched = true } = options;
+  const { matched = true, source = 'backlog' } = options;
 
   return {
-    id: preserveId ? item.id : createGridReceiverId(position),
-    title: extractTitle(item),
-    description: item.description ?? '',
-    image_url: normalizeImageUrl(item.image_url),
+    id: createGridReceiverId(position),
     position,
-    matched,
-    backlogItemId: item.id,
-    tags: item.tags ?? [],
-    item_year: item.item_year,
-    item_year_to: item.item_year_to,
-    isDragPlaceholder: false,
+    item: matched ? {
+      id: item.id,
+      title: extractTitle(item),
+      description: item.description ?? '',
+      image_url: normalizeImageUrl(item.image_url),
+      tags: item.tags ?? [],
+      category: item.category,
+      subcategory: item.subcategory,
+      item_year: item.item_year,
+      item_year_to: item.item_year_to,
+    } : null,
+    context: {
+      source,
+      matched,
+    },
   };
 }
 
 /**
- * Convert TransferableItem to GridItemType at a specific position
+ * Convert BaseItem (TransferableItem) to PlacedItem (GridItemType) at a specific position
  */
 export function transferableToGrid(
-  item: TransferableItem,
+  item: BaseItem,
   position: number,
   options: CreateGridItemOptions = {}
 ): GridItemType {
-  const { preserveId = false, matched = true } = options;
-
-  const backlogItemId = !isGridReceiverId(item.id) ? item.id : undefined;
+  const { matched = true, source = 'backlog' } = options;
 
   return {
-    id: preserveId ? item.id : createGridReceiverId(position),
-    title: item.title,
-    description: item.description ?? '',
-    image_url: normalizeImageUrl(item.image_url),
+    id: createGridReceiverId(position),
     position,
-    matched,
-    backlogItemId,
-    tags: item.tags ?? [],
-    isDragPlaceholder: false,
+    item: matched ? { ...item } : null,
+    context: {
+      source,
+      matched,
+    },
   };
 }
 
 /**
- * Convert any supported item type to GridItemType
+ * Convert any supported item type to PlacedItem (GridItemType)
  * Auto-detects the source type
  */
 export function toGridItem(
@@ -281,7 +301,7 @@ export function toGridItem(
   position: number,
   options: CreateGridItemOptions = {}
 ): GridItemType {
-  const { preserveId = false, matched = true } = options;
+  const { matched = true, source: itemSource = 'backlog' } = options;
 
   if (!source || typeof source !== 'object') {
     return createEmptyGridSlot(position);
@@ -293,37 +313,41 @@ export function toGridItem(
     return createEmptyGridSlot(position);
   }
 
-  // If already a grid item, update position
+  // If already a PlacedItem, update position
   if (isGridItemLike(obj)) {
-    const gridItem = obj as GridItemType;
+    const placed = obj as PlacedItem;
     return {
-      ...gridItem,
-      id: preserveId ? gridItem.id : createGridReceiverId(position),
+      ...placed,
+      id: createGridReceiverId(position),
       position,
-      matched: options.matched ?? gridItem.matched,
+      context: {
+        ...placed.context,
+        matched: options.matched ?? placed.context.matched,
+      },
     };
   }
 
-  // Determine backlogItemId
-  let backlogItemId: string | undefined;
-  if (isGridItemLike(source) && (source as GridItemType).backlogItemId) {
-    backlogItemId = (source as GridItemType).backlogItemId;
-  } else if (!isGridReceiverId(obj.id)) {
-    backlogItemId = obj.id;
-  }
-
-  return {
-    id: preserveId ? obj.id : createGridReceiverId(position),
+  // Convert from any item-like object
+  const baseItem: BaseItem = {
+    id: obj.id,
     title: extractTitle(obj as { name?: string; title?: string }),
     description: (typeof obj.description === 'string' ? obj.description : undefined) ?? '',
     image_url: normalizeImageUrl(obj.image_url as string | null | undefined),
-    position,
-    matched,
-    backlogItemId,
     tags: safeStringArray(obj.tags),
+    category: safeString(obj.category),
+    subcategory: safeString(obj.subcategory),
     item_year: typeof obj.item_year === 'number' ? obj.item_year : undefined,
     item_year_to: typeof obj.item_year_to === 'number' ? obj.item_year_to : undefined,
-    isDragPlaceholder: false,
+  };
+
+  return {
+    id: createGridReceiverId(position),
+    position,
+    item: matched ? baseItem : null,
+    context: {
+      source: itemSource,
+      matched,
+    },
   };
 }
 
@@ -333,12 +357,12 @@ export function toGridItem(
 export function createEmptyGridSlot(position: number): GridItemType {
   return {
     id: createGridReceiverId(position),
-    title: '',
-    description: '',
     position,
-    matched: false,
-    isDragPlaceholder: false,
-    tags: [],
+    item: null,
+    context: {
+      source: 'grid',
+      matched: false,
+    },
   };
 }
 
@@ -350,7 +374,7 @@ export function createEmptyGrid(size: number): GridItemType[] {
 }
 
 /**
- * Update a grid item's position (for moves/swaps)
+ * Update a PlacedItem's position (for moves/swaps)
  */
 export function updateGridItemPosition(
   item: GridItemType,
@@ -368,25 +392,28 @@ export function updateGridItemPosition(
 // ============================================================================
 
 /**
- * Convert GridItemType back to BacklogItem format
+ * Convert PlacedItem (GridItemType) back to BacklogItem format
  * Useful when removing items from grid back to pool
  */
 export function gridToBacklog(item: GridItemType): Partial<BacklogItem> {
+  if (!item.item) return { id: item.id };
   return {
-    id: item.backlogItemId ?? item.id,
-    name: item.title,
-    title: item.title,
-    description: item.description,
-    image_url: normalizeImageUrl(item.image_url),
-    tags: item.tags ?? [],
+    id: item.item.id,
+    name: item.item.title,
+    title: item.item.title,
+    description: item.item.description,
+    image_url: normalizeImageUrl(item.item.image_url),
+    tags: item.item.tags ?? [],
+    category: item.item.category,
+    subcategory: item.item.subcategory,
   };
 }
 
 /**
- * Convert TransferableItem to BacklogItem format
+ * Convert BaseItem (TransferableItem) to BacklogItem format
  */
 export function transferableToBacklog(
-  item: TransferableItem
+  item: BaseItem
 ): Partial<BacklogItem> {
   return {
     id: item.id,
@@ -401,45 +428,41 @@ export function transferableToBacklog(
 }
 
 // ============================================================================
-// Pipeline: Grid -> Transferable
+// Pipeline: Grid -> BaseItem (replaces Grid -> Transferable)
 // ============================================================================
 
 /**
- * Convert GridItemType to TransferableItem
+ * Extract BaseItem from a PlacedItem (GridItemType)
  * Returns null if grid item is not matched (empty slot)
  */
-export function gridToTransferable(item: GridItemType): TransferableItem | null {
-  if (!item.matched) return null;
-
-  return {
-    id: item.backlogItemId ?? item.id,
-    title: item.title,
-    description: item.description,
-    image_url: normalizeImageUrl(item.image_url),
-    tags: item.tags ?? [],
-  };
+export function gridToTransferable(item: GridItemType): BaseItem | null {
+  if (!item.context.matched || !item.item) return null;
+  return { ...item.item };
 }
 
 // ============================================================================
-// Pipeline: -> Ranked
+// Pipeline: -> Ranked (PlacedItem with rank- prefix)
 // ============================================================================
 
 /**
- * Create a RankedItem from a TransferableItem
+ * Create a RankedItem (PlacedItem) from a BaseItem
  */
 export function createRankedItem(
   position: number,
-  item: TransferableItem,
+  item: BaseItem,
   mode: RankingMode
 ): RankedItem {
   return {
     id: `rank-${position}`,
     position,
-    itemId: item.id,
     item,
-    metadata: {
-      assignedAt: Date.now(),
-      assignedBy: mode,
+    context: {
+      source: 'grid',
+      matched: true,
+      metadata: {
+        assignedAt: Date.now(),
+        assignedBy: mode,
+      },
     },
   };
 }
@@ -451,8 +474,11 @@ export function createEmptyRankedItem(position: number): RankedItem {
   return {
     id: `rank-${position}`,
     position,
-    itemId: null,
     item: null,
+    context: {
+      source: 'grid',
+      matched: false,
+    },
   };
 }
 
@@ -475,19 +501,14 @@ export function backlogToRanked(
 }
 
 /**
- * Convert GridItemType to RankedItem
+ * Convert PlacedItem (GridItemType) to RankedItem
  */
 export function gridToRanked(item: GridItemType, mode: RankingMode): RankedItem {
-  if (!item.matched) {
+  if (!item.context.matched || !item.item) {
     return createEmptyRankedItem(item.position);
   }
 
-  const transferable = gridToTransferable(item);
-  if (!transferable) {
-    return createEmptyRankedItem(item.position);
-  }
-
-  return createRankedItem(item.position, transferable, mode);
+  return createRankedItem(item.position, item.item, mode);
 }
 
 // ============================================================================
@@ -495,24 +516,24 @@ export function gridToRanked(item: GridItemType, mode: RankingMode): RankedItem 
 // ============================================================================
 
 /**
- * Convert array of BacklogItems to TransferableItems
+ * Convert array of BacklogItems to BaseItems (TransferableItems)
  */
 export function batchBacklogToTransferable(
   items: BacklogItem[]
-): TransferableItem[] {
+): BaseItem[] {
   return items.map(backlogToTransferable);
 }
 
 /**
- * Convert array of GridItemTypes to TransferableItems (matched only)
+ * Convert array of PlacedItems (GridItemTypes) to BaseItems (matched only)
  */
 export function batchGridToTransferable(
   items: GridItemType[]
-): TransferableItem[] {
+): BaseItem[] {
   return items
-    .filter((item) => item.matched)
-    .map((item) => gridToTransferable(item))
-    .filter((item): item is TransferableItem => item !== null);
+    .filter((item) => item.context.matched && item.item !== null)
+    .map((item) => item.item!)
+    .map((item) => ({ ...item }));
 }
 
 /**
@@ -553,8 +574,12 @@ export function validateForGrid(item: unknown): ItemValidation {
     errors.push('Missing required field: id');
   }
 
-  if (typeof obj.title !== 'string' && typeof obj.name !== 'string') {
-    warnings.push('Missing title and name fields');
+  if (typeof obj.position !== 'number') {
+    errors.push('Missing required field: position');
+  }
+
+  if (!('context' in obj) || typeof obj.context !== 'object') {
+    errors.push('Missing required field: context');
   }
 
   return {
@@ -565,7 +590,7 @@ export function validateForGrid(item: unknown): ItemValidation {
 }
 
 /**
- * Validate a GridItemType for consistency
+ * Validate a PlacedItem (GridItemType) for consistency
  */
 export function validateGridItem(item: GridItemType): ItemValidation {
   const errors: string[] = [];
@@ -581,16 +606,12 @@ export function validateGridItem(item: GridItemType): ItemValidation {
     errors.push(`Invalid position: ${item.position}`);
   }
 
-  if (typeof item.matched !== 'boolean') {
-    errors.push('Missing required field: matched');
+  if (item.context.matched && !item.item) {
+    warnings.push('Matched item has no item data');
   }
 
-  if (item.matched && !item.title) {
+  if (item.context.matched && item.item && !item.item.title) {
     warnings.push('Matched item has empty title');
-  }
-
-  if (item.matched && !item.backlogItemId) {
-    warnings.push('Matched item has no backlogItemId');
   }
 
   const expectedId = createGridReceiverId(item.position);

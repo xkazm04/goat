@@ -4,11 +4,9 @@ import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 import { ReactNode } from 'react';
 
-// Shared animation constants
-const SMOOTH_EASING = [0.25, 0.1, 0.25, 1] as const;
+import { DURATION, EASE } from '@/lib/animations/motion-presets';
+
 const SLIDE_OFFSET = 8;
-const ENTER_DURATION = 0.4;
-const EXIT_DURATION = 0.3;
 
 /**
  * Shared transition configuration for page animations
@@ -25,8 +23,8 @@ const pageTransition: Variants = {
     y: 0,
     scale: 1,
     transition: {
-      duration: ENTER_DURATION,
-      ease: SMOOTH_EASING,
+      duration: DURATION.normal,
+      ease: EASE.inOut,
     }
   },
   exit: {
@@ -34,8 +32,8 @@ const pageTransition: Variants = {
     y: -SLIDE_OFFSET,
     scale: 0.99,
     transition: {
-      duration: EXIT_DURATION,
-      ease: SMOOTH_EASING,
+      duration: DURATION.normal,
+      ease: EASE.inOut,
     }
   }
 };

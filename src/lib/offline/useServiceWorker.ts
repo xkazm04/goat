@@ -52,7 +52,7 @@ export function useServiceWorker(): UseServiceWorkerReturn {
           scope: '/',
         });
 
-        console.log('[SW] Service worker registered:', registration.scope);
+        // Service worker registered successfully
 
         // Update state with registration info
         updateRegistrationState(registration);
@@ -91,7 +91,7 @@ export function useServiceWorker(): UseServiceWorkerReturn {
 
     // Listen for controller changes (when a new SW takes over)
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-      console.log('[SW] Controller changed, reloading...');
+      // New service worker took over — reload to use updated assets
       window.location.reload();
     });
 
@@ -100,7 +100,7 @@ export function useServiceWorker(): UseServiceWorkerReturn {
       const { type, timestamp } = event.data;
 
       if (type === 'SYNC_REQUESTED') {
-        console.log('[SW] Sync requested at:', new Date(timestamp));
+        // Sync requested by service worker
         // Trigger sync through the offline module
         window.dispatchEvent(new CustomEvent('sw-sync-request'));
       }
@@ -123,7 +123,6 @@ export function useServiceWorker(): UseServiceWorkerReturn {
 
     try {
       await state.registration.update();
-      console.log('[SW] Update check completed');
     } catch (error) {
       console.error('[SW] Update failed:', error);
     }
@@ -133,14 +132,12 @@ export function useServiceWorker(): UseServiceWorkerReturn {
     if (!state.registration?.waiting) return;
 
     state.registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-    console.log('[SW] Skip waiting requested');
   }, [state.registration]);
 
   const clearCache = useCallback((): void => {
     if (!state.registration?.active) return;
 
     state.registration.active.postMessage({ type: 'CLEAR_CACHE' });
-    console.log('[SW] Cache clear requested');
   }, [state.registration]);
 
   const getCacheSize = useCallback(async (): Promise<number | null> => {

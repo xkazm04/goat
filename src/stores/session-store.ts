@@ -5,7 +5,6 @@ import { GRID_LIMITS } from '@/lib/grid/constants';
 import { sessionLogger } from '@/lib/logger';
 import { saveSessionToOffline, getOfflineSession } from '@/lib/offline/sessionStoreIntegration';
 import { reconcileSessionSources } from '@/lib/storage/storage-registry';
-import { DEBOUNCE } from '@/lib/timing';
 import { BacklogGroup, BacklogItem } from '@/types/backlog-groups';
 import { GridItemType, BacklogGroupType } from '@/types/match';
 
@@ -48,9 +47,9 @@ interface SessionStoreState {
 
   // Actions - Session Management
   createSession: (listId: string, size: number) => void;
-  switchToSession: (listId: string) => void;
-  saveCurrentSession: () => void;
-  loadSession: (listId: string) => void;
+  switchToSession: (listId: string) => Promise<void>;
+  saveCurrentSession: (explicitSessionId?: string) => void;
+  loadSession: (listId: string) => Promise<void>;
   deleteSession: (listId: string) => void;
   syncWithList: (listId: string, category?: string) => void;
   
@@ -125,42 +124,9 @@ function getCachedBacklogGroupTypes(normalizedData: NormalizedBacklogData): Back
   return denormalizedTypeCache.result;
 }
 
-// PERFORMANCE OPTIMIZATION: Debounced auto-save to coalesce multiple rapid operations
-// into a single save, reducing localStorage thrashing and UI lag during bulk operations
-let saveTimeout: ReturnType<typeof setTimeout> | null = null;
-let pendingSaveFunction: (() => void) | null = null;
-
-function debouncedSaveSession(getSaveFunction: () => void) {
-  // Clear any pending save
-  if (saveTimeout !== null) {
-    clearTimeout(saveTimeout);
-  }
-  // Store the save function so it can be flushed on beforeunload
-  pendingSaveFunction = getSaveFunction;
-  // Schedule new save with trailing delay
-  saveTimeout = setTimeout(() => {
-    saveTimeout = null;
-    pendingSaveFunction = null;
-    getSaveFunction();
-  }, DEBOUNCE.SESSION_SYNC);
-}
-
-/**
- * Flush any pending debounced session save immediately.
- * Called on beforeunload to prevent data loss when the user closes the tab
- * before the debounce timer fires.
- */
-export function flushPendingSessionSave(): void {
-  if (saveTimeout !== null) {
-    clearTimeout(saveTimeout);
-    saveTimeout = null;
-  }
-  if (pendingSaveFunction) {
-    const fn = pendingSaveFunction;
-    pendingSaveFunction = null;
-    fn();
-  }
-}
+// Serialization lock for switchToSession to prevent concurrent session switches
+// from causing out-of-order loadSession resolution
+let switchSessionLock: Promise<void> = Promise.resolve();
 
 export const useSessionStore = create<SessionStoreState>()(
   persist(
@@ -198,23 +164,34 @@ export const useSessionStore = create<SessionStoreState>()(
       },
 
       switchToSession: (listId: string) => {
-        const state = get();
-        
-        if (state.activeSessionId && state.activeSessionId !== listId) {
-          // Flush any pending debounced save before switching, so ranking
-          // changes are persisted under the old activeSessionId.
-          flushPendingSessionSave();
-          get().saveCurrentSession();
-        }
+        // Serialize session switches to prevent out-of-order loadSession resolution
+        // when the user rapidly switches between lists
+        const doSwitch = async () => {
+          const state = get();
 
-        get().loadSession(listId);
+          if (state.activeSessionId && state.activeSessionId !== listId) {
+            // Capture the current session ID before any async work
+            const previousSessionId = state.activeSessionId;
+            get().saveCurrentSession(previousSessionId);
+          }
+
+          await get().loadSession(listId);
+        };
+
+        // Chain onto the lock so concurrent switches execute in order
+        switchSessionLock = switchSessionLock.then(doSwitch, doSwitch);
+        return switchSessionLock;
       },
 
-      saveCurrentSession: () => {
+      saveCurrentSession: (explicitSessionId?: string) => {
         const state = get();
-        if (!state.activeSessionId) return;
+        // Use explicit ID if provided (e.g. during session switch to avoid
+        // saving under the wrong activeSessionId after a race), otherwise
+        // fall back to current activeSessionId.
+        const sessionId = explicitSessionId ?? state.activeSessionId;
+        if (!sessionId) return;
 
-        const currentSession = state.listSessions[state.activeSessionId];
+        const currentSession = state.listSessions[sessionId];
         if (!currentSession) return;
 
         // PERFORMANCE OPTIMIZATION: Use cached denormalization — skips O(n*m)
@@ -231,7 +208,7 @@ export const useSessionStore = create<SessionStoreState>()(
         set((state) => ({
           listSessions: {
             ...state.listSessions,
-            [state.activeSessionId!]: updatedSession
+            [sessionId]: updatedSession
           }
         }));
 
@@ -316,30 +293,27 @@ export const useSessionStore = create<SessionStoreState>()(
         bumpNormalizedVersion();
         set({ normalizedData });
         // Debounced auto-save to coalesce rapid operations
-        debouncedSaveSession(() => get().saveCurrentSession());
+        get().saveCurrentSession();
       },
 
       toggleBacklogGroup: (groupId: string) => {
         bumpNormalizedVersion();
         set((state) => {
-          const group = state.normalizedData.groupsById[groupId];
+          const group = state.normalizedData.groupsById.get(groupId);
           if (!group) return state;
+
+          const newGroupsById = new Map(state.normalizedData.groupsById);
+          newGroupsById.set(groupId, { ...group, isOpen: !group.isOpen });
 
           return {
             normalizedData: {
               ...state.normalizedData,
-              groupsById: {
-                ...state.normalizedData.groupsById,
-                [groupId]: {
-                  ...group,
-                  isOpen: !group.isOpen
-                }
-              }
+              groupsById: newGroupsById,
             }
           };
         });
 
-        debouncedSaveSession(() => get().saveCurrentSession());
+        get().saveCurrentSession();
       },
 
       addItemToGroup: (groupId: string, item: BacklogItem) => {
@@ -350,7 +324,7 @@ export const useSessionStore = create<SessionStoreState>()(
           return { normalizedData: updatedData };
         });
 
-        debouncedSaveSession(() => get().saveCurrentSession());
+        get().saveCurrentSession();
       },
 
       removeItemFromGroup: (groupId: string, itemId: string) => {
@@ -359,13 +333,13 @@ export const useSessionStore = create<SessionStoreState>()(
           sessionLogger.debug(`Removing item ${itemId} from group ${groupId}`);
 
           // Check if item exists
-          const item = state.normalizedData.itemsById[itemId];
+          const item = state.normalizedData.itemsById.get(itemId);
           if (!item) {
             sessionLogger.warn(`Item ${itemId} not found`);
             return state;
           }
 
-          const group = state.normalizedData.groupsById[groupId];
+          const group = state.normalizedData.groupsById.get(groupId);
           if (!group) {
             sessionLogger.warn(`Group ${groupId} not found`);
             return state;
@@ -386,7 +360,7 @@ export const useSessionStore = create<SessionStoreState>()(
           };
         });
 
-        debouncedSaveSession(() => get().saveCurrentSession());
+        get().saveCurrentSession();
       },
 
       // NEW: Update items for a specific group
@@ -401,7 +375,7 @@ export const useSessionStore = create<SessionStoreState>()(
           return { normalizedData: updatedData };
         });
 
-        debouncedSaveSession(() => get().saveCurrentSession());
+        get().saveCurrentSession();
       },
 
       getGroupItems: (groupId: string): BacklogItem[] => {
@@ -471,36 +445,26 @@ export const useSessionStore = create<SessionStoreState>()(
         return getSessionMetadata(session);
       },
 
-      // Integration hooks
+      // Integration hooks — synchronous projection from grid-store.
+      // Persistence to IndexedDB is handled by derived-session-sync observer.
       updateSessionGridItems: (gridItems) => {
-        let savedSession: ListSession | null = null;
-
         set((s) => {
           if (!s.activeSessionId) return s;
 
           const currentSession = s.listSessions[s.activeSessionId];
           if (!currentSession) return s;
 
-          const updatedSession = {
-            ...currentSession,
-            gridItems,
-            updatedAt: new Date().toISOString(),
-          };
-
-          savedSession = updatedSession;
-
           return {
             listSessions: {
               ...s.listSessions,
-              [s.activeSessionId]: updatedSession
+              [s.activeSessionId]: {
+                ...currentSession,
+                gridItems,
+                updatedAt: new Date().toISOString(),
+              }
             }
           };
         });
-
-        // OFFLINE SYNC: Save grid changes to IndexedDB
-        if (savedSession) {
-          saveSessionToOffline(savedSession);
-        }
       },
 
       getActiveSession: () => {

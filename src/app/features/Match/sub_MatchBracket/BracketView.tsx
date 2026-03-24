@@ -137,8 +137,8 @@ export function BracketView({
   const availableItems = useMemo(() => {
     const usedIds = new Set(
       gridItems
-        .filter((item) => item.matched && item.backlogItemId)
-        .map((item) => item.backlogItemId)
+        .filter((item) => item.context.matched && item.item?.id)
+        .map((item) => item.item!.id)
     );
     return backlogItems.filter((item) => !usedIds.has(item.id));
   }, [gridItems, backlogItems]);

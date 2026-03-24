@@ -77,7 +77,7 @@
 // └─────────────────────────────────────────────────────────────────────────┘
 //
 // SYNC RULES:
-// - grid-store → session-store: grid writes batched sync via syncGridToSession()
+// - grid-store → session-store: derived sync via derived-session-sync subscriber
 // - ranking-store: self-contained; tiers derive from ranking[] internally
 // - match-store → grid-store, session-store: orchestrates via getState() calls
 // - NO store may write tier assignments except ranking-store

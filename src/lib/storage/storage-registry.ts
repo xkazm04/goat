@@ -196,9 +196,9 @@ export async function diagnoseSessionStorage(listId: string): Promise<{
 
   // Read from goat-offline-db
   try {
-    const { getOfflineStorage } = await import('@/lib/offline/OfflineStorage');
-    const storage = getOfflineStorage();
-    offlineSession = await storage.getSession(listId);
+    const { getOfflinePersistence } = await import('@/lib/offline/OfflinePersistence');
+    const persistence = getOfflinePersistence();
+    offlineSession = await persistence.getSession(listId);
   } catch {
     // offline storage read failed
   }

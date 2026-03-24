@@ -82,6 +82,7 @@ import type {
   TierWithItems,
   TierDefinition as BaseTierDefinition,
   RankingStoreState,
+  PositionBracketSession,
 } from '@/types/ranking';
 
 // ============================================================================
@@ -92,7 +93,7 @@ import type {
  * Compute statistics from ranking
  */
 function computeStatistics(ranking: RankedItem[]) {
-  const filledCount = ranking.filter(r => r.itemId !== null).length;
+  const filledCount = ranking.filter(r => r.item !== null).length;
   const total = ranking.length;
   return {
     filledCount,
@@ -108,7 +109,7 @@ function deriveTiersFromRanking(
   ranking: RankedItem[],
   tierConfig: TierConfig
 ): TierState {
-  const filledItems = ranking.filter(r => r.itemId !== null);
+  const filledItems = ranking.filter(r => r.item !== null);
   const rankingSize = filledItems.length || ranking.length;
   const boundaries = computeTierBoundaries(rankingSize, tierConfig.tiers.map(t => t.id));
 
@@ -124,8 +125,8 @@ function deriveTiersFromRanking(
     const tierId = getTierForPosition(rankedItem.position, boundaries);
     if (tierId) {
       const tier = tiers.find(t => t.id === tierId);
-      if (tier && rankedItem.itemId) {
-        tier.itemIds.push(rankedItem.itemId);
+      if (tier && rankedItem.item?.id) {
+        tier.itemIds.push(rankedItem.item.id);
       }
     }
   }
@@ -134,7 +135,7 @@ function deriveTiersFromRanking(
     tiers,
     unrankedItemIds: [],
     isDirty: false,
-    lastSyncedFromRanking: filledItems.map(r => r.itemId!),
+    lastSyncedFromRanking: filledItems.map(r => r.item!.id),
   };
 }
 
@@ -246,6 +247,12 @@ interface RankingActions {
   applyBracketToRanking: () => void;
   resetBracket: () => void;
 
+  // === Position Bracket Actions (bracket-to-fill-a-single-position) ===
+  initPositionBracket: (items: BacklogItem[], targetPosition: number, config: BracketConfig) => void;
+  recordPositionMatchup: (matchupId: string, winnerId: string) => void;
+  undoPositionMatchup: () => string | null;
+  resetPositionBracket: () => void;
+
   // === Tier Actions ===
   assignToTier: (itemId: string, tierId: string, item?: TransferableItem) => void;
   removeFromTier: (itemId: string, tierId: string) => void;
@@ -312,6 +319,7 @@ export const useRankingStore = create<RankingStore>()(
         bracketUndoStack: [] as Array<{ bracketState: RankingBracketState; matchupId: string }>,
         /** Maximum number of undo entries kept in memory to prevent bloat */
         bracketUndoMaxDepth: 15,
+        positionBracketSession: null as PositionBracketSession | null,
         tierState: initialTierState,
         tierConfig: DEFAULT_TIER_CONFIG,
         smartTierState: initialSmartTierState,
@@ -373,7 +381,7 @@ export const useRankingStore = create<RankingStore>()(
         assignToPosition: (item, position) => {
           set(state => {
             if (position < 0 || position >= state.ranking.length) return state;
-            if (state.ranking[position].itemId !== null) return state;
+            if (state.ranking[position].item !== null) return state;
 
             const transferable: TransferableItem =
               'category' in item && typeof (item as BacklogItem).category === 'string'
@@ -419,7 +427,7 @@ export const useRankingStore = create<RankingStore>()(
             const toItem = newRanking[toPosition];
 
             // If target is empty, move. If occupied, swap.
-            if (toItem.itemId === null) {
+            if (toItem.item === null) {
               // Move: source becomes empty, target gets the item
               newRanking[toPosition] = {
                 ...fromItem,
@@ -623,7 +631,7 @@ export const useRankingStore = create<RankingStore>()(
             const bracketState: RankingBracketState = {
               ...state.bracketState,
               appliedToRankingAt: Date.now(),
-              rankingSnapshot: newRanking.filter(r => r.itemId).map(r => r.itemId!),
+              rankingSnapshot: newRanking.filter(r => r.item).map(r => r.item!.id),
             };
 
             return {
@@ -642,6 +650,73 @@ export const useRankingStore = create<RankingStore>()(
             bracketConfig: null,
             bracketUndoStack: [],
           });
+        },
+
+        // === Position Bracket Actions ===
+        initPositionBracket: (items, targetPosition, config) => {
+          const { size, seedingStrategy } = config;
+          const emptyBracket = createEmptyBracket(size);
+          const participants = seedParticipants(items, size, { strategy: seedingStrategy });
+          const seededBracket = seedBracket(emptyBracket, participants);
+
+          const bracketState: RankingBracketState = {
+            ...seededBracket,
+            appliedToRankingAt: null,
+            rankingSnapshot: null,
+          };
+
+          set({
+            positionBracketSession: {
+              targetPosition,
+              bracketState,
+              bracketConfig: config,
+              undoStack: [],
+            },
+          });
+        },
+
+        recordPositionMatchup: (matchupId, winnerId) => {
+          const session = get().positionBracketSession;
+          if (!session) return;
+
+          const undoEntry = {
+            bracketState: structuredClone(session.bracketState),
+            matchupId,
+          };
+
+          const updatedBracket = recordMatchupResult(session.bracketState, matchupId, winnerId);
+          const newBracketState: RankingBracketState = {
+            ...updatedBracket,
+            appliedToRankingAt: session.bracketState.appliedToRankingAt,
+            rankingSnapshot: session.bracketState.rankingSnapshot,
+          };
+
+          set({
+            positionBracketSession: {
+              ...session,
+              bracketState: newBracketState,
+              undoStack: [...session.undoStack, undoEntry].slice(-15),
+            },
+          });
+        },
+
+        undoPositionMatchup: () => {
+          const session = get().positionBracketSession;
+          if (!session || session.undoStack.length === 0) return null;
+
+          const lastEntry = session.undoStack[session.undoStack.length - 1];
+          set({
+            positionBracketSession: {
+              ...session,
+              bracketState: lastEntry.bracketState,
+              undoStack: session.undoStack.slice(0, -1),
+            },
+          });
+          return lastEntry.matchupId;
+        },
+
+        resetPositionBracket: () => {
+          set({ positionBracketSession: null });
         },
 
         // === Tier Actions ===
@@ -814,7 +889,7 @@ export const useRankingStore = create<RankingStore>()(
               tierState: {
                 ...state.tierState,
                 isDirty: false,
-                lastSyncedFromRanking: newRanking.filter(r => r.itemId).map(r => r.itemId!),
+                lastSyncedFromRanking: newRanking.filter(r => r.item).map(r => r.item!.id),
               },
               ...stats,
             };
@@ -1300,14 +1375,14 @@ export const useRankingStore = create<RankingStore>()(
 
         getNextAvailablePosition: () => {
           const { ranking } = get();
-          const index = ranking.findIndex(r => r.itemId === null);
+          const index = ranking.findIndex(r => r.item === null);
           return index >= 0 ? index : null;
         },
 
         isPositionOccupied: (position) => {
           const { ranking } = get();
           if (position < 0 || position >= ranking.length) return false;
-          return ranking[position].itemId !== null;
+          return ranking[position].item !== null;
         },
       }),
       {
@@ -1368,7 +1443,7 @@ export const useRankedItemAtPosition = (position: number) =>
  * Get all filled ranking items
  */
 export const useFilledRankingItems = () =>
-  useRankingStore((state) => state.ranking.filter((r) => r.itemId !== null));
+  useRankingStore((state) => state.ranking.filter((r) => r.item !== null));
 
 /**
  * Get ranking statistics

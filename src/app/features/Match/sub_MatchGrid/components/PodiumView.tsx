@@ -19,6 +19,7 @@ interface PodiumViewProps {
     gridItems: (GridItemType | null)[];
     onRemove: (position: number) => void;
     getItemTitle: (item: any) => string;
+    onFillViaBracket?: (position: number) => void;
 }
 
 const clickToPlaceStyle = { boxShadow: 'var(--glow-brand-sm)', cursor: 'pointer' } as const;
@@ -47,7 +48,7 @@ const podiumItem = {
     show: { opacity: 1, y: 0, scale: 1, transition: SPRING_CONFIG.podiumEntrance },
 };
 
-export function PodiumView({ gridItems, onRemove, getItemTitle }: PodiumViewProps) {
+export function PodiumView({ gridItems, onRemove, getItemTitle, onFillViaBracket }: PodiumViewProps) {
     const slot0 = usePodiumClickToPlace(0);
     const slot1 = usePodiumClickToPlace(1);
     const slot2 = usePodiumClickToPlace(2);
@@ -105,12 +106,14 @@ export function PodiumView({ gridItems, onRemove, getItemTitle }: PodiumViewProp
                         <Elevated level="medium" hoverLift={false} className="w-full h-full rounded-card">
                             <SimpleDropZone
                                 position={1}
-                                isOccupied={!!(gridItems[1] && gridItems[1].matched)}
-                                occupiedBy={gridItems[1]?.matched ? getItemTitle(gridItems[1]) : undefined}
-                                imageUrl={gridItems[1]?.matched ? gridItems[1].image_url : undefined}
-                                gridItem={gridItems[1]?.matched ? gridItems[1] : undefined}
+                                isOccupied={!!(gridItems[1] && gridItems[1].context.matched)}
+                                occupiedBy={gridItems[1]?.context.matched ? getItemTitle(gridItems[1]) : undefined}
+                                imageUrl={gridItems[1]?.context.matched ? gridItems[1].item?.image_url : undefined}
+                                gridItem={gridItems[1]?.context.matched ? gridItems[1] : undefined}
                                 onRemove={() => onRemove(1)}
                                 showBadge={false}
+                                hideTitle
+                                onFillViaBracket={onFillViaBracket ? () => onFillViaBracket(1) : undefined}
                             />
                         </Elevated>
                     </div>
@@ -138,6 +141,12 @@ export function PodiumView({ gridItems, onRemove, getItemTitle }: PodiumViewProp
                             </div>
                         </div>
                     </motion.div>
+                    {/* Title below podium */}
+                    {gridItems[1]?.context.matched && (
+                        <p className="mt-2 text-xs font-medium text-white/90 text-center leading-tight line-clamp-2 max-w-[10rem]">
+                            {getItemTitle(gridItems[1])}
+                        </p>
+                    )}
                 </motion.div>
 
                 {/* 1st Place - Center, tallest */}
@@ -170,12 +179,14 @@ export function PodiumView({ gridItems, onRemove, getItemTitle }: PodiumViewProp
                         <Elevated level="medium" hoverLift={false} className="w-full h-full rounded-card">
                             <SimpleDropZone
                                 position={0}
-                                isOccupied={!!(gridItems[0] && gridItems[0].matched)}
-                                occupiedBy={gridItems[0]?.matched ? getItemTitle(gridItems[0]) : undefined}
-                                imageUrl={gridItems[0]?.matched ? gridItems[0].image_url : undefined}
-                                gridItem={gridItems[0]?.matched ? gridItems[0] : undefined}
+                                isOccupied={!!(gridItems[0] && gridItems[0].context.matched)}
+                                occupiedBy={gridItems[0]?.context.matched ? getItemTitle(gridItems[0]) : undefined}
+                                imageUrl={gridItems[0]?.context.matched ? gridItems[0].item?.image_url : undefined}
+                                gridItem={gridItems[0]?.context.matched ? gridItems[0] : undefined}
                                 onRemove={() => onRemove(0)}
                                 showBadge={false}
+                                hideTitle
+                                onFillViaBracket={onFillViaBracket ? () => onFillViaBracket(0) : undefined}
                             />
                         </Elevated>
                     </div>
@@ -206,6 +217,12 @@ export function PodiumView({ gridItems, onRemove, getItemTitle }: PodiumViewProp
                             </div>
                         </div>
                     </motion.div>
+                    {/* Title below podium */}
+                    {gridItems[0]?.context.matched && (
+                        <p className="mt-2 text-sm font-bold text-yellow-200/90 text-center leading-tight line-clamp-2 max-w-[14rem]">
+                            {getItemTitle(gridItems[0])}
+                        </p>
+                    )}
                 </motion.div>
 
                 {/* 3rd Place */}
@@ -228,12 +245,14 @@ export function PodiumView({ gridItems, onRemove, getItemTitle }: PodiumViewProp
                         <Elevated level="medium" hoverLift={false} className="w-full h-full rounded-card">
                             <SimpleDropZone
                                 position={2}
-                                isOccupied={!!(gridItems[2] && gridItems[2].matched)}
-                                occupiedBy={gridItems[2]?.matched ? getItemTitle(gridItems[2]) : undefined}
-                                imageUrl={gridItems[2]?.matched ? gridItems[2].image_url : undefined}
-                                gridItem={gridItems[2]?.matched ? gridItems[2] : undefined}
+                                isOccupied={!!(gridItems[2] && gridItems[2].context.matched)}
+                                occupiedBy={gridItems[2]?.context.matched ? getItemTitle(gridItems[2]) : undefined}
+                                imageUrl={gridItems[2]?.context.matched ? gridItems[2].item?.image_url : undefined}
+                                gridItem={gridItems[2]?.context.matched ? gridItems[2] : undefined}
                                 onRemove={() => onRemove(2)}
                                 showBadge={false}
+                                hideTitle
+                                onFillViaBracket={onFillViaBracket ? () => onFillViaBracket(2) : undefined}
                             />
                         </Elevated>
                     </div>
@@ -261,6 +280,12 @@ export function PodiumView({ gridItems, onRemove, getItemTitle }: PodiumViewProp
                             </div>
                         </div>
                     </motion.div>
+                    {/* Title below podium */}
+                    {gridItems[2]?.context.matched && (
+                        <p className="mt-2 text-xs font-medium text-white/90 text-center leading-tight line-clamp-2 max-w-[9rem]">
+                            {getItemTitle(gridItems[2])}
+                        </p>
+                    )}
                 </motion.div>
             </motion.div>
 

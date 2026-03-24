@@ -8,7 +8,6 @@ import { Inter, Space_Grotesk } from 'next/font/google';
 import { AuthHeader, Toaster } from '@/components/auth';
 import { PageTransition } from '@/components/page-transition';
 import { ThemeProvider } from '@/components/theme/theme-provider';
-import { BacklogProvider } from '@/providers/BacklogProvider';
 import { DeferredProviders } from '@/providers/DeferredProviders';
 import { QueryProvider } from '@/providers/query-provider';
 
@@ -89,29 +88,27 @@ export default function RootLayout({
             enableSystem={false}
             themes={['light', 'dark', 'experimental-dark']}
           >
-            <BacklogProvider>
-              <QueryProvider>
-                <DeferredProviders>
-                    {/* Skip to main content link for keyboard users */}
-                    <a
-                      href="#main-content"
-                      className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-9999 focus:px-4 focus:py-2 focus:bg-brand-muted focus:text-white focus:rounded-lg focus-ring"
-                    >
-                      Skip to main content
-                    </a>
-                    <div className="min-h-screen bg-linear-to-b from-gray-900 to-gray-800/95 text-gray-100 w-full flex flex-col">
-                      {/* Auth header -- sign in button or user menu */}
-                      <div className="fixed top-4 right-4 z-toast">
-                        <AuthHeader />
-                      </div>
-                      <main id="main-content" className="gradient-to-b" tabIndex={-1}>
-                        <PageTransition>{children}</PageTransition>
-                      </main>
+            <QueryProvider>
+              <DeferredProviders>
+                  {/* Skip to main content link for keyboard users */}
+                  <a
+                    href="#main-content"
+                    className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-9999 focus:px-4 focus:py-2 focus:bg-brand-muted focus:text-white focus:rounded-lg focus-ring"
+                  >
+                    Skip to main content
+                  </a>
+                  <div className="min-h-screen bg-linear-to-b from-gray-900 to-gray-800/95 text-gray-100 w-full flex flex-col">
+                    {/* Auth header -- sign in button or user menu */}
+                    <div className="fixed top-4 right-4 z-toast">
+                      <AuthHeader />
                     </div>
-                    <Toaster />
-                </DeferredProviders>
-              </QueryProvider>
-            </BacklogProvider>
+                    <main id="main-content" className="gradient-to-b" tabIndex={-1}>
+                      <PageTransition>{children}</PageTransition>
+                    </main>
+                  </div>
+                  <Toaster />
+              </DeferredProviders>
+            </QueryProvider>
           </ThemeProvider>
         </body>
       </html>

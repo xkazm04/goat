@@ -1,0 +1,24 @@
+[     586ms] Error: Module [project]/node_modules/@sentry/core/build/esm/exports.js [app-client] (ecmascript) was instantiated because it was required from module [project]/src/app/global-error.tsx [app-client] (ecmascript), but the module factory is not available. It might have been deleted in an HMR update.
+    at instantiateModule (http://localhost:3001/_next/static/chunks/turbopack-_62cebc78._.js:846:15)
+    at getOrInstantiateModuleFromParent (http://localhost:3001/_next/static/chunks/turbopack-_62cebc78._.js:831:12)
+    at DevContext.esmImport [as i] (http://localhost:3001/_next/static/chunks/turbopack-_62cebc78._.js:239:20)
+    at module evaluation (http://localhost:3001/_next/static/chunks/src_app_global-error_tsx_8e7553f5._.js:12:188)
+    at http://localhost:3001/_next/static/chunks/turbopack-_62cebc78._.js:880:13
+    at runModuleExecutionHooks (http://localhost:3001/_next/static/chunks/turbopack-_62cebc78._.js:905:13)
+    at instantiateModule (http://localhost:3001/_next/static/chunks/turbopack-_62cebc78._.js:878:9)
+    at getOrInstantiateModuleFromParent (http://localhost:3001/_next/static/chunks/turbopack-_62cebc78._.js:831:12)
+    at DevContext.commonJsRequire [as r] (http://localhost:3001/_next/static/chunks/turbopack-_62cebc78._.js:260:12)
+    at requireModule (http://localhost:3001/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_9212ccad._.js:86:84)
+    at initializeModuleChunk (http://localhost:3001/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_9212ccad._.js:1090:25)
+    at resolveModuleChunk (http://localhost:3001/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_9212ccad._.js:1014:43)
+    at http://localhost:3001/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_9212ccad._.js:1736:24
+[     620ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3001/favicon.ico:0
+[     919ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3001/favicon-16x16.png:0
+[    3939ms] [WARNING] The resource http://localhost:3001/_next/static/chunks/node_modules_lucide-react_dist_esm_icons_84c8000a._.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ http://localhost:3001/:0
+[    3939ms] [WARNING] The resource http://localhost:3001/_next/static/chunks/src_app_features_Landing_sub_LandingLists_FeaturedListsSection_tsx_7539365b._.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ http://localhost:3001/:0
+[    3939ms] [WARNING] The resource http://localhost:3001/_next/static/chunks/src_094251de._.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ http://localhost:3001/:0
+[    3939ms] [WARNING] The resource http://localhost:3001/_next/static/chunks/src_cacf542d._.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ http://localhost:3001/:0
+[    3939ms] [WARNING] The resource http://localhost:3001/_next/static/chunks/node_modules_62ddacda._.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ http://localhost:3001/:0
+[    3939ms] [WARNING] The resource http://localhost:3001/_next/static/chunks/_b23dec06._.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ http://localhost:3001/:0
+[    3939ms] [WARNING] The resource http://localhost:3001/_next/static/chunks/src_app_features_Landing_sub_LandingLists_UserListsSection_tsx_7539365b._.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ http://localhost:3001/:0
+[    3939ms] [WARNING] The resource http://localhost:3001/_next/static/chunks/src_app_features_Landing_sub_LandingLists_CollectionsSection_tsx_7539365b._.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ http://localhost:3001/:0

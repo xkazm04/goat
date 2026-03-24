@@ -12,7 +12,7 @@ import { GoogleGenAI } from '@google/genai';
 // ============================================================================
 
 /** Primary model for structured generation with Google Search (studio, image lookup, youtube) */
-export const GEMINI_MODEL_PRIMARY = 'gemini-3-flash-preview';
+export const GEMINI_MODEL_PRIMARY = 'gemini-3.1-flash-lite-preview';
 
 /** Lightweight model for simple text tasks (recommendations, debate, seeding) */
 export const GEMINI_MODEL_FLASH = 'gemini-2.0-flash';

@@ -31,7 +31,7 @@ export function CommandPaletteTrigger({
       <button
         onClick={openCommandPalette}
         className={`flex items-center gap-2 px-3 py-1.5 rounded-control bg-white/5 hover:bg-white/10
-          border border-white/10 text-white/60 hover:text-white/80 transition-all text-sm ${className}`}
+          border border-white/10 text-slate-400 hover:text-slate-200 transition-all text-sm ${className}`}
         data-testid="command-palette-trigger-inline"
       >
         <Keyboard className="w-4 h-4" />

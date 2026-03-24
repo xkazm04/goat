@@ -13,50 +13,10 @@
 
 import type { Variants, Transition, TargetAndTransition } from 'framer-motion';
 
-// =============================================================================
-// Motion Design Tokens
-// =============================================================================
+import { DURATION, EASING } from './motion-presets';
 
-/**
- * Standard easing curves
- * - easeOut: For departures and entrances (feels snappy)
- * - easeInOut: For transforms and state changes (feels smooth)
- * - spring: For bouncy, playful interactions
- * - decel: For settling animations
- */
-export const EASING = {
-  /** Quick departure, smooth arrival */
-  easeOut: [0.16, 1, 0.3, 1] as const,
-  /** Smooth throughout */
-  easeInOut: [0.4, 0, 0.2, 1] as const,
-  /** Bouncy, playful */
-  spring: [0.34, 1.56, 0.64, 1] as const,
-  /** Gradual deceleration */
-  decel: [0.0, 0.0, 0.2, 1] as const,
-  /** Sharp snap */
-  snap: [0.68, -0.55, 0.27, 1.55] as const,
-} as const;
-
-/**
- * Duration tiers (seconds) — aligned with design-tokens.css
- *   --duration-instant · --duration-quick · --duration-normal · --duration-slow
- */
-export const DURATION = {
-  /** 50 ms — focus rings, active/pressed, tap feedback */
-  instant: 0.05,
-  /** 150 ms — hover, toggle, small state changes */
-  quick: 0.15,
-  /** 200 ms — fade-in, collapse, subtle transitions */
-  fast: 0.2,
-  /** 300 ms — modal entry/exit, panel slide, standard transitions */
-  normal: 0.3,
-  /** 500 ms — page transitions, stagger base */
-  slow: 0.5,
-  /** 600 ms — celebration animations, extended entrances */
-  emphasis: 0.6,
-  /** 800 ms — dramatic reveals, hero animations */
-  dramatic: 0.8,
-} as const;
+// Re-export canonical tokens so existing consumers keep working.
+export { DURATION, EASING };
 
 /**
  * Scale factors for press states

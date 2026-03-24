@@ -152,7 +152,7 @@ export function useTierLayout(
       for (let pos = tier.range.start; pos < tier.range.end; pos++) {
         const item = gridItems[pos] || null;
         allPositionItems.push({ position: pos, item });
-        if (item?.matched) {
+        if (item?.context.matched) {
           filledSlots++;
           tierItems.push({ position: pos, item });
         }

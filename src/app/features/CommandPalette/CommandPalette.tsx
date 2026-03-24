@@ -539,7 +539,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         </div>
         <Play
           className={`w-4 h-4 shrink-0 transition-colors ${
-            isSelected ? "text-white" : "text-white/30 group-hover:text-white/60"
+            isSelected ? "text-white" : "text-white/30 group-hover:text-slate-300"
           }`}
         />
       </button>
@@ -587,7 +587,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         </div>
         <Play
           className={`w-4 h-4 shrink-0 transition-colors ${
-            isSelected ? "text-white" : "text-white/30 group-hover:text-white/60"
+            isSelected ? "text-white" : "text-white/30 group-hover:text-slate-300"
           }`}
         />
       </button>
@@ -939,7 +939,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                               </div>
                               <Play
                                 className={`w-4 h-4 shrink-0 transition-colors ${
-                                  selectedIndex === i ? "text-white" : "text-white/30 group-hover:text-white/60"
+                                  selectedIndex === i ? "text-white" : "text-white/30 group-hover:text-slate-300"
                                 }`}
                               />
                             </button>
@@ -1020,28 +1020,28 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
               <div className="px-4 py-3 border-t border-white/10 flex items-center justify-between">
                 <div className="flex items-center gap-4 text-xs text-white/40">
                   <div className="flex items-center gap-1.5">
-                    <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white/60 font-mono">
+                    <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-slate-300 font-mono">
                       <ArrowRight className="w-3 h-3 -rotate-90" />
                     </kbd>
-                    <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white/60 font-mono">
+                    <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-slate-300 font-mono">
                       <ArrowRight className="w-3 h-3 rotate-90" />
                     </kbd>
                     <span>navigate</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white/60 font-mono text-2xs">
+                    <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-slate-300 font-mono text-2xs">
                       Enter
                     </kbd>
                     <span>{(useApiSearch && apiResults.length > 0) || filteredLists.length > 0 ? "select" : "create"}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white/60 font-mono text-2xs">
+                    <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-slate-300 font-mono text-2xs">
                       /list
                     </kbd>
                     <span>filter by type</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white/60 font-mono text-2xs">
+                    <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-slate-300 font-mono text-2xs">
                       Esc
                     </kbd>
                     <span>close</span>

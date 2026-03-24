@@ -5,7 +5,7 @@
  * Premium sticky header with gradient accent line and G.O.A.T. branding.
  */
 
-import { ArrowLeft, Crown, Sparkles } from 'lucide-react';
+import { ArrowLeft, Crown, Sparkles, Globe } from 'lucide-react';
 import Link from 'next/link';
 
 export interface StudioHeaderProps {
@@ -64,8 +64,18 @@ export function StudioHeader({
             </div>
           </div>
 
-          {/* AI badge */}
+          {/* Action badges */}
           <div className="hidden sm:flex items-center gap-2">
+            <Link
+              href="/templates"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-badge
+                bg-white/[0.03] border border-white/[0.06]
+                hover:bg-white/[0.06] hover:border-white/[0.1]
+                transition-all duration-300"
+            >
+              <Globe className="w-3.5 h-3.5 text-cyan-500/60" />
+              <span className="text-xs font-medium text-gray-400 hover:text-gray-300">Templates</span>
+            </Link>
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-badge
               bg-white/[0.03] border border-white/[0.06]"
             >

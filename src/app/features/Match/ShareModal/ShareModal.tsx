@@ -107,7 +107,7 @@ export function ShareModal({ isOpen: controlledIsOpen, onClose }: ShareModalProp
 
   // Get ranked items for sharing
   const rankedItems = gridItems
-    .filter((item) => item.matched)
+    .filter((item) => item.context.matched)
     .sort((a, b) => a.position - b.position);
 
   const listTitle = currentList?.title || "My Top 10";
@@ -143,9 +143,9 @@ export function ShareModal({ isOpen: controlledIsOpen, onClose }: ShareModalProp
     try {
       const items: SharedRankingItem[] = rankedItems.map((item) => ({
         position: item.position + 1,
-        title: item.title,
-        description: item.description,
-        image_url: item.image_url,
+        title: item.item?.title ?? '',
+        description: item.item?.description,
+        image_url: item.item?.image_url ?? undefined,
       }));
 
       const request: CreateSharedRankingRequest = {
@@ -345,7 +345,7 @@ export function ShareModal({ isOpen: controlledIsOpen, onClose }: ShareModalProp
                   <span style={{ fontSize: 22, fontWeight: 700, opacity: 0.6, minWidth: 36 }}>
                     {index + 1}
                   </span>
-                  <span style={{ fontSize: 16, fontWeight: 500 }}>{item.title}</span>
+                  <span style={{ fontSize: 16, fontWeight: 500 }}>{item.item?.title ?? ''}</span>
                 </div>
               ))}
             </div>
@@ -538,7 +538,7 @@ export function ShareModal({ isOpen: controlledIsOpen, onClose }: ShareModalProp
                             {rankedItems.slice(0, 3).map((item, index) => (
                               <div key={item.id} className="flex items-center gap-2 text-sm">
                                 <span className="text-brand-hover font-bold w-5">{index + 1}.</span>
-                                <span className="text-white truncate">{item.title}</span>
+                                <span className="text-white truncate">{item.item?.title ?? ''}</span>
                               </div>
                             ))}
                             {rankedItems.length > 3 && (

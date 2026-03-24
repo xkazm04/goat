@@ -2,6 +2,7 @@
 
 import { useEffect, useCallback, useRef } from 'react';
 
+import { backlogLogger } from '@/lib/logger';
 import { createBacklogCoalescer } from '@/lib/utils/request-coalescer';
 import { useBacklogStore } from '@/stores/backlog-store';
 
@@ -36,7 +37,7 @@ export function BacklogProvider({ children }: { children: React.ReactNode }) {
     const isOnline = checkNetworkStatus();
     const { setOfflineMode } = useBacklogStore.getState();
     setOfflineMode(!isOnline);
-    console.log(`🌐 Network status: ${isOnline ? 'Online' : 'Offline'}`);
+    backlogLogger.info(`Network status: ${isOnline ? 'Online' : 'Offline'}`);
     
     hasCheckedNetwork.current = true;
     return isOnline;
@@ -49,7 +50,7 @@ export function BacklogProvider({ children }: { children: React.ReactNode }) {
     
     // Only persist if we have data and it's been a while since last sync
     if (state.groups.length > 0 && now - lastSyncRef.current > 30000) { // 30 seconds
-      console.log(`💾 BacklogProvider: Persisting ${state.groups.length} groups to cache`);
+      backlogLogger.debug(`Persisting ${state.groups.length} groups to cache`);
       
       // The store's persist middleware should handle this automatically,
       // but we can trigger a manual sync if needed
@@ -66,7 +67,7 @@ export function BacklogProvider({ children }: { children: React.ReactNode }) {
     const state = useBacklogStore.getState();
     
     if (state.cache && Object.keys(state.cache).length > 0) {
-      console.log(`🔄 BacklogProvider: Found cached data for ${Object.keys(state.cache).length} categories`);
+      backlogLogger.debug(`Found cached data for ${Object.keys(state.cache).length} categories`);
       
       // The data should already be loaded by the persist middleware,
       // but we can validate it here
@@ -75,7 +76,7 @@ export function BacklogProvider({ children }: { children: React.ReactNode }) {
         return sum + (state.cache[key]?.groups?.length || 0);
       }, 0);
       
-      console.log(`📊 BacklogProvider: Total cached groups: ${totalCachedGroups}`);
+      backlogLogger.debug(`Total cached groups: ${totalCachedGroups}`);
     }
   }, []);
 
@@ -87,14 +88,9 @@ export function BacklogProvider({ children }: { children: React.ReactNode }) {
     // Initialize coalescer and expose it to the store
     const coalescer = getCoalescer();
 
-    // Store coalescer reference in window for debugging
-    if (typeof window !== 'undefined') {
-      (window as any).__backlogCoalescer = coalescer;
-    }
-
     // Set up network status listeners
     const handleOnline = () => {
-      console.log('🌐 App is online - syncing data');
+      backlogLogger.info('App is online - syncing data');
       const { setOfflineMode, syncWithBackend } = useBacklogStore.getState();
       setOfflineMode(false);
 
@@ -108,7 +104,7 @@ export function BacklogProvider({ children }: { children: React.ReactNode }) {
     };
 
     const handleOffline = () => {
-      console.log('🌐 App is offline - using cached data');
+      backlogLogger.info('App is offline - using cached data');
       const { setOfflineMode } = useBacklogStore.getState();
       setOfflineMode(true);
     };
@@ -125,7 +121,7 @@ export function BacklogProvider({ children }: { children: React.ReactNode }) {
       const efficiency = coalescer.getEfficiency();
 
       if (stats.totalRequests > 0) {
-        console.log(`📊 BacklogCoalescer Stats:`, {
+        backlogLogger.debug('Coalescer stats', {
           totalRequests: stats.totalRequests,
           coalescedRequests: stats.coalescedRequests,
           cacheHits: stats.cacheHits,
@@ -161,7 +157,7 @@ export function BacklogProvider({ children }: { children: React.ReactNode }) {
         
         // If it's been more than 5 minutes, consider refreshing
         if (now - state.lastSyncTimestamp > 5 * 60 * 1000) {
-          console.log('🔄 BacklogProvider: User returned after 5+ minutes, consider refreshing data');
+          backlogLogger.debug('User returned after 5+ minutes, consider refreshing data');
           // You could trigger a refresh here if needed
         }
       }

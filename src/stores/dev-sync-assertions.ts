@@ -37,7 +37,7 @@ function assertTierCoverage(): void {
   if (tierConfig.derivationMode !== 'computed') return;
 
   const filledItemIds = new Set(
-    ranking.filter(r => r.itemId !== null).map(r => r.itemId!)
+    ranking.filter(r => r.item !== null).map(r => r.item!.id)
   );
   if (filledItemIds.size === 0) return;
 
@@ -91,13 +91,13 @@ function assertItemOverlap(): void {
 
   const gridItemIds = new Set(
     gridItems
-      .filter(g => g.matched && g.id)
-      .map(g => g.id)
+      .filter(g => g.context.matched && g.item?.id)
+      .map(g => g.item!.id)
   );
   const rankingItemIds = new Set(
     ranking
-      .filter(r => r.itemId !== null)
-      .map(r => r.itemId!)
+      .filter(r => r.item !== null)
+      .map(r => r.item!.id)
   );
 
   // Only warn if both stores have items but they significantly diverge

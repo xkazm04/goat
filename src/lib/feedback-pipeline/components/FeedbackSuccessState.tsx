@@ -96,7 +96,7 @@ export function FeedbackSuccessState({
               }}
               transition={{
                 duration: DURATION.dramatic,
-                delay: 0.1,
+                delay: DURATION.instant,
                 ease: 'easeOut',
               }}
             />
@@ -119,7 +119,7 @@ export function FeedbackSuccessState({
         <motion.div
           initial={{ scale: 0, rotate: -180 }}
           animate={{ scale: 1, rotate: 0 }}
-          transition={{ type: 'spring', delay: 0.2, duration: 0.4 }}
+          transition={{ type: 'spring', delay: DURATION.fast, duration: DURATION.slow }}
         >
           <IconComponent className={cn('text-green-400', sizes.iconInner)} />
         </motion.div>
@@ -128,7 +128,7 @@ export function FeedbackSuccessState({
       <motion.h3
         initial={{ opacity: 0, y: 5 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
+        transition={{ delay: DURATION.normal }}
         className={cn('font-semibold text-gray-200 mb-2', sizes.title)}
       >
         {title}
@@ -138,7 +138,7 @@ export function FeedbackSuccessState({
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
+          transition={{ delay: DURATION.normal + DURATION.instant }}
           className={cn('text-gray-400 max-w-md mb-4', sizes.text)}
         >
           {message}
@@ -149,7 +149,7 @@ export function FeedbackSuccessState({
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
+          transition={{ delay: DURATION.slow }}
           className="flex gap-3 mt-2"
         >
           {actionText && onAction && (

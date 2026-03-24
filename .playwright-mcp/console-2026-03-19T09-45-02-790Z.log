@@ -1,0 +1,30 @@
+[    1181ms] [WARNING] Please ensure that the container has a non-static position, like 'relative', 'fixed', or 'absolute' to ensure scroll offset is calculated correctly. @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2298
+[    1826ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3001/api/bookmarks?user_id=059bc1b3-344e-4e89-82b6-736e5b8bdab2:0
+[    1827ms] [ERROR] [QueryCache] ❌ ["bookmarks","user","059bc1b3-344e-4e89-82b6-736e5b8bdab2"] Error: Failed to fetch bookmarks
+    at fetchBookmarks (http://localhost:3001/_next/static/chunks/src_cb78d8fb._.js:1737:24) @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3128
+[    1880ms] [WARNING] [API Contract] Response format mismatch for GET /lists:
+  Expected: raw
+  Received: envelope
+  Response sample: {"success":true,"data":[]}
+  Update the endpoint or API_RESPONSE_CONTRACTS in client.ts @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2298
+[    2258ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3001/api/bookmarks?user_id=059bc1b3-344e-4e89-82b6-736e5b8bdab2:0
+[    3434ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3001/api/bookmarks?user_id=059bc1b3-344e-4e89-82b6-736e5b8bdab2:0
+[    5608ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3001/api/bookmarks?user_id=059bc1b3-344e-4e89-82b6-736e5b8bdab2:0
+[    9900ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3001/api/bookmarks?user_id=059bc1b3-344e-4e89-82b6-736e5b8bdab2:0
+[    9901ms] [ERROR] [QueryCache] ❌ ["bookmarks","user","059bc1b3-344e-4e89-82b6-736e5b8bdab2"] Error: Failed to fetch bookmarks
+    at fetchBookmarks (http://localhost:3001/_next/static/chunks/src_cb78d8fb._.js:1737:24) @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3128
+[   36339ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3001/api/sync:0
+[   38611ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3001/api/sync:0
+[   43071ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3001/api/sync:0
+[   51619ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3001/api/sync:0
+[   69772ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3001/api/sync:0
+[   69781ms] [WARNING] [SyncEngine] Operation failed: UPDATE_SESSION 06ca05fd-ecd0-40f2-bc21-6ddbca60e481 Authentication required @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2298
+[   92913ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3001/api/bookmarks?user_id=059bc1b3-344e-4e89-82b6-736e5b8bdab2:0
+[   92916ms] [ERROR] [QueryCache] ❌ ["bookmarks","user","059bc1b3-344e-4e89-82b6-736e5b8bdab2"] Error: Failed to fetch bookmarks
+    at fetchBookmarks (http://localhost:3001/_next/static/chunks/src_cb78d8fb._.js:1737:24) @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3128
+[   93255ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3001/api/bookmarks?user_id=059bc1b3-344e-4e89-82b6-736e5b8bdab2:0
+[   94524ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3001/api/bookmarks?user_id=059bc1b3-344e-4e89-82b6-736e5b8bdab2:0
+[   96896ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3001/api/bookmarks?user_id=059bc1b3-344e-4e89-82b6-736e5b8bdab2:0
+[  101261ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3001/api/bookmarks?user_id=059bc1b3-344e-4e89-82b6-736e5b8bdab2:0
+[  101262ms] [ERROR] [QueryCache] ❌ ["bookmarks","user","059bc1b3-344e-4e89-82b6-736e5b8bdab2"] Error: Failed to fetch bookmarks
+    at fetchBookmarks (http://localhost:3001/_next/static/chunks/src_cb78d8fb._.js:1737:24) @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3128

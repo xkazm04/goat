@@ -37,9 +37,9 @@ function areGridItemsEqual(prev: GridItemType[], next: GridItemType[]): boolean 
     if (!p || !n) return false;
     if (
       p.id !== n.id ||
-      p.matched !== n.matched ||
-      p.image_url !== n.image_url ||
-      p.title !== n.title
+      p.context.matched !== n.context.matched ||
+      p.item?.image_url !== n.item?.image_url ||
+      p.item?.title !== n.item?.title
     ) {
       return false;
     }
@@ -79,10 +79,12 @@ export const ViewSelector = memo(
     viewMode,
     gridItems,
     onRemove,
+    onFillViaBracket,
   }: {
     viewMode: ViewMode;
     gridItems: GridItemType[];
     onRemove: (position: number) => void;
+    onFillViaBracket?: (position: number) => void;
   }) {
     let content: React.ReactNode = null;
     switch (viewMode) {
@@ -92,6 +94,7 @@ export const ViewSelector = memo(
             gridItems={gridItems}
             onRemove={onRemove}
             getItemTitle={getItemTitle}
+            onFillViaBracket={onFillViaBracket}
           />
         );
         break;
@@ -101,6 +104,7 @@ export const ViewSelector = memo(
             gridItems={gridItems}
             onRemove={onRemove}
             getItemTitle={getItemTitle}
+            onFillViaBracket={onFillViaBracket}
           />
         );
         break;
@@ -110,6 +114,7 @@ export const ViewSelector = memo(
             gridItems={gridItems}
             onRemove={onRemove}
             getItemTitle={getItemTitle}
+            onFillViaBracket={onFillViaBracket}
           />
         );
         break;
@@ -126,6 +131,7 @@ export const ViewSelector = memo(
   (prev, next) =>
     prev.viewMode === next.viewMode &&
     prev.onRemove === next.onRemove &&
+    prev.onFillViaBracket === next.onFillViaBracket &&
     areGridItemsEqual(prev.gridItems, next.gridItems),
 );
 
@@ -325,14 +331,14 @@ export const MemoizedPositionSlot = memo(
     tierGlow?: string;
     showBadge?: boolean;
   }) {
-    const isOccupied = item?.matched ?? false;
+    const isOccupied = item?.context.matched ?? false;
 
     return (
       <SimpleDropZone
         position={position}
         isOccupied={isOccupied}
         occupiedBy={isOccupied ? getItemTitle(item) : undefined}
-        imageUrl={isOccupied ? item?.image_url : undefined}
+        imageUrl={isOccupied ? item?.item?.image_url : undefined}
         gridItem={isOccupied && item ? item : undefined}
         onRemove={onRemove}
         tierAccent={tierAccent}
@@ -358,9 +364,9 @@ export const MemoizedPositionSlot = memo(
 
     return (
       prevItem.id === nextItem.id &&
-      prevItem.matched === nextItem.matched &&
-      prevItem.image_url === nextItem.image_url &&
-      prevItem.title === nextItem.title
+      prevItem.context.matched === nextItem.context.matched &&
+      prevItem.item?.image_url === nextItem.item?.image_url &&
+      prevItem.item?.title === nextItem.item?.title
     );
   }
 );

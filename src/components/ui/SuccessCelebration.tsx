@@ -95,7 +95,7 @@ export const SuccessCelebration = memo(function SuccessCelebration({
       const timer = setTimeout(() => {
         setIsVisible(false);
         onComplete?.();
-      }, DURATION.celebration * 1000 + 500);
+      }, DURATION.dramatic * 1000 + 500);
 
       return () => clearTimeout(timer);
     }
@@ -208,7 +208,7 @@ const Sparkles = memo(function Sparkles({ color, count, radius }: SparklesProps)
               y: [0, y * 1.2],
             }}
             transition={{
-              duration: DURATION.celebration,
+              duration: DURATION.dramatic,
               ease: EASING.easeOut,
               delay: 0.15 + i * 0.03,
             }}

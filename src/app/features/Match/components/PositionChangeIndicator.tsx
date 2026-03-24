@@ -3,6 +3,8 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { memo } from 'react';
 
+import { DURATION } from '@/lib/animations/motion-presets';
+
 import type { PositionChange } from '../hooks/usePositionHistory';
 
 interface PositionChangeIndicatorProps {
@@ -44,7 +46,7 @@ export const PositionChangeIndicator = memo(function PositionChangeIndicator({
         <motion.div
           initial={{ opacity: 0, scale: 0.5 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ type: 'spring', stiffness: 400, damping: 20, delay: 0.3 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 20, delay: DURATION.normal }}
           className={`inline-flex items-center ${config.h} ${config.px} rounded-sm bg-amber-500/25 border border-amber-500/40 ${className}`}
         >
           <span className={`${config.text} font-bold text-amber-400 leading-none`}>NEW</span>
@@ -65,7 +67,7 @@ export const PositionChangeIndicator = memo(function PositionChangeIndicator({
       <motion.div
         initial={{ opacity: 0, y: isUp ? 6 : -6 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ type: 'spring', stiffness: 500, damping: 25, delay: 0.2 }}
+        transition={{ type: 'spring', stiffness: 500, damping: 25, delay: DURATION.fast }}
         className={`inline-flex items-center ${config.gap} ${config.h} ${config.px} rounded-sm ${className} ${
           isUp
             ? 'bg-emerald-500/20 border border-emerald-500/30'
@@ -75,7 +77,7 @@ export const PositionChangeIndicator = memo(function PositionChangeIndicator({
         <motion.span
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
-          transition={{ type: 'spring', stiffness: 600, damping: 15, delay: 0.35 }}
+          transition={{ type: 'spring', stiffness: 600, damping: 15, delay: DURATION.normal }}
           className={`${config.arrow} leading-none ${isUp ? 'text-emerald-400' : 'text-rose-400'}`}
         >
           {arrow}

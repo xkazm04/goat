@@ -85,14 +85,16 @@ export function AwardList({ parentListId, title = "Annual Awards", description }
                     // First item is the winner
                     const winner = list.items[0];
                     initialWinners[list.id] = {
-                        id: winner.id,
-                        title: winner.title,
-                        description: winner.description || '',
-                        image_url: winner.image_url,
+                        id: `winner-${list.id}`,
                         position: 0,
-                        matched: true,
-                        isDragPlaceholder: false,
-                        tags: []
+                        item: {
+                            id: winner.id,
+                            title: winner.title,
+                            description: winner.description || '',
+                            image_url: winner.image_url,
+                            tags: []
+                        },
+                        context: { source: 'grid', matched: true }
                     };
 
                     // Remaining items (up to 5) are candidates
@@ -130,23 +132,48 @@ export function AwardList({ parentListId, title = "Annual Awards", description }
         }
     };
 
+    // Helper to extract properties from the union type
+    const extractItemProps = (item: CollectionItem | BacklogItem | GridItemType) => {
+        if ('context' in item && 'item' in item) {
+            // It's a GridItemType (PlacedItem)
+            return {
+                id: item.item?.id ?? item.id,
+                title: item.item?.title ?? '',
+                description: item.item?.description ?? '',
+                image_url: item.item?.image_url ?? undefined,
+                tags: item.item?.tags ?? [],
+            };
+        }
+        // CollectionItem or BacklogItem - flat shape
+        const flat = item as CollectionItem | BacklogItem;
+        return {
+            id: flat.id,
+            title: 'title' in flat ? flat.title : (flat as BacklogItem).name || '',
+            description: flat.description || '',
+            image_url: flat.image_url ?? undefined,
+            tags: ('tags' in flat ? flat.tags : undefined) || [],
+        };
+    };
+
     // Shared function to assign an item to a winner slot
     const assignWinner = useCallback((item: CollectionItem | BacklogItem | GridItemType, targetListId: string) => {
-        const itemTitle = 'title' in item ? item.title : (item as BacklogItem).name || '';
+        const props = extractItemProps(item);
 
         const newWinner: GridItemType = {
             id: `winner-${targetListId}-${Date.now()}`,
-            title: itemTitle,
-            description: item.description || '',
-            image_url: item.image_url || undefined,
             position: 0,
-            matched: true,
-            isDragPlaceholder: false,
-            tags: item.tags || []
+            item: {
+                id: props.id,
+                title: props.title,
+                description: props.description,
+                image_url: props.image_url,
+                tags: props.tags
+            },
+            context: { source: 'grid', matched: true }
         };
 
         setWinners(prev => ({ ...prev, [targetListId]: newWinner }));
-        console.log(`🏆 Awarding "${itemTitle}" to category`);
+        console.log(`🏆 Awarding "${props.title}" to category`);
 
         if ('id' in item) {
             markItemAsUsed(item.id, true);
@@ -155,12 +182,12 @@ export function AwardList({ parentListId, title = "Annual Awards", description }
 
     // Shared function to assign an item to a candidate slot
     const assignCandidate = useCallback((item: CollectionItem | BacklogItem | GridItemType, listId: string, slotIndex: number) => {
-        const itemTitle = 'title' in item ? item.title : (item as BacklogItem).name || '';
+        const props = extractItemProps(item);
 
         const newCandidate: AwardCandidate = {
             id: `candidate-${listId}-${Date.now()}`,
-            title: itemTitle,
-            image_url: item.image_url
+            title: props.title,
+            image_url: props.image_url
         };
 
         setCandidatesByAward(prev => {
@@ -172,7 +199,7 @@ export function AwardList({ parentListId, title = "Annual Awards", description }
             return { ...prev, [listId]: currentCandidates };
         });
 
-        console.log(`📋 Added "${itemTitle}" as candidate #${slotIndex + 1}`);
+        console.log(`📋 Added "${props.title}" as candidate #${slotIndex + 1}`);
 
         if ('id' in item) {
             markItemAsUsed(item.id, true);
@@ -395,7 +422,11 @@ export function AwardList({ parentListId, title = "Annual Awards", description }
 
                 {/* Simple Drag Overlay without cursor glow effects */}
                 <DragOverlay dropAnimation={null}>
-                    {activeItem && <DragOverlayContent activeItem={activeItem} />}
+                    {activeItem && <DragOverlayContent activeItem={
+                        'context' in activeItem
+                            ? { id: activeItem.item?.id, title: activeItem.item?.title ?? '', image_url: activeItem.item?.image_url }
+                            : activeItem
+                    } />}
                 </DragOverlay>
             </DndContext>
         </ClickAssignContext.Provider>

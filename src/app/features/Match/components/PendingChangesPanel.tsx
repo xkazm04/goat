@@ -14,7 +14,7 @@ import {
 import { useState, useEffect } from 'react';
 
 import { useOffline } from '@/lib/offline/OfflineProvider';
-import { getSyncQueue } from '@/lib/offline/SyncQueue';
+import { getOfflinePersistence } from '@/lib/offline/OfflinePersistence';
 
 import type { SyncOperation, OperationStatus } from '@/lib/offline/types';
 
@@ -92,8 +92,8 @@ export function PendingChangesPanel({
     const loadOperations = async () => {
       setIsLoading(true);
       try {
-        const state = await getSyncQueue().getState();
-        setOperations(state.operations);
+        const ops = await getOfflinePersistence().getAllOperations();
+        setOperations(ops as SyncOperation[]);
       } catch (error) {
         console.error('Failed to load operations:', error);
       } finally {

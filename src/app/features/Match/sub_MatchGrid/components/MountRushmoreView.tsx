@@ -20,6 +20,7 @@ interface MountRushmoreViewProps {
     gridItems: (GridItemType | null)[];
     onRemove: (position: number) => void;
     getItemTitle: (item: any) => string;
+    onFillViaBracket?: (position: number) => void;
 }
 
 const rushmoreContainer = {
@@ -48,7 +49,7 @@ function useChiselingReveal(gridItems: (GridItemType | null)[]) {
         const newlyPlaced = new Set<number>();
 
         for (let i = 0; i < 4; i++) {
-            if (gridItems[i]?.matched) {
+            if (gridItems[i]?.context.matched) {
                 currentMatched.add(i);
                 if (!prevMatchedRef.current.has(i)) {
                     newlyPlaced.add(i);
@@ -79,7 +80,7 @@ function useChiselingReveal(gridItems: (GridItemType | null)[]) {
     return chiselingSlots;
 }
 
-export function MountRushmoreView({ gridItems, onRemove, getItemTitle }: MountRushmoreViewProps) {
+export function MountRushmoreView({ gridItems, onRemove, getItemTitle, onFillViaBracket }: MountRushmoreViewProps) {
     const chiselingSlots = useChiselingReveal(gridItems);
 
     return (
@@ -130,7 +131,7 @@ export function MountRushmoreView({ gridItems, onRemove, getItemTitle }: MountRu
                     style={{ perspective: 800 }}
                 >
                     {[0, 1, 2, 3].map((position) => {
-                        const isOccupied = !!(gridItems[position] && gridItems[position].matched);
+                        const isOccupied = !!(gridItems[position] && gridItems[position].context.matched);
                         const isChiseling = chiselingSlots.has(position);
 
                         return (
@@ -138,7 +139,7 @@ export function MountRushmoreView({ gridItems, onRemove, getItemTitle }: MountRu
                                 key={position}
                                 variants={rushmoreCard}
                                 className={cn(
-                                    "relative aspect-[3/4]",
+                                    "relative aspect-[3/5]",
                                     position === 0 && "z-10"
                                 )}
                                 style={position === 0 ? {
@@ -171,11 +172,12 @@ export function MountRushmoreView({ gridItems, onRemove, getItemTitle }: MountRu
                                         <SimpleDropZone
                                             position={position}
                                             isOccupied={isOccupied}
-                                            occupiedBy={gridItems[position]?.matched ? getItemTitle(gridItems[position]) : undefined}
-                                            imageUrl={gridItems[position]?.matched ? gridItems[position].image_url : undefined}
-                                            gridItem={gridItems[position]?.matched ? gridItems[position] : undefined}
+                                            occupiedBy={gridItems[position]?.context.matched ? getItemTitle(gridItems[position]) : undefined}
+                                            imageUrl={gridItems[position]?.context.matched ? gridItems[position].item?.image_url : undefined}
+                                            gridItem={gridItems[position]?.context.matched ? gridItems[position] : undefined}
                                             onRemove={() => onRemove(position)}
                                             showBadge={false}
+                                            onFillViaBracket={onFillViaBracket ? () => onFillViaBracket(position) : undefined}
                                         />
 
                                         {/* Stone texture overlay - only on occupied slots */}

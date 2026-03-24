@@ -28,6 +28,7 @@ import React, {
 } from 'react';
 
 import { GoatSearch, GoatSparkles, GoatFilter } from '@/components/visual/GoatIcons';
+import { DURATION } from '@/lib/animations/motion-presets';
 import { cn } from '@/lib/utils';
 
 import {
@@ -392,7 +393,7 @@ export function SearchAutocomplete({
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.1 }}
+              transition={{ duration: DURATION.instant }}
               className={cn(
                 'absolute right-10 top-1/2 -translate-y-1/2',
                 'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium',

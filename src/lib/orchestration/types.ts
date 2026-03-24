@@ -346,9 +346,9 @@ export interface SessionStoreActions {
   updateSessionGridItems: (gridItems: GridItemType[]) => void;
   setSelectedBacklogItem: (id: string | null) => void;
   syncWithList: (listId: string, category?: string) => void;
-  saveCurrentSession: () => void;
+  saveCurrentSession: (explicitSessionId?: string) => void;
   createSession: (listId: string, size: number) => void;
-  switchToSession: (listId: string) => void;
+  switchToSession: (listId: string) => Promise<void>;
 }
 
 export interface ComparisonStoreActions {

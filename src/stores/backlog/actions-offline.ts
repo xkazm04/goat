@@ -1,5 +1,5 @@
 import { backlogLogger } from '@/lib/logger';
-import { getSyncQueue } from '@/lib/offline/SyncQueue';
+import { getOfflinePersistence } from '@/lib/offline/OfflinePersistence';
 
 import { BacklogState, FailedChange, PendingChange } from './types';
 
@@ -55,7 +55,7 @@ export const createOfflineActions = (
     const retryable: PendingChange[] = [];
     const deadLettered: FailedChange[] = [];
 
-    const syncQueue = getSyncQueue();
+    const persistence = getOfflinePersistence();
 
     // Process in sequence
     for (const change of sortedChanges) {
@@ -73,9 +73,7 @@ export const createOfflineActions = (
           continue;
         }
 
-        // Enqueue into the SyncQueue which handles retry, persistence,
-        // and routing through /api/sync with proper error handling
-        await syncQueue.enqueue(
+        await persistence.enqueue(
           'UPDATE_BACKLOG',
           change.groupId,
           'backlog',
@@ -130,10 +128,10 @@ export const createOfflineActions = (
       s.syncDiagnostics.isSyncing = false;
     });
 
-    // Trigger the SyncQueue to process enqueued operations through /api/sync
+    // Trigger sync processing through /api/sync
     if (succeeded.length > 0) {
-      syncQueue.processQueue().catch(err => {
-        backlogLogger.error('SyncQueue processing failed after enqueue', err);
+      persistence.processQueue().catch(err => {
+        backlogLogger.error('Sync processing failed after enqueue', err);
       });
     }
 

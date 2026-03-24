@@ -1,17 +1,17 @@
 "use client";
 
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useEffect, Suspense } from 'react';
+import { useEffect, useRef, Suspense } from 'react';
 
 import { useTopList } from '@/hooks/use-top-lists';
-import { BacklogProvider } from '@/providers/BacklogProvider';
+import { sessionLogger } from '@/lib/logger';
 import { useBacklogStore } from '@/stores/backlog-store';
 import { useGridStore } from '@/stores/grid-store';
 import { useSessionStore } from '@/stores/session-store';
 import { useListStore } from '@/stores/use-list-store';
 
 // Lazy-load the match grid to defer loading of @dnd-kit (~25KB gzipped)
-import { LazySimpleMatchGrid } from '../features/Match/sub_MatchGrid/LazySimpleMatchGrid';
+import { LazySimpleMatchGrid } from '../../features/Match/sub_MatchGrid/LazySimpleMatchGrid';
 
 // Default list metadata colors
 const DEFAULT_LIST_COLORS = {
@@ -67,18 +67,25 @@ function MatchTestContent() {
     } as any
   );
 
+  // Track which listId we've already initialized to prevent double-firing.
+  // Without this, setCurrentList() in Case 2 changes `currentList`, re-triggers
+  // the effect, which runs Case 1 and bumps _loadingGeneration — cancelling
+  // the in-flight bulk items fetch from Case 2 (items never load).
+  const initializedListRef = useRef<string | null>(null);
+
   // Initialize data when list is loaded
   useEffect(() => {
-    if (!listId) {
-      // No list ID - redirect to home or show message
-      return;
-    }
+    if (!listId) return;
+
+    // Skip if we already initialized this list
+    if (initializedListRef.current === listId) return;
 
     const initializeData = async () => {
       try {
         // Case 1: Use cached list from local state
         if (currentList?.id === listId) {
-          console.log('✅ Using cached list from local state:', currentList.id);
+          sessionLogger.debug('Using cached list from local state', currentList.id);
+          initializedListRef.current = listId;
 
           if (activeSessionId !== listId) {
             switchToSession(listId);
@@ -101,7 +108,8 @@ function MatchTestContent() {
 
         // Case 2: Fresh data from API
         if (listData && listData.id === listId) {
-          console.log('✅ Using fresh list data from backend:', listData.id);
+          sessionLogger.debug('Using fresh list data from backend', listData.id);
+          initializedListRef.current = listId;
 
           const listConfig = {
             ...listData,
@@ -128,10 +136,9 @@ function MatchTestContent() {
           // Sync with backend to load any existing list items
           try {
             await syncWithBackend(listId);
-            console.log('✅ Synced with backend successfully');
+            sessionLogger.debug('Synced with backend successfully');
           } catch (syncError) {
             console.error('❌ Error syncing with backend:', syncError);
-            // Continue anyway - user can still use the app
           }
         }
       } catch (error) {
@@ -200,11 +207,7 @@ function MatchTestContent() {
   }
 
   // Render the match grid (lazy-loaded for code splitting)
-  return (
-    <BacklogProvider>
-      <LazySimpleMatchGrid />
-    </BacklogProvider>
-  );
+  return <LazySimpleMatchGrid />;
 }
 
 /**

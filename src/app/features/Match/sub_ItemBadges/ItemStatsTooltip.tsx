@@ -151,7 +151,7 @@ export function ItemStatsTooltip({
                   <span className="text-white/20">•</span>
 
                   {/* Total Rankings */}
-                  <span className="flex items-center gap-1 text-white/60">
+                  <span className="flex items-center gap-1 text-slate-400">
                     <Users className="w-3 h-3" />
                     {data.totalRankings}
                   </span>

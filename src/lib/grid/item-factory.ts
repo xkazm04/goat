@@ -172,7 +172,7 @@ export function updateGridItemPosition(item: GridItemType, newPosition: number):
  */
 export function canSwapGridItems(itemA: GridItemType, itemB: GridItemType): boolean {
   // Both must be matched (have actual items)
-  return itemA.matched && itemB.matched;
+  return itemA.context.matched && itemB.context.matched;
 }
 
 /**
@@ -191,11 +191,11 @@ export function logGridItem(gridItem: GridItemType, label = 'GridItem'): void {
   gridLogger.debug(label, {
     id: gridItem.id,
     position: gridItem.position,
-    title: gridItem.title,
-    matched: gridItem.matched,
-    backlogItemId: gridItem.backlogItemId,
-    hasImageUrl: !!gridItem.image_url,
-    imageUrl: gridItem.image_url || 'NONE',
+    title: gridItem.item?.title ?? '',
+    matched: gridItem.context.matched,
+    itemId: gridItem.item?.id,
+    hasImageUrl: !!gridItem.item?.image_url,
+    imageUrl: gridItem.item?.image_url || 'NONE',
   });
 }
 

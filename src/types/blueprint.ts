@@ -33,6 +33,13 @@ export interface BlueprintTierConfig {
   }>;
 }
 
+// Snapshot of an item in a community template (rankings stripped)
+export interface CommunityTemplateItem {
+  title: string;
+  imageUrl?: string;
+  description?: string;
+}
+
 // Core Blueprint entity - the unified type for both system presets and user-created blueprints
 export interface Blueprint {
   // Identity
@@ -66,10 +73,17 @@ export interface Blueprint {
   isSystem?: boolean; // System preset (not editable)
   isFeatured?: boolean; // Show in featured section
   isBanned?: boolean; // Special visual treatment (e.g., hip-hop showcase card)
+  isCommunity?: boolean; // Community-published template
 
   // Analytics
   usageCount?: number;
   cloneCount?: number;
+
+  // Community template fields
+  avgRating?: number;
+  ratingCount?: number;
+  completionRate?: number;
+  itemSnapshot?: CommunityTemplateItem[];
 
   // Timestamps
   createdAt?: string;
@@ -97,8 +111,14 @@ export interface BlueprintRow {
   tier_config?: string; // JSON serialized BlueprintTierConfig
   is_system: boolean;
   is_featured: boolean;
+  is_community?: boolean;
+  is_banned?: boolean;
   usage_count: number;
   clone_count: number;
+  avg_rating?: number;
+  rating_count?: number;
+  completion_rate?: number;
+  item_snapshot?: string; // JSON serialized CommunityTemplateItem[]
   source_list_id?: string;
   created_at: string;
   updated_at: string;
@@ -113,6 +133,16 @@ export function blueprintFromRow(row: BlueprintRow): Blueprint {
       tierConfig = JSON.parse(row.tier_config) as BlueprintTierConfig;
     } catch {
       // Invalid JSON, ignore tier config
+    }
+  }
+
+  // Parse item snapshot if present
+  let itemSnapshot: CommunityTemplateItem[] | undefined;
+  if (row.item_snapshot) {
+    try {
+      itemSnapshot = JSON.parse(row.item_snapshot) as CommunityTemplateItem[];
+    } catch {
+      // Invalid JSON, ignore
     }
   }
 
@@ -135,8 +165,14 @@ export function blueprintFromRow(row: BlueprintRow): Blueprint {
     tierConfig,
     isSystem: row.is_system,
     isFeatured: row.is_featured,
+    isCommunity: row.is_community,
+    isBanned: row.is_banned,
     usageCount: row.usage_count,
     cloneCount: row.clone_count,
+    avgRating: row.avg_rating,
+    ratingCount: row.rating_count,
+    completionRate: row.completion_rate,
+    itemSnapshot,
     sourceListId: row.source_list_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -167,8 +203,14 @@ export function blueprintToRow(blueprint: Partial<Blueprint>): Partial<Blueprint
   }
   if (blueprint.isSystem !== undefined) row.is_system = blueprint.isSystem;
   if (blueprint.isFeatured !== undefined) row.is_featured = blueprint.isFeatured;
+  if (blueprint.isCommunity !== undefined) row.is_community = blueprint.isCommunity;
+  if (blueprint.isBanned !== undefined) row.is_banned = blueprint.isBanned;
   if (blueprint.usageCount !== undefined) row.usage_count = blueprint.usageCount;
   if (blueprint.cloneCount !== undefined) row.clone_count = blueprint.cloneCount;
+  if (blueprint.avgRating !== undefined) row.avg_rating = blueprint.avgRating;
+  if (blueprint.ratingCount !== undefined) row.rating_count = blueprint.ratingCount;
+  if (blueprint.completionRate !== undefined) row.completion_rate = blueprint.completionRate;
+  if (blueprint.itemSnapshot !== undefined) row.item_snapshot = JSON.stringify(blueprint.itemSnapshot);
   if (blueprint.sourceListId !== undefined) row.source_list_id = blueprint.sourceListId;
 
   return row;
@@ -204,16 +246,35 @@ export interface BlueprintShareResponse {
   shortUrl?: string;
 }
 
+// Request to publish a list as a community template
+export interface PublishAsTemplateRequest {
+  listId: string;
+  title: string;
+  description?: string;
+  category: string;
+  subcategory?: string;
+  size: number;
+  timePeriod?: 'all-time' | 'decade' | 'year';
+  color?: BlueprintColor;
+  items: CommunityTemplateItem[];
+}
+
+// Request to rate a community template
+export interface RateTemplateRequest {
+  rating: number; // 1-5
+}
+
 // Search/filter parameters
 export interface SearchBlueprintsParams {
   category?: string;
   subcategory?: string;
   authorId?: string;
   isFeatured?: boolean;
+  isCommunity?: boolean;
   search?: string;
   limit?: number;
   offset?: number;
-  sort?: 'popular' | 'recent' | 'trending';
+  sort?: 'popular' | 'recent' | 'trending' | 'top-rated';
 }
 
 // Generate a URL-friendly slug from title

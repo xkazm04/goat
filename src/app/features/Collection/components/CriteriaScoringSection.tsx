@@ -208,7 +208,7 @@ export function CriteriaScoringSection({
                         initial={{ opacity: 0.6, scale: 1 }}
                         animate={{ opacity: 0, scale: 1.5 }}
                         exit={{ opacity: 0 }}
-                        transition={{ duration: 0.4 }}
+                        transition={{ duration: DURATION.slow }}
                       />
                     )}
                   </AnimatePresence>

@@ -37,7 +37,7 @@ export const BookmarkButton = memo(function BookmarkButton({
       className={`${buttonSize} rounded-lg backdrop-blur-sm transition-colors z-10
         ${isBookmarked
           ? "bg-amber-500/20 text-amber-400 hover:bg-amber-500/30"
-          : "bg-black/40 text-white/60 hover:text-white hover:bg-black/60"
+          : "bg-black/40 text-slate-400 hover:text-white hover:bg-black/60"
         }
         focus-ring ${className}`}
       whileHover={{ scale: 1.15 }}

@@ -104,8 +104,8 @@ export function LandingMain() {
         {/* Main content - Hero showcase */}
         <FloatingShowcase />
 
-        {/* Saved/Bookmarked Lists */}
-        <SavedListsSection />
+        {/* Saved/Bookmarked Lists — disabled until bookmarks API is ready */}
+        {/* <SavedListsSection /> */}
 
         {/* Browse by Category Section */}
         <div className="max-w-5xl mx-auto px-6 pb-20 relative z-10">

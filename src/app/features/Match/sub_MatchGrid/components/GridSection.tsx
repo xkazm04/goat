@@ -46,7 +46,7 @@ const GridSlot = memo(function GridSlot({
     onRemove: (position: number) => void;
 }) {
     const item = useGridItemAtPosition(position);
-    const isOccupied = item?.matched ?? false;
+    const isOccupied = item?.context.matched ?? false;
     const backlogSelectedItem = useGridStore((s) => s.mobileSelectedItem);
     const gridSelectedPos = useClickMoveStore((s) => s.selectedPosition);
 
@@ -75,7 +75,7 @@ const GridSlot = memo(function GridSlot({
             // Move the grid item
             const gridStore = useGridStore.getState();
             const sourceItem = gridStore.gridItems[currentGridSelectedPos];
-            if (sourceItem?.matched) {
+            if (sourceItem?.context.matched) {
                 gridStore.moveGridItem(currentGridSelectedPos, position);
                 triggerHaptic('dropPositionRegular');
             }
@@ -105,7 +105,7 @@ const GridSlot = memo(function GridSlot({
                 position={position}
                 isOccupied={isOccupied}
                 occupiedBy={isOccupied ? getItemTitle(item) : undefined}
-                imageUrl={isOccupied ? item?.image_url : undefined}
+                imageUrl={isOccupied ? item?.item?.image_url : undefined}
                 gridItem={isOccupied ? item ?? undefined : undefined}
                 onRemove={handleRemove}
             />

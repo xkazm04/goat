@@ -3,6 +3,9 @@ import { Suspense } from "react";
 
 import { LazyAwardList } from "@/app/features/Awards/LazyAwardList";
 
+// This page depends on searchParams, so opt out of static prerendering
+export const dynamic = 'force-dynamic';
+
 interface PageProps {
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }

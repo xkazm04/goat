@@ -75,7 +75,7 @@ export function useTierIntegration(
   // Get filled positions from grid
   const filledPositions = useMemo(() => {
     return gridItems
-      .filter((item) => item.matched)
+      .filter((item) => item.context.matched)
       .map((item) => item.position);
   }, [gridItems]);
 

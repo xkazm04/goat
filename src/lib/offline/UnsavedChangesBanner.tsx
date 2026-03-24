@@ -4,29 +4,23 @@
  * UnsavedChangesBanner - Persistent top-of-page banner for unsynced changes
  *
  * Shows when there are pending changes, especially when offline.
- * Displays change count, last sync time, and a manual sync button.
- * Inspired by Todoist's unsynced indicator pattern.
  */
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { CloudOff, RefreshCw, Loader2, X, AlertTriangle } from 'lucide-react';
+
+import { DURATION, EASE } from '@/lib/animations/motion-presets';
 import React, { useState, useEffect, useCallback } from 'react';
 
 import { cn } from '@/lib/utils';
 
-
-import { getNetworkMonitor } from './NetworkMonitor';
-import { getSyncEngine } from './SyncEngine';
+import { getOfflinePersistence } from './OfflinePersistence';
 import { SyncState } from './types';
 
 export interface UnsavedChangesBannerProps {
-  /** Minimum pending changes before showing banner (default: 1) */
   minPendingToShow?: number;
-  /** Only show when offline (default: false - shows whenever there are pending changes) */
   onlyWhenOffline?: boolean;
-  /** Custom className */
   className?: string;
-  /** Whether user has dismissed the banner */
   onDismiss?: () => void;
 }
 
@@ -42,53 +36,57 @@ export const UnsavedChangesBanner: React.FC<UnsavedChangesBannerProps> = ({
   const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
-    let unsubscribeNetwork: (() => void) | null = null;
+    // Check network status
+    setIsOffline(!navigator.onLine);
 
-    const init = async () => {
-      try {
-        const engine = getSyncEngine();
-        const networkMonitor = getNetworkMonitor();
-
-        engine.setEvents({
-          onStateChange: (state) => {
-            setSyncState(state);
-            setIsSyncing(state.status === 'syncing');
-            // Re-show banner if new changes appear after dismiss
-            if (state.pendingChanges >= minPendingToShow && state.status === 'pending') {
-              setIsDismissed(false);
-            }
-          },
-        });
-
-        unsubscribeNetwork = networkMonitor.subscribe((state) => {
-          const offline = state.status === 'offline';
-          setIsOffline(offline);
-          // Re-show banner when going offline with pending changes
-          if (offline) {
-            setIsDismissed(false);
-          }
-        });
-
-        setSyncState(engine.getState());
-        setIsOffline(networkMonitor.isOffline());
-      } catch {
-        // Engine not initialized yet
-      }
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => {
+      setIsOffline(true);
+      setIsDismissed(false);
     };
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
 
-    init();
+    // Subscribe to queue changes
+    const persistence = getOfflinePersistence();
+    const unsubscribe = persistence.onQueueChange((pendingCount) => {
+      setSyncState({
+        status: pendingCount > 0 ? 'pending' : 'idle',
+        lastSyncedAt: null,
+        pendingChanges: pendingCount,
+        error: null,
+      });
+      if (pendingCount >= minPendingToShow) {
+        setIsDismissed(false);
+      }
+    });
+
+    // Load initial count
+    persistence.getPendingCount().then(count => {
+      if (count > 0) {
+        setSyncState({
+          status: 'pending',
+          lastSyncedAt: null,
+          pendingChanges: count,
+          error: null,
+        });
+      }
+    });
+
     return () => {
-      unsubscribeNetwork?.();
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      unsubscribe();
     };
   }, [minPendingToShow]);
 
   const handleSync = useCallback(async () => {
     try {
       setIsSyncing(true);
-      const engine = getSyncEngine();
-      await engine.forceSync();
+      const persistence = getOfflinePersistence();
+      await persistence.processQueue();
     } catch {
-      // Sync failed - state will update via events
+      // Sync failed
     } finally {
       setIsSyncing(false);
     }
@@ -109,14 +107,11 @@ export const UnsavedChangesBanner: React.FC<UnsavedChangesBannerProps> = ({
     return `${Math.floor(minutes / 60)}h ago`;
   };
 
-  // Determine visibility
   if (!syncState) return null;
   if (isDismissed) return null;
 
   const pendingCount = syncState.pendingChanges;
-  const hasPending = pendingCount >= minPendingToShow;
-
-  if (!hasPending) return null;
+  if (pendingCount < minPendingToShow) return null;
   if (onlyWhenOffline && !isOffline) return null;
 
   const isError = syncState.status === 'error';
@@ -127,7 +122,7 @@ export const UnsavedChangesBanner: React.FC<UnsavedChangesBannerProps> = ({
         initial={{ opacity: 0, y: -40 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -40 }}
-        transition={{ duration: 0.25, ease: 'easeOut' }}
+        transition={{ duration: DURATION.normal, ease: EASE.out }}
         className={cn(
           'fixed top-0 left-0 right-0 z-toast',
           isError
@@ -140,7 +135,6 @@ export const UnsavedChangesBanner: React.FC<UnsavedChangesBannerProps> = ({
         )}
       >
         <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between gap-3">
-          {/* Left: Status icon + message */}
           <div className="flex items-center gap-2.5 min-w-0">
             {isOffline ? (
               <CloudOff className="w-4 h-4 text-white flex-shrink-0" />
@@ -159,7 +153,6 @@ export const UnsavedChangesBanner: React.FC<UnsavedChangesBannerProps> = ({
             </span>
           </div>
 
-          {/* Right: Actions */}
           <div className="flex items-center gap-2 flex-shrink-0">
             {!isOffline && (
               <button

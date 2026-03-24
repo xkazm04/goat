@@ -240,9 +240,8 @@ export async function trackServerImpression(
     metadata,
   };
 
-  // In production, this would write to a database or analytics service
-  // For now, we'll log it
-  console.log('[Widget Analytics]', event);
+  // TODO: Write to analytics service when backend is ready
+  void event;
 }
 
 /**

@@ -1,33 +1,18 @@
 /**
  * DnD Operations Module
  *
- * Unified drag-and-drop operation system with router pattern.
- * This module consolidates all drag handling logic into reusable,
- * testable operation classes.
+ * Grid operations (assign, move, swap) are handled via algebraic primitives
+ * (Place, Remove, Swap) — no class hierarchy. The DragOperationRouter
+ * decomposes drag events into primitive sequences and executes them directly.
+ *
+ * Tier operations use registered class instances via the DragOperation interface.
  *
  * Usage:
  * ```typescript
- * import {
- *   DragOperationRouter,
- *   getDragOperationRouter,
- *   AssignOperation,
- *   MoveOperation,
- *   SwapOperation,
- * } from '@/lib/dnd/operations';
+ * import { createStandardRouter } from '@/lib/dnd/operations';
  *
- * // Setup router with operations
- * const router = getDragOperationRouter({ debug: true });
- * router.registerOperation(new AssignOperation());
- * router.registerOperation(new MoveOperation());
- * router.registerOperation(new SwapOperation());
- *
- * // Handle drag end in component
- * const handleDragEnd = (event: DragEndEvent) => {
- *   const result = router.handleDragEnd(event, storeContext);
- *   if (!result.success) {
- *     showError(result.errorCode);
- *   }
- * };
+ * const router = createStandardRouter({ debug: true });
+ * const result = router.handleDragEnd(event, storeContext);
  * ```
  */
 
@@ -55,13 +40,32 @@ export {
   resetDragOperationRouter,
 } from './DragOperationRouter';
 
-// Core Grid Operations
-export { BaseGridOperation } from './BaseGridOperation';
-export { AssignOperation } from './AssignOperation';
-export { MoveOperation } from './MoveOperation';
-export { SwapOperation } from './SwapOperation';
+// Algebraic Primitives
+export {
+  type GridPrimitive,
+  type PlacePrimitive,
+  type RemovePrimitive,
+  type SwapPrimitive,
+  type GridState,
+  validatePrimitive,
+  validateSequence,
+  executePrimitive,
+  executeSequence,
+} from './primitives';
 
-// Tier Operations
+// Grid Operation Plans (decomposition layer)
+export {
+  type GridOperationPlan,
+  type BacklogEffect,
+  planAssign,
+  planMove,
+  planSwap,
+  isPlan,
+  executePlan,
+  createUndoableOperation,
+} from './grid-plans';
+
+// Tier Operations (class-based, registered with router)
 export {
   BaseTierOperation,
   TierAssignOperation,
@@ -73,7 +77,7 @@ export {
   GridToTierOperation,
 } from './tier';
 
-// Validation Helpers
+// Validation Helpers (used by tier operations)
 export {
   requireStore,
   requireGridSlotTarget,
@@ -101,11 +105,8 @@ export {
 // Pre-configured Router Factory
 // ============================================================================
 
-import { AssignOperation } from './AssignOperation';
 import { DragOperationRouter } from './DragOperationRouter';
 import { DragResultHandler, type ValidationErrorEmitter } from './DragResultHandler';
-import { MoveOperation } from './MoveOperation';
-import { SwapOperation } from './SwapOperation';
 import {
   TierAssignOperation,
   TierMoveOperation,
@@ -119,17 +120,15 @@ import {
 import type { RouterConfig } from './types';
 
 /**
- * Create a pre-configured router with all standard operations registered
+ * Create a pre-configured router with all operations available.
+ *
+ * Grid operations (assign, move, swap) are handled via algebraic primitives
+ * built into the router. Tier operations are registered as class instances.
  */
 export function createStandardRouter(config?: RouterConfig): DragOperationRouter {
   const router = new DragOperationRouter(config);
 
-  // Register grid operations
-  router.registerOperation(new AssignOperation());
-  router.registerOperation(new MoveOperation());
-  router.registerOperation(new SwapOperation());
-
-  // Register tier operations
+  // Register tier operations (grid ops are handled by primitives in the router)
   router.registerOperation(new TierAssignOperation());
   router.registerOperation(new TierMoveOperation());
   router.registerOperation(new TierTransferOperation());
@@ -142,16 +141,11 @@ export function createStandardRouter(config?: RouterConfig): DragOperationRouter
 }
 
 /**
- * Create a router configured only for grid operations (no tier support)
+ * Create a router configured only for grid operations (no tier support).
+ * Grid operations are built-in via algebraic primitives — no registration needed.
  */
 export function createGridOnlyRouter(config?: RouterConfig): DragOperationRouter {
-  const router = new DragOperationRouter(config);
-
-  router.registerOperation(new AssignOperation());
-  router.registerOperation(new MoveOperation());
-  router.registerOperation(new SwapOperation());
-
-  return router;
+  return new DragOperationRouter(config);
 }
 
 /**
@@ -175,7 +169,7 @@ export function createDragSystem(
     resultHandler.handle(result, context);
   });
 
-  router.setValidationErrorHandler((errorCode, context) => {
+  router.setValidationErrorHandler((errorCode) => {
     if (errorEmitter) {
       errorEmitter(errorCode);
     }

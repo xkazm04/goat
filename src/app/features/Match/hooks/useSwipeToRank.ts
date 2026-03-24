@@ -61,7 +61,7 @@ export function useSwipeToRank() {
   const getNextEmptySlot = useCallback((): number | null => {
     const { gridItems, maxGridSize } = useGridStore.getState();
     for (let i = 0; i < maxGridSize; i++) {
-      if (!gridItems[i]?.matched) return i;
+      if (!gridItems[i]?.context.matched) return i;
     }
     return null;
   }, []);
@@ -98,7 +98,7 @@ export function useSwipeToRank() {
       const { gridItems, maxGridSize, assignItemToGrid } =
         useGridStore.getState();
       if (position < 0 || position >= maxGridSize) return false;
-      if (gridItems[position]?.matched) return false;
+      if (gridItems[position]?.context.matched) return false;
 
       const backlogItem = resolveBacklogItem(item.id);
       if (!backlogItem) return false;

@@ -236,6 +236,7 @@ export const POST = withTiming(withErrorHandler(async (request: NextRequest) => 
       .from('list_collections')
       .select('id, parent_id')
       .eq('id', body.parent_id)
+      .eq('user_id', auth.userId)
       .single();
 
     if (parentError || !parent) {

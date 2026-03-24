@@ -11,10 +11,11 @@
  */
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, CheckCircle2, AlertCircle, Send, Save, UserPlus } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertCircle, Send, Save, UserPlus, Globe } from 'lucide-react';
 import { useState, useRef } from 'react';
 
 import { SURFACE_ELEVATION, GLOW_PRESET } from '@/components/visual/depth/depth-tokens';
+import { usePublishAsTemplate } from '@/hooks/use-blueprints';
 import { useToast } from '@/hooks/use-toast';
 import { useCreateListWithUser } from '@/hooks/use-top-lists';
 import { apiClient } from '@/lib/api/client';
@@ -56,6 +57,8 @@ export function MetadataPanel() {
   const publishingRef = useRef(false);
 
   const createListMutation = useCreateListWithUser();
+  const publishTemplateMutation = usePublishAsTemplate();
+  const [templatePublished, setTemplatePublished] = useState(false);
 
   const hasAnyItems = itemCount > 0;
 
@@ -307,6 +310,74 @@ export function MetadataPanel() {
           </AnimatePresence>
         </motion.button>
       </div>
+
+      {/* Publish as Community Template */}
+      {canPublish && (
+        <div className="space-y-2 pt-2 border-t border-white/[0.04]">
+          <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+            Community
+          </span>
+          <button
+            onClick={async () => {
+              if (templatePublished || publishTemplateMutation.isPending) return;
+              try {
+                await publishTemplateMutation.mutateAsync({
+                  listId: '', // Will be set by the API from source context
+                  title: listTitle.trim(),
+                  description: listDescription.trim() || undefined,
+                  category: categoryToDbValue(category),
+                  size: listSize,
+                  items: generatedItems.map(item => ({
+                    title: item.title,
+                    imageUrl: item.image_url || undefined,
+                    description: item.description || undefined,
+                  })),
+                });
+                setTemplatePublished(true);
+                toast({
+                  title: 'Published as template!',
+                  description: 'Your list is now available in the Community Templates marketplace.',
+                });
+              } catch (err) {
+                toast({
+                  title: 'Failed to publish template',
+                  description: err instanceof Error ? err.message : 'Please try again.',
+                });
+              }
+            }}
+            disabled={!canPublish || publishTemplateMutation.isPending || templatePublished}
+            className={cn(
+              'w-full h-9 text-sm font-medium rounded-control transition-all duration-200',
+              'flex items-center justify-center gap-2 border',
+              templatePublished
+                ? 'text-green-400 border-green-500/30 bg-green-500/10'
+                : canPublish && !publishTemplateMutation.isPending
+                  ? 'text-cyan-400 hover:text-cyan-300 border-cyan-500/30 hover:border-cyan-500/50 hover:bg-cyan-500/10'
+                  : 'text-gray-600 cursor-not-allowed border-gray-700/30'
+            )}
+          >
+            {publishTemplateMutation.isPending ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Publishing...
+              </>
+            ) : templatePublished ? (
+              <>
+                <CheckCircle2 className="w-4 h-4" />
+                Published!
+              </>
+            ) : (
+              <>
+                <Globe className="w-4 h-4" />
+                Publish as Template
+              </>
+            )}
+          </button>
+          <p className="text-[10px] text-gray-500 text-center">
+            Share your item set with the community (rankings are not included)
+          </p>
+        </div>
+      )}
     </div>
   );
 }

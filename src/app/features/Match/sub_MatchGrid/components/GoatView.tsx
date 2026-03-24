@@ -13,6 +13,7 @@ interface GoatViewProps {
     gridItems: (GridItemType | null)[];
     onRemove: (position: number) => void;
     getItemTitle: (item: any) => string;
+    onFillViaBracket?: (position: number) => void;
 }
 
 /* ── Inline SVG icons for authentic GOAT visuals ── */
@@ -61,8 +62,8 @@ function GoatStarburst({ className }: { className?: string }) {
     );
 }
 
-export function GoatView({ gridItems, onRemove, getItemTitle }: GoatViewProps) {
-    const isFirstPositionAssigned = gridItems[0]?.matched;
+export function GoatView({ gridItems, onRemove, getItemTitle, onFillViaBracket }: GoatViewProps) {
+    const isFirstPositionAssigned = gridItems[0]?.context.matched;
     const { ref, shouldAnimate } = useAnimationPause();
 
     return (
@@ -138,7 +139,7 @@ export function GoatView({ gridItems, onRemove, getItemTitle }: GoatViewProps) {
                     initial={{ scale: 0.8, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ type: "spring", bounce: 0.3, duration: DURATION.dramatic }}
-                    className="relative w-72 h-72 md:w-80 md:h-80 lg:w-96 lg:h-96"
+                    className="relative w-72 h-[22rem] md:w-80 md:h-[25rem] lg:w-96 lg:h-[30rem]"
                 >
                     <div className={`absolute -inset-3 rounded-container border-2 border-yellow-500/40 ${shouldAnimate ? 'animate-pulse' : ''}`} />
                     <div className="absolute -inset-6 rounded-container border border-yellow-500/20" />
@@ -146,12 +147,13 @@ export function GoatView({ gridItems, onRemove, getItemTitle }: GoatViewProps) {
                     <Elevated level="high" hoverLift={false} className="w-full h-full rounded-container">
                         <SimpleDropZone
                             position={0}
-                            isOccupied={!!(gridItems[0] && gridItems[0].matched)}
-                            occupiedBy={gridItems[0]?.matched ? getItemTitle(gridItems[0]) : undefined}
-                            imageUrl={gridItems[0]?.matched ? gridItems[0].image_url : undefined}
-                            gridItem={gridItems[0]?.matched ? gridItems[0] : undefined}
+                            isOccupied={!!(gridItems[0] && gridItems[0].context.matched)}
+                            occupiedBy={gridItems[0]?.context.matched ? getItemTitle(gridItems[0]) : undefined}
+                            imageUrl={gridItems[0]?.context.matched ? gridItems[0].item?.image_url : undefined}
+                            gridItem={gridItems[0]?.context.matched ? gridItems[0] : undefined}
                             onRemove={() => onRemove(0)}
                             showBadge={false}
+                            onFillViaBracket={onFillViaBracket ? () => onFillViaBracket(0) : undefined}
                         />
                     </Elevated>
                 </motion.div>
@@ -173,17 +175,18 @@ export function GoatView({ gridItems, onRemove, getItemTitle }: GoatViewProps) {
                             <span className="text-lg font-black text-slate-300/80">#2</span>
                             <span className="text-xs text-slate-500 uppercase tracking-wide font-mono">Silver</span>
                         </div>
-                        <div className="w-32 h-32 md:w-36 md:h-36 lg:w-40 lg:h-40 relative">
+                        <div className="w-32 h-40 md:w-36 md:h-44 lg:w-40 lg:h-48 relative">
                             <div className="absolute -inset-1.5 rounded-card border border-slate-400/30" />
                             <Elevated level="medium" hoverLift={false} className="w-full h-full rounded-card">
                                 <SimpleDropZone
                                     position={1}
-                                    isOccupied={!!(gridItems[1] && gridItems[1].matched)}
-                                    occupiedBy={gridItems[1]?.matched ? getItemTitle(gridItems[1]) : undefined}
-                                    imageUrl={gridItems[1]?.matched ? gridItems[1].image_url : undefined}
-                                    gridItem={gridItems[1]?.matched ? gridItems[1] : undefined}
+                                    isOccupied={!!(gridItems[1] && gridItems[1].context.matched)}
+                                    occupiedBy={gridItems[1]?.context.matched ? getItemTitle(gridItems[1]) : undefined}
+                                    imageUrl={gridItems[1]?.context.matched ? gridItems[1].item?.image_url : undefined}
+                                    gridItem={gridItems[1]?.context.matched ? gridItems[1] : undefined}
                                     onRemove={() => onRemove(1)}
                                     showBadge={false}
+                                    onFillViaBracket={onFillViaBracket ? () => onFillViaBracket(1) : undefined}
                                 />
                             </Elevated>
                         </div>
@@ -195,17 +198,18 @@ export function GoatView({ gridItems, onRemove, getItemTitle }: GoatViewProps) {
                             <span className="text-lg font-black text-orange-400/80">#3</span>
                             <span className="text-xs text-slate-500 uppercase tracking-wide font-mono">Bronze</span>
                         </div>
-                        <div className="w-32 h-32 md:w-36 md:h-36 lg:w-40 lg:h-40 relative">
+                        <div className="w-32 h-40 md:w-36 md:h-44 lg:w-40 lg:h-48 relative">
                             <div className="absolute -inset-1.5 rounded-card border border-orange-500/25" />
                             <Elevated level="medium" hoverLift={false} className="w-full h-full rounded-card">
                                 <SimpleDropZone
                                     position={2}
-                                    isOccupied={!!(gridItems[2] && gridItems[2].matched)}
-                                    occupiedBy={gridItems[2]?.matched ? getItemTitle(gridItems[2]) : undefined}
-                                    imageUrl={gridItems[2]?.matched ? gridItems[2].image_url : undefined}
-                                    gridItem={gridItems[2]?.matched ? gridItems[2] : undefined}
+                                    isOccupied={!!(gridItems[2] && gridItems[2].context.matched)}
+                                    occupiedBy={gridItems[2]?.context.matched ? getItemTitle(gridItems[2]) : undefined}
+                                    imageUrl={gridItems[2]?.context.matched ? gridItems[2].item?.image_url : undefined}
+                                    gridItem={gridItems[2]?.context.matched ? gridItems[2] : undefined}
                                     onRemove={() => onRemove(2)}
                                     showBadge={false}
+                                    onFillViaBracket={onFillViaBracket ? () => onFillViaBracket(2) : undefined}
                                 />
                             </Elevated>
                         </div>

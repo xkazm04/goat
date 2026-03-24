@@ -45,7 +45,7 @@ export function generateConfettiParticles(rankColor: string, position: number): 
       rotation: Math.random() * 360,
       scale: 0.3 + Math.random() * 0.7,
       color: colors[Math.floor(Math.random() * colors.length)],
-      delay: Math.random() * 0.15,
+      delay: Math.random() * DURATION.quick,
       duration: DURATION.dramatic + Math.random() * 0.4,
       shape: shapes[Math.floor(Math.random() * shapes.length)],
     });
@@ -64,7 +64,7 @@ export function generateSparkles(): SparkleParticle[] {
       y: Math.sin(angle) * distance,
       size: 3 + Math.random() * 4,
       delay: i * 0.03,
-      duration: 0.4 + Math.random() * 0.2,
+      duration: DURATION.slow * 0.8 + Math.random() * DURATION.fast,
     });
   }
   return sparkles;

@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState, useMemo } from "react";
 
 import { useMotionCapabilities } from "@/hooks/use-motion-preference";
-import { DURATION } from '@/lib/animations/motion-presets';
+import { DURATION, EASE } from '@/lib/animations/motion-presets';
 
 import {
   generateConfettiParticles,
@@ -70,8 +70,8 @@ export function DropCelebration({ isActive, isPodium, rankColor, position }: Dro
         <div className="absolute inset-0 pointer-events-none z-drag overflow-visible" data-testid="drop-celebration">
           {/* Multiple Glow Pulse Rings */}
           <GlowPulseRing color={rankColor} delay={0} />
-          <GlowPulseRing color={rankColor} delay={0.1} />
-          <GlowPulseRing color={rankColor} delay={0.2} />
+          <GlowPulseRing color={rankColor} delay={DURATION.quick} />
+          <GlowPulseRing color={rankColor} delay={DURATION.fast} />
 
           {/* Sparkle Particles */}
           {sparkles.map((sparkle) => (
@@ -82,7 +82,7 @@ export function DropCelebration({ isActive, isPodium, rankColor, position }: Dro
           <motion.div
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: [0, 1.5, 0], opacity: [0, 0.6, 0] }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
+            transition={{ duration: DURATION.slow, ease: EASE.out }}
             className="absolute inset-0 rounded-card pointer-events-none"
             style={{ background: `radial-gradient(circle, ${rankColor}40 0%, transparent 70%)` }}
             data-testid="center-flash"
@@ -111,7 +111,7 @@ export function DropCelebration({ isActive, isPodium, rankColor, position }: Dro
                 stroke={rankColor} strokeWidth="2" fill="none"
                 initial={{ pathLength: 0, opacity: 0 }}
                 animate={{ pathLength: 1, opacity: [0, 0.8, 0] }}
-                transition={{ duration: 0.4, delay: 0.1 }}
+                transition={{ duration: DURATION.slow, delay: 0.1 }}
               />
             </motion.svg>
           </motion.div>

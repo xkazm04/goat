@@ -183,7 +183,7 @@ export default function SharePage() {
           className="text-xl text-gray-400"
           initial={reducedMotion ? false : { opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: DURATION.fast }}
         >
           {error || "Ranking not found"}
         </motion.div>
@@ -193,7 +193,7 @@ export default function SharePage() {
           data-testid="share-go-home-btn"
           initial={reducedMotion ? false : { opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+          transition={{ delay: DURATION.normal }}
           whileHover={{ scale: 1.02, boxShadow: "0 8px 25px rgba(6, 182, 212, 0.35)" }}
           whileTap={{ scale: 0.98 }}
         >
@@ -218,7 +218,7 @@ export default function SharePage() {
           data-testid="share-back-btn"
           initial={reducedMotion ? false : { opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.1 }}
+          transition={{ delay: DURATION.instant }}
           whileHover={{ x: -4 }}
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -232,7 +232,7 @@ export default function SharePage() {
           className="mb-6"
           initial={reducedMotion ? false : { opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
+          transition={{ delay: DURATION.quick }}
         >
           <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
             {getAttribution()}
@@ -245,7 +245,7 @@ export default function SharePage() {
           <motion.div
             initial={reducedMotion ? false : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: DURATION.slow, delay: 0.2 }}
+            transition={{ duration: DURATION.slow, delay: DURATION.fast }}
           >
             {/* Ranking List Card */}
             <motion.div
@@ -262,7 +262,7 @@ export default function SharePage() {
                     className="flex items-center gap-3 sm:gap-4 px-4 sm:px-6 py-3 hover:bg-white/[0.02] transition-colors"
                     initial={reducedMotion ? false : { opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.25 + index * 0.03 }}
+                    transition={{ delay: DURATION.fast + DURATION.instant + index * 0.03 }}
                   >
                     {/* Position */}
                     <div
@@ -305,7 +305,7 @@ export default function SharePage() {
               className="mt-6 grid grid-cols-3 gap-3"
               initial={reducedMotion ? false : { opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
+              transition={{ delay: DURATION.normal + DURATION.instant }}
             >
               <div
                 className="rounded-xl p-4 text-center"
@@ -356,7 +356,7 @@ export default function SharePage() {
               className="mt-6"
               initial={reducedMotion ? false : { opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
+              transition={{ delay: DURATION.slow }}
             >
               <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Share this ranking</h3>
               <motion.div
@@ -415,7 +415,7 @@ export default function SharePage() {
               className="mt-10"
               initial={reducedMotion ? false : { opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6 }}
+              transition={{ delay: DURATION.emphasis }}
             >
               {/* Fork / Remix Button */}
               <motion.button

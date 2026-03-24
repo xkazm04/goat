@@ -12,7 +12,7 @@ import { BacklogItem } from '@/types/backlog-groups';
 import { GridItemType } from '@/types/match';
 
 import { DebatePanel } from './Debate/DebatePanel';
-import { useOptionalDropZoneHighlight } from './DropZoneHighlightContext';
+import { useDropZoneHighlightStore } from '@/stores/drop-zone-highlight-store';
 import {
   KeyboardShortcutsPanel,
   KeyboardModeIndicator,
@@ -74,9 +74,8 @@ export function TierListView({
   const addToUnranked = useRankingStore(state => state.addToUnranked);
   const removeFromUnranked = useRankingStore(state => state.removeFromUnranked);
 
-  // Get drag state from context (optional - may not exist if used outside SimpleMatchGrid)
-  const dropZoneContext = useOptionalDropZoneHighlight();
-  const isDragging = dropZoneContext?.dragState?.isDragging ?? false;
+  // Get drag state from store (granular selector — only re-renders when isDragging changes)
+  const isDragging = useDropZoneHighlightStore((s) => s.isDragging);
 
   // Compute tier-item groupings with reference-stable memoization
   const { itemsMap, tiers, unrankedItems, tierItemsMap } = useTierItemGroups({
@@ -85,10 +84,41 @@ export function TierListView({
     tierState,
   });
 
-  // Sync tiers from ranking on mount (when entering tier mode)
+  // Sync grid positions into ranking store, then derive tiers
   useEffect(() => {
+    const rankingState = useRankingStore.getState();
+    const hasRankingData = rankingState.ranking.some(r => r.item !== null);
+
+    // If ranking store is empty but grid has items, populate from grid
+    if (!hasRankingData) {
+      const filledGridItems = gridItems
+        .filter(gi => gi.context.matched && gi.item?.id)
+        .map((gi) => ({
+          position: gi.position,
+          item: gi.item!,
+        }));
+
+      if (filledGridItems.length > 0) {
+        useRankingStore.setState(state => {
+          const newRanking = Array.from({ length: state.maxRankingSize }, (_, i) => {
+            const gridEntry = filledGridItems.find(g => g.position === i);
+            return {
+              id: `rank-${i}`,
+              position: i,
+              item: gridEntry?.item ?? null,
+              context: {
+                source: 'grid' as const,
+                matched: !!gridEntry,
+              },
+            };
+          });
+          return { ranking: newRanking };
+        });
+      }
+    }
+
     syncTiersFromRanking();
-  }, [syncTiersFromRanking]);
+  }, [gridItems, syncTiersFromRanking]);
 
   // Handle preset change
   const handlePresetChange = useCallback((newPreset: TierListPreset) => {
@@ -400,9 +430,8 @@ function TierListViewContent({
   }, [tiers, tierItemsMap, unrankedItems, setTiers, setTierItems, setUnrankedItems]);
 
   // Handle item detail open (placeholder for future implementation)
-  const handleOpenItemDetail = useCallback((item: BacklogItem) => {
-    // Could open a detail modal here
-    console.log('Open item detail:', item.title);
+  const handleOpenItemDetail = useCallback((_item: BacklogItem) => {
+    // Placeholder for future item detail modal
   }, []);
 
   // Keyboard navigation hook

@@ -36,6 +36,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
   const subcategory = searchParams.get('subcategory');
   const authorId = searchParams.get('author_id');
   const isFeatured = searchParams.get('is_featured');
+  const isCommunity = searchParams.get('is_community');
   const search = searchParams.get('search');
   const slug = searchParams.get('slug');
   const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 50;
@@ -55,6 +56,10 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
       break;
     case 'trending':
       query = query.order('clone_count', { ascending: false });
+      break;
+    case 'top-rated':
+      query = query.order('avg_rating', { ascending: false })
+        .order('rating_count', { ascending: false });
       break;
     case 'recent':
     default:
@@ -76,6 +81,9 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
   }
   if (isFeatured !== null && isFeatured !== undefined) {
     query = query.eq('is_featured', isFeatured === 'true');
+  }
+  if (isCommunity !== null && isCommunity !== undefined) {
+    query = query.eq('is_community', isCommunity === 'true');
   }
   if (search) {
     query = query.ilike('title', `%${escapeIlikeWildcards(search)}%`);

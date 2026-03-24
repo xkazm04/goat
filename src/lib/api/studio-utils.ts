@@ -130,6 +130,17 @@ export function handleStudioError(
   // Standard errors -> 500
   if (error instanceof Error) {
     console.error(`${context}:`, error);
+
+    // Sanitize API key / auth errors — don't leak provider details to the client
+    const msg = error.message || '';
+    if (msg.includes('API key') || msg.includes('API_KEY_INVALID') || msg.includes('INVALID_ARGUMENT')) {
+      return createErrorResponse(
+        'AI generation is temporarily unavailable. Please try again later.',
+        503,
+        { code: StudioErrorCodes.CONFIG_ERROR }
+      );
+    }
+
     return createErrorResponse(error.message, 500, { code: defaultCode });
   }
 
@@ -244,6 +255,13 @@ export function generateTitleVariations(title: string): string[] {
   const withoutYear = clean.replace(/\s*\(\d{4}\)\s*/g, '').trim();
   if (withoutYear !== clean) {
     variations.push(withoutYear);
+  }
+
+  // Add common disambiguation suffixes for Wikipedia lookups
+  // (helps when the clean title is ambiguous, e.g., "Inside" → "Inside (video game)")
+  if (!clean.includes('(')) {
+    variations.push(`${clean} (video game)`);
+    variations.push(`${clean} (film)`);
   }
 
   return variations;

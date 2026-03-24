@@ -14,27 +14,18 @@
 // Core Interfaces
 // ============================================================================
 
+import type { BaseItem } from '@/types/placed-item';
+
 /**
- * Base interface for any item that can be transferred via drag-and-drop
+ * TransferableItem is now an alias for BaseItem.
+ *
+ * BaseItem is the unified core item data type defined in types/placed-item.ts.
+ * This alias is kept for backward compatibility across the DnD system.
  */
-export interface TransferableItem {
-  /** Unique identifier for the item */
-  id: string;
-  /** Human-readable title */
-  title: string;
-  /** Optional description */
-  description?: string;
-  /** Optional image URL */
-  image_url?: string | null;
-  /** Optional tags for categorization */
-  tags?: string[];
-  /** Item category */
-  category?: string;
-  /** Item subcategory */
-  subcategory?: string;
-  /** Custom metadata */
-  metadata?: Record<string, unknown>;
-}
+export type TransferableItem = BaseItem;
+
+// Re-export BaseItem so consumers can migrate gradually
+export type { BaseItem } from '@/types/placed-item';
 
 /**
  * Identifies the type of transfer source

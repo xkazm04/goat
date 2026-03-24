@@ -243,7 +243,7 @@ export class DropZoneScorer {
   private hashGrid(gridItems: GridItemType[]): string {
     // Simple hash based on occupied positions
     return gridItems
-      .map((item, idx) => (item.matched ? idx : ''))
+      .map((item, idx) => (item.context.matched ? idx : ''))
       .filter(Boolean)
       .join(',');
   }

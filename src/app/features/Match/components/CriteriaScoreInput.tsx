@@ -11,15 +11,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Star, Minus, Plus, MessageSquare } from 'lucide-react';
 import React, { useCallback, useState, useRef, useMemo } from 'react';
 
+import { DURATION, SPRING } from '@/lib/animations/motion-presets';
 import { cn } from '@/lib/utils';
 
 import type { Criterion, ScoreInputMode, CriterionScore } from '@/lib/criteria/types';
-
-// Animation configuration
-const ANIMATION_CONFIG = {
-  spring: { stiffness: 300, damping: 30 },
-  duration: { fast: 0.15, normal: 0.2, slow: 0.3 },
-};
 
 // Score quality thresholds for visual feedback
 const SCORE_THRESHOLDS = {
@@ -113,7 +108,7 @@ export function CriteriaScoreInput({
       animate={{
         borderColor: isInteracting ? `${criterion.color ?? '#6366f1'}40` : undefined,
       }}
-      transition={{ duration: ANIMATION_CONFIG.duration.fast }}
+      transition={{ duration: DURATION.quick }}
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-2">
@@ -127,7 +122,7 @@ export function CriteriaScoreInput({
                 ? `0 0 8px ${criterion.color ?? '#6366f1'}60`
                 : '0 1px 2px rgba(0,0,0,0.1)',
             }}
-            transition={{ duration: ANIMATION_CONFIG.duration.fast }}
+            transition={{ duration: DURATION.quick }}
           />
           <span className={cn('font-medium', compact ? 'text-sm' : '')}>
             {criterion.name}
@@ -147,7 +142,7 @@ export function CriteriaScoreInput({
             key={Math.floor(score * 10)}
             initial={{ scale: 1.1, opacity: 0.8 }}
             animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: ANIMATION_CONFIG.duration.fast }}
+            transition={{ duration: DURATION.quick }}
           >
             {score.toFixed(1)}
           </motion.span>
@@ -332,7 +327,7 @@ function SliderInput({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.1 }}
+              transition={{ duration: DURATION.instant }}
             />
           )}
         </AnimatePresence>
@@ -346,7 +341,7 @@ function SliderInput({
           }}
           initial={false}
           animate={{ width: `${percentage}%` }}
-          transition={{ type: 'spring', ...ANIMATION_CONFIG.spring }}
+          transition={SPRING.smooth}
         />
 
         {/* Tick marks for visual reference */}
@@ -380,7 +375,7 @@ function SliderInput({
             left: `${percentage}%`,
             scale: isDragging ? 1.15 : 1,
           }}
-          transition={{ type: 'spring', ...ANIMATION_CONFIG.spring }}
+          transition={SPRING.smooth}
           whileHover={{ scale: 1.1 }}
         />
       </div>

@@ -23,7 +23,8 @@ import { LazyShareModal } from "../components/LazyModals";
 
 
 // Import modular components
-import { DropZoneHighlightProvider, useDropZoneHighlight } from "./components/DropZoneHighlightContext";
+import { DropZoneHighlightProvider } from "./components/DropZoneHighlightContext";
+import { useDropZoneHighlightStore } from "@/stores/drop-zone-highlight-store";
 import { ViewSelector } from "./components/GridRenderer";
 import { GridSection } from "./components/GridSection";
 import { MatchGridHeader } from "./components/MatchGridHeader";
@@ -31,6 +32,7 @@ import { PortalDragOverlay } from "./components/PortalDragOverlay";
 import { TierListView } from "./components/TierListView";
 import { ViewSwitcher, ViewMode } from "./components/ViewSwitcher";
 import { BracketView } from "../sub_MatchBracket";
+import { PositionBracketModal } from "../sub_MatchBracket/PositionBracketModal";
 import { StandaloneAnnouncer } from "./components/ScreenReaderAnnouncer";
 
 
@@ -55,14 +57,19 @@ export function SimpleMatchGrid() {
  * Inner component that uses the highlight context
  */
 function SimpleMatchGridInner() {
-  // Get the highlight context for drag state synchronization
-  const { setIsDragging, setHoveredPosition, emitDragError } = useDropZoneHighlight();
+  // Get actions from store — stable references, no re-renders from state changes
+  const setIsDragging = useDropZoneHighlightStore((s) => s.setIsDragging);
+  const setHoveredPosition = useDropZoneHighlightStore((s) => s.setHoveredPosition);
+  const emitDragError = useDropZoneHighlightStore((s) => s.emitDragError);
 
   // Screen reader error announcement state
   const [dragErrorMessage, setDragErrorMessage] = useState("");
 
   // View mode state
   const [viewMode, setViewMode] = useState<ViewMode>('podium');
+
+  // Position bracket modal state
+  const [bracketForPosition, setBracketForPosition] = useState<number | null>(null);
 
   // Get current list from store (populated from API)
   const currentList = useCurrentList();
@@ -281,9 +288,25 @@ function SimpleMatchGridInner() {
     handleViewModeChange('podium');
   }, [assignItemToGrid, markItemAsUsed, maxGridSize, handleViewModeChange]);
 
+  // Unused backlog items (for position bracket)
+  const unusedBacklogItems = useMemo(() => {
+    const usedIds = new Set(
+      gridItems.filter(i => i.context?.matched && i.item?.id).map(i => i.item!.id)
+    );
+    return allBacklogItems.filter(item => !usedIds.has(item.id));
+  }, [allBacklogItems, gridItems]);
+
+  // Handle position bracket winner
+  const handlePositionBracketWinner = useCallback((winner: BacklogItem, position: number) => {
+    assignItemToGrid(winner, position);
+    markItemAsUsed(winner.id, true);
+    useRankingStore.getState().resetPositionBracket();
+    setBracketForPosition(null);
+  }, [assignItemToGrid, markItemAsUsed]);
+
   // Calculate completion status
   const filledPositions = useMemo(() => {
-    return gridItems.filter(item => item.matched).length;
+    return gridItems.filter(item => item.context?.matched).length;
   }, [gridItems]);
 
   const isComplete = useMemo(() => {
@@ -445,9 +468,9 @@ function SimpleMatchGridInner() {
   const handleRemove = useCallback((position: number) => {
     const item = useGridStore.getState().gridItems[position];
 
-    if (item && item.backlogItemId) {
+    if (item && item.item?.id) {
       removeItemFromGrid(position);
-      markItemAsUsed(item.backlogItemId, false);
+      markItemAsUsed(item.item.id, false);
     }
   }, [removeItemFromGrid, markItemAsUsed]);
 
@@ -523,6 +546,7 @@ function SimpleMatchGridInner() {
               viewMode={viewMode}
               gridItems={gridItems}
               onRemove={handleRemove}
+              onFillViaBracket={setBracketForPosition}
             />
 
             {viewMode === 'bracket' && (
@@ -572,6 +596,19 @@ function SimpleMatchGridInner() {
         {/* Portal-based Drag Overlay - bypasses all CSS clipping/scroll issues */}
         <PortalDragOverlay item={activeItem} targetPosition={targetPosition} />
       </DndContext>
+
+      {/* Position Bracket Modal - fills a single grid position via tournament */}
+      {bracketForPosition !== null && unusedBacklogItems.length >= 2 && (
+        <PositionBracketModal
+          targetPosition={bracketForPosition}
+          availableItems={unusedBacklogItems}
+          onWinnerSelected={handlePositionBracketWinner}
+          onClose={() => {
+            useRankingStore.getState().resetPositionBracket();
+            setBracketForPosition(null);
+          }}
+        />
+      )}
 
       {/* Completion Modal - auto-shown when all grid positions are filled */}
       <CompletionModal

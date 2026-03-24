@@ -95,6 +95,14 @@ export const PUT = withErrorHandler(
       return successResponse({ updated: 0 });
     }
 
+    const MAX_ITEMS = 200;
+    if (updates.length > MAX_ITEMS) {
+      throw fromSupabaseError({
+        message: `Too many items: max ${MAX_ITEMS} allowed per request`,
+        code: 'VALIDATION_ERROR',
+      });
+    }
+
     // Update each item's scores
     let updatedCount = 0;
     for (const update of updates) {

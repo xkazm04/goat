@@ -96,7 +96,7 @@ export function FeedbackStateIndicator({
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              transition={{ type: 'spring', duration: 0.4 }}
+              transition={{ type: 'spring', duration: DURATION.slow }}
               className={cn(
                 'w-16 h-16 rounded-full flex items-center justify-center mb-4',
                 colors.bg

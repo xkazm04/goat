@@ -40,7 +40,7 @@ export class GridToTierOperation extends BaseTierOperation {
     }
 
     const sourceItem = grid.gridItems[source.gridPosition!];
-    if (!sourceItem || !sourceItem.matched) {
+    if (!sourceItem || !sourceItem.context.matched) {
       return {
         isValid: false,
         errorCode: 'SOURCE_NOT_FOUND',
@@ -59,7 +59,7 @@ export class GridToTierOperation extends BaseTierOperation {
 
     const sourceItem = grid.gridItems[fromPosition];
 
-    if (!sourceItem || !sourceItem.matched) {
+    if (!sourceItem || !sourceItem.context.matched || !sourceItem.item) {
       return {
         success: false,
         operationType: 'grid-to-tier',
@@ -71,13 +71,13 @@ export class GridToTierOperation extends BaseTierOperation {
       };
     }
 
-    const itemId = sourceItem.backlogItemId || sourceItem.id;
+    const itemId = sourceItem.item.id;
     const transferable = {
       id: itemId,
-      title: sourceItem.title,
-      description: sourceItem.description,
-      image_url: sourceItem.image_url,
-      tags: sourceItem.tags,
+      title: sourceItem.item.title,
+      description: sourceItem.item.description,
+      image_url: sourceItem.item.image_url,
+      tags: sourceItem.item.tags,
     };
 
     dndLogger.debug('Executing grid-to-tier operation', {

@@ -89,8 +89,8 @@ export function useTierItemGroups({
 
     // 5. Add grid-used IDs to placed set
     for (const gridItem of gridItems) {
-      if (gridItem.matched && gridItem.backlogItemId) {
-        placedIds.add(gridItem.backlogItemId);
+      if (gridItem.context.matched && gridItem.item?.id) {
+        placedIds.add(gridItem.item.id);
       }
     }
 

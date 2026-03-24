@@ -312,7 +312,7 @@ export function LongPressPreview({
                     {item.metadata.tags.slice(0, 5).map((tag, index) => (
                       <span
                         key={index}
-                        className="px-2 py-0.5 rounded-full bg-white/5 text-2xs text-white/60"
+                        className="px-2 py-0.5 rounded-full bg-white/5 text-2xs text-slate-400"
                       >
                         {tag}
                       </span>

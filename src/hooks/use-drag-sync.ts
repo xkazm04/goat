@@ -209,7 +209,7 @@ export function useGridSync() {
 
   // Sync matched count to composition store
   useEffect(() => {
-    const matchedCount = gridItems.filter((item) => item.matched).length;
+    const matchedCount = gridItems.filter((item) => item.context.matched).length;
     const totalSlots = gridItems.length;
 
     // Could update composition store with progress if needed
@@ -217,9 +217,9 @@ export function useGridSync() {
   }, [gridItems]);
 
   return {
-    matchedCount: gridItems.filter((item) => item.matched).length,
+    matchedCount: gridItems.filter((item) => item.context.matched).length,
     totalSlots: gridItems.length,
-    isEmpty: gridItems.every((item) => !item.matched),
-    isFull: gridItems.every((item) => item.matched),
+    isEmpty: gridItems.every((item) => !item.context.matched),
+    isFull: gridItems.every((item) => item.context.matched),
   };
 }

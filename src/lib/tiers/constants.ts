@@ -3,6 +3,8 @@
  * Predefined tier configurations, colors, and presets
  */
 
+import { DURATION } from '@/lib/animations/motion-presets';
+
 import { TierDefinition, TierPreset, ExtendedTierLabel } from './types';
 
 /**
@@ -386,12 +388,12 @@ export const TIER_ANIMATIONS = {
   separatorEnter: {
     initial: { opacity: 0, width: 0 },
     animate: { opacity: 1, width: '100%' },
-    transition: { duration: 0.3, ease: 'easeOut' as const },
+    transition: { duration: DURATION.normal, ease: 'easeOut' as const },
   },
   labelEnter: {
     initial: { opacity: 0, x: -20 },
     animate: { opacity: 1, x: 0 },
-    transition: { delay: 0.1, duration: 0.2 },
+    transition: { delay: 0.1, duration: DURATION.fast },
   },
 };
 

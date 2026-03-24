@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 
 import { ItemCategory } from "@/app/features/Collection/types";
-import { DURATION } from '@/lib/animations/motion-presets';
+import { DURATION, EASE } from '@/lib/animations/motion-presets';
 import { highlightMatch } from "@/lib/utils/search";
 
 interface CollectionSidebarProps {
@@ -46,7 +46,7 @@ export function CollectionSidebar({
       animate={{
         opacity: 1,
         x: 0,
-        transition: { delay: 0.15, duration: 0.25, ease: [0.16, 1, 0.3, 1] }
+        transition: { delay: DURATION.quick, duration: DURATION.normal, ease: EASE.out }
       }}
       aria-label="Collection categories"
       className="w-[140px] lg:w-44 glass-dock-sidebar p-3 overflow-y-auto space-y-1.5 scrollbar-thin scrollbar-thumb-white/15 scrollbar-track-white/[0.02]"
@@ -92,7 +92,7 @@ export function CollectionSidebar({
             animate={{
               opacity: 1,
               x: 0,
-              transition: { delay: 0.2 + index * 0.03, duration: DURATION.fast, ease: [0.16, 1, 0.3, 1] }
+              transition: { delay: DURATION.fast + index * 0.03, duration: DURATION.fast, ease: EASE.out }
             }}
             onClick={() => onTabChange(group.id)}
             whileHover={{ scale: 1.02, x: 2 }}
@@ -126,7 +126,7 @@ export function CollectionSidebar({
             <span className={`text-2xs font-mono px-1.5 py-0.5 rounded transition-all shrink-0 ${
               activeTab === group.id
                 ? 'bg-white/15 text-white'
-                : 'bg-white/5 text-white/40 group-hover:bg-white/10 group-hover:text-white/60'
+                : 'bg-white/5 text-white/40 group-hover:bg-white/10 group-hover:text-slate-300'
             }`} aria-hidden="true">
               {availableCount}
             </span>

@@ -58,8 +58,8 @@ export function SmartFillPanel({
   const itemQueue = useMemo(() => {
     const placedIds = new Set(
       gridItems
-        .filter(g => g.matched && g.backlogItemId)
-        .map(g => g.backlogItemId!)
+        .filter(g => g.context.matched && g.item?.id)
+        .map(g => g.item!.id)
     );
 
     return availableItems.filter(
@@ -71,7 +71,7 @@ export function SmartFillPanel({
   const currentItem = itemQueue[currentIndex] || null;
 
   // Calculate progress
-  const filledCount = gridItems.filter(g => g.matched).length;
+  const filledCount = gridItems.filter(g => g.context.matched).length;
   const progress = Math.round((filledCount / targetSize) * 100);
 
   // Update prediction when current item changes

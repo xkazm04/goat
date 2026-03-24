@@ -74,6 +74,7 @@
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-storybook": "^10.1.11",
     "eslint-plugin-unused-imports": "^4.4.1",
+    "pg": "^8.20.0",
     "postcss-loader": "^8.2.0",
     "storybook": "^10.1.11",
     "style-loader": "^4.0.0",

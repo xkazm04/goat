@@ -229,7 +229,7 @@ export const CustomSizeSlider = memo(function CustomSizeSlider({
                   }}
                   transition={{
                     left: { type: "spring", stiffness: 300, damping: 30 },
-                    scale: { duration: 0.1 },
+                    scale: { duration: DURATION.instant },
                   }}
                 >
                   <div

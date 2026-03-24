@@ -48,6 +48,8 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
 
   const response = await cachedFetch<FeaturedListsData>(cacheKey, FEATURED_CACHE_TTL, async () => {
     // Execute all 4 queries in parallel for better performance
+    // All queries exclude child/fork lists (parent_list_id IS NULL) to show only
+    // top-level templates — user rankings are aggregated into consensus stats instead
     const [popular, trending, latest, awards] = await Promise.all([
       // Popular lists - ordered by updated_at as engagement proxy (recently active = popular)
       timedQuery(() =>
@@ -55,6 +57,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
           .from('lists')
           .select('*')
           .eq('type', 'top')
+          .is('parent_list_id', null)
           .order('updated_at', { ascending: false })
           .order('created_at', { ascending: false })
           .limit(popularLimit)
@@ -66,6 +69,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
           .from('lists')
           .select('*')
           .eq('type', 'top')
+          .is('parent_list_id', null)
           .order('updated_at', { ascending: false, nullsFirst: false })
           .limit(trendingLimit)
       ),
@@ -76,16 +80,18 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
           .from('lists')
           .select('*')
           .eq('type', 'top')
+          .is('parent_list_id', null)
           .order('created_at', { ascending: false })
           .limit(latestLimit)
       ),
 
-      // Award lists - filter out child awards (only parent awards)
+      // Award lists - only parent awards
       timedQuery(() =>
         supabase
           .from('lists')
           .select('*')
           .eq('type', 'award')
+          .is('parent_list_id', null)
           .order('created_at', { ascending: false })
           .limit(awardsLimit)
       ),
@@ -116,10 +122,8 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
       throw fromSupabaseError(errors[0].error!);
     }
 
-    // Filter awards to only include parent awards (no parent_list_id) and limit to 10
-    const filteredAwards = (awardsResult.data || [])
-      .filter((list) => !list.parent_list_id)
-      .slice(0, 10);
+    // Awards already filtered at DB level (parent_list_id IS NULL)
+    const filteredAwards = (awardsResult.data || []).slice(0, 10);
 
     // Convert to ListData format - pick known fields, omit columns that may not exist in DB
     const toListData = (list: typeof popularResult.data extends (infer T)[] | null ? T : never): ListData => ({

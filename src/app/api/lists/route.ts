@@ -26,6 +26,9 @@ function transformListResponse(list: ListRow) {
 // Force dynamic rendering for this route since it uses cookies
 export const dynamic = 'force-dynamic';
 
+/** Maximum number of results per page */
+const MAX_LIMIT = 100;
+
 // GET /api/lists - Get lists with optional filters
 export const GET = withErrorHandler(async (request: NextRequest) => {
   const supabase = await createClient();
@@ -38,8 +41,9 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
   const predefined = searchParams.get('predefined');
   const type = searchParams.get('type');
   const parentListId = searchParams.get('parent_list_id');
-  const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 100;
-  const offset = searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : 0;
+  const rawLimit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 100;
+  const limit = Math.max(1, Math.min(rawLimit, MAX_LIMIT));
+  const offset = Math.max(0, searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : 0);
 
   // Build query
   let query = supabase

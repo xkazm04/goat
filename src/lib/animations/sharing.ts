@@ -7,38 +7,10 @@
 
 import type { Variants, Transition } from 'framer-motion';
 
-// ============================================================================
-// Animation Constants
-// ============================================================================
+import { DURATION, EASING } from './motion-presets';
 
-/** Standard easing curves */
-export const EASING = {
-  /** For entrances and reveals */
-  easeOut: [0.16, 1, 0.3, 1] as const,
-  /** For interactive feedback */
-  easeInOut: [0.4, 0, 0.2, 1] as const,
-  /** Bouncy spring effect */
-  spring: [0.34, 1.56, 0.64, 1] as const,
-  /** Smooth deceleration */
-  decel: [0, 0.55, 0.45, 1] as const,
-} as const;
-
-/**
- * Duration tiers (seconds) — aligned with design-tokens.css
- *   --duration-instant · --duration-quick · --duration-normal · --duration-slow
- */
-export const DURATION = {
-  /** 50 ms — focus rings, active/pressed, tap feedback */
-  instant: 0.05,
-  /** 150 ms — hover, toggle, small state changes */
-  quick: 0.15,
-  /** 300 ms — modal entry/exit, panel slide, standard transitions */
-  normal: 0.3,
-  /** 500 ms — page transitions, stagger base, emphasis */
-  slow: 0.5,
-  /** 800 ms — celebration animations (extended tier) */
-  celebration: 0.8,
-} as const;
+// Re-export canonical tokens so existing consumers keep working.
+export { DURATION, EASING };
 
 /** Stagger delay between items */
 export const STAGGER = {
@@ -194,7 +166,7 @@ export const celebrationPulseVariants: Variants = {
     opacity: [0, 1, 0.8, 0],
     scale: [0.5, 1.2, 1.4, 1.6],
     transition: {
-      duration: DURATION.celebration,
+      duration: DURATION.dramatic,
       ease: EASING.easeOut,
     },
   },

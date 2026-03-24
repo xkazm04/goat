@@ -132,7 +132,7 @@ export const DropZoneOccupied = memo(function DropZoneOccupied({
           className="absolute top-2 left-1/2 -translate-x-1/2 z-20"
           initial={{ opacity: 0, y: -10, scale: 0.8 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ delay: 0.1, duration: DURATION.normal, type: "spring", stiffness: 300 }}
+          transition={{ delay: DURATION.instant, duration: DURATION.normal, type: "spring", stiffness: 300 }}
         >
           <div
             className="px-3 py-1 rounded-control backdrop-blur-md border flex items-center gap-1.5 shadow-lg"

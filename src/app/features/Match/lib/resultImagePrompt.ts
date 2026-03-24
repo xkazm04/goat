@@ -25,16 +25,16 @@ export function generateResultImagePrompt(config: ImagePromptConfig): string {
   const { items, listTitle, category, subcategory, timePeriod, style, size } = config;
 
   const styleConfig = getStyleConfig(style);
-  const matchedItems = items.filter(item => item.matched && item.title);
+  const matchedItems = items.filter(item => item.context.matched && item.item?.title);
   const topItems = matchedItems.slice(0, 10);
   const remainingCount = matchedItems.length - 10;
 
   const itemsList = matchedItems
-    .map((item, index) => `${index + 1}. ${item.title}`)
+    .map((item, index) => `${index + 1}. ${item.item?.title ?? ''}`)
     .join('\n');
 
   const topItemsList = topItems
-    .map((item, index) => `${index + 1}. ${item.title}`)
+    .map((item, index) => `${index + 1}. ${item.item?.title ?? ''}`)
     .join('\n');
 
   return `Create a visually striking social media shareable image design for a ranking list.
@@ -131,9 +131,9 @@ export function generatePromptForCanvas(
 
 export function calculateImageHash(items: GridItemType[], metadata: any): string {
   const itemIds = items
-    .filter(item => item.matched)
+    .filter(item => item.context.matched)
     .sort((a, b) => a.position - b.position)
-    .map(item => `${item.position}:${item.backlogItemId || item.id}`)
+    .map(item => `${item.position}:${item.item?.id || item.id}`)
     .join('|');
 
   const metadataString = JSON.stringify({

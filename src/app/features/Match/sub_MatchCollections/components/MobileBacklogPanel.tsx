@@ -212,7 +212,7 @@ export function MobileBacklogPanel({ items, totalCount }: MobileBacklogPanelProp
     // Find next empty slot
     let position: number | null = null;
     for (let i = 0; i < maxGridSize; i++) {
-      if (!gridItems[i]?.matched) {
+      if (!gridItems[i]?.context.matched) {
         position = i;
         break;
       }
@@ -256,7 +256,7 @@ export function MobileBacklogPanel({ items, totalCount }: MobileBacklogPanelProp
         onClick={handleToggle}
       >
         <div className="w-12 h-1 rounded-full bg-white/30 mb-1" />
-        <div className="flex items-center gap-2 text-white/60 text-sm">
+        <div className="flex items-center gap-2 text-slate-400 text-sm">
           <GripHorizontal className="w-4 h-4" />
           <span>Backlog ({totalCount} items)</span>
           <ChevronUp

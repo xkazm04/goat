@@ -16,11 +16,6 @@ import { useListStore } from './use-list-store';
 import { useValidationNotificationStore } from './validation-notification-store';
 
 
-// Re-export ValidationNotification type from the dedicated store for backwards compatibility
-export type { ValidationNotification } from './validation-notification-store';
-// Re-export for backwards compatibility
-export type { ValidationErrorCode as TransferValidationErrorCode } from '@/lib/validation';
-
 interface MatchStoreState {
   // Match-specific UI state
   isLoading: boolean;

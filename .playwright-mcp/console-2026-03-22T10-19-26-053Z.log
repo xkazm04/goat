@@ -1,0 +1,28 @@
+[     497ms] Error: Module [project]/node_modules/lucide-react/dist/esm/createLucideIcon.js [app-client] (ecmascript) was instantiated because it was required from module [project]/node_modules/lucide-react/dist/esm/icons/triangle-alert.js [app-client] (ecmascript), but the module factory is not available. It might have been deleted in an HMR update.
+    at instantiateModule (http://localhost:3001/_next/static/chunks/turbopack-_62cebc78._.js:846:15)
+    at getOrInstantiateModuleFromParent (http://localhost:3001/_next/static/chunks/turbopack-_62cebc78._.js:831:12)
+    at DevContext.esmImport [as i] (http://localhost:3001/_next/static/chunks/turbopack-_62cebc78._.js:239:20)
+    at module evaluation (http://localhost:3001/_next/static/chunks/node_modules_3779a9aa._.js:10600:199)
+    at http://localhost:3001/_next/static/chunks/turbopack-_62cebc78._.js:880:13
+    at runModuleExecutionHooks (http://localhost:3001/_next/static/chunks/turbopack-_62cebc78._.js:905:13)
+    at instantiateModule (http://localhost:3001/_next/static/chunks/turbopack-_62cebc78._.js:878:9)
+    at getOrInstantiateModuleFromParent (http://localhost:3001/_next/static/chunks/turbopack-_62cebc78._.js:831:12)
+    at DevContext.esmImport [as i] (http://localhost:3001/_next/static/chunks/turbopack-_62cebc78._.js:239:20)
+    at module evaluation (http://localhost:3001/_next/static/chunks/node_modules_3779a9aa._.js:10636:205)
+    at http://localhost:3001/_next/static/chunks/turbopack-_62cebc78._.js:880:13
+    at runModuleExecutionHooks (http://localhost:3001/_next/static/chunks/turbopack-_62cebc78._.js:905:13)
+    at instantiateModule (http://localhost:3001/_next/static/chunks/turbopack-_62cebc78._.js:878:9)
+    at getOrInstantiateModuleFromParent (http://localhost:3001/_next/static/chunks/turbopack-_62cebc78._.js:831:12)
+    at DevContext.esmImport [as i] (http://localhost:3001/_next/static/chunks/turbopack-_62cebc78._.js:239:20)
+    at module evaluation (http://localhost:3001/_next/static/chunks/src_app_global-error_tsx_8e7553f5._.js:14:249)
+    at http://localhost:3001/_next/static/chunks/turbopack-_62cebc78._.js:880:13
+    at runModuleExecutionHooks (http://localhost:3001/_next/static/chunks/turbopack-_62cebc78._.js:905:13)
+    at instantiateModule (http://localhost:3001/_next/static/chunks/turbopack-_62cebc78._.js:878:9)
+    at getOrInstantiateModuleFromParent (http://localhost:3001/_next/static/chunks/turbopack-_62cebc78._.js:831:12)
+    at DevContext.commonJsRequire [as r] (http://localhost:3001/_next/static/chunks/turbopack-_62cebc78._.js:260:12)
+    at requireModule (http://localhost:3001/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_9212ccad._.js:86:84)
+    at initializeModuleChunk (http://localhost:3001/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_9212ccad._.js:1090:25)
+    at resolveModuleChunk (http://localhost:3001/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_9212ccad._.js:1014:43)
+    at http://localhost:3001/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_9212ccad._.js:1736:24
+[     533ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3001/favicon.ico:0
+[     891ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3001/favicon-16x16.png:0

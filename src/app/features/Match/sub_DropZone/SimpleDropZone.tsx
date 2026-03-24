@@ -1,10 +1,11 @@
 "use client";
 
 import { useDraggable, useDroppable } from "@dnd-kit/core";
-import { X } from "lucide-react";
+import { ChevronUp, ChevronDown, Swords, X } from "lucide-react";
 import { useState, useEffect, useRef, useMemo, memo } from "react";
 
 import { createGridDragData, createGridSlotDropData, createGridReceiverId } from "@/lib/dnd";
+import { useItemConsensus } from "./hooks/useItemConsensus";
 import { useCriteriaStore, useActiveProfile } from '@/stores/criteria-store';
 import { useListStore } from '@/stores/use-list-store';
 import { GridItemType } from "@/types/match";
@@ -15,11 +16,9 @@ import { DropZoneCard, ActiveSelectionRing, HoverGlowBorder, ItemTitle } from ".
 import { DropZoneEmpty, RankNumberBackground, HoloGridPattern } from "./components/DropZoneEmpty";
 import { DropZoneOccupied } from "./components/DropZoneOccupied";
 import { ValidDropIndicator, SnapConfirmationGlow } from "./components/MagneticGlowAura";
-import { PositionChangeIndicator } from "../components/PositionChangeIndicator";
-import { usePositionChange } from "../components/PositionHistoryContext";
 import { getMedalGradient, MEDAL_HINT_COLORS } from "../lib/medalStyling";
 import { getRankConfig, isPodiumPosition } from "../lib/rankConfig";
-import { useOptionalDropZoneHighlight } from "../sub_MatchGrid/components/DropZoneHighlightContext";
+import { useDropZoneHighlightStore } from "@/stores/drop-zone-highlight-store";
 
 
 interface SimpleDropZoneProps {
@@ -33,6 +32,8 @@ interface SimpleDropZoneProps {
   tierAccent?: string;
   tierGlow?: string;
   showBadge?: boolean;
+  hideTitle?: boolean;
+  onFillViaBracket?: () => void;
 }
 
 /**
@@ -42,7 +43,7 @@ interface SimpleDropZoneProps {
  */
 export const SimpleDropZone = memo(function SimpleDropZone({
   position, isOccupied, occupiedBy, imageUrl, gridItem,
-  onRemove, dropId, tierAccent, tierGlow, showBadge = true,
+  onRemove, dropId, tierAccent, tierGlow, showBadge = true, hideTitle = false, onFillViaBracket,
 }: SimpleDropZoneProps) {
   const rankConfig = getRankConfig(position);
   const isTop3 = isPodiumPosition(position);
@@ -51,12 +52,11 @@ export const SimpleDropZone = memo(function SimpleDropZone({
   const prevOccupiedRef = useRef(isOccupied);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Position change tracking (Billboard-style movement indicators)
-  const positionChange = usePositionChange(gridItem?.backlogItemId);
-
-  // Global drag state from highlight context (read only what's needed to avoid re-renders)
-  const highlightContext = useOptionalDropZoneHighlight();
-  const isGlobalDragActive = highlightContext?.dragState.isDragging ?? false;
+  // Global drag state — granular selectors ensure this component only re-renders
+  // when isDragging or dragError changes, not on hoveredPosition/magneticState/etc.
+  const isGlobalDragActive = useDropZoneHighlightStore((s) => s.isDragging);
+  const registerDropZone = useDropZoneHighlightStore((s) => s.registerDropZone);
+  const unregisterDropZone = useDropZoneHighlightStore((s) => s.unregisterDropZone);
 
   // Criteria score and display config
   const getItemScores = useCriteriaStore((s) => s.getItemScores);
@@ -66,9 +66,9 @@ export const SimpleDropZone = memo(function SimpleDropZone({
 
   // Get item scores for weighted score and individual criterion scores
   const itemScoresData = useMemo(() => {
-    if (!isOccupied || !activeProfileId || !gridItem?.backlogItemId) return null;
-    return getItemScores(gridItem.backlogItemId);
-  }, [isOccupied, activeProfileId, gridItem?.backlogItemId, getItemScores]);
+    if (!isOccupied || !activeProfileId || !gridItem?.item?.id) return null;
+    return getItemScores(gridItem.item.id);
+  }, [isOccupied, activeProfileId, gridItem?.item?.id, getItemScores]);
 
   const weightedScore = itemScoresData?.weightedScore ?? 0;
 
@@ -76,15 +76,13 @@ export const SimpleDropZone = memo(function SimpleDropZone({
   const criteria = activeProfile?.criteria;
   const criteriaScores = itemScoresData?.scores;
 
-  // Register drop zone with highlight context (only on mount/unmount, not during drag)
+  // Register drop zone with store (only on mount/unmount, not during drag)
   useEffect(() => {
-    const register = highlightContext?.registerDropZone;
-    const unregister = highlightContext?.unregisterDropZone;
-    if (!register || !unregister || !containerRef.current) return;
+    if (!containerRef.current) return;
     const el = containerRef.current;
-    register(position, el);
-    return () => { unregister(position); };
-  }, [position, highlightContext?.registerDropZone, highlightContext?.unregisterDropZone]);
+    registerDropZone(position, el);
+    return () => { unregisterDropZone(position); };
+  }, [position, registerDropZone, unregisterDropZone]);
 
   // DnD hooks
   const { attributes, listeners, setNodeRef: setDragRef, transform, isDragging } = useDraggable({
@@ -111,49 +109,22 @@ export const SimpleDropZone = memo(function SimpleDropZone({
   }, [isOccupied, isDragging]);
 
   // Drag error state for this position
-  const dragError = highlightContext?.dragState.dragError ?? null;
+  const dragError = useDropZoneHighlightStore((s) => s.dragError);
   const hasError = dragError !== null && dragError.position === position;
 
   const accentColor = tierAccent || rankConfig.color;
   const style = transform ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0) scale(1.05)`, zIndex: 100 } : undefined;
   const medalType = getMedalGradient(position);
 
+  // Consensus average position for this item
+  const consensus = useItemConsensus(gridItem?.item?.id, category ?? undefined);
+  const userRank = position + 1;
+  const avgRank = consensus?.averagePosition;
+  const isAboveAvg = avgRank ? userRank < avgRank : false;
+  const isBelowAvg = avgRank ? userRank > avgRank : false;
+
   return (
     <div ref={containerRef} className="flex flex-col" data-testid={`drop-zone-wrapper-${position}`}>
-      {/* Header row above card: Badge (center) + Change indicator + Remove button (right) */}
-      {isOccupied && (
-        <div className="flex items-center justify-center h-6 mb-1 relative">
-          {/* Centered position badge + change indicator (hidden when showBadge is false) */}
-          {showBadge && (
-            <div className="flex items-center gap-1">
-              <div
-                className="px-2.5 py-0.5 rounded-control backdrop-blur-md border flex items-center gap-1 shadow-md text-xs font-bold"
-                style={{
-                  backgroundColor: `${accentColor}20`,
-                  borderColor: `${accentColor}40`,
-                  color: accentColor,
-                }}
-              >
-                {isTop3 && rankConfig.icon && (
-                  <rankConfig.icon className="w-3 h-3" style={{ color: accentColor }} />
-                )}
-                #{position + 1}
-              </div>
-              <PositionChangeIndicator change={positionChange} size="xs" />
-            </div>
-          )}
-          {/* Remove button - absolute right */}
-          {onRemove && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onRemove(); }}
-              className="absolute right-0 p-1 rounded-full bg-black/40 text-white/60 hover:text-red-400 hover:bg-red-500/20 border border-white/10 transition-colors"
-              data-testid={`remove-item-btn-header-${position}`}
-            >
-              <X className="w-3 h-3" />
-            </button>
-          )}
-        </div>
-      )}
       <DropZoneCard
         ref={setNodeRef}
         position={position}
@@ -171,6 +142,42 @@ export const SimpleDropZone = memo(function SimpleDropZone({
         attributes={attributes}
         listeners={listeners}
       >
+        {/* Overlay badge stripe — inside card, absolute top */}
+        {isOccupied && showBadge && (
+          <div className="absolute top-0 left-0 right-0 z-10 flex items-center h-6 px-1 bg-gradient-to-b from-black/70 to-transparent pointer-events-auto">
+            {/* Position number */}
+            <span className="text-[10px] font-bold ml-0.5" style={{ color: accentColor }}>
+              {isTop3 && rankConfig.icon && (
+                <rankConfig.icon className="w-2.5 h-2.5 inline mr-0.5" style={{ color: accentColor }} />
+              )}
+              #{userRank}
+            </span>
+
+            {/* Average consensus with arrow */}
+            {avgRank && (
+              <span className={`text-[10px] font-medium ml-1 flex items-center gap-px ${
+                isAboveAvg ? 'text-emerald-400' : isBelowAvg ? 'text-red-400' : 'text-slate-400'
+              }`}>
+                {isAboveAvg ? <ChevronUp className="w-2.5 h-2.5" /> : isBelowAvg ? <ChevronDown className="w-2.5 h-2.5" /> : null}
+                {avgRank}
+              </span>
+            )}
+
+            {/* Spacer */}
+            <div className="flex-1" />
+
+            {/* Remove button */}
+            {onRemove && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onRemove(); }}
+                className="p-0.5 rounded-full text-slate-400 hover:text-red-400 transition-colors"
+                data-testid={`remove-item-btn-header-${position}`}
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+        )}
         <ValidDropIndicator isActive={isOver && !isOccupied} testId={`valid-drop-zone-indicator-${position}`} />
         <InvalidDropIndicator isActive={hasError} />
         <HoloGridPattern accentColor={accentColor} isVisible={!isOccupied} />
@@ -183,7 +190,19 @@ export const SimpleDropZone = memo(function SimpleDropZone({
             criteria={criteria} criteriaScores={criteriaScores}
           />
         ) : (
-          <DropZoneEmpty position={position} isTop3={isTop3} isOver={isOver} accentColor={accentColor} />
+          <>
+            <DropZoneEmpty position={position} isTop3={isTop3} isOver={isOver} accentColor={accentColor} />
+            {onFillViaBracket && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onFillViaBracket(); }}
+                className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1 px-2 py-1 rounded-control bg-slate-800/80 backdrop-blur-xs text-slate-400 hover:text-amber-400 hover:bg-slate-700/80 transition-colors text-2xs border border-slate-700/50"
+                aria-label={`Fill position ${position + 1} via bracket tournament`}
+              >
+                <Swords className="w-3 h-3" />
+                <span className="hidden sm:inline">Bracket</span>
+              </button>
+            )}
+          </>
         )}
         <HoverGlowBorder accentColor={accentColor} />
         <ActiveSelectionRing isActive={isOver} accentColor={accentColor} />
@@ -195,7 +214,7 @@ export const SimpleDropZone = memo(function SimpleDropZone({
           </>
         )}
       </DropZoneCard>
-      <ItemTitle isOccupied={isOccupied} title={occupiedBy} />
+      {!hideTitle && <ItemTitle isOccupied={isOccupied} title={occupiedBy} />}
     </div>
   );
 });

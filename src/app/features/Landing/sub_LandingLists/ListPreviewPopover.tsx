@@ -7,7 +7,7 @@ import { ReactNode } from "react";
 
 import { ELEVATION, withInset } from "@/components/visual/depth";
 import { useListPreview } from "@/hooks/use-list-preview";
-import { DURATION } from '@/lib/animations/motion-presets';
+import { DURATION, EASE } from '@/lib/animations/motion-presets';
 import { getCategoryColor } from "@/lib/helpers/getColors";
 
 interface ListPreviewPopoverProps {
@@ -208,7 +208,7 @@ function PreviewContent({ data }: PreviewContentProps) {
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${completionPercent}%` }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
+            transition={{ duration: DURATION.slow, ease: EASE.out }}
             className="h-full rounded-full"
             style={{
               background: `linear-gradient(90deg, ${colors.primary}, ${colors.secondary})`,

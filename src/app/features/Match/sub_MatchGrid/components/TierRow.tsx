@@ -14,7 +14,7 @@ import { useCurrentList } from '@/stores/use-list-store';
 import { BacklogItem } from '@/types/backlog-groups';
 
 import { ControversyBadge } from './Debate/ControversyBadge';
-import { useOptionalDropZoneHighlight } from './DropZoneHighlightContext';
+import { useDropZoneHighlightStore } from '@/stores/drop-zone-highlight-store';
 import { TierListTier } from '../../lib/tierPresets';
 
 interface TierItemProps {
@@ -301,9 +301,8 @@ export const TierRow = memo(forwardRef<HTMLDivElement, TierRowProps>(function Ti
     data: createUnifiedTierRowDropData(tier.id, tierIndex),
   });
 
-  // Get drag state from context for magnetic glow effect
-  const dropZoneContext = useOptionalDropZoneHighlight();
-  const isParentDragging = dropZoneContext?.dragState?.isDragging ?? false;
+  // Get drag state from store (granular selector — only re-renders when isDragging changes)
+  const isParentDragging = useDropZoneHighlightStore((s) => s.isDragging);
 
   const itemIds = useMemo(() => items.map(item => item.id), [items]);
 
@@ -496,9 +495,8 @@ export function UnrankedPool({ items }: UnrankedPoolProps) {
     },
   });
 
-  // Get drag state from context for magnetic glow effect
-  const dropZoneContext = useOptionalDropZoneHighlight();
-  const isParentDragging = dropZoneContext?.dragState?.isDragging ?? false;
+  // Get drag state from store (granular selector — only re-renders when isDragging changes)
+  const isParentDragging = useDropZoneHighlightStore((s) => s.isDragging);
   const showMagneticGlow = isParentDragging && !isOver;
 
   const itemIds = useMemo(() => items.map(item => item.id), [items]);

@@ -1,79 +1,68 @@
 /**
- * useNetworkStatus - React hook for network status monitoring
+ * useNetworkStatus - React hook for network status
  *
- * Provides reactive network status updates for React components.
+ * Simple hook using navigator.onLine and online/offline events.
  */
 
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 
-import { getNetworkMonitor } from './NetworkMonitor';
-import { NetworkState, NetworkStatus } from './types';
-
 export interface UseNetworkStatusReturn {
-  status: NetworkStatus;
+  status: 'online' | 'offline';
   isOnline: boolean;
   isOffline: boolean;
   isSlow: boolean;
   effectiveType: string | null;
   statusText: string;
-  /** Returns time since last network change on demand (no polling). */
   getTimeSinceChange: () => number;
   probe: () => Promise<boolean>;
 }
 
 export function useNetworkStatus(): UseNetworkStatusReturn {
-  const [networkState, setNetworkState] = useState<NetworkState>(() => {
-    // Get initial state from monitor if available
-    if (typeof window !== 'undefined') {
-      return getNetworkMonitor().getState();
-    }
-    return {
-      status: 'online',
-      effectiveType: null,
-      downlink: null,
-      rtt: null,
-      lastOnlineAt: null,
-      lastOfflineAt: null,
-    };
-  });
+  const [isOnline, setIsOnline] = useState(() =>
+    typeof navigator !== 'undefined' ? navigator.onLine : true
+  );
+  const [lastChangeAt] = useState(() => Date.now());
 
   useEffect(() => {
-    const monitor = getNetworkMonitor();
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
 
-    // Subscribe to network changes
-    const unsubscribe = monitor.subscribe((state) => {
-      setNetworkState(state);
-    });
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
 
     return () => {
-      unsubscribe();
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
     };
   }, []);
 
+  const getTimeSinceChange = useCallback(() => Date.now() - lastChangeAt, [lastChangeAt]);
+
   const probe = useCallback(async (): Promise<boolean> => {
-    const monitor = getNetworkMonitor();
-    return monitor.probe();
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      const response = await fetch('/api/health', {
+        method: 'HEAD',
+        cache: 'no-store',
+        signal: controller.signal,
+      }).catch(() => null);
+      clearTimeout(timeoutId);
+      return !!response?.ok;
+    } catch {
+      return false;
+    }
   }, []);
-
-  const getTimeSinceChange = useCallback((): number => {
-    const monitor = getNetworkMonitor();
-    return monitor.getTimeSinceLastChange();
-  }, []);
-
-  const statusText = useCallback((): string => {
-    const monitor = getNetworkMonitor();
-    return monitor.getStatusText();
-  }, [networkState.status, networkState.effectiveType]);
 
   return {
-    status: networkState.status,
-    isOnline: networkState.status !== 'offline',
-    isOffline: networkState.status === 'offline',
-    isSlow: networkState.status === 'slow',
-    effectiveType: networkState.effectiveType,
-    statusText: statusText(),
+    status: isOnline ? 'online' : 'offline',
+    isOnline,
+    isOffline: !isOnline,
+    isSlow: false,
+    effectiveType: null,
+    statusText: isOnline ? 'Online' : 'Offline',
     getTimeSinceChange,
     probe,
   };

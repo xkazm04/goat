@@ -46,7 +46,7 @@ export function useRankingProgress(): RankingProgress {
 
   return useMemo(() => {
     const totalCount = currentList?.size || maxGridSize;
-    const filledCount = gridItems.filter((item) => item.matched).length;
+    const filledCount = gridItems.filter((item) => item.context.matched).length;
     const percentage =
       totalCount > 0 ? Math.round((filledCount / totalCount) * 100) : 0;
     const normalized = totalCount > 0 ? filledCount / totalCount : 0;

@@ -56,7 +56,7 @@ export default function BlueprintPage() {
             <AlertCircle className="w-8 h-8 text-red-400" />
           </div>
           <h1 className="text-2xl font-bold text-white mb-2">Blueprint Not Found</h1>
-          <p className="text-white/60 mb-6">
+          <p className="text-slate-300 mb-6">
             This blueprint may have been removed or the link is invalid.
           </p>
           <button
@@ -160,7 +160,7 @@ export default function BlueprintPage() {
             {blueprint.author && (
               <div className="flex items-center gap-2 text-white/40 text-sm mb-6">
                 <span>Created by</span>
-                <span className="text-white/60 font-medium">{blueprint.author}</span>
+                <span className="text-slate-300 font-medium">{blueprint.author}</span>
               </div>
             )}
 

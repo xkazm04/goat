@@ -10,11 +10,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import {
-  getSupabaseClient,
   handleStudioError,
   StudioErrorCodes,
 } from '@/lib/api/studio-utils';
-import { escapeIlikeWildcards } from '@/lib/supabase/server';
+import { createClient, escapeIlikeWildcards } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,7 +21,7 @@ const matchItemsRequestSchema = z.object({
   items: z.array(z.object({
     title: z.string(),
     description: z.string().optional(),
-  })),
+  })).max(200),
   category: z.string(),
 });
 
@@ -43,18 +42,26 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { items, category } = matchItemsRequestSchema.parse(body);
 
-    const supabase = getSupabaseClient();
+    const supabase = await createClient();
 
     // Normalize titles for matching (lowercase, trim)
     const normalizedTitles = items.map(item => item.title.toLowerCase().trim());
 
-    // Query existing items by name and category
-    // Using ilike for case-insensitive matching
+    // Query existing items by name and category using OR + ilike for case-insensitive matching
+    // (matches the approach used by the generate route's findExistingItems)
+    const orConditions = items
+      .map(item => {
+        const escaped = item.title.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        return `name.ilike."${escaped}"`;
+      })
+      .join(',');
+
     const { data: existingItems, error } = await supabase
       .from('items')
       .select('id, name, image_url, description, category')
       .eq('category', category)
-      .in('name', items.map(i => i.title)); // Exact match first
+      .or(orConditions)
+      .limit(items.length * 2);
 
     if (error) {
       console.error('Supabase query error:', error);

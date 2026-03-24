@@ -14,7 +14,7 @@ import { createPortal } from "react-dom";
 
 import { PlaceholderImage } from "@/components/ui/placeholder-image";
 
-import { useOptionalDropZoneHighlight } from "./DropZoneHighlightContext";
+import { useDropZoneHighlightStore } from "@/stores/drop-zone-highlight-store";
 
 interface DraggableItem {
   id?: string;
@@ -41,9 +41,8 @@ export function PortalDragOverlay({ item, targetPosition }: PortalDragOverlayPro
   const positionRef = useRef({ x: 0, y: 0 });
   const rafRef = useRef<number>(0);
 
-  // Get optional highlight context to broadcast cursor position for magnetic glow effects
-  const highlightContext = useOptionalDropZoneHighlight();
-  const updateCursorPosition = highlightContext?.updateCursorPosition;
+  // Get action from store — actions are stable references, no re-renders
+  const updateCursorPosition = useDropZoneHighlightStore((s) => s.updateCursorPosition);
 
   // Ensure we only render portal on client
   useEffect(() => {

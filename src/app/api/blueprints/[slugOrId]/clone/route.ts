@@ -45,7 +45,7 @@ export const POST = withErrorHandler(
       throw fromSupabaseError(findError);
     }
 
-    const blueprint = blueprintFromRow(blueprintData as BlueprintRow);
+    const blueprint = blueprintFromRow(blueprintData as unknown as BlueprintRow);
 
     // Create a new list based on the blueprint
     const listData = {

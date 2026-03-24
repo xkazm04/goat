@@ -5,10 +5,9 @@ import { ListSession, SessionProgress } from './types';
 export function createEmptySession(listId: string, size: number): ListSession {
   const gridItems = Array.from({ length: size }, (_, index) => ({
     id: `grid-${index}`,
-    title: '',
-    tags: [],
     position: index,
-    matched: false,
+    item: null,
+    context: { source: 'grid' as const, matched: false },
   }));
 
   return {
@@ -51,7 +50,7 @@ export function validateSession(session: ListSession): boolean {
 }
 
 export function calculateProgress(gridItems: GridItemType[]): SessionProgress {
-  const matchedCount = gridItems.filter((item) => item.matched).length;
+  const matchedCount = gridItems.filter((item) => item.context.matched).length;
   const totalSize = gridItems.length;
   const percentage = totalSize > 0 ? (matchedCount / totalSize) * 100 : 0;
 

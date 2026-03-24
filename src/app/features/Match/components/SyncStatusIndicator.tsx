@@ -220,13 +220,6 @@ export function SyncStatusIndicator({
                   </span>
                 </div>
 
-                {/* Current operation */}
-                {syncState.currentOperation && (
-                  <div className="text-sm text-gray-400">
-                    {syncState.currentOperation}
-                  </div>
-                )}
-
                 {/* Error message with illustration */}
                 {syncState.error && (
                   <div className={`flex flex-col items-center gap-2 px-3 py-3 rounded text-center ${
@@ -255,8 +248,7 @@ export function SyncStatusIndicator({
                     className={`w-full flex flex-col items-center gap-2 text-sm ${syncStatusColors.conflict.text} ${syncStatusColors.conflict.bgMuted} px-3 py-3 rounded hover:bg-orange-900/30 transition-colors`}
                   >
                     <SyncErrorIllustration error="conflict" width={48} height={48} />
-                    {syncState.conflicts.length} conflict
-                    {syncState.conflicts.length > 1 ? 's' : ''} need resolution
+                    Conflicts need resolution
                   </button>
                 )}
               </div>

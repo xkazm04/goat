@@ -18,8 +18,8 @@ type PositionSnapshot = Record<string, number>;
 function snapshotFromGrid(gridItems: GridItemType[]): PositionSnapshot {
   const snapshot: PositionSnapshot = {};
   for (const item of gridItems) {
-    if (item.matched && item.backlogItemId) {
-      snapshot[item.backlogItemId] = item.position;
+    if (item.context.matched && item.item?.id) {
+      snapshot[item.item.id] = item.position;
     }
   }
   return snapshot;
@@ -74,7 +74,7 @@ export function usePositionHistory(
     if (snapshotTakenRef.current === listId) return;
 
     // Need at least one occupied slot to consider this a valid grid
-    const hasOccupied = gridItems.some((item) => item.matched && item.backlogItemId);
+    const hasOccupied = gridItems.some((item) => item.context.matched && item.item?.id);
     if (!hasOccupied) return;
 
     snapshotTakenRef.current = listId;

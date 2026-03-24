@@ -63,7 +63,7 @@ const expandVariants = {
     height: 'auto',
     marginTop: 24,
     overflow: 'visible' as const,
-    transition: { duration: 0.4, ease: [0.23, 1, 0.32, 1] as [number, number, number, number], staggerChildren: 0.06 },
+    transition: { duration: DURATION.slow, ease: [0.23, 1, 0.32, 1] as [number, number, number, number], staggerChildren: 0.06 },
   },
   exit: {
     opacity: 0,
@@ -301,7 +301,7 @@ export function TopicInputForm() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
+            transition={{ delay: DURATION.fast }}
             className="flex items-center justify-center gap-4 mt-4"
           >
             <button

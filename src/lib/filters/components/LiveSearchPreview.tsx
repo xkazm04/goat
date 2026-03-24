@@ -8,6 +8,8 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, Search, Hash } from 'lucide-react';
+
+import { DURATION } from '@/lib/animations/motion-presets';
 import React from 'react';
 
 import { cn } from '@/lib/utils';
@@ -75,7 +77,7 @@ function InlinePreview({
         initial={{ opacity: 0, y: -2 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 2 }}
-        transition={{ duration: 0.1 }}
+        transition={{ duration: DURATION.instant }}
         className={cn('flex items-center gap-2 text-xs', className)}
       >
         {counts.isCalculating ? (
@@ -140,7 +142,7 @@ function BadgePreview({
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.8 }}
-        transition={{ duration: 0.1 }}
+        transition={{ duration: DURATION.instant }}
         className={cn(
           'inline-flex items-center justify-center',
           'px-1.5 py-0.5 rounded-badge text-2xs font-medium',

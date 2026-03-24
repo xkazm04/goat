@@ -48,7 +48,7 @@ export function AwardItem({
   hasSelectedItem = false
 }: AwardItemProps) {
   const [justAwarded, setJustAwarded] = useState(false);
-  const isOccupied = !!(gridItem && gridItem.matched);
+  const isOccupied = !!(gridItem && gridItem.context.matched);
   const dropId = `award-${list.id}`;
   const clickAssign = useClickAssign();
 
@@ -220,7 +220,7 @@ export function AwardItem({
                       >
                         {/* Winner Image */}
                         <ProgressiveImage
-                          src={gridItem?.image_url}
+                          src={gridItem?.item?.image_url}
                           alt={getItemTitle(gridItem)}
                           itemTitle={getItemTitle(gridItem)}
                           autoFetchWiki={true}

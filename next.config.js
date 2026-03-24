@@ -43,6 +43,21 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'cdn.cloudflare.steamstatic.com',
       },
+      // IGDB (game covers and screenshots)
+      {
+        protocol: 'https',
+        hostname: 'images.igdb.com',
+      },
+      // TMDB (movie/TV posters and backdrops)
+      {
+        protocol: 'https',
+        hostname: 'image.tmdb.org',
+      },
+      // Spotify (album art)
+      {
+        protocol: 'https',
+        hostname: 'i.scdn.co',
+      },
       // WordPress-hosted images
       {
         protocol: 'https',
@@ -139,8 +154,10 @@ module.exports = withSentryConfig(nextConfig, {
   hideSourceMaps: true,
 
   // Tree-shake Sentry logger statements to reduce bundle size
-  disableLogger: true,
-
-  // Automatically instrument Next.js app components and API routes
-  automaticVercelMonitors: true,
+  webpack: {
+    treeshake: {
+      removeDebugLogging: true,
+    },
+    automaticVercelMonitors: true,
+  },
 });

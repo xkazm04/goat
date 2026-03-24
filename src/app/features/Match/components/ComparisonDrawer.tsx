@@ -80,7 +80,7 @@ const ComparisonDrawerContent = memo(function ComparisonDrawerContent({
 
   // Find the first empty grid slot
   const firstEmptySlot = useMemo(() => {
-    return gridItems.findIndex((item) => !item.matched);
+    return gridItems.findIndex((item) => !item.context.matched);
   }, [gridItems]);
 
   const handleAssign = useCallback(

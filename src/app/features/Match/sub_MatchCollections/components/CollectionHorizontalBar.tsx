@@ -36,7 +36,7 @@ export function CollectionHorizontalBar({
       animate={{
         opacity: 1,
         y: 0,
-        transition: { delay: 0.15, duration: 0.25 }
+        transition: { delay: DURATION.quick, duration: DURATION.normal }
       }}
       className="px-4 py-3 border-b border-white/5 dark:border-white/2 bg-black/10 dark:bg-black/20"
     >

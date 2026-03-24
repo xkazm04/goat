@@ -27,8 +27,7 @@ export async function GET(
     const offset = searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : 0;
     const minItemCount = searchParams.get('min_item_count') ? parseInt(searchParams.get('min_item_count')!) : 1;
 
-    // Build query with item count
-    // We need to join with items table to count items in each group
+    // Build query - item_count is maintained by DB trigger on item_groups
     let query = supabase
       .from('item_groups')
       .select(`
@@ -38,6 +37,7 @@ export async function GET(
         subcategory,
         description,
         image_url,
+        item_count,
         created_at,
         updated_at
       `)
@@ -54,6 +54,11 @@ export async function GET(
       query = query.ilike('name', `%${escapeIlikeWildcards(search)}%`);
     }
 
+    // Filter by minimum item count at the DB level
+    if (minItemCount > 0) {
+      query = query.gte('item_count', minItemCount);
+    }
+
     const { data: groups, error: groupsError } = await query;
 
     if (groupsError) {
@@ -64,42 +69,7 @@ export async function GET(
       );
     }
 
-    // Get item counts per group using individual count queries to avoid row-limit truncation
-    if (groups && groups.length > 0) {
-      const groupIds = groups.map(g => g.id);
-
-      // Count items per group using batch count queries (avoids Supabase default 1000-row limit)
-      const countMap = new Map<string, number>();
-      const BATCH_SIZE = 20;
-      for (let i = 0; i < groupIds.length; i += BATCH_SIZE) {
-        const batch = groupIds.slice(i, i + BATCH_SIZE);
-        const countPromises = batch.map(async (gid) => {
-          const { count, error } = await supabase
-            .from('items')
-            .select('*', { count: 'exact', head: true })
-            .eq('group_id', gid);
-          if (!error && count !== null) {
-            countMap.set(gid, count);
-          }
-        });
-        await Promise.all(countPromises);
-      }
-
-      // Add item_count and optionally filter by minimum
-      const groupsWithCount = groups
-        .map(group => ({
-          ...group,
-          item_count: countMap.get(group.id) || 0
-        }));
-
-      const filteredGroups = minItemCount > 0
-        ? groupsWithCount.filter(group => group.item_count >= minItemCount)
-        : groupsWithCount;
-
-      return NextResponse.json(filteredGroups);
-    }
-
-    return NextResponse.json([]);
+    return NextResponse.json(groups || []);
   } catch (error) {
     console.error(`[${requestId}] Unexpected error in GET /api/top/groups/categories/[category]:`, error);
     return NextResponse.json(

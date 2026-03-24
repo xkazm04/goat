@@ -117,7 +117,7 @@ export class PlacementPredictor {
     // Get available positions
     const availablePositions = gridItems
       .map((g, idx) => ({ item: g, position: idx }))
-      .filter(({ item }) => !options.excludeOccupied || !item.matched)
+      .filter(({ item }) => !options.excludeOccupied || !item.context.matched)
       .map(({ position }) => position);
 
     // Score each position
@@ -336,7 +336,7 @@ export class PlacementPredictor {
     const neighbors = this.getNeighbors(position, gridItems.length);
     const filledNeighbors = neighbors
       .map(pos => gridItems[pos])
-      .filter(g => g && g.matched);
+      .filter(g => g && g.context.matched);
 
     // Empty neighbors = more flexibility
     if (filledNeighbors.length === 0) {
@@ -355,8 +355,8 @@ export class PlacementPredictor {
       // Check tag overlap with neighbors
       if (item.tags && item.tags.length > 0) {
         const neighborTagSets = filledNeighbors
-          .filter(n => n.tags && n.tags.length > 0)
-          .map(n => new Set(n.tags));
+          .filter(n => n.item?.tags && n.item.tags.length > 0)
+          .map(n => new Set(n.item!.tags!));
 
         if (neighborTagSets.length > 0) {
           const totalOverlap = neighborTagSets.reduce((sum, tags) => {
@@ -462,8 +462,8 @@ export class PlacementPredictor {
 
     for (const neighborPos of neighbors) {
       const neighbor = gridItems[neighborPos];
-      if (neighbor?.matched && neighbor.tags) {
-        neighbor.tags.forEach(tag => tags.add(tag));
+      if (neighbor?.context.matched && neighbor.item?.tags) {
+        neighbor.item.tags.forEach(tag => tags.add(tag));
       }
     }
 

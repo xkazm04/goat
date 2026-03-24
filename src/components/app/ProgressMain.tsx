@@ -26,12 +26,10 @@ const ProgressMain = ({ text, showPercentage = true, className = "" }: ProgressM
             return { matchedCount: 0, totalSize: 50, progressPercentage: 0, isCompleted: false };
         }
 
-        const matched = gridItems.filter(item => item.matched).length;
+        const matched = gridItems.filter(item => item.context.matched).length;
         const total = currentList.size || 50;
         const percentage = total > 0 ? (matched / total) * 100 : 0;
         const completed = percentage >= 100;
-
-        console.log('Progress calculation:', { matched, total, percentage, completed });
 
         return {
             matchedCount: matched,
@@ -57,7 +55,7 @@ const ProgressMain = ({ text, showPercentage = true, className = "" }: ProgressM
                     <motion.div
                         initial={{ opacity: 0, scale: 0 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 1.8, duration: 0.4 }}
+                        transition={{ delay: 1.8, duration: DURATION.slow }}
                         className="flex justify-center items-center gap-1 px-2 py-1 rounded-badge text-xs"
                     >
                         <span
@@ -84,7 +82,7 @@ const ProgressMain = ({ text, showPercentage = true, className = "" }: ProgressM
                     className={`flex items-center justify-center gap-4 mb-6 ${className}`}
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.8, duration: DURATION.emphasis }}
+                    transition={{ delay: DURATION.dramatic, duration: DURATION.emphasis }}
                 >
                     {/* Left Progress Line */}
                     <motion.div

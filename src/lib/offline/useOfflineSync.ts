@@ -1,176 +1,135 @@
 /**
- * useOfflineSync - React hook for offline sync management
+ * useOfflineSync - React hook for offline sync state
  *
- * Subscribes read-only to SyncEngine state. SyncEngine is the single
- * orchestrator that owns periodic sync intervals, network listeners,
- * and SyncQueue event handlers. This hook never calls setEvents()
- * on singletons directly.
+ * Provides reactive sync state and actions for UI components.
  */
 
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 import { ListSession } from '@/stores/item-store/types';
 
-import { getNetworkMonitor } from './NetworkMonitor';
-import { getOfflineStorage } from './OfflineStorage';
-import { getSyncEngine } from './SyncEngine';
-import { getSyncQueue } from './SyncQueue';
-import {
-  SyncState,
-  ConflictRecord,
-  ConflictResolutionStrategy,
-} from './types';
-
+import { getOfflinePersistence } from './OfflinePersistence';
+import { SyncState } from './types';
 
 export interface UseOfflineSyncReturn {
-  // State
   syncState: SyncState;
   isOnline: boolean;
   isSyncing: boolean;
   hasPendingChanges: boolean;
   hasConflicts: boolean;
-  conflicts: ConflictRecord[];
-
-  // Actions
+  conflicts: [];
   saveSession: (session: ListSession) => Promise<void>;
   loadSession: (listId: string) => Promise<ListSession | null>;
   syncNow: () => Promise<void>;
   resolveConflict: (
     conflictId: string,
-    strategy: ConflictResolutionStrategy,
+    strategy: string,
     mergedData?: unknown
   ) => Promise<void>;
   retryFailed: () => Promise<void>;
   clearSyncQueue: () => Promise<void>;
 }
 
-const SYNC_DEBOUNCE_MS = 500;
-
 export function useOfflineSync(): UseOfflineSyncReturn {
   const [syncState, setSyncState] = useState<SyncState>({
     status: 'idle',
     lastSyncedAt: null,
     pendingChanges: 0,
-    syncProgress: 0,
-    currentOperation: null,
     error: null,
-    conflicts: [],
   });
 
   const [isOnline, setIsOnline] = useState(true);
-  const syncDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isInitializedRef = useRef(false);
 
-  // Initialize: subscribe to SyncEngine as read-only consumer
   useEffect(() => {
-    if (isInitializedRef.current) return;
-    isInitializedRef.current = true;
+    if (typeof navigator !== 'undefined') {
+      setIsOnline(navigator.onLine);
+    }
 
-    const syncEngine = getSyncEngine();
-    const networkMonitor = getNetworkMonitor();
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
 
-    // Initialize SyncEngine (idempotent — safe to call multiple times)
-    syncEngine.initialize().then(() => {
-      // Set initial state from engine
-      const engineState = syncEngine.getState();
-      setSyncState(engineState);
+    // Subscribe to queue changes
+    const persistence = getOfflinePersistence();
+    const unsubscribe = persistence.onQueueChange((pendingCount) => {
+      setSyncState(prev => ({
+        ...prev,
+        pendingChanges: pendingCount,
+        status: pendingCount > 0 ? 'pending' : 'idle',
+      }));
     });
 
-    // Subscribe to SyncEngine state changes (read-only, no overwrite)
-    const unsubscribeEngine = syncEngine.subscribeEvents({
-      onStateChange: (state) => {
-        setSyncState(state);
-      },
-      onNetworkChange: (state) => {
-        setIsOnline(state.status !== 'offline');
-      },
-    });
-
-    // Subscribe to network status for the isOnline flag
-    const unsubscribeNetwork = networkMonitor.subscribe((state) => {
-      setIsOnline(state.status !== 'offline');
+    // Load initial pending count
+    persistence.getPendingCount().then(count => {
+      setSyncState(prev => ({
+        ...prev,
+        pendingChanges: count,
+        status: count > 0 ? 'pending' : 'idle',
+      }));
     });
 
     return () => {
-      unsubscribeEngine();
-      unsubscribeNetwork();
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      unsubscribe();
     };
   }, []);
 
-  // Save session with debounced sync
-  const saveSession = useCallback(async (session: ListSession): Promise<void> => {
-    const storage = getOfflineStorage();
-    const syncQueue = getSyncQueue();
+  const saveSession = useCallback(async (session: ListSession) => {
+    const persistence = getOfflinePersistence();
+    await persistence.saveSession(session);
+    await persistence.enqueueSessionUpdate(session.listId, session);
 
-    // Save to IndexedDB immediately
-    await storage.saveSession(session);
-
-    // Queue for sync
-    await syncQueue.enqueueSessionUpdate(session.listId, session);
-
-    // Debounced sync trigger
-    if (syncDebounceRef.current) {
-      clearTimeout(syncDebounceRef.current);
+    if (typeof navigator !== 'undefined' && navigator.onLine) {
+      persistence.processQueue();
     }
-
-    syncDebounceRef.current = setTimeout(() => {
-      syncDebounceRef.current = null;
-      if (getNetworkMonitor().isOnline()) {
-        syncQueue.processQueue();
-      }
-    }, SYNC_DEBOUNCE_MS);
   }, []);
 
-  // Load session from offline storage
-  const loadSession = useCallback(async (listId: string): Promise<ListSession | null> => {
-    const storage = getOfflineStorage();
-    return storage.getSession(listId);
+  const loadSession = useCallback(async (listId: string) => {
+    const persistence = getOfflinePersistence();
+    return persistence.getSession(listId);
   }, []);
 
-  // Manual sync trigger — delegate to SyncEngine
-  const syncNow = useCallback(async (): Promise<void> => {
-    const syncEngine = getSyncEngine();
-
-    if (!getNetworkMonitor().isOnline()) {
-      setSyncState((prev) => ({
-        ...prev,
-        error: 'Cannot sync while offline',
-      }));
+  const syncNow = useCallback(async () => {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setSyncState(prev => ({ ...prev, error: 'Cannot sync while offline' }));
       return;
     }
 
-    await syncEngine.sync();
+    setSyncState(prev => ({ ...prev, status: 'syncing', error: null }));
+
+    try {
+      const persistence = getOfflinePersistence();
+      await persistence.processQueue();
+      setSyncState(prev => ({
+        ...prev,
+        status: prev.pendingChanges > 0 ? 'pending' : 'synced',
+        lastSyncedAt: Date.now(),
+      }));
+    } catch (error) {
+      setSyncState(prev => ({
+        ...prev,
+        status: 'error',
+        error: error instanceof Error ? error.message : 'Sync failed',
+      }));
+    }
   }, []);
 
-  // Resolve conflict — delegate to SyncEngine
-  const resolveConflict = useCallback(
-    async (
-      conflictId: string,
-      strategy: ConflictResolutionStrategy,
-      mergedData?: unknown
-    ): Promise<void> => {
-      const syncEngine = getSyncEngine();
-      await syncEngine.resolveConflict(
-        conflictId,
-        strategy as 'local_wins' | 'server_wins' | 'merge',
-        mergedData
-      );
-    },
-    []
-  );
-
-  // Retry failed operations
-  const retryFailed = useCallback(async (): Promise<void> => {
-    const syncQueue = getSyncQueue();
-    await syncQueue.retryFailed();
+  const resolveConflict = useCallback(async () => {
+    // No-op: conflict resolution was never triggered in practice
   }, []);
 
-  // Clear sync queue
-  const clearSyncQueue = useCallback(async (): Promise<void> => {
-    const syncQueue = getSyncQueue();
-    await syncQueue.clearAll();
+  const retryFailed = useCallback(async () => {
+    const persistence = getOfflinePersistence();
+    await persistence.retryFailed();
+  }, []);
+
+  const clearSyncQueue = useCallback(async () => {
+    const persistence = getOfflinePersistence();
+    await persistence.clearAll();
   }, []);
 
   return {
@@ -178,8 +137,8 @@ export function useOfflineSync(): UseOfflineSyncReturn {
     isOnline,
     isSyncing: syncState.status === 'syncing',
     hasPendingChanges: syncState.pendingChanges > 0,
-    hasConflicts: syncState.conflicts.length > 0,
-    conflicts: syncState.conflicts,
+    hasConflicts: false,
+    conflicts: [],
     saveSession,
     loadSession,
     syncNow,

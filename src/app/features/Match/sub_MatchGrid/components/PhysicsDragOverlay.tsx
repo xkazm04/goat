@@ -197,7 +197,7 @@ export function PhysicsDragOverlay({
               ? "rgba(34, 211, 238, 0.8)"
               : "rgba(34, 211, 238, 0.6)",
         }}
-        transition={{ duration: 0.1 }}
+        transition={{ duration: DURATION.instant }}
       />
 
       {/* Content */}

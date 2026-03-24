@@ -40,20 +40,16 @@ export async function GET(request: NextRequest) {
 
     const supabase = await createClient();
 
-    // For now, generate mock consensus data since we don't have a rankings table yet
-    // In production, this would aggregate real user rankings
-    const consensusData = await generateConsensusData(
-      supabase,
-      category,
-      subcategory,
-      itemIds
-    );
+    // Try real consensus data from item_consensus_cache first
+    const consensusData = await getRealConsensusData(supabase, category, itemIds)
+      || await generateConsensusData(supabase, category, subcategory, itemIds);
 
     const response: ConsensusAPIResponse = {
       items: consensusData,
       category,
       lastUpdated: new Date().toISOString(),
-      totalUsers: Math.floor(Math.random() * 500) + 100, // Mock for now
+      totalUsers: Object.values(consensusData).reduce((max, c) =>
+        Math.max(max, c.totalRankings || 0), 0),
     };
 
     return NextResponse.json(response);
@@ -64,6 +60,65 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+/**
+ * Fetch real consensus data from item_consensus_cache table.
+ * Returns null if no data exists so caller can fall back to mock.
+ */
+async function getRealConsensusData(
+  supabase: TypedSupabaseClient,
+  category: string,
+  itemIds: string[] | undefined
+): Promise<Record<string, ItemConsensusWithClusters> | null> {
+  let query = supabase
+    .from('item_consensus_cache')
+    .select('*')
+    .eq('category', category);
+
+  if (itemIds && itemIds.length > 0) {
+    query = query.in('item_id', itemIds);
+  }
+
+  const { data, error } = await query.limit(500);
+
+  if (error || !data || data.length === 0) return null;
+
+  const result: Record<string, ItemConsensusWithClusters> = {};
+
+  for (const row of data) {
+    const avg = Number(row.average_position) || 0;
+    const median = row.median_position || Math.round(avg);
+    const vol = Number(row.volatility) || 0;
+    const stdDev = Number(row.position_std_dev) || 0;
+    const dist = (row.distribution || {}) as Record<string, number>;
+
+    // Convert string keys to number keys for distribution
+    const distribution: Record<number, number> = {};
+    for (const [k, v] of Object.entries(dist)) {
+      distribution[Number(k)] = v as number;
+    }
+
+    result[row.item_id] = {
+      itemId: row.item_id,
+      medianRank: median,
+      averageRank: avg,
+      averagePosition: avg,
+      volatility: vol * 10,
+      totalRankings: row.total_rankings || 0,
+      confidence: Number(row.confidence) || 0,
+      distribution,
+      modeRank: median,
+      percentiles: (row.percentiles as { p25?: number; p50?: number; p75?: number }) || {
+        p25: Math.max(1, Math.round(avg - stdDev)),
+        p50: Math.round(avg),
+        p75: Math.min(50, Math.round(avg + stdDev)),
+      },
+      peerClusters: [],
+    };
+  }
+
+  return result;
 }
 
 /**

@@ -131,7 +131,7 @@ export const RankingProgressIndicator = memo(function RankingProgressIndicator({
           className="flex items-center gap-1 shrink-0"
           initial={prefersReducedMotion ? {} : { opacity: 0, x: -4 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: DURATION.normal, delay: 0.2 }}
+          transition={{ duration: DURATION.normal, delay: DURATION.fast }}
         >
           <span
             className="text-xs font-medium tabular-nums"
@@ -202,7 +202,7 @@ export const RankingProgressIndicator = memo(function RankingProgressIndicator({
                 fill="none"
                 initial={prefersReducedMotion ? {} : { pathLength: 0 }}
                 animate={{ pathLength: 1 }}
-                transition={{ duration: DURATION.normal, delay: 0.1 }}
+                transition={{ duration: DURATION.normal, delay: DURATION.instant }}
               />
             </motion.svg>
           )}

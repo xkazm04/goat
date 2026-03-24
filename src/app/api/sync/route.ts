@@ -63,6 +63,16 @@ function syncLog(entry: LogEntry): void {
 }
 
 // ============================================================================
+// Validation Constants
+// ============================================================================
+
+/** Maximum number of list IDs allowed in a single sync status request */
+const MAX_LIST_IDS = 50;
+
+/** Maximum number of operations allowed in a single sync batch */
+const MAX_OPERATIONS = 50;
+
+// ============================================================================
 // Types
 // ============================================================================
 
@@ -96,9 +106,9 @@ function extractMatchedItems(gridItems: GridItemType[]): Array<{
   ranking: number;
 }> {
   return gridItems
-    .filter((item) => item.matched && item.matchedWith)
+    .filter((item) => item.context.matched && item.item?.id)
     .map((item) => ({
-      item_id: item.matchedWith!,
+      item_id: item.item!.id,
       ranking: item.position,
     }));
 }
@@ -409,6 +419,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (body.operations.length > MAX_OPERATIONS) {
+      syncLog({
+        level: 'warn',
+        traceId,
+        route: '/api/sync',
+        event: 'invalid_request',
+        error: `Too many operations: ${body.operations.length} exceeds max ${MAX_OPERATIONS}`,
+      });
+      return NextResponse.json(
+        { error: `Too many operations: max ${MAX_OPERATIONS} allowed per request` },
+        { status: 400 }
+      );
+    }
+
     // Build type breakdown for the batch
     const typeBreakdown: Record<string, number> = {};
     for (const op of body.operations) {
@@ -443,8 +467,37 @@ export async function POST(request: NextRequest) {
 
     await Promise.all(
       Array.from(operationsByEntity.values()).map(async (group) => {
+        let entityGroupFailed = false;
+        let failedError = '';
         for (const { index, op } of group) {
+          if (entityGroupFailed) {
+            // A prior operation on this entity failed — skip to prevent
+            // bypassing conflict detection with stale data
+            syncLog({
+              level: 'warn',
+              traceId,
+              route: '/api/sync',
+              event: 'operation_skipped',
+              operationType: op.type,
+              operationId: op.id,
+              entityId: op.entityId,
+              error: `Skipped: prior operation on entity ${op.entityId} failed (${failedError})`,
+            });
+            indexedResults.push({
+              index,
+              result: {
+                operationId: op.id,
+                success: false,
+                error: `Skipped: prior operation on this entity failed (${failedError})`,
+              },
+            });
+            continue;
+          }
           const result = await processOperation(op, supabase, traceId);
+          if (!result.success) {
+            entityGroupFailed = true;
+            failedError = result.error || 'Unknown error';
+          }
           indexedResults.push({ index, result });
         }
       })
@@ -519,6 +572,20 @@ export async function GET(request: NextRequest) {
       });
       return NextResponse.json(
         { error: 'listIds query parameter required' },
+        { status: 400 }
+      );
+    }
+
+    if (listIds.length > MAX_LIST_IDS) {
+      syncLog({
+        level: 'warn',
+        traceId,
+        route: '/api/sync',
+        event: 'invalid_request',
+        error: `Too many listIds: ${listIds.length} exceeds max ${MAX_LIST_IDS}`,
+      });
+      return NextResponse.json(
+        { error: `Too many listIds: max ${MAX_LIST_IDS} allowed` },
         { status: 400 }
       );
     }

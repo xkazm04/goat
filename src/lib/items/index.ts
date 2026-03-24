@@ -3,7 +3,7 @@
  *
  * Two-file structure:
  *   item-utils.ts      — extractTitle, normalizeImageUrl, display helpers
- *   item-transforms.ts — typed pipeline: DB -> Backlog -> Transferable -> Grid -> Ranked
+ *   item-transforms.ts — typed pipeline: DB -> Backlog -> BaseItem -> PlacedItem (Grid/Ranked)
  */
 
 // Utilities & display helpers
@@ -26,20 +26,20 @@ export {
   isNormalizedItemLike,
 } from './item-transforms';
 
-// Transformations (pipeline: DB -> Backlog -> Transferable -> Grid -> Ranked)
+// Transformations (pipeline: DB -> Backlog -> BaseItem -> PlacedItem)
 export {
   // Backlog <-> Normalized
   backlogToNormalized,
   normalizedToBacklog,
   normalizedToBacklogItemType,
 
-  // -> Transferable
+  // -> BaseItem (TransferableItem)
   backlogToTransferable,
   normalizedToTransferable,
   gridToTransferable,
   toTransferable,
 
-  // -> Grid
+  // -> Grid (PlacedItem)
   type CreateGridItemOptions,
   backlogToGrid,
   transferableToGrid,
@@ -52,7 +52,7 @@ export {
   gridToBacklog,
   transferableToBacklog,
 
-  // -> Ranked
+  // -> Ranked (PlacedItem with rank- prefix)
   createRankedItem,
   createEmptyRankedItem,
   createEmptyRanking,

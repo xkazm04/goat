@@ -5,8 +5,10 @@ import { requireStore, requireTierTarget, validateAll } from '../validation-help
 import { BaseTierOperation } from './BaseTierOperation';
 
 import type { DragContext, DragOperationResult, OperationStoreContext } from '../types';
+import type { TransferableItem } from '../../transfer-protocol';
 import type { ValidationResult } from '@/lib/validation';
 import type { BacklogItem } from '@/types/backlog-groups';
+import type { GridItemType } from '@/types/match';
 
 
 
@@ -52,9 +54,18 @@ export class TierAssignOperation extends BaseTierOperation {
       };
     }
 
-    const transferable = 'category' in item
-      ? backlogToTransferable(item as BacklogItem)
-      : item;
+    // Normalize to TransferableItem (BaseItem):
+    // - BacklogItem has 'category' → use backlogToTransferable
+    // - PlacedItem has 'context' → extract inner .item
+    // - TransferableItem → use directly
+    let transferable: TransferableItem;
+    if ('category' in item && typeof (item as BacklogItem).category === 'string') {
+      transferable = backlogToTransferable(item as BacklogItem);
+    } else if ('context' in item && (item as GridItemType).item) {
+      transferable = (item as GridItemType).item!;
+    } else {
+      transferable = item as TransferableItem;
+    }
 
     dndLogger.debug('Executing tier-assign operation', {
       itemId: source.itemId,

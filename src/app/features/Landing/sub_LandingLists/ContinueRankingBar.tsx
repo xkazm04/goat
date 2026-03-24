@@ -75,7 +75,7 @@ export const ContinueRankingBar = memo(function ContinueRankingBar() {
     const result: InProgressList[] = [];
 
     for (const [listId, session] of Object.entries(listSessions)) {
-      const filled = session.gridItems.filter((item) => item.matched).length;
+      const filled = session.gridItems.filter((item) => item.context.matched).length;
       const total = session.listSize;
       if (total <= 0) continue;
       const percentage = Math.round((filled / total) * 100);

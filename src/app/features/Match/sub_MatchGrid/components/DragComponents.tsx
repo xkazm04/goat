@@ -56,7 +56,7 @@ export function DragOverlayContent({
             }}
             transition={{
                 scale: isSnapping ? { duration: DURATION.normal, ease: "easeOut" } : { duration: DURATION.quick },
-                rotate: { duration: 0.1 },
+                rotate: { duration: DURATION.instant },
             }}
             className="w-24 h-24 rounded-card overflow-hidden"
             style={{

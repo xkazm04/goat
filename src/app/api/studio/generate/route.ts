@@ -14,7 +14,6 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { zodToJsonSchema } from 'zod-to-json-schema';
 
 import { rateLimit, getRateLimitKey } from '@/lib/api/rate-limiter';
 import {
@@ -36,6 +35,31 @@ import {
 import type { GeneratedItem } from '@/types/studio';
 
 export const dynamic = 'force-dynamic';
+
+/**
+ * Explicit JSON Schema for Gemini structured output.
+ * zodToJsonSchema v3.25+ returns empty schemas for Zod objects — this is the manual equivalent.
+ */
+const GEMINI_RESPONSE_SCHEMA = {
+  type: 'object',
+  properties: {
+    items: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          title: { type: 'string' },
+          description: { type: 'string' },
+          wikipedia_url: { type: 'string', nullable: true },
+        },
+        required: ['title', 'description', 'wikipedia_url'],
+      },
+    },
+    suggested_title: { type: 'string' },
+    suggested_description: { type: 'string' },
+  },
+  required: ['items'],
+} as const;
 export const maxDuration = 60;
 
 /** Run async tasks with bounded concurrency */
@@ -341,13 +365,13 @@ ALSO provide:
 
 REQUIREMENTS:
 1. Each item MUST have a Wikipedia article - prioritize well-known, notable items
-2. Use the EXACT Wikipedia article title for the item name (e.g., "The Legend of Zelda: Breath of the Wild" not "Zelda BOTW")
-3. Include the full, correct Wikipedia URL
+2. Use the item's common/popular name as the title — do NOT include Wikipedia disambiguation labels like "(video game)", "(film)", "(2008 video game)", "(band)", etc. For example use "Dead Space" not "Dead Space (2008 video game)", "Resident Evil" not "Resident Evil (1996 video game)", "Inside" not "Inside (video game)"
+3. The wikipedia_url MUST still point to the correct Wikipedia article (which may include disambiguation in the URL — that's fine)
 
 For each item provide:
-- title: The exact name as it appears on Wikipedia (full official name, not abbreviations)
+- title: The item's popular/common name without any parenthetical labels
 - description: A brief description (max 200 characters)
-- wikipedia_url: The full Wikipedia URL (e.g., https://en.wikipedia.org/wiki/Article_Title)
+- wikipedia_url: The full, correct Wikipedia URL (e.g., https://en.wikipedia.org/wiki/Dead_Space_(2008_video_game))
 
 Focus on items that are:
 - Well-documented with Wikipedia articles
@@ -388,11 +412,7 @@ async function handleClassicGenerate(request: NextRequest) {
     const ai = getGeminiClient();
     const prompt = buildPrompt(topic, count, category, excludeTitles);
 
-    // Convert Zod schema to JSON Schema and strip $schema field (Gemini doesn't accept it)
-    const jsonSchema = zodToJsonSchema(geminiResponseSchema as any) as Record<string, unknown>;
-    delete jsonSchema.$schema;
-
-    const { result: geminiResult, gemini_retries, gemini_duration_ms } = await callGeminiWithRetry(ai, prompt, jsonSchema, requestId);
+    const { result: geminiResult, gemini_retries, gemini_duration_ms } = await callGeminiWithRetry(ai, prompt, GEMINI_RESPONSE_SCHEMA as Record<string, unknown>, requestId);
 
     // Search Supabase for existing items to reuse images/IDs
     const dbLookupStart = performance.now();
@@ -509,24 +529,25 @@ async function handleStreamingGenerate(request: NextRequest) {
         const ai = getGeminiClient();
         const prompt = buildPrompt(topic, count, category, excludeTitles);
 
-        // Convert Zod schema to JSON Schema
-        const jsonSchema = zodToJsonSchema(geminiResponseSchema as any) as Record<string, unknown>;
-        delete jsonSchema.$schema;
-
         // Call Gemini with silent retry
         let geminiResult;
         let geminiRetries = 0;
         let geminiDurationMs = 0;
         try {
-          const geminiResponse = await callGeminiWithRetry(ai, prompt, jsonSchema, requestId);
+          const geminiResponse = await callGeminiWithRetry(ai, prompt, GEMINI_RESPONSE_SCHEMA as Record<string, unknown>, requestId);
           geminiResult = geminiResponse.result;
           geminiRetries = geminiResponse.gemini_retries;
           geminiDurationMs = geminiResponse.gemini_duration_ms;
         } catch (err) {
-          const message = err instanceof Error ? err.message : 'Generation failed';
+          const rawMsg = err instanceof Error ? err.message : '';
+          // Sanitize API key / provider errors — show generic message to user
+          const isAuthError = rawMsg.includes('API key') || rawMsg.includes('API_KEY_INVALID') || rawMsg.includes('INVALID_ARGUMENT');
+          const message = isAuthError
+            ? 'AI generation is temporarily unavailable. Please try again later.'
+            : 'Generation failed. Try a more specific topic, or rephrase your request.';
           sendLine({
             type: 'error',
-            message: `Generation failed after retry. ${message}. Try a more specific topic, or rephrase your request.`,
+            message,
           });
           safeClose();
           return;
