@@ -1,6 +1,0 @@
-[     885ms] [WARNING] Please ensure that the container has a non-static position, like 'relative', 'fixed', or 'absolute' to ensure scroll offset is calculated correctly. @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2298
-[    1968ms] [WARNING] [API Contract] Response format mismatch for GET /lists:
-  Expected: raw
-  Received: envelope
-  Response sample: {"success":true,"data":[]}
-  Update the endpoint or API_RESPONSE_CONTRACTS in client.ts @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2298
