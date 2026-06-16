@@ -24,6 +24,12 @@ Accumulated structural facts discovered by Vibeman pipeline runs. Read this firs
 - **2026-06-16** — Test runner is **Playwright e2e only** (`npm run test:e2e`) — no vitest/unit runner. e2e needs browsers + a running app, so it's not a cheap per-wave gate.
 - **2026-06-16** — `npx eslint` / `next lint` currently **fails to start**: `eslint.config.mjs` imports `eslint-plugin-storybook` which is not installed. Lint gate unavailable until that dep is restored.
 
+## Open follow-ups (from the 2026-06-16 combined UI+Bug scan, Wave 17 — Scattered sweep #3)
+Wave 17 closed 5: ListCreateButton double-submit ref + try/finally creationStep reset, streak bonus written back so leaderboard ranks it, studio persist now keeps listSize/allowCustomItems, wiki-image hook subscribes to store data (not getters) so fetched images paint.
+- Anti-patterns: selecting a Zustand getter/action (stable ref) + calling it in render defeats subscription — select the derived value; a value shown to the user computed separately from the value used to rank/sort silently diverges — write it back to the source of truth or don't show it.
+- (Wave 16, migrations: authored increment_share_fork_count + increment_blueprint_usage_count RPCs + deploy-safe call-with-fallback wiring; migration NOT applied — blocked, no CLI/psql/DB creds in harness.)
+- Cumulative Waves 1–17: 73 functional findings addressed + 4 security mitigated, TS held at 53, 0 regressions. Remaining: diminishing low-sev tail + decision/infra deferrals + unapplied migration.
+
 ## Open follow-ups (from the 2026-06-16 combined UI+Bug scan, Wave 15 — Scattered sweep #2)
 Wave 15 closed 5: ItemInspector Add-to-Grid wired (reuses Wave-3 assignToNextOpenSlot), getBulkItems chunks >100 groups, achievement reveal re-sequences per id, invitation accept/decline match exact placeholder, achievement confetti gated on reduced motion.
 - Anti-patterns: a stubbed handler that logs-and-returns while the UI signals success (wire or hide); a server-only cap with no client chunking (whole call fails — chunk+merge); blanket placeholder matching (`startsWith('pending_')`) collides across concurrent entities (match exact id).
