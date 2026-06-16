@@ -24,6 +24,12 @@ Accumulated structural facts discovered by Vibeman pipeline runs. Read this firs
 - **2026-06-16** — Test runner is **Playwright e2e only** (`npm run test:e2e`) — no vitest/unit runner. e2e needs browsers + a running app, so it's not a cheap per-wave gate.
 - **2026-06-16** — `npx eslint` / `next lint` currently **fails to start**: `eslint.config.mjs` imports `eslint-plugin-storybook` which is not installed. Lint gate unavailable until that dep is restored.
 
+## Open follow-ups (from the 2026-06-16 combined UI+Bug scan, Wave 10 — Mobile/responsive)
+Wave 10 (T11) closed 5: MasonryGrid inline gridTemplateColumns (was Tailwind-JIT-collapsed to 1 col in prod), Studio grid base grid-cols-2, hero tables responsive grid, onboarding cards flex-col sm:flex-row, facet drawer dragListener=false.
+- Anti-pattern: **dynamic Tailwind class names (`grid-cols-${n}`) emit no CSS** — JIT only sees static strings; use inline style / literal lookup / safelist. And always set the PHONE base first, scale up (desktop-first fixed columns break mobile).
+- Notes: a near-duplicate MobileFacetDrawer exists at `src/lib/filters/facets/components/` (only the faceted-search copy was fixed — verify if the other is live). Facet breadcrumb onRemove=onToggleValue is OK in practice (breadcrumbs derive from selections).
+- Cumulative Waves 1–10: 43 functional findings closed + 4 security mitigated, TS held at 53, 0 regressions.
+
 ## Open follow-ups (from the 2026-06-16 combined UI+Bug scan, Wave 9 — Wrong-data-source)
 Wave 9 (T8) closed 4: RankingDistribution zeroed-stats→empty + chart un-truncated (cap 100, median line clamped), stats route ranks the full population (not the queried subset), removed the vacuous list-preview "avg rank" stat.
 - Anti-pattern: **a rank/stat is only meaningful against its true population** — ranking a requested subset, averaging positions (~(N+1)/2), or zero-filling "no data" all fabricate confident-but-wrong numbers. Rank vs the real population, return null/empty for no-data, drop stats with no real metric.
