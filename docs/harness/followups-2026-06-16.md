@@ -48,7 +48,14 @@ consumers; the shipped `ComparisonModal` is a criteria-scoring UI. Either wire a
 real "Diff" view + export toolbar into `ComparisonModal`, OR delete the orphaned
 engine if scoring is the intended product. This is a product call, not a fix.
 
-## 7. Atomic counters needing a migration (T3) — DEFERRED
+## 7. Atomic counters needing a migration (T3) — MIGRATION AUTHORED (Wave 16), NEEDS APPLYING
+**Update (Wave 16):** `supabase/migrations/20260616000000_add_increment_counter_rpcs.sql`
+adds `increment_share_fork_count` + `increment_blueprint_usage_count`, and the
+fork/blueprint routes now call them with a read-modify-write fallback. **Run the
+migration** to make the counters atomic. Still open: decouple blueprint
+usage_count from the detail GET (fire-once tracking) so it stops over-counting on
+refetch. Original notes below.
+
 Wave 13 made the share view/challenge counters atomic via the existing
 `increment_share_*` RPCs. Two counters still need infra:
 - **share fork_count** (`api/share/[code]/fork/route.ts`): no `increment_share_fork_count`
