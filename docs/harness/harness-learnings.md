@@ -24,6 +24,12 @@ Accumulated structural facts discovered by Vibeman pipeline runs. Read this firs
 - **2026-06-16** — Test runner is **Playwright e2e only** (`npm run test:e2e`) — no vitest/unit runner. e2e needs browsers + a running app, so it's not a cheap per-wave gate.
 - **2026-06-16** — `npx eslint` / `next lint` currently **fails to start**: `eslint.config.mjs` imports `eslint-plugin-storybook` which is not installed. Lint gate unavailable until that dep is restored.
 
+## Open follow-ups (from the 2026-06-16 combined UI+Bug scan, Wave 3)
+Wave 3 (remaining crash/data criticals) closed 4: offline stranded-ops revert, interest-decay top-preservation, atomic mobile swipe-to-rank (`grid-store.assignToNextOpenSlot`), and collapsing the duplicate `grid-store.handleDragEnd` engine into the single DragOperationRouter (−125 LOC).
+- **Critical tally: 10/16 closed** (Wave 1: 6, Wave 3: 4). Remaining: 4 security (gated), OG-route-404 (T2), page-transition a11y (T5).
+- New structural fact: **`grid-store.handleDragEnd` no longer reimplements assign — it delegates to `getGridDragRouter().handleDragEnd(event, get().getStoreContext())`.** The router (src/lib/dnd/operations) is the single drag-end engine; grid-store owns grid state + atomic placement (`assignItemToGrid`, `moveGridItem`, `assignToNextOpenSlot`).
+- Tidy-up follow-up: removing the duplicate engine left `getValidationAuthority`/`logValidationFailure`/ID-parse helpers possibly unused in grid-store — prune once lint is restored.
+
 ## Open follow-ups (from the 2026-06-16 combined UI+Bug scan, Wave 2)
 Wave 2 (built-but-unwired) closed 4 high findings: template rating click-through, branded ImageFallback wiring, Award Share button, collections list-removal + ordering source-of-truth. **Deferred** (architectural / needs decision — see `docs/harness/followups-2026-06-16.md`): collection toolbar filters → grid (shared filter state + FilterEngine across 4+ files); collections drag-reorder + Add-List picker (no DndContext / no picker exists); comparison-engine wire-or-delete (product call); clone-API wiring (bundle with security wave — unauth IDOR).
 - New anti-pattern: **optional callback prop = silent dead feature** — a child gating an affordance on an optional callback the parent forgets to pass compiles clean but ships an inert control (Award Share, collections CRUD). Audit these when a feature "doesn't appear."
