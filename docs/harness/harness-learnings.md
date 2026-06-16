@@ -24,6 +24,12 @@ Accumulated structural facts discovered by Vibeman pipeline runs. Read this firs
 - **2026-06-16** — Test runner is **Playwright e2e only** (`npm run test:e2e`) — no vitest/unit runner. e2e needs browsers + a running app, so it's not a cheap per-wave gate.
 - **2026-06-16** — `npx eslint` / `next lint` currently **fails to start**: `eslint.config.mjs` imports `eslint-plugin-storybook` which is not installed. Lint gate unavailable until that dep is restored.
 
+## Open follow-ups (from the 2026-06-16 combined UI+Bug scan, Wave 18 — Deferred decisions)
+Wave 18 closed the 4 user-gated decisions: **dropped** StatsCard label→color magic-string (color now from explicit prop only); **deleted** the orphaned comparison/diff/export engine (−981 LOC, zero consumers, kept ComparisonSelector); **built** collections drag-reorder (@dnd-kit) + Add-List picker modal (`AddListModal`, wired `onReorderLists`/`onAddList` in dashboard); **kept dark-only** (light palette is a token-system project, recorded as a closed decision not an open item).
+- Anti-pattern: a deferred decision is closed by a *choice* (build / delete / keep-and-record), not by leaving it perpetually "deferred". And drag-reorder over a *filterable* list must gate reorder OFF while a filter is active — index-based `arrayMove` on a filtered view corrupts the persisted order (CollectionView uses `canReorder = !!onReorderLists && !searchTerm.trim()`).
+- This resolves the comparison-engine + collections-reorder/picker + light-palette deferrals carried since Wave 2/8/12.
+- Cumulative Waves 1–18: 76 functional findings addressed + 4 security mitigated + 4 decisions closed, TS held at 53, 0 regressions. Remaining: infra/security (RLS, api_keys, guest tokens, unapplied counter-RPC migration) + diminishing low-sev tail.
+
 ## Open follow-ups (from the 2026-06-16 combined UI+Bug scan, Wave 17 — Scattered sweep #3)
 Wave 17 closed 5: ListCreateButton double-submit ref + try/finally creationStep reset, streak bonus written back so leaderboard ranks it, studio persist now keeps listSize/allowCustomItems, wiki-image hook subscribes to store data (not getters) so fetched images paint.
 - Anti-patterns: selecting a Zustand getter/action (stable ref) + calling it in render defeats subscription — select the derived value; a value shown to the user computed separately from the value used to rank/sort silently diverges — write it back to the source of truth or don't show it.
