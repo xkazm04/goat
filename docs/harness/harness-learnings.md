@@ -24,6 +24,12 @@ Accumulated structural facts discovered by Vibeman pipeline runs. Read this firs
 - **2026-06-16** — Test runner is **Playwright e2e only** (`npm run test:e2e`) — no vitest/unit runner. e2e needs browsers + a running app, so it's not a cheap per-wave gate.
 - **2026-06-16** — `npx eslint` / `next lint` currently **fails to start**: `eslint.config.mjs` imports `eslint-plugin-storybook` which is not installed. Lint gate unavailable until that dep is restored.
 
+## Open follow-ups (from the 2026-06-16 combined UI+Bug scan, Wave 7 — Resource leaks)
+Wave 7 (lifecycle/cleanup leaks) closed 5: InteractivePreview body scroll-lock (useEffect cleanup), usePanelResize listener teardown on unmount, ParallaxLayer conditional will-change, Card3D onTouchCancel + touch-action, AI image cache key now includes dimensions (wrong-size cache hit).
+- Anti-pattern: **a global side effect set in a handler needs a lifecycle-bound undo** — teardown bound only to a symmetric "end" event (close/mouseup/touchend) leaks if that event never fires (unmount, touchcancel). Use useEffect cleanup or a ref-stored teardown invoked on unmount, and handle every "end" event's cancel sibling.
+- Remaining documented follow-up: AI image module cache is per-process global with no user scoping (cross-user history/favorite leakage) — see result-image #5.
+- Cumulative Waves 1–7: 29 functional findings closed + 4 security mitigated, TS held at 53, 0 regressions.
+
 ## Open follow-ups (from the 2026-06-16 combined UI+Bug scan, Wave 6 — NaN math)
 Wave 6 (NaN / divide-by-zero) closed 5: achievements completion 0/0, consensus totalRankings empty divide, tier percentile from rank-index (was negative for partial lists), center-of-mass all-zero-weight guard (BalanceOptimizer + LayoutEngine), and analytics fake-100%-agreement → null.
 - Anti-pattern: **`length === 0` guard ≠ zero-total guard** — an all-zero-weight/count collection (length>0, sum=0) still divides 0/0 → NaN. Guard the denominator. And don't default a rate to 1 on empty input (fake "100%") — return null + render "not enough data".
