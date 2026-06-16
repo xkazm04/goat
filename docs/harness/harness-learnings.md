@@ -24,6 +24,11 @@ Accumulated structural facts discovered by Vibeman pipeline runs. Read this firs
 - **2026-06-16** — Test runner is **Playwright e2e only** (`npm run test:e2e`) — no vitest/unit runner. e2e needs browsers + a running app, so it's not a cheap per-wave gate.
 - **2026-06-16** — `npx eslint` / `next lint` currently **fails to start**: `eslint.config.mjs` imports `eslint-plugin-storybook` which is not installed. Lint gate unavailable until that dep is restored.
 
+## Open follow-ups (from the 2026-06-16 combined UI+Bug scan, Wave 14 — Scattered sweep)
+Wave 14 closed 5 across untouched contexts: palette Escape stopPropagation + parseDomainFilter trimmed-slice, DeferredProviders rAF/timer cleanup, ErrorBoundary records directly (not via lazy window global), fuzzy word-start dedupe + exact offsets.
+- Anti-patterns: two handlers for one key need stopPropagation; a cleanup returned from inside a rAF/timer callback is swallowed (clear ids from the useEffect cleanup); a side-effect global probed via `if (window.__X__)` no-ops until the installing module is imported — call it directly to install eagerly; tokenized-string offset math must use the same normalized string it matched.
+- Cumulative Waves 1–14: 61 functional findings closed + 4 security mitigated, TS held at 53, 0 regressions. Remaining work is deferred/infra (migrations, decisions, schema) + scattered low-sev (challenges timezone, top-groups chunking, ai-item gemini schema).
+
 ## Open follow-ups (from the 2026-06-16 combined UI+Bug scan, Wave 13 — Counters/concurrency)
 Wave 13 (T3) closed 3: atomic share view/challenge counters via existing `increment_share_*` RPCs, bookmark optimistic alreadyExists desync, debate quick-reply synchronous re-entrancy guard.
 - Structural fact: **atomic increment RPCs exist** — `increment_share_view_count` / `increment_share_challenge_count` (migration `20251205100000`). Use `supabase.rpc(...)` for counters, NOT read-modify-write. No fork_count / blueprint usage_count RPC yet.
