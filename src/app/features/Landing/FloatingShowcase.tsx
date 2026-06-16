@@ -63,10 +63,22 @@ const TableRow = memo(function TableRow({
 
     return (
         <motion.div
-            className="flex items-center gap-2 px-2 py-1.5 cursor-pointer transition-colors"
+            className="flex items-center gap-2 px-2 py-1.5 cursor-pointer transition-colors rounded focus-ring"
+            role="button"
+            tabIndex={0}
+            aria-label={`Play ${list.title}`}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
             onClick={handleClick}
+            // The hero row is the most prominent ranking entry point; without a
+            // keydown handler it was mouse-only (WCAG 2.1.1), unlike the sibling
+            // MosaicCard. Activate on Enter/Space.
+            onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleClick();
+                }
+            }}
             onContextMenu={handleContextMenu}
             style={{
                 background: isHovered ? `${colors.primary}10` : 'transparent',
