@@ -58,19 +58,20 @@ export function useProgressiveWikiImage({
   autoFetch = true,
   fetchDelay = DEFAULT_FETCH_DELAY_MS,
 }: UseProgressiveWikiImageOptions): UseProgressiveWikiImageResult {
-  // Use individual selectors to get stable references
-  const getImage = useWikiImageStore((state) => state.getImage);
-  const isFetchingStore = useWikiImageStore((state) => state.isFetching);
+  // Subscribe to the actual store DATA (not the getter functions). Selecting the
+  // getter returns a stable reference, so a later fetchImage write into
+  // state.images never re-rendered the component — the image only painted by
+  // accident when the local isFetching toggle happened to re-render. Selecting
+  // the derived value makes store mutations drive re-renders deterministically.
   const hasFailedStore = useWikiImageStore((state) => state.hasFailed);
   const fetchImage = useWikiImageStore((state) => state.fetchImage);
+  const cachedImage = useWikiImageStore((state) => state.images.get(itemTitle) ?? null);
+  const isStoreFetching = useWikiImageStore((state) => state.fetching.has(itemTitle));
 
   const [isFetching, setIsFetching] = useState(false);
   const hasFetchedRef = useRef(false);
 
-  // Get cached image
-  const cachedImage = getImage(itemTitle);
   const hasFailed = hasFailedStore(itemTitle);
-  const isStoreFetching = isFetchingStore(itemTitle);
 
   // Final image URL (priority: existing > cached > null)
   const imageUrl = existingImage || cachedImage || null;
@@ -105,7 +106,8 @@ export function useProgressiveWikiImage({
 
   // Manual refetch
   const refetch = useCallback(async () => {
-    if (isFetchingStore(itemTitle)) return;
+    // Read current fetching state at call time (callback, not render).
+    if (useWikiImageStore.getState().fetching.has(itemTitle)) return;
 
     setIsFetching(true);
     try {
@@ -113,7 +115,7 @@ export function useProgressiveWikiImage({
     } finally {
       setIsFetching(false);
     }
-  }, [itemTitle, isFetchingStore, fetchImage]);
+  }, [itemTitle, fetchImage]);
 
   return {
     imageUrl,
