@@ -550,9 +550,9 @@ function HierarchicalFacetSection({
                   <HierarchicalNodeItem
                     key={node.value}
                     node={node}
-                    isExpanded={expandedNodes.has(node.value)}
-                    onToggleExpand={() => toggleNode(node.value)}
-                    onSelect={(value) => onSelectValue(value)}
+                    expandedNodes={expandedNodes}
+                    onToggleNode={toggleNode}
+                    onSelectValue={onSelectValue}
                     onDrillDown={
                       onDrillDown
                         ? (path) => onDrillDown(facet.definition.id, path)
@@ -561,6 +561,7 @@ function HierarchicalFacetSection({
                     showCounts={showCounts}
                     showBars={showBars}
                     compact={compact}
+                    path={[]}
                   />
                 ))}
               </div>
@@ -590,28 +591,43 @@ function HierarchicalFacetSection({
  */
 interface HierarchicalNodeItemProps {
   node: HierarchicalFacetNode;
-  isExpanded: boolean;
-  onToggleExpand: () => void;
-  onSelect: (value: string) => void;
+  /** Set of expanded node path-keys (full `parent/child/...` path), shared across all depths. */
+  expandedNodes: Set<string>;
+  /** Toggle a node's expansion by its full path-key. */
+  onToggleNode: (pathKey: string) => void;
+  /** Select a node by its full path value (matches how the index keys nodes). */
+  onSelectValue: (value: string) => void;
   onDrillDown?: (path: string[]) => void;
   showCounts: boolean;
   showBars: boolean;
   compact: boolean;
   depth?: number;
+  /** Accumulated ancestor values (excludes this node). */
+  path?: string[];
 }
 
 function HierarchicalNodeItem({
   node,
-  isExpanded,
-  onToggleExpand,
-  onSelect,
+  expandedNodes,
+  onToggleNode,
+  onSelectValue,
   onDrillDown,
   showCounts,
   showBars,
   compact,
   depth = 0,
+  path = [],
 }: HierarchicalNodeItemProps) {
   const hasChildren = node.children.length > 0;
+  // Full path identifies this node uniquely at any depth. The index keys child
+  // nodes by `parent/child` (FacetExtractor), so selection/expansion must use
+  // the full path, not the bare leaf value — otherwise nested selections never
+  // match the index and grandchildren can't track their own expand state.
+  const fullPath = [...path, node.value];
+  const pathKey = fullPath.join('/');
+  const selectionValue = pathKey;
+  const isExpanded = expandedNodes.has(pathKey);
+  const onToggleExpand = () => onToggleNode(pathKey);
 
   return (
     <div style={{ marginLeft: depth * 12 }}>
@@ -650,7 +666,7 @@ function HierarchicalNodeItem({
               ? 'bg-primary border-primary text-primary-foreground'
               : 'border-border hover:border-primary'
           )}
-          onClick={() => onSelect(node.value)}
+          onClick={() => onSelectValue(selectionValue)}
         >
           {node.selected && <span className="text-xs">✓</span>}
         </button>
@@ -660,9 +676,9 @@ function HierarchicalNodeItem({
           className="flex-1 text-left truncate"
           onClick={() => {
             if (hasChildren && onDrillDown) {
-              onDrillDown([node.value]);
+              onDrillDown(fullPath);
             } else {
-              onSelect(node.value);
+              onSelectValue(selectionValue);
             }
           }}
         >
@@ -697,13 +713,15 @@ function HierarchicalNodeItem({
                 <HierarchicalNodeItem
                   key={child.value}
                   node={child}
-                  isExpanded={false}
-                  onToggleExpand={() => {}}
-                  onSelect={onSelect}
+                  expandedNodes={expandedNodes}
+                  onToggleNode={onToggleNode}
+                  onSelectValue={onSelectValue}
+                  onDrillDown={onDrillDown}
                   showCounts={showCounts}
                   showBars={showBars}
                   compact={compact}
                   depth={depth + 1}
+                  path={fullPath}
                 />
               ))}
             </div>
