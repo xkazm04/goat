@@ -8,15 +8,14 @@
  *   Sync: grid-store → session-store (via derived-session-sync subscriber).
  *         NO other store may mutate grid positions directly.
  *
- * This store is the authoritative handler for all drag-and-drop operations in the application.
- * It uses TransferProtocol utilities for consistent ID parsing and handles:
- * - Backlog to grid assignment
- * - Grid to grid move/swap
- * - Position validation
- * - Session synchronization
+ * This store owns grid state and the atomic placement actions (assignItemToGrid,
+ * moveGridItem, assignToNextOpenSlot). Drag-END resolution is owned by the single
+ * DragOperationRouter (see src/lib/dnd/operations): the live path is
+ * SimpleMatchGrid -> getGridDragRouter().handleDragEnd(event, getStoreContext()).
+ * The store's handleDragEnd delegates to that same router so the two can never
+ * diverge (it previously reimplemented a second, contradictory assign engine).
  *
  * Session-store handles session persistence, backlog-store handles backlog groups.
- * Components should use useMatchGridState().handleDragEnd which delegates here.
  */
 import { DragEndEvent } from '@dnd-kit/core';
 import { create } from 'zustand';
@@ -919,131 +918,19 @@ export const useGridStore = create<GridStoreState>()(
         gridLogger.info(`Tap-to-place: placed item at position ${position}`);
       },
 
-      // Handle drag end events (uses TransferProtocol utilities for ID parsing)
+      // Delegate drag-end resolution to the single DragOperationRouter so this
+      // entry point can never diverge from the live SimpleMatchGrid path.
+      // (Previously this reimplemented a second assign engine that rejected
+      // occupied-slot drops instead of displacing — contradictory semantics
+      // depending on which path a caller happened to invoke.)
       handleDragEnd: (event) => {
-        const { active, over } = event;
-
-        if (!active || !over) {
+        if (!event.over) return;
+        const storeContext = get().getStoreContext();
+        if (!storeContext) {
+          gridLogger.error('Store context unavailable - cannot complete drag operation');
           return;
         }
-
-        const activeId = String(active.id);
-        const overId = String(over.id);
-
-        gridLogger.debug(`Drag end ${activeId} -> ${overId}`);
-
-        // Assert canonical grid ID format in development
-        assertCanonicalGridId(activeId, 'grid-store.handleDragEnd(active)');
-        assertCanonicalGridId(overId, 'grid-store.handleDragEnd(over)');
-
-        // Use TransferProtocol utilities for consistent ID parsing
-        const isActiveFromGrid = isGridReceiverId(activeId);
-        const isTargetGrid = isGridReceiverId(overId);
-
-        // Grid item to grid position (move/swap)
-        if (isActiveFromGrid && isTargetGrid) {
-          const fromPosition = extractGridPosition(activeId);
-          const toPosition = extractGridPosition(overId);
-
-          if (fromPosition !== null && toPosition !== null && fromPosition !== toPosition) {
-            get().moveGridItem(fromPosition, toPosition);
-          }
-          return;
-        }
-
-        // Backlog/external item to grid position (assign)
-        if (!isActiveFromGrid && isTargetGrid) {
-          const toPosition = extractGridPosition(overId);
-
-          if (toPosition === null) {
-            gridLogger.warn(`Invalid grid position from ${overId}`);
-            // Emit validation error to match-store
-            get().emitValidationError('TARGET_POSITION_INVALID');
-            return;
-          }
-
-          // Use lazy accessor to safely get backlog store state
-          // This handles race conditions if user drags before module initializes
-          const backlogState = backlogStoreAccessor.getState();
-
-          if (!backlogState) {
-            gridLogger.error('Backlog store not initialized - cannot complete drag operation');
-            get().emitValidationError('SOURCE_NOT_FOUND');
-            return;
-          }
-
-          // RACE CONDITION FIX: Acquire lock BEFORE validation to prevent
-          // double-click drag placing same item in two grid positions.
-          // If user double-clicks rapidly, second drag will fail to acquire lock.
-          if (!acquireItemLock(activeId)) {
-            gridLogger.warn(`Item ${activeId} is already being assigned (concurrent drag blocked)`);
-            get().emitValidationError('SOURCE_ALREADY_USED');
-            return;
-          }
-
-          try {
-            const state = get();
-
-            // Use ValidationAuthority for comprehensive validation
-            const authority = getValidationAuthority();
-            const validationResult = authority.canTransfer(
-              {
-                itemId: activeId,
-                from: 'backlog',
-                to: 'grid',
-                toPosition,
-              },
-              {
-                gridItems: state.gridItems,
-                maxGridSize: state.maxGridSize,
-              },
-              {
-                getItemById: backlogState.getItemById,
-                isItemUsed: backlogState.isItemUsed,
-                isItemLocked: (id) => itemsBeingAssigned.has(id) && id !== activeId,
-              }
-            );
-
-            // Handle validation failure
-            if (!validationResult.isValid) {
-              logValidationFailure(validationResult, {
-                activeId,
-                overId,
-                operation: 'backlog-to-grid',
-              });
-
-              // Emit error to match-store for UI notification
-              if (validationResult.errorCode) {
-                get().emitValidationError(validationResult.errorCode);
-              }
-              return;
-            }
-
-            // Validation passed - proceed with assignment
-            const item = validationResult.item;
-
-            if (item) {
-              gridLogger.debug(`Validated backlog item:`, {
-                id: item.id,
-                title: extractTitle(item),
-                hasImageUrl: !!item.image_url
-              });
-
-              // Use factory to create grid item with consistent image_url handling
-              const gridItem = createGridItem(item, toPosition);
-
-              // ATOMIC OPERATION: Assign item to grid and mark as used together
-              // This prevents race condition where item appears in multiple positions
-              get().assignItemToGrid(gridItem, toPosition);
-              backlogState.markItemAsUsed(item.id, true);
-
-              gridLogger.info(`Successfully assigned item to position ${toPosition}`);
-            }
-          } finally {
-            // Guarantee lock release regardless of success or error
-            releaseItemLock(activeId);
-          }
-        }
+        getGridDragRouter().handleDragEnd(event, storeContext);
       },
 
       // Emit validation error to validation-notification-store
