@@ -330,8 +330,10 @@ export const FloatingShowcase = memo(function FloatingShowcase() {
                         </button>
                     </div>
 
-                    {/* Three tables side by side */}
-                    <div className="flex gap-4">
+                    {/* Tables: stacked on phones, 2-up on small screens, 3-up on
+                        desktop. A non-wrapping flex row crammed all three into
+                        ~110px columns on mobile (the largest traffic segment). */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {SHOWCASE_CATEGORIES.map(category => (
                             <CategoryTable
                                 key={category}
