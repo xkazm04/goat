@@ -60,6 +60,16 @@ async function fetchBlueprint(slugOrId: string): Promise<Blueprint> {
   return response.json();
 }
 
+// Record a single blueprint view (fire-once, decoupled from the detail GET so
+// refetches don't inflate the count). Best-effort: never throws into the UI.
+export async function trackBlueprintView(slugOrId: string): Promise<void> {
+  try {
+    await fetch(`/api/blueprints/${slugOrId}/view`, { method: 'POST' });
+  } catch {
+    // View tracking is non-critical; swallow network errors.
+  }
+}
+
 // Create a new blueprint
 async function createBlueprint(data: CreateBlueprintRequest): Promise<{ blueprint: Blueprint; shareUrl: string }> {
   const response = await fetch('/api/blueprints', {
