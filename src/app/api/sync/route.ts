@@ -285,8 +285,18 @@ async function processDeleteSession(
   const listId = operation.entityId;
 
   try {
-    // Delete list items first (cascade would handle this but being explicit)
-    await supabase.from('list_items').delete().eq('list_id', listId);
+    // Delete list items first (cascade would handle this but being explicit).
+    // supabase-js returns errors IN-BAND (it does not throw), so the try/catch
+    // alone would report a failed delete as success — the offline queue then
+    // drops the op locally = permanent silent data loss. Check {error} explicitly.
+    const { error } = await supabase.from('list_items').delete().eq('list_id', listId);
+    if (error) {
+      return {
+        operationId: operation.id,
+        success: false,
+        error: error.message,
+      };
+    }
 
     // Note: We don't delete the actual list here - that's a separate operation
     // The session deletion is just about clearing the local ranking data
