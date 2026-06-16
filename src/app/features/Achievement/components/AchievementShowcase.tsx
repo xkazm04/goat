@@ -107,7 +107,10 @@ export function AchievementShowcase({
       totalUnlocked: unlocked.length,
       totalAchievements: showcase.achievements.length,
       totalPoints: showcase.stats.totalPoints,
-      completionPercent: Math.round((unlocked.length / showcase.achievements.length) * 100),
+      // Guard 0/0 — an empty achievements list rendered "NaN%" on this public surface.
+      completionPercent: showcase.achievements.length > 0
+        ? Math.round((unlocked.length / showcase.achievements.length) * 100)
+        : 0,
       byTier,
     };
   }, [showcase]);
@@ -543,7 +546,9 @@ function LockedAchievementCard({ achievement }: { achievement: Achievement }) {
               <div
                 className="h-full rounded-full"
                 style={{
-                  width: `${(achievement.progress.current / achievement.progress.target) * 100}%`,
+                  width: `${achievement.progress.target > 0
+                    ? Math.min((achievement.progress.current / achievement.progress.target) * 100, 100)
+                    : 0}%`,
                   background: tierConfig.gradient,
                 }}
               />
