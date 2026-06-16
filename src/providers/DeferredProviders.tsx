@@ -31,11 +31,18 @@ export function DeferredProviders({ children }: { children: ReactNode }) {
       const id = requestIdleCallback(() => setReady(true), { timeout: 2000 });
       return () => cancelIdleCallback(id);
     } else {
+      // rAF ignores its callback's return value, so the inner setTimeout was
+      // never cleared (and the effect cleanup only cancelled the already-fired
+      // rAF) — a leaked timer + setState-on-unmounted on no-requestIdleCallback
+      // browsers. Capture both ids and clear both from the single effect cleanup.
+      let timer: ReturnType<typeof setTimeout> | undefined;
       const raf = requestAnimationFrame(() => {
-        const timer = setTimeout(() => setReady(true), 0);
-        return () => cancelAnimationFrame(raf);
+        timer = setTimeout(() => setReady(true), 0);
       });
-      return () => cancelAnimationFrame(raf);
+      return () => {
+        cancelAnimationFrame(raf);
+        if (timer) clearTimeout(timer);
+      };
     }
   }, []);
 
