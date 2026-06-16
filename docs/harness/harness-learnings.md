@@ -24,6 +24,12 @@ Accumulated structural facts discovered by Vibeman pipeline runs. Read this firs
 - **2026-06-16** — Test runner is **Playwright e2e only** (`npm run test:e2e`) — no vitest/unit runner. e2e needs browsers + a running app, so it's not a cheap per-wave gate.
 - **2026-06-16** — `npx eslint` / `next lint` currently **fails to start**: `eslint.config.mjs` imports `eslint-plugin-storybook` which is not installed. Lint gate unavailable until that dep is restored.
 
+## Open follow-ups (from the 2026-06-16 combined UI+Bug scan, Wave 8 — Theming)
+Wave 8 (theming/dark-mode) closed 5: z-9 backdrop (undefined utility → real zIndex), ResizeObserver created-once + CSS var px units, theme-support dead-doc corrected, and dropped the broken `light` theme (dark-only tokens, no `.light` overrides).
+- Structural fact: **design-tokens.css tokens are dark-only `:root` with NO `.light` overrides**; `globals.css` scopes per theme class but design-tokens.css doesn't. `light` is now unregistered — re-adding needs a real light palette (followups #6).
+- Anti-pattern: **an undefined Tailwind utility (e.g. `z-9`) silently emits nothing** in this token-scoped setup — verify against the named scale (z-sticky/z-toast) or use inline values. Custom props need explicit px (no React auto-suffix).
+- Cumulative Waves 1–8: 34 functional findings closed + 4 security mitigated, TS held at 53, 0 regressions.
+
 ## Open follow-ups (from the 2026-06-16 combined UI+Bug scan, Wave 7 — Resource leaks)
 Wave 7 (lifecycle/cleanup leaks) closed 5: InteractivePreview body scroll-lock (useEffect cleanup), usePanelResize listener teardown on unmount, ParallaxLayer conditional will-change, Card3D onTouchCancel + touch-action, AI image cache key now includes dimensions (wrong-size cache hit).
 - Anti-pattern: **a global side effect set in a handler needs a lifecycle-bound undo** — teardown bound only to a symmetric "end" event (close/mouseup/touchend) leaks if that event never fires (unmount, touchcancel). Use useEffect cleanup or a ref-stored teardown invoked on unmount, and handle every "end" event's cancel sibling.

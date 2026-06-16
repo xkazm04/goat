@@ -76,6 +76,15 @@ were intentionally NOT attempted in an automated sweep:
    (+ `GOAT_API_KEYS_PRO`) and `AGENT_BRIDGE_SECRET` — until set, those two
    endpoints keep their permissive dev behavior.
 
+## 6. Light-mode token palette (design-tokens #1) — DEFERRED
+Wave 8 dropped the broken `light` theme from the registered themes (tokens are
+dark-only `:root` with no `.light` overrides). To actually support light mode:
+author `.light { --surface-card; --icon-default; --placeholder-color;
+--focus-offset; ... }` overrides in `src/app/design-tokens.css` (mirror how
+`globals.css` scopes `--background`/`--border` per theme class), then re-add
+`'light'` to the `themes` array in `layout.tsx` and add a theme switcher. Needs
+design input on the light palette.
+
 ## 5. Clone API wiring (templates #4) — defer to security wave
 "Use template" never calls the clone route, so `clone_count` is always 0. But the
 clone route trusts `body.userId` with no auth (IDOR). Wire the UI call only
