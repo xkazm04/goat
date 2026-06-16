@@ -24,6 +24,13 @@ Accumulated structural facts discovered by Vibeman pipeline runs. Read this firs
 - **2026-06-16** — Test runner is **Playwright e2e only** (`npm run test:e2e`) — no vitest/unit runner. e2e needs browsers + a running app, so it's not a cheap per-wave gate.
 - **2026-06-16** — `npx eslint` / `next lint` currently **fails to start**: `eslint.config.mjs` imports `eslint-plugin-storybook` which is not installed. Lint gate unavailable until that dep is restored.
 
+## Open follow-ups (from the 2026-06-16 combined UI+Bug scan, Wave 11 — A11y/reduced-motion)
+Wave 11 (T5) closed 5: page-transition tier-aware (WCAG 2.3.3), use3DTilt ORs !allowInteraction, AnimatedCounter/SuccessCelebration SSR-safe motion hook, hero rows keyboard-operable (role/tabIndex/aria/Enter-Space), RankingProgressLayer uses 3-tier + data-motion-tier.
+- Structural fact: motion system is `useMotionPreference`/`useMotionCapabilities` (3-tier, SSR-safe via useSyncExternalStore, `getServerSnapshot`='full') in `@/hooks/use-motion-preference`. The system-only `useReducedMotion` (`@/hooks/use-reduced-motion`) is **deprecated** — don't use it. `globals.css` has `[data-motion-tier="reduced"|"minimal"]` guards that only engage if a component emits `data-motion-tier`.
+- Anti-pattern: **client-only preference read during render = hydration mismatch** — use the SSR-safe hook, not `prefersReducedMotion()` in the render body. And gating that exists but never engages (pervasive animations bypassing the motion system) is worse than none.
+- Remaining a11y (lower sev): GlassModal/UniversalSelect ARIA, ItemDetailPopup dialog semantics, Achievement reduced-motion.
+- Cumulative Waves 1–11: 48 functional findings closed + 4 security mitigated, TS held at 53, 0 regressions.
+
 ## Open follow-ups (from the 2026-06-16 combined UI+Bug scan, Wave 10 — Mobile/responsive)
 Wave 10 (T11) closed 5: MasonryGrid inline gridTemplateColumns (was Tailwind-JIT-collapsed to 1 col in prod), Studio grid base grid-cols-2, hero tables responsive grid, onboarding cards flex-col sm:flex-row, facet drawer dragListener=false.
 - Anti-pattern: **dynamic Tailwind class names (`grid-cols-${n}`) emit no CSS** — JIT only sees static strings; use inline style / literal lookup / safelist. And always set the PHONE base first, scale up (desktop-first fixed columns break mobile).
