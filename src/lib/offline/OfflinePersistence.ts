@@ -379,6 +379,26 @@ class OfflinePersistence {
       this.notifyQueueChange();
     } catch (error) {
       sessionLogger.debug('Queue processing failed', error);
+      // A thrown fetch (network drop, abort, DNS failure) is the most common
+      // offline failure and skips both the !ok and per-result revert paths,
+      // leaving ops stuck 'in_progress' forever — invisible to getPendingOperations,
+      // the pending count, and every future sync (silent data loss). Revert any
+      // op still in_progress back to 'pending' so it is retried when back online.
+      try {
+        const allOps = await this.getAllOperations();
+        const stranded = allOps.filter((op) => op.status === 'in_progress');
+        for (const op of stranded) {
+          await this.updateOperation({
+            ...op,
+            status: 'pending',
+            retryCount: op.retryCount + 1,
+            lastError: error instanceof Error ? error.message : 'Sync failed',
+          });
+        }
+        if (stranded.length > 0) this.notifyQueueChange();
+      } catch (revertError) {
+        sessionLogger.debug('Failed to revert stranded in_progress ops', revertError);
+      }
     } finally {
       this.isProcessing = false;
     }
