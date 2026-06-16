@@ -122,8 +122,15 @@ export function useBookmarks(userId: string) {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: bookmarkKeys.user(userId) });
     },
-    onSuccess: () => {
-      toast({ title: 'Saved', description: 'List bookmarked!' });
+    onSuccess: (data) => {
+      // The POST returns { alreadyExists: true } (200) when the list was already
+      // bookmarked (e.g. added in another tab). Don't claim "Saved" for a no-op —
+      // the optimistic temp row reconciles to the real one via onSettled invalidation.
+      if (data?.data?.alreadyExists) {
+        toast({ title: 'Already saved', description: 'This list is already in your bookmarks.' });
+      } else {
+        toast({ title: 'Saved', description: 'List bookmarked!' });
+      }
     },
   });
 
