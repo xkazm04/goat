@@ -24,6 +24,12 @@ Accumulated structural facts discovered by Vibeman pipeline runs. Read this firs
 - **2026-06-16** — Test runner is **Playwright e2e only** (`npm run test:e2e`) — no vitest/unit runner. e2e needs browsers + a running app, so it's not a cheap per-wave gate.
 - **2026-06-16** — `npx eslint` / `next lint` currently **fails to start**: `eslint.config.mjs` imports `eslint-plugin-storybook` which is not installed. Lint gate unavailable until that dep is restored.
 
+## Open follow-ups (from the 2026-06-16 combined UI+Bug scan, Wave 9 — Wrong-data-source)
+Wave 9 (T8) closed 4: RankingDistribution zeroed-stats→empty + chart un-truncated (cap 100, median line clamped), stats route ranks the full population (not the queried subset), removed the vacuous list-preview "avg rank" stat.
+- Anti-pattern: **a rank/stat is only meaningful against its true population** — ranking a requested subset, averaging positions (~(N+1)/2), or zero-filling "no data" all fabricate confident-but-wrong numbers. Rank vs the real population, return null/empty for no-data, drop stats with no real metric.
+- Deferred: list-preview #4 thumbnails `.order('ranking')` on list_items — needs schema confirmation of which table owns `ranking`.
+- Cumulative Waves 1–9: 38 functional findings closed + 4 security mitigated, TS held at 53, 0 regressions.
+
 ## Open follow-ups (from the 2026-06-16 combined UI+Bug scan, Wave 8 — Theming)
 Wave 8 (theming/dark-mode) closed 5: z-9 backdrop (undefined utility → real zIndex), ResizeObserver created-once + CSS var px units, theme-support dead-doc corrected, and dropped the broken `light` theme (dark-only tokens, no `.light` overrides).
 - Structural fact: **design-tokens.css tokens are dark-only `:root` with NO `.light` overrides**; `globals.css` scopes per theme class but design-tokens.css doesn't. `light` is now unregistered — re-adding needs a real light palette (followups #6).
