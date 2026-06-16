@@ -672,6 +672,11 @@ export const useStudioStore = create<StudioState>()(
         selectedProfileId: state.selectedProfileId,
         customProfile: state.customProfile,
         appliedTemplateId: state.appliedTemplateId,
+        // Persist these too so a returning user keeps their draft fully — they
+        // were omitted, silently losing the list-size + custom-items choice and
+        // contradicting the "Save Draft / return later" promise.
+        listSize: state.listSize,
+        allowCustomItems: state.allowCustomItems,
       }),
     }
   )
