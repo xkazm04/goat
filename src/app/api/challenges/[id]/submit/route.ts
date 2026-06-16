@@ -125,6 +125,12 @@ export async function POST(request: NextRequest, context: RouteContext) {
       finalScore = bonusResult.finalScore;
     }
 
+    // Persist the bonused score back onto the stored submission BEFORE building
+    // the leaderboard — submitRanking returns the same object the manager stores
+    // and getLeaderboard ranks on `submission.score`. Without this the user saw
+    // "your score: <bonused>" but was ranked by the un-bonused base score.
+    submission.score = finalScore;
+
     // Get updated leaderboard
     const leaderboard = await challengeManager.getLeaderboard(challengeId, 10, userId);
 
