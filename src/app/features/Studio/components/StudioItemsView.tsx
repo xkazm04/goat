@@ -24,7 +24,10 @@ import { StudioItemCard } from './StudioItemCard';
 
 
 
-const DEFAULT_GRID_CLASS = 'grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3';
+// Base at 2 columns for phones (the grid previously started at 4, giving ~70px
+// cards with truncated titles and untappable affordances), scaling up on larger
+// screens. All static literals so Tailwind generates them.
+const DEFAULT_GRID_CLASS = 'grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3';
 
 interface StudioItemsViewProps {
   gridClassName?: string;
