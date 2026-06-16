@@ -182,7 +182,10 @@ export const ParallaxLayer = memo(function ParallaxLayer({
         scale,
         rotate,
         zIndex,
-        willChange: 'transform, opacity',
+        // Don't force permanent GPU layer promotion when effects are disabled /
+        // reduced-motion — the transforms are neutralized, so a hardcoded
+        // will-change would keep every layer on the compositor for nothing.
+        willChange: effectsDisabled ? 'auto' : 'transform, opacity',
         ...(motionStyle || {}),
       }}
     >
