@@ -337,6 +337,14 @@ export interface GridStoreState {
 
   // Actions - Item placement
   assignItemToGrid: (item: BacklogItem | GridItemType, position: number) => void;
+  /**
+   * Atomically place an item into the next open grid slot: locks the item,
+   * reads fresh grid state, assigns, verifies the placement actually took, and
+   * only then marks the item used. Returns the placed position, or null if no
+   * slot was free / the placement did not take. Used by mobile swipe-to-rank so
+   * a contested slot can't "phantom-succeed".
+   */
+  assignToNextOpenSlot: (item: BacklogItem | GridItemType) => number | null;
   removeItemFromGrid: (position: number) => void;
   removeItemByItemId: (itemId: string) => void;
   moveGridItem: (fromPosition: number, toPosition: number) => void;
@@ -611,6 +619,49 @@ export const useGridStore = create<GridStoreState>()(
           return update;
         });
       },
+
+      // Atomically place an item into the next open slot (mobile swipe-to-rank).
+      assignToNextOpenSlot: (item): number | null => {
+        // Backlog item id used for locking + marking used (nested for a GridItemType).
+        const markId = ('item' in item && item.item?.id) ? item.item.id : (item as BacklogItem).id;
+        if (!markId) return null;
+
+        // Lock so a rapid double-swipe of the SAME card can't double-place it,
+        // mirroring the desktop drag path's acquireItemLock guard.
+        if (!acquireItemLock(markId)) {
+          gridLogger.warn(`assignToNextOpenSlot: ${markId} already being assigned`);
+          return null;
+        }
+
+        try {
+          // Read FRESH grid state inside the action (not a caller's stale snapshot)
+          // and find the next open slot.
+          const { gridItems, maxGridSize } = get();
+          let position: number | null = null;
+          for (let i = 0; i < maxGridSize; i++) {
+            if (!gridItems[i]?.context.matched) {
+              position = i;
+              break;
+            }
+          }
+          if (position === null) return null;
+
+          get().assignItemToGrid(item, position);
+
+          // assignItemToGrid silently no-ops on an already-filled slot. The slot
+          // was empty in our fresh read above, so if it is matched now WE placed
+          // it. Only then mark the item used — otherwise a contested slot would
+          // remove the item from the backlog without ever placing it (lost item).
+          const placed = get().gridItems[position]?.context.matched === true;
+          if (!placed) return null;
+
+          backlogStoreAccessor.getState()?.markItemAsUsed(markId, true);
+          return position;
+        } finally {
+          releaseItemLock(markId);
+        }
+      },
+
       // Remove an item from a grid position
       removeItemFromGrid: (position) => {
         set(state => {
