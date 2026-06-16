@@ -24,6 +24,12 @@ Accumulated structural facts discovered by Vibeman pipeline runs. Read this firs
 - **2026-06-16** — Test runner is **Playwright e2e only** (`npm run test:e2e`) — no vitest/unit runner. e2e needs browsers + a running app, so it's not a cheap per-wave gate.
 - **2026-06-16** — `npx eslint` / `next lint` currently **fails to start**: `eslint.config.mjs` imports `eslint-plugin-storybook` which is not installed. Lint gate unavailable until that dep is restored.
 
+## Open follow-ups (from the 2026-06-16 combined UI+Bug scan, Wave 12 — Cleanup)
+Wave 12 (a11y + interaction cleanup) closed 5: GestureRecognizer pinch→drag re-seed (phantom swipe), UniversalSelect combobox/listbox/option ARIA + clear label, GlassModal close aria-label, ItemDetailPopup dialog semantics, pinch-zoom snap-on-release-only.
+- Anti-pattern: **keyboard mechanics without ARIA = invisible UX** (custom select had arrow-keys but no roles); build them together. And **state machines must handle partial transitions** — resetting only on the terminal event (all fingers up) leaks stale state on one-finger-lift.
+- Deferred: StatsCard magic-string color (visual-risk behavior change); ItemDetailPopup focus trap/restore (non-modal stacking — auto-focus would steal focus).
+- Cumulative Waves 1–12: 53 functional findings closed + 4 security mitigated, TS held at 53, 0 regressions.
+
 ## Open follow-ups (from the 2026-06-16 combined UI+Bug scan, Wave 11 — A11y/reduced-motion)
 Wave 11 (T5) closed 5: page-transition tier-aware (WCAG 2.3.3), use3DTilt ORs !allowInteraction, AnimatedCounter/SuccessCelebration SSR-safe motion hook, hero rows keyboard-operable (role/tabIndex/aria/Enter-Space), RankingProgressLayer uses 3-tier + data-motion-tier.
 - Structural fact: motion system is `useMotionPreference`/`useMotionCapabilities` (3-tier, SSR-safe via useSyncExternalStore, `getServerSnapshot`='full') in `@/hooks/use-motion-preference`. The system-only `useReducedMotion` (`@/hooks/use-reduced-motion`) is **deprecated** — don't use it. `globals.css` has `[data-motion-tier="reduced"|"minimal"]` guards that only engage if a component emits `data-motion-tier`.
