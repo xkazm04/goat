@@ -642,6 +642,10 @@ export class LayoutEngine {
       totalWeight += weight;
     }
 
+    // Degenerate zero-area cells make totalWeight 0 (length>0 so the guard above
+    // doesn't fire) → NaN mass → NaN balance score. Treat as neutral/balanced.
+    if (totalWeight === 0) return 1;
+
     const massX = weightedX / totalWeight;
     const massY = weightedY / totalWeight;
 
