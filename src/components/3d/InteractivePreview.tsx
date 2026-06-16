@@ -123,23 +123,30 @@ export const InteractivePreview = memo(function InteractivePreview({
 
     setIsOpen(true);
     onOpen?.();
-
-    // Lock body scroll
-    document.body.style.overflow = 'hidden';
+    // Body scroll lock is handled by the effect below (keyed on isOpen) so it is
+    // always restored — even if the component unmounts while open.
   }, [effectsDisabled, onOpen]);
 
   const handleClose = useCallback(() => {
     setIsOpen(false);
     onClose?.();
 
-    // Restore body scroll
-    document.body.style.overflow = '';
-
     // Restore focus
     if (previousActiveElement.current instanceof HTMLElement) {
       previousActiveElement.current.focus();
     }
   }, [onClose]);
+
+  // Lock body scroll while open; the cleanup guarantees restoration on unmount
+  // or when isOpen flips false. Previously the lock was set/cleared imperatively
+  // in handlers, so unmounting while open left the page permanently scroll-locked.
+  useEffect(() => {
+    if (!isOpen) return;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
 
   // Handle escape key
   useEffect(() => {
