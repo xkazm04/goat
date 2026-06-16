@@ -18,6 +18,7 @@ import { SURFACE_ELEVATION } from '@/components/visual/depth/depth-tokens';
 import { GoatMascot } from '@/components/visual/GoatMascot';
 import { DURATION } from '@/lib/animations/motion-presets';
 import { useStudioItems, useStudioGeneration, useStudioValidation, useStudioStore } from '@/stores/studio-store';
+import { getStudioItemId } from '@/types/studio';
 
 import { StudioItemCard } from './StudioItemCard';
 
@@ -41,9 +42,7 @@ export function StudioItemsView({ gridClassName = DEFAULT_GRID_CLASS }: StudioIt
     })
   );
 
-  const sortableIds = generatedItems.map((item) =>
-    `item-${item.db_item_id || item.title}`
-  );
+  const sortableIds = generatedItems.map((item) => getStudioItemId(item));
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -176,7 +175,7 @@ export function StudioItemsView({ gridClassName = DEFAULT_GRID_CLASS }: StudioIt
               <AnimatePresence initial={false}>
                 {generatedItems.map((item, index) => (
                   <motion.div
-                    key={item.title}
+                    key={getStudioItemId(item)}
                     initial={{ opacity: 0, scale: 0.85, y: 16 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.9, y: -8 }}

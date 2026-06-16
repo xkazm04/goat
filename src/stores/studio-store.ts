@@ -320,7 +320,9 @@ export const useStudioStore = create<StudioState>()(
 
             case 'item': {
               if (isStale()) return;
-              const item = parsed.data;
+              // Stamp a stable uid so duplicate titles never collide on React
+              // keys / dnd-kit sortable ids downstream.
+              const item = { ...parsed.data, uid: parsed.data.uid ?? crypto.randomUUID() };
               const titleKey = item.title.toLowerCase().trim();
               // Filter duplicates (case-insensitive)
               if (!existingTitles.includes(titleKey)) {
@@ -520,7 +522,8 @@ export const useStudioStore = create<StudioState>()(
 
   addItem: (item) => {
     const { generatedItems } = get();
-    set({ generatedItems: [...generatedItems, item] });
+    const withId = { ...item, uid: item.uid ?? crypto.randomUUID() };
+    set({ generatedItems: [...generatedItems, withId] });
   },
 
   // Metadata actions
@@ -604,6 +607,7 @@ export const useStudioStore = create<StudioState>()(
       description: item.description,
       wikipedia_url: item.wikipedia_url,
       image_url: null,
+      uid: crypto.randomUUID(),
     }));
 
     set({
