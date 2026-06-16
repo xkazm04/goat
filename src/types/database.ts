@@ -864,6 +864,15 @@ export interface Database {
         };
         Returns: string;
       };
+      // Atomic counter increments (migration 20260616000000_add_increment_counter_rpcs).
+      increment_share_fork_count: {
+        Args: { share_id: string };
+        Returns: undefined;
+      };
+      increment_blueprint_usage_count: {
+        Args: { blueprint_id: string };
+        Returns: undefined;
+      };
     };
     Enums: {
       [_ in never]: never;

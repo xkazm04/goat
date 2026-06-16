@@ -51,11 +51,21 @@ export const GET = withErrorHandler(
 
     const blueprint = blueprintFromRow(data as BlueprintRow);
 
-    // Increment usage count (view tracking)
-    await supabase
-      .from('blueprints')
-      .update({ usage_count: (data.usage_count || 0) + 1 })
-      .eq('id', data.id);
+    // Increment usage count atomically (avoids lost concurrent increments).
+    // Falls back to read-modify-write if the RPC isn't present yet (safe to
+    // deploy before 20260616000000_add_increment_counter_rpcs.sql is applied).
+    // NOTE: this still runs on every detail GET (incl. React Query refetch), so
+    // it can over-count — moving tracking to a dedicated fire-once call is a
+    // documented follow-up (followups-2026-06-16.md #7).
+    const { error: usageRpcError } = await supabase.rpc('increment_blueprint_usage_count', {
+      blueprint_id: data.id,
+    });
+    if (usageRpcError) {
+      await supabase
+        .from('blueprints')
+        .update({ usage_count: (data.usage_count || 0) + 1 })
+        .eq('id', data.id);
+    }
 
     return successResponse(blueprint);
   }

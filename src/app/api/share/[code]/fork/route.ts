@@ -106,11 +106,19 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       }
     }
 
-    // 4. Increment fork_count on the original shared ranking
-    await supabase
-      .from('shared_rankings')
-      .update({ fork_count: (original.fork_count || 0) + 1 })
-      .eq('id', original.id);
+    // 4. Increment fork_count atomically (avoids lost concurrent forks). Falls
+    //    back to a read-modify-write if the RPC isn't present yet, so the app is
+    //    safe to deploy before the migration that adds increment_share_fork_count
+    //    (supabase/migrations/20260616000000_add_increment_counter_rpcs.sql).
+    const { error: rpcError } = await supabase.rpc('increment_share_fork_count', {
+      share_id: original.id,
+    });
+    if (rpcError) {
+      await supabase
+        .from('shared_rankings')
+        .update({ fork_count: (original.fork_count || 0) + 1 })
+        .eq('id', original.id);
+    }
 
     return NextResponse.json({
       success: true,
