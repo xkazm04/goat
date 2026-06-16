@@ -141,6 +141,11 @@ export function MobileFacetDrawer({
             }}
             drag="y"
             dragControls={dragControls}
+            // Only the drag handle (onPointerDown → dragControls.start) initiates
+            // dismissal. Without this, drag="y" made the entire sheet draggable,
+            // so a downward swipe starting in the scrollable facet list competed
+            // with native scroll and could accidentally drag-dismiss the drawer.
+            dragListener={false}
             dragConstraints={{ top: 0 }}
             dragElastic={0.2}
             onDragEnd={handleDragEnd}
