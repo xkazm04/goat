@@ -40,11 +40,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Increment view count
-    await supabase
-      .from('shared_rankings')
-      .update({ view_count: data.view_count + 1 })
-      .eq('id', data.id);
+    // Atomic increment (Postgres RPC) — a JS read-modify-write loses concurrent
+    // views under traffic, systematically under-counting this social-proof stat.
+    await supabase.rpc('increment_share_view_count', { share_id: data.id });
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://goat.app';
 
@@ -94,11 +92,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Increment challenge count on original
-    await supabase
-      .from('shared_rankings')
-      .update({ challenge_count: original.challenge_count + 1 })
-      .eq('id', original.id);
+    // Atomic increment (Postgres RPC) — avoids lost concurrent challenges.
+    await supabase.rpc('increment_share_challenge_count', { share_id: original.id });
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://goat.app';
 
