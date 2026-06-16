@@ -24,6 +24,12 @@ Accumulated structural facts discovered by Vibeman pipeline runs. Read this firs
 - **2026-06-16** — Test runner is **Playwright e2e only** (`npm run test:e2e`) — no vitest/unit runner. e2e needs browsers + a running app, so it's not a cheap per-wave gate.
 - **2026-06-16** — `npx eslint` / `next lint` currently **fails to start**: `eslint.config.mjs` imports `eslint-plugin-storybook` which is not installed. Lint gate unavailable until that dep is restored.
 
+## Open follow-ups (from the 2026-06-16 combined UI+Bug scan, Wave 15 — Scattered sweep #2)
+Wave 15 closed 5: ItemInspector Add-to-Grid wired (reuses Wave-3 assignToNextOpenSlot), getBulkItems chunks >100 groups, achievement reveal re-sequences per id, invitation accept/decline match exact placeholder, achievement confetti gated on reduced motion.
+- Anti-patterns: a stubbed handler that logs-and-returns while the UI signals success (wire or hide); a server-only cap with no client chunking (whole call fails — chunk+merge); blanket placeholder matching (`startsWith('pending_')`) collides across concurrent entities (match exact id).
+- Remaining a11y: achievement looping trophy/rings + Card/Toast still need reduced-motion gating.
+- Cumulative Waves 1–15: 66 functional findings closed + 4 security mitigated, TS held at 53, 0 regressions. Remaining: deferred/infra (migrations, decisions, schema) + a few scattered low-sev (challenges streak timezone, ai-item gemini schema).
+
 ## Open follow-ups (from the 2026-06-16 combined UI+Bug scan, Wave 14 — Scattered sweep)
 Wave 14 closed 5 across untouched contexts: palette Escape stopPropagation + parseDomainFilter trimmed-slice, DeferredProviders rAF/timer cleanup, ErrorBoundary records directly (not via lazy window global), fuzzy word-start dedupe + exact offsets.
 - Anti-patterns: two handlers for one key need stopPropagation; a cleanup returned from inside a rAF/timer callback is swallowed (clear ids from the useEffect cleanup); a side-effect global probed via `if (window.__X__)` no-ops until the installing module is imported — call it directly to install eagerly; tokenized-string offset math must use the same normalized string it matched.
