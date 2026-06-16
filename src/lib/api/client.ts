@@ -228,9 +228,14 @@ export class ApiClient {
       ApiClient.DEFAULT_TIMEOUT_MS
     );
 
-    // Chain with any existing signal
+    // Chain with any existing external signal. Use a NAMED handler removed in the
+    // finally below: previously an anonymous listener was added and never removed,
+    // so a reused/long-lived signal (a component- or app-scoped AbortSignal)
+    // accumulated one listener per request — each pinning a per-request
+    // AbortController + timeout closure (slow leak + O(n) abort fan-out).
+    const onExternalAbort = () => controller.abort();
     if (options.signal) {
-      options.signal.addEventListener('abort', () => controller.abort());
+      options.signal.addEventListener('abort', onExternalAbort, { once: true });
     }
 
     const config: RequestInit = {
@@ -329,6 +334,13 @@ export class ApiClient {
       );
       trackApiError(unknownError, endpoint, method, requestId);
       throw unknownError;
+    } finally {
+      // Always detach the external-signal listener so it can't outlive the
+      // request (the timeout is already cleared on both the success and catch
+      // paths above, before the response body is read).
+      if (options.signal) {
+        options.signal.removeEventListener('abort', onExternalAbort);
+      }
     }
   }
 
