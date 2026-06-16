@@ -28,7 +28,9 @@ export function AchievementReveal({
   const [showCard, setShowCard] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
 
-  // Auto-close timer
+  // Auto-close timer — keyed on achievement.id too so a back-to-back unlock
+  // restarts the 5s timer instead of letting the first achievement's timer close
+  // the modal mid-reveal of the second.
   useEffect(() => {
     if (isOpen && autoClose) {
       const timer = setTimeout(() => {
@@ -36,22 +38,20 @@ export function AchievementReveal({
       }, autoCloseDelay);
       return () => clearTimeout(timer);
     }
-  }, [isOpen, autoClose, autoCloseDelay, onClose]);
+  }, [isOpen, autoClose, autoCloseDelay, onClose, achievement?.id]);
 
-  // Animation sequence
+  // Animation sequence — re-runs per achievement (id in deps), so when the parent
+  // swaps `achievement` while isOpen stays true the confetti/card re-sequence for
+  // the new one (previously they only ran once on open → wrong tier/no burst).
   useEffect(() => {
     if (isOpen) {
-      // Start confetti immediately
+      // Reset to the start of the sequence for this achievement.
+      setShowCard(false);
       setShowConfetti(true);
-      // Show card after burst animation
       const cardTimer = setTimeout(() => setShowCard(true), 600);
-      return () => {
-        clearTimeout(cardTimer);
-        setShowCard(false);
-        setShowConfetti(false);
-      };
+      return () => clearTimeout(cardTimer);
     }
-  }, [isOpen]);
+  }, [isOpen, achievement?.id]);
 
   if (!achievement) return null;
 
