@@ -52,7 +52,12 @@ engine if scoring is the intended product. This is a product call, not a fix.
 **Update (Wave 16):** `supabase/migrations/20260616000000_add_increment_counter_rpcs.sql`
 adds `increment_share_fork_count` + `increment_blueprint_usage_count`, and the
 fork/blueprint routes now call them with a read-modify-write fallback. **Run the
-migration** to make the counters atomic. Still open: decouple blueprint
+migration** to make the counters atomic.
+**BLOCKED (apply step):** the migration could not be applied from the Vibeman harness —
+no Supabase CLI, no psql, no DB connection string (only NEXT_PUBLIC_SUPABASE_URL +
+service-role key in .env), and DDL can't go through PostgREST. Apply via Supabase
+Studio SQL editor, `supabase db push` (linked project), or `psql "$DATABASE_URL" -f
+<file>`. The fallback keeps the app working until then. Still open: decouple blueprint
 usage_count from the detail GET (fire-once tracking) so it stops over-counting on
 refetch. Original notes below.
 
