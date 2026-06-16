@@ -451,16 +451,32 @@ const groupsApi = {
    * Bulk-fetch items for multiple groups in a single request.
    * Returns a map of groupId → items array.
    */
-  getBulkItems: (
+  getBulkItems: async (
     groupIds: string[],
     config?: RequestConfig
   ): Promise<Record<string, GroupItem[]>> => {
-    return request<Record<string, GroupItem[]>>(
-      '/top/groups/bulk-items',
-      'GET',
-      { group_ids: groupIds.join(',') },
-      config
-    );
+    // The server caps each request at 100 groups; a larger category previously
+    // failed the WHOLE request (400) and returned an empty backlog. Chunk to
+    // <=100 and merge the per-batch maps so big categories load fully.
+    const MAX_PER_REQUEST = 100;
+    const fetchChunk = (chunk: string[]) =>
+      request<Record<string, GroupItem[]>>(
+        '/top/groups/bulk-items',
+        'GET',
+        { group_ids: chunk.join(',') },
+        config
+      );
+
+    if (groupIds.length <= MAX_PER_REQUEST) {
+      return fetchChunk(groupIds);
+    }
+
+    const chunks: string[][] = [];
+    for (let i = 0; i < groupIds.length; i += MAX_PER_REQUEST) {
+      chunks.push(groupIds.slice(i, i + MAX_PER_REQUEST));
+    }
+    const results = await Promise.all(chunks.map(fetchChunk));
+    return Object.assign({}, ...results);
   },
 
   /**
