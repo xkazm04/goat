@@ -259,6 +259,24 @@ export function AwardList({ parentListId, title = "Annual Awards", description }
 
     const getItemTitle = (item: any) => item.title || item.name || '';
 
+    // Share an award winner via the Web Share API, falling back to clipboard.
+    // Previously AwardItem rendered a Share button but AwardList never passed
+    // onShare, so the affordance was silently dead.
+    const handleShareWinner = useCallback(async (listId: string, winnerTitle: string) => {
+        const categoryName = awardLists?.find((l) => l.id === listId)?.title || 'an award';
+        const url = typeof window !== 'undefined' ? window.location.href : '';
+        const shareText = `🏆 ${winnerTitle} won ${categoryName}!`;
+        try {
+            if (typeof navigator !== 'undefined' && navigator.share) {
+                await navigator.share({ title: categoryName, text: shareText, url });
+            } else if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                await navigator.clipboard.writeText(`${shareText} ${url}`.trim());
+            }
+        } catch {
+            // User dismissed the share sheet or clipboard was blocked — no-op.
+        }
+    }, [awardLists]);
+
     // Calculate stats
     const totalAwards = awardLists?.length || 0;
     const awardedCount = Object.keys(winners).length;
@@ -394,6 +412,7 @@ export function AwardList({ parentListId, title = "Annual Awards", description }
                                     gridItem={winners[list.id] || null}
                                     candidates={candidatesByAward[list.id] || []}
                                     onRemove={() => handleRemoveWinner(list.id)}
+                                    onShare={handleShareWinner}
                                     getItemTitle={getItemTitle}
                                     index={index}
                                     hasSelectedItem={!!selectedItem}
