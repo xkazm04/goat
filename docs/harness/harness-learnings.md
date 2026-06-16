@@ -24,6 +24,12 @@ Accumulated structural facts discovered by Vibeman pipeline runs. Read this firs
 - **2026-06-16** — Test runner is **Playwright e2e only** (`npm run test:e2e`) — no vitest/unit runner. e2e needs browsers + a running app, so it's not a cheap per-wave gate.
 - **2026-06-16** — `npx eslint` / `next lint` currently **fails to start**: `eslint.config.mjs` imports `eslint-plugin-storybook` which is not installed. Lint gate unavailable until that dep is restored.
 
+## Open follow-ups (from the 2026-06-16 combined UI+Bug scan, Wave 6 — NaN math)
+Wave 6 (NaN / divide-by-zero) closed 5: achievements completion 0/0, consensus totalRankings empty divide, tier percentile from rank-index (was negative for partial lists), center-of-mass all-zero-weight guard (BalanceOptimizer + LayoutEngine), and analytics fake-100%-agreement → null.
+- Anti-pattern: **`length === 0` guard ≠ zero-total guard** — an all-zero-weight/count collection (length>0, sum=0) still divides 0/0 → NaN. Guard the denominator. And don't default a rate to 1 on empty input (fake "100%") — return null + render "not enough data".
+- Structural fact: tier percentile must come from rank index within the sorted FILLED set, not absolute grid slot (slots exceed filled count in partial lists).
+- Cumulative Waves 1–6: 24 functional findings closed + 4 security mitigated, TS held at 53, 0 regressions.
+
 ## Open follow-ups (from the 2026-06-16 combined UI+Bug scan, Wave 5 — Security)
 Wave 5 applied **app-layer stopgaps** to the 4 security criticals (env-gated `GOAT_API_KEYS` allowlist, env-gated `AGENT_BRIDGE_SECRET` bearer, authed cross-user bookmark guard, merge-guest UUID validation). These MITIGATE, not close — robust fixes need an `api_keys` table, server-issued guest tokens, and RLS migrations (most tables are `USING(true)`). Full plan: SECURITY section of `followups-2026-06-16.md`.
 - **Structural fact:** the app has NO `api_keys` table; `validateApiKey` (`src/lib/api/public-api.ts`) is a mock. Guest identity = unverifiable client UUID (`useTempUser`), so the app trusts client `user_id`/`guest_id` by design — IDOR fixes must not break the guest flow.
