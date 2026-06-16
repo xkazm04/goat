@@ -134,10 +134,17 @@ export const useMatchStore = create<MatchStoreState>((set, get) => ({
   selectNextAvailableItem: () => {
     const sessionStore = useSessionStore.getState();
     const availableItems = sessionStore.getAvailableBacklogItems();
+    if (availableItems.length === 0) return;
 
-    if (availableItems.length > 0) {
-      useSelectionCursor.getState().select(availableItems[0].id, 'auto');
-    }
+    // Advance relative to the current cursor instead of always snapping to index
+    // 0. After a quick-assign the placed item is already filtered out of
+    // availableItems, so findIndex falls back to the first unplaced item.
+    const cursor = useSelectionCursor.getState();
+    const currentIdx = cursor.itemId
+      ? availableItems.findIndex((item) => item.id === cursor.itemId)
+      : -1;
+    const nextIdx = currentIdx >= 0 ? (currentIdx + 1) % availableItems.length : 0;
+    cursor.select(availableItems[nextIdx].id, 'auto');
   },
   
   // Quick Assign Functions

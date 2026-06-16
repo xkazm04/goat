@@ -407,7 +407,22 @@ export const useSessionStore = create<SessionStoreState>()(
       getAvailableBacklogItems: (): BacklogItem[] => {
         const state = get();
         // PERFORMANCE OPTIMIZATION: Get all items directly from normalized data
-        return NormalizedOps.getAllItems(state.normalizedData);
+        const allItems = NormalizedOps.getAllItems(state.normalizedData);
+        // The authoritative "used" flag is owned by the backlog store (grid
+        // placement writes it there, not into this session's normalizedData).
+        // Filter placed items out so "available" actually means unplaced — without
+        // this, keyboard quick-assign/navigation re-target already-ranked items.
+        // require() mirrors grid-store's circular-import-safe accessor.
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-require-imports
+          const backlogState = require('@/stores/backlog-store').useBacklogStore.getState();
+          if (typeof backlogState?.isItemUsed === 'function') {
+            return allItems.filter((item) => !backlogState.isItemUsed(item.id));
+          }
+        } catch {
+          // Backlog store unavailable — fall back to the full list.
+        }
+        return allItems;
       },
 
       getSessionProgress: (listId) => {
