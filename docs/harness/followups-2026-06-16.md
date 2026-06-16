@@ -48,6 +48,18 @@ consumers; the shipped `ComparisonModal` is a criteria-scoring UI. Either wire a
 real "Diff" view + export toolbar into `ComparisonModal`, OR delete the orphaned
 engine if scoring is the intended product. This is a product call, not a fix.
 
+## 7. Atomic counters needing a migration (T3) — DEFERRED
+Wave 13 made the share view/challenge counters atomic via the existing
+`increment_share_*` RPCs. Two counters still need infra:
+- **share fork_count** (`api/share/[code]/fork/route.ts`): no `increment_share_fork_count`
+  RPC. Add one (mirror `increment_share_view_count` in a migration) and call it.
+- **blueprint usage_count** (`api/blueprints/[slugOrId]/route.ts:54`): incremented
+  via read-modify-write on every detail GET, so it's non-atomic AND double-counts
+  on React Query refetch. Proper fix = an atomic `increment_blueprint_usage_count`
+  RPC + move tracking to a dedicated fire-once call (not the data GET; a GET should
+  be side-effect-free). Not removed in Wave 13 because that would freeze the
+  `sort=popular` popularity signal.
+
 ## SECURITY — real fixes deferred behind Wave-5 stopgaps (2026-06-16)
 
 Wave 5 landed **app-layer stopgaps** for the 4 security criticals (env-gated key

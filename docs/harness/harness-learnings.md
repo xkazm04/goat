@@ -24,6 +24,13 @@ Accumulated structural facts discovered by Vibeman pipeline runs. Read this firs
 - **2026-06-16** — Test runner is **Playwright e2e only** (`npm run test:e2e`) — no vitest/unit runner. e2e needs browsers + a running app, so it's not a cheap per-wave gate.
 - **2026-06-16** — `npx eslint` / `next lint` currently **fails to start**: `eslint.config.mjs` imports `eslint-plugin-storybook` which is not installed. Lint gate unavailable until that dep is restored.
 
+## Open follow-ups (from the 2026-06-16 combined UI+Bug scan, Wave 13 — Counters/concurrency)
+Wave 13 (T3) closed 3: atomic share view/challenge counters via existing `increment_share_*` RPCs, bookmark optimistic alreadyExists desync, debate quick-reply synchronous re-entrancy guard.
+- Structural fact: **atomic increment RPCs exist** — `increment_share_view_count` / `increment_share_challenge_count` (migration `20251205100000`). Use `supabase.rpc(...)` for counters, NOT read-modify-write. No fork_count / blueprint usage_count RPC yet.
+- Anti-pattern: counters via read-modify-write lose concurrent updates; side-effecting increments on GET double-count on refetch (keep GET side-effect-free); re-entrancy must be guarded synchronously (ref), not via async React state.
+- Deferred (followups #7): fork_count + blueprint usage_count need new increment RPCs (migrations).
+- Cumulative Waves 1–13: 56 functional findings closed + 4 security mitigated, TS held at 53, 0 regressions.
+
 ## Open follow-ups (from the 2026-06-16 combined UI+Bug scan, Wave 12 — Cleanup)
 Wave 12 (a11y + interaction cleanup) closed 5: GestureRecognizer pinch→drag re-seed (phantom swipe), UniversalSelect combobox/listbox/option ARIA + clear label, GlassModal close aria-label, ItemDetailPopup dialog semantics, pinch-zoom snap-on-release-only.
 - Anti-pattern: **keyboard mechanics without ARIA = invisible UX** (custom select had arrow-keys but no roles); build them together. And **state machines must handle partial transitions** — resetting only on the terminal event (all fingers up) leaks stale state on one-finger-lift.
