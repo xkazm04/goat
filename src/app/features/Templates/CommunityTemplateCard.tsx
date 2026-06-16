@@ -127,13 +127,21 @@ export function CommunityTemplateCard({ template, onUseTemplate }: CommunityTemp
             )}
           </div>
 
-          <StarRating
-            value={template.avgRating ?? 0}
-            interactive
-            onChange={handleRate}
-            size="sm"
-            showValue
-          />
+          {/* Stop the rating click from bubbling to the card's onUseTemplate,
+              which would otherwise yank the user into the composition modal. */}
+          <span
+            onClick={(e) => e.stopPropagation()}
+            role="presentation"
+            className="inline-flex"
+          >
+            <StarRating
+              value={template.avgRating ?? 0}
+              interactive
+              onChange={handleRate}
+              size="sm"
+              showValue
+            />
+          </span>
         </div>
 
         {/* Author + user's rating */}
