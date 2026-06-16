@@ -24,6 +24,12 @@ Accumulated structural facts discovered by Vibeman pipeline runs. Read this firs
 - **2026-06-16** — Test runner is **Playwright e2e only** (`npm run test:e2e`) — no vitest/unit runner. e2e needs browsers + a running app, so it's not a cheap per-wave gate.
 - **2026-06-16** — `npx eslint` / `next lint` currently **fails to start**: `eslint.config.mjs` imports `eslint-plugin-storybook` which is not installed. Lint gate unavailable until that dep is restored.
 
+## Open follow-ups (from the 2026-06-16 combined UI+Bug scan, Wave 4)
+Wave 4 (silent failures / success theater) closed 5: sync DELETE_SESSION false-success (in-band Supabase error ignored → dropped offline op = data loss), activity feed demo-fabrication on real errors, activity timeline error state, share preview-capture error surfacing, and the client external-signal abort-listener leak.
+- New anti-pattern: **in-band error channels (supabase-js `{data,error}`) pass a try/catch silently** — always destructure and check `error`, or a failed write reports success. Grep for `await supabase.from(...).(delete|update|insert|upsert)(` without a `{ error }` check.
+- New anti-pattern: **a fallback that fires on every failure becomes a lie** — demo/placeholder data is OK for one-shot "feature absent" (404) but never on transient errors in a poll loop.
+- Cumulative Waves 1–4: 19 findings closed, TS held at 53, 0 regressions.
+
 ## Open follow-ups (from the 2026-06-16 combined UI+Bug scan, Wave 3)
 Wave 3 (remaining crash/data criticals) closed 4: offline stranded-ops revert, interest-decay top-preservation, atomic mobile swipe-to-rank (`grid-store.assignToNextOpenSlot`), and collapsing the duplicate `grid-store.handleDragEnd` engine into the single DragOperationRouter (−125 LOC).
 - **Critical tally: 10/16 closed** (Wave 1: 6, Wave 3: 4). Remaining: 4 security (gated), OG-route-404 (T2), page-transition a11y (T5).
