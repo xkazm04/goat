@@ -24,6 +24,10 @@ Accumulated structural facts discovered by Vibeman pipeline runs. Read this firs
 - **2026-06-16** — Test runner is **Playwright e2e only** (`npm run test:e2e`) — no vitest/unit runner. e2e needs browsers + a running app, so it's not a cheap per-wave gate.
 - **2026-06-16** — `npx eslint` / `next lint` currently **fails to start**: `eslint.config.mjs` imports `eslint-plugin-storybook` which is not installed. Lint gate unavailable until that dep is restored.
 
+## Open follow-ups (from the 2026-06-16 combined UI+Bug scan, Wave 2)
+Wave 2 (built-but-unwired) closed 4 high findings: template rating click-through, branded ImageFallback wiring, Award Share button, collections list-removal + ordering source-of-truth. **Deferred** (architectural / needs decision — see `docs/harness/followups-2026-06-16.md`): collection toolbar filters → grid (shared filter state + FilterEngine across 4+ files); collections drag-reorder + Add-List picker (no DndContext / no picker exists); comparison-engine wire-or-delete (product call); clone-API wiring (bundle with security wave — unauth IDOR).
+- New anti-pattern: **optional callback prop = silent dead feature** — a child gating an affordance on an optional callback the parent forgets to pass compiles clean but ships an inert control (Award Share, collections CRUD). Audit these when a feature "doesn't appear."
+
 ## Open follow-ups (from the 2026-06-16 combined UI+Bug scan, Wave 1)
 Full triage: `docs/harness/ui-bug-combined-2026-06-16/INDEX.md` (190 findings). Wave 1 closed 6 of 16 criticals. Still open:
 - **Security (gated, high-risk):** mock API-key validation = total `/api/v1/*` auth bypass (`public-api.ts:233`); agent-bridge task API no auth + unbounded store (`agent-bridge/tasks/route.ts`); bookmarks IDOR (`api/bookmarks/route.ts`); merge-guest IDOR (`api/auth/merge-guest/route.ts`); unescaped OG/embed injection.
