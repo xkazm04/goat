@@ -186,11 +186,15 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
       varianceCount++;
     }
 
-    // Agreement rate: 1 - normalized average variance (higher = more agreement)
+    // Agreement rate: 1 - normalized average variance (higher = more agreement).
+    // Return null when there's no real signal (no item ranked by 2+ users, or
+    // list.size 0) instead of defaulting to 1 — a fake "100% agreement" badge on
+    // a brand-new/low-traffic list misrepresents engagement.
     const maxVariance = list.size * list.size; // theoretical max
-    const avgVariance = varianceCount > 0 ? totalVariance / varianceCount : 0;
     const agreement_rate =
-      maxVariance > 0 ? Math.round((1 - Math.min(avgVariance / maxVariance, 1)) * 100) / 100 : 1;
+      varianceCount > 0 && maxVariance > 0
+        ? Math.round((1 - Math.min((totalVariance / varianceCount) / maxVariance, 1)) * 100) / 100
+        : null;
 
     const most_controversial = variances
       .sort((a, b) => b.variance - a.variance)

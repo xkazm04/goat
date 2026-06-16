@@ -136,18 +136,22 @@ export function ListAnalyticsCard({
         <div className="flex items-center gap-1.5 text-xs">
           <Award className="w-3 h-3 text-emerald-400 opacity-60" />
           <span className="text-slate-400">Agreement</span>
-          <span
-            className={cn(
-              "font-semibold",
-              analytics.consensus.agreement_rate >= 0.7
-                ? "text-emerald-400"
-                : analytics.consensus.agreement_rate >= 0.4
-                ? "text-amber-400"
-                : "text-rose-400"
-            )}
-          >
-            {Math.round(analytics.consensus.agreement_rate * 100)}%
-          </span>
+          {analytics.consensus.agreement_rate == null ? (
+            <span className="font-semibold text-slate-500">Not enough data</span>
+          ) : (
+            <span
+              className={cn(
+                "font-semibold",
+                analytics.consensus.agreement_rate >= 0.7
+                  ? "text-emerald-400"
+                  : analytics.consensus.agreement_rate >= 0.4
+                  ? "text-amber-400"
+                  : "text-rose-400"
+              )}
+            >
+              {Math.round(analytics.consensus.agreement_rate * 100)}%
+            </span>
+          )}
         </div>
 
         {analytics.consensus.most_controversial.length > 0 && (
