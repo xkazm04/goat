@@ -33,13 +33,17 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     const { id: challengeId } = await context.params;
     const body = await request.json();
-    const { items, userName, userAvatar, timeTaken, referredBy } = body as {
+    const { items, userName, userAvatar, timeTaken, referredBy, timeZone } = body as {
       items: RankedItem[];
       userName: string;
       userAvatar?: string;
       timeTaken?: number;
       referredBy?: string;
+      timeZone?: string;
     };
+    // Client's IANA zone (e.g. Intl.DateTimeFormat().resolvedOptions().timeZone)
+    // so the daily streak is computed in the user's local day, not UTC.
+    const userTimeZone = typeof timeZone === 'string' && timeZone ? timeZone : undefined;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
@@ -111,7 +115,8 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const streakResult = await streakTracker.recordActivity(
       userId,
       'any_challenge',
-      submission.score
+      submission.score,
+      userTimeZone
     );
 
     // Apply streak bonus if any
