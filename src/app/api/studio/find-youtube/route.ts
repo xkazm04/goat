@@ -33,6 +33,26 @@ interface FindYouTubeResponse {
   video_title: string | null;
 }
 
+// Structured-output schema so Gemini returns parseable JSON even with the
+// Google Search tool attached (which otherwise often wraps JSON in prose/fences).
+const GEMINI_RESPONSE_SCHEMA = {
+  type: 'object',
+  properties: {
+    youtube_url: { type: 'string', nullable: true },
+    video_title: { type: 'string', nullable: true },
+  },
+  required: ['youtube_url', 'video_title'],
+} as const;
+
+// Strip a leading/trailing markdown code fence (```json … ``` or ``` … ```).
+// With googleSearch enabled, Gemini still occasionally fences its JSON despite
+// responseMimeType: 'application/json'.
+function stripCodeFences(text: string): string {
+  const trimmed = text.trim();
+  const fenced = trimmed.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/i);
+  return fenced ? fenced[1].trim() : trimmed;
+}
+
 export async function POST(request: NextRequest) {
   // Rate limit: 20 requests per minute per IP
   const limited = rateLimit(getRateLimitKey(request, 'studio-find-youtube'), 20, 60_000);
@@ -81,11 +101,12 @@ If no suitable video is found, respond with:
       config: {
         tools: [{ googleSearch: {} }],
         responseMimeType: 'application/json',
+        responseJsonSchema: GEMINI_RESPONSE_SCHEMA,
       },
     });
     const geminiMs = Math.round(performance.now() - geminiStart);
 
-    const responseText = response.text?.trim() || '{}';
+    const responseText = stripCodeFences(response.text || '{}') || '{}';
 
     // Parse the JSON response
     let parsedResponse: { youtube_url?: string; video_title?: string };
