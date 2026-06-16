@@ -24,6 +24,12 @@ Accumulated structural facts discovered by Vibeman pipeline runs. Read this firs
 - **2026-06-16** — Test runner is **Playwright e2e only** (`npm run test:e2e`) — no vitest/unit runner. e2e needs browsers + a running app, so it's not a cheap per-wave gate.
 - **2026-06-16** — `npx eslint` / `next lint` currently **fails to start**: `eslint.config.mjs` imports `eslint-plugin-storybook` which is not installed. Lint gate unavailable until that dep is restored.
 
+## Open follow-ups (from the 2026-06-16 combined UI+Bug scan, Wave 5 — Security)
+Wave 5 applied **app-layer stopgaps** to the 4 security criticals (env-gated `GOAT_API_KEYS` allowlist, env-gated `AGENT_BRIDGE_SECRET` bearer, authed cross-user bookmark guard, merge-guest UUID validation). These MITIGATE, not close — robust fixes need an `api_keys` table, server-issued guest tokens, and RLS migrations (most tables are `USING(true)`). Full plan: SECURITY section of `followups-2026-06-16.md`.
+- **Structural fact:** the app has NO `api_keys` table; `validateApiKey` (`src/lib/api/public-api.ts`) is a mock. Guest identity = unverifiable client UUID (`useTempUser`), so the app trusts client `user_id`/`guest_id` by design — IDOR fixes must not break the guest flow.
+- **Prod action:** set `GOAT_API_KEYS`(+`_PRO`) and `AGENT_BRIDGE_SECRET` or those endpoints keep permissive dev behavior.
+- Anti-pattern: **gate, don't guess, on security** — escalate when the real fix needs infra/RLS/identity decisions; only land behavior-preserving stopgaps in an automated run.
+
 ## Open follow-ups (from the 2026-06-16 combined UI+Bug scan, Wave 4)
 Wave 4 (silent failures / success theater) closed 5: sync DELETE_SESSION false-success (in-band Supabase error ignored → dropped offline op = data loss), activity feed demo-fabrication on real errors, activity timeline error state, share preview-capture error surfacing, and the client external-signal abort-listener leak.
 - New anti-pattern: **in-band error channels (supabase-js `{data,error}`) pass a try/catch silently** — always destructure and check `error`, or a failed write reports success. Grep for `await supabase.from(...).(delete|update|insert|upsert)(` without a `{ error }` check.

@@ -48,7 +48,35 @@ consumers; the shipped `ComparisonModal` is a criteria-scoring UI. Either wire a
 real "Diff" view + export toolbar into `ComparisonModal`, OR delete the orphaned
 engine if scoring is the intended product. This is a product call, not a fix.
 
-## 4. Clone API wiring (templates #4) — defer to security wave
+## SECURITY — real fixes deferred behind Wave-5 stopgaps (2026-06-16)
+
+Wave 5 landed **app-layer stopgaps** for the 4 security criticals (env-gated key
+allowlist, env-gated agent-bridge bearer secret, authed cross-user bookmark
+guard, merge-guest UUID validation). These reduce exposure but do NOT fully
+close the holes — the robust fixes need infrastructure + design decisions and
+were intentionally NOT attempted in an automated sweep:
+
+1. **API-key identity (public API + agent-bridge).** No `api_keys` table exists;
+   `validateApiKey` is a mock and agent-bridge had no auth. Real fix: an
+   `api_keys` table (key hash, tier, owner, created/revoked), a key-issuance
+   flow, and a lookup in `validateApiKey` + per-agent keys for agent-bridge
+   (replacing the shared `AGENT_BRIDGE_SECRET` stopgap). Migration + UI work.
+2. **Guest identity / IDOR (bookmarks, merge-guest, and the broader app).** The
+   app trusts client-generated guest UUIDs because guests have no server
+   session. The authed-caller guard added in Wave 5 only protects logged-in
+   users. Real fix: server-issued, signed guest tokens (httpOnly cookie) so a
+   guest UUID can be *verified*, OR a deliberate decision to accept the trust
+   model and rely on RLS.
+3. **RLS policies.** Most tables ship `USING (true)` (e.g. `shared_rankings`,
+   `list_collections`, blueprints). Real fix: per-table RLS scoping reads/writes
+   to `auth.uid() = user_id` (with a guest-token claim where guests are allowed).
+   Migration work; must be validated against the guest flow so it doesn't lock
+   guests out.
+4. **Set the stopgap env vars in production:** `GOAT_API_KEYS`
+   (+ `GOAT_API_KEYS_PRO`) and `AGENT_BRIDGE_SECRET` — until set, those two
+   endpoints keep their permissive dev behavior.
+
+## 5. Clone API wiring (templates #4) — defer to security wave
 "Use template" never calls the clone route, so `clone_count` is always 0. But the
 clone route trusts `body.userId` with no auth (IDOR). Wire the UI call only
 together with hardening the route to derive `user_id` from the session — bundle
