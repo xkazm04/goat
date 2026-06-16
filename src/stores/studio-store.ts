@@ -549,7 +549,9 @@ export const useStudioStore = create<StudioState>()(
   getCriteriaConfig: () => {
     const { criteriaMode, selectedProfileId, customProfile } = get();
 
-    if (criteriaMode === 'none' || !selectedProfileId) {
+    // Only 'none' has no config. Do NOT gate on selectedProfileId here: custom
+    // mode never sets it, so gating on it silently discarded all custom criteria.
+    if (criteriaMode === 'none') {
       return null;
     }
 
@@ -565,7 +567,7 @@ export const useStudioStore = create<StudioState>()(
     }
 
     // For presets, resolve the template by ID
-    if (criteriaMode === 'preset') {
+    if (criteriaMode === 'preset' && selectedProfileId) {
       const template = getTemplateById(selectedProfileId);
       if (template) {
         const now = new Date().toISOString();
