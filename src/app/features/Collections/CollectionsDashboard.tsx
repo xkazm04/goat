@@ -12,6 +12,7 @@ import {
 } from "@/stores/collection-store";
 import { useCurrentUser, useUserLists } from "@/stores/use-list-store";
 
+import { AddListModal } from "./components/AddListModal";
 import { CollectionManager } from "./components/CollectionManager";
 import { CollectionSidebar } from "./components/CollectionSidebar";
 import { CollectionView } from "./components/CollectionView";
@@ -43,10 +44,12 @@ export const CollectionsDashboard = memo(function CollectionsDashboard({
   });
 
   // Collection operations
-  const { create, update, remove, removeList, isPending } = useCollectionOperations();
+  const { create, update, remove, addLists, removeList, reorderLists, isPending } =
+    useCollectionOperations();
 
   // Modal state
   const [isManagerOpen, setIsManagerOpen] = useState(false);
+  const [isAddListOpen, setIsAddListOpen] = useState(false);
   const [editingCollection, setEditingCollection] =
     useState<ListCollection | null>(null);
 
@@ -61,6 +64,14 @@ export const CollectionsDashboard = memo(function CollectionsDashboard({
         selectedCollection.listIds.includes(list.id)
       )
     : userLists;
+
+  // Lists the user owns that aren't already in the selected collection — the
+  // pool offered by the Add-List picker.
+  const candidateLists = selectedCollection
+    ? userLists.filter(
+        (list) => !selectedCollection.listIds.includes(list.id)
+      )
+    : [];
 
   // Handlers
   const handleSelectCollection = useCallback(
@@ -128,6 +139,39 @@ export const CollectionsDashboard = memo(function CollectionsDashboard({
     [removeList, selectedCollection]
   );
 
+  // Reorder lists within the selected collection (drag-and-drop in CollectionView).
+  // Previously CollectionView had no onReorderLists, so the drag handles were
+  // inert and the persisted order never changed.
+  const handleReorderLists = useCallback(
+    async (listIds: string[]) => {
+      if (!selectedCollection) return;
+      try {
+        await reorderLists({ collectionId: selectedCollection.id, listIds });
+      } catch (error) {
+        console.error("Failed to reorder lists:", error);
+      }
+    },
+    [reorderLists, selectedCollection]
+  );
+
+  // Open the Add-List picker. Previously the "Add list" affordance had no
+  // handler, so there was no way to add lists to a collection from this view.
+  const handleOpenAddList = useCallback(() => {
+    setIsAddListOpen(true);
+  }, []);
+
+  const handleAddLists = useCallback(
+    async (listIds: string[]) => {
+      if (!selectedCollection || listIds.length === 0) return;
+      try {
+        await addLists({ collectionId: selectedCollection.id, listIds });
+      } catch (error) {
+        console.error("Failed to add lists to collection:", error);
+      }
+    },
+    [addLists, selectedCollection]
+  );
+
   if (!user) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -155,6 +199,8 @@ export const CollectionsDashboard = memo(function CollectionsDashboard({
         lists={listsInCollection}
         isLoading={isLoading}
         onRemoveList={selectedCollection ? handleRemoveListFromCollection : undefined}
+        onReorderLists={selectedCollection ? handleReorderLists : undefined}
+        onAddList={selectedCollection ? handleOpenAddList : undefined}
         stats={
           selectedCollection
             ? {
@@ -175,6 +221,15 @@ export const CollectionsDashboard = memo(function CollectionsDashboard({
         parentCollections={collections.filter((c) => !c.parentId)}
         onSave={handleSaveCollection}
         onDelete={editingCollection ? handleDeleteCollection : undefined}
+      />
+
+      {/* Add-List Picker Modal */}
+      <AddListModal
+        isOpen={isAddListOpen}
+        onClose={() => setIsAddListOpen(false)}
+        candidateLists={candidateLists}
+        onAdd={handleAddLists}
+        isPending={isPending}
       />
     </div>
   );
