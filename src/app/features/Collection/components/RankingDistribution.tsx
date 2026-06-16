@@ -170,9 +170,11 @@ export function RankingDistribution({
 
     if (positions.length === 0) return [];
 
-    // Find range to display (pad by 2 on each side)
+    // Find range to display (pad by 2 on each side). Cap at 100 (not 50) so
+    // items frequently ranked 50-100 aren't silently dropped from the histogram
+    // while the stats grid still reflects the full data.
     const minPos = Math.max(1, positions[0] - 2);
-    const maxPos = Math.min(50, positions[positions.length - 1] + 2);
+    const maxPos = Math.min(100, positions[positions.length - 1] + 2);
 
     // Create data array with all positions in range
     const data = [];
@@ -214,7 +216,10 @@ export function RankingDistribution({
     );
   }
 
-  if (!stats) {
+  // The API returns a *zeroed* stats object (not null) for unranked items so the
+  // panel always shows — but rendering it produces a misleading "#0.0 / Very
+  // Stable" that implies real consensus. Treat zero rankings as the empty state.
+  if (!stats || stats.totalRankings === 0) {
     return (
       <div className={cn("text-center py-6 text-slate-500", className)}>
         <BarChart3 className="w-5 h-5 mx-auto mb-2 opacity-50" />
@@ -322,12 +327,18 @@ export function RankingDistribution({
                 content={<CustomTooltip />}
                 cursor={{ fill: 'rgba(34,211,238,0.1)', stroke: '#22D3EE', strokeWidth: 1, strokeOpacity: 0.3 }}
               />
-              <ReferenceLine
-                x={Math.round(stats.medianPosition)}
-                stroke="#22D3EE"
-                strokeDasharray="3 3"
-                strokeWidth={2}
-              />
+              {/* Only draw the median line when it falls inside the visible
+                  domain — otherwise the legend references a line off the axis. */}
+              {chartData.length > 0 &&
+                Math.round(stats.medianPosition) >= chartData[0].position &&
+                Math.round(stats.medianPosition) <= chartData[chartData.length - 1].position && (
+                <ReferenceLine
+                  x={Math.round(stats.medianPosition)}
+                  stroke="#22D3EE"
+                  strokeDasharray="3 3"
+                  strokeWidth={2}
+                />
+              )}
               <Bar
                 dataKey="count"
                 maxBarSize={20}
