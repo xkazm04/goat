@@ -15,7 +15,7 @@ import {
   GripVertical,
 } from "lucide-react";
 import Link from "next/link";
-import { memo, useMemo, useState, useCallback } from "react";
+import { memo, useMemo, useState, useCallback, useEffect } from "react";
 
 import { EmptyTrophyCase, NoSearchResults } from "@/components/illustrations/EmptyStateIllustrations";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
@@ -163,6 +163,14 @@ export const CollectionView = memo(function CollectionView({
     collection?.listIds || []
   );
 
+  // Re-sync the local ordering whenever the selected collection (or its
+  // membership) changes — initializing once via useState left a stale order
+  // when switching collections or after add/remove.
+  const listIdsKey = collection?.listIds?.join(",") ?? "";
+  useEffect(() => {
+    setOrderedListIds(collection?.listIds || []);
+  }, [collection?.id, listIdsKey]);
+
   const filteredLists = useMemo(() => {
     if (!searchTerm.trim()) return lists;
     const term = searchTerm.toLowerCase();
@@ -182,12 +190,19 @@ export const CollectionView = memo(function CollectionView({
     [onReorderLists]
   );
 
-  const orderedLists = useMemo(() => {
-    const listMap = new Map(lists.map((l) => [l.id, l]));
-    return orderedListIds
-      .map((id) => listMap.get(id))
-      .filter((l): l is TopList => l !== undefined);
-  }, [lists, orderedListIds]);
+  // Lists to render: the search-filtered set, sorted by the saved order.
+  // Unknown/new ids fall to the end so nothing ever disappears. This is the
+  // single display source of truth (previous code rendered the unordered
+  // filteredLists while a separate orderedLists memo went unused).
+  const displayedLists = useMemo(() => {
+    if (orderedListIds.length === 0) return filteredLists;
+    const orderIndex = new Map(orderedListIds.map((id, i) => [id, i]));
+    return [...filteredLists].sort((a, b) => {
+      const ai = orderIndex.get(a.id) ?? Number.MAX_SAFE_INTEGER;
+      const bi = orderIndex.get(b.id) ?? Number.MAX_SAFE_INTEGER;
+      return ai - bi;
+    });
+  }, [filteredLists, orderedListIds]);
 
   // If no collection selected, show all lists
   if (!collection) {
@@ -375,7 +390,7 @@ export const CollectionView = memo(function CollectionView({
           }
         >
           <AnimatePresence mode="popLayout">
-            {filteredLists.map((list) =>
+            {displayedLists.map((list) =>
               viewMode === "grid" ? (
                 <ListCard
                   key={list.id}

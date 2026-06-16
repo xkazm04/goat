@@ -43,7 +43,7 @@ export const CollectionsDashboard = memo(function CollectionsDashboard({
   });
 
   // Collection operations
-  const { create, update, remove, isPending } = useCollectionOperations();
+  const { create, update, remove, removeList, isPending } = useCollectionOperations();
 
   // Modal state
   const [isManagerOpen, setIsManagerOpen] = useState(false);
@@ -113,6 +113,21 @@ export const CollectionsDashboard = memo(function CollectionsDashboard({
     setEditingCollection(null);
   }, []);
 
+  // Remove a list from the selected collection. Previously CollectionView was
+  // rendered without onRemoveList, so the per-list remove control was hidden
+  // and the collection-contents feature was inert.
+  const handleRemoveListFromCollection = useCallback(
+    async (listId: string) => {
+      if (!selectedCollection) return;
+      try {
+        await removeList({ collectionId: selectedCollection.id, listId });
+      } catch (error) {
+        console.error("Failed to remove list from collection:", error);
+      }
+    },
+    [removeList, selectedCollection]
+  );
+
   if (!user) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -139,6 +154,7 @@ export const CollectionsDashboard = memo(function CollectionsDashboard({
         collection={selectedCollection}
         lists={listsInCollection}
         isLoading={isLoading}
+        onRemoveList={selectedCollection ? handleRemoveListFromCollection : undefined}
         stats={
           selectedCollection
             ? {
