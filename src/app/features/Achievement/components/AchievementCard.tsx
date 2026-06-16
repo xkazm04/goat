@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { Trophy, Star, Users, Compass, Flag, Sparkles, LucideIcon } from "lucide-react";
 
+import { useMotionCapabilities } from "@/hooks/use-motion-preference";
 import { DURATION } from "@/lib/animations/motion-presets";
 import {
   Achievement,
@@ -93,6 +94,9 @@ export function AchievementCard({
   className = '',
 }: AchievementCardProps) {
   const config = { ...defaultConfig, ...userConfig };
+  // Gate the infinitely-looping sparkles on ambient-motion capability (full tier
+  // only) in addition to the manual `animated` flag (WCAG 2.3.3).
+  const { allowAmbient } = useMotionCapabilities();
   const tierConfig = TIER_CONFIG[achievement.tier];
   const categoryConfig = CATEGORY_CONFIG[achievement.category];
   const stylePreset = STYLE_PRESETS[config.style];
@@ -135,7 +139,7 @@ export function AchievementCard({
       />
 
       {/* Animated sparkles for unlocked achievements */}
-      {achievement.unlocked && config.animated && (
+      {achievement.unlocked && config.animated && allowAmbient && (
         <motion.div
           className="absolute inset-0 pointer-events-none overflow-hidden"
           initial={{ opacity: 0 }}
@@ -203,10 +207,12 @@ export function AchievementCard({
         <div className="flex items-center gap-4 mb-5">
           <motion.div
             className="relative shrink-0"
-            animate={config.animated && achievement.unlocked ? {
+            animate={config.animated && achievement.unlocked && allowAmbient ? {
               scale: [1, 1.05, 1],
             } : {}}
-            transition={{ duration: 2, repeat: Infinity }}
+            transition={
+              allowAmbient ? { duration: 2, repeat: Infinity } : { duration: 0 }
+            }
           >
             <div
               className="w-20 h-20 rounded-container flex items-center justify-center"

@@ -31,7 +31,9 @@ export function AchievementReveal({
   // Reduced/minimal motion suppresses the celebratory confetti + particle burst
   // (24 burst + 40 confetti + 8 star bursts) on this very motion-heavy surface
   // (WCAG 2.3.3). The card still reveals; only the celebratory motion is gated.
-  const { allowCelebrations } = useMotionCapabilities();
+  // allowAmbient additionally gates the infinitely-looping glow ring, trophy
+  // pulse, and the 3 pulsing rings (continuous motion = the worst offender).
+  const { allowCelebrations, allowAmbient } = useMotionCapabilities();
 
   // Auto-close timer — keyed on achievement.id too so a back-to-back unlock
   // restarts the 5s timer instead of letting the first achievement's timer close
@@ -236,15 +238,16 @@ export function AchievementReveal({
                 style={{
                   background: `radial-gradient(circle, ${tierConfig.glow} 0%, transparent 70%)`,
                 }}
-                animate={{
-                  scale: [1, 1.3, 1],
-                  opacity: [0.5, 0.8, 0.5],
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  ease: 'easeInOut',
-                }}
+                animate={
+                  allowAmbient
+                    ? { scale: [1, 1.3, 1], opacity: [0.5, 0.8, 0.5] }
+                    : { scale: 1, opacity: 0.6 }
+                }
+                transition={
+                  allowAmbient
+                    ? { duration: 2, repeat: Infinity, ease: 'easeInOut' }
+                    : { duration: 0 }
+                }
               />
 
               {/* Trophy icon */}
@@ -254,14 +257,12 @@ export function AchievementReveal({
                   background: tierConfig.gradient,
                   boxShadow: `0 0 60px ${tierConfig.glow}`,
                 }}
-                animate={{
-                  scale: [1, 1.05, 1],
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  ease: 'easeInOut',
-                }}
+                animate={allowAmbient ? { scale: [1, 1.05, 1] } : { scale: 1 }}
+                transition={
+                  allowAmbient
+                    ? { duration: 2, repeat: Infinity, ease: 'easeInOut' }
+                    : { duration: 0 }
+                }
               >
                 <Trophy
                   className="w-14 h-14"
@@ -271,8 +272,8 @@ export function AchievementReveal({
                 />
               </motion.div>
 
-              {/* Pulsing rings */}
-              {[...Array(3)].map((_, i) => (
+              {/* Pulsing rings — pure ambient decoration, dropped under reduced motion */}
+              {allowAmbient && [...Array(3)].map((_, i) => (
                 <motion.div
                   key={i}
                   className="absolute inset-0 rounded-full border-2"
@@ -423,6 +424,8 @@ export function AchievementToast({
   onClose: () => void;
   onClick?: () => void;
 }) {
+  const { allowAmbient } = useMotionCapabilities();
+
   useEffect(() => {
     if (isVisible) {
       const timer = setTimeout(onClose, 5000);
@@ -467,13 +470,10 @@ export function AchievementToast({
                 background: tierConfig.gradient,
                 boxShadow: `0 0 20px ${tierConfig.glow}`,
               }}
-              animate={{
-                scale: [1, 1.1, 1],
-              }}
-              transition={{
-                duration: 1.5,
-                repeat: Infinity,
-              }}
+              animate={allowAmbient ? { scale: [1, 1.1, 1] } : { scale: 1 }}
+              transition={
+                allowAmbient ? { duration: 1.5, repeat: Infinity } : { duration: 0 }
+              }
             >
               <Trophy
                 className="w-6 h-6"
