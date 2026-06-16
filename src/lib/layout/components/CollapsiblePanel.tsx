@@ -239,7 +239,12 @@ export function CollapsiblePanel({
       <AnimatePresence>
         {showOverlay && effectiveState === 'expanded' && layout.isMobile && (
           <motion.div
-            className="fixed inset-0 bg-black/50 z-9"
+            className="fixed inset-0 bg-black/50"
+            // `z-9` is not a defined utility (the scale is token-based: z-sticky,
+            // z-toast), so Tailwind emitted nothing and the backdrop fell to
+            // z-index:auto — below the panel, breaking dim + tap-to-dismiss. Use
+            // an explicit value just below the panel's sidebar z-index.
+            style={{ zIndex: LAYOUT_Z_INDEX.sidebar - 1 }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
