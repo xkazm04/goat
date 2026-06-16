@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Search, Check, X } from 'lucide-react';
-import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback, useId } from 'react';
 
 import { DURATION } from '@/lib/animations/motion-presets';
 import { cn } from '@/lib/utils';
@@ -61,6 +61,9 @@ export function UniversalSelect({
   const containerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const optionRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  // Stable ids for combobox/listbox/option ARIA wiring.
+  const listboxId = useId();
+  const optionId = (index: number) => `${listboxId}-opt-${index}`;
   const sizeStyles = SIZE_STYLES[size];
 
   // Auto-enable search for 5+ options
@@ -193,6 +196,11 @@ export function UniversalSelect({
         type="button"
         onClick={handleToggle}
         disabled={disabled}
+        role="combobox"
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        aria-controls={isOpen ? listboxId : undefined}
+        aria-activedescendant={isOpen && highlightedIndex >= 0 ? optionId(highlightedIndex) : undefined}
         className={cn(
           'w-full flex items-center justify-between gap-2 rounded-card border transition-all focus-ring',
           'bg-[var(--surface-deep)]/80 border-[var(--border-card-subtle)] text-gray-200',
@@ -254,6 +262,7 @@ export function UniversalSelect({
                       <button
                         type="button"
                         onClick={() => setSearchQuery('')}
+                        aria-label="Clear search"
                         className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
                       >
                         <X className="w-3 h-3" />
@@ -263,7 +272,7 @@ export function UniversalSelect({
                 </div>
               )}
 
-              <div className="max-h-60 overflow-y-auto">
+              <div className="max-h-60 overflow-y-auto" role="listbox" id={listboxId}>
                 {filteredOptions.length === 0 ? (
                   <div className="px-3 py-4 text-center text-gray-500 text-sm">
                     No options found
@@ -286,6 +295,9 @@ export function UniversalSelect({
                       <button
                         ref={(el) => { optionRefs.current[index] = el; }}
                         type="button"
+                        role="option"
+                        id={optionId(index)}
+                        aria-selected={isSelected}
                         onClick={() => !isDisabled && handleSelect(option.value)}
                         onMouseEnter={() => setHighlightedIndex(index)}
                         disabled={isDisabled}
