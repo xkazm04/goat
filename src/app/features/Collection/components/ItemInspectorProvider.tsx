@@ -3,6 +3,7 @@
 import { useCallback } from "react";
 
 import { gridLogger } from "@/lib/logger";
+import { useBacklogStore } from "@/stores/backlog-store";
 import { useGridStore } from "@/stores/grid-store";
 import { useItemPopupStore } from "@/stores/item-popup-store";
 
@@ -25,21 +26,22 @@ export function ItemInspectorProvider() {
   const isOpen = useItemPopupStore((state) => state.inspectorIsOpen);
   const closeInspector = useItemPopupStore((state) => state.closeInspector);
   const openInspector = useItemPopupStore((state) => state.openInspector);
-  const assignItemToGrid = useGridStore((state) => state.assignItemToGrid);
-  const getNextAvailableGridPosition = useGridStore((state) => state.getNextAvailableGridPosition);
 
-  // Handle quick assign from inspector
+  // Handle quick assign from inspector. Previously a stub that only logged and
+  // let the inspector close (implying success); now resolves the backlog item and
+  // routes through the atomic assignToNextOpenSlot store action (lock + verify +
+  // mark used), mirroring ItemDetailPopupProvider.
   const handleQuickAssign = useCallback((id: string) => {
-    const nextPosition = getNextAvailableGridPosition();
-    if (nextPosition !== null) {
-      // We need the full item data - for now we'll need to get it from the API
-      // This is a simplified version that just assigns by ID
-      // In a full implementation, we'd fetch the item data first
-      gridLogger.debug('Quick assign item', { id, position: nextPosition });
-      // Note: The actual assignment would need the full item data
-      // This would typically be done via a store action or API call
+    const backlogItem = useBacklogStore.getState().getItemById?.(id);
+    if (!backlogItem) {
+      gridLogger.warn('Quick assign: item not found in backlog', { id });
+      return;
     }
-  }, [getNextAvailableGridPosition]);
+    const position = useGridStore.getState().assignToNextOpenSlot(backlogItem);
+    if (position === null) {
+      gridLogger.debug('Quick assign: no open slot or already placed', { id });
+    }
+  }, []);
 
   // Handle clicking a related item - opens that item in inspector
   const handleRelatedItemClick = useCallback((item: RelatedItem) => {
