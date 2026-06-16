@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Trophy, Star, Sparkles, X } from "lucide-react";
 import { useState, useEffect } from "react";
 
+import { useMotionCapabilities } from "@/hooks/use-motion-preference";
 import { Achievement, TIER_CONFIG } from "@/types/achievement";
 
 import { AchievementCard } from "./AchievementCard";
@@ -27,6 +28,10 @@ export function AchievementReveal({
 }: AchievementRevealProps) {
   const [showCard, setShowCard] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  // Reduced/minimal motion suppresses the celebratory confetti + particle burst
+  // (24 burst + 40 confetti + 8 star bursts) on this very motion-heavy surface
+  // (WCAG 2.3.3). The card still reveals; only the celebratory motion is gated.
+  const { allowCelebrations } = useMotionCapabilities();
 
   // Auto-close timer — keyed on achievement.id too so a back-to-back unlock
   // restarts the 5s timer instead of letting the first achievement's timer close
@@ -47,11 +52,11 @@ export function AchievementReveal({
     if (isOpen) {
       // Reset to the start of the sequence for this achievement.
       setShowCard(false);
-      setShowConfetti(true);
+      setShowConfetti(allowCelebrations);
       const cardTimer = setTimeout(() => setShowCard(true), 600);
       return () => clearTimeout(cardTimer);
     }
-  }, [isOpen, achievement?.id]);
+  }, [isOpen, achievement?.id, allowCelebrations]);
 
   if (!achievement) return null;
 
