@@ -155,14 +155,23 @@ export function BracketView({
 
   // Initialize bracket from setup with branded loading transition
   const handleSetupStart = useCallback(() => {
+    // Guard against seeding a bracket with too few participants — seedBracket
+    // throws on zero, and a throw inside the timer below would never reset the
+    // loading flag, leaving the branded loader spinning forever.
+    if (availableItems.length < 2) return;
     setIsInitializing(true);
     // Show bracket-drawing animation briefly before initializing
     setTimeout(() => {
-      storeInitializeBracket(availableItems, {
-        size: bracketSize,
-        seedingStrategy: seedingStrategy,
-      });
-      setIsInitializing(false);
+      try {
+        storeInitializeBracket(availableItems, {
+          size: bracketSize,
+          seedingStrategy: seedingStrategy,
+        });
+      } catch (err) {
+        console.error('Failed to initialize bracket:', err);
+      } finally {
+        setIsInitializing(false);
+      }
     }, 1500);
   }, [availableItems, bracketSize, seedingStrategy, storeInitializeBracket]);
 

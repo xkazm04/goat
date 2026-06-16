@@ -181,6 +181,8 @@ export function BracketSetup({
   onCancel,
 }: BracketSetupProps) {
   const byeCount = Math.max(0, bracketSize - itemCount);
+  // A bracket needs at least 2 participants; seeding throws on 0 (and 1 is a no-op).
+  const notEnoughItems = itemCount < 2;
 
   return (
     <motion.div
@@ -268,12 +270,18 @@ export function BracketSetup({
           </button>
           <button
             onClick={onStart}
-            className={`flex-1 ${GLASS_BUTTON_PRIMARY} font-bold flex items-center justify-center gap-2 focus-ring`}
+            disabled={notEnoughItems}
+            className={`flex-1 ${GLASS_BUTTON_PRIMARY} font-bold flex items-center justify-center gap-2 focus-ring disabled:opacity-50 disabled:cursor-not-allowed`}
           >
             <Play className="w-4 h-4" />
             Start
           </button>
         </div>
+        {notEnoughItems && (
+          <p className="mt-2 text-center text-xs text-amber-400">
+            Need at least 2 items to start a bracket.
+          </p>
+        )}
       </div>
     </motion.div>
   );
