@@ -2,7 +2,7 @@
 
 import * as HoverCard from "@radix-ui/react-hover-card";
 import { motion, AnimatePresence } from "framer-motion";
-import { Hash, Calendar, Loader2, Star, Clock } from "lucide-react";
+import { Hash, Calendar, Loader2, Clock } from "lucide-react";
 import { ReactNode } from "react";
 
 import { ELEVATION, withInset } from "@/components/visual/depth";
@@ -150,8 +150,11 @@ function PreviewContent({ data }: PreviewContentProps) {
         {data.title}
       </h4>
 
-      {/* Stats grid */}
-      <div className="grid grid-cols-2 gap-2 mb-3">
+      {/* Stats — the former "avg rank" badge was removed: it averaged item
+          POSITIONS, which is ~(N+1)/2 for any fully-ranked list (identical across
+          same-size lists) and backed by no real ranking metric, so it presented a
+          confident but mathematically meaningless number. */}
+      <div className="mb-3">
         {/* Item count */}
         <div
           className="flex items-center gap-2 px-2.5 py-2 rounded-control"
@@ -167,26 +170,6 @@ function PreviewContent({ data }: PreviewContentProps) {
               {data.itemCount}/{data.size}
             </div>
             <div className="text-2xs text-slate-500">items</div>
-          </div>
-        </div>
-
-        {/* Average ranking badge */}
-        <div
-          className="flex items-center gap-2 px-2.5 py-2 rounded-control"
-          style={{
-            background: "rgba(255, 255, 255, 0.04)",
-            border: "1px solid rgba(255, 255, 255, 0.06)",
-          }}
-          data-testid="list-preview-avg-ranking"
-        >
-          <Star className="w-3.5 h-3.5 text-yellow-400" />
-          <div>
-            <div className="text-xs font-medium text-white">
-              {data.averageRanking !== undefined
-                ? `#${data.averageRanking}`
-                : "—"}
-            </div>
-            <div className="text-2xs text-slate-500">avg rank</div>
           </div>
         </div>
       </div>
