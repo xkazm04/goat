@@ -167,17 +167,20 @@ export const useActivityStore = create<ActivityStoreState>((set, get) => ({
       const response = await fetch('/api/activities?limit=10');
 
       if (!response.ok) {
-        // If API doesn't exist yet, generate demo activities
+        // 404 = feature not deployed yet. Seed a single demo entry ONCE so the
+        // empty feed isn't bare, but don't re-seed on every 10s poll.
         if (response.status === 404) {
-          // Simulate new activity coming in
-          const demoActivity = generateDemoActivities()[0];
-          demoActivity.id = `demo-${Date.now()}`;
-          demoActivity.timestamp = new Date();
-          get().addActivity(demoActivity);
+          const hasDemo = state.activities.some((a) => a.id.startsWith('demo-'));
+          if (!hasDemo) {
+            const demoActivity = generateDemoActivities()[0];
+            demoActivity.id = `demo-${Date.now()}`;
+            demoActivity.timestamp = new Date();
+            get().addActivity(demoActivity);
+          }
           set({ isLoading: false });
           return;
         }
-        throw new Error('Failed to fetch activities');
+        throw new Error(`Failed to fetch activities (HTTP ${response.status})`);
       }
 
       const data = await response.json();
@@ -198,13 +201,15 @@ export const useActivityStore = create<ActivityStoreState>((set, get) => ({
         }
       }
     } catch (error) {
-      activityLogger.warn('Activity feed API not available, using demo data');
-      // Generate a random demo activity on failure
-      const demoActivity = generateDemoActivities()[Math.floor(Math.random() * 5)];
-      demoActivity.id = `demo-${Date.now()}`;
-      demoActivity.timestamp = new Date();
-      get().addActivity(demoActivity);
-      set({ isLoading: false, error: null });
+      // A real transient failure (500, network, JSON parse) — surface it instead
+      // of fabricating fake activity every poll. The previous code injected a
+      // random demo event and cleared the error, so the feed silently lied and
+      // never signalled the outage. Demo data is reserved for the 404 path above.
+      activityLogger.warn('Failed to fetch activities', error);
+      set({
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Failed to load activity',
+      });
     }
   },
 
