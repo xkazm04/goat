@@ -38,6 +38,18 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      # Pin npm to the major that WROTE package-lock.json. npm 10 and npm 11
+      # resolve this tree differently — 10 wants @emnapi/{core,runtime}@1.11.3
+      # hoisted, 11 wants them nested under the two wasm32-wasi packages — and
+      # no single lockfile satisfies both. node 22 ships npm 10, so without this
+      # step `npm ci` fails before any check runs, which is exactly what it did
+      # on this workflow's first three runs.
+      #
+      # The lockfile alone is not a reproducible input; the lockfile PLUS the
+      # resolver version is. Bump both together, and re-verify with:
+      #   npm ci --os=linux --cpu=x64 --dry-run
+      # in a clean directory, on the pinned major.
+      - run: npm install -g npm@11
       - run: npm ci
       # BLOCKS. Input: the tree. vitest is configured with
       # passWithNoTests:false, so a run that executed zero files is red rather
@@ -53,6 +65,18 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      # Pin npm to the major that WROTE package-lock.json. npm 10 and npm 11
+      # resolve this tree differently — 10 wants @emnapi/{core,runtime}@1.11.3
+      # hoisted, 11 wants them nested under the two wasm32-wasi packages — and
+      # no single lockfile satisfies both. node 22 ships npm 10, so without this
+      # step `npm ci` fails before any check runs, which is exactly what it did
+      # on this workflow's first three runs.
+      #
+      # The lockfile alone is not a reproducible input; the lockfile PLUS the
+      # resolver version is. Bump both together, and re-verify with:
+      #   npm ci --os=linux --cpu=x64 --dry-run
+      # in a clean directory, on the pinned major.
+      - run: npm install -g npm@11
       - run: npm ci
       # ADVISORY-BY-DISPLAY, BLOCKING-BY-RATCHET. `tsc --noEmit` currently
       # exits 1 on 29 inherited errors, so running it bare would wall every
@@ -77,6 +101,18 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      # Pin npm to the major that WROTE package-lock.json. npm 10 and npm 11
+      # resolve this tree differently — 10 wants @emnapi/{core,runtime}@1.11.3
+      # hoisted, 11 wants them nested under the two wasm32-wasi packages — and
+      # no single lockfile satisfies both. node 22 ships npm 10, so without this
+      # step `npm ci` fails before any check runs, which is exactly what it did
+      # on this workflow's first three runs.
+      #
+      # The lockfile alone is not a reproducible input; the lockfile PLUS the
+      # resolver version is. Bump both together, and re-verify with:
+      #   npm ci --os=linux --cpu=x64 --dry-run
+      # in a clean directory, on the pinned major.
+      - run: npm install -g npm@11
       - run: npm ci
       # BLOCKS. Input: the tree. 44 correctness rules sit at `error`, each
       # measured at 0 findings before promotion. The ~721 legacy warnings
@@ -92,6 +128,18 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      # Pin npm to the major that WROTE package-lock.json. npm 10 and npm 11
+      # resolve this tree differently — 10 wants @emnapi/{core,runtime}@1.11.3
+      # hoisted, 11 wants them nested under the two wasm32-wasi packages — and
+      # no single lockfile satisfies both. node 22 ships npm 10, so without this
+      # step `npm ci` fails before any check runs, which is exactly what it did
+      # on this workflow's first three runs.
+      #
+      # The lockfile alone is not a reproducible input; the lockfile PLUS the
+      # resolver version is. Bump both together, and re-verify with:
+      #   npm ci --os=linux --cpu=x64 --dry-run
+      # in a clean directory, on the pinned major.
+      - run: npm install -g npm@11
       - run: npm ci
       # BLOCKS. Input: the tree plus a committed baseline. Refuses a rise in
       # any bucket AND an unexplained drop.
