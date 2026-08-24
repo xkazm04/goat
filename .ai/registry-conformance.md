@@ -1,16 +1,34 @@
 # Registry conformance — software-engineering
 
-contributor: mkdol-dev-box · audited: 2026-08-24 · repo: goat @ main (post-merge, 179 remote commits)
-· **wave 2 drained: 2026-08-24** — see `## Drained 2026-08-24` at the bottom for
-what moved and the commit that moved it.
+contributor: mkdol-dev-box · audited: 2026-08-24 · repo: goat @ main
+· **wave 2 drained: 2026-08-24** (29 deviations → 12)
+· **wave 2b drained: 2026-08-25** (12 → **0**)
+See the two `## Drained` sections at the bottom for what moved and the commit
+that moved it.
+
+**Deviations: 0. Deferred: 0**, over 75 rows across 13 subjects. No row in this
+table is at status `deviation`. That is not the same as "nothing left to do" —
+26 rows are `partial`, each naming what is still short, 3 are `n/a` with the
+reason stated, and the open work is ranked in the backlog below.
+Neither operator deferral (authentication/authorization, data retention) touches
+a row in this table: this repo's conformance selection has no `authorization` or
+`data-retention` subject. The auth deferral DID land somewhere — as five
+`suppressed` findings in `.ai/findings.json`, each carrying the operator's dated
+reason, an owner and a revisit horizon, because a suppression is a verdict with
+provenance and the finding stays visible.
 
 Bundle: `ai-registry/knowledge/software-engineering`. Subjects selected against this
 repo's real surfaces: a Next 16 / React 19 / zustand 5 app whose core is a
 drag-and-drop ranking grid over ~24 client stores.
 
-At audit time (wave 1) there was no unit runner and no CI. Both exist as of
-wave 2: vitest on `npm test` (177 tests) and `.github/workflows/gates.yml`
-(unit, lint, ratchet and the generated store-graph all blocking).
+At audit time (wave 1) there was no unit runner and no CI. As of wave 2b:
+vitest on `npm test` (**275 tests over 11 files**, every suite carrying a
+recorded negative control with its measured red count) and
+`.github/workflows/gates.yml` with **seven blocking checks** — unit, lint,
+ratchet, the generated store-graph, the doc-coupling map, the findings ledger
+and the structural backlog — plus a same-change docs job on pull requests and a
+manual-dispatch browser suite. The browser suite can now be run at all:
+`npm run seed:e2e` writes deterministic, namespaced, idempotent fixtures.
 
 A `deviation` here is a finding, not a verdict on anyone. Rows that read
 `followed` or `fixed` say what they were before, so the history stays legible
@@ -25,28 +43,28 @@ rather than being quietly overwritten by the fix.
 | client-state | persistence-and-migration | partial | was: 12 stores persist with `partialize`, none declared `version:`/`migrate:`. `grid-store` now has a real chain — `version: 1` + `migrate` routing through `src/stores/grid-store-migrations.ts`: append-only, each step total over its input version, preserve-and-default on a future payload, never throws, 27 tests. The other 11 stores are still unversioned. WAS: 12 stores use `persist` + `partialize`, none declares `version:`/`migrate:`. `grid-store.ts:1152` hand-rolls shape migration inside `onRehydrateStorage` — real, but not a versioned chain, so a payload cannot say what version it is or have a step appended |
 | client-state | rehydration-narrowing | partial | `grid-store`'s `onRehydrateStorage` is now narrowing ONLY — recompute derived statistics, resolve `currentListId` against the cache it references; all shape work moved to the versioned chain, and hostile input falls to defaults with a diagnostic rather than throwing (6 test cases). Was: it recomputed statistics and back-filled the `context` envelope on rehydrate — good narrowing. No store validates a persisted value against today's vocabulary; a corrupt key is not isolated from its siblings |
 | client-state | store-slicing | partial | `drop-zone-highlight-store.ts:1-14` documents a real migration off a context that re-rendered 50+ consumers; `slices/grid-slice.ts` exists. But `match-store` reaches 9 other stores via `getState()`, which is coupling the slicing was meant to prevent |
-| client-state | status-fsms | deviation | request state is boolean flags (`isLoading`/`isError`) throughout. The `'idle' \| …` unions that exist are domain machines, not request state (`patterns/drag-drop/types.ts:83`, `lib/debate/types.ts:88`) |
+| client-state | status-fsms | followed | FIXED. `src/lib/async-state/` is the one status vocabulary — `idle \| loading \| loaded \| empty \| failed \| stale`, DERIVED from the request machinery rather than hand-maintained, with the settled bit read from the query cache so a remount does not re-ghost. Failure lands where the technique says it lands: `failed` when nothing is held, `stale` when data is. Per-entity operation status is the keyed machine in `entity-mutex.ts`, with a composite-key separator guard that REFUSES a colliding key and a reaper for a lease whose holder never settles. 34 + 28 tests, four negative controls. Was: request state is boolean flags (`isLoading`/`isError`) throughout; the `'idle' \| …` unions that exist are domain machines, not request state |
 | client-state | async-race-guards | partial | TanStack Query supplies dedupe/cancellation for fetches. `useVisibleCollectionItems.ts:119` guards its own re-entrancy with a stable id-string compare; `undo-store.ts:106` guards undo/redo re-entrancy |
-| client-state | optimistic-write-path | deviation | `hooks/useOptimisticMutation.ts:140-184` is the naive recipe the technique names: whole-query snapshot, **unconditional** restore in `onError` — no compare-and-swap on the patched fields, no per-entity mutex, so two rapid actions on one entity corrupt each other's rollback. It does cancel in-flight refetches (`:150`), which is the one guard present. The drag path does not use it at all; `CollectionsDashboard.tsx:151` swallows a rejected reorder with `console.error` and never reverts |
+| client-state | optimistic-write-path | followed | FIXED. `useOptimisticMutation` records what it PAINTED as well as what it snapshotted, and `decideRevert` is a compare-and-swap: revert while the painted value still holds (structurally, not by reference), DROP when a refetch or a later mutation wrote a newer truth, DROP when the entity is gone. Serialized per entity by `optimisticEntityMutex`, whole attempt inside the critical section, second action waits rather than being dropped, release only if still the holder. The error notification is emitted OUTSIDE every revert branch — losing the revert must never mean losing the failure. `CollectionsDashboard`'s three `console.error` swallows are no longer the only handler: the collection mutations reconcile by re-asking the authority and raise a visible failure. Was: whole-query snapshot, unconditional restore in `onError`, no compare-and-swap, no per-entity mutex; the drag path did not use it and a rejected reorder was swallowed |
 | client-state | identity-scoped-eviction | n/a | no multi-account switching surface; auth is single-session Clerk with no cache keyed per identity |
 | client-state | invalidation-strategy | followed | TanStack Query with centralized keys (`src/lib/query-keys/collection.ts`); refetch-on-invalidate rather than event patching |
 | drag-drop | drag-lifecycle | followed | FIXED. `SimpleMatchGrid` and `AwardList` each have ONE named `resetDragState` reaper called from every exit — commit, Escape, drop-on-nothing, unmount — wired through `onDragCancel`. `CollectionView`/`StudioItemsView` hold no drag state of their own and now say so at the site. Was: **no `DndContext` passed `onDragCancel`** — all four (`SimpleMatchGrid.tsx:499`, `CollectionView.tsx:478`, `AwardList.tsx:316`, `StudioItemsView.tsx:171`) wire `onDragEnd` only. On Escape the cleanup at `SimpleMatchGrid.tsx:446-450` never runs, so `isDragging`/`hoveredPosition` stay set and all 50 slots remain lit while the overlay vanishes |
 | drag-drop | drag-lifecycle | followed | FIXED. One `DRAG_ACTIVATION_DISTANCE_PX = 6` in `src/lib/dnd/activation.ts`, read by all four surfaces. The grid's 2px was raised, not merely renamed: its cards are also click-to-place targets, where 2px turns ordinary clicks into micro-drags. Was: four different thresholds and no shared constant — 2px (`SimpleMatchGrid.tsx:365`), 5px, 6px, 8px. The 2px grid threshold coexists with click-to-place on the same cards |
 | drag-drop | keyboard-alternatives | followed | FIXED. All four surfaces register a `KeyboardSensor`; the grid uses a stepwise coordinate getter (`src/lib/dnd/keyboard-coordinates.ts`, 25 tests) that moves between real drop targets rather than dnd-kit's fixed 25px translate, with a `closestCenter` fallback without which the keyboard drag would move and never be able to drop. The announcement also names the quick-select accelerator. Was: no `KeyboardSensor` anywhere, yet `SimpleMatchGrid.tsx:153` reads out *"press Space or Enter… use arrow keys to move"* to screen readers. A separate quick-select path exists (`useQuickSelect.ts:195-247`, `q` then digits) and tier mode is genuinely complete (`useTierKeyboardNavigation.ts:29-51`) — but the grid announces an interaction it does not implement |
 | drag-drop | drop-affordances | partial | invalid-target refusal is well built (`SimpleDropZone.tsx:226-251`, crossed-circle + 600ms pulse, auto-cleared at `drop-zone-highlight-store.ts:118-130`). Two gaps: grid cards carry no `cursor-grab`/grip (`DropZoneCard.tsx:73`) though backlog items do (`ItemCard.tsx:64`), and refusal is only shown *after* the drop — `showValidDropZoneHighlight` is hardcoded `false` (`SimpleDropZone.tsx:135`) |
-| drag-drop | payload-and-identity | deviation | the payload carries identity *and* position (`lib/dnd/type-guards.ts:418-425`), but mutation is index-keyed: `grid-store.ts:750-799` splices by index and **rewrites the item's dnd id** to `createGridReceiverId(toPosition)` (`:782`, `:793`). An item's identity is a function of its slot, which breaks React key stability. Ranks are dense integers, defensible for a fixed 50-slot grid |
+| drag-drop | payload-and-identity | followed | FIXED. Primitives carry the IDENTITY the drop is about — `RemovePrimitive.expectItemId`, `SwapPrimitive.expectItemA/B` — and `validatePrimitive` refuses when a slot's occupant is no longer that item, naming both sides. `null` is a real expectation ("this slot was empty"), so a move onto a slot that filled up mid-drag is refused rather than silently displacing. The slot-address-as-item-id fallback is gone from both live instances (`grid-plans` result metadata, and `resultImagePrompt`'s cache key, which CHANGED WHENEVER AN ITEM MOVED); `PlacedItem.id` now documents at the type that it is a slot address. Dense integer ranks deliberately KEPT — the client owns the arrangement, there is no per-drop server write, and the technique's fractional-rank trade is bought under write contention this app does not have. 14 tests, 1 negative control. Was: mutation is index-keyed and rewrites the item's dnd id to `createGridReceiverId(toPosition)` |
 | drag-drop | ownership-boundaries | partial | the client owns the arrangement outright (localStorage persist, `grid-store.ts:394`) and there is no per-drop server write, so there is nothing to snap back — a legitimate choice. But `OfflinePersistence.ts:365-375` drops a permanently-`failed` sync op silently: local state keeps an arrangement the server rejected, with no reconciliation and no user-visible signal |
 | drag-drop | cross-surface-handoff | followed | backlog→grid handoff is real and routed (`DragOperationRouter.ts`), and the haunting is gone — `PortalDragOverlay` and the grid now both tear down on cancel, through the grid's single reaper. Was: on cancel one surface cleans up (`PortalDragOverlay.tsx:93-95` handles `onDragCancel` via `useDndMonitor`) while the grid does not — a visibly half-cancelled UI |
 | undo-history | undo-model-selection | followed | inverse-command, not snapshot (`undo-store.ts:31-42`, rollback at `:152`, re-execute at `:184`). Correct choice for a 50-slot grid; memory-light |
 | undo-history | stack-policy | followed | depth 50, trimmed from the front on push (`undo-store.ts:101`, `:114-119`); `setMaxDepth` re-trims (`:225-232`) |
 | undo-history | redo-semantics | followed | divergence truncates — `push` clears `redoStack` (`undo-store.ts:120-124`); re-entrancy latched by `isUndoRedoInProgress` with `finally` release (`:149`, `:165`, `:181`, `:216`) |
-| undo-history | gesture-coalescing | deviation | none. Every router operation pushes one command (`DragOperationRouter.ts:500-507`) with no time window or same-item merge, so arranging six items costs six Ctrl+Z presses |
-| undo-history | undo-scope | deviation | STILL OPEN, not attempted in wave 2: each hole needs an inverse command designed against product intent, and there is no e2e lane able to prove one. Four grid mutations bypass the stack entirely: the per-slot X button (`SimpleMatchGrid.tsx:468-475`), keyboard placement (`useQuickSelect.ts:179`), mobile swipe-to-rank (`grid-store.ts:623-662`), and the view-mode `clearGrid()` + bulk re-assign (`SimpleMatchGrid.tsx:243-257`) — the most destructive action in the app. Tier ops are conditionally undoable (`DragOperationRouter.ts:605`), so Ctrl+Z can fail *after* the press (`undo-store.ts:142-147`) |
+| undo-history | gesture-coalescing | followed | FIXED. `useUndoStore.pushTagged` merges consecutive pushes carrying the same tag into the step at the top of the stack. EXPLICIT TAGS, not a time window — a window guesses intention from rhythm and guesses wrong at both edges. The tag names the gesture INSTANCE (`remove:7`, `quick-place:item-42`), merging is legal only into the current top so a reused tag does not resurrect a closed step, and the merge is asymmetric (first rollback, latest forward half) so a step costs one entry however many events merged. Boundary events close a step: a different tag, an untagged commit-grade push, and undo itself. 60s ceiling as a backstop, not policy. Was: every router operation pushes one command with no time window or same-item merge, so arranging six items costs six Ctrl+Z presses |
+| undo-history | undo-scope | followed | FIXED. ONE slice definition and ONE restore door (`src/lib/undo/grid-slice.ts`), with every field's in/out decision written in its header as the reviewable record. In: the arrangement and the used-flags it implies. Out: viewMode, selection, hover, drag state, highlights, scroll, filters — and derived statistics, recomputed after restore. All four holes closed through `recordGridChange`: the per-slot X, keyboard placement, mobile tap-to-place, and the view-mode `clearGrid()` + bulk re-assign that emptied 50 slots with no way back. The conditional-undo defect is gone at the root: `push` REFUSES a step with no rollback, so a step that reaches the stack is undoable by construction and `canUndo()` means what it says. Restore reads a LIVE store context, because the memoized one is a render-time snapshot and would have made every capture pair report "nothing changed". 22 tests, 3 negative controls. Was: four grid mutations bypassed the stack; tier ops conditionally undoable, so Ctrl+Z could fail AFTER the press |
 | undo-history | checkpoint-restore | n/a | no restore-to-checkpoint surface; the stack is cleared wholesale on session reset (`match-store.ts:361`) |
-| async-ui-states | state-model | deviation | derived from boolean flags, not a discriminated model. No `AsyncState` union exists for requests anywhere in `src/` |
+| async-ui-states | state-model | followed | FIXED. `deriveAsyncState` implements the ordering exactly — content dominates, failure outranks loading only when nothing is held, empty requires the sticky settled bit, unstarted collapses into loading — and the four forbidden edges are unreachable by construction rather than avoided by convention. Adopted at five sites in the same change: `list-grid.tsx` (its render order IS the model), both Landing sections, `use-bookmarks`, and `SavedListsSection`, where it fixed a LIVE `loaded -> loading` edge that blanked the whole grid on every background refresh. The `data = []` default that made `data` defined on the first render — collapsing "asking" and "answered with nothing" — is removed. 34 tests, 2 negative controls. Was: derived from boolean flags; no `AsyncState` union existed anywhere in `src/` |
 | async-ui-states | failure-states | followed | FIXED. `SavedListsSection` now takes `error` and renders three distinct arms: a first-class failure state with a retry that reissues the same request; an ambient stale notice that KEEPS held content when a refresh fails; and an empty state gated on `!error`. `useBookmarks` newly exposes `refetch`. Was: it destructured `useBookmarks` without taking `error` (which `use-bookmarks.ts:269` returns), then `:287` returns `null` on empty — **a failed fetch deletes the whole Saved Lists section**, indistinguishable from having no bookmarks. Repeated at `:415` |
-| async-ui-states | empty-state-design | partial | `components/ui/list-grid.tsx:100-143` and now `SavedListsSection` both order load → fail → empty → data. No audit of the remaining surfaces was done in wave 2. `CollectionPanel.tsx:236` gates the data branch on both flags. Elsewhere the precedence is absent |
-| async-ui-states | placeholder-design | partial | shape-matched shared skeletons exist (`list-grid.tsx:79-97`, `StudioSkeleton.tsx`). Two contract misses: no delay window — the skeleton renders on the first `isLoading` frame, so warm and cached loads flash; and the skeleton container carries `aria-live="polite"` + `aria-busy` (`:84-85`), so the placeholder announces itself rather than being hidden from the accessibility tree |
+| async-ui-states | empty-state-design | followed | FIXED at the primitive, which is where it belongs: `list-grid.tsx` no longer ORDERS four branches over three booleans, it switches on one derived state, so `-> empty while unsettled` (the empty flash) is unreachable rather than avoided. `isSettledEmpty` is false for every unsettled state by construction, and a held empty array is `loaded`-and-empty rather than a fourth flag. `SavedListsSection` and both Landing sections consume it. Was: two surfaces ordered load -> fail -> empty -> data by hand and no audit of the rest was done |
+| async-ui-states | placeholder-design | partial | Shape-matched shared skeletons exist. ONE of the two contract misses is fixed: the `list-grid` placeholder no longer carries `aria-live="polite"` — it is `aria-hidden`, because a placeholder is a visual stand-in for something that is not there yet and there is nothing to read out. The other stands: there is still no delay window, so a warm or cached load flashes the skeleton for a frame. That is a real remaining gap, listed in the backlog |
 | async-ui-states | action-busy-states | partial | per-control busy states exist in forms. The technique's testable core — a **synchronous** disarm inside the activation event — is not in evidence anywhere; the drag/placement path has no double-press guard |
 | table | client-server-split | partial | list fetch is server-paged (`api/lists/route.ts:44-53`), while sort/filter of the loaded collection is client-side (`useCollection.ts:328-353`) — a defensible split at current sizes, undocumented as a decision |
 | table | sorting | followed | FIXED. `src/lib/sorting/comparators.ts` is the one authority: absent values placed LAST in both directions (direction applied inside each comparator, so no outer negation can flip them), `withIdTiebreak` makes every order total, `sortedBy` copies, locale collation with numeric runs. 31 tests. Converted `useCollection.ts` and `CreatorAnalyticsDashboard.tsx`; `CollectionView.tsx:265` deliberately left alone, it was already correct. Was: no stable tiebreak in any comparator, and absent values are coerced rather than placed: `useCollection.ts:333` `a.ranking ?? 0` makes unranked indistinguishable from worst-ranked and flips them to the top under `asc`; `:341` dates missing → epoch; `:346` popularity → 0. `CreatorAnalyticsDashboard.tsx:204-212` sorts a derived array **in place**, mutating memo input. `CollectionView.tsx:265-273` is the one careful sort (`MAX_SAFE_INTEGER` sentinel, intent documented) |
@@ -69,118 +87,74 @@ rather than being quietly overwritten by the fix.
 | quality-gates | policy-projection | partial | `.ai/manifest.yaml` was the second place gate policy was stated and disagreed with reality (`lint` advertised against a broken command). Corrected this session, with a `capabilityNotes` block stating what a green run actually means |
 | test-harness | negative-control-tests | followed | vitest wired to `npm test`, `passWithNoTests: false`. 177 tests over 8 files. EVERY suite carries a recorded negative control in its header naming the exact mutation and the MEASURED red count, and every one was actually run and restored. The three impersonating files were resolved per their nature (one rewritten as a real suite; one renamed `visual-exports.type-check.tsx`, honest and still enforced by typecheck, with its runtime claims covered by a new suite; one renamed `useCollection.usage-examples.tsx`). Was: **no unit-test runner existed** — no vitest/jest config, no dep, no script. Three files look like tests and are not: `src/lib/tiers/boundary.test.ts:4` is a hand-run `tsx` script, `visual-components.test.tsx:7-8` states outright that compiling *is* the test, `useCollection.test.example.tsx:2` is a reference sample. Nothing licenses a refactor |
 | test-harness | suite-partitioning | partial | the three stub specs are deleted and `docs/E2E_BROWSER_TESTING.md` carries a dated correction plus an explicit "Not covered" table, so each gap is visible rather than implied by a file that exists and does nothing. 39 tests / 7 files / 13 skipped → 29 / 4 / 3. The two suites are also now genuinely separate machines with their own configs. Was: 13 of 39 e2e tests (33%) hard-skipped, and three entire specs are TODO stubs with zero assertions: `e2e/list-search.spec.ts`, `e2e/ranking-completion.spec.ts`, `e2e/session-persistence.spec.ts`. `docs/E2E_BROWSER_TESTING.md:239-244` lists them in a coverage table with behavioural descriptions |
-| test-harness | platform-quirk-absorption | followed | `e2e/global-setup.ts` owns the precondition: one check before any worker, refusing the run with a greppable `E2E_PRECONDITION_FAILED` when the lists API returns zero, printing the population it verified on success, treating an unrecognised response shape as could-not-establish rather than as zero, and offering `E2E_ALLOW_EMPTY_DB=1` as an opt-out that says so in the output. It does not seed. The three in-test `test.skip()`s became assertions. Was: a run that executed nothing exited green rather than fatal — `exploratory-smoke.spec.ts:286-289`, `:319-322` and `drag-drop-ranking.spec.ts:240-243` call `test.skip()` when fixture data is absent, so against an empty database the suite is green and empty. There is no launcher that owns environment preconditions and no named diagnostic for a zero-executed run |
-| test-harness | isolation-lanes | partial | UNCHANGED for e2e — `webServer` still runs `npm run dev` and the suite has still never touched a production bundle (backlog #13, not attempted: a second config that cannot be executed here would be an unverified claim). The UNIT lane is now properly isolated: own config, own `include`, node environment, per-file `@vitest-environment` opt-in so no file pays for a DOM it does not need. Was: one chromium project, `fullyParallel: true`, `reuseExistingServer` on (`playwright.config.ts:32-45`). `webServer` runs `npm run dev` — the suite has never touched a production bundle, which is where module-evaluation-order defects surface |
+| test-harness | platform-quirk-absorption | followed | The launcher owns the precondition (one check before any worker, greppable `E2E_PRECONDITION_FAILED`, unrecognised shape treated as could-not-establish rather than as zero, `E2E_ALLOW_EMPTY_DB=1` as an opt-out that says so). As of 2026-08-25 the OTHER half exists: `npm run seed:e2e` writes deterministic fixtures, namespaced to fixed `e2e00000-…` UUIDs, idempotent, with `--check` and `--teardown`, refusing a non-local target without `E2E_SEED_ALLOW_REMOTE=1`. Verified end to end against a live database — 11/35/1614/421 before, 12/37/1632/436 after, stable across three seeds, back to 11/35/1614/421 after teardown. The launcher still does not seed, deliberately: a setup that silently populates a database it found empty hides the condition it exists to report. Its failure message now names the seed command. Was: a run that executed nothing exited green rather than fatal |
+| test-harness | isolation-lanes | partial | The UNIT lane is properly isolated (own config, own include, node environment, per-file `@vitest-environment` opt-in). For e2e, `webServer` still runs `npm run dev` and the suite has still never touched a production bundle — backlog #13, and it is now ACTIONABLE rather than blocked: the reason it was not attempted in wave 2 was "a second config that cannot be executed here (no seeded database available) would be an unverified claim", and a seeded database is exactly what landed on 2026-08-25. The claim would now be checkable; making it is the next session's work, not a thing to assert here |
 | test-harness | flake-lifecycle | partial | the never-reviewed quarantine is gone — the three permanently-empty specs were deleted rather than left to accumulate, and `retries: 2` on CI is now reachable because CI exists. No flake register or expiry policy yet. Was: `retries: 0` locally (`playwright.config.ts:14`, CI-gated and no CI exists), and the quarantine has no expiry or review — the three stub specs have been empty since they were written |
 | test-harness | live-app-harness | followed | Playwright drives the real app with `data-testid` locators rather than styling-coupled selectors |
 | docs-sync | dated-corrections | followed | the practice held across wave 2: `lazy-loading-implementation.md` gained a SECOND dated correction when the deletion it had deferred was actually made, and `E2E_BROWSER_TESTING.md`, `STORE_DEPENDENCY_GRAPH.md`, `Collection/README.md` and `useLazyLoad.ts` each got one rather than a silent edit. Originally: `docs/lazy-loading-implementation.md` was headed `Status: ✅ Complete` / "production-ready, fully tested" while quoting a 36-line integration block that was never in `CollectionPanel.tsx` and naming two files that do not exist. Now carries a dated correction table, and the Performance and Testing sections are marked projected/planned rather than measured |
 | docs-sync | doc-rot-detection | fixed (partly) | `docs/STORE_DEPENDENCY_GRAPH.md` claimed 17 stores, named four that never existed (`tier-store`, `filter-store`, `heatmap-store`, `task-store`) and omitted eleven real ones. It is now generated from `src/stores/registry.ts` with a `--check` mode. Every other doc remains uncheckable |
-| docs-sync | source-doc-mapping | deviation | exactly one coupling is declared and enforced (registry → store graph). 74 files in `docs/` have no mapping to the source they describe; nothing knows which doc a change owes |
-| docs-sync | same-change-enforcement | deviation | no gate reads a change record. Nothing would have caught any of the drift above at the commit that caused it |
-| docs-sync | coupled-surface-inventory | deviation | the store count was stated in three places — `STORE_DEPENDENCY_GRAPH.md` (17), `CLAUDE.md` (7), the manifest (15) — and all three disagreed with the code (24). Two are now pointers to the one authority; the inventory itself is still undeclared |
+| docs-sync | source-doc-mapping | followed | FIXED. `.ai/doc-coupling.json` is the one authority and `scripts/doc-coupling.mjs` its only reader. 20 entries, four of them DERIVED from the colocated-README convention rather than declared — self-repairing under rename, which is a declared map's characteristic death. Entries carry a required reference target plus a written dismissal altitude. The coverage check refuses a stale glob, a missing reference doc, and an allowlist entry naming an area the walk cannot find; it asserts its own walked population against a floor, because a checker that walks zero directories reports perfect coverage. Proved red seven ways. Was: exactly one coupling declared and enforced; 74 files in `docs/` with no mapping |
+| docs-sync | same-change-enforcement | followed | FIXED. `npm run docs:coupling -- --changed --base <ref>` reads the VERSION-CONTROL DIFF with rename detection — never a transcript, never a list of editor destinations — and blocks in a pull-request CI job with `fetch-depth: 0`, because a shallow clone makes merge-base unresolvable and the script reports that as exit 2 rather than as a pass. Satisfaction is on the NAMED target only. Dismissal is first-class and leaves an artifact: a `Docs-dismissed: <why>` commit trailer, countable from git history. It found three genuine obligations in its own first change and four more across this wave, every one settled rather than dismissed. Was: no gate reads a change record; nothing would have caught any of the drift at the commit that caused it |
+| docs-sync | coupled-surface-inventory | followed | FIXED. The inventory is the map's `coverage.areaRoots` — the coupling UNIVERSE, enumerated — against which the residue is counted and held as the `docs:unmappedAreas` ratchet bucket: 9 of 82 areas mapped, 4 exempt with a written reason, 69 unmapped. A report with a baseline, not a bar to clear; what it buys is that the 70th area is refused, which it already did twice in this wave (`src/lib/async-state`, `src/lib/undo`), both answered with a README rather than a re-baseline. `crossRepoSurfaces` is declared empty and says why cross-repo surfaces are reported rather than gated. Was: the store count was stated in three places and all three disagreed with the code; the inventory itself undeclared |
 | docs-sync | checked-vs-skipped-denominators | partial | the new `--check` reports the count it verified (`24 declared stores`), so a green run says what it looked at. No other check reports a denominator |
 | dead-code | instrument-per-orphan-class | followed | knip added (`knip.json`, `npm run scan:dead`), entry points declared rather than guessed, counts held as three ratchet buckets — a report with a baseline, not a bar to clear: 241 unused files is not a number anyone drives to zero soon, but the 242nd is refused (proved). The counter also refuses to report zero issues in a repo this size, since that means the entry globs stopped matching. Was: the only instrument was `eslint-plugin-unused-imports` (`eslint.config.mjs:80`), which sees unused **imports and locals** and never unused **exports** — precisely the class that let `shouldUseVirtualization`, `LazyLoadTrigger` and `src/lib/virtual/` sit orphaned. No knip, ts-prune, depcheck or madge. `src/lib/virtual/index.ts` is the shadow-declaration shape exactly: a barrel re-exporting its five dead siblings, so any reference-counting instrument would certify each of them alive |
-| dead-code | quarantine-vs-delete | partial | the two largest quarantined islands were promoted to deletion (4,612 lines), and knip now recomputes the population on demand. The hand-written never-expiring snapshots still exist and are still stale: `docs/UNUSED_COMPONENTS.md`, `docs/analysis/unused-components-integration-analysis.md`, `docs/unused/unused-code-scan-2025-11-06T20-45-41.md` — the last ~9 months stale. Nothing on those lists is ever promoted to deletion or cleared |
+| dead-code | quarantine-vs-delete | followed | The three hand-written never-expiring snapshots are DELETED, and every entry in all three was attributed first rather than assumed stale: `UNUSED_COMPONENTS.md` — 47 entries, 12 files gone, 27 NOW IMPORTED (it listed live wired code as unused), 8 still orphaned and all 8 in knip's current population; `unused-components-integration-analysis.md` — 7 of 7 components gone from the tree; `unused-code-scan-2025-11-06` — 46 paths, 43 gone, 3 now imported, ZERO still holding, one of which was `src/app/layout.tsx`, the Next.js root layout (its method searched only for JSX tags and imports, so every framework entry point was a structural false positive). Visibility MOVED to a live instrument rather than being deleted: the only live findings any of them held are reported by `npm run scan:dead` and pinned by three ratchet buckets. Autopsy in `.ai/manifest.yaml` capabilityNotes |
 | dead-code | carrying-cost-economics | followed | BOTH DELETED, each in its own revertible commit with the decision recorded. Was: two substantial libraries carried cost with no consumer and no decision recorded — `src/lib/virtual/` (6 modules, ~2,100 lines, **zero importers**) and `src/lib/orchestration/` (5 modules, zero importers outside itself). Recorded in the backlog below rather than deleted unilaterally |
 | dead-code | deletion-protocols | followed | two deletions shipped under the protocol. Each: zero importers established four independent ways and re-verified at the moment of deletion (path grep, per-symbol grep, dynamic-`import(` string grep, knip); the three closure questions answered BEFORE the act (still-reachable none, newly-unreachable none, tests referencing none); one island per commit with nothing riding along; every downstream number attributed (knip 252→241 = exactly the 11 files); surviving code that shares vocabulary named so the next session does not "finish the job" on live code; and an autopsy left at the site for the deleted predicates, which read as protection |
 | codebase-scanning | dead-code-detection | followed | knip is the reachability instrument, run by `npm run scan:dead` and enforced by three ratchet buckets. Was: no automated instrument; every orphan in the audit was found by hand-grepping importers |
 | codebase-scanning | rule-precision-discipline | followed | EVERY check added in wave 2 was shown able to go red before being trusted: the lint gate (seeded 3-error file), the ratchet (seeded rise, tampered drop, broken instrument), the knip bucket (seeded orphan module), and all 8 test suites (each with a recorded mutation and measured red count). The wave also produced three worked examples of the FAILURE mode — three successive verifications of the same `npm ci` defect each shared a cause with the thing they verified (same OS, then a resolution-only flag, then the wrong npm major) and so could not have failed; recorded in the commit messages. Was: the manifest validator was written against a seeded violation before being trusted — both a dangling edge and a cycle were injected and observed to throw. No other rule in the repo has been shown to match anything |
-| codebase-scanning | finding-lifecycle | deviation | findings live in dated markdown snapshots with no dedup key and no notion of "fixed"; `docs/harness/ui-bug-combined-2026-06-16/` is 63 files of exactly this |
-| module-design | locality-and-leverage | deviation | the same capability is implemented repeatedly with no shared seam: lazy-load ladders **twice** (now one), Ctrl+Z handlers **three times** (`use-undo-keyboard.ts:36`, `useOrchestrator.ts:481`, `useMatchupKeyboard.ts:46` — all window-level, all firing together if two surfaces mount), drag-state machines **three times** (`SimpleMatchGrid`, the unused `DragStateManager.tsx`, the unused `use-drag-sync.ts`), and virtualization twice |
+| codebase-scanning | finding-lifecycle | followed | FIXED. `.ai/findings.json` gives the 190 findings identity, states and verification. Identity is `sha256(contextSlug \| anchorFile \| titleSlug)` — the anchor FILE, never the LINE — proved by carrying 15 hand-written verdicts across a full re-derivation. The ledger is DERIVED from the reports and `--check` refuses any divergence. States: 175 open, 7 `fixed` (each RE-READ in the tree, each with a regression probe the CI check runs), 5 `suppressed` under the operator's dated auth deferral with owner and revisit horizon, 3 `needs-reanchor` — deliberately not "cleared", because absence also happens when the sensor never ran. 8 of 90 closure references in the FIXES-WAVE documents cannot be resolved to a context and the ingester REFUSES to guess: that number is the measurement of the defect. Proved red six ways. Was: findings live in dated markdown snapshots with no dedup key and no notion of "fixed" |
+| module-design | locality-and-leverage | followed | FIXED, by deletion in two revertible commits totalling 1,951 lines. The unadopted pattern library (`src/components/patterns/` minus badges and one live hook) had FOUR external importers in the whole tree, none of them what it was extracted for, and shipped a MIGRATION guide onto code nobody imported. Then the Match duplicates: drag state implemented three times (adopted once), magnetic snap twice (adopted zero times). Both islands under the deletion protocol — import-graph walk over alias/relative/dynamic/require specifiers, per-symbol grep, knip, the three closure questions, every downstream number attributed, autopsies at both barrels naming what survives and shares the vocabulary. The FINDING is recorded as structural specs, not just the dead code: a capability gets written twice when the first one does not look like it exists from where the author is standing. Was: the same capability implemented repeatedly with no shared seam |
 | module-design | module-depth | partial | `grid-store.ts` is deep in the good sense — a wide surface over one owned domain. `match-store` reaching nine stores is the opposite: a thin orchestrator with a very wide dependency footprint |
 | module-design | seams-and-adapters | partial | `createLazyStoreAccessor` remains a real, adopted seam. The unadopted one is DELETED — which removes a structure that made the coupling look like it had an owner and does NOT repair the coupling: `match-store` still reaches nine stores through direct `getState()`. Was: `src/lib/orchestration/` was built as the seam for cross-store coordination and never adopted, so the coupling it was meant to absorb is still direct `getState()` |
-| module-design | structural-improvement-loop | deviation | `STORE_DEPENDENCY_GRAPH.md` carried a four-phase migration plan whose "Success Criteria" checkboxes were ticked for work that had not landed (`dragHandlers.ts` was listed as shipped and does not exist). A plan that marks itself complete is not a loop |
+| module-design | structural-improvement-loop | followed | FIXED. `.ai/structural-backlog.json` + `scripts/structural-backlog.mjs`. The memory records what was DONE — 2 accepted, 2 executed, 1 DECLINED WITH ITS REASON — and never what was computed; every measurement is re-derived each run, because a derived number that outlives its tree is a proxy that has already diverged. Each spec names at least two concrete places and quotes the relation. The check blocks on grounding (files exist and still say what the spec quotes), on status obligations (accepted needs target/trade/invariant/stop-condition/review-by; the trade must say what it buys, spends and who collects), and on stop conditions evaluated BOTH WAYS — `executed` whose condition does not hold FAILS, which is the self-ticking checkbox caught by machine. Review-by dates are REPORTED, never gated: the calendar is not the tree. Proved red six ways, and its first run refused two specs its own author had just written. Was: `STORE_DEPENDENCY_GRAPH.md` carried a plan whose Success Criteria were ticked for work that had not landed |
 | repo-manifest-standard | capability-not-tool-vocabulary | followed | `.ai/manifest.yaml` keys on capabilities (`lint`, `typecheck`, `test`) mapped to commands, not tool names — it survived the `next lint` → `eslint` swap as a one-line edit |
 | repo-manifest-standard | generated-from-provenance | partial | `generatedFrom` listed `context_map.json`, deleted in 2026-03, gitignored, with no generator — provenance naming an input that did not exist. Removed this session along with the dangling `paths.contextMap`. The deeper gap stands: the manifest is hand-written while carrying a `generatedFrom` field, no generator exists, and there is no re-synthesize-and-compare drift check, so nothing can tell drift from could-not-synthesize |
 | repo-manifest-standard | pointers-not-embeds | followed | `paths:` points at subsystems rather than embedding them; extended this session with `storeTopology` and `conformance` pointers |
 | repo-manifest-standard | must-ignore-unknown | followed | stated in the file's own header comment and honoured — the new `capabilityNotes` and `verifiedAt` keys are additive |
 | repo-manifest-standard | spec-ships-with-artifact | partial | the contract's rules are stated as comments inside the artifact, which makes it self-describing offline, but there is no versioned spec to conform to beyond `schemaVersion: 0.1.0` |
 
-## Deviations backlog
+## Open backlog
 
-Ranked by value. Everything above the `## Drained` heading is still open.
+Ranked by value. Everything here is a `partial` row's remaining half or a
+`n/a` waiting on a decision — there are no `deviation` rows left to list.
 
-6. **`src/app/features/Collection/components/LazyLoadTrigger.tsx` has no
-   consumer.** Kept when its two sibling predicates were deleted, because a
-   component is a decision about UI rather than an obviously-inert helper. Wire
-   it into `CollectionPanel` as tier 2 of the lazy-loading ladder, or delete it
-   and drop the row from `docs/lazy-loading-implementation.md`. There is a
-   second, also-unused `LazyLoadTrigger` in
-   `src/components/patterns/virtualization/` — decide which one survives before
-   wiring either. *(dead-code/quarantine-vs-delete)*
+6. **`Collection/components/LazyLoadTrigger.tsx` still has no consumer.** No
+   longer tracked here as a loose end: it is the accepted structural spec
+   `ladder-has-one-owner` in `.ai/structural-backlog.json`, grounded in three
+   named files, with the trade stated and a review-by of 2026-11-24. Its stop
+   condition is machine-checked on every run — either `CollectionPanel` renders
+   the trigger, or the trigger is gone. The decision (wire or delete) is the
+   human input the loop cannot supply. *(dead-code/quarantine-vs-delete)*
 
 10b. **The other 11 persisted stores have no migration chain.** `grid-store` is
-   now the worked exemplar (`src/stores/grid-store-migrations.ts`); copy its
-   shape. Cheapest first step for each: add `version: 1` with an identity
-   `migrate`, which strands nothing and gives the next shape change somewhere to
-   land. *(client-state/persistence-and-migration)*
+   the worked exemplar (`src/stores/grid-store-migrations.ts`); copy its shape.
+   Cheapest first step for each: `version: 1` with an identity `migrate`, which
+   strands nothing and gives the next shape change somewhere to land.
+   *(client-state/persistence-and-migration)*
 
-11. **Undo has holes the user can fall into.** Four grid mutations bypass the
-   stack (per-slot X, keyboard placement, mobile swipe, and the view-mode
-   `clearGrid()` + bulk re-assign — the most destructive action in the app), and
-   tier ops are undoable only if the operation happens to carry a `rollback`, so
-   Ctrl+Z can fail *after* the press. Also: `canUndo`/`undoDescription` are fully
-   implemented (`undo-store.ts:234-245`) with zero consumers — there is no undo
-   affordance in the UI at all.
-   *Not attempted in wave 2*: each hole needs an inverse command designed
-   against product intent, and there is no e2e lane able to prove one.
-   *(undo-history/undo-scope)*
+13. **The e2e suite has never run against a production bundle.**
+   `playwright.config.ts` starts `npm run dev`. Module-evaluation-order defects —
+   the class the store topology work exists to prevent — only appear under
+   production bundling. NOW ACTIONABLE: wave 2 declined this because "a second
+   config that cannot be executed here (no seeded database available) would be
+   an unverified claim", and `npm run seed:e2e` removed that blocker on
+   2026-08-25. *(test-harness/isolation-lanes)*
 
-11b. **Gesture coalescing.** Every router operation pushes one command with no
-   time window or same-item merge, so arranging six items costs six Ctrl+Z
-   presses. Same blocker as 11 — the merge window is a product decision.
-   *(undo-history/gesture-coalescing)*
+17. **`match-store` reaches nine other stores via `getState()`.** Carried as the
+   accepted spec `match-store-getstate-fanout`, grounded in two named files with
+   the trade stated (leverage for callers, locality spent by maintainers) and a
+   deliberate constraint from the deleted orchestration layer: any seam must be
+   ADOPTED IN THE SAME CHANGE THAT INTRODUCES IT. Its stop condition is
+   `manual: true` on purpose rather than an invented threshold nobody agreed to.
+   Step one is measuring the scatter WITH its predicate; scatter is evidence,
+   not a verdict. *(module-design/module-depth, seams-and-adapters,
+   client-state/store-slicing)*
 
-13. **The e2e suite has never run against a production bundle** —
-   `playwright.config.ts` starts `npm run dev`. Module-evaluation-order defects,
-   the class the store topology work exists to prevent, only appear under
-   production bundling.
-   *Not attempted in wave 2*: a second config that cannot be executed here (no
-   seeded database available) would be an unverified claim, which is the thing
-   this whole wave has been removing. Needs an environment with fixtures.
-   *(test-harness/isolation-lanes)*
-
-14. **74 docs, two declared source couplings.** The store graph is generated and
-   checked; everything else is prose nobody can verify. Declare couplings for the
-   next-most-load-bearing documents (`CLAUDE.md`, `E2E_BROWSER_TESTING.md`,
-   `Collection/README.md`) before adding more prose.
-   *(docs-sync/source-doc-mapping, coupled-surface-inventory)*
-
-15. **No gate reads a change record.** Nothing would catch doc drift at the
-   commit that caused it. CI now exists, so there is somewhere for such a check
-   to run — which is what made this actionable rather than theoretical.
-   *(docs-sync/same-change-enforcement)*
-
-16. **Findings still live in dated markdown snapshots with no dedup key and no
-   notion of "fixed"** — `docs/harness/ui-bug-combined-2026-06-16/` is 63 files
-   of exactly this, and `docs/UNUSED_COMPONENTS.md` and friends are ~9 months
-   stale. knip now recomputes the dead-code population on demand, which makes
-   those three snapshots deletable rather than merely wrong.
-   *(codebase-scanning/finding-lifecycle, dead-code/quarantine-vs-delete)*
-
-17. **`match-store` reaches nine other stores via `getState()`.** The seam built
-   to absorb this was deleted in wave 2 as unadopted — which removed a structure
-   that made the coupling look owned, and did not give it an owner. Any future
-   seam must be adopted in the same change that introduces it.
-   *(module-design/module-depth, seams-and-adapters, client-state/store-slicing)*
-
-18. **`useOptimisticMutation.ts:140-184` is the naive recipe** — whole-query
-   snapshot, unconditional restore in `onError`, no compare-and-swap and no
-   per-entity mutex, so two rapid actions on one entity corrupt each other's
-   rollback. The drag path does not use it at all;
-   `CollectionsDashboard.tsx:151` swallows a rejected reorder with
-   `console.error` and never reverts. *(client-state/optimistic-write-path)*
-
-19. **Request state is boolean flags throughout.** No `AsyncState` discriminated
-   union exists anywhere in `src/`; the `'idle' | …` unions that do exist are
-   domain machines, not request state.
-   *(client-state/status-fsms, async-ui-states/state-model)*
-
-20. **Skeletons have no delay window and announce themselves.**
-   `list-grid.tsx:79-97` renders on the first `isLoading` frame, so warm and
-   cached loads flash, and the container carries `aria-live="polite"` +
-   `aria-busy`, so the placeholder speaks instead of being hidden from the
-   accessibility tree. *(async-ui-states/placeholder-design)*
+20. **Skeletons still have no delay window.** The other half of this row is
+   fixed — the placeholder no longer announces itself — but `list-grid` still
+   renders shimmer on the first `isLoading` frame, so a warm or cached load
+   flashes. *(async-ui-states/placeholder-design)*
 
 21. **The live-region provider reads only the last announcement**
    (`ScreenReaderAnnouncer.tsx:28`), so a burst loses all but one — there is no
@@ -198,13 +172,9 @@ Ranked by value. Everything above the `## Drained` heading is still open.
 
 24. **`OfflinePersistence.ts:365-375` drops a permanently-failed sync op
    silently** — local state keeps an arrangement the server rejected, with no
-   reconciliation and no user-visible signal.
-   *(drag-drop/ownership-boundaries)*
-
-25. **Grid item identity is a function of its slot.** `grid-store.ts:750-799`
-   splices by index and rewrites the item's dnd id to
-   `createGridReceiverId(toPosition)`, which breaks React key stability.
-   *(drag-drop/payload-and-identity)*
+   reconciliation and no user-visible signal. The same defect shape was fixed
+   for the collection membership writes on 2026-08-25; this one is a different
+   surface with a different owner. *(drag-drop/ownership-boundaries)*
 
 26. **`showValidDropZoneHighlight` is hardcoded `false`**
    (`SimpleDropZone.tsx:135`), so refusal is only shown AFTER the drop; and grid
@@ -214,6 +184,58 @@ Ranked by value. Everything above the `## Drained` heading is still open.
 27. **The manifest carries `generatedFrom` with no generator** and no
    re-synthesize-and-compare check, so nothing can tell drift from
    could-not-synthesize. *(repo-manifest-standard/generated-from-provenance)*
+
+## Drained 2026-08-25 (wave 2b)
+
+Twelve deviation rows to zero, plus the e2e seeded-database condition. Gates
+after every slice, full pass at the end; every new check proved able to go red
+before being trusted.
+
+| # | item | commit |
+|---|---|---|
+| ~~14 + 15~~ | ~~docs-sync: no coupling map, no gate reading a change record~~ | `b630456` |
+| ~~16~~ | ~~190 findings with no dedup key and no notion of "fixed"~~ | `7080dcd` |
+| ~~16b~~ | ~~three never-expiring dead-code snapshots~~ (100 entries attributed first) | `077e00a` |
+| ~~17a~~ | ~~the pattern library nothing adopted~~ (9 files, 1,137 lines) | `ac071e4` |
+| ~~17b~~ | ~~drag state implemented 3×, magnetic snap 2×~~ (3 files, 814 lines) | `3afc62b` |
+| — | the structural improvement loop, replacing a plan that ticked its own boxes | `5d9fb8d` |
+| ~~19~~ | ~~no `AsyncState` union anywhere in `src/`~~ | `71bc903` |
+| ~~18~~ | ~~the naive optimistic recipe: unconditional restore, no mutex~~ | `4416fee` |
+| ~~11 + 11b~~ | ~~four grid mutations bypassed undo; no gesture coalescing~~ | `db7b242` |
+| ~~25~~ | ~~grid item identity was a function of its slot~~ | `9542181` |
+| — | the e2e seed: the suite can now actually be run | `f36fc30` |
+
+### What the new checks found on their own
+
+The argument for having them, again:
+
+- The **coupling gate** found three genuine obligations in its own first change
+  (the manifest, CLAUDE.md, the ratchet baseline) and four more across the wave
+  — every one settled rather than dismissed. It also demanded, by name, the
+  corrections to `Collection/README.md` and `Collection/hooks/README.md`.
+- The **coverage bucket** refused two new source areas that arrived without a
+  coupled document (`src/lib/async-state`, `src/lib/undo`). Both were answered
+  with a README rather than a re-baseline.
+- The **structural check** refused two `executed` specs whose deletions had not
+  landed yet — the self-ticking checkbox, firing against its own author.
+- The **ratchet** caught five regressions from this wave's own commits
+  (import/order, knip:unusedTypes ×2, docs:unmappedAreas ×2). All fixed, none
+  re-baselined.
+- The **seed's idempotence check** caught a defect where run one passed and run
+  two failed: `list_items`' rerank trigger versus a batch upsert.
+
+### Negative controls that failed, and were fixed
+
+Recorded because a control that cannot go red is worse than no control:
+
+- A findings probe of `/function getStudioItemId/` **still matched** after the
+  symbol was renamed to `getStudioItemIdRENAMED`. Now anchored on the paren.
+- A structural grounding clause of `mustNotContain: "useMagneticSnap"` fired on
+  the **autopsy comment** left at the deletion site. Grounding clauses now take
+  regexes and assert on export statements.
+- Two undo tests asserting "refuses a step with no rollback" passed a step that
+  HAD one, because the helper's default parameter fired on an explicit
+  `undefined`. They could not have failed.
 
 ## Drained 2026-08-24
 
