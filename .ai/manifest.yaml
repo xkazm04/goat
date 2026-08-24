@@ -1,0 +1,60 @@
+# .ai/manifest.yaml — the agent-facing contract for this repo.
+# Capabilities are tool-NEUTRAL (a name -> the command that fulfils it) and unknown fields MUST be
+# ignored — so this survives tool churn and schema growth.
+schema: ai-manifest
+schemaVersion: 0.1.0
+generatedAt: "2026-08-24"
+generatedFrom: [package.json, CLAUDE.md, context_map.json]
+
+repo:
+  name: goat
+  purpose: "G.O.A.T. — Next.js app for building and ranking custom top-N lists via a drag-and-drop match grid"
+  languages: [typescript]
+
+# Capabilities, not tools. Add keys freely; older readers ignore unknown ones.
+# `verified` is a claim a doctor flips to true once it has actually run the command.
+# Every command below exists in package.json scripts (or is tsc against the repo's tsconfig.json).
+capabilities:
+  dev: { command: "npm run dev", verified: false }
+  build: { command: "npm run build", verified: false }
+  start: { command: "npm start", verified: false }
+  lint: { command: "npm run lint", verified: false }
+  typecheck: { command: "npx tsc --noEmit", verified: false }
+  test: { command: "npm run test:e2e", verified: false }
+  test-ui: { command: "npm run test:e2e:ui", verified: false }
+  storybook: { command: "npm run storybook", verified: false }
+  build-storybook: { command: "npm run build-storybook", verified: false }
+
+# Pointers — these subsystems can change format underneath without breaking this contract.
+paths:
+  contextMap: context_map.json
+  docs: docs/
+  e2e: e2e/
+  stores: src/stores/
+
+# The organization's AI registry - knowledge bundles this repo consumes and the skill
+# marketplace it installs from. Unknown fields MUST be ignored by a reader.
+# registered from the secondary machine (mkdol) 2026-08-24
+registry:
+  remote: github:xkazm04/ai-registry
+  local: ../ai-registry
+  machine: secondary
+  contributor: mkdol-dev-box
+knowledge:
+  domains: [software-engineering, media-generation]
+
+# Shared skills this project uses, from the registry's skills/ lane. The LINK is machine
+# state (gitignored, made by ai-registry/scripts/link-skills.mjs); THIS list is the
+# reviewable declaration. A skill not listed here is project-owned and lives in
+# .claude/skills/ as a real directory.
+skills:
+  - architect
+  - conform
+  - consult
+  - explorer
+  - research
+  - ship-loop
+  - motionize
+  - npm-updates
+  - tiger
+  - uat
