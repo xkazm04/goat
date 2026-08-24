@@ -115,6 +115,11 @@ export const STORE_DEPENDENCIES = {
   'grid-store': [
     'backlog-store',
     'session-store',
+    // Added 2026-08-25: handleMobileTapSlot records an undo step through
+    // @/lib/undo/record-grid-change, which writes to undo-store. Declared here
+    // because it is a real edge, reached by a deferred require() exactly like
+    // the backlog-store one above.
+    'undo-store',
     'use-list-store',
     'validation-notification-store',
   ],

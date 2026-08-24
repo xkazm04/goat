@@ -11,15 +11,15 @@
   },
   "measuredAt": "2026-08-24",
   "instrument": {
-    "filesWalked": 971,
-    "minFilesWalked": 776
+    "filesWalked": 981,
+    "minFilesWalked": 784
   },
   "buckets": {
     "docs:unmappedAreas": 69,
     "eslint:@next/next/no-html-link-for-pages": 1,
     "eslint:@next/next/no-img-element": 31,
     "eslint:import/no-anonymous-default-export": 2,
-    "eslint:import/order": 83,
+    "eslint:import/order": 68,
     "eslint:jsx-a11y/click-events-have-key-events": 23,
     "eslint:jsx-a11y/html-has-lang": 2,
     "eslint:jsx-a11y/label-has-associated-control": 43,

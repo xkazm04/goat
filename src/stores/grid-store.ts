@@ -897,21 +897,44 @@ export const useGridStore = create<GridStoreState>()(
           return;
         }
 
-        // If slot is occupied, displace existing item back to backlog
-        const existingItem = state.gridItems[position];
-        if (existingItem && existingItem.context.matched && existingItem.item?.id) {
-          const displacedItemId = existingItem.item.id;
-          get().removeItemFromGrid(position);
-          backlogState.markItemAsUsed(displacedItemId, false);
-          gridLogger.debug(`Tap-to-place: displaced item ${displacedItemId} from position ${position}`);
-        }
+        // UNDOABLE since 2026-08-25. Tap-to-place is the primary interaction
+        // on touch, and it used to bypass the undo stack entirely: an entire
+        // ranking built on a phone had no undo while the same ranking built by
+        // dragging on a desktop had one.
+        //
+        // The tag carries the ITEM identity, so tapping two different items in
+        // quick succession stays two steps.
+        //
+        // require() rather than a top-level import: this module is loaded by the
+        // undo recorder's own live-context accessor, and a static import here
+        // would close the cycle at module-evaluation time. Mirrors the pattern
+        // already used for backlog-store above.
+        const { recordGridChange } = require('@/lib/undo/record-grid-change');
+        recordGridChange(
+          {
+            description: `Place "${item.title ?? 'item'}" at position ${position + 1}`,
+            tag: `tap-place:${item.id}`,
+          },
+          () => {
+            // If slot is occupied, displace existing item back to backlog
+            const existingItem = get().gridItems[position];
+            if (existingItem && existingItem.context.matched && existingItem.item?.id) {
+              const displacedItemId = existingItem.item.id;
+              get().removeItemFromGrid(position);
+              backlogState.markItemAsUsed(displacedItemId, false);
+              gridLogger.debug(`Tap-to-place: displaced item ${displacedItemId} from position ${position}`);
+            }
 
-        // Place the item
-        const gridItem = createGridItem(item, position);
-        get().assignItemToGrid(gridItem, position);
-        backlogState.markItemAsUsed(item.id, true);
+            // Place the item
+            const gridItem = createGridItem(item, position);
+            get().assignItemToGrid(gridItem, position);
+            backlogState.markItemAsUsed(item.id, true);
+          },
+        );
 
-        // Clear selection after placement
+        // Clear selection after placement. OUT OF SCOPE for undo — this is
+        // transient interaction state, not something the user said about the
+        // document.
         set({ mobileSelectedItem: null });
         gridLogger.info(`Tap-to-place: placed item at position ${position}`);
       },

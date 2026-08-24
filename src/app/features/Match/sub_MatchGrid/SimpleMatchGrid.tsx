@@ -8,6 +8,7 @@ import { AudioPlayer } from "@/components/AudioPlayer";
 import { AuthPrompt } from "@/components/auth";
 import { RankingProgressLayer } from "@/components/visual/RankingProgressLayer";
 import { useAuthUser } from "@/hooks/use-auth-user";
+import { useUndoKeyboard } from "@/hooks/use-undo-keyboard";
 import {
   createStandardRouter,
   createStepwiseKeyboardCoordinateGetter,
@@ -17,37 +18,38 @@ import {
   TOUCH_ACTIVATION_TOLERANCE_PX,
   type OperationStoreContext,
 } from "@/lib/dnd";
+import { recordGridChange } from "@/lib/undo/record-grid-change";
 import { useBacklogStore } from "@/stores/backlog-store";
+import { useDropZoneHighlightStore } from "@/stores/drop-zone-highlight-store";
 import { useGridStore } from "@/stores/grid-store";
-import { BacklogItem } from "@/types/backlog-groups";
-import { backlogGroupsToItemCategories } from "../../Collection";
-import { CollectionItem } from "../../Collection/types";
-import { SimpleCollectionPanel } from "../sub_MatchCollections/SimpleCollectionPanel";
-import { useCurrentList } from "@/stores/use-list-store";
 import { useMatchStore } from "@/stores/match-store";
 import { useRankingStore } from "@/stores/ranking-store";
+import { useCurrentList } from "@/stores/use-list-store";
+import { BacklogItem } from "@/types/backlog-groups";
 
+import { backlogGroupsToItemCategories } from "../../Collection";
+import { CollectionItem } from "../../Collection/types";
 import { LazyShareModal } from "../components/LazyModals";
+import { BracketView } from "../sub_MatchBracket";
+import { SimpleCollectionPanel } from "../sub_MatchCollections/SimpleCollectionPanel";
+
 
 
 // Import modular components
 import { DropZoneHighlightProvider } from "./components/DropZoneHighlightContext";
-import { useDropZoneHighlightStore } from "@/stores/drop-zone-highlight-store";
 import { ViewSelector } from "./components/GridRenderer";
 import { GridSection } from "./components/GridSection";
 import { MatchGridHeader } from "./components/MatchGridHeader";
 import { PortalDragOverlay } from "./components/PortalDragOverlay";
+import { StandaloneAnnouncer } from "./components/ScreenReaderAnnouncer";
 import { TierListView } from "./components/TierListView";
 import { ViewSwitcher, ViewMode } from "./components/ViewSwitcher";
-import { BracketView } from "../sub_MatchBracket";
-import { PositionBracketModal } from "../sub_MatchBracket/PositionBracketModal";
-import { StandaloneAnnouncer } from "./components/ScreenReaderAnnouncer";
-
-
 import { ComparisonDrawer } from "../components/ComparisonDrawer";
 import { PositionHistoryProvider } from "../components/PositionHistoryContext";
+import { PositionBracketModal } from "../sub_MatchBracket/PositionBracketModal";
 
-import { useUndoKeyboard } from "@/hooks/use-undo-keyboard";
+
+
 
 /**
  * "Neon Arena" Match Grid
@@ -259,22 +261,37 @@ function SimpleMatchGridInner() {
       // Sync tier state to ranking store
       syncRankingFromTiers(transferableMap);
 
-      // Clear grid atomically in a single setState (avoids N individual re-renders)
-      clearGrid();
+      // UNDOABLE since 2026-08-25, and this is the one that mattered most: a
+      // view-mode switch out of tier list CLEARS ALL 50 SLOTS and rebuilds them
+      // from the tiers. It was the most destructive action in the app and had
+      // no way back at all.
+      //
+      // No tag: this is a commit-grade action, a whole intention on its own. It
+      // therefore also CLOSES any open gesture step, so a Ctrl+Z immediately
+      // after cannot merge into a drag that happened before it.
+      //
+      // The step restores the ARRANGEMENT only. The view mode itself is out of
+      // scope by design — undo returns your ranking without also throwing you
+      // back into the previous view, because moving the camera as a side effect
+      // of state capture is what makes a surface feel haunted.
+      recordGridChange({ description: 'Rebuild grid from tier list' }, () => {
+        // Clear grid atomically in a single setState (avoids N individual re-renders)
+        clearGrid();
 
-      // Apply items from tiers to grid in order (O(1) lookups via Map)
-      let gridPosition = 0;
-      for (const tier of tierState.tiers) {
-        for (const itemId of tier.itemIds) {
-          if (gridPosition >= maxGridSize) break;
-          const item = itemLookup.get(itemId);
-          if (item) {
-            assignItemToGrid(item, gridPosition);
-            markItemAsUsed(item.id, true);
-            gridPosition++;
+        // Apply items from tiers to grid in order (O(1) lookups via Map)
+        let gridPosition = 0;
+        for (const tier of tierState.tiers) {
+          for (const itemId of tier.itemIds) {
+            if (gridPosition >= maxGridSize) break;
+            const item = itemLookup.get(itemId);
+            if (item) {
+              assignItemToGrid(item, gridPosition);
+              markItemAsUsed(item.id, true);
+              gridPosition++;
+            }
           }
         }
-      }
+      });
     }
 
     setViewMode(newMode);
@@ -547,11 +564,22 @@ function SimpleMatchGridInner() {
 
   const handleRemove = useCallback((position: number) => {
     const item = useGridStore.getState().gridItems[position];
+    if (!item?.item?.id) return;
 
-    if (item && item.item?.id) {
-      removeItemFromGrid(position);
-      markItemAsUsed(item.item.id, false);
-    }
+    // UNDOABLE since 2026-08-25. The per-slot X used to mutate the arrangement
+    // with no step on the stack, so Ctrl+Z after a mis-click reverted whatever
+    // DRAG came before it — silently undoing something else.
+    //
+    // The tag carries the slot identity, so removing slot 3 and slot 9 in quick
+    // succession are two steps. A bare "remove" tag would merge them and one
+    // Ctrl+Z would bring back both.
+    recordGridChange(
+      { description: `Remove "${item.item.title ?? 'item'}" from position ${position + 1}`, tag: `remove:${position}` },
+      () => {
+        removeItemFromGrid(position);
+        markItemAsUsed(item.item!.id, false);
+      },
+    );
   }, [removeItemFromGrid, markItemAsUsed]);
 
   // Click-to-place: selected backlog item state (shared for desktop + mobile)

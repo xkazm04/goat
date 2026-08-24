@@ -76,7 +76,7 @@ No store-to-store edges. Safe to construct first, and safe to touch in isolation
 |---|---|---|---|
 | `backlog-store` | `selection-cursor` | 1 | `session-store`, `grid-store`, `match-store` |
 | `session-store` | `backlog-store`, `selection-cursor` | 2 | `grid-store`, `match-store` |
-| `grid-store` | `backlog-store`, `session-store`, `use-list-store`, `validation-notification-store` | 5 | `match-store` |
+| `grid-store` | `backlog-store`, `session-store`, `undo-store`, `use-list-store`, `validation-notification-store` | 6 | `match-store` |
 | `match-store` | `backlog-store`, `comparison-store`, `grid-store`, `placement-store`, `selection-cursor`, `session-store`, `undo-store`, `use-list-store`, `validation-notification-store` | 9 | — |
 
 ## Graph (DOT)
@@ -116,6 +116,7 @@ digraph StoreDependencies {
   "session-store" -> "selection-cursor";
   "grid-store" -> "backlog-store";
   "grid-store" -> "session-store";
+  "grid-store" -> "undo-store";
   "grid-store" -> "use-list-store";
   "grid-store" -> "validation-notification-store";
   "match-store" -> "backlog-store";
