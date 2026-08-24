@@ -9,14 +9,15 @@
  * - Animated generation skeleton with gradient sweep
  */
 
-import { DndContext, closestCenter, DragEndEvent , useSensor, useSensors, PointerSensor } from '@dnd-kit/core';
-import { SortableContext, rectSortingStrategy } from '@dnd-kit/sortable';
+import { DndContext, closestCenter, DragEndEvent , useSensor, useSensors, KeyboardSensor, PointerSensor } from '@dnd-kit/core';
+import { SortableContext, rectSortingStrategy, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { AnimatePresence, motion } from 'framer-motion';
 import { GripVertical, Database, Crown } from 'lucide-react';
 
 import { SURFACE_ELEVATION } from '@/components/visual/depth/depth-tokens';
 import { GoatMascot } from '@/components/visual/GoatMascot';
 import { DURATION } from '@/lib/animations/motion-presets';
+import { DRAG_ACTIVATION_DISTANCE_PX } from '@/lib/dnd';
 import { useStudioItems, useStudioGeneration, useStudioValidation, useStudioStore } from '@/stores/studio-store';
 import { getStudioItemId } from '@/types/studio';
 
@@ -41,8 +42,11 @@ export function StudioItemsView({ gridClassName = DEFAULT_GRID_CLASS }: StudioIt
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: { distance: 5 },
-    })
+      activationConstraint: { distance: DRAG_ACTIVATION_DISTANCE_PX },
+    }),
+    // Was pointer-only; generated items could not be reordered from a keyboard
+    // at all (drag-drop/keyboard-alternatives).
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
   const sortableIds = generatedItems.map((item) => getStudioItemId(item));
@@ -172,6 +176,8 @@ export function StudioItemsView({ gridClassName = DEFAULT_GRID_CLASS }: StudioIt
           sensors={sensors}
           collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}
+          // No local drag state: the reorder is derived from the end event and
+          // dnd-kit owns the transforms, so cancel has nothing of ours to reap.
         >
           <SortableContext items={sortableIds} strategy={rectSortingStrategy}>
             <div className={gridClassName}>

@@ -71,3 +71,29 @@ export {
   createStandardRouter,
   createGridOnlyRouter,
 } from './operations';
+
+// Keyboard drag path — the second control that invokes the same operation the
+// pointer gesture does (registry drag-drop/keyboard-alternatives).
+export {
+  type ArrowDirection,
+  type DropCandidate,
+  type Point,
+  type RectLike,
+
+  centerOf,
+  coordinatesForTarget,
+  directionFromKey,
+  pickDirectionalTarget,
+} from './keyboard-coordinates';
+
+export {
+  createStepwiseKeyboardCoordinateGetter,
+  pointerWithinOrClosestCenter,
+} from './keyboard-sensor';
+
+// Activation thresholds — one authority for the click-vs-drag decision.
+export {
+  DRAG_ACTIVATION_DISTANCE_PX,
+  TOUCH_ACTIVATION_DELAY_MS,
+  TOUCH_ACTIVATION_TOLERANCE_PX,
+} from './activation';

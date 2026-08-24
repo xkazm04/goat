@@ -1,11 +1,16 @@
 "use client";
 
-import { DndContext, DragOverlay, DragEndEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { DndContext, DragOverlay, DragEndEvent, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { motion } from "framer-motion";
 import { Loader2, Trophy, Sparkles, Star, MousePointer2 } from "lucide-react";
 import { useState, useCallback, useEffect, createContext, useContext } from "react";
 
 import { useTopLists } from "@/hooks/use-top-lists";
+import {
+  createStepwiseKeyboardCoordinateGetter,
+  pointerWithinOrClosestCenter,
+  DRAG_ACTIVATION_DISTANCE_PX,
+} from "@/lib/dnd";
 import { useBacklogStore } from "@/stores/backlog-store";
 import { BacklogItem } from "@/types/backlog-groups";
 import { GridItemType } from "@/types/match";
@@ -15,6 +20,13 @@ import { AwardItem } from "./components/AwardItem";
 import { CollectionItem } from "../Collection/types";
 import { SimpleCollectionPanel } from "../Match/sub_MatchCollections/SimpleCollectionPanel";
 import { DragOverlayContent } from "../Match/sub_MatchGrid/components/DragComponents";
+
+// Module-scope so the sensor and collision detection keep stable identities
+// across renders without needing a memo in every consumer.
+const awardKeyboardCoordinates = createStepwiseKeyboardCoordinateGetter(
+    (id) => id.startsWith('award-') || id.startsWith('candidate-')
+);
+const awardCollisionDetection = pointerWithinOrClosestCenter();
 
 
 
@@ -114,10 +126,22 @@ export function AwardList({ parentListId, title = "Annual Awards", description }
     const sensors = useSensors(
         useSensor(PointerSensor, {
             activationConstraint: {
-                distance: 8,
+                distance: DRAG_ACTIVATION_DISTANCE_PX,
             },
-        })
+        }),
+        // Space/Enter to grab, arrows to move between award and candidate
+        // slots, Escape to cancel. Added 2026-08-24 with onDragCancel below.
+        useSensor(KeyboardSensor, { coordinateGetter: awardKeyboardCoordinates })
     );
+
+    /**
+     * The one teardown. Escape used to leave `activeItem` set, so the drag
+     * overlay kept rendering an item that was no longer being dragged
+     * (registry drag-drop/drag-lifecycle).
+     */
+    const resetDragState = useCallback(() => {
+        setActiveItem(null);
+    }, []);
 
     const handleDragStart = (event: any) => {
         const { active } = event;
@@ -224,8 +248,9 @@ export function AwardList({ parentListId, title = "Annual Awards", description }
     const handleDragEnd = useCallback(async (event: DragEndEvent) => {
         const { active, over } = event;
 
-        setActiveItem(null);
+        resetDragState();
 
+        // Drop on nothing is a cancel, not an error.
         if (!over) return;
 
         const itemData = active.data.current;
@@ -247,7 +272,7 @@ export function AwardList({ parentListId, title = "Annual Awards", description }
             const slotIndex = parseInt(parts[2], 10);
             assignCandidate(item, listId, slotIndex);
         }
-    }, [assignWinner, assignCandidate]);
+    }, [assignWinner, assignCandidate, resetDragState]);
 
     const handleRemoveWinner = useCallback((listId: string) => {
         setWinners(prev => {
@@ -315,8 +340,10 @@ export function AwardList({ parentListId, title = "Annual Awards", description }
         <ClickAssignContext.Provider value={clickAssignValue}>
             <DndContext
                 sensors={sensors}
+                collisionDetection={awardCollisionDetection}
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
+                onDragCancel={resetDragState}
             >
                 {/* Fixed background */}
                 <div className="fixed inset-0 bg-[#050505] -z-10" />

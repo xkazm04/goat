@@ -3,6 +3,7 @@
 import {
   DndContext,
   closestCenter,
+  KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
@@ -13,6 +14,7 @@ import {
   useSortable,
   arrayMove,
   rectSortingStrategy,
+  sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -35,6 +37,7 @@ import { memo, useMemo, useState, useCallback, useEffect } from "react";
 
 import { EmptyTrophyCase, NoSearchResults } from "@/components/illustrations/EmptyStateIllustrations";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import { DRAG_ACTIVATION_DISTANCE_PX } from "@/lib/dnd";
 
 import type { ListCollection, CollectionStats } from "@/types/collection";
 import type { TopList } from "@/types/top-lists";
@@ -273,7 +276,13 @@ export const CollectionView = memo(function CollectionView({
   }, [filteredLists, orderedListIds]);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: DRAG_ACTIVATION_DISTANCE_PX },
+    }),
+    // Reordering lists was pointer-only. sortableKeyboardCoordinates is
+    // dnd-kit's own grab/move/drop mirror for a SortableContext, so this is the
+    // whole keyboard path for this surface (drag-drop/keyboard-alternatives).
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
   const canReorder = !!onReorderLists && !searchTerm.trim();
   const handleDragEnd = useCallback(
@@ -479,6 +488,11 @@ export const CollectionView = memo(function CollectionView({
               sensors={sensors}
               collisionDetection={closestCenter}
               onDragEnd={handleDragEnd}
+              // This surface holds no drag state of its own — the reorder is
+              // computed entirely from the end event and dnd-kit owns the
+              // transforms — so cancel has nothing to reap beyond dnd-kit's own
+              // teardown. Stated rather than left to inference, because the
+              // other two DndContexts in this app DID need a reaper.
             >
               <SortableContext
                 items={displayedLists.map((l) => l.id)}

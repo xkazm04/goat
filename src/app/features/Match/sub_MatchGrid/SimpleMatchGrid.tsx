@@ -1,6 +1,6 @@
 "use client";
 
-import { DndContext, DragEndEvent, DragMoveEvent, PointerSensor, TouchSensor, useSensor, useSensors, pointerWithin, type Announcements, type ScreenReaderInstructions } from "@dnd-kit/core";
+import { DndContext, DragEndEvent, DragMoveEvent, KeyboardSensor, PointerSensor, TouchSensor, useSensor, useSensors, type Announcements, type ScreenReaderInstructions } from "@dnd-kit/core";
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 
 import { CompletionModal } from "@/components/app/modals/completion/CompletionModal";
@@ -8,7 +8,15 @@ import { AudioPlayer } from "@/components/AudioPlayer";
 import { AuthPrompt } from "@/components/auth";
 import { RankingProgressLayer } from "@/components/visual/RankingProgressLayer";
 import { useAuthUser } from "@/hooks/use-auth-user";
-import { createStandardRouter, type OperationStoreContext } from "@/lib/dnd";
+import {
+  createStandardRouter,
+  createStepwiseKeyboardCoordinateGetter,
+  pointerWithinOrClosestCenter,
+  DRAG_ACTIVATION_DISTANCE_PX,
+  TOUCH_ACTIVATION_DELAY_MS,
+  TOUCH_ACTIVATION_TOLERANCE_PX,
+  type OperationStoreContext,
+} from "@/lib/dnd";
 import { useBacklogStore } from "@/stores/backlog-store";
 import { useGridStore } from "@/stores/grid-store";
 import { BacklogItem } from "@/types/backlog-groups";
@@ -149,8 +157,20 @@ function SimpleMatchGridInner() {
       },
     };
 
+    // These instructions are only true because a KeyboardSensor is registered
+    // below. From the day this grid was written until 2026-08-24 they promised
+    // a control that existed nowhere in the repo. If the sensor is ever removed,
+    // this string must go with it in the same change: semantics follow
+    // capability, never lead it (drag-drop/keyboard-alternatives).
+    //
+    // The second sentence names the operation-shaped accelerator, which is
+    // faster than fifty arrow presses and was previously undiscoverable from
+    // the grid (see useQuickSelect in features/Collection/hooks).
     const screenReaderInstructions: ScreenReaderInstructions = {
-      draggable: 'To pick up a draggable item, press Space or Enter. Use arrow keys to move. Press Space or Enter again to drop the item, or press Escape to cancel.',
+      draggable:
+        'To pick up a draggable item, press Space or Enter. Use arrow keys to move between positions. ' +
+        'Press Space or Enter again to drop the item, or press Escape to cancel. ' +
+        'To place an item without dragging, press Q for quick select, then a number to choose the item and a number to choose its position.',
     };
 
     return { announcements, screenReaderInstructions };
@@ -361,20 +381,71 @@ function SimpleMatchGridInner() {
     }
   }, [currentList?.size, maxGridSize, initializeRanking]);
 
-  // Pointer sensor for desktop, touch sensor with long-press delay for mobile reorder
+  /**
+   * Arrow keys step between real drop targets, not by a fixed pixel budget.
+   * The filter keeps grid slots, tier rows and the unranked pool — the same set
+   * the pointer path can land on — so a keyboard move cannot reach a target a
+   * mouse could not.
+   */
+  // pointerWithin returns nothing when there are no pointer coordinates, which
+  // is exactly the keyboard's situation. Without this fallback a keyboard drag
+  // would move and then have nothing to drop onto — the announcement would be
+  // true and the control still useless.
+  const collisionDetection = useMemo(() => pointerWithinOrClosestCenter(), []);
+
+  const keyboardCoordinateGetter = useMemo(
+    () =>
+      createStepwiseKeyboardCoordinateGetter(
+        (id) => id.startsWith('grid-') || id.startsWith('tier-') || id === 'unranked-pool'
+      ),
+    []
+  );
+
+  // Pointer sensor for desktop, touch sensor with long-press delay for mobile
+  // reorder, keyboard sensor so the announced Space/Enter grammar is real.
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 2, // Low threshold for responsive drag initiation
+        // Was a bare 2 — too low for a surface whose cards are ALSO
+        // click-to-place targets, so ordinary clicks became micro-drags.
+        distance: DRAG_ACTIVATION_DISTANCE_PX,
       },
     }),
     useSensor(TouchSensor, {
       activationConstraint: {
-        delay: 350, // Long-press to pick up (iOS home screen UX)
-        tolerance: 5, // Allow slight finger movement during hold
+        delay: TOUCH_ACTIVATION_DELAY_MS, // Long-press to pick up (iOS home screen UX)
+        tolerance: TOUCH_ACTIVATION_TOLERANCE_PX,
       },
-    })
+    }),
+    // Added 2026-08-24. `screenReaderInstructions` above has advertised
+    // Space/Enter + arrows since this grid was written, with no KeyboardSensor
+    // registered anywhere in the repo — a control announced to assistive
+    // technology and implemented nowhere (drag-drop/keyboard-alternatives:
+    // "never declare what cannot be operated").
+    useSensor(KeyboardSensor, { coordinateGetter: keyboardCoordinateGetter })
   );
+
+  /**
+   * The one teardown routine. Every path back to idle runs THIS — commit,
+   * Escape, drop-on-nothing, unmount. Before 2026-08-24 the cleanup lived
+   * inline in handleDragEnd only, and no DndContext in this repo passed
+   * onDragCancel: pressing Escape mid-drag left `isDragging` and
+   * `hoveredPosition` set, so all 50 slots stayed lit while the overlay
+   * vanished (registry drag-drop/drag-lifecycle, "cleanup is a named reaper").
+   *
+   * Idempotent by construction, because several exits may call it.
+   */
+  const resetDragState = useCallback(() => {
+    setActiveItem(null);
+    setActiveType(null);
+    setTargetPosition(null);
+    setIsDragging(false);
+    setHoveredPosition(null);
+  }, [setIsDragging, setHoveredPosition]);
+
+  // Unmounting mid-drag is a cancel too: the mode cannot survive losing its
+  // host, and the highlight store outlives this component.
+  useEffect(() => resetDragState, [resetDragState]);
 
   /**
    * Simple drag start handler
@@ -442,14 +513,11 @@ function SimpleMatchGridInner() {
     const overData = event.over?.data?.current;
     const errorPosition = overData?.type === 'grid-slot' ? (overData.position as number) : null;
 
-    // Clear drag state first
-    setActiveItem(null);
-    setActiveType(null);
-    setTargetPosition(null);
-    setIsDragging(false);
-    setHoveredPosition(null);
+    // Clear drag state first — through the one reaper, so this path and the
+    // cancel path cannot drift apart.
+    resetDragState();
 
-    // Early return if no drop target
+    // Drop on nothing is a cancel, not an error: nothing fires, the item stays.
     if (!event.over) return;
 
     // Delegate to the DragOperationRouter
@@ -463,7 +531,19 @@ function SimpleMatchGridInner() {
       setDragErrorMessage(errorMsg);
     }
 
-  }, [dragRouter, getStoreContext, setIsDragging, setHoveredPosition, emitDragError]);
+  }, [dragRouter, getStoreContext, resetDragState, emitDragError]);
+
+  /**
+   * Escape mid-drag, a revoked pointer capture, a system gesture taking the
+   * stream, the surface unmounting. Every one of these is a cancel and routes
+   * into the same reaper as a commit — never into the commit path, because
+   * committing the last-known position when the gesture was TAKEN rather than
+   * released invents an intent the user never expressed
+   * (drag-drop/drag-lifecycle, "enumerate the cancel paths").
+   */
+  const handleDragCancel = useCallback(() => {
+    resetDragState();
+  }, [resetDragState]);
 
   const handleRemove = useCallback((position: number) => {
     const item = useGridStore.getState().gridItems[position];
@@ -498,10 +578,11 @@ function SimpleMatchGridInner() {
 
       <DndContext
         sensors={sensors}
-        collisionDetection={pointerWithin}
+        collisionDetection={collisionDetection}
         onDragStart={handleDragStart}
         onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
         accessibility={dndAccessibility}
       >
         <PositionHistoryProvider listId={currentList?.id ?? null} gridItems={gridItems}>
