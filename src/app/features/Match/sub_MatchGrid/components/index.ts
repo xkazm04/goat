@@ -30,7 +30,13 @@ export { DropZoneHighlightProvider, useDropZoneHighlight } from './DropZoneHighl
 export { DropZoneConnectors } from './DropZoneConnectors';
 
 // State management components
-export { DragStateManager, useDragState, useOptionalDragState } from './DragStateManager';
+//
+// `DragStateManager` (a full React drag-state context provider, 424 lines) was
+// exported here and rendered by nothing. This line was its only reference.
+// Drag state in this feature has ONE owner: SimpleMatchGrid, whose named
+// `resetDragState` reaper is called from every drag exit. A third
+// implementation, src/hooks/use-drag-sync.ts, had no reference at all.
+// Both deleted 2026-08-24.
 export {
   AnimationController,
   useAnimations,
