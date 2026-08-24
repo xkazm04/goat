@@ -1,36 +1,78 @@
 # Collection Feature - Architecture & Structure
 
+> ## Correction — 2026-08-24
+>
+> The file tree below was hand-maintained and had drifted in both directions.
+> It named four files that **do not exist** — `CollectionItem.tsx`,
+> `CollectionHeader.tsx`, `VirtualizedGrid.tsx`, `useCollectionLazyLoad.ts`
+> (the last two are the same two phantoms `docs/lazy-loading-implementation.md`
+> was corrected for) and `IMPROVEMENTS.md` — while omitting **seventeen** files
+> that do. It is replaced below by the live tree, and the sections that describe
+> the lazy-loading ladder are marked for what they are: a design, not a
+> description.
+>
+> This README is now a **derived coupling target**: any change under
+> `src/app/features/Collection/` is checked against it by
+> `npm run docs:coupling -- --changed` (colocated-README convention). That is
+> what produced this correction — the deletion of the unadopted pattern library
+> reached this file and the gate said so.
+
 ## 📁 File Structure
+
+Verified against the tree on 2026-08-24.
 
 ```
 Collection/
-├── index.ts                           # Main exports
-├── types.ts                           # TypeScript types and interfaces
-├── IMPROVEMENTS.md                   # 10 Business/UI improvement ideas
+├── index.ts                            # Main exports
+├── types.ts                            # TypeScript types and interfaces
+├── README.md                           # this file
 │
-├── components/                       # React components
-│   ├── CollectionPanel.tsx           # Main panel component (fixed bottom)
-│   ├── CollectionItem.tsx            # Draggable item component
-│   ├── CollectionToolbar.tsx         # Unified toolbar (header + search + categories)
-│   ├── CollectionHeader.tsx          # Panel header with controls (standalone)
-│   ├── CollectionStats.tsx           # Statistics display
-│   ├── LazyLoadTrigger.tsx           # Intersection observer trigger
-│   ├── VirtualizedGrid.tsx           # Virtual scrolling grid component
-│   └── AddItemModal.tsx              # Add item modal dialog
+├── components/                         # React components
+│   ├── ActivityTimeline.tsx
+│   ├── AddItemModal.tsx                # Add item modal dialog
+│   ├── AverageRankingBadge.tsx
+│   ├── CollectionErrorBoundary.tsx
+│   ├── CollectionFilterIntegration.tsx
+│   ├── CollectionPanel.tsx             # Main panel component (fixed bottom)
+│   ├── CollectionStats.tsx             # Statistics display
+│   ├── CollectionToolbar.tsx           # Unified toolbar (header + search + categories)
+│   ├── ConfigurableCollectionItem.tsx  # Draggable item component
+│   ├── CriteriaScoringSection.tsx
+│   ├── DragHandleIndicator.tsx
+│   ├── FocusRingOverlay.tsx
+│   ├── ItemDetailPopup.tsx
+│   ├── ItemDetailPopupProvider.tsx
+│   ├── ItemInspector.tsx
+│   ├── ItemInspectorProvider.tsx
+│   ├── LazyLoadTrigger.tsx             # Intersection observer trigger — SEE BELOW,
+│   │                                   #   it has no consumer
+│   ├── MetadataGrid.tsx
+│   ├── MiniTrajectoryChart.tsx
+│   ├── RankingDistribution.tsx
+│   ├── SpotlightTooltip.tsx
+│   └── StickyContext.tsx
 │
-├── hooks/                            # Custom React hooks
-│   ├── useCollection.ts              # Unified data fetching, filtering, stats & mutations
-│   ├── useCollectionLazyLoad.ts      # Lazy loading pagination
-│   └── useIntersectionObserver.ts    # Viewport detection
+├── hooks/                              # Custom React hooks (see hooks/README.md)
+│   ├── useCollection.ts                # Unified data fetching, filtering, stats & mutations
+│   ├── useCollection.usage-examples.tsx  # NOT a test — reference samples, renamed
+│   │                                     #   2026-08-24 so it stops impersonating one
+│   ├── useCollectionFilterState.ts
+│   ├── useIntersectionObserver.ts      # Viewport detection
+│   ├── useQuickSelect.ts               # `q` + digits quick placement
+│   └── useVisibleCollectionItems.ts
 │
-├── context/                          # React Context
-│   └── CollectionFiltersContext.tsx  # Filter state provider
+├── context/                            # React Context (see context/README.md)
+│   └── CollectionFiltersContext.tsx    # Filter state provider
 │
-├── constants/                        # Configuration
-│   └── lazyLoadConfig.ts             # Lazy load thresholds
+├── constants/                          # Configuration
+│   └── lazyLoadConfig.ts               # Lazy load thresholds — declared, mostly unread
 │
-└── utils/                            # Utility functions
-    └── transformers.ts               # Data transformation
+├── lib/
+│   └── adaptiveLoader.ts               # orphaned; in knip's population
+│
+└── utils/                              # Utility functions
+    ├── easterEgg.ts
+    └── transformers.ts                 # Data transformation
 ```
 
 ## 🎯 Key Features
@@ -54,10 +96,20 @@ Collection/
   - **Small (≤50 items)**: Normal rendering — *the only path that runs today*
   - **Medium (51-100 items)**: Lazy loading with progressive pagination — not wired
   - **Large (>100 items)**: Virtual scrolling — not written
-- **Intersection Observer**: Triggers loading when scrolling near bottom
-- **Prefetching**: Loads items ahead of viewport for smooth experience
-- **Progress indicators**: Shows loading state and completion percentage
-- **Configurable thresholds**: Easy to adjust in `lazyLoadConfig.ts`
+- **Intersection Observer**: `hooks/useIntersectionObserver.ts` is real and used
+- **Prefetching / progress indicators**: *designed, not implemented* — no
+  component renders a progress indicator for this ladder
+- **Configurable thresholds**: declared in `lazyLoadConfig.ts`; as of 2026-08-24
+  only the observer fields (`INTERSECTION_ROOT_MARGIN`,
+  `INTERSECTION_THRESHOLD`) are read by anything
+
+> **Corrected 2026-08-24.** `components/LazyLoadTrigger.tsx` exists and reads the
+> config, but **no component renders it** — the feature barrel is its only
+> reference. A second, more complete answer to the same problem
+> (`src/lib/virtual/`, ~2,100 lines) was written and also never wired; it was
+> deleted in commit `615d25e`. A third (`src/components/patterns/virtualization/
+> useLazyLoad.ts`) was deleted today. This ladder has now been designed three
+> times and wired zero times, which is the finding, not the file count.
 
 ### 4. Modular Architecture
 - **Components**: Reusable, focused components
@@ -72,8 +124,11 @@ Collection/
 - Manages visibility state
 - Coordinates child components
 - Handles layout and positioning
-- **Selects rendering strategy** based on item count
-- Integrates lazy loading and virtualization
+- ~~**Selects rendering strategy** based on item count~~ — *corrected 2026-08-24:
+  it does not. `CollectionPanel.tsx` imports nothing lazy, virtual or
+  observer-based; it renders every filtered item.*
+- ~~Integrates lazy loading and virtualization~~ — *corrected 2026-08-24: neither
+  is integrated anywhere in this feature.*
 
 ### CollectionToolbar
 - **Unified component** consolidating header, category bar, and search

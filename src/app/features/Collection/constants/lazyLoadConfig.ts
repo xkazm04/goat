@@ -7,6 +7,15 @@
  * threshold; it has been removed. If you need these numbers elsewhere, import
  * them from here rather than defaulting a parameter.
  *
+ * CORRECTION 2026-08-24 (later the same day): the sentence above said the
+ * duplicate "has been removed", and only the two PREDICATES had been — the file
+ * src/components/patterns/virtualization/useLazyLoad.ts itself was still there,
+ * still exporting a whole second lazy-loading hook, still reachable through the
+ * pattern-library barrel. It has now actually been deleted, along with the rest
+ * of the unadopted pattern library. Surviving in that directory, and genuinely
+ * live: useIntersectionObserver.tsx (one consumer, FloatingShowcase.tsx) and
+ * badges/ (three consumers). Do not "finish the job" on those.
+ *
  * CURRENT STATUS (2026-08-24): only the observer fields are live, via
  * components/LazyLoadTrigger.tsx. The VIRTUALIZATION_* and LAZY_LOAD_* numbers
  * are still declared but nothing reads them — the Collection panel renders

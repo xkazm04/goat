@@ -11,8 +11,8 @@
   },
   "measuredAt": "2026-08-24",
   "instrument": {
-    "filesWalked": 980,
-    "minFilesWalked": 784
+    "filesWalked": 974,
+    "minFilesWalked": 779
   },
   "buckets": {
     "docs:unmappedAreas": 69,
@@ -31,15 +31,15 @@
     "eslint:react-hooks/immutability": 3,
     "eslint:react-hooks/preserve-manual-memoization": 7,
     "eslint:react-hooks/purity": 33,
-    "eslint:react-hooks/refs": 93,
-    "eslint:react-hooks/set-state-in-effect": 62,
+    "eslint:react-hooks/refs": 89,
+    "eslint:react-hooks/set-state-in-effect": 61,
     "eslint:react-hooks/set-state-in-render": 2,
     "eslint:react-hooks/static-components": 3,
     "eslint:react/no-unescaped-entities": 23,
     "eslint:storybook/no-renderer-packages": 1,
-    "eslint:unused-imports/no-unused-vars": 229,
+    "eslint:unused-imports/no-unused-vars": 225,
     "knip:unusedExports": 1330,
-    "knip:unusedFiles": 241,
+    "knip:unusedFiles": 233,
     "knip:unusedTypes": 735,
     "typecheck:errors": 23
   }

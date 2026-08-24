@@ -41,6 +41,32 @@
 > Everything below the correction is preserved as the original **design**. Read
 > it as a proposal, not as a description of running code.
 
+> ## Third correction — 2026-08-24
+>
+> The second correction said the duplicate ladder in
+> `src/components/patterns/virtualization/useLazyLoad.ts` "has been removed".
+> Only the two **predicates** had been. The file itself was still present, still
+> exporting a whole second lazy-loading hook (`useLazyLoad`, `useInfiniteScroll`,
+> `calculateOptimalPageSize`, 269 lines), still re-exported by the pattern
+> library's barrel. It has now actually been deleted, together with the rest of
+> that unadopted library.
+>
+> The count that matters: **this ladder has been designed three times and wired
+> zero times.**
+>
+> | attempt | fate |
+> |---|---|
+> | `Collection/constants/lazyLoadConfig.ts` + `components/LazyLoadTrigger.tsx` | config live (observer fields only); the trigger component still has **no consumer** |
+> | `src/lib/virtual/` — 6 modules, ~2,100 lines | zero importers, deleted `615d25e` |
+> | `src/components/patterns/virtualization/useLazyLoad.ts` — 269 lines | reachable only through a barrel nothing imported, deleted 2026-08-24 |
+>
+> Three independent implementations of one capability, none adopted, is a
+> locality finding rather than a dead-code finding: the second and third were
+> written because the first did not look like it existed from where the author
+> was standing. That is recorded as an accepted structural spec in
+> `.ai/structural-backlog.json` (`ladder-has-one-owner`), which is where any
+> fourth attempt should be argued before it is written.
+
 ## Overview
 
 A lazy loading design for Collection items that selects a rendering strategy
