@@ -1,8 +1,10 @@
 "use client";
 
-import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
+import * as React from "react";
+
 import { cn } from "@/lib/utils";
+
 import { Skeleton } from "./skeleton";
 
 /**
@@ -15,7 +17,7 @@ const statsCardVariants = cva(
     variants: {
       layout: {
         inline: "gap-4 text-xs flex-wrap",
-        stacked: "flex-col gap-2 p-4 bg-gray-800/40 border border-gray-700/50 rounded-lg",
+        stacked: "flex-col gap-2 p-4 bg-[var(--surface-overlay)] border border-[var(--border-card-subtle)] rounded-lg",
         grid: "grid gap-4",
         spread: "justify-between w-full",
       },
@@ -42,7 +44,7 @@ const statItemVariants = cva(
       layout: {
         inline: "gap-1",
         stacked: "flex-col items-start gap-0.5",
-        grid: "flex-col items-center text-center p-3 bg-gray-800/60 border border-gray-700/50 rounded-md hover:border-gray-600/70",
+        grid: "flex-col items-center text-center p-3 bg-[var(--surface-overlay)] border border-[var(--border-card-subtle)] rounded-md hover:border-[var(--border-card-hover)]",
         spread: "gap-2",
       },
       emphasis: {
@@ -142,7 +144,7 @@ export function StatsCardSkeleton({
 }) {
   if (layout === "stacked") {
     return (
-      <div className={cn("flex flex-col gap-2 p-4 bg-gray-800/40 border border-gray-700/50 rounded-lg", className)}>
+      <div className={cn("flex flex-col gap-2 p-4 bg-[var(--surface-overlay)] border border-[var(--border-card-subtle)] rounded-lg", className)}>
         {Array.from({ length: count }).map((_, idx) => (
           <div key={idx} className="flex flex-col gap-1">
             <Skeleton className="h-3 w-16" />
@@ -157,7 +159,7 @@ export function StatsCardSkeleton({
     return (
       <div className={cn("grid gap-4 grid-cols-2 md:grid-cols-3", className)}>
         {Array.from({ length: count }).map((_, idx) => (
-          <div key={idx} className="flex flex-col items-center gap-2 p-3 bg-gray-800/60 border border-gray-700/50 rounded-md">
+          <div key={idx} className="flex flex-col items-center gap-2 p-3 bg-[var(--surface-overlay)] border border-[var(--border-card-subtle)] rounded-md">
             <Skeleton className="h-3 w-16" />
             <Skeleton className="h-5 w-10" />
           </div>
@@ -193,18 +195,11 @@ const StatItem = React.forwardRef<
   const handleClick = onClick ? () => onClick(metric) : undefined;
   const isClickable = !!onClick;
 
-  // Default color mappings
-  const defaultColors: Record<string, string> = {
-    total: "text-gray-300",
-    selected: "text-cyan-400",
-    active: "text-green-400",
-    pending: "text-yellow-400",
-    completed: "text-blue-400",
-    error: "text-red-400",
-    warning: "text-orange-400",
-  };
-
-  const valueColor = metric.color || defaultColors[metric.label.toLowerCase()] || "text-gray-300";
+  // Value color comes from the explicit `color` prop, defaulting to neutral.
+  // The previous defaultColors[label.toLowerCase()] lookup inferred color from
+  // the human-readable label ("Active"→green, "Error"→red), which is
+  // locale-fragile and silently overrode caller intent for common English words.
+  const valueColor = metric.color || "text-gray-300";
 
   // Change indicator styling
   const changeColorClass = metric.changeType === "positive"
@@ -239,13 +234,13 @@ const StatItem = React.forwardRef<
         )}
         data-testid="stat-item-label"
       >
-        {metric.label}:
+        {metric.label}{layout === "inline" ? ":" : ""}
       </span>
 
       {/* Value */}
       <span
         className={cn(
-          "font-semibold",
+          "font-semibold font-grotesk",
           valueColor,
           layout === "grid" && "text-lg"
         )}
@@ -291,7 +286,7 @@ StatItem.displayName = "StatItem";
  * <StatsCard
  *   metrics={[
  *     { label: "Total", value: 100, color: "text-gray-300" },
- *     { label: "Active", value: 42, color: "text-cyan-400" },
+ *     { label: "Active", value: 42, color: "text-brand-hover" },
  *     { label: "Completed", value: 58, color: "text-green-400" }
  *   ]}
  *   layout="inline"
@@ -371,7 +366,7 @@ export const StatsCard = React.forwardRef<HTMLDivElement, StatsCardProps>(
             />
             {/* Dividers for inline layout */}
             {showDividers && layout === "inline" && index < metrics.length - 1 && (
-              <div className="h-3 w-px bg-gray-700" data-testid="stat-divider" />
+              <div className="h-3 w-px bg-[var(--border-card)]" data-testid="stat-divider" />
             )}
           </React.Fragment>
         ))}

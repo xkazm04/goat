@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useSyncExternalStore } from "react";
+
 import { useMotionCapabilities, type MotionCapabilities } from "./use-motion-preference";
 
 // ===== Page Visibility API =====

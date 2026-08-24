@@ -10,8 +10,9 @@
  * @module calculateWeightedScore
  */
 
-import type { Criterion, CriterionScore, WeightedScoreOptions } from './types';
 import { DEFAULT_SCORE_OPTIONS } from './types';
+
+import type { Criterion, CriterionScore } from './types';
 
 // =============================================================================
 // Types

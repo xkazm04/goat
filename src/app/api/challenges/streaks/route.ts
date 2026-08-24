@@ -4,8 +4,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+
 import { getStreakTracker, type StreakType } from '@/lib/challenges';
+import { createClient } from '@/lib/supabase/server';
 
 /**
  * GET /api/challenges/streaks
@@ -13,10 +14,12 @@ import { getStreakTracker, type StreakType } from '@/lib/challenges';
  */
 export async function GET() {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    const userId = user.id;
 
     const streakTracker = getStreakTracker();
     const streakData = await streakTracker.getUserData(userId);
@@ -58,16 +61,21 @@ export async function GET() {
  */
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    const userId = user.id;
 
     const body = await request.json();
-    const { type, score } = body as {
+    const { type, score, timeZone } = body as {
       type: StreakType;
       score?: number;
+      timeZone?: string;
     };
+    // Client's IANA zone so the daily streak is computed in the user's local day.
+    const userTimeZone = typeof timeZone === 'string' && timeZone ? timeZone : undefined;
 
     if (!type) {
       return NextResponse.json(
@@ -85,7 +93,7 @@ export async function POST(request: NextRequest) {
     }
 
     const streakTracker = getStreakTracker();
-    const result = await streakTracker.recordActivity(userId, type, score);
+    const result = await streakTracker.recordActivity(userId, type, score, userTimeZone);
 
     return NextResponse.json(result);
   } catch (error) {

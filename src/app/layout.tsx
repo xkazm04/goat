@@ -1,17 +1,24 @@
+// Import dev CSS variable contract check (development only)
+if (process.env.NODE_ENV === 'development') {
+  import('./dev-css-var-check').then(mod => mod.checkCssVariableContract());
+}
 import './globals.css';
-import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
-import { ClerkProvider } from '@clerk/nextjs';
-import { QueryProvider } from '@/providers/query-provider';
-import { BacklogProvider } from '@/providers/BacklogProvider';
-import { PrefetchProvider } from '@/providers/prefetch-provider';
+import { Inter, Space_Grotesk } from 'next/font/google';
+
+import { AuthHeader, Toaster } from '@/components/auth';
 import { PageTransition } from '@/components/page-transition';
 import { ThemeProvider } from '@/components/theme/theme-provider';
-import { CommandPaletteProvider } from '@/app/features/CommandPalette';
-import { ItemDetailPopupProvider } from '@/app/features/Collection/components/ItemDetailPopupProvider';
-import { OfflineProvider } from '@/lib/offline';
+import { DeferredProviders } from '@/providers/DeferredProviders';
+import { QueryProvider } from '@/providers/query-provider';
+
+import type { Metadata } from 'next';
 
 const inter = Inter({ subsets: ['latin'] });
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  weight: ['600', '700'],
+  variable: '--font-grotesk',
+});
 
 const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://goat.app';
 
@@ -73,41 +80,43 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ClerkProvider>
-      <html lang="en" suppressHydrationWarning>
-        <body className={inter.className}>
+    <html lang="en" suppressHydrationWarning>
+        <body className={`${inter.className} ${spaceGrotesk.variable}`}>
           <ThemeProvider
             attribute="class"
             defaultTheme="dark"
             enableSystem={false}
-            themes={['light', 'dark', 'experimental-dark']}
+            // 'light' is intentionally NOT registered: design-tokens.css defines
+            // tokens only as dark values under :root with no .light overrides, so
+            // a 'light' theme renders unreadable dark-on-light surfaces. No UI
+            // selects it and enableSystem is false, so dropping it is non-breaking
+            // and removes the broken state. Re-add once a real light palette
+            // exists (see docs/harness/followups-2026-06-16.md).
+            themes={['dark', 'experimental-dark']}
           >
-            <BacklogProvider>
-              <QueryProvider>
-                <PrefetchProvider>
-                  <OfflineProvider showStatusIndicator enableAutoSync>
-                    <CommandPaletteProvider>
-                    {/* Skip to main content link for keyboard users */}
-                    <a
-                      href="#main-content"
-                      className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-cyan-600 focus:text-white focus:rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-gray-900"
-                    >
-                      Skip to main content
-                    </a>
-                    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800/95 text-gray-100 w-full flex flex-col">
-                      <main id="main-content" className="gradient-to-b" tabIndex={-1}>
-                        <PageTransition>{children}</PageTransition>
-                      </main>
+            <QueryProvider>
+              <DeferredProviders>
+                  {/* Skip to main content link for keyboard users */}
+                  <a
+                    href="#main-content"
+                    className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-9999 focus:px-4 focus:py-2 focus:bg-brand-muted focus:text-white focus:rounded-lg focus-ring"
+                  >
+                    Skip to main content
+                  </a>
+                  <div className="min-h-screen bg-linear-to-b from-gray-900 to-gray-800/95 text-gray-100 w-full flex flex-col">
+                    {/* Auth header -- sign in button or user menu */}
+                    <div className="fixed top-4 right-4 z-toast">
+                      <AuthHeader />
                     </div>
-                    <ItemDetailPopupProvider />
-                    </CommandPaletteProvider>
-                  </OfflineProvider>
-                </PrefetchProvider>
-              </QueryProvider>
-            </BacklogProvider>
+                    <main id="main-content" className="gradient-to-b" tabIndex={-1}>
+                      <PageTransition>{children}</PageTransition>
+                    </main>
+                  </div>
+                  <Toaster />
+              </DeferredProviders>
+            </QueryProvider>
           </ThemeProvider>
         </body>
       </html>
-    </ClerkProvider>
   );
 }

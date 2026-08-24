@@ -1,10 +1,14 @@
 import { motion } from "framer-motion";
+import { useMemo, useState } from "react";
+
+import { DURATION } from '@/lib/animations/motion-presets';
+import { getCenterTextStyles, getProgressLineStyles } from "@/lib/helpers/getCompletionStyles";
 import { useGridStore } from "@/stores/grid-store";
 import { useCurrentList } from "@/stores/use-list-store";
-import { useMemo, useState } from "react";
-import { CompletionModal } from "./modals/completion/CompletionModal";
+
 import ShowcaseDecor from "./decorations/ShowcaseDecor";
-import { getCenterTextStyles, getProgressLineStyles } from "@/lib/helpers/getCompletionStyles";
+import { CompletionModal } from "./modals/completion/CompletionModal";
+
 
 interface ProgressMainProps {
     text: string;
@@ -22,12 +26,10 @@ const ProgressMain = ({ text, showPercentage = true, className = "" }: ProgressM
             return { matchedCount: 0, totalSize: 50, progressPercentage: 0, isCompleted: false };
         }
 
-        const matched = gridItems.filter(item => item.matched).length;
+        const matched = gridItems.filter(item => item.context.matched).length;
         const total = currentList.size || 50;
         const percentage = total > 0 ? (matched / total) * 100 : 0;
         const completed = percentage >= 100;
-
-        console.log('Progress calculation:', { matched, total, percentage, completed });
 
         return {
             matchedCount: matched,
@@ -53,8 +55,8 @@ const ProgressMain = ({ text, showPercentage = true, className = "" }: ProgressM
                     <motion.div
                         initial={{ opacity: 0, scale: 0 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 1.8, duration: 0.4 }}
-                        className="flex justify-center items-center gap-1 px-2 py-1 rounded-full text-xs"
+                        transition={{ delay: 1.8, duration: DURATION.slow }}
+                        className="flex justify-center items-center gap-1 px-2 py-1 rounded-badge text-xs"
                     >
                         <span
                             style={{
@@ -80,14 +82,14 @@ const ProgressMain = ({ text, showPercentage = true, className = "" }: ProgressM
                     className={`flex items-center justify-center gap-4 mb-6 ${className}`}
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.8, duration: 0.6 }}
+                    transition={{ delay: DURATION.dramatic, duration: DURATION.emphasis }}
                 >
                     {/* Left Progress Line */}
                     <motion.div
                         className="h-px flex-1 relative overflow-hidden"
                         initial={{ scaleX: 0 }}
                         animate={{ scaleX: 1 }}
-                        transition={{ delay: 1.2, duration: 0.8 }}
+                        transition={{ delay: 1.2, duration: DURATION.dramatic }}
                     >
                         {/* Background line */}
                         <div
@@ -125,7 +127,7 @@ const ProgressMain = ({ text, showPercentage = true, className = "" }: ProgressM
 
                     {/* Center Text Container */}
                     <motion.div
-                        className="text-xl z-30 font-semibold tracking-wider relative px-6 py-2 rounded-full flex items-center gap-3"
+                        className="text-xl z-30 font-semibold tracking-wider relative px-6 py-2 rounded-badge flex items-center gap-3"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{
                             opacity: 1,
@@ -140,7 +142,7 @@ const ProgressMain = ({ text, showPercentage = true, className = "" }: ProgressM
                         }}
                         transition={{
                             delay: 1,
-                            duration: 0.6,
+                            duration: DURATION.emphasis,
                             ...(isCompleted && {
                                 textShadow: {
                                     repeat: Infinity,
@@ -168,7 +170,7 @@ const ProgressMain = ({ text, showPercentage = true, className = "" }: ProgressM
                         className="h-px flex-1 relative overflow-hidden"
                         initial={{ scaleX: 0 }}
                         animate={{ scaleX: 1 }}
-                        transition={{ delay: 1.2, duration: 0.8 }}
+                        transition={{ delay: 1.2, duration: DURATION.dramatic }}
                     >
                         {/* Background line */}
                         <div
@@ -210,10 +212,11 @@ const ProgressMain = ({ text, showPercentage = true, className = "" }: ProgressM
             <CompletionModal
                 isOpen={isCompletionModalOpen}
                 onClose={() => setIsCompletionModalOpen(false)}
+                onKeepEditing={() => setIsCompletionModalOpen(false)}
                 listTitle={currentList?.title || "Your Ranking"}
                 completionData={{
                     totalItems: totalSize,
-                    timeTaken: "Just now", // We'll calculate this later
+                    timeTaken: "Just now",
                     category: currentList?.category || "General"
                 }}
             />

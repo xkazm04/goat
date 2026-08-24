@@ -191,7 +191,7 @@ import { useBacklogStore } from '@/stores/backlog-store';
 function MyComponent() {
   const groups = useBacklogStore(state => state.groups);
 
-  // Transform groups if needed to match CollectionGroup type
+  // Transform groups if needed to match ItemCategory type
   const collectionGroups = groups.map(group => ({
     id: group.id,
     name: group.name,

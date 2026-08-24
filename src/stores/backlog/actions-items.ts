@@ -1,6 +1,10 @@
-import { BacklogState, PendingChange } from './types';
-import { BacklogItem } from '@/types/backlog-groups';
 import { backlogLogger } from '@/lib/logger';
+import { BacklogItem } from '@/types/backlog-groups';
+
+import { syncCacheFromGroups } from './cache-utils';
+import { replaceGroupInIndex } from './item-index';
+import { BacklogState, PendingChange } from './types';
+import { useSelectionCursor } from '../selection-cursor';
 
 // Type for immer-compatible set function
 type ImmerSet = (fn: (state: BacklogState) => void) => void;
@@ -13,50 +17,31 @@ export const createItemActions = (
   addItemToGroup: (groupId: string, item: BacklogItem) => {
     set(state => {
       backlogLogger.debug(`Adding item ${item.id} to group ${groupId}`);
-      
-      const updatedGroups = state.groups.map(group => {
-        if (group.id === groupId) {
-          // Check if item already exists
-          const itemExists = group.items?.some(existingItem => existingItem.id === item.id);
-          if (!itemExists) {
-            const updatedItems = [...(group.items || []), item];
-            backlogLogger.debug(`Added item to group ${group.name}: ${group.items?.length || 0} → ${updatedItems.length}`);
-            
-            return {
-              ...group,
-              items: updatedItems,
-              item_count: updatedItems.length
-            };
-          } else {
-            backlogLogger.warn(`Item ${item.id} already exists in group ${group.name}`);
-          }
-        }
-        return group;
-      });
-      
-      state.groups = updatedGroups;
-      
-      // Update cache to persist the change
-      Object.keys(state.cache).forEach(cacheKey => {
-        if (state.cache[cacheKey] && state.cache[cacheKey].groups) {
-          const updatedCachedGroups = state.cache[cacheKey].groups.map(group => {
-            if (group.id === groupId && !group.items?.some(existingItem => existingItem.id === item.id)) {
-              const updatedItems = [...(group.items || []), item];
-              return {
-                ...group,
-                items: updatedItems,
-                item_count: updatedItems.length
-              };
-            }
-            return group;
-          });
-          
-          state.cache[cacheKey].groups = updatedCachedGroups;
-          state.cache[cacheKey].lastUpdated = Date.now();
-          state.cache[cacheKey].loadedGroupIds.add(groupId);
-        }
-      });
-      
+
+      const groupIndex = state.groups.findIndex(g => g.id === groupId);
+      if (groupIndex === -1) return;
+
+      const group = state.groups[groupIndex];
+      const itemExists = group.items?.some(existingItem => existingItem.id === item.id);
+      if (itemExists) {
+        backlogLogger.warn(`Item ${item.id} already exists in group ${group.name}`);
+        return;
+      }
+
+      if (!group.items) group.items = [];
+      const prevCount = group.items.length;
+      group.items.push(item);
+      group.item_count = group.items.length;
+      // Maintain loaded groups counter: group went from empty to non-empty
+      if (prevCount === 0) state._loadedGroupsCount++;
+      backlogLogger.debug(`Added item to group ${group.name}: ${prevCount} → ${group.items.length}`);
+
+      // Update item index: add new item mapping
+      state._itemIndex.set(item.id, groupIndex);
+
+      // Sync cache from state.groups (single reference copy, not re-iteration)
+      syncCacheFromGroups(state, groupId);
+
       // Add to pending changes if offline
       if (state.isOfflineMode) {
         const pendingChange: PendingChange = {
@@ -74,79 +59,50 @@ export const createItemActions = (
   removeItemFromGroup: (groupId: string, itemId: string) => {
     set(state => {
       backlogLogger.debug(`Removing item ${itemId} from group ${groupId}`);
-      
-      let itemFound = false;
 
-      const updatedGroups = state.groups.map(group => {
-        if (group.id === groupId) {
-          const originalCount = group.items?.length || 0;
-          const updatedItems = (group.items || []).filter(item => {
-            if (item.id === itemId) {
-              itemFound = true;
-              return false; // Remove this item
-            }
-            return true; // Keep other items
-          });
-          
-          if (itemFound) {
-            backlogLogger.debug(`Removed item from group ${group.name}: ${originalCount} → ${updatedItems.length}`);
-            
-            return {
-              ...group,
-              items: updatedItems,
-              item_count: updatedItems.length
-            };
-          }
-        }
-        return group;
-      });
-      
-      if (!itemFound) {
+      const groupIndex = state.groups.findIndex(g => g.id === groupId);
+      if (groupIndex === -1) return;
+
+      const group = state.groups[groupIndex];
+      if (!group.items) {
         backlogLogger.warn(`Item ${itemId} not found in group ${groupId}`);
-        // Debug: List all items in the group
-        const targetGroup = state.groups.find(g => g.id === groupId);
-        if (targetGroup && targetGroup.items) {
-          backlogLogger.debug(`Group ${groupId} contains items:`, targetGroup.items.map(i => ({ id: i.id, name: i.name })));
-        }
         return;
       }
-      
-      state.groups = updatedGroups;
-      
-      // CRITICAL: Update ALL relevant caches to persist removal
-      Object.keys(state.cache).forEach(cacheKey => {
-        if (state.cache[cacheKey] && state.cache[cacheKey].groups) {
-          // Update the cached groups as well
-          const updatedCachedGroups = state.cache[cacheKey].groups.map(group => {
-            if (group.id === groupId) {
-              const updatedItems = (group.items || []).filter(item => item.id !== itemId);
-              return {
-                ...group,
-                items: updatedItems,
-                item_count: updatedItems.length
-              };
-            }
-            return group;
-          });
-          
-          state.cache[cacheKey].groups = updatedCachedGroups;
-          state.cache[cacheKey].lastUpdated = Date.now();
-          
-          // Also update loadedGroupIds to ensure the group is marked as modified
-          state.cache[cacheKey].loadedGroupIds.add(groupId);
-        }
-      });
-      
+
+      const itemIndex = group.items.findIndex(i => i.id === itemId);
+      if (itemIndex === -1) {
+        backlogLogger.warn(`Item ${itemId} not found in group ${groupId}`);
+        backlogLogger.debug(`Group ${groupId} contains items:`, group.items.map(i => ({ id: i.id, name: i.name })));
+        return;
+      }
+
+      const originalCount = group.items.length;
+      group.items.splice(itemIndex, 1);
+      group.item_count = group.items.length;
+      // Maintain loaded groups counter: group went from non-empty to empty
+      if (group.items.length === 0 && originalCount > 0) state._loadedGroupsCount--;
+      backlogLogger.debug(`Removed item from group ${group.name}: ${originalCount} → ${group.items.length}`);
+
+      // Update item index: remove deleted item
+      state._itemIndex.delete(itemId);
+
+      // Sync cache from state.groups (single reference copy, not re-iteration)
+      syncCacheFromGroups(state, groupId);
+
       backlogLogger.debug(`Item removal persisted to cache`);
-      
-      // Clear selections if the removed item was selected
+
+      // Clear selection cursor if the removed item was selected
+      if (useSelectionCursor.getState().itemId === itemId) {
+        useSelectionCursor.getState().clear();
+      }
+      // Clear deprecated local shadows
       if (state.selectedItemId === itemId) {
         state.selectedItemId = null;
       }
       if (state.activeItemId === itemId) {
         state.activeItemId = null;
       }
-      
+
       // Add to pending changes if offline
       if (state.isOfflineMode) {
         const pendingChange: PendingChange = {
@@ -164,39 +120,25 @@ export const createItemActions = (
   updateGroupItems: (groupId: string, items: BacklogItem[]) => {
     set(state => {
       backlogLogger.debug(`Updating group ${groupId} with ${items.length} items`);
-      
-      const updatedGroups = state.groups.map(group => {
-        if (group.id === groupId) {
-          return {
-            ...group,
-            items: items,
-            item_count: items.length
-          };
-        }
-        return group;
-      });
-      
-      state.groups = updatedGroups;
-      
-      // Update cache as well
-      Object.keys(state.cache).forEach(cacheKey => {
-        if (state.cache[cacheKey] && state.cache[cacheKey].groups) {
-          const updatedCachedGroups = state.cache[cacheKey].groups.map(group => {
-            if (group.id === groupId) {
-              return {
-                ...group,
-                items: items,
-                item_count: items.length
-              };
-            }
-            return group;
-          });
-          
-          state.cache[cacheKey].groups = updatedCachedGroups;
-          state.cache[cacheKey].lastUpdated = Date.now();
-          state.cache[cacheKey].loadedGroupIds.add(groupId);
-        }
-      });
+
+      const groupIndex = state.groups.findIndex(g => g.id === groupId);
+      if (groupIndex === -1) return;
+
+      // Incremental index update: remove old entries, add new ones — O(old+new) not O(all)
+      const oldItems = state.groups[groupIndex].items;
+      const hadItems = oldItems && oldItems.length > 0;
+      replaceGroupInIndex(state._itemIndex, groupIndex, oldItems, items);
+
+      state.groups[groupIndex].items = items;
+      state.groups[groupIndex].item_count = items.length;
+
+      // Maintain loaded groups counter
+      const hasItems = items.length > 0;
+      if (!hadItems && hasItems) state._loadedGroupsCount++;
+      else if (hadItems && !hasItems) state._loadedGroupsCount--;
+
+      // Sync cache from state.groups
+      syncCacheFromGroups(state, groupId);
     });
   },
 
@@ -214,14 +156,20 @@ export const createItemActions = (
     });
   },
 
-  // Select item
+  // Select item — cursor is the single source of truth
   selectItem: (itemId: string | null) => {
+    if (itemId) {
+      useSelectionCursor.getState().select(itemId, 'click');
+    } else {
+      useSelectionCursor.getState().clear();
+    }
+    // Keep deprecated local shadow in sync for storage compat
     set(state => {
       state.selectedItemId = itemId;
     });
   },
 
-  // Set active item
+  // Set active item (deprecated — hover/preview state should be component-local)
   setActiveItem: (itemId: string | null) => {
     set(state => {
       state.activeItemId = itemId;
@@ -240,43 +188,19 @@ export const createItemActions = (
     set(state => {
       backlogLogger.debug(`Updating item ${itemId} in group ${groupId}`);
 
-      const updatedGroups = state.groups.map(group => {
-        if (group.id === groupId && group.items) {
-          const updatedItems = group.items.map(item => {
-            if (item.id === itemId) {
-              return { ...item, ...updates };
-            }
-            return item;
-          });
+      const groupIndex = state.groups.findIndex(g => g.id === groupId);
+      if (groupIndex === -1) return;
 
-          return { ...group, items: updatedItems };
-        }
-        return group;
-      });
+      const group = state.groups[groupIndex];
+      if (!group.items) return;
 
-      state.groups = updatedGroups;
+      const itemIndex = group.items.findIndex(i => i.id === itemId);
+      if (itemIndex === -1) return;
 
-      // Update cache as well
-      Object.keys(state.cache).forEach(cacheKey => {
-        if (state.cache[cacheKey] && state.cache[cacheKey].groups) {
-          const updatedCachedGroups = state.cache[cacheKey].groups.map(group => {
-            if (group.id === groupId && group.items) {
-              const updatedItems = group.items.map(item => {
-                if (item.id === itemId) {
-                  return { ...item, ...updates };
-                }
-                return item;
-              });
+      Object.assign(group.items[itemIndex], updates);
 
-              return { ...group, items: updatedItems };
-            }
-            return group;
-          });
-
-          state.cache[cacheKey].groups = updatedCachedGroups;
-          state.cache[cacheKey].lastUpdated = Date.now();
-        }
-      });
+      // Sync cache from state.groups
+      syncCacheFromGroups(state, groupId);
     });
   },
 
@@ -286,7 +210,7 @@ export const createItemActions = (
     const searchTerm = state.searchTerm.toLowerCase().trim();
 
     if (!searchTerm) {
-      return state.groups.reduce((count, group) => count + (group.item_count || 0), 0);
+      return state.groups.reduce((count, group) => count + (group.items?.length || 0), 0);
     }
 
     let count = 0;
@@ -307,19 +231,24 @@ export const createItemActions = (
     return count;
   },
 
-  // Check if item is used
+  // Check if item is used - O(1) via index map
   isItemUsed: (itemId: string) => {
     const state = get();
-
+    const groupIdx = state._itemIndex.get(itemId);
+    if (groupIdx !== undefined) {
+      const group = state.groups[groupIdx];
+      if (group?.items) {
+        const item = group.items.find(i => i.id === itemId);
+        if (item) return item.used || false;
+      }
+    }
+    // Fallback: linear scan
     for (const group of state.groups) {
       if (group.items) {
         const item = group.items.find(i => i.id === itemId);
-        if (item) {
-          return item.used || false;
-        }
+        if (item) return item.used || false;
       }
     }
-
     return false;
   },
 

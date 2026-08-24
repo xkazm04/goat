@@ -3,19 +3,18 @@
 /**
  * PortalDragOverlay - Renders drag overlay via portal with direct pointer tracking
  *
- * This component solves coordinate system mismatches between:
- * - Fixed-position panels (viewport-relative)
- * - Scrollable content areas (document-relative)
- *
- * By tracking pointer position directly and rendering to document.body
- * with position:fixed, we bypass all CSS stacking/clipping/scroll issues.
+ * Performance: Position updates bypass React entirely by writing
+ * transform directly to the DOM element via ref. React only re-renders
+ * for isDragging/item identity changes, never for coordinates.
  */
 
+import { useDndMonitor } from "@dnd-kit/core";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
-import { useDndMonitor } from "@dnd-kit/core";
+
 import { PlaceholderImage } from "@/components/ui/placeholder-image";
-import { useOptionalDropZoneHighlight } from "./DropZoneHighlightContext";
+
+import { useDropZoneHighlightStore } from "@/stores/drop-zone-highlight-store";
 
 interface DraggableItem {
   id?: string;
@@ -35,29 +34,43 @@ interface PortalDragOverlayProps {
  */
 export function PortalDragOverlay({ item, targetPosition }: PortalDragOverlayProps) {
   const [isDragging, setIsDragging] = useState(false);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
   const [mounted, setMounted] = useState(false);
 
-  // Use ref for position to avoid stale closures in event handlers
+  // DOM ref for direct transform manipulation — bypasses React reconciliation
+  const overlayRef = useRef<HTMLDivElement>(null);
   const positionRef = useRef({ x: 0, y: 0 });
+  const rafRef = useRef<number>(0);
 
-  // Get optional highlight context to broadcast cursor position for magnetic glow effects
-  const highlightContext = useOptionalDropZoneHighlight();
-  const updateCursorPosition = highlightContext?.updateCursorPosition;
+  // Get action from store — actions are stable references, no re-renders
+  const updateCursorPosition = useDropZoneHighlightStore((s) => s.updateCursorPosition);
 
   // Ensure we only render portal on client
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Track pointer position directly via native events
+  // Apply position to DOM element directly via CSS transform
+  const applyPosition = useCallback((x: number, y: number) => {
+    const el = overlayRef.current;
+    if (el) {
+      // translate3d triggers GPU compositing — offset by 40px to center the 80px overlay
+      el.style.transform = `translate3d(${x - 40}px, ${y - 40}px, 0)`;
+    }
+  }, []);
+
+  // Track pointer position directly via native events, throttled to rAF
   const handlePointerMove = useCallback((e: PointerEvent) => {
-    const newPos = { x: e.clientX, y: e.clientY };
-    positionRef.current = newPos;
-    setPosition(newPos);
-    // Broadcast to context for magnetic glow effects on drop zones
-    updateCursorPosition?.(e.clientX, e.clientY);
-  }, [updateCursorPosition]);
+    positionRef.current = { x: e.clientX, y: e.clientY };
+
+    if (!rafRef.current) {
+      rafRef.current = requestAnimationFrame(() => {
+        rafRef.current = 0;
+        const pos = positionRef.current;
+        applyPosition(pos.x, pos.y);
+        updateCursorPosition?.(pos.x, pos.y);
+      });
+    }
+  }, [applyPosition, updateCursorPosition]);
 
   // Monitor @dnd-kit drag state
   useDndMonitor({
@@ -66,10 +79,11 @@ export function PortalDragOverlay({ item, targetPosition }: PortalDragOverlayPro
       // Get initial position from the activator event
       const activatorEvent = event.activatorEvent;
       if (activatorEvent instanceof PointerEvent || activatorEvent instanceof MouseEvent) {
-        const initialPos = { x: activatorEvent.clientX, y: activatorEvent.clientY };
-        positionRef.current = initialPos;
-        setPosition(initialPos);
-        // Broadcast initial position to context
+        positionRef.current = { x: activatorEvent.clientX, y: activatorEvent.clientY };
+        // Apply initial position on next frame after React renders the overlay element
+        requestAnimationFrame(() => {
+          applyPosition(activatorEvent.clientX, activatorEvent.clientY);
+        });
         updateCursorPosition?.(activatorEvent.clientX, activatorEvent.clientY);
       }
     },
@@ -88,6 +102,10 @@ export function PortalDragOverlay({ item, targetPosition }: PortalDragOverlayPro
       window.addEventListener("pointermove", handlePointerMove, { passive: true });
       return () => {
         window.removeEventListener("pointermove", handlePointerMove);
+        if (rafRef.current) {
+          cancelAnimationFrame(rafRef.current);
+          rafRef.current = 0;
+        }
       };
     }
   }, [isDragging, handlePointerMove]);
@@ -99,10 +117,11 @@ export function PortalDragOverlay({ item, targetPosition }: PortalDragOverlayPro
 
   const overlayContent = (
     <div
+      ref={overlayRef}
       style={{
         position: "fixed",
-        left: position.x - 40, // Center the 80px overlay
-        top: position.y - 40,
+        left: 0,
+        top: 0,
         width: 80,
         height: 80,
         zIndex: 99999,
@@ -110,12 +129,12 @@ export function PortalDragOverlay({ item, targetPosition }: PortalDragOverlayPro
         borderRadius: 8,
         overflow: "hidden",
         boxShadow: `
-          0 8px 32px rgba(0, 0, 0, 0.4),
+          var(--elevation-modal),
           0 0 0 2px rgba(34, 211, 238, 0.8),
-          0 0 20px rgba(34, 211, 238, 0.4)
+          var(--glow-brand-lg)
         `,
-        // Ensure no transform that could affect positioning
-        transform: "none",
+        // will-change hints the browser to promote to its own compositor layer
+        willChange: "transform",
       }}
       data-testid="portal-drag-overlay"
     >
@@ -129,7 +148,7 @@ export function PortalDragOverlay({ item, targetPosition }: PortalDragOverlayPro
         blurAmount={10}
         fallbackComponent={
           <div className="w-full h-full bg-gray-800 flex items-center justify-center">
-            <span className="text-[10px] text-gray-400 text-center px-1 truncate">
+            <span className="text-2xs text-gray-400 text-center px-1 truncate">
               {item.title}
             </span>
           </div>
@@ -143,13 +162,13 @@ export function PortalDragOverlay({ item, targetPosition }: PortalDragOverlayPro
             position: "absolute",
             top: -4,
             right: -4,
-            backgroundColor: "#06b6d4", // cyan-500
+            backgroundColor: "#06b6d4", // brand
             color: "white",
             fontSize: 10,
             fontWeight: "bold",
             padding: "2px 6px",
             borderRadius: 6,
-            boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+            boxShadow: "var(--elevation-card)",
           }}
           data-testid="position-badge"
         >

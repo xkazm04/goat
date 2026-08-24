@@ -19,3 +19,6 @@ export type { StarRatingProps } from "./star-rating";
 
 export { ListGrid } from "./list-grid";
 export type { ListGridProps } from "./list-grid";
+
+export { ImageFallback } from "./ImageFallback";
+export type { ImageFallbackProps } from "./ImageFallback";

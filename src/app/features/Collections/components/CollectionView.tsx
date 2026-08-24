@@ -1,8 +1,22 @@
 "use client";
 
-import { memo, useMemo, useState, useCallback } from "react";
-import { motion, AnimatePresence, Reorder } from "framer-motion";
-import Link from "next/link";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  arrayMove,
+  rectSortingStrategy,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Grid,
   List,
@@ -16,6 +30,12 @@ import {
   ExternalLink,
   GripVertical,
 } from "lucide-react";
+import Link from "next/link";
+import { memo, useMemo, useState, useCallback, useEffect } from "react";
+
+import { EmptyTrophyCase, NoSearchResults } from "@/components/illustrations/EmptyStateIllustrations";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
+
 import type { ListCollection, CollectionStats } from "@/types/collection";
 import type { TopList } from "@/types/top-lists";
 
@@ -31,19 +51,30 @@ interface CollectionViewProps {
 
 type ViewMode = "grid" | "list" | "compact";
 
+interface DragProps {
+  setNodeRef?: (node: HTMLElement | null) => void;
+  style?: React.CSSProperties;
+  handleProps?: Record<string, unknown>;
+}
+
 const ListCard = memo(function ListCard({
   list,
   onRemove,
   showDragHandle,
+  drag,
 }: {
   list: TopList;
   onRemove?: () => void;
   showDragHandle?: boolean;
+  drag?: DragProps;
 }) {
+  const reducedMotion = useReducedMotion();
   return (
     <motion.div
+      ref={drag?.setNodeRef}
+      style={drag?.style}
       layout
-      initial={{ opacity: 0, scale: 0.95 }}
+      initial={reducedMotion ? false : { opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
       className="group relative bg-slate-800/50 rounded-xl border border-slate-700/50 overflow-hidden hover:border-slate-600/50 hover:bg-slate-800/70 transition-all"
@@ -51,12 +82,16 @@ const ListCard = memo(function ListCard({
       <Link href={`/match/${list.id}`} className="block p-5">
         <div className="flex items-start gap-3">
           {showDragHandle && (
-            <div className="mt-1 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing">
+            <div
+              {...(drag?.handleProps ?? {})}
+              onClick={(e) => e.preventDefault()}
+              className="mt-1 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing touch-none"
+            >
               <GripVertical className="w-4 h-4 text-slate-500" />
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-white group-hover:text-cyan-400 transition-colors line-clamp-2 mb-2">
+            <h3 className="font-semibold text-white group-hover:text-brand-hover transition-colors line-clamp-2 mb-2">
               {list.title}
             </h3>
             <div className="flex items-center gap-3 text-sm text-slate-500">
@@ -99,15 +134,20 @@ const ListRow = memo(function ListRow({
   list,
   onRemove,
   showDragHandle,
+  drag,
 }: {
   list: TopList;
   onRemove?: () => void;
   showDragHandle?: boolean;
+  drag?: DragProps;
 }) {
+  const reducedMotion = useReducedMotion();
   return (
     <motion.div
+      ref={drag?.setNodeRef}
+      style={drag?.style}
       layout
-      initial={{ opacity: 0, x: -10 }}
+      initial={reducedMotion ? false : { opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -10 }}
       className="group"
@@ -117,15 +157,19 @@ const ListRow = memo(function ListRow({
         className="flex items-center gap-4 p-4 bg-slate-800/30 hover:bg-slate-800/60 rounded-xl border border-slate-700/30 hover:border-slate-600/50 transition-all"
       >
         {showDragHandle && (
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing">
+          <div
+            {...(drag?.handleProps ?? {})}
+            onClick={(e) => e.preventDefault()}
+            className="opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing touch-none"
+          >
             <GripVertical className="w-4 h-4 text-slate-500" />
           </div>
         )}
-        <div className="w-10 h-10 rounded-lg bg-slate-700/50 flex items-center justify-center text-slate-400 group-hover:text-cyan-400 transition-colors">
+        <div className="w-10 h-10 rounded-lg bg-slate-700/50 flex items-center justify-center text-slate-400 group-hover:text-brand-hover transition-colors">
           <Layers className="w-5 h-5" />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="font-medium text-white group-hover:text-cyan-400 transition-colors truncate">
+          <h3 className="font-medium text-white group-hover:text-brand-hover transition-colors truncate">
             {list.title}
           </h3>
           <p className="text-sm text-slate-500 capitalize">
@@ -142,6 +186,36 @@ const ListRow = memo(function ListRow({
   );
 });
 
+// Sortable wrapper — calls useSortable (must be inside a SortableContext) and
+// passes the drag bindings down to the presentational card/row.
+function SortableCollectionItem({
+  list,
+  viewMode,
+  onRemove,
+}: {
+  list: TopList;
+  viewMode: ViewMode;
+  onRemove?: () => void;
+}) {
+  const { setNodeRef, transform, transition, attributes, listeners, isDragging } =
+    useSortable({ id: list.id });
+  const drag: DragProps = {
+    setNodeRef,
+    style: {
+      transform: CSS.Transform.toString(transform),
+      transition,
+      zIndex: isDragging ? 50 : undefined,
+      opacity: isDragging ? 0.6 : undefined,
+    },
+    handleProps: { ...attributes, ...listeners },
+  };
+  return viewMode === "list" ? (
+    <ListRow list={list} onRemove={onRemove} showDragHandle drag={drag} />
+  ) : (
+    <ListCard list={list} onRemove={onRemove} showDragHandle drag={drag} />
+  );
+}
+
 export const CollectionView = memo(function CollectionView({
   collection,
   lists,
@@ -156,6 +230,14 @@ export const CollectionView = memo(function CollectionView({
   const [orderedListIds, setOrderedListIds] = useState<string[]>(
     collection?.listIds || []
   );
+
+  // Re-sync the local ordering whenever the selected collection (or its
+  // membership) changes — initializing once via useState left a stale order
+  // when switching collections or after add/remove.
+  const listIdsKey = collection?.listIds?.join(",") ?? "";
+  useEffect(() => {
+    setOrderedListIds(collection?.listIds || []);
+  }, [collection?.id, listIdsKey]);
 
   const filteredLists = useMemo(() => {
     if (!searchTerm.trim()) return lists;
@@ -176,12 +258,36 @@ export const CollectionView = memo(function CollectionView({
     [onReorderLists]
   );
 
-  const orderedLists = useMemo(() => {
-    const listMap = new Map(lists.map((l) => [l.id, l]));
-    return orderedListIds
-      .map((id) => listMap.get(id))
-      .filter((l): l is TopList => l !== undefined);
-  }, [lists, orderedListIds]);
+  // Lists to render: the search-filtered set, sorted by the saved order.
+  // Unknown/new ids fall to the end so nothing ever disappears. This is the
+  // single display source of truth (previous code rendered the unordered
+  // filteredLists while a separate orderedLists memo went unused).
+  const displayedLists = useMemo(() => {
+    if (orderedListIds.length === 0) return filteredLists;
+    const orderIndex = new Map(orderedListIds.map((id, i) => [id, i]));
+    return [...filteredLists].sort((a, b) => {
+      const ai = orderIndex.get(a.id) ?? Number.MAX_SAFE_INTEGER;
+      const bi = orderIndex.get(b.id) ?? Number.MAX_SAFE_INTEGER;
+      return ai - bi;
+    });
+  }, [filteredLists, orderedListIds]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
+  );
+  const canReorder = !!onReorderLists && !searchTerm.trim();
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
+      const ids = displayedLists.map((l) => l.id);
+      const oldIndex = ids.indexOf(String(active.id));
+      const newIndex = ids.indexOf(String(over.id));
+      if (oldIndex === -1 || newIndex === -1) return;
+      handleReorder(arrayMove(ids, oldIndex, newIndex));
+    },
+    [displayedLists, handleReorder]
+  );
 
   // If no collection selected, show all lists
   if (!collection) {
@@ -202,7 +308,7 @@ export const CollectionView = memo(function CollectionView({
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search lists..."
-                className="pl-9 pr-4 py-2 w-64 bg-slate-800/50 border border-slate-700/50 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500/50"
+                className="pl-9 pr-4 py-2 w-64 bg-slate-800/50 border border-slate-700/50 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-hidden focus:border-brand/50"
               />
             </div>
             <ViewModeToggle mode={viewMode} onModeChange={setViewMode} />
@@ -228,9 +334,13 @@ export const CollectionView = memo(function CollectionView({
         </div>
 
         {filteredLists.length === 0 && (
-          <div className="text-center py-16">
-            <Folder className="w-16 h-16 text-slate-700 mx-auto mb-4" />
-            <p className="text-slate-500">
+          <div className="text-center py-16 flex flex-col items-center">
+            {searchTerm ? (
+              <NoSearchResults width={160} height={128} />
+            ) : (
+              <EmptyTrophyCase width={160} height={128} />
+            )}
+            <p className="text-slate-500 mt-2">
               {searchTerm ? "No lists match your search" : "No lists yet"}
             </p>
           </div>
@@ -309,14 +419,14 @@ export const CollectionView = memo(function CollectionView({
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search in collection..."
-            className="pl-9 pr-4 py-2 w-64 bg-slate-800/50 border border-slate-700/50 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500/50"
+            className="pl-9 pr-4 py-2 w-64 bg-slate-800/50 border border-slate-700/50 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-hidden focus:border-brand/50"
           />
         </div>
         <div className="flex items-center gap-3">
           {onAddList && (
             <button
               onClick={onAddList}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-cyan-600/20 hover:bg-cyan-600/30 border border-cyan-500/30 text-cyan-400 text-sm font-medium transition-colors"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-muted/20 hover:bg-brand-muted/30 border border-brand/30 text-brand-hover text-sm font-medium transition-colors"
             >
               <Plus className="w-4 h-4" />
               Add List
@@ -330,15 +440,19 @@ export const CollectionView = memo(function CollectionView({
       {isLoading ? (
         <div className="flex items-center justify-center py-16">
           <motion.div
-            className="w-10 h-10 border-3 border-cyan-400/30 border-t-cyan-400 rounded-full"
+            className="w-10 h-10 border-3 border-brand-hover/30 border-t-brand-hover rounded-full"
             animate={{ rotate: 360 }}
             transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
           />
         </div>
       ) : filteredLists.length === 0 ? (
-        <div className="text-center py-16">
-          <Folder className="w-16 h-16 text-slate-700 mx-auto mb-4" />
-          <p className="text-slate-500 mb-4">
+        <div className="text-center py-16 flex flex-col items-center">
+          {searchTerm ? (
+            <NoSearchResults width={160} height={128} />
+          ) : (
+            <EmptyTrophyCase width={160} height={128} />
+          )}
+          <p className="text-slate-500 mb-4 mt-2">
             {searchTerm
               ? "No lists match your search"
               : "This collection is empty"}
@@ -346,7 +460,7 @@ export const CollectionView = memo(function CollectionView({
           {onAddList && !searchTerm && (
             <button
               onClick={onAddList}
-              className="text-cyan-400 hover:text-cyan-300 text-sm"
+              className="text-brand-hover hover:text-brand-hover text-sm"
             >
               Add your first list
             </button>
@@ -360,25 +474,47 @@ export const CollectionView = memo(function CollectionView({
               : "space-y-2"
           }
         >
-          <AnimatePresence mode="popLayout">
-            {filteredLists.map((list) =>
-              viewMode === "grid" ? (
-                <ListCard
-                  key={list.id}
-                  list={list}
-                  onRemove={onRemoveList ? () => onRemoveList(list.id) : undefined}
-                  showDragHandle={!!onReorderLists}
-                />
-              ) : (
-                <ListRow
-                  key={list.id}
-                  list={list}
-                  onRemove={onRemoveList ? () => onRemoveList(list.id) : undefined}
-                  showDragHandle={!!onReorderLists}
-                />
-              )
-            )}
-          </AnimatePresence>
+          {canReorder ? (
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={displayedLists.map((l) => l.id)}
+                strategy={viewMode === "grid" ? rectSortingStrategy : verticalListSortingStrategy}
+              >
+                {displayedLists.map((list) => (
+                  <SortableCollectionItem
+                    key={list.id}
+                    list={list}
+                    viewMode={viewMode}
+                    onRemove={onRemoveList ? () => onRemoveList(list.id) : undefined}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
+          ) : (
+            <AnimatePresence mode="popLayout">
+              {displayedLists.map((list) =>
+                viewMode === "grid" ? (
+                  <ListCard
+                    key={list.id}
+                    list={list}
+                    onRemove={onRemoveList ? () => onRemoveList(list.id) : undefined}
+                    showDragHandle={false}
+                  />
+                ) : (
+                  <ListRow
+                    key={list.id}
+                    list={list}
+                    onRemove={onRemoveList ? () => onRemoveList(list.id) : undefined}
+                    showDragHandle={false}
+                  />
+                )
+              )}
+            </AnimatePresence>
+          )}
         </div>
       )}
     </div>

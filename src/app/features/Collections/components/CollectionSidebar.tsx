@@ -1,6 +1,5 @@
 "use client";
 
-import { memo, useCallback, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Folder,
@@ -16,13 +15,16 @@ import {
   Globe,
   Lock,
 } from "lucide-react";
+import { memo, useCallback, useState } from "react";
+
+import { DURATION } from '@/lib/animations/motion-presets';
 import {
   useCollectionTree,
-  useCollectionStore,
   useCollectionActions,
 } from "@/stores/collection-store";
-import type { ListCollection, CollectionTreeNode } from "@/types/collection";
 import { DEFAULT_COLLECTIONS } from "@/types/collection";
+
+import type { ListCollection, CollectionTreeNode } from "@/types/collection";
 
 interface CollectionSidebarProps {
   onSelectCollection: (collection: ListCollection | null) => void;
@@ -100,7 +102,7 @@ const TreeNode = memo(function TreeNode({
   return (
     <div>
       <motion.div
-        className={`group relative flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-colors ${
+        className={`group relative flex items-center gap-2 px-3 py-2 rounded-card cursor-pointer transition-colors ${
           isSelected
             ? "bg-slate-700/60 text-white"
             : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-200"
@@ -128,7 +130,7 @@ const TreeNode = memo(function TreeNode({
 
         {/* Folder icon */}
         <div
-          className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
+          className="w-6 h-6 rounded-control flex items-center justify-center shrink-0"
           style={{
             backgroundColor: isSelected ? `${color}30` : `${color}15`,
           }}
@@ -175,7 +177,7 @@ const TreeNode = memo(function TreeNode({
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className="absolute right-0 top-full mt-1 py-1 w-28 bg-slate-800 rounded-lg border border-slate-700 shadow-xl z-50"
+                  className="absolute right-0 top-full mt-1 py-1 w-28 bg-slate-800 rounded-card border border-slate-700 shadow-xl z-dropdown"
                   onClick={(e) => e.stopPropagation()}
                 >
                   {onEdit && (
@@ -210,7 +212,7 @@ const TreeNode = memo(function TreeNode({
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: DURATION.quick }}
             className="overflow-hidden"
           >
             {children.map((child) => (
@@ -255,12 +257,12 @@ export const CollectionSidebar = memo(function CollectionSidebar({
   return (
     <div className="flex flex-col h-full bg-slate-900/50 border-r border-slate-800/50">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-slate-800/50">
+      <div className="flex items-center justify-between p-4 divider-gradient">
         <h2 className="text-sm font-semibold text-white">Collections</h2>
         {onCreateCollection && (
           <button
             onClick={onCreateCollection}
-            className="p-1.5 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 text-slate-400 hover:text-white transition-colors"
+            className="p-1.5 rounded-control bg-slate-800/50 hover:bg-slate-700/50 text-slate-400 hover:text-white transition-colors"
             title="Create collection"
           >
             <FolderPlus className="w-4 h-4" />
@@ -271,16 +273,16 @@ export const CollectionSidebar = memo(function CollectionSidebar({
       {/* All Lists option */}
       <div className="px-2 pt-3">
         <motion.button
-          className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+          className={`w-full flex items-center gap-2 px-3 py-2 rounded-card text-sm font-medium transition-colors ${
             selectedCollectionId === null
-              ? "bg-cyan-600/20 text-cyan-400"
+              ? "bg-brand-muted/20 text-brand-hover"
               : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-200"
           }`}
           onClick={handleShowAll}
           whileHover={{ x: 2 }}
           whileTap={{ scale: 0.98 }}
         >
-          <div className="w-6 h-6 rounded-md flex items-center justify-center bg-slate-700/50">
+          <div className="w-6 h-6 rounded-control flex items-center justify-center bg-slate-700/50">
             <Folder className="w-3.5 h-3.5" />
           </div>
           All Lists
@@ -299,7 +301,7 @@ export const CollectionSidebar = memo(function CollectionSidebar({
             {onCreateCollection && (
               <button
                 onClick={onCreateCollection}
-                className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors"
+                className="text-sm text-brand-hover hover:text-brand-hover transition-colors"
               >
                 Create your first collection
               </button>
@@ -332,7 +334,7 @@ export const CollectionSidebar = memo(function CollectionSidebar({
           return (
             <button
               key={config.type}
-              className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm text-slate-500 hover:bg-slate-800/30 hover:text-slate-300 transition-colors"
+              className="w-full flex items-center gap-2 px-2 py-1.5 rounded-control text-sm text-slate-500 hover:bg-slate-800/30 hover:text-slate-300 transition-colors"
             >
               <IconComponent className="w-3.5 h-3.5" style={{ color: config.color }} />
               {config.name}

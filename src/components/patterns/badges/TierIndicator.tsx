@@ -26,10 +26,16 @@
  * ```
  */
 
-import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Trophy, Medal, Star, Circle } from 'lucide-react';
+import React, { useMemo } from 'react';
+
+import {
+  consensusTierConfigs,
+  badgeSizeScale,
+  resolveTierFromRank,
+} from '@/lib/tokens/badge-tokens';
 import { cn } from '@/lib/utils';
+
 import type {
   TierIndicatorProps,
   ConsensusTier,
@@ -38,104 +44,35 @@ import type {
   BadgePosition,
 } from './types';
 
-// =============================================================================
-// Tier Configuration
-// =============================================================================
+export { consensusTierConfigs as tierConfigs } from '@/lib/tokens/badge-tokens';
+export { resolveTierFromRank as getTierFromRank } from '@/lib/tokens/badge-tokens';
 
-export const tierConfigs: Record<ConsensusTier, Omit<TierConfig, 'tier'>> = {
-  elite: {
-    label: 'Elite',
-    icon: Trophy,
-    color: {
-      background: 'bg-yellow-500/20',
-      text: 'text-yellow-400',
-      border: 'border-yellow-500/30',
-      glow: 'shadow-yellow-500/20',
-    },
-    minRank: 1,
-    maxRank: 3,
-  },
-  top: {
-    label: 'Top',
-    icon: Medal,
-    color: {
-      background: 'bg-cyan-500/20',
-      text: 'text-cyan-400',
-      border: 'border-cyan-500/30',
-      glow: 'shadow-cyan-500/20',
-    },
-    minRank: 4,
-    maxRank: 10,
-  },
-  solid: {
-    label: 'Solid',
-    icon: Star,
-    color: {
-      background: 'bg-purple-500/20',
-      text: 'text-purple-400',
-      border: 'border-purple-500/30',
-      glow: 'shadow-purple-500/20',
-    },
-    minRank: 11,
-    maxRank: 25,
-  },
-  common: {
-    label: 'Common',
-    icon: Circle,
-    color: {
-      background: 'bg-zinc-500/20',
-      text: 'text-zinc-400',
-      border: 'border-zinc-500/30',
-    },
-    minRank: 26,
-    maxRank: 50,
-  },
-  unranked: {
-    label: 'Unranked',
-    icon: Circle,
-    color: {
-      background: 'bg-emerald-500/20',
-      text: 'text-emerald-400',
-      border: 'border-emerald-500/30',
-    },
-  },
-};
+const tierConfigs = consensusTierConfigs;
 
-// =============================================================================
-// Size Configuration
-// =============================================================================
-
-interface SizeConfig {
-  container: string;
-  fontSize: string;
-  iconSize: number;
-  gap: string;
-}
-
-const sizeConfigs: Record<BadgeSize, SizeConfig> = {
+const sizeConfigs = {
   xs: {
-    container: 'h-4 px-1.5',
-    fontSize: 'text-[9px]',
-    iconSize: 8,
-    gap: 'gap-0.5',
+    container: `${badgeSizeScale.xs.height} ${badgeSizeScale.xs.padding}`,
+    fontSize: 'text-2xs',
+    iconSize: badgeSizeScale.xs.iconSize - 2,
+    gap: badgeSizeScale.xs.gap,
   },
   sm: {
-    container: 'h-5 px-2',
-    fontSize: 'text-[10px]',
-    iconSize: 10,
-    gap: 'gap-1',
+    container: `${badgeSizeScale.sm.height} ${badgeSizeScale.sm.padding}`,
+    fontSize: 'text-2xs',
+    iconSize: badgeSizeScale.sm.iconSize - 2,
+    gap: badgeSizeScale.sm.gap,
   },
   md: {
-    container: 'h-6 px-2.5',
+    container: `${badgeSizeScale.md.height} ${badgeSizeScale.md.padding}`,
     fontSize: 'text-xs',
-    iconSize: 12,
+    iconSize: badgeSizeScale.md.iconSize - 2,
     gap: 'gap-1',
   },
   lg: {
     container: 'h-7 px-3',
     fontSize: 'text-sm',
-    iconSize: 14,
-    gap: 'gap-1.5',
+    iconSize: badgeSizeScale.lg.iconSize - 2,
+    gap: badgeSizeScale.lg.gap,
   },
 };
 
@@ -156,27 +93,17 @@ const positionStyles: Record<BadgePosition, string> = {
 // =============================================================================
 
 /**
- * Calculate tier from average rank
- */
-export function getTierFromRank(averageRank: number | undefined): ConsensusTier {
-  if (averageRank === undefined || averageRank === null) return 'unranked';
-  if (averageRank <= 3) return 'elite';
-  if (averageRank <= 10) return 'top';
-  if (averageRank <= 25) return 'solid';
-  if (averageRank <= 50) return 'common';
-  return 'unranked';
-}
-
-/**
  * Get tier config from tier or average rank
  */
 export function getTierConfig(
   tier?: ConsensusTier,
   averageRank?: number
 ): TierConfig {
-  const resolvedTier = tier ?? getTierFromRank(averageRank);
-  const config = tierConfigs[resolvedTier];
-  return { tier: resolvedTier, ...config };
+  const resolvedTier = tier ?? resolveTierFromRank(averageRank);
+  // Guard against unknown tier values - fall back to 'unranked'
+  const config = tierConfigs[resolvedTier] ?? tierConfigs.unranked;
+  const safeTier = tierConfigs[resolvedTier] ? resolvedTier : 'unranked';
+  return { tier: safeTier, ...config };
 }
 
 // =============================================================================
@@ -206,12 +133,12 @@ export const TierIndicator = React.memo(function TierIndicator({
       animate={{ opacity: 1, scale: 1 }}
       transition={{ type: 'spring', stiffness: 300, damping: 20 }}
       className={cn(
-        'inline-flex items-center rounded-full backdrop-blur-sm',
+        'inline-flex items-center rounded-badge backdrop-blur-xs',
         sizeConfig.container,
         sizeConfig.gap,
         colorConfig.background,
         colorConfig.border && `border ${colorConfig.border}`,
-        colorConfig.glow && `shadow-sm ${colorConfig.glow}`,
+        colorConfig.glow && `shadow-xs ${colorConfig.glow}`,
         position && positionStyles[position],
         position && 'z-10',
         className
@@ -254,7 +181,7 @@ export const TierBadge = React.memo(function TierBadge({
         sizeConfig.container.replace('px-2', '').replace('px-2.5', '').replace('px-3', ''),
         config.color.background,
         config.color.border && `border ${config.color.border}`,
-        config.color.glow && `shadow-sm ${config.color.glow}`,
+        config.color.glow && `shadow-xs ${config.color.glow}`,
         className
       )}
       title={showTooltip ? config.label : undefined}

@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { transformCollectionRow, generateShareSlug } from '@/types/collection';
+
+import { withTiming } from '@/lib/api/request-timing';
 import {
   withErrorHandler,
   fromSupabaseError,
@@ -8,6 +8,8 @@ import {
   noContentResponse,
   NotFoundError,
 } from '@/lib/errors';
+import { createClient, requireAuth } from '@/lib/supabase/server';
+import { transformCollectionRow, generateShareSlug } from '@/types/collection';
 
 // Force dynamic rendering for this route since it uses cookies
 export const dynamic = 'force-dynamic';
@@ -19,7 +21,7 @@ export const dynamic = 'force-dynamic';
  * - include_stats: Include computed statistics
  * - include_lists: Include full list data for contained lists
  */
-export const GET = withErrorHandler(
+export const GET = withTiming(withErrorHandler(
   async (
     request: NextRequest,
     context?: { params?: Promise<Record<string, string>> }
@@ -51,54 +53,80 @@ export const GET = withErrorHandler(
     }
 
     let collection = transformCollectionRow(data);
+    const warnings: string[] = [];
 
     // Include stats if requested
     if (includeStats && collection.listIds.length > 0) {
-      const { data: listsData } = await supabase
+      const { data: listsData, error: statsError } = await supabase
         .from('lists')
         .select('id, total_items, updated_at')
         .in('id', collection.listIds);
 
-      const totalItems = (listsData || []).reduce(
-        (sum, l) => sum + (l.total_items || 0),
-        0
-      );
-      const lastActivity =
-        listsData && listsData.length > 0
-          ? listsData.reduce(
-              (latest, l) =>
-                l.updated_at > (latest || '') ? l.updated_at : latest,
-              null as string | null
-            )
-          : null;
+      if (statsError) {
+        console.error('[collections] Stats query failed', {
+          query: 'lists.stats',
+          collectionId: id,
+          listIds: collection.listIds.slice(0, 5),
+          error: statsError.message,
+          code: statsError.code,
+        });
+        warnings.push('stats_unavailable');
+      } else {
+        const totalItems = (listsData || []).reduce(
+          (sum, l) => sum + (l.total_items || 0),
+          0
+        );
+        const lastActivity =
+          listsData && listsData.length > 0
+            ? listsData.reduce(
+                (latest, l) =>
+                  l.updated_at > (latest || '') ? l.updated_at : latest,
+                null as string | null
+              )
+            : null;
 
-      collection = {
-        ...collection,
-        stats: {
-          listCount: collection.listIds.length,
-          totalItems,
-          completedLists: 0,
-          lastActivity,
-        },
-      } as typeof collection & { stats: object };
+        collection = {
+          ...collection,
+          stats: {
+            listCount: collection.listIds.length,
+            totalItems,
+            completedLists: 0,
+            lastActivity,
+          },
+        } as typeof collection & { stats: object };
+      }
     }
 
     // Include full list data if requested
     if (includeLists && collection.listIds.length > 0) {
-      const { data: listsData } = await supabase
+      const { data: listsData, error: listsError } = await supabase
         .from('lists')
         .select('*')
         .in('id', collection.listIds);
 
-      collection = {
-        ...collection,
-        lists: listsData || [],
-      } as typeof collection & { lists: object[] };
+      if (listsError) {
+        console.error('[collections] Lists query failed', {
+          query: 'lists.full',
+          collectionId: id,
+          listIds: collection.listIds.slice(0, 5),
+          error: listsError.message,
+          code: listsError.code,
+        });
+        warnings.push('lists_unavailable');
+      } else {
+        collection = {
+          ...collection,
+          lists: listsData || [],
+        } as typeof collection & { lists: object[] };
+      }
     }
 
-    return successResponse(collection);
+    return successResponse({
+      ...collection,
+      ...(warnings.length > 0 && { _warnings: warnings }),
+    });
   }
-);
+), 'collections/[id]');
 
 /**
  * PUT /api/collections/[id] - Update a collection
@@ -114,7 +142,7 @@ export const GET = withErrorHandler(
  * - order: Display order
  * - list_ids: Array of list IDs in this collection
  */
-export const PUT = withErrorHandler(
+export const PUT = withTiming(withErrorHandler(
   async (
     request: NextRequest,
     context?: { params?: Promise<Record<string, string>> }
@@ -150,11 +178,15 @@ export const PUT = withErrorHandler(
       }
 
       if (newParentId !== null) {
-        // Check if new parent exists
+        // Check if new parent exists and belongs to the authenticated user
+        const auth = await requireAuth();
+        if (auth.error) return auth.error;
+
         const { data: parent, error: parentError } = await supabase
           .from('list_collections')
           .select('id, parent_id')
           .eq('id', newParentId)
+          .eq('user_id', auth.userId)
           .single();
 
         if (parentError || !parent) {
@@ -243,7 +275,7 @@ export const PUT = withErrorHandler(
 
     return successResponse(transformCollectionRow(data));
   }
-);
+), 'collections/[id]');
 
 /**
  * DELETE /api/collections/[id] - Delete a collection
@@ -251,7 +283,7 @@ export const PUT = withErrorHandler(
  * Query params:
  * - cascade: If 'true', also delete child collections. Default: false (orphan children)
  */
-export const DELETE = withErrorHandler(
+export const DELETE = withTiming(withErrorHandler(
   async (
     request: NextRequest,
     context?: { params?: Promise<Record<string, string>> }
@@ -312,4 +344,4 @@ export const DELETE = withErrorHandler(
 
     return noContentResponse();
   }
-);
+), 'collections/[id]');

@@ -7,8 +7,10 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import type { ErrorMetrics, ErrorEvent } from './error-analytics';
+
 import { getErrorAnalytics, subscribeToErrors } from './error-analytics';
+
+import type { ErrorMetrics, ErrorEvent } from './error-analytics';
 
 /**
  * Hook to access error metrics with auto-refresh

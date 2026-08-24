@@ -80,6 +80,7 @@ export type ErrorCode =
   | 'CLIENT_UNKNOWN_ERROR'
   | 'CLIENT_INVALID_STATE'
   | 'CLIENT_STORAGE_ERROR'
+  | 'CLIENT_EMPTY_RESPONSE'
 
   // Grid/Match specific (re-using validation codes)
   | 'GRID_SOURCE_NOT_FOUND'
@@ -155,211 +156,216 @@ export interface ErrorResponse {
 export const ERROR_MESSAGES: Record<ErrorCode, { title: string; description: string; severity: ErrorSeverity }> = {
   // Validation errors
   VALIDATION_REQUIRED_FIELD: {
-    title: 'Missing Information',
-    description: 'Please fill in all required fields.',
+    title: 'Almost there!',
+    description: 'Looks like a required field is empty. Fill it in and you\'re good to go.',
     severity: 'error',
   },
   VALIDATION_INVALID_FORMAT: {
-    title: 'Invalid Format',
-    description: 'Please check the format of your input.',
+    title: 'Quick fix needed',
+    description: 'The format doesn\'t look quite right. Double-check your input and try again.',
     severity: 'error',
   },
   VALIDATION_OUT_OF_RANGE: {
-    title: 'Value Out of Range',
-    description: 'Please enter a value within the allowed range.',
+    title: 'Number\'s a bit off',
+    description: 'That value is outside the allowed range. Adjust it and try again.',
     severity: 'error',
   },
   VALIDATION_INVALID_TYPE: {
-    title: 'Invalid Input',
-    description: 'The input type is not supported.',
+    title: 'Wrong input type',
+    description: 'We expected a different kind of input here. Check the field and try again.',
     severity: 'error',
   },
   VALIDATION_CONSTRAINT_VIOLATION: {
-    title: 'Invalid Input',
-    description: 'Your input does not meet the requirements.',
+    title: 'Hmm, that didn\'t work',
+    description: 'Your input doesn\'t meet the requirements. Review the highlighted fields and try again.',
     severity: 'error',
   },
 
   // Authentication errors
   AUTH_NOT_AUTHENTICATED: {
-    title: 'Sign In Required',
-    description: 'Please sign in to continue.',
+    title: 'Let\'s get you signed in',
+    description: 'Sign in to save your rankings, share lists, and pick up where you left off.',
     severity: 'warning',
   },
   AUTH_SESSION_EXPIRED: {
-    title: 'Session Expired',
-    description: 'Your session has expired. Please sign in again.',
+    title: 'Session timed out',
+    description: 'You\'ve been away for a while. Sign in again to continue — your progress is safe.',
     severity: 'warning',
   },
   AUTH_INVALID_TOKEN: {
-    title: 'Authentication Error',
-    description: 'There was a problem with your credentials. Please sign in again.',
+    title: 'Credentials issue',
+    description: 'Something\'s off with your login. Try signing in again — it usually fixes this.',
     severity: 'error',
   },
 
   // Authorization errors
   AUTH_FORBIDDEN: {
-    title: 'Access Denied',
-    description: 'You do not have permission to perform this action.',
+    title: 'Can\'t access this',
+    description: 'You don\'t have permission for this action. If this seems wrong, try signing out and back in.',
     severity: 'error',
   },
   AUTH_INSUFFICIENT_PERMISSIONS: {
-    title: 'Insufficient Permissions',
-    description: 'You need additional permissions to access this feature.',
+    title: 'Need more access',
+    description: 'This feature requires additional permissions. Contact the list owner if you need access.',
     severity: 'warning',
   },
   AUTH_PREMIUM_REQUIRED: {
-    title: 'Premium Feature',
-    description: 'This feature is available for premium users.',
+    title: 'Premium feature',
+    description: 'This is a premium feature. Upgrade to unlock it and supercharge your rankings.',
     severity: 'info',
   },
 
   // Not found errors
   NOT_FOUND_RESOURCE: {
-    title: 'Not Found',
-    description: 'The requested resource could not be found.',
+    title: 'Can\'t find that',
+    description: 'Whatever you\'re looking for has moved or been removed. Try heading back to the home page.',
     severity: 'warning',
   },
   NOT_FOUND_USER: {
-    title: 'User Not Found',
-    description: 'The user you are looking for does not exist.',
+    title: 'User not found',
+    description: 'We couldn\'t find that user. They may have changed their profile or left the platform.',
     severity: 'warning',
   },
   NOT_FOUND_LIST: {
-    title: 'List Not Found',
-    description: 'This list may have been deleted or moved.',
+    title: 'List has vanished',
+    description: 'This list may have been deleted by its creator. Check your own lists or browse featured rankings.',
     severity: 'warning',
   },
   NOT_FOUND_ITEM: {
-    title: 'Item Not Found',
-    description: 'This item could not be found. Try refreshing the page.',
+    title: 'Item missing',
+    description: 'This item seems to have disappeared. Try refreshing — it might just be a hiccup.',
     severity: 'warning',
   },
   NOT_FOUND_GROUP: {
-    title: 'Group Not Found',
-    description: 'This group could not be found.',
+    title: 'Category not found',
+    description: 'This category doesn\'t exist anymore. Head back and try a different one.',
     severity: 'warning',
   },
 
   // Conflict errors
   CONFLICT_DUPLICATE: {
-    title: 'Already Exists',
-    description: 'This item already exists. Please use a different name.',
+    title: 'Already exists',
+    description: 'Something with that name is already here. Try a different name to keep things unique.',
     severity: 'warning',
   },
   CONFLICT_VERSION_MISMATCH: {
-    title: 'Update Conflict',
-    description: 'This item was modified by someone else. Please refresh and try again.',
+    title: 'Someone else made changes',
+    description: 'This was updated while you were editing. Refresh to see the latest version, then make your changes.',
     severity: 'warning',
   },
   CONFLICT_CONCURRENT_MODIFICATION: {
-    title: 'Concurrent Edit',
-    description: 'Another change is in progress. Please wait and try again.',
+    title: 'Hold on a sec',
+    description: 'Another update is still saving. Give it a moment, then try again.',
     severity: 'warning',
   },
 
   // Rate limit errors
   RATE_LIMIT_EXCEEDED: {
-    title: 'Too Many Requests',
-    description: 'Please slow down and try again in a moment.',
+    title: 'Whoa, slow down!',
+    description: 'You\'re doing things faster than we can keep up. Take a breather and try again in a few seconds.',
     severity: 'warning',
   },
   RATE_LIMIT_QUOTA_EXCEEDED: {
-    title: 'Quota Exceeded',
-    description: 'You have reached your usage limit. Please try again later.',
+    title: 'Daily limit reached',
+    description: 'You\'ve hit your usage limit for now. It\'ll reset soon — come back a little later.',
     severity: 'warning',
   },
 
   // Server errors
   SERVER_INTERNAL_ERROR: {
-    title: 'Server Error',
-    description: 'Something went wrong on our end. Please try again.',
+    title: 'Our bad!',
+    description: 'Something went wrong on our end. Your progress is safe locally — hit retry and we\'ll sort it out.',
     severity: 'error',
   },
   SERVER_DATABASE_ERROR: {
-    title: 'Database Error',
-    description: 'We are having trouble saving your data. Please try again.',
+    title: 'Couldn\'t save right now',
+    description: 'Your ranking couldn\'t be saved to the cloud, but your progress is safe locally and will sync when the issue clears up.',
     severity: 'error',
   },
   SERVER_EXTERNAL_SERVICE_ERROR: {
-    title: 'Service Unavailable',
-    description: 'An external service is unavailable. Please try again later.',
+    title: 'External service hiccup',
+    description: 'A service we rely on is having issues. This usually resolves itself — try again in a minute.',
     severity: 'error',
   },
   SERVER_CONFIGURATION_ERROR: {
-    title: 'Configuration Error',
-    description: 'There is a problem with the server configuration.',
+    title: 'Setup issue',
+    description: 'There\'s a configuration problem on our side. We\'re likely already aware — try again shortly.',
     severity: 'error',
   },
 
   // Network errors
   NETWORK_OFFLINE: {
-    title: 'You Are Offline',
-    description: 'Please check your internet connection and try again.',
+    title: 'You\'re offline',
+    description: 'No worries — your rankings are saved locally. They\'ll sync automatically when you\'re back online.',
     severity: 'warning',
   },
   NETWORK_TIMEOUT: {
-    title: 'Request Timed Out',
-    description: 'The request took too long. Please try again.',
+    title: 'Taking too long',
+    description: 'The connection is slow right now. Your work is saved locally — try again when your connection improves.',
     severity: 'warning',
   },
   NETWORK_CONNECTION_REFUSED: {
-    title: 'Connection Failed',
-    description: 'Could not connect to the server. Please try again.',
+    title: 'Can\'t reach our servers',
+    description: 'We\'re having trouble connecting. Check your internet, or try again in a moment — your progress is safe.',
     severity: 'error',
   },
 
   // Client errors
   CLIENT_UNKNOWN_ERROR: {
-    title: 'Something Went Wrong',
-    description: 'An unexpected error occurred. Please try again.',
+    title: 'Something unexpected happened',
+    description: 'We hit a snag we didn\'t anticipate. Try refreshing the page — your ranking progress is saved locally.',
     severity: 'error',
   },
   CLIENT_INVALID_STATE: {
-    title: 'Invalid State',
-    description: 'The application is in an unexpected state. Please refresh the page.',
+    title: 'Things got out of sync',
+    description: 'The app got into an unexpected state. A quick page refresh should fix this — your data is safe.',
     severity: 'error',
   },
   CLIENT_STORAGE_ERROR: {
-    title: 'Storage Error',
-    description: 'Could not save your data locally. Please check your browser settings.',
+    title: 'Can\'t save locally',
+    description: 'Your browser storage is full or restricted. Try clearing some space or check your privacy settings.',
     severity: 'warning',
+  },
+  CLIENT_EMPTY_RESPONSE: {
+    title: 'Empty response from server',
+    description: 'The server returned a success status but no data. This is likely a server-side issue — try again shortly.',
+    severity: 'error',
   },
 
   // Grid/Match specific
   GRID_SOURCE_NOT_FOUND: {
-    title: 'Item Not Found',
-    description: 'The item could not be found. Try refreshing the page.',
+    title: 'Item disappeared',
+    description: 'That item isn\'t available anymore. Try refreshing the collection to see updated items.',
     severity: 'error',
   },
   GRID_SOURCE_ALREADY_USED: {
-    title: 'Item Already Placed',
-    description: 'This item is already on your grid. Remove it first to reposition.',
+    title: 'Already ranked!',
+    description: 'This one\'s already on your grid. Remove it from its current spot first if you want to move it.',
     severity: 'warning',
   },
   GRID_TARGET_INVALID: {
-    title: 'Invalid Position',
-    description: 'Could not determine the target position. Please try again.',
+    title: 'Oops, missed the target',
+    description: 'Couldn\'t place it there. Try dropping it directly onto a grid slot.',
     severity: 'error',
   },
   GRID_TARGET_OCCUPIED: {
-    title: 'Position Occupied',
-    description: 'Drop on an empty slot, or drag directly onto another item to swap.',
+    title: 'Spot\'s taken',
+    description: 'That slot has an item in it. Drop directly on the item to swap, or pick an empty slot.',
     severity: 'info',
   },
   GRID_OUT_OF_BOUNDS: {
-    title: 'Out of Range',
-    description: 'That position is outside your current grid size.',
+    title: 'Off the grid',
+    description: 'That spot is beyond your list size. Try a position within your Top N range.',
     severity: 'warning',
   },
   GRID_NOT_INITIALIZED: {
-    title: 'Grid Not Ready',
-    description: 'The ranking grid is still loading. Please wait a moment.',
+    title: 'Grid is loading...',
+    description: 'The ranking grid is still setting up. Just a moment and you\'ll be ready to rank!',
     severity: 'warning',
   },
   GRID_ITEM_LOCKED: {
-    title: 'Item In Use',
-    description: 'This item is currently being moved. Please wait.',
+    title: 'Item is busy',
+    description: 'This item is mid-move. Wait for it to settle, then try again.',
     severity: 'warning',
   },
 };

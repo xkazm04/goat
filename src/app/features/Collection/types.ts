@@ -2,6 +2,36 @@
  * Collection Feature Types
  */
 
+/**
+ * Typed metadata fields commonly returned from the API for collection items.
+ *
+ * Using a defined interface instead of `Record<string, any>` so that consumers
+ * can access known fields without unsafe casts or optional chaining on `any`.
+ * Additional ad-hoc fields are still permitted via the index signature.
+ */
+export interface CollectionItemMetadata {
+  /** Year the item was released / created (e.g. movie year, album year) */
+  item_year?: number;
+  /** Alias used by some API responses and sort strategies */
+  year?: number;
+  /** Number of times this item has been selected / ranked by users */
+  selection_count?: number;
+  /** The backlog group this item belongs to */
+  group_id?: string;
+  /** Total view count for this item */
+  view_count?: number;
+  /** Popularity score (used for sorting) */
+  popularity?: number;
+  /** Preference score assigned by recommendation engine */
+  preferenceScore?: number;
+  /** ISO date string for when the item was created */
+  created_at?: string;
+  /** Item category (may differ from the top-level category field) */
+  category?: string;
+  /** Allow additional untyped fields for forward-compatibility */
+  [key: string]: unknown;
+}
+
 export interface CollectionItem {
   id: string;
   title: string;
@@ -11,11 +41,19 @@ export interface CollectionItem {
   subcategory?: string;
   tags?: string[];
   ranking?: number; // Numeric ranking field (0-5 stars)
-  metadata?: Record<string, any>;
-  used?: boolean; // Track if item is placed in the grid
+  metadata?: CollectionItemMetadata;
+  /**
+   * Whether this item is currently placed in the match grid.
+   *
+   * Set by `backlogStore.markItemAsUsed()` (in `stores/backlog/actions-utils.ts`)
+   * during grid sync, and propagated to CollectionItem via `backlogItemToCollectionItem`.
+   * Consumed by `useCollectionFiltering` and `ConfigurableCollectionItem` to hide/dim
+   * placed items. Defaults to `false` when undefined.
+   */
+  used?: boolean;
 }
 
-export interface CollectionGroup {
+export interface ItemCategory {
   id: string;
   name: string;
   items?: CollectionItem[]; // Optional - may not be included in API response
@@ -37,7 +75,7 @@ export interface CollectionFilter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export interface CollectionStats {
+export interface ItemPanelStats {
   totalItems: number;
   selectedItems: number;
   visibleGroups: number;

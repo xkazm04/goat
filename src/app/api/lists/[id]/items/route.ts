@@ -1,12 +1,14 @@
 import { NextRequest } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import type { ListItemCriteriaScores } from '@/lib/criteria/types';
+
 import {
   withErrorHandler,
   fromSupabaseError,
   notFound,
   successResponse,
 } from '@/lib/errors';
+import { createClient } from '@/lib/supabase/server';
+
+import type { ListItemCriteriaScores } from '@/lib/criteria/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -91,6 +93,14 @@ export const PUT = withErrorHandler(
 
     if (!Array.isArray(updates) || updates.length === 0) {
       return successResponse({ updated: 0 });
+    }
+
+    const MAX_ITEMS = 200;
+    if (updates.length > MAX_ITEMS) {
+      throw fromSupabaseError({
+        message: `Too many items: max ${MAX_ITEMS} allowed per request`,
+        code: 'VALIDATION_ERROR',
+      });
     }
 
     // Update each item's scores

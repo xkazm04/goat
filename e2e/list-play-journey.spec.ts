@@ -6,7 +6,7 @@ import { test, expect } from "@playwright/test";
  * Tests the critical user journey from landing page to match interface:
  * 1. Renders FeaturedListsSection on landing page
  * 2. Clicks a list's play button
- * 3. Verifies navigation to /match-test?list={id}
+ * 3. Verifies navigation to /goat?list={id}
  * 4. Confirms the match grid loads correctly
  *
  * This ensures the list->match handoff integration works correctly.
@@ -33,7 +33,7 @@ test.describe("List Play Journey", () => {
     ).toBeVisible();
   });
 
-  test("clicking play on featured list navigates to match-test with correct list ID", async ({
+  test("clicking play on featured list navigates to goat with correct list ID", async ({
     page,
   }) => {
     // Wait for featured lists to load (check for skeleton to disappear or items to appear)
@@ -55,14 +55,14 @@ test.describe("List Play Journey", () => {
     // Click on the featured list item (the entire item is clickable and triggers play)
     await firstListItem.click();
 
-    // Verify navigation to match-test page with correct list ID
-    await page.waitForURL(`**/match-test?list=${listId}`, { timeout: 10000 });
+    // Verify navigation to goat page with correct list ID
+    await page.waitForURL(`**/goat?list=${listId}`, { timeout: 10000 });
 
     // Verify URL contains the correct list parameter
-    expect(page.url()).toContain(`/match-test?list=${listId}`);
+    expect(page.url()).toContain(`/goat?list=${listId}`);
   });
 
-  test("match-test page loads and displays match grid after navigation", async ({
+  test("goat page loads and displays match grid after navigation", async ({
     page,
   }) => {
     // Wait for featured lists to load
@@ -81,7 +81,7 @@ test.describe("List Play Journey", () => {
     await firstListItem.click();
 
     // Wait for navigation
-    await page.waitForURL(`**/match-test?list=${listId}`, { timeout: 10000 });
+    await page.waitForURL(`**/goat?list=${listId}`, { timeout: 10000 });
 
     // Wait for loading to complete (spinner should disappear)
     // The page shows a loading spinner during data fetch
@@ -119,8 +119,8 @@ test.describe("List Play Journey", () => {
         await userListPlayBtn.click();
 
         // Verify navigation
-        await page.waitForURL(`**/match-test?list=${listId}`, { timeout: 10000 });
-        expect(page.url()).toContain(`/match-test?list=${listId}`);
+        await page.waitForURL(`**/goat?list=${listId}`, { timeout: 10000 });
+        expect(page.url()).toContain(`/goat?list=${listId}`);
       }
     }
 
@@ -149,7 +149,7 @@ test.describe("List Play Journey", () => {
     await firstListItem.click();
 
     // Wait for navigation
-    await page.waitForURL(`**/match-test?list=${listId}`, { timeout: 10000 });
+    await page.waitForURL(`**/goat?list=${listId}`, { timeout: 10000 });
 
     // Verify list-store was populated by checking localStorage
     // The list-store uses zustand persist which saves to localStorage
@@ -170,7 +170,7 @@ test.describe("List Play Journey", () => {
   });
 
   test("navigation preserves list ID through page load", async ({ page }) => {
-    // Navigate directly to match-test with a list parameter
+    // Navigate directly to goat with a list parameter
     // This tests that the page can load list data from URL param alone
     await page.goto("/");
 
@@ -184,8 +184,8 @@ test.describe("List Play Journey", () => {
     const testId = await firstListItem.getAttribute("data-testid");
     const listId = testId?.replace("featured-list-item-", "");
 
-    // Navigate directly to match-test page
-    await page.goto(`/match-test?list=${listId}`);
+    // Navigate directly to goat page
+    await page.goto(`/goat?list=${listId}`);
 
     // Wait for page to load
     await page.waitForLoadState("networkidle");

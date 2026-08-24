@@ -1,16 +1,5 @@
 "use client";
 
-import { useMemo } from "react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-  ReferenceLine,
-} from "recharts";
 import { motion } from "framer-motion";
 import {
   BarChart3,
@@ -21,7 +10,23 @@ import {
   Minus,
   Award,
 } from "lucide-react";
+import { useMemo } from "react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+  ReferenceLine,
+  CartesianGrid,
+} from "recharts";
+
 import { cn } from "@/lib/utils";
+
+import type { BarShapeProps } from "recharts";
+
 
 export interface RankingStats {
   totalRankings: number;
@@ -55,26 +60,26 @@ interface StatCardProps {
   trend?: 'up' | 'down' | 'neutral';
 }
 
-function StatCard({ icon, label, value, subtext, color = "text-cyan-400", trend }: StatCardProps) {
+function StatCard({ icon, label, value, subtext, color = "text-brand-hover", trend }: StatCardProps) {
   const TrendIcon = trend === 'up' ? TrendingUp : trend === 'down' ? TrendingDown : Minus;
 
   return (
-    <div className="p-3 rounded-lg bg-gray-800/50 border border-gray-700/50">
+    <div className="p-3 rounded-card bg-slate-800/50 border border-slate-700/50">
       <div className="flex items-center gap-2 mb-1">
-        <span className={cn("text-gray-400", color)}>{icon}</span>
-        <span className="text-xs text-gray-500 uppercase tracking-wider">{label}</span>
+        <span className={cn("text-slate-400", color)}>{icon}</span>
+        <span className="text-xs text-slate-500 uppercase tracking-wider">{label}</span>
       </div>
       <div className="flex items-baseline gap-2">
         <span className={cn("text-xl font-bold", color)}>{value}</span>
         {trend && (
           <TrendIcon className={cn(
             "w-3 h-3",
-            trend === 'up' ? 'text-emerald-400' : trend === 'down' ? 'text-rose-400' : 'text-gray-400'
+            trend === 'up' ? 'text-emerald-400' : trend === 'down' ? 'text-rose-400' : 'text-slate-400'
           )} />
         )}
       </div>
       {subtext && (
-        <p className="text-xs text-gray-500 mt-0.5">{subtext}</p>
+        <p className="text-xs text-slate-500 mt-0.5">{subtext}</p>
       )}
     </div>
   );
@@ -85,14 +90,36 @@ function DistributionSkeleton() {
     <div className="space-y-4">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="p-3 rounded-lg bg-gray-800/30 animate-pulse">
-            <div className="h-3 w-16 bg-gray-700/50 rounded mb-2" />
-            <div className="h-6 w-12 bg-gray-700/50 rounded" />
+          <div key={i} className="p-3 rounded-card bg-slate-800/30 animate-pulse">
+            <div className="h-3 w-16 bg-slate-700/50 rounded mb-2" />
+            <div className="h-6 w-12 bg-slate-700/50 rounded" />
           </div>
         ))}
       </div>
-      <div className="h-40 bg-gray-800/30 rounded-lg animate-pulse" />
+      <div className="h-40 bg-slate-800/30 rounded-card animate-pulse" />
     </div>
+  );
+}
+
+/**
+ * Custom rounded-top bar shape with gradient fill
+ */
+function BrandedBarShape({ x, y, width, height, gradientId, fill }: {
+  x?: number; y?: number; width?: number; height?: number;
+  gradientId?: string; fill?: string;
+}) {
+  if (!x || !y || !width || !height || height <= 0) return null;
+  const r = Math.min(4, width / 2, height);
+  return (
+    <path
+      d={`M${x},${y + height}
+          V${y + r}
+          Q${x},${y} ${x + r},${y}
+          H${x + width - r}
+          Q${x + width},${y} ${x + width},${y + r}
+          V${y + height}Z`}
+      fill={gradientId ? `url(#${gradientId})` : fill}
+    />
   );
 }
 
@@ -103,9 +130,18 @@ function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload || !payload.length) return null;
 
   return (
-    <div className="bg-gray-900 border border-gray-700 rounded-lg p-2 shadow-xl">
-      <p className="text-xs text-gray-400 mb-1">Position #{label}</p>
-      <p className="text-sm font-semibold text-cyan-400">
+    <div
+      className="rounded-card p-2 shadow-xl backdrop-blur-sm"
+      style={{
+        background: 'rgba(15,23,42,0.95)',
+        border: '1px solid rgba(34,211,238,0.3)',
+        boxShadow: 'var(--glow-brand-sm)',
+      }}
+    >
+      <p className="text-xs text-slate-400 mb-1" style={{ fontFamily: 'var(--font-family-mono)' }}>
+        Position #{label}
+      </p>
+      <p className="text-sm font-semibold text-brand-hover">
         {payload[0].value} rankings
       </p>
     </div>
@@ -134,9 +170,11 @@ export function RankingDistribution({
 
     if (positions.length === 0) return [];
 
-    // Find range to display (pad by 2 on each side)
+    // Find range to display (pad by 2 on each side). Cap at 100 (not 50) so
+    // items frequently ranked 50-100 aren't silently dropped from the histogram
+    // while the stats grid still reflects the full data.
     const minPos = Math.max(1, positions[0] - 2);
-    const maxPos = Math.min(50, positions[positions.length - 1] + 2);
+    const maxPos = Math.min(100, positions[positions.length - 1] + 2);
 
     // Create data array with all positions in range
     const data = [];
@@ -153,12 +191,12 @@ export function RankingDistribution({
 
   // Determine volatility level and color
   const volatilityInfo = useMemo(() => {
-    if (!stats) return { level: 'unknown', color: 'text-gray-400', label: 'Unknown' };
+    if (!stats) return { level: 'unknown', color: 'text-slate-400', label: 'Unknown' };
 
     if (stats.volatility < 2) {
       return { level: 'stable', color: 'text-emerald-400', label: 'Very Stable' };
     } else if (stats.volatility < 4) {
-      return { level: 'moderate', color: 'text-cyan-400', label: 'Moderate' };
+      return { level: 'moderate', color: 'text-brand-hover', label: 'Moderate' };
     } else if (stats.volatility < 6) {
       return { level: 'contested', color: 'text-amber-400', label: 'Contested' };
     } else {
@@ -169,7 +207,7 @@ export function RankingDistribution({
   if (loading) {
     return (
       <div className={cn("space-y-3", className)}>
-        <div className="flex items-center gap-2 text-gray-400">
+        <div className="flex items-center gap-2 text-slate-400">
           <BarChart3 className="w-4 h-4" />
           <span className="text-sm font-medium">Community Rankings</span>
         </div>
@@ -178,9 +216,12 @@ export function RankingDistribution({
     );
   }
 
-  if (!stats) {
+  // The API returns a *zeroed* stats object (not null) for unranked items so the
+  // panel always shows — but rendering it produces a misleading "#0.0 / Very
+  // Stable" that implies real consensus. Treat zero rankings as the empty state.
+  if (!stats || stats.totalRankings === 0) {
     return (
-      <div className={cn("text-center py-6 text-gray-500", className)}>
+      <div className={cn("text-center py-6 text-slate-500", className)}>
         <BarChart3 className="w-5 h-5 mx-auto mb-2 opacity-50" />
         <p className="text-sm">No ranking data available</p>
       </div>
@@ -190,7 +231,7 @@ export function RankingDistribution({
   return (
     <div className={cn("space-y-4", className)}>
       {/* Header */}
-      <div className="flex items-center gap-2 text-gray-400">
+      <div className="flex items-center gap-2 text-slate-400">
         <BarChart3 className="w-4 h-4" />
         <span className="text-sm font-medium">Community Rankings</span>
       </div>
@@ -201,7 +242,7 @@ export function RankingDistribution({
           icon={<Target className="w-4 h-4" />}
           label="Avg Position"
           value={`#${stats.averagePosition.toFixed(1)}`}
-          color="text-cyan-400"
+          color="text-brand-hover"
         />
         <StatCard
           icon={<Users className="w-4 h-4" />}
@@ -227,18 +268,18 @@ export function RankingDistribution({
       {/* Percentiles */}
       <div className="flex items-center justify-center gap-4 py-2 text-xs">
         <div className="text-center">
-          <span className="text-gray-500">25th</span>
-          <p className="font-semibold text-gray-300">#{stats.percentiles.p25}</p>
+          <span className="text-slate-500">25th</span>
+          <p className="font-semibold text-slate-300">#{stats.percentiles.p25}</p>
         </div>
-        <div className="h-8 w-px bg-gray-700" />
+        <div className="h-8 w-px bg-slate-700" />
         <div className="text-center">
-          <span className="text-gray-500">Median</span>
-          <p className="font-bold text-cyan-400 text-sm">#{stats.percentiles.p50}</p>
+          <span className="text-slate-500">Median</span>
+          <p className="font-bold text-brand-hover text-sm">#{stats.percentiles.p50}</p>
         </div>
-        <div className="h-8 w-px bg-gray-700" />
+        <div className="h-8 w-px bg-slate-700" />
         <div className="text-center">
-          <span className="text-gray-500">75th</span>
-          <p className="font-semibold text-gray-300">#{stats.percentiles.p75}</p>
+          <span className="text-slate-500">75th</span>
+          <p className="font-semibold text-slate-300">#{stats.percentiles.p75}</p>
         </div>
       </div>
 
@@ -255,28 +296,58 @@ export function RankingDistribution({
               data={chartData}
               margin={{ top: 5, right: 10, left: -20, bottom: 5 }}
             >
+              <defs>
+                <linearGradient id="dist-bar-grad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#22D3EE" stopOpacity={1} />
+                  <stop offset="100%" stopColor="#22D3EE" stopOpacity={0.7} />
+                </linearGradient>
+                <linearGradient id="dist-bar-grad-dim" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#22D3EE" stopOpacity={0.5} />
+                  <stop offset="100%" stopColor="#22D3EE" stopOpacity={0.25} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid
+                horizontal
+                vertical={false}
+                stroke="rgba(255,255,255,0.2)"
+                strokeDasharray="3 3"
+              />
               <XAxis
                 dataKey="position"
-                tick={{ fill: '#6B7280', fontSize: 10 }}
+                tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 9, fontFamily: 'var(--font-family-mono)' }}
                 tickLine={false}
-                axisLine={{ stroke: '#374151' }}
+                axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
               />
               <YAxis
-                tick={{ fill: '#6B7280', fontSize: 10 }}
+                tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 9, fontFamily: 'var(--font-family-mono)' }}
                 tickLine={false}
                 axisLine={false}
               />
-              <Tooltip content={<CustomTooltip />} />
-              <ReferenceLine
-                x={Math.round(stats.medianPosition)}
-                stroke="#22D3EE"
-                strokeDasharray="3 3"
-                strokeWidth={2}
+              <Tooltip
+                content={<CustomTooltip />}
+                cursor={{ fill: 'rgba(34,211,238,0.1)', stroke: '#22D3EE', strokeWidth: 1, strokeOpacity: 0.3 }}
               />
+              {/* Only draw the median line when it falls inside the visible
+                  domain — otherwise the legend references a line off the axis. */}
+              {chartData.length > 0 &&
+                Math.round(stats.medianPosition) >= chartData[0].position &&
+                Math.round(stats.medianPosition) <= chartData[chartData.length - 1].position && (
+                <ReferenceLine
+                  x={Math.round(stats.medianPosition)}
+                  stroke="#22D3EE"
+                  strokeDasharray="3 3"
+                  strokeWidth={2}
+                />
+              )}
               <Bar
                 dataKey="count"
-                radius={[2, 2, 0, 0]}
                 maxBarSize={20}
+                shape={(props: BarShapeProps) => (
+                  <BrandedBarShape
+                    x={props.x} y={props.y} width={props.width} height={props.height}
+                    gradientId={(props as BarShapeProps & { isMedian?: boolean }).isMedian ? 'dist-bar-grad' : 'dist-bar-grad-dim'}
+                  />
+                )}
               >
                 {chartData.map((entry, index) => (
                   <Cell
@@ -291,13 +362,13 @@ export function RankingDistribution({
       )}
 
       {/* Chart legend */}
-      <div className="flex justify-center gap-4 text-[10px] text-gray-500">
+      <div className="flex justify-center gap-4 text-xs text-slate-500">
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-sm bg-cyan-500/40" />
+          <div className="w-3 h-3 rounded-sm bg-brand/40" />
           <span>Rankings count</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-0.5 bg-cyan-400 border-dashed" style={{ borderStyle: 'dashed' }} />
+          <div className="w-3 h-0.5 bg-brand-hover border-dashed" style={{ borderStyle: 'dashed' }} />
           <span>Median position</span>
         </div>
       </div>

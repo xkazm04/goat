@@ -44,35 +44,6 @@ export interface AchievementCardConfig {
   accentColor?: string;
 }
 
-export interface ShareableAchievement {
-  id: string;
-  achievement_id: string;
-  user_id?: string;
-  share_code: string;
-  og_image_url?: string;
-  view_count: number;
-  created_at: string;
-  achievement: Achievement;
-  config: AchievementCardConfig;
-}
-
-export interface CreateAchievementShareRequest {
-  achievement_id: string;
-  user_id?: string;
-  config: AchievementCardConfig;
-}
-
-export interface AchievementShareResponse {
-  success: boolean;
-  data?: {
-    share_url: string;
-    share_code: string;
-    og_image_url: string;
-    embed_code: string;
-  };
-  error?: string;
-}
-
 export interface AchievementShowcase {
   userId: string;
   username: string;

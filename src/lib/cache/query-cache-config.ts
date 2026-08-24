@@ -9,7 +9,12 @@
  */
 
 import { QueryClient, QueryCache, MutationCache } from '@tanstack/react-query';
-import { CACHE_TTL_MS, GC_TIME_MS, INVALIDATION_RULES, type InvalidationEvent } from './unified-cache';
+
+import { createLogger } from '@/lib/logger/debug-config';
+
+import { CACHE_TTL_MS, GC_TIME_MS, INVALIDATION_RULES, getRetryConfig, type InvalidationEvent } from './unified-cache';
+
+const log = createLogger('cache');
 
 // =============================================================================
 // Cache Metrics
@@ -90,12 +95,10 @@ export function createQueryClient(): QueryClient {
         metrics.misses++;
       }
 
-      if (isDev) {
-        console.log(`[QueryCache] ✅ ${query.queryHash}`, {
-          staleTime: (query.options as { staleTime?: number }).staleTime,
-          dataAge: Date.now() - query.state.dataUpdatedAt,
-        });
-      }
+      log.debug(`[QueryCache] ✅ ${query.queryHash}`, {
+        staleTime: (query.options as { staleTime?: number }).staleTime,
+        dataAge: Date.now() - query.state.dataUpdatedAt,
+      });
     },
     onError: (error, query) => {
       metrics.errors++;
@@ -108,11 +111,9 @@ export function createQueryClient(): QueryClient {
     onSuccess: (_data, _variables, _context, mutation) => {
       metrics.mutations++;
 
-      if (isDev) {
-        console.log(`[MutationCache] ✅ Mutation completed`, {
-          key: mutation.options.mutationKey,
-        });
-      }
+      log.debug(`[MutationCache] ✅ Mutation completed`, {
+        key: mutation.options.mutationKey,
+      });
     },
     onError: (error, _variables, _context, mutation) => {
       metrics.errors++;
@@ -134,18 +135,8 @@ export function createQueryClient(): QueryClient {
         // Garbage collection - keep unused data for 10 minutes
         gcTime: GC_TIME_MS.STANDARD,
 
-        // Retry strategy with exponential backoff
-        retry: (failureCount, error) => {
-          // Don't retry on 4xx errors (client errors)
-          if (error instanceof Error) {
-            const message = error.message.toLowerCase();
-            if (message.includes('401') || message.includes('403') || message.includes('404')) {
-              return false;
-            }
-          }
-          return failureCount < 3;
-        },
-        retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+        // Retry strategy with exponential backoff (centralized)
+        ...getRetryConfig('standard'),
 
         // Network mode - always try to fetch in background
         networkMode: 'offlineFirst',
@@ -156,8 +147,7 @@ export function createQueryClient(): QueryClient {
         refetchOnMount: true,        // Refetch on component mount if stale
       },
       mutations: {
-        retry: 1,
-        retryDelay: 1000,
+        ...getRetryConfig('mutation'),
         networkMode: 'offlineFirst',
       },
     },
@@ -189,6 +179,8 @@ export function resetQueryClient(): void {
 
 /**
  * Invalidate queries by event type using the unified invalidation rules.
+ * Uses a Set for O(1) tag lookups and a single predicate scan over all queries
+ * instead of one scan per tag -- reduces from O(tags * queries) to O(queries * keyParts).
  */
 export function invalidateByEvent(
   queryClient: QueryClient,
@@ -198,36 +190,26 @@ export function invalidateByEvent(
   const tags = INVALIDATION_RULES[event];
 
   if (!tags || tags.length === 0) {
-    console.warn(`[QueryCache] No invalidation rules for event: ${event}`);
+    log.warn(`[QueryCache] No invalidation rules for event: ${event}`);
     return;
   }
 
   metrics.invalidations++;
 
-  // Invalidate all queries that match any of the tags
-  tags.forEach((tag) => {
-    queryClient.invalidateQueries({
-      predicate: (query) => {
-        const queryKey = query.queryKey;
-        // Check if any part of the query key matches the tag
-        return queryKey.some((part) => {
-          if (typeof part === 'string') {
-            return part.includes(tag);
-          }
-          if (typeof part === 'object' && part !== null) {
-            return JSON.stringify(part).includes(tag);
-          }
-          return false;
-        });
-      },
-    });
+  // Build a Set for O(1) membership checks -- single pass over all queries
+  const tagSet = new Set<string>(tags);
+
+  queryClient.invalidateQueries({
+    predicate: (query) =>
+      query.queryKey.some((part) => typeof part === 'string' && tagSet.has(part)),
   });
 
-  console.log(`[QueryCache] Invalidated by event: ${event}`, { tags, context });
+  log.debug(`[QueryCache] Invalidated by event: ${event}`, { tags: Array.from(tagSet), context });
 }
 
 /**
  * Invalidate queries by specific tags.
+ * Uses a Set for O(1) tag lookups and a single predicate pass.
  */
 export function invalidateByTags(
   queryClient: QueryClient,
@@ -235,21 +217,15 @@ export function invalidateByTags(
 ): void {
   metrics.invalidations++;
 
-  tags.forEach((tag) => {
-    queryClient.invalidateQueries({
-      predicate: (query) => {
-        const queryKey = query.queryKey;
-        return queryKey.some((part) => {
-          if (typeof part === 'string') {
-            return part.includes(tag);
-          }
-          return false;
-        });
-      },
-    });
+  // Build a Set for O(1) membership checks -- single pass over all queries
+  const tagSet = new Set<string>(tags);
+
+  queryClient.invalidateQueries({
+    predicate: (query) =>
+      query.queryKey.some((part) => typeof part === 'string' && tagSet.has(part)),
   });
 
-  console.log(`[QueryCache] Invalidated by tags:`, tags);
+  log.debug(`[QueryCache] Invalidated by tags:`, Array.from(tagSet));
 }
 
 /**
@@ -268,7 +244,7 @@ export function invalidateByPrefix(
     },
   });
 
-  console.log(`[QueryCache] Invalidated by prefix: ${prefix}`);
+  log.debug(`[QueryCache] Invalidated by prefix: ${prefix}`);
 }
 
 // =============================================================================
@@ -288,7 +264,7 @@ export function withCoalescing<T>(
   const existing = pendingRequests.get(key) as Promise<T> | undefined;
 
   if (existing) {
-    console.log(`[Coalescing] Reusing in-flight request: ${key}`);
+    log.debug(`[Coalescing] Reusing in-flight request: ${key}`);
     return existing;
   }
 

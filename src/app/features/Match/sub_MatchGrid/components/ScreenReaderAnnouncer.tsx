@@ -1,7 +1,8 @@
 "use client";
 
 import { memo, useEffect, useRef, useState } from "react";
-import { useTierFocus, type Announcement } from "./TierFocusProvider";
+
+import { useTierFocus } from "./TierFocusProvider";
 
 /**
  * ScreenReaderAnnouncer - Live region for screen reader announcements
@@ -151,13 +152,13 @@ export const SkipLinks = memo(function SkipLinks({
   return (
     <nav
       aria-label="Skip links"
-      className="sr-only focus-within:not-sr-only focus-within:absolute focus-within:top-2 focus-within:left-2 focus-within:z-50"
+      className="sr-only focus-within:not-sr-only focus-within:absolute focus-within:top-2 focus-within:left-2 focus-within:z-modal"
     >
-      <ul className="flex flex-col gap-1 bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-xl">
+      <ul className="flex flex-col gap-1 bg-slate-900 border border-slate-700 rounded-card p-2 shadow-xl">
         <li>
           <button
             onClick={() => onSkipToTier(tiers[0]?.id)}
-            className="block w-full px-3 py-1.5 text-sm text-left text-white hover:bg-slate-700 rounded focus:outline-none focus:ring-2 focus:ring-cyan-500"
+            className="block w-full px-3 py-1.5 text-sm text-left text-white hover:bg-slate-700 rounded focus:outline-hidden focus:ring-2 focus:ring-brand"
           >
             Skip to tier list
           </button>
@@ -166,7 +167,7 @@ export const SkipLinks = memo(function SkipLinks({
           <li key={tier.id}>
             <button
               onClick={() => onSkipToTier(tier.id)}
-              className="block w-full px-3 py-1.5 text-sm text-left text-slate-300 hover:bg-slate-700 rounded focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              className="block w-full px-3 py-1.5 text-sm text-left text-slate-300 hover:bg-slate-700 rounded focus:outline-hidden focus:ring-2 focus:ring-brand"
             >
               Skip to {tier.label} tier
             </button>
@@ -175,7 +176,7 @@ export const SkipLinks = memo(function SkipLinks({
         <li>
           <button
             onClick={onSkipToUnranked}
-            className="block w-full px-3 py-1.5 text-sm text-left text-slate-300 hover:bg-slate-700 rounded focus:outline-none focus:ring-2 focus:ring-cyan-500"
+            className="block w-full px-3 py-1.5 text-sm text-left text-slate-300 hover:bg-slate-700 rounded focus:outline-hidden focus:ring-2 focus:ring-brand"
           >
             Skip to unranked pool
           </button>
@@ -222,14 +223,14 @@ export const FocusIndicator = memo(function FocusIndicator({
   if (!isFocused) return null;
 
   const ringStyles = {
-    item: "ring-2 ring-cyan-400 ring-offset-2 ring-offset-slate-900",
+    item: "ring-2 ring-brand-hover ring-offset-2 ring-offset-slate-900",
     tier: "ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-900",
     button: "ring-2 ring-white ring-offset-2 ring-offset-slate-900",
   };
 
   return (
     <div
-      className={`absolute inset-0 pointer-events-none rounded-lg ${ringStyles[variant]} ${className}`}
+      className={`absolute inset-0 pointer-events-none rounded-card ${ringStyles[variant]} ${className}`}
       style={{
         boxShadow: variant === "item"
           ? "0 0 0 2px #22d3ee, 0 0 12px rgba(34, 211, 238, 0.5)"

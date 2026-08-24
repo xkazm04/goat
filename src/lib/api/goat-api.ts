@@ -3,7 +3,7 @@
  *
  * A single, unified API client for all GOAT application endpoints.
  * Consolidates multiple specialized clients into one consistent interface
- * with request batching, deduplication, retry logic, and full TypeScript coverage.
+ * with retry logic, circuit breaking, and full TypeScript coverage.
  *
  * @example
  * ```ts
@@ -19,27 +19,102 @@
  *
  * // Items
  * const items = await goatApi.items.search({ category: 'movies' });
- *
- * // Request batching
- * const [list, group] = await goatApi.batch([
- *   goatApi.lists.get('list-id'),
- *   goatApi.groups.get('group-id'),
- * ]);
  * ```
  */
 
-import { apiClient } from './client';
-import { createCacheKey, getGlobalAPICache } from '@/lib/cache';
+import { withCoalescing } from '@/lib/cache/query-cache-config';
 import {
   GoatError,
-  NetworkError,
   isGoatError,
-  trackError,
 } from '@/lib/errors';
+
+import { getGlobalCircuitBreaker } from './CircuitBreaker';
+import { apiClient } from './client';
+import { generateRequestId } from './request-id';
 
 // =============================================================================
 // Types - Lists
 // =============================================================================
+
+
+// =============================================================================
+// Types - Groups & Items (from @/types/groups)
+// =============================================================================
+
+import type {
+  Blueprint,
+  CreateBlueprintRequest,
+  UpdateBlueprintRequest,
+  SearchBlueprintsParams,
+  BlueprintShareResponse,
+} from '@/types/blueprint';
+import type {
+  ItemConsensusWithClusters,
+  ConsensusAPIResponse,
+} from '@/types/consensus';
+import type {
+  ItemGroup,
+  ItemGroupWithItems,
+  GroupItem,
+  GroupSearchParams,
+  GroupCreateRequest,
+  GroupItemsResponse,
+  GroupSuggestion,
+} from '@/types/groups';
+
+export type {
+  ItemGroup,
+  ItemGroupWithItems,
+  GroupItem,
+  GroupSearchParams,
+  GroupCreateRequest,
+  GroupItemsResponse,
+  GroupSuggestion,
+} from '@/types/groups';
+
+// =============================================================================
+// Types - Items (from @/types/items)
+// =============================================================================
+
+import type {
+  Item,
+  ItemSearchParams,
+  ItemCreateRequest,
+  ItemUpdateRequest,
+  PaginatedResponse,
+  ItemStat,
+  ItemStatsResponse,
+  ItemStatsParams,
+
+  ItemResearchRequest,
+  ItemResearchResponse,
+  ItemValidationRequest} from '@/types/items';
+
+export type {
+  Item,
+  ItemSearchParams,
+  ItemCreateRequest,
+  ItemUpdateRequest,
+  PaginatedResponse,
+  ItemStat,
+  ItemStatsResponse,
+  ItemStatsParams,
+} from '@/types/items';
+
+// =============================================================================
+// Types - Blueprints
+// =============================================================================
+
+
+// =============================================================================
+// Types - Consensus
+// =============================================================================
+
+
+// =============================================================================
+// Types - Research & Users (from @/types/items, @/types/users)
+// =============================================================================
+
 
 import type {
   TopList,
@@ -52,268 +127,58 @@ import type {
   VersionComparison,
   ListCreationResponse,
   FeaturedListsResponse,
+  CreatorAnalyticsSummary,
 } from '@/types/top-lists';
 
-// =============================================================================
-// Types - Groups & Items
-// =============================================================================
+export type {
+  ItemResearchRequest,
+  ItemResearchResponse,
+  ItemValidationRequest,
+} from '@/types/items';
 
-export interface ItemGroup {
-  id: string;
-  name: string;
-  description?: string;
-  category: string;
-  subcategory?: string;
-  image_url?: string;
-  item_count: number;
-  created_at: string;
-  updated_at: string;
-}
+import type {
+  User,
+  UserPreferences,
+  ConsensusSubmission,
+} from '@/types/users';
 
-export interface ItemGroupWithItems extends ItemGroup {
-  items: GroupItem[];
-}
-
-export interface GroupItem {
-  id: string;
-  name: string;
-  description?: string;
-  category: string;
-  subcategory?: string;
-  item_year?: number;
-  item_year_to?: number;
-  image_url?: string;
-  created_at: string;
-}
-
-export interface GroupSearchParams {
-  category?: string;
-  subcategory?: string;
-  search?: string;
-  limit?: number;
-  offset?: number;
-  minItemCount?: number;
-}
-
-export interface GroupCreateRequest {
-  name: string;
-  category: string;
-  subcategory?: string;
-  description?: string;
-  image_url?: string;
-}
-
-export interface GroupItemsResponse {
-  group_id: string;
-  items: GroupItem[];
-  count: number;
-}
-
-export interface GroupSuggestion {
-  query: string;
-  suggestions: string[];
-}
+export type {
+  User,
+  UserPreferences,
+  ConsensusSubmission,
+} from '@/types/users';
 
 // =============================================================================
-// Types - Items
+// Server Response Shapes
 // =============================================================================
 
-export interface Item {
-  id: string;
-  name: string;
-  description?: string;
-  category: string;
-  subcategory?: string;
-  item_year?: number;
-  item_year_to?: number;
-  image_url?: string;
-  group?: string;
-  group_id?: string;
-  selection_count?: number;
-  view_count?: number;
-  created_at: string;
-  updated_at?: string;
-  tags?: string[];
-}
-
-export interface ItemSearchParams {
-  category?: string;
-  subcategory?: string;
-  search?: string;
-  groupIds?: string[];
-  sortBy?: 'name' | 'date' | 'popularity' | 'ranking';
-  sortOrder?: 'asc' | 'desc';
-  limit?: number;
-  offset?: number;
-}
-
-export interface ItemCreateRequest {
-  name: string;
-  description?: string;
-  category: string;
-  subcategory?: string;
-  item_year?: number;
-  item_year_to?: number;
-  image_url?: string;
-  group_id?: string;
-  tags?: string[];
-}
-
-export interface ItemUpdateRequest extends Partial<ItemCreateRequest> {
-  id: string;
-}
-
-export interface PaginatedResponse<T> {
-  data: T[];
+/** Server-side paginated response from /api/top/items (format: 'paginated') */
+interface ServerPaginatedResponse<T> {
+  items: T[];
   total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-  hasMore: boolean;
-  nextOffset?: number;
-}
-
-// =============================================================================
-// Types - Item Stats
-// =============================================================================
-
-export interface ItemStat {
-  item_id: string;
-  name: string;
-  selection_count: number;
-  view_count: number;
-  average_ranking: number;
-  percentile: number;
-}
-
-export interface ItemStatsResponse {
-  stats: ItemStat[];
-  total_items: number;
-}
-
-export interface ItemStatsParams {
-  item_ids?: string[];
-  category?: string;
-}
-
-// =============================================================================
-// Types - Blueprints
-// =============================================================================
-
-import type {
-  Blueprint,
-  CreateBlueprintRequest,
-  UpdateBlueprintRequest,
-  SearchBlueprintsParams,
-  BlueprintShareResponse,
-} from '@/types/blueprint';
-
-// =============================================================================
-// Types - Consensus
-// =============================================================================
-
-import type {
-  ItemConsensus,
-  ItemConsensusWithClusters,
-  ConsensusAPIResponse,
-} from '@/types/consensus';
-
-export interface ConsensusSubmission {
-  listId: string;
-  userId?: string;
-  rankings: Array<{
-    itemId: string;
-    position: number;
-  }>;
-}
-
-// =============================================================================
-// Types - Research
-// =============================================================================
-
-export interface ItemResearchRequest {
-  name: string;
-  category: string;
-  subcategory?: string;
-  description?: string;
-  depth?: 'quick' | 'standard' | 'deep';
-  handleDuplicates?: 'skip' | 'merge' | 'create';
-}
-
-export interface ItemResearchResponse {
-  item?: Item;
-  isValid: boolean;
-  confidence: number;
-  duplicates?: Array<{
-    id: string;
-    name: string;
-    similarity: number;
-  }>;
-  sources?: Array<{
-    name: string;
-    url: string;
-    confidence: number;
-  }>;
-  researchMethod: 'cache' | 'web' | 'llm';
-}
-
-export interface ItemValidationRequest {
-  name: string;
-  category: string;
-  subcategory?: string;
-}
-
-// =============================================================================
-// Types - Users
-// =============================================================================
-
-export interface User {
-  id: string;
-  email: string;
-  name?: string;
-  avatar_url?: string;
-  created_at: string;
-  updated_at?: string;
-}
-
-export interface UserPreferences {
-  theme?: 'light' | 'dark' | 'system';
-  notifications?: boolean;
-  defaultCategory?: string;
+  limit: number;
+  offset: number;
+  has_more: boolean;
 }
 
 // =============================================================================
 // Request Infrastructure
 // =============================================================================
 
+/**
+ * Per-request configuration.
+ *
+ * **Retry ownership**: React Query owns all retry logic (see unified-cache.ts
+ * `getRetryConfig`). GoatAPI intentionally does NOT retry — a single failed
+ * fetch surfaces immediately so React Query can apply its own backoff/retry
+ * strategy without multiplicative retry storms.
+ */
 interface RequestConfig {
-  /** @deprecated Cache is now handled by React Query - this option is ignored */
-  cache?: 'none' | 'short' | 'standard' | 'long' | 'static' | number;
-  /** @deprecated Cache tags - this option is ignored */
-  tags?: string[];
-  /** Enable request deduplication (default: true for GET) */
-  dedupe?: boolean;
-  /** Retry configuration */
-  retry?: {
-    maxAttempts?: number;
-    baseDelay?: number;
-    maxDelay?: number;
-  };
   /** Request timeout in ms */
   timeout?: number;
   /** Signal for request cancellation */
   signal?: AbortSignal;
 }
-
-// Request deduplication map
-const pendingRequests = new Map<string, Promise<unknown>>();
-
-// Default retry configuration
-const DEFAULT_RETRY = {
-  maxAttempts: 3,
-  baseDelay: 1000,
-  maxDelay: 30000,
-};
 
 /**
  * Clean parameters - remove undefined/null/empty values
@@ -329,54 +194,8 @@ function cleanParams<T extends object>(params: T): Record<string, unknown> {
 }
 
 /**
- * Sleep for retry backoff
- */
-function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-/**
- * Execute request with retry logic
- */
-async function executeWithRetry<T>(
-  fn: () => Promise<T>,
-  config: RequestConfig['retry'] = {}
-): Promise<T> {
-  const { maxAttempts, baseDelay, maxDelay } = { ...DEFAULT_RETRY, ...config };
-  let lastError: unknown;
-
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    try {
-      return await fn();
-    } catch (error) {
-      lastError = error;
-
-      // Don't retry if error is not retriable
-      if (isGoatError(error) && !error.isRetriable()) {
-        throw error;
-      }
-
-      // Don't retry on last attempt
-      if (attempt === maxAttempts) {
-        throw error;
-      }
-
-      // Calculate backoff delay with jitter
-      const delay = Math.min(
-        baseDelay * Math.pow(2, attempt - 1) + Math.random() * 1000,
-        maxDelay
-      );
-
-      console.log(`🔄 Retry attempt ${attempt}/${maxAttempts} in ${Math.round(delay)}ms`);
-      await sleep(delay);
-    }
-  }
-
-  throw lastError;
-}
-
-/**
- * Execute request with caching and deduplication
+ * Execute request with retry logic and GET request coalescing.
+ * Identical in-flight GET requests share a single network call via withCoalescing.
  */
 async function request<T>(
   endpoint: string,
@@ -384,18 +203,23 @@ async function request<T>(
   data?: unknown,
   config: RequestConfig = {}
 ): Promise<T> {
-  const cacheKey = createCacheKey(endpoint, data as Record<string, unknown>);
+  const requestId = generateRequestId();
+  const circuitBreaker = getGlobalCircuitBreaker();
 
-  // Request deduplication for GET requests (prevents duplicate in-flight requests)
-  if (method === 'GET' && config.dedupe !== false) {
-    const pending = pendingRequests.get(cacheKey) as Promise<T> | undefined;
-    if (pending) {
-      console.log('⚡ Deduplicating request:', endpoint);
-      return pending;
+  // Circuit breaker: fail fast if endpoint is unhealthy
+  if (!circuitBreaker.canRequest(endpoint)) {
+    // If HALF_OPEN, wait for probe to complete instead of failing immediately
+    const probeResult = await circuitBreaker.waitForProbe(endpoint);
+    if (!probeResult) {
+      console.warn(`[${requestId}] Circuit open for ${endpoint} — failing fast`);
+      throw new GoatError('NETWORK_CONNECTION_REFUSED', `Circuit open for ${endpoint} — failing fast`, {
+        category: 'network',
+        status: 503,
+        details: { context: { circuitState: 'OPEN', endpoint, requestId } },
+      });
     }
   }
 
-  // Execute request with retry
   const requestFn = async (): Promise<T> => {
     switch (method) {
       case 'GET':
@@ -413,20 +237,24 @@ async function request<T>(
     }
   };
 
-  const promise = executeWithRetry(requestFn, config.retry);
+  const executeFn = () => requestFn();
 
-  // Track pending request for deduplication
-  if (method === 'GET' && config.dedupe !== false) {
-    pendingRequests.set(cacheKey, promise);
-    promise.finally(() => {
-      pendingRequests.delete(cacheKey);
-    });
+  try {
+    // Coalesce identical in-flight GET requests to avoid duplicate network calls
+    const result = method === 'GET'
+      ? await withCoalescing<T>(
+          `${method}:${endpoint}:${data ? JSON.stringify(data) : ''}`,
+          executeFn
+        )
+      : await executeFn();
+
+    circuitBreaker.recordSuccess(endpoint);
+    return result;
+  } catch (error) {
+    circuitBreaker.recordFailure(endpoint, error);
+    console.error(`[${requestId}] ${method} ${endpoint} failed:`, isGoatError(error) ? error.code : error);
+    throw error;
   }
-
-  // Note: Response caching is handled by React Query at the hook level.
-  // The APICache layer was removed to avoid double-caching conflicts.
-
-  return promise;
 }
 
 // =============================================================================
@@ -438,22 +266,14 @@ const listsApi = {
    * Search lists with filters
    */
   search: (params?: SearchListsParams, config?: RequestConfig): Promise<TopList[]> => {
-    return request<TopList[]>('/lists', 'GET', cleanParams(params || {}), {
-      cache: 'standard',
-      tags: ['lists'],
-      ...config,
-    });
+    return request<TopList[]>('/lists', 'GET', cleanParams(params || {}), config);
   },
 
   /**
    * Get a single list by ID
    */
   get: (listId: string, includeItems = true, config?: RequestConfig): Promise<ListWithItems> => {
-    return request<ListWithItems>(`/lists/${listId}`, 'GET', { include_items: includeItems }, {
-      cache: 'standard',
-      tags: ['lists', `list-${listId}`],
-      ...config,
-    });
+    return request<ListWithItems>(`/lists/${listId}`, 'GET', { include_items: includeItems }, config);
   },
 
   /**
@@ -505,11 +325,14 @@ const listsApi = {
    * Get list analytics
    */
   getAnalytics: (listId: string, config?: RequestConfig): Promise<ListAnalytics> => {
-    return request<ListAnalytics>(`/lists/${listId}/analytics`, 'GET', undefined, {
-      cache: 'short',
-      tags: ['analytics', `list-${listId}`],
-      ...config,
-    });
+    return request<ListAnalytics>(`/lists/${listId}/analytics`, 'GET', undefined, config);
+  },
+
+  /**
+   * Get creator analytics summary for all lists owned by a user
+   */
+  getCreatorAnalytics: (userId: string, config?: RequestConfig): Promise<CreatorAnalyticsSummary> => {
+    return request<CreatorAnalyticsSummary>(`/lists/analytics?user_id=${encodeURIComponent(userId)}`, 'GET', undefined, config);
   },
 
   /**
@@ -525,7 +348,7 @@ const listsApi = {
       `/lists/${listId}/versions/compare`,
       'GET',
       { version1, version2 },
-      { cache: 'long', tags: [`list-${listId}`], ...config }
+      config
     );
   },
 
@@ -533,22 +356,14 @@ const listsApi = {
    * Get user's lists
    */
   getByUser: (userId: string, params?: Omit<SearchListsParams, 'user_id'>, config?: RequestConfig): Promise<TopList[]> => {
-    return request<TopList[]>('/lists', 'GET', cleanParams({ user_id: userId, ...params }), {
-      cache: 'short',
-      tags: ['lists', `user-${userId}`],
-      ...config,
-    });
+    return request<TopList[]>('/lists', 'GET', cleanParams({ user_id: userId, ...params }), config);
   },
 
   /**
    * Get predefined lists
    */
   getPredefined: (category?: string, subcategory?: string, config?: RequestConfig): Promise<TopList[]> => {
-    return request<TopList[]>('/lists', 'GET', cleanParams({ predefined: true, category, subcategory }), {
-      cache: 'long',
-      tags: ['lists', 'predefined'],
-      ...config,
-    });
+    return request<TopList[]>('/lists', 'GET', cleanParams({ predefined: true, category, subcategory }), config);
   },
 
   /**
@@ -563,11 +378,7 @@ const listsApi = {
     },
     config?: RequestConfig
   ): Promise<FeaturedListsResponse> => {
-    return request<FeaturedListsResponse>('/lists/featured', 'GET', cleanParams(params || {}), {
-      cache: 'standard',
-      tags: ['lists', 'featured'],
-      ...config,
-    });
+    return request<FeaturedListsResponse>('/lists/featured', 'GET', cleanParams(params || {}), config);
   },
 };
 
@@ -580,11 +391,7 @@ const groupsApi = {
    * Search groups with filters
    */
   search: (params?: GroupSearchParams, config?: RequestConfig): Promise<ItemGroup[]> => {
-    return request<ItemGroup[]>('/top/groups', 'GET', cleanParams(params || {}), {
-      cache: 'long',
-      tags: ['groups'],
-      ...config,
-    });
+    return request<ItemGroup[]>('/top/groups', 'GET', cleanParams(params || {}), config);
   },
 
   /**
@@ -607,22 +414,14 @@ const groupsApi = {
       min_item_count: options?.minItemCount || 1,
     });
 
-    return request<ItemGroup[]>(`/top/groups/categories/${category}`, 'GET', params, {
-      cache: 'long',
-      tags: ['groups', `category-${category}`],
-      ...config,
-    });
+    return request<ItemGroup[]>(`/top/groups/categories/${category}`, 'GET', params, config);
   },
 
   /**
    * Get a single group by ID
    */
   get: (groupId: string, includeItems = true, config?: RequestConfig): Promise<ItemGroupWithItems> => {
-    return request<ItemGroupWithItems>(`/top/groups/${groupId}`, 'GET', { include_items: includeItems }, {
-      cache: 'long',
-      tags: ['groups', `group-${groupId}`],
-      ...config,
-    });
+    return request<ItemGroupWithItems>(`/top/groups/${groupId}`, 'GET', { include_items: includeItems }, config);
   },
 
   /**
@@ -644,8 +443,40 @@ const groupsApi = {
       `/top/groups/${groupId}/items`,
       'GET',
       cleanParams({ limit: options?.limit || 50, offset: options?.offset || 0 }),
-      { cache: 'long', tags: ['groups', `group-${groupId}`], ...config }
+      config
     );
+  },
+
+  /**
+   * Bulk-fetch items for multiple groups in a single request.
+   * Returns a map of groupId → items array.
+   */
+  getBulkItems: async (
+    groupIds: string[],
+    config?: RequestConfig
+  ): Promise<Record<string, GroupItem[]>> => {
+    // The server caps each request at 100 groups; a larger category previously
+    // failed the WHOLE request (400) and returned an empty backlog. Chunk to
+    // <=100 and merge the per-batch maps so big categories load fully.
+    const MAX_PER_REQUEST = 100;
+    const fetchChunk = (chunk: string[]) =>
+      request<Record<string, GroupItem[]>>(
+        '/top/groups/bulk-items',
+        'GET',
+        { group_ids: chunk.join(',') },
+        config
+      );
+
+    if (groupIds.length <= MAX_PER_REQUEST) {
+      return fetchChunk(groupIds);
+    }
+
+    const chunks: string[][] = [];
+    for (let i = 0; i < groupIds.length; i += MAX_PER_REQUEST) {
+      chunks.push(groupIds.slice(i, i + MAX_PER_REQUEST));
+    }
+    const results = await Promise.all(chunks.map(fetchChunk));
+    return Object.assign({}, ...results);
   },
 
   /**
@@ -660,7 +491,7 @@ const groupsApi = {
       '/top/groups/search/suggestions',
       'GET',
       cleanParams({ query, ...options, limit: options?.limit || 10 }),
-      { cache: 'standard', tags: ['suggestions'], ...config }
+      config
     );
   },
 };
@@ -671,7 +502,11 @@ const groupsApi = {
 
 const itemsApi = {
   /**
-   * Search items with filters
+   * Search items with filters.
+   *
+   * The /api/top/items endpoint returns the server 'paginated' format
+   * ({ items, total, limit, offset, has_more }). This method transforms
+   * it into the client-side PaginatedResponse<Item> shape.
    */
   search: (params?: ItemSearchParams, config?: RequestConfig): Promise<PaginatedResponse<Item>> => {
     const queryParams = cleanParams({
@@ -683,23 +518,30 @@ const itemsApi = {
       limit: params?.limit,
     });
 
-    return request<PaginatedResponse<Item>>('/top/items', 'GET', queryParams, {
-      cache: 'standard',
-      tags: ['items'],
-      ...config,
-    }).then(response => {
-      // Handle both wrapped and unwrapped responses
+    return request<ServerPaginatedResponse<Item> | Item[]>('/top/items', 'GET', queryParams, config).then(response => {
+      // Fallback: if the server ever returns a raw array, wrap it
       if (Array.isArray(response)) {
         return {
-          data: response as unknown as Item[],
-          total: (response as unknown as Item[]).length,
+          data: response,
+          total: response.length,
           page: 1,
-          pageSize: (response as unknown as Item[]).length,
+          pageSize: response.length,
           totalPages: 1,
           hasMore: false,
         };
       }
-      return response;
+
+      // Transform server paginated format to client PaginatedResponse
+      const pageSize = response.limit || 50;
+      const page = Math.floor(response.offset / pageSize) + 1;
+      return {
+        data: response.items,
+        total: response.total,
+        page,
+        pageSize,
+        totalPages: Math.ceil(response.total / pageSize),
+        hasMore: response.has_more,
+      };
     });
   },
 
@@ -707,11 +549,7 @@ const itemsApi = {
    * Get a single item by ID
    */
   get: (itemId: string, config?: RequestConfig): Promise<Item> => {
-    return request<Item>(`/top/items/${itemId}`, 'GET', undefined, {
-      cache: 'long',
-      tags: ['items', `item-${itemId}`],
-      ...config,
-    });
+    return request<Item>(`/top/items/${itemId}`, 'GET', undefined, config);
   },
 
   /**
@@ -747,30 +585,53 @@ const itemsApi = {
       queryParams.category = params.category;
     }
 
-    return request<ItemStatsResponse>('/items/stats', 'GET', queryParams, {
-      cache: 'short',
-      tags: ['stats'],
-      ...config,
-    });
+    return request<ItemStatsResponse>('/items/stats', 'GET', queryParams, config);
   },
 
   /**
-   * Get stats for a single item
+   * Get stats for a single item (auto-batched via microtask)
+   * Multiple concurrent getStat calls are collected and sent as a single getStats request.
    */
-  getStat: async (itemId: string, config?: RequestConfig): Promise<ItemStat | null> => {
-    const response = await itemsApi.getStats({ item_ids: [itemId] }, config);
-    return response.stats.find(stat => stat.item_id === itemId) || null;
-  },
+  getStat: (() => {
+    let pendingIds: string[] = [];
+    let pendingResolvers: Array<{ itemId: string; resolve: (v: ItemStat | null) => void; reject: (e: unknown) => void }> = [];
+    let scheduled = false;
+
+    return (itemId: string, _config?: RequestConfig): Promise<ItemStat | null> => {
+      return new Promise((resolve, reject) => {
+        pendingIds.push(itemId);
+        pendingResolvers.push({ itemId, resolve, reject });
+
+        if (!scheduled) {
+          scheduled = true;
+          queueMicrotask(async () => {
+            const ids = Array.from(new Set(pendingIds));
+            const resolvers = [...pendingResolvers];
+            pendingIds = [];
+            pendingResolvers = [];
+            scheduled = false;
+
+            try {
+              const response = await itemsApi.getStats({ item_ids: ids });
+              for (const { itemId: id, resolve: res } of resolvers) {
+                res(response.stats.find(stat => stat.item_id === id) || null);
+              }
+            } catch (error) {
+              for (const { reject: rej } of resolvers) {
+                rej(error);
+              }
+            }
+          });
+        }
+      });
+    };
+  })(),
 
   /**
    * Get trending items
    */
   getTrending: (category?: string, limit = 10, config?: RequestConfig): Promise<Item[]> => {
-    return request<Item[]>('/top/items/trending', 'GET', cleanParams({ category, limit }), {
-      cache: 'short',
-      tags: ['items', 'trending'],
-      ...config,
-    });
+    return request<Item[]>('/top/items/trending', 'GET', cleanParams({ category, limit }), config);
   },
 };
 
@@ -794,22 +655,14 @@ const blueprintsApi = {
       sort: params?.sort,
     });
 
-    return request<Blueprint[]>('/blueprints', 'GET', queryParams, {
-      cache: 'long',
-      tags: ['blueprints'],
-      ...config,
-    });
+    return request<Blueprint[]>('/blueprints', 'GET', queryParams, config);
   },
 
   /**
    * Get a single blueprint by slug or ID
    */
   get: (slugOrId: string, config?: RequestConfig): Promise<Blueprint> => {
-    return request<Blueprint>(`/blueprints/${slugOrId}`, 'GET', undefined, {
-      cache: 'long',
-      tags: ['blueprints', `blueprint-${slugOrId}`],
-      ...config,
-    });
+    return request<Blueprint>(`/blueprints/${slugOrId}`, 'GET', undefined, config);
   },
 
   /**
@@ -880,22 +733,14 @@ const consensusApi = {
    * Get consensus data for a category
    */
   getByCategory: (category: string, config?: RequestConfig): Promise<ConsensusAPIResponse> => {
-    return request<ConsensusAPIResponse>(`/consensus/${category}`, 'GET', undefined, {
-      cache: 'standard',
-      tags: ['consensus', `consensus-${category}`],
-      ...config,
-    });
+    return request<ConsensusAPIResponse>(`/consensus/${category}`, 'GET', undefined, config);
   },
 
   /**
    * Get consensus data for a specific list
    */
   getByList: (listId: string, config?: RequestConfig): Promise<Record<string, ItemConsensusWithClusters>> => {
-    return request<Record<string, ItemConsensusWithClusters>>(`/consensus/${listId}`, 'GET', undefined, {
-      cache: 'standard',
-      tags: ['consensus', `list-${listId}`],
-      ...config,
-    });
+    return request<Record<string, ItemConsensusWithClusters>>(`/consensus/${listId}`, 'GET', undefined, config);
   },
 
   /**
@@ -935,22 +780,14 @@ const usersApi = {
    * Get current user profile
    */
   me: (config?: RequestConfig): Promise<User> => {
-    return request<User>('/users/me', 'GET', undefined, {
-      cache: 'short',
-      tags: ['user'],
-      ...config,
-    });
+    return request<User>('/users/me', 'GET', undefined, config);
   },
 
   /**
    * Get user by ID
    */
   get: (userId: string, config?: RequestConfig): Promise<User> => {
-    return request<User>(`/users/${userId}`, 'GET', undefined, {
-      cache: 'standard',
-      tags: ['users', `user-${userId}`],
-      ...config,
-    });
+    return request<User>(`/users/${userId}`, 'GET', undefined, config);
   },
 
   /**
@@ -964,11 +801,7 @@ const usersApi = {
    * Get user preferences
    */
   getPreferences: (userId: string, config?: RequestConfig): Promise<UserPreferences> => {
-    return request<UserPreferences>(`/users/${userId}/preferences`, 'GET', undefined, {
-      cache: 'short',
-      tags: ['user', `user-${userId}`],
-      ...config,
-    });
+    return request<UserPreferences>(`/users/${userId}/preferences`, 'GET', undefined, config);
   },
 
   /**
@@ -980,52 +813,10 @@ const usersApi = {
 };
 
 // =============================================================================
-// Batch & Utility Functions
-// =============================================================================
-
-/**
- * Execute multiple requests in parallel
- */
-async function batch<T extends readonly Promise<unknown>[]>(
-  requests: T
-): Promise<{ [K in keyof T]: Awaited<T[K]> }> {
-  const results = await Promise.all(requests);
-  return results as { [K in keyof T]: Awaited<T[K]> };
-}
-
-/**
- * Invalidate cache by tags
- */
-function invalidateCache(options: {
-  tags?: string[];
-  pattern?: RegExp;
-  all?: boolean;
-}): number {
-  const cache = getGlobalAPICache();
-  return cache.invalidate(options);
-}
-
-/**
- * Get cache metrics
- */
-function getCacheMetrics() {
-  const cache = getGlobalAPICache();
-  return cache.getMetrics();
-}
-
-/**
- * Get pending request count (for deduplication status)
- */
-function getPendingRequestCount(): number {
-  return pendingRequests.size;
-}
-
-// =============================================================================
 // GoatAPI - Unified Export
 // =============================================================================
 
 export const goatApi = {
-  // Domain APIs
   lists: listsApi,
   groups: groupsApi,
   items: itemsApi,
@@ -1033,12 +824,6 @@ export const goatApi = {
   consensus: consensusApi,
   research: researchApi,
   users: usersApi,
-
-  // Utilities
-  batch,
-  invalidateCache,
-  getCacheMetrics,
-  getPendingRequestCount,
 } as const;
 
 // Type for the GoatAPI

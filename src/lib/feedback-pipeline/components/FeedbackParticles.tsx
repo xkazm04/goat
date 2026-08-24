@@ -1,9 +1,12 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import type { ParticleConfig } from '../types';
-import { cn } from '@/lib/utils';
+
 import { useMotionCapabilities } from '@/hooks/use-motion-preference';
+import { DURATION } from '@/lib/animations/motion-presets';
+import { cn } from '@/lib/utils';
+
+import type { ParticleConfig } from '../types';
 
 interface FeedbackParticlesProps {
   /** Array of particles to render */
@@ -46,7 +49,7 @@ export function FeedbackParticles({
 
   return (
     <div
-      className={cn('fixed inset-0 z-[99] pointer-events-none', className)}
+      className={cn('fixed inset-0 z-99 pointer-events-none', className)}
       data-testid="feedback-particles"
     >
       <AnimatePresence>
@@ -172,6 +175,6 @@ export function generateParticles(
     timestamp: Date.now(),
     size: sizeRange[0] + Math.random() * (sizeRange[1] - sizeRange[0]),
     color: colors ? colors[Math.floor(Math.random() * colors.length)] : undefined,
-    duration: 0.8 + Math.random() * 0.7,
+    duration: DURATION.dramatic + Math.random() * 0.7,
   }));
 }

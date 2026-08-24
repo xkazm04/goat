@@ -13,6 +13,7 @@
  */
 
 import dynamic from 'next/dynamic';
+
 import type { ComparisonModalProps } from '@/types/modal-props';
 
 // Loading placeholder for modals - invisible, renders nothing

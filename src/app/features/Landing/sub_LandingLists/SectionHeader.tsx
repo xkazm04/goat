@@ -2,11 +2,14 @@
 
 import { motion } from "framer-motion";
 import { LucideIcon } from "lucide-react";
-import { springConfig } from "../shared/animations";
+
+import { ELEVATION, INSET, withInset } from "@/components/visual/depth";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 
+import { springConfig } from "../shared/animations";
+
 interface SectionHeaderProps {
-  icon: LucideIcon;
+  icon: LucideIcon | React.ComponentType<{ className?: string }>;
   title: string;
   subtitle: string;
   /** Gradient colors in format "rgba(r, g, b, a)" for start and end */
@@ -14,7 +17,7 @@ interface SectionHeaderProps {
     start: string;
     end: string;
   };
-  /** Icon color class e.g., "text-cyan-400" */
+  /** Icon color class e.g., "text-brand-hover" */
   iconColorClass?: string;
   /** Optional right-side content (e.g., action buttons) */
   rightContent?: React.ReactNode;
@@ -49,14 +52,10 @@ export function SectionHeader({
     >
       <div className="flex items-center gap-4">
         <motion.div
-          className="relative p-3 rounded-2xl"
+          className="relative p-3 rounded-container"
           style={{
             background: `linear-gradient(135deg, ${gradientColors.start}, ${gradientColors.end})`,
-            boxShadow: `
-              0 8px 32px ${gradientColors.start},
-              0 0 15px rgba(251, 191, 36, 0.2),
-              inset 0 1px 0 rgba(255, 255, 255, 0.1)
-            `,
+            boxShadow: withInset(ELEVATION.high, INSET.glassHighlightStrong),
           }}
           whileHover={prefersReducedMotion ? {} : { scale: 1.05, rotate: 5 }}
           data-testid={testIdPrefix ? `${testIdPrefix}-icon` : undefined}
@@ -65,7 +64,7 @@ export function SectionHeader({
         </motion.div>
         <div>
           <h2
-            className="text-3xl font-bold tracking-tight flex"
+            className="text-3xl font-bold tracking-tight flex font-heading"
             data-testid={testIdPrefix ? `${testIdPrefix}-section-title` : undefined}
           >
             {title.split("").map((char, i) => (

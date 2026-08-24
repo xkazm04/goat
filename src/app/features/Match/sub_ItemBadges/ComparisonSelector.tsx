@@ -1,6 +1,5 @@
 "use client";
 
-import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   GitCompare,
@@ -8,9 +7,11 @@ import {
   Plus,
   Check,
   ChevronRight,
-  Trash2,
 } from "lucide-react";
+import { memo, useEffect, useState } from "react";
+
 import { useComparison } from "@/hooks/use-comparison";
+
 import type { BacklogItemType } from "@/types/match";
 
 interface ComparisonSelectorProps {
@@ -53,19 +54,19 @@ export const ComparisonSelector = memo(function ComparisonSelector({
   return (
     <AnimatePresence>
       <motion.div
-        className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 ${className}`}
+        className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-sticky ${className}`}
         initial={{ y: 100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 100, opacity: 0 }}
         transition={{ type: "spring", stiffness: 400, damping: 30 }}
       >
         <div
-          className="relative bg-slate-900/95 backdrop-blur-xl rounded-2xl border border-slate-700/50
+          className="relative bg-slate-900/95 backdrop-blur-xl rounded-container border border-slate-700/50
             shadow-2xl shadow-black/40 overflow-hidden"
         >
           {/* Glow effect */}
           <div
-            className="absolute inset-0 rounded-2xl opacity-50 pointer-events-none"
+            className="absolute inset-0 rounded-container opacity-50 pointer-events-none"
             style={{
               background: canCompare
                 ? "radial-gradient(ellipse at center, rgba(34, 197, 94, 0.15) 0%, transparent 70%)"
@@ -88,7 +89,7 @@ export const ComparisonSelector = memo(function ComparisonSelector({
 
               <button
                 onClick={clearSelection}
-                className="p-1.5 rounded-lg hover:bg-slate-700/50 text-slate-400
+                className="p-1.5 rounded-control hover:bg-slate-700/50 text-slate-400
                   hover:text-slate-300 transition-colors"
                 title="Clear selection"
               >
@@ -111,7 +112,7 @@ export const ComparisonSelector = memo(function ComparisonSelector({
                 Array.from({ length: MAX_ITEMS - selectedIds.length }).map((_, i) => (
                   <motion.div
                     key={`empty-${i}`}
-                    className="w-12 h-12 rounded-lg border-2 border-dashed border-slate-700/50
+                    className="w-12 h-12 rounded-card border-2 border-dashed border-slate-700/50
                       flex items-center justify-center"
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 0.5, scale: 1 }}
@@ -129,7 +130,7 @@ export const ComparisonSelector = memo(function ComparisonSelector({
               <div className="flex items-center gap-2">
                 <button
                   onClick={clearSelection}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400
+                  className="px-3 py-1.5 rounded-control text-xs font-medium text-slate-400
                     hover:text-white hover:bg-slate-700/50 transition-all"
                 >
                   Clear
@@ -139,10 +140,10 @@ export const ComparisonSelector = memo(function ComparisonSelector({
                   onClick={onCompare}
                   disabled={!canCompare}
                   className={`
-                    px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2
+                    px-4 py-2 rounded-card text-sm font-semibold flex items-center gap-2
                     transition-all
                     ${canCompare
-                      ? "bg-gradient-to-r from-emerald-500 to-green-500 text-white shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50"
+                      ? "bg-linear-to-r from-emerald-500 to-green-500 text-white shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50"
                       : "bg-slate-800 text-slate-500 cursor-not-allowed"}
                   `}
                   whileHover={canCompare ? { scale: 1.02 } : {}}
@@ -184,7 +185,7 @@ const ComparisonItemChip = memo(function ComparisonItemChip({
       transition={{ delay: index * 0.05 }}
     >
       <div
-        className="w-12 h-12 rounded-lg overflow-hidden border-2 border-indigo-500/50
+        className="w-12 h-12 rounded-card overflow-hidden border-2 border-indigo-500/50
           shadow-lg shadow-indigo-500/20 cursor-pointer hover:border-indigo-400 transition-colors"
         onClick={() => toggleSelection(item)}
         title={item.title}
@@ -196,7 +197,7 @@ const ComparisonItemChip = memo(function ComparisonItemChip({
             className="w-full h-full object-cover"
           />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-indigo-500/20 to-purple-500/20
+          <div className="w-full h-full bg-linear-to-br from-indigo-500/20 to-purple-500/20
             flex items-center justify-center">
             <span className="text-lg font-bold text-indigo-400">
               {item.title.charAt(0)}
@@ -258,7 +259,7 @@ export const SelectionCheckbox = memo(function SelectionCheckbox({
       }}
       disabled={disabled}
       className={`
-        ${sizeClasses} rounded-md flex items-center justify-center
+        ${sizeClasses} rounded-control flex items-center justify-center
         transition-all
         ${isSelected
           ? "bg-indigo-500 border-indigo-500 shadow-lg shadow-indigo-500/30"

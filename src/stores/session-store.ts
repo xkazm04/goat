@@ -1,25 +1,39 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { GridItemType, BacklogItemType } from '@/types/match';
-import { ListSession, SessionProgress } from './item-store/types';
-import { SessionManager } from './item-store/session-manager';
+
+import { GRID_LIMITS } from '@/lib/grid/constants';
+import { sessionLogger } from '@/lib/logger';
+import { saveSessionToOffline, getOfflineSession } from '@/lib/offline/sessionStoreIntegration';
+import { reconcileSessionSources } from '@/lib/storage/storage-registry';
 import { BacklogGroup, BacklogItem } from '@/types/backlog-groups';
+import { GridItemType, BacklogGroupType } from '@/types/match';
+
 import {
   NormalizedBacklogData,
   normalizeBacklogGroups,
   denormalizeToBacklogGroup,
   denormalizeToBacklogGroupType,
   migrateFromLegacyFormat,
-  isNormalizedData,
   createEmptyNormalizedData,
   NormalizedOps
 } from './item-store/normalized-session';
-import { saveSessionToOffline, getOfflineSession } from '@/lib/offline';
-import { sessionLogger } from '@/lib/logger';
-import { GRID_LIMITS } from '@/lib/grid/constants';
-import { DEBOUNCE } from '@/lib/timing';
+import {
+  createEmptySession,
+  updateSessionTimestamp,
+  markSessionSynced,
+  validateSession,
+  calculateProgress,
+  hasUnsavedChanges,
+  getSessionMetadata,
+} from './item-store/session-manager';
+import { ListSession, SessionProgress } from './item-store/types';
+import { useSelectionCursor } from './selection-cursor';
+
 
 interface SessionStoreState {
+  // Hydration readiness flag - true once persist middleware has rehydrated from storage
+  _hydrated: boolean;
+
   // Multi-list sessions
   listSessions: Record<string, ListSession>;
   activeSessionId: string | null;
@@ -33,9 +47,9 @@ interface SessionStoreState {
 
   // Actions - Session Management
   createSession: (listId: string, size: number) => void;
-  switchToSession: (listId: string) => void;
-  saveCurrentSession: () => void;
-  loadSession: (listId: string) => void;
+  switchToSession: (listId: string) => Promise<void>;
+  saveCurrentSession: (explicitSessionId?: string) => void;
+  loadSession: (listId: string) => Promise<void>;
   deleteSession: (listId: string) => void;
   syncWithList: (listId: string, category?: string) => void;
   
@@ -70,41 +84,55 @@ interface SessionStoreState {
   syncWithBackend: (listId: string) => Promise<void>;
 }
 
+// Monotonic version counter for normalizedData changes.
+// Bumped by bumpNormalizedVersion() every time normalizedData is actually mutated.
+// The denormalization cache checks this counter instead of object identity,
+// avoiding false cache misses from Zustand producing new references on every set().
+let normalizedVersion = 0;
+
+function bumpNormalizedVersion(): number {
+  return ++normalizedVersion;
+}
+
 // Cache for denormalized backlog groups to avoid repeated transformations
-let denormalizedCache: { data: NormalizedBacklogData | null; result: BacklogGroup[] } = {
-  data: null,
+let denormalizedCache: { version: number; result: BacklogGroup[] } = {
+  version: -1,
   result: []
 };
 
 function getCachedBacklogGroups(normalizedData: NormalizedBacklogData): BacklogGroup[] {
-  // Only recompute if normalized data has changed (reference check)
-  if (denormalizedCache.data !== normalizedData) {
-    denormalizedCache.data = normalizedData;
+  if (denormalizedCache.version !== normalizedVersion) {
+    denormalizedCache.version = normalizedVersion;
     denormalizedCache.result = denormalizeToBacklogGroup(normalizedData);
   }
   return denormalizedCache.result;
 }
 
-// PERFORMANCE OPTIMIZATION: Debounced auto-save to coalesce multiple rapid operations
-// into a single save, reducing localStorage thrashing and UI lag during bulk operations
-let saveTimeout: ReturnType<typeof setTimeout> | null = null;
+// Cache for denormalized BacklogGroupType[] used in session persist.
+// During drag sequences only grid positions change, not normalizedData,
+// so we skip the O(n*m) denormalization when the version hasn't bumped.
+let denormalizedTypeCache: { version: number; result: BacklogGroupType[] } = {
+  version: -1,
+  result: []
+};
 
-function debouncedSaveSession(getSaveFunction: () => void) {
-  // Clear any pending save
-  if (saveTimeout !== null) {
-    clearTimeout(saveTimeout);
+function getCachedBacklogGroupTypes(normalizedData: NormalizedBacklogData): BacklogGroupType[] {
+  if (denormalizedTypeCache.version !== normalizedVersion) {
+    denormalizedTypeCache.version = normalizedVersion;
+    denormalizedTypeCache.result = denormalizeToBacklogGroupType(normalizedData);
   }
-  // Schedule new save with trailing delay
-  saveTimeout = setTimeout(() => {
-    saveTimeout = null;
-    getSaveFunction();
-  }, DEBOUNCE.SESSION_SYNC);
+  return denormalizedTypeCache.result;
 }
+
+// Serialization lock for switchToSession to prevent concurrent session switches
+// from causing out-of-order loadSession resolution
+let switchSessionLock: Promise<void> = Promise.resolve();
 
 export const useSessionStore = create<SessionStoreState>()(
   persist(
     (set, get) => ({
       // Initial state
+      _hydrated: false,
       listSessions: {},
       activeSessionId: null,
       normalizedData: createEmptyNormalizedData(),
@@ -112,14 +140,19 @@ export const useSessionStore = create<SessionStoreState>()(
       get backlogGroups(): BacklogGroup[] {
         return getCachedBacklogGroups(get().normalizedData);
       },
-      selectedBacklogItem: null,
+      // Selection is now derived from the authoritative SelectionCursor store
+      get selectedBacklogItem(): string | null {
+        return useSelectionCursor.getState().itemId;
+      },
 
       // Session Management
       createSession: (listId: string, size: number = 150) => {
         sessionLogger.debug(`Creating session for list ${listId} with size ${size}`);
 
-        const session = SessionManager.createEmptySession(listId, size);
+        const session = createEmptySession(listId, size);
 
+        useSelectionCursor.getState().clear();
+        bumpNormalizedVersion();
         set((state) => ({
           listSessions: {
             ...state.listSessions,
@@ -127,43 +160,55 @@ export const useSessionStore = create<SessionStoreState>()(
           },
           activeSessionId: listId,
           normalizedData: createEmptyNormalizedData(),
-          selectedBacklogItem: null
         }));
       },
 
       switchToSession: (listId: string) => {
-        const state = get();
-        
-        if (state.activeSessionId && state.activeSessionId !== listId) {
-          get().saveCurrentSession();
-        }
-        
-        get().loadSession(listId);
+        // Serialize session switches to prevent out-of-order loadSession resolution
+        // when the user rapidly switches between lists
+        const doSwitch = async () => {
+          const state = get();
+
+          if (state.activeSessionId && state.activeSessionId !== listId) {
+            // Capture the current session ID before any async work
+            const previousSessionId = state.activeSessionId;
+            get().saveCurrentSession(previousSessionId);
+          }
+
+          await get().loadSession(listId);
+        };
+
+        // Chain onto the lock so concurrent switches execute in order
+        switchSessionLock = switchSessionLock.then(doSwitch, doSwitch);
+        return switchSessionLock;
       },
 
-      saveCurrentSession: () => {
+      saveCurrentSession: (explicitSessionId?: string) => {
         const state = get();
-        if (!state.activeSessionId) return;
+        // Use explicit ID if provided (e.g. during session switch to avoid
+        // saving under the wrong activeSessionId after a race), otherwise
+        // fall back to current activeSessionId.
+        const sessionId = explicitSessionId ?? state.activeSessionId;
+        if (!sessionId) return;
 
-        const currentSession = state.listSessions[state.activeSessionId];
+        const currentSession = state.listSessions[sessionId];
         if (!currentSession) return;
 
-        // PERFORMANCE OPTIMIZATION: Use normalized data directly instead of
-        // expensive O(n*m) deep mapping transformation
-        // The denormalization to BacklogGroupType[] is done lazily only when needed
-        const backlogGroupsForStorage = denormalizeToBacklogGroupType(state.normalizedData);
+        // PERFORMANCE OPTIMIZATION: Use cached denormalization — skips O(n*m)
+        // work when normalizedData hasn't changed (e.g. during drag sequences
+        // where only grid positions change)
+        const backlogGroupsForStorage = getCachedBacklogGroupTypes(state.normalizedData);
 
-        const updatedSession = SessionManager.updateSessionTimestamp({
+        const updatedSession = updateSessionTimestamp({
           ...currentSession,
           backlogGroups: backlogGroupsForStorage,
-          selectedBacklogItem: state.selectedBacklogItem,
-          compareList: [], // Legacy field - kept empty for session compatibility
+          selectedBacklogItem: useSelectionCursor.getState().itemId,
         });
 
         set((state) => ({
           listSessions: {
             ...state.listSessions,
-            [state.activeSessionId!]: updatedSession
+            [sessionId]: updatedSession
           }
         }));
 
@@ -174,41 +219,33 @@ export const useSessionStore = create<SessionStoreState>()(
 
       loadSession: async (listId: string) => {
         const state = get();
-        let session = state.listSessions[listId];
+        const zustandSession = state.listSessions[listId] ?? null;
 
-        // OFFLINE SYNC: Try to load from IndexedDB and merge if needed
+        // Reconcile Zustand persist (localStorage) with offline-db (goat-offline-db).
+        // See src/lib/storage/storage-registry.ts for the dual-write architecture.
+        let session: ListSession | null = zustandSession;
         try {
           const offlineSession = await getOfflineSession(listId);
+          session = reconcileSessionSources(zustandSession, offlineSession);
 
-          if (offlineSession) {
-            if (!session) {
-              // No local session, use offline version
-              sessionLogger.debug(`Loading session ${listId} from offline storage`);
-              session = offlineSession;
-            } else {
-              // Both exist - compare timestamps and use the more recent one
-              const localTime = new Date(session.updatedAt).getTime();
-              const offlineTime = new Date(offlineSession.updatedAt).getTime();
-
-              if (offlineTime > localTime) {
-                sessionLogger.debug(`Using newer offline session for ${listId}`);
-                session = offlineSession;
-              }
-            }
+          if (session !== zustandSession && session !== null) {
+            sessionLogger.debug(`Using newer offline session for ${listId}`);
           }
         } catch (error) {
           sessionLogger.warn('Failed to load offline session:', error);
         }
 
-        if (session && SessionManager.validateSession(session)) {
+        if (session && validateSession(session)) {
           // PERFORMANCE OPTIMIZATION: Migrate legacy format to normalized format
           // This conversion happens once on load, then normalized data is used for all operations
           const normalizedData = migrateFromLegacyFormat(session.backlogGroups || []);
 
+          // Restore selection cursor from the persisted session
+          useSelectionCursor.getState().select(session.selectedBacklogItem, 'auto');
+          bumpNormalizedVersion();
           set({
             activeSessionId: listId,
             normalizedData,
-            selectedBacklogItem: session.selectedBacklogItem,
             listSessions: {
               ...state.listSessions,
               [listId]: session
@@ -253,55 +290,56 @@ export const useSessionStore = create<SessionStoreState>()(
       setBacklogGroups: (groups: BacklogGroup[]) => {
         // PERFORMANCE OPTIMIZATION: Normalize on input, store in normalized format
         const normalizedData = normalizeBacklogGroups(groups);
+        bumpNormalizedVersion();
         set({ normalizedData });
         // Debounced auto-save to coalesce rapid operations
-        debouncedSaveSession(() => get().saveCurrentSession());
+        get().saveCurrentSession();
       },
 
       toggleBacklogGroup: (groupId: string) => {
+        bumpNormalizedVersion();
         set((state) => {
-          const group = state.normalizedData.groupsById[groupId];
+          const group = state.normalizedData.groupsById.get(groupId);
           if (!group) return state;
+
+          const newGroupsById = new Map(state.normalizedData.groupsById);
+          newGroupsById.set(groupId, { ...group, isOpen: !group.isOpen });
 
           return {
             normalizedData: {
               ...state.normalizedData,
-              groupsById: {
-                ...state.normalizedData.groupsById,
-                [groupId]: {
-                  ...group,
-                  isOpen: !group.isOpen
-                }
-              }
+              groupsById: newGroupsById,
             }
           };
         });
 
-        debouncedSaveSession(() => get().saveCurrentSession());
+        get().saveCurrentSession();
       },
 
       addItemToGroup: (groupId: string, item: BacklogItem) => {
+        bumpNormalizedVersion();
         set((state) => {
           // PERFORMANCE OPTIMIZATION: O(1) item addition
           const updatedData = NormalizedOps.addItem(state.normalizedData, groupId, item);
           return { normalizedData: updatedData };
         });
 
-        debouncedSaveSession(() => get().saveCurrentSession());
+        get().saveCurrentSession();
       },
 
       removeItemFromGroup: (groupId: string, itemId: string) => {
+        bumpNormalizedVersion();
         set((state) => {
           sessionLogger.debug(`Removing item ${itemId} from group ${groupId}`);
 
           // Check if item exists
-          const item = state.normalizedData.itemsById[itemId];
+          const item = state.normalizedData.itemsById.get(itemId);
           if (!item) {
             sessionLogger.warn(`Item ${itemId} not found`);
             return state;
           }
 
-          const group = state.normalizedData.groupsById[groupId];
+          const group = state.normalizedData.groupsById.get(groupId);
           if (!group) {
             sessionLogger.warn(`Group ${groupId} not found`);
             return state;
@@ -310,22 +348,24 @@ export const useSessionStore = create<SessionStoreState>()(
           // PERFORMANCE OPTIMIZATION: O(n) where n is items in group, not total items
           const updatedData = NormalizedOps.removeItem(state.normalizedData, groupId, itemId);
 
-          // Clear selection if removed item was selected
-          const updatedSelectedBacklogItem = state.selectedBacklogItem === itemId ? null : state.selectedBacklogItem;
+          // Clear selection cursor if removed item was selected
+          if (useSelectionCursor.getState().itemId === itemId) {
+            useSelectionCursor.getState().clear();
+          }
 
           sessionLogger.debug(`Item ${itemId} removed successfully`);
 
           return {
             normalizedData: updatedData,
-            selectedBacklogItem: updatedSelectedBacklogItem
           };
         });
 
-        debouncedSaveSession(() => get().saveCurrentSession());
+        get().saveCurrentSession();
       },
 
       // NEW: Update items for a specific group
       updateGroupItems: (groupId: string, items: BacklogItem[]) => {
+        bumpNormalizedVersion();
         set((state) => {
           sessionLogger.debug(`Updating ${items.length} items for group ${groupId}`);
 
@@ -335,7 +375,7 @@ export const useSessionStore = create<SessionStoreState>()(
           return { normalizedData: updatedData };
         });
 
-        debouncedSaveSession(() => get().saveCurrentSession());
+        get().saveCurrentSession();
       },
 
       getGroupItems: (groupId: string): BacklogItem[] => {
@@ -358,14 +398,31 @@ export const useSessionStore = create<SessionStoreState>()(
         return NormalizedOps.getGroupsByCategory(state.normalizedData, category, subcategory);
       },
 
-      // Selection Management
-      setSelectedBacklogItem: (id) => set({ selectedBacklogItem: id }),
+      // Selection Management — delegates to the authoritative SelectionCursor
+      setSelectedBacklogItem: (id) => {
+        useSelectionCursor.getState().select(id, 'auto');
+      },
 
       // Utilities
       getAvailableBacklogItems: (): BacklogItem[] => {
         const state = get();
         // PERFORMANCE OPTIMIZATION: Get all items directly from normalized data
-        return NormalizedOps.getAllItems(state.normalizedData);
+        const allItems = NormalizedOps.getAllItems(state.normalizedData);
+        // The authoritative "used" flag is owned by the backlog store (grid
+        // placement writes it there, not into this session's normalizedData).
+        // Filter placed items out so "available" actually means unplaced — without
+        // this, keyboard quick-assign/navigation re-target already-ranked items.
+        // require() mirrors grid-store's circular-import-safe accessor.
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-require-imports
+          const backlogState = require('@/stores/backlog-store').useBacklogStore.getState();
+          if (typeof backlogState?.isItemUsed === 'function') {
+            return allItems.filter((item) => !backlogState.isItemUsed(item.id));
+          }
+        } catch {
+          // Backlog store unavailable — fall back to the full list.
+        }
+        return allItems;
       },
 
       getSessionProgress: (listId) => {
@@ -373,7 +430,7 @@ export const useSessionStore = create<SessionStoreState>()(
         const targetSession = listId ? state.listSessions[listId] : null;
         const gridItems = targetSession ? targetSession.gridItems : [];
         
-        return SessionManager.calculateProgress(gridItems);
+        return calculateProgress(gridItems);
       },
 
       getAllSessions: () => {
@@ -389,7 +446,7 @@ export const useSessionStore = create<SessionStoreState>()(
         const session = state.listSessions[sessionId];
         if (!session) return false;
         
-        return SessionManager.hasUnsavedChanges(session);
+        return hasUnsavedChanges(session);
       },
 
       getSessionMetadata: (listId) => {
@@ -400,32 +457,29 @@ export const useSessionStore = create<SessionStoreState>()(
         const session = state.listSessions[sessionId];
         if (!session) return null;
         
-        return SessionManager.getSessionMetadata(session);
+        return getSessionMetadata(session);
       },
 
-      // Integration hooks
+      // Integration hooks — synchronous projection from grid-store.
+      // Persistence to IndexedDB is handled by derived-session-sync observer.
       updateSessionGridItems: (gridItems) => {
-        const state = get();
-        if (!state.activeSessionId) return;
+        set((s) => {
+          if (!s.activeSessionId) return s;
 
-        const currentSession = state.listSessions[state.activeSessionId];
-        if (!currentSession) return;
+          const currentSession = s.listSessions[s.activeSessionId];
+          if (!currentSession) return s;
 
-        const updatedSession = {
-          ...currentSession,
-          gridItems,
-          updatedAt: new Date().toISOString(),
-        };
-
-        set((state) => ({
-          listSessions: {
-            ...state.listSessions,
-            [state.activeSessionId!]: updatedSession
-          }
-        }));
-
-        // OFFLINE SYNC: Save grid changes to IndexedDB
-        saveSessionToOffline(updatedSession);
+          return {
+            listSessions: {
+              ...s.listSessions,
+              [s.activeSessionId]: {
+                ...currentSession,
+                gridItems,
+                updatedAt: new Date().toISOString(),
+              }
+            }
+          };
+        });
       },
 
       getActiveSession: () => {
@@ -437,12 +491,14 @@ export const useSessionStore = create<SessionStoreState>()(
       // Reset and Sync
       resetStore: () => {
         // Clear the cache when resetting
-        denormalizedCache = { data: null, result: [] };
+        bumpNormalizedVersion();
+        denormalizedCache = { version: -1, result: [] };
+        denormalizedTypeCache = { version: -1, result: [] };
+        useSelectionCursor.getState().clear();
         set({
           listSessions: {},
           activeSessionId: null,
           normalizedData: createEmptyNormalizedData(),
-          selectedBacklogItem: null
         });
       },
 
@@ -458,7 +514,7 @@ export const useSessionStore = create<SessionStoreState>()(
           
           const session = state.listSessions[listId];
           if (session) {
-            const syncedSession = SessionManager.markSessionSynced(session);
+            const syncedSession = markSessionSynced(session);
             
             set((state) => ({
               listSessions: {
@@ -475,10 +531,33 @@ export const useSessionStore = create<SessionStoreState>()(
     }),
     {
       name: 'session-store',
-      partialize: (state) => ({
-        listSessions: state.listSessions,
-        activeSessionId: state.activeSessionId
-      })
+      partialize: (state) => {
+        // Cap persisted sessions to the 20 most recent to prevent localStorage bloat
+        const MAX_PERSISTED_SESSIONS = 20;
+        const keys = Object.keys(state.listSessions);
+        let sessions = state.listSessions;
+        if (keys.length > MAX_PERSISTED_SESSIONS) {
+          const sorted = keys
+            .map(k => ({ key: k, mod: new Date(state.listSessions[k]?.updatedAt || 0).getTime() }))
+            .sort((a, b) => b.mod - a.mod)
+            .slice(0, MAX_PERSISTED_SESSIONS);
+          sessions = {} as typeof state.listSessions;
+          for (const { key } of sorted) {
+            sessions[key] = state.listSessions[key];
+          }
+        }
+        return {
+          listSessions: sessions,
+          activeSessionId: state.activeSessionId,
+          // NOTE: _hydrated is intentionally excluded -- it must reset to false on page load
+        };
+      },
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          state._hydrated = true;
+          sessionLogger.debug('Session store rehydrated successfully');
+        }
+      }
     }
   )
 );
@@ -490,11 +569,14 @@ export const useActiveSession = () => useSessionStore((state) => ({
   activeSessionId: state.activeSessionId,
   hasSession: !!state.activeSessionId
 }));
-export const useSessionSelection = () => useSessionStore((state) => ({
-  selectedBacklogItem: state.selectedBacklogItem
+export const useSessionSelection = () => useSelectionCursor((state) => ({
+  selectedBacklogItem: state.itemId
 }));
 export const useSessionProgress = () => useSessionStore((state) => state.getSessionProgress());
 export const useSessionMetadata = () => useSessionStore((state) => state.getSessionMetadata());
+
+// Hydration readiness selector
+export const useSessionHydrated = () => useSessionStore((state) => state._hydrated);
 
 // New selectors for group management
 export const useGroupItems = (groupId: string) => useSessionStore((state) => state.getGroupItems(groupId));

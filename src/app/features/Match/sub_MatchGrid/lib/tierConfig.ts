@@ -3,6 +3,8 @@
  * Centralized tier definitions with visual properties for position-aware smart grid
  */
 
+import { getTierForPositionGeneric, isAtBoundaryGeneric, rangeFromTierConfig } from '@/lib/tiers/boundary';
+
 /**
  * Tier identifiers
  */
@@ -83,7 +85,7 @@ export const DEFAULT_TIERS: TierDefinition[] = [
       glowColor: 'rgba(245, 158, 11, 0.4)',
       textColor: 'text-amber-400',
       scale: 1.05,
-      badgeColor: 'bg-gradient-to-r from-amber-500 to-yellow-400',
+      badgeColor: 'bg-linear-to-r from-amber-500 to-yellow-400',
       shadowIntensity: 0.8,
     },
     layout: {
@@ -106,12 +108,12 @@ export const DEFAULT_TIERS: TierDefinition[] = [
     description: 'Reliable performers - the backbone',
     range: { start: 10, end: 20 },
     style: {
-      gradient: 'from-cyan-500/15 via-blue-500/10 to-transparent',
-      accentColor: '#06b6d4', // cyan-500
+      gradient: 'from-brand/15 via-blue-500/10 to-transparent',
+      accentColor: '#06b6d4', // brand
       glowColor: 'rgba(6, 182, 212, 0.3)',
-      textColor: 'text-cyan-400',
+      textColor: 'text-brand-hover',
       scale: 1.0,
-      badgeColor: 'bg-gradient-to-r from-cyan-500 to-blue-400',
+      badgeColor: 'bg-linear-to-r from-brand to-blue-400',
       shadowIntensity: 0.5,
     },
     layout: {
@@ -139,7 +141,7 @@ export const DEFAULT_TIERS: TierDefinition[] = [
       glowColor: 'rgba(168, 85, 247, 0.25)',
       textColor: 'text-purple-400',
       scale: 0.95,
-      badgeColor: 'bg-gradient-to-r from-purple-500 to-violet-400',
+      badgeColor: 'bg-linear-to-r from-purple-500 to-violet-400',
       shadowIntensity: 0.3,
     },
     layout: {
@@ -167,7 +169,7 @@ export const DEFAULT_TIERS: TierDefinition[] = [
       glowColor: 'rgba(100, 116, 139, 0.2)',
       textColor: 'text-slate-400',
       scale: 0.9,
-      badgeColor: 'bg-gradient-to-r from-slate-500 to-gray-400',
+      badgeColor: 'bg-linear-to-r from-slate-500 to-gray-400',
       shadowIntensity: 0.2,
     },
     layout: {
@@ -186,10 +188,11 @@ export const DEFAULT_TIERS: TierDefinition[] = [
 ];
 
 /**
- * Get tier for a given position
+ * Get tier for a given position.
+ * Delegates to the canonical boundary lookup (exclusive-end convention).
  */
 export function getTierForPosition(position: number, tiers: TierDefinition[] = DEFAULT_TIERS): TierDefinition | null {
-  return tiers.find(tier => position >= tier.range.start && position < tier.range.end) || null;
+  return getTierForPositionGeneric(position, tiers, rangeFromTierConfig) || null;
 }
 
 /**
@@ -201,10 +204,11 @@ export function getTierIdForPosition(position: number, tiers: TierDefinition[] =
 }
 
 /**
- * Check if position is at a tier boundary (last position in tier)
+ * Check if position is at a tier boundary (last position in tier).
+ * Delegates to the canonical boundary utility.
  */
 export function isAtTierBoundary(position: number, tiers: TierDefinition[] = DEFAULT_TIERS): boolean {
-  return tiers.some(tier => position === tier.range.end - 1);
+  return isAtBoundaryGeneric(position, tiers, rangeFromTierConfig);
 }
 
 /**

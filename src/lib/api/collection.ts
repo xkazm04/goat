@@ -25,8 +25,11 @@
  * - collectionApi.getItem()         -> goatApi.items.get()
  */
 
+import { CollectionItem, ItemCategory } from '@/app/features/Collection/types';
+import { extractTitle } from '@/lib/items/item-utils';
+import { apiLogger } from '@/lib/logger';
+
 import { apiClient } from './client';
-import { CollectionItem, CollectionGroup } from '@/app/features/Collection/types';
 
 export interface CollectionApiParams {
   category?: string;
@@ -81,12 +84,12 @@ export const collectionApi = {
   /**
    * Fetch collection groups with optional filtering
    */
-  getGroups: async (params?: Pick<CollectionApiParams, 'category' | 'subcategory'>): Promise<CollectionGroup[]> => {
+  getGroups: async (params?: Pick<CollectionApiParams, 'category' | 'subcategory'>): Promise<ItemCategory[]> => {
     const response = await apiClient.get<any[]>(`${COLLECTION_ENDPOINT}/groups`, params);
 
-    console.log('🔍 API response sample (first 3 groups):', response.slice(0, 3));
+    apiLogger.debug('API response sample (first 3 groups)', response.slice(0, 3));
 
-    // Transform API response to CollectionGroup format
+    // Transform API response to ItemCategory format
     return response.map(group => ({
       id: group.id || group.group_name,
       name: group.group_name || group.name,
@@ -128,7 +131,7 @@ export const collectionApi = {
     // Transform to CollectionItem format
     const items: CollectionItem[] = response.items.map(item => ({
       id: item.id,
-      title: item.name || item.title,
+      title: extractTitle(item),
       image_url: item.image_url,
       description: item.description,
       category: item.category,
@@ -179,7 +182,7 @@ export const collectionApi = {
 
     return response.items.map(item => ({
       id: item.id,
-      title: item.name || item.title,
+      title: extractTitle(item),
       image_url: item.image_url,
       description: item.description,
       category: item.category,

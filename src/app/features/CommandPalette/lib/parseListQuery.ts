@@ -6,8 +6,6 @@
 
 import {
   CATEGORY_CONFIG,
-  CATEGORIES,
-  getInitialSubcategory,
   getDefaultSubcategory
 } from '@/lib/config/category-config';
 

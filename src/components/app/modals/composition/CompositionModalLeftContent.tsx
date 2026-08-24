@@ -1,16 +1,18 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useState } from "react";
-import SetupListSize from "./SetupListSize";
-import SetupTimePeriod from "./SetupTimePeriod";
-import SetupCategory from "./SetupCategory";
+
 import {
   CATEGORIES,
   getSubcategories,
   getDefaultSubcategory,
   categoryHasSubcategories,
 } from "@/lib/config/category-config";
+
+import SetupCategory from "./SetupCategory";
+import SetupListSize from "./SetupListSize";
+import SetupTimePeriod from "./SetupTimePeriod";
 
 interface CompositionModalLeftContentProps {
   selectedCategory: string;
@@ -108,7 +110,7 @@ export function CompositionModalLeftContent({
 
       {/* Content Header with enhanced styling */}
       <motion.div 
-        className="mb-8 p-4 rounded-2xl backdrop-blur-sm relative"
+        className="mb-8 p-4 rounded-2xl backdrop-blur-xs relative"
         style={{
           background: `linear-gradient(135deg, ${color.primary}10, ${color.secondary}10)`,
           border: `1px solid ${color.primary}20`,
@@ -150,7 +152,7 @@ export function CompositionModalLeftContent({
             value={customName}
             onChange={(e) => setCustomName(e.target.value)}
             placeholder="Enter your custom ranking name..."
-            className="w-full px-4 py-3 rounded-xl text-slate-200 transition-all duration-200 focus:outline-none placeholder-slate-500 backdrop-blur-sm"
+            className="w-full px-4 py-3 rounded-xl text-slate-200 transition-all duration-200 focus:outline-hidden placeholder-slate-500 backdrop-blur-xs"
             style={{
               background: `
                 linear-gradient(135deg, 

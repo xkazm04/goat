@@ -12,9 +12,12 @@ import React, {
   type ReactNode,
   type TouchEvent as ReactTouchEvent,
 } from 'react';
+
 import { cn } from '@/lib/utils';
-import { useLayout } from '../LayoutManager';
+
 import { GESTURE_THRESHOLDS } from '../constants';
+import { useLayout } from '../LayoutManager';
+
 import type { GestureType } from '../types';
 
 /**

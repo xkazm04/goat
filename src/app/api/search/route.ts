@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+
 import {
   withErrorHandler,
   successResponse,
@@ -12,7 +12,9 @@ import {
   popularityBoost,
   combineScores,
 } from '@/lib/search';
-import type { SearchDomain, SearchFacet } from '@/lib/search';
+import { createClient, sanitizeFilterValue, escapeIlikeWildcards } from '@/lib/supabase/server';
+
+import type { SearchDomain, SearchFacet, DomainStatus } from '@/lib/search';
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic';
@@ -47,6 +49,7 @@ interface ApiSearchResponse {
   totalResults: number;
   results: ApiSearchResult[];
   resultsByDomain: Partial<Record<SearchDomain, ApiSearchResult[]>>;
+  domainStatus: Partial<Record<SearchDomain, DomainStatus>>;
   suggestions: ApiSearchSuggestion[];
   facets: SearchFacet[];
   executionTime: number;
@@ -98,10 +101,24 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
   const includeSuggestions = searchParams.get('includeSuggestions') !== 'false';
   const userId = searchParams.get('userId');
 
-  // Search all domains in parallel
-  const searchPromises = domains.map(domain =>
-    searchDomain(supabase, domain, query, { category, limit, userId })
-  );
+  // Search all domains in parallel, tracking per-domain status
+  const domainStatusMap: Partial<Record<SearchDomain, DomainStatus>> = {};
+  const searchPromises = domains.map(async (domain) => {
+    const domainStart = performance.now();
+    try {
+      const results = await searchDomain(supabase, domain, query, { category, limit, userId });
+      domainStatusMap[domain] = { status: 'success', durationMs: performance.now() - domainStart };
+      return results;
+    } catch (error) {
+      console.error(`[/api/search] Domain "${domain}" failed:`, error);
+      domainStatusMap[domain] = {
+        status: 'error',
+        error: error instanceof Error ? error.message : String(error),
+        durationMs: performance.now() - domainStart,
+      };
+      return [];
+    }
+  });
 
   const domainResults = await Promise.all(searchPromises);
 
@@ -162,6 +179,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
     totalResults: allResults.length,
     results: allResults.slice(0, limit),
     resultsByDomain,
+    domainStatus: domainStatusMap,
     suggestions,
     facets,
     executionTime: Math.round(performance.now() - startTime),
@@ -208,7 +226,7 @@ async function searchLists(
   let dbQuery = supabase
     .from('lists')
     .select('id, title, description, category, subcategory, created_at, user_id')
-    .ilike('title', `%${query}%`)
+    .ilike('title', `%${escapeIlikeWildcards(query)}%`)
     .order('created_at', { ascending: false })
     .limit(options.limit * 2); // Fetch more to allow for scoring/filtering
 
@@ -262,7 +280,7 @@ async function searchItems(
   const dbQuery = supabase
     .from('top_items')
     .select('id, name, group_id, image_url')
-    .ilike('name', `%${query}%`)
+    .ilike('name', `%${escapeIlikeWildcards(query)}%`)
     .limit(options.limit * 2);
 
   const { data, error } = await dbQuery;
@@ -297,7 +315,7 @@ async function searchGroups(
   let dbQuery = supabase
     .from('top_groups')
     .select('id, name, category, subcategory, description, item_count')
-    .ilike('name', `%${query}%`)
+    .ilike('name', `%${escapeIlikeWildcards(query)}%`)
     .limit(options.limit * 2);
 
   if (options.category) {
@@ -346,7 +364,7 @@ async function searchBlueprints(
   let dbQuery = supabase
     .from('blueprints')
     .select('id, slug, title, description, category')
-    .or(`title.ilike.%${query}%,description.ilike.%${query}%`)
+    .or(`title.ilike.%${sanitizeFilterValue(escapeIlikeWildcards(query))}%,description.ilike.%${sanitizeFilterValue(escapeIlikeWildcards(query))}%`)
     .limit(options.limit * 2);
 
   if (options.category) {

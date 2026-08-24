@@ -1,5 +1,6 @@
-import { Metadata } from "next";
 import { createClient } from "@supabase/supabase-js";
+import { Metadata } from "next";
+
 import type { OGCardLayout } from "@/lib/og/types";
 
 interface LayoutProps {
@@ -69,13 +70,16 @@ export async function generateMetadata({ params }: LayoutProps): Promise<Metadat
 
   const title = `${ranking.title} | G.O.A.T.`;
 
-  // Generate rich description with top items
+  // Generate rich description with attribution and top items
+  const attribution = ranking.display_name
+    ? `${ranking.display_name}'s Top ${ranking.items?.length || 10} ${ranking.category}`
+    : `Someone ranked their Top ${ranking.items?.length || 10} ${ranking.category}`;
   const topItems = (ranking.items || []).slice(0, 3);
   const itemsText = topItems.map((item: { title: string }, i: number) => `${i + 1}. ${item.title}`).join(", ");
   const moreCount = (ranking.items?.length || 0) - 3;
   const description = moreCount > 0
-    ? `Top ${ranking.items?.length || 10} ${ranking.category}: ${itemsText}... and ${moreCount} more. Think you can do better? Challenge it now!`
-    : `Top ${ranking.items?.length || 10} ${ranking.category}: ${itemsText}. Think you can do better? Challenge it now!`;
+    ? `${attribution}: ${itemsText}... and ${moreCount} more. Think you can do better? Challenge it now!`
+    : `${attribution}: ${itemsText}. Think you can do better? Challenge it now!`;
 
   return {
     title,

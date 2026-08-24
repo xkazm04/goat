@@ -1,17 +1,9 @@
-import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useTempUser } from "@/hooks/use-temp-user";
-import { useListStore } from "@/stores/use-list-store";
 import { useRouter } from "next/navigation";
-import { CompositionResult } from "@/types/composition-to-api";
+import { useState, useCallback, useRef } from "react";
+
 import { ShimmerBtn } from "@/components/app/button/AnimButtons";
-import { ListIntent } from "@/types/list-intent";
-import { listIntentToMetadata } from "@/types/list-intent-transformers";
-import { CreationProgressIndicator, CreationStep } from "./sub_CreateList/components/CreationProgressIndicator";
-import {
-  listCreationService,
-  CreationStep as ServiceCreationStep,
-} from "@/services/list-creation-service";
+import { useTempUser } from "@/hooks/use-temp-user";
 import { toast } from "@/hooks/use-toast";
 import {
   ctaButtonVariants,
@@ -20,6 +12,17 @@ import {
   confettiVariants,
   prefersReducedMotion,
 } from "@/lib/animations/micro-interactions";
+import {
+  listCreationService,
+  CreationStep as ServiceCreationStep,
+} from "@/services/list-creation-service";
+import { useListStore } from "@/stores/use-list-store";
+import { CompositionResult } from "@/types/composition-to-api";
+import { ListIntent } from "@/types/list-intent";
+import { listIntentToMetadata } from "@/types/list-intent-transformers";
+
+import { CreationProgressIndicator, CreationStep } from "./sub_CreateList/components/CreationProgressIndicator";
+
 
 // Confetti colors
 const CONFETTI_COLORS = [
@@ -53,6 +56,9 @@ const ListCreateButton = ({ intent, createListMutation, onSuccess, onClose }: Pr
     const [creationStep, setCreationStep] = useState<CreationStep | null>(null);
     const [showSuccess, setShowSuccess] = useState(false);
     const [isPressed, setIsPressed] = useState(false);
+    // Synchronous re-entrancy guard: creationStep/isPending update async, so a
+    // fast double-click could pass the disabled check twice and create two lists.
+    const isCreatingRef = useRef(false);
 
     const reducedMotion = prefersReducedMotion();
     const isButtonDisabled = createListMutation.isPending || !isLoaded || !tempUserId || creationStep !== null;
@@ -64,8 +70,9 @@ const ListCreateButton = ({ intent, createListMutation, onSuccess, onClose }: Pr
     };
 
     const handleCreate = useCallback(async () => {
-        // Early return if button is disabled
-        if (isButtonDisabled) {
+        // Early return if disabled or a creation is already in flight (sync ref
+        // closes the double-click window that derived state can't).
+        if (isButtonDisabled || isCreatingRef.current) {
             return;
         }
 
@@ -77,9 +84,11 @@ const ListCreateButton = ({ intent, createListMutation, onSuccess, onClose }: Pr
             return;
         }
 
+        isCreatingRef.current = true;
         setIsCreating(true);
         setCreationError(null);
 
+        try {
         // Progress handler that maps service steps to component steps
         const onProgress = (step: ServiceCreationStep) => {
             // Map service steps to component steps (they use the same type)
@@ -131,12 +140,12 @@ const ListCreateButton = ({ intent, createListMutation, onSuccess, onClose }: Pr
                 success: true,
                 listId: result.listId,
                 message: `Successfully created "${result.list.title}"!`,
-                redirectUrl: `/match-test?list=${result.listId}`
+                redirectUrl: `/goat?list=${result.listId}`
             };
             onSuccess?.(compositionResult);
             onClose();
 
-            router.push(`/match-test?list=${result.listId}`);
+            router.push(`/goat?list=${result.listId}`);
         } else {
             // Handle error
             setCreationStep(null);
@@ -156,8 +165,15 @@ const ListCreateButton = ({ intent, createListMutation, onSuccess, onClose }: Pr
             };
             onSuccess?.(failureResult);
         }
-
-        setIsCreating(false);
+        } finally {
+            isCreatingRef.current = false;
+            setIsCreating(false);
+            // Clear the in-progress step on every exit — the success path never
+            // reset it, leaving the button stuck disabled (and the progress
+            // spinner visible) if navigation was blocked or the component stayed
+            // mounted.
+            setCreationStep(null);
+        }
     }, [
         isButtonDisabled,
         isLoaded,
@@ -184,7 +200,7 @@ const ListCreateButton = ({ intent, createListMutation, onSuccess, onClose }: Pr
                         {[0, 1, 2].map((i) => (
                             <motion.div
                                 key={`pulse-${i}`}
-                                className="absolute inset-0 rounded-2xl pointer-events-none"
+                                className="absolute inset-0 rounded-container pointer-events-none"
                                 style={{
                                     border: '2px solid',
                                     borderColor: intent.color.primary,
@@ -227,9 +243,7 @@ const ListCreateButton = ({ intent, createListMutation, onSuccess, onClose }: Pr
                 aria-busy={isPending}
                 aria-label={isPending ? "Creating list..." : "Create list"}
                 className={`
-                    relative rounded-2xl
-                    focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
-                    focus-visible:ring-blue-500/80 focus-visible:ring-offset-slate-900
+                    relative rounded-container focus-ring
                     ${isButtonDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}
                 `}
                 variants={ctaButtonVariants}
@@ -249,7 +263,7 @@ const ListCreateButton = ({ intent, createListMutation, onSuccess, onClose }: Pr
                 <AnimatePresence>
                     {showSuccess && (
                         <motion.div
-                            className="absolute inset-0 flex items-center justify-center z-10 rounded-2xl"
+                            className="absolute inset-0 flex items-center justify-center z-10 rounded-container"
                             style={{ backgroundColor: `${intent.color.primary}20` }}
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}

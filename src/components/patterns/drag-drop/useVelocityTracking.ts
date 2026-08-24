@@ -20,6 +20,7 @@
  */
 
 import { useRef, useCallback, useMemo } from 'react';
+
 import type { Vector2D, DragVelocity, DragPosition, UseVelocityTrackingReturn } from './types';
 
 export interface VelocityTrackingConfig {

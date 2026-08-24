@@ -2,6 +2,8 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 
+import { DURATION } from '@/lib/animations/motion-presets';
+
 interface StickyContextProps {
   isVisible: boolean;
   categoryName: string;
@@ -28,15 +30,15 @@ export function StickyContext({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 20 }}
-          transition={{ duration: 0.2 }}
-          className="fixed bottom-[620px] left-4 z-50 pointer-events-none"
+          transition={{ duration: DURATION.fast }}
+          className="fixed bottom-[620px] left-4 z-sticky pointer-events-none"
         >
-          <div className="bg-gray-900/95 backdrop-blur-md border border-gray-700 rounded-lg px-4 py-2 shadow-2xl">
+          <div className="bg-slate-900/95 backdrop-blur-md border border-slate-700 rounded-card px-4 py-2 shadow-2xl">
             <div className="flex items-center gap-3">
               {/* Category icon */}
-              <div className="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full bg-brand/20 flex items-center justify-center">
                 <svg
-                  className="w-4 h-4 text-cyan-400"
+                  className="w-4 h-4 text-brand-hover"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -52,13 +54,13 @@ export function StickyContext({
 
               {/* Category info */}
               <div>
-                <div className="text-xs text-gray-400">
+                <div className="text-xs text-slate-400">
                   {isDragging ? "Dragging from:" : "Viewing:"}
                 </div>
                 <div className="text-sm font-semibold text-white">
                   {selectedGroupName || categoryName}
                 </div>
-                <div className="text-xs text-gray-500">
+                <div className="text-xs text-slate-500">
                   {itemCount} {itemCount === 1 ? "item" : "items"}
                   {isDragging && " remaining"}
                 </div>
@@ -77,7 +79,7 @@ export function StickyContext({
                       repeat: Infinity,
                       ease: "easeInOut"
                     }}
-                    className="w-2 h-2 bg-cyan-400 rounded-full"
+                    className="w-2 h-2 bg-brand-hover rounded-full"
                   />
                 </div>
               )}

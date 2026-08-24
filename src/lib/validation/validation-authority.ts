@@ -17,6 +17,7 @@
  * - Easy to modify validation rules in one place
  */
 
+import { extractTitle } from '@/lib/items/item-utils';
 import { BacklogItem } from '@/types/backlog-groups';
 import { GridItemType } from '@/types/match';
 
@@ -249,7 +250,7 @@ export class ValidationAuthority {
 
       // Check source has an item
       const sourceItem = gridContext.gridItems[fromPosition];
-      if (!sourceItem || !sourceItem.matched) {
+      if (!sourceItem || !sourceItem.context.matched) {
         return {
           isValid: false,
           errorCode: 'SOURCE_NOT_FOUND',
@@ -315,15 +316,15 @@ export class ValidationAuthority {
 
     // Check if occupied
     const targetSlot = gridItems[position];
-    if (targetSlot && targetSlot.matched) {
+    if (targetSlot && targetSlot.context.matched) {
       return {
         isValid: false,
         errorCode: 'TARGET_POSITION_OCCUPIED',
         errorMessage: `Position ${position + 1} already has an item. Drop on an empty slot or swap items.`,
         debugInfo: {
           position,
-          occupyingItem: targetSlot.title,
-          occupyingItemId: targetSlot.backlogItemId,
+          occupyingItem: targetSlot.item?.title ?? '',
+          occupyingItemId: targetSlot.item?.id,
         },
       };
     }
@@ -385,7 +386,7 @@ export class ValidationAuthority {
         isValid: false,
         errorCode: 'ITEM_LOCKED',
         errorMessage: 'This item is currently being moved. Please wait.',
-        debugInfo: { itemId, itemTitle: item.name || item.title },
+        debugInfo: { itemId, itemTitle: extractTitle(item) },
       };
     }
 
@@ -395,7 +396,7 @@ export class ValidationAuthority {
         isValid: false,
         errorCode: 'SOURCE_ALREADY_USED',
         errorMessage: 'This item is already placed on the grid. Remove it first to move it.',
-        debugInfo: { itemId, itemTitle: item.name || item.title },
+        debugInfo: { itemId, itemTitle: extractTitle(item) },
       };
     }
 
@@ -428,7 +429,7 @@ export class ValidationAuthority {
     if (!boundsResult.isValid) return false;
 
     const slot = gridContext.gridItems[position];
-    return slot && slot.matched;
+    return slot && slot.context.matched;
   }
 }
 

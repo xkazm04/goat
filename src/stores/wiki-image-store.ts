@@ -7,14 +7,18 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+
 import { fetchItemImage } from "@/lib/api/wiki-images";
 import { wikiImageLogger } from "@/lib/logger";
+
+/** How long failed lookups are cached before retrying (24 hours) */
+const FAILURE_TTL_MS = 24 * 60 * 60 * 1000;
 
 export interface WikiImageCache {
   /** Item title -> Image URL mapping */
   images: Map<string, string>;
-  /** Failed fetches (to avoid retrying) */
-  failures: Set<string>;
+  /** Failed fetches with timestamp (title -> epoch ms) */
+  failures: Map<string, number>;
   /** Currently fetching items */
   fetching: Set<string>;
 }
@@ -49,7 +53,7 @@ export const useWikiImageStore = create<WikiImageStore>()(
   persist(
     (set, get) => ({
       images: new Map(),
-      failures: new Set(),
+      failures: new Map(),
       fetching: new Set(),
 
       getImage: (itemTitle: string) => {
@@ -62,7 +66,18 @@ export const useWikiImageStore = create<WikiImageStore>()(
       },
 
       hasFailed: (itemTitle: string) => {
-        return get().failures.has(itemTitle);
+        const failedAt = get().failures.get(itemTitle);
+        if (failedAt === undefined) return false;
+        if (Date.now() - failedAt > FAILURE_TTL_MS) {
+          // TTL expired — allow retry
+          set((state) => {
+            const newFailures = new Map(state.failures);
+            newFailures.delete(itemTitle);
+            return { failures: newFailures };
+          });
+          return false;
+        }
+        return true;
       },
 
       fetchImage: async (itemTitle: string) => {
@@ -78,8 +93,8 @@ export const useWikiImageStore = create<WikiImageStore>()(
           return null;
         }
 
-        // Skip if previously failed
-        if (state.failures.has(itemTitle)) {
+        // Skip if previously failed (and TTL hasn't expired)
+        if (get().hasFailed(itemTitle)) {
           return null;
         }
 
@@ -106,10 +121,10 @@ export const useWikiImageStore = create<WikiImageStore>()(
             wikiImageLogger.debug("Cached Wikipedia image for:", itemTitle);
             return imageUrl;
           } else {
-            // Mark as failed to avoid retrying
+            // Mark as failed with timestamp for TTL-based retry
             set((state) => {
-              const newFailures = new Set(state.failures);
-              newFailures.add(itemTitle);
+              const newFailures = new Map(state.failures);
+              newFailures.set(itemTitle, Date.now());
               const newFetching = new Set(state.fetching);
               newFetching.delete(itemTitle);
               return { failures: newFailures, fetching: newFetching };
@@ -119,10 +134,10 @@ export const useWikiImageStore = create<WikiImageStore>()(
           }
         } catch (error) {
           wikiImageLogger.error("Error fetching Wikipedia image:", error);
-          // Mark as failed
+          // Mark as failed with timestamp for TTL-based retry
           set((state) => {
-            const newFailures = new Set(state.failures);
-            newFailures.add(itemTitle);
+            const newFailures = new Map(state.failures);
+            newFailures.set(itemTitle, Date.now());
             const newFetching = new Set(state.fetching);
             newFetching.delete(itemTitle);
             return { failures: newFailures, fetching: newFetching };
@@ -135,7 +150,7 @@ export const useWikiImageStore = create<WikiImageStore>()(
         set((state) => {
           const newImages = new Map(state.images);
           newImages.set(itemTitle, url);
-          const newFailures = new Set(state.failures);
+          const newFailures = new Map(state.failures);
           newFailures.delete(itemTitle);
           return { images: newImages, failures: newFailures };
         });
@@ -145,7 +160,7 @@ export const useWikiImageStore = create<WikiImageStore>()(
         set((state) => {
           const newImages = new Map(state.images);
           newImages.delete(itemTitle);
-          const newFailures = new Set(state.failures);
+          const newFailures = new Map(state.failures);
           newFailures.delete(itemTitle);
           return { images: newImages, failures: newFailures };
         });
@@ -154,7 +169,7 @@ export const useWikiImageStore = create<WikiImageStore>()(
       clearAll: () => {
         set({
           images: new Map(),
-          failures: new Set(),
+          failures: new Map(),
           fetching: new Set(),
         });
       },
@@ -169,16 +184,33 @@ export const useWikiImageStore = create<WikiImageStore>()(
 
           try {
             const parsed = JSON.parse(str);
+            // Migrate legacy failures format (array of strings → object with timestamps)
+            const rawFailures = parsed.state.failures;
+            let failuresMap: Map<string, number>;
+            if (Array.isArray(rawFailures)) {
+              // Legacy format: string[] — treat as already expired so they get retried
+              failuresMap = new Map(rawFailures.map((key: string) => [key, 0]));
+            } else {
+              failuresMap = new Map(Object.entries(rawFailures || {}).map(
+                ([k, v]) => [k, v as number]
+              ));
+            }
             return {
               state: {
                 ...parsed.state,
                 images: new Map(Object.entries(parsed.state.images || {})),
-                failures: new Set(parsed.state.failures || []),
+                failures: failuresMap,
                 fetching: new Set(), // Don't persist fetching state
               },
             };
           } catch (error) {
-            wikiImageLogger.error("Failed to parse wiki image cache:", error);
+            // Corrupted entry — log diagnostics for recovery analysis
+            wikiImageLogger.error(
+              `Corrupted localStorage "${name}" (${str.length} chars): ${str.slice(0, 100)}`,
+              error
+            );
+            // Clear the corrupted entry so the store reinitializes cleanly
+            localStorage.removeItem(name);
             return null;
           }
         },
@@ -186,7 +218,7 @@ export const useWikiImageStore = create<WikiImageStore>()(
           const toStore = {
             state: {
               images: Object.fromEntries(value.state.images),
-              failures: Array.from(value.state.failures),
+              failures: Object.fromEntries(value.state.failures),
               // Don't persist fetching state
             },
           };

@@ -11,13 +11,13 @@
  * - Match Page: Backlog items, session data
  */
 
-import { PrefetchManager, type PrefetchTarget } from './PrefetchManager';
-import { PredictionEngine } from './PredictionEngine';
-import { topListsKeys, type FeaturedListsParams } from '@/lib/query-keys/top-lists';
-import { topItemsKeys } from '@/lib/query-keys/top-items';
-import { collectionKeys } from '@/lib/query-keys/collection';
 import { goatApi } from '@/lib/api/goat-api';
 import { CACHE_TTL_MS } from '@/lib/cache/unified-cache';
+import { collectionKeys } from '@/lib/query-keys/collection';
+import { topListsKeys } from '@/lib/query-keys/top-lists';
+
+import { PredictionEngine } from './PredictionEngine';
+import { PrefetchManager, type PrefetchTarget } from './PrefetchManager';
 
 export interface RouteConfig {
   /** Route pattern (can include :param syntax) */

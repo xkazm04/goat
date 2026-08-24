@@ -1,12 +1,13 @@
 import { NextRequest } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { BlueprintRow, blueprintFromRow } from '@/types/blueprint';
+
 import {
   withErrorHandler,
   fromSupabaseError,
   notFound,
   createdResponse,
 } from '@/lib/errors';
+import { createClient } from '@/lib/supabase/server';
+import { BlueprintRow, blueprintFromRow } from '@/types/blueprint';
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic';
@@ -44,7 +45,7 @@ export const POST = withErrorHandler(
       throw fromSupabaseError(findError);
     }
 
-    const blueprint = blueprintFromRow(blueprintData as BlueprintRow);
+    const blueprint = blueprintFromRow(blueprintData as unknown as BlueprintRow);
 
     // Create a new list based on the blueprint
     const listData = {

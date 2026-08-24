@@ -78,6 +78,65 @@ export const gradients = {
   centerGlow: `
     radial-gradient(circle_at_center, rgba(6, 182, 212, 0.15) 0%, rgba(5, 5, 5, 0) 50%, rgba(5, 5, 5, 0) 100%)
   `,
+
+  // Surface gradients — card/panel/dropdown backgrounds
+  cardSurface: `rgba(10, 10, 16, 0.8)`,
+  featuredCardSurface: `rgba(15, 23, 42, 0.6)`,
+  userCardSurface: `linear-gradient(135deg, rgba(20, 28, 48, 0.9), rgba(30, 40, 60, 0.8))`,
+  panelSurface: `
+    linear-gradient(135deg,
+      rgba(15, 23, 42, 0.8) 0%,
+      rgba(30, 41, 59, 0.6) 50%,
+      rgba(15, 23, 42, 0.8) 100%
+    )
+  `,
+  inputSurface: `
+    linear-gradient(135deg,
+      rgba(30, 41, 59, 0.8) 0%,
+      rgba(51, 65, 85, 0.9) 100%
+    )
+  `,
+  dropdownSurface: `
+    linear-gradient(135deg,
+      rgba(15, 23, 42, 0.98) 0%,
+      rgba(30, 41, 59, 0.98) 100%
+    )
+  `,
+  modalSurface: `linear-gradient(135deg, rgba(15, 20, 35, 0.98), rgba(25, 35, 55, 0.98))`,
+
+  // Amber/brand gradients — G.O.A.T. title and accents
+  amberTitle: `
+    linear-gradient(180deg,
+      #fff9e6 0%,
+      #fcd34d 15%,
+      #fbbf24 30%,
+      #f59e0b 50%,
+      #d97706 70%,
+      #b45309 85%,
+      #92400e 100%
+    )
+  `,
+  amberDot: `linear-gradient(180deg, #fcd34d 0%, #f59e0b 100%)`,
+  amberAccent: `linear-gradient(135deg, #fcd34d 0%, #f59e0b 100%)`,
+  amberGlow: `radial-gradient(circle, rgba(251, 191, 36, 0.4) 0%, transparent 60%)`,
+  amberBgGlow: `radial-gradient(ellipse at center, rgba(251, 191, 36, 0.2) 0%, rgba(245, 158, 11, 0.1) 30%, transparent 60%)`,
+
+  // Pre-rendered soft glow variants — simulate blur() without GPU rasterization cost
+  // These use wider, softer gradient stops instead of filter: blur()
+  amberGlowSoft: `radial-gradient(circle, rgba(251, 191, 36, 0.3) 0%, rgba(251, 191, 36, 0.12) 35%, transparent 70%)`,
+  amberBgGlowSoft: `radial-gradient(ellipse at center, rgba(251, 191, 36, 0.15) 0%, rgba(245, 158, 11, 0.06) 40%, transparent 70%)`,
+  amberLetterGlowSoft: `radial-gradient(circle, rgba(251, 191, 36, 0.25) 0%, rgba(251, 191, 36, 0.08) 40%, transparent 75%)`,
+  amberSubtitleGlowSoft: `radial-gradient(ellipse at center, rgba(251, 191, 36, 0.08) 0%, rgba(251, 191, 36, 0.03) 40%, transparent 75%)`,
+  amberSubtitle: `linear-gradient(90deg, rgba(251, 191, 36, 0.6), #fbbf24, rgba(251, 191, 36, 0.6))`,
+  amberSubtitleGlow: `radial-gradient(ellipse at center, rgba(251, 191, 36, 0.1) 0%, transparent 70%)`,
+  amberRay: `linear-gradient(to bottom, rgba(251, 191, 36, 0.3), transparent)`,
+  amberLineLeft: `linear-gradient(90deg, transparent, rgba(251, 191, 36, 0.8))`,
+  amberLineRight: `linear-gradient(90deg, rgba(251, 191, 36, 0.8), transparent)`,
+  amberButton: `linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(245, 158, 11, 0.12))`,
+
+  // Action button gradients
+  actionPlay: `linear-gradient(135deg, rgba(59, 130, 246, 0.9), rgba(139, 92, 246, 0.9))`,
+  actionDelete: `linear-gradient(135deg, rgba(220, 38, 38, 0.9), rgba(185, 28, 28, 0.9))`,
 } as const;
 
 // Dynamic gradient generators

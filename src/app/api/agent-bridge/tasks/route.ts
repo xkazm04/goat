@@ -8,6 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+
 import {
   getTaskMemoryManager,
   TaskFilterOptions,
@@ -16,6 +17,7 @@ import {
   TaskStatus,
   TaskPriority,
 } from '@/lib/agent-bridge';
+import { checkAgentBridgeSecret } from '@/lib/agent-bridge/require-secret';
 
 /** Parse array query param */
 function parseArrayParam<T extends string>(param: string | null): T[] | undefined {
@@ -48,6 +50,8 @@ function parseNumberParam(param: string | null, defaultValue?: number): number |
  * - includeExpired: boolean (default: false)
  */
 export async function GET(request: NextRequest) {
+  const authError = checkAgentBridgeSecret(request);
+  if (authError) return authError;
   try {
     const { searchParams } = new URL(request.url);
     const manager = getTaskMemoryManager();
@@ -98,6 +102,8 @@ export async function GET(request: NextRequest) {
  * - tags?: string[]
  */
 export async function POST(request: NextRequest) {
+  const authError = checkAgentBridgeSecret(request);
+  if (authError) return authError;
   try {
     const body = await request.json();
     const manager = getTaskMemoryManager();

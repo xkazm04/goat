@@ -1,4 +1,4 @@
-import { CollectionGroup, CollectionItem } from "@/app/features/Collection/types";
+import { ItemCategory, CollectionItem } from "@/app/features/Collection/types";
 
 export interface FlattenedItem {
   item: CollectionItem;
@@ -14,7 +14,7 @@ export interface ContinuousRow {
 }
 
 export interface VirtualizedCollectionGridProps {
-  displayGroups: CollectionGroup[];
+  displayGroups: ItemCategory[];
   searchQuery?: string;
   sortByConsensus?: boolean;
   getQuickSelectNumber?: (itemId: string) => number | null;
@@ -25,14 +25,16 @@ export interface VirtualizedCollectionGridProps {
   itemWidth?: number;
   onItemClick?: (item: CollectionItem) => void;
   selectedItemId?: string;
+  /** Category string for selecting category-aware empty state illustrations */
+  category?: string;
 }
 
-export function generateSortCacheKey(groups: CollectionGroup[], consensusTimestamp: number | null): string {
+export function generateSortCacheKey(groups: ItemCategory[], consensusTimestamp: number | null): string {
   const itemIds = groups.flatMap(g => g.items?.map(i => i.id) || []).join(',');
   return `${itemIds}:${consensusTimestamp || 0}`;
 }
 
-export function flattenGroups(groups: CollectionGroup[]): FlattenedItem[] {
+export function flattenGroups(groups: ItemCategory[]): FlattenedItem[] {
   const items: FlattenedItem[] = [];
   let globalIndex = 0;
   groups.forEach(group => {

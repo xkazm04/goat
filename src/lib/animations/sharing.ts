@@ -7,35 +7,10 @@
 
 import type { Variants, Transition } from 'framer-motion';
 
-// ============================================================================
-// Animation Constants
-// ============================================================================
+import { DURATION, EASING } from './motion-presets';
 
-/** Standard easing curves */
-export const EASING = {
-  /** For entrances and reveals */
-  easeOut: [0.16, 1, 0.3, 1] as const,
-  /** For interactive feedback */
-  easeInOut: [0.4, 0, 0.2, 1] as const,
-  /** Bouncy spring effect */
-  spring: [0.34, 1.56, 0.64, 1] as const,
-  /** Smooth deceleration */
-  decel: [0, 0.55, 0.45, 1] as const,
-} as const;
-
-/** Standard durations in seconds */
-export const DURATION = {
-  /** Micro-interactions (hover, press) */
-  micro: 0.15,
-  /** Small feedback animations */
-  fast: 0.2,
-  /** Standard transitions */
-  normal: 0.3,
-  /** Page/modal transitions */
-  slow: 0.5,
-  /** Celebration animations */
-  celebration: 0.8,
-} as const;
+// Re-export canonical tokens so existing consumers keep working.
+export { DURATION, EASING };
 
 /** Stagger delay between items */
 export const STAGGER = {
@@ -144,14 +119,14 @@ export const socialButtonVariants: Variants = {
   hover: {
     scale: 1.08,
     transition: {
-      duration: DURATION.fast,
+      duration: DURATION.quick,
       ease: EASING.easeOut,
     },
   },
   tap: {
     scale: 0.95,
     transition: {
-      duration: DURATION.micro,
+      duration: DURATION.quick,
     },
   },
 };
@@ -176,7 +151,7 @@ export const copyConfirmVariants: Variants = {
     opacity: 0,
     scale: 0.5,
     transition: {
-      duration: DURATION.fast,
+      duration: DURATION.quick,
     },
   },
 };
@@ -191,7 +166,7 @@ export const celebrationPulseVariants: Variants = {
     opacity: [0, 1, 0.8, 0],
     scale: [0.5, 1.2, 1.4, 1.6],
     transition: {
-      duration: DURATION.celebration,
+      duration: DURATION.dramatic,
       ease: EASING.easeOut,
     },
   },
@@ -264,7 +239,7 @@ export const progressVariants: Variants = {
   visible: (progress: number) => ({
     scaleX: progress,
     transition: {
-      duration: DURATION.fast,
+      duration: DURATION.quick,
       ease: EASING.easeOut,
     },
   }),
@@ -289,7 +264,7 @@ export const smoothTransition: Transition = {
 
 /** Fast micro-interaction transition */
 export const microTransition: Transition = {
-  duration: DURATION.micro,
+  duration: DURATION.quick,
   ease: EASING.easeOut,
 };
 

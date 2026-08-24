@@ -5,6 +5,26 @@
  *
  * Integrates FilterEngine, FullTextSearcher, and SmartQueryParser
  * with the Collection system. Provides unified search and filter capabilities.
+ *
+ * ## Ownership Contract
+ *
+ * This provider owns the **runtime** filter state — the canonical FilterConfig
+ * that the FilterEngine evaluates against collection items each render cycle.
+ * Any component that needs to read or write the active filter must go through
+ * the hooks exported here (useFilterIntegration, useFilterActions, etc.).
+ *
+ * The visual FilterBuilder (backed by filter-builder-store) owns the
+ * authoring representation. To connect the two, use `useFilterBuilderSync()`
+ * which calls `toFilterConfig()` on the builder store and pushes the result
+ * into this provider via `setFilterConfig()`.
+ *
+ * ### Data flow (unidirectional)
+ *
+ *   FilterBuilderStore (authoring)
+ *       → toFilterConfig()
+ *           → this provider's setFilterConfig()  (runtime, canonical)
+ *               → FilterEngine.apply(items, config)
+ *                   → filteredItems (consumed by UI)
  */
 
 import React, {
@@ -17,12 +37,14 @@ import React, {
   useRef,
   ReactNode,
 } from 'react';
-import { FilterEngine } from './FilterEngine';
-import { FullTextSearcher, createCollectionSearcher, type SearchResultItem, type SearchStats } from './FullTextSearcher';
-import { SmartQueryParser, parseSmartQuery, type ParseResult, type QuerySuggestion } from './SmartQueryParser';
-import { FILTER_PRESETS, type FilterPresetDefinition, searchPresets } from './presets';
-import type { FilterConfig, FilterCondition, FilterCombinator, FilterResult } from './types';
+
 import { EMPTY_FILTER_CONFIG } from './constants';
+import { FilterEngine } from './FilterEngine';
+import { FullTextSearcher, createCollectionSearcher, type SearchStats } from './FullTextSearcher';
+import { FILTER_PRESETS, type FilterPresetDefinition, searchPresets } from './presets';
+import { SmartQueryParser, type ParseResult, type QuerySuggestion } from './SmartQueryParser';
+
+import type { FilterConfig, FilterCondition, FilterCombinator, FilterResult, SortConfig } from './types';
 
 /**
  * Collection item type (matches Collection types)
@@ -59,6 +81,8 @@ export interface SearchHistoryEntry {
 export interface FilterIntegrationState {
   // Search
   searchQuery: string;
+  /** The display query updates instantly on every keystroke (fast path) */
+  displayQuery: string;
   searchResults: FilterableItem[];
   searchStats: SearchStats | null;
   isSearching: boolean;
@@ -69,6 +93,7 @@ export interface FilterIntegrationState {
 
   // Filter config
   filterConfig: FilterConfig;
+  sortConfig: SortConfig | null;
   activePresetId: string | null;
 
   // Results
@@ -91,6 +116,9 @@ export interface FilterIntegrationActions {
   // Search
   setSearchQuery: (query: string) => void;
   clearSearch: () => void;
+
+  // Sort
+  setSortConfig: (sort: SortConfig | null) => void;
 
   // Filter config
   setFilterConfig: (config: FilterConfig) => void;
@@ -132,8 +160,16 @@ export interface FilterIntegrationContextValue
     FilterIntegrationActions {}
 
 /**
- * Context
+ * Separate contexts: state changes frequently, actions are stable
  */
+const FilterIntegrationStateContext = createContext<FilterIntegrationState | undefined>(
+  undefined
+);
+const FilterIntegrationActionsContext = createContext<FilterIntegrationActions | undefined>(
+  undefined
+);
+
+// Legacy combined context for backward compat with useFilterIntegration
 const FilterIntegrationContext = createContext<FilterIntegrationContextValue | undefined>(
   undefined
 );
@@ -162,7 +198,11 @@ function loadHistory(): SearchHistoryEntry[] {
   try {
     const stored = localStorage.getItem(HISTORY_STORAGE_KEY);
     return stored ? JSON.parse(stored) : [];
-  } catch {
+  } catch (error) {
+    console.warn('[CollectionFilter] loadHistory: failed to load search history from localStorage', {
+      storageKey: HISTORY_STORAGE_KEY,
+      error: error instanceof Error ? error.message : String(error),
+    });
     return [];
   }
 }
@@ -174,8 +214,12 @@ function saveHistory(history: SearchHistoryEntry[]): void {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
-  } catch {
-    // Ignore storage errors
+  } catch (error) {
+    console.warn('[CollectionFilter] saveHistory: failed to persist search history to localStorage', {
+      storageKey: HISTORY_STORAGE_KEY,
+      entryCount: history.length,
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 }
 
@@ -219,7 +263,9 @@ export function FilterIntegrationProvider({
 
   // State
   const [searchQuery, setSearchQueryState] = useState('');
+  const [displayQuery, setDisplayQuery] = useState('');
   const [filterConfig, setFilterConfigState] = useState<FilterConfig>(EMPTY_FILTER_CONFIG);
+  const [sortConfig, setSortConfigState] = useState<SortConfig | null>(null);
   const [activePresetId, setActivePresetId] = useState<string | null>(null);
   const [searchHistory, setSearchHistory] = useState<SearchHistoryEntry[]>(() =>
     persistHistory ? loadHistory() : []
@@ -229,12 +275,44 @@ export function FilterIntegrationProvider({
   // Debounce timer ref
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Build search index when items change
+  // Fingerprint tracking to skip redundant index rebuilds when Zustand/React
+  // produces a new array reference without changing the actual content.
+  const itemsFingerprintRef = useRef<string>('');
+  const indexedItemsRef = useRef<FilterableItem[] | null>(null);
+
+  // Fields to pre-index for O(1) hash lookups in FilterEngine
+  const INDEXED_FIELDS = useMemo(() => ['category', 'used', 'tags', 'subcategory'], []);
+
+  // Build search index and filter field indexes when items change
   useEffect(() => {
-    if (items.length > 0 && searcherRef.current) {
+    if (items.length === 0) return;
+
+    // Fast path: same reference means definitely same data
+    if (items === indexedItemsRef.current) return;
+
+    // Content fingerprint: length + sampled IDs (first, middle, last)
+    const first = items[0]?.id ?? '';
+    const mid = items[Math.floor(items.length / 2)]?.id ?? '';
+    const last = items[items.length - 1]?.id ?? '';
+    const fingerprint = `${items.length}:${first}:${mid}:${last}`;
+
+    if (fingerprint === itemsFingerprintRef.current) {
+      // Content unchanged — update ref but skip expensive rebuild
+      indexedItemsRef.current = items;
+      return;
+    }
+
+    // Content changed — rebuild indexes
+    itemsFingerprintRef.current = fingerprint;
+    indexedItemsRef.current = items;
+
+    if (searcherRef.current) {
       searcherRef.current.buildIndex(items);
     }
-  }, [items]);
+    if (filterEngineRef.current) {
+      filterEngineRef.current.rebuildIndexes(items, INDEXED_FIELDS);
+    }
+  }, [items, INDEXED_FIELDS]);
 
   // Parse query
   const parsedQuery = useMemo(() => {
@@ -242,7 +320,7 @@ export function FilterIntegrationProvider({
     return parserRef.current!.parse(searchQuery);
   }, [searchQuery]);
 
-  // Combined filtering and searching
+  // Combined filtering and searching — minimizes intermediate array allocations
   const { filteredItems, filterResult, searchStats } = useMemo(() => {
     const startTime = performance.now();
 
@@ -250,25 +328,41 @@ export function FilterIntegrationProvider({
     let searchStatsResult: SearchStats | null = null;
     let filterResultData: FilterResult<FilterableItem> | null = null;
 
-    // First: Apply full-text search if there's a search term
-    if (parsedQuery?.searchTerm && searcherRef.current) {
-      const searchResult = searcherRef.current.search(parsedQuery.searchTerm);
-      result = searchResult.results.map((r) => r.item);
-      searchStatsResult = searchResult.stats;
-    } else if (searchQuery.trim() && !parsedQuery?.matches.length && searcherRef.current) {
-      // Pure search query without parsed filters
-      const searchResult = searcherRef.current.search(searchQuery);
-      result = searchResult.results.map((r) => r.item);
-      searchStatsResult = searchResult.stats;
-    }
-
-    // Second: Apply filter config (from smart query or manual filters)
-    const effectiveConfig = parsedQuery?.config || filterConfig;
+    // Merge parsed query conditions with manual filters (instead of replacing)
+    const parsedConfig = parsedQuery?.config;
+    const hasParsedFilters = parsedConfig &&
+      (parsedConfig.conditions.length > 0 || parsedConfig.groups.length > 0);
+    const effectiveConfig = hasParsedFilters
+      ? FilterEngine.mergeConfigs(filterConfig, parsedConfig)
+      : filterConfig;
     const hasFilters =
       effectiveConfig.conditions.length > 0 || effectiveConfig.groups.length > 0;
+    const needsFilterPass = (hasFilters || sortConfig) && filterEngineRef.current;
 
-    if (hasFilters && filterEngineRef.current) {
-      filterResultData = filterEngineRef.current.apply(result, effectiveConfig);
+    // Apply full-text search if there's a search term
+    const searchTerm = parsedQuery?.searchTerm
+      || (searchQuery.trim() && !parsedQuery?.matches.length ? searchQuery : null);
+
+    if (searchTerm && searcherRef.current) {
+      const searchResult = searcherRef.current.search(searchTerm);
+      searchStatsResult = searchResult.stats;
+
+      if (needsFilterPass) {
+        // Feed search results directly to filter engine — extract items inline
+        // to avoid a separate .map() pass creating a throwaway array
+        filterResultData = filterEngineRef.current!.apply(
+          searchResult.results.map((r) => r.item),
+          effectiveConfig,
+          sortConfig,
+        );
+        result = filterResultData.items;
+      } else {
+        // No filter pass needed — extract items (single allocation)
+        result = searchResult.results.map((r) => r.item);
+      }
+    } else if (needsFilterPass) {
+      // No search, just filter/sort
+      filterResultData = filterEngineRef.current!.apply(result, effectiveConfig, sortConfig);
       result = filterResultData.items;
     }
 
@@ -281,7 +375,7 @@ export function FilterIntegrationProvider({
         ? { ...searchStatsResult, executionTime }
         : null,
     };
-  }, [items, searchQuery, parsedQuery, filterConfig]);
+  }, [items, searchQuery, parsedQuery, filterConfig, sortConfig]);
 
   // Suggestions
   const suggestions = useMemo(() => {
@@ -292,7 +386,10 @@ export function FilterIntegrationProvider({
   // Actions
   const setSearchQuery = useCallback(
     (query: string) => {
-      // Debounce search
+      // Fast path: update display query instantly for typing feedback
+      setDisplayQuery(query);
+
+      // Debounce the expensive filter+search pipeline
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }
@@ -307,8 +404,18 @@ export function FilterIntegrationProvider({
   );
 
   const clearSearch = useCallback(() => {
+    setDisplayQuery('');
     setSearchQueryState('');
+    setIsSearching(false);
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
     setActivePresetId(null);
+  }, []);
+
+  const setSortConfig = useCallback((sort: SortConfig | null) => {
+    setSortConfigState(sort);
   }, []);
 
   const setFilterConfig = useCallback((config: FilterConfig) => {
@@ -392,6 +499,7 @@ export function FilterIntegrationProvider({
       setFilterConfigState(parsed.config);
     }
     if (parsed.searchTerm) {
+      setDisplayQuery(parsed.searchTerm);
       setSearchQueryState(parsed.searchTerm);
     }
     setActivePresetId(null);
@@ -479,27 +587,11 @@ export function FilterIntegrationProvider({
     []
   );
 
-  // Build context value
-  const value: FilterIntegrationContextValue = {
-    // State
-    searchQuery,
-    searchResults: filteredItems,
-    searchStats,
-    isSearching,
-    parsedQuery,
-    suggestions,
-    filterConfig,
-    activePresetId,
-    filteredItems,
-    filterResult,
-    searchHistory,
-    totalItems: items.length,
-    matchedItems: filteredItems.length,
-    executionTime: searchStats?.executionTime || filterResult?.executionTime || 0,
-
-    // Actions
+  // Memoize actions (stable references — these never change between renders)
+  const actions: FilterIntegrationActions = useMemo(() => ({
     setSearchQuery,
     clearSearch,
+    setSortConfig,
     setFilterConfig,
     addCondition,
     removeCondition,
@@ -519,12 +611,53 @@ export function FilterIntegrationProvider({
     getSearchSuggestions,
     filterItems,
     searchItems,
-  };
+  }), [
+    setSearchQuery, clearSearch, setSortConfig, setFilterConfig,
+    addCondition, removeCondition, updateCondition, toggleCondition,
+    setCombinator, clearFilters, applyPreset, getPresets, searchFilterPresets,
+    parseQuery, applyParsedQuery, getSuggestions,
+    addToHistory, clearHistory, getHistorySuggestions, getSearchSuggestions,
+    filterItems, searchItems,
+  ]);
+
+  // Memoize state (changes when data changes)
+  const stateValue: FilterIntegrationState = useMemo(() => ({
+    searchQuery,
+    displayQuery,
+    searchResults: filteredItems,
+    searchStats,
+    isSearching,
+    parsedQuery,
+    suggestions,
+    filterConfig,
+    sortConfig,
+    activePresetId,
+    filteredItems,
+    filterResult,
+    searchHistory,
+    totalItems: items.length,
+    matchedItems: filteredItems.length,
+    executionTime: searchStats?.executionTime || filterResult?.executionTime || 0,
+  }), [
+    searchQuery, displayQuery, filteredItems, searchStats, isSearching,
+    parsedQuery, suggestions, filterConfig, sortConfig,
+    activePresetId, filterResult, searchHistory, items.length,
+  ]);
+
+  // Combined value for legacy context consumers
+  const value: FilterIntegrationContextValue = useMemo(
+    () => ({ ...stateValue, ...actions }),
+    [stateValue, actions]
+  );
 
   return (
-    <FilterIntegrationContext.Provider value={value}>
-      {children}
-    </FilterIntegrationContext.Provider>
+    <FilterIntegrationActionsContext.Provider value={actions}>
+      <FilterIntegrationStateContext.Provider value={stateValue}>
+        <FilterIntegrationContext.Provider value={value}>
+          {children}
+        </FilterIntegrationContext.Provider>
+      </FilterIntegrationStateContext.Provider>
+    </FilterIntegrationActionsContext.Provider>
   );
 }
 
@@ -557,6 +690,7 @@ export function useFilterIntegrationOptional(): FilterIntegrationContextValue | 
 export function useSearch() {
   const {
     searchQuery,
+    displayQuery,
     setSearchQuery,
     clearSearch,
     filteredItems,
@@ -569,6 +703,7 @@ export function useSearch() {
 
   return {
     query: searchQuery,
+    displayQuery,
     setQuery: setSearchQuery,
     clear: clearSearch,
     results: filteredItems,
@@ -614,6 +749,39 @@ export function useFilters() {
     activePresetId,
     results: filteredItems,
     filterResult,
+  };
+}
+
+/**
+ * Hook for just filter actions (stable — won't cause re-renders on state changes)
+ */
+export function useFilterActions(): FilterIntegrationActions {
+  const context = useContext(FilterIntegrationActionsContext);
+  if (!context) {
+    throw new Error('useFilterActions must be used within a FilterIntegrationProvider');
+  }
+  return context;
+}
+
+/**
+ * Hook for just filter state (re-renders only when state changes)
+ */
+export function useFilterState(): FilterIntegrationState {
+  const context = useContext(FilterIntegrationStateContext);
+  if (!context) {
+    throw new Error('useFilterState must be used within a FilterIntegrationProvider');
+  }
+  return context;
+}
+
+/**
+ * Hook for sort functionality
+ */
+export function useSort() {
+  const { sortConfig, setSortConfig } = useFilterIntegration();
+  return {
+    sortConfig,
+    setSortConfig,
   };
 }
 

@@ -5,6 +5,8 @@
  * Uses the Wikipedia API to search for and retrieve image URLs.
  */
 
+import { apiLogger } from '@/lib/logger';
+
 export interface WikiImageResult {
   /** Image URL */
   url: string;
@@ -53,7 +55,7 @@ export async function fetchWikipediaImage(
     const searchResults = searchData.query?.search;
 
     if (!searchResults || searchResults.length === 0) {
-      console.log("⚠️ No Wikipedia results for:", searchTerm);
+      apiLogger.debug("No Wikipedia results for: " + searchTerm);
       return null;
     }
 
@@ -79,20 +81,30 @@ export async function fetchWikipediaImage(
     const page = pageData.query?.pages?.[pageId];
 
     if (!page) {
-      console.log("⚠️ No Wikipedia page found for:", searchTerm);
+      apiLogger.debug("No Wikipedia page found for: " + searchTerm);
       return null;
     }
 
-    // Try to get the best quality image
-    const imageUrl =
+    // Try to get the best quality image, preferring raster over SVG
+    let imageUrl: string | null =
       page.original?.source || page.thumbnail?.source || null;
 
     if (!imageUrl) {
-      console.log("⚠️ No image found on Wikipedia for:", searchTerm);
+      apiLogger.debug("No image found on Wikipedia for: " + searchTerm);
       return null;
     }
 
-    console.log("✅ Found Wikipedia image for:", searchTerm);
+    // SVG logos are typically low-value (small icons/wordmarks) — skip them
+    // and fall back to thumbnail if available, otherwise skip entirely
+    if (imageUrl.endsWith('.svg') || imageUrl.includes('.svg/')) {
+      imageUrl = page.thumbnail?.source || null;
+      if (!imageUrl || imageUrl.endsWith('.svg') || imageUrl.includes('.svg/')) {
+        apiLogger.debug("Only SVG image found on Wikipedia for: " + searchTerm + " — skipping");
+        return null;
+      }
+    }
+
+    apiLogger.debug("Found Wikipedia image for: " + searchTerm);
 
     return {
       url: imageUrl,

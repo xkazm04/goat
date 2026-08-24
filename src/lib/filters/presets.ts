@@ -3,7 +3,7 @@
  * Predefined filter configurations for common use cases
  */
 
-import type { FilterConfig, FilterCondition, QuickFilter } from './types';
+import type { FilterConfig, QuickFilter } from './types';
 
 /**
  * Preset category for grouping
@@ -22,6 +22,12 @@ export interface FilterPresetDefinition {
   config: FilterConfig;
   color?: string;
   keywords?: string[]; // For search/autocomplete
+  /** Additional keyword aliases that map to this preset in SmartQueryParser */
+  searchAliases?: string[];
+  /** If true, this preset is included in the default quick filter bar */
+  isDefaultQuickFilter?: boolean;
+  /** Override label when shown as a quick filter (defaults to name) */
+  quickFilterLabel?: string;
 }
 
 /**
@@ -44,6 +50,9 @@ export const FILTER_PRESETS: FilterPresetDefinition[] = [
     category: 'status',
     color: 'blue',
     keywords: ['unplaced', 'available', 'pending', 'backlog'],
+    searchAliases: ['not placed', 'not in grid'],
+    isDefaultQuickFilter: true,
+    quickFilterLabel: 'Unranked',
     config: {
       rootCombinator: 'AND',
       conditions: [
@@ -67,6 +76,7 @@ export const FILTER_PRESETS: FilterPresetDefinition[] = [
     category: 'status',
     color: 'green',
     keywords: ['placed', 'used', 'ranked', 'grid'],
+    searchAliases: ['placed', 'in grid'],
     config: {
       rootCombinator: 'AND',
       conditions: [
@@ -90,6 +100,7 @@ export const FILTER_PRESETS: FilterPresetDefinition[] = [
     category: 'status',
     color: 'yellow',
     keywords: ['unrated', 'no rating', 'unranked'],
+    searchAliases: ['unranked'],
     config: {
       rootCombinator: 'AND',
       conditions: [
@@ -115,6 +126,7 @@ export const FILTER_PRESETS: FilterPresetDefinition[] = [
     category: 'rating',
     color: 'yellow',
     keywords: ['top', 'best', '5 stars', 'excellent'],
+    searchAliases: ['top rated'],
     config: {
       rootCombinator: 'AND',
       conditions: [
@@ -138,6 +150,9 @@ export const FILTER_PRESETS: FilterPresetDefinition[] = [
     category: 'rating',
     color: 'orange',
     keywords: ['high', 'good', '4 stars', 'great'],
+    searchAliases: ['popular'],
+    isDefaultQuickFilter: true,
+    quickFilterLabel: 'Top Rated',
     config: {
       rootCombinator: 'AND',
       conditions: [
@@ -178,6 +193,8 @@ export const FILTER_PRESETS: FilterPresetDefinition[] = [
   },
 
   // Recency presets
+  // NOTE: These use getter functions for date values so they compute fresh
+  // thresholds at access time rather than freezing at module import.
   {
     id: 'recently-added',
     name: 'Recently Added',
@@ -186,19 +203,22 @@ export const FILTER_PRESETS: FilterPresetDefinition[] = [
     category: 'recency',
     color: 'purple',
     keywords: ['recent', 'new', 'latest', 'fresh'],
-    config: {
-      rootCombinator: 'AND',
-      conditions: [
-        {
-          id: condId('recent'),
-          field: 'created_at',
-          operator: 'greater_than',
-          value: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-          valueType: 'date',
-          enabled: true,
-        },
-      ],
-      groups: [],
+    searchAliases: ['recently added'],
+    get config(): FilterConfig {
+      return {
+        rootCombinator: 'AND',
+        conditions: [
+          {
+            id: condId('recent'),
+            field: 'created_at',
+            operator: 'greater_than',
+            value: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+            valueType: 'date',
+            enabled: true,
+          },
+        ],
+        groups: [],
+      };
     },
   },
   {
@@ -209,19 +229,21 @@ export const FILTER_PRESETS: FilterPresetDefinition[] = [
     category: 'recency',
     color: 'cyan',
     keywords: ['month', 'current month'],
-    config: {
-      rootCombinator: 'AND',
-      conditions: [
-        {
-          id: condId('month'),
-          field: 'created_at',
-          operator: 'greater_than',
-          value: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString(),
-          valueType: 'date',
-          enabled: true,
-        },
-      ],
-      groups: [],
+    get config(): FilterConfig {
+      return {
+        rootCombinator: 'AND',
+        conditions: [
+          {
+            id: condId('month'),
+            field: 'created_at',
+            operator: 'greater_than',
+            value: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString(),
+            valueType: 'date',
+            enabled: true,
+          },
+        ],
+        groups: [],
+      };
     },
   },
 
@@ -313,6 +335,8 @@ export const FILTER_PRESETS: FilterPresetDefinition[] = [
     category: 'status',
     color: 'teal',
     keywords: ['tagged', 'labels', 'categorized'],
+    isDefaultQuickFilter: true,
+    quickFilterLabel: 'Tagged',
     config: {
       rootCombinator: 'AND',
       conditions: [
@@ -320,6 +344,31 @@ export const FILTER_PRESETS: FilterPresetDefinition[] = [
           id: condId('tagged'),
           field: 'tags',
           operator: 'is_not_empty',
+          value: null,
+          valueType: 'array',
+          enabled: true,
+        },
+      ],
+      groups: [],
+    },
+  },
+  {
+    id: 'no-tags',
+    name: 'Untagged Items',
+    description: 'Items without tags assigned',
+    icon: '📦',
+    category: 'status',
+    color: 'gray',
+    keywords: ['untagged', 'no labels'],
+    isDefaultQuickFilter: true,
+    quickFilterLabel: 'Untagged',
+    config: {
+      rootCombinator: 'AND',
+      conditions: [
+        {
+          id: condId('untagged'),
+          field: 'tags',
+          operator: 'is_empty',
           value: null,
           valueType: 'array',
           enabled: true,
@@ -368,7 +417,7 @@ export function searchPresets(query: string): FilterPresetDefinition[] {
 export function presetToQuickFilter(preset: FilterPresetDefinition): QuickFilter {
   return {
     id: preset.id,
-    label: preset.name,
+    label: preset.quickFilterLabel || preset.name,
     icon: preset.icon,
     config: preset.config,
     isActive: false,
@@ -384,6 +433,70 @@ export function getPresetsAsQuickFilters(): QuickFilter[] {
     ...presetToQuickFilter(preset),
     order: index,
   }));
+}
+
+/**
+ * Get the default quick filters (presets marked with isDefaultQuickFilter)
+ */
+export function getDefaultQuickFilters(): QuickFilter[] {
+  return FILTER_PRESETS
+    .filter((p) => p.isDefaultQuickFilter)
+    .map((preset, index) => ({
+      ...presetToQuickFilter(preset),
+      order: index,
+    }));
+}
+
+/**
+ * Build a keyword-to-PatternMatch map from FILTER_PRESETS for SmartQueryParser.
+ * Each preset's id, name (lowercased), and searchAliases are mapped to
+ * a PatternMatch derived from the first condition in the preset's config.
+ */
+export function getPresetSearchKeywords(): Record<
+  string,
+  {
+    field: string;
+    operator: string;
+    value: string | number | boolean | null;
+    valueType: string;
+    confidence: number;
+  }
+> {
+  const keywords: Record<
+    string,
+    {
+      field: string;
+      operator: string;
+      value: string | number | boolean | null;
+      valueType: string;
+      confidence: number;
+    }
+  > = {};
+
+  for (const preset of FILTER_PRESETS) {
+    const condition = preset.config.conditions[0];
+    if (!condition) continue;
+
+    const match = {
+      field: condition.field,
+      operator: condition.operator,
+      value: condition.value as string | number | boolean | null,
+      valueType: condition.valueType,
+      confidence: 0.9,
+    };
+
+    // Map the preset id as a keyword
+    keywords[preset.id] = match;
+
+    // Map searchAliases
+    if (preset.searchAliases) {
+      for (const alias of preset.searchAliases) {
+        keywords[alias.toLowerCase()] = match;
+      }
+    }
+  }
+
+  return keywords;
 }
 
 /**

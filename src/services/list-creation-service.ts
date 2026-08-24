@@ -14,6 +14,13 @@
  * - Progress tracking for UI feedback
  */
 
+import { goatApi } from '@/lib/api';
+import {
+  validateListIntentComplete,
+  ListIntentValidationResult,
+  ValidationContext,
+} from '@/lib/validation/list-intent-validator';
+import { useCriteriaStore } from '@/stores/criteria-store';
 import { ListIntent, createListIntent } from '@/types/list-intent';
 import {
   listIntentToCreateRequest,
@@ -23,14 +30,9 @@ import {
   ListMetadata,
   CreateListRequest,
 } from '@/types/list-intent-transformers';
-import {
-  validateListIntentComplete,
-  ListIntentValidationResult,
-  ValidationContext,
-} from '@/lib/validation/list-intent-validator';
-import { goatApi } from '@/lib/api';
+
 import type { ListCreationResponse } from '@/types/top-lists';
-import { useCriteriaStore } from '@/stores/criteria-store';
+
 
 // ============================================================================
 // Types

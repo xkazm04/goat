@@ -6,15 +6,16 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+
+import { extractTitle } from '@/lib/items/item-utils';
+import { getVolatilityLevel } from '@/types/consensus';
+
+import { API_TIER_FEATURES } from '@/types/api-keys';
 import type {
-  ApiKey,
   ApiKeyTier,
-  API_TIER_LIMITS,
-  API_TIER_FEATURES,
   PublicRankingItem,
   WidgetConfig,
 } from '@/types/api-keys';
-import { getVolatilityLevel } from '@/types/consensus';
 
 /**
  * Extract API key from request headers
@@ -158,7 +159,7 @@ export function toPublicRankingItem(
 ): PublicRankingItem {
   const result: PublicRankingItem = {
     id: item.id,
-    name: item.name || item.title || 'Unknown',
+    name: extractTitle(item) || 'Unknown',
     imageUrl: item.image_url || null,
     category: item.category,
     subcategory: item.subcategory || null,
@@ -231,7 +232,7 @@ export function handleCors(request: NextRequest): NextResponse | null {
  */
 export async function validateApiKey(
   key: string
-): Promise<{ valid: boolean; tier: ApiKeyTier; features: typeof API_TIER_FEATURES[ApiKeyTier] } | null> {
+): Promise<{ valid: boolean; tier: ApiKeyTier; keyId: string; features: typeof API_TIER_FEATURES[ApiKeyTier] } | null> {
   // For now, accept any properly formatted key as 'free' tier
   // In production, this would lookup the key in the database
   if (!isValidApiKeyFormat(key)) {
@@ -243,6 +244,7 @@ export async function validateApiKey(
     return {
       valid: true,
       tier: 'free',
+      keyId: 'demo_free',
       features: {
         widgets: true,
         analytics: false,
@@ -259,6 +261,7 @@ export async function validateApiKey(
     return {
       valid: true,
       tier: 'pro',
+      keyId: 'demo_pro',
       features: {
         widgets: true,
         analytics: true,
@@ -271,10 +274,35 @@ export async function validateApiKey(
     };
   }
 
+  // STOPGAP HARDENING (not full key management): when GOAT_API_KEYS is set
+  // (comma-separated), only those keys are accepted, closing the "any
+  // well-formed string is a valid key" hole in production. GOAT_API_KEYS_PRO
+  // (optional) lists pro-tier keys. When unset, the permissive dev/demo
+  // fallback below is preserved so local dev is unaffected.
+  // Real fix: an api_keys table + issuance/lookup (see docs/harness/followups-2026-06-16.md).
+  const allowlist = process.env.GOAT_API_KEYS;
+  if (allowlist) {
+    const allowed = allowlist.split(',').map((k) => k.trim()).filter(Boolean);
+    if (!allowed.includes(key)) {
+      return null;
+    }
+    const proKeys = (process.env.GOAT_API_KEYS_PRO || '').split(',').map((k) => k.trim()).filter(Boolean);
+    const tier: ApiKeyTier = proKeys.includes(key) ? 'pro' : 'free';
+    return {
+      valid: true,
+      tier,
+      keyId: 'key_' + key.slice(5, 13),
+      features: API_TIER_FEATURES[tier],
+    };
+  }
+
   // Default: treat unknown but valid-format keys as free tier
+  // Generate a deterministic keyId from the key itself
+  const keyId = 'key_' + key.slice(5, 13);
   return {
     valid: true,
     tier: 'free',
+    keyId,
     features: {
       widgets: true,
       analytics: false,

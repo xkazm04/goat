@@ -1,19 +1,24 @@
 "use client";
 
-import { useCallback } from "react";
-import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Plus, Crown, Sparkles } from "lucide-react";
-import { useUserLists, useDeleteList } from "@/hooks/use-top-lists";
-import { useTempUser } from "@/hooks/use-temp-user";
-import { usePlayList } from "@/hooks/use-play-list";
-import { toast } from "@/hooks/use-toast";
-import { ListCard } from "./ListCard";
+import { ArrowRight } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useCallback } from "react";
+
 import { ListGrid } from "@/components/ui/list-grid";
-import { listContainerVariants } from "../shared/animations";
-import { NeonArenaTheme } from "../shared/NeonArenaTheme";
+import { GoatCrown, GoatSparkles } from "@/components/visual/GoatIcons";
+import { usePlayList } from "@/hooks/use-play-list";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import { useTempUser } from "@/hooks/use-temp-user";
+import { toast } from "@/hooks/use-toast";
+import { useUserLists, useDeleteList } from "@/hooks/use-top-lists";
+
 import { SectionHeader } from "./SectionHeader";
+import { UserListCard } from "./UserListCard";
+import { listContainerVariants } from "../shared/animations";
+import { gradients } from "../shared/gradients";
+import { NeonArenaTheme } from "../shared/NeonArenaTheme";
+
 
 interface UserListsSectionProps {
   className?: string;
@@ -69,42 +74,10 @@ export function UserListsSection({ className }: UserListsSectionProps) {
         <div className="max-w-6xl mx-auto relative">
           {/* Section header */}
           <SectionHeader
-            icon={Crown}
+            icon={GoatCrown}
             title="My Rankings"
             subtitle="Your personal collection of ranking lists"
             testIdPrefix="user-lists"
-            rightContent={
-              <motion.button
-                onClick={handleCreateNew}
-                className="relative group px-5 py-2.5 rounded-xl font-medium text-sm text-white overflow-hidden"
-                style={{
-                  background: `linear-gradient(135deg, rgba(251, 191, 36, 0.9), rgba(245, 158, 11, 0.9))`,
-                  boxShadow: `
-                    0 8px 30px rgba(251, 191, 36, 0.3),
-                    inset 0 1px 0 rgba(255, 255, 255, 0.2)
-                  `,
-                }}
-                whileHover={prefersReducedMotion ? {} : { scale: 1.03, y: -2 }}
-                whileTap={prefersReducedMotion ? {} : { scale: 0.98 }}
-                data-testid="create-new-list-btn"
-              >
-                {/* Shimmer effect - CSS-animated for better performance */}
-                {!prefersReducedMotion && (
-                  <div
-                    className="absolute inset-0 opacity-0 group-hover:opacity-100 animate-ambient-shimmer"
-                    style={{
-                      background: `linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.25) 50%, transparent 60%)`,
-                      backgroundSize: "200% 100%",
-                    }}
-                    data-framer-motion-reducible="true"
-                  />
-                )}
-                <span className="relative flex items-center gap-2">
-                  <Plus className="w-4 h-4" />
-                  Create New
-                </span>
-              </motion.button>
-            }
           />
 
           {/* List grid */}
@@ -117,7 +90,7 @@ export function UserListsSection({ className }: UserListsSectionProps) {
             <ListGrid
               items={userLists}
               renderItem={(list) => (
-                <ListCard list={list} variant="user" onDelete={handleDeleteList} onPlay={handlePlayList} />
+                <UserListCard list={list} onDelete={handleDeleteList} onPlay={handlePlayList} />
               )}
               isLoading={isLoading}
               error={error ? new Error("Failed to load your lists") : null}
@@ -129,7 +102,7 @@ export function UserListsSection({ className }: UserListsSectionProps) {
                   animate={{ opacity: 1, y: 0 }}
                 >
                   <div
-                    className={`mx-auto w-20 h-20 rounded-2xl flex items-center justify-center mb-6 ${prefersReducedMotion ? "" : "animate-ambient-card-float"}`}
+                    className={`mx-auto w-20 h-20 rounded-container flex items-center justify-center mb-6 ${prefersReducedMotion ? "" : "animate-ambient-card-float"}`}
                     style={{
                       background: `linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(245, 158, 11, 0.1))`,
                       "--card-float-duration": "3s",
@@ -137,7 +110,7 @@ export function UserListsSection({ className }: UserListsSectionProps) {
                     } as React.CSSProperties}
                     data-framer-motion-reducible="true"
                   >
-                    <Sparkles className="w-10 h-10 text-amber-400/60" />
+                    <GoatSparkles className="w-10 h-10 text-amber-400/60" />
                   </div>
                   <h3 className="text-xl font-semibold text-white mb-2">No Lists Yet</h3>
                   <p className="text-slate-400 mb-8 max-w-sm mx-auto">
@@ -145,18 +118,35 @@ export function UserListsSection({ className }: UserListsSectionProps) {
                   </p>
                   <motion.button
                     onClick={handleCreateNew}
-                    className="px-6 py-3 rounded-xl font-medium text-white"
+                    className="group relative px-8 py-3.5 rounded-card font-semibold text-sm tracking-wide cursor-pointer overflow-hidden"
                     style={{
-                      background: `linear-gradient(135deg, rgba(251, 191, 36, 0.9), rgba(245, 158, 11, 0.9))`,
-                      boxShadow: `0 8px 30px rgba(251, 191, 36, 0.25)`,
+                      background: gradients.amberButton,
+                      border: "1px solid rgba(251, 191, 36, 0.3)",
+                      color: "#fbbf24",
+                      boxShadow: "0 4px 20px rgba(251, 191, 36, 0.15)",
                     }}
-                    whileHover={prefersReducedMotion ? {} : { scale: 1.05 }}
-                    whileTap={prefersReducedMotion ? {} : { scale: 0.98 }}
+                    whileHover={prefersReducedMotion ? {} : {
+                      scale: 1.03,
+                      boxShadow: "0 8px 30px rgba(251, 191, 36, 0.25)",
+                    }}
+                    whileTap={prefersReducedMotion ? {} : { scale: 0.97 }}
                     data-testid="create-first-list-btn"
                   >
-                    <span className="flex items-center gap-2">
-                      <Plus className="w-4 h-4" />
-                      Create Your First List
+                    {/* Shimmer sweep overlay */}
+                    {!prefersReducedMotion && (
+                      <motion.div
+                        className="absolute inset-0 pointer-events-none"
+                        style={{
+                          background: gradients.shimmer,
+                          backgroundSize: "200% 100%",
+                        }}
+                        animate={{ backgroundPosition: ["200% 0", "-200% 0"] }}
+                        transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                      />
+                    )}
+                    <span className="relative flex items-center gap-2">
+                      Create Your First Ranking
+                      <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
                     </span>
                   </motion.button>
                 </motion.div>

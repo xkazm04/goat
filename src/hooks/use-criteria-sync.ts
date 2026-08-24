@@ -29,7 +29,9 @@
  */
 
 import { useCallback, useEffect } from 'react';
+
 import { useCriteriaStore } from '@/stores/criteria-store';
+
 import {
   useCriteriaConfig,
   useListItemScores,
@@ -38,10 +40,10 @@ import {
   useBatchSaveItemScores,
   useCriteriaCache,
 } from './use-criteria-queries';
+
 import type {
   CriteriaProfile,
   CriterionScore,
-  ItemCriteriaScores,
   ListCriteriaConfig,
   ListItemCriteriaScores,
 } from '@/lib/criteria/types';

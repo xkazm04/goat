@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ImageResponse } from 'next/og';
+
 import {
   WidgetConfig,
   WidgetData,
-  WidgetItem,
   DEFAULT_WIDGET_CONFIG,
   WIDGET_DIMENSIONS,
   THEME_PRESETS,

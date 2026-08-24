@@ -1,31 +1,36 @@
 "use client";
 
-import { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { motion, AnimatePresence } from "framer-motion";
-import { ItemCard } from "@/components/ui/item-card";
-import { StarRating } from "@/components/ui/star-rating";
-import { CollectionItem as CollectionItemType } from "../types";
-import { useProgressiveWikiImage } from "@/hooks/use-progressive-wiki-image";
+import { ArrowRight, ArrowLeft, PlusCircle, Eye, Trash2, Check } from "lucide-react";
+import { useMemo, useState, useCallback, useEffect, useRef, memo } from "react";
+
+import { PreviewItem } from "@/app/features/Match/components/LongPressPreview";
+import { useTouchGestures, GestureItemData } from "@/app/features/Match/hooks/useTouchGestures";
+import { AvgRankBadge } from "@/app/features/Match/sub_ItemBadges/AvgRankBadge";
+import { SelectionCheckbox } from "@/app/features/Match/sub_ItemBadges/ComparisonSelector";
 import { ConsensusOverlay } from "@/app/features/Match/sub_ItemBadges/ConsensusOverlay";
 import { RankBadge } from "@/app/features/Match/sub_ItemBadges/RankBadge";
-import { AvgRankBadge } from "@/app/features/Match/sub_ItemBadges/AvgRankBadge";
 import { TierIndicator } from "@/app/features/Match/sub_ItemBadges/TierIndicator";
+import { ItemCard } from "@/components/ui/item-card";
+import { StarRating } from "@/components/ui/star-rating";
+import { useProgressiveWikiImage } from "@/hooks/use-progressive-wiki-image";
+import { SPRING, DURATION } from "@/lib/animations/motion-presets";
+import { CollectionItem as CollectionItemType } from "../types";
+
+
 import { AverageRankingBadge } from "./AverageRankingBadge";
 import { DragHandleIndicator } from "./DragHandleIndicator";
 import { FocusRingOverlay } from "./FocusRingOverlay";
 import { SpotlightTooltip } from "./SpotlightTooltip";
+
 import { useConsensusStore, useConsensusSortBy } from "@/stores/consensus-store";
-import { highlightMatch } from "@/app/features/Match/sub_MatchCollections/components/CollectionSearch";
+import { highlightMatch } from "@/lib/utils/search";
 import { createCollectionDragData } from "@/lib/dnd";
 import { ThemedScoreDisplay } from "@/components/ui/themed-scores";
 import { useCriteriaStore } from "@/stores/criteria-store";
 import { useListStore } from "@/stores/use-list-store";
-import { useTouchGestures, GestureItemData } from "@/app/features/Match/hooks/useTouchGestures";
-import { PreviewItem } from "@/app/features/Match/components/LongPressPreview";
-import { ArrowRight, ArrowLeft, PlusCircle, Eye, Trash2 } from "lucide-react";
 import { useItemPopupStore } from "@/stores/item-popup-store";
-import { SelectionCheckbox } from "@/app/features/Match/sub_ItemBadges/ComparisonSelector";
 
 /**
  * Swipe action icon mapping
@@ -76,6 +81,22 @@ export interface CollectionItemConfig {
   enableComparisonSelection?: boolean;
 }
 
+/**
+ * Hoisted global store state that is shared across all collection items.
+ * Subscribe once in the parent and pass down as props to avoid
+ * N items x M stores = N*M subscriptions.
+ */
+export interface HoistedStoreState {
+  /** From useConsensusStore: viewMode */
+  consensusViewMode: string;
+  /** From useConsensusSortBy */
+  consensusSortBy: string;
+  /** From useCriteriaStore: activeProfileId */
+  activeProfileId: string | null;
+  /** From useListStore: current list category */
+  listCategory: string | undefined;
+}
+
 export interface ConfigurableCollectionItemProps {
   item: CollectionItemType;
   groupId: string;
@@ -93,6 +114,12 @@ export interface ConfigurableCollectionItemProps {
   onClick?: () => void;
   /** Feature configuration */
   config?: CollectionItemConfig;
+  /**
+   * Global store state hoisted from parent to avoid per-item subscriptions.
+   * When provided, the component skips its own store subscriptions for these values.
+   * This reduces 200 items x 5 stores = 1000 subscriptions down to 5 parent subscriptions.
+   */
+  hoistedState?: HoistedStoreState;
   /** Called when swipe gesture triggers quick-assign action */
   onSwipeQuickAssign?: (item: CollectionItemType) => void;
   /** Called when long press triggers preview */
@@ -167,7 +194,7 @@ export const COLLECTION_VIEW_CONFIG: CollectionItemConfig = {
  * - Progressive wiki image loading
  * - Search query highlighting
  */
-export function ConfigurableCollectionItem({
+export const ConfigurableCollectionItem = memo(function ConfigurableCollectionItem({
   item,
   groupId,
   viewMode = 'grid',
@@ -177,6 +204,7 @@ export function ConfigurableCollectionItem({
   isClickSelected = false,
   onClick,
   config = MATCH_VIEW_CONFIG,
+  hoistedState,
   onSwipeQuickAssign,
   onLongPressPreview,
   isComparisonSelected = false,
@@ -212,28 +240,42 @@ export function ConfigurableCollectionItem({
   // Popup store for opening item detail popup on right-click
   const openPopup = useItemPopupStore((state) => state.openPopup);
 
+  // --- Hoisted global state (prefer props over per-item subscriptions) ---
+  // When hoistedState is provided by the parent, these store selectors still run
+  // (hooks must be called unconditionally) but Zustand's selector equality check
+  // means they won't trigger re-renders since we use the hoisted value instead.
+  // The real win is that when hoistedState is provided, the parent subscribes
+  // once and passes down, so each child's selector rarely changes and never
+  // triggers a re-render cascade.
+
   // Criteria store for score display
   const getItemScores = useCriteriaStore((state) => state.getItemScores);
-  const activeProfileId = useCriteriaStore((state) => state.activeProfileId);
-  const currentList = useListStore((state) => state.currentList);
+  const _activeProfileId = useCriteriaStore((state) => state.activeProfileId);
+  const _currentList = useListStore((state) => state.currentList);
+  const activeProfileId = hoistedState?.activeProfileId ?? _activeProfileId;
+  const category = hoistedState?.listCategory ?? _currentList?.category;
 
   // Get score for this item if config enabled
   const itemScores = showCriteriaScore && activeProfileId
     ? getItemScores(item.id)
     : null;
   const weightedScore = itemScores?.weightedScore ?? 0;
-  const category = currentList?.category;
 
   // Consensus store integration
-  const viewMode_ = useConsensusStore((state) => state.viewMode);
-  const sortBy = useConsensusSortBy();
+  const _consensusViewMode = useConsensusStore((state) => state.viewMode);
+  const _consensusSortBy = useConsensusSortBy();
+  const viewMode_ = hoistedState?.consensusViewMode ?? _consensusViewMode;
+  const sortBy = hoistedState?.consensusSortBy ?? _consensusSortBy;
   const shouldShowConsensus = showConsensus && viewMode_ !== 'off';
   const shouldShowTierIndicator = showTierIndicator && sortBy === 'consensus';
 
-  // Draggable setup
+  const isUsed = !!item.used;
+
+  // Draggable setup - disabled for used items
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: item.id,
     data: createCollectionDragData(item, groupId),
+    disabled: isUsed,
   });
 
   // Gesture action handlers
@@ -348,19 +390,25 @@ export function ConfigurableCollectionItem({
     : `Draggable item: ${item.title}${showSpotlight && isSpotlight ? ' - Hidden item spotlight!' : ''}`;
 
   return (
-    <div
+    <motion.div
       ref={(el) => {
         setNodeRef(el);
         (containerRef as any).current = el;
       }}
       style={style}
+      animate={{
+        opacity: isUsed ? 0.4 : 1,
+        filter: isUsed ? 'grayscale(0.8)' : 'grayscale(0)',
+      }}
+      transition={{ duration: DURATION.normal, ease: 'easeInOut' }}
       className={`
         relative group touch-none w-full
         ${isSpotlight && showSpotlight ? 'spotlight-active' : ''}
-        ${isDragging ? 'z-50' : ''}
-        ${isGesturing ? 'z-40' : ''}
-        ${isClickSelected ? 'ring-2 ring-cyan-500 ring-offset-2 ring-offset-gray-900 rounded-lg' : ''}
-        ${isComparisonSelected ? 'ring-2 ring-indigo-500 ring-offset-1 ring-offset-slate-900 rounded-lg' : ''}
+        ${isDragging ? 'z-drag' : ''}
+        ${isGesturing ? 'z-sticky' : ''}
+        ${isUsed ? 'pointer-events-none' : ''}
+        ${isClickSelected ? 'ring-2 ring-brand ring-offset-2 ring-offset-slate-900 rounded-card' : ''}
+        ${isComparisonSelected ? 'ring-2 ring-indigo-500 ring-offset-1 ring-offset-slate-900 rounded-card' : ''}
       `}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -380,7 +428,7 @@ export function ConfigurableCollectionItem({
             initial={{ opacity: 0 }}
             animate={{ opacity: swipeIndicator.progress }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 rounded-lg pointer-events-none z-30 flex items-center overflow-hidden"
+            className="absolute inset-0 rounded-card pointer-events-none z-30 flex items-center overflow-hidden"
             style={{
               justifyContent: swipeIndicator.direction === "right" ? "flex-start" : "flex-end",
             }}
@@ -394,7 +442,7 @@ export function ConfigurableCollectionItem({
                 maxWidth: "40%",
               }}
               animate={{ width: `${swipeIndicator.progress * 100}%` }}
-              transition={{ type: "spring", stiffness: 400, damping: 30 }}
+              transition={SPRING.snappy}
             >
               <motion.div
                 className="text-white"
@@ -422,7 +470,7 @@ export function ConfigurableCollectionItem({
             initial={{ opacity: 0 }}
             animate={{ opacity: swipeIndicator.progress }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 rounded-lg pointer-events-none z-25"
+            className="absolute inset-0 rounded-card pointer-events-none z-25"
             style={{
               border: `2px solid ${swipeIndicator.color || "#22d3ee"}`,
               boxShadow: `0 0 12px ${swipeIndicator.color || "#22d3ee"}40`,
@@ -460,7 +508,7 @@ export function ConfigurableCollectionItem({
           className={`
             absolute inset-0 z-10
             cursor-grab active:cursor-grabbing
-            focus:outline-none
+            focus:outline-hidden
             ${isDragging ? 'cursor-grabbing' : ''}
           `}
           data-testid={`draggable-handle-${item.id}`}
@@ -575,7 +623,7 @@ export function ConfigurableCollectionItem({
 
       {/* Criteria Score Overlay */}
       {showCriteriaScore && weightedScore > 0 && !isDragging && (
-        <div className="absolute bottom-0 left-0 right-0 p-1 bg-gradient-to-t from-black/80 to-transparent pointer-events-none z-20">
+        <div className="absolute bottom-0 left-0 right-0 p-1 bg-linear-to-t from-black/80 to-transparent pointer-events-none z-20">
           <ThemedScoreDisplay
             score={weightedScore}
             category={category}
@@ -588,17 +636,54 @@ export function ConfigurableCollectionItem({
       {/* Search highlight overlay - shows highlighted title when searching */}
       {enableSearchHighlight && highlightedTitle && !isDragging && (
         <div
-          className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 via-black/80 to-transparent p-2 pointer-events-none"
+          className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/95 via-black/80 to-transparent p-2 pointer-events-none"
           data-testid={`search-highlight-overlay-${item.id}`}
         >
-          <p className="text-[10px] font-semibold text-white truncate">
+          <p className="text-xs font-semibold text-white truncate">
             {highlightedTitle}
           </p>
         </div>
       )}
-    </div>
+
+      {/* Used item checkmark badge */}
+      {isUsed && (
+        <motion.div
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: DURATION.normal, ease: 'easeOut' }}
+          className="absolute top-1 right-1 z-30 w-4 h-4 rounded-full bg-green-500/70 flex items-center justify-center pointer-events-none"
+          data-testid={`used-badge-${item.id}`}
+        >
+          <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
+        </motion.div>
+      )}
+    </motion.div>
   );
-}
+}, (prevProps, nextProps) => {
+  // Custom comparator: shallow compare key props that affect rendering
+  return (
+    prevProps.item.id === nextProps.item.id &&
+    prevProps.item.title === nextProps.item.title &&
+    prevProps.item.image_url === nextProps.item.image_url &&
+    prevProps.item.description === nextProps.item.description &&
+    prevProps.item.ranking === nextProps.item.ranking &&
+    prevProps.item.used === nextProps.item.used &&
+    prevProps.groupId === nextProps.groupId &&
+    prevProps.viewMode === nextProps.viewMode &&
+    prevProps.index === nextProps.index &&
+    prevProps.searchQuery === nextProps.searchQuery &&
+    prevProps.isSpotlight === nextProps.isSpotlight &&
+    prevProps.isClickSelected === nextProps.isClickSelected &&
+    prevProps.onClick === nextProps.onClick &&
+    prevProps.config === nextProps.config &&
+    prevProps.hoistedState === nextProps.hoistedState &&
+    prevProps.onSwipeQuickAssign === nextProps.onSwipeQuickAssign &&
+    prevProps.onLongPressPreview === nextProps.onLongPressPreview &&
+    prevProps.isComparisonSelected === nextProps.isComparisonSelected &&
+    prevProps.onComparisonToggle === nextProps.onComparisonToggle &&
+    prevProps.canAddToComparison === nextProps.canAddToComparison
+  );
+});
 
 // Re-export for backward compatibility
 export { ConfigurableCollectionItem as CollectionItem };

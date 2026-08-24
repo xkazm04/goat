@@ -1,17 +1,23 @@
 "use client";
 
 import { useDroppable } from "@dnd-kit/core";
-import { motion, AnimatePresence, useSpring } from "framer-motion";
-import { useState, useEffect, useRef, useCallback } from "react";
-import { DropCelebration } from "../../sub_DropZone/components/DropCelebration";
+import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+
+import { CategorySlotIllustration } from "@/components/illustrations/EmptyStateIllustrations";
+import { ImageFallback } from "@/components/ui/ImageFallback";
+import { DURATION } from '@/lib/animations/motion-presets';
 import { createGridSlotDropData } from "@/lib/dnd";
-import { getRankColor, isPodiumPosition } from "../../lib/rankConfig";
-import { getPositionAwareSpringConfig, getFramerSpringConfig } from "../lib/physicsEngine";
-import { triggerHaptic, isHapticSupported } from "../lib/hapticFeedback";
+import { DropZoneIndicator } from "@/lib/placement/DropZoneScorer";
+import { useIndicatorAtPosition, useIsDragging as usePlacementDragging } from "@/stores/placement-store";
+import { useCurrentList } from "@/stores/use-list-store";
+
 import { PositionBadge } from "../../components/PositionBadge";
 import { SlotSuggestionOverlay, QuickPlaceIndicator } from "../../components/SuggestionOverlay";
-import { useIndicatorAtPosition, useIsDragging as usePlacementDragging } from "@/stores/placement-store";
-import { DropZoneIndicator } from "@/lib/placement/DropZoneScorer";
+import { getRankColor, isPodiumPosition } from "../../lib/rankConfig";
+import { DropCelebration } from "../../sub_DropZone/components/DropCelebration";
+import { triggerHaptic, isHapticSupported } from "../lib/hapticFeedback";
+import { getPositionAwareSpringConfig, getFramerSpringConfig } from "../lib/physicsEngine";
 
 interface PhysicsGridSlotProps {
   position: number;
@@ -43,12 +49,11 @@ interface PhysicsGridSlotProps {
 /**
  * PhysicsGridSlot - Enhanced grid slot with physics-based animations
  *
- * Features:
- * - Spring physics for natural movement
- * - Bounce animation on drop
- * - Gravity well visual effects
- * - Position resistance indicator
- * - Haptic feedback integration
+ * Performance optimizations:
+ * - Infinite FM animations replaced with CSS @keyframes (no per-frame JS)
+ * - useSpring removed; gravity glow uses a static computed value
+ * - Spring config only computed when physics enabled
+ * - Bounce/rotation keyframes memoized
  */
 export function PhysicsGridSlot({
   position,
@@ -69,6 +74,7 @@ export function PhysicsGridSlot({
 }: PhysicsGridSlotProps) {
   const isOccupied = gridItem?.matched;
   const slotRef = useRef<HTMLDivElement>(null);
+  const currentList = useCurrentList();
 
   // Smart placement indicators from store
   const storeIndicator = useIndicatorAtPosition(position);
@@ -98,15 +104,15 @@ export function PhysicsGridSlot({
   const [bounceCount, setBounceCount] = useState(0);
   const prevOccupiedRef = useRef(isOccupied);
 
-  // Spring physics for slot animations
-  const springConfig = getPositionAwareSpringConfig(position);
-  const framerConfig = getFramerSpringConfig(springConfig);
+  // Only compute spring config when physics is enabled
+  const framerConfig = useMemo(() => {
+    if (!enablePhysics) return { type: "spring" as const, duration: DURATION.fast };
+    const springConfig = getPositionAwareSpringConfig(position);
+    return getFramerSpringConfig(springConfig);
+  }, [enablePhysics, position]);
 
-  // Gravity well visual effect
-  const gravityGlow = useSpring(gravityInfluence * 100, {
-    stiffness: 200,
-    damping: 20,
-  });
+  // Static gravity glow value (replaces useSpring which ran rAF on every slot)
+  const gravityGlowPx = Math.round(gravityInfluence * 100);
 
   // Calculate resistance visual intensity
   const resistanceLevel = Math.min(itemTenure / 60000, 1); // Max at 1 minute
@@ -156,30 +162,28 @@ export function PhysicsGridSlot({
     }
   };
 
-  // Calculate bounce animation keyframes
-  const getBounceKeyframes = () => {
+  // Memoize bounce/rotation keyframes so they're only recalculated when state changes
+  const bounceKeyframes = useMemo(() => {
     if (!justDropped || bounceCount === 0) return [1];
 
     const bounces = [];
     let amplitude = isTop3 ? 0.2 : 0.15;
-    bounces.push(1); // Initial
+    bounces.push(1);
 
     for (let i = 0; i < bounceCount; i++) {
-      bounces.push(1 + amplitude); // Peak
-      amplitude *= 0.6; // Decay
-      bounces.push(1 - amplitude * 0.5); // Valley
+      bounces.push(1 + amplitude);
+      amplitude *= 0.6;
+      bounces.push(1 - amplitude * 0.5);
     }
 
-    bounces.push(1); // Settle
+    bounces.push(1);
     return bounces;
-  };
+  }, [justDropped, bounceCount, isTop3]);
 
-  // Calculate rotation keyframes for wobble
-  const getRotationKeyframes = () => {
+  const rotationKeyframes = useMemo(() => {
     if (!justDropped || !isTop3) return [0];
-
     return [0, -2, 2, -1.5, 1.5, -0.5, 0.5, 0];
-  };
+  }, [justDropped, isTop3]);
 
   return (
     <motion.div
@@ -187,27 +191,27 @@ export function PhysicsGridSlot({
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{
         opacity: 1,
-        scale: justDropped ? getBounceKeyframes() : isOver ? 1.05 : 1,
-        rotate: justDropped ? getRotationKeyframes() : 0,
+        scale: justDropped ? bounceKeyframes : isOver ? 1.05 : 1,
+        rotate: justDropped ? rotationKeyframes : 0,
       }}
       transition={{
         opacity: { delay: position * 0.02 },
         scale: justDropped
           ? {
-            duration: 0.8,
+            duration: DURATION.dramatic,
             ease: [0.34, 1.56, 0.64, 1],
-            times: justDropped ? getBounceKeyframes().map((_, i, arr) => i / (arr.length - 1)) : undefined,
+            times: justDropped ? bounceKeyframes.map((_, i, arr) => i / (arr.length - 1)) : undefined,
           }
           : {
             ...framerConfig,
-            duration: 0.2,
+            duration: DURATION.fast,
           },
-        rotate: { duration: 0.6, ease: "easeOut" },
+        rotate: { duration: DURATION.emphasis, ease: "easeOut" },
       }}
       onClick={handleClick}
       className={`
         ${sizeClasses[size]}
-        relative rounded-lg border-2 transition-colors duration-200
+        relative rounded-card border-2 transition-colors duration-200
         ${isOver
           ? "border-blue-500 bg-blue-500/10"
           : "border-gray-700 bg-gray-800/50"
@@ -223,20 +227,12 @@ export function PhysicsGridSlot({
       data-occupied={isOccupied}
       data-gravity-well={gravityInfluence > 0}
     >
-      {/* Gravity Well Glow Effect */}
+      {/* Gravity Well Glow Effect - CSS animation replaces FM infinite loop */}
       {gravityInfluence > 0 && enablePhysics && (
-        <motion.div
-          className="absolute inset-0 rounded-lg pointer-events-none z-0"
+        <div
+          className="absolute inset-0 rounded-card pointer-events-none z-0 animate-gravity-glow"
           style={{
-            boxShadow: `0 0 ${gravityGlow}px rgba(34, 211, 238, ${gravityInfluence * 0.5})`,
-          }}
-          animate={{
-            opacity: [0.3, 0.6, 0.3],
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            ease: "easeInOut",
+            boxShadow: `0 0 ${gravityGlowPx}px rgba(34, 211, 238, ${gravityInfluence * 0.5})`,
           }}
           data-testid="gravity-well-glow"
         />
@@ -244,15 +240,11 @@ export function PhysicsGridSlot({
 
       {/* Position Resistance Indicator */}
       {isOccupied && resistanceLevel > 0.1 && enablePhysics && (
-        <motion.div
-          className="absolute -inset-1 rounded-xl pointer-events-none z-0"
-          initial={{ opacity: 0 }}
-          animate={{
-            opacity: resistanceLevel * 0.3,
-            borderWidth: 1 + resistanceLevel * 2,
-          }}
+        <div
+          className="absolute -inset-1 rounded-card pointer-events-none z-0"
           style={{
-            border: `solid rgba(147, 51, 234, ${resistanceLevel * 0.5})`,
+            opacity: resistanceLevel * 0.3,
+            border: `${1 + resistanceLevel * 2}px solid rgba(147, 51, 234, ${resistanceLevel * 0.5})`,
           }}
           data-testid="resistance-indicator"
         />
@@ -261,19 +253,10 @@ export function PhysicsGridSlot({
       {/* Position Number - Tier-based visual hierarchy */}
       <PositionBadge position={position} className="absolute top-1 left-1 z-10" />
 
-      {/* Gravity Well Badge for Top 5 */}
+      {/* Gravity Well Badge for Top 5 - CSS animation replaces FM infinite loop */}
       {position < 5 && !isOccupied && (
-        <motion.div
-          className="absolute top-1 right-1 z-10"
-          animate={{
-            scale: [1, 1.1, 1],
-            opacity: [0.5, 0.8, 0.5],
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
+        <div
+          className="absolute top-1 right-1 z-10 animate-gravity-badge"
           data-testid="gravity-badge"
         >
           <svg
@@ -283,11 +266,28 @@ export function PhysicsGridSlot({
             stroke="currentColor"
             strokeWidth="2"
           >
-            <circle cx="12" cy="12" r="3" className="text-cyan-400" fill="currentColor" opacity="0.5" />
-            <circle cx="12" cy="12" r="6" className="text-cyan-400" opacity="0.3" />
-            <circle cx="12" cy="12" r="9" className="text-cyan-400" opacity="0.1" />
+            <circle cx="12" cy="12" r="3" className="text-brand-hover" fill="currentColor" opacity="0.5" />
+            <circle cx="12" cy="12" r="6" className="text-brand-hover" opacity="0.3" />
+            <circle cx="12" cy="12" r="9" className="text-brand-hover" opacity="0.1" />
           </svg>
-        </motion.div>
+        </div>
+      )}
+
+      {/* Year badge on occupied slot */}
+      {isOccupied && gridItem?.item_year && (
+        <span className="absolute top-1 right-1 z-20 text-3xs leading-tight font-medium text-white/90 bg-black/50 rounded-full px-1 py-px pointer-events-none">
+          {gridItem.item_year_to && gridItem.item_year_to !== gridItem.item_year
+            ? `${gridItem.item_year}–${gridItem.item_year_to}`
+            : gridItem.item_year}
+        </span>
+      )}
+
+      {/* Tags richness indicator on occupied slot */}
+      {isOccupied && gridItem?.tags?.length > 0 && (
+        <span
+          className="absolute z-20 w-1.5 h-1.5 rounded-full bg-brand/70 pointer-events-none"
+          style={gridItem?.item_year ? { top: '1.25rem', right: '0.25rem' } : { top: '0.375rem', right: '0.375rem' }}
+        />
       )}
 
       {/* Item Content */}
@@ -310,9 +310,11 @@ export function PhysicsGridSlot({
               />
             )}
             {!gridItem.image_url && (
-              <div className="text-center text-xs text-gray-300 px-1 break-words">
-                {gridItem.title || gridItem.name || "Untitled"}
-              </div>
+              <ImageFallback
+                title={gridItem.title || gridItem.name || "Untitled"}
+                category={gridItem.category || currentList?.category}
+                size="sm"
+              />
             )}
           </motion.div>
         ) : (
@@ -321,18 +323,14 @@ export function PhysicsGridSlot({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="text-gray-600 text-sm"
+            className="flex flex-col items-center justify-center"
           >
             {isOver ? (
-              <motion.span
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ duration: 0.5, repeat: Infinity }}
-                className="text-cyan-400"
-              >
+              <span className="text-brand-hover text-sm font-bold animate-drop-hint">
                 Drop!
-              </motion.span>
+              </span>
             ) : (
-              "Drop here"
+              <CategorySlotIllustration category={currentList?.category} />
             )}
           </motion.div>
         )}
@@ -341,13 +339,13 @@ export function PhysicsGridSlot({
       {/* Swap Animation Overlay */}
       {isSwapping && (
         <motion.div
-          className="absolute inset-0 rounded-lg pointer-events-none z-30"
+          className="absolute inset-0 rounded-card pointer-events-none z-30"
           initial={{ opacity: 0 }}
           animate={{
             opacity: [0, 0.5, 0],
             scale: [1, 1.1, 1],
           }}
-          transition={{ duration: 0.3 }}
+          transition={{ duration: DURATION.normal }}
           style={{
             background: "radial-gradient(circle, rgba(34, 211, 238, 0.3) 0%, transparent 70%)",
             border: "2px solid rgba(34, 211, 238, 0.5)",
@@ -364,23 +362,10 @@ export function PhysicsGridSlot({
         position={position}
       />
 
-      {/* Hover Target Zone Indicator */}
+      {/* Hover Target Zone Indicator - CSS animation replaces FM infinite loop */}
       {isOver && !isOccupied && (
-        <motion.div
-          className="absolute inset-0 rounded-lg pointer-events-none z-20"
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{
-            opacity: 1,
-            scale: 1,
-            boxShadow: [
-              "0 0 20px rgba(34, 211, 238, 0.3)",
-              "0 0 30px rgba(34, 211, 238, 0.5)",
-              "0 0 20px rgba(34, 211, 238, 0.3)",
-            ],
-          }}
-          transition={{
-            boxShadow: { duration: 1, repeat: Infinity },
-          }}
+        <div
+          className="absolute inset-0 rounded-card pointer-events-none z-20 animate-hover-glow"
           style={{
             border: "2px dashed rgba(34, 211, 238, 0.7)",
           }}

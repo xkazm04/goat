@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+
+import { createClient, escapeIlikeWildcards } from '@/lib/supabase/server';
 
 // Force dynamic rendering for this route since it uses cookies
 export const dynamic = 'force-dynamic';
@@ -28,7 +29,7 @@ export async function GET(request: NextRequest) {
     let dbQuery = supabase
       .from('item_groups')
       .select('name')
-      .ilike('name', `%${query}%`)
+      .ilike('name', `%${escapeIlikeWildcards(query)}%`)
       .order('name', { ascending: true })
       .limit(limit);
 

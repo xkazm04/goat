@@ -101,7 +101,7 @@ export function ShimmerBtn({label, onClick}: Props) {
             className="w-5 h-5 text-white mb-1 drop-shadow-lg" 
             fill="currentColor"
           />
-          <span className="text-md font-bold text-white/90 tracking-wider uppercase drop-shadow-sm">
+          <span className="text-md font-bold text-white/90 tracking-wider uppercase drop-shadow-xs">
             {label}
           </span>
         </motion.div>

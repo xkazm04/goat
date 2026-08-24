@@ -3,6 +3,8 @@
  * Type definitions for filter engine, presets, and UI components
  */
 
+import type React from "react";
+
 /**
  * Filter operator types
  */
@@ -96,6 +98,7 @@ export interface FilterPreset {
   icon?: string;
   color?: string;
   config: FilterConfig;
+  sortConfig?: SortConfig | null;
   isDefault?: boolean;
   isQuickFilter?: boolean;
   createdAt: Date;
@@ -111,7 +114,7 @@ export interface FilterPreset {
 export interface QuickFilter {
   id: string;
   label: string;
-  icon?: string;
+  icon?: React.ReactNode;
   config: FilterConfig;
   badge?: string | number;
   color?: string;
@@ -190,6 +193,20 @@ export interface SmartFilterSuggestion {
 }
 
 /**
+ * Sort direction
+ */
+export type SortDirection = 'asc' | 'desc';
+
+/**
+ * Sort configuration
+ */
+export interface SortConfig {
+  field: string;
+  direction: SortDirection;
+  label?: string;
+}
+
+/**
  * Filter result
  */
 export interface FilterResult<T> {
@@ -198,6 +215,7 @@ export interface FilterResult<T> {
   matched: number;
   executionTime: number;
   appliedFilters: FilterCondition[];
+  appliedSort?: SortConfig | null;
 }
 
 /**
@@ -226,6 +244,7 @@ export interface FilterState {
   lastApplied: Date | null;
   searchTerm: string;
   selectedFields: string[];
+  sortConfig: SortConfig | null;
 }
 
 /**
@@ -253,6 +272,9 @@ export interface FilterActions {
   // Quick filters
   setQuickFilters: (filters: QuickFilter[]) => void;
   toggleQuickFilter: (id: string) => void;
+
+  // Sort
+  setSortConfig: (sort: SortConfig | null) => void;
 
   // Global actions
   setCombinator: (combinator: FilterCombinator) => void;

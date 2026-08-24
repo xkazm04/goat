@@ -1,3 +1,16 @@
+/**
+ * IndexedDB storage adapter for Zustand persist middleware.
+ *
+ * DATABASE: goat-app-storage (IndexedDB)
+ * OWNER: Zustand persist middleware (backlog-store)
+ *
+ * This is a generic key-value store used ONLY by Zustand's persist middleware
+ * for stores that need IndexedDB instead of localStorage (e.g., backlog-store
+ * which can exceed localStorage's ~5MB limit).
+ *
+ * NOT related to the offline sync engine's `goat-offline-db` database.
+ * See `src/lib/storage/storage-registry.ts` for the full architecture map.
+ */
 const DB_NAME = 'goat-app-storage';
 const STORE_NAME = 'zustand-store';
 const DB_VERSION = 1;
@@ -22,15 +35,40 @@ export const createIndexedDBStorage = (storeName: string): StorageAdapter => {
     };
   }
 
-  // Open database connection
+  // Cached database connection (shared across all operations)
+  let cachedDB: IDBDatabase | null = null;
+  let dbPromise: Promise<IDBDatabase> | null = null;
+
   const openDB = (): Promise<IDBDatabase> => {
-    return new Promise((resolve, reject) => {
+    // Return cached connection if still open
+    if (cachedDB) {
+      try {
+        // Test if connection is still valid by checking objectStoreNames
+        cachedDB.objectStoreNames;
+        return Promise.resolve(cachedDB);
+      } catch {
+        cachedDB = null;
+        dbPromise = null;
+      }
+    }
+    // Deduplicate concurrent open requests
+    if (dbPromise) return dbPromise;
+
+    dbPromise = new Promise<IDBDatabase>((resolve, reject) => {
       const request = window.indexedDB.open(DB_NAME, DB_VERSION);
-      
-      request.onerror = () => reject(request.error);
-      
-      request.onsuccess = () => resolve(request.result);
-      
+
+      request.onerror = () => {
+        dbPromise = null;
+        reject(request.error);
+      };
+
+      request.onsuccess = () => {
+        cachedDB = request.result;
+        // Clear cache if connection closes unexpectedly
+        cachedDB.onclose = () => { cachedDB = null; dbPromise = null; };
+        resolve(cachedDB);
+      };
+
       request.onupgradeneeded = () => {
         const db = request.result;
         if (!db.objectStoreNames.contains(STORE_NAME)) {
@@ -38,6 +76,7 @@ export const createIndexedDBStorage = (storeName: string): StorageAdapter => {
         }
       };
     });
+    return dbPromise;
   };
   
   // Get item from IndexedDB

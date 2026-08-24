@@ -1,8 +1,11 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useItemStat } from "@/hooks/use-item-stats";
 import { TrendingUp, Award, BarChart3 } from "lucide-react";
+
+import { useItemStat } from "@/hooks/use-item-stats";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import { DURATION } from "@/lib/animations/motion-presets";
 import { cn } from "@/lib/utils";
 
 interface AverageRankingBadgeProps {
@@ -32,6 +35,8 @@ export function AverageRankingBadge({
   variant = "compact",
   className,
 }: AverageRankingBadgeProps) {
+  const reducedMotion = useReducedMotion();
+
   const { data: itemStat, isLoading, isError } = useItemStat(itemId, {
     staleTime: 5 * 60 * 1000, // 5 minutes cache
   });
@@ -51,9 +56,9 @@ export function AverageRankingBadge({
   // Determine badge color based on percentile
   const getBadgeColor = (percentile: number) => {
     if (percentile >= 80) return "from-yellow-500/90 to-orange-500/90"; // Top 20%
-    if (percentile >= 60) return "from-cyan-500/90 to-blue-500/90"; // Top 40%
+    if (percentile >= 60) return "from-brand/90 to-blue-500/90"; // Top 40%
     if (percentile >= 40) return "from-green-500/90 to-teal-500/90"; // Top 60%
-    return "from-gray-500/90 to-gray-600/90"; // Bottom 40%
+    return "from-slate-500/90 to-slate-600/90"; // Bottom 40%
   };
 
   const badgeColor = getBadgeColor(itemStat.percentile);
@@ -62,9 +67,9 @@ export function AverageRankingBadge({
   if (variant === "compact") {
     return (
       <motion.div
-        initial={{ opacity: 0, scale: 0.8 }}
+        initial={reducedMotion ? false : { opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.2, delay: 0.1 }}
+        transition={{ duration: DURATION.normal, delay: 0.1 }}
         className={cn(
           "absolute z-10 pointer-events-none",
           positionClasses[position],
@@ -74,8 +79,8 @@ export function AverageRankingBadge({
       >
         <div
           className={cn(
-            "flex items-center gap-1 px-2 py-1 rounded-md backdrop-blur-md",
-            "bg-gradient-to-r shadow-lg border border-white/20",
+            "flex items-center gap-1 px-2 py-1 rounded-control backdrop-blur-md",
+            "bg-linear-to-r shadow-lg border border-white/20",
             badgeColor
           )}
         >
@@ -91,9 +96,9 @@ export function AverageRankingBadge({
   // Full variant - show more details
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.8, y: -10 }}
+      initial={reducedMotion ? false : { opacity: 0, scale: 0.8, y: -10 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: 0.1 }}
+      transition={{ duration: DURATION.normal, delay: 0.1 }}
       className={cn(
         "absolute z-10 pointer-events-none",
         positionClasses[position],
@@ -103,8 +108,8 @@ export function AverageRankingBadge({
     >
       <div
         className={cn(
-          "flex flex-col gap-1 px-2.5 py-1.5 rounded-lg backdrop-blur-md",
-          "bg-gradient-to-r shadow-xl border border-white/30",
+          "flex flex-col gap-1 px-2.5 py-1.5 rounded-card backdrop-blur-md",
+          "bg-linear-to-r shadow-xl border border-white/30",
           badgeColor
         )}
       >

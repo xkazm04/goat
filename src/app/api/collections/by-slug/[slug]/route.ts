@@ -1,12 +1,14 @@
 import { NextRequest } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { transformCollectionRow } from '@/types/collection';
+
+import { withTiming } from '@/lib/api/request-timing';
 import {
   withErrorHandler,
   fromSupabaseError,
   successResponse,
   NotFoundError,
 } from '@/lib/errors';
+import { createClient } from '@/lib/supabase/server';
+import { transformCollectionRow } from '@/types/collection';
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic';
@@ -18,7 +20,7 @@ export const dynamic = 'force-dynamic';
  * - include_stats: Include computed statistics
  * - include_lists: Include full list data for contained lists
  */
-export const GET = withErrorHandler(
+export const GET = withTiming(withErrorHandler(
   async (
     request: NextRequest,
     context?: { params?: Promise<Record<string, string>> }
@@ -102,4 +104,4 @@ export const GET = withErrorHandler(
 
     return successResponse(collection);
   }
-);
+), 'collections/by-slug');

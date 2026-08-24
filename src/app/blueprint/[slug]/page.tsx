@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Loader2, AlertCircle, Sparkles, Users, Clock } from "lucide-react";
-import { useBlueprint } from "@/hooks/use-blueprints";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useRef } from "react";
+
+import { useBlueprint, trackBlueprintView } from "@/hooks/use-blueprints";
 import { useComposition } from "@/hooks/use-composition";
 import { getCategoryIcon } from "@/lib/constants/showCaseExamples";
 
@@ -15,6 +16,16 @@ export default function BlueprintPage() {
   const { openWithBlueprint } = useComposition();
 
   const { data: blueprint, isLoading, error } = useBlueprint(slug);
+
+  // Count a view exactly once per deep-link visit. A ref guard keeps StrictMode's
+  // double-mount and any query refetch from firing it twice.
+  const viewTracked = useRef(false);
+  useEffect(() => {
+    if (blueprint && slug && !viewTracked.current) {
+      viewTracked.current = true;
+      void trackBlueprintView(slug);
+    }
+  }, [blueprint, slug]);
 
   // When blueprint loads, open the composition modal and redirect to home
   useEffect(() => {
@@ -36,7 +47,7 @@ export default function BlueprintPage() {
           animate={{ opacity: 1, scale: 1 }}
           className="text-center"
         >
-          <Loader2 className="w-12 h-12 text-cyan-400 animate-spin mx-auto mb-4" />
+          <Loader2 className="w-12 h-12 text-brand-hover animate-spin mx-auto mb-4" />
           <p className="text-white/70 text-lg">Loading blueprint...</p>
         </motion.div>
       </div>
@@ -55,12 +66,12 @@ export default function BlueprintPage() {
             <AlertCircle className="w-8 h-8 text-red-400" />
           </div>
           <h1 className="text-2xl font-bold text-white mb-2">Blueprint Not Found</h1>
-          <p className="text-white/60 mb-6">
+          <p className="text-slate-300 mb-6">
             This blueprint may have been removed or the link is invalid.
           </p>
           <button
             onClick={() => router.push("/")}
-            className="px-6 py-3 bg-cyan-500 hover:bg-cyan-400 text-white font-semibold rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-cyan-500/25 hover:scale-105 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+            className="px-6 py-3 bg-brand hover:bg-brand-hover text-white font-semibold rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-brand/25 hover:scale-105 active:scale-[0.98] focus-ring"
             data-testid="blueprint-not-found-home-btn"
           >
             Go to Home
@@ -159,12 +170,12 @@ export default function BlueprintPage() {
             {blueprint.author && (
               <div className="flex items-center gap-2 text-white/40 text-sm mb-6">
                 <span>Created by</span>
-                <span className="text-white/60 font-medium">{blueprint.author}</span>
+                <span className="text-slate-300 font-medium">{blueprint.author}</span>
               </div>
             )}
 
             {/* Loading indicator */}
-            <div className="flex items-center justify-center gap-3 py-4 rounded-xl bg-white/[0.02] border border-white/5">
+            <div className="flex items-center justify-center gap-3 py-4 rounded-xl bg-white/2 border border-white/5">
               <Loader2 className="w-5 h-5 animate-spin" style={{ color: blueprint.color.primary }} />
               <span className="text-white/70">Opening creation modal...</span>
             </div>

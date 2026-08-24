@@ -1,9 +1,12 @@
 /**
- * Advanced Multi-Filter System
- * Module exports for the filter engine and components
+ * Filter System — Public API
+ *
+ * Core pipeline: FilterEngine, SmartQueryParser, FullTextSearcher (~1,500 lines)
+ * UI components: import from './components/*' or './visual/*' directly
+ * Faceted search: import from '@/lib/faceted-search'
  */
 
-// Types
+// ── Core types ──────────────────────────────────────────────────────────
 export type {
   FilterOperator,
   FilterValueType,
@@ -24,91 +27,20 @@ export type {
   FilterState,
   FilterActions,
   FilterStore,
+  SortConfig,
+  SortDirection,
 } from './types';
 
 export { FILTER_STORAGE_KEYS } from './types';
 
-// Constants
-export {
-  OPERATOR_LABELS,
-  TYPE_OPERATORS,
-  DEFAULT_FILTER_FIELDS,
-  DEFAULT_QUICK_FILTERS,
-  EMPTY_FILTER_CONFIG,
-  DEFAULT_FILTER_OPTIONS,
-  FILTER_ANIMATIONS,
-  FILTER_COLORS,
-  COMBINATOR_LABELS,
-  SUGGESTION_TYPES,
-  PRESET_ICONS,
-  PRESET_COLORS,
-  FILTER_Z_INDEX,
-  PERFORMANCE_THRESHOLDS,
-} from './constants';
+// ── Core engine ─────────────────────────────────────────────────────────
+export { FilterEngine, createFilterMemo } from './FilterEngine';
 
-// Filter Engine
-export {
-  FilterEngine,
-  createFilterMemo,
-  defaultFilterEngine,
-} from './FilterEngine';
-
-// Components
-export {
-  FilterPanel,
-  FilterPill,
-} from './components/FilterPanel';
-
-export {
-  FilterPresetManager,
-  PresetQuickAccess,
-} from './components/FilterPresetManager';
-
-export {
-  QuickFilterBar,
-  QuickFilterGroup,
-  SearchableQuickFilters,
-} from './components/QuickFilterBar';
-
-export {
-  FilterStatistics,
-  MatchCountBadge,
-  FilterSummary,
-} from './components/FilterStatistics';
-
-export {
-  SmartFilterSuggestions,
-  generateSmartSuggestions,
-} from './components/SmartFilterSuggestions';
-
-// Visual Filter Builder
-export {
-  FilterBuilder,
-  CompactFilterBuilder,
-  FilterBlock,
-  FilterBlockOverlay,
-  FilterGroup as FilterGroupComponent,
-  FilterGroupOverlay,
-  RootCombinatorToggle,
-  FilterPreview,
-  FilterPreviewBadge,
-  FilterSaver,
-  FilterActions as FilterActionsToolbar,
-  OperatorSelector,
-  OperatorBadge,
-  ValueInput,
-  ValueDisplay,
-  FilterTemplates,
-  TemplateQuickSelect,
-  FILTER_TEMPLATES,
-} from './visual';
-
-// Full-Text Search
+// ── Full-text search ────────────────────────────────────────────────────
 export {
   FullTextSearcher,
   createCollectionSearcher,
   highlightMatches,
-  defaultSearcher,
   DEFAULT_SEARCH_CONFIG,
 } from './FullTextSearcher';
 
@@ -118,45 +50,51 @@ export type {
   SearchStats,
 } from './FullTextSearcher';
 
-// Smart Query Parser
+// ── Smart query parser ──────────────────────────────────────────────────
 export {
   SmartQueryParser,
   parseSmartQuery,
   configToQueryString,
-  defaultQueryParser,
   QUERY_TEMPLATES,
 } from './SmartQueryParser';
 
 export type {
   ParseResult,
   QuerySuggestion,
+  UnresolvedSegment,
 } from './SmartQueryParser';
 
-// Filter Presets
+// ── Constants ───────────────────────────────────────────────────────────
 export {
-  FILTER_PRESETS,
-  PRESET_CATEGORIES,
-  getPresetsByCategory,
-  getPresetById,
-  searchPresets,
-  presetToQuickFilter,
-  getPresetsAsQuickFilters,
-  createDynamicPreset,
-} from './presets';
+  OPERATOR_LABELS,
+  TYPE_OPERATORS,
+  DEFAULT_FILTER_FIELDS,
+  DEFAULT_QUICK_FILTERS,
+  EMPTY_FILTER_CONFIG,
+  DEFAULT_FILTER_OPTIONS,
+  FILTER_ANIMATIONS,
+  FILTER_TIMING,
+  FILTER_SCALE,
+  FILTER_COLORS,
+  COMBINATOR_LABELS,
+  SUGGESTION_TYPES,
+  PRESET_ICONS,
+  PRESET_COLORS,
+  FILTER_Z_INDEX,
+  PERFORMANCE_THRESHOLDS,
+} from './constants';
 
-export type {
-  PresetCategory,
-  FilterPresetDefinition,
-} from './presets';
-
-// Collection Filter Integration
+// ── Integration provider ────────────────────────────────────────────────
 export {
   FilterIntegrationProvider,
   useFilterIntegration,
   useFilterIntegrationOptional,
+  useFilterActions,
+  useFilterState,
   useSearch,
   useFilters,
   useSmartQuery,
+  useSort,
 } from './CollectionFilterIntegration';
 
 export type {
@@ -168,22 +106,34 @@ export type {
   FilterIntegrationProviderProps,
 } from './CollectionFilterIntegration';
 
-// Search Autocomplete Component
+// ── Presets ─────────────────────────────────────────────────────────────
 export {
-  SearchAutocomplete,
-  CompactSearchInput,
-} from './components/SearchAutocomplete';
+  FILTER_PRESETS,
+  PRESET_CATEGORIES,
+  getPresetsByCategory,
+  getPresetById,
+  searchPresets,
+  presetToQuickFilter,
+  getPresetsAsQuickFilters,
+  getDefaultQuickFilters,
+  getPresetSearchKeywords,
+  createDynamicPreset,
+} from './presets';
 
-// Filter Results Counter Component
-export {
-  FilterResultsCounter,
-  FilterCountBadge,
-  SearchResultSummary,
-} from './components/FilterResultsCounter';
+export type { PresetCategory, FilterPresetDefinition } from './presets';
 
-// Faceted Navigation
+// ── UI components (commonly used, kept for convenience) ─────────────────
+export { FilterPanel, FilterPill } from './components/FilterPanel';
+export { FilterPresetManager, PresetQuickAccess } from './components/FilterPresetManager';
+export { QuickFilterBar, QuickFilterGroup, SearchableQuickFilters } from './components/QuickFilterBar';
+export { FilterStatistics, MatchCountBadge, FilterSummary } from './components/FilterStatistics';
+export { SmartFilterSuggestions, generateSmartSuggestions } from './components/SmartFilterSuggestions';
+export { SearchAutocomplete, CompactSearchInput } from './components/SearchAutocomplete';
+export { FilterResultsCounter, FilterCountBadge, SearchResultSummary } from './components/FilterResultsCounter';
+
+// ── Faceted search (re-export for backward compatibility) ───────────────
+// Prefer importing directly from '@/lib/faceted-search'
 export {
-  // Types
   type FacetValue,
   type FacetDefinition,
   type Facet,
@@ -194,31 +144,25 @@ export {
   type FacetBreadcrumb,
   type FacetExtractionConfig,
   type FacetAggregationResult,
-  type FacetActions,
+  type FacetActions as FacetActionsType,
   type FacetAggregationOptions,
-  // Constants
+  type FacetCacheStats,
+  type FacetContextState,
+  type FacetContextValue,
+  type FacetProviderProps,
   DEFAULT_FACET_DEFINITIONS,
-  // Classes
   FacetExtractor,
   createCollectionFacetExtractor,
-  defaultFacetExtractor,
   FacetAggregator,
   createFacetAggregator,
-  defaultFacetAggregator,
-  // Components
   FacetPanel,
   FacetBreadcrumbs,
   GroupedFacetBreadcrumbs,
   MobileFacetDrawer,
   MobileFilterButton,
   useMobileFacetDrawer,
-  // Hook
   useFacets,
-  // Context
   FacetProvider,
   useFacetContext,
   useFacetContextOptional,
-  type FacetContextState,
-  type FacetContextValue,
-  type FacetProviderProps,
 } from './facets';

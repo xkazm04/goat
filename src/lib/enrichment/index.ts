@@ -33,6 +33,8 @@ export { EnrichmentPipeline, EnrichmentPipelineClass } from './EnrichmentPipelin
 export { SourceRouter, SourceRouterClass } from './SourceRouter';
 export { DataNormalizer, DataNormalizerClass } from './DataNormalizer';
 export { ImageSelector, ImageSelectorClass } from './ImageSelector';
+export { SourceLatencyTracker, SourceLatencyTrackerClass } from './SourceLatencyTracker';
+export type { LatencyStats } from './SourceLatencyTracker';
 
 // Fetchers
 export {

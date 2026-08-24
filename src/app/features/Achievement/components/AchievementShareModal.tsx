@@ -1,8 +1,11 @@
 "use client";
 
-import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Link2, Check, Download, Settings2, Eye } from "lucide-react";
+import { useState, useCallback } from "react";
+
+import { SURFACE_ELEVATION, ELEVATION, INSET } from "@/components/visual/depth/depth-tokens";
+import { useModalAccessibility } from "@/hooks/use-modal-accessibility";
 import {
   Achievement,
   AchievementCardConfig,
@@ -10,6 +13,7 @@ import {
   ACHIEVEMENT_SHARE_PLATFORMS,
   TIER_CONFIG,
 } from "@/types/achievement";
+
 import { AchievementCard } from "./AchievementCard";
 
 interface AchievementShareModalProps {
@@ -52,6 +56,11 @@ export function AchievementShareModal({
   });
 
   const tierConfig = TIER_CONFIG[achievement.tier];
+
+  const { modalRef, modalProps, labelId, handleKeyDown } = useModalAccessibility({
+    isOpen,
+    onClose,
+  });
 
   // Generate shareable link
   const generateShareLink = useCallback(async () => {
@@ -148,7 +157,7 @@ export function AchievementShareModal({
         <>
           {/* Backdrop */}
           <motion.div
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-modal"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -158,7 +167,10 @@ export function AchievementShareModal({
 
           {/* Modal */}
           <motion.div
-            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+            ref={modalRef}
+            {...modalProps}
+            onKeyDown={handleKeyDown}
+            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-modal w-full max-w-2xl max-h-[90vh] overflow-y-auto"
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -166,25 +178,17 @@ export function AchievementShareModal({
             data-testid="achievement-share-modal"
           >
             <div
-              className="relative rounded-2xl overflow-hidden"
+              className="relative rounded-container overflow-hidden border border-gray-700/50"
               style={{
-                background: `linear-gradient(135deg,
-                  rgba(15, 20, 35, 0.98) 0%,
-                  rgba(20, 28, 48, 0.95) 50%,
-                  rgba(15, 20, 35, 0.98) 100%
-                )`,
-                boxShadow: `
-                  0 25px 50px -12px rgba(0, 0, 0, 0.5),
-                  0 0 100px ${tierConfig.glow},
-                  inset 0 1px 0 rgba(255, 255, 255, 0.05)
-                `,
+                backgroundColor: SURFACE_ELEVATION.overlay,
+                boxShadow: `${ELEVATION.modal}, ${INSET.glassHighlight}`,
               }}
             >
               {/* Header */}
               <div className="flex items-center justify-between p-4 border-b border-white/5">
-                <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <h2 id={labelId} className="text-lg font-bold text-white flex items-center gap-2">
                   <span
-                    className="w-8 h-8 rounded-lg flex items-center justify-center"
+                    className="w-8 h-8 rounded-control flex items-center justify-center"
                     style={{ background: tierConfig.gradient }}
                   >
                     🏆
@@ -194,7 +198,7 @@ export function AchievementShareModal({
 
                 <button
                   onClick={onClose}
-                  className="p-2 rounded-lg hover:bg-white/10 transition-colors text-gray-400 hover:text-white"
+                  className="p-2 rounded-control hover:bg-white/10 transition-colors text-gray-400 hover:text-white"
                   data-testid="achievement-share-close"
                 >
                   <X className="w-5 h-5" />
@@ -207,7 +211,7 @@ export function AchievementShareModal({
                   onClick={() => setActiveTab('customize')}
                   className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors ${
                     activeTab === 'customize'
-                      ? 'text-white border-b-2 border-cyan-400'
+                      ? 'text-white border-b-2 border-brand-hover'
                       : 'text-gray-400 hover:text-white'
                   }`}
                 >
@@ -218,7 +222,7 @@ export function AchievementShareModal({
                   onClick={() => setActiveTab('share')}
                   className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors ${
                     activeTab === 'share'
-                      ? 'text-white border-b-2 border-cyan-400'
+                      ? 'text-white border-b-2 border-brand-hover'
                       : 'text-gray-400 hover:text-white'
                   }`}
                   disabled={!shareUrl}
@@ -265,9 +269,9 @@ export function AchievementShareModal({
                             <button
                               key={option.value}
                               onClick={() => setConfig(c => ({ ...c, style: option.value }))}
-                              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                              className={`px-3 py-2 rounded-control text-sm font-medium transition-all ${
                                 config.style === option.value
-                                  ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50'
+                                  ? 'bg-brand/20 text-brand-hover border border-brand/50'
                                   : 'bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10'
                               }`}
                             >
@@ -287,7 +291,7 @@ export function AchievementShareModal({
                         ].map(({ key, label }) => (
                           <label
                             key={key}
-                            className="flex items-center gap-3 p-3 rounded-lg bg-white/5 cursor-pointer hover:bg-white/10 transition-colors"
+                            className="flex items-center gap-3 p-3 rounded-card bg-white/5 cursor-pointer hover:bg-white/10 transition-colors"
                           >
                             <input
                               type="checkbox"
@@ -295,7 +299,7 @@ export function AchievementShareModal({
                               onChange={(e) =>
                                 setConfig(c => ({ ...c, [key]: e.target.checked }))
                               }
-                              className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-cyan-500 focus:ring-cyan-500"
+                              className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-brand focus:ring-brand"
                             />
                             <span className="text-sm text-gray-300">{label}</span>
                           </label>
@@ -304,7 +308,7 @@ export function AchievementShareModal({
 
                       {/* Error message */}
                       {error && (
-                        <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                        <div className="p-3 rounded-card bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
                           {error}
                         </div>
                       )}
@@ -313,7 +317,7 @@ export function AchievementShareModal({
                       <button
                         onClick={generateShareLink}
                         disabled={isGenerating}
-                        className="w-full flex items-center justify-center gap-3 px-4 py-4 rounded-xl font-semibold text-white transition-all hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100"
+                        className="w-full flex items-center justify-center gap-3 px-4 py-4 rounded-card font-semibold text-white transition-all hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100"
                         style={{
                           background: 'linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%)',
                           boxShadow: '0 4px 20px rgba(6, 182, 212, 0.3)',
@@ -348,17 +352,17 @@ export function AchievementShareModal({
                       {/* Share URL display */}
                       {shareUrl && (
                         <div
-                          className="flex items-center gap-2 p-3 rounded-lg"
+                          className="flex items-center gap-2 p-3 rounded-card"
                           style={{
                             background: 'rgba(6, 182, 212, 0.1)',
                             border: '1px solid rgba(6, 182, 212, 0.2)',
                           }}
                         >
-                          <Link2 className="w-5 h-5 text-cyan-400 flex-shrink-0" />
-                          <span className="text-sm text-cyan-300 truncate flex-1">{shareUrl}</span>
+                          <Link2 className="w-5 h-5 text-brand-hover shrink-0" />
+                          <span className="text-sm text-brand-hover truncate flex-1">{shareUrl}</span>
                           <button
                             onClick={handleCopyLink}
-                            className="p-1.5 rounded-md hover:bg-white/10 transition-colors"
+                            className="p-1.5 rounded-control hover:bg-white/10 transition-colors"
                             data-testid="achievement-copy-link"
                           >
                             {linkCopied ? (
@@ -385,7 +389,7 @@ export function AchievementShareModal({
                             <button
                               key={platform.id}
                               onClick={() => handleSocialShare(platform.id)}
-                              className="flex flex-col items-center gap-2 p-3 rounded-xl transition-all hover:scale-105"
+                              className="flex flex-col items-center gap-2 p-3 rounded-card transition-all hover:scale-105"
                               style={{
                                 background: `${platform.color}15`,
                                 border: `1px solid ${platform.color}40`,
@@ -400,7 +404,7 @@ export function AchievementShareModal({
                               >
                                 <path d={platform.icon} />
                               </svg>
-                              <span className="text-[10px] text-gray-400">{platform.name}</span>
+                              <span className="text-2xs text-gray-400">{platform.name}</span>
                             </button>
                           ))}
                         </div>
@@ -411,7 +415,7 @@ export function AchievementShareModal({
                         {/* Download image */}
                         <button
                           onClick={handleDownload}
-                          className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium text-white transition-all hover:bg-white/10"
+                          className="flex items-center justify-center gap-2 px-4 py-3 rounded-card font-medium text-white transition-all hover:bg-white/10"
                           style={{
                             background: 'rgba(255, 255, 255, 0.05)',
                             border: '1px solid rgba(255, 255, 255, 0.1)',
@@ -425,7 +429,7 @@ export function AchievementShareModal({
                         {typeof navigator !== 'undefined' && 'share' in navigator && (
                           <button
                             onClick={handleNativeShare}
-                            className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium text-white transition-all hover:scale-[1.02]"
+                            className="flex items-center justify-center gap-2 px-4 py-3 rounded-card font-medium text-white transition-all hover:scale-[1.02]"
                             style={{
                               background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.8), rgba(34, 211, 238, 0.6))',
                             }}
@@ -447,7 +451,7 @@ export function AchievementShareModal({
                       <div>
                         <p className="text-sm text-gray-400 mb-2">Embed Code</p>
                         <div
-                          className="p-3 rounded-lg font-mono text-xs text-gray-400 overflow-x-auto"
+                          className="p-3 rounded-card font-mono text-xs text-gray-400 overflow-x-auto"
                           style={{ background: 'rgba(0, 0, 0, 0.3)' }}
                         >
                           {`<iframe src="${shareUrl}/embed" width="400" height="300" frameborder="0"></iframe>`}

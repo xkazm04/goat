@@ -1,9 +1,11 @@
 "use client";
 
-import { memo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Grid3X3, ListOrdered, Sparkles } from "lucide-react";
+import { Grid3X3, ListOrdered } from "lucide-react";
+import { memo, useState } from "react";
+
 import { SubcategoryDefinition } from "@/lib/config/category-config";
+
 import { CategoryBrowser } from "./CategoryBrowser";
 
 type Props = {
@@ -99,7 +101,7 @@ const SimpleCategorySelector = memo(function SimpleCategorySelector({
             <motion.button
               key={category}
               onClick={() => handleCategoryChange(category)}
-              className={`px-4 py-2 rounded-xl border-none outline-none text-sm font-semibold transition-all duration-300 backdrop-blur-sm ${
+              className={`px-4 py-2 rounded-xl border-none outline-hidden text-sm font-semibold transition-all duration-300 backdrop-blur-xs ${
                 selectedCategory === category
                   ? "text-white shadow-lg"
                   : "text-slate-400 hover:text-slate-200"
@@ -160,7 +162,7 @@ const SimpleCategorySelector = memo(function SimpleCategorySelector({
                 <motion.button
                   key={subcategory.value}
                   onClick={() => setSelectedSubcategory?.(subcategory.value)}
-                  className={`w-full text-left p-4 rounded-xl transition-all duration-300 flex items-center gap-3 group backdrop-blur-sm ${
+                  className={`w-full text-left p-4 rounded-xl transition-all duration-300 flex items-center gap-3 group backdrop-blur-xs ${
                     selectedSubcategory === subcategory.value
                       ? "text-white"
                       : "text-slate-400 hover:text-slate-200"
@@ -199,7 +201,7 @@ const SimpleCategorySelector = memo(function SimpleCategorySelector({
                 >
                   {subcategory.icon && (
                     <motion.div
-                      className="w-10 h-10 rounded-lg flex items-center justify-center backdrop-blur-sm"
+                      className="w-10 h-10 rounded-lg flex items-center justify-center backdrop-blur-xs"
                       style={{
                         background:
                           selectedSubcategory === subcategory.value

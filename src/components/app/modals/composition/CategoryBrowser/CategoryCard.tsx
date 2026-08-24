@@ -1,9 +1,13 @@
 "use client";
 
-import { memo } from "react";
 import { motion } from "framer-motion";
 import { ChevronRight, TrendingUp, Sparkles, Folder } from "lucide-react";
-import { CategoryCardProps, CategoryNode } from "./types";
+import { memo } from "react";
+
+import { DURATION } from '@/lib/animations/motion-presets';
+
+import { CategoryCardProps } from "./types";
+
 
 /**
  * Popularity Badge Component
@@ -19,7 +23,7 @@ const PopularityBadge = memo(function PopularityBadge({
 
   return (
     <motion.div
-      className="absolute top-2 right-2 flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium"
+      className="absolute top-2 right-2 flex items-center gap-1 px-1.5 py-0.5 rounded-badge text-2xs font-medium"
       style={{
         background:
           level === "hot"
@@ -75,13 +79,13 @@ const GridCard = memo(function GridCard({
       initial={{ opacity: 0, y: 20, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: -10, scale: 0.95 }}
-      transition={{ delay: animationDelay, duration: 0.3 }}
+      transition={{ delay: animationDelay, duration: DURATION.normal }}
       whileHover={{ scale: 1.02, y: -2 }}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
     >
       <div
-        className="relative p-4 rounded-2xl overflow-hidden backdrop-blur-sm transition-all duration-300"
+        className="relative p-4 rounded-container overflow-hidden backdrop-blur-xs transition-all duration-300"
         style={{
           background: isSelected
             ? `linear-gradient(135deg, ${nodeColor.primary}50, ${nodeColor.secondary}40)`
@@ -115,7 +119,7 @@ const GridCard = memo(function GridCard({
 
         {/* Icon */}
         <motion.div
-          className="w-12 h-12 rounded-xl flex items-center justify-center mb-3 relative"
+          className="w-12 h-12 rounded-card flex items-center justify-center mb-3 relative"
           style={{
             background: `linear-gradient(135deg, ${nodeColor.primary}30, ${nodeColor.secondary}20)`,
             boxShadow: `0 4px 15px ${nodeColor.primary}20, inset 0 1px 0 rgba(255, 255, 255, 0.1)`,
@@ -129,7 +133,7 @@ const GridCard = memo(function GridCard({
 
           {/* Shimmer effect */}
           <motion.div
-            className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100"
+            className="absolute inset-0 rounded-card opacity-0 group-hover:opacity-100"
             style={{
               background: `linear-gradient(45deg, transparent 30%, ${nodeColor.accent}40 50%, transparent 70%)`,
             }}
@@ -180,7 +184,7 @@ const GridCard = memo(function GridCard({
         {/* Selection indicator */}
         {isSelected && (
           <motion.div
-            className="absolute bottom-0 left-0 right-0 h-1 rounded-b-2xl"
+            className="absolute bottom-0 left-0 right-0 h-1 rounded-b-container"
             style={{
               background: `linear-gradient(90deg, ${nodeColor.primary}, ${nodeColor.accent})`,
             }}
@@ -198,7 +202,7 @@ const GridCard = memo(function GridCard({
             transition={{ delay: 0.3, type: "spring" }}
           >
             <div
-              className="px-1.5 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1"
+              className="px-1.5 py-0.5 rounded-badge text-2xs font-bold flex items-center gap-1"
               style={{
                 background: "rgba(239, 68, 68, 0.2)",
                 color: "#ef4444",
@@ -238,13 +242,13 @@ const ListCard = memo(function ListCard({
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 20 }}
-      transition={{ delay: animationDelay, duration: 0.2 }}
+      transition={{ delay: animationDelay, duration: DURATION.fast }}
       whileHover={{ x: 4 }}
       whileTap={{ scale: 0.99 }}
       onClick={onClick}
     >
       <div
-        className="flex items-center gap-4 p-4 rounded-xl transition-all duration-300"
+        className="flex items-center gap-4 p-4 rounded-card transition-all duration-300"
         style={{
           background: isSelected
             ? `linear-gradient(135deg, ${nodeColor.primary}40, ${nodeColor.secondary}30)`
@@ -265,7 +269,7 @@ const ListCard = memo(function ListCard({
       >
         {/* Icon */}
         <motion.div
-          className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+          className="w-10 h-10 rounded-control flex items-center justify-center shrink-0"
           style={{
             background: `linear-gradient(135deg, ${nodeColor.primary}30, ${nodeColor.secondary}20)`,
           }}
@@ -290,7 +294,7 @@ const ListCard = memo(function ListCard({
 
             {node.trending && (
               <span
-                className="text-[10px] px-1 rounded"
+                className="text-2xs px-1 rounded"
                 style={{
                   background: "rgba(239, 68, 68, 0.2)",
                   color: "#ef4444",
@@ -370,7 +374,7 @@ const CompactCard = memo(function CompactCard({
 
   return (
     <motion.button
-      className="flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200"
+      className="flex items-center gap-2 px-3 py-2 rounded-control transition-all duration-200"
       style={{
         background: isSelected
           ? `linear-gradient(135deg, ${nodeColor.primary}60, ${nodeColor.secondary}50)`

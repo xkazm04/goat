@@ -110,7 +110,7 @@ export function getVolatilityColor(level: VolatilityLevel): string {
     case 'stable':
       return 'text-emerald-400';
     case 'moderate':
-      return 'text-cyan-400';
+      return 'text-brand-hover';
     case 'contested':
       return 'text-amber-400';
     case 'polarizing':
@@ -126,7 +126,7 @@ export function getVolatilityBgColor(level: VolatilityLevel): string {
     case 'stable':
       return 'bg-emerald-500/20';
     case 'moderate':
-      return 'bg-cyan-500/20';
+      return 'bg-brand/20';
     case 'contested':
       return 'bg-amber-500/20';
     case 'polarizing':

@@ -7,21 +7,18 @@
  * Features live themed score preview with micro-interactions
  */
 
-import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import * as Collapsible from '@radix-ui/react-collapsible';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BarChart3, ChevronDown, Check, Sparkles } from 'lucide-react';
-import * as Collapsible from '@radix-ui/react-collapsible';
-import { cn } from '@/lib/utils';
-import { useCriteriaStore, useSyncStatus, useCriteriaSync } from '@/stores/criteria-store';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+
 import { BulkCriteriaScoreInput } from '@/app/features/Match/components/CriteriaScoreInput';
 import { MiniThemedPreview } from '@/components/ui/ScorePreviewOverlay';
-import type { CriterionScore } from '@/lib/criteria/types';
+import { SPRING, DURATION, prefersReducedMotion } from '@/lib/animations/motion-presets';
+import { cn } from '@/lib/utils';
+import { useCriteriaStore, useSyncStatus, useCriteriaSync } from '@/stores/criteria-store';
 
-// Animation configuration
-const ANIMATION_CONFIG = {
-  spring: { stiffness: 300, damping: 30 },
-  duration: { fast: 0.15, normal: 0.2, slow: 0.3 },
-};
+import type { CriterionScore } from '@/lib/criteria/types';
 
 // Score quality thresholds
 const THRESHOLDS = {
@@ -165,17 +162,14 @@ export function CriteriaScoringSection({
   }
 
   // Check for reduced motion preference
-  const prefersReducedMotion =
-    typeof window !== 'undefined' &&
-    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  const isReducedMotion = prefersReducedMotion();
 
   return (
     <Collapsible.Root open={isOpen} onOpenChange={setIsOpen}>
       <div
-        className="rounded-lg overflow-hidden transition-all duration-200 hover:shadow-md"
+        className="rounded-card overflow-hidden transition-all duration-200 hover:shadow-md backdrop-blur-sm"
         style={{
           background: 'rgba(255, 255, 255, 0.05)',
-          backdropFilter: 'blur(8px)',
           border: '1px solid rgba(255, 255, 255, 0.1)',
         }}
       >
@@ -185,7 +179,7 @@ export function CriteriaScoringSection({
             className={cn(
               'w-full flex items-center justify-between px-3 py-2',
               'hover:bg-white/5 transition-all duration-200',
-              'focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20'
+              'focus-ring-inset'
             )}
           >
             <div className="flex items-center gap-2">
@@ -193,7 +187,7 @@ export function CriteriaScoringSection({
                 className="w-3.5 h-3.5"
                 style={{ color: accentColor }}
               />
-              <span className="text-xs font-medium text-gray-300">
+              <span className="text-xs font-medium text-slate-300">
                 Score Item
               </span>
 
@@ -201,20 +195,20 @@ export function CriteriaScoringSection({
               {weightedScore > 0 && (
                 <motion.div
                   className="relative"
-                  initial={prefersReducedMotion ? false : { scale: 0.9, opacity: 0 }}
+                  initial={isReducedMotion ? false : { scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
-                  transition={ANIMATION_CONFIG.spring}
+                  transition={SPRING.smooth}
                 >
                   {/* Threshold crossing pulse effect */}
                   <AnimatePresence>
-                    {thresholdCrossed && !prefersReducedMotion && (
+                    {thresholdCrossed && !isReducedMotion && (
                       <motion.div
-                        className="absolute inset-0 rounded-md"
+                        className="absolute inset-0 rounded-control"
                         style={{ backgroundColor: accentColor }}
                         initial={{ opacity: 0.6, scale: 1 }}
                         animate={{ opacity: 0, scale: 1.5 }}
                         exit={{ opacity: 0 }}
-                        transition={{ duration: 0.4 }}
+                        transition={{ duration: DURATION.slow }}
                       />
                     )}
                   </AnimatePresence>
@@ -223,7 +217,7 @@ export function CriteriaScoringSection({
                   <MiniThemedPreview
                     score={weightedScore}
                     category={category}
-                    animated={!prefersReducedMotion}
+                    animated={!isReducedMotion}
                   />
                 </motion.div>
               )}
@@ -238,7 +232,7 @@ export function CriteriaScoringSection({
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="text-[10px] text-gray-400 flex items-center gap-1"
+                    className="text-xs text-slate-400 flex items-center gap-1"
                   >
                     <motion.span
                       animate={{ opacity: [0.4, 1, 0.4] }}
@@ -256,7 +250,7 @@ export function CriteriaScoringSection({
                     className="text-green-400 flex items-center gap-1"
                   >
                     <Check className="w-3 h-3" />
-                    <span className="text-[10px]">Saved</span>
+                    <span className="text-xs">Saved</span>
                   </motion.div>
                 ) : null}
               </AnimatePresence>
@@ -264,9 +258,9 @@ export function CriteriaScoringSection({
               {/* Chevron toggle */}
               <motion.div
                 animate={{ rotate: isOpen ? 180 : 0 }}
-                transition={{ duration: 0.2 }}
+                transition={{ duration: DURATION.normal }}
               >
-                <ChevronDown className="w-3.5 h-3.5 text-gray-500 transition-colors duration-200 group-hover:text-gray-400" />
+                <ChevronDown className="w-3.5 h-3.5 text-slate-500 transition-colors duration-200 group-hover:text-slate-400" />
               </motion.div>
             </div>
           </button>
@@ -275,16 +269,16 @@ export function CriteriaScoringSection({
         {/* Content */}
         <Collapsible.Content>
           <motion.div
-            initial={prefersReducedMotion ? false : { opacity: 0, height: 0 }}
+            initial={isReducedMotion ? false : { opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: DURATION.normal }}
             className="px-3 pb-3"
           >
             {/* Profile name indicator */}
-            <div className="text-[10px] text-gray-500 mb-2 flex items-center gap-1">
+            <div className="text-xs text-slate-500 mb-2 flex items-center gap-1">
               <span>Using:</span>
-              <span className="text-gray-400">{activeProfile.name}</span>
+              <span className="text-slate-400">{activeProfile.name}</span>
             </div>
 
             {/* Live score preview panel */}
@@ -293,7 +287,7 @@ export function CriteriaScoringSection({
                 score={weightedScore}
                 category={category}
                 accentColor={accentColor}
-                animated={!prefersReducedMotion}
+                animated={!isReducedMotion}
               />
             )}
 
@@ -356,24 +350,24 @@ function LiveScorePreview({
 
   return (
     <motion.div
-      className="mb-3 p-2 rounded-lg flex items-center justify-between"
+      className="mb-3 p-2 rounded-card flex items-center justify-between"
       style={{
         background: `linear-gradient(135deg, ${accentColor}10 0%, ${accentColor}05 100%)`,
         border: `1px solid ${accentColor}20`,
       }}
       initial={animated ? { opacity: 0, y: -10 } : false}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: ANIMATION_CONFIG.duration.normal }}
+      transition={{ duration: DURATION.normal }}
     >
       <div className="flex items-center gap-2">
-        <span className="text-[10px] text-gray-400 uppercase tracking-wider">
+        <span className="text-xs text-slate-400 uppercase tracking-wider">
           Weighted Score
         </span>
         {qualityConfig.icon && (
           <motion.div
             initial={{ rotate: -20, scale: 0 }}
             animate={{ rotate: 0, scale: 1 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+            transition={SPRING.bouncy}
           >
             <Sparkles className="w-3 h-3 text-yellow-400" />
           </motion.div>
@@ -384,14 +378,14 @@ function LiveScorePreview({
         {/* Quality label */}
         <motion.span
           key={quality}
-          className="text-[10px] font-medium px-1.5 py-0.5 rounded"
+          className="text-xs font-medium px-1.5 py-0.5 rounded"
           style={{
             backgroundColor: `${qualityConfig.color}20`,
             color: qualityConfig.color,
           }}
           initial={animated ? { scale: 0.8, opacity: 0 } : false}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: ANIMATION_CONFIG.duration.fast }}
+          transition={{ duration: DURATION.quick }}
         >
           {qualityConfig.label}
         </motion.span>
@@ -403,7 +397,7 @@ function LiveScorePreview({
           key={Math.floor(score)}
           initial={animated ? { scale: 1.2, opacity: 0.8 } : false}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: 'spring', ...ANIMATION_CONFIG.spring }}
+          transition={SPRING.smooth}
         >
           {score.toFixed(1)}
         </motion.span>

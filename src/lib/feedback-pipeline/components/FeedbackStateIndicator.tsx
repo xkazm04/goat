@@ -2,8 +2,11 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, Check, X, Sparkles, AlertTriangle, Crown } from 'lucide-react';
-import type { ExtendedFeedbackState, StateIndicatorConfig, FeedbackVisuals } from '../types';
+
+import { DURATION } from '@/lib/animations/motion-presets';
 import { cn } from '@/lib/utils';
+
+import type { ExtendedFeedbackState, StateIndicatorConfig, FeedbackVisuals } from '../types';
 
 interface FeedbackStateIndicatorProps {
   /** Current state to display */
@@ -50,8 +53,8 @@ const stateColors: Record<ExtendedFeedbackState, { bg: string; border: string; t
   'checking-cache': { bg: 'bg-gray-500/10', border: 'border-gray-500/30', text: 'text-gray-400' },
   generating: { bg: 'bg-purple-500/10', border: 'border-purple-500/30', text: 'text-purple-400' },
   complete: { bg: 'bg-green-500/10', border: 'border-green-500/30', text: 'text-green-400' },
-  dragging: { bg: 'bg-cyan-500/10', border: 'border-cyan-500/30', text: 'text-cyan-400' },
-  dropping: { bg: 'bg-cyan-500/10', border: 'border-cyan-500/30', text: 'text-cyan-400' },
+  dragging: { bg: 'bg-brand/10', border: 'border-brand/30', text: 'text-brand-hover' },
+  dropping: { bg: 'bg-brand/10', border: 'border-brand/30', text: 'text-brand-hover' },
   empty: { bg: 'bg-gray-800/50', border: 'border-gray-700', text: 'text-gray-500' },
 };
 
@@ -79,9 +82,9 @@ export function FeedbackStateIndicator({
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        transition={{ duration: 0.2 }}
+        transition={{ duration: DURATION.fast }}
         className={cn(
-          'rounded-xl border p-6',
+          'rounded-container border p-6',
           colors.bg,
           colors.border,
           className
@@ -93,7 +96,7 @@ export function FeedbackStateIndicator({
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              transition={{ type: 'spring', duration: 0.4 }}
+              transition={{ type: 'spring', duration: DURATION.slow }}
               className={cn(
                 'w-16 h-16 rounded-full flex items-center justify-center mb-4',
                 colors.bg
@@ -128,7 +131,7 @@ export function FeedbackStateIndicator({
               {stateConfig?.actionText && stateConfig?.onAction && (
                 <button
                   onClick={stateConfig.onAction}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-control transition-colors"
                   data-testid="feedback-primary-action"
                 >
                   {stateConfig.actionText}
@@ -137,7 +140,7 @@ export function FeedbackStateIndicator({
               {stateConfig?.secondaryActionText && stateConfig?.onSecondaryAction && (
                 <button
                   onClick={stateConfig.onSecondaryAction}
-                  className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors"
+                  className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-control transition-colors"
                   data-testid="feedback-secondary-action"
                 >
                   {stateConfig.secondaryActionText}

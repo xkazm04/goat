@@ -1,13 +1,26 @@
 "use client";
 
-import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useState, useCallback, useRef } from "react";
+
+import { SURFACE_ELEVATION, ELEVATION, INSET } from "@/components/visual/depth/depth-tokens";
+import { useModalAccessibility } from "@/hooks/use-modal-accessibility";
+import { useTempUser } from "@/hooks/use-temp-user";
+import { DURATION } from '@/lib/animations/motion-presets';
+import { useActivityStore } from "@/stores/activity-store";
+import { useGridStore } from "@/stores/grid-store";
 import { useMatchStore } from "@/stores/match-store";
 import { useListStore } from "@/stores/use-list-store";
-import { useGridStore } from "@/stores/grid-store";
-import { useActivityStore } from "@/stores/activity-store";
-import { useTempUser } from "@/hooks/use-temp-user";
 import { CreateSharedRankingRequest, SharedRankingItem } from "@/types/share";
+
+import {
+  SHARE_THEME_KEYS,
+  getStyleConfig,
+  IMAGE_SIZE_PRESETS,
+  type ImageStyle,
+  type ImageSizePreset,
+} from "../lib/constants/image-styles";
+
 
 interface ShareModalProps {
   isOpen?: boolean;
@@ -49,18 +62,27 @@ const SOCIAL_PLATFORMS = [
 ];
 
 export function ShareModal({ isOpen: controlledIsOpen, onClose }: ShareModalProps) {
-  const { showResultShareModal, setShowResultShareModal } = useMatchStore();
-  const { currentList } = useListStore();
-  const { gridItems } = useGridStore();
-  const { broadcastCompletion } = useActivityStore();
+  const showResultShareModal = useMatchStore((s) => s.showResultShareModal);
+  const setShowResultShareModal = useMatchStore((s) => s.setShowResultShareModal);
+  const currentList = useListStore((s) => s.currentList);
+  const gridItems = useGridStore((s) => s.gridItems);
+  const broadcastCompletion = useActivityStore((s) => s.broadcastCompletion);
   const { tempUserId } = useTempUser();
 
-  const [copied, setCopied] = useState(false);
+  // Two-step flow state
+  const [step, setStep] = useState<"theme" | "preview">("theme");
+  const [selectedTheme, setSelectedTheme] = useState<ImageStyle>("modern");
+  const [capturedImageUrl, setCapturedImageUrl] = useState<string | null>(null);
+  const [isCapturing, setIsCapturing] = useState(false);
+
+  // Share state
   const [linkCopied, setLinkCopied] = useState(false);
   const [isGeneratingShare, setIsGeneratingShare] = useState(false);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [shareError, setShareError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"share" | "social">("share");
+  const [showSizeDropdown, setShowSizeDropdown] = useState(false);
+
+  const renderRef = useRef<HTMLDivElement>(null);
 
   const isOpen = controlledIsOpen ?? showResultShareModal;
 
@@ -71,14 +93,21 @@ export function ShareModal({ isOpen: controlledIsOpen, onClose }: ShareModalProp
       setShowResultShareModal(false);
     }
     // Reset state
+    setStep("theme");
+    setCapturedImageUrl(null);
     setShareUrl(null);
     setShareError(null);
-    setActiveTab("share");
+    setShowSizeDropdown(false);
   }, [onClose, setShowResultShareModal]);
+
+  const { modalRef, modalProps, labelId, handleKeyDown } = useModalAccessibility({
+    isOpen,
+    onClose: handleClose,
+  });
 
   // Get ranked items for sharing
   const rankedItems = gridItems
-    .filter((item) => item.matched)
+    .filter((item) => item.context.matched)
     .sort((a, b) => a.position - b.position);
 
   const listTitle = currentList?.title || "My Top 10";
@@ -86,17 +115,42 @@ export function ShareModal({ isOpen: controlledIsOpen, onClose }: ShareModalProp
   const subcategory = currentList?.subcategory;
   const timePeriod = currentList?.metadata?.timePeriod;
 
-  // Create shareable link
+  const themeConfig = getStyleConfig(selectedTheme);
+
+  // Generate preview image via snapdom
+  const handleGeneratePreview = useCallback(async () => {
+    if (!renderRef.current) return;
+    setIsCapturing(true);
+    setShareError(null);
+    try {
+      const { snapdom } = await import("@zumer/snapdom");
+      const canvas = await snapdom.toCanvas(renderRef.current, { scale: 2 });
+      const dataUrl = canvas.toDataURL("image/png");
+      setCapturedImageUrl(dataUrl);
+      setStep("preview");
+    } catch (err) {
+      // Capture can fail (offline dynamic import, tainted cross-origin image,
+      // CSP). Surface it instead of silently bouncing the button back, which
+      // left the user stuck on step 1 with no explanation.
+      console.error("Image capture failed:", err);
+      setShareError("Couldn't generate the preview image. Please try again.");
+    } finally {
+      setIsCapturing(false);
+    }
+  }, []);
+
+  // Create shareable link (lazy — only on user action)
   const createShareableLink = useCallback(async () => {
+    if (shareUrl) return shareUrl;
     setIsGeneratingShare(true);
     setShareError(null);
 
     try {
       const items: SharedRankingItem[] = rankedItems.map((item) => ({
         position: item.position + 1,
-        title: item.title,
-        description: item.description,
-        image_url: item.image_url,
+        title: item.item?.title ?? '',
+        description: item.item?.description,
+        image_url: item.item?.image_url ?? undefined,
       }));
 
       const request: CreateSharedRankingRequest = {
@@ -122,432 +176,595 @@ export function ShareModal({ isOpen: controlledIsOpen, onClose }: ShareModalProp
       }
 
       setShareUrl(data.data.share_url);
-
-      // Broadcast to activity feed
       broadcastCompletion(listTitle, category, subcategory, rankedItems.length);
-
-      // Switch to social tab
-      setActiveTab("social");
+      return data.data.share_url as string;
     } catch (error) {
       console.error("Error creating share:", error);
       setShareError(error instanceof Error ? error.message : "Failed to create shareable link");
+      return null;
     } finally {
       setIsGeneratingShare(false);
     }
-  }, [rankedItems, currentList, tempUserId, listTitle, category, subcategory, timePeriod, broadcastCompletion]);
+  }, [rankedItems, currentList, tempUserId, listTitle, category, subcategory, timePeriod, broadcastCompletion, shareUrl]);
 
-  // Generate share text
-  const generateShareText = useCallback(() => {
-    const itemList = rankedItems
-      .slice(0, 5)
-      .map((item, i) => `${i + 1}. ${item.title}`)
-      .join("\n");
-
-    const url = shareUrl || "goat.app";
-    return `I just ranked my ${listTitle}!\n\n${itemList}${rankedItems.length > 5 ? "\n..." : ""}\n\nThink you can do better? Challenge my ranking:\n${url}`;
-  }, [rankedItems, listTitle, shareUrl]);
-
-  // Handle social share
-  const handleSocialShare = useCallback(
-    (platformId: string) => {
-      if (!shareUrl) return;
-
-      const text = generateShareText();
-      let url = "";
-
-      switch (platformId) {
-        case "twitter":
-          url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&hashtags=GOAT,Rankings`;
-          break;
-        case "facebook":
-          url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
-          break;
-        case "reddit":
-          url = `https://reddit.com/submit?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(`My Top ${rankedItems.length} ${category} - "${listTitle}"`)}`;
-          break;
-        case "whatsapp":
-          url = `https://wa.me/?text=${encodeURIComponent(text)}`;
-          break;
-        case "discord":
-          // Discord picks up OG metadata when URL is pasted
-          navigator.clipboard.writeText(shareUrl);
-          setLinkCopied(true);
-          setTimeout(() => setLinkCopied(false), 2000);
-          return;
-      }
-
-      if (url) {
-        window.open(url, "_blank", "noopener,noreferrer,width=600,height=400");
-      }
-    },
-    [shareUrl, generateShareText, category, rankedItems.length, listTitle]
-  );
-
-  // Copy share link
+  // Copy link handler
   const handleCopyLink = useCallback(async () => {
-    if (!shareUrl) return;
-
+    const url = await createShareableLink();
+    if (!url) return;
     try {
-      await navigator.clipboard.writeText(shareUrl);
+      await navigator.clipboard.writeText(url);
       setLinkCopied(true);
       setTimeout(() => setLinkCopied(false), 2000);
     } catch (error) {
       console.error("Failed to copy:", error);
     }
-  }, [shareUrl]);
+  }, [createShareableLink]);
 
-  // Copy share text
-  const handleCopyText = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(generateShareText());
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (error) {
-      console.error("Failed to copy:", error);
-    }
-  }, [generateShareText]);
+  // Social share handler
+  const handleSocialShare = useCallback(
+    async (platformId: string) => {
+      const url = await createShareableLink();
+      if (!url) return;
 
-  // Share natively (mobile)
-  const handleNativeShare = useCallback(async () => {
-    if (navigator.share && shareUrl) {
-      try {
-        await navigator.share({
-          title: listTitle,
-          text: `Check out my Top ${rankedItems.length} ${category} ranking!`,
-          url: shareUrl,
-        });
-      } catch (error) {
-        if ((error as Error).name !== "AbortError") {
-          console.error("Share failed:", error);
+      const text = `I just ranked my ${listTitle}!\n\nThink you can do better? Challenge my ranking:\n${url}`;
+      let shareLink = "";
+
+      switch (platformId) {
+        case "twitter":
+          shareLink = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&hashtags=GOAT,Rankings`;
+          break;
+        case "facebook":
+          shareLink = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+          break;
+        case "reddit":
+          shareLink = `https://reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(`My Top ${rankedItems.length} ${category} - "${listTitle}"`)}`;
+          break;
+        case "whatsapp":
+          shareLink = `https://wa.me/?text=${encodeURIComponent(text)}`;
+          break;
+        case "discord":
+          navigator.clipboard.writeText(url);
+          setLinkCopied(true);
+          setTimeout(() => setLinkCopied(false), 2000);
+          return;
+      }
+
+      if (shareLink) {
+        window.open(shareLink, "_blank", "noopener,noreferrer,width=600,height=400");
+      }
+    },
+    [createShareableLink, category, rankedItems.length, listTitle]
+  );
+
+  // Download with optional size preset
+  const handleDownload = useCallback(
+    async (preset?: ImageSizePreset) => {
+      if (!capturedImageUrl) return;
+
+      // If a specific size is requested, re-render at that size
+      let downloadUrl = capturedImageUrl;
+
+      if (preset && renderRef.current) {
+        try {
+          const { snapdom } = await import("@zumer/snapdom");
+          const size = IMAGE_SIZE_PRESETS[preset];
+          const canvas = await snapdom.toCanvas(renderRef.current, {
+            width: size.width,
+            height: size.height,
+          });
+          downloadUrl = canvas.toDataURL("image/png");
+        } catch {
+          // Fall back to original captured image
         }
       }
-    }
-  }, [listTitle, rankedItems.length, category, shareUrl]);
+
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = `${listTitle.replace(/[^a-zA-Z0-9]/g, "_")}_ranking${preset ? `_${preset}` : ""}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setShowSizeDropdown(false);
+    },
+    [capturedImageUrl, listTitle]
+  );
 
   // Skip share
   const handleSkip = useCallback(() => {
-    // Still broadcast completion even if skipping share
     broadcastCompletion(listTitle, category, subcategory, rankedItems.length);
     handleClose();
   }, [broadcastCompletion, listTitle, category, subcategory, rankedItems.length, handleClose]);
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          {/* Backdrop */}
-          <motion.div
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={handleClose}
-            data-testid="share-modal-backdrop"
-          />
-
-          {/* Modal */}
-          <motion.div
-            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md max-h-[90vh] overflow-y-auto"
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            data-testid="share-modal"
+    <>
+      {/* Hidden render template for snapdom capture */}
+      <div
+        ref={renderRef}
+        style={{
+          position: "absolute",
+          left: "-9999px",
+          top: 0,
+          width: 1200,
+          height: 630,
+          overflow: "hidden",
+        }}
+        aria-hidden="true"
+      >
+        <div
+          style={{
+            width: 1200,
+            height: 630,
+            padding: 48,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            backgroundImage: `linear-gradient(135deg, ${themeConfig.colorPalette[0]}, ${themeConfig.colorPalette[1]}, ${themeConfig.colorPalette[2] || themeConfig.colorPalette[0]})`,
+            fontFamily: "system-ui, -apple-system, sans-serif",
+            color: "#ffffff",
+          }}
+        >
+          <div
+            style={{
+              background: "rgba(255,255,255,0.12)",
+              backdropFilter: "blur(12px)",
+              borderRadius: 16,
+              padding: 32,
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+            }}
           >
-            <div
-              className="relative rounded-2xl overflow-hidden"
+            <h1
               style={{
-                background: `linear-gradient(135deg,
-                  rgba(15, 20, 35, 0.98) 0%,
-                  rgba(20, 28, 48, 0.95) 50%,
-                  rgba(15, 20, 35, 0.98) 100%
-                )`,
-                boxShadow: `
-                  0 25px 50px -12px rgba(0, 0, 0, 0.5),
-                  0 0 100px rgba(6, 182, 212, 0.1),
-                  inset 0 1px 0 rgba(255, 255, 255, 0.05)
-                `,
+                fontSize: 36,
+                fontWeight: 800,
+                textAlign: "center",
+                marginBottom: 4,
               }}
             >
-              {/* Celebration effect */}
-              <motion.div
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  background:
-                    "radial-gradient(circle at 50% 0%, rgba(6, 182, 212, 0.15) 0%, transparent 50%)",
-                }}
-                animate={{
-                  opacity: [0.5, 0.8, 0.5],
-                }}
-                transition={{ duration: 2, repeat: Infinity }}
-              />
-
-              {/* Close button */}
-              <button
-                onClick={handleClose}
-                className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-colors z-10"
-                data-testid="share-modal-close-btn"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-
-              {/* Content */}
-              <div className="relative p-6">
-                {/* Header */}
-                <div className="text-center mb-6">
-                  <motion.div
-                    className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4"
-                    style={{
-                      background: "linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(34, 211, 238, 0.1))",
-                    }}
-                    animate={{ scale: [1, 1.05, 1] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  >
-                    <svg className="w-8 h-8 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </motion.div>
-                  <h2 className="text-2xl font-bold text-white mb-2">Ranking Complete!</h2>
-                  <p className="text-gray-400 text-sm">
-                    You ranked {rankedItems.length} items in <span className="text-cyan-400">{listTitle}</span>
-                  </p>
-                </div>
-
-                {/* Preview */}
+              {listTitle}
+            </h1>
+            <p
+              style={{
+                fontSize: 14,
+                opacity: 0.8,
+                textAlign: "center",
+                marginBottom: 24,
+              }}
+            >
+              {category} &bull; Top {rankedItems.length}
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
+              {rankedItems.slice(0, 10).map((item, index) => (
                 <div
-                  className="rounded-xl p-4 mb-6"
+                  key={item.id}
                   style={{
-                    background: "rgba(0, 0, 0, 0.3)",
-                    border: "1px solid rgba(255, 255, 255, 0.05)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    background: "rgba(255,255,255,0.1)",
+                    borderRadius: 8,
+                    padding: "8px 16px",
                   }}
                 >
-                  <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">Preview</p>
-                  <div className="space-y-1">
-                    {rankedItems.slice(0, 3).map((item, index) => (
-                      <div key={item.id} className="flex items-center gap-2 text-sm">
-                        <span className="text-cyan-400 font-bold w-5">{index + 1}.</span>
-                        <span className="text-white truncate">{item.title}</span>
-                      </div>
-                    ))}
-                    {rankedItems.length > 3 && (
-                      <p className="text-gray-500 text-xs mt-1">+{rankedItems.length - 3} more</p>
-                    )}
-                  </div>
+                  <span style={{ fontSize: 22, fontWeight: 700, opacity: 0.6, minWidth: 36 }}>
+                    {index + 1}
+                  </span>
+                  <span style={{ fontSize: 16, fontWeight: 500 }}>{item.item?.title ?? ''}</span>
                 </div>
+              ))}
+            </div>
+            <p
+              style={{
+                fontSize: 11,
+                opacity: 0.5,
+                textAlign: "center",
+                marginTop: 16,
+              }}
+            >
+              Created with GOAT
+            </p>
+          </div>
+        </div>
+      </div>
 
-                {/* Tab content */}
-                <AnimatePresence mode="wait">
-                  {activeTab === "share" ? (
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-modal"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={handleClose}
+              data-testid="share-modal-backdrop"
+            />
+
+            {/* Modal */}
+            <motion.div
+              ref={modalRef}
+              {...modalProps}
+              onKeyDown={handleKeyDown}
+              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-modal w-full max-w-md max-h-[90vh] overflow-y-auto"
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              data-testid="share-modal"
+            >
+              <div
+                className="relative rounded-container overflow-hidden border border-white/10"
+                style={{
+                  backgroundColor: SURFACE_ELEVATION.overlay,
+                  boxShadow: `${ELEVATION.modal}, ${INSET.glassHighlight}`,
+                }}
+              >
+                {/* Celebration effect */}
+                <motion.div
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    background:
+                      "radial-gradient(circle at 50% 0%, rgba(6, 182, 212, 0.15) 0%, transparent 50%)",
+                  }}
+                  animate={{ opacity: [0.5, 0.8, 0.5] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                />
+
+                {/* Close button */}
+                <button
+                  onClick={handleClose}
+                  className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-colors z-10"
+                  data-testid="share-modal-close-btn"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+
+                {/* Content */}
+                <div className="relative px-5 py-4">
+                  {/* Header */}
+                  <div className="text-center mb-6">
+                    {/* Back button for step 2 */}
+                    {step === "preview" && (
+                      <button
+                        onClick={() => {
+                          setStep("theme");
+                          setCapturedImageUrl(null);
+                        }}
+                        className="absolute left-4 top-4 w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-colors z-10"
+                        data-testid="share-back-top-btn"
+                      >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                      </button>
+                    )}
+
                     <motion.div
-                      key="share"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 20 }}
-                      className="space-y-3"
+                      className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4"
+                      style={{
+                        background: "linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(34, 211, 238, 0.1))",
+                      }}
+                      animate={{ scale: [1, 1.05, 1] }}
+                      transition={{ duration: 2, repeat: Infinity }}
                     >
-                      {/* Error message */}
-                      {shareError && (
-                        <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-                          {shareError}
-                        </div>
-                      )}
-
-                      {/* Create shareable link button */}
-                      <button
-                        onClick={createShareableLink}
-                        disabled={isGeneratingShare}
-                        className="w-full flex items-center justify-center gap-3 px-4 py-4 rounded-xl font-semibold text-white transition-all hover:scale-[1.02] disabled:opacity-50"
-                        style={{
-                          background: "linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%)",
-                          boxShadow: "0 4px 20px rgba(6, 182, 212, 0.3)",
-                        }}
-                        data-testid="share-create-link-btn"
-                      >
-                        {isGeneratingShare ? (
-                          <>
-                            <motion.div
-                              className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full"
-                              animate={{ rotate: 360 }}
-                              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                            />
-                            Creating Shareable Link...
-                          </>
-                        ) : (
-                          <>
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-                              />
-                            </svg>
-                            Create Shareable Link
-                          </>
-                        )}
-                      </button>
-
-                      <div className="text-center text-gray-500 text-xs my-2">
-                        Get a unique link with OG preview to share anywhere
-                      </div>
-
-                      {/* Copy text button */}
-                      <button
-                        onClick={handleCopyText}
-                        className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl font-medium text-white transition-all hover:bg-white/10"
-                        style={{
-                          background: "rgba(255, 255, 255, 0.05)",
-                          border: "1px solid rgba(255, 255, 255, 0.1)",
-                        }}
-                        data-testid="share-copy-text-btn"
-                      >
-                        {copied ? (
-                          <>
-                            <svg className="w-5 h-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                            Copied!
-                          </>
-                        ) : (
-                          <>
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                              />
-                            </svg>
-                            Copy as Text
-                          </>
-                        )}
-                      </button>
+                      <svg className="w-8 h-8 text-brand-hover" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
                     </motion.div>
-                  ) : (
-                    <motion.div
-                      key="social"
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      className="space-y-4"
-                    >
-                      {/* Share URL display */}
-                      {shareUrl && (
+                    <h2 id={labelId} className="text-2xl font-bold text-white mb-2">
+                      {step === "theme" ? "Share Your Ranking" : "Preview & Download"}
+                    </h2>
+                    <p className="text-gray-400 text-sm">
+                      {step === "theme"
+                        ? `Choose a theme for your ${rankedItems.length} item ranking`
+                        : "Download or share your ranking image"}
+                    </p>
+
+                    {/* Step progress indicator */}
+                    <div className="flex items-center justify-center gap-2 mt-3">
+                      {[0, 1].map((i) => (
+                        <motion.div
+                          key={i}
+                          className="rounded-full"
+                          animate={{
+                            width: (i === 0 && step === "theme") || (i === 1 && step === "preview") ? 20 : 8,
+                            backgroundColor:
+                              (i === 0 && step === "theme") || (i === 1 && step === "preview")
+                                ? "rgb(6, 182, 212)"
+                                : "rgba(255, 255, 255, 0.2)",
+                          }}
+                          transition={{ duration: DURATION.fast }}
+                          style={{ height: 8 }}
+                        />
+                      ))}
+                      <span className="text-xs text-gray-500 ml-2">
+                        Step {step === "theme" ? 1 : 2} of 2
+                      </span>
+                    </div>
+                  </div>
+
+                  <AnimatePresence mode="wait">
+                    {step === "theme" ? (
+                      <motion.div
+                        key="theme-step"
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 20 }}
+                        transition={{ duration: DURATION.fast }}
+                        className="space-y-4"
+                      >
+                        {/* Theme picker */}
+                        <div>
+                          <p className="text-sm font-semibold text-gray-300 mb-3">Select Theme</p>
+                          <div className="grid grid-cols-3 gap-3">
+                            {SHARE_THEME_KEYS.map((theme) => {
+                              const config = getStyleConfig(theme);
+                              return (
+                                <button
+                                  key={theme}
+                                  onClick={() => setSelectedTheme(theme)}
+                                  className={`relative rounded-card p-3 text-center transition-all ${
+                                    selectedTheme === theme
+                                      ? "ring-2 ring-cyan-400 bg-white/10 scale-105"
+                                      : "bg-white/5 hover:bg-white/10"
+                                  }`}
+                                  data-testid={`theme-btn-${theme}`}
+                                >
+                                  {/* Color swatches */}
+                                  <div className="flex justify-center gap-1 mb-2">
+                                    {config.colorPalette.slice(0, 4).map((color, i) => (
+                                      <div
+                                        key={i}
+                                        className="w-4 h-4 rounded-full border border-white/20"
+                                        style={{ backgroundColor: color }}
+                                      />
+                                    ))}
+                                  </div>
+                                  <span className="text-sm font-medium text-white">{config.name}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Mini preview */}
                         <div
-                          className="flex items-center gap-2 p-3 rounded-lg"
+                          className="rounded-card p-4"
                           style={{
-                            background: "rgba(6, 182, 212, 0.1)",
-                            border: "1px solid rgba(6, 182, 212, 0.2)",
+                            background: `linear-gradient(135deg, ${themeConfig.colorPalette[0]}40, ${themeConfig.colorPalette[1]}40)`,
+                            border: "1px solid rgba(255,255,255,0.05)",
                           }}
                         >
-                          <svg className="w-5 h-5 text-cyan-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
-                            />
-                          </svg>
-                          <span className="text-sm text-cyan-300 truncate flex-1">{shareUrl}</span>
-                          <button
-                            onClick={handleCopyLink}
-                            className="p-1.5 rounded-md hover:bg-white/10 transition-colors"
-                            data-testid="share-copy-link-inline-btn"
-                          >
-                            {linkCopied ? (
-                              <svg className="w-4 h-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                              </svg>
-                            ) : (
-                              <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                                />
-                              </svg>
+                          <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">Preview</p>
+                          <div className="space-y-1">
+                            {rankedItems.slice(0, 3).map((item, index) => (
+                              <div key={item.id} className="flex items-center gap-2 text-sm">
+                                <span className="text-brand-hover font-bold w-5">{index + 1}.</span>
+                                <span className="text-white truncate">{item.item?.title ?? ''}</span>
+                              </div>
+                            ))}
+                            {rankedItems.length > 3 && (
+                              <p className="text-gray-500 text-xs mt-1">+{rankedItems.length - 3} more</p>
                             )}
-                          </button>
+                          </div>
                         </div>
-                      )}
 
-                      {/* Social platform buttons */}
-                      <div className="grid grid-cols-5 gap-2">
-                        {SOCIAL_PLATFORMS.map((platform) => (
-                          <button
-                            key={platform.id}
-                            onClick={() => handleSocialShare(platform.id)}
-                            className="flex flex-col items-center gap-1.5 p-3 rounded-xl transition-all hover:scale-105"
-                            style={{
-                              background: `rgba(${platform.id === "twitter" ? "29, 161, 242" : platform.id === "facebook" ? "66, 103, 178" : platform.id === "reddit" ? "255, 69, 0" : platform.id === "whatsapp" ? "37, 211, 102" : "88, 101, 242"}, 0.15)`,
-                              border: `1px solid ${platform.color}40`,
-                            }}
-                            data-testid={`share-${platform.id}-btn`}
-                          >
-                            <svg className="w-5 h-5" style={{ color: platform.color }} viewBox="0 0 24 24" fill="currentColor">
-                              <path d={platform.icon} />
-                            </svg>
-                            <span className="text-[10px] text-gray-400">{platform.name}</span>
-                          </button>
-                        ))}
-                      </div>
-
-                      {/* Native share (mobile) */}
-                      {typeof navigator !== "undefined" && "share" in navigator && (
+                        {/* Generate Preview button */}
                         <button
-                          onClick={handleNativeShare}
-                          className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl font-medium text-white transition-all hover:scale-[1.02]"
+                          onClick={handleGeneratePreview}
+                          disabled={isCapturing || rankedItems.length === 0}
+                          className="w-full flex items-center justify-center gap-3 px-4 py-4 rounded-card font-semibold text-white transition-all hover:scale-[1.02] disabled:opacity-50"
                           style={{
-                            background: "linear-gradient(135deg, rgba(6, 182, 212, 0.8), rgba(34, 211, 238, 0.6))",
+                            background: "linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%)",
                             boxShadow: "0 4px 20px rgba(6, 182, 212, 0.3)",
                           }}
-                          data-testid="share-native-btn"
+                          data-testid="generate-preview-btn"
                         >
-                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-                            />
-                          </svg>
-                          Share via Device
+                          {isCapturing ? (
+                            <>
+                              <motion.div
+                                className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full"
+                                animate={{ rotate: 360 }}
+                                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                              />
+                              Generating Preview...
+                            </>
+                          ) : (
+                            <>
+                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                              Generate Preview
+                            </>
+                          )}
                         </button>
-                      )}
 
-                      {/* Back button */}
-                      <button
-                        onClick={() => setActiveTab("share")}
-                        className="w-full text-gray-500 text-sm hover:text-gray-300 transition-colors flex items-center justify-center gap-2"
-                        data-testid="share-back-btn"
+                        {/* Capture error (theme step) */}
+                        {shareError && (
+                          <div className="p-3 rounded-card bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                            {shareError}
+                          </div>
+                        )}
+
+                        {/* Skip */}
+                        <button
+                          onClick={handleSkip}
+                          className="w-full text-gray-500 text-sm hover:text-gray-300 transition-colors"
+                          data-testid="share-skip-btn"
+                        >
+                          Maybe later
+                        </button>
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="preview-step"
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ duration: DURATION.fast }}
+                        className="space-y-4"
                       >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                        </svg>
-                        Back
-                      </button>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                        {/* Captured image preview */}
+                        {capturedImageUrl && (
+                          <div className="rounded-card overflow-hidden border border-white/10">
+                            <img
+                              src={capturedImageUrl}
+                              alt="Your ranking"
+                              className="w-full"
+                              crossOrigin="anonymous"
+                            />
+                          </div>
+                        )}
 
-                {/* Skip */}
-                {activeTab === "share" && (
-                  <button
-                    onClick={handleSkip}
-                    className="w-full mt-4 text-gray-500 text-sm hover:text-gray-300 transition-colors"
-                    data-testid="share-skip-btn"
-                  >
-                    Maybe later
-                  </button>
-                )}
+                        {/* Error message */}
+                        {shareError && (
+                          <div className="p-3 rounded-card bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                            {shareError}
+                          </div>
+                        )}
+
+                        {/* Copy Link button (prominent) */}
+                        <button
+                          onClick={handleCopyLink}
+                          disabled={isGeneratingShare}
+                          className="w-full flex items-center justify-center gap-3 px-4 py-4 rounded-card font-semibold text-white transition-all hover:scale-[1.02] disabled:opacity-50"
+                          style={{
+                            background: "linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%)",
+                            boxShadow: "0 4px 20px rgba(6, 182, 212, 0.3)",
+                          }}
+                          data-testid="share-copy-link-btn"
+                        >
+                          {isGeneratingShare ? (
+                            <>
+                              <motion.div
+                                className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full"
+                                animate={{ rotate: 360 }}
+                                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                              />
+                              Creating Link...
+                            </>
+                          ) : linkCopied ? (
+                            <>
+                              <svg className="w-5 h-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                              Link Copied!
+                            </>
+                          ) : (
+                            <>
+                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                              </svg>
+                              Copy Link
+                            </>
+                          )}
+                        </button>
+
+                        {/* Download with size presets */}
+                        <div className="relative">
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleDownload()}
+                              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-card font-medium text-white bg-green-600 hover:bg-green-500 transition-colors"
+                              data-testid="download-btn"
+                            >
+                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                              </svg>
+                              Download PNG
+                            </button>
+                            <button
+                              onClick={() => setShowSizeDropdown(!showSizeDropdown)}
+                              className="px-3 py-3 rounded-card font-medium text-white bg-gray-700 hover:bg-gray-600 transition-colors"
+                              data-testid="size-preset-btn"
+                              title="Download for specific platform"
+                            >
+                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                            </button>
+                          </div>
+
+                          {/* Size dropdown */}
+                          <AnimatePresence>
+                            {showSizeDropdown && (
+                              <motion.div
+                                initial={{ opacity: 0, y: -8 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -8 }}
+                                className="absolute top-full mt-2 right-0 w-56 rounded-container overflow-hidden z-20"
+                                style={{
+                                  background: "rgba(20, 28, 48, 0.98)",
+                                  border: "1px solid rgba(255,255,255,0.1)",
+                                }}
+                              >
+                                {(Object.entries(IMAGE_SIZE_PRESETS) as [ImageSizePreset, typeof IMAGE_SIZE_PRESETS[ImageSizePreset]][]).map(
+                                  ([key, preset]) => (
+                                    <button
+                                      key={key}
+                                      onClick={() => handleDownload(key)}
+                                      className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-colors"
+                                      data-testid={`download-${key}-btn`}
+                                    >
+                                      {preset.label}
+                                      <span className="text-gray-500 ml-1 text-xs">
+                                        {preset.width}x{preset.height}
+                                      </span>
+                                    </button>
+                                  )
+                                )}
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+
+                        {/* Social platform buttons */}
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">Share on</p>
+                          <div className="grid grid-cols-5 gap-2">
+                            {SOCIAL_PLATFORMS.map((platform) => (
+                              <button
+                                key={platform.id}
+                                onClick={() => handleSocialShare(platform.id)}
+                                className="flex flex-col items-center gap-1.5 p-3 rounded-card transition-all hover:scale-105"
+                                style={{
+                                  background: `rgba(${platform.id === "twitter" ? "29, 161, 242" : platform.id === "facebook" ? "66, 103, 178" : platform.id === "reddit" ? "255, 69, 0" : platform.id === "whatsapp" ? "37, 211, 102" : "88, 101, 242"}, 0.15)`,
+                                  border: `1px solid ${platform.color}40`,
+                                }}
+                                data-testid={`share-${platform.id}-btn`}
+                              >
+                                <svg className="w-5 h-5" style={{ color: platform.color }} viewBox="0 0 24 24" fill="currentColor">
+                                  <path d={platform.icon} />
+                                </svg>
+                                <span className="text-2xs text-gray-400">{platform.name}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Change theme link */}
+                        <button
+                          onClick={() => {
+                            setStep("theme");
+                            setCapturedImageUrl(null);
+                          }}
+                          className="w-full text-gray-500 text-sm hover:text-gray-300 transition-colors"
+                          data-testid="share-back-btn"
+                        >
+                          Change theme
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
-            </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </>
   );
 }

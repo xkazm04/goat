@@ -4,7 +4,6 @@
  */
 
 import {
-  Challenge,
   ChallengeInvitation,
   ChallengeParticipant,
   ParticipantStatus,
@@ -136,10 +135,14 @@ export class InvitationSystem {
     invitation.respondedAt = new Date().toISOString();
     invitation.inviteeId = userId;
 
-    // Update participant
+    // Update participant. Match THIS invitation's placeholder precisely (it was
+    // created as `pending_${token.substring(0,8)}`) — a blanket startsWith
+    // 'pending_' grabbed the first pending row, so with multiple invites one
+    // invitee could overwrite another's placeholder slot.
+    const placeholderId = `pending_${token.substring(0, 8)}`;
     const participants = this.participants.get(invitation.challengeId) || [];
     let participant = participants.find(
-      p => p.userId === userId || p.userId.startsWith('pending_')
+      p => p.userId === userId || p.userId === placeholderId
     );
 
     if (participant) {
@@ -175,10 +178,12 @@ export class InvitationSystem {
     invitation.status = 'declined';
     invitation.respondedAt = new Date().toISOString();
 
-    // Update participant status
+    // Update participant status — match this invitation's placeholder precisely
+    // so declining one invite can't flip an unrelated invitee to 'declined'.
+    const placeholderId = `pending_${token.substring(0, 8)}`;
     const participants = this.participants.get(invitation.challengeId) || [];
     const participant = participants.find(
-      p => p.userId === invitation.inviteeId || p.userId.startsWith('pending_')
+      p => p.userId === invitation.inviteeId || p.userId === placeholderId
     );
     if (participant) {
       participant.status = 'declined';

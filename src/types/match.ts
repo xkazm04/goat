@@ -1,17 +1,24 @@
 // Match System Types
 
-export interface GridItemType {
-  id: string;
-  title: string;
-  description?: string;
-  image_url?: string;
-  position: number;
-  matched: boolean;
-  matchedWith?: string; // ID of the backlog item it's matched with
-  backlogItemId?: string;
-  tags?: string[];
-  isDragPlaceholder?: boolean;
-}
+import type { BaseItem, PlacedItem } from './placed-item';
+
+/**
+ * GridItemType is now a type alias for PlacedItem.
+ *
+ * Previously a flat interface with item properties at the top level.
+ * Now uses the unified PlacedItem envelope: { position, item: BaseItem | null, context }.
+ *
+ * Migration guide:
+ *   Old: gridItem.title        → gridItem.item?.title ?? ''
+ *   Old: gridItem.matched      → gridItem.context.matched
+ *   Old: gridItem.backlogItemId → gridItem.item?.id
+ *   Old: gridItem.image_url    → gridItem.item?.image_url
+ *   Old: gridItem.tags         → gridItem.item?.tags
+ */
+export type GridItemType = PlacedItem;
+
+// Re-export PlacedItem types for convenience
+export type { BaseItem, PlacedItem } from './placed-item';
 
 export interface BacklogItemType {
   id: string;
@@ -49,7 +56,7 @@ export interface BacklogGroupType {
   created_at: string;
   updated_at?: string;
   items: BacklogItemType[];
-  
+
   // UI state properties
   isOpen?: boolean;
   isExpanded?: boolean;
@@ -63,7 +70,6 @@ export interface MatchSession {
   backlogGroups: BacklogGroupType[];
   selectedBacklogItem: string | null;
   selectedGridItem: string | null;
-  compareList: BacklogItemType[]; // Legacy field - kept for session compatibility, always empty
   createdAt: string;
   updatedAt: string;
   progress: {

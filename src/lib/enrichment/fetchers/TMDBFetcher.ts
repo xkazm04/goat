@@ -5,6 +5,8 @@
  * Primary source for movies and TV shows.
  */
 
+import { calculateSimilarity } from '../utils/string-similarity';
+
 import type { RawSourceData, EnrichmentInput } from '../types';
 
 const TMDB_API_BASE = 'https://api.themoviedb.org/3';
@@ -40,28 +42,6 @@ interface TMDBDetailResult extends TMDBSearchResult {
     cast: Array<{ name: string; character: string; order: number }>;
     crew: Array<{ name: string; job: string; department: string }>;
   };
-}
-
-/**
- * Calculate string similarity for matching
- */
-function calculateSimilarity(str1: string, str2: string): number {
-  const s1 = str1.toLowerCase().trim();
-  const s2 = str2.toLowerCase().trim();
-
-  if (s1 === s2) return 1;
-  if (s1.includes(s2) || s2.includes(s1)) return 0.9;
-
-  // Simple word overlap
-  const words1 = new Set(s1.split(/\s+/));
-  const words2 = new Set(s2.split(/\s+/));
-
-  let overlap = 0;
-  words1.forEach((word) => {
-    if (words2.has(word)) overlap++;
-  });
-
-  return overlap / Math.max(words1.size, words2.size);
 }
 
 class TMDBFetcherClass {
@@ -232,6 +212,7 @@ class TMDBFetcherClass {
           source: 'tmdb',
           rawData: {},
           fetchedAt: Date.now(),
+          fetchDurationMs: Date.now() - startTime,
           confidence: 0,
           error: 'No matching movie found',
         };
@@ -261,6 +242,7 @@ class TMDBFetcherClass {
           cast,
         },
         fetchedAt: Date.now(),
+        fetchDurationMs: Date.now() - startTime,
         confidence: match.confidence,
       };
     } catch (error) {
@@ -268,6 +250,7 @@ class TMDBFetcherClass {
         source: 'tmdb',
         rawData: {},
         fetchedAt: Date.now(),
+        fetchDurationMs: Date.now() - startTime,
         confidence: 0,
         error: error instanceof Error ? error.message : 'Unknown error',
       };

@@ -25,13 +25,11 @@ export { RankingDistribution } from './components/RankingDistribution';
 export type { RankingDistributionProps, RankingStats } from './components/RankingDistribution';
 
 // Types
-export type { CollectionItem as CollectionItemType, CollectionGroup, CollectionStats as CollectionStatsType, CollectionPaginationState, CollectionMutationHelpers } from './types';
+export type { CollectionItem as CollectionItemType, ItemCategory, ItemPanelStats, CollectionPaginationState, CollectionMutationHelpers } from './types';
 
 // Hooks
 export { useCollection } from './hooks/useCollection';
 export type { UseCollectionOptions, UseCollectionResult } from './hooks/useCollection';
-export { useCollectionLazyLoad } from './hooks/useCollectionLazyLoad';
-export type { UseCollectionLazyLoadOptions, UseCollectionLazyLoadResult } from './hooks/useCollectionLazyLoad';
 export { useIntersectionObserver } from './hooks/useIntersectionObserver';
 export type { UseIntersectionObserverOptions, UseIntersectionObserverResult } from './hooks/useIntersectionObserver';
 // Derived state hook for Collection-Grid relationship
@@ -39,7 +37,7 @@ export { useVisibleCollectionItems, usePlacedItemIds, getPlacedItemIdsFromGrid }
 export type { UseVisibleCollectionItemsOptions, UseVisibleCollectionItemsResult, PlacementStats } from './hooks/useVisibleCollectionItems';
 
 // Utilities
-export { backlogGroupsToCollectionGroups, backlogGroupToCollectionGroup, backlogItemToCollectionItem } from './utils/transformers';
+export { backlogGroupsToItemCategories, backlogGroupToItemCategory, backlogItemToCollectionItem } from './utils/transformers';
 export { useEasterEggSpotlight, isEasterEggKeyword, EASTER_EGG_KEYWORDS, SPOTLIGHT_DURATION } from './utils/easterEgg';
 export type { SpotlightableItem, UseEasterEggSpotlightResult, EasterEggKeyword } from './utils/easterEgg';
 

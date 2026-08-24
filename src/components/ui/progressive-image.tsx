@@ -1,10 +1,13 @@
 "use client";
 
+import { motion, AnimatePresence } from "framer-motion";
 import * as React from "react";
 import { useState, useEffect } from "react";
-import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
+
 import { useProgressiveWikiImage } from "@/hooks/use-progressive-wiki-image";
+import { cn } from "@/lib/utils";
+
+import { ImageFallback } from "./ImageFallback";
 
 // Animation timing constants
 const PLACEHOLDER_EXIT_DURATION = 0.3;
@@ -29,6 +32,8 @@ export interface ProgressiveImageProps {
   fallbackComponent?: React.ReactNode;
   autoFetchWiki?: boolean;
   itemTitle?: string;
+  /** Category used to pick the branded fallback gradient when no image resolves. */
+  category?: string | null;
 }
 
 export const ProgressiveImage = React.forwardRef<HTMLDivElement, ProgressiveImageProps>(
@@ -48,6 +53,7 @@ export const ProgressiveImage = React.forwardRef<HTMLDivElement, ProgressiveImag
       fallbackComponent,
       autoFetchWiki = true,
       itemTitle,
+      category,
     },
     ref
   ) => {
@@ -136,11 +142,11 @@ export const ProgressiveImage = React.forwardRef<HTMLDivElement, ProgressiveImag
 
         {showFallback && !wikiIsFetching && (
           <div
-            className="absolute inset-0 flex items-center justify-center bg-gray-900"
+            className="absolute inset-0 flex items-center justify-center"
             data-testid="progressive-image-fallback"
           >
             {fallbackComponent || (
-              <span className="text-xs text-gray-500">No Image</span>
+              <ImageFallback title={itemTitle || alt || ""} category={category} size="sm" />
             )}
           </div>
         )}

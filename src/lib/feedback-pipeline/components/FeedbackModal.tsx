@@ -2,10 +2,16 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
-import type { ExtendedFeedbackState, StateIndicatorConfig, FeedbackProgressData } from '../types';
-import { FeedbackStateIndicator } from './FeedbackStateIndicator';
-import { FeedbackProgress } from './FeedbackProgress';
+
+import { SURFACE_ELEVATION, ELEVATION, INSET } from '@/components/visual/depth/depth-tokens';
+import { useModalAccessibility } from '@/hooks/use-modal-accessibility';
+import { DURATION } from '@/lib/animations/motion-presets';
 import { cn } from '@/lib/utils';
+
+import { FeedbackProgress } from './FeedbackProgress';
+import { FeedbackStateIndicator } from './FeedbackStateIndicator';
+
+import type { ExtendedFeedbackState, StateIndicatorConfig, FeedbackProgressData } from '../types';
 
 interface FeedbackModalProps {
   /** Whether the modal is open */
@@ -40,6 +46,8 @@ interface FeedbackModalProps {
   contentClassName?: string;
   /** Z-index level */
   zIndex?: number;
+  /** data-testid or other extra HTML attributes */
+  [key: `data-${string}`]: string | undefined;
 }
 
 const sizeClasses = {
@@ -72,6 +80,11 @@ export function FeedbackModal({
   contentClassName,
   zIndex = 50,
 }: FeedbackModalProps) {
+  const { modalRef, modalProps, labelId, handleKeyDown } = useModalAccessibility({
+    isOpen,
+    onClose,
+  });
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -81,17 +94,20 @@ export function FeedbackModal({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
             style={{ zIndex }}
             onClick={onClose}
             data-testid="feedback-modal-backdrop"
           >
             {/* Modal */}
             <motion.div
+              ref={modalRef}
+              {...modalProps}
+              onKeyDown={handleKeyDown}
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              transition={{ type: 'spring', duration: 0.3 }}
+              transition={{ type: 'spring', duration: DURATION.normal }}
               className={cn(
                 'w-full max-h-[90vh] overflow-hidden',
                 sizeClasses[size],
@@ -101,22 +117,10 @@ export function FeedbackModal({
               data-testid="feedback-modal"
             >
               <div
-                className="rounded-2xl border overflow-hidden"
+                className="rounded-container border border-gray-700/50 overflow-hidden"
                 style={{
-                  background: `
-                    linear-gradient(135deg,
-                      rgba(15, 23, 42, 0.98) 0%,
-                      rgba(30, 41, 59, 0.98) 25%,
-                      rgba(51, 65, 85, 0.98) 50%,
-                      rgba(30, 41, 59, 0.98) 75%,
-                      rgba(15, 23, 42, 0.98) 100%
-                    )
-                  `,
-                  borderColor: 'rgba(71, 85, 105, 0.4)',
-                  boxShadow: `
-                    0 25px 50px -12px rgba(0, 0, 0, 0.8),
-                    0 0 0 1px rgba(148, 163, 184, 0.1)
-                  `,
+                  backgroundColor: SURFACE_ELEVATION.overlay,
+                  boxShadow: `${ELEVATION.modal}, ${INSET.glassHighlight}`,
                 }}
               >
                 {/* Header */}
@@ -135,7 +139,7 @@ export function FeedbackModal({
                   <div className="flex items-center gap-4">
                     {headerIcon && (
                       <div
-                        className="w-10 h-10 rounded-xl flex items-center justify-center"
+                        className="w-10 h-10 rounded-card flex items-center justify-center"
                         style={{
                           background: `
                             linear-gradient(135deg,
@@ -155,7 +159,8 @@ export function FeedbackModal({
                     )}
                     <div>
                       <h2
-                        className="text-xl font-bold tracking-tight"
+                        id={labelId}
+                        className="text-xl font-display tracking-tight"
                         style={{
                           background: `
                             linear-gradient(135deg,
@@ -172,7 +177,7 @@ export function FeedbackModal({
                         {title}
                       </h2>
                       {subtitle && (
-                        <p className="text-sm text-slate-400 mt-0.5">{subtitle}</p>
+                        <p className="text-sm text-gray-400 mt-0.5">{subtitle}</p>
                       )}
                     </div>
                   </div>
@@ -181,10 +186,10 @@ export function FeedbackModal({
                     {headerContent}
                     <button
                       onClick={onClose}
-                      className="p-2 rounded-lg transition-colors hover:bg-slate-700/50"
+                      className="p-2 rounded-control transition-colors hover:bg-gray-700/50"
                       data-testid="feedback-modal-close"
                     >
-                      <X className="w-5 h-5 text-slate-400" />
+                      <X className="w-5 h-5 text-gray-400" />
                     </button>
                   </div>
                 </div>

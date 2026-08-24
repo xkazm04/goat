@@ -2,11 +2,17 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { Star } from "lucide-react";
+
+import { SURFACE_ELEVATION, ELEVATION, INSET } from "@/components/visual/depth/depth-tokens";
+import { useModalAccessibility } from "@/hooks/use-modal-accessibility";
+import { DURATION } from "@/lib/animations/motion-presets";
 import { useComparisonStore } from "@/stores/comparison-store";
 import { useGridStore } from "@/stores/grid-store";
-import { ComparisonItem } from "./ComparisonItem";
-import { ComparisonHeader } from "./ComparisonHeader";
+
 import { ComparisonActions } from "./ComparisonActions";
+import { ComparisonHeader } from "./ComparisonHeader";
+import { ComparisonItem } from "./ComparisonItem";
+
 import type { StoreConnectedComparisonModalProps } from "@/types/modal-props";
 
 /**
@@ -21,19 +27,23 @@ export function ComparisonModal({ isOpen, onClose }: StoreConnectedComparisonMod
     selectedForComparison,
     comparisonMode,
     setComparisonMode,
-    toggleComparisonSelection,
-    removeFromComparison,
-    clearComparison,
-    closeComparison
+    removeItem,
+    clearAll,
+    close,
   } = useComparisonStore();
 
   const assignItemToGrid = useGridStore((state) => state.assignItemToGrid);
   const getNextAvailableGridPosition = useGridStore((state) => state.getNextAvailableGridPosition);
 
   const handleClose = () => {
-    closeComparison();
+    close();
     onClose();
   };
+
+  const { modalRef, modalProps, handleKeyDown } = useModalAccessibility({
+    isOpen,
+    onClose: handleClose,
+  });
 
   const handleModeChange = (mode: typeof comparisonMode) => {
     setComparisonMode(mode);
@@ -43,7 +53,7 @@ export function ComparisonModal({ isOpen, onClose }: StoreConnectedComparisonMod
     const nextPosition = getNextAvailableGridPosition();
     if (nextPosition !== null) {
       assignItemToGrid(item, nextPosition);
-      removeFromComparison(item.id);
+      removeItem(item.id);
     }
   };
 
@@ -77,28 +87,21 @@ export function ComparisonModal({ isOpen, onClose }: StoreConnectedComparisonMod
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-modal flex items-center justify-center p-4"
         onClick={handleClose}
       >
         <motion.div
+          ref={modalRef}
+          {...modalProps}
+          onKeyDown={handleKeyDown}
           initial={{ scale: 0.9, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.9, opacity: 0, y: 20 }}
-          className="w-full max-w-7xl max-h-[90vh] rounded-2xl overflow-hidden"
+          className="w-full max-w-7xl max-h-[90vh] rounded-container overflow-hidden border border-gray-700/50"
           data-testid="comparison-modal"
           style={{
-            background: `
-              linear-gradient(135deg, 
-                rgba(15, 23, 42, 0.95) 0%,
-                rgba(30, 41, 59, 0.98) 50%,
-                rgba(51, 65, 85, 0.95) 100%
-              )
-            `,
-            border: '2px solid rgba(71, 85, 105, 0.4)',
-            boxShadow: `
-              0 25px 50px -12px rgba(0, 0, 0, 0.6),
-              0 0 0 1px rgba(71, 85, 105, 0.3)
-            `
+            backgroundColor: SURFACE_ELEVATION.overlay,
+            boxShadow: `${ELEVATION.modal}, ${INSET.glassHighlight}`,
           }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -142,7 +145,7 @@ export function ComparisonModal({ isOpen, onClose }: StoreConnectedComparisonMod
                 </p>
                 <button
                   onClick={handleClose}
-                  className="mt-6 px-6 py-3 rounded-xl font-semibold transition-all duration-200"
+                  className="mt-6 px-6 py-3 rounded-control font-semibold transition-all duration-200"
                   data-testid="comparison-back-btn"
                   style={{
                     background: `linear-gradient(135deg,
@@ -167,9 +170,9 @@ export function ComparisonModal({ isOpen, onClose }: StoreConnectedComparisonMod
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.8, y: -20 }}
                       transition={{
-                        duration: 0.3,
+                        duration: DURATION.normal,
                         delay: index * 0.05,
-                        layout: { duration: 0.2 }
+                        layout: { duration: DURATION.quick }
                       }}
                       layout
                       data-testid={`comparison-item-${index}`}
@@ -177,8 +180,13 @@ export function ComparisonModal({ isOpen, onClose }: StoreConnectedComparisonMod
                       <ComparisonItem
                         item={item}
                         isSelected={selectedForComparison.includes(item.id)}
-                        onToggleSelection={() => toggleComparisonSelection(item.id)}
-                        onRemove={() => removeFromComparison(item.id)}
+                        onToggleSelection={() => {
+                          const newSelected = selectedForComparison.includes(item.id)
+                            ? selectedForComparison.filter(id => id !== item.id)
+                            : [...selectedForComparison, item.id];
+                          useComparisonStore.setState({ selectedForComparison: newSelected });
+                        }}
+                        onRemove={() => removeItem(item.id)}
                         onQuickAssign={() => handleQuickAssign(item)}
                         comparisonMode={comparisonMode}
                       />
@@ -195,7 +203,7 @@ export function ComparisonModal({ isOpen, onClose }: StoreConnectedComparisonMod
               selectedCount={selectedForComparison.length}
               totalCount={items.length}
               onBulkAssign={handleBulkAssign}
-              onClearAll={clearComparison}
+              onClearAll={clearAll}
               onClose={handleClose}
             />
           )}

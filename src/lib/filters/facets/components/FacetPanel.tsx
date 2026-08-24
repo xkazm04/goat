@@ -5,9 +5,14 @@
  * Sidebar facet display with dynamic counts and drill-down
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useCallback, useMemo } from 'react';
+
+import { DURATION } from '@/lib/animations/motion-presets';
 import { cn } from '@/lib/utils';
+
+import { FILTER_ANIMATIONS, FILTER_TIMING } from '../../constants';
+
 import type {
   Facet,
   FacetValue,
@@ -16,7 +21,6 @@ import type {
   HierarchicalFacetNode,
   FacetActions,
 } from '../types';
-import { FILTER_ANIMATIONS } from '../../constants';
 
 /**
  * FacetPanel Props
@@ -211,7 +215,7 @@ function FacetSection({
   return (
     <div
       className={cn(
-        'border border-border rounded-lg overflow-hidden',
+        'border border-border rounded-card overflow-hidden',
         compact ? 'text-sm' : ''
       )}
     >
@@ -220,22 +224,22 @@ function FacetSection({
         className={cn(
           'w-full flex items-center justify-between',
           compact ? 'px-3 py-2' : 'px-4 py-3',
-          'hover:bg-accent/50 transition-colors',
-          'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-inset'
+          'filter-hover transition-colors',
+          'focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-inset'
         )}
         onClick={onToggleExpanded}
       >
         <div className="flex items-center gap-2">
           <span className="font-medium">{facet.definition.label}</span>
           {selectedCount > 0 && (
-            <span className="px-1.5 py-0.5 text-xs bg-primary text-primary-foreground rounded-full">
+            <span className="px-1.5 py-0.5 text-xs bg-primary text-primary-foreground rounded-badge">
               {selectedCount}
             </span>
           )}
         </div>
         <motion.span
           animate={{ rotate: isExpanded ? 180 : 0 }}
-          transition={{ duration: 0.2 }}
+          transition={{ duration: FILTER_TIMING.standard }}
           className="text-muted-foreground text-xs"
         >
           ▼
@@ -263,7 +267,7 @@ function FacetSection({
                   className={cn(
                     'w-full px-2 py-1 text-sm rounded',
                     'bg-muted/50 border border-transparent',
-                    'focus:border-border focus:outline-none',
+                    'focus:border-border focus:outline-hidden',
                     'placeholder:text-muted-foreground/60',
                     'mb-2'
                   )}
@@ -341,14 +345,14 @@ function FacetValueItem({
         compact ? 'px-2 py-1' : 'px-2 py-1.5',
         value.selected
           ? 'bg-primary/10 text-primary'
-          : 'hover:bg-accent/50'
+          : 'filter-hover'
       )}
       onClick={onSelect}
     >
       {/* Checkbox indicator */}
       <span
         className={cn(
-          'flex-shrink-0 w-4 h-4 rounded border flex items-center justify-center',
+          'shrink-0 w-4 h-4 rounded border flex items-center justify-center',
           'transition-colors',
           value.selected
             ? 'bg-primary border-primary text-primary-foreground'
@@ -365,7 +369,7 @@ function FacetValueItem({
       {showCount && (
         <span
           className={cn(
-            'flex-shrink-0 text-xs',
+            'shrink-0 text-xs',
             value.selected ? 'text-primary' : 'text-muted-foreground'
           )}
         >
@@ -462,7 +466,7 @@ function HierarchicalFacetSection({
   return (
     <div
       className={cn(
-        'border border-border rounded-lg overflow-hidden',
+        'border border-border rounded-card overflow-hidden',
         compact ? 'text-sm' : ''
       )}
     >
@@ -471,22 +475,22 @@ function HierarchicalFacetSection({
         className={cn(
           'w-full flex items-center justify-between',
           compact ? 'px-3 py-2' : 'px-4 py-3',
-          'hover:bg-accent/50 transition-colors',
-          'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-inset'
+          'filter-hover transition-colors',
+          'focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-inset'
         )}
         onClick={onToggleExpanded}
       >
         <div className="flex items-center gap-2">
           <span className="font-medium">{facet.definition.label}</span>
           {selectedCount > 0 && (
-            <span className="px-1.5 py-0.5 text-xs bg-primary text-primary-foreground rounded-full">
+            <span className="px-1.5 py-0.5 text-xs bg-primary text-primary-foreground rounded-badge">
               {selectedCount}
             </span>
           )}
         </div>
         <motion.span
           animate={{ rotate: isExpanded ? 180 : 0 }}
-          transition={{ duration: 0.2 }}
+          transition={{ duration: FILTER_TIMING.standard }}
           className="text-muted-foreground text-xs"
         >
           ▼
@@ -533,7 +537,7 @@ function HierarchicalFacetSection({
                   className={cn(
                     'w-full px-2 py-1 text-sm rounded',
                     'bg-muted/50 border border-transparent',
-                    'focus:border-border focus:outline-none',
+                    'focus:border-border focus:outline-hidden',
                     'placeholder:text-muted-foreground/60',
                     'mb-2'
                   )}
@@ -615,13 +619,13 @@ function HierarchicalNodeItem({
         className={cn(
           'flex items-center gap-2 rounded transition-colors relative',
           compact ? 'px-2 py-1' : 'px-2 py-1.5',
-          node.selected ? 'bg-primary/10 text-primary' : 'hover:bg-accent/50'
+          node.selected ? 'bg-primary/10 text-primary' : 'filter-hover'
         )}
       >
         {/* Expand toggle for nodes with children */}
         {hasChildren && (
           <button
-            className="flex-shrink-0 w-4 h-4 flex items-center justify-center text-muted-foreground hover:text-foreground"
+            className="shrink-0 w-4 h-4 flex items-center justify-center text-muted-foreground hover:text-foreground"
             onClick={(e) => {
               e.stopPropagation();
               onToggleExpand();
@@ -629,7 +633,7 @@ function HierarchicalNodeItem({
           >
             <motion.span
               animate={{ rotate: isExpanded ? 90 : 0 }}
-              transition={{ duration: 0.15 }}
+              transition={{ duration: DURATION.quick }}
               className="text-xs"
             >
               ▶
@@ -640,7 +644,7 @@ function HierarchicalNodeItem({
         {/* Checkbox */}
         <button
           className={cn(
-            'flex-shrink-0 w-4 h-4 rounded border flex items-center justify-center',
+            'shrink-0 w-4 h-4 rounded border flex items-center justify-center',
             'transition-colors',
             node.selected
               ? 'bg-primary border-primary text-primary-foreground'
@@ -669,7 +673,7 @@ function HierarchicalNodeItem({
         {showCounts && (
           <span
             className={cn(
-              'flex-shrink-0 text-xs',
+              'shrink-0 text-xs',
               node.selected ? 'text-primary' : 'text-muted-foreground'
             )}
           >
@@ -685,7 +689,7 @@ function HierarchicalNodeItem({
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.15 }}
+            transition={{ duration: DURATION.quick }}
             className="overflow-hidden"
           >
             <div className="space-y-0.5 mt-0.5">

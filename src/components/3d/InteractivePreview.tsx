@@ -7,6 +7,8 @@
  * animations, backdrop blur, and escape key handling.
  */
 
+import { motion, AnimatePresence } from 'framer-motion';
+import { X } from 'lucide-react';
 import {
   memo,
   useState,
@@ -15,10 +17,10 @@ import {
   useRef,
   type ReactNode,
 } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
+
 import { useMotionCapabilities } from '@/hooks/use-motion-preference';
-import { X } from 'lucide-react';
+import { DURATION } from '@/lib/animations/motion-presets';
+import { cn } from '@/lib/utils';
 
 // =============================================================================
 // Types
@@ -78,7 +80,7 @@ const previewVariants = {
     scale: 0.9,
     y: -10,
     transition: {
-      duration: 0.2,
+      duration: DURATION.fast,
     },
   },
 };
@@ -121,23 +123,30 @@ export const InteractivePreview = memo(function InteractivePreview({
 
     setIsOpen(true);
     onOpen?.();
-
-    // Lock body scroll
-    document.body.style.overflow = 'hidden';
+    // Body scroll lock is handled by the effect below (keyed on isOpen) so it is
+    // always restored — even if the component unmounts while open.
   }, [effectsDisabled, onOpen]);
 
   const handleClose = useCallback(() => {
     setIsOpen(false);
     onClose?.();
 
-    // Restore body scroll
-    document.body.style.overflow = '';
-
     // Restore focus
     if (previousActiveElement.current instanceof HTMLElement) {
       previousActiveElement.current.focus();
     }
   }, [onClose]);
+
+  // Lock body scroll while open; the cleanup guarantees restoration on unmount
+  // or when isOpen flips false. Previously the lock was set/cleared imperatively
+  // in handlers, so unmounting while open left the page permanently scroll-locked.
+  useEffect(() => {
+    if (!isOpen) return;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
 
   // Handle escape key
   useEffect(() => {
@@ -191,7 +200,7 @@ export const InteractivePreview = memo(function InteractivePreview({
       {/* Thumbnail/Trigger */}
       <div
         className={cn(
-          'cursor-pointer transition-transform',
+          'cursor-pointer transition-transform focus-ring rounded-card',
           !effectsDisabled && 'hover:scale-[1.02]',
           thumbnailClassName
         )}
@@ -216,7 +225,7 @@ export const InteractivePreview = memo(function InteractivePreview({
           <>
             {/* Backdrop */}
             <motion.div
-              className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm"
+              className="fixed inset-0 z-modal bg-black/60 backdrop-blur-sm"
               variants={backdropVariants}
               initial="hidden"
               animate="visible"
@@ -229,9 +238,9 @@ export const InteractivePreview = memo(function InteractivePreview({
             <motion.div
               ref={previewRef}
               className={cn(
-                'fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2',
-                'overflow-auto rounded-2xl',
-                'bg-gradient-to-br from-slate-900/95 to-slate-950/95',
+                'fixed z-modal left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2',
+                'overflow-auto rounded-container',
+                'bg-linear-to-br from-slate-900/95 to-slate-950/95',
                 'border border-white/10 shadow-2xl',
                 previewClassName
               )}
@@ -254,7 +263,7 @@ export const InteractivePreview = memo(function InteractivePreview({
                   'absolute top-4 right-4 z-10',
                   'p-2 rounded-full',
                   'bg-white/10 hover:bg-white/20',
-                  'text-white/60 hover:text-white',
+                  'text-slate-400 hover:text-white',
                   'transition-colors duration-200'
                 )}
                 aria-label="Close preview"
@@ -338,7 +347,7 @@ export const QuickPreview = memo(function QuickPreview({
       <AnimatePresence>
         {isVisible && (
           <motion.div
-            className="absolute z-40 top-full left-1/2 -translate-x-1/2 mt-2"
+            className="absolute z-dropdown top-full left-1/2 -translate-x-1/2 mt-2"
             initial={{ opacity: 0, y: -10, scale: 0.95 }}
             animate={{
               opacity: 1,
@@ -352,10 +361,10 @@ export const QuickPreview = memo(function QuickPreview({
               opacity: 0,
               y: -5,
               scale: 0.98,
-              transition: { duration: 0.15 },
+              transition: { duration: DURATION.quick },
             }}
           >
-            <div className="relative bg-slate-900/95 rounded-xl border border-white/10 shadow-xl p-4">
+            <div className="relative bg-slate-900/95 rounded-card border border-white/10 shadow-xl p-4">
               {/* Arrow */}
               <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 rotate-45 bg-slate-900/95 border-l border-t border-white/10" />
               <div className="relative z-10">{previewContent}</div>

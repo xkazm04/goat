@@ -1,16 +1,10 @@
 import { create } from 'zustand';
-import { ListTemplate } from '@/types/templates';
-import { TopList } from '@/types/top-lists';
+
 import { Blueprint } from '@/types/blueprint';
 import {
   ListIntent,
-  ListIntentColor,
-  ListIntentTimePeriod,
-  ListIntentSource,
-  createListIntent,
   updateListIntent,
   DEFAULT_LIST_INTENT,
-  DEFAULT_LIST_INTENT_COLOR,
 } from '@/types/list-intent';
 import {
   listTemplateToIntent,
@@ -18,8 +12,38 @@ import {
   blueprintToIntent,
   showcasePresetToIntent,
 } from '@/types/list-intent-transformers';
+import { ListTemplate } from '@/types/templates';
+import { TopList } from '@/types/top-lists';
 
 export type CompositionMode = 'create' | 'template' | 'clone' | 'blueprint';
+
+/**
+ * Intent Preservation Rules for Modal Mode Switches
+ *
+ * When the user switches between composition modes, some fields from the
+ * current ListIntent should carry over and others should be cleared.
+ * This map defines, for each target mode, which intent fields are PRESERVED.
+ * Any field not listed is cleared (reset to DEFAULT_LIST_INTENT value).
+ *
+ * Rationale:
+ * - `create`: Preserves user-entered title, category, and size since these
+ *   are the core identity fields a user chose. Clears source-specific data.
+ * - `template`: The template provides its own title, category, items, etc.
+ *   Only size and color (user visual preference) carry over.
+ * - `clone`: The source list defines everything. Only color carries over
+ *   as a user preference.
+ * - `blueprint`: The blueprint defines the full configuration. Only color
+ *   carries over for the same reason as clone.
+ */
+export const PRESERVE_FIELDS_ON_MODE_SWITCH: Record<
+  CompositionMode,
+  readonly (keyof import('@/types/list-intent').ListIntent)[]
+> = {
+  create: ['title', 'category', 'subcategory', 'size', 'timePeriod', 'color', 'selectedDecade', 'selectedYear', 'criteriaProfileId'],
+  template: ['size', 'color'],
+  clone: ['color'],
+  blueprint: ['color'],
+} as const;
 
 export interface TemplateData {
   template: ListTemplate | null;
@@ -62,6 +86,9 @@ interface CompositionModalState {
   openWithSourceList: (list: TopList) => void;
   openWithBlueprint: (blueprint: Blueprint) => void;
   clearTemplateData: () => void;
+
+  // Switch mode with intent field preservation
+  switchMode: (targetMode: CompositionMode) => void;
 
   // Pre-populate from showcase cards or other triggers
   populateFromPreset: (preset: {
@@ -203,6 +230,25 @@ export const useCompositionModalStore = create<CompositionModalState>((set, get)
         blueprint,
       },
       intent: newIntent,
+    });
+  },
+
+  // Switch mode with intent field preservation per PRESERVE_FIELDS_ON_MODE_SWITCH
+  switchMode: (targetMode) => {
+    const currentIntent = get().intent;
+    const preservedFields = PRESERVE_FIELDS_ON_MODE_SWITCH[targetMode];
+
+    // Start from default, then overlay preserved fields from current intent
+    const newIntent = { ...DEFAULT_LIST_INTENT };
+    for (const field of preservedFields) {
+      (newIntent as any)[field] = currentIntent[field];
+    }
+
+    set({
+      mode: targetMode,
+      intent: newIntent,
+      templateData: DEFAULT_TEMPLATE_DATA,
+      showTemplateGallery: false,
     });
   },
 

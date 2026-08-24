@@ -4,12 +4,13 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+
 import {
   getChallengeManager,
   getInvitationSystem,
   getShareChainTracker,
 } from '@/lib/challenges';
+import { createClient } from '@/lib/supabase/server';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -22,7 +23,9 @@ interface RouteContext {
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const { id: challengeId } = await context.params;
-    const { userId } = await auth();
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    const userId = user?.id ?? null;
 
     const challengeManager = getChallengeManager();
     const challenge = await challengeManager.getChallenge(challengeId);

@@ -1,8 +1,10 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Star, TrendingUp, Hash } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
+
+import { DURATION } from '@/lib/animations/motion-presets';
 import { cn } from '@/lib/utils';
 
 interface RankBadgeProps {
@@ -86,9 +88,9 @@ export function RankBadge({
       }
       if (ranking >= 4.0) {
         return {
-          bg: 'from-cyan-500/80 to-blue-600/80',
+          bg: 'from-brand/80 to-blue-600/80',
           text: 'text-white',
-          ring: 'ring-cyan-400/40',
+          ring: 'ring-brand-hover/40',
           icon: 'text-white',
         };
       }
@@ -120,9 +122,9 @@ export function RankBadge({
     }
     if (rankNum <= 10) {
       return {
-        bg: 'from-cyan-500/80 to-blue-600/80',
+        bg: 'from-brand/80 to-blue-600/80',
         text: 'text-white font-semibold',
-        ring: 'ring-cyan-400/40',
+        ring: 'ring-brand-hover/40',
         icon: 'text-white',
       };
     }
@@ -162,18 +164,18 @@ export function RankBadge({
             delay: entranceDelay,
           },
         }}
-        exit={{ scale: 0, opacity: 0, transition: { duration: 0.15 } }}
+        exit={{ scale: 0, opacity: 0, transition: { duration: DURATION.quick } }}
         className={cn(
           // Position in top-left corner
           'absolute top-1 left-1 z-10',
           // Glassmorphism styling
           'backdrop-blur-md',
-          'bg-gradient-to-br',
+          'bg-linear-to-br',
           style.bg,
           // Layout
           'flex items-center gap-0.5',
           'min-w-[22px] h-[18px] px-1',
-          'rounded-md',
+          'rounded-control',
           // Border and shadow
           'ring-1',
           style.ring,
@@ -189,7 +191,7 @@ export function RankBadge({
             animate={{
               opacity: 0,
               scale: 1.5,
-              transition: { duration: 0.6, ease: 'easeOut' },
+              transition: { duration: DURATION.emphasis, ease: 'easeOut' },
             }}
             className={cn(
               'absolute inset-0 rounded-md',
@@ -200,13 +202,13 @@ export function RankBadge({
 
         {/* Icon */}
         <BadgeIcon
-          className={cn('w-2.5 h-2.5 flex-shrink-0', style.icon)}
+          className={cn('w-2.5 h-2.5 shrink-0', style.icon)}
         />
 
         {/* Value */}
         <span
           className={cn(
-            'text-[9px] leading-none whitespace-nowrap',
+            'text-2xs leading-none whitespace-nowrap',
             style.text
           )}
         >

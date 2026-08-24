@@ -5,8 +5,8 @@
  * Provides explicit dependency management and atomic multi-store transactions.
  */
 
-import { GridItemType } from '@/types/match';
 import { BacklogItem } from '@/types/backlog-groups';
+import { GridItemType } from '@/types/match';
 
 // =============================================================================
 // Command Types
@@ -313,13 +313,12 @@ export interface SessionStoreSnapshot {
 }
 
 export interface ComparisonStoreSnapshot {
-  isComparisonOpen: boolean;
+  isOpen: boolean;
   items: unknown[];
 }
 
 export interface MatchStoreSnapshot {
   keyboardMode: boolean;
-  selectedItemIndex: number;
   showComparisonModal: boolean;
   showResultShareModal: boolean;
 }
@@ -347,17 +346,17 @@ export interface SessionStoreActions {
   updateSessionGridItems: (gridItems: GridItemType[]) => void;
   setSelectedBacklogItem: (id: string | null) => void;
   syncWithList: (listId: string, category?: string) => void;
-  saveCurrentSession: () => void;
+  saveCurrentSession: (explicitSessionId?: string) => void;
   createSession: (listId: string, size: number) => void;
-  switchToSession: (listId: string) => void;
+  switchToSession: (listId: string) => Promise<void>;
 }
 
 export interface ComparisonStoreActions {
-  openComparison: () => void;
-  closeComparison: () => void;
-  addToComparison: (item: unknown) => void;
-  removeFromComparison: (itemId: string) => void;
-  clearComparison: () => void;
+  open: () => void;
+  close: () => void;
+  toggleItem: (item: unknown) => void;
+  removeItem: (itemId: string) => void;
+  clearAll: () => void;
 }
 
 export interface MatchStoreActions {

@@ -9,6 +9,13 @@
  */
 
 import {
+  motion,
+  useMotionValue,
+  useSpring,
+  useTransform,
+  type MotionStyle,
+} from 'framer-motion';
+import {
   memo,
   useRef,
   useCallback,
@@ -16,15 +23,9 @@ import {
   type ReactNode,
   type HTMLAttributes,
 } from 'react';
-import {
-  motion,
-  useMotionValue,
-  useSpring,
-  useTransform,
-  type MotionStyle,
-} from 'framer-motion';
-import { cn } from '@/lib/utils';
+
 import { useMotionCapabilities } from '@/hooks/use-motion-preference';
+import { cn } from '@/lib/utils';
 
 // =============================================================================
 // Types
@@ -245,6 +246,9 @@ export const Card3D = memo(
             scale,
             z,
             transformStyle: 'preserve-3d',
+            // Preserve vertical page scroll while still allowing horizontal tilt,
+            // so the tilt gesture doesn't fight scrolling on touch devices.
+            touchAction: 'pan-y',
             ...(motionStyle || {}),
           }}
           onMouseMove={handleMouseMove}
@@ -252,6 +256,10 @@ export const Card3D = memo(
           onMouseLeave={handleMouseLeave}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
+          // touchcancel (OS interruption: incoming call, gesture nav, scroll
+          // takeover) doesn't fire touchend, which would otherwise leave the card
+          // stuck tilted/scaled. Reset on cancel too.
+          onTouchCancel={handleTouchEnd}
         >
           {/* Main content */}
           {children}

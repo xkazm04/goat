@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GridItemType } from '@/types/match';
+
+import { rateLimit, getRateLimitKey } from '@/lib/api/rate-limiter';
 import {
   LayoutEngine,
   BalanceOptimizer,
@@ -12,6 +13,8 @@ import {
   type BalanceAnalysis,
   type ColorHarmony,
 } from '@/lib/image-gen';
+import { GEMINI_MODEL_REST } from '@/lib/providers/gemini-client';
+import { GridItemType } from '@/types/match';
 
 interface GenerateImageRequest {
   gridItems: GridItemType[];
@@ -39,6 +42,10 @@ interface CompositionResult {
 }
 
 export async function POST(request: NextRequest) {
+  // Rate limit: 5 requests per minute per IP (expensive operation)
+  const limited = rateLimit(getRateLimitKey(request, 'generate-result-image'), 5, 60_000);
+  if (limited) return limited;
+
   try {
     const body: GenerateImageRequest = await request.json();
     const {
@@ -67,7 +74,7 @@ export async function POST(request: NextRequest) {
 
     // Filter matched items and sort by position
     const matchedItems = gridItems
-      .filter(item => item.matched && item.title)
+      .filter(item => item.context.matched && item.item?.title)
       .sort((a, b) => a.position - b.position);
 
     if (matchedItems.length === 0) {
@@ -103,11 +110,11 @@ export async function POST(request: NextRequest) {
           itemCount: matchedItems.length,
           items: matchedItems.map((item, index) => ({
             position: item.position + 1,
-            title: item.title,
-            description: item.description,
-            image_url: item.image_url,
+            title: item.item?.title ?? '',
+            description: item.item?.description,
+            image_url: item.item?.image_url,
             cell: composition.layout.cells[index],
-            placeholder: item.image_url ? null : composition.placeholders.get(index),
+            placeholder: item.item?.image_url ? null : composition.placeholders.get(index),
           })),
           aiEnhanced: false,
         },
@@ -119,7 +126,7 @@ export async function POST(request: NextRequest) {
 
     // Call Gemini Flash API
     const geminiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL_REST}:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: {
@@ -163,11 +170,11 @@ export async function POST(request: NextRequest) {
           itemCount: matchedItems.length,
           items: matchedItems.map((item, index) => ({
             position: item.position + 1,
-            title: item.title,
-            description: item.description,
-            image_url: item.image_url,
+            title: item.item?.title ?? '',
+            description: item.item?.description,
+            image_url: item.item?.image_url,
             cell: composition.layout.cells[index],
-            placeholder: item.image_url ? null : composition.placeholders.get(index),
+            placeholder: item.item?.image_url ? null : composition.placeholders.get(index),
           })),
           aiEnhanced: false,
           aiError: 'Gemini API unavailable',
@@ -196,11 +203,11 @@ export async function POST(request: NextRequest) {
         itemCount: matchedItems.length,
         items: matchedItems.map((item, index) => ({
           position: item.position + 1,
-          title: item.title,
-          description: item.description,
-          image_url: item.image_url,
+          title: item.item?.title ?? '',
+          description: item.item?.description,
+          image_url: item.item?.image_url,
           cell: composition.layout.cells[index],
-          placeholder: item.image_url ? null : composition.placeholders.get(index),
+          placeholder: item.item?.image_url ? null : composition.placeholders.get(index),
         })),
         aiEnhanced: !!generatedContent,
       },
@@ -208,10 +215,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error generating result image:', error);
     return NextResponse.json(
-      {
-        error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }
@@ -241,11 +245,11 @@ function generateSmartComposition(
   // Convert grid items to layout items
   const layoutItems: LayoutItem[] = items.map((item, index) => ({
     id: item.id || `item-${index}`,
-    aspectRatio: item.image_url ? estimateAspectRatio(item.image_url) : 1,
+    aspectRatio: item.item?.image_url ? estimateAspectRatio(item.item.image_url) : 1,
     importance: calculateImportance(index, items.length),
-    hasImage: !!item.image_url,
+    hasImage: !!item.item?.image_url,
     rank: index + 1,
-    title: item.title,
+    title: item.item?.title ?? '',
   }));
 
   // Generate layout
@@ -267,10 +271,10 @@ function generateSmartComposition(
   // Generate placeholders for items without images
   const placeholders = new Map<number, string>();
   items.forEach((item, index) => {
-    if (!item.image_url) {
+    if (!item.item?.image_url) {
       const placeholder = placeholderGenerator.generateDataURL(
         index + 1,
-        item.title
+        item.item?.title ?? ''
       );
       placeholders.set(index, placeholder);
     }
@@ -283,12 +287,12 @@ function generateSmartComposition(
   // Create mock color sets for demonstration
   // In production, these would come from actual image analysis
   const mockColorSets: ExtractedColors[] = items
-    .filter(item => item.image_url)
+    .filter(item => item.item?.image_url)
     .slice(0, 5)
     .map(() => ({
-      dominant: generateCategoryColor(items[0]?.title || ''),
+      dominant: generateCategoryColor(items[0]?.item?.title || ''),
       accent: generateAccentColor(),
-      palette: [generateCategoryColor(items[0]?.title || ''), generateAccentColor()],
+      palette: [generateCategoryColor(items[0]?.item?.title || ''), generateAccentColor()],
     }));
 
   if (mockColorSets.length > 0) {
@@ -376,7 +380,7 @@ function buildImagePrompt(
 
   const itemsList = items
     .slice(0, 50) // Limit to top 50
-    .map((item, index) => `${index + 1}. ${item.title}`)
+    .map((item, index) => `${index + 1}. ${item.item?.title ?? ''}`)
     .join('\n');
 
   const styleDescriptions = {

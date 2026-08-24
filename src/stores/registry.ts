@@ -43,15 +43,49 @@
  * - grid-store owns all drag-and-drop state
  */
 
-import {
-  createStoreRegistry,
-  defineStore,
-  type ZustandStore,
-  type StoreConfig,
-} from '@/lib/stores';
+// =============================================================================
+// Store Ownership Contracts
+// =============================================================================
+//
+// Each store owns a specific domain of state. No two stores may write to the
+// same domain. Cross-store reads use getState(); writes flow through the owning
+// store's actions only.
+//
+// ┌─────────────────────────────────────────────────────────────────────────┐
+// │ Store              │ Owns                        │ Persists To          │
+// ├─────────────────────────────────────────────────────────────────────────┤
+// │ ranking-store      │ Canonical ranking array,     │ localStorage         │
+// │                    │ item-to-tier assignments,    │ (persist middleware)  │
+// │                    │ tier config & boundaries,    │                      │
+// │                    │ bracket state, smart tiers   │                      │
+// ├─────────────────────────────────────────────────────────────────────────┤
+// │ grid-store         │ Drag-and-drop grid state,    │ localStorage         │
+// │                    │ grid positions (GridItemType),│ (persist middleware)  │
+// │                    │ per-list grid cache,         │                      │
+// │                    │ mobile tap-to-place          │                      │
+// ├─────────────────────────────────────────────────────────────────────────┤
+// │ session-store      │ Session persistence,         │ localStorage +       │
+// │                    │ normalized backlog data,     │ IndexedDB (offline)  │
+// │                    │ session progress tracking    │                      │
+// ├─────────────────────────────────────────────────────────────────────────┤
+// │ match-store        │ UI orchestration (keyboard,  │ None (ephemeral)     │
+// │                    │ modals, navigation), match   │                      │
+// │                    │ session lifecycle            │                      │
+// ├─────────────────────────────────────────────────────────────────────────┤
+// │ backlog-store      │ Backlog group state,         │ None                 │
+// │                    │ item usage tracking          │                      │
+// └─────────────────────────────────────────────────────────────────────────┘
+//
+// SYNC RULES:
+// - grid-store → session-store: derived sync via derived-session-sync subscriber
+// - ranking-store: self-contained; tiers derive from ranking[] internally
+// - match-store → grid-store, session-store: orchestrates via getState() calls
+// - NO store may write tier assignments except ranking-store
+// - NO store may mutate grid positions except grid-store
+//
 
 // =============================================================================
-// Store State Types (for reference)
+// Store Dependencies
 // =============================================================================
 
 /**
@@ -68,16 +102,34 @@ export const STORE_DEPENDENCIES = {
   'activity-store': [],
   'heatmap-store': [],
   'wiki-image-store': [],
-  'filter-store': [],
-  'inspector-store': [],
+  'item-popup-store': [],  // Unified: floating popups + inspector mode
   'layout-store': [],
   'use-list-store': [],
-  'ranking-store': [],  // Unified ranking store (includes tier functionality, consolidated from tier-store)
+  'ranking-store': [],  // Unified ranking store (owns ranking, tiers, brackets)
+  'undo-store': [],     // Command stack for Ctrl+Z undo/redo across drag operations
 
   // Dependent stores
   'grid-store': ['session-store', 'backlog-store', 'validation-notification-store'],
-  'match-store': ['session-store', 'grid-store', 'comparison-store'],
+  'match-store': ['session-store', 'grid-store', 'comparison-store', 'undo-store'],
 } as const;
+
+// =============================================================================
+// Ownership Domain Enum (for assertions)
+// =============================================================================
+
+/**
+ * Domains of state that stores own exclusively.
+ * Used by dev-mode assertions to detect ownership violations.
+ */
+export const STORE_OWNERSHIP = {
+  'ranking-store': ['ranking', 'tier-assignments', 'tier-config', 'tier-boundaries', 'bracket-state', 'smart-tiers'],
+  'grid-store': ['grid-positions', 'drag-drop', 'grid-cache', 'mobile-tap-to-place'],
+  'session-store': ['session-persistence', 'normalized-backlog', 'session-progress'],
+  'match-store': ['match-ui', 'keyboard-navigation', 'match-lifecycle'],
+  'backlog-store': ['backlog-groups', 'item-usage'],
+} as const;
+
+export type StoreOwnershipMap = typeof STORE_OWNERSHIP;
 
 /**
  * Get the initialization order based on dependency analysis.
@@ -217,5 +269,15 @@ if (process.env.NODE_ENV === 'development') {
   if (!validateNoCycles()) {
     console.error('CRITICAL: Circular dependencies detected in store registry!');
     console.error('Run generateDependencyGraph() to visualize the dependency graph.');
+  }
+
+  // Enable store sync drift assertions (lazy — waits for stores to initialize)
+  if (typeof window !== 'undefined') {
+    // Defer to avoid importing stores before they exist
+    setTimeout(() => {
+      import('./dev-sync-assertions').then(({ enableSyncDriftAssertions }) => {
+        enableSyncDriftAssertions();
+      });
+    }, 3000);
   }
 }

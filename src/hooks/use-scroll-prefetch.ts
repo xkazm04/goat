@@ -26,12 +26,13 @@
 'use client';
 
 import { useRef, useEffect, useCallback } from 'react';
+
+import { type PrefetchTarget } from '@/lib/prefetch/PrefetchManager';
 import {
   ScrollPrefetcher,
   type ScrollPrefetchConfig,
   type ScrollTriggerType,
 } from '@/lib/prefetch/ScrollPrefetcher';
-import { type PrefetchTarget } from '@/lib/prefetch/PrefetchManager';
 
 export interface UseScrollPrefetchOptions
   extends Omit<ScrollPrefetchConfig, 'type' | 'id' | 'targets'> {

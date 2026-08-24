@@ -39,6 +39,8 @@ export interface CategoryDefinition {
   subcategories: SubcategoryDefinition[];
   /** Default subcategory value (undefined if no subcategories) */
   defaultSubcategory: string | undefined;
+  /** Lowercase DB category strings that should resolve to this category */
+  dbAliases: string[];
 }
 
 /**
@@ -72,24 +74,28 @@ export const CATEGORY_CONFIG: CategoryConfigMap = {
     hasSubcategories: true,
     subcategories: SPORTS_SUBCATEGORIES,
     defaultSubcategory: "Basketball",
+    dbAliases: ["sports", "sport", "esports", "athletics"],
   },
   Music: {
     name: "Music",
     hasSubcategories: false,
     subcategories: [],
     defaultSubcategory: undefined,
+    dbAliases: ["music", "musical"],
   },
   Games: {
     name: "Games",
     hasSubcategories: false,
     subcategories: [],
     defaultSubcategory: undefined,
+    dbAliases: ["games", "game", "gaming", "video games"],
   },
   Stories: {
     name: "Stories",
     hasSubcategories: false,
     subcategories: [],
     defaultSubcategory: undefined,
+    dbAliases: ["stories", "story", "movies", "movie", "film", "films", "books", "book", "tv", "anime"],
   },
 } as const;
 
@@ -221,4 +227,72 @@ export function categoryToDbValue(category: string): string {
  */
 export function dbCategoryToDisplay(dbCategory: string): string {
   return dbCategory.charAt(0).toUpperCase() + dbCategory.slice(1).toLowerCase();
+}
+
+/**
+ * API category resolution map.
+ *
+ * Some category strings used internally (e.g. "general") don't exist as real
+ * database categories.  This map defines the canonical API category to use
+ * when querying the backend.  Both the backlog store and the enrichment
+ * pipeline should use {@link resolveApiCategory} so they agree on what data
+ * to fetch for a given logical category.
+ *
+ * If a category is NOT in this map it is passed through unchanged.
+ */
+const API_CATEGORY_ALIASES: Record<string, string> = {
+  general: 'sports',
+};
+
+/**
+ * Resolve a logical category to the category string used by the API / database.
+ *
+ * Use this everywhere you need to convert a user-facing or fallback category
+ * into the value sent to the backend.  This avoids hidden, one-off mappings
+ * scattered across the codebase.
+ *
+ * @param category - The logical category (e.g. "general", "sports", "music")
+ * @returns The category string the API / database expects
+ */
+export function resolveApiCategory(category: string): string {
+  const lower = category.toLowerCase().trim();
+  return API_CATEGORY_ALIASES[lower] ?? lower;
+}
+
+/**
+ * Precomputed reverse lookup: lowercase alias → canonical CategoryName.
+ * Built once from CATEGORY_CONFIG.dbAliases so every call to
+ * resolveDisplayCategory is O(1).
+ */
+const ALIAS_LOOKUP: Record<string, CategoryName> = (() => {
+  const map: Record<string, CategoryName> = {};
+  for (const [key, def] of Object.entries(CATEGORY_CONFIG)) {
+    for (const alias of def.dbAliases) {
+      map[alias] = key as CategoryName;
+    }
+  }
+  return map;
+})();
+
+/**
+ * Resolve a DB category string to its canonical CategoryName.
+ *
+ * Lookup order:
+ *  1. Exact match against dbAliases (case-insensitive)
+ *  2. Direct match against config key (case-insensitive title-case)
+ *
+ * @param dbCategory - The raw category string from the database
+ * @returns The canonical CategoryName, or null if unrecognised
+ */
+export function resolveDisplayCategory(dbCategory: string): CategoryName | null {
+  const lower = dbCategory.toLowerCase().trim();
+
+  // Fast path: alias table
+  if (lower in ALIAS_LOOKUP) return ALIAS_LOOKUP[lower];
+
+  // Fallback: title-case match against config keys
+  const titleCase = lower.charAt(0).toUpperCase() + lower.slice(1);
+  if (titleCase in CATEGORY_CONFIG) return titleCase as CategoryName;
+
+  return null;
 }

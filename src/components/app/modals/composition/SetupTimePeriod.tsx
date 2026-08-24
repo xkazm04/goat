@@ -19,7 +19,7 @@ const SetupTimePeriod = ({timePeriod, setTimePeriod, selectedDecade, setSelected
         </label>
         <div className="space-y-4">
             {/* Time Period Toggle with enhanced styling */}
-            <div className="flex gap-2 p-1 rounded-xl backdrop-blur-sm"
+            <div className="flex gap-2 p-1 rounded-xl backdrop-blur-xs"
                 style={{
                     background: `linear-gradient(135deg, rgba(51, 65, 85, 0.4), rgba(71, 85, 105, 0.3))`,
                     border: '1px solid rgba(71, 85, 105, 0.3)',
@@ -34,7 +34,7 @@ const SetupTimePeriod = ({timePeriod, setTimePeriod, selectedDecade, setSelected
                     <motion.button
                         key={option.value}
                         onClick={() => setTimePeriod(option.value as any)}
-                        className={`flex-1 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300 backdrop-blur-sm ${
+                        className={`flex-1 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300 backdrop-blur-xs ${
                             timePeriod === option.value
                                 ? 'text-white'
                                 : 'text-slate-400 hover:text-slate-200'
@@ -65,7 +65,7 @@ const SetupTimePeriod = ({timePeriod, setTimePeriod, selectedDecade, setSelected
                 <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="mt-6 p-5 rounded-xl backdrop-blur-sm"
+                    className="mt-6 p-5 rounded-xl backdrop-blur-xs"
                     style={{
                         background: `linear-gradient(135deg, ${color.primary}10, ${color.secondary}10)`,
                         border: `1px solid ${color.primary}20`,
@@ -78,7 +78,7 @@ const SetupTimePeriod = ({timePeriod, setTimePeriod, selectedDecade, setSelected
                     <div className="flex items-center justify-between mb-4">
                         <span className="text-xs text-slate-400 font-medium">1980s</span>
                         <motion.span
-                            className="text-sm font-bold px-3 py-1 rounded-full backdrop-blur-sm"
+                            className="text-sm font-bold px-3 py-1 rounded-full backdrop-blur-xs"
                             style={{
                                 color: color.accent,
                                 background: `linear-gradient(135deg, ${color.primary}30, ${color.secondary}20)`,
@@ -178,7 +178,7 @@ const SetupTimePeriod = ({timePeriod, setTimePeriod, selectedDecade, setSelected
                             max={2025}
                             value={selectedYear}
                             onChange={(e) => setSelectedYear(Number(e.target.value))}
-                            className="w-full px-4 py-3 rounded-xl text-slate-200 transition-all duration-300 focus:outline-none backdrop-blur-sm text-center text-lg font-semibold"
+                            className="w-full px-4 py-3 rounded-xl text-slate-200 transition-all duration-300 focus:outline-hidden backdrop-blur-xs text-center text-lg font-semibold"
                             style={{
                                 background: `
                                     linear-gradient(135deg, 

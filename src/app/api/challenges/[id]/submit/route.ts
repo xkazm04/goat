@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+
 import {
   getChallengeManager,
   getInvitationSystem,
@@ -12,6 +12,7 @@ import {
   getStreakTracker,
   type RankedItem,
 } from '@/lib/challenges';
+import { createClient } from '@/lib/supabase/server';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -23,20 +24,26 @@ interface RouteContext {
  */
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    const userId = user.id;
 
     const { id: challengeId } = await context.params;
     const body = await request.json();
-    const { items, userName, userAvatar, timeTaken, referredBy } = body as {
+    const { items, userName, userAvatar, timeTaken, referredBy, timeZone } = body as {
       items: RankedItem[];
       userName: string;
       userAvatar?: string;
       timeTaken?: number;
       referredBy?: string;
+      timeZone?: string;
     };
+    // Client's IANA zone (e.g. Intl.DateTimeFormat().resolvedOptions().timeZone)
+    // so the daily streak is computed in the user's local day, not UTC.
+    const userTimeZone = typeof timeZone === 'string' && timeZone ? timeZone : undefined;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
@@ -108,7 +115,8 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const streakResult = await streakTracker.recordActivity(
       userId,
       'any_challenge',
-      submission.score
+      submission.score,
+      userTimeZone
     );
 
     // Apply streak bonus if any
@@ -121,6 +129,12 @@ export async function POST(request: NextRequest, context: RouteContext) {
       );
       finalScore = bonusResult.finalScore;
     }
+
+    // Persist the bonused score back onto the stored submission BEFORE building
+    // the leaderboard — submitRanking returns the same object the manager stores
+    // and getLeaderboard ranks on `submission.score`. Without this the user saw
+    // "your score: <bonused>" but was ranked by the un-bonused base score.
+    submission.score = finalScore;
 
     // Get updated leaderboard
     const leaderboard = await challengeManager.getLeaderboard(challengeId, 10, userId);
@@ -153,10 +167,12 @@ export async function POST(request: NextRequest, context: RouteContext) {
  */
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    const userId = user.id;
 
     const { id: challengeId } = await context.params;
     const challengeManager = getChallengeManager();

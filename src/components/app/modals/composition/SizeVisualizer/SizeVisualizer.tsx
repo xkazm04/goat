@@ -1,22 +1,24 @@
 "use client";
 
-import { memo, useState, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronRight } from "lucide-react";
+import { memo, useState, useCallback, useMemo } from "react";
+
+import { DURATION } from '@/lib/animations/motion-presets';
+
+import { CustomSizeSlider } from "./CustomSizeSlider";
+import { FormatSwitcher } from "./FormatSwitcher";
+import { GridPreview, MiniGridPreview } from "./GridPreview";
+import { MorphAnimator, useMorphAnimation } from "./MorphAnimator";
+import { SizeRecommender, RecommendationBadge } from "./SizeRecommender";
+import { TimeEstimator, TimeBadge } from "./TimeEstimator";
 import {
   ListSize,
   RankingFormat,
   SizeVisualizerProps,
   SIZE_OPTIONS,
-  getNearestSize,
   getExampleItems,
 } from "./types";
-import { GridPreview, MiniGridPreview } from "./GridPreview";
-import { MorphAnimator, useMorphAnimation } from "./MorphAnimator";
-import { TimeEstimator, TimeBadge } from "./TimeEstimator";
-import { SizeRecommender, RecommendationBadge } from "./SizeRecommender";
-import { CustomSizeSlider } from "./CustomSizeSlider";
-import { FormatSwitcher, FormatBadge } from "./FormatSwitcher";
 
 /**
  * Main Size Visualizer Component
@@ -93,7 +95,7 @@ export const SizeVisualizer = memo(function SizeVisualizer({
 
       {/* Main preview area */}
       <div
-        className="relative p-6 rounded-2xl"
+        className="relative p-6 rounded-container"
         style={{
           background: `linear-gradient(135deg, rgba(15, 23, 42, 0.6), rgba(30, 41, 59, 0.4))`,
           border: `1px solid ${color.primary}20`,
@@ -134,7 +136,7 @@ export const SizeVisualizer = memo(function SizeVisualizer({
           <AnimatePresence>
             {hoveredSlot && exampleItems[hoveredSlot - 1] && (
               <motion.div
-                className="mt-4 p-2 rounded-lg text-center"
+                className="mt-4 p-2 rounded-control text-center"
                 style={{
                   background: `${color.primary}15`,
                   border: `1px solid ${color.primary}30`,
@@ -142,9 +144,9 @@ export const SizeVisualizer = memo(function SizeVisualizer({
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.15 }}
+                transition={{ duration: DURATION.quick }}
               >
-                <span className="text-[10px] text-slate-400 mr-1">#{hoveredSlot}:</span>
+                <span className="text-2xs text-slate-400 mr-1">#{hoveredSlot}:</span>
                 <span className="text-xs font-medium" style={{ color: color.accent }}>
                   {exampleItems[hoveredSlot - 1]}
                 </span>
@@ -165,7 +167,7 @@ export const SizeVisualizer = memo(function SizeVisualizer({
             return (
               <motion.button
                 key={option.value}
-                className="relative p-3 rounded-xl cursor-pointer group"
+                className="relative p-3 rounded-card cursor-pointer group"
                 style={{
                   background: isSelected
                     ? `linear-gradient(135deg, ${color.primary}40, ${color.secondary}30)`
@@ -222,7 +224,7 @@ export const SizeVisualizer = memo(function SizeVisualizer({
                 </div>
 
                 {/* Description */}
-                <div className="text-[10px] text-slate-400 text-center mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="text-2xs text-slate-400 text-center mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                   {option.description}
                 </div>
 
@@ -257,7 +259,7 @@ export const SizeVisualizer = memo(function SizeVisualizer({
         {/* Current selection info */}
         {currentOption && (
           <motion.div
-            className="mt-4 p-3 rounded-xl flex items-center justify-between"
+            className="mt-4 p-3 rounded-card flex items-center justify-between"
             style={{
               background: `${color.primary}10`,
               border: `1px solid ${color.primary}20`,
@@ -280,7 +282,7 @@ export const SizeVisualizer = memo(function SizeVisualizer({
                 {currentOption.recommendedFor.slice(0, 2).map((rec, i) => (
                   <span
                     key={i}
-                    className="text-[10px] px-1.5 py-0.5 rounded-full"
+                    className="text-2xs px-1.5 py-0.5 rounded-badge"
                     style={{
                       background: `${color.accent}20`,
                       color: color.accent,
@@ -338,7 +340,7 @@ export const SizeVisualizer = memo(function SizeVisualizer({
 
       {/* Comparison view toggle */}
       <motion.button
-        className="w-full flex items-center justify-center gap-2 py-2 rounded-lg cursor-pointer"
+        className="w-full flex items-center justify-center gap-2 py-2 rounded-control cursor-pointer"
         style={{
           background: "rgba(51, 65, 85, 0.2)",
           border: "1px solid rgba(71, 85, 105, 0.2)",
@@ -406,7 +408,7 @@ const CompactSizeVisualizer = memo(function CompactSizeVisualizer({
           return (
             <motion.button
               key={option.value}
-              className="flex-1 py-3 rounded-xl cursor-pointer"
+              className="flex-1 py-3 rounded-card cursor-pointer"
               style={{
                 background: isSelected
                   ? `linear-gradient(135deg, ${color.primary}40, ${color.secondary}30)`
@@ -448,7 +450,7 @@ const SizeComparisonView = memo(function SizeComparisonView({
 }) {
   return (
     <div
-      className="p-4 rounded-xl"
+      className="p-4 rounded-card"
       style={{
         background: "rgba(15, 23, 42, 0.4)",
         border: "1px solid rgba(71, 85, 105, 0.2)",
@@ -474,7 +476,7 @@ const SizeComparisonView = memo(function SizeComparisonView({
                 highlightedSlots={isSelected ? [1, 2, 3] : []}
               />
               <div className="mt-2 text-xs text-slate-400">{option.label}</div>
-              <div className="text-[9px] text-slate-500">{option.description}</div>
+              <div className="text-2xs text-slate-500">{option.description}</div>
             </div>
           );
         })}
@@ -494,8 +496,8 @@ const SizeComparisonView = memo(function SizeComparisonView({
                 key={`stats-${option.value}`}
                 className={`${isSelected ? "text-white" : "text-slate-500"}`}
               >
-                <div className="text-[10px]">~{comparisons} choices</div>
-                <div className="text-[10px]">~{option.estimatedMinutes}min</div>
+                <div className="text-2xs">~{comparisons} choices</div>
+                <div className="text-2xs">~{option.estimatedMinutes}min</div>
               </div>
             );
           })}

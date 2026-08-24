@@ -27,8 +27,8 @@ export function DragHandleIndicator({
         absolute -left-1 top-1/2 -translate-y-1/2 -translate-x-full
         flex items-center justify-center
         w-6 h-6 rounded
-        bg-cyan-500/90 text-white
-        shadow-lg shadow-cyan-500/30
+        bg-brand/90 text-white
+        shadow-lg shadow-brand/30
         transition-opacity duration-150
         ${isDragging ? 'opacity-100' : 'opacity-80'}
         z-30

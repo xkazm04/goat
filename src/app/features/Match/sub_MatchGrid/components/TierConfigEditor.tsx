@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import {
   X,
@@ -11,17 +10,19 @@ import {
   Check,
   RotateCcw,
   Save,
-  Eye,
-  EyeOff,
 } from 'lucide-react';
+import { useState, useCallback, useRef, useEffect } from 'react';
+
 import { useRankingStore } from '@/stores/ranking-store';
-import type { TierDefinition, TierColor } from '@/types/ranking';
+
 import {
   TIER_COLOR_PALETTES,
   createTierColor,
   SYSTEM_TIER_PRESETS,
   type CustomTierPreset,
-} from '@/lib/tier/customPresets';
+} from '../../lib/tierPresets';
+
+import type { TierDefinition } from '@/types/ranking';
 
 interface TierConfigEditorProps {
   isOpen: boolean;
@@ -53,7 +54,10 @@ function ColorPicker({
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      className="absolute top-full left-0 mt-2 p-3 bg-slate-800 rounded-lg border border-slate-700 shadow-xl z-50"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Color picker"
+      className="absolute top-full left-0 mt-2 p-3 bg-slate-800 rounded-card border border-slate-700 shadow-xl z-dropdown"
       onClick={(e) => e.stopPropagation()}
     >
       {/* Preset palettes */}
@@ -68,11 +72,11 @@ function ColorPicker({
                 onClose();
               }}
               className={`
-                w-6 h-6 rounded-md border-2 transition-all
+                w-6 h-6 rounded-control border-2 transition-all touch-target-sm
                 ${c === color ? 'border-white scale-110' : 'border-transparent hover:border-slate-500'}
               `}
               style={{ backgroundColor: c }}
-              aria-label={`Select color ${c}`}
+              aria-label={`Select tier color swatch ${i + 1}`}
             />
           ))}
         </div>
@@ -100,7 +104,7 @@ function ColorPicker({
             onChange(customColor);
             onClose();
           }}
-          className="p-1.5 bg-cyan-500 hover:bg-cyan-400 rounded text-white transition-colors"
+          className="p-1.5 bg-brand hover:bg-brand-hover rounded-control text-white transition-colors touch-target"
           aria-label="Apply custom color"
         >
           <Check className="w-4 h-4" />
@@ -157,7 +161,9 @@ function TierEditorRow({
     <Reorder.Item
       value={tier}
       id={tier.id}
-      className="flex items-center gap-3 p-3 bg-slate-800/50 rounded-lg border border-slate-700/50 group"
+      aria-roledescription="sortable tier"
+      aria-label={`${tier.displayName} tier, position ${index + 1}`}
+      className="flex items-center gap-3 p-3 bg-slate-800/50 rounded-card border border-slate-700/50 group focus-ring"
     >
       {/* Drag handle */}
       <div className="cursor-grab active:cursor-grabbing text-slate-500 hover:text-slate-300 transition-colors">
@@ -168,7 +174,7 @@ function TierEditorRow({
       <div className="relative">
         <button
           onClick={() => setShowColorPicker(!showColorPicker)}
-          className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg shadow-inner transition-all hover:scale-105"
+          className="w-10 h-10 rounded-card flex items-center justify-center font-bold text-lg shadow-inner transition-all hover:scale-105"
           style={{
             background: tier.color.gradient,
             color: tier.color.text,
@@ -204,7 +210,7 @@ function TierEditorRow({
                 setIsEditingLabel(false);
               }
             }}
-            className="w-full px-2 py-1 bg-slate-700 border border-cyan-500 rounded text-white text-sm focus:outline-none"
+            className="w-full px-2 py-1 bg-slate-700 border border-brand rounded text-white text-sm focus:outline-hidden"
             maxLength={20}
           />
         ) : (
@@ -228,7 +234,7 @@ function TierEditorRow({
       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
         <button
           onClick={() => setShowColorPicker(!showColorPicker)}
-          className="p-1.5 text-slate-400 hover:text-cyan-400 hover:bg-slate-700 rounded transition-colors"
+          className="p-1.5 text-slate-400 hover:text-brand-hover hover:bg-slate-700 rounded-control transition-colors touch-target"
           aria-label="Change color"
         >
           <Palette className="w-4 h-4" />
@@ -236,7 +242,7 @@ function TierEditorRow({
         {canRemove && (
           <button
             onClick={onRemove}
-            className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-700 rounded transition-colors"
+            className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-700 rounded-control transition-colors touch-target"
             aria-label="Remove tier"
           >
             <Trash2 className="w-4 h-4" />
@@ -349,20 +355,23 @@ export function TierConfigEditor({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+        className="fixed inset-0 z-modal flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
         onClick={onClose}
       >
         <motion.div
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
-          className="w-full max-w-2xl max-h-[85vh] bg-slate-900 rounded-2xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="tier-config-title"
+          className="w-full max-w-2xl max-h-[85vh] bg-slate-900 rounded-container border border-slate-700 shadow-2xl overflow-hidden flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-slate-700">
             <div>
-              <h2 className="text-xl font-bold text-white">
+              <h2 id="tier-config-title" className="text-xl font-bold text-white">
                 Customize Tier List
               </h2>
               <p className="text-sm text-slate-400 mt-0.5">
@@ -371,7 +380,7 @@ export function TierConfigEditor({
             </div>
             <button
               onClick={onClose}
-              className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+              className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-control transition-colors"
               aria-label="Close"
             >
               <X className="w-5 h-5" />
@@ -384,8 +393,8 @@ export function TierConfigEditor({
               <button
                 onClick={() => setShowPresets(!showPresets)}
                 className={`
-                  px-3 py-1.5 text-sm font-medium rounded-lg transition-colors
-                  ${showPresets ? 'bg-cyan-500/20 text-cyan-400' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}
+                  px-3 py-1.5 text-sm font-medium rounded-control transition-colors
+                  ${showPresets ? 'bg-brand/20 text-brand-hover' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}
                 `}
               >
                 {showPresets ? 'Hide Presets' : 'Browse Presets'}
@@ -398,7 +407,7 @@ export function TierConfigEditor({
               {hasChanges && (
                 <button
                   onClick={handleReset}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-slate-400 hover:text-white hover:bg-slate-700 rounded-control transition-colors"
                 >
                   <RotateCcw className="w-4 h-4" />
                   Reset
@@ -407,7 +416,7 @@ export function TierConfigEditor({
               <button
                 onClick={handleAddTier}
                 disabled={editingTiers.length >= 10}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-slate-700 text-white hover:bg-slate-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-slate-700 text-white hover:bg-slate-600 rounded-control transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Plus className="w-4 h-4" />
                 Add Tier
@@ -429,13 +438,13 @@ export function TierConfigEditor({
                     <button
                       key={preset.id}
                       onClick={() => handleApplyPreset(preset)}
-                      className="p-3 bg-slate-800/50 hover:bg-slate-700/50 rounded-lg border border-slate-700 text-left transition-colors group"
+                      className="p-3 bg-slate-800/50 hover:bg-slate-700/50 rounded-card border border-slate-700 text-left transition-colors group"
                     >
                       <div className="flex items-center gap-2 mb-2">
                         {preset.tiers.slice(0, 4).map((t, i) => (
                           <div
                             key={t.id}
-                            className="w-5 h-5 rounded text-[10px] font-bold flex items-center justify-center"
+                            className="w-5 h-5 rounded text-2xs font-bold flex items-center justify-center"
                             style={{
                               background: t.color.gradient,
                               color: t.color.text,
@@ -450,7 +459,7 @@ export function TierConfigEditor({
                           </span>
                         )}
                       </div>
-                      <p className="text-sm font-medium text-white group-hover:text-cyan-400 transition-colors">
+                      <p className="text-sm font-medium text-white group-hover:text-brand-hover transition-colors">
                         {preset.name}
                       </p>
                       <p className="text-xs text-slate-500 truncate">
@@ -470,6 +479,7 @@ export function TierConfigEditor({
               values={editingTiers}
               onReorder={handleReorder}
               className="space-y-2"
+              aria-label="Reorderable tier list"
             >
               {editingTiers.map((tier, index) => (
                 <TierEditorRow
@@ -498,14 +508,14 @@ export function TierConfigEditor({
             <div className="flex items-center gap-3">
               <button
                 onClick={onClose}
-                className="px-4 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
+                className="px-4 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-700 rounded-control transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSave}
                 disabled={!hasChanges}
-                className="flex items-center gap-2 px-4 py-2 text-sm bg-cyan-500 hover:bg-cyan-400 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 px-4 py-2 text-sm bg-brand hover:bg-brand-hover text-white font-medium rounded-control transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Save className="w-4 h-4" />
                 Save Changes

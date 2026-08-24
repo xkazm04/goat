@@ -4,8 +4,6 @@
  * Best for: Standard ranking displays, 5-10 items
  */
 
-import type { OGCardData, OGCardTheme, OGCardOptions } from '../types';
-import { DEFAULT_THEME } from '../types';
 import {
   getMedalColor,
   getMedalGradient,
@@ -13,6 +11,9 @@ import {
   truncateText,
   formatCount,
 } from '../OGCardGenerator';
+import { DEFAULT_THEME } from '../types';
+
+import type { OGCardData, OGCardTheme, OGCardOptions } from '../types';
 
 interface ListLayoutProps {
   data: OGCardData;

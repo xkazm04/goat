@@ -1,29 +1,34 @@
 /**
  * Grid Store - Single Source of Truth for Drag & Drop
  *
- * This store is the authoritative handler for all drag-and-drop operations in the application.
- * It uses TransferProtocol utilities for consistent ID parsing and handles:
- * - Backlog to grid assignment
- * - Grid to grid move/swap
- * - Position validation
- * - Session synchronization
+ * OWNERSHIP CONTRACT:
+ *   Owns: grid positions (GridItemType[]), drag-and-drop state, per-list grid cache,
+ *         mobile tap-to-place selection
+ *   Persists: localStorage (via Zustand persist middleware)
+ *   Sync: grid-store → session-store (via derived-session-sync subscriber).
+ *         NO other store may mutate grid positions directly.
+ *
+ * This store owns grid state and the atomic placement actions (assignItemToGrid,
+ * moveGridItem, assignToNextOpenSlot). Drag-END resolution is owned by the single
+ * DragOperationRouter (see src/lib/dnd/operations): the live path is
+ * SimpleMatchGrid -> getGridDragRouter().handleDragEnd(event, getStoreContext()).
+ * The store's handleDragEnd delegates to that same router so the two can never
+ * diverge (it previously reimplemented a second, contradictory assign engine).
  *
  * Session-store handles session persistence, backlog-store handles backlog groups.
- * This store owns all grid state and drag/drop logic.
- * Components should use useMatchGridState().handleDragEnd which delegates here.
  */
+import { DragEndEvent } from '@dnd-kit/core';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { GridItemType } from '@/types/match';
-import { BacklogItem } from '@/types/backlog-groups';
-import { DragEndEvent } from '@dnd-kit/core';
-import { useSessionStore } from './session-store';
+
+import { logActivity } from '@/lib/activity/activity-logger';
 import {
   TransferableItem,
   TransferResult,
   isGridReceiverId,
   extractGridPosition,
   createGridReceiverId,
+  assertCanonicalGridId,
   createGridOnlyRouter,
   type DragOperationRouter,
   type OperationStoreContext,
@@ -34,16 +39,134 @@ import {
   createEmptyGrid,
 } from '@/lib/grid';
 import { GRID_LIMITS, TUTORIAL_GRID } from '@/lib/grid/constants';
+import { extractTitle } from '@/lib/items/item-utils';
+import { gridLogger } from '@/lib/logger';
+import { createLazyStoreAccessor } from '@/lib/stores/lazy-store-accessor';
 import {
   getValidationAuthority,
   logValidationFailure,
   ValidationErrorCode,
 } from '@/lib/validation';
-import { createLazyStoreAccessor } from '@/lib/stores/lazy-store-accessor';
-import { gridLogger } from '@/lib/logger';
+import { BacklogItem } from '@/types/backlog-groups';
+import { GridItemType } from '@/types/match';
+/**
+ * Resize a grid to the target size, rescuing matched items that would be
+ * truncated by relocating them to empty slots within the new bounds.
+ * Any items that cannot be relocated are returned to the backlog.
+ *
+ * Returns the resized grid.
+ */
+function resizeGridWithRescue(
+  grid: GridItemType[],
+  targetSize: number,
+  returnToBacklog: (itemId: string) => void,
+): GridItemType[] {
+  if (grid.length <= targetSize) {
+    // Growing: just add empty slots
+    const resized = [...grid];
+    for (let i = resized.length; i < targetSize; i++) {
+      resized.push(createEmptyGridSlot(i));
+    }
+    return resized;
+  }
 
-// Re-export for backwards compatibility
-export type { ValidationErrorCode as TransferValidationErrorCode } from '@/lib/validation';
+  // Shrinking: rescue matched items from positions being removed
+  const displacedItems = grid
+    .slice(targetSize)
+    .filter(item => item.context.matched);
+
+  const resized = grid.slice(0, targetSize);
+
+  if (displacedItems.length > 0) {
+    // Find empty slots within the new bounds to relocate displaced items
+    for (const displaced of displacedItems) {
+      const emptyIdx = resized.findIndex(slot => !slot.context.matched);
+      if (emptyIdx !== -1) {
+        // Relocate to the empty slot
+        resized[emptyIdx] = {
+          ...displaced,
+          position: emptyIdx,
+          id: createGridReceiverId(emptyIdx),
+        };
+        gridLogger.debug(
+          `Grid resize: relocated "${displaced.item?.title ?? ''}" from position ${displaced.position} to ${emptyIdx}`
+        );
+      } else {
+        // No room left — return to backlog
+        const itemId = displaced.item?.id || displaced.id;
+        returnToBacklog(itemId);
+        gridLogger.warn(
+          `Grid resize: returned "${displaced.item?.title ?? ''}" (pos ${displaced.position}) to backlog — no empty slots`
+        );
+      }
+    }
+
+    gridLogger.debug(
+      `Grid resize: ${displacedItems.length} displaced item(s) handled during ${grid.length}→${targetSize} resize`
+    );
+  }
+
+  return resized;
+}
+
+/**
+ * Get current list context for activity logging.
+ * Non-blocking, returns what's available from grid-store state.
+ */
+function getListContext(): { listId?: string; listTitle?: string } {
+  try {
+    const gridState = useGridStore.getState();
+    const listId = gridState.currentListId || undefined;
+    // Try to get list title from list-store (lazy to avoid circular dep)
+    let listTitle: string | undefined;
+    try {
+      const listStore = require('@/stores/use-list-store').useListStore;
+      const currentList = listStore.getState().currentList;
+      listTitle = currentList?.title;
+    } catch { /* ignore */ }
+    return { listId, listTitle };
+  } catch {
+    return {};
+  }
+}
+
+/** Maximum number of lists to keep in the grid cache (LRU eviction) */
+const MAX_CACHE_SIZE = 15;
+
+/** Grid cache entry type */
+interface GridCacheEntry {
+  gridItems: GridItemType[];
+  maxGridSize: number;
+}
+
+/**
+ * Evict oldest entries from listGridCache to keep it within MAX_CACHE_SIZE.
+ * Returns new cache and order arrays (pure function, no mutation).
+ */
+function evictOldestCacheEntries(
+  cache: Record<string, GridCacheEntry>,
+  order: string[],
+  maxSize: number
+): { cache: Record<string, GridCacheEntry>; order: string[] } {
+  const newOrder = [...order];
+  const newCache = { ...cache };
+  while (newOrder.length > maxSize) {
+    const oldest = newOrder.shift()!;
+    delete newCache[oldest];
+    gridLogger.debug(`LRU evicted grid cache for list: ${oldest}`);
+  }
+  return { cache: newCache, order: newOrder };
+}
+
+/**
+ * Touch a list ID in the LRU order (move to end = most recently used).
+ * Returns a new order array.
+ */
+function touchLRUOrder(order: string[], listId: string): string[] {
+  const newOrder = order.filter(id => id !== listId);
+  newOrder.push(listId);
+  return newOrder;
+}
 
 /**
  * Lazy accessor for backlog-store to avoid circular dependency issues.
@@ -115,7 +238,7 @@ function releaseItemLock(itemId: string): void {
  */
 function computeGridStatistics(gridItems: GridItemType[]): GridStatistics {
   const total = gridItems.length;
-  const matchedCount = gridItems.reduce((count, item) => count + (item.matched ? 1 : 0), 0);
+  const matchedCount = gridItems.reduce((count, item) => count + (item.context.matched ? 1 : 0), 0);
   const emptyCount = total - matchedCount;
   const percentage = total > 0 ? Math.round((matchedCount / total) * 100) : 0;
 
@@ -128,12 +251,60 @@ function computeGridStatistics(gridItems: GridItemType[]): GridStatistics {
   };
 }
 
+/**
+ * Copy-on-write grid update: creates a new array reference with only the
+ * specified positions replaced, avoiding a full 50-element spread on every
+ * drag operation. Also incrementally patches statistics instead of
+ * re-scanning the entire array.
+ */
+function cowGridUpdate(
+  gridItems: GridItemType[],
+  stats: GridStatistics,
+  updates: Array<{ index: number; item: GridItemType }>,
+): { gridItems: GridItemType[]; gridStatistics: GridStatistics } {
+  // Slice is ~2x faster than spread for typed arrays in V8 and produces
+  // the same shallow copy. For the common single-position case the diff
+  // is small, but during rapid 20+ drag sessions it adds up.
+  const next = gridItems.slice();
+  let matchedDelta = 0;
+
+  for (const { index, item } of updates) {
+    const prev = gridItems[index];
+    // Track matched-count delta so we can patch stats without a full scan.
+    if (prev.context.matched && !item.context.matched) matchedDelta--;
+    else if (!prev.context.matched && item.context.matched) matchedDelta++;
+    next[index] = item;
+  }
+
+  const matchedCount = stats.matchedCount + matchedDelta;
+  const total = stats.total;
+  const emptyCount = total - matchedCount;
+
+  return {
+    gridItems: next,
+    gridStatistics: {
+      matchedCount,
+      emptyCount,
+      total,
+      percentage: total > 0 ? Math.round((matchedCount / total) * 100) : 0,
+      isComplete: matchedCount === total && total > 0,
+    },
+  };
+}
+
 export interface GridStatistics {
   matchedCount: number;
   emptyCount: number;
   total: number;
   percentage: number;
   isComplete: boolean;
+}
+
+/** Mobile selected item for tap-to-place interaction */
+export interface MobileSelectedItem {
+  id: string;
+  title: string;
+  image_url?: string;
 }
 
 export interface GridStoreState {
@@ -144,9 +315,13 @@ export interface GridStoreState {
   activeItem: string | null;
   isTutorialMode: boolean;
 
+  // Mobile tap-to-place state
+  mobileSelectedItem: MobileSelectedItem | null;
+
   // Per-list grid persistence
   currentListId: string | null;
-  listGridCache: Record<string, { gridItems: GridItemType[]; maxGridSize: number }>;
+  listGridCache: Record<string, GridCacheEntry>;
+  listGridCacheOrder: string[]; // LRU order: oldest first, newest last
 
   // Computed statistics (updated automatically when gridItems changes)
   gridStatistics: GridStatistics;
@@ -161,6 +336,14 @@ export interface GridStoreState {
 
   // Actions - Item placement
   assignItemToGrid: (item: BacklogItem | GridItemType, position: number) => void;
+  /**
+   * Atomically place an item into the next open grid slot: locks the item,
+   * reads fresh grid state, assigns, verifies the placement actually took, and
+   * only then marks the item used. Returns the placed position, or null if no
+   * slot was free / the placement did not take. Used by mobile swipe-to-rank so
+   * a contested slot can't "phantom-succeed".
+   */
+  assignToNextOpenSlot: (item: BacklogItem | GridItemType) => number | null;
   removeItemFromGrid: (position: number) => void;
   removeItemByItemId: (itemId: string) => void;
   moveGridItem: (fromPosition: number, toPosition: number) => void;
@@ -169,6 +352,10 @@ export interface GridStoreState {
   // Actions - Selection
   setSelectedGridItem: (id: string | null) => void;
   setActiveItem: (id: string | null) => void;
+
+  // Actions - Mobile tap-to-place
+  setMobileSelectedItem: (item: MobileSelectedItem | null) => void;
+  handleMobileTapSlot: (position: number) => void;
 
   // Actions - Drag & Drop
   handleDragEnd: (event: DragEndEvent) => void;
@@ -212,8 +399,10 @@ export const useGridStore = create<GridStoreState>()(
       selectedGridItem: null,
       activeItem: null,
       isTutorialMode: false,
+      mobileSelectedItem: null,
       currentListId: null,
       listGridCache: {},
+      listGridCacheOrder: [],
       gridStatistics: emptyGridStatistics,
 
       // Initialize a new grid
@@ -224,13 +413,24 @@ export const useGridStore = create<GridStoreState>()(
         gridLogger.debug(`Initializing grid with ${size} positions for list ${listId || 'unknown'}`);
 
         // If we have a different current list, save its grid to cache first
-        const updatedCache = { ...state.listGridCache };
+        let updatedCache = { ...state.listGridCache };
+        let updatedOrder = [...state.listGridCacheOrder];
+
         if (state.currentListId && state.currentListId !== listId && state.gridItems.length > 0) {
           updatedCache[state.currentListId] = {
             gridItems: state.gridItems,
             maxGridSize: state.maxGridSize,
           };
+          updatedOrder = touchLRUOrder(updatedOrder, state.currentListId);
         }
+
+        // Touch the new list in LRU order if it has an ID
+        if (listId) {
+          updatedOrder = touchLRUOrder(updatedOrder, listId);
+        }
+
+        // Evict oldest entries if over limit
+        const evicted = evictOldestCacheEntries(updatedCache, updatedOrder, MAX_CACHE_SIZE);
 
         set({
           gridItems: emptyGridItems,
@@ -238,13 +438,12 @@ export const useGridStore = create<GridStoreState>()(
           selectedGridItem: null,
           gridStatistics: computeGridStatistics(emptyGridItems),
           currentListId: listId || null,
-          listGridCache: updatedCache,
+          listGridCache: evicted.cache,
+          listGridCacheOrder: evicted.order,
         });
 
         // Save grid to session if listId provided
         if (listId) {
-          const sessionStore = useSessionStore.getState();
-          sessionStore.updateSessionGridItems(emptyGridItems);
           gridLogger.debug(`Grid initialized and saved to session ${listId}`);
         }
       },
@@ -258,33 +457,43 @@ export const useGridStore = create<GridStoreState>()(
         // If same list, just ensure size is correct
         if (state.currentListId === listId) {
           if (state.maxGridSize !== size) {
-            // Resize grid if needed
-            const resizedGrid = [...state.gridItems];
-            if (resizedGrid.length < size) {
-              for (let i = resizedGrid.length; i < size; i++) {
-                resizedGrid.push(createEmptyGridSlot(i));
-              }
-            } else if (resizedGrid.length > size) {
-              resizedGrid.length = size;
-            }
+            // Resize grid, rescuing any matched items that would be truncated
+            const backlogState = backlogStoreAccessor.getState();
+            const resizedGrid = resizeGridWithRescue(
+              state.gridItems,
+              size,
+              (itemId) => backlogState?.markItemAsUsed(itemId, false),
+            );
             set({
               gridItems: resizedGrid,
               maxGridSize: size,
               gridStatistics: computeGridStatistics(resizedGrid),
             });
+
           }
           return;
         }
 
         // Save current grid to cache (if we have a current list)
-        const updatedCache = { ...state.listGridCache };
+        let updatedCache = { ...state.listGridCache };
+        let updatedOrder = [...state.listGridCacheOrder];
+
         if (state.currentListId && state.gridItems.length > 0) {
           updatedCache[state.currentListId] = {
             gridItems: state.gridItems,
             maxGridSize: state.maxGridSize,
           };
+          updatedOrder = touchLRUOrder(updatedOrder, state.currentListId);
           gridLogger.debug(`Saved grid for list ${state.currentListId} to cache`);
         }
+
+        // Touch the new list in LRU order
+        updatedOrder = touchLRUOrder(updatedOrder, listId);
+
+        // Evict oldest entries if over limit
+        const evicted = evictOldestCacheEntries(updatedCache, updatedOrder, MAX_CACHE_SIZE);
+        updatedCache = evicted.cache;
+        updatedOrder = evicted.order;
 
         // Load cached grid for new list or create empty grid
         const cached = updatedCache[listId];
@@ -296,15 +505,14 @@ export const useGridStore = create<GridStoreState>()(
           newGridItems = cached.gridItems;
           newMaxSize = cached.maxGridSize;
 
-          // Resize if size changed
+          // Resize if size changed, rescuing matched items from truncated positions
           if (newMaxSize !== size) {
-            if (newGridItems.length < size) {
-              for (let i = newGridItems.length; i < size; i++) {
-                newGridItems.push(createEmptyGridSlot(i));
-              }
-            } else if (newGridItems.length > size) {
-              newGridItems = newGridItems.slice(0, size);
-            }
+            const backlogState = backlogStoreAccessor.getState();
+            newGridItems = resizeGridWithRescue(
+              newGridItems,
+              size,
+              (itemId) => backlogState?.markItemAsUsed(itemId, false),
+            );
             newMaxSize = size;
           }
         } else {
@@ -318,17 +526,17 @@ export const useGridStore = create<GridStoreState>()(
           maxGridSize: newMaxSize,
           currentListId: listId,
           listGridCache: updatedCache,
+          listGridCacheOrder: updatedOrder,
           selectedGridItem: null,
           gridStatistics: computeGridStatistics(newGridItems),
         });
 
-        // Update session store with new grid
-        const sessionStore = useSessionStore.getState();
-        sessionStore.updateSessionGridItems(newGridItems);
+
       },
 
-      // Sync with session store
+      // Sync with session store (reads FROM session INTO grid — reverse direction)
       syncWithSession: () => {
+        const { useSessionStore } = require('./session-store');
         const sessionStore = useSessionStore.getState();
         const activeSession = sessionStore.getActiveSession();
 
@@ -375,17 +583,14 @@ export const useGridStore = create<GridStoreState>()(
         set(state => {
           gridLogger.debug(`Assigning item to position ${position}`);
 
-          // Create a copy of the grid items
-          const newGridItems = [...state.gridItems];
-
           // Check if position is valid
-          if (position < 0 || position >= newGridItems.length) {
+          if (position < 0 || position >= state.gridItems.length) {
             gridLogger.warn(`Invalid position ${position}`);
             return state;
           }
 
           // Check if position is already filled
-          if (newGridItems[position].matched) {
+          if (state.gridItems[position].context.matched) {
             gridLogger.warn(`Position ${position} already has an item`);
             return state;
           }
@@ -393,43 +598,102 @@ export const useGridStore = create<GridStoreState>()(
           // Use factory to create grid item - handles both BacklogItem and GridItemType
           const gridItem = createGridItem(item, position);
 
-          // Update the grid item at the specified position
-          newGridItems[position] = gridItem;
+          // Copy-on-write: only clone the affected position
+          const update = cowGridUpdate(state.gridItems, state.gridStatistics, [
+            { index: position, item: gridItem },
+          ]);
 
-          // Update session store if needed
-          const sessionStore = useSessionStore.getState();
-          sessionStore.updateSessionGridItems(newGridItems);
 
-          return {
-            gridItems: newGridItems,
-            gridStatistics: computeGridStatistics(newGridItems),
-          };
+
+          // Log activity (non-blocking)
+          const ctx = getListContext();
+          logActivity({
+            itemId: gridItem.item?.id || gridItem.id,
+            action: 'assign',
+            listId: ctx.listId,
+            listTitle: ctx.listTitle,
+            positionAfter: position,
+          });
+
+          return update;
         });
       },
+
+      // Atomically place an item into the next open slot (mobile swipe-to-rank).
+      assignToNextOpenSlot: (item): number | null => {
+        // Backlog item id used for locking + marking used (nested for a GridItemType).
+        const markId = ('item' in item && item.item?.id) ? item.item.id : (item as BacklogItem).id;
+        if (!markId) return null;
+
+        // Lock so a rapid double-swipe of the SAME card can't double-place it,
+        // mirroring the desktop drag path's acquireItemLock guard.
+        if (!acquireItemLock(markId)) {
+          gridLogger.warn(`assignToNextOpenSlot: ${markId} already being assigned`);
+          return null;
+        }
+
+        try {
+          // Read FRESH grid state inside the action (not a caller's stale snapshot)
+          // and find the next open slot.
+          const { gridItems, maxGridSize } = get();
+          let position: number | null = null;
+          for (let i = 0; i < maxGridSize; i++) {
+            if (!gridItems[i]?.context.matched) {
+              position = i;
+              break;
+            }
+          }
+          if (position === null) return null;
+
+          get().assignItemToGrid(item, position);
+
+          // assignItemToGrid silently no-ops on an already-filled slot. The slot
+          // was empty in our fresh read above, so if it is matched now WE placed
+          // it. Only then mark the item used — otherwise a contested slot would
+          // remove the item from the backlog without ever placing it (lost item).
+          const placed = get().gridItems[position]?.context.matched === true;
+          if (!placed) return null;
+
+          backlogStoreAccessor.getState()?.markItemAsUsed(markId, true);
+          return position;
+        } finally {
+          releaseItemLock(markId);
+        }
+      },
+
       // Remove an item from a grid position
       removeItemFromGrid: (position) => {
         set(state => {
           gridLogger.debug(`Removing item from position ${position}`);
 
-          // Create a copy of the grid items
-          const newGridItems = [...state.gridItems];
-
           // Check if position is valid
-          if (position < 0 || position >= newGridItems.length) {
+          if (position < 0 || position >= state.gridItems.length) {
             gridLogger.warn(`Invalid position ${position}`);
             return state;
           }
 
-          // Reset the grid item at the specified position using factory
-          newGridItems[position] = createEmptyGridSlot(position);
+          // Log activity before clearing (need the item info)
+          const removedItem = state.gridItems[position];
+          if (removedItem.context.matched) {
+            const ctx = getListContext();
+            logActivity({
+              itemId: removedItem.item?.id || removedItem.id,
+              action: 'remove',
+              listId: ctx.listId,
+              listTitle: ctx.listTitle,
+              positionBefore: position,
+            });
+          }
 
-          // Update session store
-          const sessionStore = useSessionStore.getState();
-          sessionStore.updateSessionGridItems(newGridItems);
+          // Copy-on-write: only clone the affected position
+          const update = cowGridUpdate(state.gridItems, state.gridStatistics, [
+            { index: position, item: createEmptyGridSlot(position) },
+          ]);
+
+
 
           return {
-            gridItems: newGridItems,
-            gridStatistics: computeGridStatistics(newGridItems),
+            ...update,
             // Clear selection if the removed item was selected
             selectedGridItem: state.selectedGridItem === `grid-${position}` ? null : state.selectedGridItem
           };
@@ -441,47 +705,42 @@ export const useGridStore = create<GridStoreState>()(
         set(state => {
           gridLogger.debug(`Removing item by backlog ID ${itemId}`);
 
-          const newGridItems = [...state.gridItems];
-          let updated = false;
-
-          // Find all grid items with this backlogItemId
-          for (let i = 0; i < newGridItems.length; i++) {
-            if (newGridItems[i].backlogItemId === itemId) {
+          // Collect positions to clear
+          const updates: Array<{ index: number; item: GridItemType }> = [];
+          for (let i = 0; i < state.gridItems.length; i++) {
+            if (state.gridItems[i].item?.id === itemId) {
               gridLogger.debug(`Found item in position ${i}`);
-
-              // Reset the grid item at the specified position using factory
-              newGridItems[i] = createEmptyGridSlot(i);
-              updated = true;
+              updates.push({ index: i, item: createEmptyGridSlot(i) });
             }
           }
 
-          if (!updated) {
+          if (updates.length === 0) {
             gridLogger.warn(`Item with ID ${itemId} not found in grid`);
 
             // Debug log to see what's in the grid
             gridLogger.debug('Current grid items:',
               state.gridItems
-                .filter(item => item.matched)
+                .filter(item => item.context.matched)
                 .map(item => ({
                   position: item.position,
-                  backlogItemId: item.backlogItemId,
-                  title: item.title
+                  itemId: item.item?.id,
+                  title: item.item?.title ?? ''
                 }))
             );
 
             return state;
           }
 
-          // Update session store
-          const sessionStore = useSessionStore.getState();
-          sessionStore.updateSessionGridItems(newGridItems);
+          // Copy-on-write: only clone the affected positions
+          const update = cowGridUpdate(state.gridItems, state.gridStatistics, updates);
+
+
 
           return {
-            gridItems: newGridItems,
-            gridStatistics: computeGridStatistics(newGridItems),
+            ...update,
             // Clear selection if needed
             selectedGridItem: state.selectedGridItem && state.gridItems.find(
-              item => item.id === state.selectedGridItem && item.backlogItemId === itemId
+              item => item.id === state.selectedGridItem && item.item?.id === itemId
             ) ? null : state.selectedGridItem
           };
         });
@@ -492,32 +751,31 @@ export const useGridStore = create<GridStoreState>()(
         set(state => {
           gridLogger.debug(`Moving item from position ${fromPosition} to ${toPosition}`);
 
-          // Create a copy of the grid items
-          const newGridItems = [...state.gridItems];
-
           // Check if positions are valid
           if (
-            fromPosition < 0 || fromPosition >= newGridItems.length ||
-            toPosition < 0 || toPosition >= newGridItems.length
+            fromPosition < 0 || fromPosition >= state.gridItems.length ||
+            toPosition < 0 || toPosition >= state.gridItems.length
           ) {
             gridLogger.warn(`Invalid positions - from: ${fromPosition}, to: ${toPosition}`);
             return state;
           }
 
           // Check if source position has an item
-          if (!newGridItems[fromPosition].matched) {
+          if (!state.gridItems[fromPosition].context.matched) {
             gridLogger.warn(`No item at position ${fromPosition}`);
             return state;
           }
 
           // Get the item to move
-          const itemToMove = { ...newGridItems[fromPosition] };
+          const itemToMove = { ...state.gridItems[fromPosition] };
+
+          let updates: Array<{ index: number; item: GridItemType }>;
 
           // If target position already has an item, swap them
-          if (newGridItems[toPosition].matched) {
+          if (state.gridItems[toPosition].context.matched) {
             gridLogger.debug(`Swapping items at positions ${fromPosition} and ${toPosition}`);
 
-            const targetItem = { ...newGridItems[toPosition] };
+            const targetItem = { ...state.gridItems[toPosition] };
 
             // Update positions and IDs
             itemToMove.position = toPosition;
@@ -525,29 +783,52 @@ export const useGridStore = create<GridStoreState>()(
             targetItem.position = fromPosition;
             targetItem.id = createGridReceiverId(fromPosition);
 
-            // Perform the swap
-            newGridItems[fromPosition] = targetItem;
-            newGridItems[toPosition] = itemToMove;
+            updates = [
+              { index: fromPosition, item: targetItem },
+              { index: toPosition, item: itemToMove },
+            ];
           } else {
             // Move the item to the empty target position
             itemToMove.position = toPosition;
             itemToMove.id = createGridReceiverId(toPosition);
 
-            // Set the source position to empty using factory
-            newGridItems[fromPosition] = createEmptyGridSlot(fromPosition);
-
-            // Set the target position to the moved item
-            newGridItems[toPosition] = itemToMove;
+            updates = [
+              { index: fromPosition, item: createEmptyGridSlot(fromPosition) },
+              { index: toPosition, item: itemToMove },
+            ];
           }
 
-          // Update session store
-          const sessionStore = useSessionStore.getState();
-          sessionStore.updateSessionGridItems(newGridItems);
+          // Copy-on-write: only clone the two affected positions
+          const update = cowGridUpdate(state.gridItems, state.gridStatistics, updates);
 
-          return {
-            gridItems: newGridItems,
-            gridStatistics: computeGridStatistics(newGridItems),
-          };
+
+
+          // Log activity for move/swap (non-blocking)
+          const ctx = getListContext();
+          const isSwap = state.gridItems[toPosition].context.matched;
+          logActivity({
+            itemId: itemToMove.item?.id || itemToMove.id,
+            action: isSwap ? 'swap' : 'move',
+            listId: ctx.listId,
+            listTitle: ctx.listTitle,
+            positionBefore: fromPosition,
+            positionAfter: toPosition,
+            metadata: isSwap ? { swappedWith: state.gridItems[toPosition].item?.id } : undefined,
+          });
+          if (isSwap) {
+            const targetItem = state.gridItems[toPosition];
+            logActivity({
+              itemId: targetItem.item?.id || targetItem.id,
+              action: 'swap',
+              listId: ctx.listId,
+              listTitle: ctx.listTitle,
+              positionBefore: toPosition,
+              positionAfter: fromPosition,
+              metadata: { swappedWith: itemToMove.item?.id },
+            });
+          }
+
+          return update;
         });
       },
 
@@ -558,9 +839,6 @@ export const useGridStore = create<GridStoreState>()(
 
           const emptyGridItems = createEmptyGrid(state.gridItems.length);
 
-          // Update session store
-          const sessionStore = useSessionStore.getState();
-          sessionStore.updateSessionGridItems(emptyGridItems);
 
           return {
             gridItems: emptyGridItems,
@@ -574,133 +852,85 @@ export const useGridStore = create<GridStoreState>()(
       setSelectedGridItem: (id) => set({ selectedGridItem: id }),
 
       // Set the active drag item
-      setActiveItem: (id) => set({ activeItem: id }),
+      setActiveItem: (id) => {
+        // Clear mobile selection on drag start to prevent state conflicts
+        const state = get();
+        if (id !== null && state.mobileSelectedItem !== null) {
+          set({ activeItem: id, mobileSelectedItem: null });
+        } else {
+          set({ activeItem: id });
+        }
+      },
 
-      // Handle drag end events (uses TransferProtocol utilities for ID parsing)
+      // Mobile tap-to-place: set the currently selected backlog item
+      setMobileSelectedItem: (item) => set({ mobileSelectedItem: item }),
+
+      // Mobile tap-to-place: place the selected backlog item at a grid position
+      handleMobileTapSlot: (position) => {
+        const state = get();
+        const selected = state.mobileSelectedItem;
+
+        if (!selected) return;
+
+        // Check bounds
+        if (position < 0 || position >= state.gridItems.length) {
+          gridLogger.warn(`Tap-to-place: invalid position ${position}`);
+          return;
+        }
+
+        // Use the backlog store to get the full item and validate
+        const backlogState = backlogStoreAccessor.getState();
+        if (!backlogState) {
+          gridLogger.error('Tap-to-place: backlog store not initialized');
+          return;
+        }
+
+        const item = backlogState.getItemById(selected.id);
+        if (!item) {
+          gridLogger.warn(`Tap-to-place: item ${selected.id} not found in backlog`);
+          set({ mobileSelectedItem: null });
+          return;
+        }
+
+        // Check if already used
+        if (backlogState.isItemUsed(selected.id)) {
+          gridLogger.warn(`Tap-to-place: item ${selected.id} already used`);
+          set({ mobileSelectedItem: null });
+          return;
+        }
+
+        // If slot is occupied, displace existing item back to backlog
+        const existingItem = state.gridItems[position];
+        if (existingItem && existingItem.context.matched && existingItem.item?.id) {
+          const displacedItemId = existingItem.item.id;
+          get().removeItemFromGrid(position);
+          backlogState.markItemAsUsed(displacedItemId, false);
+          gridLogger.debug(`Tap-to-place: displaced item ${displacedItemId} from position ${position}`);
+        }
+
+        // Place the item
+        const gridItem = createGridItem(item, position);
+        get().assignItemToGrid(gridItem, position);
+        backlogState.markItemAsUsed(item.id, true);
+
+        // Clear selection after placement
+        set({ mobileSelectedItem: null });
+        gridLogger.info(`Tap-to-place: placed item at position ${position}`);
+      },
+
+      // Delegate drag-end resolution to the single DragOperationRouter so this
+      // entry point can never diverge from the live SimpleMatchGrid path.
+      // (Previously this reimplemented a second assign engine that rejected
+      // occupied-slot drops instead of displacing — contradictory semantics
+      // depending on which path a caller happened to invoke.)
       handleDragEnd: (event) => {
-        const { active, over } = event;
-
-        if (!active || !over) {
+        if (!event.over) return;
+        const storeContext = get().getStoreContext();
+        if (!storeContext) {
+          gridLogger.error('Store context unavailable - cannot complete drag operation');
           return;
         }
-
-        const activeId = String(active.id);
-        const overId = String(over.id);
-
-        gridLogger.debug(`Drag end ${activeId} -> ${overId}`);
-
-        // Use TransferProtocol utilities for consistent ID parsing
-        const isActiveFromGrid = isGridReceiverId(activeId);
-        const isTargetGrid = isGridReceiverId(overId);
-
-        // Grid item to grid position (move/swap)
-        if (isActiveFromGrid && isTargetGrid) {
-          const fromPosition = extractGridPosition(activeId);
-          const toPosition = extractGridPosition(overId);
-
-          if (fromPosition !== null && toPosition !== null && fromPosition !== toPosition) {
-            get().moveGridItem(fromPosition, toPosition);
-          }
-          return;
-        }
-
-        // Backlog/external item to grid position (assign)
-        if (!isActiveFromGrid && isTargetGrid) {
-          const toPosition = extractGridPosition(overId);
-
-          if (toPosition === null) {
-            gridLogger.warn(`Invalid grid position from ${overId}`);
-            // Emit validation error to match-store
-            get().emitValidationError('TARGET_POSITION_INVALID');
-            return;
-          }
-
-          // Use lazy accessor to safely get backlog store state
-          // This handles race conditions if user drags before module initializes
-          const backlogState = backlogStoreAccessor.getState();
-
-          if (!backlogState) {
-            gridLogger.error('Backlog store not initialized - cannot complete drag operation');
-            get().emitValidationError('SOURCE_NOT_FOUND');
-            return;
-          }
-
-          // RACE CONDITION FIX: Acquire lock BEFORE validation to prevent
-          // double-click drag placing same item in two grid positions.
-          // If user double-clicks rapidly, second drag will fail to acquire lock.
-          if (!acquireItemLock(activeId)) {
-            gridLogger.warn(`Item ${activeId} is already being assigned (concurrent drag blocked)`);
-            get().emitValidationError('SOURCE_ALREADY_USED');
-            return;
-          }
-
-          const state = get();
-
-          // Use ValidationAuthority for comprehensive validation
-          const authority = getValidationAuthority();
-          const validationResult = authority.canTransfer(
-            {
-              itemId: activeId,
-              from: 'backlog',
-              to: 'grid',
-              toPosition,
-            },
-            {
-              gridItems: state.gridItems,
-              maxGridSize: state.maxGridSize,
-            },
-            {
-              getItemById: backlogState.getItemById,
-              isItemUsed: backlogState.isItemUsed,
-              isItemLocked: (id) => itemsBeingAssigned.has(id) && id !== activeId,
-            }
-          );
-
-          // Handle validation failure
-          if (!validationResult.isValid) {
-            // Release lock on validation failure
-            releaseItemLock(activeId);
-
-            logValidationFailure(validationResult, {
-              activeId,
-              overId,
-              operation: 'backlog-to-grid',
-            });
-
-            // Emit error to match-store for UI notification
-            if (validationResult.errorCode) {
-              get().emitValidationError(validationResult.errorCode);
-            }
-            return;
-          }
-
-          // Validation passed - proceed with assignment
-          const item = validationResult.item;
-
-          if (item) {
-            gridLogger.debug(`Validated backlog item:`, {
-              id: item.id,
-              title: item.title || item.name,
-              hasImageUrl: !!item.image_url
-            });
-
-            // Use factory to create grid item with consistent image_url handling
-            const gridItem = createGridItem(item, toPosition);
-
-            // ATOMIC OPERATION: Assign item to grid and mark as used together
-            // This prevents race condition where item appears in multiple positions
-            get().assignItemToGrid(gridItem, toPosition);
-            backlogState.markItemAsUsed(item.id, true);
-
-            // Release lock only after both operations complete
-            releaseItemLock(activeId);
-
-            gridLogger.info(`Successfully assigned item to position ${toPosition}`);
-          } else {
-            // Edge case: validation passed but no item (shouldn't happen)
-            releaseItemLock(activeId);
-          }
-        }
+        getGridDragRouter().handleDragEnd(event, storeContext);
       },
 
       // Emit validation error to validation-notification-store
@@ -760,7 +990,7 @@ export const useGridStore = create<GridStoreState>()(
         }
 
         // Check if position is occupied
-        const isOccupied = state.gridItems[position].matched;
+        const isOccupied = state.gridItems[position].context.matched;
 
         if (isOccupied) {
           return {
@@ -802,17 +1032,17 @@ export const useGridStore = create<GridStoreState>()(
 
         const gridItem = gridItems[position];
 
-        if (!gridItem.matched) {
+        if (!gridItem.context.matched || !gridItem.item) {
           return null;
         }
 
         // Convert GridItemType to TransferableItem
         return {
-          id: gridItem.backlogItemId || gridItem.id,
-          title: gridItem.title,
-          description: gridItem.description,
-          image_url: gridItem.image_url,
-          tags: gridItem.tags,
+          id: gridItem.item.id,
+          title: gridItem.item.title,
+          description: gridItem.item.description,
+          image_url: gridItem.item.image_url,
+          tags: gridItem.item.tags,
         };
       },
 
@@ -833,8 +1063,8 @@ export const useGridStore = create<GridStoreState>()(
         }
 
         // At least one must be occupied
-        const aOccupied = state.gridItems[positionA].matched;
-        const bOccupied = state.gridItems[positionB].matched;
+        const aOccupied = state.gridItems[positionA].context.matched;
+        const bOccupied = state.gridItems[positionB].context.matched;
 
         if (!aOccupied && !bOccupied) {
           return {
@@ -860,13 +1090,13 @@ export const useGridStore = create<GridStoreState>()(
 
       // Get all matched grid items
       getMatchedItems: () => {
-        return get().gridItems.filter(item => item.matched);
+        return get().gridItems.filter(item => item.context.matched);
       },
 
       // Find the next available grid position
       getNextAvailableGridPosition: () => {
         const { gridItems } = get();
-        const emptyPosition = gridItems.findIndex(item => !item.matched);
+        const emptyPosition = gridItems.findIndex(item => !item.context.matched);
         return emptyPosition !== -1 ? emptyPosition : null;
       },
 
@@ -913,18 +1143,49 @@ export const useGridStore = create<GridStoreState>()(
         gridStatistics: state.gridStatistics,
         currentListId: state.currentListId,
         listGridCache: state.listGridCache,
+        listGridCacheOrder: state.listGridCacheOrder,
       }),
       // Re-compute statistics on hydration and restore correct list's grid from cache
       onRehydrateStorage: () => (state) => {
         if (state) {
-          // Re-compute statistics
+          // Migrate pre-PlacedItem grid items: ensure every item has a `context` envelope
+          const migrateGridItems = (items: GridItemType[]) => {
+            for (let i = 0; i < items.length; i++) {
+              if (!items[i].context) {
+                const legacy = items[i] as GridItemType & { matched?: boolean };
+                items[i] = {
+                  ...items[i],
+                  context: {
+                    source: 'grid',
+                    matched: legacy.matched ?? (items[i].item != null),
+                  },
+                };
+              }
+            }
+          };
+
+          // Migrate current grid items
           if (state.gridItems) {
+            migrateGridItems(state.gridItems);
             state.gridStatistics = computeGridStatistics(state.gridItems);
           }
 
-          // Ensure listGridCache exists
+          // Migrate cached grids
+          if (state.listGridCache) {
+            for (const cached of Object.values(state.listGridCache)) {
+              if (cached.gridItems) {
+                migrateGridItems(cached.gridItems);
+              }
+            }
+          }
+
+          // Ensure listGridCache and order exist
           if (!state.listGridCache) {
             state.listGridCache = {};
+          }
+          if (!state.listGridCacheOrder) {
+            // Reconstruct order from cache keys if missing (migration)
+            state.listGridCacheOrder = Object.keys(state.listGridCache);
           }
 
           // If we have a currentListId, ensure the current grid is from that list's cache
@@ -964,21 +1225,21 @@ export function useGridItemAtPosition(position: number): GridItemType | null {
  * Hook to check if a position is occupied
  */
 export function useIsPositionOccupied(position: number): boolean {
-  return useGridStore((state) => state.gridItems[position]?.matched ?? false);
+  return useGridStore((state) => state.gridItems[position]?.context.matched ?? false);
 }
 
 /**
  * Hook to get the backlog item ID at a position
  */
 export function useBacklogItemIdAtPosition(position: number): string | undefined {
-  return useGridStore((state) => state.gridItems[position]?.backlogItemId);
+  return useGridStore((state) => state.gridItems[position]?.item?.id);
 }
 
 /**
  * Hook to get the image URL at a position
  */
 export function useImageUrlAtPosition(position: number): string | undefined | null {
-  return useGridStore((state) => state.gridItems[position]?.image_url);
+  return useGridStore((state) => state.gridItems[position]?.item?.image_url);
 }
 
 /**
@@ -987,7 +1248,7 @@ export function useImageUrlAtPosition(position: number): string | undefined | nu
 export function useTitleAtPosition(position: number): string | undefined {
   return useGridStore((state) => {
     const item = state.gridItems[position];
-    return item?.title;
+    return item?.item?.title;
   });
 }
 
@@ -1021,7 +1282,7 @@ export function useIsGridComplete(): boolean {
 export function useFilledPositions(): number[] {
   return useGridStore((state) =>
     state.gridItems
-      .map((item, index) => (item.matched ? index : -1))
+      .map((item, index) => (item.context.matched ? index : -1))
       .filter((index) => index !== -1)
   );
 }
@@ -1032,7 +1293,7 @@ export function useFilledPositions(): number[] {
 export function useEmptyPositions(): number[] {
   return useGridStore((state) =>
     state.gridItems
-      .map((item, index) => (!item.matched ? index : -1))
+      .map((item, index) => (!item.context.matched ? index : -1))
       .filter((index) => index !== -1)
   );
 }

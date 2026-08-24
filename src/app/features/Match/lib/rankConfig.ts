@@ -27,7 +27,7 @@ const PODIUM_CONFIGS: Record<number, RankConfig> = {
  */
 const DEFAULT_CONFIG: Omit<RankConfig, 'label'> = {
   color: '#22d3ee',
-  glow: 'shadow-cyan-500/30',
+  glow: 'shadow-brand/30',
   icon: null,
 };
 

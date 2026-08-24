@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { cn } from '@/lib/utils';
+
 import {
   getGlow,
   GLOW_PRESET,
@@ -9,6 +9,7 @@ import {
   type GlowIntensity,
   type GlowPreset,
 } from '@/components/visual/depth';
+import { cn } from '@/lib/utils';
 
 // =============================================================================
 // TYPES

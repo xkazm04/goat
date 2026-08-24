@@ -1,9 +1,14 @@
 'use client';
 
-import { memo, useState, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import { memo, useState, useMemo, useCallback, useEffect } from 'react';
+
+import { PositionBadge } from '@/components/patterns/badges';
 import { ScoreOverlayContainer } from '@/components/ui/score-overlays';
 import { ELEVATION, Glow } from '@/components/visual';
+import { SURFACE_ELEVATION } from '@/components/visual/depth/depth-tokens';
+import { DURATION } from '@/lib/animations/motion-presets';
+
 import type { Criterion, CriterionScore } from '@/lib/criteria/types';
 
 export interface CardPreviewPanelProps {
@@ -41,17 +46,20 @@ export const CardPreviewPanel = memo(function CardPreviewPanel({
     return initial;
   });
 
-  // Update mock scores when criteria change
-  useMemo(() => {
+  // Sync mock scores when new criteria are added
+  useEffect(() => {
+    const newEntries: Record<string, number> = {};
+    let hasNew = false;
     criteria.forEach((c) => {
       if (mockScores[c.id] === undefined) {
-        setMockScores((prev) => ({
-          ...prev,
-          [c.id]: Math.round((c.maxScore - c.minScore) * 0.7 + c.minScore),
-        }));
+        newEntries[c.id] = Math.round((c.maxScore - c.minScore) * 0.7 + c.minScore);
+        hasNew = true;
       }
     });
-  }, [criteria, mockScores]);
+    if (hasNew) {
+      setMockScores((prev) => ({ ...prev, ...newEntries }));
+    }
+  }, [criteria]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Convert to CriterionScore array for the overlay
   const scores: CriterionScore[] = useMemo(
@@ -89,18 +97,18 @@ export const CardPreviewPanel = memo(function CardPreviewPanel({
 
       {/* Mock Card */}
       <div className="flex justify-center">
-        <div className="relative w-36 aspect-[4/5]">
+        <div className="relative w-36 aspect-4/5">
           {/* Position #1 Glow Background */}
           <Glow
             color="gold"
             intensity="subtle"
             asBackground
-            className="absolute inset-0 rounded-xl z-0 pointer-events-none"
+            className="absolute inset-0 rounded-card z-0 pointer-events-none"
           />
 
           {/* Gold Border - Position #1 */}
           <div
-            className="absolute inset-0 rounded-xl pointer-events-none z-[35]"
+            className="absolute inset-0 rounded-card pointer-events-none z-35"
             style={{
               boxShadow: 'inset 0 0 0 3px #fbbf24',
             }}
@@ -108,11 +116,11 @@ export const CardPreviewPanel = memo(function CardPreviewPanel({
 
           {/* Card container */}
           <motion.div
-            className="relative w-full h-full rounded-xl overflow-hidden border-2 border-white/10 bg-gray-900/80 group"
-            style={{ boxShadow: ELEVATION.medium }}
+            className="relative w-full h-full rounded-card overflow-hidden border-2 border-white/10 group"
+            style={{ boxShadow: ELEVATION.medium, backgroundColor: SURFACE_ELEVATION.raised }}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: DURATION.normal }}
           >
             {/* Placeholder Image */}
             <div
@@ -130,25 +138,16 @@ export const CardPreviewPanel = memo(function CardPreviewPanel({
             </div>
 
             {/* Gradient overlay for readability */}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/20 pointer-events-none" />
+            <div className="absolute inset-0 bg-linear-to-b from-black/40 via-transparent to-black/20 pointer-events-none" />
 
-            {/* Rank Badge (position 1) - matches PositionBadge podium styling */}
+            {/* Rank Badge (position 1) - uses shared PositionBadge */}
             <motion.div
               className="absolute top-2 left-1/2 -translate-x-1/2 z-20"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1, duration: 0.3 }}
+              transition={{ delay: 0.1, duration: DURATION.normal }}
             >
-              <div
-                className="px-2.5 py-1 rounded-lg font-bold text-gray-900 text-sm"
-                style={{
-                  background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FFD700 100%)',
-                  boxShadow: '0 2px 8px rgba(255, 215, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.3)',
-                  textShadow: '0 1px 2px rgba(0, 0, 0, 0.4), 0 0 8px rgba(255, 215, 0, 0.6)',
-                }}
-              >
-                #1
-              </div>
+              <PositionBadge position={0} size="sm" />
             </motion.div>
 
             {/* Score Overlays */}
@@ -160,7 +159,7 @@ export const CardPreviewPanel = memo(function CardPreviewPanel({
           </motion.div>
 
           {/* Title below card */}
-          <p className="mt-2 text-[11px] font-medium text-white/90 text-center leading-tight">
+          <p className="mt-2 text-xs font-medium text-white/90 text-center leading-tight">
             Example Item
           </p>
         </div>

@@ -9,7 +9,11 @@ export {
   useBacklogGroups,
   useBacklogFilters,
   useBacklogSelection,
-  useBacklogLoading,
+  useIsBacklogLoading,
+  useBacklogLoadingGroupIds,
+  useBacklogLoadingProgress,
+  useBacklogError,
+  useBacklogLoadingErrors,
   useBacklogItem,
   useBacklogOfflineStatus
 } from './backlog/selectors';

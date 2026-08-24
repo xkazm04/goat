@@ -1,7 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
+
+import { SCORE_ANIMATION_EASE, formatScore } from "@/lib/constants/scoring";
 import { cn } from "@/lib/utils";
+
 import type { ScoreRendererProps } from "./types";
 
 // Animation configuration
@@ -63,19 +66,19 @@ export function MusicScoreRenderer({
       {barHeights.map((height, i) => (
         <motion.div
           key={i}
-          className="flex-1 rounded-t-sm bg-gradient-to-t from-purple-600 to-blue-400"
+          className="flex-1 rounded-t-sm bg-linear-to-t from-purple-600 to-blue-400"
           initial={animated ? { height: 0 } : false}
           animate={{ height: `${height * barHeight}px` }}
           transition={{
             duration: ANIMATION_DURATION,
             delay: i * ANIMATION_DELAY_STEP,
-            ease: "easeOut",
+            ease: SCORE_ANIMATION_EASE,
           }}
         />
       ))}
       {showLabel && variant !== "inline" && (
         <span className="ml-2 text-xs text-purple-400/80 font-medium">
-          {score.toFixed(0)}
+          {formatScore(score)}
         </span>
       )}
     </div>

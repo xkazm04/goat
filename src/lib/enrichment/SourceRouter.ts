@@ -5,6 +5,8 @@
  * Routes requests to the most appropriate sources for each content type.
  */
 
+import { resolveApiCategory } from '@/lib/config/category-config';
+
 import type {
   EnrichmentCategory,
   DataSource,
@@ -29,11 +31,11 @@ const SOURCE_ROUTES: Record<EnrichmentCategory, SourceRoutingConfig> = {
   },
   music: {
     primary: ['spotify'],
-    fallback: ['musicbrainz', 'wikipedia', 'gemini'],
+    fallback: ['wikipedia', 'gemini'],
   },
   books: {
-    primary: ['openlibrary'],
-    fallback: ['googlebooks', 'wikipedia', 'gemini'],
+    primary: ['wikipedia'],
+    fallback: ['gemini'],
   },
   sports: {
     primary: ['wikipedia'],
@@ -134,7 +136,10 @@ class SourceRouterClass {
     category: string,
     subcategory?: string
   ): EnrichmentCategory {
-    const lowerCategory = category.toLowerCase().trim();
+    // Resolve API aliases first so enrichment agrees with the backlog store
+    // (e.g. "general" → "sports" before looking up the enrichment route).
+    const resolved = resolveApiCategory(category);
+    const lowerCategory = resolved.toLowerCase().trim();
     const lowerSubcategory = subcategory?.toLowerCase().trim();
 
     // Check subcategory override first

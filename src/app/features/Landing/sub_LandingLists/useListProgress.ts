@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+
 import { useSessionStore } from "@/stores/session-store";
 
 interface ListProgress {
@@ -34,7 +35,7 @@ export function useListProgress(listId: string, listSize: number): ListProgress 
     }
 
     // Count matched items in the grid
-    const filledCount = session.gridItems.filter((item) => item.matched).length;
+    const filledCount = session.gridItems.filter((item) => item.context.matched).length;
     const total = session.listSize || listSize;
     const percentage = total > 0 ? Math.round((filledCount / total) * 100) : 0;
 

@@ -1,11 +1,36 @@
 'use client';
 
 /**
- * RichItemCard
- * Enhanced card component with expandable preview, quick actions,
- * metadata badges, and visual indicators.
+ * RichItemCard - Feature-rich item card with built-in interactivity and metadata display.
+ *
+ * USE THIS WHEN:
+ * - Displaying items in browse/explore contexts where users benefit from previews
+ * - You want hover-to-expand, quick action overlays, metadata badges, or mini galleries
+ *   without wiring them up manually
+ * - You need Letterboxd-style card flip to reveal detailed metadata
+ * - You want auto-generated badges from item data (rating, year, genre)
+ * - Accessibility and keyboard shortcuts are important (1-9 for quick actions,
+ *   Enter/Space to expand/flip, Escape to dismiss, arrow keys for gallery)
+ *
+ * DO NOT USE WHEN:
+ * - Rendering items inside the match grid or drag-and-drop zones -- use ItemCard
+ *   (@/components/ui/item-card) for its lighter weight and drag state support
+ * - You need maximum render performance in large virtualized lists (RichItemCard
+ *   carries more internal state and event handlers)
+ *
+ * HOW IT DIFFERS FROM ItemCard:
+ * - RichItemCard is a **superset** of ItemCard's visual capabilities, but uses a
+ *   different data contract (RichItemData object vs individual props).
+ * - RichItemCard manages its own hover/expand/flip/gallery state internally.
+ * - ItemCard is a thin wrapper; RichItemCard is a self-contained interactive widget.
+ *
+ * REQUIRED PROPS: item (RichItemData with id and title)
+ * KEY OPTIONAL PROPS: config (RichItemCardConfig), quickActions, badges, indicators,
+ *   viewMode, isDragging, isSelected, onClick, onQuickAction, renderExpandedContent,
+ *   renderFlipContent
  */
 
+import { motion, AnimatePresence } from 'framer-motion';
 import React, {
   memo,
   useState,
@@ -14,13 +39,16 @@ import React, {
   useEffect,
   useMemo,
 } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+
+import { DURATION } from '@/lib/animations/motion-presets';
 import { cn } from '@/lib/utils';
-import { QuickActions, QuickActionConfig } from './QuickActions';
-import { MetadataBadges, MetadataBadgeData } from './MetadataBadges';
+
+import { CardFlipReveal } from './CardFlipReveal';
 import { ExpandedPreview } from './ExpandedPreview';
-import { MiniGallery } from './MiniGallery';
 import { ItemIndicators, ItemIndicatorState } from './ItemIndicators';
+import { MetadataBadges, MetadataBadgeData } from './MetadataBadges';
+import { MiniGallery } from './MiniGallery';
+import { QuickActions, QuickActionConfig } from './QuickActions';
 
 /**
  * Item data structure for RichItemCard
@@ -61,6 +89,10 @@ export interface RichItemCardConfig {
   enableKeyboardShortcuts?: boolean;
   /** Show tooltip on hover */
   enableTooltip?: boolean;
+  /** Enable Letterboxd-style card flip to reveal metadata */
+  enableFlip?: boolean;
+  /** Flip trigger: tap, hover, or both */
+  flipTrigger?: 'tap' | 'hover' | 'both';
 }
 
 /**
@@ -76,6 +108,8 @@ const DEFAULT_CONFIG: RichItemCardConfig = {
   enableIndicators: true,
   enableKeyboardShortcuts: true,
   enableTooltip: true,
+  enableFlip: false,
+  flipTrigger: 'tap',
 };
 
 /**
@@ -108,6 +142,8 @@ export interface RichItemCardProps {
   onExpandChange?: (expanded: boolean, item: RichItemData) => void;
   /** Custom render for expanded content */
   renderExpandedContent?: (item: RichItemData) => React.ReactNode;
+  /** Custom render for card flip back face */
+  renderFlipContent?: (item: RichItemData) => React.ReactNode;
   /** Custom class name */
   className?: string;
   /** Test ID */
@@ -140,6 +176,7 @@ export const RichItemCard = memo(function RichItemCard({
   onQuickAction,
   onExpandChange,
   renderExpandedContent,
+  renderFlipContent,
   className,
   testId,
 }: RichItemCardProps) {
@@ -149,6 +186,7 @@ export const RichItemCard = memo(function RichItemCard({
 
   const [isHovered, setIsHovered] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isFlipped, setIsFlipped] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [activeGalleryIndex, setActiveGalleryIndex] = useState(0);
 
@@ -170,6 +208,13 @@ export const RichItemCard = memo(function RichItemCard({
   const handleMouseEnter = useCallback(() => {
     setIsHovered(true);
 
+    if (config.enableFlip && (config.flipTrigger === 'hover' || config.flipTrigger === 'both')) {
+      expandTimeoutRef.current = setTimeout(() => {
+        setIsFlipped(true);
+      }, config.expandDelay);
+      return;
+    }
+
     if (config.enableExpand && (config.expandTrigger === 'hover' || config.expandTrigger === 'both')) {
       expandTimeoutRef.current = setTimeout(() => {
         setIsExpanded(true);
@@ -185,6 +230,10 @@ export const RichItemCard = memo(function RichItemCard({
       clearTimeout(expandTimeoutRef.current);
     }
 
+    if (config.enableFlip && (config.flipTrigger === 'hover' || config.flipTrigger === 'both')) {
+      setIsFlipped(false);
+    }
+
     if (config.expandTrigger === 'hover') {
       setIsExpanded(false);
     }
@@ -192,6 +241,10 @@ export const RichItemCard = memo(function RichItemCard({
 
   // Handle click
   const handleClick = useCallback(() => {
+    if (config.enableFlip && (config.flipTrigger === 'tap' || config.flipTrigger === 'both')) {
+      setIsFlipped((prev) => !prev);
+      return;
+    }
     if (config.enableExpand && (config.expandTrigger === 'click' || config.expandTrigger === 'both')) {
       setIsExpanded((prev) => !prev);
     }
@@ -220,18 +273,25 @@ export const RichItemCard = memo(function RichItemCard({
         }
       }
 
-      // Enter/Space to expand
+      // Enter/Space to expand or flip
       if (e.key === 'Enter' || e.key === ' ') {
-        if (config.enableExpand) {
-          e.preventDefault();
+        e.preventDefault();
+        if (config.enableFlip) {
+          setIsFlipped((prev) => !prev);
+        } else if (config.enableExpand) {
           setIsExpanded((prev) => !prev);
         }
       }
 
-      // Escape to collapse
-      if (e.key === 'Escape' && isExpanded) {
-        e.preventDefault();
-        setIsExpanded(false);
+      // Escape to collapse or unflip
+      if (e.key === 'Escape') {
+        if (isFlipped) {
+          e.preventDefault();
+          setIsFlipped(false);
+        } else if (isExpanded) {
+          e.preventDefault();
+          setIsExpanded(false);
+        }
       }
 
       // Arrow keys for gallery navigation
@@ -250,7 +310,7 @@ export const RichItemCard = memo(function RichItemCard({
         }
       }
     },
-    [config, quickActions, handleQuickAction, isExpanded, item.images]
+    [config, quickActions, handleQuickAction, isExpanded, isFlipped, item.images]
   );
 
   // Generate auto badges from metadata if not provided
@@ -286,8 +346,9 @@ export const RichItemCard = memo(function RichItemCard({
     return autoBadges;
   }, [badges, item]);
 
-  // Determine if should show expanded view
-  const showExpanded = isExpanded && !isDragging;
+  // Determine if should show flip or expanded view
+  const showFlip = config.enableFlip && !isDragging;
+  const showExpanded = isExpanded && !isDragging && !config.enableFlip;
   const showQuickActions = config.enableQuickActions && (isHovered || isFocused) && !isDragging && quickActions.length > 0;
   const showBadges = config.enableBadges && effectiveBadges.length > 0 && !isDragging;
   const showGallery = config.enableGallery && item.images && item.images.length > 1 && isHovered && !isDragging;
@@ -302,20 +363,20 @@ export const RichItemCard = memo(function RichItemCard({
     <motion.div
       ref={containerRef}
       className={cn(
-        'relative group rounded-lg overflow-hidden',
-        'bg-gray-800 border border-gray-700',
+        'relative group rounded-card overflow-hidden',
+        'bg-[var(--surface-card)] border border-[var(--border-card)]',
         'transition-colors duration-200',
-        isHovered && 'border-cyan-500/50',
-        isSelected && 'ring-2 ring-cyan-500',
+        isHovered && 'border-brand/50',
+        isSelected && 'ring-2 ring-brand',
         isDragging && 'opacity-50 scale-95',
-        isFocused && 'ring-2 ring-cyan-400 ring-offset-2 ring-offset-gray-900',
-        viewMode === 'grid' ? 'aspect-[4/5]' : 'flex items-center gap-3 p-2',
+        'focus-ring',
+        viewMode === 'grid' ? 'aspect-4/5' : 'flex items-center gap-3 p-2',
         className
       )}
       style={{ contain: 'layout style paint' }}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.02, duration: 0.2 }}
+      transition={{ delay: index * 0.02, duration: DURATION.quick }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onClick={handleClick}
@@ -353,8 +414,8 @@ export const RichItemCard = memo(function RichItemCard({
 
       {/* Image Area */}
       <div className={cn(
-        'relative overflow-hidden bg-gray-900',
-        viewMode === 'grid' ? 'aspect-[4/3]' : 'w-16 h-16 rounded flex-shrink-0'
+        'relative overflow-hidden bg-[var(--surface-deep)]',
+        viewMode === 'grid' ? 'aspect-4/3' : 'w-16 h-16 rounded shrink-0'
       )}>
         {displayImage ? (
           <motion.img
@@ -363,7 +424,7 @@ export const RichItemCard = memo(function RichItemCard({
             className="w-full h-full object-cover"
             initial={false}
             animate={{ scale: isHovered ? 1.05 : 1 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: DURATION.normal }}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-gray-600">
@@ -410,6 +471,16 @@ export const RichItemCard = memo(function RichItemCard({
           </p>
         )}
       </div>
+
+      {/* Card Flip Reveal */}
+      {showFlip && (
+        <CardFlipReveal
+          item={item}
+          isFlipped={isFlipped}
+          badges={effectiveBadges}
+          renderBackContent={renderFlipContent}
+        />
+      )}
 
       {/* Expanded Preview Overlay */}
       <AnimatePresence>

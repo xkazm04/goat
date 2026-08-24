@@ -1,5 +1,6 @@
-import { BacklogState } from "./types";
 import { backlogLogger } from '@/lib/logger';
+
+import { BacklogState } from "./types";
 
 // Type for immer-compatible set function
 type ImmerSet = (fn: (state: BacklogState) => void) => void;
@@ -115,6 +116,7 @@ export const createUtilActions = (
   clearAllData: () => {
     set(state => {
       state.groups = [];
+      state._loadedGroupsCount = 0;
       state.selectedGroupId = null;
       state.selectedItemId = null;
       state.activeItemId = null;
@@ -134,7 +136,7 @@ export const createUtilActions = (
   getStats: () => {
     const state = get();
     const totalGroups = state.groups.length;
-    const groupsWithItems = state.groups.filter(g => g.items && g.items.length > 0).length;
+    const groupsWithItems = state._loadedGroupsCount;
     const totalItems = state.groups.reduce((sum, group) => sum + (group.item_count || 0), 0);
     
     return {

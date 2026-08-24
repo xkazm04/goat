@@ -7,19 +7,18 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { BacklogItem } from '@/types/backlog-groups';
-import { GridItemType } from '@/types/match';
+
 import {
-  PlacementPredictor,
+  getDropZoneScorer,
+  DropZoneIndicator,
+} from '@/lib/placement/DropZoneScorer';
+import {
   getPlacementPredictor,
   PlacementPrediction,
   UserPatterns,
 } from '@/lib/placement/PlacementPredictor';
-import {
-  DropZoneScorer,
-  getDropZoneScorer,
-  DropZoneIndicator,
-} from '@/lib/placement/DropZoneScorer';
+import { BacklogItem } from '@/types/backlog-groups';
+import { GridItemType } from '@/types/match';
 
 /**
  * Smart fill mode state
@@ -176,43 +175,60 @@ export const usePlacementStore = create<PlacementStoreState>()(
 
       // Drag Prediction Actions
       startDrag: (item, gridItems) => {
-        const predictor = getPlacementPredictor();
-        const scorer = getDropZoneScorer();
+        try {
+          const predictor = getPlacementPredictor();
+          const scorer = getDropZoneScorer();
 
-        const prediction = predictor.predict(item, gridItems, { excludeOccupied: true });
-        const indicators = scorer.scoreDropZones(item, gridItems);
-        const quickPlaceSuggestions = prediction.predictions
-          .slice(0, 9)
-          .map(p => p.position);
+          const prediction = predictor.predict(item, gridItems, { excludeOccupied: true });
+          const indicators = scorer.scoreDropZones(item, gridItems);
+          const quickPlaceSuggestions = prediction.predictions
+            .slice(0, 9)
+            .map(p => p.position);
 
-        set({
-          isDragging: true,
-          draggedItemId: item.id,
-          draggedItem: item,
-          currentPrediction: prediction,
-          dropZoneIndicators: indicators,
-          quickPlaceSuggestions,
-        });
+          set({
+            isDragging: true,
+            draggedItemId: item.id,
+            draggedItem: item,
+            currentPrediction: prediction,
+            dropZoneIndicators: indicators,
+            quickPlaceSuggestions,
+          });
+        } catch (error) {
+          console.error('[placement-store] startDrag prediction failed:', error);
+          // Still enter drag mode, just without predictions
+          set({
+            isDragging: true,
+            draggedItemId: item.id,
+            draggedItem: item,
+            currentPrediction: null,
+            dropZoneIndicators: [],
+            quickPlaceSuggestions: [],
+          });
+        }
       },
 
       updateDragPrediction: (gridItems) => {
         const state = get();
         if (!state.isDragging || !state.draggedItem) return;
 
-        const predictor = getPlacementPredictor();
-        const scorer = getDropZoneScorer();
+        try {
+          const predictor = getPlacementPredictor();
+          const scorer = getDropZoneScorer();
 
-        const prediction = predictor.predict(state.draggedItem, gridItems, { excludeOccupied: true });
-        const indicators = scorer.scoreDropZones(state.draggedItem, gridItems);
-        const quickPlaceSuggestions = prediction.predictions
-          .slice(0, 9)
-          .map(p => p.position);
+          const prediction = predictor.predict(state.draggedItem, gridItems, { excludeOccupied: true });
+          const indicators = scorer.scoreDropZones(state.draggedItem, gridItems);
+          const quickPlaceSuggestions = prediction.predictions
+            .slice(0, 9)
+            .map(p => p.position);
 
-        set({
-          currentPrediction: prediction,
-          dropZoneIndicators: indicators,
-          quickPlaceSuggestions,
-        });
+          set({
+            currentPrediction: prediction,
+            dropZoneIndicators: indicators,
+            quickPlaceSuggestions,
+          });
+        } catch (error) {
+          console.error('[placement-store] updateDragPrediction failed:', error);
+        }
       },
 
       endDrag: () => {
@@ -242,12 +258,16 @@ export const usePlacementStore = create<PlacementStoreState>()(
 
       // Pattern Learning Actions
       recordPlacement: (item, position) => {
-        const predictor = getPlacementPredictor();
-        predictor.recordPlacement(item, position);
+        try {
+          const predictor = getPlacementPredictor();
+          predictor.recordPlacement(item, position);
 
-        // Export and save patterns
-        const patterns = predictor.exportPatterns();
-        set({ userPatterns: patterns });
+          // Export and save patterns
+          const patterns = predictor.exportPatterns();
+          set({ userPatterns: patterns });
+        } catch (error) {
+          console.error('[placement-store] recordPlacement failed:', error);
+        }
       },
 
       exportPatterns: () => {
@@ -255,9 +275,13 @@ export const usePlacementStore = create<PlacementStoreState>()(
       },
 
       importPatterns: (patterns) => {
-        const predictor = getPlacementPredictor();
-        predictor.importPatterns(patterns);
-        set({ userPatterns: patterns });
+        try {
+          const predictor = getPlacementPredictor();
+          predictor.importPatterns(patterns);
+          set({ userPatterns: patterns });
+        } catch (error) {
+          console.error('[placement-store] importPatterns failed:', error);
+        }
       },
 
       // Drop Zone Indicator Actions
@@ -301,17 +325,39 @@ export const usePlacementStore = create<PlacementStoreState>()(
           const str = localStorage.getItem(name);
           if (!str) return null;
 
-          const data = JSON.parse(str);
+          let data;
+          try {
+            data = JSON.parse(str);
+          } catch {
+            // Corrupted entry — log diagnostics and clear so store reinitializes
+            console.error(
+              `[placement-store] Corrupted localStorage "${name}" (${str.length} chars): ${str.slice(0, 100)}`
+            );
+            localStorage.removeItem(name);
+            return null;
+          }
 
-          // Rehydrate Maps from arrays
+          // Rehydrate Maps and Sets from arrays after JSON round-trip
           if (data.state?.userPatterns) {
             const patterns = data.state.userPatterns;
-            if (patterns.categoryPreferences && Array.isArray(patterns.categoryPreferences)) {
-              patterns.categoryPreferences = new Map<string, number[]>(patterns.categoryPreferences);
+            if (patterns.categoryPreferences && !(patterns.categoryPreferences instanceof Map)) {
+              patterns.categoryPreferences = new Map<string, number[]>(
+                Array.isArray(patterns.categoryPreferences) ? patterns.categoryPreferences : []
+              );
             }
-            if (patterns.placementSpeed && Array.isArray(patterns.placementSpeed)) {
-              patterns.placementSpeed = new Map<number, number>(patterns.placementSpeed);
+            if (patterns.placementSpeed && !(patterns.placementSpeed instanceof Map)) {
+              patterns.placementSpeed = new Map<number, number>(
+                Array.isArray(patterns.placementSpeed) ? patterns.placementSpeed : []
+              );
             }
+          }
+
+          // Rehydrate any Set fields that may have been serialized as arrays
+          // (e.g., smartFillSkipped if partialize config changes)
+          if (data.state?.smartFillSkipped && !(data.state.smartFillSkipped instanceof Set)) {
+            data.state.smartFillSkipped = new Set<string>(
+              Array.isArray(data.state.smartFillSkipped) ? data.state.smartFillSkipped : []
+            );
           }
 
           return data;
@@ -337,12 +383,7 @@ export const usePlacementStore = create<PlacementStoreState>()(
 );
 
 // Selector hooks for performance
-export const useSmartFillMode = () => usePlacementStore((state) => state.smartFillMode);
 export const useIsDragging = () => usePlacementStore((state) => state.isDragging);
-export const useDropZoneIndicators = () => usePlacementStore((state) => state.dropZoneIndicators);
-export const useCurrentPrediction = () => usePlacementStore((state) => state.currentPrediction);
-export const useQuickPlaceEnabled = () => usePlacementStore((state) => state.quickPlaceEnabled);
-export const useQuickPlaceSuggestions = () => usePlacementStore((state) => state.quickPlaceSuggestions);
 
 /**
  * Hook to get the indicator for a specific position
@@ -351,14 +392,4 @@ export function useIndicatorAtPosition(position: number): DropZoneIndicator | nu
   return usePlacementStore((state) =>
     state.dropZoneIndicators.find(i => i.position === position) || null
   );
-}
-
-/**
- * Hook to check if a position is a top suggestion
- */
-export function useIsTopSuggestion(position: number): boolean {
-  return usePlacementStore((state) => {
-    if (!state.currentPrediction) return false;
-    return state.currentPrediction.topSuggestion?.position === position;
-  });
 }

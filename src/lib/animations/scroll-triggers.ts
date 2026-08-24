@@ -15,8 +15,11 @@ import {
   useCallback,
   useMemo,
 } from 'react';
-import type { Variants, Transition } from 'framer-motion';
+
 import { useMotionCapabilities } from '@/hooks/use-motion-preference';
+import { DURATION } from '@/lib/animations/motion-presets';
+
+import type { Variants, Transition } from 'framer-motion';
 
 // =============================================================================
 // Types
@@ -79,7 +82,7 @@ const BASE_TRANSITION: Transition = {
 export const scrollAnimationVariants: Record<ScrollAnimationType, Variants> = {
   fade: {
     hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { ...BASE_TRANSITION, duration: 0.5 } },
+    visible: { opacity: 1, transition: { ...BASE_TRANSITION, duration: DURATION.slow } },
   },
   fadeUp: {
     hidden: { opacity: 0, y: 40 },
@@ -106,11 +109,11 @@ export const scrollAnimationVariants: Record<ScrollAnimationType, Variants> = {
     visible: { opacity: 1, scale: 1, y: 0, transition: BASE_TRANSITION },
   },
   blur: {
-    hidden: { opacity: 0, filter: 'blur(10px)' },
+    hidden: { opacity: 0, scale: 0.95 },
     visible: {
       opacity: 1,
-      filter: 'blur(0px)',
-      transition: { ...BASE_TRANSITION, duration: 0.6 },
+      scale: 1,
+      transition: { ...BASE_TRANSITION, duration: DURATION.emphasis },
     },
   },
   slideUp: {

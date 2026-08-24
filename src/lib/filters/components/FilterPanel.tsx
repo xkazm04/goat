@@ -5,9 +5,24 @@
  * Expandable UI for filter configuration
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronDown, Check, X, Plus } from 'lucide-react';
+import React, { useState, useCallback, useMemo } from 'react';
+
+import { UniversalSelect } from '@/components/ui/universal-select';
 import { cn } from '@/lib/utils';
+
+import {
+  OPERATOR_LABELS,
+  TYPE_OPERATORS,
+  FILTER_COLORS,
+  COMBINATOR_LABELS,
+  FILTER_ANIMATIONS,
+  FILTER_TIMING,
+  FILTER_SCALE,
+  DEFAULT_FILTER_FIELDS,
+} from '../constants';
+
 import type {
   FilterCondition,
   FilterGroup,
@@ -17,14 +32,6 @@ import type {
   FilterValue,
   FilterCombinator,
 } from '../types';
-import {
-  OPERATOR_LABELS,
-  TYPE_OPERATORS,
-  FILTER_COLORS,
-  COMBINATOR_LABELS,
-  FILTER_ANIMATIONS,
-  DEFAULT_FILTER_FIELDS,
-} from '../constants';
 
 /**
  * FilterPanel Props
@@ -140,7 +147,7 @@ export function FilterPanel({
   return (
     <div
       className={cn(
-        'border border-border rounded-lg bg-background overflow-hidden',
+        'border border-border rounded-card bg-background overflow-hidden',
         className
       )}
     >
@@ -149,25 +156,25 @@ export function FilterPanel({
         <button
           className={cn(
             'w-full flex items-center justify-between px-4 py-3',
-            'hover:bg-accent/50 transition-colors',
-            'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-inset'
+            'filter-hover transition-colors',
+            'focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-inset'
           )}
           onClick={toggleExpand}
         >
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">Filters</span>
             {activeCount > 0 && (
-              <span className="px-2 py-0.5 text-xs bg-primary text-primary-foreground rounded-full">
+              <span className="px-2 py-0.5 text-xs bg-primary text-primary-foreground rounded-badge">
                 {activeCount}
               </span>
             )}
           </div>
           <motion.span
             animate={{ rotate: isExpanded ? 180 : 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: FILTER_TIMING.standard }}
             className="text-muted-foreground"
           >
-            ▼
+            <ChevronDown size={16} />
           </motion.span>
         </button>
       )}
@@ -205,7 +212,7 @@ export function FilterPanel({
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: 20 }}
-                      transition={{ delay: index * 0.05 }}
+                      transition={{ delay: index * FILTER_TIMING.stagger }}
                     >
                       <FilterConditionRow
                         condition={condition}
@@ -227,14 +234,14 @@ export function FilterPanel({
                 <button
                   className={cn(
                     'flex items-center gap-1.5 px-3 py-1.5 text-sm',
-                    'bg-accent hover:bg-accent/80 rounded-md transition-colors',
+                    'bg-accent hover:bg-accent/80 rounded-control transition-colors',
                     config.conditions.length >= maxConditions &&
-                      'opacity-50 cursor-not-allowed'
+                      'filter-disabled'
                   )}
                   onClick={handleAddCondition}
                   disabled={config.conditions.length >= maxConditions}
                 >
-                  <span>+</span>
+                  <Plus size={14} />
                   <span>Add Filter</span>
                 </button>
 
@@ -273,7 +280,7 @@ function CombinatorToggle({
   size = 'sm',
 }: CombinatorToggleProps) {
   return (
-    <div className="inline-flex bg-muted rounded-md p-0.5">
+    <div className="inline-flex bg-muted rounded-control p-0.5">
       {(['AND', 'OR'] as const).map((combinator) => (
         <button
           key={combinator}
@@ -348,7 +355,7 @@ function FilterConditionRow({
   return (
     <div
       className={cn(
-        'flex items-center gap-2 p-2 rounded-lg border transition-all',
+        'flex items-center gap-2 p-2 rounded-card border transition-all',
         condition.enabled
           ? `${colors.bg} ${colors.border}`
           : 'bg-muted/30 border-muted opacity-60'
@@ -372,44 +379,37 @@ function FilterConditionRow({
         onClick={() => onUpdate({ enabled: !condition.enabled })}
         title={condition.enabled ? 'Disable filter' : 'Enable filter'}
       >
-        {condition.enabled && <span className="text-xs">✓</span>}
+        {condition.enabled && <Check size={10} />}
       </button>
 
       {/* Field selector */}
-      <select
-        className={cn(
-          'flex-shrink-0 px-2 py-1 text-sm bg-transparent rounded',
-          'border border-transparent hover:border-border focus:border-ring',
-          'focus:outline-none cursor-pointer'
-        )}
-        value={field.id}
-        onChange={(e) => handleFieldChange(e.target.value)}
-      >
-        {fields.map((f) => (
-          <option key={f.id} value={f.id}>
-            {f.icon} {f.name}
-          </option>
-        ))}
-      </select>
+      <div className="shrink-0 min-w-[110px]">
+        <UniversalSelect
+          value={field.id}
+          onChange={handleFieldChange}
+          options={fields.map((f) => ({
+            value: f.id,
+            label: f.name,
+            icon: <span>{f.icon}</span>,
+          }))}
+          size="sm"
+          searchable={false}
+        />
+      </div>
 
       {/* Operator selector */}
-      <select
-        className={cn(
-          'flex-shrink-0 px-2 py-1 text-sm bg-transparent rounded',
-          'border border-transparent hover:border-border focus:border-ring',
-          'focus:outline-none cursor-pointer'
-        )}
-        value={condition.operator}
-        onChange={(e) =>
-          onUpdate({ operator: e.target.value as FilterOperator })
-        }
-      >
-        {operators.map((op) => (
-          <option key={op} value={op}>
-            {OPERATOR_LABELS[op]}
-          </option>
-        ))}
-      </select>
+      <div className="shrink-0 min-w-[120px]">
+        <UniversalSelect
+          value={condition.operator}
+          onChange={(val) => onUpdate({ operator: val as FilterOperator })}
+          options={operators.map((op) => ({
+            value: op,
+            label: OPERATOR_LABELS[op],
+          }))}
+          size="sm"
+          searchable={false}
+        />
+      </div>
 
       {/* Value input */}
       {!['is_empty', 'is_not_empty'].includes(condition.operator) && (
@@ -427,14 +427,14 @@ function FilterConditionRow({
       {/* Remove button */}
       <button
         className={cn(
-          'flex-shrink-0 w-6 h-6 rounded flex items-center justify-center',
+          'shrink-0 w-6 h-6 rounded flex items-center justify-center',
           'text-muted-foreground hover:text-destructive hover:bg-destructive/10',
           'transition-colors'
         )}
         onClick={onRemove}
         title="Remove filter"
       >
-        ✕
+        <X size={14} />
       </button>
     </div>
   );
@@ -479,7 +479,7 @@ function FilterValueInput({
           className={cn(
             'w-20 px-2 py-1 text-sm rounded',
             'bg-background border border-border',
-            'focus:outline-none focus:ring-1 focus:ring-ring'
+            'focus:outline-hidden focus:ring-1 focus:ring-ring'
           )}
           value={rangeValue.min}
           min={range?.min}
@@ -494,7 +494,7 @@ function FilterValueInput({
           className={cn(
             'w-20 px-2 py-1 text-sm rounded',
             'bg-background border border-border',
-            'focus:outline-none focus:ring-1 focus:ring-ring'
+            'focus:outline-hidden focus:ring-1 focus:ring-ring'
           )}
           value={rangeValue.max}
           min={range?.min}
@@ -539,40 +539,39 @@ function FilterValueInput({
   // Select for enum type with options
   if (type === 'enum' && options) {
     return (
-      <select
-        className={cn(
-          'flex-1 min-w-[120px] px-2 py-1 text-sm rounded',
-          'bg-background border border-border',
-          'focus:outline-none focus:ring-1 focus:ring-ring'
-        )}
-        value={String(value || '')}
-        onChange={(e) => onChange(e.target.value)}
-      >
-        <option value="">Select...</option>
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
+      <div className="flex-1 min-w-[120px]">
+        <UniversalSelect
+          value={String(value || '')}
+          onChange={(val) => onChange(val)}
+          options={[
+            { value: '', label: 'Select...' },
+            ...options.map((opt) => ({
+              value: String(opt.value),
+              label: opt.label,
+            })),
+          ]}
+          size="sm"
+          placeholder="Select..."
+        />
+      </div>
     );
   }
 
   // Boolean toggle
   if (type === 'boolean') {
     return (
-      <select
-        className={cn(
-          'w-20 px-2 py-1 text-sm rounded',
-          'bg-background border border-border',
-          'focus:outline-none focus:ring-1 focus:ring-ring'
-        )}
-        value={String(value)}
-        onChange={(e) => onChange(e.target.value === 'true')}
-      >
-        <option value="true">Yes</option>
-        <option value="false">No</option>
-      </select>
+      <div className="w-24">
+        <UniversalSelect
+          value={String(value)}
+          onChange={(val) => onChange(val === 'true')}
+          options={[
+            { value: 'true', label: 'Yes' },
+            { value: 'false', label: 'No' },
+          ]}
+          size="sm"
+          searchable={false}
+        />
+      </div>
     );
   }
 
@@ -584,7 +583,7 @@ function FilterValueInput({
         className={cn(
           'flex-1 min-w-[80px] px-2 py-1 text-sm rounded',
           'bg-background border border-border',
-          'focus:outline-none focus:ring-1 focus:ring-ring'
+          'focus:outline-hidden focus:ring-1 focus:ring-ring'
         )}
         value={value as number}
         min={range?.min}
@@ -603,7 +602,7 @@ function FilterValueInput({
         className={cn(
           'flex-1 min-w-[140px] px-2 py-1 text-sm rounded',
           'bg-background border border-border',
-          'focus:outline-none focus:ring-1 focus:ring-ring'
+          'focus:outline-hidden focus:ring-1 focus:ring-ring'
         )}
         value={value ? new Date(value as string).toISOString().split('T')[0] : ''}
         onChange={(e) => onChange(new Date(e.target.value))}
@@ -618,7 +617,7 @@ function FilterValueInput({
       className={cn(
         'flex-1 min-w-[120px] px-2 py-1 text-sm rounded',
         'bg-background border border-border',
-        'focus:outline-none focus:ring-1 focus:ring-ring'
+        'focus:outline-hidden focus:ring-1 focus:ring-ring'
       )}
       value={String(value || '')}
       placeholder={placeholder || 'Enter value...'}
@@ -661,15 +660,15 @@ export function FilterPill({
   return (
     <motion.div
       className={cn(
-        'inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs',
+        'inline-flex items-center gap-1 px-2 py-1 rounded-badge text-xs',
         'border transition-all cursor-pointer',
         condition.enabled
           ? `${colors.bg} ${colors.border} ${colors.text}`
           : 'bg-muted/50 border-muted text-muted-foreground'
       )}
       onClick={onToggle}
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
+      whileHover={{ scale: FILTER_SCALE.hover }}
+      whileTap={{ scale: FILTER_SCALE.tap }}
     >
       {field.icon && <span>{field.icon}</span>}
       <span className="font-medium">{field.name}</span>
@@ -684,7 +683,7 @@ export function FilterPill({
           onRemove();
         }}
       >
-        ✕
+        <X size={12} />
       </button>
     </motion.div>
   );

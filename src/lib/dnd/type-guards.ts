@@ -8,17 +8,20 @@
  */
 
 import { DragEndEvent, DragStartEvent, DragOverEvent, Active, Over } from '@dnd-kit/core';
-import { TransferableItem, TransferSourceType } from './transfer-protocol';
-import type { GridItemType } from '@/types/match';
-import type { BacklogItem } from '@/types/backlog-groups';
-import type { CollectionItem } from '@/app/features/Collection/types';
-import { dndLogger } from '@/lib/logger';
+
 import {
   backlogToTransferable as transformBacklogToTransferable,
   gridToTransferable as transformGridToTransferable,
   normalizeImageUrl,
   extractTitle,
 } from '@/lib/items';
+import { dndLogger } from '@/lib/logger';
+
+import { TransferableItem, TransferSourceType } from './transfer-protocol';
+
+import type { CollectionItem } from '@/app/features/Collection/types';
+import type { BacklogItem } from '@/types/backlog-groups';
+import type { GridItemType } from '@/types/match';
 
 // ============================================================================
 // DnD Data Types (for use with @dnd-kit data.current)
@@ -180,9 +183,10 @@ export function isGridItem(item: unknown): item is GridItemType {
   const obj = item as Record<string, unknown>;
   return (
     typeof obj.id === 'string' &&
-    typeof obj.title === 'string' &&
     typeof obj.position === 'number' &&
-    typeof obj.matched === 'boolean'
+    obj.context !== null &&
+    typeof obj.context === 'object' &&
+    typeof (obj.context as Record<string, unknown>).matched === 'boolean'
   );
 }
 

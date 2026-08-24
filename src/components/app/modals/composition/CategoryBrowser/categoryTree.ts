@@ -32,6 +32,9 @@ import {
   Popcorn,
   LucideIcon,
 } from "lucide-react";
+
+import { CATEGORY_CONFIG } from "@/lib/config/category-config";
+
 import {
   CategoryNode,
   CategoryTree,
@@ -39,7 +42,6 @@ import {
   CATEGORY_DESCRIPTIONS,
   CATEGORY_POPULARITY,
 } from "./types";
-import { CATEGORY_CONFIG, SPORTS_SUBCATEGORIES } from "@/lib/config/category-config";
 
 /**
  * Icon mapping for categories

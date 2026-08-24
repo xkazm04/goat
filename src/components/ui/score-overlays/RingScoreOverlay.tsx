@@ -1,9 +1,13 @@
 'use client';
 
-import { memo } from 'react';
 import { motion } from 'framer-motion';
+import { memo } from 'react';
+
+import { DURATION } from '@/lib/animations/motion-presets';
 import { cn } from '@/lib/utils';
+
 import type { CriterionDisplaySize } from '@/lib/criteria/types';
+
 
 export interface RingScoreOverlayProps {
   /** Score value (0-10 or 0-100 depending on scale) */
@@ -30,7 +34,7 @@ const SIZE_CONFIG = {
     dimensions: 28,
     strokeWidth: 2.5,
     radius: 11,
-    fontSize: 'text-[8px]',
+    fontSize: 'text-3xs',
     viewBox: '0 0 28 28',
     center: 14,
   },
@@ -38,7 +42,7 @@ const SIZE_CONFIG = {
     dimensions: 36,
     strokeWidth: 3,
     radius: 14,
-    fontSize: 'text-[10px]',
+    fontSize: 'text-2xs',
     viewBox: '0 0 36 36',
     center: 18,
   },
@@ -90,7 +94,7 @@ export const RingScoreOverlay = memo(function RingScoreOverlay({
           width: config.dimensions,
           height: config.dimensions,
           backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          boxShadow: `0 2px 8px rgba(0, 0, 0, 0.3), 0 0 12px ${color}30`,
+          boxShadow: `var(--elevation-card), 0 0 12px ${color}30`,
         }}
       >
         <svg
@@ -120,7 +124,7 @@ export const RingScoreOverlay = memo(function RingScoreOverlay({
             strokeDasharray={circumference}
             initial={animated ? { strokeDashoffset: circumference } : { strokeDashoffset }}
             animate={{ strokeDashoffset }}
-            transition={{ duration: 0.8, ease: 'easeOut' }}
+            transition={{ duration: DURATION.dramatic, ease: 'easeOut' }}
             style={{
               filter: `drop-shadow(0 0 4px ${color}80)`,
             }}
@@ -133,7 +137,7 @@ export const RingScoreOverlay = memo(function RingScoreOverlay({
             className={cn('font-bold text-white', config.fontSize)}
             initial={animated ? { opacity: 0, scale: 0.8 } : {}}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.3, duration: 0.3 }}
+            transition={{ delay: 0.3, duration: DURATION.normal }}
             style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
           >
             {displayScore}
@@ -144,7 +148,7 @@ export const RingScoreOverlay = memo(function RingScoreOverlay({
       {/* Optional name label */}
       {showName && name && (
         <span
-          className="text-[7px] font-medium text-white/80 max-w-[60px] truncate text-center"
+          className="text-3xs font-medium text-white/80 max-w-[60px] truncate text-center"
           style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}
         >
           {name}

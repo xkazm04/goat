@@ -12,24 +12,22 @@
  * - Debug tools for transaction history
  */
 
+import { getCommandDescription } from './commands';
 import {
   OrchestratorCommand,
   OrchestratorConfig,
   DEFAULT_ORCHESTRATOR_CONFIG,
   Transaction,
-  TransactionStatus,
   ExecutionResult,
   StateSnapshot,
   UndoState,
   UndoEntry,
-  Middleware,
   MiddlewareConfig,
   GridCommand,
   SessionCommand,
   ComparisonCommand,
   MatchUICommand,
 } from './types';
-import { getCommandDescription } from './commands';
 
 // =============================================================================
 // Store References (lazy initialization)
@@ -492,7 +490,7 @@ class GlobalOrchestratorImpl {
 
     // Clear all related stores
     gridState.clearGrid();
-    comparisonState.clearComparison();
+    comparisonState.clearAll();
     sessionState.setSelectedBacklogItem(null);
 
     // Reset match UI state
@@ -535,7 +533,7 @@ class GlobalOrchestratorImpl {
     const comparisonState = stores.comparison.getState();
     const matchState = stores.match.getState();
 
-    comparisonState.openComparison();
+    comparisonState.open();
     matchState.setShowComparisonModal(true);
 
     return { success: true, executedCommands: [_command] };
@@ -548,7 +546,7 @@ class GlobalOrchestratorImpl {
     const comparisonState = stores.comparison.getState();
     const matchState = stores.match.getState();
 
-    comparisonState.closeComparison();
+    comparisonState.close();
     matchState.setShowComparisonModal(false);
 
     return { success: true, executedCommands: [_command] };
@@ -560,7 +558,7 @@ class GlobalOrchestratorImpl {
   ): ExecutionResult {
     const { item } = command.payload;
     const comparisonState = stores.comparison.getState();
-    comparisonState.addToComparison(item);
+    comparisonState.toggleItem(item);
 
     return { success: true, executedCommands: [command] };
   }
@@ -571,7 +569,7 @@ class GlobalOrchestratorImpl {
   ): ExecutionResult {
     const { itemId } = command.payload;
     const comparisonState = stores.comparison.getState();
-    comparisonState.removeFromComparison(itemId);
+    comparisonState.removeItem(itemId);
 
     return { success: true, executedCommands: [command] };
   }
@@ -581,7 +579,7 @@ class GlobalOrchestratorImpl {
     stores: NonNullable<typeof storeRefs>
   ): ExecutionResult {
     const comparisonState = stores.comparison.getState();
-    comparisonState.clearComparison();
+    comparisonState.clearAll();
 
     return { success: true, executedCommands: [_command] };
   }

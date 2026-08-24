@@ -23,9 +23,6 @@ export type DataSource =
   | 'tmdb'
   | 'igdb'
   | 'spotify'
-  | 'musicbrainz'
-  | 'openlibrary'
-  | 'googlebooks'
   | 'wikipedia'
   | 'gemini';
 
@@ -49,6 +46,7 @@ export interface RawSourceData {
   rawData: Record<string, unknown>;
   fetchedAt: number;
   confidence: number; // 0-1, how confident we are in the match
+  fetchDurationMs?: number;
   error?: string;
 }
 
@@ -107,7 +105,6 @@ export interface NormalizedItemData {
     imdb?: string;
     igdb?: string;
     spotify?: string;
-    musicbrainz?: string;
     wikipedia?: string;
     isbn?: string;
   };

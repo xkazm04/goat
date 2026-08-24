@@ -6,16 +6,46 @@
  * Uses React.memo for fine-grained render optimization
  */
 
-import React, { memo, useMemo, useCallback } from "react";
+import React, { memo, lazy, Suspense } from "react";
+
 import { GridItemType } from "@/types/match";
-import { ViewMode } from "./ViewSwitcher";
-import { PodiumView } from "./PodiumView";
-import { GoatView } from "./GoatView";
-import { MountRushmoreView } from "./MountRushmoreView";
+
 import { GridSection } from "./GridSection";
 import { TierSection } from "./TierSection";
+import { PodiumViewSkeleton, GoatViewSkeleton, MountRushmoreViewSkeleton } from "./ViewSkeletons";
+import { ViewMode } from "./ViewSwitcher";
+import { SimpleDropZone } from "../../sub_DropZone/SimpleDropZone";
+
+// Lazy-load view components to keep them code-split
+const PodiumView = lazy(() => import("./PodiumView").then(m => ({ default: m.PodiumView })));
+const GoatView = lazy(() => import("./GoatView").then(m => ({ default: m.GoatView })));
+const MountRushmoreView = lazy(() => import("./MountRushmoreView").then(m => ({ default: m.MountRushmoreView })));
 import { useTierLayout } from "../hooks/useTierLayout";
 import { getItemTitle } from "../lib/helpers";
+
+/**
+ * Shallow-compare two GridItemType arrays by value fields.
+ * Avoids re-renders when the array reference changes but data is identical.
+ */
+function areGridItemsEqual(prev: GridItemType[], next: GridItemType[]): boolean {
+  if (prev === next) return true;
+  if (prev.length !== next.length) return false;
+  for (let i = 0; i < prev.length; i++) {
+    const p = prev[i];
+    const n = next[i];
+    if (p === n) continue;
+    if (!p || !n) return false;
+    if (
+      p.id !== n.id ||
+      p.context.matched !== n.context.matched ||
+      p.item?.image_url !== n.item?.image_url ||
+      p.item?.title !== n.item?.title
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
 
 /**
  * GridRenderer props
@@ -38,113 +68,133 @@ interface GridRendererProps {
 /**
  * Memoized view selector component
  */
-const ViewSelector = memo(function ViewSelector({
-  viewMode,
-  gridItems,
-  onRemove,
-}: {
-  viewMode: ViewMode;
-  gridItems: GridItemType[];
-  onRemove: (position: number) => void;
-}) {
-  switch (viewMode) {
-    case "podium":
-      return (
-        <PodiumView
-          gridItems={gridItems}
-          onRemove={onRemove}
-          getItemTitle={getItemTitle}
-        />
-      );
-    case "goat":
-      return (
-        <GoatView
-          gridItems={gridItems}
-          onRemove={onRemove}
-          getItemTitle={getItemTitle}
-        />
-      );
-    case "rushmore":
-      return (
-        <MountRushmoreView
-          gridItems={gridItems}
-          onRemove={onRemove}
-          getItemTitle={getItemTitle}
-        />
-      );
-    default:
-      return null;
-  }
-});
+const viewSkeletons: Record<string, React.ReactNode> = {
+  podium: <PodiumViewSkeleton />,
+  goat: <GoatViewSkeleton />,
+  rushmore: <MountRushmoreViewSkeleton />,
+};
+
+export const ViewSelector = memo(
+  function ViewSelector({
+    viewMode,
+    gridItems,
+    onRemove,
+    onFillViaBracket,
+  }: {
+    viewMode: ViewMode;
+    gridItems: GridItemType[];
+    onRemove: (position: number) => void;
+    onFillViaBracket?: (position: number) => void;
+  }) {
+    let content: React.ReactNode = null;
+    switch (viewMode) {
+      case "podium":
+        content = (
+          <PodiumView
+            gridItems={gridItems}
+            onRemove={onRemove}
+            getItemTitle={getItemTitle}
+            onFillViaBracket={onFillViaBracket}
+          />
+        );
+        break;
+      case "goat":
+        content = (
+          <GoatView
+            gridItems={gridItems}
+            onRemove={onRemove}
+            getItemTitle={getItemTitle}
+            onFillViaBracket={onFillViaBracket}
+          />
+        );
+        break;
+      case "rushmore":
+        content = (
+          <MountRushmoreView
+            gridItems={gridItems}
+            onRemove={onRemove}
+            getItemTitle={getItemTitle}
+            onFillViaBracket={onFillViaBracket}
+          />
+        );
+        break;
+      default:
+        return null;
+    }
+
+    return (
+      <Suspense fallback={viewSkeletons[viewMode] ?? null}>
+        {content}
+      </Suspense>
+    );
+  },
+  (prev, next) =>
+    prev.viewMode === next.viewMode &&
+    prev.onRemove === next.onRemove &&
+    prev.onFillViaBracket === next.onFillViaBracket &&
+    areGridItemsEqual(prev.gridItems, next.gridItems),
+);
 
 /**
  * Standard grid sections renderer
  */
 const StandardGridSections = memo(function StandardGridSections({
-  gridItems,
+  gridItemsLength,
   viewMode,
   onRemove,
 }: {
-  gridItems: GridItemType[];
+  gridItemsLength: number;
   viewMode: ViewMode;
   onRemove: (position: number) => void;
 }) {
   const startOffset = viewMode === "rushmore" ? 4 : 3;
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-4 sm:space-y-8 lg:space-y-12">
       {/* Elite Tier: Positions 4-10 (or 5-10 for rushmore) */}
-      {gridItems.length > startOffset && (
+      {gridItemsLength > startOffset && (
         <GridSection
           title="Elite Tier"
-          gridItems={gridItems}
           startPosition={startOffset}
-          endPosition={Math.min(10, gridItems.length)}
+          endPosition={Math.min(10, gridItemsLength)}
           columns={7}
           onRemove={onRemove}
-          getItemTitle={getItemTitle}
         />
       )}
 
       {/* Core Roster: Positions 11-20 */}
-      {gridItems.length > 10 && (
+      {gridItemsLength > 10 && (
         <GridSection
           title="Core Roster"
-          gridItems={gridItems}
           startPosition={10}
-          endPosition={Math.min(20, gridItems.length)}
+          endPosition={Math.min(20, gridItemsLength)}
           columns={10}
           gap={3}
           onRemove={onRemove}
-          getItemTitle={getItemTitle}
         />
       )}
 
       {/* Rising Stars: Positions 21-35 */}
-      {gridItems.length > 20 && (
+      {gridItemsLength > 20 && (
         <GridSection
           title="Rising Stars"
-          gridItems={gridItems}
           startPosition={20}
-          endPosition={Math.min(35, gridItems.length)}
+          endPosition={Math.min(35, gridItemsLength)}
           columns={10}
           gap={3}
           onRemove={onRemove}
-          getItemTitle={getItemTitle}
         />
       )}
 
       {/* Reserves: Positions 36-50 */}
-      {gridItems.length > 35 && (
+      {gridItemsLength > 35 && (
         <GridSection
           title="Reserves"
-          gridItems={gridItems}
           startPosition={35}
-          endPosition={Math.min(50, gridItems.length)}
+          endPosition={Math.min(50, gridItemsLength)}
           columns={10}
           gap={3}
           onRemove={onRemove}
-          getItemTitle={getItemTitle}
         />
       )}
     </div>
@@ -154,17 +204,18 @@ const StandardGridSections = memo(function StandardGridSections({
 /**
  * Tier-based grid sections renderer
  */
-const TierGridSections = memo(function TierGridSections({
-  gridItems,
-  listSize,
-  onRemove,
-  showHeaders,
-}: {
-  gridItems: GridItemType[];
-  listSize: number;
-  onRemove: (position: number) => void;
-  showHeaders: boolean;
-}) {
+const TierGridSections = memo(
+  function TierGridSections({
+    gridItems,
+    listSize,
+    onRemove,
+    showHeaders,
+  }: {
+    gridItems: GridItemType[];
+    listSize: number;
+    onRemove: (position: number) => void;
+    showHeaders: boolean;
+  }) {
   const {
     tiers,
     tierStats,
@@ -205,54 +256,61 @@ const TierGridSections = memo(function TierGridSections({
       })}
     </div>
   );
-});
+  },
+  (prev, next) =>
+    prev.listSize === next.listSize &&
+    prev.onRemove === next.onRemove &&
+    prev.showHeaders === next.showHeaders &&
+    areGridItemsEqual(prev.gridItems, next.gridItems),
+);
 
 /**
  * GridRenderer Component
  */
-export const GridRenderer = memo(function GridRenderer({
-  gridItems,
-  viewMode,
-  onRemove,
-  maxSize = 50,
-  useTierLayout: useTiers = false,
-  showTierHeaders = true,
-}: GridRendererProps) {
-  // Memoized remove handler to prevent unnecessary re-renders
-  const handleRemove = useCallback(
-    (position: number) => {
-      onRemove(position);
-    },
-    [onRemove]
-  );
-
-  return (
-    <div className="max-w-7xl mx-auto px-8 relative z-10">
-      {/* View-specific top section (Podium, GOAT, Rushmore) */}
-      <ViewSelector
-        viewMode={viewMode}
-        gridItems={gridItems}
-        onRemove={handleRemove}
-      />
-
-      {/* Main grid sections */}
-      {useTiers ? (
-        <TierGridSections
-          gridItems={gridItems}
-          listSize={maxSize}
-          onRemove={handleRemove}
-          showHeaders={showTierHeaders}
-        />
-      ) : (
-        <StandardGridSections
-          gridItems={gridItems}
+export const GridRenderer = memo(
+  function GridRenderer({
+    gridItems,
+    viewMode,
+    onRemove,
+    maxSize = 50,
+    useTierLayout: useTiers = false,
+    showTierHeaders = true,
+  }: GridRendererProps) {
+    return (
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 relative z-10">
+        {/* View-specific top section (Podium, GOAT, Rushmore) */}
+        <ViewSelector
           viewMode={viewMode}
-          onRemove={handleRemove}
+          gridItems={gridItems}
+          onRemove={onRemove}
         />
-      )}
-    </div>
-  );
-});
+
+        {/* Main grid sections */}
+        {useTiers ? (
+          <TierGridSections
+            gridItems={gridItems}
+            listSize={maxSize}
+            onRemove={onRemove}
+            showHeaders={showTierHeaders}
+          />
+        ) : (
+          <StandardGridSections
+            gridItemsLength={gridItems.length}
+            viewMode={viewMode}
+            onRemove={onRemove}
+          />
+        )}
+      </div>
+    );
+  },
+  (prev, next) =>
+    prev.viewMode === next.viewMode &&
+    prev.onRemove === next.onRemove &&
+    prev.maxSize === next.maxSize &&
+    prev.useTierLayout === next.useTierLayout &&
+    prev.showTierHeaders === next.showTierHeaders &&
+    areGridItemsEqual(prev.gridItems, next.gridItems),
+);
 
 /**
  * Memoized position slot for individual slot optimization
@@ -273,18 +331,15 @@ export const MemoizedPositionSlot = memo(
     tierGlow?: string;
     showBadge?: boolean;
   }) {
-    const isOccupied = item?.matched ?? false;
-
-    // Import SimpleDropZone dynamically to avoid circular dependency
-    const { SimpleDropZone } = require("../../sub_DropZone/SimpleDropZone");
+    const isOccupied = item?.context.matched ?? false;
 
     return (
       <SimpleDropZone
         position={position}
         isOccupied={isOccupied}
         occupiedBy={isOccupied ? getItemTitle(item) : undefined}
-        imageUrl={isOccupied ? item?.image_url : undefined}
-        gridItem={isOccupied ? item : undefined}
+        imageUrl={isOccupied ? item?.item?.image_url : undefined}
+        gridItem={isOccupied && item ? item : undefined}
         onRemove={onRemove}
         tierAccent={tierAccent}
         tierGlow={tierGlow}
@@ -309,9 +364,9 @@ export const MemoizedPositionSlot = memo(
 
     return (
       prevItem.id === nextItem.id &&
-      prevItem.matched === nextItem.matched &&
-      prevItem.image_url === nextItem.image_url &&
-      prevItem.title === nextItem.title
+      prevItem.context.matched === nextItem.context.matched &&
+      prevItem.item?.image_url === nextItem.item?.image_url &&
+      prevItem.item?.title === nextItem.item?.title
     );
   }
 );

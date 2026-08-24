@@ -7,7 +7,6 @@ import {
   UserProfile,
   BehaviorEvent,
   CategoryInterest,
-  BehaviorEventType,
   STORAGE_KEYS,
   EVENT_WEIGHTS,
   INTEREST_DECAY,
@@ -158,28 +157,45 @@ export class InterestTracker {
     const now = Date.now();
     const decayFactor = Math.log(2) / (INTEREST_DECAY.halfLifeDays * 24 * 60 * 60 * 1000);
 
-    this.profile.interests = this.profile.interests
-      .map((interest) => {
-        const timeSinceInteraction = now - interest.lastInteraction;
-        const decay = Math.exp(-decayFactor * timeSinceInteraction);
-        const newScore = interest.score * decay;
+    const decayed = this.profile.interests.map((interest) => {
+      const timeSinceInteraction = now - interest.lastInteraction;
+      const decay = Math.exp(-decayFactor * timeSinceInteraction);
+      const newScore = interest.score * decay;
 
-        // Apply decay to subcategories too
-        const decayedSubcategories: Record<string, number> = {};
-        for (const [sub, score] of Object.entries(interest.subcategories)) {
-          const decayedScore = score * decay;
-          if (decayedScore >= INTEREST_DECAY.minScore) {
-            decayedSubcategories[sub] = decayedScore;
-          }
+      // Apply decay to subcategories too
+      const decayedSubcategories: Record<string, number> = {};
+      for (const [sub, score] of Object.entries(interest.subcategories)) {
+        const decayedScore = score * decay;
+        if (decayedScore >= INTEREST_DECAY.minScore) {
+          decayedSubcategories[sub] = decayedScore;
         }
+      }
 
-        return {
-          ...interest,
-          score: newScore,
-          subcategories: decayedSubcategories,
-        };
-      })
-      .filter((interest) => interest.score >= INTEREST_DECAY.minScore);
+      return {
+        ...interest,
+        score: newScore,
+        subcategories: decayedSubcategories,
+      };
+    });
+
+    if (decayed.length === 0) {
+      this.profile.interests = [];
+      return;
+    }
+
+    // Preserve the user's single strongest signal so a long absence never empties
+    // interests entirely — an empty array would gate every personalization path
+    // (interests.length > 0) and silently demote a returning loyal user to the
+    // generic "new user" experience. The top interest is floored to minScore.
+    const topInterest = decayed.reduce((max, i) => (i.score > max.score ? i : max), decayed[0]);
+
+    this.profile.interests = decayed
+      .filter((interest) => interest.score >= INTEREST_DECAY.minScore || interest === topInterest)
+      .map((interest) =>
+        interest === topInterest && interest.score < INTEREST_DECAY.minScore
+          ? { ...interest, score: INTEREST_DECAY.minScore }
+          : interest
+      );
   }
 
   /**

@@ -1,29 +1,26 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
-import { initializeOfflineSessionSync, triggerSync } from './sessionStoreIntegration';
-import { useServiceWorker, useServiceWorkerUpdate } from './useServiceWorker';
-import { useNetworkStatus } from './useNetworkStatus';
-import { useOfflineSync, UseOfflineSyncReturn } from './useOfflineSync';
-import { ConflictRecord, ConflictResolutionStrategy } from './types';
-import { SyncStatusIndicator } from '@/app/features/Match/components/SyncStatusIndicator';
-import { ConflictResolutionModal } from '@/app/features/Match/components/ConflictResolutionModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RefreshCw, X } from 'lucide-react';
+import { createContext, useContext, useEffect, useRef, useState, useCallback, useMemo, ReactNode } from 'react';
+
+import { initDerivedSessionSync } from '@/stores/derived-session-sync';
+
+import { initializeOfflineSessionSync, triggerSync } from './sessionStoreIntegration';
+import { ConflictRecord, ConflictResolutionStrategy } from './types';
+import { useNetworkStatus } from './useNetworkStatus';
+import { useOfflineSync } from './useOfflineSync';
+import { useServiceWorkerUpdate } from './useServiceWorker';
+import { useUnsavedChangesGuard } from './useUnsavedChangesGuard';
 
 interface OfflineContextValue {
-  // Network status
   isOnline: boolean;
   isOffline: boolean;
   isSlow: boolean;
-
-  // Sync status
   isSyncing: boolean;
   hasPendingChanges: boolean;
   pendingCount: number;
   lastSyncedAt: number | null;
-
-  // Conflicts
   hasConflicts: boolean;
   conflicts: ConflictRecord[];
   resolveConflict: (
@@ -31,84 +28,78 @@ interface OfflineContextValue {
     strategy: ConflictResolutionStrategy,
     mergedData?: unknown
   ) => Promise<void>;
-
-  // Actions
   syncNow: () => Promise<void>;
   retryFailed: () => Promise<void>;
-
-  // Service Worker
   hasUpdate: boolean;
   applyUpdate: () => void;
 }
 
 const OfflineContext = createContext<OfflineContextValue | null>(null);
 
+const OFFLINE_DEFAULTS: OfflineContextValue = {
+  isOnline: true,
+  isOffline: false,
+  isSlow: false,
+  isSyncing: false,
+  hasPendingChanges: false,
+  pendingCount: 0,
+  lastSyncedAt: null,
+  hasConflicts: false,
+  conflicts: [],
+  resolveConflict: async () => {},
+  syncNow: async () => {},
+  retryFailed: async () => {},
+  hasUpdate: false,
+  applyUpdate: () => {},
+};
+
 export function useOffline(): OfflineContextValue {
   const context = useContext(OfflineContext);
-  if (!context) {
-    throw new Error('useOffline must be used within an OfflineProvider');
-  }
-  return context;
+  return context ?? OFFLINE_DEFAULTS;
 }
 
 interface OfflineProviderProps {
   children: ReactNode;
-  showStatusIndicator?: boolean;
   enableAutoSync?: boolean;
 }
 
 export function OfflineProvider({
   children,
-  showStatusIndicator = true,
   enableAutoSync = true,
 }: OfflineProviderProps) {
   const [isInitialized, setIsInitialized] = useState(false);
-  const [showConflictModal, setShowConflictModal] = useState(false);
   const [showUpdateBanner, setShowUpdateBanner] = useState(false);
 
-  // Network status
+  useUnsavedChangesGuard();
+
+  // Initialize derived session sync (grid→session projection).
+  // Safe to call multiple times — subsequent calls are no-ops.
+  useEffect(() => {
+    initDerivedSessionSync();
+  }, []);
+
   const { isOnline, isOffline, isSlow } = useNetworkStatus();
 
-  // Offline sync
   const {
     syncState,
     isSyncing,
     hasPendingChanges,
-    hasConflicts,
-    conflicts,
     syncNow,
-    resolveConflict,
     retryFailed,
   } = useOfflineSync();
 
-  // Service worker
   const { hasUpdate, applyUpdate } = useServiceWorkerUpdate();
 
-  // Initialize offline sync on mount
   useEffect(() => {
     if (isInitialized) return;
-
-    initializeOfflineSessionSync().then(() => {
-      setIsInitialized(true);
-      console.log('[OfflineProvider] Initialized');
-    });
+    initializeOfflineSessionSync().then(() => setIsInitialized(true));
   }, [isInitialized]);
 
-  // Show update banner when service worker update is available
   useEffect(() => {
-    if (hasUpdate) {
-      setShowUpdateBanner(true);
-    }
+    if (hasUpdate) setShowUpdateBanner(true);
   }, [hasUpdate]);
 
-  // Auto-show conflict modal when conflicts detected
-  useEffect(() => {
-    if (hasConflicts && conflicts.length > 0) {
-      setShowConflictModal(true);
-    }
-  }, [hasConflicts, conflicts.length]);
-
-  // Listen for sync requests from service worker
+  // Auto-sync when coming online
   useEffect(() => {
     const handleSyncRequest = () => {
       if (isOnline && enableAutoSync) {
@@ -117,33 +108,44 @@ export function OfflineProvider({
     };
 
     window.addEventListener('sw-sync-request', handleSyncRequest);
-    return () => {
-      window.removeEventListener('sw-sync-request', handleSyncRequest);
-    };
+    return () => window.removeEventListener('sw-sync-request', handleSyncRequest);
   }, [isOnline, enableAutoSync]);
+
+  // Auto-sync on interval (every 2 minutes) when there are pending changes
+  const autoSyncRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  useEffect(() => {
+    if (autoSyncRef.current) {
+      clearInterval(autoSyncRef.current);
+      autoSyncRef.current = null;
+    }
+
+    if (!enableAutoSync || !isOnline) return;
+
+    autoSyncRef.current = setInterval(() => {
+      const pending = syncState.pendingChanges;
+      if (pending > 0 && !isSyncing) {
+        triggerSync();
+      }
+    }, 2 * 60 * 1000); // 2 minutes
+
+    return () => {
+      if (autoSyncRef.current) {
+        clearInterval(autoSyncRef.current);
+        autoSyncRef.current = null;
+      }
+    };
+  }, [enableAutoSync, isOnline, isSyncing, syncState.pendingChanges]);
 
   const handleApplyUpdate = useCallback(() => {
     applyUpdate();
     setShowUpdateBanner(false);
   }, [applyUpdate]);
 
-  const handleResolveConflict = useCallback(
-    async (
-      conflictId: string,
-      strategy: ConflictResolutionStrategy,
-      mergedData?: unknown
-    ) => {
-      await resolveConflict(conflictId, strategy, mergedData);
+  const resolveConflict = useCallback(async () => {
+    // No-op: conflicts are not generated in current implementation
+  }, []);
 
-      // Close modal if no more conflicts
-      if (conflicts.length <= 1) {
-        setShowConflictModal(false);
-      }
-    },
-    [resolveConflict, conflicts.length]
-  );
-
-  const contextValue: OfflineContextValue = {
+  const contextValue: OfflineContextValue = useMemo(() => ({
     isOnline,
     isOffline,
     isSlow,
@@ -151,14 +153,19 @@ export function OfflineProvider({
     hasPendingChanges,
     pendingCount: syncState.pendingChanges,
     lastSyncedAt: syncState.lastSyncedAt,
-    hasConflicts,
-    conflicts,
-    resolveConflict: handleResolveConflict,
+    hasConflicts: false,
+    conflicts: [],
+    resolveConflict,
     syncNow,
     retryFailed,
     hasUpdate,
     applyUpdate: handleApplyUpdate,
-  };
+  }), [
+    isOnline, isOffline, isSlow,
+    isSyncing, hasPendingChanges, syncState.pendingChanges, syncState.lastSyncedAt,
+    resolveConflict, syncNow, retryFailed,
+    hasUpdate, handleApplyUpdate,
+  ]);
 
   return (
     <OfflineContext.Provider value={contextValue}>
@@ -171,7 +178,7 @@ export function OfflineProvider({
             initial={{ opacity: 0, y: -50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -50 }}
-            className="fixed top-0 left-0 right-0 z-50 bg-blue-600 px-4 py-3"
+            className="fixed top-0 left-0 right-0 z-toast bg-blue-600 px-4 py-3"
           >
             <div className="max-w-7xl mx-auto flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -196,24 +203,6 @@ export function OfflineProvider({
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Sync Status Indicator */}
-      {showStatusIndicator && (
-        <div className="fixed bottom-4 right-4 z-40">
-          <SyncStatusIndicator
-            showDetails
-            onConflictClick={() => setShowConflictModal(true)}
-          />
-        </div>
-      )}
-
-      {/* Conflict Resolution Modal */}
-      <ConflictResolutionModal
-        isOpen={showConflictModal}
-        conflicts={conflicts}
-        onResolve={handleResolveConflict}
-        onClose={() => setShowConflictModal(false)}
-      />
     </OfflineContext.Provider>
   );
 }

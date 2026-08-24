@@ -1,5 +1,7 @@
 import { motion } from "framer-motion"
 
+import { DURATION } from '@/lib/animations/motion-presets';
+
 type Props = {
     content: string;
 }
@@ -8,11 +10,11 @@ export const LongTag = ({content}: Props) => {
     return       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1.5, duration: 0.8 }}
+        transition={{ delay: 1.5, duration: DURATION.dramatic }}
         className="mt-6"
       >
         <motion.div
-          className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl relative overflow-hidden"
+          className="inline-flex items-center gap-3 px-8 py-4 rounded-container relative overflow-hidden"
           style={{
             background: `
               linear-gradient(135deg, 

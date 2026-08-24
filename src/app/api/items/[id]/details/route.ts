@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import { createClient } from '@/lib/supabase/server';
-import type { ItemDetailResponse } from '@/types/item-details';
+
 import type { TypedSupabaseClient } from '@/lib/supabase/types';
 import type { ItemRow } from '@/types/database';
+import type { ItemDetailResponse, ActivityTimelineData, ActivityEvent, TrajectoryPoint } from '@/types/item-details';
+
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -58,6 +61,9 @@ export async function GET(
     // Generate external links based on item data
     const externalLinks = generateExternalLinks(item);
 
+    // Fetch activity timeline
+    const activityTimeline = await fetchActivityTimeline(supabase, id);
+
     const response: ItemDetailResponse = {
       item: {
         id: item.id,
@@ -82,6 +88,7 @@ export async function GET(
       rankingStats,
       recentRankings,
       externalLinks,
+      activityTimeline,
     };
 
     return NextResponse.json(response);
@@ -152,79 +159,159 @@ async function fetchRelatedItems(
 }
 
 /**
- * Fetch ranking statistics for an item
- * Note: This generates mock data. In production, aggregate from rankings table.
+ * Fetch ranking statistics for an item.
+ *
+ * Priority order:
+ * 1. item_consensus_cache (pre-computed, fast)
+ * 2. Live aggregation from list_items (slower, always fresh)
+ * 3. null (no ranking data available)
  */
 async function fetchRankingStats(
-  _supabase: TypedSupabaseClient,
+  supabase: TypedSupabaseClient,
   itemId: string
 ): Promise<ItemDetailResponse['rankingStats']> {
-  // Generate deterministic mock data based on item ID
-  const seed = hashCode(itemId);
-  const totalRankings = ((seed * 13) % 500) + 20;
-  const baseRank = (seed % 30) + 1;
-  const volatility = ((seed * 7) % 60) / 10;
+  // 1. Try consensus cache first (table may not be in generated types yet)
+  try {
+    interface ConsensusCacheRow {
+      total_rankings: number | null;
+      average_position: number | null;
+      median_position: number | null;
+      distribution: Record<number, number> | null;
+      volatility: number | null;
+      confidence: number | null;
+      percentiles: { p25?: number; p50?: number; p75?: number } | null;
+    }
 
-  // Generate distribution
-  const distribution: Record<number, number> = {};
-  const spreadPositions = Math.min(15, Math.ceil(volatility * 2) + 3);
+    const { data: cached } = await (supabase as any)
+      .from('item_consensus_cache')
+      .select('total_rankings, average_position, median_position, distribution, volatility, confidence, percentiles')
+      .eq('item_id', itemId)
+      .maybeSingle() as { data: ConsensusCacheRow | null };
 
-  for (let i = 0; i < spreadPositions; i++) {
-    const position = Math.max(1, Math.min(50, baseRank + i - Math.floor(spreadPositions / 2)));
-    // Bell curve-like distribution centered on baseRank
-    const distance = Math.abs(position - baseRank);
-    const count = Math.max(1, Math.floor(totalRankings / spreadPositions * Math.exp(-distance * 0.3)));
-    distribution[position] = count;
+    if (cached && cached.total_rankings && cached.total_rankings > 0) {
+      const percentiles = cached.percentiles || {};
+      return {
+        totalRankings: cached.total_rankings,
+        averagePosition: Number(cached.average_position) || 0,
+        medianPosition: cached.median_position || 0,
+        distribution: cached.distribution || {},
+        volatility: Number(cached.volatility) || 0,
+        confidence: Number(cached.confidence) || 0,
+        percentiles: {
+          p25: percentiles.p25 || 0,
+          p50: percentiles.p50 || 0,
+          p75: percentiles.p75 || 0,
+        },
+      };
+    }
+  } catch {
+    // Table may not exist yet — fall through to live aggregation
   }
 
-  const confidence = Math.min(0.95, (totalRankings / 300) * (1 - volatility / 10));
+  // 2. Live aggregation from list_items
+  try {
+    const { data: rankings } = await supabase
+      .from('list_items')
+      .select('ranking')
+      .eq('item_id', itemId);
 
-  return {
-    totalRankings,
-    averagePosition: baseRank + (volatility / 5),
-    medianPosition: baseRank,
-    distribution,
-    volatility,
-    confidence,
-    percentiles: {
-      p25: Math.max(1, baseRank - Math.floor(volatility)),
-      p50: baseRank,
-      p75: Math.min(50, baseRank + Math.floor(volatility)),
-    },
-  };
+    if (!rankings || rankings.length === 0) {
+      // Return zeroed stats so the UI always shows the distribution panel
+      return {
+        totalRankings: 0,
+        averagePosition: 0,
+        medianPosition: 0,
+        distribution: {},
+        volatility: 0,
+        confidence: 0,
+        percentiles: { p25: 0, p50: 0, p75: 0 },
+      };
+    }
+
+    const positions = rankings.map(r => r.ranking).sort((a, b) => a - b);
+    const totalRankings = positions.length;
+
+    // Build distribution
+    const distribution: Record<number, number> = {};
+    for (const pos of positions) {
+      distribution[pos] = (distribution[pos] || 0) + 1;
+    }
+
+    // Compute stats
+    const sum = positions.reduce((a, b) => a + b, 0);
+    const averagePosition = sum / totalRankings;
+    const medianPosition = positions[Math.floor(totalRankings / 2)];
+    const p25 = positions[Math.floor(totalRankings * 0.25)];
+    const p75 = positions[Math.floor(totalRankings * 0.75)];
+
+    // Volatility: standard deviation
+    const variance = positions.reduce((acc, pos) => acc + Math.pow(pos - averagePosition, 2), 0) / totalRankings;
+    const volatility = Math.sqrt(variance);
+
+    // Confidence: based on sample size and volatility
+    const confidence = Math.min(0.95, (totalRankings / 200) * (1 - Math.min(volatility, 9) / 10));
+
+    return {
+      totalRankings,
+      averagePosition,
+      medianPosition,
+      distribution,
+      volatility,
+      confidence: Math.max(0, confidence),
+      percentiles: {
+        p25: p25 || medianPosition,
+        p50: medianPosition,
+        p75: p75 || medianPosition,
+      },
+    };
+  } catch {
+    return {
+      totalRankings: 0,
+      averagePosition: 0,
+      medianPosition: 0,
+      distribution: {},
+      volatility: 0,
+      confidence: 0,
+      percentiles: { p25: 0, p50: 0, p75: 0 },
+    };
+  }
 }
 
 /**
- * Fetch recent rankings featuring this item
- * Note: Returns mock data. In production, query from rankings/lists tables.
+ * Fetch recent rankings featuring this item from list_items + lists tables
  */
 async function fetchRecentRankings(
-  _supabase: TypedSupabaseClient,
+  supabase: TypedSupabaseClient,
   itemId: string
 ): Promise<ItemDetailResponse['recentRankings']> {
-  // Mock recent rankings for now
-  const seed = hashCode(itemId);
-  const count = (seed % 5) + 2;
+  try {
+    const { data: listItems } = await supabase
+      .from('list_items')
+      .select('list_id, ranking, created_at')
+      .eq('item_id', itemId)
+      .order('created_at', { ascending: false })
+      .limit(5);
 
-  const mockRankings: ItemDetailResponse['recentRankings'] = [];
-  const listTitles = [
-    'Top 10 All Time Favorites',
-    'Best of 2024',
-    'Personal Rankings',
-    'Community Picks',
-    'Critics\' Choice',
-  ];
+    if (!listItems || listItems.length === 0) return [];
 
-  for (let i = 0; i < count; i++) {
-    mockRankings.push({
-      listId: `list-${seed + i}`,
-      listTitle: listTitles[i % listTitles.length],
-      position: ((seed + i) % 10) + 1,
-      rankedAt: new Date(Date.now() - (i * 86400000 * (i + 1))).toISOString(),
-    });
+    // Fetch list titles
+    const listIds = listItems.map(li => li.list_id);
+    const { data: lists } = await supabase
+      .from('lists')
+      .select('id, title')
+      .in('id', listIds);
+
+    const listMap = new Map((lists || []).map(l => [l.id, l.title]));
+
+    return listItems.map(li => ({
+      listId: li.list_id,
+      listTitle: listMap.get(li.list_id) || 'Untitled List',
+      position: li.ranking,
+      rankedAt: li.created_at || new Date().toISOString(),
+    }));
+  } catch {
+    return [];
   }
-
-  return mockRankings;
 }
 
 /**
@@ -281,14 +368,50 @@ function generateExternalLinks(item: ItemRow): ItemDetailResponse['externalLinks
 }
 
 /**
- * Simple hash function for deterministic random values
+ * Fetch activity timeline for an item
  */
-function hashCode(str: string): number {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
+async function fetchActivityTimeline(
+  supabase: TypedSupabaseClient,
+  itemId: string
+): Promise<ActivityTimelineData | undefined> {
+  try {
+    const { data: events, count } = await supabase
+      .from('ranking_activities')
+      .select('id, action, position_before, position_after, list_title, list_id, metadata, created_at', { count: 'exact' })
+      .eq('item_id', itemId)
+      .order('created_at', { ascending: false })
+      .limit(15);
+
+    if (!events || events.length === 0) return undefined;
+
+    const activityEvents: ActivityEvent[] = events.map(e => ({
+      id: e.id,
+      action: e.action as ActivityEvent['action'],
+      position_before: e.position_before,
+      position_after: e.position_after,
+      list_title: e.list_title,
+      list_id: e.list_id,
+      metadata: e.metadata as Record<string, unknown> | null,
+      created_at: e.created_at,
+    }));
+
+    const positionEvents = events
+      .filter(e => e.position_after != null && e.action !== 'remove')
+      .reverse();
+
+    const trajectory: TrajectoryPoint[] = positionEvents.map(e => ({
+      date: e.created_at,
+      position: e.position_after!,
+    }));
+
+    return {
+      events: activityEvents,
+      trajectory,
+      totalEvents: count || 0,
+    };
+  } catch {
+    // Non-critical — table may not exist yet
+    return undefined;
   }
-  return Math.abs(hash);
 }
+

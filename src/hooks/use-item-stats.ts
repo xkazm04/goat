@@ -1,4 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useRef } from 'react';
+
 import { goatApi, ItemStatsParams } from '@/lib/api';
 
 // Cache time constants
@@ -47,4 +49,38 @@ export function useItemStat(itemId: string, options?: QueryOptions) {
     queryFn: () => goatApi.items.getStat(itemId),
     ...buildQueryConfig(options, !!itemId),
   });
+}
+
+/**
+ * Hook to batch-prefetch stats for multiple items in a single request.
+ * Seeds the individual item query caches so child useItemStat hooks
+ * find data already available without making per-item requests.
+ */
+export function useItemStatsBatch(itemIds: string[], options?: QueryOptions) {
+  const queryClient = useQueryClient();
+  const prevKeyRef = useRef('');
+
+  const stableKey = itemIds.slice().sort().join(',');
+  const enabled = (options?.enabled ?? true) && itemIds.length > 0;
+
+  const query = useQuery({
+    queryKey: itemStatsKeys.list({ item_ids: itemIds }),
+    queryFn: () => goatApi.items.getStats({ item_ids: itemIds }),
+    ...buildQueryConfig(options, enabled),
+  });
+
+  // Seed individual item caches when batch data arrives
+  useEffect(() => {
+    if (!query.data?.stats || stableKey === prevKeyRef.current) return;
+    prevKeyRef.current = stableKey;
+
+    for (const stat of query.data.stats) {
+      queryClient.setQueryData(
+        itemStatsKeys.item(stat.item_id),
+        stat,
+      );
+    }
+  }, [query.data, stableKey, queryClient]);
+
+  return query;
 }

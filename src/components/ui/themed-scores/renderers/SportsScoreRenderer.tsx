@@ -1,12 +1,15 @@
 "use client";
 
-import { motion } from "framer-motion";
+import {
+  SCORE_LOW_THRESHOLD,
+  SCORE_MID_THRESHOLD,
+  formatScore,
+} from "@/lib/constants/scoring";
 import { cn } from "@/lib/utils";
-import type { ScoreRendererProps } from "./types";
 
-// Score thresholds for color coding
-const SCORE_LOW_THRESHOLD = 33;
-const SCORE_MID_THRESHOLD = 66;
+import { AnimatedProgressBar } from "./AnimatedProgressBar";
+
+import type { ScoreRendererProps } from "./types";
 
 /**
  * Get health bar gradient color based on score
@@ -62,14 +65,11 @@ export function SportsScoreRenderer({
         )}
       >
         {/* Fill */}
-        <motion.div
-          className={cn(
-            "absolute inset-y-0 left-0 bg-gradient-to-r",
-            colorClass
-          )}
-          initial={animated ? { width: 0 } : false}
-          animate={{ width: `${score}%` }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
+        <AnimatedProgressBar
+          score={score}
+          animated={animated}
+          fillClassName={cn("bg-linear-to-r", colorClass)}
+          duration={0.6}
         />
         {/* Segments (health bar style) */}
         {variant !== "inline" && (
@@ -90,7 +90,7 @@ export function SportsScoreRenderer({
             {label}
           </span>
           <span className="text-xs font-mono text-gray-500 tabular-nums">
-            {score.toFixed(0)}
+            {formatScore(score)}
           </span>
         </div>
       )}

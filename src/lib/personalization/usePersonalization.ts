@@ -4,9 +4,10 @@
  */
 
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+
+import { getContextAnalyzer, ContextAnalyzer } from './ContextAnalyzer';
 import { getInterestTracker, InterestTracker } from './InterestTracker';
 import { getPersonalizationEngine, PersonalizationEngine, ContentItem } from './PersonalizationEngine';
-import { getContextAnalyzer, ContextAnalyzer } from './ContextAnalyzer';
 import {
   UserProfile,
   PersonalizedShowcaseItem,

@@ -1,8 +1,11 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useOptionalDropZoneHighlight } from "./DropZoneHighlightContext";
 import { useEffect, useState, useRef, useCallback } from "react";
+
+import { DURATION } from '@/lib/animations/motion-presets';
+
+import { useDropZoneHighlightStore } from "@/stores/drop-zone-highlight-store";
 
 interface ConnectorLine {
   id: number;
@@ -24,21 +27,18 @@ interface ConnectorLine {
  * - Smooth enter/exit animations
  */
 export function DropZoneConnectors() {
-  const highlightContext = useOptionalDropZoneHighlight();
+  // Granular selectors — only isDragging triggers re-renders.
+  // dropZonePositions/hoveredPosition are read via getState() in the rAF loop.
+  const isDragging = useDropZoneHighlightStore((s) => s.isDragging);
+  const cursorPositionRef = useDropZoneHighlightStore((s) => s.cursorPositionRef);
   const [connectors, setConnectors] = useState<ConnectorLine[]>([]);
   const animationFrameRef = useRef<number | undefined>(undefined);
   const prevConnectorsKeyRef = useRef<string>("");
 
-  // Extract values to avoid dependency on the whole context object
-  const isDragging = highlightContext?.dragState.isDragging ?? false;
-  const dragStateRef = useRef(highlightContext?.dragState);
-  dragStateRef.current = highlightContext?.dragState;
-
   const updateConnectors = useCallback(() => {
-    const dragState = dragStateRef.current;
-    if (!dragState) return;
-
-    const { cursorPosition, dropZonePositions, hoveredPosition } = dragState;
+    const storeState = useDropZoneHighlightStore.getState();
+    const { dropZonePositions, hoveredPosition } = storeState;
+    const cursorPosition = cursorPositionRef?.current ?? { x: 0, y: 0 };
     const maxDistance = 600; // Max distance for visibility
     const maxConnectors = 5; // Show up to 5 nearest connectors
 
@@ -74,7 +74,7 @@ export function DropZoneConnectors() {
     }
 
     animationFrameRef.current = requestAnimationFrame(updateConnectors);
-  }, []);
+  }, [cursorPositionRef]);
 
   useEffect(() => {
     if (!isDragging) {
@@ -94,13 +94,13 @@ export function DropZoneConnectors() {
     };
   }, [isDragging, updateConnectors, connectors.length]);
 
-  if (!highlightContext?.dragState.isDragging || connectors.length === 0) {
+  if (!isDragging || connectors.length === 0) {
     return null;
   }
 
   return (
     <svg
-      className="fixed inset-0 pointer-events-none z-[97]"
+      className="fixed inset-0 pointer-events-none z-97"
       style={{ width: "100vw", height: "100vh" }}
       data-testid="drop-zone-connectors"
     >
@@ -156,11 +156,11 @@ export function DropZoneConnectors() {
                 }}
                 exit={{ opacity: 0, pathLength: 0 }}
                 transition={{
-                  opacity: { duration: 0.2 },
-                  pathLength: { duration: 0.3 },
+                  opacity: { duration: DURATION.fast },
+                  pathLength: { duration: DURATION.normal },
                   strokeDashoffset: connector.isHovered
                     ? { duration: 0 }
-                    : { duration: 0.8, repeat: Infinity, ease: "linear" },
+                    : { duration: DURATION.dramatic, repeat: Infinity, ease: "linear" },
                 }}
               />
 
@@ -180,7 +180,7 @@ export function DropZoneConnectors() {
                 transition={{
                   scale: connector.isHovered
                     ? { duration: 1, repeat: Infinity, ease: "easeInOut" }
-                    : { duration: 0.2 },
+                    : { duration: DURATION.fast },
                 }}
               />
             </g>

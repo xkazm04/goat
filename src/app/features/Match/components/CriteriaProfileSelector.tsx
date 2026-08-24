@@ -5,7 +5,6 @@
  * Component for selecting, creating, and managing criteria profiles
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Check,
@@ -15,15 +14,17 @@ import {
   Trash2,
   Share2,
   Download,
-  Upload,
-  Settings,
   Star,
   Edit2,
 } from 'lucide-react';
+import React, { useState, useCallback, useMemo } from 'react';
+
+import { DURATION } from '@/lib/animations/motion-presets';
+import { mapCategoryToTemplate } from '@/lib/criteria/templates';
 import { cn } from '@/lib/utils';
 import { useCriteriaStore } from '@/stores/criteria-store';
+
 import type { CriteriaProfile, Criterion, ScoreInputMode } from '@/lib/criteria/types';
-import { mapCategoryToTemplate, getTemplatesForCategory } from '@/lib/criteria/templates';
 
 /**
  * CriteriaProfileSelector Props
@@ -135,9 +136,9 @@ export function CriteriaProfileSelector({
       <button
         className={cn(
           'w-full flex items-center justify-between gap-2 px-4 py-3',
-          'rounded-lg border border-border bg-card',
-          'hover:bg-accent/50 hover:shadow-sm transition-all duration-200',
-          'focus:outline-none focus:ring-2 focus:ring-ring'
+          'rounded-card border border-border bg-card',
+          'hover:bg-accent/50 hover:shadow-xs transition-all duration-200',
+          'focus:outline-hidden focus:ring-2 focus:ring-ring'
         )}
         onClick={() => setIsOpen(!isOpen)}
       >
@@ -167,11 +168,11 @@ export function CriteriaProfileSelector({
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.15 }}
+            transition={{ duration: DURATION.quick }}
             className={cn(
-              'absolute z-50 w-full mt-2',
-              'rounded-lg border border-border bg-card shadow-xl',
-              'max-h-[400px] overflow-y-auto backdrop-blur-sm'
+              'absolute z-dropdown w-full mt-2',
+              'rounded-card border border-border bg-card shadow-xl',
+              'max-h-[400px] overflow-y-auto backdrop-blur-xs'
             )}
           >
             {/* Templates Section */}
@@ -225,7 +226,7 @@ export function CriteriaProfileSelector({
               <div className="p-2">
                 <button
                   className={cn(
-                    'w-full flex items-center gap-2 px-3 py-2 rounded-lg',
+                    'w-full flex items-center gap-2 px-3 py-2 rounded-card',
                     'text-primary hover:bg-primary/10 transition-all duration-200 hover:scale-[1.01]'
                   )}
                   onClick={() => {
@@ -262,7 +263,7 @@ export function CriteriaProfileSelector({
       {/* Click outside to close */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-40"
+          className="fixed inset-0 z-dropdown"
           onClick={() => setIsOpen(false)}
         />
       )}
@@ -299,7 +300,7 @@ function ProfileOption({
   return (
     <div
       className={cn(
-        'relative flex items-center justify-between px-3 py-2 rounded-lg',
+        'relative flex items-center justify-between px-3 py-2 rounded-card',
         'cursor-pointer transition-all duration-200',
         isActive ? 'bg-primary/10' : 'hover:bg-accent/50 hover:translate-x-0.5'
       )}
@@ -315,7 +316,7 @@ function ProfileOption({
               {profile.name}
             </span>
             {profile.isTemplate && (
-              <span className="px-1.5 py-0.5 text-[10px] bg-muted rounded">
+              <span className="px-1.5 py-0.5 text-2xs bg-muted rounded">
                 Template
               </span>
             )}
@@ -476,14 +477,14 @@ function CriteriaProfileEditor({
   const totalWeight = criteria.reduce((sum, c) => sum + c.weight, 0);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-modal flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
         className={cn(
           'w-full max-w-xl max-h-[90vh] overflow-y-auto',
-          'rounded-xl border border-border bg-card shadow-2xl'
+          'rounded-container border border-border bg-card shadow-2xl'
         )}
       >
         {/* Header */}
@@ -510,8 +511,8 @@ function CriteriaProfileEditor({
               onChange={(e) => setName(e.target.value)}
               placeholder="My Custom Criteria"
               className={cn(
-                'w-full px-3 py-2 rounded-lg border border-border transition-all duration-200',
-                'bg-background focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-ring'
+                'w-full px-3 py-2 rounded-card border border-border transition-all duration-200',
+                'bg-background focus:outline-hidden focus:ring-2 focus:ring-ring/50 focus:border-ring'
               )}
             />
           </div>
@@ -527,9 +528,9 @@ function CriteriaProfileEditor({
               placeholder="Describe your criteria profile..."
               rows={2}
               className={cn(
-                'w-full px-3 py-2 rounded-lg border border-border transition-all duration-200',
+                'w-full px-3 py-2 rounded-card border border-border transition-all duration-200',
                 'bg-background resize-none',
-                'focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-ring'
+                'focus:outline-hidden focus:ring-2 focus:ring-ring/50 focus:border-ring'
               )}
             />
           </div>
@@ -556,7 +557,7 @@ function CriteriaProfileEditor({
               {criteria.map((criterion, index) => (
                 <div
                   key={criterion.id}
-                  className="p-3 rounded-lg border border-border bg-muted/30 transition-all duration-200 hover:border-border/80 hover:shadow-sm"
+                  className="p-3 rounded-card border border-border bg-muted/30 transition-all duration-200 hover:border-border/80 hover:shadow-xs"
                 >
                   <div className="flex items-start gap-2">
                     <div className="flex-1 space-y-2">
@@ -571,7 +572,7 @@ function CriteriaProfileEditor({
                         placeholder="Criterion name"
                         className={cn(
                           'w-full px-2 py-1 text-sm rounded border border-border',
-                          'bg-background focus:outline-none focus:ring-1 focus:ring-ring'
+                          'bg-background focus:outline-hidden focus:ring-1 focus:ring-ring'
                         )}
                       />
                       <input
@@ -585,7 +586,7 @@ function CriteriaProfileEditor({
                         placeholder="Description"
                         className={cn(
                           'w-full px-2 py-1 text-xs rounded border border-border',
-                          'bg-background focus:outline-none focus:ring-1 focus:ring-ring'
+                          'bg-background focus:outline-hidden focus:ring-1 focus:ring-ring'
                         )}
                       />
                       <div className="flex items-center gap-2">
@@ -602,7 +603,7 @@ function CriteriaProfileEditor({
                           max={100}
                           className={cn(
                             'w-16 px-2 py-1 text-xs rounded border border-border',
-                            'bg-background focus:outline-none focus:ring-1 focus:ring-ring'
+                            'bg-background focus:outline-hidden focus:ring-1 focus:ring-ring'
                           )}
                         />
                         <span className="text-xs text-muted-foreground">%</span>
@@ -621,9 +622,9 @@ function CriteriaProfileEditor({
               <button
                 className={cn(
                   'w-full flex items-center justify-center gap-2 px-3 py-2',
-                  'rounded-lg border border-dashed border-border',
+                  'rounded-card border border-dashed border-border',
                   'text-muted-foreground hover:text-foreground hover:border-foreground',
-                  'transition-all duration-200 hover:scale-[1.01] hover:shadow-sm'
+                  'transition-all duration-200 hover:scale-[1.01] hover:shadow-xs'
                 )}
                 onClick={addCriterion}
               >
@@ -638,7 +639,7 @@ function CriteriaProfileEditor({
         <div className="flex items-center justify-end gap-2 p-4 border-t border-border">
           <button
             className={cn(
-              'px-4 py-2 rounded-lg border border-border',
+              'px-4 py-2 rounded-card border border-border',
               'hover:bg-accent transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]'
             )}
             onClick={onClose}
@@ -647,7 +648,7 @@ function CriteriaProfileEditor({
           </button>
           <button
             className={cn(
-              'px-4 py-2 rounded-lg',
+              'px-4 py-2 rounded-card',
               'bg-primary text-primary-foreground',
               'hover:bg-primary/90 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]',
               'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100'
@@ -684,14 +685,14 @@ export function InputModeSelector({
   ];
 
   return (
-    <div className={cn('flex items-center gap-1 p-1 rounded-lg bg-muted', className)}>
+    <div className={cn('flex items-center gap-1 p-1 rounded-card bg-muted', className)}>
       {modes.map((mode) => (
         <button
           key={mode.value}
           className={cn(
             'px-3 py-1 text-sm rounded transition-all duration-200',
             value === mode.value
-              ? 'bg-background text-foreground shadow-sm scale-[1.02]'
+              ? 'bg-background text-foreground shadow-xs scale-[1.02]'
               : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
           )}
           onClick={() => onChange(mode.value)}

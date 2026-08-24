@@ -5,16 +5,15 @@
  * Handles API communication, caching, and fallback logic.
  */
 
+import { getAIStyleConfig } from './ai/stylePresets';
+import { buildSDPrompt, buildDALLEPrompt, sanitizeCustomPrompt } from './promptBuilder';
+
 import type {
   AIGenerationRequest,
   AIGenerationResponse,
-  GeneratedImage,
   GenerationProgress,
-  GenerationStatus,
   GenerationHistoryEntry,
 } from './ai/types';
-import { buildSDPrompt, buildDALLEPrompt, sanitizeCustomPrompt } from './promptBuilder';
-import { getAIStyleConfig } from './ai/stylePresets';
 
 /**
  * AI provider configuration
@@ -63,7 +62,12 @@ type ProgressCallback = (progress: GenerationProgress) => void;
 function generateCacheKey(request: AIGenerationRequest): string {
   const itemsKey = request.items.map(i => `${i.position}:${i.title}`).join('|');
   const customKey = request.customPrompt || '';
-  return `${request.listTitle}:${request.category}:${request.style}:${itemsKey}:${customKey}`;
+  // Include dimensions + variation count: they affect the output, so omitting
+  // them caused a 1200x630 request to return a cached 1080x1080 image (wrong-size
+  // cache hit) for the same title/category/style/items.
+  const dimsKey = `${request.dimensions.width}x${request.dimensions.height}`;
+  const variationsKey = String(request.numVariations ?? 1);
+  return `${request.listTitle}:${request.category}:${request.style}:${dimsKey}:${variationsKey}:${itemsKey}:${customKey}`;
 }
 
 /**

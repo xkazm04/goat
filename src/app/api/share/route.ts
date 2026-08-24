@@ -1,14 +1,20 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { CreateSharedRankingRequest, SharedRanking } from '@/types/share';
-import { getOGCacheManager } from '@/lib/og/CacheManager';
+import { NextRequest, NextResponse } from 'next/server';
+
+import { requireAuth } from '@/lib/supabase/server';
+import { CreateSharedRankingRequest } from '@/types/share';
+
 import type { OGCardLayout } from '@/lib/og/types';
 
-// Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 function getSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error('Missing Supabase configuration for share API');
+  }
+
   return createClient(supabaseUrl, supabaseServiceKey);
 }
 
@@ -44,8 +50,13 @@ function suggestLayout(items: Array<{ image_url?: string }>): OGCardLayout {
 // POST - Create a new shared ranking
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireAuth();
+    if (auth.error) return auth.error;
+
     const body: CreateSharedRankingRequest = await request.json();
-    const { list_id, user_id, title, category, subcategory, time_period, items } = body;
+    const { list_id, display_name, title, category, subcategory, time_period, items } = body;
+    // Use authenticated user's ID
+    const user_id = auth.userId;
 
     // Validate request
     if (!title || !category || !items || items.length === 0) {
@@ -99,6 +110,7 @@ export async function POST(request: NextRequest) {
       .insert({
         list_id,
         user_id,
+        display_name: display_name || null,
         title,
         category,
         subcategory,
@@ -113,7 +125,7 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error('Error creating shared ranking:', error);
       return NextResponse.json(
-        { error: 'Failed to create shared ranking', details: error.message },
+        { error: 'Failed to create shared ranking' },
         { status: 500 }
       );
     }
@@ -148,7 +160,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const code = searchParams.get('code');
     const userId = searchParams.get('user_id');
-    const limit = parseInt(searchParams.get('limit') || '10');
+    const limit = Math.max(1, Math.min(parseInt(searchParams.get('limit') || '10'), 50));
 
     const supabase = getSupabaseClient();
 
@@ -167,12 +179,9 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      // Increment view count (fire and forget)
-      supabase
-        .from('shared_rankings')
-        .update({ view_count: data.view_count + 1 })
-        .eq('id', data.id)
-        .then(() => {});
+      // Increment view count (fire and forget) — atomic RPC to avoid lost
+      // concurrent increments (a JS read-modify-write under-counts under traffic).
+      supabase.rpc('increment_share_view_count', { share_id: data.id }).then(() => {});
 
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://goat.app';
 

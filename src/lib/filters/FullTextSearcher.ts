@@ -5,6 +5,11 @@
 
 import Fuse, { FuseResult, IFuseOptions, FuseResultMatch } from 'fuse.js';
 
+import type { FilterMetrics } from './FilterEngine';
+
+// Pre-compiled regex for extended syntax detection
+const RE_EXTENDED_FIELD = /\w+:/;
+
 /**
  * Configuration for the full-text searcher
  */
@@ -84,9 +89,18 @@ export class FullTextSearcher<T extends Record<string, unknown>> {
   private items: T[] = [];
   private config: FullTextSearchConfig;
   private lastBuildTime: number = 0;
+  private onMetrics?: (metrics: FilterMetrics) => void;
 
   constructor(config: Partial<FullTextSearchConfig> = {}) {
     this.config = { ...DEFAULT_SEARCH_CONFIG, ...config };
+  }
+
+  /**
+   * Set an optional metrics callback for real-time performance visibility.
+   * The callback receives {operation, durationMs, itemCount} after each operation.
+   */
+  setMetricsCallback(callback: (metrics: FilterMetrics) => void): void {
+    this.onMetrics = callback;
   }
 
   /**
@@ -114,6 +128,14 @@ export class FullTextSearcher<T extends Record<string, unknown>> {
 
     this.fuse = new Fuse(items, fuseOptions);
     this.lastBuildTime = performance.now() - startTime;
+
+    if (this.onMetrics) {
+      this.onMetrics({
+        operation: 'fullTextSearch.buildIndex',
+        durationMs: this.lastBuildTime,
+        itemCount: items.length,
+      });
+    }
   }
 
   /**
@@ -159,13 +181,22 @@ export class FullTextSearcher<T extends Record<string, unknown>> {
     }
 
     const results = fuseResults.map((result) => this.transformResult(result));
+    const durationMs = performance.now() - startTime;
+
+    if (this.onMetrics) {
+      this.onMetrics({
+        operation: 'fullTextSearch.search',
+        durationMs,
+        itemCount: this.items.length,
+      });
+    }
 
     return {
       results,
       stats: {
         totalItems: this.items.length,
         matchedItems: results.length,
-        executionTime: performance.now() - startTime,
+        executionTime: durationMs,
         query,
       },
     };
@@ -225,20 +256,31 @@ export class FullTextSearcher<T extends Record<string, unknown>> {
   }
 
   /**
-   * Check if an item matches the query
+   * Check if an item matches the query using simple field-level string matching
+   * instead of instantiating a full Fuse.js instance per item.
    */
   matches(item: T, query: string): boolean {
     if (!query.trim()) return true;
 
-    // Create a temporary Fuse instance for single item check
-    const tempFuse = new Fuse([item], {
-      keys: this.config.keys,
-      threshold: this.config.threshold,
-      useExtendedSearch: this.config.useExtendedSearch,
-    });
+    const normalizedQuery = query.toLowerCase().trim();
+    const keys = this.config.keys;
 
-    const searchQuery = this.prepareQuery(query);
-    return tempFuse.search(searchQuery).length > 0;
+    for (const key of keys) {
+      const fieldName = typeof key === 'string' ? key : key.name;
+      const value = (item as Record<string, unknown>)[fieldName];
+
+      if (value == null) continue;
+
+      if (typeof value === 'string') {
+        if (value.toLowerCase().includes(normalizedQuery)) return true;
+      } else if (Array.isArray(value)) {
+        for (const v of value) {
+          if (typeof v === 'string' && v.toLowerCase().includes(normalizedQuery)) return true;
+        }
+      }
+    }
+
+    return false;
   }
 
   /**
@@ -299,7 +341,7 @@ export class FullTextSearcher<T extends Record<string, unknown>> {
       query.includes('^') ||
       query.includes('=') ||
       query.includes('$') ||
-      /\w+:/.test(query)
+      RE_EXTENDED_FIELD.test(query)
     );
   }
 
@@ -365,7 +407,3 @@ export function highlightMatches(
   return result;
 }
 
-/**
- * Default instance for convenience
- */
-export const defaultSearcher = new FullTextSearcher();

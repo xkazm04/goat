@@ -100,7 +100,6 @@ export type BlueprintCloneResponse = ApiResponse<BlueprintCloneData>;
 // List API Response Types
 // =============================================================================
 
-import type { ListRow } from '@/types/database';
 
 /**
  * List data type for API responses

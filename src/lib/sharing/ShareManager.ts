@@ -3,6 +3,10 @@
  * Orchestrates the sharing flow across platforms
  */
 
+import { getContentOptimizer, ContentOptimizer } from './ContentOptimizer';
+import { getPlatformAdapter, isWebShareAvailable } from './platforms';
+import { getShareAnalytics, ShareAnalytics } from './ShareAnalytics';
+
 import type {
   SharePlatform,
   ShareContent,
@@ -10,9 +14,6 @@ import type {
   ShareResult,
   OptimizedContent,
 } from './types';
-import { getPlatformAdapter, isWebShareAvailable } from './platforms';
-import { getContentOptimizer, ContentOptimizer } from './ContentOptimizer';
-import { getShareAnalytics, ShareAnalytics } from './ShareAnalytics';
 
 /**
  * Share manager options

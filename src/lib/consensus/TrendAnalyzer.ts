@@ -4,7 +4,6 @@
  */
 
 import {
-  ItemConsensus,
   ConsensusTrend,
   CommunityRanking,
 } from './types';

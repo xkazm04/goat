@@ -2,6 +2,8 @@
 
 import { motion } from 'framer-motion';
 import { Check, Sparkles, Trophy, Star, PartyPopper } from 'lucide-react';
+
+import { DURATION } from '@/lib/animations/motion-presets';
 import { cn } from '@/lib/utils';
 
 interface FeedbackSuccessStateProps {
@@ -80,7 +82,7 @@ export function FeedbackSuccessState({
           {[...Array(8)].map((_, i) => (
             <motion.div
               key={i}
-              className="absolute left-1/2 top-1/2 w-2 h-2 rounded-full bg-gradient-to-r from-green-400 to-emerald-400"
+              className="absolute left-1/2 top-1/2 w-2 h-2 rounded-full bg-linear-to-r from-green-400 to-emerald-400"
               initial={{
                 x: 0,
                 y: 0,
@@ -93,8 +95,8 @@ export function FeedbackSuccessState({
                 opacity: [0, 1, 0],
               }}
               transition={{
-                duration: 0.8,
-                delay: 0.1,
+                duration: DURATION.dramatic,
+                delay: DURATION.instant,
                 ease: 'easeOut',
               }}
             />
@@ -105,7 +107,7 @@ export function FeedbackSuccessState({
       <motion.div
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
-        transition={{ type: 'spring', duration: 0.5, bounce: 0.5 }}
+        transition={{ type: 'spring', duration: DURATION.slow, bounce: 0.5 }}
         className={cn(
           'rounded-full flex items-center justify-center mb-4',
           sizes.icon
@@ -117,7 +119,7 @@ export function FeedbackSuccessState({
         <motion.div
           initial={{ scale: 0, rotate: -180 }}
           animate={{ scale: 1, rotate: 0 }}
-          transition={{ type: 'spring', delay: 0.2, duration: 0.4 }}
+          transition={{ type: 'spring', delay: DURATION.fast, duration: DURATION.slow }}
         >
           <IconComponent className={cn('text-green-400', sizes.iconInner)} />
         </motion.div>
@@ -126,8 +128,8 @@ export function FeedbackSuccessState({
       <motion.h3
         initial={{ opacity: 0, y: 5 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        className={cn('font-semibold text-slate-200 mb-2', sizes.title)}
+        transition={{ delay: DURATION.normal }}
+        className={cn('font-semibold text-gray-200 mb-2', sizes.title)}
       >
         {title}
       </motion.h3>
@@ -136,8 +138,8 @@ export function FeedbackSuccessState({
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className={cn('text-slate-400 max-w-md mb-4', sizes.text)}
+          transition={{ delay: DURATION.normal + DURATION.instant }}
+          className={cn('text-gray-400 max-w-md mb-4', sizes.text)}
         >
           {message}
         </motion.p>
@@ -147,13 +149,13 @@ export function FeedbackSuccessState({
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
+          transition={{ delay: DURATION.slow }}
           className="flex gap-3 mt-2"
         >
           {actionText && onAction && (
             <button
               onClick={onAction}
-              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
+              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-control transition-colors flex items-center gap-2"
               data-testid="success-primary-action"
             >
               {actionText}
@@ -162,7 +164,7 @@ export function FeedbackSuccessState({
           {secondaryActionText && onSecondaryAction && (
             <button
               onClick={onSecondaryAction}
-              className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors"
+              className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-control transition-colors"
               data-testid="success-secondary-action"
             >
               {secondaryActionText}

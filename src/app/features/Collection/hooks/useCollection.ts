@@ -11,13 +11,82 @@
  * Unified hook for collection data management
  */
 
-import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, QueryKey } from '@tanstack/react-query';
 import { useMemo, useCallback, useState, useEffect, useRef } from 'react';
+
 import { collectionApi, CollectionApiParams, CollectionItemCreate, CollectionItemUpdate } from '@/lib/api/collection';
+import { trackError } from '@/lib/errors/error-analytics';
+import { fromUnknown } from '@/lib/errors/GoatError';
 import { collectionKeys } from '@/lib/query-keys/collection';
-import { CollectionItem, CollectionGroup, CollectionStats } from '../types';
+
+import { CollectionItem, ItemCategory, ItemPanelStats } from '../types';
 import { useVisibleCollectionItems, PlacementStats } from './useVisibleCollectionItems';
 import { useEasterEggSpotlight } from '../utils/easterEgg';
+
+// ============================================================================
+// Dev-mode cache operation instrumentation
+// ============================================================================
+
+const isDev = process.env.NODE_ENV === 'development';
+
+/**
+ * Log a cache mutation (setQueryData / invalidateQueries) in development.
+ * No-ops in production for zero overhead.
+ */
+function logCacheOp(
+  op: 'setQueryData' | 'invalidateQueries',
+  queryKey: QueryKey,
+  extra?: { hadExistingData?: boolean; context?: string }
+): void {
+  if (!isDev) return;
+  console.debug(
+    `[Collection Cache] ${op}`,
+    {
+      queryKey,
+      ...extra,
+      timestamp: new Date().toISOString(),
+    }
+  );
+}
+
+/**
+ * Log a structured error when an optimistic mutation fails and rolls back.
+ * Feeds into the ErrorAnalytics pipeline for observability.
+ */
+function logMutationError(
+  mutationName: 'addItem' | 'updateItem' | 'deleteItem',
+  error: unknown,
+  meta: { itemId?: string; collectionId?: string }
+): void {
+  const goatError = fromUnknown(error);
+
+  trackError({
+    code: goatError.code,
+    category: goatError.category,
+    severity: 'error',
+    traceId: goatError.traceId,
+    source: `useCollection.${mutationName}`,
+    context: {
+      mutationName,
+      itemId: meta.itemId,
+      collectionId: meta.collectionId,
+      errorMessage: goatError.message,
+      stack: isDev ? goatError.stack : undefined,
+    },
+  });
+
+  if (isDev) {
+    console.error(
+      `[Collection Mutation] ${mutationName} failed`,
+      {
+        itemId: meta.itemId,
+        collectionId: meta.collectionId,
+        code: goatError.code,
+        message: goatError.message,
+      }
+    );
+  }
+}
 
 // Curator milestone thresholds - gamification levels based on items ranked
 // Level 1: Novice (10 items), Level 2: Apprentice (25 items), Level 3: Curator (50 items),
@@ -59,18 +128,17 @@ export interface UseCollectionOptions {
   sortOrder?: 'asc' | 'desc';
   pageSize?: number;
   enablePagination?: boolean;
-  enableInfiniteScroll?: boolean;
   staleTime?: number;
   cacheTime?: number;
 }
 
 export interface UseCollectionResult {
   // Data
-  groups: CollectionGroup[];
+  groups: ItemCategory[];
   items: CollectionItem[];
   filteredItems: CollectionItem[];
-  selectedGroups: CollectionGroup[];
-  stats: CollectionStats;
+  selectedGroups: ItemCategory[];
+  stats: ItemPanelStats;
 
   // Derived placement state (first-class relationship with Grid)
   placementStats: PlacementStats;
@@ -93,13 +161,6 @@ export interface UseCollectionResult {
     nextPage: () => void;
     prevPage: () => void;
     goToPage: (page: number) => void;
-  };
-
-  // Infinite scroll (alternative to pagination)
-  infiniteScroll?: {
-    hasNextPage: boolean;
-    isFetchingNextPage: boolean;
-    fetchNextPage: () => void;
   };
 
   // Filter controls
@@ -158,7 +219,6 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
     sortOrder: initialSortOrder = 'desc', // Descending (highest ranking first)
     pageSize = 50,
     enablePagination = false,
-    enableInfiniteScroll = false,
     staleTime = 5 * 60 * 1000, // 5 minutes
     cacheTime = 10 * 60 * 1000 // 10 minutes
   } = options;
@@ -195,18 +255,15 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
   // Sort groups alphabetically by name (ascending)
   // Note: API returns groups with item_count, not items array
   const groupsData = useMemo(() => {
-    console.log('📦 Raw groups from API:', groupsDataRaw.length);
     const filtered = groupsDataRaw
       .filter(group => (group.item_count || 0) > 0) // Hide groups with no items
       .sort((a, b) => a.name.localeCompare(b.name)); // Sort groups by name (asc)
-    console.log('📦 Filtered groups (with items):', filtered.length);
     return filtered;
   }, [groupsDataRaw]);
 
   // Initialize selected groups when groups load (only once)
   useEffect(() => {
     if (!hasInitializedGroupsRef.current && groupsData.length > 0 && selectedGroupIds.size === 0) {
-      console.log('🔄 Initializing selected groups:', groupsData.length, 'groups');
       hasInitializedGroupsRef.current = true;
       setSelectedGroupIds(new Set(groupsData.map(g => g.id)));
     }
@@ -234,37 +291,14 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
   } = useQuery({
     queryKey: collectionKeys.itemsPaginated(queryParams),
     queryFn: () => collectionApi.getItemsPaginated(queryParams),
-    enabled: !enableInfiniteScroll,
-    staleTime,
-    gcTime: cacheTime
-  });
-
-  // Infinite scroll query (alternative to pagination)
-  const infiniteQuery = useInfiniteQuery({
-    queryKey: collectionKeys.itemsInfinite(queryParams),
-    queryFn: ({ pageParam = 0 }) =>
-      collectionApi.getItemsPaginated({ ...queryParams, offset: pageParam, limit: pageSize }),
-    initialPageParam: 0,
-    getNextPageParam: (lastPage) => lastPage.nextOffset,
-    enabled: enableInfiniteScroll,
     staleTime,
     gcTime: cacheTime
   });
 
   // Extract raw items from query results (before placement filtering)
   const rawItems = useMemo(() => {
-    let items: CollectionItem[] = [];
-    if (enableInfiniteScroll && infiniteQuery.data) {
-      items = infiniteQuery.data.pages.flatMap(page => page.data);
-    } else {
-      items = paginatedData?.data || [];
-    }
-    console.log('📊 Items from API:', items.length);
-    if (items.length > 0) {
-      console.log('📊 Sample item:', items[0]);
-    }
-    return items;
-  }, [enableInfiniteScroll, infiniteQuery.data, paginatedData]);
+    return paginatedData?.data || [];
+  }, [paginatedData]);
 
   // Use the derived-state hook for Collection-Grid relationship
   // This makes the relationship first-class: VisibleItems = AllItems - GridPlacedItems
@@ -278,14 +312,9 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
     maxGridSize: pageSize, // Use page size as proxy for grid size
   });
 
-  console.log('📊 Available items after placement filtering:', allItems.length, 'placed:', placementStats.placedCount);
-
   // Client-side filtering by selected groups and sorting
   const filteredItems = useMemo(() => {
-    console.log('🔍 Filtering items - selectedGroupIds:', selectedGroupIds.size, 'allItems:', allItems.length);
-
     if (selectedGroupIds.size === 0) {
-      console.log('⚠️  No groups selected, returning empty array');
       return [];
     }
 
@@ -294,8 +323,6 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
       if (!itemGroupId) return true; // Include items without group
       return selectedGroupIds.has(itemGroupId);
     });
-
-    console.log('✅ Filtered to', items.length, 'items');
 
     // Apply client-side sorting
     items = [...items].sort((a, b) => {
@@ -337,7 +364,7 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
   const { spotlightItemId } = useEasterEggSpotlight(searchTerm, filteredItems);
 
   // Calculate statistics with first-class placement state
-  const stats: CollectionStats = useMemo(() => {
+  const stats: ItemPanelStats = useMemo(() => {
     const totalItems = groupsData.reduce((sum, g) => sum + (g.item_count || 0), 0);
     const selectedItems = selectedGroups.reduce((sum, g) => sum + (g.item_count || 0), 0);
 
@@ -416,12 +443,13 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
       await queryClient.cancelQueries({ queryKey: collectionKeys.groups() });
       await queryClient.cancelQueries({ queryKey: collectionKeys.items() });
 
-      // Snapshot previous values
+      // Snapshot previous values for both caches
       const previousGroups = queryClient.getQueryData(collectionKeys.groupsList({ category, subcategory }));
+      const previousItems = queryClient.getQueryData(collectionKeys.itemsPaginated(queryParams));
 
       // Optimistically update cache
       const optimisticItem: CollectionItem = {
-        id: `temp-${Date.now()}`,
+        id: `temp-${crypto.randomUUID()}`,
         title: newItem.title,
         image_url: newItem.image_url,
         description: newItem.description,
@@ -431,26 +459,38 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
         metadata: newItem.metadata
       };
 
+      const itemsKey = collectionKeys.itemsPaginated(queryParams);
+      logCacheOp('setQueryData', itemsKey, { hadExistingData: !!previousItems, context: 'addItem.onMutate' });
       queryClient.setQueryData(
-        collectionKeys.itemsPaginated(queryParams),
+        itemsKey,
         (old: any) => old ? { ...old, data: [optimisticItem, ...old.data] } : old
       );
 
-      return { previousGroups };
+      return { previousGroups, previousItems };
     },
     onError: (err, newItem, context) => {
-      // Rollback on error
+      logMutationError('addItem', err, {
+        collectionId: category,
+      });
+      // Rollback both caches on error
+      if (context?.previousItems) {
+        const itemsKey = collectionKeys.itemsPaginated(queryParams);
+        logCacheOp('setQueryData', itemsKey, { hadExistingData: true, context: 'addItem.onError rollback' });
+        queryClient.setQueryData(itemsKey, context.previousItems);
+      }
       if (context?.previousGroups) {
-        queryClient.setQueryData(
-          collectionKeys.groupsList({ category, subcategory }),
-          context.previousGroups
-        );
+        const groupsKey = collectionKeys.groupsList({ category, subcategory });
+        logCacheOp('setQueryData', groupsKey, { hadExistingData: true, context: 'addItem.onError rollback' });
+        queryClient.setQueryData(groupsKey, context.previousGroups);
       }
     },
     onSuccess: () => {
       // Invalidate and refetch
+      logCacheOp('invalidateQueries', collectionKeys.groups(), { context: 'addItem.onSuccess' });
       queryClient.invalidateQueries({ queryKey: collectionKeys.groups() });
+      logCacheOp('invalidateQueries', collectionKeys.items(), { context: 'addItem.onSuccess' });
       queryClient.invalidateQueries({ queryKey: collectionKeys.items() });
+      logCacheOp('invalidateQueries', collectionKeys.stats(), { context: 'addItem.onSuccess' });
       queryClient.invalidateQueries({ queryKey: collectionKeys.stats() });
     }
   });
@@ -461,11 +501,13 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
     onMutate: async (updatedItem) => {
       await queryClient.cancelQueries({ queryKey: collectionKeys.items() });
 
-      const previousData = queryClient.getQueryData(collectionKeys.itemsPaginated(queryParams));
+      const itemsKey = collectionKeys.itemsPaginated(queryParams);
+      const previousData = queryClient.getQueryData(itemsKey);
 
       // Optimistically update
+      logCacheOp('setQueryData', itemsKey, { hadExistingData: !!previousData, context: 'updateItem.onMutate' });
       queryClient.setQueryData(
-        collectionKeys.itemsPaginated(queryParams),
+        itemsKey,
         (old: any) => {
           if (!old) return old;
           return {
@@ -480,12 +522,20 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
       return { previousData };
     },
     onError: (err, updatedItem, context) => {
+      logMutationError('updateItem', err, {
+        itemId: updatedItem.id,
+        collectionId: category,
+      });
       if (context?.previousData) {
-        queryClient.setQueryData(collectionKeys.itemsPaginated(queryParams), context.previousData);
+        const itemsKey = collectionKeys.itemsPaginated(queryParams);
+        logCacheOp('setQueryData', itemsKey, { hadExistingData: true, context: 'updateItem.onError rollback' });
+        queryClient.setQueryData(itemsKey, context.previousData);
       }
     },
     onSuccess: () => {
+      logCacheOp('invalidateQueries', collectionKeys.items(), { context: 'updateItem.onSuccess' });
       queryClient.invalidateQueries({ queryKey: collectionKeys.items() });
+      logCacheOp('invalidateQueries', collectionKeys.groups(), { context: 'updateItem.onSuccess' });
       queryClient.invalidateQueries({ queryKey: collectionKeys.groups() });
     }
   });
@@ -496,11 +546,13 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
     onMutate: async (itemId) => {
       await queryClient.cancelQueries({ queryKey: collectionKeys.items() });
 
-      const previousData = queryClient.getQueryData(collectionKeys.itemsPaginated(queryParams));
+      const itemsKey = collectionKeys.itemsPaginated(queryParams);
+      const previousData = queryClient.getQueryData(itemsKey);
 
       // Optimistically remove item
+      logCacheOp('setQueryData', itemsKey, { hadExistingData: !!previousData, context: 'deleteItem.onMutate' });
       queryClient.setQueryData(
-        collectionKeys.itemsPaginated(queryParams),
+        itemsKey,
         (old: any) => {
           if (!old) return old;
           return {
@@ -513,13 +565,22 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
       return { previousData };
     },
     onError: (err, itemId, context) => {
+      logMutationError('deleteItem', err, {
+        itemId,
+        collectionId: category,
+      });
       if (context?.previousData) {
-        queryClient.setQueryData(collectionKeys.itemsPaginated(queryParams), context.previousData);
+        const itemsKey = collectionKeys.itemsPaginated(queryParams);
+        logCacheOp('setQueryData', itemsKey, { hadExistingData: true, context: 'deleteItem.onError rollback' });
+        queryClient.setQueryData(itemsKey, context.previousData);
       }
     },
     onSuccess: () => {
+      logCacheOp('invalidateQueries', collectionKeys.items(), { context: 'deleteItem.onSuccess' });
       queryClient.invalidateQueries({ queryKey: collectionKeys.items() });
+      logCacheOp('invalidateQueries', collectionKeys.groups(), { context: 'deleteItem.onSuccess' });
       queryClient.invalidateQueries({ queryKey: collectionKeys.groups() });
+      logCacheOp('invalidateQueries', collectionKeys.stats(), { context: 'deleteItem.onSuccess' });
       queryClient.invalidateQueries({ queryKey: collectionKeys.stats() });
     }
   });
@@ -532,6 +593,7 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
 
   // Invalidate all collection cache
   const invalidateCache = useCallback(() => {
+    logCacheOp('invalidateQueries', collectionKeys.all, { context: 'invalidateCache (manual)' });
     queryClient.invalidateQueries({ queryKey: collectionKeys.all });
   }, [queryClient]);
 
@@ -548,10 +610,10 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
     isItemPlaced,
 
     // Loading states
-    isLoading: isLoadingGroups || isLoadingItems || (enableInfiniteScroll && infiniteQuery.isLoading),
-    isError: isErrorGroups || isErrorItems || (enableInfiniteScroll && infiniteQuery.isError),
-    error: (errorGroups || errorItems || (enableInfiniteScroll && infiniteQuery.error)) as Error | null,
-    isFetching: isFetching || (enableInfiniteScroll && infiniteQuery.isFetching),
+    isLoading: isLoadingGroups || isLoadingItems,
+    isError: isErrorGroups || isErrorItems,
+    error: (errorGroups || errorItems) as Error | null,
+    isFetching,
 
     // Pagination
     pagination: {
@@ -564,13 +626,6 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
       prevPage,
       goToPage
     },
-
-    // Infinite scroll
-    infiniteScroll: enableInfiniteScroll ? {
-      hasNextPage: infiniteQuery.hasNextPage || false,
-      isFetchingNextPage: infiniteQuery.isFetchingNextPage,
-      fetchNextPage: infiniteQuery.fetchNextPage
-    } : undefined,
 
     // Filter
     filter: {

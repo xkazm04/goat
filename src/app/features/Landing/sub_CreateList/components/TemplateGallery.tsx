@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles,
@@ -12,10 +11,12 @@ import {
   Copy,
   Check
 } from "lucide-react";
-import { TopList } from "@/types/top-lists";
-import { ListTemplate, STARTER_TEMPLATES, topListToTemplate } from "@/types/templates";
-import { getCategoryColor } from "@/lib/helpers/getColors";
+import { useState } from "react";
+
 import { useTopLists } from "@/hooks/use-top-lists";
+import { DURATION } from '@/lib/animations/motion-presets';
+import { getCategoryColor } from "@/lib/helpers/getColors";
+import { ListTemplate, STARTER_TEMPLATES, topListToTemplate } from "@/types/templates";
 
 interface TemplateGalleryProps {
   onSelectTemplate: (template: ListTemplate) => void;
@@ -85,7 +86,7 @@ export function TemplateGallery({ onSelectTemplate, onClose }: TemplateGalleryPr
       {/* Header */}
       <div className="mb-6">
         <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-          <Copy className="w-5 h-5 text-cyan-400" />
+          <Copy className="w-5 h-5 text-brand-hover" />
           Start from Template
         </h3>
         <p className="text-sm text-slate-400 mt-1">
@@ -104,10 +105,10 @@ export function TemplateGallery({ onSelectTemplate, onClose }: TemplateGalleryPr
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`
-                flex items-center gap-2 px-4 py-2.5 rounded-xl
+                flex items-center gap-2 px-4 py-2.5 rounded-card
                 transition-all duration-200 whitespace-nowrap
                 ${isActive
-                  ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/40'
+                  ? 'bg-brand/20 text-brand-hover border border-brand/40'
                   : 'bg-slate-800/50 text-slate-400 border border-slate-700/50 hover:bg-slate-700/50'
                 }
               `}
@@ -136,7 +137,7 @@ export function TemplateGallery({ onSelectTemplate, onClose }: TemplateGalleryPr
               {Array.from({ length: 4 }).map((_, i) => (
                 <div
                   key={i}
-                  className="h-24 rounded-xl overflow-hidden relative"
+                  className="h-24 rounded-card overflow-hidden relative"
                   style={{
                     background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.6), rgba(51, 65, 85, 0.4))',
                   }}
@@ -159,7 +160,7 @@ export function TemplateGallery({ onSelectTemplate, onClose }: TemplateGalleryPr
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: DURATION.fast }}
               className="grid grid-cols-1 sm:grid-cols-2 gap-3"
               data-testid="template-grid"
             >
@@ -175,10 +176,10 @@ export function TemplateGallery({ onSelectTemplate, onClose }: TemplateGalleryPr
                     transition={{ delay: index * 0.05 }}
                     onClick={() => handleTemplateClick(template)}
                     className={`
-                      relative group rounded-xl overflow-hidden cursor-pointer
+                      relative group rounded-card overflow-hidden cursor-pointer
                       border transition-all duration-200
                       ${isSelected
-                        ? 'border-cyan-400 ring-2 ring-cyan-400/30'
+                        ? 'border-brand-hover ring-2 ring-brand-hover/30'
                         : 'border-slate-700/50 hover:border-slate-600'
                       }
                     `}
@@ -210,7 +211,7 @@ export function TemplateGallery({ onSelectTemplate, onClose }: TemplateGalleryPr
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
                           exit={{ scale: 0 }}
-                          className="absolute top-2 right-2 w-6 h-6 rounded-full bg-cyan-500 flex items-center justify-center z-10"
+                          className="absolute top-2 right-2 w-6 h-6 rounded-full bg-brand flex items-center justify-center z-10"
                         >
                           <Check className="w-4 h-4 text-white" />
                         </motion.div>
@@ -226,7 +227,7 @@ export function TemplateGallery({ onSelectTemplate, onClose }: TemplateGalleryPr
                       {/* Metadata row */}
                       <div className="flex items-center gap-2 mb-2">
                         <span
-                          className="text-xs px-2 py-0.5 rounded-full font-medium"
+                          className="text-xs px-2 py-0.5 rounded-badge font-medium"
                           style={{
                             background: `${colors.primary}20`,
                             color: colors.accent,
@@ -247,7 +248,7 @@ export function TemplateGallery({ onSelectTemplate, onClose }: TemplateGalleryPr
                       )}
 
                       {/* Use Template hint */}
-                      <div className="flex items-center gap-1 mt-2 text-xs text-slate-500 group-hover:text-cyan-400 transition-colors">
+                      <div className="flex items-center gap-1 mt-2 text-xs text-slate-500 group-hover:text-brand-hover transition-colors">
                         <span>Use template</span>
                         <ChevronRight className="w-3 h-3" />
                       </div>

@@ -17,6 +17,7 @@ import React, {
   type ReactNode,
   type CSSProperties,
 } from 'react';
+
 import { cn } from '@/lib/utils';
 
 /**
@@ -290,8 +291,8 @@ function ContainerDebugOverlay({
   return (
     <div
       className={cn(
-        'absolute top-1 right-1 z-50',
-        'rounded px-2 py-1 text-[10px] font-mono',
+        'absolute top-1 right-1 z-sticky',
+        'rounded px-2 py-1 text-2xs font-mono',
         'bg-black/80 text-white pointer-events-none',
         'opacity-80 hover:opacity-100 transition-opacity'
       )}
@@ -299,7 +300,7 @@ function ContainerDebugOverlay({
       <div className="flex flex-col gap-0.5">
         <span className="text-yellow-400">{name}</span>
         <span>
-          bp: <span className="text-cyan-400">{breakpoint}</span>
+          bp: <span className="text-brand-hover">{breakpoint}</span>
         </span>
         <span>
           {Math.round(dimensions.width)} x {Math.round(dimensions.height)}

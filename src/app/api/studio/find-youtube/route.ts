@@ -7,12 +7,14 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { extractYouTubeId } from '@/lib/youtube';
+
+import { rateLimit, getRateLimitKey } from '@/lib/api/rate-limiter';
 import {
-  getGeminiClient,
   handleStudioError,
   StudioErrorCodes,
 } from '@/lib/api/studio-utils';
+import { getGeminiClient, GEMINI_MODEL_PRIMARY } from '@/lib/providers/gemini-client';
+import { extractYouTubeId } from '@/lib/youtube';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
@@ -31,7 +33,33 @@ interface FindYouTubeResponse {
   video_title: string | null;
 }
 
+// Structured-output schema so Gemini returns parseable JSON even with the
+// Google Search tool attached (which otherwise often wraps JSON in prose/fences).
+const GEMINI_RESPONSE_SCHEMA = {
+  type: 'object',
+  properties: {
+    youtube_url: { type: 'string', nullable: true },
+    video_title: { type: 'string', nullable: true },
+  },
+  required: ['youtube_url', 'video_title'],
+} as const;
+
+// Strip a leading/trailing markdown code fence (```json … ``` or ``` … ```).
+// With googleSearch enabled, Gemini still occasionally fences its JSON despite
+// responseMimeType: 'application/json'.
+function stripCodeFences(text: string): string {
+  const trimmed = text.trim();
+  const fenced = trimmed.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/i);
+  return fenced ? fenced[1].trim() : trimmed;
+}
+
 export async function POST(request: NextRequest) {
+  // Rate limit: 20 requests per minute per IP
+  const limited = rateLimit(getRateLimitKey(request, 'studio-find-youtube'), 20, 60_000);
+  if (limited) return limited;
+
+  const requestStart = performance.now();
+
   try {
     const body = await request.json();
     const { title, artist, context } = findYouTubeRequestSchema.parse(body);
@@ -66,22 +94,26 @@ If no suitable video is found, respond with:
   "video_title": null
 }`;
 
+    const geminiStart = performance.now();
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: GEMINI_MODEL_PRIMARY,
       contents: prompt,
       config: {
         tools: [{ googleSearch: {} }],
         responseMimeType: 'application/json',
+        responseJsonSchema: GEMINI_RESPONSE_SCHEMA,
       },
     });
+    const geminiMs = Math.round(performance.now() - geminiStart);
 
-    const responseText = response.text?.trim() || '{}';
+    const responseText = stripCodeFences(response.text || '{}') || '{}';
 
     // Parse the JSON response
     let parsedResponse: { youtube_url?: string; video_title?: string };
     try {
       parsedResponse = JSON.parse(responseText);
-    } catch {
+    } catch (err) {
+      console.warn(`[Find YouTube] JSON parse failed for "${title}":`, err instanceof Error ? err.message : err);
       // Try to extract URL from text if JSON parsing fails
       const urlMatch = responseText.match(
         /https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/
@@ -96,6 +128,15 @@ If no suitable video is found, respond with:
     const youtubeUrl = parsedResponse.youtube_url || null;
     const videoTitle = parsedResponse.video_title || null;
     const youtubeId = youtubeUrl ? extractYouTubeId(youtubeUrl) : null;
+
+    console.log('[Find YouTube] find_youtube_complete', JSON.stringify({
+      operation: 'gemini_find_youtube',
+      title,
+      artist: artist || null,
+      resolved: !!youtubeUrl,
+      duration_ms: Math.round(performance.now() - requestStart),
+      gemini_ms: geminiMs,
+    }));
 
     const result: FindYouTubeResponse = {
       youtube_url: youtubeUrl,

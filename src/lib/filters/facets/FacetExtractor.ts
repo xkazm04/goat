@@ -3,13 +3,15 @@
  * Extracts facetable values from item collections
  */
 
+import { DEFAULT_FACET_DEFINITIONS } from './types';
+import { createFieldAccessor as createNestedFieldAccessor } from '../utils';
+
 import type {
   FacetDefinition,
   FacetValue,
   HierarchicalFacetNode,
   FacetExtractionConfig,
 } from './types';
-import { DEFAULT_FACET_DEFINITIONS } from './types';
 
 /**
  * Raw extracted facet data before aggregation
@@ -48,15 +50,7 @@ export class FacetExtractor<T extends Record<string, unknown>> {
    * Create a field accessor function for nested fields
    */
   private createFieldAccessor(fieldPath: string): (item: T) => unknown {
-    const parts = fieldPath.split('.');
-    return (item: T) => {
-      let value: unknown = item;
-      for (const part of parts) {
-        if (value === null || value === undefined) return undefined;
-        value = (value as Record<string, unknown>)[part];
-      }
-      return value;
-    };
+    return createNestedFieldAccessor(fieldPath) as (item: T) => unknown;
   }
 
   /**
@@ -305,6 +299,49 @@ export class FacetExtractor<T extends Record<string, unknown>> {
   }
 
   /**
+   * Build an inverted index: facetId -> value -> Set<itemIndex>
+   * Used for incremental facet count computation without re-extracting all items.
+   */
+  buildInvertedIndex(items: T[]): Map<string, Map<string | number | boolean, Set<number>>> {
+    const index = new Map<string, Map<string | number | boolean, Set<number>>>();
+
+    for (const definition of this.config.fields) {
+      index.set(definition.id, new Map());
+    }
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      for (const definition of this.config.fields) {
+        const accessor = this.fieldAccessors.get(definition.field);
+        if (!accessor) continue;
+
+        const rawValue = accessor(item);
+        const values = this.normalizeValue(rawValue, definition.type);
+        const facetIndex = index.get(definition.id)!;
+
+        for (const value of values) {
+          if (!this.config.includeEmpty && this.isEmpty(value)) continue;
+          let itemSet = facetIndex.get(value);
+          if (!itemSet) {
+            itemSet = new Set();
+            facetIndex.set(value, itemSet);
+          }
+          itemSet.add(i);
+        }
+      }
+    }
+
+    return index;
+  }
+
+  /**
+   * Format a value using the configured formatter
+   */
+  formatValue(field: string, value: unknown): string {
+    return this.config.formatValue(field, value);
+  }
+
+  /**
    * Update configuration
    */
   updateConfig(config: Partial<FacetExtractionConfig>): void {
@@ -327,7 +364,3 @@ export function createCollectionFacetExtractor<T extends Record<string, unknown>
   return new FacetExtractor<T>(config);
 }
 
-/**
- * Default facet extractor instance
- */
-export const defaultFacetExtractor = new FacetExtractor();

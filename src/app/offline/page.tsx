@@ -1,12 +1,32 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { WifiOff, RefreshCw, Home } from 'lucide-react';
+import { RefreshCw, Home, WifiOff, CloudOff } from 'lucide-react';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
+
+import { GoatMascot } from '@/components/icons/GoatMascot';
+import { Shimmer } from '@/components/visual/decorations/Shimmer';
+import { Surface } from '@/components/visual/depth/Surface';
+import { syncStatusColors } from '@/lib/offline/sync-status-colors';
+import { useBacklogStore } from '@/stores/backlog/store';
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.12, delayChildren: 0.1 },
+  },
+};
+
+const staggerItem = {
+  hidden: { opacity: 0, y: 16 },
+  visible: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 300, damping: 24 } },
+};
 
 export default function OfflinePage() {
   const [isOnline, setIsOnline] = useState(false);
+  const pendingChanges = useBacklogStore((state) => state.pendingChanges);
 
   useEffect(() => {
     // Check initial online status
@@ -39,57 +59,77 @@ export default function OfflinePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-950 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-linear-to-b from-gray-900 to-gray-950 flex items-center justify-center p-4">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
+        variants={staggerContainer}
+        initial="hidden"
+        animate="visible"
         className="text-center max-w-md"
       >
-        {/* Icon */}
-        <motion.div
-          initial={{ scale: 0.8 }}
-          animate={{ scale: 1 }}
-          transition={{ type: 'spring', duration: 0.5 }}
-          className="mb-8"
-        >
-          <div className="w-24 h-24 bg-yellow-900/30 rounded-full flex items-center justify-center mx-auto">
-            <WifiOff className="w-12 h-12 text-yellow-400" />
+        {/* Goat Mascot Illustration with radial glow */}
+        <motion.div variants={staggerItem} className="mb-6 relative">
+          {/* Radial glow behind mascot */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="w-48 h-48 rounded-full bg-gradient-radial from-amber-500/10 to-transparent blur-2xl" />
           </div>
+          {/* Floating mascot */}
+          <motion.div
+            animate={{ y: [-4, 4] }}
+            transition={{ duration: 3, repeat: Infinity, repeatType: 'mirror', ease: 'easeInOut' }}
+          >
+            <GoatMascot size={200} className="mx-auto relative" />
+          </motion.div>
         </motion.div>
 
         {/* Title */}
-        <h1 className="text-3xl font-bold text-white mb-4">
-          {isOnline ? 'Back Online!' : "You're Offline"}
-        </h1>
+        <motion.h1
+          variants={staggerItem}
+          className="text-3xl font-bold text-white mb-3"
+          style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+        >
+          {isOnline ? 'The G.O.A.T. is back!' : 'The G.O.A.T. is grazing offline'}
+        </motion.h1>
 
         {/* Description */}
-        <p className="text-gray-400 mb-8">
+        <motion.p variants={staggerItem} className="text-gray-400 mb-6">
           {isOnline
-            ? 'Reconnecting...'
-            : "Don't worry, your progress is saved locally. Connect to the internet to sync your data."}
-        </p>
+            ? 'Reconnecting you now...'
+            : "No worries \u2014 your rankings are saved locally and will sync the moment you\u2019re back online."}
+        </motion.p>
 
-        {/* Status indicator */}
+        {/* Glass Dock status panel */}
         {!isOnline && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="bg-gray-800/50 rounded-lg p-4 mb-8"
-          >
-            <div className="flex items-center justify-center gap-2 text-yellow-400">
-              <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse" />
-              <span className="text-sm">Waiting for connection...</span>
-            </div>
+          <motion.div variants={staggerItem}>
+            <Surface variant="glass" elevation="raised" className="rounded-xl p-4 mb-6 border-amber-500/20">
+              {/* Reconnection indicator with design system Shimmer */}
+              <div className="flex items-center justify-center gap-2.5 mb-3">
+                <WifiOff className={`w-4 h-4 ${syncStatusColors.offline.text}`} />
+                <Shimmer duration={1200} className="flex-1 max-w-[180px] h-1 rounded-full bg-slate-700/50">
+                  <div className="h-1 w-full rounded-full bg-gradient-to-r from-amber-500/60 to-amber-400/40" />
+                </Shimmer>
+                <span className={`text-xs font-medium ${syncStatusColors.offline.text}`}>Listening...</span>
+              </div>
+
+              {/* Pending changes count */}
+              {pendingChanges.length > 0 && (
+                <div className="flex items-center justify-center gap-2 text-slate-400">
+                  <CloudOff className={`w-3.5 h-3.5 ${syncStatusColors.pending.text} opacity-70`} />
+                  <span className="text-xs">
+                    <strong className={syncStatusColors.pending.text}>{pendingChanges.length}</strong> pending change{pendingChanges.length !== 1 ? 's' : ''} will sync when online
+                  </span>
+                </div>
+              )}
+            </Surface>
           </motion.div>
         )}
 
         {/* Actions */}
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+        <motion.div variants={staggerItem} className="flex flex-col sm:flex-row gap-3 justify-center">
           <motion.button
             onClick={handleRetry}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+            className="glass-dock-btn flex items-center justify-center gap-2 px-6 py-3 bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-medium transition-all shadow-lg shadow-amber-600/20"
           >
             <RefreshCw className="w-5 h-5" />
             Try Again
@@ -99,19 +139,19 @@ export default function OfflinePage() {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors"
+              className="glass-dock-btn flex items-center justify-center gap-2 px-6 py-3 bg-white/5 hover:bg-white/10 text-white rounded-lg font-medium transition-all border border-white/10"
             >
               <Home className="w-5 h-5" />
               Go Home
             </motion.button>
           </Link>
-        </div>
+        </motion.div>
 
         {/* Info */}
-        <p className="text-gray-500 text-sm mt-8">
+        <motion.p variants={staggerItem} className="text-gray-500 text-sm mt-8">
           G.O.A.T. works offline! Your rankings are automatically saved and will
           sync when you reconnect.
-        </p>
+        </motion.p>
       </motion.div>
     </div>
   );

@@ -10,7 +10,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+
 import { EnrichmentPipeline } from '@/lib/enrichment';
+
 import type { EnrichmentInput, BatchEnrichmentRequest } from '@/lib/enrichment';
 
 interface BatchRequestBody {

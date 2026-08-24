@@ -1,48 +1,59 @@
 "use client";
 
-import { useMemo, forwardRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, useSortable, horizontalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { ChevronDown, ChevronRight, X, Play, Pause } from 'lucide-react';
-import { TierListTier } from '../../lib/tierPresets';
-import { BacklogItem } from '@/types/backlog-groups';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronDown, ChevronRight, X, Play, Pause, Sparkles } from 'lucide-react';
+import { memo, useCallback, useMemo, forwardRef } from 'react';
+
+import { TierEmptyIllustration } from '@/components/illustrations/TierEmptyIllustration';
 import { createUnifiedTierRowDropData, createUnifiedTierDragData } from '@/lib/dnd/unified-protocol';
-import { useOptionalDropZoneHighlight } from './DropZoneHighlightContext';
+import { useAudioStore } from '@/stores/audio-store';
 import { useCurrentList } from '@/stores/use-list-store';
-import { useAudioStore, useIsItemPlaying } from '@/stores/audio-store';
+import { BacklogItem } from '@/types/backlog-groups';
+
+import { ControversyBadge } from './Debate/ControversyBadge';
+import { useDropZoneHighlightStore } from '@/stores/drop-zone-highlight-store';
+import { TierListTier } from '../../lib/tierPresets';
 
 interface TierItemProps {
   item: BacklogItem;
   tierId: string;
+  isMusicCategory: boolean;
   onRemove?: (itemId: string) => void;
+  tierColor?: string;
+  /** Debate mode: controversy info for this item */
+  debateInfo?: { score: number; isHotTake: boolean; hasDebate: boolean } | null;
+  /** Debate mode: callback to challenge this item's placement */
+  onDebate?: (itemId: string, itemName: string) => void;
 }
 
 /**
  * Draggable item within a tier row
- * Uses unified protocol for drag data format
+ * Uses unified protocol for drag data format.
+ * Memoized to prevent re-renders when unrelated items change.
  */
-function TierItem({
+const TierItem = memo(function TierItem({
   item,
   tierId,
+  isMusicCategory,
   onRemove,
+  tierColor,
+  debateInfo,
+  onDebate,
 }: TierItemProps) {
-  // Get item's index within the tier for unified protocol
-  const orderInTier = 0; // Will be derived from actual position when dragging
+  const orderInTier = 0;
 
-  // Check if Music category for play button
-  const currentList = useCurrentList();
-  const isMusicCategory = currentList?.category?.toLowerCase() === 'music';
-
-  // Audio playback state
+  // Single consolidated audio selector — only re-renders when THIS item's state changes
+  const { isPlaying: isThisItemPlaying, isLoading: isThisItemLoading } = useAudioStore(
+    useCallback((state) => ({
+      isPlaying: state.isPlaying && state.currentItem?.id === item.id,
+      isLoading: state.isLoading && state.currentItem?.id === item.id,
+    }), [item.id])
+  );
   const play = useAudioStore((state) => state.play);
   const pause = useAudioStore((state) => state.pause);
-  const isLoading = useAudioStore((state) => state.isLoading);
-  const currentItem = useAudioStore((state) => state.currentItem);
-  const isThisItemPlaying = useIsItemPlaying(item.id);
-  const isThisItemCurrent = currentItem?.id === item.id;
-  const isThisItemLoading = isThisItemCurrent && isLoading;
 
   const handlePlayClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -70,7 +81,6 @@ function TierItem({
     isDragging,
   } = useSortable({
     id: item.id,
-    // Use unified protocol data format
     data: createUnifiedTierDragData(item, tierId, orderInTier),
   });
 
@@ -91,8 +101,8 @@ function TierItem({
       exit={{ opacity: 0, scale: 0.8 }}
       transition={{ type: 'spring', stiffness: 300, damping: 25 }}
       className={`
-        relative group flex-shrink-0
-        ${isDragging ? 'z-50' : 'z-10'}
+        relative group shrink-0
+        ${isDragging ? 'z-drag' : 'z-10'}
       `}
       {...attributes}
       {...listeners}
@@ -100,13 +110,31 @@ function TierItem({
       {/* Item card */}
       <div
         className={`
-          relative w-20 h-20 sm:w-24 sm:h-24 rounded-lg overflow-hidden
+          relative w-20 h-20 sm:w-24 sm:h-24 rounded-card overflow-hidden
           bg-slate-800/90 border border-slate-700/80
           transition-all duration-200 ease-out
-          ${isDragging ? 'shadow-xl shadow-cyan-500/30 scale-105 border-cyan-500/50' : 'hover:border-slate-500/80 hover:shadow-lg hover:shadow-slate-900/50 hover:-translate-y-0.5'}
-          ${isThisItemPlaying ? 'ring-2 ring-cyan-400/50 shadow-lg shadow-cyan-500/20' : ''}
+          ${isDragging ? 'shadow-xl shadow-brand/30 scale-105 border-brand/50' : 'hover:-translate-y-0.5 hover:shadow-lg hover:shadow-slate-900/50'}
+          ${isThisItemPlaying ? 'ring-2 ring-brand-hover/50 shadow-lg shadow-brand/20' : ''}
           cursor-grab active:cursor-grabbing
         `}
+        style={{
+          ...(tierColor && !isDragging ? {
+            borderBottomColor: tierColor,
+            borderBottomWidth: '2px',
+            boxShadow: `inset 0 -2px 4px ${tierColor}1A`,
+          } : {}),
+        }}
+        onMouseEnter={(e) => {
+          if (tierColor && !isDragging) {
+            e.currentTarget.style.borderColor = `${tierColor}99`;
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (tierColor && !isDragging) {
+            e.currentTarget.style.borderColor = '';
+            e.currentTarget.style.borderBottomColor = tierColor;
+          }
+        }}
       >
         {/* Image */}
         {item.image_url ? (
@@ -117,19 +145,41 @@ function TierItem({
             draggable={false}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-700 to-slate-800">
+          <div className="w-full h-full flex items-center justify-center bg-linear-to-br from-slate-700 to-slate-800">
             <span className="text-2xl font-bold text-slate-500">
               {title.charAt(0).toUpperCase()}
             </span>
           </div>
         )}
 
-        {/* Overlay gradient - enhanced for better readability */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
+        {/* Overlay gradient */}
+        <div className="absolute inset-0 bg-linear-to-t from-black/85 via-black/20 to-transparent" />
+
+        {/* Year badge */}
+        {item.item_year && !isMusicCategory && (
+          <span className="absolute top-1 right-1 z-10 text-3xs leading-tight font-medium text-white/90 bg-black/50 rounded-full px-1 py-px pointer-events-none">
+            {item.item_year_to && item.item_year_to !== item.item_year
+              ? `${item.item_year}–${item.item_year_to}`
+              : item.item_year}
+          </span>
+        )}
+        {/* Music category: year badge in bottom-right to avoid play button */}
+        {item.item_year && isMusicCategory && (
+          <span className="absolute bottom-6 right-0.5 z-10 text-3xs leading-tight font-medium text-white/90 bg-black/50 rounded-full px-1 py-px pointer-events-none">
+            {item.item_year_to && item.item_year_to !== item.item_year
+              ? `${item.item_year}–${item.item_year_to}`
+              : item.item_year}
+          </span>
+        )}
+
+        {/* Tags richness indicator */}
+        {item.tags && item.tags.length > 0 && (
+          <span className="absolute top-1.5 right-1.5 z-10 w-1.5 h-1.5 rounded-full bg-brand/70 pointer-events-none" style={item.item_year && !isMusicCategory ? { top: '1.25rem' } : undefined} />
+        )}
 
         {/* Title */}
         <div className="absolute bottom-0 left-0 right-0 p-1">
-          <p className="text-[10px] font-medium text-white truncate text-center">
+          <p className="text-tier-item font-medium text-white truncate text-center">
             {title}
           </p>
         </div>
@@ -144,10 +194,10 @@ function TierItem({
             className={`
               absolute top-1 right-1 w-6 h-6 rounded-full
               flex items-center justify-center
-              bg-cyan-500/80 hover:bg-cyan-400
+              bg-brand/80 hover:bg-brand-hover
               opacity-0 group-hover:opacity-100 transition-all
-              focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300
-              ${isThisItemPlaying ? 'opacity-100 ring-2 ring-cyan-300' : ''}
+              focus-visible:opacity-100 focus-ring
+              ${isThisItemPlaying ? 'opacity-100 ring-2 ring-brand-hover' : ''}
               disabled:opacity-50
             `}
           >
@@ -169,15 +219,42 @@ function TierItem({
               onRemove(item.id);
             }}
             aria-label={`Remove ${title} from tier`}
-            className="absolute top-1 left-1 w-5 h-5 rounded-full bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-red-500/80 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+            className="absolute top-1 left-1 w-5 h-5 rounded-full bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-red-500/80 focus-visible:opacity-100 focus-ring touch-target-sm"
           >
             <X className="w-3 h-3 text-white" aria-hidden="true" />
+          </button>
+        )}
+
+        {/* Controversy badge (debate mode) */}
+        {debateInfo && debateInfo.score > 0 && (
+          <div className="absolute bottom-5 left-0.5 z-20">
+            <ControversyBadge
+              score={debateInfo.score}
+              isHotTake={debateInfo.isHotTake}
+              hasDebate={debateInfo.hasDebate}
+              onClick={() => onDebate?.(item.id, title)}
+              compact
+            />
+          </div>
+        )}
+
+        {/* Debate trigger button (shown on hover when debate mode is on) */}
+        {onDebate && !debateInfo?.hasDebate && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDebate(item.id, title);
+            }}
+            aria-label={`Challenge placement of ${title}`}
+            className="absolute bottom-5 left-0.5 w-5 h-5 rounded-full bg-brand/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-brand focus-visible:opacity-100 focus-ring z-20 touch-target-sm"
+          >
+            <Sparkles className="w-3 h-3 text-white" aria-hidden="true" />
           </button>
         )}
       </div>
     </motion.div>
   );
-}
+});
 
 interface TierRowProps {
   tier: TierListTier;
@@ -189,13 +266,18 @@ interface TierRowProps {
   isDraggingOver?: boolean;
   /** Index of this tier for accessibility */
   tierIndex?: number;
+  /** Debate mode: per-item controversy data */
+  debateInfoMap?: Map<string, { score: number; isHotTake: boolean; hasDebate: boolean }>;
+  /** Debate mode: callback when user wants to debate an item */
+  onDebateItem?: (itemId: string, itemName: string, tierId: string) => void;
 }
 
 /**
  * Single tier row with drop zone and sortable items
- * Uses unified protocol for drop target data
+ * Uses unified protocol for drop target data.
+ * Memoized to prevent re-renders when unrelated tiers change during drag.
  */
-export const TierRow = forwardRef<HTMLDivElement, TierRowProps>(function TierRow(
+export const TierRow = memo(forwardRef<HTMLDivElement, TierRowProps>(function TierRow(
   {
     tier,
     items,
@@ -204,9 +286,14 @@ export const TierRow = forwardRef<HTMLDivElement, TierRowProps>(function TierRow
     onEditTier,
     isDraggingOver,
     tierIndex = 0,
+    debateInfoMap,
+    onDebateItem,
   },
   ref
 ) {
+  // Hoist category check once for all TierItems in this row
+  const currentList = useCurrentList();
+  const isMusicCategory = currentList?.category?.toLowerCase() === 'music';
 
   // Use unified protocol for drop data
   const { setNodeRef, isOver } = useDroppable({
@@ -214,9 +301,8 @@ export const TierRow = forwardRef<HTMLDivElement, TierRowProps>(function TierRow
     data: createUnifiedTierRowDropData(tier.id, tierIndex),
   });
 
-  // Get drag state from context for magnetic glow effect
-  const dropZoneContext = useOptionalDropZoneHighlight();
-  const isParentDragging = dropZoneContext?.dragState?.isDragging ?? false;
+  // Get drag state from store (granular selector — only re-renders when isDragging changes)
+  const isParentDragging = useDropZoneHighlightStore((s) => s.isDragging);
 
   const itemIds = useMemo(() => items.map(item => item.id), [items]);
 
@@ -257,7 +343,7 @@ export const TierRow = forwardRef<HTMLDivElement, TierRowProps>(function TierRow
     >
       {/* Tier label */}
       <div
-        className="flex-shrink-0 w-16 sm:w-20 flex flex-col items-center justify-center cursor-pointer hover:brightness-110 transition-all duration-200"
+        className="shrink-0 w-16 sm:w-20 flex flex-col items-center justify-center cursor-pointer hover:brightness-110 transition-all duration-200 focus-ring"
         style={{
           background: tierBackground,
           borderRadius: '8px 0 0 8px',
@@ -274,14 +360,14 @@ export const TierRow = forwardRef<HTMLDivElement, TierRowProps>(function TierRow
         }}
       >
         <span
-          className="text-xl sm:text-2xl font-black"
+          className="text-tier-label font-bold"
           style={{ color: tierTextColor }}
         >
           {tier.customLabel || tier.label}
         </span>
         {!tier.collapsed && items.length > 0 && (
           <span
-            className="text-[10px] font-medium opacity-80"
+            className="text-xs font-medium opacity-80"
             style={{ color: tierTextColor }}
           >
             {items.length} item{items.length !== 1 ? 's' : ''}
@@ -295,7 +381,7 @@ export const TierRow = forwardRef<HTMLDivElement, TierRowProps>(function TierRow
         aria-expanded={!tier.collapsed}
         aria-controls={`tier-items-${tier.id}`}
         aria-label={`${tier.collapsed ? 'Expand' : 'Collapse'} ${tierLabel} tier`}
-        className="flex-shrink-0 w-6 flex items-center justify-center bg-slate-800/80 hover:bg-slate-700/80 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-inset"
+        className="shrink-0 w-6 flex items-center justify-center bg-slate-800/80 hover:bg-slate-700/80 transition-all duration-200 focus-ring"
       >
         {tier.collapsed ? (
           <ChevronRight className="w-4 h-4 text-slate-400" aria-hidden="true" />
@@ -311,16 +397,27 @@ export const TierRow = forwardRef<HTMLDivElement, TierRowProps>(function TierRow
         role="group"
         aria-label={`Items in ${tierLabel} tier`}
         className={`
-          flex-1 min-h-[88px] sm:min-h-[104px] p-2
-          bg-slate-900/70 backdrop-blur-sm border border-slate-700/40
+          flex-1 min-h-24 p-3 relative
+          bg-slate-900/70 backdrop-blur-xs border border-slate-700/40
           ${tier.collapsed ? 'overflow-hidden max-h-6' : ''}
           transition-all duration-200 ease-out
-          ${isHighlighted ? 'bg-slate-800/90 border-cyan-500/50 shadow-inner shadow-cyan-500/10' : ''}
-          ${showMagneticGlow ? 'border-cyan-500/25 shadow-lg shadow-cyan-500/5' : ''}
+          ${isHighlighted ? 'bg-slate-800/90 shadow-inner' : ''}
+          ${isParentDragging && !isHighlighted ? '' : ''}
         `}
         style={{
           borderRadius: '0 8px 8px 0',
           borderLeft: 'none',
+          ...(isHighlighted ? {
+            borderColor: `${tier.customColor || tier.color.primary}80`,
+            boxShadow: `inset 0 0 12px ${tier.customColor || tier.color.primary}15`,
+          } : showMagneticGlow ? {
+            borderColor: `${tier.customColor || tier.color.primary}40`,
+            boxShadow: `0 0 8px ${tier.customColor || tier.color.primary}08`,
+          } : {}),
+          ...(isParentDragging ? {
+            animation: 'tierPulse 2s ease-in-out infinite',
+            outlineColor: `${tier.customColor || tier.color.primary}30`,
+          } : {}),
         }}
       >
         <AnimatePresence mode="popLayout">
@@ -337,13 +434,21 @@ export const TierRow = forwardRef<HTMLDivElement, TierRowProps>(function TierRow
             <motion.div
               key="empty"
               initial={{ opacity: 0 }}
-              animate={{ opacity: 0.5 }}
+              animate={{ opacity: 1 }}
               className={`
-                h-full flex items-center justify-center text-sm
-                ${isHighlighted ? 'text-cyan-400' : 'text-slate-600'}
+                h-full flex items-center justify-center text-xs
+                border border-dashed border-slate-700/50 rounded-card
+                ${isHighlighted ? 'border-opacity-50' : ''}
               `}
+              style={isHighlighted ? {
+                borderColor: `${tier.customColor || tier.color.primary}50`,
+              } : undefined}
             >
-              {isHighlighted ? 'Drop here' : 'Drag items here'}
+              <TierEmptyIllustration
+                tierLabel={tier.customLabel || tier.label}
+                color={tier.customColor || tier.color.primary}
+                isHighlighted={isHighlighted}
+              />
             </motion.div>
           ) : (
             <SortableContext items={itemIds} strategy={horizontalListSortingStrategy}>
@@ -353,7 +458,11 @@ export const TierRow = forwardRef<HTMLDivElement, TierRowProps>(function TierRow
                     key={item.id}
                     item={item}
                     tierId={tier.id}
+                    isMusicCategory={isMusicCategory}
                     onRemove={onRemoveItem}
+                    tierColor={tier.customColor || tier.color.primary}
+                    debateInfo={debateInfoMap?.get(item.id) ?? null}
+                    onDebate={onDebateItem ? (itemId, itemName) => onDebateItem(itemId, itemName, tier.id) : undefined}
                   />
                 ))}
               </div>
@@ -363,7 +472,7 @@ export const TierRow = forwardRef<HTMLDivElement, TierRowProps>(function TierRow
       </div>
     </motion.div>
   );
-});
+}));
 
 /**
  * Unranked items pool at the bottom
@@ -375,6 +484,9 @@ interface UnrankedPoolProps {
 }
 
 export function UnrankedPool({ items }: UnrankedPoolProps) {
+  const currentList = useCurrentList();
+  const isMusicCategory = currentList?.category?.toLowerCase() === 'music';
+
   // Use unified protocol for drop data
   const { setNodeRef, isOver } = useDroppable({
     id: 'unranked-pool',
@@ -383,9 +495,8 @@ export function UnrankedPool({ items }: UnrankedPoolProps) {
     },
   });
 
-  // Get drag state from context for magnetic glow effect
-  const dropZoneContext = useOptionalDropZoneHighlight();
-  const isParentDragging = dropZoneContext?.dragState?.isDragging ?? false;
+  // Get drag state from store (granular selector — only re-renders when isDragging changes)
+  const isParentDragging = useDropZoneHighlightStore((s) => s.isDragging);
   const showMagneticGlow = isParentDragging && !isOver;
 
   const itemIds = useMemo(() => items.map(item => item.id), [items]);
@@ -400,7 +511,7 @@ export function UnrankedPool({ items }: UnrankedPoolProps) {
     >
       {/* Header */}
       <div className="flex items-center gap-2 mb-3">
-        <h3 className="text-sm font-semibold text-slate-400">
+        <h3 className="text-base font-bold text-slate-400">
           Unranked Items
         </h3>
         <span className="px-2 py-0.5 rounded-full bg-slate-800 text-xs text-slate-500">
@@ -412,10 +523,10 @@ export function UnrankedPool({ items }: UnrankedPoolProps) {
       <div
         ref={setNodeRef}
         className={`
-          min-h-[100px] p-4 rounded-xl
-          bg-slate-900/40 backdrop-blur-sm border-2 border-dashed
-          ${isOver ? 'border-cyan-500/50 bg-cyan-500/5 shadow-inner shadow-cyan-500/5' : 'border-slate-700/40'}
-          ${showMagneticGlow ? 'border-cyan-500/25 shadow-lg shadow-cyan-500/5' : ''}
+          min-h-24 p-4 rounded-container
+          bg-slate-900/40 backdrop-blur-xs border-2 border-dashed
+          ${isOver ? 'border-brand/50 bg-brand/5 shadow-inner shadow-brand/5' : 'border-slate-700/40'}
+          ${showMagneticGlow ? 'border-brand/25 shadow-lg shadow-brand/5' : ''}
           transition-all duration-200 ease-out
         `}
       >
@@ -427,6 +538,7 @@ export function UnrankedPool({ items }: UnrankedPoolProps) {
                   key={item.id}
                   item={item}
                   tierId="unranked"
+                  isMusicCategory={isMusicCategory}
                 />
               ))}
             </AnimatePresence>

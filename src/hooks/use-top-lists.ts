@@ -5,10 +5,10 @@ import {
   UseQueryOptions,
   UseMutationOptions,
 } from '@tanstack/react-query';
-import { toast } from './use-toast';
+
 import { goatApi } from '@/lib/api';
-import { topListsKeys } from '@/lib/query-keys/top-lists';
-import { cacheInvalidation } from '@/lib/cache';
+import { CACHE_TTL_MS , CACHE_TAGS } from '@/lib/cache/unified-cache';
+import { topListsKeys , FeaturedListsParams } from '@/lib/query-keys/top-lists';
 import {
   TopList,
   ListWithItems,
@@ -20,9 +20,12 @@ import {
   VersionComparison,
   ListCreationResponse,
   FeaturedListsResponse,
+  CreatorAnalyticsSummary,
 } from '@/types/top-lists';
-import { FeaturedListsParams } from '@/lib/query-keys/top-lists';
-import { CACHE_TTL_MS } from '@/lib/cache/unified-cache';
+
+
+import { toast } from './use-toast';
+import { useOptimisticMutation } from './useOptimisticMutation';
 
 // Unified cache times - imported from unified-cache.ts for consistency
 const CACHE_TIMES = {
@@ -114,6 +117,19 @@ export const useListAnalytics = (
   });
 };
 
+export const useCreatorAnalytics = (
+  userId: string,
+  options?: Omit<UseQueryOptions<CreatorAnalyticsSummary, Error, CreatorAnalyticsSummary, readonly unknown[]>, 'queryKey' | 'queryFn'>
+) => {
+  return useQuery({
+    queryKey: topListsKeys.creatorAnalytics(userId),
+    queryFn: () => goatApi.lists.getCreatorAnalytics(userId),
+    enabled: !!userId,
+    staleTime: CACHE_TIMES.SHORT,
+    ...options,
+  });
+};
+
 export const useVersionComparison = (
   listId: string,
   version1: number,
@@ -149,7 +165,7 @@ export const useCreateListWithUser = (
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: goatApi.lists.createWithUser,
+    mutationFn: (data: CreateListRequest) => goatApi.lists.createWithUser(data),
     onSuccess: (data, variables) => {
       // Invalidate and refetch lists
       queryClient.invalidateQueries({ queryKey: topListsKeys.lists() });
@@ -158,9 +174,6 @@ export const useCreateListWithUser = (
       queryClient.invalidateQueries({
         queryKey: topListsKeys.userLists(data.user.id)
       });
-
-      // Also invalidate the API cache layer
-      cacheInvalidation.onListCreated(data.list.id);
 
       // Pre-populate the cache with the new list data
       queryClient.setQueryData(
@@ -194,7 +207,7 @@ export const useCreateList = (
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: goatApi.lists.create,
+    mutationFn: (data: CreateListRequest) => goatApi.lists.create(data),
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: topListsKeys.lists() });
 
@@ -211,72 +224,63 @@ export const useCreateList = (
   });
 };
 
-export const useUpdateList = (
-  options?: UseMutationOptions<TopList, Error, { listId: string; data: UpdateListRequest }>
-) => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
+export const useUpdateList = () => {
+  return useOptimisticMutation<TopList, { listId: string; data: UpdateListRequest }>({
     mutationFn: ({ listId, data }) => goatApi.lists.update(listId, data),
-    onSuccess: (data, variables) => {
-      queryClient.setQueryData(
-        topListsKeys.list(variables.listId),
-        (old: ListWithItems | undefined) => old ? { ...old, ...data } : old
-      );
-      queryClient.invalidateQueries({ queryKey: topListsKeys.lists() });
-
-      // Invalidate API cache layer
-      cacheInvalidation.onListUpdated(variables.listId);
-
+    optimisticUpdates: (variables) => [
+      {
+        queryKey: topListsKeys.list(variables.listId),
+        updater: (current: ListWithItems | undefined) =>
+          current ? { ...current, ...variables.data } : current as unknown as ListWithItems,
+      },
+    ],
+    invalidateOnSettled: [topListsKeys.lists()],
+    invalidateTags: [CACHE_TAGS.LISTS, CACHE_TAGS.USER_LISTS],
+    onSuccess: (data) => {
       showSuccessToast("Success", `List "${data.title}" updated successfully!`);
     },
-    onError: (error) => showErrorToast("update list", error),
-    ...options,
+    notificationSource: 'list-update',
   });
 };
 
-export const useDeleteList = (
-  options?: UseMutationOptions<{ message: string }, Error, string>
-) => {
+export const useDeleteList = () => {
   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: goatApi.lists.delete,
+  return useOptimisticMutation<{ message: string }, string>({
+    mutationFn: (listId: string) => goatApi.lists.delete(listId),
+    optimisticUpdates: (listId) => [
+      {
+        // Optimistically remove from user lists cache
+        queryKey: topListsKeys.lists(),
+        updater: (current: TopList[] | undefined) =>
+          current ? current.filter((l) => l.id !== listId) : [],
+      },
+    ],
     onSuccess: (_, listId) => {
+      // Fully remove the individual list from cache
       queryClient.removeQueries({ queryKey: topListsKeys.list(listId) });
-      queryClient.invalidateQueries({ queryKey: topListsKeys.lists() });
-
-      // Invalidate API cache layer
-      cacheInvalidation.onListDeleted(listId);
-
       showSuccessToast("Success", "List deleted successfully!");
     },
-    onError: (error) => showErrorToast("delete list", error),
-    ...options,
+    invalidateOnSettled: [topListsKeys.lists()],
+    invalidateTags: [CACHE_TAGS.LISTS, CACHE_TAGS.USER_LISTS, CACHE_TAGS.FEATURED],
+    notificationSource: 'list-delete',
   });
 };
 
-export const useCloneList = (
-  options?: UseMutationOptions<
+export const useCloneList = () => {
+  return useOptimisticMutation<
     { message: string; new_list_id: string },
-    Error,
     { listId: string; userId: string; modifications: CloneListRequest }
-  >
-) => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
+  >({
     mutationFn: ({ listId, userId, modifications }) =>
       goatApi.lists.clone(listId, userId, modifications),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: topListsKeys.lists() });
-      queryClient.invalidateQueries({
-        queryKey: topListsKeys.userLists(variables.userId)
-      });
+    optimisticUpdates: [],
+    invalidateOnSettled: [topListsKeys.lists()],
+    invalidateTags: [CACHE_TAGS.LISTS, CACHE_TAGS.USER_LISTS],
+    onSuccess: () => {
       showSuccessToast("Success", "List cloned successfully!");
     },
-    onError: (error) => showErrorToast("clone list", error),
-    ...options,
+    notificationSource: 'list-clone',
   });
 };
 

@@ -7,6 +7,8 @@
  */
 
 import { useRef, useCallback, useEffect, useState, useMemo } from "react";
+
+import { useIsTouchDevice } from "@/hooks/useMediaQuery";
 import {
   GestureRecognizer,
   GestureData,
@@ -22,6 +24,7 @@ import {
   ActionResult,
   createSwipeActionHandler,
 } from "@/lib/gestures/SwipeActionHandler";
+
 import { PreviewItem } from "../components/LongPressPreview";
 
 /**
@@ -166,6 +169,9 @@ export function useTouchGestures(
   eventHandlers: GestureEventHandlers = {},
   actionHandlers: SwipeActionHandlers = {}
 ): UseTouchGesturesReturn {
+  // Skip gesture initialization on non-touch devices
+  const isTouchDevice = useIsTouchDevice();
+
   // Merge config with defaults
   const finalConfig = useMemo(
     () => ({ ...DEFAULT_CONFIG, ...config }),
@@ -194,9 +200,9 @@ export function useTouchGestures(
     actionHandlersRef.current = actionHandlers;
   }, [actionHandlers]);
 
-  // Initialize gesture recognizer
+  // Initialize gesture recognizer (skip on non-touch devices)
   useEffect(() => {
-    if (!finalConfig.enabled) return;
+    if (!finalConfig.enabled || !isTouchDevice) return;
 
     const callbacks: GestureCallbacks = {
       onGestureStart: (gesture) => {
@@ -307,11 +313,11 @@ export function useTouchGestures(
     return () => {
       gestureRecognizerRef.current?.reset();
     };
-  }, [finalConfig]);
+  }, [finalConfig, isTouchDevice]);
 
-  // Initialize swipe action handler
+  // Initialize swipe action handler (skip on non-touch devices)
   useEffect(() => {
-    if (!finalConfig.swipeShortcutsEnabled) return;
+    if (!finalConfig.swipeShortcutsEnabled || !isTouchDevice) return;
 
     swipeHandlerRef.current = createSwipeActionHandler({
       enableHaptics: finalConfig.hapticEnabled,
@@ -338,7 +344,7 @@ export function useTouchGestures(
     if (handlers.onDismiss) {
       swipeHandlerRef.current.setActionHandler("dismiss", handlers.onDismiss);
     }
-  }, [finalConfig.swipeShortcutsEnabled, finalConfig.hapticEnabled]);
+  }, [finalConfig.swipeShortcutsEnabled, finalConfig.hapticEnabled, isTouchDevice]);
 
   // Touch handlers
   const handleTouchStart = useCallback(

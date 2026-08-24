@@ -4,7 +4,7 @@
  * Supports quick-assign, remove, preview, and custom actions
  */
 
-import { GestureData, GestureType } from "./GestureRecognizer";
+import { GestureData } from "./GestureRecognizer";
 
 /**
  * Available swipe actions

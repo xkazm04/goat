@@ -1,12 +1,6 @@
 import { NextRequest } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import {
-  BlueprintRow,
-  blueprintFromRow,
-  generateBlueprintSlug,
-  CreateBlueprintRequest,
-} from '@/types/blueprint';
 import { v4 as uuidv4 } from 'uuid';
+
 import {
   withErrorHandler,
   fromSupabaseError,
@@ -14,6 +8,13 @@ import {
   successResponse,
   createdResponse,
 } from '@/lib/errors';
+import { createClient, escapeIlikeWildcards } from '@/lib/supabase/server';
+import {
+  BlueprintRow,
+  blueprintFromRow,
+  generateBlueprintSlug,
+  CreateBlueprintRequest,
+} from '@/types/blueprint';
 
 // Force dynamic rendering for this route since it uses cookies
 export const dynamic = 'force-dynamic';
@@ -35,6 +36,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
   const subcategory = searchParams.get('subcategory');
   const authorId = searchParams.get('author_id');
   const isFeatured = searchParams.get('is_featured');
+  const isCommunity = searchParams.get('is_community');
   const search = searchParams.get('search');
   const slug = searchParams.get('slug');
   const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 50;
@@ -54,6 +56,10 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
       break;
     case 'trending':
       query = query.order('clone_count', { ascending: false });
+      break;
+    case 'top-rated':
+      query = query.order('avg_rating', { ascending: false })
+        .order('rating_count', { ascending: false });
       break;
     case 'recent':
     default:
@@ -76,8 +82,11 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
   if (isFeatured !== null && isFeatured !== undefined) {
     query = query.eq('is_featured', isFeatured === 'true');
   }
+  if (isCommunity !== null && isCommunity !== undefined) {
+    query = query.eq('is_community', isCommunity === 'true');
+  }
   if (search) {
-    query = query.ilike('title', `%${search}%`);
+    query = query.ilike('title', `%${escapeIlikeWildcards(search)}%`);
   }
 
   const { data, error } = await query;
@@ -141,8 +150,8 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
 
   const blueprint = blueprintFromRow(data as unknown as BlueprintRow);
 
-  // Generate share URL
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  /** Base URL for share links — falls back to production domain when env var is unset */
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://goat.app';
   const shareUrl = `${baseUrl}/blueprint/${blueprint.slug}`;
 
   return createdResponse({ blueprint, shareUrl });

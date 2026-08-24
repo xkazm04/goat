@@ -1,0 +1,116 @@
+/*
+ * design-tokens.css
+ * Central contract for theme CSS variables used across goat UI components.
+ *
+ * Each variable is documented with the components that depend on it.
+ *
+ * To extend or override, import this file in your theme and redefine variables as needed.
+ */
+
+:root {
+  /* Surface Tokens — shared UI components (cards, selects, stats) */
+  --surface-card: rgba(31, 41, 55, 1); /* Used by: UniversalSelect, ItemCard, RichItemCard */
+  --surface-card-hover: rgba(55, 65, 81, 1); /* Used by: UniversalSelect, ItemCard */
+  --surface-deep: rgba(17, 24, 39, 1); /* Used by: UniversalSelect, ItemCard */
+  --surface-overlay: rgba(31, 41, 55, 0.6); /* Used by: UniversalSelect, ItemCard, StatsCard */
+
+  /* Border Tokens */
+  --border-card: rgba(55, 65, 81, 1); /* Used by: ItemCard, RichItemCard */
+  --border-card-subtle: rgba(55, 65, 81, 0.5); /* Used by: UniversalSelect, ItemCard, StatsCard */
+  --border-card-hover: rgba(75, 85, 99, 0.5); /* Used by: UniversalSelect, ItemCard, StatsCard */
+
+  /* ── Border Radius Hierarchy ──
+     4-tier scale: container → card → control → badge
+     Each component level maps to exactly one tier.
+     Containers are always rounder than their children for nested depth illusion.
+  */
+  --radius-container: 16px;  /* modals, panels, dialogs, tier containers */
+  --radius-card: 12px;       /* cards, tier rows, list items, popovers */
+  --radius-control: 8px;     /* buttons, inputs, selects, toggles */
+  --radius-badge: 9999px;    /* pills, badges, tags, progress bars */
+
+  /* ── Interaction State Tokens ──
+     Used across all interactive components for consistent hover, focus, active, and disabled states.
+  */
+  --focus-ring: rgba(34, 211, 238, 0.5);       /* cyan-400/50 — focus rings on interactive elements */
+  --focus-offset: rgba(17, 24, 39, 1);          /* gray-900 — ring-offset color for contrast */
+  --hover-overlay: rgba(255, 255, 255, 0.05);   /* white/5 — subtle hover background overlay */
+  --active-overlay: rgba(255, 255, 255, 0.1);   /* white/10 — pressed/active background overlay */
+  --disabled-opacity: 0.5;                       /* standard disabled element opacity */
+  --placeholder-color: rgba(100, 116, 139, 1);  /* slate-500 — placeholder text and secondary labels */
+
+  /* ── Icon Color Tokens ──
+     Semantic icon colors for consistent iconography across the app.
+  */
+  --icon-default: rgba(148, 163, 184, 1);   /* slate-400 — default icon color */
+  --icon-muted: rgba(100, 116, 139, 1);     /* slate-500 — de-emphasized icons */
+  --icon-active: rgba(34, 211, 238, 1);     /* cyan-400 — active/selected state */
+  --icon-danger: rgba(248, 113, 113, 1);    /* red-400 — destructive/error actions */
+
+  /* ── Elevation Tokens ──
+     Standard depth shadows for cards, modals, and overlays.
+     Used by: Elevated, PortalDragOverlay, ComparisonModal, DropZoneCard, score overlays
+  */
+  --elevation-card: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --elevation-modal: 0 8px 32px rgba(0, 0, 0, 0.5);
+
+  /* ── Brand Glow Tokens ──
+     Cyan brand glow at 3 intensities for interactive highlights, drag states, and emphasis.
+     Used by: GridSection click-to-place, PodiumView, hover-glow keyframes, CollectionToggleButton
+  */
+  --glow-brand-sm: 0 0 8px rgba(34, 211, 238, 0.15);
+  --glow-brand-md: 0 0 16px rgba(34, 211, 238, 0.25);
+  --glow-brand-lg: 0 0 24px rgba(34, 211, 238, 0.4);
+
+  /* ── Motion Duration Tokens ──
+     4-tier scale: instant → quick → normal → slow
+     Each interaction type maps to exactly one tier.
+  */
+  --duration-instant: 50ms;  /* focus rings, active/pressed states, tap feedback */
+  --duration-quick: 150ms;   /* hover, toggle, small state changes, badge transitions */
+  --duration-normal: 300ms;  /* modal entry/exit, panel slide, standard transitions */
+  --duration-slow: 500ms;    /* page transitions, stagger base, emphasis animations */
+}
+
+/*
+  Components using these tokens:
+  - UniversalSelect: --surface-deep, --surface-card, --surface-card-hover, --surface-overlay, --border-card-subtle, --border-card-hover
+  - ItemCard: --surface-card, --surface-deep, --surface-overlay, --border-card, --border-card-subtle, --border-card-hover
+  - StatsCard: --surface-overlay, --border-card-subtle, --border-card-hover
+  - RichItemCard: --surface-card, --border-card
+
+  Border radius tiers:
+  - --radius-container (16px): modals, panels, dialogs — GlassModal, CollectionPanel, ShareModal, ComparisonModal, FilterPanel
+  - --radius-card (12px): cards, rows, items — TierRow, CollectionCard, UserListCard, RichItemCard, DropZoneCard
+  - --radius-control (8px): buttons, inputs — AddItemForm, SearchInput, UniversalSelect, toolbar buttons
+  - --radius-badge (9999px): pills, badges — PositionBadge, TierIndicator, AvgRankBadge, progress bars
+
+  Motion duration tiers:
+  - --duration-instant (50ms): focus, active, tap — UniversalSelect, animations.ts tap
+  - --duration-quick (150ms): hover, toggle — DropZoneCard, badges, AuthModal, CommandPalette, StudioItemCard
+  - --duration-normal (300ms): modal, panel — modalContentVariants, CollectionPanel, FilterStatistics, CompositionModal
+  - --duration-slow (500ms): page, stagger — fadeInUp, PodiumView, StudioLayout, ShareModal
+
+  Interaction state tokens:
+  - --focus-ring (cyan-400/50): focus-visible ring color for all interactive elements
+  - --focus-offset (gray-900): ring-offset background for dark-mode contrast
+  - --hover-overlay (white/5): subtle hover background for buttons, cards, list items
+  - --active-overlay (white/10): pressed/active state background
+  - --disabled-opacity (0.5): universal disabled element opacity
+  - --placeholder-color (slate-500): placeholder text, secondary labels
+
+  Icon color tokens:
+  - --icon-default (slate-400): default neutral icon color
+  - --icon-muted (slate-500): de-emphasized/secondary icons
+  - --icon-active (cyan-400): active, selected, or branded icons
+  - --icon-danger (red-400): destructive actions, errors, warnings
+
+  Elevation tokens:
+  - --elevation-card (0 2px 8px): standard card depth — PortalDragOverlay, score overlays, BarScoreOverlay
+  - --elevation-modal (0 8px 32px): prominent modal/overlay depth — ComparisonModal, CategorySearch dropdown
+
+  Brand glow tokens:
+  - --glow-brand-sm (8px blur, 0.15 opacity): subtle glow — click-to-place hints, ViewSwitcher indicator
+  - --glow-brand-md (16px blur, 0.25 opacity): medium glow — drag source highlight, CollectionToggleButton
+  - --glow-brand-lg (24px blur, 0.4 opacity): strong glow — hover-glow keyframes, CollectionToggleButton hover
+*/

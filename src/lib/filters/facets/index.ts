@@ -1,64 +1,43 @@
 /**
- * Faceted Navigation Module
- * Exports for facet extraction, aggregation, and UI components
+ * Faceted Navigation Module — re-exports from @/lib/faceted-search
+ * @deprecated Import directly from '@/lib/faceted-search' instead.
  */
-
-// Types
-export type {
-  FacetValue,
-  FacetDefinition,
-  Facet,
-  HierarchicalFacetNode,
-  HierarchicalFacet,
-  FacetSelection,
-  FacetState,
-  FacetBreadcrumb,
-  FacetExtractionConfig,
-  FacetAggregationResult,
-  FacetActions,
-} from './types';
-
-export { DEFAULT_FACET_DEFINITIONS } from './types';
-
-// Facet Extractor
 export {
+  // Types
+  type FacetValue,
+  type FacetDefinition,
+  type Facet,
+  type HierarchicalFacetNode,
+  type HierarchicalFacet,
+  type FacetSelection,
+  type FacetState,
+  type FacetBreadcrumb,
+  type FacetExtractionConfig,
+  type FacetAggregationResult,
+  type FacetActions,
+  type FacetAggregationOptions,
+  type FacetCacheStats,
+  type FacetContextState,
+  type FacetContextValue,
+  type FacetProviderProps,
+  // Constants
+  DEFAULT_FACET_DEFINITIONS,
+  // Classes
   FacetExtractor,
   createCollectionFacetExtractor,
-  defaultFacetExtractor,
-} from './FacetExtractor';
-
-// Facet Aggregator
-export {
   FacetAggregator,
   createFacetAggregator,
-  defaultFacetAggregator,
-} from './FacetAggregator';
-
-export type { FacetAggregationOptions } from './FacetAggregator';
-
-// Components
-export {
+  // Components
   FacetPanel,
   FacetBreadcrumbs,
   GroupedFacetBreadcrumbs,
   MobileFacetDrawer,
   MobileFilterButton,
   useMobileFacetDrawer,
-} from './components';
-
-// React Hook
-export { useFacets, default as useFacetsDefault } from './useFacets';
-
-// React Context
-export {
+  // Hook
+  useFacets,
+  // Context
   FacetProvider,
   useFacetContext,
   useFacetContextOptional,
-  default as FacetContextDefault,
-} from './FacetContext';
-
-export type {
-  FacetContextState,
-  FacetContextValue,
-  FacetProviderProps,
-} from './FacetContext';
+} from '@/lib/faceted-search';

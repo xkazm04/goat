@@ -4,7 +4,6 @@
  */
 
 import type {
-  SharePlatform,
   ShareContent,
   OptimizedContent,
   PlatformConfig,
@@ -89,7 +88,7 @@ export abstract class BasePlatformAdapter {
 
       const cleanup = () => {
         document.body.removeChild(iframe);
-        window.removeEventListener('blur', onBlur);
+        window.removeEventListener('blur-sm', onBlur);
         clearTimeout(fallbackTimer);
       };
 

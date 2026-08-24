@@ -14,15 +14,17 @@ import React, {
   useRef,
   type ReactNode,
 } from 'react';
+
 import { useLayoutStore } from '@/stores/layout-store';
+
 import {
   BREAKPOINTS,
   getBreakpointFromWidth,
   LAYOUT_PRESETS,
-  SIDEBAR_CONSTRAINTS,
   getRecommendedPreset,
   isTouchDevice,
 } from './constants';
+
 import type {
   Breakpoint,
   LayoutPreset,
@@ -33,6 +35,8 @@ import type {
   LayoutDimensions,
   PipConfig,
   PanelConfig,
+  DetachedWindowConfig,
+  DockEdge,
 } from './types';
 
 /**
@@ -82,6 +86,20 @@ interface LayoutContextValue {
   collapsePanel: (id: string) => void;
   expandPanel: (id: string) => void;
   togglePanel: (id: string) => void;
+
+  // Workspace (Multi-Window)
+  detachedWindows: Map<string, DetachedWindowConfig>;
+  activeWindowId: string | null;
+  detachWindow: (config: Omit<DetachedWindowConfig, 'zIndex'>) => void;
+  attachWindow: (id: string) => void;
+  focusWindow: (id: string) => void;
+  minimizeWindow: (id: string) => void;
+  maximizeWindow: (id: string) => void;
+  restoreWindow: (id: string) => void;
+  dockWindow: (id: string, edge: DockEdge) => void;
+  undockWindow: (id: string) => void;
+  arrangeWindows: (arrangement: 'cascade' | 'tile-horizontal' | 'tile-vertical') => void;
+  closeAllWindows: () => void;
 }
 
 const LayoutContext = createContext<LayoutContextValue | null>(null);
@@ -199,12 +217,6 @@ export function LayoutProvider({
         case 'double-tap':
           store.toggleSidebar();
           break;
-        case 'pinch-in':
-          // Could zoom out grid
-          break;
-        case 'pinch-out':
-          // Could zoom in grid
-          break;
         default:
           break;
       }
@@ -267,6 +279,20 @@ export function LayoutProvider({
       collapsePanel: store.collapsePanel,
       expandPanel: store.expandPanel,
       togglePanel: store.togglePanel,
+
+      // Workspace
+      detachedWindows: store.detachedWindows,
+      activeWindowId: store.activeWindowId,
+      detachWindow: store.detachWindow,
+      attachWindow: store.attachWindow,
+      focusWindow: store.focusWindow,
+      minimizeWindow: store.minimizeWindow,
+      maximizeWindow: store.maximizeWindow,
+      restoreWindow: store.restoreWindow,
+      dockWindow: store.dockWindow,
+      undockWindow: store.undockWindow,
+      arrangeWindows: store.arrangeWindows,
+      closeAllWindows: store.closeAllWindows,
     }),
     [store, computed, handleGesture]
   );
@@ -339,5 +365,24 @@ export function usePictureInPicture(): {
     setEnabled: layout.setPipEnabled,
     setPosition: layout.setPipPosition,
     dock: layout.dockPip,
+  };
+}
+
+export function useWorkspace() {
+  const layout = useLayout();
+  return {
+    windows: layout.detachedWindows,
+    activeWindowId: layout.activeWindowId,
+    windowCount: layout.detachedWindows.size,
+    detach: layout.detachWindow,
+    attach: layout.attachWindow,
+    focus: layout.focusWindow,
+    minimize: layout.minimizeWindow,
+    maximize: layout.maximizeWindow,
+    restore: layout.restoreWindow,
+    dock: layout.dockWindow,
+    undock: layout.undockWindow,
+    arrange: layout.arrangeWindows,
+    closeAll: layout.closeAllWindows,
   };
 }

@@ -22,6 +22,8 @@ export const topListsKeys = {
     [...topListsKeys.lists(), 'featured', params] as const,
   analytics: (id: string) =>
     [...topListsKeys.all, 'analytics', id] as const,
+  creatorAnalytics: (userId: string) =>
+    [...topListsKeys.all, 'creator-analytics', userId] as const,
   versions: (id: string, version1: number, version2: number) =>
     [...topListsKeys.all, 'versions', id, { version1, version2 }] as const,
 

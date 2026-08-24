@@ -1,8 +1,11 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import type { FeedbackProgressData } from '../types';
+
+import { DURATION } from '@/lib/animations/motion-presets';
 import { cn } from '@/lib/utils';
+
+import type { FeedbackProgressData } from '../types';
 
 interface FeedbackProgressProps {
   /** Progress data */
@@ -30,7 +33,7 @@ const variantClasses = {
   success: 'bg-green-500',
   warning: 'bg-orange-500',
   error: 'bg-red-500',
-  cyan: 'bg-cyan-500',
+  cyan: 'bg-brand',
   purple: 'bg-purple-500',
 };
 
@@ -84,7 +87,7 @@ export function FeedbackProgress({
             className={cn('h-full rounded-full', variantClasses[variant])}
             initial={{ width: 0 }}
             animate={{ width: `${value}%` }}
-            transition={{ duration: 0.3, ease: 'easeOut' }}
+            transition={{ duration: DURATION.normal, ease: 'easeOut' }}
           />
         )}
       </div>

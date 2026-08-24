@@ -5,6 +5,9 @@
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+
+import { getBreakpointFromWidth } from '@/lib/layout/constants';
+
 import type {
   Breakpoint,
   LayoutPreset,
@@ -17,7 +20,8 @@ import type {
   ResizeEvent,
   LayoutState,
   LayoutActions,
-  LAYOUT_STORAGE_KEYS,
+  DetachedWindowConfig,
+  DockEdge,
 } from '@/lib/layout/types';
 
 /**
@@ -69,6 +73,11 @@ function createDefaultPanelConfig(id: string): PanelConfig {
 }
 
 /**
+ * Base z-index for detached windows
+ */
+const WINDOW_BASE_Z_INDEX = 100;
+
+/**
  * Initial state
  */
 const initialState: LayoutState = {
@@ -83,6 +92,9 @@ const initialState: LayoutState = {
   isTransitioning: false,
   gestureEnabled: false,
   customPresets: [],
+  detachedWindows: new Map<string, DetachedWindowConfig>(),
+  activeWindowId: null,
+  nextWindowZIndex: WINDOW_BASE_Z_INDEX,
 };
 
 /**
@@ -105,19 +117,8 @@ export const useLayoutStore = create<LayoutStore>()(
 
       detectBreakpoint: () => {
         if (typeof window === 'undefined') return;
-        const width = window.innerWidth;
-        let breakpoint: Breakpoint = 'desktop';
-
-        if (width < 640) {
-          breakpoint = 'mobile';
-        } else if (width < 1024) {
-          breakpoint = 'tablet';
-        } else if (width < 1536) {
-          breakpoint = 'desktop';
-        } else {
-          breakpoint = 'ultrawide';
-        }
-
+        // Use centralized breakpoint thresholds from layout/constants.ts
+        const breakpoint = getBreakpointFromWidth(window.innerWidth);
         set({ currentBreakpoint: breakpoint });
       },
 
@@ -290,6 +291,176 @@ export const useLayoutStore = create<LayoutStore>()(
         }));
       },
 
+      // Detached Windows
+      detachWindow: (config: Omit<DetachedWindowConfig, 'zIndex'>) => {
+        const state = get();
+        const nextZ = state.nextWindowZIndex + 1;
+        const detachedWindows = new Map(state.detachedWindows);
+        detachedWindows.set(config.id, { ...config, zIndex: nextZ });
+        set({ detachedWindows, activeWindowId: config.id, nextWindowZIndex: nextZ });
+      },
+
+      attachWindow: (id: string) => {
+        const detachedWindows = new Map(get().detachedWindows);
+        detachedWindows.delete(id);
+        const activeWindowId = get().activeWindowId === id ? null : get().activeWindowId;
+        set({ detachedWindows, activeWindowId });
+      },
+
+      updateWindow: (id: string, config: Partial<DetachedWindowConfig>) => {
+        const detachedWindows = new Map(get().detachedWindows);
+        const existing = detachedWindows.get(id);
+        if (existing) {
+          detachedWindows.set(id, { ...existing, ...config });
+          set({ detachedWindows });
+        }
+      },
+
+      focusWindow: (id: string) => {
+        const state = get();
+        const detachedWindows = new Map(state.detachedWindows);
+        const existing = detachedWindows.get(id);
+        if (existing) {
+          const nextZ = state.nextWindowZIndex + 1;
+          detachedWindows.set(id, { ...existing, zIndex: nextZ });
+          set({ detachedWindows, activeWindowId: id, nextWindowZIndex: nextZ });
+        }
+      },
+
+      minimizeWindow: (id: string) => {
+        const detachedWindows = new Map(get().detachedWindows);
+        const existing = detachedWindows.get(id);
+        if (existing) {
+          detachedWindows.set(id, { ...existing, isMinimized: true });
+          set({ detachedWindows });
+        }
+      },
+
+      maximizeWindow: (id: string) => {
+        const detachedWindows = new Map(get().detachedWindows);
+        const existing = detachedWindows.get(id);
+        if (existing && !existing.isMaximized) {
+          detachedWindows.set(id, {
+            ...existing,
+            isMaximized: true,
+            isMinimized: false,
+            preMaximize: { position: existing.position, size: existing.size },
+          });
+          set({ detachedWindows });
+        }
+      },
+
+      restoreWindow: (id: string) => {
+        const detachedWindows = new Map(get().detachedWindows);
+        const existing = detachedWindows.get(id);
+        if (existing) {
+          if (existing.isMaximized && existing.preMaximize) {
+            detachedWindows.set(id, {
+              ...existing,
+              isMaximized: false,
+              isMinimized: false,
+              position: existing.preMaximize.position,
+              size: existing.preMaximize.size,
+              preMaximize: null,
+            });
+          } else {
+            detachedWindows.set(id, { ...existing, isMinimized: false, isMaximized: false });
+          }
+          set({ detachedWindows });
+        }
+      },
+
+      dockWindow: (id: string, edge: DockEdge) => {
+        const detachedWindows = new Map(get().detachedWindows);
+        const existing = detachedWindows.get(id);
+        if (existing) {
+          detachedWindows.set(id, {
+            ...existing,
+            isDocked: true,
+            dockEdge: edge,
+            isMaximized: false,
+            isMinimized: false,
+            preMaximize: existing.preMaximize || { position: existing.position, size: existing.size },
+          });
+          set({ detachedWindows });
+        }
+      },
+
+      undockWindow: (id: string) => {
+        const detachedWindows = new Map(get().detachedWindows);
+        const existing = detachedWindows.get(id);
+        if (existing) {
+          const restored = existing.preMaximize || { position: existing.position, size: existing.size };
+          detachedWindows.set(id, {
+            ...existing,
+            isDocked: false,
+            dockEdge: null,
+            position: restored.position,
+            size: restored.size,
+            preMaximize: null,
+          });
+          set({ detachedWindows });
+        }
+      },
+
+      closeAllWindows: () => {
+        set({ detachedWindows: new Map(), activeWindowId: null });
+      },
+
+      arrangeWindows: (arrangement: 'cascade' | 'tile-horizontal' | 'tile-vertical') => {
+        const state = get();
+        const detachedWindows = new Map(state.detachedWindows);
+        const windows = Array.from(detachedWindows.values()).filter((w) => !w.isMinimized);
+        if (windows.length === 0) return;
+
+        const { viewportWidth, viewportHeight } = state.dimensions;
+        const padding = 20;
+        const usableW = viewportWidth - padding * 2;
+        const usableH = viewportHeight - padding * 2;
+
+        windows.forEach((win, i) => {
+          let position = win.position;
+          let size = win.size;
+
+          switch (arrangement) {
+            case 'cascade': {
+              const offset = i * 30;
+              position = { x: padding + offset, y: padding + offset };
+              size = { width: Math.min(win.size.width, usableW - offset), height: Math.min(win.size.height, usableH - offset) };
+              break;
+            }
+            case 'tile-horizontal': {
+              const colWidth = Math.floor(usableW / windows.length);
+              position = { x: padding + i * colWidth, y: padding };
+              size = { width: colWidth - 4, height: usableH };
+              break;
+            }
+            case 'tile-vertical': {
+              const rowHeight = Math.floor(usableH / windows.length);
+              position = { x: padding, y: padding + i * rowHeight };
+              size = { width: usableW, height: rowHeight - 4 };
+              break;
+            }
+          }
+
+          detachedWindows.set(win.id, {
+            ...win,
+            position,
+            size: {
+              width: Math.max(win.minSize.width, Math.min(win.maxSize.width, size.width)),
+              height: Math.max(win.minSize.height, Math.min(win.maxSize.height, size.height)),
+            },
+            isDocked: false,
+            dockEdge: null,
+            isMaximized: false,
+            isMinimized: false,
+            preMaximize: null,
+          });
+        });
+
+        set({ detachedWindows });
+      },
+
       // Reset
       reset: () => {
         set(initialState);
@@ -306,14 +477,24 @@ export const useLayoutStore = create<LayoutStore>()(
         pipConfig: state.pipConfig,
         gestureEnabled: state.gestureEnabled,
         customPresets: state.customPresets,
+        // Serialize detached windows as array for persistence
+        detachedWindows: Array.from(state.detachedWindows.entries()),
+        activeWindowId: state.activeWindowId,
+        nextWindowZIndex: state.nextWindowZIndex,
       }),
       // Custom serialization for Map
       merge: (persistedState, currentState) => {
-        const persisted = persistedState as Partial<LayoutState>;
+        const persisted = persistedState as Partial<LayoutState> & { detachedWindows?: [string, DetachedWindowConfig][] };
+        // Restore detached windows from serialized array
+        let detachedWindows = new Map<string, DetachedWindowConfig>();
+        if (Array.isArray(persisted.detachedWindows)) {
+          detachedWindows = new Map(persisted.detachedWindows);
+        }
         return {
           ...currentState,
           ...persisted,
           panelConfigs: new Map(), // Maps don't persist well, recreate empty
+          detachedWindows,
           dimensions: currentState.dimensions, // Don't persist dimensions
         };
       },
@@ -349,3 +530,9 @@ export const useIsTransitioning = () =>
 
 export const useGestureEnabled = () =>
   useLayoutStore((state) => state.gestureEnabled);
+
+export const useDetachedWindows = () =>
+  useLayoutStore((state) => state.detachedWindows);
+
+export const useActiveWindowId = () =>
+  useLayoutStore((state) => state.activeWindowId);

@@ -1,16 +1,19 @@
 'use client';
 
 import { memo, useMemo } from 'react';
+
 import { cn } from '@/lib/utils';
+
+import { BarScoreOverlay } from './BarScoreOverlay';
+import { LabelScoreOverlay } from './LabelScoreOverlay';
+import { RingScoreOverlay } from './RingScoreOverlay';
+
 import type {
   Criterion,
   CriterionScore,
   CriterionDisplayPosition,
   CriterionDisplayType,
 } from '@/lib/criteria/types';
-import { RingScoreOverlay } from './RingScoreOverlay';
-import { BarScoreOverlay } from './BarScoreOverlay';
-import { LabelScoreOverlay } from './LabelScoreOverlay';
 
 export interface ScoreOverlayContainerProps {
   /** Criteria with display configurations */
@@ -95,7 +98,7 @@ function resolvePositions(
         criterion,
         score,
         position: explicitPosition,
-        displayType: criterion.displayConfig?.displayType ?? 'ring',
+        displayType: criterion.displayConfig?.displayType ?? 'ring-3',
         color: criterion.color || DEFAULT_COLORS[idx % DEFAULT_COLORS.length],
         index: idx,
       });
@@ -119,7 +122,7 @@ function resolvePositions(
       criterion,
       score,
       position: availablePosition,
-      displayType: criterion.displayConfig?.displayType ?? 'ring',
+      displayType: criterion.displayConfig?.displayType ?? 'ring-3',
       color: criterion.color || DEFAULT_COLORS[idx % DEFAULT_COLORS.length],
       index: idx,
     });
@@ -159,7 +162,7 @@ export const ScoreOverlayContainer = memo(function ScoreOverlayContainer({
 
         return (
           <div key={criterion.id} className={cn('absolute', positionClass)}>
-            {displayType === 'ring' && (
+            {displayType === 'ring-3' && (
               <RingScoreOverlay
                 score={score.score}
                 maxScore={criterion.maxScore}

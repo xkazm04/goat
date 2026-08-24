@@ -14,6 +14,8 @@
  * - Seamless transition between unranked and ranked states
  */
 
+import { resolveTierFromRank } from '@/lib/tokens/badge-tokens';
+
 import type { ItemConsensusWithClusters } from './consensus';
 import type { CollectionItem } from '@/app/features/Collection/types';
 import type { SortCriteria, SortDirection } from '@/lib/sorting';
@@ -68,14 +70,11 @@ export type InventoryTier =
   | 'unranked';   // No consensus data yet
 
 /**
- * Get tier from consensus average rank
+ * Get tier from consensus average rank.
+ * Delegates to the shared tier resolver in badge-tokens.
  */
 export function getTierFromRank(avgRank: number | undefined): InventoryTier {
-  if (avgRank === undefined) return 'unranked';
-  if (avgRank <= 3) return 'elite';
-  if (avgRank <= 10) return 'top';
-  if (avgRank <= 25) return 'solid';
-  return 'common';
+  return resolveTierFromRank(avgRank);
 }
 
 /**
@@ -105,9 +104,9 @@ export function getTierConfig(tier: InventoryTier): TierConfig {
     case 'top':
       return {
         label: 'Top Pick',
-        color: 'text-cyan-400',
-        bgColor: 'bg-cyan-500/20',
-        borderColor: 'border-cyan-500/40',
+        color: 'text-brand-hover',
+        bgColor: 'bg-brand/20',
+        borderColor: 'border-brand/40',
         icon: 'medal',
       };
     case 'solid':

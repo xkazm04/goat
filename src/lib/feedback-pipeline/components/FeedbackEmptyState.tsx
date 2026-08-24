@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Crown, Inbox, Search, Sparkles, Plus } from 'lucide-react';
+
 import { cn } from '@/lib/utils';
 
 interface FeedbackEmptyStateProps {
@@ -84,15 +85,15 @@ export function FeedbackEmptyState({
           `,
         }}
       >
-        <IconComponent className={cn('text-slate-500', sizes.iconInner)} />
+        <IconComponent className={cn('text-gray-500', sizes.iconInner)} />
       </motion.div>
 
-      <h3 className={cn('font-semibold text-slate-200 mb-2', sizes.title)}>
+      <h3 className={cn('font-semibold text-gray-200 mb-2', sizes.title)}>
         {title}
       </h3>
 
       {description && (
-        <p className={cn('text-slate-400 max-w-md mb-4', sizes.desc)}>
+        <p className={cn('text-gray-400 max-w-md mb-4', sizes.desc)}>
           {description}
         </p>
       )}

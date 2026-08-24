@@ -7,20 +7,22 @@
  * Shows visual feedback for active filters and search.
  */
 
-import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Filter,
-  Search,
   Clock,
   CheckCircle2,
-  AlertCircle,
   TrendingDown,
   TrendingUp,
   Loader2,
 } from 'lucide-react';
+import React, { useMemo } from 'react';
+
+import { GoatZeroResults } from '@/components/illustrations/EmptyStateIllustrations';
+import { GoatFilter, GoatSearch } from '@/components/visual/GoatIcons';
 import { cn } from '@/lib/utils';
+
 import { useFilterIntegrationOptional } from '../CollectionFilterIntegration';
+
 import type { FilterConfig } from '../types';
 
 /**
@@ -102,17 +104,17 @@ export function FilterResultsCounter({
     return (
       <div className={cn('flex items-center gap-2 text-sm', className)}>
         {isLoading ? (
-          <Loader2 size={14} className="animate-spin text-cyan-400" />
+          <Loader2 size={14} className="animate-spin text-primary" />
         ) : (
-          <Filter
+          <GoatFilter
             size={14}
-            className={isFiltering ? 'text-cyan-400' : 'text-zinc-500'}
+            className={isFiltering ? 'text-primary' : 'text-muted-foreground'}
           />
         )}
-        <span className={isFiltering ? 'text-zinc-200' : 'text-zinc-500'}>
+        <span className={isFiltering ? 'text-foreground' : 'text-muted-foreground'}>
           {matchedItems}
           {isFiltering && (
-            <span className="text-zinc-500"> / {totalItems}</span>
+            <span className="text-muted-foreground"> / {totalItems}</span>
           )}
         </span>
       </div>
@@ -124,25 +126,25 @@ export function FilterResultsCounter({
     return (
       <div
         className={cn(
-          'rounded-lg border border-zinc-700/50 bg-zinc-900/50 p-3',
+          'rounded-card border border-border/50 bg-background/50 p-3',
           className
         )}
       >
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             {isLoading ? (
-              <Loader2 size={16} className="animate-spin text-cyan-400" />
+              <Loader2 size={16} className="animate-spin text-primary" />
             ) : isFiltering ? (
-              <Filter size={16} className="text-cyan-400" />
+              <GoatFilter size={16} className="text-primary" />
             ) : (
               <CheckCircle2 size={16} className="text-emerald-400" />
             )}
-            <span className="text-sm font-medium text-zinc-200">
+            <span className="text-sm font-medium text-foreground">
               {isFiltering ? 'Filtered Results' : 'All Items'}
             </span>
           </div>
           {showExecution && executionTime > 0 && (
-            <span className="flex items-center gap-1 text-xs text-zinc-500">
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
               <Clock size={12} />
               {executionTime.toFixed(1)}ms
             </span>
@@ -152,12 +154,12 @@ export function FilterResultsCounter({
         {/* Stats grid */}
         <div className="grid grid-cols-3 gap-3">
           <div className="text-center">
-            <div className="text-2xl font-bold text-cyan-400">{matchedItems}</div>
-            <div className="text-xs text-zinc-500">Matched</div>
+            <div className="text-2xl font-bold text-primary">{matchedItems}</div>
+            <div className="text-xs text-muted-foreground">Matched</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-zinc-400">{totalItems}</div>
-            <div className="text-xs text-zinc-500">Total</div>
+            <div className="text-2xl font-bold text-muted-foreground">{totalItems}</div>
+            <div className="text-xs text-muted-foreground">Total</div>
           </div>
           <div className="text-center">
             <div
@@ -167,28 +169,28 @@ export function FilterResultsCounter({
                   ? 'text-emerald-400'
                   : matchPercentage === 0
                   ? 'text-red-400'
-                  : 'text-zinc-300'
+                  : 'text-foreground'
               )}
             >
               {matchPercentage}%
             </div>
-            <div className="text-xs text-zinc-500">Match Rate</div>
+            <div className="text-xs text-muted-foreground">Match Rate</div>
           </div>
         </div>
 
         {/* Active filters summary */}
         {isFiltering && (
-          <div className="mt-3 pt-3 border-t border-zinc-800">
-            <div className="flex items-center gap-2 text-xs text-zinc-400">
+          <div className="mt-3 pt-3 border-t border-border">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
               {hasSearch && (
-                <span className="flex items-center gap-1 rounded bg-cyan-500/10 px-1.5 py-0.5 text-cyan-400">
-                  <Search size={10} />
+                <span className="flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-primary">
+                  <GoatSearch size={10} />
                   Search active
                 </span>
               )}
               {hasFilters && (
                 <span className="flex items-center gap-1 rounded bg-purple-500/10 px-1.5 py-0.5 text-purple-400">
-                  <Filter size={10} />
+                  <GoatFilter size={10} />
                   {activeFilters} filter{activeFilters !== 1 ? 's' : ''}
                 </span>
               )}
@@ -203,12 +205,12 @@ export function FilterResultsCounter({
   return (
     <div
       className={cn(
-        'flex items-center gap-3 rounded-lg border border-zinc-700/50 bg-zinc-900/30 px-3 py-2',
+        'flex items-center gap-3 rounded-card border border-border/50 bg-background/30 px-3 py-2',
         className
       )}
     >
       {/* Icon */}
-      <div className="flex-shrink-0">
+      <div className="shrink-0">
         <AnimatePresence mode="wait">
           {isLoading ? (
             <motion.div
@@ -217,7 +219,7 @@ export function FilterResultsCounter({
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
             >
-              <Loader2 size={18} className="animate-spin text-cyan-400" />
+              <Loader2 size={18} className="animate-spin text-primary" />
             </motion.div>
           ) : trend === 'none' ? (
             <motion.div
@@ -226,7 +228,7 @@ export function FilterResultsCounter({
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
             >
-              <AlertCircle size={18} className="text-red-400" />
+              <GoatZeroResults width={24} height={20} />
             </motion.div>
           ) : trend === 'all' || !isFiltering ? (
             <motion.div
@@ -244,7 +246,7 @@ export function FilterResultsCounter({
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
             >
-              <Filter size={18} className="text-cyan-400" />
+              <GoatFilter size={18} className="text-primary" />
             </motion.div>
           )}
         </AnimatePresence>
@@ -262,25 +264,25 @@ export function FilterResultsCounter({
               ? 'text-red-400'
               : trend === 'all' || !isFiltering
               ? 'text-emerald-400'
-              : 'text-cyan-400'
+              : 'text-primary'
           )}
         >
           {matchedItems}
         </motion.span>
         {isFiltering && (
           <>
-            <span className="text-zinc-600">/</span>
-            <span className="text-sm text-zinc-500">{totalItems}</span>
+            <span className="text-muted-foreground">/</span>
+            <span className="text-sm text-muted-foreground">{totalItems}</span>
           </>
         )}
-        <span className="text-xs text-zinc-500 ml-1">
+        <span className="text-xs text-muted-foreground ml-1">
           {isFiltering ? 'matches' : 'items'}
         </span>
       </div>
 
       {/* Trend indicator */}
       {isFiltering && trend && (
-        <div className="flex-shrink-0">
+        <div className="shrink-0">
           {trend === 'low' && (
             <TrendingDown size={14} className="text-orange-400" />
           )}
@@ -292,7 +294,7 @@ export function FilterResultsCounter({
 
       {/* Execution time */}
       {showExecution && executionTime > 0 && (
-        <div className="flex items-center gap-1 text-xs text-zinc-500 ml-auto">
+        <div className="flex items-center gap-1 text-xs text-muted-foreground ml-auto">
           <Clock size={12} />
           <span>{executionTime.toFixed(1)}ms</span>
         </div>
@@ -324,7 +326,7 @@ export function FilterCountBadge({
       className={cn(
         'inline-flex items-center justify-center',
         'min-w-[18px] h-[18px] px-1',
-        'rounded-full bg-cyan-500 text-[10px] font-bold text-white',
+        'rounded-badge bg-primary text-2xs font-bold text-white',
         className
       )}
     >
@@ -351,7 +353,7 @@ export function SearchResultSummary({
 
   if (isSearching) {
     return (
-      <span className={cn('text-sm text-zinc-400', className)}>
+      <span className={cn('text-sm text-muted-foreground', className)}>
         Searching...
       </span>
     );
@@ -359,7 +361,7 @@ export function SearchResultSummary({
 
   if (!hasSearch && activeFilters === 0) {
     return (
-      <span className={cn('text-sm text-zinc-500', className)}>
+      <span className={cn('text-sm text-muted-foreground', className)}>
         {totalItems} items total
       </span>
     );
@@ -377,11 +379,11 @@ export function SearchResultSummary({
 
   return (
     <span className={cn('text-sm', className)}>
-      <span className="text-cyan-400">{matchedItems}</span>
-      <span className="text-zinc-500"> of </span>
-      <span className="text-zinc-400">{totalItems}</span>
-      <span className="text-zinc-500"> match </span>
-      <span className="text-zinc-400">{parts.join(' + ')}</span>
+      <span className="text-primary">{matchedItems}</span>
+      <span className="text-muted-foreground"> of </span>
+      <span className="text-muted-foreground">{totalItems}</span>
+      <span className="text-muted-foreground"> match </span>
+      <span className="text-muted-foreground">{parts.join(' + ')}</span>
     </span>
   );
 }

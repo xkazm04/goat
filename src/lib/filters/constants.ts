@@ -7,7 +7,6 @@ import type {
   FilterOperator,
   FilterValueType,
   FilterFieldDefinition,
-  QuickFilter,
   FilterCombinator,
   FilterConfig,
 } from './types';
@@ -158,86 +157,11 @@ export const DEFAULT_FILTER_FIELDS: FilterFieldDefinition[] = [
 ];
 
 /**
- * Default quick filters
+ * Default quick filters — derived from FILTER_PRESETS in presets.ts.
+ * @see getDefaultQuickFilters in presets.ts
  */
-export const DEFAULT_QUICK_FILTERS: QuickFilter[] = [
-  {
-    id: 'unranked',
-    label: 'Unranked',
-    icon: '📋',
-    config: {
-      rootCombinator: 'AND',
-      groups: [],
-      conditions: [
-        {
-          id: 'unranked-condition',
-          field: 'used',
-          operator: 'equals',
-          value: false,
-          valueType: 'boolean',
-          enabled: true,
-        },
-      ],
-    },
-  },
-  {
-    id: 'top-rated',
-    label: 'Top Rated',
-    icon: '⭐',
-    config: {
-      rootCombinator: 'AND',
-      groups: [],
-      conditions: [
-        {
-          id: 'top-rated-condition',
-          field: 'ranking',
-          operator: 'greater_equal',
-          value: 4,
-          valueType: 'number',
-          enabled: true,
-        },
-      ],
-    },
-  },
-  {
-    id: 'has-tags',
-    label: 'Tagged',
-    icon: '🏷️',
-    config: {
-      rootCombinator: 'AND',
-      groups: [],
-      conditions: [
-        {
-          id: 'has-tags-condition',
-          field: 'tags',
-          operator: 'is_not_empty',
-          value: null,
-          valueType: 'array',
-          enabled: true,
-        },
-      ],
-    },
-  },
-  {
-    id: 'no-tags',
-    label: 'Untagged',
-    icon: '📦',
-    config: {
-      rootCombinator: 'AND',
-      groups: [],
-      conditions: [
-        {
-          id: 'no-tags-condition',
-          field: 'tags',
-          operator: 'is_empty',
-          value: null,
-          valueType: 'array',
-          enabled: true,
-        },
-      ],
-    },
-  },
-];
+import { getDefaultQuickFilters } from './presets';
+export const DEFAULT_QUICK_FILTERS = getDefaultQuickFilters();
 
 /**
  * Empty filter config
@@ -261,6 +185,27 @@ export const DEFAULT_FILTER_OPTIONS = {
 } as const;
 
 /**
+ * Standardized animation timing tokens for all filter components.
+ * Use these instead of hardcoded duration/delay values.
+ */
+export const FILTER_TIMING = {
+  fast: 0.15,
+  standard: 0.2,
+  slow: 0.3,
+  stagger: 0.05,
+  /** Delay between staggered children */
+  staggerChildren: 0.03,
+} as const;
+
+/**
+ * Standardized scale values for hover/tap micro-interactions.
+ */
+export const FILTER_SCALE = {
+  hover: 1.02,
+  tap: 0.98,
+} as const;
+
+/**
  * Animation configurations
  */
 export const FILTER_ANIMATIONS = {
@@ -277,12 +222,12 @@ export const FILTER_ANIMATIONS = {
     mass: 0.6,
   },
   transition: {
-    duration: 0.2,
+    duration: FILTER_TIMING.standard,
     ease: [0.4, 0, 0.2, 1] as const,
   },
   stagger: {
-    delayChildren: 0.05,
-    staggerChildren: 0.03,
+    delayChildren: FILTER_TIMING.stagger,
+    staggerChildren: FILTER_TIMING.staggerChildren,
   },
 };
 
@@ -295,7 +240,7 @@ export const FILTER_COLORS = {
   boolean: { bg: 'bg-purple-500/10', border: 'border-purple-500/30', text: 'text-purple-500' },
   date: { bg: 'bg-orange-500/10', border: 'border-orange-500/30', text: 'text-orange-500' },
   array: { bg: 'bg-pink-500/10', border: 'border-pink-500/30', text: 'text-pink-500' },
-  enum: { bg: 'bg-cyan-500/10', border: 'border-cyan-500/30', text: 'text-cyan-500' },
+  enum: { bg: 'bg-primary/10', border: 'border-primary/30', text: 'text-primary' },
 } as const;
 
 /**

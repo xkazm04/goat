@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Users } from 'lucide-react';
+import { useMemo } from 'react';
+
+import { DURATION } from '@/lib/animations/motion-presets';
 import { cn } from '@/lib/utils';
 import { useItemConsensus } from '@/stores/consensus-store';
 
@@ -71,9 +73,9 @@ export function AvgRankBadge({
     }
     if (avgRank <= 10) {
       return {
-        bg: 'from-cyan-500/70 to-blue-600/70',
+        bg: 'from-brand/70 to-blue-600/70',
         text: 'text-white font-medium',
-        ring: 'ring-cyan-400/40',
+        ring: 'ring-brand-hover/40',
       };
     }
     if (avgRank <= 25) {
@@ -99,7 +101,7 @@ export function AvgRankBadge({
       return { label: 'High confidence', color: 'text-emerald-400' };
     }
     if (total >= 50) {
-      return { label: 'Good confidence', color: 'text-cyan-400' };
+      return { label: 'Good confidence', color: 'text-brand-hover' };
     }
     if (total >= 20) {
       return { label: 'Moderate confidence', color: 'text-amber-400' };
@@ -134,19 +136,19 @@ export function AvgRankBadge({
             opacity: 0,
             scale: 0.8,
             y: 4,
-            transition: { duration: 0.15 }
+            transition: { duration: DURATION.quick }
           }}
           className={cn(
             'absolute z-20',
             positionClasses,
             // Glassmorphism styling
             'backdrop-blur-md',
-            'bg-gradient-to-br',
+            'bg-linear-to-br',
             getBadgeStyle.bg,
             // Layout
             'flex items-center gap-1',
             'h-[20px] px-1.5',
-            'rounded-md',
+            'rounded-control',
             // Border and shadow
             'ring-1',
             getBadgeStyle.ring,
@@ -156,12 +158,12 @@ export function AvgRankBadge({
           data-testid={`avg-rank-badge-${itemId}`}
         >
           {/* Community icon */}
-          <Users className={cn('w-2.5 h-2.5 flex-shrink-0', getBadgeStyle.text)} />
+          <Users className={cn('w-2.5 h-2.5 shrink-0', getBadgeStyle.text)} />
 
           {/* Average rank display */}
           <span
             className={cn(
-              'text-[9px] leading-none whitespace-nowrap',
+              'text-2xs leading-none whitespace-nowrap',
               getBadgeStyle.text
             )}
           >
@@ -172,7 +174,7 @@ export function AvgRankBadge({
           {totalRankings >= 10 && (
             <span
               className={cn(
-                'text-[8px] leading-none opacity-70 whitespace-nowrap',
+                'text-3xs leading-none opacity-70 whitespace-nowrap',
                 getBadgeStyle.text
               )}
               title={`Based on ${totalRankings} rankings - ${confidenceInfo?.label}`}

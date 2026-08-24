@@ -1,4 +1,11 @@
 import { create } from 'zustand';
+
+import { consensusLogger } from '@/lib/logger';
+import {
+  sortItemIds as unifiedSortItemIds,
+  fromLegacySortBy,
+} from '@/lib/sorting';
+
 import type {
   ConsensusState,
   ConsensusViewMode,
@@ -10,12 +17,6 @@ import type {
   InventorySortOrder,
   InventorySortConfig,
 } from '@/types/ranked-inventory';
-import {
-  type SortConfig,
-  sortItemIds as unifiedSortItemIds,
-  fromLegacySortBy,
-} from '@/lib/sorting';
-import { consensusLogger } from '@/lib/logger';
 
 interface ConsensusStoreActions {
   /** Set the consensus view mode */
@@ -84,9 +85,9 @@ export const useConsensusStore = create<ConsensusStore>((set, get) => ({
     set({ viewMode: VIEW_MODE_CYCLE[nextIndex] });
   },
 
-  // Fetch consensus data
+  // Fetch consensus data (deduplicated: concurrent calls for the same category share one request)
   fetchConsensus: async (category, subcategory) => {
-    const { currentCategory, lastFetched } = get();
+    const { currentCategory, lastFetched, isLoading } = get();
 
     // Skip if we recently fetched for this category (5 minute cache)
     const cacheTime = 5 * 60 * 1000;
@@ -95,6 +96,12 @@ export const useConsensusStore = create<ConsensusStore>((set, get) => ({
       lastFetched &&
       Date.now() - lastFetched < cacheTime
     ) {
+      return;
+    }
+
+    // Skip if a fetch is already in progress for any category
+    // (prevents N+1 when 20+ components mount simultaneously)
+    if (isLoading) {
       return;
     }
 

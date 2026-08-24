@@ -7,8 +7,9 @@
  * - Efficient caching for performance
  */
 
-import { GridItemType } from '@/types/match';
 import { BacklogItem } from '@/types/backlog-groups';
+import { GridItemType } from '@/types/match';
+
 import {
   PlacementPredictor,
   PositionPrediction,
@@ -242,7 +243,7 @@ export class DropZoneScorer {
   private hashGrid(gridItems: GridItemType[]): string {
     // Simple hash based on occupied positions
     return gridItems
-      .map((item, idx) => (item.matched ? idx : ''))
+      .map((item, idx) => (item.context.matched ? idx : ''))
       .filter(Boolean)
       .join(',');
   }

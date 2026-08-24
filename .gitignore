@@ -11,6 +11,9 @@
 /blob-report/
 /test-results/
 
+# playwright mcp
+/.playwright-mcp/
+
 # next.js
 /.next/
 /out/
@@ -44,8 +47,16 @@ next-env.d.ts
 *storybook.log
 storybook-static
 
-# GSD Planning docs (local-only)
-.planning/
+# planning artifacts
+/.planning/
+
+# dev artifacts (screenshots, generated reports)
+goat-page-initial.png
+landing-page-full.png
+landing-scrolled.png
+context_map.json
+BACKLOG_COALESCING_IMPLEMENTATION.md
+DEV_ARTIFACTS_REPORT.md
 
 # BEGIN ai-registry linked skills (managed by ai-registry/scripts/link-registry.mjs)
 # Links are machine state; the declarations live in .ai/manifest.yaml (`skills:` and `knowledge.domains`).

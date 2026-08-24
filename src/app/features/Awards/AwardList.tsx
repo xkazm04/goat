@@ -1,18 +1,24 @@
 "use client";
 
-import { useState, useCallback, useEffect, createContext, useContext } from "react";
 import { DndContext, DragOverlay, DragEndEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
-import { useTopLists } from "@/hooks/use-top-lists";
-import { AwardItem } from "./components/AwardItem";
-import { SimpleCollectionPanel } from "../Match/sub_MatchCollections/SimpleCollectionPanel";
-import { DragOverlayContent } from "../Match/sub_MatchGrid/components/DragComponents";
 import { motion } from "framer-motion";
+import { Loader2, Trophy, Sparkles, Star, MousePointer2 } from "lucide-react";
+import { useState, useCallback, useEffect, createContext, useContext } from "react";
+
+import { useTopLists } from "@/hooks/use-top-lists";
+import { useBacklogStore } from "@/stores/backlog-store";
 import { BacklogItem } from "@/types/backlog-groups";
 import { GridItemType } from "@/types/match";
+
+import { backlogGroupsToItemCategories } from "../Collection";
+import { AwardItem } from "./components/AwardItem";
 import { CollectionItem } from "../Collection/types";
-import { backlogGroupsToCollectionGroups } from "../Collection";
-import { useBacklogStore } from "@/stores/backlog-store";
-import { Loader2, Trophy, Sparkles, Star, MousePointer2 } from "lucide-react";
+import { SimpleCollectionPanel } from "../Match/sub_MatchCollections/SimpleCollectionPanel";
+import { DragOverlayContent } from "../Match/sub_MatchGrid/components/DragComponents";
+
+
+
+
 
 interface AwardListProps {
     parentListId: string;
@@ -79,14 +85,16 @@ export function AwardList({ parentListId, title = "Annual Awards", description }
                     // First item is the winner
                     const winner = list.items[0];
                     initialWinners[list.id] = {
-                        id: winner.id,
-                        title: winner.title,
-                        description: winner.description || '',
-                        image_url: winner.image_url,
+                        id: `winner-${list.id}`,
                         position: 0,
-                        matched: true,
-                        isDragPlaceholder: false,
-                        tags: []
+                        item: {
+                            id: winner.id,
+                            title: winner.title,
+                            description: winner.description || '',
+                            image_url: winner.image_url,
+                            tags: []
+                        },
+                        context: { source: 'grid', matched: true }
                     };
 
                     // Remaining items (up to 5) are candidates
@@ -124,23 +132,48 @@ export function AwardList({ parentListId, title = "Annual Awards", description }
         }
     };
 
+    // Helper to extract properties from the union type
+    const extractItemProps = (item: CollectionItem | BacklogItem | GridItemType) => {
+        if ('context' in item && 'item' in item) {
+            // It's a GridItemType (PlacedItem)
+            return {
+                id: item.item?.id ?? item.id,
+                title: item.item?.title ?? '',
+                description: item.item?.description ?? '',
+                image_url: item.item?.image_url ?? undefined,
+                tags: item.item?.tags ?? [],
+            };
+        }
+        // CollectionItem or BacklogItem - flat shape
+        const flat = item as CollectionItem | BacklogItem;
+        return {
+            id: flat.id,
+            title: 'title' in flat ? flat.title : (flat as BacklogItem).name || '',
+            description: flat.description || '',
+            image_url: flat.image_url ?? undefined,
+            tags: ('tags' in flat ? flat.tags : undefined) || [],
+        };
+    };
+
     // Shared function to assign an item to a winner slot
     const assignWinner = useCallback((item: CollectionItem | BacklogItem | GridItemType, targetListId: string) => {
-        const itemTitle = 'title' in item ? item.title : (item as BacklogItem).name || '';
+        const props = extractItemProps(item);
 
         const newWinner: GridItemType = {
             id: `winner-${targetListId}-${Date.now()}`,
-            title: itemTitle,
-            description: item.description || '',
-            image_url: item.image_url || undefined,
             position: 0,
-            matched: true,
-            isDragPlaceholder: false,
-            tags: item.tags || []
+            item: {
+                id: props.id,
+                title: props.title,
+                description: props.description,
+                image_url: props.image_url,
+                tags: props.tags
+            },
+            context: { source: 'grid', matched: true }
         };
 
         setWinners(prev => ({ ...prev, [targetListId]: newWinner }));
-        console.log(`🏆 Awarding "${itemTitle}" to category`);
+        console.log(`🏆 Awarding "${props.title}" to category`);
 
         if ('id' in item) {
             markItemAsUsed(item.id, true);
@@ -149,12 +182,12 @@ export function AwardList({ parentListId, title = "Annual Awards", description }
 
     // Shared function to assign an item to a candidate slot
     const assignCandidate = useCallback((item: CollectionItem | BacklogItem | GridItemType, listId: string, slotIndex: number) => {
-        const itemTitle = 'title' in item ? item.title : (item as BacklogItem).name || '';
+        const props = extractItemProps(item);
 
         const newCandidate: AwardCandidate = {
             id: `candidate-${listId}-${Date.now()}`,
-            title: itemTitle,
-            image_url: item.image_url
+            title: props.title,
+            image_url: props.image_url
         };
 
         setCandidatesByAward(prev => {
@@ -166,7 +199,7 @@ export function AwardList({ parentListId, title = "Annual Awards", description }
             return { ...prev, [listId]: currentCandidates };
         });
 
-        console.log(`📋 Added "${itemTitle}" as candidate #${slotIndex + 1}`);
+        console.log(`📋 Added "${props.title}" as candidate #${slotIndex + 1}`);
 
         if ('id' in item) {
             markItemAsUsed(item.id, true);
@@ -226,6 +259,24 @@ export function AwardList({ parentListId, title = "Annual Awards", description }
 
     const getItemTitle = (item: any) => item.title || item.name || '';
 
+    // Share an award winner via the Web Share API, falling back to clipboard.
+    // Previously AwardItem rendered a Share button but AwardList never passed
+    // onShare, so the affordance was silently dead.
+    const handleShareWinner = useCallback(async (listId: string, winnerTitle: string) => {
+        const categoryName = awardLists?.find((l) => l.id === listId)?.title || 'an award';
+        const url = typeof window !== 'undefined' ? window.location.href : '';
+        const shareText = `🏆 ${winnerTitle} won ${categoryName}!`;
+        try {
+            if (typeof navigator !== 'undefined' && navigator.share) {
+                await navigator.share({ title: categoryName, text: shareText, url });
+            } else if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                await navigator.clipboard.writeText(`${shareText} ${url}`.trim());
+            }
+        } catch {
+            // User dismissed the share sheet or clipboard was blocked — no-op.
+        }
+    }, [awardLists]);
+
     // Calculate stats
     const totalAwards = awardLists?.length || 0;
     const awardedCount = Object.keys(winners).length;
@@ -270,7 +321,7 @@ export function AwardList({ parentListId, title = "Annual Awards", description }
                 {/* Fixed background */}
                 <div className="fixed inset-0 bg-[#050505] -z-10" />
                 <div className="fixed inset-0 pointer-events-none -z-10">
-                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-yellow-900/15 via-[#050505] to-[#050505]" />
+                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-yellow-900/15 via-[#050505] to-[#050505]" />
                     <div
                         className="absolute top-20 left-1/4 w-96 h-96 bg-yellow-500/10 rounded-full blur-3xl"
                     />
@@ -293,7 +344,7 @@ export function AwardList({ parentListId, title = "Annual Awards", description }
                             <div className="inline-flex items-center justify-center mb-4">
                                 <div className="relative">
                                     <div className="absolute inset-0 bg-yellow-500/20 blur-2xl rounded-full" />
-                                    <div className="relative p-3 bg-gradient-to-br from-yellow-500/20 to-orange-500/10 rounded-xl border border-yellow-500/30">
+                                    <div className="relative p-3 bg-linear-to-br from-yellow-500/20 to-orange-500/10 rounded-card border border-yellow-500/30">
                                         <Trophy className="w-8 h-8 text-yellow-500" />
                                     </div>
                                     <Sparkles className="absolute -top-1 -right-1 w-4 h-4 text-yellow-400 animate-pulse" />
@@ -301,7 +352,7 @@ export function AwardList({ parentListId, title = "Annual Awards", description }
                             </div>
 
                             {/* Title */}
-                            <h1 className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-yellow-400 to-orange-400 mb-2">
+                            <h1 className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-linear-to-r from-yellow-200 via-yellow-400 to-orange-400 mb-2">
                                 {title}
                             </h1>
 
@@ -312,15 +363,15 @@ export function AwardList({ parentListId, title = "Annual Awards", description }
 
                             {/* Stats bar */}
                             <div className="flex items-center justify-center gap-4 text-xs flex-wrap">
-                                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-900/60 rounded-full border border-white/5">
+                                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-900/60 rounded-badge border border-white/5">
                                     <Trophy className="w-3.5 h-3.5 text-yellow-500" />
                                     <span className="text-gray-400">{totalAwards} Categories</span>
                                 </div>
-                                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-900/60 rounded-full border border-white/5">
+                                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-900/60 rounded-badge border border-white/5">
                                     <Sparkles className="w-3.5 h-3.5 text-green-500" />
                                     <span className="text-gray-400">{awardedCount} Awarded</span>
                                 </div>
-                                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-900/60 rounded-full border border-white/5">
+                                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-900/60 rounded-badge border border-white/5">
                                     <Star className="w-3.5 h-3.5 text-blue-500" />
                                     <span className="text-gray-400">{totalCandidates} Nominees</span>
                                 </div>
@@ -331,15 +382,15 @@ export function AwardList({ parentListId, title = "Annual Awards", description }
                                 <motion.div
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-cyan-500/20 rounded-full border border-cyan-500/40"
+                                    className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-brand/20 rounded-badge border border-brand/40"
                                 >
-                                    <MousePointer2 className="w-4 h-4 text-cyan-400" />
-                                    <span className="text-sm text-cyan-300">
+                                    <MousePointer2 className="w-4 h-4 text-brand-hover" />
+                                    <span className="text-sm text-brand-hover">
                                         Click on an award slot to assign: <strong>{selectedItem.title}</strong>
                                     </span>
                                     <button
                                         onClick={() => setSelectedItem(null)}
-                                        className="ml-2 text-cyan-400 hover:text-white transition-colors"
+                                        className="ml-2 text-brand-hover hover:text-white transition-colors"
                                     >
                                         ✕
                                     </button>
@@ -349,7 +400,7 @@ export function AwardList({ parentListId, title = "Annual Awards", description }
 
                         {/* Divider */}
                         <div className="flex items-center gap-4 mb-6">
-                            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-yellow-500/20 to-transparent" />
+                            <div className="flex-1 h-px bg-linear-to-r from-transparent via-yellow-500/20 to-transparent" />
                         </div>
 
                         {/* Award Categories List */}
@@ -361,6 +412,7 @@ export function AwardList({ parentListId, title = "Annual Awards", description }
                                     gridItem={winners[list.id] || null}
                                     candidates={candidatesByAward[list.id] || []}
                                     onRemove={() => handleRemoveWinner(list.id)}
+                                    onShare={handleShareWinner}
                                     getItemTitle={getItemTitle}
                                     index={index}
                                     hasSelectedItem={!!selectedItem}
@@ -382,14 +434,18 @@ export function AwardList({ parentListId, title = "Annual Awards", description }
 
                 {/* Collection Panel - truly fixed outside everything */}
                 <SimpleCollectionPanel
-                    groups={backlogGroupsToCollectionGroups(groups)}
+                    groups={backlogGroupsToItemCategories(groups)}
                     onItemClick={(item) => setSelectedItem(item)}
                     selectedItemId={selectedItem?.id}
                 />
 
                 {/* Simple Drag Overlay without cursor glow effects */}
                 <DragOverlay dropAnimation={null}>
-                    {activeItem && <DragOverlayContent activeItem={activeItem} />}
+                    {activeItem && <DragOverlayContent activeItem={
+                        'context' in activeItem
+                            ? { id: activeItem.item?.id, title: activeItem.item?.title ?? '', image_url: activeItem.item?.image_url }
+                            : activeItem
+                    } />}
                 </DragOverlay>
             </DndContext>
         </ClickAssignContext.Provider>

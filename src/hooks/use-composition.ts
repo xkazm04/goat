@@ -1,19 +1,15 @@
 import { useCallback, useMemo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
+
 import {
   useCompositionModalStore,
-  CompositionMode,
-  TemplateData,
 } from '@/stores/composition-modal-store';
-import { useShallow } from 'zustand/react/shallow';
-import { ListTemplate } from '@/types/templates';
-import { TopList } from '@/types/top-lists';
 import { Blueprint } from '@/types/blueprint';
 import {
   ListIntent,
-  ListIntentColor,
-  ListIntentTimePeriod,
-  ListIntentSource,
 } from '@/types/list-intent';
+import { ListTemplate } from '@/types/templates';
+import { TopList } from '@/types/top-lists';
 
 // Re-export types for convenient access
 export type {

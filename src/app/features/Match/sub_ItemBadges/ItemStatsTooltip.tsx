@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { TrendingUp, Users, Sparkles } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useState, useEffect, useRef } from "react";
+
+import { DURATION } from '@/lib/animations/motion-presets';
 
 interface ConsensusData {
   hasData: boolean;
@@ -130,19 +131,19 @@ export function ItemStatsTooltip({
             initial={{ opacity: 0, y: 5, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 5, scale: 0.95 }}
-            transition={{ duration: 0.15 }}
-            className="fixed z-[100] pointer-events-none"
+            transition={{ duration: DURATION.quick }}
+            className="fixed z-dropdown pointer-events-none"
             style={{
               left: position.x,
               top: position.y,
               transform: 'translate(-50%, -100%)',
             }}
           >
-            <div className="px-2.5 py-1.5 rounded-lg bg-gray-900/95 backdrop-blur-xl border border-white/10 shadow-xl shadow-black/30 whitespace-nowrap">
+            <div className="px-2.5 py-1.5 rounded-card bg-gray-900/95 backdrop-blur-xl border border-white/10 shadow-xl shadow-black/30 whitespace-nowrap">
               {data.hasData ? (
                 <div className="flex items-center gap-2 text-xs">
                   {/* Avg Position */}
-                  <span className="flex items-center gap-1 text-cyan-400">
+                  <span className="flex items-center gap-1 text-brand-hover">
                     <TrendingUp className="w-3 h-3" />
                     #{data.averagePosition?.toFixed(1)}
                   </span>
@@ -150,7 +151,7 @@ export function ItemStatsTooltip({
                   <span className="text-white/20">•</span>
 
                   {/* Total Rankings */}
-                  <span className="flex items-center gap-1 text-white/60">
+                  <span className="flex items-center gap-1 text-slate-400">
                     <Users className="w-3 h-3" />
                     {data.totalRankings}
                   </span>

@@ -1,5 +1,7 @@
-import { useBacklogStore } from './store';
 import { useShallow } from 'zustand/react/shallow';
+
+import { useBacklogStore } from './store';
+import { useSelectionCursor } from '../selection-cursor';
 
 // Selector hooks with memoization to prevent unnecessary renders
 export const useBacklogGroups = () =>
@@ -13,27 +15,44 @@ export const useBacklogFilters = () =>
     }))
   );
 
-export const useBacklogSelection = () =>
-  useBacklogStore(
+export const useBacklogSelection = () => {
+  // Selection cursor is the single source of truth for item selection
+  const selectedItemId = useSelectionCursor(state => state.itemId);
+  const selectionSource = useSelectionCursor(state => state.source);
+  const storeValues = useBacklogStore(
     useShallow(state => ({
       selectedGroupId: state.selectedGroupId,
-      selectedItemId: state.selectedItemId,
-      activeItemId: state.activeItemId,
       selectGroup: state.selectGroup,
       selectItem: state.selectItem,
-      setActiveItem: state.setActiveItem
+    }))
+  );
+  return { ...storeValues, selectedItemId, selectionSource };
+};
+
+// Granular loading selectors — subscribe only to the slice you need
+export const useIsBacklogLoading = () =>
+  useBacklogStore(state => state.isLoading);
+
+export const useBacklogLoadingGroupIds = () =>
+  useBacklogStore(state => state.loadingGroupIds);
+
+export const useBacklogLoadingProgress = () =>
+  useBacklogStore(
+    useShallow(state => state.loadingProgress)
+  );
+
+export const useBacklogError = () =>
+  useBacklogStore(state => state.error);
+
+export const useBacklogLoadingErrors = () =>
+  useBacklogStore(
+    useShallow(state => ({
+      loadingErrors: state.loadingErrors,
+      retryFailedGroups: state.retryFailedGroups,
+      clearLoadingErrors: state.clearLoadingErrors
     }))
   );
 
-export const useBacklogLoading = () =>
-  useBacklogStore(
-    useShallow(state => ({
-      isLoading: state.isLoading,
-      loadingGroupIds: state.loadingGroupIds,
-      loadingProgress: state.loadingProgress,
-      error: state.error
-    }))
-  );
 
 export const useBacklogItem = (itemId: string) =>
   useBacklogStore(state => state.getItemById(itemId));
@@ -47,5 +66,15 @@ export const useBacklogOfflineStatus = () =>
     }))
   );
 
+export const useOfflineSyncDiagnostics = () =>
+  useBacklogStore(
+    useShallow(state => state.syncDiagnostics)
+  );
+
 export const useBacklogStats = () =>
   useBacklogStore(state => state.getStats());
+
+export const useEnrichmentSources = () =>
+  useBacklogStore(
+    useShallow(state => state.enrichmentSources)
+  );

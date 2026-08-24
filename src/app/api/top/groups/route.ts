@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+
+import { getRequestId } from '@/lib/api/request-id';
+import { cachedFetch } from '@/lib/cache/server-cache';
+import { createClient, requireAuth, escapeIlikeWildcards } from '@/lib/supabase/server';
 
 // Force dynamic rendering for this route since it uses cookies
 export const dynamic = 'force-dynamic';
 
+/** TTL for group listings: 5 minutes (reference data, rarely changes) */
+const GROUPS_CACHE_TTL = 5 * 60 * 1000;
+
 // GET /api/top/groups - Get all item groups with optional filters
 export async function GET(request: NextRequest) {
+  const requestId = getRequestId(request);
   try {
     const supabase = await createClient();
     const searchParams = request.nextUrl.searchParams;
@@ -14,77 +21,62 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get('category');
     const subcategory = searchParams.get('subcategory');
     const search = searchParams.get('search');
-    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 100;
-    const offset = searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : 0;
+    const limit = Math.max(1, Math.min(parseInt(searchParams.get('limit') || '100'), 500));
+    const offset = Math.max(0, parseInt(searchParams.get('offset') || '0'));
 
-    // Build query
-    let query = supabase
-      .from('item_groups')
-      .select('*')
-      .order('name', { ascending: true })
-      .range(offset, offset + limit - 1);
+    // Build a cache key from the query parameters
+    const cacheKey = `groups:${category || ''}:${subcategory || ''}:${search || ''}:${limit}:${offset}`;
 
-    // Apply filters
-    if (category) {
-      query = query.eq('category', category);
-    }
-    if (subcategory) {
-      query = query.eq('subcategory', subcategory);
-    }
-    if (search) {
-      query = query.ilike('name', `%${search}%`);
-    }
+    // Only cache when there's no free-text search (search results are too varied)
+    const shouldCache = !search;
+    const ttl = shouldCache ? GROUPS_CACHE_TTL : 0;
 
-    const { data, error } = await query;
+    const groupsWithCount = await cachedFetch(cacheKey, ttl, async () => {
+      // Build query — use resource embedding to get item counts via SQL aggregate
+      // instead of fetching all item rows client-side
+      let query = supabase
+        .from('item_groups')
+        .select('*, items(count)')
+        .order('name', { ascending: true })
+        .range(offset, offset + limit - 1);
 
-    if (error) {
-      console.error('Error fetching item groups:', error);
-      return NextResponse.json(
-        { error: error.message },
-        { status: 500 }
-      );
-    }
-
-    // Add item_count to each group
-    if (data && data.length > 0) {
-      const groupIds = data.map(g => g.id);
-
-      const { data: itemCounts, error: countError } = await supabase
-        .from('items')
-        .select('group_id')
-        .in('group_id', groupIds)
-        .not('group_id', 'is', null);
-
-      if (countError) {
-        console.error('Error counting items:', countError);
-        // Continue without counts
-        return NextResponse.json(
-          data.map(group => ({ ...group, item_count: 0 }))
-        );
+      // Apply filters
+      if (category) {
+        query = query.eq('category', category);
+      }
+      if (subcategory) {
+        query = query.eq('subcategory', subcategory);
+      }
+      if (search) {
+        query = query.ilike('name', `%${escapeIlikeWildcards(search)}%`);
       }
 
-      // Count items per group
-      const countMap = new Map<string, number>();
-      itemCounts?.forEach(item => {
-        if (item.group_id) {
-          const count = countMap.get(item.group_id) || 0;
-          countMap.set(item.group_id, count + 1);
-        }
+      const { data, error } = await query;
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      // Transform embedded count into flat item_count field
+      return (data || []).map(group => {
+        const { items, ...rest } = group as Record<string, unknown>;
+        const countArr = items as { count: number }[] | undefined;
+        return {
+          ...rest,
+          item_count: countArr?.[0]?.count ?? 0,
+        };
       });
+    });
 
-      const groupsWithCount = data.map(group => ({
-        ...group,
-        item_count: countMap.get(group.id) || 0
-      }));
-
-      return NextResponse.json(groupsWithCount);
-    }
-
-    return NextResponse.json(data || []);
+    return NextResponse.json(groupsWithCount, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+      },
+    });
   } catch (error) {
-    console.error('Unexpected error in GET /api/top/groups:', error);
+    console.error(`[${requestId}] Unexpected error in GET /api/top/groups:`, error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', requestId },
       { status: 500 }
     );
   }
@@ -92,7 +84,11 @@ export async function GET(request: NextRequest) {
 
 // POST /api/top/groups - Create a new item group
 export async function POST(request: NextRequest) {
+  const requestId = getRequestId(request);
   try {
+    const auth = await requireAuth();
+    if (auth.error) return auth.error;
+
     const supabase = await createClient();
     const body = await request.json();
 
@@ -122,9 +118,9 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Error creating item group:', error);
+      console.error(`[${requestId}] Error creating item group:`, error);
       return NextResponse.json(
-        { error: error.message },
+        { error: 'Failed to create item group', requestId },
         { status: 500 }
       );
     }
@@ -137,9 +133,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(groupWithCount, { status: 201 });
   } catch (error) {
-    console.error('Unexpected error in POST /api/top/groups:', error);
+    console.error(`[${requestId}] Unexpected error in POST /api/top/groups:`, error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', requestId },
       { status: 500 }
     );
   }

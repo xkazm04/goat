@@ -8,10 +8,12 @@
  * Includes threshold crossing animations and score quality indicators.
  */
 
-import { memo, useMemo, useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, useSpring, useTransform } from 'framer-motion';
-import { cn } from '@/lib/utils';
+import { memo, useState, useEffect, useRef } from 'react';
+
+import { DURATION } from '@/lib/animations/motion-presets';
 import { mapCategoryToTheme, type ThemeKey } from '@/lib/criteria/theme-mapping';
+import { cn } from '@/lib/utils';
 
 // Animation configuration
 const ANIMATION_DURATION = 0.2;
@@ -147,7 +149,7 @@ export const ScorePreviewOverlay = memo(function ScorePreviewOverlay({
       {isActive && (
         <motion.div
           className={cn(
-            'relative rounded-lg overflow-hidden',
+            'relative rounded-card overflow-hidden',
             'border backdrop-blur-md',
             className
           )}
@@ -166,7 +168,7 @@ export const ScorePreviewOverlay = memo(function ScorePreviewOverlay({
           <AnimatePresence>
             {thresholdPulse && !prefersReducedMotion && (
               <motion.div
-                className="absolute inset-0 rounded-lg"
+                className="absolute inset-0 rounded-card"
                 style={{ backgroundColor: qualityInfo.color }}
                 initial={{ opacity: 0.5 }}
                 animate={{ opacity: 0 }}
@@ -190,11 +192,11 @@ export const ScorePreviewOverlay = memo(function ScorePreviewOverlay({
               {showQualityLabel && (
                 <motion.span
                   key={quality}
-                  className={cn('font-medium', size === 'sm' ? 'text-[10px]' : 'text-xs')}
+                  className={cn('font-medium', size === 'sm' ? 'text-2xs' : 'text-xs')}
                   style={{ color: qualityInfo.color }}
                   initial={prefersReducedMotion ? false : { opacity: 0, x: 5 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.15 }}
+                  transition={{ duration: DURATION.quick }}
                 >
                   {qualityInfo.label}
                 </motion.span>
@@ -313,7 +315,7 @@ const MiniSportsPreview = memo(function MiniSportsPreview({
             }}
             initial={animated ? { scaleY: 0 } : false}
             animate={{ scaleY: 1 }}
-            transition={{ delay: i * 0.05, duration: 0.2 }}
+            transition={{ delay: i * 0.05, duration: DURATION.fast }}
           />
         );
       })}
@@ -375,7 +377,7 @@ const MiniMusicPreview = memo(function MiniMusicPreview({
           }}
           initial={animated ? { height: 0 } : false}
           animate={{ height: `${Math.max(height * 100, 15)}%` }}
-          transition={{ delay: i * 0.05, duration: 0.3 }}
+          transition={{ delay: i * 0.05, duration: DURATION.normal }}
         />
       ))}
     </div>
@@ -406,7 +408,7 @@ const MiniGamesPreview = memo(function MiniGamesPreview({
           transition={{ type: 'spring', stiffness: 200, damping: 25 }}
         />
       </div>
-      <span className="text-[10px] font-bold text-emerald-400">L{Math.min(level, 10)}</span>
+      <span className="text-2xs font-bold text-emerald-400">L{Math.min(level, 10)}</span>
     </div>
   );
 });
@@ -433,7 +435,7 @@ const MiniDefaultPreview = memo(function MiniDefaultPreview({
           transition={{ type: 'spring', stiffness: 200, damping: 25 }}
         />
       </div>
-      <span className="text-[10px] font-medium text-cyan-400 tabular-nums">{Math.round(score)}</span>
+      <span className="text-2xs font-medium text-brand-hover tabular-nums">{Math.round(score)}</span>
     </div>
   );
 });

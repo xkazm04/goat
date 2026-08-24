@@ -1,15 +1,17 @@
 "use client";
 
-import { useState, useCallback, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { BacklogItem } from "@/types/backlog-groups";
-import { GridItemType } from "@/types/match";
+import { useState, useCallback, useEffect, useMemo } from "react";
+
+import { DURATION } from "@/lib/animations/motion-presets";
+import { getDropZoneTailwindClasses } from "@/lib/placement/DropZoneScorer";
 import {
   getPlacementPredictor,
   PlacementPrediction,
   PositionPrediction,
 } from "@/lib/placement/PlacementPredictor";
-import { getDropZoneTailwindClasses } from "@/lib/placement/DropZoneScorer";
+import { BacklogItem } from "@/types/backlog-groups";
+import { GridItemType } from "@/types/match";
 
 /**
  * Smart fill mode state
@@ -56,8 +58,8 @@ export function SmartFillPanel({
   const itemQueue = useMemo(() => {
     const placedIds = new Set(
       gridItems
-        .filter(g => g.matched && g.backlogItemId)
-        .map(g => g.backlogItemId!)
+        .filter(g => g.context.matched && g.item?.id)
+        .map(g => g.item!.id)
     );
 
     return availableItems.filter(
@@ -69,7 +71,7 @@ export function SmartFillPanel({
   const currentItem = itemQueue[currentIndex] || null;
 
   // Calculate progress
-  const filledCount = gridItems.filter(g => g.matched).length;
+  const filledCount = gridItems.filter(g => g.context.matched).length;
   const progress = Math.round((filledCount / targetSize) * 100);
 
   // Update prediction when current item changes
@@ -185,16 +187,16 @@ export function SmartFillPanel({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 20 }}
-      className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 w-full max-w-lg"
+      className="fixed bottom-24 left-1/2 -translate-x-1/2 z-sticky w-full max-w-lg"
     >
-      <div className="bg-gray-900/95 backdrop-blur-lg border border-gray-700 rounded-xl shadow-2xl overflow-hidden">
+      <div className="bg-gray-900/95 backdrop-blur-lg border border-gray-700 rounded-container shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700">
           <div className="flex items-center gap-3">
             <motion.div
               animate={{ rotate: 360 }}
               transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-              className="w-6 h-6 text-cyan-400"
+              className="w-6 h-6 text-brand-hover"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" />
@@ -213,7 +215,7 @@ export function SmartFillPanel({
             <div className="flex items-center gap-2">
               <div className="w-20 h-1.5 bg-gray-700 rounded-full overflow-hidden">
                 <motion.div
-                  className="h-full bg-gradient-to-r from-cyan-500 to-green-500"
+                  className="h-full bg-linear-to-r from-brand to-green-500"
                   initial={{ width: 0 }}
                   animate={{ width: `${progress}%` }}
                 />
@@ -224,7 +226,7 @@ export function SmartFillPanel({
             {/* Close button */}
             <button
               onClick={onToggle}
-              className="p-1.5 rounded-lg hover:bg-gray-700 transition-colors"
+              className="p-1.5 rounded-control hover:bg-gray-700 transition-colors"
             >
               <svg className="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M6 18L18 6M6 6l12 12" />
@@ -259,7 +261,7 @@ export function SmartFillPanel({
 
         {/* Footer with keyboard hints */}
         {!isCompleted && currentItem && (
-          <div className="px-4 py-2 bg-gray-800/50 border-t border-gray-700 flex items-center justify-between text-[10px] text-gray-500">
+          <div className="px-4 py-2 bg-gray-800/50 border-t border-gray-700 flex items-center justify-between text-2xs text-gray-500">
             <div className="flex items-center gap-3">
               <span><kbd className="px-1 bg-gray-700 rounded">↑↓</kbd> Navigate</span>
               <span><kbd className="px-1 bg-gray-700 rounded">1-9</kbd> Quick select</span>
@@ -294,7 +296,7 @@ function SmartFillToggleButton({
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
       onClick={onClick}
-      className="fixed bottom-24 right-8 z-50 flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-full shadow-lg shadow-cyan-500/20 text-white font-medium text-sm hover:shadow-cyan-500/40 transition-shadow"
+      className="fixed bottom-24 right-8 z-sticky flex items-center gap-2 px-4 py-2.5 bg-linear-to-r from-brand-muted to-blue-600 rounded-full shadow-lg shadow-brand/20 text-white font-medium text-sm hover:shadow-brand/40 transition-shadow"
     >
       <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <path d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -340,10 +342,10 @@ function ItemSuggestionCard({
           <img
             src={item.image_url}
             alt={item.title || item.name}
-            className="w-16 h-16 rounded-lg object-cover"
+            className="w-16 h-16 rounded-control object-cover"
           />
         ) : (
-          <div className="w-16 h-16 rounded-lg bg-gray-700 flex items-center justify-center text-2xl">
+          <div className="w-16 h-16 rounded-control bg-gray-700 flex items-center justify-center text-2xl">
             {(item.title || item.name || "?").charAt(0)}
           </div>
         )}
@@ -360,7 +362,7 @@ function ItemSuggestionCard({
               {item.tags.slice(0, 3).map(tag => (
                 <span
                   key={tag}
-                  className="text-[10px] px-1.5 py-0.5 bg-gray-700 rounded-full text-gray-300"
+                  className="text-2xs px-1.5 py-0.5 bg-gray-700 rounded-full text-gray-300"
                 >
                   {tag}
                 </span>
@@ -398,7 +400,7 @@ function ItemSuggestionCard({
       <div className="flex gap-3 mt-4">
         <button
           onClick={onSkip}
-          className="flex-1 py-2 px-4 rounded-lg border border-gray-600 text-gray-300 hover:bg-gray-700 transition-colors text-sm"
+          className="flex-1 py-2 px-4 rounded-control border border-gray-600 text-gray-300 hover:bg-gray-700 transition-colors text-sm"
         >
           Skip for now
         </button>
@@ -407,7 +409,7 @@ function ItemSuggestionCard({
           whileTap={{ scale: 0.98 }}
           onClick={onPlace}
           disabled={selectedPosition === null}
-          className="flex-1 py-2 px-4 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 py-2 px-4 rounded-control bg-linear-to-r from-brand-muted to-blue-600 text-white font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Place at #{selectedPosition !== null ? selectedPosition + 1 : "?"}
         </motion.button>
@@ -444,22 +446,22 @@ function PositionOption({
       whileTap={{ scale: 0.95 }}
       onClick={onClick}
       className={`
-        relative p-2 rounded-lg border-2 transition-all
+        relative p-2 rounded-control border-2 transition-all
         ${isSelected
-          ? "border-cyan-400 bg-cyan-400/20 ring-2 ring-cyan-400/50"
+          ? "border-brand-hover bg-brand-hover/20 ring-2 ring-brand-hover/50"
           : getDropZoneTailwindClasses(color, prediction.confidence >= 0.7)
         }
       `}
     >
       <div className="text-center">
         <span className="text-lg font-bold">#{prediction.position + 1}</span>
-        <div className="text-[10px] opacity-70">
+        <div className="text-2xs opacity-70">
           {Math.round(prediction.confidence * 100)}%
         </div>
       </div>
 
       {/* Keyboard hint */}
-      <span className="absolute -top-1 -right-1 w-4 h-4 bg-gray-700 rounded text-[10px] flex items-center justify-center">
+      <span className="absolute -top-1 -right-1 w-4 h-4 bg-gray-700 rounded text-2xs flex items-center justify-center">
         {index + 1}
       </span>
     </motion.button>
@@ -480,13 +482,13 @@ function SelectedPositionReasoning({
     <motion.div
       initial={{ opacity: 0, height: 0 }}
       animate={{ opacity: 1, height: "auto" }}
-      className="mt-2 p-2 bg-gray-800/50 rounded-lg"
+      className="mt-2 p-2 bg-gray-800/50 rounded-control"
     >
-      <p className="text-[10px] text-gray-400 mb-1">Why this position:</p>
+      <p className="text-2xs text-gray-400 mb-1">Why this position:</p>
       <ul className="space-y-0.5">
         {prediction.reasons.slice(0, 2).map((reason, idx) => (
           <li key={idx} className="text-xs text-gray-300 flex items-start gap-1">
-            <span className="text-cyan-400 mt-0.5">•</span>
+            <span className="text-brand-hover mt-0.5">•</span>
             <span>{reason.description}</span>
           </li>
         ))}
@@ -515,8 +517,8 @@ function CompletedState({
     >
       <motion.div
         animate={{ scale: [1, 1.2, 1] }}
-        transition={{ duration: 0.5 }}
-        className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-green-500 to-cyan-500 flex items-center justify-center"
+        transition={{ duration: DURATION.slow }}
+        className="w-16 h-16 mx-auto mb-4 rounded-full bg-linear-to-r from-green-500 to-brand flex items-center justify-center"
       >
         <svg className="w-8 h-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
           <path d="M5 13l4 4L19 7" />
@@ -532,7 +534,7 @@ function CompletedState({
 
       <button
         onClick={onClose}
-        className="px-6 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-lg text-white font-medium"
+        className="px-6 py-2 bg-linear-to-r from-brand-muted to-blue-600 rounded-control text-white font-medium"
       >
         Close Smart Fill
       </button>

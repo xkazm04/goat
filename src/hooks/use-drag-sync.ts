@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useGridStore } from "@/stores/grid-store";
-import { useCompositionModalStore } from "@/stores/composition-modal-store";
 import { DragEndEvent, DragMoveEvent, DragStartEvent } from "@dnd-kit/core";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+import { useGridStore } from "@/stores/grid-store";
 
 interface DragState {
   isDragging: boolean;
@@ -45,9 +45,8 @@ export function useDragSync(options: UseDragSyncOptions = {}) {
     time: Date.now(),
   });
 
-  // Grid store actions
-  const gridStore = useGridStore();
-  const compositionStore = useCompositionModalStore();
+  // Grid store and composition store are synced via handleDragEnd callbacks,
+  // no full-store subscription needed here.
 
   /**
    * Handle drag start
@@ -207,11 +206,10 @@ export function useDragSync(options: UseDragSyncOptions = {}) {
  */
 export function useGridSync() {
   const gridItems = useGridStore((state) => state.gridItems);
-  const compositionStore = useCompositionModalStore();
 
   // Sync matched count to composition store
   useEffect(() => {
-    const matchedCount = gridItems.filter((item) => item.matched).length;
+    const matchedCount = gridItems.filter((item) => item.context.matched).length;
     const totalSlots = gridItems.length;
 
     // Could update composition store with progress if needed
@@ -219,9 +217,9 @@ export function useGridSync() {
   }, [gridItems]);
 
   return {
-    matchedCount: gridItems.filter((item) => item.matched).length,
+    matchedCount: gridItems.filter((item) => item.context.matched).length,
     totalSlots: gridItems.length,
-    isEmpty: gridItems.every((item) => !item.matched),
-    isFull: gridItems.every((item) => item.matched),
+    isEmpty: gridItems.every((item) => !item.context.matched),
+    isFull: gridItems.every((item) => item.context.matched),
   };
 }

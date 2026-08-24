@@ -7,16 +7,17 @@
 
 'use client';
 
-import { memo, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, Download, Share2 } from 'lucide-react';
+import { memo, useEffect, useState } from 'react';
+
 import {
   DURATION,
   EASING,
   celebrationPulseVariants,
   copyConfirmVariants,
-  prefersReducedMotion,
 } from '@/lib/animations/sharing';
+import { useMotionPreference } from '@/hooks/use-motion-preference';
 
 export type CelebrationVariant = 'check' | 'download' | 'share';
 
@@ -81,7 +82,10 @@ export const SuccessCelebration = memo(function SuccessCelebration({
   className = '',
 }: SuccessCelebrationProps) {
   const [isVisible, setIsVisible] = useState(false);
-  const reducedMotion = prefersReducedMotion();
+  // SSR-safe motion check (see AnimatedCounter): render-time prefersReducedMotion()
+  // diverged server (false) vs client (true), causing a hydration mismatch.
+  const { tier } = useMotionPreference();
+  const reducedMotion = tier !== 'full';
 
   const { icon: iconSize, ring: ringSize } = SIZE_CONFIG[size];
   const Icon = ICONS[variant];
@@ -94,7 +98,7 @@ export const SuccessCelebration = memo(function SuccessCelebration({
       const timer = setTimeout(() => {
         setIsVisible(false);
         onComplete?.();
-      }, DURATION.celebration * 1000 + 500);
+      }, DURATION.dramatic * 1000 + 500);
 
       return () => clearTimeout(timer);
     }
@@ -207,7 +211,7 @@ const Sparkles = memo(function Sparkles({ color, count, radius }: SparklesProps)
               y: [0, y * 1.2],
             }}
             transition={{
-              duration: DURATION.celebration,
+              duration: DURATION.dramatic,
               ease: EASING.easeOut,
               delay: 0.15 + i * 0.03,
             }}
@@ -249,7 +253,9 @@ export const DownloadProgress = memo(function DownloadProgress({
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference * (1 - progress);
 
-  const reducedMotion = prefersReducedMotion();
+  // SSR-safe motion check (avoids the render-time hydration mismatch).
+  const { tier } = useMotionPreference();
+  const reducedMotion = tier !== 'full';
 
   return (
     <div
@@ -284,7 +290,7 @@ export const DownloadProgress = memo(function DownloadProgress({
           transition={
             reducedMotion
               ? { duration: 0 }
-              : { duration: DURATION.fast, ease: EASING.easeOut }
+              : { duration: DURATION.quick, ease: EASING.easeOut }
           }
         />
       </svg>

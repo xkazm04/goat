@@ -26,6 +26,7 @@ export type LogCategory =
   | 'heatmap'   // Heatmap data operations
   | 'list'      // List CRUD operations
   | 'api'       // API client operations
+  | 'cache'     // Query cache and request coalescing
   | '*';        // Wildcard - enables all categories
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
@@ -129,6 +130,7 @@ const ALL_CATEGORIES: LogCategory[] = [
   'heatmap',
   'list',
   'api',
+  'cache',
 ];
 
 /**
@@ -139,7 +141,6 @@ function createDebugAPI(): DebugAPI {
     enable: (category: LogCategory) => {
       debugConfig.enabled = true;
       debugConfig.categories.add(category);
-      // eslint-disable-next-line no-console
       console.log(`[GOAT Debug] Enabled category: ${category}`);
     },
 
@@ -148,7 +149,6 @@ function createDebugAPI(): DebugAPI {
       if (debugConfig.categories.size === 0) {
         debugConfig.enabled = false;
       }
-      // eslint-disable-next-line no-console
       console.log(`[GOAT Debug] Disabled category: ${category}`);
     },
 
@@ -156,14 +156,12 @@ function createDebugAPI(): DebugAPI {
       debugConfig.enabled = true;
       debugConfig.categories.clear();
       debugConfig.categories.add('*');
-      // eslint-disable-next-line no-console
       console.log('[GOAT Debug] All categories enabled');
     },
 
     disableAll: () => {
       debugConfig.enabled = false;
       debugConfig.categories.clear();
-      // eslint-disable-next-line no-console
       console.log('[GOAT Debug] All logging disabled');
     },
 
@@ -173,13 +171,11 @@ function createDebugAPI(): DebugAPI {
         if (debugConfig.categories.size === 0) {
           debugConfig.enabled = false;
         }
-        // eslint-disable-next-line no-console
         console.log(`[GOAT Debug] Disabled: ${category}`);
         return false;
       } else {
         debugConfig.enabled = true;
         debugConfig.categories.add(category);
-        // eslint-disable-next-line no-console
         console.log(`[GOAT Debug] Enabled: ${category}`);
         return true;
       }
@@ -187,13 +183,11 @@ function createDebugAPI(): DebugAPI {
 
     setLevel: (level: LogLevel) => {
       debugConfig.level = level;
-      // eslint-disable-next-line no-console
       console.log(`[GOAT Debug] Log level set to: ${level}`);
     },
 
     setTimestamps: (enabled: boolean) => {
       debugConfig.timestamps = enabled;
-      // eslint-disable-next-line no-console
       console.log(`[GOAT Debug] Timestamps: ${enabled ? 'enabled' : 'disabled'}`);
     },
 
@@ -202,9 +196,7 @@ function createDebugAPI(): DebugAPI {
         ? ['* (all)']
         : Array.from(debugConfig.categories);
 
-      // eslint-disable-next-line no-console
       console.log('%c[GOAT Debug Status]', 'color: #22c55e; font-weight: bold');
-      // eslint-disable-next-line no-console
       console.table({
         enabled: debugConfig.enabled,
         level: debugConfig.level,
@@ -214,9 +206,7 @@ function createDebugAPI(): DebugAPI {
     },
 
     categories: () => {
-      // eslint-disable-next-line no-console
       console.log('%c[GOAT Debug] Available categories:', 'color: #22c55e');
-      // eslint-disable-next-line no-console
       console.log(ALL_CATEGORIES.join(', '));
       return ALL_CATEGORIES;
     },
@@ -248,12 +238,56 @@ export function initializeDebugAPI(): void {
   const api = createDebugAPI();
   window.__DEBUG_GOAT__ = api;
 
-  // eslint-disable-next-line no-console
   console.log(
     '%c[GOAT Debug] Debug API initialized. Use window.__DEBUG_GOAT__.status() for help.',
     'color: #22c55e; font-style: italic'
   );
 }
+
+// =============================================================================
+// Logger API
+// =============================================================================
+
+export interface Logger {
+  debug: (message: string, ...args: unknown[]) => void;
+  info: (message: string, ...args: unknown[]) => void;
+  warn: (message: string, ...args: unknown[]) => void;
+  error: (message: string, ...args: unknown[]) => void;
+}
+
+/**
+ * Create a category-scoped logger.
+ * Calls are no-ops when the category/level is not enabled.
+ */
+export function createLogger(category: LogCategory): Logger {
+  const log = (level: LogLevel, message: string, ...args: unknown[]) => {
+    if (!shouldLog(category, level)) return;
+    const ts = formatTimestamp();
+    const prefix = `${ts}[${category}]`;
+    const consoleFn = level === 'error' ? console.error
+      : level === 'warn' ? console.warn
+      : level === 'info' ? console.info
+      : console.debug;
+    if (args.length > 0) {
+      consoleFn(prefix, message, ...args);
+    } else {
+      consoleFn(prefix, message);
+    }
+  };
+
+  return {
+    debug: (message: string, ...args: unknown[]) => log('debug', message, ...args),
+    info: (message: string, ...args: unknown[]) => log('info', message, ...args),
+    warn: (message: string, ...args: unknown[]) => log('warn', message, ...args),
+    error: (message: string, ...args: unknown[]) => log('error', message, ...args),
+  };
+}
+
+/**
+ * Default logger instance (wildcard category).
+ * Import this for quick usage: `import { logger } from '@/lib/logger/debug-config';`
+ */
+export const logger = createLogger('*');
 
 // TypeScript declaration for window augmentation
 declare global {

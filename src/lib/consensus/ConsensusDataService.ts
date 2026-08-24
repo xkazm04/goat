@@ -7,12 +7,10 @@ import {
   ItemConsensus,
   CommunityRanking,
   ConsensusLevel,
-  ConsensusTrend,
   UserVsCommunityComparison,
   HeatmapCell,
   HeatIntensity,
   ConsensusBadge,
-  ConsensusBadgeType,
   CONSENSUS_THRESHOLDS,
   DEFAULT_HEATMAP_COLORS,
 } from './types';
@@ -198,7 +196,12 @@ export function createCommunityRanking(
   return {
     listId,
     categoryId,
-    totalRankings: items.reduce((sum, item) => sum + item.sampleSize, 0) / items.length,
+    // Guard divide-by-zero — an empty consensus (cold-start category, all
+    // rankings filtered out) otherwise yields NaN that propagates to the API
+    // response, totalUsers reduction, and UI sample-size counts.
+    totalRankings: items.length > 0
+      ? items.reduce((sum, item) => sum + item.sampleSize, 0) / items.length
+      : 0,
     items,
     overallConsensus,
     mostControversial,

@@ -1,33 +1,45 @@
 "use client";
 
+import { DndContext, DragEndEvent, DragMoveEvent, PointerSensor, TouchSensor, useSensor, useSensors, pointerWithin, type Announcements, type ScreenReaderInstructions } from "@dnd-kit/core";
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
-import { DndContext, DragEndEvent, DragMoveEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
-import { backlogGroupsToCollectionGroups } from "../../Collection";
-import { SimpleCollectionPanel } from "../sub_MatchCollections/SimpleCollectionPanel";
-import { CollectionItem } from "../../Collection/types";
-import { BacklogItem } from "@/types/backlog-groups";
-import { GridItemType } from "@/types/match";
-import { useGridStore, getGridDragRouter } from "@/stores/grid-store";
+
+import { CompletionModal } from "@/components/app/modals/completion/CompletionModal";
+import { AudioPlayer } from "@/components/AudioPlayer";
+import { AuthPrompt } from "@/components/auth";
+import { RankingProgressLayer } from "@/components/visual/RankingProgressLayer";
+import { useAuthUser } from "@/hooks/use-auth-user";
+import { createStandardRouter, type OperationStoreContext } from "@/lib/dnd";
 import { useBacklogStore } from "@/stores/backlog-store";
+import { useGridStore } from "@/stores/grid-store";
+import { BacklogItem } from "@/types/backlog-groups";
+import { backlogGroupsToItemCategories } from "../../Collection";
+import { CollectionItem } from "../../Collection/types";
+import { SimpleCollectionPanel } from "../sub_MatchCollections/SimpleCollectionPanel";
 import { useCurrentList } from "@/stores/use-list-store";
 import { useMatchStore } from "@/stores/match-store";
 import { useRankingStore } from "@/stores/ranking-store";
+
 import { LazyShareModal } from "../components/LazyModals";
-import { createStandardRouter, type OperationStoreContext } from "@/lib/dnd";
+
 
 // Import modular components
-import { ViewSwitcher, ViewMode } from "./components/ViewSwitcher";
-import { PodiumView } from "./components/PodiumView";
-import { GoatView } from "./components/GoatView";
-import { MountRushmoreView } from "./components/MountRushmoreView";
-import { BracketView } from "../sub_MatchBracket";
-import { TierListView } from "./components/TierListView";
+import { DropZoneHighlightProvider } from "./components/DropZoneHighlightContext";
+import { useDropZoneHighlightStore } from "@/stores/drop-zone-highlight-store";
+import { ViewSelector } from "./components/GridRenderer";
 import { GridSection } from "./components/GridSection";
 import { MatchGridHeader } from "./components/MatchGridHeader";
 import { PortalDragOverlay } from "./components/PortalDragOverlay";
-import { DropZoneHighlightProvider, useDropZoneHighlight } from "./components/DropZoneHighlightContext";
-import { getItemTitle } from "./lib/helpers";
-import { AudioPlayer } from "@/components/AudioPlayer";
+import { TierListView } from "./components/TierListView";
+import { ViewSwitcher, ViewMode } from "./components/ViewSwitcher";
+import { BracketView } from "../sub_MatchBracket";
+import { PositionBracketModal } from "../sub_MatchBracket/PositionBracketModal";
+import { StandaloneAnnouncer } from "./components/ScreenReaderAnnouncer";
+
+
+import { ComparisonDrawer } from "../components/ComparisonDrawer";
+import { PositionHistoryProvider } from "../components/PositionHistoryContext";
+
+import { useUndoKeyboard } from "@/hooks/use-undo-keyboard";
 
 /**
  * "Neon Arena" Match Grid
@@ -45,11 +57,19 @@ export function SimpleMatchGrid() {
  * Inner component that uses the highlight context
  */
 function SimpleMatchGridInner() {
-  // Get the highlight context for drag state synchronization
-  const { setIsDragging, setHoveredPosition } = useDropZoneHighlight();
+  // Get actions from store — stable references, no re-renders from state changes
+  const setIsDragging = useDropZoneHighlightStore((s) => s.setIsDragging);
+  const setHoveredPosition = useDropZoneHighlightStore((s) => s.setHoveredPosition);
+  const emitDragError = useDropZoneHighlightStore((s) => s.emitDragError);
+
+  // Screen reader error announcement state
+  const [dragErrorMessage, setDragErrorMessage] = useState("");
 
   // View mode state
   const [viewMode, setViewMode] = useState<ViewMode>('podium');
+
+  // Position bracket modal state
+  const [bracketForPosition, setBracketForPosition] = useState<number | null>(null);
 
   // Get current list from store (populated from API)
   const currentList = useCurrentList();
@@ -61,6 +81,7 @@ function SimpleMatchGridInner() {
   const switchList = useGridStore(state => state.switchList);
   const assignItemToGrid = useGridStore(state => state.assignItemToGrid);
   const removeItemFromGrid = useGridStore(state => state.removeItemFromGrid);
+  const clearGrid = useGridStore(state => state.clearGrid);
   const moveGridItem = useGridStore(state => state.moveGridItem);
 
   const groups = useBacklogStore(state => state.groups);
@@ -88,8 +109,57 @@ function SimpleMatchGridInner() {
   // Create the drag operation router with all operations (grid + tier)
   const dragRouter = useMemo(() => createStandardRouter({ debug: false }), []);
 
-  // Create the store context for the router
-  const getStoreContext = useCallback((): OperationStoreContext => ({
+  // dnd-kit accessibility: announce drag operations to screen readers (WCAG 2.1 4.1.3)
+  const dndAccessibility = useMemo(() => {
+    const getItemName = (active: { data: { current?: Record<string, unknown> } }) => {
+      const d = active.data.current;
+      if (d?.item) {
+        const item = d.item as { title?: string; name?: string };
+        return item.title || item.name || 'item';
+      }
+      return 'item';
+    };
+
+    const getDropTarget = (over: { id: string | number; data: { current?: Record<string, unknown> } } | null) => {
+      if (!over) return null;
+      const d = over.data.current;
+      if (d?.type === 'grid-slot') return `position ${(d.position as number) + 1}`;
+      if (d?.type === 'tier-row') return `${(d.tierName as string) || 'tier'} tier`;
+      if (d?.type === 'tier-item') return `${(d.tierName as string) || 'tier'} tier`;
+      if (d?.type === 'unranked-pool') return 'unranked pool';
+      return null;
+    };
+
+    const announcements: Announcements = {
+      onDragStart({ active }) {
+        return `Dragging ${getItemName(active)}`;
+      },
+      onDragOver({ active, over }) {
+        const target = getDropTarget(over);
+        if (target) return `Over ${target}`;
+        return undefined;
+      },
+      onDragEnd({ active, over }) {
+        const target = getDropTarget(over);
+        if (target) return `Placed ${getItemName(active)} in ${target}`;
+        return `Cancelled drag`;
+      },
+      onDragCancel() {
+        return `Cancelled drag`;
+      },
+    };
+
+    const screenReaderInstructions: ScreenReaderInstructions = {
+      draggable: 'To pick up a draggable item, press Space or Enter. Use arrow keys to move. Press Space or Enter again to drop the item, or press Escape to cancel.',
+    };
+
+    return { announcements, screenReaderInstructions };
+  }, []);
+
+  // Memoize store context so the object identity only changes when grid data
+  // actually changes. Action methods from Zustand selectors are stable refs,
+  // so only gridItems and maxGridSize are meaningful deps.
+  const storeContext = useMemo((): OperationStoreContext => ({
     grid: {
       gridItems,
       maxGridSize,
@@ -109,11 +179,20 @@ function SimpleMatchGridInner() {
       addToUnranked,
       moveWithinTier,
     },
-  }), [
-    gridItems, maxGridSize, assignItemToGrid, removeItemFromGrid, moveGridItem, emitValidationError,
-    getItemById, isItemUsed, markItemAsUsed,
-    assignToTier, moveBetweenTiers, addToUnranked, moveWithinTier,
-  ]);
+  }), [gridItems, maxGridSize, assignItemToGrid, removeItemFromGrid, moveGridItem, emitValidationError, getItemById, isItemUsed, markItemAsUsed, assignToTier, moveBetweenTiers, addToUnranked, moveWithinTier]);
+
+  // Ref keeps the latest memoized context accessible from stable callbacks
+  // without adding storeContext to their dependency arrays.
+  const storeContextRef = useRef(storeContext);
+  storeContextRef.current = storeContext;
+
+  const getStoreContext = useCallback(
+    (): OperationStoreContext => storeContextRef.current,
+    [],
+  );
+
+  // Undo/redo keyboard handler (Ctrl+Z / Ctrl+Shift+Z)
+  useUndoKeyboard({ getStoreContext });
 
   // Drag state - simple: just track active item and target position
   // The activeItem is a simplified representation for the drag overlay
@@ -121,8 +200,15 @@ function SimpleMatchGridInner() {
   const [activeType, setActiveType] = useState<'collection' | 'grid' | null>(null);
   const [targetPosition, setTargetPosition] = useState<number | null>(null);
 
+  // Auth state for post-completion prompt
+  const { isGuest } = useAuthUser();
+
   // Track if we've already shown the share modal for this session
   const hasShownShareModal = useRef(false);
+
+  // Completion modal state
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [hasUserDismissedCompletion, setHasUserDismissedCompletion] = useState(false);
 
   // Get all backlog items from groups for bracket view
   const allBacklogItems = useMemo(() => {
@@ -135,38 +221,33 @@ function SimpleMatchGridInner() {
 
     // When leaving tier list mode, sync tier state to grid
     if (previousMode === 'tierlist' && newMode !== 'tierlist') {
-      // Build items map for sync
-      const transferableMap = new Map(
-        allBacklogItems.map(item => [
-          item.id,
-          {
-            id: item.id,
-            title: item.title || item.name || 'Untitled',
-            description: item.description,
-            image_url: item.image_url,
-            tags: item.tags,
-            category: item.category,
-          },
-        ])
-      );
+      // Single-pass: build lookup map and transferable map together
+      const itemLookup = new Map<string, BacklogItem>();
+      const transferableMap = new Map<string, { id: string; title: string; description?: string; image_url?: string | null; tags?: string[]; category?: string }>();
+      for (const item of allBacklogItems) {
+        itemLookup.set(item.id, item);
+        transferableMap.set(item.id, {
+          id: item.id,
+          title: item.title || item.name || 'Untitled',
+          description: item.description,
+          image_url: item.image_url,
+          tags: item.tags,
+          category: item.category,
+        });
+      }
 
       // Sync tier state to ranking store
       syncRankingFromTiers(transferableMap);
 
-      // Apply tier items to grid in order (top-left to bottom-right)
-      // Clear grid first, then apply tier items
-      gridItems.forEach((_, index) => {
-        if (gridItems[index].matched) {
-          removeItemFromGrid(index);
-        }
-      });
+      // Clear grid atomically in a single setState (avoids N individual re-renders)
+      clearGrid();
 
-      // Apply items from tiers to grid in order
+      // Apply items from tiers to grid in order (O(1) lookups via Map)
       let gridPosition = 0;
       for (const tier of tierState.tiers) {
         for (const itemId of tier.itemIds) {
           if (gridPosition >= maxGridSize) break;
-          const item = allBacklogItems.find(i => i.id === itemId);
+          const item = itemLookup.get(itemId);
           if (item) {
             assignItemToGrid(item, gridPosition);
             markItemAsUsed(item.id, true);
@@ -191,7 +272,7 @@ function SimpleMatchGridInner() {
         setRankingDirectViewMode(newMode);
       }
     }
-  }, [viewMode, allBacklogItems, tierState.tiers, gridItems, maxGridSize, syncRankingFromTiers, removeItemFromGrid, assignItemToGrid, markItemAsUsed, setRankingActiveMode, setRankingDirectViewMode]);
+  }, [viewMode, allBacklogItems, tierState.tiers, maxGridSize, syncRankingFromTiers, clearGrid, assignItemToGrid, markItemAsUsed, setRankingActiveMode, setRankingDirectViewMode]);
 
   // Handle bracket ranking completion - apply ranked items to grid
   const handleBracketRankingComplete = useCallback((rankedItems: BacklogItem[]) => {
@@ -207,9 +288,25 @@ function SimpleMatchGridInner() {
     handleViewModeChange('podium');
   }, [assignItemToGrid, markItemAsUsed, maxGridSize, handleViewModeChange]);
 
+  // Unused backlog items (for position bracket)
+  const unusedBacklogItems = useMemo(() => {
+    const usedIds = new Set(
+      gridItems.filter(i => i.context?.matched && i.item?.id).map(i => i.item!.id)
+    );
+    return allBacklogItems.filter(item => !usedIds.has(item.id));
+  }, [allBacklogItems, gridItems]);
+
+  // Handle position bracket winner
+  const handlePositionBracketWinner = useCallback((winner: BacklogItem, position: number) => {
+    assignItemToGrid(winner, position);
+    markItemAsUsed(winner.id, true);
+    useRankingStore.getState().resetPositionBracket();
+    setBracketForPosition(null);
+  }, [assignItemToGrid, markItemAsUsed]);
+
   // Calculate completion status
   const filledPositions = useMemo(() => {
-    return gridItems.filter(item => item.matched).length;
+    return gridItems.filter(item => item.context?.matched).length;
   }, [gridItems]);
 
   const isComplete = useMemo(() => {
@@ -217,22 +314,34 @@ function SimpleMatchGridInner() {
     return filledPositions >= targetSize && targetSize > 0;
   }, [filledPositions, currentList?.size, maxGridSize]);
 
-  // Show share modal when ranking is complete
+  // Show completion modal when ranking is complete
   useEffect(() => {
-    if (isComplete && !hasShownShareModal.current) {
+    if (isComplete && !hasUserDismissedCompletion && !hasShownShareModal.current) {
       // Small delay to let the last drop animation complete
       const timer = setTimeout(() => {
         hasShownShareModal.current = true;
-        setShowResultShareModal(true);
+        setShowCompletionModal(true);
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [isComplete, setShowResultShareModal]);
+  }, [isComplete, hasUserDismissedCompletion]);
 
-  // Reset the share modal flag when list changes
+  // Reset completion modal flag when list changes
   useEffect(() => {
     hasShownShareModal.current = false;
+    setHasUserDismissedCompletion(false);
+    setShowCompletionModal(false);
   }, [currentList?.id]);
+
+  // Keep editing handler - dismisses modal and prevents re-show
+  const handleKeepEditing = useCallback(() => {
+    setShowCompletionModal(false);
+    setHasUserDismissedCompletion(true);
+  }, []);
+
+  const handleCloseCompletionModal = useCallback(() => {
+    setShowCompletionModal(false);
+  }, []);
 
   // Switch grid store to new list when list changes
   useEffect(() => {
@@ -252,11 +361,17 @@ function SimpleMatchGridInner() {
     }
   }, [currentList?.size, maxGridSize, initializeRanking]);
 
-  // Simple pointer sensor with minimal activation delay
+  // Pointer sensor for desktop, touch sensor with long-press delay for mobile reorder
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
         distance: 2, // Low threshold for responsive drag initiation
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 350, // Long-press to pick up (iOS home screen UX)
+        tolerance: 5, // Allow slight finger movement during hold
       },
     })
   );
@@ -323,6 +438,10 @@ function SimpleMatchGridInner() {
    * The router handles all drag scenarios: grid slots, tier rows, unranked pool
    */
   const handleDragEnd = useCallback((event: DragEndEvent) => {
+    // Capture target position before clearing state
+    const overData = event.over?.data?.current;
+    const errorPosition = overData?.type === 'grid-slot' ? (overData.position as number) : null;
+
     // Clear drag state first
     setActiveItem(null);
     setActiveType(null);
@@ -337,30 +456,65 @@ function SimpleMatchGridInner() {
     const storeContext = getStoreContext();
     const result = dragRouter.handleDragEnd(event, storeContext);
 
-  }, [dragRouter, getStoreContext, setIsDragging, setHoveredPosition]);
+    // Emit error feedback for failed operations
+    if (!result.success && result.operationType !== 'noop') {
+      const errorMsg = result.errorMessage || 'Drop not allowed here';
+      emitDragError(errorPosition, errorMsg);
+      setDragErrorMessage(errorMsg);
+    }
+
+  }, [dragRouter, getStoreContext, setIsDragging, setHoveredPosition, emitDragError]);
 
   const handleRemove = useCallback((position: number) => {
-    const item = gridItems[position];
+    const item = useGridStore.getState().gridItems[position];
 
-    if (item && item.backlogItemId) {
+    if (item && item.item?.id) {
       removeItemFromGrid(position);
-      markItemAsUsed(item.backlogItemId, false);
+      markItemAsUsed(item.item.id, false);
     }
-  }, [gridItems, removeItemFromGrid, markItemAsUsed]);
+  }, [removeItemFromGrid, markItemAsUsed]);
+
+  // Click-to-place: selected backlog item state (shared for desktop + mobile)
+  const mobileSelectedItem = useGridStore(state => state.mobileSelectedItem);
+  const setMobileSelectedItem = useGridStore(state => state.setMobileSelectedItem);
+
+  const handleCollectionItemClick = useCallback((item: CollectionItem) => {
+    if (mobileSelectedItem?.id === item.id) {
+      // Deselect if clicking the same item
+      setMobileSelectedItem(null);
+    } else {
+      setMobileSelectedItem({
+        id: item.id,
+        title: item.title,
+        image_url: item.image_url ?? undefined,
+      });
+    }
+  }, [mobileSelectedItem, setMobileSelectedItem]);
 
   return (
     <>
+      {/* Screen reader announcement for drag errors */}
+      <StandaloneAnnouncer message={dragErrorMessage} priority="assertive" clearAfter={1000} />
+
       <DndContext
         sensors={sensors}
+        collisionDetection={pointerWithin}
         onDragStart={handleDragStart}
         onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
+        accessibility={dndAccessibility}
       >
-        <div className="min-h-screen bg-[#050505] pb-[420px] relative" data-testid="match-grid-container">
+        <PositionHistoryProvider listId={currentList?.id ?? null} gridItems={gridItems}>
+        <RankingProgressLayer>
+        <div
+          className="min-h-screen bg-[#050505] relative"
+          style={{ paddingBottom: 'var(--collection-panel-height, 420px)' }}
+          data-testid="match-grid-container"
+        >
 
           {/* Animated Background - contained with overflow-hidden */}
           <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-cyan-900/20 via-[#050505] to-[#050505]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,var(--tw-gradient-stops))] from-brand-muted/20 via-[#050505] to-[#050505]" />
             <div className="absolute inset-0 opacity-[0.03]"
               style={{
                 backgroundImage: 'linear-gradient(0deg, transparent 24%, #22d3ee 25%, #22d3ee 26%, transparent 27%, transparent 74%, #22d3ee 75%, #22d3ee 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, #22d3ee 25%, #22d3ee 26%, transparent 27%, transparent 74%, #22d3ee 75%, #22d3ee 76%, transparent 77%, transparent)',
@@ -387,30 +541,13 @@ function SimpleMatchGridInner() {
           {/* Grid Area */}
           <div className="max-w-7xl mx-auto px-8 relative z-10">
 
-            {/* Render the appropriate view */}
-            {viewMode === 'podium' && (
-              <PodiumView
-                gridItems={gridItems}
-                onRemove={handleRemove}
-                getItemTitle={getItemTitle}
-              />
-            )}
-
-            {viewMode === 'goat' && (
-              <GoatView
-                gridItems={gridItems}
-                onRemove={handleRemove}
-                getItemTitle={getItemTitle}
-              />
-            )}
-
-            {viewMode === 'rushmore' && (
-              <MountRushmoreView
-                gridItems={gridItems}
-                onRemove={handleRemove}
-                getItemTitle={getItemTitle}
-              />
-            )}
+            {/* Render the appropriate view (lazy-loaded via GridRenderer) */}
+            <ViewSelector
+              viewMode={viewMode}
+              gridItems={gridItems}
+              onRemove={handleRemove}
+              onFillViaBracket={setBracketForPosition}
+            />
 
             {viewMode === 'bracket' && (
               <BracketView
@@ -435,32 +572,72 @@ function SimpleMatchGridInner() {
             {/* Unified Grid - hidden in bracket and tierlist mode */}
             {viewMode !== 'bracket' && viewMode !== 'tierlist' && (
               <GridSection
-                gridItems={gridItems}
                 startPosition={viewMode === 'rushmore' ? 4 : 3}
                 endPosition={gridItems.length}
                 columns={10}
                 gap={3}
                 onRemove={handleRemove}
-                getItemTitle={getItemTitle}
               />
             )}
           </div>
         </div>
+        </RankingProgressLayer>
+        </PositionHistoryProvider>
 
         {/* Collection Panel - Fixed at bottom, OUTSIDE scrollable container (hidden in bracket mode only) */}
         {viewMode !== 'bracket' && (
-          <SimpleCollectionPanel groups={backlogGroupsToCollectionGroups(groups)} />
+          <SimpleCollectionPanel
+            groups={backlogGroupsToItemCategories(groups)}
+            onItemClick={handleCollectionItemClick}
+            selectedItemId={mobileSelectedItem?.id}
+          />
         )}
 
         {/* Portal-based Drag Overlay - bypasses all CSS clipping/scroll issues */}
         <PortalDragOverlay item={activeItem} targetPosition={targetPosition} />
       </DndContext>
 
+      {/* Position Bracket Modal - fills a single grid position via tournament */}
+      {bracketForPosition !== null && unusedBacklogItems.length >= 2 && (
+        <PositionBracketModal
+          targetPosition={bracketForPosition}
+          availableItems={unusedBacklogItems}
+          onWinnerSelected={handlePositionBracketWinner}
+          onClose={() => {
+            useRankingStore.getState().resetPositionBracket();
+            setBracketForPosition(null);
+          }}
+        />
+      )}
+
+      {/* Completion Modal - auto-shown when all grid positions are filled */}
+      <CompletionModal
+        isOpen={showCompletionModal}
+        onClose={handleCloseCompletionModal}
+        onKeepEditing={handleKeepEditing}
+        listTitle={currentList?.title || "My Ranking"}
+        completionData={{
+          totalItems: filledPositions,
+          timeTaken: "",
+          category: currentList?.category || "",
+        }}
+      />
+
+      {/* Post-completion auth prompt for guests */}
+      {isComplete && isGuest && !showCompletionModal && (
+        <div className="fixed bottom-[440px] left-1/2 -translate-x-1/2 z-sticky w-full max-w-lg px-4">
+          <AuthPrompt />
+        </div>
+      )}
+
       {/* Share Modal - shown when ranking is complete (lazy loaded) */}
       <LazyShareModal />
 
       {/* Audio Player for Music category */}
       <AudioPlayer />
+
+      {/* Floating comparison drawer */}
+      <ComparisonDrawer />
     </>
   );
 }

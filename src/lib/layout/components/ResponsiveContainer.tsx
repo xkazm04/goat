@@ -5,11 +5,14 @@
  * Breakpoint-aware wrapper component with CSS container queries
  */
 
-import React, { useRef, useEffect, useState, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import React, { useRef, useEffect, useState, type ReactNode } from 'react';
+
 import { cn } from '@/lib/utils';
+
+import { BREAKPOINTS, LAYOUT_ANIMATIONS, getContainerBreakpoint } from '../constants';
 import { useLayout } from '../LayoutManager';
-import { BREAKPOINTS, LAYOUT_ANIMATIONS, LAYOUT_CSS_VARS } from '../constants';
+
 import type { Breakpoint } from '../types';
 
 /**
@@ -48,35 +51,34 @@ export function ResponsiveContainer({
   const [containerBreakpoint, setContainerBreakpoint] =
     useState<Breakpoint>(breakpoint);
 
+  // Read the latest breakpoint / callback through refs so the observer is created
+  // ONCE. Previously containerBreakpoint and onBreakpointChange were effect deps,
+  // so every breakpoint crossing (or an inline onBreakpointChange) disconnected
+  // and re-subscribed the observer, dropping resize events in the gap.
+  const containerBreakpointRef = useRef(containerBreakpoint);
+  containerBreakpointRef.current = containerBreakpoint;
+  const onBreakpointChangeRef = useRef(onBreakpointChange);
+  onBreakpointChangeRef.current = onBreakpointChange;
+
   // Track container-level breakpoints with ResizeObserver
   useEffect(() => {
     if (!useContainerQueries || !containerRef.current) return;
 
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        const width = entry.contentRect.width;
-        let newBreakpoint: Breakpoint = 'desktop';
+        // Use centralized container breakpoints from layout/constants.ts
+        const newBreakpoint = getContainerBreakpoint(entry.contentRect.width);
 
-        if (width < 400) {
-          newBreakpoint = 'mobile';
-        } else if (width < 700) {
-          newBreakpoint = 'tablet';
-        } else if (width < 1200) {
-          newBreakpoint = 'desktop';
-        } else {
-          newBreakpoint = 'ultrawide';
-        }
-
-        if (newBreakpoint !== containerBreakpoint) {
+        if (newBreakpoint !== containerBreakpointRef.current) {
           setContainerBreakpoint(newBreakpoint);
-          onBreakpointChange?.(newBreakpoint);
+          onBreakpointChangeRef.current?.(newBreakpoint);
         }
       }
     });
 
     observer.observe(containerRef.current);
     return () => observer.disconnect();
-  }, [useContainerQueries, containerBreakpoint, onBreakpointChange]);
+  }, [useContainerQueries]);
 
   // Determine which content to render
   const getContent = (): ReactNode => {
@@ -111,8 +113,11 @@ export function ResponsiveContainer({
 
   // CSS custom properties for container
   const containerStyle = {
-    '--container-width': dimensions.contentWidth,
-    '--container-height': dimensions.contentHeight,
+    // Length custom properties need explicit units — React does NOT px-suffix
+    // custom props, so a bare number is an invalid length declaration and any
+    // `var(--container-width)` consumer resolves to 0/invalid.
+    '--container-width': `${dimensions.contentWidth}px`,
+    '--container-height': `${dimensions.contentHeight}px`,
     '--grid-columns': BREAKPOINTS[breakpoint].columns,
     minHeight:
       typeof minHeight === 'number' ? `${minHeight}px` : minHeight,

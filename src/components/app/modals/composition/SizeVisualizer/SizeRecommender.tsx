@@ -1,8 +1,9 @@
 "use client";
 
-import { memo, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Sparkles, TrendingUp, Target, Award } from "lucide-react";
+import { Sparkles, Target, Award } from "lucide-react";
+import { memo, useMemo } from "react";
+
 import { ListSize, SizeRecommendation, SIZE_OPTIONS } from "./types";
 
 interface SizeRecommenderProps {
@@ -199,7 +200,7 @@ export const SizeRecommender = memo(function SizeRecommender({
   if (compact) {
     return (
       <motion.button
-        className="flex items-center gap-1.5 px-2 py-1 rounded-full cursor-pointer"
+        className="flex items-center gap-1.5 px-2 py-1 rounded-badge cursor-pointer"
         style={{
           background: `${color.accent}20`,
           border: `1px solid ${color.accent}40`,
@@ -218,7 +219,7 @@ export const SizeRecommender = memo(function SizeRecommender({
 
   return (
     <motion.div
-      className="rounded-xl overflow-hidden"
+      className="rounded-card overflow-hidden"
       style={{
         background: "rgba(15, 23, 42, 0.5)",
         border: `1px solid ${color.accent}30`,
@@ -246,7 +247,7 @@ export const SizeRecommender = memo(function SizeRecommender({
       {/* Main recommendation */}
       <div className="p-4">
         <motion.button
-          className="w-full p-4 rounded-xl cursor-pointer relative overflow-hidden group"
+          className="w-full p-4 rounded-card cursor-pointer relative overflow-hidden group"
           style={{
             background: `linear-gradient(135deg, ${color.primary}30, ${color.secondary}20)`,
             border: `2px solid ${color.accent}60`,
@@ -299,7 +300,7 @@ export const SizeRecommender = memo(function SizeRecommender({
 
           {/* Use button */}
           <div
-            className="mt-3 py-2 rounded-lg text-center text-sm font-medium"
+            className="mt-3 py-2 rounded-control text-center text-sm font-medium"
             style={{
               background: `${color.accent}30`,
               color: color.accent,
@@ -319,7 +320,7 @@ export const SizeRecommender = memo(function SizeRecommender({
               {recommendation.alternatives.map((alt) => (
                 <motion.button
                   key={alt.size}
-                  className="flex-1 p-3 rounded-lg cursor-pointer"
+                  className="flex-1 p-3 rounded-card cursor-pointer"
                   style={{
                     background: "rgba(51, 65, 85, 0.4)",
                     border: "1px solid rgba(71, 85, 105, 0.3)",
@@ -360,7 +361,7 @@ export const SizeRecommender = memo(function SizeRecommender({
               {sizeOption.recommendedFor.slice(0, 2).map((rec, i) => (
                 <span
                   key={i}
-                  className="px-2 py-0.5 rounded-full"
+                  className="px-2 py-0.5 rounded-badge"
                   style={{
                     background: `${color.primary}20`,
                     color: color.accent,
@@ -398,7 +399,7 @@ export const RecommendationBadge = memo(function RecommendationBadge({
 
   return (
     <motion.div
-      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px]"
+      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-badge text-2xs"
       style={{
         background: `${color.accent}20`,
         border: `1px solid ${color.accent}40`,

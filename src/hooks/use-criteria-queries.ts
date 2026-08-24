@@ -12,7 +12,7 @@ import {
   UseQueryOptions,
   UseMutationOptions,
 } from '@tanstack/react-query';
-import { criteriaKeys } from '@/lib/query-keys/criteria';
+
 import {
   fetchListCriteria,
   saveListCriteria,
@@ -21,13 +21,16 @@ import {
   saveItemScores,
   batchSaveItemScores,
 } from '@/lib/api/criteria';
+import { CACHE_TTL_MS, GC_TIME_MS, getRetryConfig } from '@/lib/cache/unified-cache';
+import { emitErrorNotification } from '@/lib/errors/error-notification-store';
+import { criteriaKeys } from '@/lib/query-keys/criteria';
+
 import type {
   ListCriteriaConfig,
   ListItemCriteriaScores,
   CriterionScore,
   ItemCriteriaScores,
 } from '@/lib/criteria/types';
-import { CACHE_TTL_MS, GC_TIME_MS } from '@/lib/cache/unified-cache';
 
 // =============================================================================
 // Types
@@ -123,8 +126,7 @@ export function useCriteriaConfig(
     enabled: !!listId,
     staleTime: CRITERIA_CACHE.config.staleTime,
     gcTime: CRITERIA_CACHE.config.gcTime,
-    retry: 2,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
+    ...getRetryConfig('fast'),
     ...options,
   });
 }
@@ -145,8 +147,7 @@ export function useListItemScores(
     enabled: !!listId,
     staleTime: CRITERIA_CACHE.scores.staleTime,
     gcTime: CRITERIA_CACHE.scores.gcTime,
-    retry: 2,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
+    ...getRetryConfig('fast'),
     ...options,
   });
 }
@@ -168,7 +169,7 @@ export function useItemScores(
     enabled: !!listId && !!itemId,
     staleTime: CRITERIA_CACHE.itemScore.staleTime,
     gcTime: CRITERIA_CACHE.itemScore.gcTime,
-    retry: 2,
+    ...getRetryConfig('fast'),
     ...options,
   });
 }
@@ -203,8 +204,7 @@ export function useSaveCriteriaConfig(
         queryKey: criteriaKeys.config(),
       });
     },
-    retry: 2,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
+    ...getRetryConfig('fast'),
     ...options,
   });
 }
@@ -292,7 +292,7 @@ export function useSaveItemScores(
       return { previousScores, previousItemScore };
     },
 
-    onError: (_error, variables, context) => {
+    onError: (error, variables, context) => {
       // Rollback on error
       if (context?.previousScores) {
         queryClient.setQueryData(
@@ -306,6 +306,9 @@ export function useSaveItemScores(
           context.previousItemScore
         );
       }
+
+      // Show error notification on rollback
+      emitErrorNotification(error, { source: 'criteria-score-save' });
     },
 
     onSettled: (_data, _error, variables) => {
@@ -315,8 +318,7 @@ export function useSaveItemScores(
       });
     },
 
-    retry: 2,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
+    ...getRetryConfig('fast'),
     ...options,
   });
 }
@@ -377,7 +379,7 @@ export function useBatchSaveItemScores(
       return { previousScores };
     },
 
-    onError: (_error, variables, context) => {
+    onError: (error, variables, context) => {
       // Rollback on error
       if (context?.previousScores) {
         queryClient.setQueryData(
@@ -385,6 +387,9 @@ export function useBatchSaveItemScores(
           context.previousScores
         );
       }
+
+      // Show error notification on rollback
+      emitErrorNotification(error, { source: 'criteria-batch-save' });
     },
 
     onSettled: (_data, _error, variables) => {
@@ -394,7 +399,7 @@ export function useBatchSaveItemScores(
       });
     },
 
-    retry: 1, // Fewer retries for batch operations
+    ...getRetryConfig('batch'),
     ...options,
   });
 }

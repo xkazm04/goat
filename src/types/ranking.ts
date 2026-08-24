@@ -5,9 +5,14 @@
  * across all ranking modes (Podium, Goat, Rushmore, Bracket, Tier List).
  */
 
-import type { TransferableItem } from '@/lib/dnd/transfer-protocol';
-import type { BracketState, BracketSize } from '@/app/features/Match/lib/bracketGenerator';
-import type { SeedingStrategy } from '@/app/features/Match/lib/seedingEngine';
+import { getTierForPositionGeneric, rangeFromInclusiveBoundary } from '@/lib/tiers/boundary';
+
+import type { BracketState, BracketSize } from '@/app/features/Match/sub_MatchBracket/lib/bracketGenerator';
+import type { SeedingStrategy } from '@/app/features/Match/sub_MatchBracket/lib/seedingEngine';
+import type { BaseItem, PlacedItem } from '@/types/placed-item';
+
+// Re-export for convenience
+export type { BaseItem, PlacedItem, PlacedItemSource, PlacedItemContext } from '@/types/placed-item';
 
 // ============================================================================
 // Core Ranking Types
@@ -24,33 +29,17 @@ export type RankingMode = 'direct' | 'bracket' | 'tierlist';
 export type DirectViewMode = 'podium' | 'goat' | 'rushmore';
 
 /**
- * A single ranked item in the ranking
+ * RankedItem is now a type alias for PlacedItem.
+ *
+ * Previously had its own shape with itemId, item, metadata fields.
+ * Now uses the unified PlacedItem envelope.
+ *
+ * Migration guide:
+ *   Old: rankedItem.itemId     → rankedItem.item?.id ?? null
+ *   Old: rankedItem.item       → rankedItem.item (same — now BaseItem | null)
+ *   Old: rankedItem.metadata   → rankedItem.context.metadata
  */
-export interface RankedItem {
-  /** Unique ID for this ranking slot (e.g., "rank-0", "rank-1") */
-  id: string;
-
-  /** 0-based position in the ranking */
-  position: number;
-
-  /** Reference to the backlog item ID (null = empty slot) */
-  itemId: string | null;
-
-  /** Denormalized item data for display (null = empty slot) */
-  item: TransferableItem | null;
-
-  /** Metadata about how this ranking was assigned */
-  metadata?: {
-    /** When this item was assigned */
-    assignedAt: number;
-
-    /** Which mode assigned this item */
-    assignedBy: RankingMode;
-
-    /** Optional notes */
-    notes?: string;
-  };
-}
+export type RankedItem = PlacedItem;
 
 // ============================================================================
 // Bracket Types
@@ -76,6 +65,28 @@ export interface RankingBracketState extends BracketState {
 
   /** Snapshot of item IDs at time of application (for comparison) */
   rankingSnapshot: string[] | null;
+}
+
+// ============================================================================
+// Position Bracket Types (bracket-to-fill-a-single-position)
+// ============================================================================
+
+/**
+ * Ephemeral session for a bracket tournament scoped to filling one grid position.
+ * The winner is applied to the target position; losers return to the backlog.
+ */
+export interface PositionBracketSession {
+  /** 0-based grid position this bracket is filling */
+  targetPosition: number;
+
+  /** The active bracket tree */
+  bracketState: RankingBracketState;
+
+  /** Bracket configuration (size + seeding) */
+  bracketConfig: BracketConfig;
+
+  /** Undo stack for this session */
+  undoStack: Array<{ bracketState: RankingBracketState; matchupId: string }>;
 }
 
 // ============================================================================
@@ -266,6 +277,12 @@ export interface RankingStoreState {
   /** Bracket configuration */
   bracketConfig: BracketConfig | null;
 
+  /** Undo stack for bracket matchup votes */
+  bracketUndoStack: Array<{ bracketState: RankingBracketState; matchupId: string }>;
+
+  /** Maximum undo entries kept in memory (prevents bloat in long tournaments) */
+  bracketUndoMaxDepth: number;
+
   // === Tier State ===
 
   /** Current tier state */
@@ -318,8 +335,11 @@ export function createEmptyRankedItem(position: number): RankedItem {
   return {
     id: `rank-${position}`,
     position,
-    itemId: null,
     item: null,
+    context: {
+      source: 'grid',
+      matched: false,
+    },
   };
 }
 
@@ -328,17 +348,20 @@ export function createEmptyRankedItem(position: number): RankedItem {
  */
 export function createRankedItem(
   position: number,
-  item: TransferableItem,
+  item: BaseItem,
   assignedBy: RankingMode = 'direct'
 ): RankedItem {
   return {
     id: `rank-${position}`,
     position,
-    itemId: item.id,
     item,
-    metadata: {
-      assignedAt: Date.now(),
-      assignedBy,
+    context: {
+      source: 'grid',
+      matched: true,
+      metadata: {
+        assignedAt: Date.now(),
+        assignedBy,
+      },
     },
   };
 }
@@ -488,16 +511,18 @@ export function computeTierBoundaries(
 }
 
 /**
- * Get the tier ID for a given position
+ * Get the tier ID for a given position.
+ * Note: TierBoundary in this file uses INCLUSIVE endPosition.
+ * Delegates to the canonical boundary lookup after converting to exclusive-end.
  */
 export function getTierForPosition(
   position: number,
   boundaries: TierBoundaries
 ): string | null {
-  for (const boundary of boundaries.boundaries) {
-    if (position >= boundary.startPosition && position <= boundary.endPosition) {
-      return boundary.tierId;
-    }
-  }
-  return null;
+  const result = getTierForPositionGeneric(
+    position,
+    boundaries.boundaries,
+    rangeFromInclusiveBoundary,
+  );
+  return result?.tierId ?? null;
 }

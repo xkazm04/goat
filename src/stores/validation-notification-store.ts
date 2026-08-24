@@ -15,14 +15,12 @@
  */
 
 import { create } from 'zustand';
+
 import { validationLogger } from '@/lib/logger';
 import {
   ValidationErrorCode,
   getValidationNotification,
 } from '@/lib/validation';
-
-// Re-export for backwards compatibility
-export type { ValidationErrorCode as TransferValidationErrorCode } from '@/lib/validation';
 
 // ============================================================================
 // Types

@@ -6,10 +6,12 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleGenAI } from '@google/genai';
 import { z } from 'zod';
+
+import { rateLimit, getRateLimitKey } from '@/lib/api/rate-limiter';
+import { handleStudioError, StudioErrorCodes } from '@/lib/api/studio-utils';
 import { fetchWikipediaImage } from '@/lib/api/wiki-images';
-import type { StudioApiError } from '@/types/studio';
+import { getGeminiClient, GEMINI_MODEL_PRIMARY } from '@/lib/providers/gemini-client';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
@@ -20,32 +22,34 @@ const findImageRequestSchema = z.object({
   context: z.string().max(500).optional(),
 });
 
-// Lazy singleton for Gemini client
-let aiClient: GoogleGenAI | null = null;
-
-function getClient(): GoogleGenAI {
-  if (!aiClient) {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      throw new Error('GEMINI_API_KEY not configured');
-    }
-    aiClient = new GoogleGenAI({ apiKey });
-  }
-  return aiClient;
-}
-
 export async function POST(request: NextRequest) {
+  // Rate limit: 30 requests per minute per IP
+  const limited = rateLimit(getRateLimitKey(request, 'studio-find-image'), 30, 60_000);
+  if (limited) return limited;
+
+  const requestStart = performance.now();
+
   try {
     const body = await request.json();
     const { title, context } = findImageRequestSchema.parse(body);
 
     // Strategy 1: Direct Wikipedia lookup
+    const s1Start = performance.now();
     let wikiImage = await fetchWikipediaImage(title);
+    const s1Ms = Math.round(performance.now() - s1Start);
     if (wikiImage?.url) {
+      console.log('[Find Image] find_image_complete', JSON.stringify({
+        operation: 'find_image',
+        title,
+        source: 'wikipedia_direct',
+        resolved: true,
+        duration_ms: Math.round(performance.now() - requestStart),
+        strategy_timing: { direct_wiki_ms: s1Ms },
+      }));
       return NextResponse.json({ image_url: wikiImage.url, source: 'wikipedia_direct' });
     }
 
-    const ai = getClient();
+    const ai = getGeminiClient();
 
     // Strategy 2: Use Gemini to find the correct Wikipedia article title
     const wikiPrompt = `Find the exact Wikipedia article title for: "${title}"${context ? ` (context: ${context})` : ''}.
@@ -63,18 +67,29 @@ Common patterns:
 
 Return ONLY the title, nothing else. If truly unfindable, return the original: "${title}"`;
 
+    const s2Start = performance.now();
     const wikiResponse = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: GEMINI_MODEL_PRIMARY,
       contents: wikiPrompt,
       config: {
         tools: [{ googleSearch: {} }],
       },
     });
+    const s2GeminiMs = Math.round(performance.now() - s2Start);
 
     const suggestedTitle = wikiResponse.text?.trim();
     if (suggestedTitle && suggestedTitle !== title) {
       wikiImage = await fetchWikipediaImage(suggestedTitle);
       if (wikiImage?.url) {
+        const s2Ms = Math.round(performance.now() - s2Start);
+        console.log('[Find Image] find_image_complete', JSON.stringify({
+          operation: 'find_image',
+          title,
+          source: 'wikipedia_ai',
+          resolved: true,
+          duration_ms: Math.round(performance.now() - requestStart),
+          strategy_timing: { direct_wiki_ms: s1Ms, gemini_wiki_lookup_ms: s2GeminiMs, strategy2_total_ms: s2Ms },
+        }));
         return NextResponse.json({
           image_url: wikiImage.url,
           suggested_title: suggestedTitle,
@@ -84,11 +99,21 @@ Return ONLY the title, nothing else. If truly unfindable, return the original: "
     }
 
     // Strategy 3: Try variations of the title
+    const s3Start = performance.now();
     const variations = generateTitleVariations(title);
     for (const variation of variations) {
       if (variation !== title && variation !== suggestedTitle) {
         wikiImage = await fetchWikipediaImage(variation);
         if (wikiImage?.url) {
+          const s3Ms = Math.round(performance.now() - s3Start);
+          console.log('[Find Image] find_image_complete', JSON.stringify({
+            operation: 'find_image',
+            title,
+            source: 'wikipedia_variation',
+            resolved: true,
+            duration_ms: Math.round(performance.now() - requestStart),
+            strategy_timing: { direct_wiki_ms: s1Ms, gemini_wiki_lookup_ms: s2GeminiMs, variations_ms: s3Ms },
+          }));
           return NextResponse.json({
             image_url: wikiImage.url,
             suggested_title: variation,
@@ -97,6 +122,7 @@ Return ONLY the title, nothing else. If truly unfindable, return the original: "
         }
       }
     }
+    const s3Ms = Math.round(performance.now() - s3Start);
 
     // Strategy 4: Ask Gemini to find a direct image URL from reliable sources
     const imagePrompt = `Find a high-quality image URL for: "${title}"${context ? ` (${context})` : ''}.
@@ -112,49 +138,47 @@ If no reliable image found, return: null
 
 Return ONLY the URL or null, nothing else.`;
 
+    const s4Start = performance.now();
     const imageResponse = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: GEMINI_MODEL_PRIMARY,
       contents: imagePrompt,
       config: {
         tools: [{ googleSearch: {} }],
       },
     });
+    const s4Ms = Math.round(performance.now() - s4Start);
 
     const imageUrl = imageResponse.text?.trim();
     if (imageUrl && imageUrl !== 'null' && isValidImageUrl(imageUrl)) {
+      console.log('[Find Image] find_image_complete', JSON.stringify({
+        operation: 'find_image',
+        title,
+        source: 'gemini_search',
+        resolved: true,
+        duration_ms: Math.round(performance.now() - requestStart),
+        strategy_timing: { direct_wiki_ms: s1Ms, gemini_wiki_lookup_ms: s2GeminiMs, variations_ms: s3Ms, gemini_image_search_ms: s4Ms },
+      }));
       return NextResponse.json({
         image_url: imageUrl,
         source: 'gemini_search'
       });
     }
 
+    console.log('[Find Image] find_image_complete', JSON.stringify({
+      operation: 'find_image',
+      title,
+      source: 'none',
+      resolved: false,
+      duration_ms: Math.round(performance.now() - requestStart),
+      strategy_timing: { direct_wiki_ms: s1Ms, gemini_wiki_lookup_ms: s2GeminiMs, variations_ms: s3Ms, gemini_image_search_ms: s4Ms },
+    }));
+
     return NextResponse.json({
       image_url: null,
       suggested_title: suggestedTitle || null,
     });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      const errorResponse: StudioApiError = {
-        error: 'Invalid request',
-        details: error.errors,
-      };
-      return NextResponse.json(errorResponse, { status: 400 });
-    }
-
-    if (error instanceof Error && error.message === 'GEMINI_API_KEY not configured') {
-      const errorResponse: StudioApiError = {
-        error: 'GEMINI_API_KEY not configured',
-        code: 'CONFIG_ERROR',
-      };
-      return NextResponse.json(errorResponse, { status: 500 });
-    }
-
-    console.error('Find image error:', error);
-    const errorResponse: StudioApiError = {
-      error: error instanceof Error ? error.message : 'Image search failed',
-      code: 'IMAGE_SEARCH_ERROR',
-    };
-    return NextResponse.json(errorResponse, { status: 500 });
+    return handleStudioError(error, 'Find image error', StudioErrorCodes.IMAGE_SEARCH_ERROR);
   }
 }
 

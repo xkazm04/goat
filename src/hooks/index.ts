@@ -43,6 +43,17 @@ export {
 } from './useSupabaseMutation';
 
 /**
+ * Optimistic Mutation Hook
+ * Wraps TanStack Query mutations with automatic cache snapshot, optimistic
+ * updates, rollback on failure, and ErrorNotificationToast on error
+ */
+export {
+  useOptimisticMutation,
+  type OptimisticUpdate,
+  type UseOptimisticMutationOptions,
+} from './useOptimisticMutation';
+
+/**
  * Supabase Authentication Hook
  * Manages authentication state using Supabase's built-in auth methods
  */
@@ -90,6 +101,7 @@ export {
   useUserLists,
   usePredefinedLists,
   useListAnalytics,
+  useCreatorAnalytics,
   useVersionComparison,
   useCreateListWithUser,
   useCreateList,
@@ -144,6 +156,19 @@ export {
 } from './use-backlog-selectors';
 
 /**
+ * Selection Hook
+ * Single source of truth for item selection state.
+ * Re-exports from the authoritative SelectionCursor store.
+ */
+export {
+  useSelectionCursor,
+  useSelectedItemId,
+  useIsItemSelected,
+  type SelectionSource,
+  type SelectionCursor,
+} from '../stores/selection-cursor';
+
+/**
  * Toast Notifications Hook
  * Provides toast notification functionality
  */
@@ -164,17 +189,16 @@ export {
 } from './use-consensus';
 
 // ========================================
-// Authentication Hooks (Legacy/Clerk)
+// Authentication Hooks
 // ========================================
 
 /**
- * Clerk User Hook
- * Manages Clerk authentication state
- * NOTE: Being migrated to useSupabaseAuth
+ * Unified Auth Hook
+ * Provides userId for both guests and authenticated users via Supabase Auth
  */
 export {
-  useClerkUser,
-} from './use-clerk-user';
+  useAuthUser,
+} from './use-auth-user';
 
 /**
  * Temporary User Hook
@@ -209,26 +233,6 @@ export {
 // ========================================
 
 /**
- * Loading State Machine Hook
- * Manages complex loading states with error handling and recovery
- */
-export {
-  useLoadingStateMachine,
-  categorizeHttpError,
-  createRetryRecoveryAction,
-  isLoadingState,
-  isErrorState,
-  isSuccessState,
-  isIdleState,
-  type LoadingState,
-  type LoadingAction,
-  type LoadingStateType,
-  type ErrorType,
-  type ErrorMetadata,
-  type UseLoadingStateMachineReturn,
-} from './useLoadingStateMachine';
-
-/**
  * Swipe Gesture Hook
  * Mobile-optimized swipe gesture detection with velocity and distance tracking
  */
@@ -254,6 +258,8 @@ export {
   useMotionProps,
   useMotionDuration,
   getMotionCapabilities,
+  prefersReducedMotion,
+  getCurrentMotionTier,
 } from './use-motion-preference';
 
 export type {
@@ -278,6 +284,7 @@ export {
 export {
   useItemStat,
   useItemStats,
+  useItemStatsBatch,
 } from './use-item-stats';
 
 // ========================================
@@ -309,6 +316,18 @@ export {
   useItemScoring,
   useCriteriaConfigManager,
 } from './use-criteria-sync';
+
+// ========================================
+// Undo/Redo Hooks
+// ========================================
+
+/**
+ * Undo Keyboard Hook
+ * Global Ctrl+Z / Ctrl+Shift+Z handler for ranking operations
+ */
+export {
+  useUndoKeyboard,
+} from './use-undo-keyboard';
 
 // ========================================
 // Migration Notes

@@ -6,12 +6,16 @@
  * Shows full item information with actions and metadata.
  */
 
-import React, { memo, useCallback, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
 import { X } from 'lucide-react';
-import { QuickActions, QuickActionConfig } from './QuickActions';
+import React, { memo, useCallback, useRef, useEffect } from 'react';
+
+import { DURATION } from '@/lib/animations/motion-presets';
+import { cn } from '@/lib/utils';
+
+
 import { MetadataBadges, MetadataBadgeData } from './MetadataBadges';
+import { QuickActions, QuickActionConfig } from './QuickActions';
 import { RichItemData } from './RichItemCard';
 
 /**
@@ -94,11 +98,11 @@ export const ExpandedPreview = memo(function ExpandedPreview({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.2 }}
+      transition={{ duration: DURATION.fast }}
       className={cn(
         'absolute inset-0 z-30',
         'bg-gray-900/95 backdrop-blur-md',
-        'rounded-lg overflow-hidden',
+        'rounded-card overflow-hidden',
         'flex flex-col',
         className
       )}
@@ -111,7 +115,7 @@ export const ExpandedPreview = memo(function ExpandedPreview({
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.1 }}
         onClick={onClose}
-        className="absolute top-2 right-2 z-40 p-1.5 rounded-lg bg-gray-800/80 text-gray-400 hover:text-white hover:bg-gray-700 transition-colors"
+        className="absolute top-2 right-2 z-sticky p-1.5 rounded-control bg-gray-800/80 text-gray-400 hover:text-white hover:bg-gray-700 transition-colors"
         aria-label="Close preview"
       >
         <X className="w-4 h-4" />
@@ -123,14 +127,14 @@ export const ExpandedPreview = memo(function ExpandedPreview({
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
-          className="relative h-24 bg-gray-800 overflow-hidden flex-shrink-0"
+          className="relative h-24 bg-gray-800 overflow-hidden shrink-0"
         >
           <img
             src={item.image}
             alt={item.title}
             className="w-full h-full object-cover opacity-60"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-gray-900/50 to-gray-900" />
+          <div className="absolute inset-0 bg-linear-to-b from-transparent via-gray-900/50 to-gray-900" />
         </motion.div>
       )}
 
@@ -192,13 +196,13 @@ export const ExpandedPreview = memo(function ExpandedPreview({
             {item.tags.slice(0, 5).map((tag) => (
               <span
                 key={tag}
-                className="px-1.5 py-0.5 text-[10px] bg-gray-700/50 text-gray-400 rounded"
+                className="px-1.5 py-0.5 text-2xs bg-gray-700/50 text-gray-400 rounded"
               >
                 {tag}
               </span>
             ))}
             {item.tags.length > 5 && (
-              <span className="px-1.5 py-0.5 text-[10px] text-gray-500">
+              <span className="px-1.5 py-0.5 text-2xs text-gray-500">
                 +{item.tags.length - 5}
               </span>
             )}
@@ -223,7 +227,7 @@ export const ExpandedPreview = memo(function ExpandedPreview({
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35 }}
-          className="flex-shrink-0 p-3 border-t border-gray-700/50 bg-gray-800/50"
+          className="shrink-0 p-3 border-t border-gray-700/50 bg-gray-800/50"
         >
           <QuickActions
             actions={quickActions}
@@ -256,9 +260,9 @@ export const TooltipPreview = memo(function TooltipPreview({
       initial={{ opacity: 0, y: 5, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 5, scale: 0.95 }}
-      transition={{ duration: 0.15 }}
+      transition={{ duration: DURATION.quick }}
       className={cn(
-        'bg-gray-900 border border-gray-700 rounded-lg shadow-xl',
+        'bg-gray-900 border border-gray-700 rounded-card shadow-xl',
         'p-3 min-w-[200px] max-w-[280px]',
         className
       )}
@@ -272,7 +276,7 @@ export const TooltipPreview = memo(function TooltipPreview({
           {badges.slice(0, 3).map((badge) => (
             <span
               key={`${badge.type}-${badge.value}`}
-              className="px-1.5 py-0.5 text-[10px] bg-gray-800 text-gray-300 rounded"
+              className="px-1.5 py-0.5 text-2xs bg-gray-800 text-gray-300 rounded"
             >
               {String(badge.value)}
             </span>

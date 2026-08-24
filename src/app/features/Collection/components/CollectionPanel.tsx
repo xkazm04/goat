@@ -1,23 +1,26 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
-import { CollectionGroup, CollectionItem as CollectionItemType } from "../types";
-import { CollectionToolbar } from "./CollectionToolbar";
-import { ConfigurableCollectionItem, COLLECTION_VIEW_CONFIG } from "./ConfigurableCollectionItem";
-import { CollectionStats } from "./CollectionStats";
-import { AddItemModal } from "./AddItemModal";
-import { StickyContext } from "./StickyContext";
-import { LazyLoadTrigger } from "./LazyLoadTrigger";
-import { useCollection } from "../hooks/useCollection";
-import { useCollectionLazyLoad } from "../hooks/useCollectionLazyLoad";
-import { useCurrentList } from "@/stores/use-list-store";
-import { CollectionFiltersProvider } from "../context/CollectionFiltersContext";
-import { shouldUseLazyLoading } from "../constants/lazyLoadConfig";
-import { CollectionErrorBoundary } from "./CollectionErrorBoundary";
+import { useState, useMemo, useRef, useEffect, useDeferredValue } from "react";
+
+import { EmptyTrophyCase, NoSearchResults } from "@/components/illustrations/EmptyStateIllustrations";
 import { MasonryGrid } from "@/components/ui/masonry-grid";
+import { useItemStatsBatch } from "@/hooks/use-item-stats";
+import { useConsensusStore, useConsensusSortBy } from "@/stores/consensus-store";
+import { useCriteriaStore } from "@/stores/criteria-store";
+import { useCurrentList , useListStore } from "@/stores/use-list-store";
+
+import { AddItemModal } from "./AddItemModal";
+import { CollectionErrorBoundary } from "./CollectionErrorBoundary";
+import { CollectionStats } from "./CollectionStats";
+import { CollectionToolbar } from "./CollectionToolbar";
+import { ConfigurableCollectionItem, COLLECTION_VIEW_CONFIG, type HoistedStoreState } from "./ConfigurableCollectionItem";
+import { StickyContext } from "./StickyContext";
+import { useCollection } from "../hooks/useCollection";
+
+
+
 
 interface CollectionPanelProps {
-  groups?: CollectionGroup[]; // Now optional - can be fetched via hook
   className?: string;
   category?: string;
   subcategory?: string;
@@ -37,7 +40,6 @@ interface CollectionPanelProps {
  * - Unified data fetching with caching and optimistic updates
  */
 function CollectionPanelInternal({
-  groups: externalGroups,
   className = "",
   category,
   subcategory,
@@ -52,6 +54,22 @@ function CollectionPanelInternal({
   const itemsAreaRef = useRef<HTMLDivElement>(null);
   const currentList = useCurrentList();
 
+  // Hoist global store subscriptions to parent level.
+  // Instead of each ConfigurableCollectionItem subscribing to these stores
+  // individually (200 items x 4 stores = 800 subscriptions), we subscribe
+  // once here and pass the values down as props.
+  const consensusViewMode = useConsensusStore((state) => state.viewMode);
+  const consensusSortBy = useConsensusSortBy();
+  const activeProfileId = useCriteriaStore((state) => state.activeProfileId);
+  const listCategory = useListStore((state) => state.currentList)?.category;
+
+  const hoistedState = useMemo<HoistedStoreState>(() => ({
+    consensusViewMode,
+    consensusSortBy,
+    activeProfileId,
+    listCategory,
+  }), [consensusViewMode, consensusSortBy, activeProfileId, listCategory]);
+
   // Use unified collection hook for data fetching and mutations
   const collection = useCollection({
     category: category || currentList?.category,
@@ -61,79 +79,57 @@ function CollectionPanelInternal({
     staleTime: 3 * 60 * 1000, // 3 minutes
   });
 
-  // Use external groups if provided (backward compatibility), otherwise use hook data
-  // Guard: Ensure groups is always a valid array
-  const groups = Array.isArray(externalGroups)
-    ? externalGroups
-    : Array.isArray(collection.groups)
-    ? collection.groups
-    : [];
+  // Single source of truth: useCollection hook owns all data
+  const groups = Array.isArray(collection.groups) ? collection.groups : [];
 
   // Guard: Ensure filteredItems is always a valid array
-  const filteredItems = Array.isArray(collection.filteredItems)
+  // Use useDeferredValue to prevent search keystrokes from blocking input
+  const rawFilteredItems = Array.isArray(collection.filteredItems)
     ? collection.filteredItems
     : [];
+  const filteredItems = useDeferredValue(rawFilteredItems);
 
   const selectedGroups = collection.selectedGroups;
   const stats = collection.stats;
 
-  const useLazyLoading = useMemo(
-    () => shouldUseLazyLoading(filteredItems.length),
-    [filteredItems.length]
+  const displayItems = filteredItems;
+
+  // Batch-prefetch item stats for all visible items in a single request.
+  // Seeds individual query caches so AverageRankingBadge finds data immediately.
+  const displayItemIds = useMemo(
+    () => displayItems.map(item => item.id),
+    [displayItems]
   );
-
-  // Lazy loading for medium-sized collections
-  const lazyLoad = useCollectionLazyLoad({
-    items: filteredItems,
-    enabled: useLazyLoading
+  useItemStatsBatch(displayItemIds, {
+    enabled: COLLECTION_VIEW_CONFIG.showAverageRankingBadge && displayItemIds.length > 0,
+    staleTime: 5 * 60 * 1000,
   });
-
-  // Determine which items to render
-  const displayItems = useMemo(() => {
-    if (useLazyLoading) {
-      // Use lazy-loaded slice
-      return lazyLoad.visibleItems;
-    }
-    // Small collections: render all
-    return filteredItems;
-  }, [useLazyLoading, filteredItems, lazyLoad.visibleItems]);
 
   const handleAddItemSuccess = async () => {
     // Invalidate cache to refetch fresh data
     collection.invalidateCache();
   };
 
-  // Prepare context value for provider
-  const contextValue = {
-    filter: collection.filter,
-    groups,
-    filteredItems,
-    selectedGroups,
-    stats,
-    setSearchTerm: collection.setSearchTerm,
-    toggleGroup: collection.toggleGroup,
-    selectAllGroups: collection.selectAllGroups,
-    deselectAllGroups: collection.deselectAllGroups,
-    setSortBy: collection.setSortBy,
-    setSortOrder: collection.setSortOrder,
-    isLoading: collection.isLoading,
-    isError: collection.isError,
-    error: collection.error,
-    spotlightItemId: collection.spotlightItemId // Add spotlight to context
-  };
-
-  // Scroll tracking for sticky context
+  // Scroll tracking for sticky context (RAF-throttled)
   useEffect(() => {
     const itemsArea = itemsAreaRef.current;
     if (!itemsArea) return;
 
+    let rafId: number | null = null;
+
     const handleScroll = () => {
-      // Show sticky context when scrolled past category bar (50px threshold)
-      setShowStickyContext(itemsArea.scrollTop > 50);
+      if (rafId !== null) return;
+      rafId = requestAnimationFrame(() => {
+        setShowStickyContext(itemsArea.scrollTop > 50);
+        rafId = null;
+      });
     };
 
-    itemsArea.addEventListener('scroll', handleScroll);
-    return () => itemsArea.removeEventListener('scroll', handleScroll);
+    itemsArea.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      itemsArea.removeEventListener('scroll', handleScroll);
+      if (rafId !== null) cancelAnimationFrame(rafId);
+    };
   }, []);
 
   // Track drag state
@@ -151,7 +147,7 @@ function CollectionPanelInternal({
   }, []);
 
   return (
-    <CollectionFiltersProvider value={contextValue}>
+    <>
       {/* Sticky Context Indicator */}
       <StickyContext
         isVisible={showStickyContext && isVisible}
@@ -172,8 +168,8 @@ function CollectionPanelInternal({
         className={`
           fixed bottom-0 left-0 right-0
           glass-dock-panel
-          z-40
-          transition-all duration-[var(--glass-transition-slow)] ease-[var(--glass-easing)]
+          z-sticky
+          transition-all duration-(--glass-transition-slow) ease-(--glass-easing)
           ${isVisible ? 'translate-y-0' : 'translate-y-full'}
           ${className}
         `}
@@ -193,6 +189,11 @@ function CollectionPanelInternal({
           onAddItem={() => setIsAddModalOpen(true)}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
+          groups={groups}
+          selectedGroupIds={collection.filter.selectedGroupIds}
+          onToggleGroup={collection.toggleGroup}
+          searchValue={collection.filter.searchTerm}
+          onSearchChange={collection.setSearchTerm}
           showCategoryBar={true}
           showSearch={true}
         />
@@ -206,7 +207,7 @@ function CollectionPanelInternal({
             <div className="flex-1 p-4" data-testid="collection-loading" role="status" aria-label="Loading collection items">
               <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
                 {Array.from({ length: 20 }).map((_, i) => (
-                  <div key={i} className="aspect-[3/4] glass-dock-skeleton" />
+                  <div key={i} className="aspect-3/4 glass-dock-skeleton" />
                 ))}
               </div>
               <span className="sr-only">Loading items...</span>
@@ -222,8 +223,8 @@ function CollectionPanelInternal({
               </div>
               <button
                 onClick={() => collection.invalidateCache()}
-                className="px-4 py-2 text-sm bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition-all duration-[var(--glass-transition-normal)] ease-[var(--glass-easing)]
-                  glass-dock-focus hover:shadow-[var(--glass-shadow-elevated)]"
+                className="px-4 py-2 text-sm bg-slate-800 hover:bg-slate-700 text-white rounded-control transition-all duration-(--glass-transition-normal) ease-(--glass-easing)
+                  glass-dock-focus hover:shadow-(--glass-shadow-elevated)"
                 aria-label="Retry loading items"
               >
                 Try Again
@@ -240,7 +241,7 @@ function CollectionPanelInternal({
                     <p className="text-sm text-slate-500 mb-2">No groups selected</p>
                     <button
                       onClick={collection.selectAllGroups}
-                      className="text-xs text-cyan-400 hover:text-cyan-300 transition-all duration-[var(--glass-transition-normal)] hover:underline underline-offset-2"
+                      className="text-xs text-brand-hover hover:text-brand-hover transition-all duration-(--glass-transition-normal) hover:underline underline-offset-2"
                       data-testid="select-all-groups-btn"
                     >
                       Select all groups
@@ -248,7 +249,12 @@ function CollectionPanelInternal({
                   </div>
                 </div>
               ) : filteredItems.length === 0 ? (
-                <div className="h-full flex items-center justify-center">
+                <div className="h-full flex flex-col items-center justify-center gap-2">
+                  {collection.filter.searchTerm ? (
+                    <NoSearchResults width={120} height={96} />
+                  ) : (
+                    <EmptyTrophyCase width={120} height={96} />
+                  )}
                   <p className="text-sm text-slate-500">
                     {collection.filter.searchTerm
                       ? `No items found matching "${collection.filter.searchTerm}"`
@@ -258,12 +264,6 @@ function CollectionPanelInternal({
                 </div>
               ) : (
                 <>
-                  {useLazyLoading && (
-                    <div className="mb-2 text-xs text-slate-400 flex items-center justify-between transition-colors duration-[var(--glass-transition-normal)]">
-                      <span>Loaded {lazyLoad.loadedCount} of {lazyLoad.totalItems} items</span>
-                      <span className="text-cyan-400">{lazyLoad.loadProgress}% loaded</span>
-                    </div>
-                  )}
                   {viewMode === 'grid' ? (
                     <MasonryGrid
                       columns={{ sm: 4, md: 6, lg: 8, xl: 10 }}
@@ -283,6 +283,7 @@ function CollectionPanelInternal({
                             index={index}
                             isSpotlight={isSpotlight}
                             config={COLLECTION_VIEW_CONFIG}
+                            hoistedState={hoistedState}
                           />
                         );
                       })}
@@ -301,22 +302,13 @@ function CollectionPanelInternal({
                             index={index}
                             isSpotlight={isSpotlight}
                             config={COLLECTION_VIEW_CONFIG}
+                            hoistedState={hoistedState}
                           />
                         );
                       })}
                     </div>
                   )}
 
-                  {/* Lazy load trigger */}
-                  {useLazyLoading && lazyLoad.hasMore && (
-                    <LazyLoadTrigger
-                      onVisible={lazyLoad.loadMore}
-                      enabled={!lazyLoad.isLoadingMore}
-                      isLoading={lazyLoad.isLoadingMore}
-                      loadingMessage={`Loading more items... (${lazyLoad.loadedCount}/${lazyLoad.totalItems})`}
-                      testId="collection-lazy-load-trigger"
-                    />
-                  )}
                 </>
               )}
             </div>
@@ -324,22 +316,22 @@ function CollectionPanelInternal({
 
           {/* Pagination Controls (if enabled) */}
           {enablePagination && collection.pagination.totalPages > 1 && (
-            <div className="px-4 py-2 border-t border-[var(--glass-border-subtle)] glass-dock-header flex items-center justify-between">
+            <div className="px-4 py-2 border-t border-(--glass-border-subtle) glass-dock-header flex items-center justify-between">
               <button
                 onClick={collection.pagination.prevPage}
                 disabled={collection.pagination.page === 1}
-                className="px-3 py-1 text-xs bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed rounded transition-all duration-[var(--glass-transition-normal)] hover:shadow-md glass-dock-focus"
+                className="px-3 py-1 text-xs bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed rounded transition-all duration-(--glass-transition-normal) hover:shadow-md glass-dock-focus"
                 data-testid="prev-page-btn"
               >
                 Previous
               </button>
-              <span className="text-xs text-slate-400 transition-colors duration-[var(--glass-transition-normal)]">
+              <span className="text-xs text-slate-400 transition-colors duration-(--glass-transition-normal)">
                 Page {collection.pagination.page} of {collection.pagination.totalPages}
               </span>
               <button
                 onClick={collection.pagination.nextPage}
                 disabled={!collection.pagination.hasMore}
-                className="px-3 py-1 text-xs bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed rounded transition-all duration-[var(--glass-transition-normal)] hover:shadow-md glass-dock-focus"
+                className="px-3 py-1 text-xs bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed rounded transition-all duration-(--glass-transition-normal) hover:shadow-md glass-dock-focus"
                 data-testid="next-page-btn"
               >
                 Next
@@ -348,7 +340,7 @@ function CollectionPanelInternal({
           )}
 
           {/* Footer Stats */}
-          <div className="px-4 py-2 border-t border-[var(--glass-border-subtle)] glass-dock-header">
+          <div className="px-4 py-2 border-t border-(--glass-border-subtle) glass-dock-header">
             <CollectionStats stats={stats} />
           </div>
         </div>
@@ -361,7 +353,7 @@ function CollectionPanelInternal({
         onClose={() => setIsAddModalOpen(false)}
         onSuccess={handleAddItemSuccess}
       />
-    </CollectionFiltersProvider>
+    </>
   );
 }
 

@@ -1,15 +1,18 @@
 "use client";
 
-import { forwardRef, type HTMLAttributes, type CSSProperties } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { SURFACE_ELEVATION, type SurfaceLevel } from "./depth-tokens";
+import { forwardRef, type HTMLAttributes, type CSSProperties } from "react";
+
 import { cn } from "@/lib/utils";
+
+import { SURFACE_ELEVATION, type SurfaceLevel } from "./depth-tokens";
+
 
 /**
  * Surface variant styles using class-variance-authority
  *
  * - solid: Opaque surface with SURFACE_ELEVATION background
- * - glass: Translucent surface with Safari-safe backdrop-blur
+ * - glass: Translucent surface with Safari-safe backdrop-blur-sm
  * - outline: Transparent with border only
  */
 const surfaceVariants = cva(
@@ -25,7 +28,7 @@ const surfaceVariants = cva(
         glass: [
           "bg-slate-900/80",
           "border border-white/10",
-          "backdrop-blur-[12px]",
+          "backdrop-blur-md",
           "[-webkit-backdrop-filter:blur(12px)]",
         ].join(" "),
         // Outline: Transparent with border
@@ -55,7 +58,7 @@ export interface SurfaceProps
 /**
  * Surface - Background component with solid/glass/outline variants
  *
- * Provides consistent surface styling with Safari-safe backdrop-blur
+ * Provides consistent surface styling with Safari-safe backdrop-blur-sm
  * fallback for glass variant and SURFACE_ELEVATION colors for solid.
  *
  * @example

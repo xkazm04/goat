@@ -1,7 +1,9 @@
 "use client";
 
-import { memo, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { memo, useMemo } from "react";
+
+import { DURATION } from '@/lib/animations/motion-presets';
 import {
   DropZoneIndicator,
   getDropZoneTailwindClasses,
@@ -27,7 +29,7 @@ export const SuggestionBadge = memo(function SuggestionBadge({
   onClick,
 }: SuggestionBadgeProps) {
   const sizeClasses = {
-    small: "text-[10px] px-1 py-0.5",
+    small: "text-2xs px-1 py-0.5",
     medium: "text-xs px-1.5 py-0.5",
     large: "text-sm px-2 py-1",
   };
@@ -42,12 +44,12 @@ export const SuggestionBadge = memo(function SuggestionBadge({
       initial={{ opacity: 0, scale: 0.8, y: -5 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.8, y: -5 }}
-      transition={{ duration: 0.2, ease: "easeOut" }}
+      transition={{ duration: DURATION.fast, ease: "easeOut" }}
       className={`
         absolute top-0 right-0 z-20
         rounded-bl-lg rounded-tr-lg
         font-medium
-        backdrop-blur-sm
+        backdrop-blur-xs
         cursor-pointer
         transition-all duration-150
         hover:scale-105
@@ -74,7 +76,7 @@ export const SuggestionBadge = memo(function SuggestionBadge({
         <motion.div
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
-          className="text-[9px] opacity-80 mt-0.5 max-w-[100px] truncate"
+          className="text-2xs opacity-80 mt-0.5 max-w-[100px] truncate"
         >
           {indicator.shortReason}
         </motion.div>
@@ -121,7 +123,7 @@ export const SlotSuggestionOverlay = memo(function SlotSuggestionOverlay({
               ? `0 0 ${20 * glowIntensity}px ${10 * glowIntensity}px ${getGlowColor(indicator.color, glowIntensity)}`
               : `0 0 ${10 * glowIntensity}px ${5 * glowIntensity}px ${getGlowColor(indicator.color, glowIntensity * 0.5)}`,
           }}
-          transition={{ duration: 0.2 }}
+          transition={{ duration: DURATION.fast }}
         />
 
         {/* Pulsing border for top suggestion */}
@@ -182,10 +184,10 @@ export const QuickPlaceIndicator = memo(function QuickPlaceIndicator({
         w-6 h-6 rounded-md
         flex items-center justify-center
         text-xs font-bold
-        backdrop-blur-sm
+        backdrop-blur-xs
         transition-colors duration-150
         ${isActive
-          ? "bg-cyan-500 text-white"
+          ? "bg-brand text-white"
           : "bg-gray-800/80 text-gray-300 border border-gray-600"
         }
       `}
@@ -221,7 +223,7 @@ export const SuggestionsTooltip = memo(function SuggestionsTooltip({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 10 }}
       className={`
-        absolute z-50
+        absolute z-dropdown
         bg-gray-900/95 backdrop-blur-md
         border border-gray-700 rounded-lg
         shadow-xl shadow-black/50
@@ -276,7 +278,7 @@ export const SuggestionsTooltip = memo(function SuggestionsTooltip({
         ))}
       </div>
 
-      <div className="mt-3 pt-2 border-t border-gray-700 text-[10px] text-gray-500">
+      <div className="mt-3 pt-2 border-t border-gray-700 text-2xs text-gray-500">
         Press 1-9 to quick-place
       </div>
     </motion.div>

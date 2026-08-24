@@ -1,21 +1,21 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Clock,
   ChevronDown,
   ChevronUp,
   RefreshCw,
-  Trash2,
   AlertCircle,
   CheckCircle,
   Loader2,
-  X,
   Upload,
 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+
 import { useOffline } from '@/lib/offline/OfflineProvider';
-import { getSyncQueue } from '@/lib/offline/SyncQueue';
+import { getOfflinePersistence } from '@/lib/offline/OfflinePersistence';
+
 import type { SyncOperation, OperationStatus } from '@/lib/offline/types';
 
 interface PendingChangesPanelProps {
@@ -92,8 +92,8 @@ export function PendingChangesPanel({
     const loadOperations = async () => {
       setIsLoading(true);
       try {
-        const state = await getSyncQueue().getState();
-        setOperations(state.operations);
+        const ops = await getOfflinePersistence().getAllOperations();
+        setOperations(ops as SyncOperation[]);
       } catch (error) {
         console.error('Failed to load operations:', error);
       } finally {
@@ -118,7 +118,7 @@ export function PendingChangesPanel({
   const conflictOps = operations.filter((op) => op.status === 'conflict');
 
   return (
-    <div className={`bg-gray-900 border border-gray-700 rounded-lg overflow-hidden ${className}`}>
+    <div className={`bg-gray-900 border border-gray-700 rounded-card overflow-hidden ${className}`}>
       {/* Header - Always visible */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
@@ -128,7 +128,7 @@ export function PendingChangesPanel({
           <div className="relative">
             <Upload className="w-5 h-5 text-gray-400" />
             {pendingCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-500 text-gray-900 text-[10px] font-bold rounded-full flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-500 text-gray-900 text-2xs font-bold rounded-full flex items-center justify-center">
                 {pendingCount}
               </span>
             )}

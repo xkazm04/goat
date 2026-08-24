@@ -13,45 +13,10 @@
 
 import type { Variants, Transition, TargetAndTransition } from 'framer-motion';
 
-// =============================================================================
-// Motion Design Tokens
-// =============================================================================
+import { DURATION, EASING } from './motion-presets';
 
-/**
- * Standard easing curves
- * - easeOut: For departures and entrances (feels snappy)
- * - easeInOut: For transforms and state changes (feels smooth)
- * - spring: For bouncy, playful interactions
- * - decel: For settling animations
- */
-export const EASING = {
-  /** Quick departure, smooth arrival */
-  easeOut: [0.16, 1, 0.3, 1] as const,
-  /** Smooth throughout */
-  easeInOut: [0.4, 0, 0.2, 1] as const,
-  /** Bouncy, playful */
-  spring: [0.34, 1.56, 0.64, 1] as const,
-  /** Gradual deceleration */
-  decel: [0.0, 0.0, 0.2, 1] as const,
-  /** Sharp snap */
-  snap: [0.68, -0.55, 0.27, 1.55] as const,
-} as const;
-
-/**
- * Standard durations in seconds
- * - instant: For immediate feedback (< 100ms)
- * - fast: For micro-interactions (100-200ms)
- * - normal: For standard transitions (200-300ms)
- * - slow: For dramatic effects (300-500ms)
- * - emphasis: For celebration animations (500-800ms)
- */
-export const DURATION = {
-  instant: 0.08,
-  fast: 0.15,
-  normal: 0.25,
-  slow: 0.4,
-  emphasis: 0.6,
-} as const;
+// Re-export canonical tokens so existing consumers keep working.
+export { DURATION, EASING };
 
 /**
  * Scale factors for press states
@@ -152,7 +117,7 @@ export const buttonPressDeep: TargetAndTransition = {
 export const buttonHover: TargetAndTransition = {
   scale: SCALE.hover,
   transition: {
-    duration: DURATION.fast,
+    duration: DURATION.quick,
     ease: EASING.easeOut,
   },
 };
@@ -165,7 +130,7 @@ export const buttonHoverLift: TargetAndTransition = {
   scale: SCALE.hover,
   y: -2,
   transition: {
-    duration: DURATION.fast,
+    duration: DURATION.quick,
     ease: EASING.easeOut,
   },
 };
@@ -181,7 +146,7 @@ export const buttonVariants: Variants = {
   hover: {
     scale: SCALE.hover,
     transition: {
-      duration: DURATION.fast,
+      duration: DURATION.quick,
       ease: EASING.easeOut,
     },
   },
@@ -307,7 +272,7 @@ export const fieldFocusVariants: Variants = {
     borderColor: 'rgba(6, 182, 212, 0.5)',
     boxShadow: '0 0 0 3px rgba(6, 182, 212, 0.15)',
     transition: {
-      duration: DURATION.fast,
+      duration: DURATION.quick,
       ease: EASING.easeOut,
     },
   },
@@ -329,7 +294,7 @@ export const errorShakeVariants: Variants = {
   shake: {
     x: [-8, 8, -6, 6, -4, 4, -2, 2, 0],
     transition: {
-      duration: 0.5,
+      duration: DURATION.slow,
       ease: 'linear',
     },
   },
@@ -349,7 +314,7 @@ export const validationIndicatorVariants: Variants = {
     scale: 1,
     x: 0,
     transition: {
-      duration: DURATION.fast,
+      duration: DURATION.quick,
       ease: EASING.easeOut,
     },
   },
@@ -358,7 +323,7 @@ export const validationIndicatorVariants: Variants = {
     scale: 0.8,
     x: 5,
     transition: {
-      duration: DURATION.fast,
+      duration: DURATION.quick,
     },
   },
 };
@@ -450,7 +415,7 @@ export const dropdownVariants: Variants = {
     y: 0,
     scale: 1,
     transition: {
-      duration: DURATION.fast,
+      duration: DURATION.quick,
       ease: EASING.easeOut,
     },
   },
@@ -459,7 +424,7 @@ export const dropdownVariants: Variants = {
     y: -10,
     scale: 0.95,
     transition: {
-      duration: DURATION.fast,
+      duration: DURATION.quick,
       ease: EASING.easeInOut,
     },
   },
@@ -477,7 +442,7 @@ export const menuItemVariants: Variants = {
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     x: 4,
     transition: {
-      duration: DURATION.fast,
+      duration: DURATION.quick,
       ease: EASING.easeOut,
     },
   },
@@ -550,7 +515,7 @@ export const iconRotateVariants: Variants = {
   active: {
     rotate: 45,
     transition: {
-      duration: DURATION.fast,
+      duration: DURATION.quick,
       ease: EASING.snap,
     },
   },
@@ -604,7 +569,7 @@ export const tooltipVariants: Variants = {
     y: 0,
     scale: 1,
     transition: {
-      duration: DURATION.fast,
+      duration: DURATION.quick,
       ease: EASING.easeOut,
     },
   },

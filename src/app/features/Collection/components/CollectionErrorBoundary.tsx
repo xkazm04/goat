@@ -1,7 +1,9 @@
 "use client";
 
+import { RefreshCw } from "lucide-react";
 import React, { Component, ReactNode } from "react";
-import { AlertTriangle, RefreshCw } from "lucide-react";
+
+import { ToppledTrophy } from "@/components/illustrations/EmptyStateIllustrations";
 
 interface Props {
   children: ReactNode;
@@ -120,20 +122,20 @@ export class CollectionErrorBoundary extends Component<Props, State> {
 
     return (
       <div
-        className="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-red-500/50 z-40 p-6"
+        className="fixed bottom-0 left-0 right-0 glass-dock-panel border-t border-amber-500/30 z-sticky p-6 backdrop-blur-xl"
         data-testid="collection-error-boundary-fallback"
       >
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="flex items-start gap-4 mb-4">
-            <div className="flex-shrink-0 w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
-              <AlertTriangle className="w-6 h-6 text-red-400" />
+            <div className="shrink-0">
+              <ToppledTrophy width={80} height={80} />
             </div>
             <div className="flex-1">
-              <h3 className="text-lg font-semibold text-white mb-1">
-                Collection Error
+              <h3 className="text-lg font-semibold text-white mb-1" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                Even the G.O.A.T. stumbles sometimes
               </h3>
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-slate-400">
                 Something went wrong while rendering the collection panel.
                 The error has been logged and reported.
               </p>
@@ -142,28 +144,28 @@ export class CollectionErrorBoundary extends Component<Props, State> {
 
           {/* Error Details (Development only) */}
           {isDevelopment && error && (
-            <div className="mb-4 p-4 bg-gray-800 rounded-lg border border-gray-700">
+            <div className="mb-4 p-4 bg-white/5 rounded-card border border-white/10">
               <div className="mb-2">
-                <span className="text-xs font-mono text-red-400">
+                <span className="text-xs font-mono text-amber-400">
                   {error.name}: {error.message}
                 </span>
               </div>
               {error.stack && (
                 <details className="mt-2">
-                  <summary className="text-xs text-gray-400 cursor-pointer hover:text-gray-300">
+                  <summary className="text-xs text-slate-400 cursor-pointer hover:text-slate-300">
                     Stack Trace
                   </summary>
-                  <pre className="mt-2 text-xs text-gray-500 overflow-x-auto whitespace-pre-wrap">
+                  <pre className="mt-2 text-xs text-slate-500 overflow-x-auto whitespace-pre-wrap">
                     {error.stack}
                   </pre>
                 </details>
               )}
               {errorInfo?.componentStack && (
                 <details className="mt-2">
-                  <summary className="text-xs text-gray-400 cursor-pointer hover:text-gray-300">
+                  <summary className="text-xs text-slate-400 cursor-pointer hover:text-slate-300">
                     Component Stack
                   </summary>
-                  <pre className="mt-2 text-xs text-gray-500 overflow-x-auto whitespace-pre-wrap">
+                  <pre className="mt-2 text-xs text-slate-500 overflow-x-auto whitespace-pre-wrap">
                     {errorInfo.componentStack}
                   </pre>
                 </details>
@@ -175,7 +177,7 @@ export class CollectionErrorBoundary extends Component<Props, State> {
           <div className="flex items-center gap-3">
             <button
               onClick={this.handleReset}
-              className="flex items-center gap-2 px-4 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 rounded-lg transition-colors text-sm font-medium border border-cyan-500/40"
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-brand to-blue-500 hover:from-brand-hover hover:to-blue-400 text-white rounded-control transition-all text-sm font-medium shadow-lg shadow-brand/20"
               data-testid="collection-error-retry-btn"
             >
               <RefreshCw className="w-4 h-4" />
@@ -183,7 +185,7 @@ export class CollectionErrorBoundary extends Component<Props, State> {
             </button>
             <button
               onClick={() => window.location.reload()}
-              className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors text-sm"
+              className="px-4 py-2 bg-white/5 hover:bg-white/10 text-slate-300 rounded-control transition-colors text-sm border border-white/10"
               data-testid="collection-error-reload-btn"
             >
               Reload Page
@@ -191,9 +193,9 @@ export class CollectionErrorBoundary extends Component<Props, State> {
           </div>
 
           {/* Help Text */}
-          <div className="mt-4 p-3 bg-gray-800/50 rounded-lg border border-gray-700/50">
-            <p className="text-xs text-gray-400">
-              <strong className="text-gray-300">What to do:</strong> Try refreshing
+          <div className="mt-4 p-3 bg-white/5 rounded-card border border-white/10">
+            <p className="text-xs text-slate-400">
+              <strong className="text-slate-300">What to do:</strong> Try refreshing
               the page or clearing your browser cache. If the problem persists,
               please contact support with the error details above.
             </p>

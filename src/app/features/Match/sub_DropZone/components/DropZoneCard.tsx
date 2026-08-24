@@ -1,10 +1,16 @@
 "use client";
 
-import { memo, forwardRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { memo, forwardRef } from "react";
+
+import { DURATION, EASE } from "@/lib/animations/motion-presets";
+
+import { MedalType } from "../../lib/medalStyling";
+
 import type { DraggableAttributes } from "@dnd-kit/core";
 import type { SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities";
-import { MedalType } from "../../lib/medalStyling";
+
+
 
 export interface DropZoneCardProps {
   /** Position in the grid (0-based) */
@@ -27,6 +33,8 @@ export interface DropZoneCardProps {
   medalType: MedalType | null;
   /** Medal hint background color */
   medalHintColor?: string;
+  /** Whether this drop zone has an active error (triggers shake animation) */
+  hasError?: boolean;
   /** Inline style (for drag transform) */
   style?: React.CSSProperties;
   /** Draggable attributes - spread onto the element when occupied */
@@ -55,6 +63,7 @@ export const DropZoneCard = memo(
       accentColor,
       medalType,
       medalHintColor,
+      hasError,
       style,
       attributes,
       listeners,
@@ -67,8 +76,12 @@ export const DropZoneCard = memo(
         ref={ref}
         style={{
           ...style,
+          willChange: 'transform, opacity',
           ...((!isOccupied && medalType && medalHintColor) && {
             backgroundColor: medalHintColor,
+          }),
+          ...(hasError && {
+            animation: 'drag-error-shake 200ms ease-out, drag-error-border-flash 600ms ease-out',
           }),
         } as React.CSSProperties}
         initial={false}
@@ -78,27 +91,27 @@ export const DropZoneCard = memo(
               ? [1, 1.2, 0.92, 1.08, 0.98, 1.02, 1]
               : [1, 1.15, 0.95, 1.02, 1])
             : isOver ? 1.08 : showValidDropZoneHighlight ? 1.05 : 1,
-          borderColor: isOver ? accentColor : isOccupied ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)',
+          borderColor: hasError ? '#f87171' : isOver ? accentColor : isOccupied ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)',
           rotate: justDropped && isTop3 ? [0, -2, 2, -1, 1, 0] : 0,
           opacity: shouldDimFilledSlot ? 0.6 : 1,
         }}
         transition={{
           scale: justDropped
             ? {
-              duration: isTop3 ? 0.8 : 0.6,
-              ease: [0.34, 1.56, 0.64, 1],
+              duration: isTop3 ? DURATION.dramatic : DURATION.emphasis,
+              ease: EASE.spring,
             }
-            : { duration: 0.2 },
+            : { duration: DURATION.quick },
           rotate: justDropped && isTop3
             ? {
-              duration: 0.6,
+              duration: DURATION.emphasis,
               ease: "easeOut",
             }
             : { duration: 0 },
-          opacity: { duration: 0.3, ease: "easeOut" },
+          opacity: { duration: DURATION.normal, ease: "easeOut" },
         }}
         className={`
-          relative aspect-[4/5] rounded-xl overflow-hidden group
+          relative aspect-4/5 rounded-card overflow-hidden group
           border-2 transition-colors duration-300
           ${isOccupied ? 'bg-gray-900/80' : 'bg-gray-900/20'}
           ${!isOccupied && 'shadow-[inset_0_2px_8px_rgba(0,0,0,0.3)]'}
@@ -132,11 +145,11 @@ export const ActiveSelectionRing = memo(function ActiveSelectionRing({
   return (
     <motion.div
       layoutId="active-ring"
-      className="absolute -inset-[2px] rounded-xl border-2 pointer-events-none z-50"
+      className="absolute -inset-[2px] rounded-card border-2 pointer-events-none z-drag"
       style={{ borderColor: accentColor }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.15 }}
+      transition={{ duration: DURATION.quick }}
     />
   );
 });
@@ -154,7 +167,7 @@ export const HoverGlowBorder = memo(function HoverGlowBorder({
 }: HoverGlowBorderProps) {
   return (
     <div
-      className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+      className="absolute inset-0 rounded-card opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
       style={{ boxShadow: `inset 0 0 20px ${accentColor}20` }}
     />
   );
@@ -181,10 +194,10 @@ export const ItemTitle = memo(function ItemTitle({
           initial={{ opacity: 0, y: -5 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -5 }}
-          transition={{ delay: 0.2, duration: 0.3, type: "spring", stiffness: 200 }}
+          transition={{ delay: DURATION.fast, duration: DURATION.normal, type: "spring", stiffness: 200 }}
         >
           <p
-            className="text-[11px] font-medium text-white/90 text-center leading-tight line-clamp-2"
+            className="text-xs font-medium text-white/90 text-center leading-tight line-clamp-2"
             title={title}
           >
             {title}

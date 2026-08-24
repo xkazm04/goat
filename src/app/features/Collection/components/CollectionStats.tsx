@@ -1,7 +1,8 @@
 "use client";
 
-import { CollectionStats as StatsType } from "../types";
 import { StatsCard, Metric } from "@/components/ui";
+
+import { ItemPanelStats as StatsType } from "../types";
 
 interface CollectionStatsProps {
   stats: StatsType;
@@ -32,7 +33,7 @@ export function CollectionStats({
       id: "remaining-to-rank",
       label: "Available",
       value: stats.remainingToRank,
-      color: stats.remainingToRank > 0 ? "text-cyan-400" : "text-green-400",
+      color: stats.remainingToRank > 0 ? "text-brand-hover" : "text-green-400",
     });
 
     // Show placed count if any items are placed
@@ -61,13 +62,13 @@ export function CollectionStats({
         id: "total-items",
         label: "Total",
         value: stats.totalItems,
-        color: "text-gray-300",
+        color: "text-slate-300",
       },
       {
         id: "selected-items",
         label: "Selected",
         value: stats.selectedItems,
-        color: "text-cyan-400",
+        color: "text-brand-hover",
       }
     );
   }
@@ -78,7 +79,7 @@ export function CollectionStats({
       id: "visible-groups",
       label: "Groups",
       value: `${stats.visibleGroups}/${stats.totalGroups}`,
-      color: "text-gray-300",
+      color: "text-slate-300",
     });
   }
 

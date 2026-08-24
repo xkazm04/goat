@@ -6,9 +6,7 @@
  * Shows rating, year, genre, and other metadata as compact badges.
  */
 
-import React, { memo, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
 import {
   Star,
   Calendar,
@@ -21,6 +19,11 @@ import {
   Zap,
   type LucideIcon,
 } from 'lucide-react';
+import React, { memo, useMemo } from 'react';
+
+import { DURATION } from '@/lib/animations/motion-presets';
+import { cn } from '@/lib/utils';
+
 
 /**
  * Built-in badge types
@@ -145,9 +148,9 @@ const BADGE_COLORS: Record<MetadataBadgeType, { bg: string; text: string; border
     border: 'border-red-500/30',
   },
   new: {
-    bg: 'bg-cyan-500/20',
-    text: 'text-cyan-400',
-    border: 'border-cyan-500/30',
+    bg: 'bg-brand/20',
+    text: 'text-brand-hover',
+    border: 'border-brand/30',
   },
   custom: {
     bg: 'bg-gray-500/20',
@@ -163,7 +166,7 @@ const SIZE_CONFIG = {
   xs: {
     container: 'px-1.5 py-0.5 gap-0.5',
     icon: 'w-2.5 h-2.5',
-    text: 'text-[10px]',
+    text: 'text-2xs',
   },
   sm: {
     container: 'px-2 py-1 gap-1',
@@ -230,9 +233,9 @@ const Badge = memo(function Badge({
       initial={{ opacity: 0, scale: 0.8 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.8 }}
-      transition={{ delay: index * 0.05, duration: 0.15 }}
+      transition={{ delay: index * 0.05, duration: DURATION.quick }}
       className={cn(
-        'flex items-center rounded-md border backdrop-blur-sm',
+        'flex items-center rounded-control border backdrop-blur-xs',
         sizeConfig.container,
         colors.bg,
         colors.border,
@@ -310,7 +313,7 @@ export const MetadataBadges = memo(function MetadataBadges({
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           className={cn(
-            'flex items-center rounded-md border backdrop-blur-sm',
+            'flex items-center rounded-control border backdrop-blur-xs',
             SIZE_CONFIG[size].container,
             'bg-gray-700/50 border-gray-600/30 text-gray-400'
           )}

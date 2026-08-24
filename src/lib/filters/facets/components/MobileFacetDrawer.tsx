@@ -5,17 +5,20 @@
  * Responsive facet UI for mobile devices - slides up from bottom
  */
 
-import React, { useCallback, useEffect, useState } from 'react';
 import { motion, AnimatePresence, useDragControls, PanInfo } from 'framer-motion';
+import React, { useCallback, useEffect, useState } from 'react';
+
 import { cn } from '@/lib/utils';
+
+import { FacetBreadcrumbs } from './FacetBreadcrumbs';
+import { FacetPanel } from './FacetPanel';
+
 import type {
   Facet,
   FacetSelection,
   HierarchicalFacet,
   FacetActions,
 } from '../types';
-import { FacetPanel } from './FacetPanel';
-import { FacetBreadcrumbs } from './FacetBreadcrumbs';
 
 /**
  * MobileFacetDrawer Props
@@ -113,7 +116,7 @@ export function MobileFacetDrawer({
         <>
           {/* Backdrop */}
           <motion.div
-            className="fixed inset-0 bg-black/50 z-40"
+            className="fixed inset-0 bg-black/50 z-modal"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -123,8 +126,8 @@ export function MobileFacetDrawer({
           {/* Drawer */}
           <motion.div
             className={cn(
-              'fixed inset-x-0 bottom-0 z-50',
-              'bg-background rounded-t-2xl shadow-2xl',
+              'fixed inset-x-0 bottom-0 z-modal',
+              'bg-background rounded-t-container shadow-2xl',
               'max-h-[85vh] flex flex-col',
               className
             )}
@@ -153,16 +156,16 @@ export function MobileFacetDrawer({
             {/* Header */}
             <div className="flex items-center justify-between px-4 pb-3 border-b border-border">
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-semibold">Filters</h2>
+                <h2 className="text-lg font-semibold font-grotesk">Filters</h2>
                 {activeCount > 0 && (
-                  <span className="px-2 py-0.5 text-xs bg-primary text-primary-foreground rounded-full">
+                  <span className="px-2 py-0.5 text-xs bg-primary text-primary-foreground rounded-badge">
                     {activeCount}
                   </span>
                 )}
               </div>
 
               <button
-                className="p-2 hover:bg-accent rounded-lg transition-colors"
+                className="p-2 filter-hover rounded-control transition-colors"
                 onClick={onClose}
                 aria-label="Close filters"
               >
@@ -210,7 +213,7 @@ export function MobileFacetDrawer({
               {/* Clear all */}
               {activeCount > 0 && (
                 <button
-                  className="flex-1 py-3 rounded-lg border border-border hover:bg-accent transition-colors"
+                  className="flex-1 py-3 rounded-control border border-border filter-hover transition-colors"
                   onClick={onClearAll}
                 >
                   Clear all
@@ -220,9 +223,9 @@ export function MobileFacetDrawer({
               {/* Apply / Show results */}
               <button
                 className={cn(
-                  'flex-1 py-3 rounded-lg transition-colors',
+                  'flex-1 py-3 rounded-control transition-colors',
                   'bg-primary text-primary-foreground hover:bg-primary/90',
-                  activeCount === 0 && 'flex-[2]'
+                  activeCount === 0 && 'flex-2'
                 )}
                 onClick={handleApply}
               >
@@ -267,7 +270,7 @@ export function MobileFilterButton({
       <FilterIcon className="w-5 h-5" />
       <span className="font-medium">Filters</span>
       {activeCount > 0 && (
-        <span className="px-2 py-0.5 text-xs bg-primary-foreground text-primary rounded-full">
+        <span className="px-2 py-0.5 text-xs bg-primary-foreground text-primary rounded-badge">
           {activeCount}
         </span>
       )}

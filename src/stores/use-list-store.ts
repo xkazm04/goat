@@ -1,7 +1,9 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { TopList } from '@/types/top-lists';
+import { useShallow } from 'zustand/react/shallow';
+
 import { listLogger } from '@/lib/logger';
+import { TopList } from '@/types/top-lists';
 
 export interface ListConfiguration extends TopList {
   metadata?: {
@@ -116,8 +118,16 @@ export const useListStore = create<ListStoreState>()(
           metadata: state.currentList.metadata
         } : null;
         
-        // Only update if changed
-        if (JSON.stringify(state._matchingContext) !== JSON.stringify(newContext)) {
+        // Only update if changed (shallow compare key fields instead of JSON.stringify)
+        const prev = state._matchingContext;
+        const changed = !prev !== !newContext
+          || (prev && newContext && (
+            prev.listId !== newContext.listId
+            || prev.title !== newContext.title
+            || prev.category !== newContext.category
+            || prev.subcategory !== newContext.subcategory
+          ));
+        if (changed) {
           set({ _matchingContext: newContext });
         }
       },
@@ -274,22 +284,22 @@ export const useCurrentUser = () => useListStore((state) => state.currentUser);
 export const useAvailableLists = () => useListStore((state) => state.availableLists);
 export const useUserLists = () => useListStore((state) => state.getUserLists());
 
-export const useListCreationState = () => useListStore((state) => ({
+export const useListCreationState = () => useListStore(useShallow((state) => ({
   isCreating: state.isCreating,
   isLoading: state.isLoading,
   creationError: state.creationError,
   shouldRedirectToMatch: state.shouldRedirectToMatch
-}));
+})));
 
 // Fixed: Use cached matching context to prevent infinite loops
 export const useMatchingContext = () => useListStore((state) => state._matchingContext);
 
 // Additional selector hooks for specific data
 export const useCurrentListMetadata = () => useListStore((state) => state.currentList?.metadata);
-export const useCurrentListInfo = () => useListStore((state) => state.currentList ? {
+export const useCurrentListInfo = () => useListStore(useShallow((state) => state.currentList ? {
   id: state.currentList.id,
   title: state.currentList.title,
   category: state.currentList.category,
   subcategory: state.currentList.subcategory,
   size: state.currentList.size
-} : null);
+} : null));

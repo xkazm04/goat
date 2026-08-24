@@ -2,28 +2,27 @@
 
 /**
  * StudioSidebar
- * Sidebar for list metadata configuration in the List Creation Studio
- * Contains publish controls (criteria is now in the main content tabs)
+ * Glass-morphism sidebar for publish controls.
  */
 
-import { Surface } from '@/components/visual';
 import { MetadataPanel } from './MetadataPanel';
 
 export interface StudioSidebarProps {
-  /** Optional children to render instead of default content */
   children?: React.ReactNode;
 }
 
-/**
- * StudioSidebar Component
- * Renders publish controls panel.
- */
 export function StudioSidebar({ children }: StudioSidebarProps) {
   return (
     <aside>
-      <Surface elevation="raised" className="rounded-xl p-4">
+      <div
+        className="rounded-container p-4 border border-white/[0.06] backdrop-blur-xl"
+        style={{
+          background: 'linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 50%, rgba(255,255,255,0.02) 100%)',
+          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+        }}
+      >
         {children || <MetadataPanel />}
-      </Surface>
+      </div>
     </aside>
   );
 }

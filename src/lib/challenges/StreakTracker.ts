@@ -119,7 +119,8 @@ export class StreakTracker {
   async recordActivity(
     userId: string,
     streakType: StreakType,
-    score?: number
+    score?: number,
+    timeZone?: string
   ): Promise<{
     streak: UserStreak;
     isNewStreak: boolean;
@@ -129,7 +130,7 @@ export class StreakTracker {
     const data = await this.getUserData(userId);
     const streak = data.streaks.get(streakType)!;
     const now = new Date();
-    const today = this.getDateString(now);
+    const today = this.getDateString(now, timeZone);
 
     let isNewStreak = false;
     let streakBroken = false;
@@ -144,8 +145,10 @@ export class StreakTracker {
       return { streak, isNewStreak: false, streakBroken: false };
     }
 
-    // Check if streak continues or breaks
-    const yesterday = this.getDateString(new Date(now.getTime() - 24 * 60 * 60 * 1000));
+    // Check if streak continues or breaks. "Yesterday" is the calendar day
+    // before `today` in the user's zone — NOT now-minus-24h, which lands on the
+    // wrong day across DST transitions (a local day can be 23h or 25h long).
+    const yesterday = this.getPreviousDateString(today);
 
     if (streak.lastActivityDate === yesterday) {
       // Streak continues
@@ -193,10 +196,45 @@ export class StreakTracker {
   }
 
   /**
-   * Get date string in YYYY-MM-DD format
+   * Get the calendar day (YYYY-MM-DD) for a moment, in the given IANA time zone.
+   *
+   * "Daily streak" is an inherently local-time concept, but the server has no
+   * intrinsic per-user zone, so callers pass the client's zone (e.g.
+   * `Intl.DateTimeFormat().resolvedOptions().timeZone`). Defaults to UTC, which
+   * preserves the previous behavior when no zone is supplied. An invalid zone
+   * string falls back to UTC rather than throwing.
    */
-  private getDateString(date: Date): string {
+  private getDateString(date: Date, timeZone: string = 'UTC'): string {
+    try {
+      const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).formatToParts(date);
+      const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '';
+      const year = get('year');
+      const month = get('month');
+      const day = get('day');
+      if (year && month && day) return `${year}-${month}-${day}`;
+    } catch {
+      // Invalid timeZone — fall through to UTC.
+    }
     return date.toISOString().split('T')[0];
+  }
+
+  /**
+   * Get the calendar day immediately before a YYYY-MM-DD string.
+   *
+   * Pure calendar arithmetic in UTC space on a date-only value, so it is immune
+   * to DST (it never reasons about hours). Correct companion to a zone-aware
+   * `today`: the day before `today` in that zone, regardless of day length.
+   */
+  private getPreviousDateString(dateStr: string): string {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const dt = new Date(Date.UTC(year, month - 1, day));
+    dt.setUTCDate(dt.getUTCDate() - 1);
+    return dt.toISOString().split('T')[0];
   }
 
   /**
@@ -254,11 +292,11 @@ export class StreakTracker {
   /**
    * Check if streak is at risk (expiring today)
    */
-  async isStreakAtRisk(userId: string, streakType: StreakType): Promise<boolean> {
+  async isStreakAtRisk(userId: string, streakType: StreakType, timeZone?: string): Promise<boolean> {
     const streak = await this.getUserStreak(userId, streakType);
     if (streak.currentStreak === 0) return false;
 
-    const today = this.getDateString(new Date());
+    const today = this.getDateString(new Date(), timeZone);
     return streak.lastActivityDate !== today;
   }
 

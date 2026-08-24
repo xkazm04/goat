@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo } from "react";
+
 import {
   useComparisonStore,
   useComparisonPanelState,
@@ -9,6 +10,7 @@ import {
   MAX_COMPARISON_ITEMS,
   type ComparisonHistoryEntry,
 } from "@/stores/comparison-store";
+
 import type { BacklogItemType } from "@/types/match";
 
 /**

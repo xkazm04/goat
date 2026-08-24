@@ -1,21 +1,27 @@
 "use client";
 
-import React, { useMemo, useRef, useCallback } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, TrendingUp, Sparkles } from "lucide-react";
+import { TrendingUp, Sparkles } from "lucide-react";
+import React, { useMemo, useRef, useCallback } from "react";
+
+import { ConfigurableCollectionItem, MATCH_VIEW_CONFIG, type HoistedStoreState } from "@/app/features/Collection/components/ConfigurableCollectionItem";
 import { CollectionItem } from "@/app/features/Collection/types";
-import { ConfigurableCollectionItem, MATCH_VIEW_CONFIG } from "@/app/features/Collection/components/ConfigurableCollectionItem";
-import { useConsensusStore, useConsensusSortBy } from "@/stores/consensus-store";
-import { QuickSelectBadge } from "../../sub_ItemBadges/QuickSelectBadge";
-import { ItemStatsTooltip } from "../../sub_ItemBadges/ItemStatsTooltip";
+import { CategoryEmptyState } from "@/components/illustrations/EmptyStateIllustrations";
+import { DURATION } from "@/lib/animations/motion-presets";
 import { createSortComparator, type SortConfig } from "@/lib/sorting";
+import { useConsensusStore, useConsensusSortBy } from "@/stores/consensus-store";
+import { useCriteriaStore } from "@/stores/criteria-store";
+import { useListStore } from "@/stores/use-list-store";
+
 import {
   VirtualizedCollectionGridProps,
   generateSortCacheKey,
   flattenGroups,
   chunkIntoRows,
 } from "./virtualizedGridTypes";
+import { ItemStatsTooltip } from "../../sub_ItemBadges/ItemStatsTooltip";
+import { QuickSelectBadge } from "../../sub_ItemBadges/QuickSelectBadge";
 
 /**
  * Virtualized grid display for collection items.
@@ -33,12 +39,23 @@ export function VirtualizedCollectionGrid({
   itemWidth = 120,
   onItemClick,
   selectedItemId,
+  category,
 }: VirtualizedCollectionGridProps) {
   const parentRef = useRef<HTMLDivElement>(null);
+  const listCategory = useListStore((s) => s.currentList?.category);
   const sortBy = useConsensusSortBy();
+  const consensusViewMode = useConsensusStore((s) => s.viewMode);
   const consensusLastFetched = useConsensusStore((s) => s.lastFetched);
   const hasConsensusData = useConsensusStore((s) => Object.keys(s.consensusData).length > 0);
-  const consensusData = useConsensusStore((s) => s.consensusData);
+  const activeProfileId = useCriteriaStore((s) => s.activeProfileId);
+
+  // Hoist global store state to avoid per-item subscriptions in ConfigurableCollectionItem
+  const hoistedState = useMemo<HoistedStoreState>(() => ({
+    consensusViewMode,
+    consensusSortBy: sortBy,
+    activeProfileId,
+    listCategory,
+  }), [consensusViewMode, sortBy, activeProfileId, listCategory]);
 
   const sortCacheKey = useMemo(
     () => generateSortCacheKey(displayGroups, consensusLastFetched),
@@ -48,18 +65,19 @@ export function VirtualizedCollectionGrid({
   const sortedGroups = useMemo(() => {
     if (!sortByConsensus || sortBy !== 'consensus' || !hasConsensusData) return displayGroups;
 
+    const currentConsensus = useConsensusStore.getState().consensusData;
     const sortConfig: SortConfig = {
       criteria: 'consensus', direction: 'asc',
       secondaryCriteria: 'alphabetical', secondaryDirection: 'asc',
     };
-    const comparator = createSortComparator<CollectionItem>(sortConfig, (id) => consensusData[id] ?? null);
+    const comparator = createSortComparator<CollectionItem>(sortConfig, (id) => currentConsensus[id] ?? null);
 
     return displayGroups.map(group => ({
       ...group,
       items: [...(group.items || [])].sort(comparator),
     }));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sortCacheKey, sortByConsensus, sortBy, hasConsensusData, consensusData]);
+  }, [sortCacheKey, sortByConsensus, sortBy, hasConsensusData]);
 
   const isConsensusSortActive = sortByConsensus && sortBy === 'consensus' && hasConsensusData;
   const flattenedItems = useMemo(() => flattenGroups(sortedGroups), [sortedGroups]);
@@ -79,13 +97,13 @@ export function VirtualizedCollectionGrid({
     return (
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1, transition: { delay: 0.3, duration: 0.2 } }}
+        animate={{ opacity: 1, scale: 1, transition: { delay: 0.3, duration: DURATION.fast } }}
         className="h-full flex flex-col items-center justify-center text-slate-500 gap-3"
         data-testid="virtualized-collection-grid-empty"
       >
-        <Search className="w-8 h-8 opacity-20" />
-        <p className="text-sm">No items available in this category</p>
-        <p className="text-xs text-slate-600">Items placed in the grid are hidden here</p>
+        <CategoryEmptyState category={category || listCategory} width={140} height={112} />
+        <p className="text-sm font-medium text-slate-400 font-grotesk">No items available in this category</p>
+        <p className="text-xs text-slate-600 font-sans">Try selecting a different category</p>
       </motion.div>
     );
   }
@@ -95,17 +113,17 @@ export function VirtualizedCollectionGrid({
       {isConsensusSortActive && (
         <motion.div
           initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-2 px-3 py-1.5 glass-dock-gradient-border bg-gradient-to-r from-cyan-500/10 to-purple-500/10"
+          className="flex items-center gap-2 px-3 py-1.5 glass-dock-gradient-border bg-linear-to-r from-brand/10 to-purple-500/10"
         >
-          <TrendingUp className="w-3.5 h-3.5 text-cyan-400" />
-          <span className="text-[11px] text-cyan-300/80">Sorted by community ranking</span>
+          <TrendingUp className="w-3.5 h-3.5 text-brand-hover" />
+          <span className="text-xs text-brand-hover/80">Sorted by community ranking</span>
           <Sparkles className="w-3 h-3 text-purple-400/60 ml-auto" />
         </motion.div>
       )}
 
       <div
         ref={parentRef}
-        className="overflow-auto glass-dock-focus scrollbar-thin scrollbar-thumb-white/15 scrollbar-track-white/[0.02] rounded-lg"
+        className="overflow-auto glass-dock-focus scrollbar-thin scrollbar-thumb-white/15 scrollbar-track-white/[0.02] rounded-card"
         style={{ height: containerHeight, willChange: 'scroll-position', background: 'linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.2) 100%)' }}
       >
         <div style={{ height: `${rowVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
@@ -128,7 +146,7 @@ export function VirtualizedCollectionGrid({
                     return (
                       <ItemStatsTooltip key={flatItem.item.id} itemId={flatItem.item.id}>
                         <div
-                          className={`relative glass-card-glow ${showDivider ? 'border-l-2 border-cyan-500/30 pl-1' : ''}`}
+                          className={`relative glass-card-glow ${showDivider ? 'border-l-2 border-brand/30 pl-1' : ''}`}
                           style={{ contain: 'layout style' }}
                           onClick={onItemClick ? () => handleItemClick(flatItem.item) : undefined}
                         >
@@ -137,6 +155,7 @@ export function VirtualizedCollectionGrid({
                             searchQuery={searchQuery} isClickSelected={isClickSelected}
                             onClick={onItemClick ? () => handleItemClick(flatItem.item) : undefined}
                             config={MATCH_VIEW_CONFIG}
+                            hoistedState={hoistedState}
                           />
                           <AnimatePresence>
                             {quickSelectNum != null && (
@@ -146,7 +165,7 @@ export function VirtualizedCollectionGrid({
                           {(selected || isClickSelected) && (
                             <motion.div
                               initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-                              className="absolute inset-0 rounded-lg glass-dock-selection-ring pointer-events-none z-10"
+                              className="absolute inset-0 rounded-card glass-dock-selection-ring pointer-events-none z-10"
                             />
                           )}
                         </div>

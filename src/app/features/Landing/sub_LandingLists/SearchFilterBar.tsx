@@ -1,46 +1,15 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback, useMemo, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, X, Clock, Hash, Filter, ChevronDown } from "lucide-react";
+import { useState, useRef, useEffect, useMemo, useTransition } from "react";
+
+import { ELEVATION, INSET, withInset } from "@/components/visual/depth";
+import { DURATION } from '@/lib/animations/motion-presets';
+import { fuzzyMatch } from "@/lib/search/fuzzy";
 import { TopList } from "@/types/top-lists";
 
-// Simple fuzzy search implementation
-function fuzzyMatch(text: string, query: string): { match: boolean; score: number } {
-  if (!query) return { match: true, score: 0 };
-
-  const textLower = text.toLowerCase();
-  const queryLower = query.toLowerCase();
-
-  // Exact match gets highest score
-  if (textLower.includes(queryLower)) {
-    return { match: true, score: queryLower.length / textLower.length * 100 };
-  }
-
-  // Fuzzy match - check if all characters exist in order
-  let queryIndex = 0;
-  let matchCount = 0;
-  let lastMatchIndex = -1;
-  let consecutiveBonus = 0;
-
-  for (let i = 0; i < textLower.length && queryIndex < queryLower.length; i++) {
-    if (textLower[i] === queryLower[queryIndex]) {
-      matchCount++;
-      if (lastMatchIndex === i - 1) {
-        consecutiveBonus += 2;
-      }
-      lastMatchIndex = i;
-      queryIndex++;
-    }
-  }
-
-  if (queryIndex === queryLower.length) {
-    const score = (matchCount / textLower.length * 50) + consecutiveBonus;
-    return { match: true, score };
-  }
-
-  return { match: false, score: 0 };
-}
+import { gradients } from "../shared/gradients";
 
 export interface SearchFilterResult {
   list: TopList;
@@ -80,15 +49,25 @@ export function SearchFilterBar({
   className,
 }: SearchFilterBarProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [timePeriodFilter, setTimePeriodFilter] = useState<TimePeriodFilter>("all");
   const [listSizeFilter, setListSizeFilter] = useState<ListSizeFilter>("all");
   const [isFocused, setIsFocused] = useState(false);
-  const [selectedIndex, setSelectedIndex] = useState(-1);
-  const [showDropdown, setShowDropdown] = useState(false);
+  const [, startTransition] = useTransition();
 
   const inputRef = useRef<HTMLInputElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const prevResultsRef = useRef<string>("");
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  // Debounce search query - keeps input responsive while deferring expensive filtering
+  useEffect(() => {
+    debounceTimerRef.current = setTimeout(() => {
+      startTransition(() => {
+        setDebouncedQuery(searchQuery);
+      });
+    }, 150);
+    return () => clearTimeout(debounceTimerRef.current);
+  }, [searchQuery]);
 
   // Compute filtered results
   const filteredResults = useMemo(() => {
@@ -106,19 +85,19 @@ export function SearchFilterBar({
         if (list.size !== listSizeFilter) continue;
       }
 
-      // Apply fuzzy search
-      if (searchQuery) {
-        const titleMatch = fuzzyMatch(list.title, searchQuery);
-        const categoryMatch = fuzzyMatch(list.category, searchQuery);
+      // Apply fuzzy search (uses debounced query for performance)
+      if (debouncedQuery) {
+        const titleMatch = fuzzyMatch(debouncedQuery, list.title);
+        const categoryMatch = fuzzyMatch(debouncedQuery, list.category);
         const subcategoryMatch = list.subcategory
-          ? fuzzyMatch(list.subcategory, searchQuery)
-          : { match: false, score: 0 };
+          ? fuzzyMatch(debouncedQuery, list.subcategory)
+          : { matches: false, score: 0 };
 
-        if (titleMatch.match) {
-          results.push({ list, score: titleMatch.score + 10, matchField: "title" });
-        } else if (categoryMatch.match) {
-          results.push({ list, score: categoryMatch.score + 5, matchField: "category" });
-        } else if (subcategoryMatch.match) {
+        if (titleMatch.matches) {
+          results.push({ list, score: titleMatch.score + 1.0, matchField: "title" });
+        } else if (categoryMatch.matches) {
+          results.push({ list, score: categoryMatch.score + 0.5, matchField: "category" });
+        } else if (subcategoryMatch.matches) {
           results.push({ list, score: subcategoryMatch.score, matchField: "subcategory" });
         }
       } else {
@@ -128,7 +107,7 @@ export function SearchFilterBar({
 
     // Sort by score (highest first)
     return results.sort((a, b) => b.score - a.score);
-  }, [lists, searchQuery, timePeriodFilter, listSizeFilter]);
+  }, [lists, debouncedQuery, timePeriodFilter, listSizeFilter]);
 
   // Notify parent of filtered results only when they actually change
   useEffect(() => {
@@ -146,55 +125,19 @@ export function SearchFilterBar({
     onSearchActive(isActive);
   }, [searchQuery, timePeriodFilter, listSizeFilter, onSearchActive]);
 
-  // Keyboard navigation
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (!showDropdown) return;
-
-    switch (e.key) {
-      case "ArrowDown":
-        e.preventDefault();
-        setSelectedIndex(prev =>
-          prev < filteredResults.length - 1 ? prev + 1 : prev
-        );
-        break;
-      case "ArrowUp":
-        e.preventDefault();
-        setSelectedIndex(prev => prev > 0 ? prev - 1 : 0);
-        break;
-      case "Enter":
-        e.preventDefault();
-        if (selectedIndex >= 0 && selectedIndex < filteredResults.length) {
-          // Could trigger a selection action here
-          setShowDropdown(false);
-        }
-        break;
-      case "Escape":
-        e.preventDefault();
-        setShowDropdown(false);
-        inputRef.current?.blur();
-        break;
-    }
-  }, [showDropdown, filteredResults.length, selectedIndex]);
-
-  // Scroll selected item into view
-  useEffect(() => {
-    if (selectedIndex >= 0 && dropdownRef.current) {
-      const items = dropdownRef.current.querySelectorAll("[data-result-item]");
-      items[selectedIndex]?.scrollIntoView({ block: "nearest" });
-    }
-  }, [selectedIndex]);
-
   const clearSearch = () => {
     setSearchQuery("");
-    setSelectedIndex(-1);
+    setDebouncedQuery("");
+    clearTimeout(debounceTimerRef.current);
     inputRef.current?.focus();
   };
 
   const clearAllFilters = () => {
     setSearchQuery("");
+    setDebouncedQuery("");
+    clearTimeout(debounceTimerRef.current);
     setTimePeriodFilter("all");
     setListSizeFilter("all");
-    setSelectedIndex(-1);
   };
 
   const hasActiveFilters = searchQuery.length > 0 || timePeriodFilter !== "all" || listSizeFilter !== "all";
@@ -204,23 +147,14 @@ export function SearchFilterBar({
       className={`relative ${className}`}
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: DURATION.normal }}
     >
       {/* Search and Filter Container */}
       <div
-        className="flex flex-col sm:flex-row gap-3 p-4 rounded-2xl"
+        className="flex flex-col sm:flex-row gap-3 p-4 rounded-container"
         style={{
-          background: `
-            linear-gradient(135deg,
-              rgba(15, 23, 42, 0.8) 0%,
-              rgba(30, 41, 59, 0.6) 50%,
-              rgba(15, 23, 42, 0.8) 100%
-            )
-          `,
-          boxShadow: `
-            0 4px 20px rgba(0, 0, 0, 0.3),
-            inset 0 1px 0 rgba(255, 255, 255, 0.05)
-          `,
+          background: gradients.panelSurface,
+          boxShadow: withInset(ELEVATION.high),
           border: "1px solid rgba(255, 255, 255, 0.05)",
         }}
         data-testid="search-filter-container"
@@ -228,46 +162,29 @@ export function SearchFilterBar({
         {/* Search Input */}
         <div className="relative flex-1">
           <div
-            className={`relative flex items-center rounded-xl transition-all duration-200 ${
-              isFocused ? "ring-2 ring-cyan-400/30" : ""
+            className={`relative flex items-center rounded-card transition-all duration-200 ${
+              isFocused ? "ring-2 ring-brand-hover/30" : ""
             }`}
             style={{
-              background: `
-                linear-gradient(135deg,
-                  rgba(30, 41, 59, 0.8) 0%,
-                  rgba(51, 65, 85, 0.9) 100%
-                )
-              `,
+              background: gradients.inputSurface,
               border: isFocused
                 ? "1px solid rgba(6, 182, 212, 0.5)"
                 : "1px solid rgba(255, 255, 255, 0.1)",
               boxShadow: isFocused
-                ? "0 0 20px rgba(6, 182, 212, 0.15)"
-                : "none",
+                ? INSET.focusGlow
+                : ELEVATION.none,
             }}
           >
-            <Search className="w-4 h-4 text-slate-400 ml-3 flex-shrink-0" />
+            <Search className="w-4 h-4 text-slate-400 ml-3 shrink-0" />
             <input
               ref={inputRef}
               type="text"
               value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setSelectedIndex(-1);
-                setShowDropdown(true);
-              }}
-              onFocus={() => {
-                setIsFocused(true);
-                if (searchQuery.length > 0) setShowDropdown(true);
-              }}
-              onBlur={() => {
-                setIsFocused(false);
-                // Delay hiding dropdown to allow click events
-                setTimeout(() => setShowDropdown(false), 150);
-              }}
-              onKeyDown={handleKeyDown}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
               placeholder="Search lists by title, category..."
-              className="w-full px-3 py-2.5 bg-transparent text-slate-200 text-sm placeholder-slate-500 focus:outline-none"
+              className="w-full px-3 py-2.5 bg-transparent text-slate-200 text-sm placeholder-slate-500 focus:outline-hidden"
               data-testid="search-filter-input"
             />
             <AnimatePresence>
@@ -277,7 +194,8 @@ export function SearchFilterBar({
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.8 }}
                   onClick={clearSearch}
-                  className="mr-2 p-1 rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-600/50 transition-colors"
+                  className="mr-2 p-1 rounded-control text-slate-400 hover:text-slate-200 hover:bg-slate-600/50 transition-colors
+                    focus-ring"
                   data-testid="search-clear-btn"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -285,75 +203,6 @@ export function SearchFilterBar({
               )}
             </AnimatePresence>
           </div>
-
-          {/* Search Dropdown */}
-          <AnimatePresence>
-            {showDropdown && searchQuery.length > 0 && filteredResults.length > 0 && (
-              <motion.div
-                ref={dropdownRef}
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="absolute top-full left-0 right-0 mt-2 max-h-64 overflow-y-auto rounded-xl z-50"
-                style={{
-                  background: `
-                    linear-gradient(135deg,
-                      rgba(15, 23, 42, 0.98) 0%,
-                      rgba(30, 41, 59, 0.98) 100%
-                    )
-                  `,
-                  boxShadow: `
-                    0 10px 40px rgba(0, 0, 0, 0.4),
-                    inset 0 1px 0 rgba(255, 255, 255, 0.05)
-                  `,
-                  border: "1px solid rgba(255, 255, 255, 0.1)",
-                }}
-                data-testid="search-dropdown"
-              >
-                <div className="p-2">
-                  <div className="text-xs text-slate-500 px-2 py-1 mb-1">
-                    {filteredResults.length} result{filteredResults.length !== 1 ? "s" : ""} found
-                  </div>
-                  {filteredResults.slice(0, 8).map((result, index) => (
-                    <motion.div
-                      key={result.list.id}
-                      data-result-item
-                      className={`px-3 py-2 rounded-lg cursor-pointer transition-colors ${
-                        index === selectedIndex
-                          ? "bg-cyan-500/20 text-cyan-200"
-                          : "text-slate-300 hover:bg-slate-700/50"
-                      }`}
-                      onClick={() => {
-                        // Could navigate or select the list
-                        setShowDropdown(false);
-                      }}
-                      data-testid={`search-result-${result.list.id}`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium truncate">
-                            {result.list.title}
-                          </div>
-                          <div className="text-xs text-slate-500 flex items-center gap-2">
-                            <span>{result.list.category}</span>
-                            {result.list.subcategory && (
-                              <>
-                                <span className="text-slate-600">•</span>
-                                <span>{result.list.subcategory}</span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex-shrink-0 text-xs px-2 py-0.5 rounded-full bg-slate-700/50 text-slate-400">
-                          Top {result.list.size}
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
 
         {/* Filter Chips */}
@@ -388,7 +237,8 @@ export function SearchFilterBar({
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
                 onClick={clearAllFilters}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 bg-slate-700/50 hover:bg-slate-600/50 transition-colors flex items-center gap-1.5"
+                className="px-3 py-1.5 rounded-control text-xs font-medium text-slate-400 hover:text-slate-200 bg-slate-700/50 hover:bg-slate-600/50 transition-colors flex items-center gap-1.5
+                  focus-ring"
                 data-testid="filter-clear-all-btn"
               >
                 <X className="w-3 h-3" />
@@ -412,7 +262,7 @@ export function SearchFilterBar({
               <Filter className="w-3 h-3" />
               <span>
                 Showing {filteredResults.length} list{filteredResults.length !== 1 ? "s" : ""}
-                {searchQuery && <span> matching "{searchQuery}"</span>}
+                {searchQuery && <span> matching &quot;{searchQuery}&quot;</span>}
               </span>
             </div>
           </motion.div>
@@ -461,9 +311,11 @@ function FilterChip<T extends string | number>({
     <div ref={chipRef} className="relative">
       <motion.button
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-control text-xs font-medium transition-colors
+          focus-ring
+          ${
           isActive
-            ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30"
+            ? "bg-brand/20 text-brand-hover border border-brand/30"
             : "bg-slate-700/50 text-slate-400 border border-transparent hover:bg-slate-600/50 hover:text-slate-300"
         }`}
         whileHover={{ scale: 1.02 }}
@@ -481,16 +333,11 @@ function FilterChip<T extends string | number>({
             initial={{ opacity: 0, y: -5 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -5 }}
-            className="absolute top-full left-0 mt-1 min-w-[140px] rounded-lg z-50 overflow-hidden"
+            className="absolute top-full left-0 mt-1 min-w-[140px] rounded-card z-dropdown overflow-hidden"
             style={{
-              background: `
-                linear-gradient(135deg,
-                  rgba(15, 23, 42, 0.98) 0%,
-                  rgba(30, 41, 59, 0.98) 100%
-                )
-              `,
-              boxShadow: "0 10px 30px rgba(0, 0, 0, 0.4)",
-              border: "1px solid rgba(255, 255, 255, 0.1)",
+              background: gradients.dropdownSurface,
+              boxShadow: ELEVATION.overlay,
+              border: "1px solid rgba(255,255,255,0.1)",
             }}
             data-testid={`${testId}-dropdown`}
           >
@@ -501,9 +348,11 @@ function FilterChip<T extends string | number>({
                   onChange(option.value);
                   setIsOpen(false);
                 }}
-                className={`w-full px-3 py-2 text-left text-xs transition-colors ${
+                className={`w-full px-3 py-2 text-left text-xs transition-colors
+                  focus-ring
+                  ${
                   value === option.value
-                    ? "bg-cyan-500/20 text-cyan-300"
+                    ? "bg-brand/20 text-brand-hover"
                     : "text-slate-300 hover:bg-slate-700/50"
                 }`}
                 data-testid={`${testId}-option-${option.value}`}

@@ -11,6 +11,9 @@
  * 4. ListIntent → Metadata (for list store and session)
  */
 
+import { getDefaultSubcategory, getInitialSubcategory } from '@/lib/config/category-config';
+
+import { Blueprint } from './blueprint';
 import {
   ListIntent,
   ListIntentColor,
@@ -21,8 +24,6 @@ import {
 } from './list-intent';
 import { ListTemplate } from './templates';
 import { TopList } from './top-lists';
-import { Blueprint } from './blueprint';
-import { getDefaultSubcategory, getInitialSubcategory } from '@/lib/config/category-config';
 
 // ============================================================================
 // API Request Types
@@ -38,6 +39,10 @@ export interface CreateListRequest {
   size: number;
   time_period: string;
   description?: string;
+  allow_custom_items?: boolean;
+  // Resolved owner id (temp/guest UUID or authenticated user id). The
+  // create-with-user route reads this; without it every list is orphaned.
+  user_id?: string;
   user: {
     email: string;
     name?: string;
@@ -109,6 +114,9 @@ export function listIntentToCreateRequest(
     size: intent.size,
     time_period: intent.timePeriod,
     description: generateListDescription(intent),
+    // The route reads body.user_id to own the list; the user descriptor below is
+    // kept only as a fallback hint. Without user_id the list is created orphaned.
+    user_id: tempUserId,
     user: {
       email: `temp-${tempUserId}@goat.app`,
       name: `User ${tempUserId.slice(-6)}`,

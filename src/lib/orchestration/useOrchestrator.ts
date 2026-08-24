@@ -5,13 +5,10 @@
  * and reactive updates to undo/redo state.
  */
 
-import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
-import {
-  getOrchestrator,
-  OrchestratorEvent,
-  createLoggingMiddleware,
-  createPersistenceMiddleware,
-} from './GlobalOrchestrator';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+
+import { BacklogItem } from '@/types/backlog-groups';
+
 import {
   assignItem,
   moveItem,
@@ -30,7 +27,12 @@ import {
   showResultModal,
   hideResultModal,
 } from './commands';
-import { BacklogItem } from '@/types/backlog-groups';
+import {
+  getOrchestrator,
+  OrchestratorEvent,
+  createLoggingMiddleware,
+  createPersistenceMiddleware,
+} from './GlobalOrchestrator';
 import { UndoEntry } from './types';
 
 // =============================================================================

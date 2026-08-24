@@ -66,3 +66,19 @@ export {
   type TierBadgeProps,
   type TierLegendProps,
 } from './TierIndicator';
+
+export {
+  GoalStatusBadge,
+  type GoalStatus,
+  type GoalStatusBadgeProps,
+} from './GoalStatusBadge';
+
+export {
+  GoalCompletionBurst,
+  type GoalCompletionBurstProps,
+} from './GoalCompletionBurst';
+
+export {
+  GoalProgressRing,
+  type GoalProgressRingProps,
+} from './GoalProgressRing';

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+
 import { cn } from "@/lib/utils";
 
 // Responsive breakpoint thresholds (in pixels)
@@ -76,20 +77,12 @@ export const MasonryGrid = React.forwardRef<HTMLDivElement, MasonryGridProps>(
   ) => {
     const childArray = React.Children.toArray(children);
 
-    // Generate column-based responsive classes
-    const getColumnClasses = () => {
-      if (typeof columns === 'number') {
-        return `grid-cols-${columns}`;
-      }
-
-      const { sm = DEFAULT_COLUMNS, md = DEFAULT_COLUMNS_MD, lg = DEFAULT_COLUMNS_LG, xl = DEFAULT_COLUMNS_LG } = columns;
-      return cn(
-        `grid-cols-${sm}`,
-        `sm:grid-cols-${md}`,
-        `md:grid-cols-${lg}`,
-        `lg:grid-cols-${xl}`
-      );
-    };
+    // Drive the column count via an inline gridTemplateColumns. The previous
+    // approach interpolated class names (`grid-cols-${n}`) which Tailwind 4 JIT
+    // never sees as static strings, so no CSS was generated and the grid silently
+    // collapsed to one column in production. useMasonryColumns resolves the count
+    // responsively (and SSR-safely: initial render uses the `sm`/number value).
+    const resolvedColumns = useMasonryColumns(columns);
 
     return (
       <div
@@ -97,13 +90,13 @@ export const MasonryGrid = React.forwardRef<HTMLDivElement, MasonryGridProps>(
         data-testid={testId || "masonry-grid"}
         className={cn(
           "grid w-full",
-          getColumnClasses(),
           enableTransitions && "transition-all duration-300 ease-in-out",
           className
         )}
         style={{
           gap: `${gap}px`,
           gridAutoRows: 'auto',
+          gridTemplateColumns: `repeat(${resolvedColumns}, minmax(0, 1fr))`,
         }}
         {...props}
       >

@@ -1,8 +1,11 @@
 "use client";
 
-import { motion, useSpring, useTransform } from "framer-motion";
+import { motion, useSpring } from "framer-motion";
 import { useMemo } from "react";
+
 import { PlaceholderImage } from "@/components/ui/placeholder-image";
+import { DURATION } from '@/lib/animations/motion-presets';
+
 import { getSpeed, getDirection, Vector2D } from "../lib/physicsEngine";
 
 interface DraggableItem {
@@ -68,7 +71,32 @@ export function PhysicsDragOverlay({
     return Math.atan2(velocity.y, velocity.x) * (180 / Math.PI) + 180;
   }, [velocity.x, velocity.y]);
 
-  // Spring animations for smooth transitions
+  // Adaptive sizing: match target slot's 4:5 aspect ratio when hovering
+  const isOverDropZone = previewPosition != null;
+  const targetWidth = isOverDropZone ? 88 : 96;
+  const targetHeight = isOverDropZone ? 110 : 96; // 88 * 5/4 = 110 (4:5 aspect)
+
+  // Spring animations for smooth size transitions
+  const springWidth = useSpring(targetWidth, {
+    stiffness: 280,
+    damping: 22,
+  });
+
+  const springHeight = useSpring(targetHeight, {
+    stiffness: 280,
+    damping: 22,
+  });
+
+  const springMarginLeft = useSpring(-targetWidth / 2, {
+    stiffness: 280,
+    damping: 22,
+  });
+
+  const springMarginTop = useSpring(-targetHeight / 2, {
+    stiffness: 280,
+    damping: 22,
+  });
+
   const springScale = useSpring(dynamicScale, {
     stiffness: 300,
     damping: 20,
@@ -92,10 +120,12 @@ export function PhysicsDragOverlay({
           : { duration: 0.1 },
         rotate: { duration: 0.08 },
       }}
-      className="w-24 h-24 rounded-xl overflow-hidden"
+      className="rounded-card overflow-hidden"
       style={{
-        marginLeft: '-48px',
-        marginTop: '-48px',
+        width: springWidth,
+        height: springHeight,
+        marginLeft: springMarginLeft,
+        marginTop: springMarginTop,
         boxShadow: `
           0 ${10 + shadowIntensity * 20}px ${25 + shadowIntensity * 35}px rgba(0, 0, 0, ${0.3 + shadowIntensity * 0.3}),
           0 0 ${35 + shadowIntensity * 25}px rgba(34, 211, 238, ${0.35 + shadowIntensity * 0.35}),
@@ -107,13 +137,13 @@ export function PhysicsDragOverlay({
       {/* Gravity Well Attraction Indicator */}
       {gravityWellActive && (
         <motion.div
-          className="absolute -inset-2 rounded-2xl pointer-events-none z-0"
+          className="absolute -inset-2 rounded-container pointer-events-none z-0"
           animate={{
             opacity: [0.3, 0.6, 0.3],
             scale: [1, 1.05, 1],
           }}
           transition={{
-            duration: 0.8,
+            duration: DURATION.dramatic,
             repeat: Infinity,
             ease: "easeInOut",
           }}
@@ -128,7 +158,7 @@ export function PhysicsDragOverlay({
       {/* Resistance Indicator */}
       {resistance > 0.1 && (
         <motion.div
-          className="absolute -inset-1 rounded-xl pointer-events-none z-5"
+          className="absolute -inset-1 rounded-card pointer-events-none z-5"
           animate={{
             opacity: [resistance * 0.3, resistance * 0.5, resistance * 0.3],
           }}
@@ -146,7 +176,7 @@ export function PhysicsDragOverlay({
 
       {/* Glow border that intensifies when near drop zone */}
       <motion.div
-        className="absolute inset-0 rounded-xl pointer-events-none z-20"
+        className="absolute inset-0 rounded-card pointer-events-none z-20"
         animate={{
           boxShadow: previewPosition !== null
             ? "inset 0 0 20px rgba(34, 211, 238, 0.6), 0 0 25px rgba(34, 211, 238, 0.5)"
@@ -154,12 +184,12 @@ export function PhysicsDragOverlay({
               ? "inset 0 0 15px rgba(34, 211, 238, 0.4), 0 0 18px rgba(34, 211, 238, 0.3)"
               : "inset 0 0 0px transparent",
         }}
-        transition={{ duration: 0.15 }}
+        transition={{ duration: DURATION.quick }}
       />
 
       {/* Border */}
       <motion.div
-        className="absolute inset-0 rounded-xl border-2 pointer-events-none z-10"
+        className="absolute inset-0 rounded-card border-2 pointer-events-none z-10"
         animate={{
           borderColor: previewPosition !== null
             ? "rgba(34, 211, 238, 1)"
@@ -167,7 +197,7 @@ export function PhysicsDragOverlay({
               ? "rgba(34, 211, 238, 0.8)"
               : "rgba(34, 211, 238, 0.6)",
         }}
-        transition={{ duration: 0.1 }}
+        transition={{ duration: DURATION.instant }}
       />
 
       {/* Content */}
@@ -190,7 +220,7 @@ export function PhysicsDragOverlay({
         <motion.div
           initial={{ opacity: 0, scale: 0.8, y: -5 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          className="absolute top-1 right-1 bg-cyan-500/95 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md backdrop-blur-sm z-30"
+          className="absolute top-1 right-1 bg-brand/95 text-white text-2xs font-bold px-1.5 py-0.5 rounded-control backdrop-blur-xs z-30"
           data-testid="physics-position-preview"
         >
           #{previewPosition + 1}
@@ -202,7 +232,7 @@ export function PhysicsDragOverlay({
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 0.7, scale: 1 }}
-          className="absolute top-1 left-1 bg-purple-500/80 text-white text-[9px] font-bold px-1 py-0.5 rounded-md backdrop-blur-sm z-30 flex items-center gap-0.5"
+          className="absolute top-1 left-1 bg-purple-500/80 text-white text-2xs font-bold px-1 py-0.5 rounded-control backdrop-blur-xs z-30 flex items-center gap-0.5"
           data-testid="gravity-target-indicator"
         >
           <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="currentColor">
@@ -229,14 +259,14 @@ export function PhysicsDragOverlay({
       {/* Speed indicator ring - appears at high velocity */}
       {speed > 500 && (
         <motion.div
-          className="absolute -inset-3 rounded-2xl pointer-events-none z-0"
+          className="absolute -inset-3 rounded-container pointer-events-none z-0"
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{
             opacity: [0.2, 0.4, 0.2],
             scale: [1, 1.1, 1],
           }}
           transition={{
-            duration: 0.3,
+            duration: DURATION.normal,
             repeat: Infinity,
           }}
           style={{
@@ -255,7 +285,7 @@ export function PhysicsDragOverlay({
             opacity: [0, 0.8, 0],
             scale: [1, 1.3, 1.5],
           }}
-          transition={{ duration: 0.3, ease: "easeOut" }}
+          transition={{ duration: DURATION.normal, ease: "easeOut" }}
           style={{
             background: "radial-gradient(circle, rgba(34, 211, 238, 0.5) 0%, transparent 60%)",
           }}
@@ -296,7 +326,7 @@ export function PhysicsTrail({
 
   return (
     <svg
-      className="fixed inset-0 pointer-events-none z-[98]"
+      className="fixed inset-0 pointer-events-none z-98"
       data-testid="physics-trail"
     >
       <defs>
@@ -388,7 +418,7 @@ export function GravityWellConnector({
 
   return (
     <svg
-      className="fixed inset-0 pointer-events-none z-[97]"
+      className="fixed inset-0 pointer-events-none z-97"
       data-testid="gravity-well-connector"
     >
       <defs>
@@ -418,7 +448,7 @@ export function GravityWellConnector({
           pathLength: 1,
           opacity: strength,
         }}
-        transition={{ duration: 0.3 }}
+        transition={{ duration: DURATION.normal }}
       />
 
       {/* Pulsing dots along the line */}

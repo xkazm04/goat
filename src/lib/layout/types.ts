@@ -136,6 +136,36 @@ export interface PipConfig {
 }
 
 /**
+ * Dock edge for detachable windows
+ */
+export type DockEdge = 'top' | 'right' | 'bottom' | 'left';
+
+/**
+ * Detached window configuration
+ */
+export interface DetachedWindowConfig {
+  id: string;
+  title: string;
+  /** Source panel this was detached from (e.g. 'collection-browser', 'item-detail') */
+  sourcePanel: string;
+  position: { x: number; y: number };
+  size: { width: number; height: number };
+  minSize: { width: number; height: number };
+  maxSize: { width: number; height: number };
+  zIndex: number;
+  opacity: number;
+  /** Whether the window is docked to a viewport edge */
+  isDocked: boolean;
+  dockEdge: DockEdge | null;
+  /** Whether the window is minimized to a taskbar-like strip */
+  isMinimized: boolean;
+  /** Whether the window is maximized to fill the viewport */
+  isMaximized: boolean;
+  /** Stored position/size before maximize, for restore */
+  preMaximize: { position: { x: number; y: number }; size: { width: number; height: number } } | null;
+}
+
+/**
  * Layout state
  */
 export interface LayoutState {
@@ -150,6 +180,12 @@ export interface LayoutState {
   isTransitioning: boolean;
   gestureEnabled: boolean;
   customPresets: LayoutPresetConfig[];
+  /** Multi-window workspace: detached floating windows */
+  detachedWindows: Map<string, DetachedWindowConfig>;
+  /** Tracks which window is currently focused (topmost) */
+  activeWindowId: string | null;
+  /** Global counter for z-index stacking */
+  nextWindowZIndex: number;
 }
 
 /**
@@ -195,6 +231,19 @@ export interface LayoutActions {
 
   // Dimensions
   updateDimensions: (dimensions: Partial<LayoutDimensions>) => void;
+
+  // Detached Windows (Multi-Window Workspace)
+  detachWindow: (config: Omit<DetachedWindowConfig, 'zIndex'>) => void;
+  attachWindow: (id: string) => void;
+  updateWindow: (id: string, config: Partial<DetachedWindowConfig>) => void;
+  focusWindow: (id: string) => void;
+  minimizeWindow: (id: string) => void;
+  maximizeWindow: (id: string) => void;
+  restoreWindow: (id: string) => void;
+  dockWindow: (id: string, edge: DockEdge) => void;
+  undockWindow: (id: string) => void;
+  closeAllWindows: () => void;
+  arrangeWindows: (arrangement: 'cascade' | 'tile-horizontal' | 'tile-vertical') => void;
 
   // Reset
   reset: () => void;

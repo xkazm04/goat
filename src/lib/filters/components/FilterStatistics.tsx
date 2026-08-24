@@ -5,11 +5,14 @@
  * Real-time match counts and filter statistics
  */
 
-import React, { useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
+import React from 'react';
+
 import { cn } from '@/lib/utils';
+
+import { FILTER_ANIMATIONS, FILTER_TIMING } from '../constants';
+
 import type { FilterStatistics as FilterStatsType, FieldDistribution } from '../types';
-import { FILTER_ANIMATIONS } from '../constants';
 
 /**
  * FilterStatistics Props
@@ -125,7 +128,7 @@ function CardStatistics({
   return (
     <motion.div
       className={cn(
-        'p-4 rounded-lg border border-border bg-background',
+        'p-4 rounded-card border border-border bg-background',
         className
       )}
       initial={{ opacity: 0, y: 10 }}
@@ -135,7 +138,7 @@ function CardStatistics({
       {/* Main stats */}
       <div className="flex items-center justify-between mb-3">
         <div>
-          <div className="text-2xl font-bold">
+          <div className="text-2xl font-bold font-mono tabular-nums">
             <AnimatedNumber value={statistics.matchedItems} />
           </div>
           <div className="text-xs text-muted-foreground">
@@ -145,7 +148,7 @@ function CardStatistics({
 
         {showPercentage && (
           <div className="text-right">
-            <div className="text-lg font-semibold text-primary">
+            <div className="text-lg font-semibold text-primary font-mono tabular-nums">
               <AnimatedNumber value={Math.round(statistics.matchPercentage)} />%
             </div>
             <div className="text-xs text-muted-foreground">
@@ -161,7 +164,7 @@ function CardStatistics({
           className="h-full bg-primary rounded-full"
           initial={{ width: 0 }}
           animate={{ width: `${statistics.matchPercentage}%` }}
-          transition={{ duration: 0.5, ease: 'easeOut' }}
+          transition={{ duration: FILTER_TIMING.slow, ease: 'easeOut' }}
         />
       </div>
 
@@ -262,9 +265,9 @@ function StatCard({
   };
 
   return (
-    <div className="p-3 rounded-lg bg-muted/50">
+    <div className="p-3 rounded-card bg-muted/50">
       <div className="text-xs text-muted-foreground mb-1">{label}</div>
-      <div className={cn('text-xl font-bold', colorClasses[color])}>
+      <div className={cn('text-xl font-bold font-mono tabular-nums', colorClasses[color])}>
         {typeof value === 'number' ? <AnimatedNumber value={value} /> : value}
       </div>
       {subtitle && (
@@ -296,7 +299,7 @@ function FieldBreakdown({
             {dist.values.slice(0, 5).map((v) => (
               <span
                 key={String(v.value)}
-                className="px-1.5 py-0.5 text-[10px] bg-muted rounded"
+                className="px-1.5 py-0.5 text-2xs bg-muted rounded"
               >
                 {String(v.value)}: {v.count}
               </span>
@@ -322,7 +325,7 @@ function FieldDistributionChart({
   const topValues = distribution.values.slice(0, 5);
 
   return (
-    <div className="p-3 rounded-lg border border-border">
+    <div className="p-3 rounded-card border border-border">
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm font-medium capitalize">{distribution.field}</span>
         {distribution.average !== undefined && (
@@ -343,10 +346,10 @@ function FieldDistributionChart({
                 className="h-full bg-primary/60 rounded-full"
                 initial={{ width: 0 }}
                 animate={{ width: `${(item.count / maxCount) * 100}%` }}
-                transition={{ duration: 0.3, delay: 0.1 }}
+                transition={{ duration: FILTER_TIMING.slow, delay: 0.1 }}
               />
             </div>
-            <span className="text-xs font-medium w-10 text-right">
+            <span className="text-xs font-medium w-10 text-right font-mono tabular-nums">
               {item.count}
             </span>
           </div>
@@ -384,7 +387,7 @@ function StatisticsLoading({
   return (
     <div
       className={cn(
-        'p-4 rounded-lg border border-border animate-pulse',
+        'p-4 rounded-card border border-border animate-pulse',
         className
       )}
     >

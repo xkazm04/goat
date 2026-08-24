@@ -1,13 +1,11 @@
 // Collection Panel Components
-export { CollectionHeader, type GroupViewMode } from './CollectionHeader';
-export { CompactCollectionHeader } from './CompactCollectionHeader';
+export { CompactCollectionHeader, type GroupViewMode } from './CompactCollectionHeader';
 export { CollectionSidebar } from './CollectionSidebar';
-export { VerticalCategoryNav } from './VerticalCategoryNav';
 export { CollectionHorizontalBar } from './CollectionHorizontalBar';
 export { VirtualizedCollectionGrid } from './VirtualizedCollectionGrid';
 export { CollectionToggleButton } from './CollectionToggleButton';
-export { CollectionSearch, highlightMatch, filterItemsByQuery } from './CollectionSearch';
-export { EnhancedCollectionSearch } from './EnhancedCollectionSearch';
+export { CollectionSearchInput } from './CollectionSearchInput';
+export { highlightMatch } from '@/lib/utils/search';
 export { useGridColumns, useGridDimensions } from './useGridColumns';
 
 // Re-export from sub_ItemBadges for backwards compatibility

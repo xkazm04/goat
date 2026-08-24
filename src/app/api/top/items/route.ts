@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+
+import { getRequestId } from '@/lib/api/request-id';
+import { createClient, requireAuth, sanitizeFilterValue, escapeIlikeWildcards } from '@/lib/supabase/server';
+
 import type { ItemInsert } from '@/types/database';
 
 // Force dynamic rendering
@@ -9,6 +12,7 @@ export const dynamic = 'force-dynamic';
  * GET /api/top/items - Get items with filtering, sorting, and pagination
  */
 export async function GET(request: NextRequest) {
+  const requestId = getRequestId(request);
   try {
     const supabase = await createClient();
     const { searchParams } = new URL(request.url);
@@ -19,12 +23,10 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     const sortBy = searchParams.get('sort_by') || 'name';
     const sortOrder = (searchParams.get('sort_order') || 'asc').toLowerCase();
-    const limit = parseInt(searchParams.get('limit') || '50');
-    const offset = parseInt(searchParams.get('offset') || '0');
+    const limit = Math.max(1, Math.min(parseInt(searchParams.get('limit') || '50'), 200));
+    const offset = Math.max(0, parseInt(searchParams.get('offset') || '0'));
     const groupId = searchParams.get('group_id');
     const missingImage = searchParams.get('missing_image') === 'true';
-
-    console.log('🔍 Items API params:', { category, subcategory, search, sortBy, sortOrder, limit, offset, groupId, missingImage });
 
     // Build query
     let query = supabase.from('items').select('*', { count: 'exact' });
@@ -40,7 +42,7 @@ export async function GET(request: NextRequest) {
       query = query.eq('group_id', groupId);
     }
     if (search) {
-      query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
+      query = query.or(`name.ilike.%${sanitizeFilterValue(escapeIlikeWildcards(search))}%,description.ilike.%${sanitizeFilterValue(escapeIlikeWildcards(search))}%`);
     }
     if (missingImage) {
       query = query.is('image_url', null);
@@ -63,15 +65,12 @@ export async function GET(request: NextRequest) {
     // Apply pagination
     query = query.range(offset, offset + limit - 1);
 
-    console.log('🔍 Final sort field:', sortField, 'order:', sortOrder);
-
     const { data, error, count } = await query;
 
     if (error) {
-      console.error('Error fetching items:', error);
-      console.error('Query details - sortField:', sortField, 'sortOrder:', sortOrder);
+      console.error(`[${requestId}] Error fetching items:`, error);
       return NextResponse.json(
-        { error: error.message, details: error },
+        { error: 'Failed to fetch items', requestId },
         { status: 500 }
       );
     }
@@ -84,9 +83,9 @@ export async function GET(request: NextRequest) {
       has_more: count ? offset + limit < count : false,
     });
   } catch (error) {
-    console.error('Unexpected error in GET /api/top/items:', error);
+    console.error(`[${requestId}] Unexpected error in GET /api/top/items:`, error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', requestId },
       { status: 500 }
     );
   }
@@ -96,7 +95,11 @@ export async function GET(request: NextRequest) {
  * POST /api/top/items - Create a new item
  */
 export async function POST(request: NextRequest) {
+  const requestId = getRequestId(request);
   try {
+    const auth = await requireAuth();
+    if (auth.error) return auth.error;
+
     const supabase = await createClient();
     const body = await request.json();
 
@@ -131,13 +134,13 @@ export async function POST(request: NextRequest) {
     }
     if (body.item_year !== undefined && body.item_year !== null) {
       const year = parseInt(String(body.item_year));
-      if (!isNaN(year)) {
+      if (!isNaN(year) && year >= -3000 && year <= 2100) {
         itemData.item_year = year;
       }
     }
     if (body.item_year_to !== undefined && body.item_year_to !== null) {
       const yearTo = parseInt(String(body.item_year_to));
-      if (!isNaN(yearTo)) {
+      if (!isNaN(yearTo) && yearTo >= -3000 && yearTo <= 2100) {
         itemData.item_year_to = yearTo;
       }
     }
@@ -156,27 +159,27 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Error creating item:', error);
-      
+      console.error(`[${requestId}] Error creating item:`, error);
+
       // Handle unique constraint violation
       if (error.code === '23505') {
         return NextResponse.json(
-          { error: 'An item with this name, category, and subcategory already exists' },
+          { error: 'An item with this name, category, and subcategory already exists', requestId },
           { status: 409 }
         );
       }
 
       return NextResponse.json(
-        { error: error.message },
+        { error: 'Failed to create item', requestId },
         { status: 500 }
       );
     }
 
     return NextResponse.json(data, { status: 201 });
   } catch (error) {
-    console.error('Unexpected error in POST /api/top/items:', error);
+    console.error(`[${requestId}] Unexpected error in POST /api/top/items:`, error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', requestId },
       { status: 500 }
     );
   }

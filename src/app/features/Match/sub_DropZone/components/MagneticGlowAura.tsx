@@ -1,7 +1,9 @@
 "use client";
 
-import { memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { memo } from "react";
+
+import { DURATION } from '@/lib/animations/motion-presets';
 
 export interface MagneticGlowAuraProps {
   /** Whether the aura should be visible */
@@ -24,7 +26,7 @@ export interface MagneticGlowAuraProps {
 export const MagneticGlowAura = memo(function MagneticGlowAura({
   isActive,
   strength,
-  color = "22, 211, 238", // cyan-400 RGB values
+  color = "22, 211, 238", // brand-hover RGB values
   className = "",
   testId,
 }: MagneticGlowAuraProps) {
@@ -32,7 +34,7 @@ export const MagneticGlowAura = memo(function MagneticGlowAura({
     <AnimatePresence>
       {isActive && strength > 0 && (
         <motion.div
-          className={`absolute -inset-[4px] rounded-xl pointer-events-none z-50 ${className}`}
+          className={`absolute -inset-[4px] rounded-card pointer-events-none z-drag ${className}`}
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{
             opacity: strength,
@@ -40,7 +42,7 @@ export const MagneticGlowAura = memo(function MagneticGlowAura({
           }}
           exit={{ opacity: 0, scale: 0.95 }}
           transition={{
-            duration: 0.15,
+            duration: DURATION.quick,
             ease: "easeOut",
           }}
           style={{
@@ -81,13 +83,13 @@ export const ValidDropIndicator = memo(function ValidDropIndicator({
     <AnimatePresence>
       {isActive && (
         <motion.div
-          className={`absolute -inset-[2px] rounded-xl pointer-events-none z-40 ${className}`}
+          className={`absolute -inset-[2px] rounded-card pointer-events-none z-sticky ${className}`}
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 0.7, scale: 1 }}
           exit={{ opacity: 0, scale: 0.98 }}
-          transition={{ duration: 0.2, ease: "easeOut" }}
+          transition={{ duration: DURATION.fast, ease: "easeOut" }}
           style={{
-            border: '2px solid rgb(34, 211, 238)', // cyan-400
+            border: '2px solid rgb(34, 211, 238)', // brand-hover
             boxShadow: `
               0 0 15px rgba(6, 182, 212, 0.4),
               0 0 30px rgba(6, 182, 212, 0.2),
@@ -124,14 +126,14 @@ export const SnapConfirmationGlow = memo(function SnapConfirmationGlow({
 
   return (
     <motion.div
-      className="absolute -inset-[4px] rounded-xl pointer-events-none z-50"
+      className="absolute -inset-[4px] rounded-card pointer-events-none z-drag"
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{
         opacity: [0, 1, 0.7, 0],
         scale: [0.9, 1.1, 1.05, 1],
       }}
       transition={{
-        duration: 0.6,
+        duration: DURATION.emphasis,
         ease: "easeOut",
       }}
       style={{

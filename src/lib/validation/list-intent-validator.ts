@@ -13,15 +13,15 @@
  */
 
 import {
-  ListIntent,
-  validateListIntent as basicValidateListIntent,
-  ListIntentValidation,
-} from '@/types/list-intent';
-import {
   categoryHasSubcategories,
   isValidSubcategory,
   CATEGORY_CONFIG,
 } from '@/lib/config/category-config';
+import {
+  ListIntent,
+  validateListIntent as basicValidateListIntent,
+  ListIntentValidation,
+} from '@/types/list-intent';
 
 // ============================================================================
 // Validation Types

@@ -1,6 +1,5 @@
 "use client";
 
-import { memo, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Flame,
@@ -8,13 +7,15 @@ import {
   TrendingUp,
   Eye,
   EyeOff,
-  Settings,
   BarChart3,
   ChevronDown,
   Sparkles,
   Target,
   Zap,
 } from "lucide-react";
+import { memo, useState } from "react";
+
+import { HeatmapLegend } from "../HeatmapRenderer";
 import {
   HeatmapViewMode,
   HeatmapConfig,
@@ -22,7 +23,6 @@ import {
   ItemConsensus,
   UserVsCommunityComparison,
 } from "../types";
-import { HeatmapLegend } from "../HeatmapRenderer";
 
 /**
  * Mode selector option
@@ -79,7 +79,7 @@ export const HeatmapToggle = memo(function HeatmapToggle({
 }) {
   return (
     <motion.button
-      className="flex items-center gap-2 px-3 py-2 rounded-lg transition-all"
+      className="flex items-center gap-2 px-3 py-2 rounded-control transition-all"
       style={{
         background: enabled
           ? "rgba(34, 197, 94, 0.2)"
@@ -125,7 +125,7 @@ export const ModeSelector = memo(function ModeSelector({
   return (
     <div className="relative">
       <motion.button
-        className="flex items-center gap-2 px-3 py-2 rounded-lg"
+        className="flex items-center gap-2 px-3 py-2 rounded-control"
         style={{
           background: "rgba(51, 65, 85, 0.4)",
           border: "1px solid rgba(71, 85, 105, 0.3)",
@@ -147,11 +147,10 @@ export const ModeSelector = memo(function ModeSelector({
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            className="absolute top-full left-0 mt-2 w-56 rounded-xl overflow-hidden z-50"
+            className="absolute top-full left-0 mt-2 w-56 rounded-card overflow-hidden z-dropdown backdrop-blur-md"
             style={{
               background: "rgba(30, 41, 59, 0.95)",
               border: "1px solid rgba(71, 85, 105, 0.4)",
-              backdropFilter: "blur(12px)",
             }}
             initial={{ opacity: 0, y: -10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -240,7 +239,7 @@ export const CommunityStatsCard = memo(function CommunityStatsCard({
 }) {
   return (
     <div
-      className="p-3 rounded-xl"
+      className="p-3 rounded-card"
       style={{
         background: "rgba(51, 65, 85, 0.3)",
         border: "1px solid rgba(71, 85, 105, 0.2)",
@@ -278,7 +277,7 @@ export const UserComparisonCard = memo(function UserComparisonCard({
 }) {
   return (
     <div
-      className="p-3 rounded-xl"
+      className="p-3 rounded-card"
       style={{
         background: "rgba(139, 92, 246, 0.1)",
         border: "1px solid rgba(139, 92, 246, 0.3)",
@@ -343,7 +342,7 @@ export const ControversialList = memo(function ControversialList({
       {topControversial.map((item, index) => (
         <motion.div
           key={item.itemId}
-          className="flex items-center gap-2 p-2 rounded-lg"
+          className="flex items-center gap-2 p-2 rounded-card"
           style={{ background: "rgba(239, 68, 68, 0.1)" }}
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
@@ -393,7 +392,7 @@ export const ConsensusWinnersList = memo(function ConsensusWinnersList({
       {topConsensus.map((item, index) => (
         <motion.div
           key={item.itemId}
-          className="flex items-center gap-2 p-2 rounded-lg"
+          className="flex items-center gap-2 p-2 rounded-card"
           style={{ background: "rgba(34, 197, 94, 0.1)" }}
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
@@ -436,11 +435,10 @@ export const ConsensusOverlayPanel = memo(function ConsensusOverlayPanel({
 }) {
   return (
     <div
-      className="rounded-xl overflow-hidden"
+      className="rounded-card overflow-hidden backdrop-blur-md"
       style={{
         background: "rgba(30, 41, 59, 0.6)",
         border: "1px solid rgba(71, 85, 105, 0.3)",
-        backdropFilter: "blur(12px)",
       }}
     >
       {/* Header */}

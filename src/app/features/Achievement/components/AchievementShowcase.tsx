@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Trophy,
@@ -12,6 +11,8 @@ import {
   Sparkles,
   Lock,
 } from "lucide-react";
+import { useState, useMemo } from "react";
+
 import {
   Achievement,
   AchievementCategory,
@@ -20,7 +21,8 @@ import {
   TIER_CONFIG,
   CATEGORY_CONFIG,
 } from "@/types/achievement";
-import { AchievementCard, AchievementCardCompact } from "./AchievementCard";
+
+import { AchievementCard } from "./AchievementCard";
 import { AchievementShareModal } from "./AchievementShareModal";
 
 interface AchievementShowcaseProps {
@@ -105,7 +107,10 @@ export function AchievementShowcase({
       totalUnlocked: unlocked.length,
       totalAchievements: showcase.achievements.length,
       totalPoints: showcase.stats.totalPoints,
-      completionPercent: Math.round((unlocked.length / showcase.achievements.length) * 100),
+      // Guard 0/0 — an empty achievements list rendered "NaN%" on this public surface.
+      completionPercent: showcase.achievements.length > 0
+        ? Math.round((unlocked.length / showcase.achievements.length) * 100)
+        : 0,
       byTier,
     };
   }, [showcase]);
@@ -219,7 +224,7 @@ export function AchievementShowcase({
               }}
             >
               <div className="flex items-center gap-3 mb-2">
-                <Star className="w-5 h-5 text-cyan-400" />
+                <Star className="w-5 h-5 text-brand-hover" />
                 <span className="text-sm text-gray-400">Total Points</span>
               </div>
               <p className="text-2xl font-bold text-white">{stats.totalPoints.toLocaleString()}</p>
@@ -303,7 +308,7 @@ export function AchievementShowcase({
           <button
             onClick={() => setShowFilters(!showFilters)}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-colors ${
-              showFilters ? 'bg-cyan-500/20 text-cyan-400' : 'bg-white/5 text-gray-400 hover:text-white'
+              showFilters ? 'bg-brand/20 text-brand-hover' : 'bg-white/5 text-gray-400 hover:text-white'
             }`}
           >
             <Filter className="w-4 h-4" />
@@ -319,7 +324,7 @@ export function AchievementShowcase({
                 onClick={() => setFilterMode(mode)}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                   filterMode === mode
-                    ? 'bg-cyan-500/20 text-cyan-400'
+                    ? 'bg-brand/20 text-brand-hover'
                     : 'bg-white/5 text-gray-400 hover:text-white'
                 }`}
               >
@@ -367,7 +372,7 @@ export function AchievementShowcase({
                       onClick={() => setFilterCategory('all')}
                       className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                         filterCategory === 'all'
-                          ? 'bg-cyan-500/20 text-cyan-400'
+                          ? 'bg-brand/20 text-brand-hover'
                           : 'bg-white/5 text-gray-400 hover:text-white'
                       }`}
                     >
@@ -379,7 +384,7 @@ export function AchievementShowcase({
                         onClick={() => setFilterCategory(cat)}
                         className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                           filterCategory === cat
-                            ? 'bg-cyan-500/20 text-cyan-400'
+                            ? 'bg-brand/20 text-brand-hover'
                             : 'bg-white/5 text-gray-400 hover:text-white'
                         }`}
                       >
@@ -397,7 +402,7 @@ export function AchievementShowcase({
                       onClick={() => setFilterTier('all')}
                       className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                         filterTier === 'all'
-                          ? 'bg-cyan-500/20 text-cyan-400'
+                          ? 'bg-brand/20 text-brand-hover'
                           : 'bg-white/5 text-gray-400 hover:text-white'
                       }`}
                     >
@@ -409,7 +414,7 @@ export function AchievementShowcase({
                         onClick={() => setFilterTier(tier)}
                         className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                           filterTier === tier
-                            ? 'bg-cyan-500/20 text-cyan-400'
+                            ? 'bg-brand/20 text-brand-hover'
                             : 'bg-white/5 text-gray-400 hover:text-white'
                         }`}
                         style={{
@@ -506,7 +511,7 @@ function LockedAchievementCard({ achievement }: { achievement: Achievement }) {
       }}
     >
       {/* Locked overlay */}
-      <div className="absolute inset-0 backdrop-blur-sm bg-gray-950/50 flex items-center justify-center z-10">
+      <div className="absolute inset-0 backdrop-blur-xs bg-gray-950/50 flex items-center justify-center z-10">
         <div className="text-center">
           <Lock className="w-8 h-8 text-gray-600 mx-auto mb-2" />
           <p className="text-sm text-gray-500">Locked</p>
@@ -541,7 +546,9 @@ function LockedAchievementCard({ achievement }: { achievement: Achievement }) {
               <div
                 className="h-full rounded-full"
                 style={{
-                  width: `${(achievement.progress.current / achievement.progress.target) * 100}%`,
+                  width: `${achievement.progress.target > 0
+                    ? Math.min((achievement.progress.current / achievement.progress.target) * 100, 100)
+                    : 0}%`,
                   background: tierConfig.gradient,
                 }}
               />

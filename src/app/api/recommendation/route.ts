@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import { geminiProvider, ItemRecommendationRequest } from '@/lib/providers/gemini';
 
 // Force dynamic rendering

@@ -1,9 +1,13 @@
 "use client";
 
-import { memo, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Eye, EyeOff } from "lucide-react";
-import { SizeVisualizer, ListSize, SIZE_OPTIONS } from "./SizeVisualizer";
+import { memo, useState, useCallback } from "react";
+
+import { DURATION } from '@/lib/animations/motion-presets';
+
+import { SizeVisualizer, ListSize } from "./SizeVisualizer";
+
 
 type Props = {
   hierarchyOptions: { value: string; label: string; description: string }[];
@@ -64,7 +68,7 @@ const SetupListSize = memo(function SetupListSize({
           List Size
         </label>
         <motion.button
-          className="flex items-center gap-1.5 px-2 py-1 rounded-lg cursor-pointer"
+          className="flex items-center gap-1.5 px-2 py-1 rounded-control cursor-pointer"
           style={{
             background: showVisualizer ? `${color.primary}20` : "rgba(51, 65, 85, 0.3)",
             border: `1px solid ${showVisualizer ? color.primary : "rgba(71, 85, 105, 0.3)"}40`,
@@ -94,7 +98,7 @@ const SetupListSize = memo(function SetupListSize({
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: DURATION.normal }}
           >
             <SizeVisualizer
               selectedSize={currentSize as ListSize}
@@ -114,7 +118,7 @@ const SetupListSize = memo(function SetupListSize({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: DURATION.fast }}
           >
             <SimpleListSizeSelector
               hierarchyOptions={hierarchyOptions}
@@ -144,7 +148,7 @@ const SimpleListSizeSelector = memo(function SimpleListSizeSelector({
         <motion.button
           key={option.value}
           onClick={() => handleHierarchyChange(option.value)}
-          className={`w-full text-left p-4 rounded-xl transition-all duration-300 group cursor-pointer backdrop-blur-sm ${
+          className={`w-full text-left p-4 rounded-card transition-all duration-300 group cursor-pointer backdrop-blur-xs ${
             activeHierarchy === option.value
               ? "text-white"
               : "text-slate-400 hover:text-slate-200"
@@ -221,7 +225,7 @@ const SimpleListSizeSelector = memo(function SimpleListSizeSelector({
                     }}
                     transition={{
                       delay: i * 0.1,
-                      duration: 0.6,
+                      duration: DURATION.emphasis,
                       repeat: activeHierarchy === option.value ? Infinity : 0,
                       repeatDelay: 2,
                     }}

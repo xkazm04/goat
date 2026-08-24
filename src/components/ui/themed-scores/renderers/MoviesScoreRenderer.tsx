@@ -1,9 +1,14 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
+
 import { StarRating } from "@/components/ui/star-rating";
+import { DURATION } from '@/lib/animations/motion-presets';
+import { formatScore } from "@/lib/constants/scoring";
+import { cn } from "@/lib/utils";
+
 import type { ScoreRendererProps } from "./types";
+
 
 // Conversion factor from 0-100 score to 0-5 star scale
 const STAR_MAX = 5;
@@ -41,7 +46,7 @@ export function MoviesScoreRenderer({
       )}
       initial={animated ? { opacity: 0 } : false}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: DURATION.normal }}
     >
       <StarRating
         value={starValue}
@@ -57,7 +62,7 @@ export function MoviesScoreRenderer({
             variant === "full" && "text-sm"
           )}
         >
-          {score.toFixed(0)}%
+          {formatScore(score)}%
         </span>
       )}
     </motion.div>

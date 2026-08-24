@@ -6,3 +6,5 @@
  */
 
 export * from './scroll-triggers';
+export * from './motion-presets';
+export * from './motion-tokens';

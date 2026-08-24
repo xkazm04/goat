@@ -8,9 +8,11 @@
 
 'use client';
 
-import { memo, useEffect, useState, useRef } from 'react';
 import { motion, useSpring, useTransform, useInView } from 'framer-motion';
-import { DURATION, EASING, prefersReducedMotion } from '@/lib/animations/sharing';
+import { memo, useEffect, useState, useRef } from 'react';
+
+import { DURATION, EASING } from '@/lib/animations/sharing';
+import { useMotionPreference } from '@/hooks/use-motion-preference';
 
 export interface AnimatedCounterProps {
   /** The target value to count to */
@@ -71,8 +73,12 @@ export const AnimatedCounter = memo(function AnimatedCounter({
   const isInView = useInView(ref, { once: true, margin: '-50px' });
   const [hasAnimated, setHasAnimated] = useState(false);
 
-  // Check for reduced motion preference
-  const reducedMotion = prefersReducedMotion();
+  // Check for reduced motion preference via the SSR-safe hook (useSyncExternalStore)
+  // — calling prefersReducedMotion() during render returned false on the server
+  // and true in the browser, diverging the initial useState/JSX branch and
+  // triggering a React 19 hydration mismatch for reduced-motion users.
+  const { tier } = useMotionPreference();
+  const reducedMotion = tier !== 'full';
 
   // Spring animation for smooth counting
   const spring = useSpring(0, {

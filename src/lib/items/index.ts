@@ -1,27 +1,46 @@
 /**
  * Items Module Index
  *
- * Centralized exports for item transformation utilities
+ * Two-file structure:
+ *   item-utils.ts      — extractTitle, normalizeImageUrl, display helpers
+ *   item-transforms.ts — typed pipeline: DB -> Backlog -> BaseItem -> PlacedItem (Grid/Ranked)
  */
 
+// Utilities & display helpers
 export {
-  // Core utilities
   normalizeImageUrl,
   extractTitle,
+  safeString,
+  safeNumber,
+  safeStringArray,
+  normalizeForDisplay,
+  getDisplayTitle,
+  getDisplayImageUrl,
+} from './item-utils';
 
-  // Type guards
+// Type guards
+export {
   isBacklogItemLike,
   isGridItemLike,
   isTransferableItemLike,
   isNormalizedItemLike,
+} from './item-transforms';
 
-  // To TransferableItem
+// Transformations (pipeline: DB -> Backlog -> BaseItem -> PlacedItem)
+export {
+  // Backlog <-> Normalized
+  backlogToNormalized,
+  normalizedToBacklog,
+  normalizedToBacklogItemType,
+
+  // -> BaseItem (TransferableItem)
   backlogToTransferable,
-  gridToTransferable,
   normalizedToTransferable,
+  gridToTransferable,
   toTransferable,
 
-  // To GridItemType
+  // -> Grid (PlacedItem)
+  type CreateGridItemOptions,
   backlogToGrid,
   transferableToGrid,
   toGridItem,
@@ -29,16 +48,11 @@ export {
   createEmptyGrid,
   updateGridItemPosition,
 
-  // To BacklogItem
+  // Grid -> Backlog (reverse)
   gridToBacklog,
   transferableToBacklog,
 
-  // To NormalizedItem
-  backlogToNormalized,
-  normalizedToBacklog,
-  normalizedToBacklogItemType,
-
-  // To RankedItem
+  // -> Ranked (PlacedItem with rank- prefix)
   createRankedItem,
   createEmptyRankedItem,
   createEmptyRanking,
@@ -51,18 +65,7 @@ export {
   batchNormalizedToBacklog,
 
   // Validation
+  type ItemValidation,
   validateForGrid,
   validateGridItem,
-
-  // Display helpers
-  normalizeForDisplay,
-  getDisplayTitle,
-  getDisplayImageUrl,
-
-  // Namespace export
-  ItemTransformer,
-
-  // Types
-  type CreateGridItemOptions,
-  type ItemValidation,
-} from './ItemTransformer';
+} from './item-transforms';

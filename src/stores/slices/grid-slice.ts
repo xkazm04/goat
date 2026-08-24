@@ -5,6 +5,7 @@
  */
 
 import { StateCreator } from 'zustand';
+
 import { GridItemType } from '@/types/match';
 
 /**
@@ -93,7 +94,7 @@ export const createGridSlice: StateCreator<GridSlice> = (set, get) => ({
     // Skip if no change
     if (
       (item === null && previousItem === null) ||
-      (item?.id === previousItem?.id && item?.matched === previousItem?.matched)
+      (item?.id === previousItem?.id && item?.context.matched === previousItem?.context.matched)
     ) {
       return;
     }

@@ -9,21 +9,21 @@
  */
 
 import {
-  memo,
-  useRef,
-  forwardRef,
-  type ReactNode,
-  type HTMLAttributes,
-} from 'react';
-import {
   motion,
   useScroll,
   useTransform,
   useSpring,
   type MotionStyle,
-} from 'framer-motion';
-import { cn } from '@/lib/utils';
+ MotionValue } from 'framer-motion';
+import {
+  memo,
+  useRef,
+  forwardRef,
+  type ReactNode,
+} from 'react';
+
 import { useMotionCapabilities } from '@/hooks/use-motion-preference';
+import { cn } from '@/lib/utils';
 
 // =============================================================================
 // Types
@@ -78,7 +78,8 @@ export interface ParallaxLayerProps {
 // =============================================================================
 
 import { createContext, useContext } from 'react';
-import type { MotionValue } from 'framer-motion';
+
+
 
 interface ParallaxContextValue {
   scrollYProgress: MotionValue<number>;
@@ -181,7 +182,10 @@ export const ParallaxLayer = memo(function ParallaxLayer({
         scale,
         rotate,
         zIndex,
-        willChange: 'transform, opacity',
+        // Don't force permanent GPU layer promotion when effects are disabled /
+        // reduced-motion — the transforms are neutralized, so a hardcoded
+        // will-change would keep every layer on the compositor for nothing.
+        willChange: effectsDisabled ? 'auto' : 'transform, opacity',
         ...(motionStyle || {}),
       }}
     >

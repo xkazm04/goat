@@ -76,6 +76,7 @@ const CATEGORY_EMOJI: Record<LogCategory, string> = {
   heatmap: '🗺️',
   list: '📋',
   api: '🌐',
+  cache: '🗄️',
   '*': '⚡',
 };
 
@@ -110,10 +111,8 @@ function logInternal(
         : console.log;
 
   if (data !== undefined) {
-    // eslint-disable-next-line no-console
     consoleFn(formattedMessage, data);
   } else {
-    // eslint-disable-next-line no-console
     consoleFn(formattedMessage);
   }
 }
@@ -206,58 +205,6 @@ export function createLogger(namespace: string, _emoji?: string): CategoryLogger
   const category = categoryMap[namespace] || 'grid';
   return createCategoryLogger(category);
 }
-
-/**
- * @deprecated Use category loggers directly
- * Legacy store loggers object for backwards compatibility
- */
-export const storeLoggers = {
-  grid: gridLogger,
-  session: sessionLogger,
-  backlog: backlogLogger,
-  match: matchLogger,
-  comparison: matchLogger, // Alias to match
-  tier: tierLogger,
-  activity: consensusLogger,
-  heatmap: heatmapLogger,
-  consensus: consensusLogger,
-  wikiImage: apiLogger,
-  validation: validationLogger,
-  list: listLogger,
-};
-
-/**
- * @deprecated Use initializeDebugAPI instead
- * Legacy config object for backwards compatibility
- */
-export const loggerConfig = {
-  setEnabled(enabled: boolean): void {
-    if (typeof window !== 'undefined' && window.__DEBUG_GOAT__) {
-      if (enabled) {
-        window.__DEBUG_GOAT__.enableAll();
-      } else {
-        window.__DEBUG_GOAT__.disableAll();
-      }
-    }
-  },
-  setLevel(level: LogLevel): void {
-    if (typeof window !== 'undefined' && window.__DEBUG_GOAT__) {
-      window.__DEBUG_GOAT__.setLevel(level);
-    }
-  },
-  setNamespaces(_namespaces: string[]): void {
-    // Legacy - no-op, use category-based enabling instead
-  },
-  enableNamespace(_namespace: string): void {
-    // Legacy - no-op
-  },
-  disableNamespace(_namespace: string): void {
-    // Legacy - no-op
-  },
-  isEnabled(): boolean {
-    return typeof window !== 'undefined' && !!window.__DEBUG_GOAT__?.isEnabled('*');
-  },
-};
 
 // Backwards-compatible exports (matching old logger.ts exports)
 export const activityLogger = consensusLogger;

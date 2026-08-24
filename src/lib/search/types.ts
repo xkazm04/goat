@@ -197,6 +197,15 @@ export interface SearchFacet {
   }>;
 }
 
+export interface DomainStatus {
+  /** Whether the domain search succeeded */
+  status: 'success' | 'error';
+  /** Error message if the domain search failed */
+  error?: string;
+  /** Execution time for this domain in ms */
+  durationMs?: number;
+}
+
 export interface SearchResponse {
   /** Search query */
   query: string;
@@ -206,6 +215,8 @@ export interface SearchResponse {
   results: SearchResult[];
   /** Results by domain for easier access */
   resultsByDomain: Partial<Record<SearchDomain, SearchResult[]>>;
+  /** Per-domain success/error status */
+  domainStatus: Partial<Record<SearchDomain, DomainStatus>>;
   /** Search suggestions */
   suggestions: SearchSuggestion[];
   /** Available facets for filtering */

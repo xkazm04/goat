@@ -1,6 +1,6 @@
+import { createClient } from '@supabase/supabase-js';
 import { ImageResponse } from 'next/og';
 import { NextRequest } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 
 export const runtime = 'edge';
 

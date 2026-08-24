@@ -1,9 +1,13 @@
 "use client";
 
-import { memo } from "react";
 import { motion } from "framer-motion";
 import { List, Layers, GitBranch, Lock } from "lucide-react";
+import { memo } from "react";
+
+import { DURATION } from '@/lib/animations/motion-presets';
+
 import { RankingFormat, FORMAT_CONFIGS } from "./types";
+
 
 interface FormatSwitcherProps {
   selectedFormat: RankingFormat;
@@ -43,7 +47,7 @@ export const FormatSwitcher = memo(function FormatSwitcher({
           return (
             <motion.button
               key={format}
-              className={`p-2 rounded-lg ${isDisabled ? "cursor-not-allowed" : "cursor-pointer"}`}
+              className={`p-2 rounded-control ${isDisabled ? "cursor-not-allowed" : "cursor-pointer"}`}
               style={{
                 background: isSelected
                   ? `linear-gradient(135deg, ${color.primary}40, ${color.secondary}30)`
@@ -85,7 +89,7 @@ export const FormatSwitcher = memo(function FormatSwitcher({
           return (
             <motion.button
               key={format}
-              className={`relative p-4 rounded-xl text-left ${
+              className={`relative p-4 rounded-card text-left ${
                 isDisabled ? "cursor-not-allowed" : "cursor-pointer"
               }`}
               style={{
@@ -114,7 +118,7 @@ export const FormatSwitcher = memo(function FormatSwitcher({
             >
               {/* Disabled overlay */}
               {isDisabled && (
-                <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/30 backdrop-blur-[1px]">
+                <div className="absolute inset-0 flex items-center justify-center rounded-card bg-black/30 backdrop-blur-[1px]">
                   <div className="flex items-center gap-1 text-xs text-slate-400">
                     <Lock className="w-3 h-3" />
                     <span>Soon</span>
@@ -124,7 +128,7 @@ export const FormatSwitcher = memo(function FormatSwitcher({
 
               <div className="flex items-start gap-3">
                 <div
-                  className="p-2 rounded-lg"
+                  className="p-2 rounded-control"
                   style={{
                     background: isSelected
                       ? `${color.accent}20`
@@ -174,7 +178,7 @@ export const FormatSwitcher = memo(function FormatSwitcher({
 
       {/* Format preview/explanation */}
       <motion.div
-        className="mt-4 p-3 rounded-lg"
+        className="mt-4 p-3 rounded-card"
         style={{
           background: "rgba(15, 23, 42, 0.4)",
           border: "1px solid rgba(71, 85, 105, 0.2)",
@@ -182,7 +186,7 @@ export const FormatSwitcher = memo(function FormatSwitcher({
         key={selectedFormat}
         initial={{ opacity: 0, y: 5 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2 }}
+        transition={{ duration: DURATION.fast }}
       >
         <div className="flex items-center gap-2 mb-2">
           {(() => {
@@ -234,7 +238,7 @@ export const FormatBadge = memo(function FormatBadge({
 
   return (
     <div
-      className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs"
+      className="inline-flex items-center gap-1.5 px-2 py-1 rounded-badge text-xs"
       style={{
         background: `${color.primary}20`,
         border: `1px solid ${color.primary}30`,

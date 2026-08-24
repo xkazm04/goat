@@ -4,6 +4,7 @@
  */
 
 import { GridItemType } from "@/types/match";
+
 import { TierDefinition, TierId, getTierForPosition, adjustTiersForSize } from "./tierConfig";
 
 /**
@@ -157,7 +158,7 @@ export class SmartGridLayout {
 
     for (let i = 0; i < this.listSize; i++) {
       const item = currentGrid[i];
-      if (!item?.matched || !preserveExisting) {
+      if (!item?.context.matched || !preserveExisting) {
         available.push(i);
       }
     }
@@ -302,7 +303,7 @@ export class SmartGridLayout {
 
       // Find empty positions
       for (let i = 0; i < this.listSize && itemSuggestions.length < count; i++) {
-        if (!currentGrid[i]?.matched) {
+        if (!currentGrid[i]?.context.matched) {
           itemSuggestions.push(i);
         }
       }
@@ -344,7 +345,7 @@ export class SmartGridLayout {
         const itemB = currentGrid[j];
 
         // Skip if both empty or both same state
-        if ((!itemA?.matched && !itemB?.matched)) continue;
+        if ((!itemA?.context.matched && !itemB?.context.matched)) continue;
 
         // Calculate current arrangement score
         const currentScore = this.calculatePositionScore(i, itemA) +
@@ -369,7 +370,7 @@ export class SmartGridLayout {
    * Calculate score for an item at a position
    */
   private calculatePositionScore(position: number, item: GridItemType | null): number {
-    if (!item?.matched) return 0;
+    if (!item?.context.matched) return 0;
 
     let score = 100 - position; // Base score from position
 
@@ -398,7 +399,7 @@ export class SmartGridLayout {
     for (const tier of this.tiers) {
       let filledCount = 0;
       for (let i = tier.range.start; i < tier.range.end; i++) {
-        if (currentGrid[i]?.matched) filledCount++;
+        if (currentGrid[i]?.context.matched) filledCount++;
       }
 
       const totalSlots = tier.range.end - tier.range.start;

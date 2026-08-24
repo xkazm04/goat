@@ -2,9 +2,12 @@
 
 import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
-import { FeedbackProgress } from './FeedbackProgress';
-import type { FeedbackProgressData } from '../types';
+
 import { cn } from '@/lib/utils';
+
+import { FeedbackProgress } from './FeedbackProgress';
+
+import type { FeedbackProgressData } from '../types';
 
 interface FeedbackLoadingStateProps {
   /** Loading message */
@@ -57,7 +60,7 @@ export function FeedbackLoadingState({
         transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
         className="mb-4"
       >
-        <Loader2 className={cn('text-blue-400', sizes.spinner)} />
+        <Loader2 className={cn('text-brand', sizes.spinner)} />
       </motion.div>
 
       <p className={cn('font-medium text-white', sizes.text)}>{message}</p>
@@ -77,7 +80,7 @@ export function FeedbackLoadingState({
   if (overlay) {
     return (
       <div
-        className="absolute inset-0 z-10 flex items-center justify-center bg-black/50 backdrop-blur-sm rounded-xl"
+        className="absolute inset-0 z-10 flex items-center justify-center bg-black/50 backdrop-blur-xs rounded-container"
         data-testid="feedback-loading-overlay"
       >
         {content}

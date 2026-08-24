@@ -19,6 +19,8 @@ export type {
   PipConfig,
   LayoutState,
   LayoutActions,
+  DockEdge,
+  DetachedWindowConfig,
 } from './types';
 
 export { LAYOUT_STORAGE_KEYS } from './types';
@@ -58,6 +60,7 @@ export {
   useSidebarState,
   useLayoutPreset,
   usePictureInPicture,
+  useWorkspace,
 } from './LayoutManager';
 
 // ResponsiveContainer
@@ -101,6 +104,18 @@ export {
   PipToggleButton,
   usePip,
 } from './components/PictureInPicture';
+
+// DetachableWindow (Multi-Window Workspace)
+export { DetachableWindow } from './components/DetachableWindow';
+export {
+  WindowManager,
+  registerPanelRenderer,
+  unregisterPanelRenderer,
+} from './components/WindowManager';
+export {
+  useDetachablePanel,
+  DetachButton,
+} from './components/useDetachablePanel';
 
 // ContainerProvider (Container Queries)
 export {

@@ -6,6 +6,7 @@
  * Provides context for child components to access drag state without prop drilling
  */
 
+import { DragStartEvent, DragMoveEvent, DragEndEvent } from "@dnd-kit/core";
 import React, {
   createContext,
   useContext,
@@ -15,10 +16,10 @@ import React, {
   useMemo,
   ReactNode,
 } from "react";
-import { DragStartEvent, DragMoveEvent, DragEndEvent } from "@dnd-kit/core";
-import { CollectionItem } from "../../../Collection/types";
+
 import { GridItemType } from "@/types/match";
-import { BacklogItem } from "@/types/backlog-groups";
+
+import { CollectionItem } from "../../../Collection/types";
 import { TIMING } from "../../lib/PhysicsConfig";
 
 /**

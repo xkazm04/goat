@@ -1,32 +1,37 @@
 "use client";
 
-import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Keyboard } from 'lucide-react';
-import { GridItemType } from '@/types/match';
-import { BacklogItem } from '@/types/backlog-groups';
-import {
-  TierListTier,
-  TierListPreset,
-  PRESET_CLASSIC,
-  tierListToRanking,
-} from '../../lib/tierPresets';
-import { TierRow } from './TierRow';
-import { TierConfigurator } from './TierConfigurator';
-import { exportTierListImage } from '../../lib/tierListExporter';
+import { Keyboard, Sparkles } from 'lucide-react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+
+import { useDebate } from '@/hooks/use-debate';
+import { useDebateStore } from '@/stores/debate-store';
 import { useRankingStore } from '@/stores/ranking-store';
-import { useDropZoneHighlight, useOptionalDropZoneHighlight } from './DropZoneHighlightContext';
-import { TierFocusProvider, useTierFocus } from './TierFocusProvider';
+import { useCurrentListInfo } from '@/stores/use-list-store';
+import { BacklogItem } from '@/types/backlog-groups';
+import { GridItemType } from '@/types/match';
+
+import { DebatePanel } from './Debate/DebatePanel';
+import { useDropZoneHighlightStore } from '@/stores/drop-zone-highlight-store';
+import {
+  KeyboardShortcutsPanel,
+  KeyboardModeIndicator,
+} from './KeyboardShortcutsPanel';
 import {
   ScreenReaderAnnouncer,
   SkipLinks,
   TierInstructions,
 } from './ScreenReaderAnnouncer';
+import { TierConfigurator } from './TierConfigurator';
+import { TierFocusProvider, useTierFocus } from './TierFocusProvider';
+import { TierRow } from './TierRow';
+import { exportTierListImage } from '../../lib/tierListExporter';
 import {
-  KeyboardShortcutsPanel,
-  KeyboardModeIndicator,
-  KeyboardHint,
-} from './KeyboardShortcutsPanel';
+  TierListTier,
+  TierListPreset,
+  PRESET_CLASSIC,
+} from '../../lib/tierPresets';
+import { useTierItemGroups } from '../hooks/useTierItemGroups';
 import { useTierKeyboardNavigation } from '../hooks/useTierKeyboardNavigation';
 
 interface TierListViewProps {
@@ -69,57 +74,51 @@ export function TierListView({
   const addToUnranked = useRankingStore(state => state.addToUnranked);
   const removeFromUnranked = useRankingStore(state => state.removeFromUnranked);
 
-  // Get drag state from context (optional - may not exist if used outside SimpleMatchGrid)
-  const dropZoneContext = useOptionalDropZoneHighlight();
-  const isDragging = dropZoneContext?.dragState?.isDragging ?? false;
+  // Get drag state from store (granular selector — only re-renders when isDragging changes)
+  const isDragging = useDropZoneHighlightStore((s) => s.isDragging);
 
-  // Map of item ID to BacklogItem
-  const itemsMap = useMemo(() => {
-    const map = new Map<string, BacklogItem>();
-    backlogItems.forEach(item => map.set(item.id, item));
-    return map;
-  }, [backlogItems]);
+  // Compute tier-item groupings with reference-stable memoization
+  const { itemsMap, tiers, unrankedItems, tierItemsMap } = useTierItemGroups({
+    backlogItems,
+    gridItems,
+    tierState,
+  });
 
-  // Convert ranking-store tiers to TierListTier format for rendering
-  const tiers = useMemo((): TierListTier[] => {
-    return tierState.tiers.map(tier => ({
-      id: tier.id,
-      label: tier.label,
-      displayName: tier.displayName,
-      description: tier.description,
-      color: tier.color,
-      items: tier.itemIds, // itemIds from store maps to items in TierListTier
-      collapsed: tier.collapsed,
-    }));
-  }, [tierState.tiers]);
-
-  // Get unranked items from store + any backlog items not yet placed
-  const unrankedItems = useMemo(() => {
-    // Items explicitly in unranked pool
-    const unrankedFromStore = tierState.unrankedItemIds
-      .map(id => itemsMap.get(id))
-      .filter((item): item is BacklogItem => !!item);
-
-    // Items from backlog not in any tier and not in unranked pool
-    const tieredIds = new Set(tierState.tiers.flatMap(t => t.itemIds));
-    const unrankedIds = new Set(tierState.unrankedItemIds);
-    const usedInGridIds = new Set(
-      gridItems
-        .filter(item => item.matched && item.backlogItemId)
-        .map(item => item.backlogItemId)
-    );
-
-    const notPlacedYet = backlogItems.filter(
-      item => !tieredIds.has(item.id) && !unrankedIds.has(item.id) && !usedInGridIds.has(item.id)
-    );
-
-    return [...unrankedFromStore, ...notPlacedYet];
-  }, [tierState.tiers, tierState.unrankedItemIds, itemsMap, backlogItems, gridItems]);
-
-  // Sync tiers from ranking on mount (when entering tier mode)
+  // Sync grid positions into ranking store, then derive tiers
   useEffect(() => {
+    const rankingState = useRankingStore.getState();
+    const hasRankingData = rankingState.ranking.some(r => r.item !== null);
+
+    // If ranking store is empty but grid has items, populate from grid
+    if (!hasRankingData) {
+      const filledGridItems = gridItems
+        .filter(gi => gi.context.matched && gi.item?.id)
+        .map((gi) => ({
+          position: gi.position,
+          item: gi.item!,
+        }));
+
+      if (filledGridItems.length > 0) {
+        useRankingStore.setState(state => {
+          const newRanking = Array.from({ length: state.maxRankingSize }, (_, i) => {
+            const gridEntry = filledGridItems.find(g => g.position === i);
+            return {
+              id: `rank-${i}`,
+              position: i,
+              item: gridEntry?.item ?? null,
+              context: {
+                source: 'grid' as const,
+                matched: !!gridEntry,
+              },
+            };
+          });
+          return { ranking: newRanking };
+        });
+      }
+    }
+
     syncTiersFromRanking();
-  }, [syncTiersFromRanking]);
+  }, [gridItems, syncTiersFromRanking]);
 
   // Handle preset change
   const handlePresetChange = useCallback((newPreset: TierListPreset) => {
@@ -235,24 +234,13 @@ export function TierListView({
     onRankingComplete(rankedItems);
   }, [tiers, itemsMap, backlogItems, onRankingComplete, syncRankingFromTiers]);
 
-  // Get items for a tier
+  // Get items for a tier (uses pre-computed tierItemsMap)
   const getTierItems = useCallback(
     (tier: TierListTier): BacklogItem[] => {
-      return tier.items
-        .map(id => itemsMap.get(id))
-        .filter((i): i is BacklogItem => !!i);
+      return tierItemsMap.get(tier.id) || [];
     },
-    [itemsMap]
+    [tierItemsMap]
   );
-
-  // Create tier items map for focus provider
-  const tierItemsMap = useMemo(() => {
-    const map = new Map<string, BacklogItem[]>();
-    tiers.forEach(tier => {
-      map.set(tier.id, getTierItems(tier));
-    });
-    return map;
-  }, [tiers, getTierItems]);
 
   // No DndContext here - parent SimpleMatchGrid provides the DndContext
   // Wrap with TierFocusProvider for keyboard navigation
@@ -268,6 +256,7 @@ export function TierListView({
         isExporting={isExporting}
         showKeyboardHelp={showKeyboardHelp}
         listTitle={listTitle}
+        listSize={listSize}
         tierListRef={tierListRef}
         onPresetChange={handlePresetChange}
         onTierUpdate={handleTierUpdate}
@@ -297,6 +286,7 @@ interface TierListViewContentProps {
   isExporting: boolean;
   showKeyboardHelp: boolean;
   listTitle: string;
+  listSize: number;
   tierListRef: React.RefObject<HTMLDivElement | null>;
   onPresetChange: (preset: TierListPreset) => void;
   onTierUpdate: (tierId: string, updates: Partial<TierListTier>) => void;
@@ -320,6 +310,7 @@ function TierListViewContent({
   isExporting,
   showKeyboardHelp,
   listTitle,
+  listSize,
   tierListRef,
   onPresetChange,
   onTierUpdate,
@@ -341,6 +332,96 @@ function TierListViewContent({
     focusUnrankedPool,
   } = useTierFocus();
 
+  // AI Debate Mode
+  const listInfo = useCurrentListInfo();
+  const debateEnabled = useDebateStore(s => s.enabled);
+  const debateThreads = useDebateStore(s => s.threads);
+  const {
+    activeThread,
+    panelOpen,
+    isLoading: debateLoading,
+    setEnabled: setDebateEnabled,
+    challengePlacement,
+    replyToDebate,
+    resolveDebate,
+    setActiveThread,
+    setPanelOpen,
+    getControversy,
+  } = useDebate({
+    category: listInfo?.category || 'General',
+    subcategory: listInfo?.subcategory,
+    listSize,
+  });
+
+  // Build per-item debate info map for TierRow
+  const debateInfoMap = useMemo(() => {
+    if (!debateEnabled) return undefined;
+    const map = new Map<string, { score: number; isHotTake: boolean; hasDebate: boolean }>();
+    for (const [itemId, thread] of Object.entries(debateThreads)) {
+      map.set(itemId, {
+        score: thread.controversyScore,
+        isHotTake: thread.isHotTake,
+        hasDebate: thread.messages.length > 0,
+      });
+    }
+    return map;
+  }, [debateEnabled, debateThreads]);
+
+  // Handle debate trigger from a tier item
+  const handleDebateItem = useCallback((itemId: string, itemName: string, tierId: string) => {
+    // Gather context: tiermates, items above/below
+    const tier = tiers.find(t => t.id === tierId);
+    const tierItems = tier ? (tierItemsMap.get(tier.id) || []) : [];
+    const tierLabel = tier?.customLabel || tier?.label || '?';
+
+    const tierIndex = tiers.findIndex(t => t.id === tierId);
+    const tiermates = tierItems
+      .filter(i => i.id !== itemId)
+      .map(i => i.title || i.name || 'Unknown')
+      .slice(0, 5);
+
+    const rankedAbove = tiers
+      .slice(0, tierIndex)
+      .flatMap(t => (tierItemsMap.get(t.id) || []).map(i => i.title || i.name || 'Unknown'))
+      .slice(0, 5);
+
+    const rankedBelow = tiers
+      .slice(tierIndex + 1)
+      .flatMap(t => (tierItemsMap.get(t.id) || []).map(i => i.title || i.name || 'Unknown'))
+      .slice(0, 5);
+
+    // Count position (1-based) across all tiers
+    let position = 1;
+    for (const t of tiers) {
+      const items = tierItemsMap.get(t.id) || [];
+      if (t.id === tierId) {
+        const idx = items.findIndex(i => i.id === itemId);
+        position += idx >= 0 ? idx : 0;
+        break;
+      }
+      position += items.length;
+    }
+
+    challengePlacement(itemId, itemName, tierLabel, position, {
+      tiermates,
+      rankedAbove,
+      rankedBelow,
+    });
+  }, [tiers, tierItemsMap, challengePlacement]);
+
+  const handleDebateAccept = useCallback(() => {
+    if (activeThread) resolveDebate(activeThread.id, 'accepted');
+  }, [activeThread, resolveDebate]);
+
+  const handleDebateDismiss = useCallback(() => {
+    if (activeThread) resolveDebate(activeThread.id, 'dismissed');
+  }, [activeThread, resolveDebate]);
+
+  const handleDebateClose = useCallback(() => {
+    setPanelOpen(false);
+    setActiveThread(null);
+  }, [setPanelOpen, setActiveThread]);
+
   // Sync tier data with focus provider
   useEffect(() => {
     setTiers(tiers);
@@ -349,9 +430,8 @@ function TierListViewContent({
   }, [tiers, tierItemsMap, unrankedItems, setTiers, setTierItems, setUnrankedItems]);
 
   // Handle item detail open (placeholder for future implementation)
-  const handleOpenItemDetail = useCallback((item: BacklogItem) => {
-    // Could open a detail modal here
-    console.log('Open item detail:', item.title);
+  const handleOpenItemDetail = useCallback((_item: BacklogItem) => {
+    // Placeholder for future item detail modal
   }, []);
 
   // Keyboard navigation hook
@@ -365,6 +445,11 @@ function TierListViewContent({
       }
     },
   });
+
+  // Stable callback for onEditTier — avoids inline arrow in render
+  const handleEditTier = useCallback((tier: TierListTier) => {
+    onTierUpdate(tier.id, tier);
+  }, [onTierUpdate]);
 
   // Skip link handlers
   const handleSkipToTier = useCallback((tierId: string) => {
@@ -396,19 +481,35 @@ function TierListViewContent({
       />
       {/* Action buttons - title is in page header */}
       <div className="flex items-center justify-end gap-2 mb-4 flex-wrap">
+        {/* AI Debate Mode toggle */}
+        <button
+          onClick={() => setDebateEnabled(!debateEnabled)}
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-control text-sm font-medium
+            border transition-all duration-200 focus-ring
+            ${debateEnabled
+              ? 'bg-brand/20 text-brand border-brand/50 hover:bg-brand/30 shadow-sm shadow-brand/20'
+              : 'bg-slate-800/80 text-slate-300 border-slate-600/80 hover:border-slate-500 hover:bg-slate-700/80'
+            }`}
+          aria-label={debateEnabled ? 'Disable AI Debate Mode' : 'Enable AI Debate Mode'}
+          aria-pressed={debateEnabled}
+        >
+          <Sparkles className="w-4 h-4" />
+          <span className="hidden sm:inline">AI Debate</span>
+        </button>
+
         {/* Keyboard shortcuts hint */}
         <button
           onClick={onToggleKeyboardHelp}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium
+          className="flex items-center gap-1.5 px-3 py-2 rounded-control text-sm font-medium
             bg-slate-800/80 text-slate-300 border border-slate-600/80
             hover:border-slate-500 hover:bg-slate-700/80
-            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900
+            focus-ring
             transition-all duration-200"
           aria-label="Show keyboard shortcuts (press ? key)"
         >
           <Keyboard className="w-4 h-4" />
           <span className="hidden sm:inline">Shortcuts</span>
-          <kbd className="px-1 py-0.5 rounded bg-slate-700 text-[10px] font-mono text-slate-400">?</kbd>
+          <kbd className="px-1 py-0.5 rounded bg-slate-700 text-2xs font-mono text-slate-400">?</kbd>
         </button>
 
         {/* Customize button */}
@@ -439,9 +540,11 @@ function TierListViewContent({
               items={getTierItems(tier)}
               onToggleCollapse={onToggleCollapse}
               onRemoveItem={onRemoveItem}
-              onEditTier={(t) => onTierUpdate(t.id, t)}
+              onEditTier={handleEditTier}
               isDraggingOver={isDragging}
               tierIndex={index}
+              debateInfoMap={debateInfoMap}
+              onDebateItem={debateEnabled ? handleDebateItem : undefined}
             />
           ))}
         </AnimatePresence>
@@ -457,6 +560,18 @@ function TierListViewContent({
         onClose={onToggleKeyboardHelp}
       />
 
+      {/* AI Debate Panel */}
+      {debateEnabled && panelOpen && (
+        <DebatePanel
+          thread={activeThread}
+          onReply={replyToDebate}
+          onAccept={handleDebateAccept}
+          onDismiss={handleDebateDismiss}
+          onClose={handleDebateClose}
+          isLoading={debateLoading}
+        />
+      )}
+
       {/* Export loading overlay */}
       <AnimatePresence>
         {isExporting && (
@@ -464,10 +579,10 @@ function TierListViewContent({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
+            className="fixed inset-0 bg-black/80 flex items-center justify-center z-modal"
           >
             <div className="text-center">
-              <div className="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+              <div className="w-12 h-12 border-4 border-brand border-t-transparent rounded-full animate-spin mx-auto mb-4" />
               <p className="text-white font-medium">Generating image...</p>
             </div>
           </motion.div>

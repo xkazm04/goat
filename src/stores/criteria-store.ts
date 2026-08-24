@@ -6,6 +6,17 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useShallow } from 'zustand/react/shallow';
+
+import {
+  fetchListCriteria,
+  saveListCriteria,
+  fetchListItemScores,
+  saveItemScores,
+  batchSaveItemScores,
+} from '@/lib/api/criteria';
+import { calculateWeightedScore } from '@/lib/criteria/calculateWeightedScore';
+import { ALL_TEMPLATES } from '@/lib/criteria/templates';
+
 import type {
   CriteriaProfile,
   Criterion,
@@ -17,16 +28,6 @@ import type {
   ListCriteriaConfig,
   ListItemCriteriaScores,
 } from '@/lib/criteria/types';
-import { CriteriaManager, createCriteriaManager } from '@/lib/criteria/CriteriaManager';
-import { ALL_TEMPLATES } from '@/lib/criteria/templates';
-import { calculateWeightedScore } from '@/lib/criteria/calculateWeightedScore';
-import {
-  fetchListCriteria,
-  saveListCriteria,
-  fetchListItemScores,
-  saveItemScores,
-  batchSaveItemScores,
-} from '@/lib/api/criteria';
 
 /**
  * Generate unique ID
@@ -56,19 +57,12 @@ interface CriteriaStoreState {
   currentListId: string | null;
   syncStatus: 'idle' | 'syncing' | 'error';
   lastSyncAt: string | null;
-
-  // Manager instance (not persisted)
-  _manager: CriteriaManager | null;
 }
 
 /**
  * Criteria store actions
  */
 interface CriteriaStoreActions {
-  // Initialization
-  initialize: () => void;
-  _getManager: () => CriteriaManager;
-
   // Profile management
   createProfile: (data: Omit<CriteriaProfile, 'id' | 'createdAt' | 'updatedAt'>) => CriteriaProfile;
   updateProfile: (id: string, updates: Partial<CriteriaProfile>) => void;
@@ -140,36 +134,17 @@ export const useCriteriaStore = create<CriteriaStore>()(
       currentListId: null,
       syncStatus: 'idle',
       lastSyncAt: null,
-      _manager: null,
-
-      // Initialize manager and load templates
-      initialize: () => {
-        const state = get();
-        if (state._manager) return;
-
-        const manager = createCriteriaManager();
-        manager.loadTemplates(ALL_TEMPLATES);
-        manager.loadProfiles(state.profiles.filter((p) => !p.isTemplate));
-
-        // Load item scores
-        const scores = Object.values(state.itemScores);
-        manager.loadItemScores(scores);
-
-        set({ _manager: manager });
-      },
-
-      _getManager: () => {
-        const state = get();
-        if (!state._manager) {
-          get().initialize();
-        }
-        return get()._manager!;
-      },
 
       // Profile management
       createProfile: (data) => {
-        const manager = get()._getManager();
-        const profile = manager.createProfile(data);
+        const now = new Date().toISOString();
+        const profile: CriteriaProfile = {
+          ...data,
+          id: generateId(),
+          createdAt: now,
+          updatedAt: now,
+          shareCode: undefined,
+        };
 
         set((state) => ({
           profiles: [...state.profiles, profile],
@@ -179,9 +154,18 @@ export const useCriteriaStore = create<CriteriaStore>()(
       },
 
       updateProfile: (id, updates) => {
-        const manager = get()._getManager();
-        const updated = manager.updateProfile(id, updates);
-        if (!updated) return;
+        const state = get();
+        const profile = state.profiles.find((p) => p.id === id);
+        if (!profile) return;
+
+        const updated: CriteriaProfile = {
+          ...profile,
+          ...updates,
+          id: profile.id,
+          isTemplate: profile.isTemplate,
+          createdAt: profile.createdAt,
+          updatedAt: new Date().toISOString(),
+        };
 
         set((state) => ({
           profiles: state.profiles.map((p) => (p.id === id ? updated : p)),
@@ -193,9 +177,6 @@ export const useCriteriaStore = create<CriteriaStore>()(
         const profile = state.profiles.find((p) => p.id === id);
         if (!profile || profile.isTemplate) return;
 
-        const manager = get()._getManager();
-        manager.deleteProfile(id);
-
         set((state) => ({
           profiles: state.profiles.filter((p) => p.id !== id),
           activeProfileId: state.activeProfileId === id ? null : state.activeProfileId,
@@ -203,13 +184,18 @@ export const useCriteriaStore = create<CriteriaStore>()(
       },
 
       duplicateProfile: (id, newName) => {
-        const manager = get()._getManager();
-        const duplicated = manager.duplicateProfile(id, newName);
-        if (!duplicated) return null;
+        const state = get();
+        const original = state.profiles.find((p) => p.id === id);
+        if (!original) return null;
 
-        set((state) => ({
-          profiles: [...state.profiles, duplicated],
-        }));
+        const duplicated = get().createProfile({
+          name: newName,
+          description: `Copy of ${original.name}`,
+          category: original.category,
+          criteria: original.criteria.map((c) => ({ ...c, id: generateId() })),
+          isTemplate: false,
+          createdBy: null,
+        });
 
         return duplicated;
       },

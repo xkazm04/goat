@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import { createClient } from '@/lib/supabase/server';
 
 // Force dynamic rendering
@@ -47,21 +48,51 @@ export async function GET(request: NextRequest) {
     // Higher selection_count = better (lower) ranking
     const items = data || [];
 
-    // Sort by selection_count descending to get rankings
+    // When item_ids was provided, `items` is an arbitrary subset (and badges
+    // auto-batch concurrent fetches), so ranking within it gave non-deterministic
+    // numbers — and a single-item fetch always read "#1 / Top 0%". Rank against
+    // the FULL population instead so the badge is a stable, global figure.
+    // (Population query is ordered server-side; Supabase's default row cap means
+    // items beyond the cap fall back to the subset rank — acceptable vs. the bug.)
+    let globalRank: Map<string, { rank: number; percentile: number }> | null = null;
+    if (itemIdsParam) {
+      let popQuery = supabase
+        .from('items')
+        .select('id, selection_count')
+        .order('selection_count', { ascending: false });
+      if (category) popQuery = popQuery.eq('category', category);
+      const { data: popData } = await popQuery;
+      const population = popData || [];
+      const total = population.length;
+      globalRank = new Map(
+        population.map((it, idx) => [
+          it.id,
+          { rank: idx + 1, percentile: total > 0 ? Math.round((1 - idx / total) * 100) : 0 },
+        ])
+      );
+    }
+
+    // Sort by selection_count descending to get rankings (used as the fallback
+    // when there is no global ranking, i.e. an unfiltered/all-items request).
     const sortedItems = [...items].sort((a, b) =>
       (b.selection_count || 0) - (a.selection_count || 0)
     );
 
     // Create ranking map
-    const stats = sortedItems.map((item, index) => ({
-      item_id: item.id,
-      name: item.name,
-      image_url: item.image_url,
-      selection_count: item.selection_count || 0,
-      view_count: item.view_count || 0,
-      average_ranking: index + 1, // Ranking position (1-based)
-      percentile: items.length > 0 ? Math.round((1 - index / items.length) * 100) : 0,
-    }));
+    const stats = sortedItems.map((item, index) => {
+      const global = globalRank?.get(item.id);
+      return {
+        item_id: item.id,
+        name: item.name,
+        image_url: item.image_url,
+        selection_count: item.selection_count || 0,
+        view_count: item.view_count || 0,
+        average_ranking: global ? global.rank : index + 1, // 1-based
+        percentile: global
+          ? global.percentile
+          : items.length > 0 ? Math.round((1 - index / items.length) * 100) : 0,
+      };
+    });
 
     return NextResponse.json({
       stats,

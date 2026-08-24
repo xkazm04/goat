@@ -1,18 +1,23 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
-import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { FolderPlus, Folder, FolderOpen, ChevronRight } from "lucide-react";
-import { useUserCollections } from "@/hooks/use-collections";
+import { useRouter } from "next/navigation";
+import { useCallback, useMemo } from "react";
+
 import { CollectionCard } from "@/app/features/Collections";
 import { ListGrid } from "@/components/ui/list-grid";
+import { ELEVATION, INSET, withInset } from "@/components/visual/depth";
+import { useUserCollections } from "@/hooks/use-collections";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import { useCurrentUser } from "@/stores/use-list-store";
+
+import { SectionHeader } from "./SectionHeader";
 import { listContainerVariants } from "../shared/animations";
 import { NeonArenaTheme } from "../shared/NeonArenaTheme";
-import { useReducedMotion } from "@/hooks/use-reduced-motion";
-import { SectionHeader } from "./SectionHeader";
+
 import type { ListCollection } from "@/types/collection";
-import { useCurrentUser } from "@/stores/use-list-store";
+
 
 interface CollectionsSectionProps {
   className?: string;
@@ -79,10 +84,7 @@ export function CollectionsSection({ className }: CollectionsSectionProps) {
               className="relative group px-5 py-2.5 rounded-xl font-medium text-sm text-white overflow-hidden flex items-center gap-2"
               style={{
                 background: `linear-gradient(135deg, rgba(168, 85, 247, 0.9), rgba(139, 92, 246, 0.9))`,
-                boxShadow: `
-                  0 8px 30px rgba(168, 85, 247, 0.3),
-                  inset 0 1px 0 rgba(255, 255, 255, 0.2)
-                `,
+                boxShadow: withInset(ELEVATION.high, INSET.glassHighlightStrong),
               }}
               whileHover={prefersReducedMotion ? {} : { scale: 1.03, y: -2 }}
               whileTap={prefersReducedMotion ? {} : { scale: 0.98 }}
@@ -155,7 +157,7 @@ export function CollectionsSection({ className }: CollectionsSectionProps) {
                   className="px-6 py-3 rounded-xl font-medium text-white"
                   style={{
                     background: `linear-gradient(135deg, rgba(168, 85, 247, 0.9), rgba(139, 92, 246, 0.9))`,
-                    boxShadow: `0 8px 30px rgba(168, 85, 247, 0.25)`,
+                    boxShadow: ELEVATION.high,
                   }}
                   whileHover={prefersReducedMotion ? {} : { scale: 1.05 }}
                   whileTap={prefersReducedMotion ? {} : { scale: 0.98 }}

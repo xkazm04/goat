@@ -4,12 +4,13 @@
  * Best for: Premium shares, top 3 lists, visual impact
  */
 
-import type { OGCardData, OGCardTheme, OGCardOptions } from '../types';
-import { DEFAULT_THEME } from '../types';
 import {
   getMedalColor,
   truncateText,
 } from '../OGCardGenerator';
+import { DEFAULT_THEME } from '../types';
+
+import type { OGCardData, OGCardTheme, OGCardOptions } from '../types';
 
 interface FeaturedLayoutProps {
   data: OGCardData;

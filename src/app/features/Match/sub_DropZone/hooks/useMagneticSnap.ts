@@ -7,7 +7,7 @@
  * as the cursor gets closer to the center of the drop zone.
  */
 
-import { useMemo, RefObject } from "react";
+import { useMemo, useRef, useEffect, RefObject } from "react";
 
 // Constants for magnetic snap effect
 export const MAGNETIC_THRESHOLD = 120; // pixels from center to activate magnetism
@@ -68,9 +68,38 @@ export function useMagneticSnap({
   minStrength = MAGNETIC_STRENGTH_MIN,
   maxStrength = MAGNETIC_STRENGTH_MAX,
 }: MagneticSnapOptions): MagneticSnapResult {
+  // Cache the bounding rect to avoid layout thrashing on every mouse move.
+  // Recalculate only when drag starts, or on scroll/resize.
+  const cachedRectRef = useRef<DOMRect | null>(null);
+
+  useEffect(() => {
+    if (!isDragging || !containerRef.current) {
+      cachedRectRef.current = null;
+      return;
+    }
+
+    // Snapshot rect on drag start
+    cachedRectRef.current = containerRef.current.getBoundingClientRect();
+
+    // Refresh on scroll or resize (rects shift)
+    const refresh = () => {
+      if (containerRef.current) {
+        cachedRectRef.current = containerRef.current.getBoundingClientRect();
+      }
+    };
+
+    window.addEventListener('scroll', refresh, { passive: true, capture: true });
+    window.addEventListener('resize', refresh, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', refresh, true);
+      window.removeEventListener('resize', refresh);
+    };
+  }, [isDragging, containerRef]);
+
   return useMemo(() => {
     // Early return if not in a valid drag state
-    if (!isDragging || !isValidDropTarget || !containerRef.current) {
+    if (!isDragging || !isValidDropTarget || !cachedRectRef.current) {
       return {
         strength: 0,
         isInRange: false,
@@ -79,7 +108,7 @@ export function useMagneticSnap({
       };
     }
 
-    const rect = containerRef.current.getBoundingClientRect();
+    const rect = cachedRectRef.current;
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
 
@@ -108,7 +137,7 @@ export function useMagneticSnap({
       distance,
       normalizedDistance,
     };
-  }, [isDragging, isValidDropTarget, cursorPosition.x, cursorPosition.y, containerRef, threshold, minStrength, maxStrength]);
+  }, [isDragging, isValidDropTarget, cursorPosition.x, cursorPosition.y, threshold, minStrength, maxStrength]);
 }
 
 /**

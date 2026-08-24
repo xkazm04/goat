@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import { createClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
@@ -14,6 +15,14 @@ const WHITELISTED_DOMAINS = [
   'cdn.britannica.com',
   'media.d3.nhle.com',
   'files.eliteprospects.com',
+  // Steam CDN
+  'cdn.cloudflare.steamstatic.com',
+  // IGDB (game covers and screenshots)
+  'images.igdb.com',
+  // TMDB (movie/TV posters and backdrops)
+  'image.tmdb.org',
+  // Spotify (album art)
+  'i.scdn.co',
   // WordPress-hosted
   'i0.wp.com',
   'i1.wp.com',

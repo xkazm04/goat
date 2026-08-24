@@ -1,6 +1,8 @@
 "use client";
 
 import { Calendar, Tag, FolderOpen, Clock, Hash, Info } from "lucide-react";
+
+import { NoMetadata } from "@/components/illustrations/EmptyStateIllustrations";
 import { cn } from "@/lib/utils";
 
 export interface MetadataGridProps {
@@ -33,13 +35,13 @@ interface MetadataItemProps {
 
 function MetadataItem({ icon, label, value, className }: MetadataItemProps) {
   return (
-    <div className={cn("flex items-start gap-3 p-3 rounded-lg bg-gray-800/50 border border-gray-700/50", className)}>
-      <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-gray-700/50 flex items-center justify-center text-gray-400">
+    <div className={cn("flex items-start gap-3 p-3 rounded-lg bg-slate-800/50 border border-slate-700/50", className)}>
+      <div className="shrink-0 w-8 h-8 rounded-lg bg-slate-700/50 flex items-center justify-center text-slate-400">
         {icon}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-xs text-gray-500 uppercase tracking-wider mb-0.5">{label}</p>
-        <div className="text-sm text-gray-200 font-medium">{value}</div>
+        <p className="text-xs text-slate-500 uppercase tracking-wider mb-0.5">{label}</p>
+        <div className="text-sm text-slate-200 font-medium">{value}</div>
       </div>
     </div>
   );
@@ -69,9 +71,9 @@ export function MetadataGrid({
 
   if (!hasAnyMetadata) {
     return (
-      <div className={cn("p-4 text-center text-gray-500 text-sm", className)}>
-        <Info className="w-5 h-5 mx-auto mb-2 opacity-50" />
-        No metadata available
+      <div className={cn("p-4 flex flex-col items-center text-center text-slate-500 text-sm", className)}>
+        <NoMetadata width={64} height={52} />
+        <span className="mt-1">No metadata available</span>
       </div>
     );
   }
@@ -97,7 +99,7 @@ export function MetadataGrid({
               <span>
                 {category}
                 {subcategory && (
-                  <span className="text-gray-400"> / {subcategory}</span>
+                  <span className="text-slate-400"> / {subcategory}</span>
                 )}
               </span>
             }
@@ -129,16 +131,16 @@ export function MetadataGrid({
 
       {/* Tags */}
       {tags && tags.length > 0 && (
-        <div className="p-3 rounded-lg bg-gray-800/50 border border-gray-700/50">
+        <div className="p-3 rounded-lg bg-slate-800/50 border border-slate-700/50">
           <div className="flex items-center gap-2 mb-2">
-            <Tag className="w-4 h-4 text-gray-400" />
-            <p className="text-xs text-gray-500 uppercase tracking-wider">Tags</p>
+            <Tag className="w-4 h-4 text-slate-400" />
+            <p className="text-xs text-slate-500 uppercase tracking-wider">Tags</p>
           </div>
           <div className="flex flex-wrap gap-1.5">
             {tags.map((tag, index) => (
               <span
                 key={index}
-                className="px-2 py-0.5 text-xs rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30"
+                className="px-2 py-0.5 text-xs rounded-full bg-brand/20 text-brand-hover border border-brand/30"
               >
                 {tag}
               </span>
@@ -149,12 +151,12 @@ export function MetadataGrid({
 
       {/* Description */}
       {description && (
-        <div className="p-3 rounded-lg bg-gray-800/50 border border-gray-700/50">
+        <div className="p-3 rounded-lg bg-slate-800/50 border border-slate-700/50">
           <div className="flex items-center gap-2 mb-2">
-            <Info className="w-4 h-4 text-gray-400" />
-            <p className="text-xs text-gray-500 uppercase tracking-wider">Description</p>
+            <Info className="w-4 h-4 text-slate-400" />
+            <p className="text-xs text-slate-500 uppercase tracking-wider">Description</p>
           </div>
-          <p className="text-sm text-gray-300 leading-relaxed">
+          <p className="text-sm text-slate-300 leading-relaxed">
             {description}
           </p>
         </div>

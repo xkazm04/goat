@@ -1,39 +1,40 @@
 "use client";
 
-import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useRouter } from "next/navigation";
 import { Copy, ArrowLeft, Share2, Check, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState, useRef } from "react";
+
 import { CompositionModalHeader } from "@/components/app/modals/composition/CompositionModalHeader";
 import { CompositionModalLeftContent } from "@/components/app/modals/composition/CompositionModalLeftContent";
 import { CompositionModalRightContent } from "@/components/app/modals/composition/CompositionModalRightContent";
-import { useCreateListWithUser } from "@/hooks/use-top-lists";
-import { useTempUser } from "@/hooks/use-temp-user";
-import { useListStore } from "@/stores/use-list-store";
-import { toast } from "@/hooks/use-toast";
-import ListCreateButton from "../ListCreateButton";
-import { useComposition } from "@/hooks/use-composition";
-import { modalBackdropVariants, modalContentVariants } from "../shared/animations";
-import { getInitialSubcategory } from "@/lib/config/category-config";
-import { CreationStep } from "./components/CreationProgressIndicator";
-import { TemplateGallery } from "./components/TemplateGallery";
-import { CriteriaTemplateSection } from "./components/CriteriaTemplateSection";
-import { ListTemplate } from "@/types/templates";
+import { SURFACE_ELEVATION, ELEVATION, INSET } from "@/components/visual/depth/depth-tokens";
 import { useCreateBlueprint, copyBlueprintShareUrl } from "@/hooks/use-blueprints";
+import { useComposition } from "@/hooks/use-composition";
+import { useModalAccessibility } from "@/hooks/use-modal-accessibility";
+import { useTempUser } from "@/hooks/use-temp-user";
+import { toast } from "@/hooks/use-toast";
+import { useCreateListWithUser } from "@/hooks/use-top-lists";
+import {
+  successCheckVariants,
+} from "@/lib/animations/micro-interactions";
+import { getInitialSubcategory } from "@/lib/config/category-config";
+import { trackError } from "@/lib/errors/error-analytics";
+import { listCreationService, CreationStep as ServiceCreationStep } from "@/services/list-creation-service";
+import { useListStore } from "@/stores/use-list-store";
 import { CompositionResult } from "@/types/composition-to-api";
 import {
   listIntentToMetadata,
   listIntentToBlueprintRequest,
 } from "@/types/list-intent-transformers";
-import { ListIntent } from "@/types/list-intent";
-import { listCreationService, CreationStep as ServiceCreationStep } from "@/services/list-creation-service";
-import {
-  buttonVariants,
-  successCheckVariants,
-  DURATION,
-  SCALE,
-  prefersReducedMotion,
-} from "@/lib/animations/micro-interactions";
+import { ListTemplate } from "@/types/templates";
+
+import ListCreateButton from "../ListCreateButton";
+import { modalBackdropVariants, modalContentVariants } from "../shared/animations";
+import { CreationStep } from "./components/CreationProgressIndicator";
+import { CriteriaTemplateSection } from "./components/CriteriaTemplateSection";
+import { TemplateGallery } from "./components/TemplateGallery";
+
 
 interface CompositionModalProps {
   initialAuthor?: string;
@@ -56,6 +57,7 @@ export function CompositionModal({
   const createBlueprintMutation = useCreateBlueprint();
   const [creationStep, setCreationStep] = useState<CreationStep | null>(null);
   const [shareUrlCopied, setShareUrlCopied] = useState(false);
+  const isCreatingRef = useRef(false);
 
   const {
     isOpen,
@@ -89,10 +91,15 @@ export function CompositionModal({
   };
 
   const handleClose = () => {
-    if (!createListMutation.isPending && creationStep === null) {
+    if (!createListMutation.isPending && creationStep === null && !isCreatingRef.current) {
       closeComposition();
     }
   };
+
+  const { modalRef, modalProps, handleKeyDown } = useModalAccessibility({
+    isOpen,
+    onClose: handleClose,
+  });
 
   const handleSelectTemplate = (template: ListTemplate) => {
     openWithTemplate(template);
@@ -103,50 +110,72 @@ export function CompositionModal({
   };
 
   const handleCreatePredefined = async () => {
+    // Guard against double-click: if already creating, bail out immediately
+    if (isCreatingRef.current) return;
+
     if (!isLoaded || !tempUserId) {
       toast({ title: "Not Ready", description: "Please wait while we prepare your session..." });
       return;
     }
 
-    // Progress handler that maps service steps to component steps
-    const onProgress = (step: ServiceCreationStep) => {
-      setCreationStep(step === 'idle' ? null : step as CreationStep);
-    };
+    isCreatingRef.current = true;
 
-    // Use the unified service for list creation
-    const result = await listCreationService.createList(intent, {
-      userId: tempUserId,
-      onProgress,
-    });
-
-    if (result.success && result.list) {
-      // Update store with enhanced list data
-      const enhancedListData = {
-        ...result.list,
-        metadata: listIntentToMetadata(intent),
+    try {
+      // Progress handler that maps service steps to component steps
+      const onProgress = (step: ServiceCreationStep) => {
+        setCreationStep(step === 'idle' ? null : step as CreationStep);
       };
 
-      setCurrentList(enhancedListData);
+      // Use the unified service for list creation
+      const result = await listCreationService.createList(intent, {
+        userId: tempUserId,
+        onProgress,
+      });
 
-      // Brief pause to show completion before navigating
-      await new Promise(resolve => setTimeout(resolve, 300));
+      if (result.success && result.list) {
+        // Update store with enhanced list data
+        const enhancedListData = {
+          ...result.list,
+          metadata: listIntentToMetadata(intent),
+        };
 
-      toast({ title: "List Created!", description: `"${result.list.title}" is ready for ranking!` });
+        setCurrentList(enhancedListData);
 
-      const compositionResult: CompositionResult = {
-        success: true,
-        listId: result.listId,
-        message: `Successfully created "${result.list.title}"!`,
-        redirectUrl: `/match-test?list=${result.listId}`,
-      };
+        // Brief pause to show completion before navigating
+        await new Promise(resolve => setTimeout(resolve, 300));
 
-      onSuccess?.(compositionResult);
-      closeComposition();
-      router.push(`/match-test?list=${result.listId}`);
-    } else {
+        toast({ title: "List Created!", description: `"${result.list.title}" is ready for ranking!` });
+
+        const compositionResult: CompositionResult = {
+          success: true,
+          listId: result.listId,
+          message: `Successfully created "${result.list.title}"!`,
+          redirectUrl: `/goat?list=${result.listId}`,
+        };
+
+        onSuccess?.(compositionResult);
+        closeComposition();
+        router.push(`/goat?list=${result.listId}`);
+      } else {
+        setCreationStep(null);
+        const errorMessage = result.error || "Failed to create list";
+        toast({ title: "Creation Failed", description: errorMessage });
+      }
+    } catch (error) {
       setCreationStep(null);
-      const errorMessage = result.error || "Failed to create list";
-      toast({ title: "Creation Failed", description: errorMessage });
+      const message = error instanceof Error ? error.message : "An unexpected error occurred";
+      console.error("[CompositionModal] List creation failed:", error);
+      trackError({
+        code: 'CLIENT_UNKNOWN_ERROR',
+        category: 'client',
+        severity: 'error',
+        traceId: `composition-${Date.now().toString(36)}`,
+        source: 'CompositionModal.handleCreatePredefined',
+        context: { intent: intent.title, category: intent.category },
+      });
+      toast({ title: "Creation Failed", description: message });
+    } finally {
+      isCreatingRef.current = false;
     }
   };
 
@@ -205,11 +234,14 @@ export function CompositionModal({
           initial="hidden"
           animate="visible"
           exit="exit"
-          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-modal flex items-center justify-center p-4"
           onClick={handleClose}
           data-testid="composition-modal-backdrop"
         >
           <motion.div
+            ref={modalRef}
+            {...modalProps}
+            onKeyDown={handleKeyDown}
             variants={modalContentVariants}
             initial="hidden"
             animate="visible"
@@ -219,20 +251,10 @@ export function CompositionModal({
             data-testid="composition-modal-container"
           >
             <div
-              className="rounded-3xl overflow-hidden"
+              className="rounded-container overflow-hidden border border-gray-700/50"
               style={{
-                background: `
-                  linear-gradient(135deg,
-                    rgba(15, 20, 35, 0.98) 0%,
-                    rgba(25, 35, 55, 0.98) 50%,
-                    rgba(15, 20, 35, 0.98) 100%
-                  )
-                `,
-                boxShadow: `
-                  0 30px 80px rgba(0, 0, 0, 0.6),
-                  0 0 100px ${intent.color.primary}15,
-                  inset 0 1px 0 rgba(255, 255, 255, 0.05)
-                `,
+                backgroundColor: SURFACE_ELEVATION.overlay,
+                boxShadow: `${ELEVATION.modal}, ${INSET.glassHighlight}`,
               }}
             >
               {/* Header */}
@@ -264,7 +286,7 @@ export function CompositionModal({
                     <div className="flex items-center gap-3 mb-4">
                       <motion.button
                         onClick={handleBackFromTemplates}
-                        className="p-2 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                        className="p-2 rounded-control bg-slate-800/50 hover:bg-slate-700/50 transition-all duration-200 focus-ring"
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         data-testid="back-from-templates-btn"
@@ -296,7 +318,7 @@ export function CompositionModal({
                       <motion.div
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="mb-4 p-3 rounded-xl flex items-center justify-between"
+                        className="mb-4 p-3 rounded-card flex items-center justify-between"
                         style={{
                           background: mode === 'blueprint'
                             ? 'linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(168, 85, 247, 0.05))'
@@ -311,7 +333,7 @@ export function CompositionModal({
                           {mode === 'blueprint' ? (
                             <Share2 className="w-4 h-4 text-purple-400" />
                           ) : (
-                            <Copy className="w-4 h-4 text-cyan-400" />
+                            <Copy className="w-4 h-4 text-brand-hover" />
                           )}
                           <div>
                             <p className="text-sm font-medium text-white">
@@ -324,7 +346,7 @@ export function CompositionModal({
                         </div>
                         <motion.button
                           onClick={clearTemplateData}
-                          className="text-xs text-slate-400 hover:text-white transition-all duration-200 px-2 py-1 rounded-md hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+                          className="text-xs text-slate-400 hover:text-white transition-all duration-200 px-2 py-1 rounded-control hover:bg-white/5 focus-ring-inset"
                           whileHover={{ scale: 1.05 }}
                           data-testid="clear-template-btn"
                         >
@@ -338,7 +360,7 @@ export function CompositionModal({
                       <div className="flex flex-col gap-3">
                         <motion.button
                           onClick={() => setShowTemplateGallery(true)}
-                          className="group w-full flex items-center justify-center gap-3 py-4 rounded-xl transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                          className="group w-full flex items-center justify-center gap-3 py-4 rounded-card transition-all duration-200 focus-ring"
                           style={{
                             background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(34, 211, 238, 0.05))',
                             border: '1px solid rgba(6, 182, 212, 0.2)',
@@ -350,7 +372,7 @@ export function CompositionModal({
                           whileTap={{ scale: 0.99 }}
                           data-testid="start-from-template-btn"
                         >
-                          <Copy className="w-5 h-5 text-cyan-400 transition-transform duration-200 group-hover:scale-110" />
+                          <Copy className="w-5 h-5 text-brand-hover transition-transform duration-200 group-hover:scale-110" />
                           <span className="text-sm font-medium text-white">Start from Template</span>
                           <span className="text-xs text-slate-400 ml-2 transition-colors duration-200 group-hover:text-slate-300">
                             Clone popular lists or use presets
@@ -361,7 +383,7 @@ export function CompositionModal({
                         <motion.button
                           onClick={handleShareAsBlueprint}
                           disabled={createBlueprintMutation.isPending}
-                          className="group w-full flex items-center justify-center gap-3 py-3 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                          className="group w-full flex items-center justify-center gap-3 py-3 rounded-card transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
                           style={{
                             background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(168, 85, 247, 0.05))',
                             border: '1px solid rgba(139, 92, 246, 0.2)',

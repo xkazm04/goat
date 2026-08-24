@@ -2,6 +2,9 @@
 
 import { motion } from "framer-motion";
 import { Star } from "lucide-react";
+
+import { DURATION } from '@/lib/animations/motion-presets';
+
 import type { CardColor } from "../types";
 
 interface CardFooterProps {
@@ -52,7 +55,7 @@ export function CardFooter({ author, comment, color, rating = 5 }: CardFooterPro
               key={star}
               initial={{ opacity: 0, scale: 0 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.1 * star, duration: 0.2 }}
+              transition={{ delay: 0.1 * star, duration: DURATION.fast }}
             >
               <Star
                 className="w-3 h-3 transition-all"

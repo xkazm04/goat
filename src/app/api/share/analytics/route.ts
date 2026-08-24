@@ -4,7 +4,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+
+import { createClient } from '@/lib/supabase/server';
+
 import type {
   ShareEvent,
   SharePlatform,
@@ -34,7 +36,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user ID if authenticated
-    const { userId } = await auth();
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    const userId = user?.id ?? null;
 
     // Add events to store
     events.forEach((event) => {

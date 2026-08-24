@@ -3,8 +3,9 @@
  * Generates shareable tier list images optimized for social media
  */
 
-import { TierListTier } from './tierPresets';
 import { BacklogItemType } from '@/types/match';
+
+import { TierListTier } from './tierPresets';
 
 /**
  * Tier with resolved item data

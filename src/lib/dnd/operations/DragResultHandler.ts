@@ -5,10 +5,11 @@
  * Integrates with the validation notification system for user feedback.
  */
 
+import { dndLogger } from '@/lib/logger';
+import { getValidationNotification } from '@/lib/validation';
+
 import type { DragOperationResult, DragContext } from './types';
 import type { ValidationErrorCode } from '@/lib/validation';
-import { getValidationNotification } from '@/lib/validation';
-import { dndLogger } from '@/lib/logger';
 
 // ============================================================================
 // Types

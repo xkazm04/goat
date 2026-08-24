@@ -1,6 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Blueprint, CreateBlueprintRequest, UpdateBlueprintRequest, SearchBlueprintsParams } from '@/types/blueprint';
+
 import { CACHE_TTL_MS, GC_TIME_MS } from '@/lib/cache/unified-cache';
+import {
+  Blueprint,
+  CreateBlueprintRequest,
+  UpdateBlueprintRequest,
+  SearchBlueprintsParams,
+  PublishAsTemplateRequest,
+  RateTemplateRequest,
+} from '@/types/blueprint';
 
 // Query keys for blueprint caching
 export const blueprintKeys = {
@@ -22,6 +30,7 @@ async function fetchBlueprints(params?: SearchBlueprintsParams): Promise<Bluepri
   if (params?.subcategory) queryParams.set('subcategory', params.subcategory);
   if (params?.authorId) queryParams.set('author_id', params.authorId);
   if (params?.isFeatured !== undefined) queryParams.set('is_featured', String(params.isFeatured));
+  if (params?.isCommunity !== undefined) queryParams.set('is_community', String(params.isCommunity));
   if (params?.search) queryParams.set('search', params.search);
   if (params?.limit) queryParams.set('limit', String(params.limit));
   if (params?.offset) queryParams.set('offset', String(params.offset));
@@ -49,6 +58,16 @@ async function fetchBlueprint(slugOrId: string): Promise<Blueprint> {
   }
 
   return response.json();
+}
+
+// Record a single blueprint view (fire-once, decoupled from the detail GET so
+// refetches don't inflate the count). Best-effort: never throws into the UI.
+export async function trackBlueprintView(slugOrId: string): Promise<void> {
+  try {
+    await fetch(`/api/blueprints/${slugOrId}/view`, { method: 'POST' });
+  } catch {
+    // View tracking is non-critical; swallow network errors.
+  }
 }
 
 // Create a new blueprint
@@ -231,6 +250,97 @@ export function useCloneBlueprint() {
       // Invalidate the blueprint to update clone count
       queryClient.invalidateQueries({ queryKey: blueprintKeys.detail(variables.slugOrId) });
     },
+  });
+}
+
+// Hook to fetch community templates
+export function useCommunityTemplates(params?: Omit<SearchBlueprintsParams, 'isCommunity'>) {
+  const fullParams: SearchBlueprintsParams = { ...params, isCommunity: true };
+  return useQuery({
+    queryKey: [...blueprintKeys.all, 'community', fullParams] as const,
+    queryFn: () => fetchBlueprints(fullParams),
+    staleTime: CACHE_TTL_MS.STANDARD,
+    gcTime: GC_TIME_MS.STANDARD,
+  });
+}
+
+// Publish a list as a community template
+async function publishAsTemplate(data: PublishAsTemplateRequest): Promise<{ blueprint: Blueprint; shareUrl: string }> {
+  const response = await fetch('/api/blueprints/publish', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to publish template');
+  }
+
+  const json = await response.json();
+  return json.data ?? json;
+}
+
+// Hook to publish a list as a community template
+export function usePublishAsTemplate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: publishAsTemplate,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: blueprintKeys.all });
+    },
+  });
+}
+
+// Rate a community template
+async function rateTemplate(slugOrId: string, data: RateTemplateRequest): Promise<{ avgRating: number; ratingCount: number; userRating: number }> {
+  const response = await fetch(`/api/blueprints/${slugOrId}/rate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to rate template');
+  }
+
+  const json = await response.json();
+  return json.data ?? json;
+}
+
+// Fetch current user's rating for a template
+async function fetchUserRating(slugOrId: string): Promise<{ userRating: number | null }> {
+  const response = await fetch(`/api/blueprints/${slugOrId}/rate`);
+  if (!response.ok) return { userRating: null };
+  const json = await response.json();
+  return json.data ?? json;
+}
+
+// Hook to rate a template
+export function useRateTemplate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ slugOrId, rating }: { slugOrId: string; rating: number }) =>
+      rateTemplate(slugOrId, { rating }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: blueprintKeys.detail(variables.slugOrId) });
+      queryClient.invalidateQueries({ queryKey: [...blueprintKeys.all, 'community'] });
+      queryClient.invalidateQueries({ queryKey: [...blueprintKeys.all, 'user-rating', variables.slugOrId] });
+    },
+  });
+}
+
+// Hook to get current user's rating
+export function useUserRating(slugOrId: string) {
+  return useQuery({
+    queryKey: [...blueprintKeys.all, 'user-rating', slugOrId] as const,
+    queryFn: () => fetchUserRating(slugOrId),
+    enabled: !!slugOrId,
+    staleTime: CACHE_TTL_MS.STANDARD,
+    gcTime: GC_TIME_MS.STANDARD,
   });
 }
 

@@ -20,6 +20,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+
 import type { UseIntersectionObserverReturn } from './types';
 
 // =============================================================================

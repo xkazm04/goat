@@ -6,18 +6,18 @@
  * Useful for development and debugging virtual scroll performance.
  */
 
+import { motion, AnimatePresence } from 'framer-motion';
+import { Activity, Cpu, Layers, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import React, {
   memo,
   useRef,
   useEffect,
   useState,
   useCallback,
-  createContext,
-  useContext,
 } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+
 import { cn } from '@/lib/utils';
-import { Activity, Cpu, Layers, Clock, ChevronDown, ChevronUp } from 'lucide-react';
+
 
 /**
  * Performance metrics structure
@@ -272,7 +272,7 @@ export const PerformanceMonitor = memo(function PerformanceMonitor({
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
       className={cn(
-        'fixed z-[9999] bg-black/90 backdrop-blur-sm rounded-lg border border-gray-700/50 shadow-xl',
+        'fixed z-9999 bg-black/90 backdrop-blur-xs rounded-lg border border-gray-700/50 shadow-xl',
         'font-mono text-xs',
         positionClasses[position],
         className
@@ -284,7 +284,7 @@ export const PerformanceMonitor = memo(function PerformanceMonitor({
         className="w-full flex items-center justify-between gap-2 px-3 py-2 hover:bg-gray-800/50 rounded-t-lg"
       >
         <div className="flex items-center gap-2">
-          <Activity className="w-3 h-3 text-cyan-400" />
+          <Activity className="w-3 h-3 text-brand-hover" />
           <span className={cn('font-bold', getFpsColor(metrics.fps, thresholds))}>
             {metrics.fps} FPS
           </span>
@@ -377,65 +377,5 @@ export const PerformanceMonitor = memo(function PerformanceMonitor({
     </motion.div>
   );
 });
-
-/**
- * Performance context for sharing metrics
- */
-interface PerformanceContextValue {
-  metrics: PerformanceMetrics | null;
-  isMonitoring: boolean;
-  startMonitoring: () => void;
-  stopMonitoring: () => void;
-}
-
-const PerformanceContext = createContext<PerformanceContextValue>({
-  metrics: null,
-  isMonitoring: false,
-  startMonitoring: () => {},
-  stopMonitoring: () => {},
-});
-
-/**
- * Hook to access performance context
- */
-export function usePerformanceMetrics(): PerformanceContextValue {
-  return useContext(PerformanceContext);
-}
-
-/**
- * Provider for performance monitoring
- */
-export function PerformanceProvider({
-  children,
-  autoStart = false,
-}: {
-  children: React.ReactNode;
-  autoStart?: boolean;
-}) {
-  const [metrics, setMetrics] = useState<PerformanceMetrics | null>(null);
-  const [isMonitoring, setIsMonitoring] = useState(autoStart);
-
-  const startMonitoring = useCallback(() => setIsMonitoring(true), []);
-  const stopMonitoring = useCallback(() => setIsMonitoring(false), []);
-
-  return (
-    <PerformanceContext.Provider
-      value={{
-        metrics,
-        isMonitoring,
-        startMonitoring,
-        stopMonitoring,
-      }}
-    >
-      {children}
-      {isMonitoring && (
-        <PerformanceMonitor
-          visible={true}
-          onMetricsUpdate={setMetrics}
-        />
-      )}
-    </PerformanceContext.Provider>
-  );
-}
 
 export default PerformanceMonitor;

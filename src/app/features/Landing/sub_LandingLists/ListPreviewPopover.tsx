@@ -1,10 +1,13 @@
 "use client";
 
-import { ReactNode } from "react";
 import * as HoverCard from "@radix-ui/react-hover-card";
 import { motion, AnimatePresence } from "framer-motion";
-import { Hash, Calendar, BarChart3, Loader2, Star, Clock } from "lucide-react";
+import { Hash, Calendar, Loader2, Clock } from "lucide-react";
+import { ReactNode } from "react";
+
+import { ELEVATION, withInset } from "@/components/visual/depth";
 import { useListPreview } from "@/hooks/use-list-preview";
+import { DURATION, EASE } from '@/lib/animations/motion-presets';
 import { getCategoryColor } from "@/lib/helpers/getColors";
 
 interface ListPreviewPopoverProps {
@@ -54,24 +57,19 @@ export function ListPreviewPopover({
             side={side}
             align={align}
             sideOffset={8}
-            className="z-50"
+            className="z-dropdown"
             data-testid={`list-preview-popover-${listId}`}
           >
             <motion.div
               initial={{ opacity: 0, y: side === "top" ? 5 : side === "bottom" ? -5 : 0, scale: 0.96 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: side === "top" ? 5 : side === "bottom" ? -5 : 0, scale: 0.96 }}
-              transition={{ duration: 0.15, ease: "easeOut" }}
-              className="w-64 rounded-xl overflow-hidden"
+              transition={{ duration: DURATION.quick, ease: "easeOut" }}
+              className="w-64 rounded-card overflow-hidden backdrop-blur-sm"
               style={{
                 background: `linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(30, 41, 59, 0.98) 100%)`,
                 border: "1px solid rgba(255, 255, 255, 0.1)",
-                boxShadow: `
-                  0 20px 40px rgba(0, 0, 0, 0.4),
-                  0 0 30px rgba(0, 0, 0, 0.2),
-                  inset 0 1px 0 rgba(255, 255, 255, 0.05)
-                `,
-                backdropFilter: "blur(20px)",
+                boxShadow: withInset(ELEVATION.overlay),
               }}
             >
               {isLoading ? (
@@ -129,7 +127,7 @@ function PreviewContent({ data }: PreviewContentProps) {
       {/* Category badge and title */}
       <div className="flex items-start gap-3 mb-4">
         <div
-          className="flex-shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-bold text-white uppercase tracking-wide"
+          className="shrink-0 px-2.5 py-1 rounded-control text-2xs font-bold text-white uppercase tracking-wide"
           style={{
             background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`,
             boxShadow: `0 2px 8px ${colors.primary}30`,
@@ -139,7 +137,7 @@ function PreviewContent({ data }: PreviewContentProps) {
           {data.category}
         </div>
         {data.subcategory && (
-          <span className="text-[11px] text-slate-500 mt-0.5">
+          <span className="text-xs text-slate-500 mt-0.5">
             {data.subcategory}
           </span>
         )}
@@ -152,43 +150,26 @@ function PreviewContent({ data }: PreviewContentProps) {
         {data.title}
       </h4>
 
-      {/* Stats grid */}
-      <div className="grid grid-cols-2 gap-2 mb-3">
+      {/* Stats — the former "avg rank" badge was removed: it averaged item
+          POSITIONS, which is ~(N+1)/2 for any fully-ranked list (identical across
+          same-size lists) and backed by no real ranking metric, so it presented a
+          confident but mathematically meaningless number. */}
+      <div className="mb-3">
         {/* Item count */}
         <div
-          className="flex items-center gap-2 px-2.5 py-2 rounded-lg"
+          className="flex items-center gap-2 px-2.5 py-2 rounded-control"
           style={{
             background: "rgba(255, 255, 255, 0.04)",
             border: "1px solid rgba(255, 255, 255, 0.06)",
           }}
           data-testid="list-preview-item-count"
         >
-          <Hash className="w-3.5 h-3.5 text-cyan-400" />
+          <Hash className="w-3.5 h-3.5 text-brand-hover" />
           <div>
             <div className="text-xs font-medium text-white">
               {data.itemCount}/{data.size}
             </div>
-            <div className="text-[10px] text-slate-500">items</div>
-          </div>
-        </div>
-
-        {/* Average ranking badge */}
-        <div
-          className="flex items-center gap-2 px-2.5 py-2 rounded-lg"
-          style={{
-            background: "rgba(255, 255, 255, 0.04)",
-            border: "1px solid rgba(255, 255, 255, 0.06)",
-          }}
-          data-testid="list-preview-avg-ranking"
-        >
-          <Star className="w-3.5 h-3.5 text-yellow-400" />
-          <div>
-            <div className="text-xs font-medium text-white">
-              {data.averageRanking !== undefined
-                ? `#${data.averageRanking}`
-                : "—"}
-            </div>
-            <div className="text-[10px] text-slate-500">avg rank</div>
+            <div className="text-2xs text-slate-500">items</div>
           </div>
         </div>
       </div>
@@ -196,10 +177,10 @@ function PreviewContent({ data }: PreviewContentProps) {
       {/* Completion progress bar */}
       <div className="mb-3">
         <div className="flex items-center justify-between mb-1.5">
-          <span className="text-[10px] text-slate-500 uppercase tracking-wide">
+          <span className="text-2xs text-slate-500 uppercase tracking-wide">
             Completion
           </span>
-          <span className="text-[10px] font-medium text-slate-400">
+          <span className="text-2xs font-medium text-slate-400">
             {completionPercent}%
           </span>
         </div>
@@ -210,7 +191,7 @@ function PreviewContent({ data }: PreviewContentProps) {
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${completionPercent}%` }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
+            transition={{ duration: DURATION.slow, ease: EASE.out }}
             className="h-full rounded-full"
             style={{
               background: `linear-gradient(90deg, ${colors.primary}, ${colors.secondary})`,
@@ -222,7 +203,7 @@ function PreviewContent({ data }: PreviewContentProps) {
       </div>
 
       {/* Footer with time info */}
-      <div className="flex items-center justify-between text-[10px] text-slate-500 pt-2 border-t border-white/5">
+      <div className="flex items-center justify-between text-2xs text-slate-500 pt-2 border-t border-white/5">
         <div className="flex items-center gap-1">
           <Calendar className="w-3 h-3" />
           <span className="capitalize">

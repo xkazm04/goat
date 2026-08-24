@@ -1,7 +1,11 @@
 'use client';
 
-import { Suspense } from 'react';
 import { motion } from 'framer-motion';
+import { Suspense } from 'react';
+
+import { ParallaxSection, ParallaxLayer, FloatingElements, FloatingPresets } from '@/components/3d';
+import { useScrollTrigger, scrollAnimationVariants } from '@/lib/animations';
+
 import { LandingMain } from './LandingMain';
 import {
     LazyFeaturedListsSection,
@@ -11,8 +15,7 @@ import {
     UserListsSkeleton,
     CollectionsSkeleton
 } from './sub_LandingLists/LazyListSections';
-import { ParallaxSection, ParallaxLayer, FloatingElements, FloatingPresets } from '@/components/3d';
-import { useScrollTrigger, scrollAnimationVariants } from '@/lib/animations';
+import { useLandingPrefetch } from './useLandingPrefetch';
 
 /**
  * ScrollRevealSection - Wrapper that reveals content on scroll
@@ -55,6 +58,10 @@ function ScrollRevealSection({
  * - Collections section
  */
 const LandingLayout = () => {
+    // Fire all landing page data fetches in parallel on mount
+    // Eliminates waterfall from lazy-loaded sections mounting progressively
+    useLandingPrefetch();
+
     return (
         <div className="min-h-screen relative" data-testid="landing-layout">
             {/* Global floating elements - ambient decoration */}

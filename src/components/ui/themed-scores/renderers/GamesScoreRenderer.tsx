@@ -1,16 +1,16 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { formatScore } from "@/lib/constants/scoring";
 import { cn } from "@/lib/utils";
+
+import { AnimatedProgressBar } from "./AnimatedProgressBar";
+
 import type { ScoreRendererProps } from "./types";
 
 // Level calculation constants
 const LEVEL_DIVISOR = 10;
 const MAX_LEVEL = 10;
 const MAX_SCORE = 100;
-
-// Animation configuration
-const ANIMATION_DURATION = 0.5;
 
 // Glow effect for XP bar
 const XP_BAR_GLOW =
@@ -64,18 +64,15 @@ export function GamesScoreRenderer({
         )}
       >
         {/* XP fill with glow effect */}
-        <motion.div
-          className="absolute inset-y-0 left-0 bg-gradient-to-r from-green-600 via-emerald-500 to-green-400"
-          initial={animated ? { width: 0 } : false}
-          animate={{ width: `${score}%` }}
-          transition={{ duration: ANIMATION_DURATION, ease: "easeOut" }}
-          style={{
-            boxShadow: XP_BAR_GLOW,
-          }}
+        <AnimatedProgressBar
+          score={score}
+          animated={animated}
+          fillClassName="bg-linear-to-r from-green-600 via-emerald-500 to-green-400"
+          fillStyle={{ boxShadow: XP_BAR_GLOW }}
         />
         {/* Scanline effect */}
         {variant !== "inline" && (
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/5 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-linear-to-b from-transparent via-white/5 to-transparent pointer-events-none" />
         )}
       </div>
       {/* Level indicator */}
@@ -83,7 +80,7 @@ export function GamesScoreRenderer({
         <div className="flex justify-between mt-1.5">
           <span className="text-xs font-bold text-green-400 drop-shadow-[0_0_4px_rgba(34,197,94,0.3)]">LVL {level}</span>
           <span className="text-xs font-mono text-green-500/70 tabular-nums">
-            {score.toFixed(0)} XP
+            {formatScore(score)} XP
           </span>
         </div>
       )}

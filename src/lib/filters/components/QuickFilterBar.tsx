@@ -5,11 +5,18 @@
  * Chip-based common filters for quick access
  */
 
-import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronDown } from 'lucide-react';
+import React, { useMemo } from 'react';
+
+import { GoatFilterEmpty } from '@/components/illustrations/EmptyStateIllustrations';
+import { GoatSearch } from '@/components/visual/GoatIcons';
 import { cn } from '@/lib/utils';
-import type { QuickFilter, FilterConfig } from '../types';
-import { FILTER_ANIMATIONS, DEFAULT_QUICK_FILTERS } from '../constants';
+
+import { FILTER_ANIMATIONS, FILTER_TIMING, FILTER_SCALE, DEFAULT_QUICK_FILTERS } from '../constants';
+
+import type { QuickFilter } from '../types';
+
 
 /**
  * QuickFilterBar Props
@@ -114,7 +121,7 @@ function DefaultQuickFilters({
       {showClearAll && activeFilters.length > 0 && onClear && (
         <motion.button
           className={cn(
-            'flex-shrink-0 px-2 py-1 text-xs',
+            'shrink-0 px-2 py-1 text-xs touch-target',
             'text-muted-foreground hover:text-foreground',
             'transition-colors'
           )}
@@ -143,7 +150,7 @@ function CompactQuickFilters({
   return (
     <div
       className={cn(
-        'inline-flex bg-muted rounded-lg p-1',
+        'inline-flex bg-muted rounded-card p-1',
         className
       )}
       role="group"
@@ -156,7 +163,7 @@ function CompactQuickFilters({
           <motion.button
             key={filter.id}
             className={cn(
-              'relative px-2 py-1.5 rounded-md transition-colors',
+              'relative px-2 py-1.5 rounded-control transition-colors touch-target',
               isActive
                 ? 'text-primary-foreground'
                 : 'text-muted-foreground hover:text-foreground'
@@ -166,7 +173,7 @@ function CompactQuickFilters({
           >
             {isActive && (
               <motion.div
-                className="absolute inset-0 bg-primary rounded-md"
+                className="absolute inset-0 bg-primary rounded-control"
                 layoutId="quick-filter-indicator"
                 transition={FILTER_ANIMATIONS.transition}
               />
@@ -174,7 +181,7 @@ function CompactQuickFilters({
             <span className="relative z-10 flex items-center gap-1">
               {filter.icon || '🔍'}
               {count !== undefined && (
-                <span className="text-[10px] opacity-70">{count}</span>
+                <span className="text-2xs opacity-70">{count}</span>
               )}
             </span>
           </motion.button>
@@ -206,16 +213,16 @@ function PillQuickFilters({
           <motion.button
             key={filter.id}
             className={cn(
-              'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full',
+              'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-badge touch-target',
               'text-sm font-medium transition-all',
               'border',
               isActive
                 ? 'bg-primary text-primary-foreground border-primary'
-                : 'bg-background border-border hover:border-primary/50 hover:bg-accent/50'
+                : 'bg-background border-border hover:border-primary/50 filter-hover'
             )}
             onClick={() => onToggle(filter.id)}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            whileHover={{ scale: FILTER_SCALE.hover }}
+            whileTap={{ scale: FILTER_SCALE.tap }}
             layout
           >
             {filter.icon && <span>{filter.icon}</span>}
@@ -223,7 +230,7 @@ function PillQuickFilters({
             {count !== undefined && (
               <span
                 className={cn(
-                  'px-1.5 py-0.5 rounded-full text-xs',
+                  'px-1.5 py-0.5 rounded-badge text-xs',
                   isActive ? 'bg-primary-foreground/20' : 'bg-muted'
                 )}
               >
@@ -238,7 +245,7 @@ function PillQuickFilters({
       {showClearAll && activeFilters.length > 0 && onClear && (
         <motion.button
           className={cn(
-            'inline-flex items-center px-3 py-1.5 rounded-full',
+            'inline-flex items-center px-3 py-1.5 rounded-badge',
             'text-sm text-muted-foreground hover:text-foreground',
             'border border-dashed border-border hover:border-destructive',
             'transition-colors'
@@ -279,8 +286,8 @@ function QuickFilterChip({
   return (
     <motion.button
       className={cn(
-        'flex-shrink-0 inline-flex items-center gap-1.5',
-        'px-3 py-1.5 rounded-lg text-sm',
+        'shrink-0 inline-flex items-center gap-1.5',
+        'px-3 py-1.5 rounded-card text-sm touch-target',
         'border transition-all',
         isActive
           ? 'bg-primary/10 border-primary text-primary'
@@ -291,8 +298,8 @@ function QuickFilterChip({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 10 }}
       transition={{ delay: index * FILTER_ANIMATIONS.stagger.staggerChildren }}
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
+      whileHover={{ scale: FILTER_SCALE.hover }}
+      whileTap={{ scale: FILTER_SCALE.tap }}
       layout
     >
       {filter.icon && <span>{filter.icon}</span>}
@@ -300,7 +307,7 @@ function QuickFilterChip({
       {count !== undefined && (
         <span
           className={cn(
-            'px-1.5 min-w-[20px] text-center text-xs rounded-full',
+            'px-1.5 min-w-[20px] text-center text-xs rounded-badge',
             isActive ? 'bg-primary/20' : 'bg-muted'
           )}
         >
@@ -348,13 +355,13 @@ export function QuickFilterGroup({
       >
         <motion.span
           animate={{ rotate: collapsed ? -90 : 0 }}
-          transition={{ duration: 0.2 }}
+          transition={{ duration: FILTER_TIMING.standard }}
         >
-          ▼
+          <ChevronDown size={14} />
         </motion.span>
         <span>{title}</span>
         {activeInGroup > 0 && (
-          <span className="px-1.5 py-0.5 text-xs bg-primary text-primary-foreground rounded-full">
+          <span className="px-1.5 py-0.5 text-xs bg-primary text-primary-foreground rounded-badge">
             {activeInGroup}
           </span>
         )}
@@ -426,17 +433,15 @@ export function SearchableQuickFilters({
         <input
           type="text"
           className={cn(
-            'w-full px-3 py-2 pl-9 text-sm rounded-lg',
+            'w-full px-3 py-2 pl-9 text-sm rounded-control',
             'bg-background border border-border',
-            'focus:outline-none focus:ring-2 focus:ring-ring'
+            'focus:outline-hidden focus:ring-2 focus:ring-ring'
           )}
           placeholder={placeholder}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-          🔍
-        </span>
+        <GoatSearch size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
       </div>
 
       {/* Filters */}
@@ -451,9 +456,12 @@ export function SearchableQuickFilters({
 
       {/* No results */}
       {search && filteredFilters.length === 0 && (
-        <p className="text-sm text-muted-foreground text-center py-2">
-          No filters matching "{search}"
-        </p>
+        <div className="flex flex-col items-center gap-2 py-3">
+          <GoatFilterEmpty width={80} height={64} />
+          <p className="text-sm text-muted-foreground">
+            No filters matching &ldquo;{search}&rdquo;
+          </p>
+        </div>
       )}
     </div>
   );

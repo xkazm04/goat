@@ -2,6 +2,9 @@
 
 import { motion } from "framer-motion";
 import { Trophy, Star, Users, Compass, Flag, Sparkles, LucideIcon } from "lucide-react";
+
+import { useMotionCapabilities } from "@/hooks/use-motion-preference";
+import { DURATION } from "@/lib/animations/motion-presets";
 import {
   Achievement,
   AchievementCardConfig,
@@ -91,6 +94,9 @@ export function AchievementCard({
   className = '',
 }: AchievementCardProps) {
   const config = { ...defaultConfig, ...userConfig };
+  // Gate the infinitely-looping sparkles on ambient-motion capability (full tier
+  // only) in addition to the manual `animated` flag (WCAG 2.3.3).
+  const { allowAmbient } = useMotionCapabilities();
   const tierConfig = TIER_CONFIG[achievement.tier];
   const categoryConfig = CATEGORY_CONFIG[achievement.category];
   const stylePreset = STYLE_PRESETS[config.style];
@@ -110,7 +116,7 @@ export function AchievementCard({
 
   return (
     <motion.div
-      className={`relative overflow-hidden rounded-2xl ${className}`}
+      className={`relative overflow-hidden rounded-container ${className}`}
       style={{
         background: stylePreset.background,
         boxShadow: `
@@ -121,7 +127,7 @@ export function AchievementCard({
       }}
       initial={config.animated ? { opacity: 0, y: 20 } : false}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
+      transition={{ duration: DURATION.slow }}
       data-testid="achievement-card"
     >
       {/* Tier glow effect */}
@@ -133,7 +139,7 @@ export function AchievementCard({
       />
 
       {/* Animated sparkles for unlocked achievements */}
-      {achievement.unlocked && config.animated && (
+      {achievement.unlocked && config.animated && allowAmbient && (
         <motion.div
           className="absolute inset-0 pointer-events-none overflow-hidden"
           initial={{ opacity: 0 }}
@@ -169,7 +175,7 @@ export function AchievementCard({
         <div className="flex items-start justify-between mb-4">
           {/* Category badge */}
           <div
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-control"
             style={{
               background: `${categoryConfig.color}20`,
               border: `1px solid ${categoryConfig.color}40`,
@@ -200,14 +206,16 @@ export function AchievementCard({
         {/* Achievement icon/visual */}
         <div className="flex items-center gap-4 mb-5">
           <motion.div
-            className="relative flex-shrink-0"
-            animate={config.animated && achievement.unlocked ? {
+            className="relative shrink-0"
+            animate={config.animated && achievement.unlocked && allowAmbient ? {
               scale: [1, 1.05, 1],
             } : {}}
-            transition={{ duration: 2, repeat: Infinity }}
+            transition={
+              allowAmbient ? { duration: 2, repeat: Infinity } : { duration: 0 }
+            }
           >
             <div
-              className="w-20 h-20 rounded-2xl flex items-center justify-center"
+              className="w-20 h-20 rounded-container flex items-center justify-center"
               style={{
                 background: tierConfig.gradient,
                 boxShadow: `0 0 30px ${tierConfig.glow}`,
@@ -410,7 +418,7 @@ export function AchievementCardCompact({
   return (
     <motion.button
       onClick={onClick}
-      className={`flex items-center gap-3 p-3 rounded-xl transition-all ${className}`}
+      className={`flex items-center gap-3 p-3 rounded-card transition-all ${className}`}
       style={{
         background: 'rgba(255, 255, 255, 0.03)',
         border: `1px solid ${achievement.unlocked ? tierConfig.borderColor : 'rgba(255, 255, 255, 0.05)'}`,
@@ -421,7 +429,7 @@ export function AchievementCardCompact({
     >
       {/* Icon */}
       <div
-        className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+        className="w-12 h-12 rounded-card flex items-center justify-center shrink-0"
         style={{
           background: achievement.unlocked ? tierConfig.gradient : 'rgba(255, 255, 255, 0.05)',
           opacity: achievement.unlocked ? 1 : 0.5,
@@ -442,7 +450,7 @@ export function AchievementCardCompact({
         <div className="flex items-center gap-2">
           <span className="font-semibold text-white truncate">{achievement.title}</span>
           {achievement.unlocked && (
-            <svg className="w-4 h-4 text-green-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <svg className="w-4 h-4 text-green-400 shrink-0" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
             </svg>
           )}
@@ -462,7 +470,7 @@ export function AchievementCardCompact({
       </div>
 
       {/* Arrow */}
-      <svg className="w-5 h-5 text-gray-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <svg className="w-5 h-5 text-gray-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
       </svg>
     </motion.button>

@@ -34,10 +34,9 @@ const SetupPreview = ({ color, selectedCategory, selectedSubcategory, timePeriod
             >
                 {/* Enhanced Header with better visibility */}
                 <div
-                    className="flex items-center gap-3 mb-4 p-3 rounded-lg"
+                    className="flex items-center gap-3 mb-4 p-3 rounded-lg backdrop-blur-sm"
                     style={{
                         background: `linear-gradient(135deg, ${color.primary}25, ${color.secondary}25)`,
-                        backdropFilter: 'blur(8px)',
                         border: `1px solid ${color.primary}40`
                     }}
                 >

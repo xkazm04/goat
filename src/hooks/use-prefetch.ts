@@ -21,11 +21,12 @@
 
 'use client';
 
-import { useCallback, useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useCallback, useEffect, useRef } from 'react';
+
+import { BandwidthDetector, type NetworkConditions, type PrefetchStrategy } from '@/lib/prefetch/BandwidthDetector';
 import { PrefetchManager, type PrefetchTarget, type PrefetchAnalytics } from '@/lib/prefetch/PrefetchManager';
 import { RoutePreloader } from '@/lib/prefetch/RoutePreloader';
-import { BandwidthDetector, type NetworkConditions, type PrefetchStrategy } from '@/lib/prefetch/BandwidthDetector';
 
 export interface UsePrefetchReturn {
   /** Prefetch a single target */

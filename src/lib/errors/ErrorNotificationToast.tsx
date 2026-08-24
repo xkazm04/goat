@@ -10,8 +10,11 @@ import {
   Copy,
 } from 'lucide-react';
 import { useState } from 'react';
+
 import { cn } from '@/lib/utils';
+
 import { useErrorNotifications, type ErrorNotification } from './error-notification-store';
+
 import type { ErrorSeverity } from './types';
 
 // ============================================================================
@@ -20,25 +23,28 @@ import type { ErrorSeverity } from './types';
 
 const severityStyles: Record<
   ErrorSeverity,
-  { icon: typeof AlertCircle; bg: string; border: string; iconColor: string }
+  { icon: typeof AlertCircle; bg: string; border: string; iconColor: string; progressColor: string }
 > = {
   error: {
     icon: AlertCircle,
-    bg: 'bg-red-500/10',
-    border: 'border-red-500/30',
-    iconColor: 'text-red-400',
+    bg: 'bg-[var(--severity-error-bg)]',
+    border: 'border-[var(--severity-error-border)]',
+    iconColor: 'text-[var(--severity-error-text)]',
+    progressColor: 'var(--severity-error-progress)',
   },
   warning: {
     icon: AlertTriangle,
-    bg: 'bg-amber-500/10',
-    border: 'border-amber-500/30',
-    iconColor: 'text-amber-400',
+    bg: 'bg-[var(--severity-warning-bg)]',
+    border: 'border-[var(--severity-warning-border)]',
+    iconColor: 'text-[var(--severity-warning-text)]',
+    progressColor: 'var(--severity-warning-progress)',
   },
   info: {
     icon: Info,
-    bg: 'bg-blue-500/10',
-    border: 'border-blue-500/30',
-    iconColor: 'text-blue-400',
+    bg: 'bg-[var(--severity-info-bg)]',
+    border: 'border-[var(--severity-info-border)]',
+    iconColor: 'text-[var(--severity-info-text)]',
+    progressColor: 'var(--severity-info-progress)',
   },
 };
 
@@ -79,20 +85,20 @@ function ErrorToast({ notification, onDismiss }: ErrorToastProps) {
       exit={{ opacity: 0, y: -10, scale: 0.95 }}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
       className={cn(
-        'relative overflow-hidden rounded-lg border backdrop-blur-md shadow-lg',
+        'relative overflow-hidden rounded-card border backdrop-blur-md shadow-lg',
         styles.bg,
         styles.border
       )}
     >
       <div className="flex items-start gap-3 p-4">
         {/* Icon */}
-        <div className="flex-shrink-0 mt-0.5">
+        <div className="shrink-0 mt-0.5">
           <Icon className={cn('w-5 h-5', styles.iconColor)} />
         </div>
 
         {/* Content */}
         <div className="flex-1 min-w-0">
-          <h4 className="text-sm font-medium text-slate-200">
+          <h4 className="text-sm font-medium font-grotesk text-slate-200">
             {notification.title}
           </h4>
           <p className="mt-1 text-sm text-slate-400">
@@ -104,7 +110,7 @@ function ErrorToast({ notification, onDismiss }: ErrorToastProps) {
             {notification.retriable && notification.onRetry && (
               <button
                 onClick={handleRetry}
-                className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-400 hover:text-blue-300 transition-colors"
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-accent hover:text-accent/80 transition-colors"
               >
                 <RefreshCw className="w-3 h-3" />
                 Retry
@@ -127,7 +133,7 @@ function ErrorToast({ notification, onDismiss }: ErrorToastProps) {
         {/* Dismiss button */}
         <button
           onClick={() => onDismiss(notification.id)}
-          className="flex-shrink-0 p-1 rounded hover:bg-white/10 transition-colors"
+          className="shrink-0 p-1 rounded hover:bg-white/10 transition-colors"
         >
           <X className="w-4 h-4 text-slate-400" />
         </button>
@@ -146,8 +152,8 @@ function ErrorToast({ notification, onDismiss }: ErrorToastProps) {
               : 4,
           ease: 'linear',
         }}
-        className="absolute bottom-0 left-0 right-0 h-0.5 bg-current origin-left opacity-30"
-        style={{ color: styles.iconColor.replace('text-', '') }}
+        className="absolute bottom-0 left-0 right-0 h-0.5 origin-left opacity-30"
+        style={{ backgroundColor: styles.progressColor }}
       />
     </motion.div>
   );
@@ -201,7 +207,7 @@ export function ErrorNotificationToastContainer({
   return (
     <div
       className={cn(
-        'fixed z-50 flex flex-col gap-2 w-full max-w-sm',
+        'fixed z-toast flex flex-col gap-2 w-full max-w-sm',
         positionClasses[position],
         className
       )}
@@ -293,12 +299,12 @@ export function InlineErrorDisplay({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               className={cn(
-                'flex items-center gap-3 p-3 rounded-lg border',
+                'flex items-center gap-3 p-3 rounded-card border',
                 styles.bg,
                 styles.border
               )}
             >
-              <Icon className={cn('w-4 h-4 flex-shrink-0', styles.iconColor)} />
+              <Icon className={cn('w-4 h-4 shrink-0', styles.iconColor)} />
               <p className="text-sm text-slate-300 flex-1">
                 {notification.description}
               </p>

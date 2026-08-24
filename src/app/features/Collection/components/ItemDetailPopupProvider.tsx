@@ -1,10 +1,12 @@
 "use client";
 
-import { useCallback } from "react";
 import { AnimatePresence } from "framer-motion";
-import { useItemPopupStore } from "@/stores/item-popup-store";
-import { useGridStore } from "@/stores/grid-store";
+import { useCallback } from "react";
+
 import { useBacklogStore } from "@/stores/backlog-store";
+import { useGridStore } from "@/stores/grid-store";
+import { useItemPopupStore } from "@/stores/item-popup-store";
+
 import { ItemDetailPopup } from "./ItemDetailPopup";
 
 /**
@@ -27,7 +29,7 @@ export function ItemDetailPopupProvider() {
   // Handle quick-assign: add item to next available grid position
   const handleQuickAssign = useCallback((itemId: string) => {
     // Find next available position (first empty slot)
-    const nextPosition = gridItems.findIndex(item => !item.matched) + 1;
+    const nextPosition = gridItems.findIndex(item => !item.context.matched) + 1;
     if (nextPosition === 0 || nextPosition > gridItems.length) {
       console.warn('No available grid positions');
       return;
@@ -42,12 +44,15 @@ export function ItemDetailPopupProvider() {
 
     // Create grid item from backlog item
     const gridItem = {
-      id: item.id,
-      title: item.title,
-      description: item.description,
-      image_url: item.image_url,
+      id: `grid-${nextPosition}`,
       position: nextPosition,
-      matched: true,
+      item: {
+        id: item.id,
+        title: item.title,
+        description: item.description,
+        image_url: item.image_url,
+      },
+      context: { source: 'grid' as const, matched: true },
     };
 
     assignItemToGrid(gridItem, nextPosition);

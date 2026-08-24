@@ -26,7 +26,7 @@ function MatchGridSkeleton() {
     >
       {/* Background gradient */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-cyan-900/10 via-[#050505] to-[#050505]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,var(--tw-gradient-stops))] from-brand-muted/10 via-[#050505] to-[#050505]" />
       </div>
 
       {/* Header skeleton */}
@@ -44,11 +44,11 @@ function MatchGridSkeleton() {
       <div className="relative z-10 max-w-7xl mx-auto px-8 mt-12">
         <div className="flex justify-center gap-6 mb-12">
           {/* Position 2 */}
-          <div className="w-32 h-40 bg-gray-800/40 rounded-xl animate-pulse" />
+          <div className="w-32 h-40 bg-gray-800/40 rounded-card animate-pulse" />
           {/* Position 1 (taller) */}
-          <div className="w-36 h-48 bg-gray-800/50 rounded-xl animate-pulse -mt-4" />
+          <div className="w-36 h-48 bg-gray-800/50 rounded-card animate-pulse -mt-4" />
           {/* Position 3 */}
-          <div className="w-32 h-40 bg-gray-800/40 rounded-xl animate-pulse" />
+          <div className="w-32 h-40 bg-gray-800/40 rounded-card animate-pulse" />
         </div>
 
         {/* Grid section skeleton */}
@@ -60,7 +60,7 @@ function MatchGridSkeleton() {
               {Array.from({ length: 7 }).map((_, i) => (
                 <div
                   key={i}
-                  className="aspect-square bg-gray-800/30 rounded-lg animate-pulse"
+                  className="aspect-square bg-gray-800/30 rounded-card animate-pulse"
                   style={{ animationDelay: `${i * 50}ms` }}
                 />
               ))}
@@ -74,7 +74,7 @@ function MatchGridSkeleton() {
               {Array.from({ length: 10 }).map((_, i) => (
                 <div
                   key={i}
-                  className="aspect-square bg-gray-800/25 rounded-lg animate-pulse"
+                  className="aspect-square bg-gray-800/25 rounded-card animate-pulse"
                   style={{ animationDelay: `${i * 30}ms` }}
                 />
               ))}
@@ -91,7 +91,7 @@ function MatchGridSkeleton() {
             {Array.from({ length: 16 }).map((_, i) => (
               <div
                 key={i}
-                className="aspect-square bg-gray-800/30 rounded-lg"
+                className="aspect-square bg-gray-800/30 rounded-card"
                 style={{ animationDelay: `${i * 20}ms` }}
               />
             ))}
@@ -100,9 +100,9 @@ function MatchGridSkeleton() {
       </div>
 
       {/* Loading indicator */}
-      <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-50">
-        <div className="bg-gray-900/90 backdrop-blur-sm rounded-xl px-6 py-4 flex items-center gap-3">
-          <div className="w-5 h-5 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+      <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-modal">
+        <div className="bg-gray-900/90 backdrop-blur-xs rounded-container px-6 py-4 flex items-center gap-3">
+          <div className="w-5 h-5 border-2 border-brand border-t-transparent rounded-full animate-spin" />
           <span className="text-sm text-gray-300">Loading drag & drop...</span>
         </div>
       </div>

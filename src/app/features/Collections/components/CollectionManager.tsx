@@ -1,6 +1,5 @@
 "use client";
 
-import { memo, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -12,6 +11,11 @@ import {
   ChevronDown,
   Loader2,
 } from "lucide-react";
+import { memo, useState, useCallback } from "react";
+
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
+
+
 import type { ListCollection, CreateCollectionRequest, UpdateCollectionRequest } from "@/types/collection";
 
 interface CollectionManagerProps {
@@ -53,6 +57,7 @@ export const CollectionManager = memo(function CollectionManager({
   onSave,
   onDelete,
 }: CollectionManagerProps) {
+  const reducedMotion = useReducedMotion();
   const isEdit = !!collection;
 
   const [name, setName] = useState(collection?.name || "");
@@ -128,23 +133,23 @@ export const CollectionManager = memo(function CollectionManager({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-modal"
             onClick={onClose}
           />
 
           {/* Modal */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
+            initial={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.95, y: 20 }}
+            animate={reducedMotion ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg z-50"
+            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg z-modal"
           >
-            <div className="bg-slate-900 rounded-2xl border border-slate-700/50 shadow-2xl overflow-hidden">
+            <div className="bg-slate-900 rounded-container border border-slate-700/50 shadow-2xl overflow-hidden">
               {/* Header */}
               <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
                 <div className="flex items-center gap-3">
                   <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center"
+                    className="w-10 h-10 rounded-card flex items-center justify-center"
                     style={{ backgroundColor: `${color}20` }}
                   >
                     <FolderPlus className="w-5 h-5" style={{ color }} />
@@ -155,7 +160,7 @@ export const CollectionManager = memo(function CollectionManager({
                 </div>
                 <button
                   onClick={onClose}
-                  className="p-2 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+                  className="p-2 rounded-control hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -165,7 +170,7 @@ export const CollectionManager = memo(function CollectionManager({
               <div className="p-6 space-y-5">
                 {/* Error */}
                 {error && (
-                  <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                  <div className="p-3 rounded-card bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
                     {error}
                   </div>
                 )}
@@ -180,7 +185,7 @@ export const CollectionManager = memo(function CollectionManager({
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="My Collection"
-                    className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500/50 transition-colors"
+                    className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-card text-white placeholder-slate-500 focus:outline-hidden focus:border-brand/50 transition-colors"
                     autoFocus
                   />
                 </div>
@@ -195,7 +200,7 @@ export const CollectionManager = memo(function CollectionManager({
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Optional description..."
                     rows={2}
-                    className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500/50 transition-colors resize-none"
+                    className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder-slate-500 focus:outline-hidden focus:border-brand/50 transition-colors resize-none"
                   />
                 </div>
 
@@ -210,7 +215,7 @@ export const CollectionManager = memo(function CollectionManager({
                       <button
                         key={c}
                         onClick={() => setColor(c)}
-                        className={`w-8 h-8 rounded-lg transition-transform ${
+                        className={`w-8 h-8 rounded-control transition-transform ${
                           color === c ? "ring-2 ring-white ring-offset-2 ring-offset-slate-900 scale-110" : "hover:scale-105"
                         }`}
                         style={{ backgroundColor: c }}
@@ -220,7 +225,7 @@ export const CollectionManager = memo(function CollectionManager({
                       type="color"
                       value={color}
                       onChange={(e) => setColor(e.target.value)}
-                      className="w-8 h-8 rounded-lg cursor-pointer bg-transparent border-0"
+                      className="w-8 h-8 rounded-control cursor-pointer bg-transparent border-0"
                     />
                   </div>
                 </div>
@@ -236,7 +241,7 @@ export const CollectionManager = memo(function CollectionManager({
                       <select
                         value={parentId || ""}
                         onChange={(e) => setParentId(e.target.value || null)}
-                        className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white appearance-none focus:outline-none focus:border-cyan-500/50 transition-colors"
+                        className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-card text-white appearance-none focus:outline-hidden focus:border-brand/50 transition-colors"
                       >
                         <option value="">No parent (root level)</option>
                         {availableParents.map((p) => (
@@ -258,7 +263,7 @@ export const CollectionManager = memo(function CollectionManager({
                   <div className="flex gap-3">
                     <button
                       onClick={() => setIsPublic(false)}
-                      className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border transition-colors ${
+                      className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-card border transition-colors ${
                         !isPublic
                           ? "bg-slate-700/50 border-slate-600 text-white"
                           : "bg-slate-800/30 border-slate-700/50 text-slate-400 hover:border-slate-600"
@@ -269,9 +274,9 @@ export const CollectionManager = memo(function CollectionManager({
                     </button>
                     <button
                       onClick={() => setIsPublic(true)}
-                      className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border transition-colors ${
+                      className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-card border transition-colors ${
                         isPublic
-                          ? "bg-cyan-600/20 border-cyan-500/50 text-cyan-400"
+                          ? "bg-brand-muted/20 border-brand/50 text-brand-hover"
                           : "bg-slate-800/30 border-slate-700/50 text-slate-400 hover:border-slate-600"
                       }`}
                     >
@@ -296,13 +301,13 @@ export const CollectionManager = memo(function CollectionManager({
                       <button
                         onClick={handleDelete}
                         disabled={isDeleting}
-                        className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-white text-sm font-medium disabled:opacity-50 transition-colors"
+                        className="px-3 py-1.5 rounded-control bg-red-600 hover:bg-red-500 text-white text-sm font-medium disabled:opacity-50 transition-colors"
                       >
                         {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Delete"}
                       </button>
                       <button
                         onClick={() => setShowDeleteConfirm(false)}
-                        className="px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-sm transition-colors"
+                        className="px-3 py-1.5 rounded-control bg-slate-700 hover:bg-slate-600 text-white text-sm transition-colors"
                       >
                         Cancel
                       </button>
@@ -322,14 +327,14 @@ export const CollectionManager = memo(function CollectionManager({
                 <div className="flex items-center gap-3">
                   <button
                     onClick={onClose}
-                    className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-sm font-medium transition-colors"
+                    className="px-4 py-2 rounded-control bg-slate-800 hover:bg-slate-700 text-white text-sm font-medium transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleSubmit}
                     disabled={isSaving || !name.trim()}
-                    className="flex items-center gap-2 px-5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-700 disabled:text-slate-400 text-white text-sm font-medium transition-colors"
+                    className="flex items-center gap-2 px-5 py-2 rounded-control bg-brand-muted hover:bg-brand disabled:bg-slate-700 disabled:text-slate-400 text-white text-sm font-medium transition-colors"
                   >
                     {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
                     {isEdit ? "Save Changes" : "Create Collection"}

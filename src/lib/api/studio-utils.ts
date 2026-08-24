@@ -6,33 +6,20 @@
  * - Zod validation error handling
  */
 
-import { NextResponse } from 'next/server';
-import { GoogleGenAI } from '@google/genai';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { NextResponse } from 'next/server';
 import { z } from 'zod';
+
 import type { StudioApiError } from '@/types/studio';
+
+// Re-export centralized Gemini client so existing imports keep working
+export { getGeminiClient } from '@/lib/providers/gemini-client';
 
 // ============================================================================
 // Client Factories (Lazy Singletons)
 // ============================================================================
 
-let geminiClient: GoogleGenAI | null = null;
 let supabaseClient: SupabaseClient | null = null;
-
-/**
- * Get or create Gemini AI client (lazy singleton)
- * @throws Error if GEMINI_API_KEY is not configured
- */
-export function getGeminiClient(): GoogleGenAI {
-  if (!geminiClient) {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      throw new StudioConfigError('GEMINI_API_KEY not configured');
-    }
-    geminiClient = new GoogleGenAI({ apiKey });
-  }
-  return geminiClient;
-}
 
 /**
  * Get or create Supabase client (lazy singleton)
@@ -93,6 +80,7 @@ export const StudioErrorCodes = {
   GENERATION_ERROR: 'GENERATION_ERROR',
   YOUTUBE_SEARCH_ERROR: 'YOUTUBE_SEARCH_ERROR',
   MATCH_ERROR: 'MATCH_ERROR',
+  IMAGE_SEARCH_ERROR: 'IMAGE_SEARCH_ERROR',
   DATABASE_ERROR: 'DATABASE_ERROR',
   UNKNOWN_ERROR: 'UNKNOWN_ERROR',
 } as const;
@@ -127,7 +115,7 @@ export function handleStudioError(
   // Zod validation errors -> 400
   if (error instanceof z.ZodError) {
     return createErrorResponse('Invalid request', 400, {
-      details: error.errors,
+      details: error.issues,
       code: StudioErrorCodes.VALIDATION_ERROR,
     });
   }
@@ -142,6 +130,17 @@ export function handleStudioError(
   // Standard errors -> 500
   if (error instanceof Error) {
     console.error(`${context}:`, error);
+
+    // Sanitize API key / auth errors — don't leak provider details to the client
+    const msg = error.message || '';
+    if (msg.includes('API key') || msg.includes('API_KEY_INVALID') || msg.includes('INVALID_ARGUMENT')) {
+      return createErrorResponse(
+        'AI generation is temporarily unavailable. Please try again later.',
+        503,
+        { code: StudioErrorCodes.CONFIG_ERROR }
+      );
+    }
+
     return createErrorResponse(error.message, 500, { code: defaultCode });
   }
 
@@ -192,7 +191,7 @@ export async function safeParseRequest<T extends z.ZodType>(
       return {
         success: false,
         response: createErrorResponse('Invalid request', 400, {
-          details: result.error.errors,
+          details: result.error.issues,
           code: StudioErrorCodes.VALIDATION_ERROR,
         }),
       };
@@ -256,6 +255,13 @@ export function generateTitleVariations(title: string): string[] {
   const withoutYear = clean.replace(/\s*\(\d{4}\)\s*/g, '').trim();
   if (withoutYear !== clean) {
     variations.push(withoutYear);
+  }
+
+  // Add common disambiguation suffixes for Wikipedia lookups
+  // (helps when the clean title is ambiguous, e.g., "Inside" → "Inside (video game)")
+  if (!clean.includes('(')) {
+    variations.push(`${clean} (video game)`);
+    variations.push(`${clean} (film)`);
   }
 
   return variations;

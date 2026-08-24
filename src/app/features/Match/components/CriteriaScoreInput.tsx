@@ -7,17 +7,14 @@
  * Features enhanced visual feedback with criterion color propagation
  */
 
-import React, { useCallback, useState, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Star, Minus, Plus, MessageSquare } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import type { Criterion, ScoreInputMode, CriterionScore } from '@/lib/criteria/types';
+import React, { useCallback, useState, useRef, useMemo } from 'react';
 
-// Animation configuration
-const ANIMATION_CONFIG = {
-  spring: { stiffness: 300, damping: 30 },
-  duration: { fast: 0.15, normal: 0.2, slow: 0.3 },
-};
+import { DURATION, SPRING } from '@/lib/animations/motion-presets';
+import { cn } from '@/lib/utils';
+
+import type { Criterion, ScoreInputMode, CriterionScore } from '@/lib/criteria/types';
 
 // Score quality thresholds for visual feedback
 const SCORE_THRESHOLDS = {
@@ -102,22 +99,22 @@ export function CriteriaScoreInput({
   return (
     <motion.div
       className={cn(
-        'rounded-lg border border-border bg-card/50 transition-all duration-200',
+        'rounded-card border border-border bg-card/50 transition-all duration-200',
         isInteracting && 'border-border/80 shadow-md',
-        !isInteracting && 'hover:border-border/80 hover:shadow-sm',
+        !isInteracting && 'hover:border-border/80 hover:shadow-xs',
         compact ? 'p-3' : 'p-4',
         className
       )}
       animate={{
         borderColor: isInteracting ? `${criterion.color ?? '#6366f1'}40` : undefined,
       }}
-      transition={{ duration: ANIMATION_CONFIG.duration.fast }}
+      transition={{ duration: DURATION.quick }}
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <motion.span
-            className="w-3 h-3 rounded-full shadow-sm"
+            className="w-3 h-3 rounded-full shadow-xs"
             style={{ backgroundColor: criterion.color ?? '#6366f1' }}
             animate={{
               scale: isInteracting ? 1.15 : 1,
@@ -125,7 +122,7 @@ export function CriteriaScoreInput({
                 ? `0 0 8px ${criterion.color ?? '#6366f1'}60`
                 : '0 1px 2px rgba(0,0,0,0.1)',
             }}
-            transition={{ duration: ANIMATION_CONFIG.duration.fast }}
+            transition={{ duration: DURATION.quick }}
           />
           <span className={cn('font-medium', compact ? 'text-sm' : '')}>
             {criterion.name}
@@ -145,7 +142,7 @@ export function CriteriaScoreInput({
             key={Math.floor(score * 10)}
             initial={{ scale: 1.1, opacity: 0.8 }}
             animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: ANIMATION_CONFIG.duration.fast }}
+            transition={{ duration: DURATION.quick }}
           >
             {score.toFixed(1)}
           </motion.span>
@@ -203,9 +200,9 @@ export function CriteriaScoreInput({
                 onChange={(e) => handleNoteChange(e.target.value)}
                 placeholder="Add a note about your score..."
                 className={cn(
-                  'w-full px-2 py-1.5 text-xs rounded-md border border-border',
+                  'w-full px-2 py-1.5 text-xs rounded-control border border-border',
                   'bg-background resize-none transition-all duration-200',
-                  'focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-ring'
+                  'focus:outline-hidden focus:ring-2 focus:ring-ring/50 focus:border-ring'
                 )}
                 rows={2}
               />
@@ -330,7 +327,7 @@ function SliderInput({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.1 }}
+              transition={{ duration: DURATION.instant }}
             />
           )}
         </AnimatePresence>
@@ -344,7 +341,7 @@ function SliderInput({
           }}
           initial={false}
           animate={{ width: `${percentage}%` }}
-          transition={{ type: 'spring', ...ANIMATION_CONFIG.spring }}
+          transition={SPRING.smooth}
         />
 
         {/* Tick marks for visual reference */}
@@ -378,7 +375,7 @@ function SliderInput({
             left: `${percentage}%`,
             scale: isDragging ? 1.15 : 1,
           }}
-          transition={{ type: 'spring', ...ANIMATION_CONFIG.spring }}
+          transition={SPRING.smooth}
           whileHover={{ scale: 1.1 }}
         />
       </div>
@@ -425,7 +422,7 @@ function StarInput({
         return (
           <motion.button
             key={index}
-            className="p-0.5 transition-transform duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="p-0.5 transition-transform duration-150 focus-ring-inset"
             onClick={() => handleStarClick(index)}
             onMouseEnter={() => {
               setHoverIndex(index);
@@ -494,10 +491,10 @@ function NumericInput({
     <div className="flex items-center justify-center gap-2">
       <motion.button
         className={cn(
-          'p-1.5 rounded-lg border border-border',
+          'p-1.5 rounded-card border border-border',
           'hover:bg-accent transition-all duration-150',
           'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100',
-          'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+          'focus-ring-inset'
         )}
         onClick={handleDecrement}
         disabled={value <= criterion.minScore}
@@ -519,8 +516,8 @@ function NumericInput({
         step={0.1}
         className={cn(
           'w-16 text-center text-lg font-bold tabular-nums',
-          'bg-transparent border border-border rounded-lg py-1 transition-all duration-200',
-          'focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-ring'
+          'bg-transparent border border-border rounded-card py-1 transition-all duration-200',
+          'focus:outline-hidden focus:ring-2 focus:ring-ring/50 focus:border-ring'
         )}
         onFocus={onInteractionStart}
         onBlur={onInteractionEnd}
@@ -529,10 +526,10 @@ function NumericInput({
 
       <motion.button
         className={cn(
-          'p-1.5 rounded-lg border border-border',
+          'p-1.5 rounded-card border border-border',
           'hover:bg-accent transition-all duration-150',
           'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100',
-          'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+          'focus-ring-inset'
         )}
         onClick={handleIncrement}
         disabled={value >= criterion.maxScore}

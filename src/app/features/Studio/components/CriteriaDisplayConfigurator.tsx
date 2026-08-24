@@ -1,6 +1,5 @@
 'use client';
 
-import { memo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Circle,
@@ -10,7 +9,11 @@ import {
   Plus,
   Trash2,
 } from 'lucide-react';
+import { memo, useCallback } from 'react';
+
+import { SURFACE_ELEVATION } from '@/components/visual/depth/depth-tokens';
 import { cn } from '@/lib/utils';
+
 import type {
   Criterion,
   CriterionDisplayType,
@@ -35,7 +38,7 @@ export interface CriteriaDisplayConfiguratorProps {
 
 // Display type options
 const DISPLAY_TYPES: { type: CriterionDisplayType; icon: typeof Circle; label: string }[] = [
-  { type: 'ring', icon: Circle, label: 'Ring' },
+  { type: 'ring-3', icon: Circle, label: 'Ring' },
   { type: 'bar', icon: Minus, label: 'Bar' },
   { type: 'label', icon: Type, label: 'Label' },
   { type: 'hidden', icon: EyeOff, label: 'Hidden' },
@@ -85,7 +88,7 @@ export const CriteriaDisplayConfigurator = memo(function CriteriaDisplayConfigur
         return {
           ...c,
           displayConfig: {
-            displayType: c.displayConfig?.displayType ?? 'ring',
+            displayType: c.displayConfig?.displayType ?? 'ring-3',
             ...c.displayConfig,
             ...configUpdates,
           },
@@ -106,7 +109,7 @@ export const CriteriaDisplayConfigurator = memo(function CriteriaDisplayConfigur
       minScore: 1,
       maxScore: 10,
       displayConfig: {
-        displayType: 'ring',
+        displayType: 'ring-3',
       },
     };
     onCriteriaChange([...criteria, newCriterion]);
@@ -133,7 +136,7 @@ export const CriteriaDisplayConfigurator = memo(function CriteriaDisplayConfigur
               'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors',
               criteria.length >= maxCriteria
                 ? 'bg-gray-800 text-gray-600 cursor-not-allowed'
-                : 'bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/30'
+                : 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30'
             )}
           >
             <Plus className="w-3.5 h-3.5" />
@@ -147,7 +150,7 @@ export const CriteriaDisplayConfigurator = memo(function CriteriaDisplayConfigur
         <AnimatePresence mode="popLayout">
           {criteria.map((criterion, idx) => {
             const color = colors[idx] || criterion.color || '#f59e0b';
-            const displayType = criterion.displayConfig?.displayType ?? 'ring';
+            const displayType = criterion.displayConfig?.displayType ?? 'ring-3';
 
             return (
               <motion.div
@@ -156,8 +159,8 @@ export const CriteriaDisplayConfigurator = memo(function CriteriaDisplayConfigur
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 10, height: 0 }}
-                className="flex items-center gap-3 p-2.5 rounded-lg bg-gray-900/50 border border-gray-800/50"
-                style={{ borderLeftColor: color, borderLeftWidth: 3 }}
+                className="flex items-center gap-3 p-2.5 rounded-lg border border-gray-800/50"
+                style={{ backgroundColor: SURFACE_ELEVATION.sunken, borderLeftColor: color, borderLeftWidth: 3 }}
               >
                 {/* Color dot + Name */}
                 <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -174,14 +177,14 @@ export const CriteriaDisplayConfigurator = memo(function CriteriaDisplayConfigur
                       type="text"
                       value={criterion.name}
                       onChange={(e) => updateCriterion(criterion.id, { name: e.target.value })}
-                      className="flex-1 min-w-0 bg-transparent text-sm font-medium text-gray-200 focus:text-white focus:outline-none"
+                      className="flex-1 min-w-0 bg-transparent text-sm font-medium text-gray-200 focus:text-white focus:outline-hidden"
                       placeholder="Criterion name"
                     />
                   )}
                 </div>
 
                 {/* Display Type Icons */}
-                <div className="flex items-center gap-0.5 p-0.5 rounded-md bg-gray-800/50">
+                <div className="flex items-center gap-0.5 p-0.5 rounded-md" style={{ backgroundColor: SURFACE_ELEVATION.raised }}>
                   {DISPLAY_TYPES.map(({ type, icon: Icon, label }) => (
                     <button
                       key={type}
@@ -210,7 +213,8 @@ export const CriteriaDisplayConfigurator = memo(function CriteriaDisplayConfigur
                         position: (e.target.value || undefined) as CriterionDisplayPosition | undefined,
                       })
                     }
-                    className="text-xs bg-gray-800/50 border border-gray-700/50 rounded px-2 py-1 text-gray-300 focus:outline-none focus:border-gray-600"
+                    className="text-xs border border-gray-700/50 rounded px-2 py-1 text-gray-300 focus:outline-hidden focus:border-gray-600"
+                    style={{ backgroundColor: SURFACE_ELEVATION.raised }}
                   >
                     <option value="">Auto</option>
                     {POSITION_OPTIONS.map((opt) => (
@@ -250,7 +254,7 @@ export const CriteriaDisplayConfigurator = memo(function CriteriaDisplayConfigur
           {allowAdd && !readOnly && (
             <button
               onClick={addCriterion}
-              className="mt-2 text-xs text-cyan-400 hover:text-cyan-300"
+              className="mt-2 text-xs text-amber-400 hover:text-amber-300"
             >
               Add your first criterion
             </button>

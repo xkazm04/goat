@@ -1,27 +1,30 @@
 "use client";
 
+import { useDndMonitor } from "@dnd-kit/core";
 import { useState, useEffect, useCallback, useRef, useDeferredValue } from "react";
 import { createPortal } from "react-dom";
-import { CollectionGroup, CollectionItem } from "@/app/features/Collection/types";
+
 import { useQuickSelect } from "@/app/features/Collection/hooks/useQuickSelect";
+import { ItemCategory, CollectionItem } from "@/app/features/Collection/types";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { cn } from "@/lib/utils";
+
 import {
   CollectionSidebar,
-  CollectionHorizontalBar,
   VirtualizedCollectionGrid,
   CollectionToggleButton,
-  GroupViewMode,
   QuickSelectStatusBar,
   useGridDimensions,
 } from "./components";
+import { AddCustomItemForm } from "./components/AddCustomItemForm";
 import { CompactCollectionHeader } from "./components/CompactCollectionHeader";
-import { VerticalCategoryNav } from "./components/VerticalCategoryNav";
+import { MobileBacklogPanel } from "./components/MobileBacklogPanel";
 import { PanelResizeHandle } from "./components/PanelResizeHandle";
 import { useCollectionFiltering } from "./hooks/useCollectionFiltering";
 import { usePanelResize } from "./hooks/usePanelResize";
 
 interface SimpleCollectionPanelProps {
-  groups: CollectionGroup[];
+  groups: ItemCategory[];
   onItemClick?: (item: CollectionItem) => void;
   selectedItemId?: string;
 }
@@ -32,9 +35,9 @@ type AnimationState = 'hidden' | 'entering' | 'visible' | 'exiting';
  * "Glass Dock" Collection Panel - A floating dock for managing collection items.
  */
 export function SimpleCollectionPanel({ groups, onItemClick, selectedItemId }: SimpleCollectionPanelProps) {
+  const isMobileBreakpoint = useMediaQuery('(max-width: 767px)');
   const [isVisible, setIsVisible] = useState(true);
   const [activeTab, setActiveTab] = useState<string | 'all'>('all');
-  const [groupViewMode] = useState<GroupViewMode>('sidebar');
   const [searchQuery, setSearchQuery] = useState('');
   const [mounted, setMounted] = useState(false);
   const [animState, setAnimState] = useState<AnimationState>('visible');
@@ -43,20 +46,41 @@ export function SimpleCollectionPanel({ groups, onItemClick, selectedItemId }: S
   const gridContainerRef = useRef<HTMLDivElement>(null);
 
   // Custom hooks
-  const { panelHeight, isResizing, handleResizeStart } = usePanelResize();
+  const { panelHeight, isResizing, isDndActive, handleResizeStart, setDndActive } = usePanelResize();
+
+  // Track DnD state to disable resize during drag operations
+  useDndMonitor({
+    onDragStart: () => setDndActive(true),
+    onDragEnd: () => setDndActive(false),
+    onDragCancel: () => setDndActive(false),
+  });
   const gridDimensions = useGridDimensions(gridContainerRef, {
     minColumns: 3, maxColumns: 10, minItemWidth: 120, gap: 8, aspectRatio: 4 / 5,
+    paused: isDndActive,
   });
 
   const {
     availableGroups, groupAvailableCounts, totalItemCount,
     displayGroups, filteredItemCount, flatFilteredItems,
+    groupMatchCounts, groupNameMatches,
   } = useCollectionFiltering(groups, activeTab, deferredSearchQuery);
 
   const quickSelect = useQuickSelect({ visibleItems: flatFilteredItems, enabled: isVisible });
 
   // SSR safety
   useEffect(() => { setMounted(true); }, []);
+
+  // Broadcast panel height as CSS custom property for dynamic grid padding
+  useEffect(() => {
+    if (mounted && isVisible) {
+      document.documentElement.style.setProperty('--collection-panel-height', `${panelHeight + 20}px`);
+    } else if (mounted) {
+      document.documentElement.style.setProperty('--collection-panel-height', '0px');
+    }
+    return () => {
+      document.documentElement.style.removeProperty('--collection-panel-height');
+    };
+  }, [mounted, isVisible, panelHeight]);
 
   // Animation state machine
   useEffect(() => {
@@ -73,7 +97,7 @@ export function SimpleCollectionPanel({ groups, onItemClick, selectedItemId }: S
   // Layout calculations
   const isCompactMode = panelHeight < 300;
   const gridHeight = Math.max(150, panelHeight - 36 - (quickSelect.state.isActive ? 32 : 0) -
-    (groupViewMode === 'horizontal' ? 40 : 0) - (isCompactMode ? 8 : 16));
+    (isCompactMode ? 8 : 16));
 
   // Reset to 'all' if selected group becomes empty
   useEffect(() => {
@@ -113,6 +137,17 @@ export function SimpleCollectionPanel({ groups, onItemClick, selectedItemId }: S
 
   if (!mounted) return null;
 
+  // On mobile (< 768px), render the bottom sheet panel instead of the desktop sidebar
+  if (isMobileBreakpoint) {
+    return createPortal(
+      <MobileBacklogPanel
+        items={flatFilteredItems}
+        totalCount={totalItemCount}
+      />,
+      document.body
+    );
+  }
+
   const shouldRenderPanel = animState !== 'hidden';
 
   return createPortal(
@@ -122,17 +157,18 @@ export function SimpleCollectionPanel({ groups, onItemClick, selectedItemId }: S
       {shouldRenderPanel && (
         <div
           className={cn(
-            "fixed bottom-0 left-0 right-0 z-50",
+            "fixed bottom-0 left-0 right-0 z-sticky",
             animState === 'entering' && "animate-[collection-panel-slide-in_0.3s_ease-out_forwards]",
             animState === 'exiting' && "animate-[collection-panel-slide-out_0.25s_ease-in_forwards]"
           )}
-          style={{ height: panelHeight }}
+          style={{ height: panelHeight, '--panel-height': `${panelHeight}px` } as React.CSSProperties}
           onAnimationEnd={handleAnimationEnd}
           data-testid="collection-panel"
+          data-panel-height={panelHeight}
         >
-          <PanelResizeHandle isResizing={isResizing} onResizeStart={handleResizeStart} />
+          <PanelResizeHandle isResizing={isResizing} isDndActive={isDndActive} onResizeStart={handleResizeStart} />
 
-          <div className="w-full h-full glass-dock-panel flex flex-col overflow-hidden rounded-t-xl">
+          <div className="w-full h-full glass-dock-panel flex flex-col overflow-hidden rounded-t-container">
             <CompactCollectionHeader
               totalItems={totalItemCount}
               filteredItemCount={filteredItemCount}
@@ -145,7 +181,7 @@ export function SimpleCollectionPanel({ groups, onItemClick, selectedItemId }: S
             />
 
             {quickSelect.state.isActive && (
-              <div className="px-3 py-1 flex-shrink-0 border-b border-white/5">
+              <div className="px-3 py-1 shrink-0 border-b border-white/5">
                 <QuickSelectStatusBar
                   isActive={quickSelect.state.isActive}
                   mode={quickSelect.state.mode}
@@ -157,24 +193,26 @@ export function SimpleCollectionPanel({ groups, onItemClick, selectedItemId }: S
               </div>
             )}
 
-            {groupViewMode === 'horizontal' && (
-              <div className="flex-shrink-0">
-                <CollectionHorizontalBar
-                  groups={availableGroups} groupAvailableCounts={groupAvailableCounts}
-                  activeTab={activeTab} onTabChange={setActiveTab} totalItemCount={totalItemCount}
+            {/* Add Custom Item Form */}
+            {(() => {
+              const targetGroup = activeTab !== 'all'
+                ? availableGroups.find(g => g.id === activeTab)
+                : availableGroups[0];
+              if (!targetGroup) return null;
+              return (
+                <AddCustomItemForm
+                  category={targetGroup.category || ''}
+                  subcategory={targetGroup.subcategory || undefined}
+                  groupId={targetGroup.id}
                 />
-              </div>
-            )}
+              );
+            })()}
 
             <div className={cn("flex flex-1 min-h-0 overflow-hidden", isCompactMode && "gap-0.5")}>
-              {groupViewMode === 'minimal' && (
-                <VerticalCategoryNav groups={availableGroups} groupAvailableCounts={groupAvailableCounts}
-                  activeTab={activeTab} onTabChange={setActiveTab} totalItemCount={totalItemCount} />
-              )}
-              {groupViewMode === 'sidebar' && (
-                <CollectionSidebar groups={availableGroups} groupAvailableCounts={groupAvailableCounts}
-                  activeTab={activeTab} onTabChange={setActiveTab} totalItemCount={totalItemCount} />
-              )}
+              <CollectionSidebar groups={availableGroups} groupAvailableCounts={groupAvailableCounts}
+                activeTab={activeTab} onTabChange={setActiveTab} totalItemCount={totalItemCount}
+                searchQuery={deferredSearchQuery} groupMatchCounts={groupMatchCounts}
+                groupNameMatches={groupNameMatches} />
 
               <div className={cn("flex-1 min-h-0 overflow-hidden", isCompactMode ? "p-1" : "p-2")}>
                 <div ref={gridContainerRef} className="w-full h-full" data-testid="collection-grid-container">

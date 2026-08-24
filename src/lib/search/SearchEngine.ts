@@ -6,12 +6,14 @@
  */
 
 import { goatApi } from '@/lib/api';
+
 import {
   fuzzyMatchFields,
   recencyBoost,
   popularityBoost,
   combineScores,
 } from './fuzzy';
+
 import type {
   SearchDomain,
   SearchOptions,
@@ -19,19 +21,16 @@ import type {
   SearchResult,
   SearchSuggestion,
   SearchFacet,
+  DomainStatus,
   ListSearchResult,
   ItemSearchResult,
   GroupSearchResult,
   BlueprintSearchResult,
-  SEARCH_DOMAINS,
 } from './types';
-import type { TopList } from '@/types/top-lists';
 import type { Blueprint } from '@/types/blueprint';
-import type {
-  Item,
-  ItemGroup,
-  PaginatedResponse,
-} from '@/lib/api/goat-api';
+import type { ItemGroup } from '@/types/groups';
+import type { Item } from '@/types/items';
+import type { TopList } from '@/types/top-lists';
 
 // =============================================================================
 // Configuration
@@ -43,6 +42,9 @@ const DEFAULT_OPTIONS: SearchOptions = {
   minScore: 0.1,
   includeSuggestions: true,
 };
+
+/** Threshold in ms above which search timing is logged */
+const SEARCH_LOG_THRESHOLD_MS = 100;
 
 // =============================================================================
 // Result Transformers
@@ -62,7 +64,7 @@ function transformListToResult(
     category: list.category,
     subcategory: list.subcategory,
     score,
-    url: `/match-test?list=${list.id}`,
+    url: `/goat?list=${list.id}`,
     timestamp: list.created_at,
     metadata: {
       size: list.size,
@@ -145,15 +147,70 @@ function transformBlueprintToResult(
 }
 
 // =============================================================================
-// Domain Search Functions
+// Generic Domain Search
 // =============================================================================
 
-async function searchLists(
+interface DomainSearchConfig<TEntity, TResult extends SearchResult> {
+  domain: string;
+  fetcher: (query: string, options: SearchOptions) => Promise<TEntity[]>;
+  fieldWeights: (entity: TEntity) => Array<{ text: string; weight: number }>;
+  boosts: (entity: TEntity, options: SearchOptions) => Array<{ score: number; weight: number }>;
+  transformer: (entity: TEntity, score: number, options: SearchOptions) => TResult;
+}
+
+interface DomainSearchOutcome<TResult extends SearchResult> {
+  results: TResult[];
+  status: DomainStatus;
+}
+
+async function searchDomainEntities<TEntity, TResult extends SearchResult>(
+  config: DomainSearchConfig<TEntity, TResult>,
   query: string,
   options: SearchOptions
-): Promise<ListSearchResult[]> {
+): Promise<DomainSearchOutcome<TResult>> {
+  const start = performance.now();
   try {
-    // Fetch lists from API
+    const entities = await config.fetcher(query, options);
+    const results: TResult[] = [];
+    const limit = options.limit || DEFAULT_OPTIONS.limit!;
+    const minScore = options.minScore || DEFAULT_OPTIONS.minScore!;
+
+    for (const entity of entities) {
+      const match = fuzzyMatchFields(query, config.fieldWeights(entity));
+      if (!match.matches || match.score < minScore) continue;
+
+      const finalScore = combineScores([
+        { score: match.score, weight: 1.0 },
+        ...config.boosts(entity, options),
+      ]);
+
+      results.push(config.transformer(entity, finalScore, options));
+    }
+
+    return {
+      results: results.sort((a, b) => b.score - a.score).slice(0, limit),
+      status: { status: 'success', durationMs: performance.now() - start },
+    };
+  } catch (error) {
+    console.error(`Search ${config.domain} error:`, error);
+    return {
+      results: [],
+      status: {
+        status: 'error',
+        error: error instanceof Error ? error.message : String(error),
+        durationMs: performance.now() - start,
+      },
+    };
+  }
+}
+
+// =============================================================================
+// Domain Configs
+// =============================================================================
+
+const listConfig: DomainSearchConfig<TopList, ListSearchResult> = {
+  domain: 'lists',
+  fetcher: async (query, options) => {
     const [userLists, allLists] = await Promise.all([
       options.userId
         ? goatApi.lists.getByUser(options.userId, {
@@ -169,186 +226,98 @@ async function searchLists(
         limit: 100,
       }),
     ]);
-
-    // Combine and dedupe
     const listMap = new Map<string, TopList>();
-    for (const list of userLists) {
-      listMap.set(list.id, list);
-    }
-    for (const list of allLists) {
-      if (!listMap.has(list.id)) {
-        listMap.set(list.id, list);
-      }
-    }
+    for (const list of userLists) listMap.set(list.id, list);
+    for (const list of allLists) if (!listMap.has(list.id)) listMap.set(list.id, list);
+    return Array.from(listMap.values());
+  },
+  fieldWeights: (list) => [
+    { text: list.title, weight: 1.0 },
+    { text: list.category || '', weight: 0.7 },
+    { text: list.subcategory || '', weight: 0.6 },
+  ],
+  boosts: (list, options) => [
+    { score: recencyBoost(list.created_at), weight: 0.2 },
+    { score: options.userId && list.user_id === options.userId ? 0.3 : 0, weight: 0.3 },
+  ],
+  transformer: (list, score, options) => transformListToResult(list, score, options.userId),
+};
 
-    // Score and filter
-    const results: ListSearchResult[] = [];
-    const limit = options.limit || DEFAULT_OPTIONS.limit!;
-    const minScore = options.minScore || DEFAULT_OPTIONS.minScore!;
-
-    for (const list of Array.from(listMap.values())) {
-      const match = fuzzyMatchFields(query, [
-        { text: list.title, weight: 1.0 },
-        { text: list.category || '', weight: 0.7 },
-        { text: list.subcategory || '', weight: 0.6 },
-      ]);
-
-      if (!match.matches || match.score < minScore) continue;
-
-      // Apply boosts
-      const finalScore = combineScores([
-        { score: match.score, weight: 1.0 },
-        { score: recencyBoost(list.created_at), weight: 0.2 },
-        { score: options.userId && list.user_id === options.userId ? 0.3 : 0, weight: 0.3 },
-      ]);
-
-      results.push(transformListToResult(list, finalScore, options.userId));
-    }
-
-    // Sort by score and limit
-    return results
-      .sort((a, b) => b.score - a.score)
-      .slice(0, limit);
-  } catch (error) {
-    console.error('Search lists error:', error);
-    return [];
-  }
-}
-
-async function searchItems(
-  query: string,
-  options: SearchOptions
-): Promise<ItemSearchResult[]> {
-  try {
+const itemConfig: DomainSearchConfig<Item, ItemSearchResult> = {
+  domain: 'items',
+  fetcher: async (query, options) => {
     const response = await goatApi.items.search({
       category: options.category,
       subcategory: options.subcategory,
       search: query,
       limit: 100,
     });
+    return response.data || [];
+  },
+  fieldWeights: (item) => [
+    { text: item.name, weight: 1.0 },
+    { text: item.category || '', weight: 0.5 },
+    { text: item.subcategory || '', weight: 0.4 },
+    { text: item.item_year?.toString() || '', weight: 0.3 },
+  ],
+  boosts: (item) => [
+    { score: popularityBoost(item.selection_count), weight: 0.3 },
+    { score: recencyBoost(item.created_at, 0.1), weight: 0.1 },
+  ],
+  transformer: (item, score) => transformItemToResult(item, score),
+};
 
-    const items = response.data || [];
-    const results: ItemSearchResult[] = [];
-    const limit = options.limit || DEFAULT_OPTIONS.limit!;
-    const minScore = options.minScore || DEFAULT_OPTIONS.minScore!;
-
-    for (const item of items) {
-      const match = fuzzyMatchFields(query, [
-        { text: item.name, weight: 1.0 },
-        { text: item.category || '', weight: 0.5 },
-        { text: item.subcategory || '', weight: 0.4 },
-        { text: item.item_year?.toString() || '', weight: 0.3 },
-      ]);
-
-      if (!match.matches || match.score < minScore) continue;
-
-      // Apply boosts
-      const finalScore = combineScores([
-        { score: match.score, weight: 1.0 },
-        { score: popularityBoost(item.selection_count), weight: 0.3 },
-        { score: recencyBoost(item.created_at, 0.1), weight: 0.1 },
-      ]);
-
-      results.push(transformItemToResult(item, finalScore));
-    }
-
-    return results
-      .sort((a, b) => b.score - a.score)
-      .slice(0, limit);
-  } catch (error) {
-    console.error('Search items error:', error);
-    return [];
-  }
-}
-
-async function searchGroups(
-  query: string,
-  options: SearchOptions
-): Promise<GroupSearchResult[]> {
-  try {
-    const groups = await goatApi.groups.search({
+const groupConfig: DomainSearchConfig<ItemGroup, GroupSearchResult> = {
+  domain: 'groups',
+  fetcher: async (query, options) => {
+    return goatApi.groups.search({
       category: options.category,
       subcategory: options.subcategory,
       search: query,
       limit: 100,
     });
+  },
+  fieldWeights: (group) => [
+    { text: group.name, weight: 1.0 },
+    { text: group.category || '', weight: 0.6 },
+    { text: group.subcategory || '', weight: 0.5 },
+  ],
+  boosts: (group) => [
+    { score: popularityBoost(group.item_count, 0.2, 50), weight: 0.3 },
+  ],
+  transformer: (group, score) => transformGroupToResult(group, score),
+};
 
-    const results: GroupSearchResult[] = [];
-    const limit = options.limit || DEFAULT_OPTIONS.limit!;
-    const minScore = options.minScore || DEFAULT_OPTIONS.minScore!;
-
-    for (const group of groups) {
-      const match = fuzzyMatchFields(query, [
-        { text: group.name, weight: 1.0 },
-        { text: group.category || '', weight: 0.6 },
-        { text: group.subcategory || '', weight: 0.5 },
-      ]);
-
-      if (!match.matches || match.score < minScore) continue;
-
-      // Apply boosts
-      const finalScore = combineScores([
-        { score: match.score, weight: 1.0 },
-        { score: popularityBoost(group.item_count, 0.2, 50), weight: 0.3 },
-      ]);
-
-      results.push(transformGroupToResult(group, finalScore));
-    }
-
-    return results
-      .sort((a, b) => b.score - a.score)
-      .slice(0, limit);
-  } catch (error) {
-    console.error('Search groups error:', error);
-    return [];
-  }
-}
-
-async function searchBlueprints(
-  query: string,
-  options: SearchOptions
-): Promise<BlueprintSearchResult[]> {
-  try {
-    const blueprints = await goatApi.blueprints.search({
+const blueprintConfig: DomainSearchConfig<Blueprint, BlueprintSearchResult> = {
+  domain: 'blueprints',
+  fetcher: async (query, options) => {
+    return goatApi.blueprints.search({
       category: options.category,
       subcategory: options.subcategory,
       search: query,
       limit: 100,
     });
+  },
+  fieldWeights: (blueprint) => [
+    { text: blueprint.title, weight: 1.0 },
+    { text: blueprint.category || '', weight: 0.6 },
+    { text: blueprint.subcategory || '', weight: 0.5 },
+    { text: blueprint.description || '', weight: 0.3 },
+  ],
+  boosts: (blueprint) => [
+    { score: blueprint.isFeatured ? 0.2 : 0, weight: 0.2 },
+    { score: popularityBoost(blueprint.usageCount), weight: 0.2 },
+    { score: recencyBoost(blueprint.createdAt, 0.1), weight: 0.1 },
+  ],
+  transformer: (blueprint, score) => transformBlueprintToResult(blueprint, score),
+};
 
-    const results: BlueprintSearchResult[] = [];
-    const limit = options.limit || DEFAULT_OPTIONS.limit!;
-    const minScore = options.minScore || DEFAULT_OPTIONS.minScore!;
-
-    for (const blueprint of blueprints) {
-      const match = fuzzyMatchFields(query, [
-        { text: blueprint.title, weight: 1.0 },
-        { text: blueprint.category || '', weight: 0.6 },
-        { text: blueprint.subcategory || '', weight: 0.5 },
-        { text: blueprint.description || '', weight: 0.3 },
-      ]);
-
-      if (!match.matches || match.score < minScore) continue;
-
-      // Apply boosts
-      const finalScore = combineScores([
-        { score: match.score, weight: 1.0 },
-        { score: blueprint.isFeatured ? 0.2 : 0, weight: 0.2 },
-        { score: popularityBoost(blueprint.usageCount), weight: 0.2 },
-        { score: recencyBoost(blueprint.createdAt, 0.1), weight: 0.1 },
-      ]);
-
-      results.push(transformBlueprintToResult(blueprint, finalScore));
-    }
-
-    return results
-      .sort((a, b) => b.score - a.score)
-      .slice(0, limit);
-  } catch (error) {
-    console.error('Search blueprints error:', error);
-    return [];
-  }
-}
+const domainConfigs: Record<string, DomainSearchConfig<unknown, SearchResult>> = {
+  lists: listConfig as DomainSearchConfig<unknown, SearchResult>,
+  items: itemConfig as DomainSearchConfig<unknown, SearchResult>,
+  groups: groupConfig as DomainSearchConfig<unknown, SearchResult>,
+  blueprints: blueprintConfig as DomainSearchConfig<unknown, SearchResult>,
+};
 
 // =============================================================================
 // Suggestion Generation
@@ -404,8 +373,12 @@ async function generateSuggestions(
         });
       }
     }
-  } catch {
-    // Ignore suggestion errors
+  } catch (error) {
+    console.warn('[SearchEngine] generateSuggestions: failed to fetch API suggestions', {
+      query,
+      category: options.category,
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 
   return suggestions
@@ -470,6 +443,7 @@ export async function search(
       totalResults: 0,
       results: [],
       resultsByDomain: {},
+      domainStatus: {},
       suggestions: [],
       facets: [],
       executionTime: 0,
@@ -479,25 +453,18 @@ export async function search(
 
   // Determine which domains to search
   const domains = mergedOptions.domains || ['lists', 'items', 'groups', 'blueprints'];
+  const activeDomains = domains.filter((d) => d in domainConfigs);
 
-  // Search all domains in parallel
-  const searchPromises: Promise<SearchResult[]>[] = [];
+  // Search all domains in parallel, tracking per-domain status
+  const domainStatus: Partial<Record<SearchDomain, DomainStatus>> = {};
+  const searchPromises = activeDomains.map(async (d) => {
+    const outcome = await searchDomainEntities(domainConfigs[d], query, mergedOptions);
+    domainStatus[d as SearchDomain] = outcome.status;
+    return outcome.results;
+  });
 
-  if (domains.includes('lists')) {
-    searchPromises.push(searchLists(query, mergedOptions));
-  }
-  if (domains.includes('items')) {
-    searchPromises.push(searchItems(query, mergedOptions));
-  }
-  if (domains.includes('groups')) {
-    searchPromises.push(searchGroups(query, mergedOptions));
-  }
-  if (domains.includes('blueprints')) {
-    searchPromises.push(searchBlueprints(query, mergedOptions));
-  }
-
-  // Wait for all searches
   const searchResults = await Promise.all(searchPromises);
+  const domainSearchDone = performance.now();
 
   // Flatten and sort all results
   const allResults = searchResults.flat().sort((a, b) => b.score - a.score);
@@ -512,20 +479,36 @@ export async function search(
   }
 
   // Generate suggestions
+  const suggestionsStart = performance.now();
   const suggestions = mergedOptions.includeSuggestions
     ? await generateSuggestions(query, allResults, mergedOptions)
     : [];
+  const suggestionsDuration = performance.now() - suggestionsStart;
 
   // Generate facets
   const facets = generateFacets(allResults);
 
   const executionTime = performance.now() - startTime;
 
+  // Log structured timing when above threshold
+  if (executionTime > SEARCH_LOG_THRESHOLD_MS) {
+    const domainBreakdown = Object.entries(domainStatus)
+      .map(([domain, s]) => `${domain}=${s.durationMs?.toFixed(0) ?? '?'}ms${s.status === 'error' ? '(ERR)' : ''}`)
+      .join(' ');
+    console.warn(
+      `[SearchEngine] Slow search (${executionTime.toFixed(0)}ms) query="${query}" | ` +
+      `domains: ${domainBreakdown} | ` +
+      `suggestions=${suggestionsDuration.toFixed(0)}ms | ` +
+      `results=${allResults.length}`
+    );
+  }
+
   return {
     query,
     totalResults: allResults.length,
     results: allResults.slice(0, (mergedOptions.limit || 10) * domains.length),
     resultsByDomain,
+    domainStatus,
     suggestions,
     facets,
     executionTime,

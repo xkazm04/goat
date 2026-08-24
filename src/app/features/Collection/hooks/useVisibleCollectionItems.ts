@@ -17,7 +17,9 @@
  */
 
 import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
+
 import { useGridStore, GridStoreState } from '@/stores/grid-store';
+
 import { CollectionItem } from '../types';
 
 /**
@@ -31,9 +33,9 @@ import { CollectionItem } from '../types';
  * @returns Array of backlog item IDs that are currently placed in the grid
  */
 export function getPlacedItemIdsFromGrid(state: GridStoreState): string[] {
-  const matchedItems = state.gridItems.filter(item => item.matched);
+  const matchedItems = state.gridItems.filter(item => item.context.matched);
   return matchedItems
-    .map(item => item.backlogItemId)
+    .map(item => item.item?.id)
     .filter((id): id is string => Boolean(id));
 }
 

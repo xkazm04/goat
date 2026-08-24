@@ -139,7 +139,7 @@ export type ImageEditOperation =
   | { type: 'brightness'; value: number }
   | { type: 'contrast'; value: number }
   | { type: 'saturation'; value: number }
-  | { type: 'blur'; value: number }
+  | { type: 'blur-sm'; value: number }
   | { type: 'sharpen'; value: number }
   | { type: 'filter'; filter: ImageFilter }
   | { type: 'overlay'; text: string; position: 'top' | 'bottom' | 'center' };

@@ -1,6 +1,7 @@
 "use client";
 
 import { ReactNode, memo, createContext, useContext, useMemo } from "react";
+
 import {
   NeonArenaBackground,
   NeonArenaBackgroundProps,

@@ -7,15 +7,12 @@
 import {
   Challenge,
   ChallengeConfig,
-  ChallengeStatus,
-  ChallengeType,
   CreateChallengeInput,
   UpdateChallengeInput,
   RankingSubmission,
   RankedItem,
   LeaderboardEntry,
   ScoringResult,
-  ChallengeStats,
   CHALLENGE_TEMPLATES,
   ChallengeFilters,
 } from './types';

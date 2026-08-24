@@ -17,12 +17,13 @@
 
 'use client';
 
-import { useEffect, useRef } from 'react';
-import { usePathname } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
+import { usePathname } from 'next/navigation';
+import { useEffect, useRef } from 'react';
+
+import { PredictionEngine } from '@/lib/prefetch/PredictionEngine';
 import { PrefetchManager } from '@/lib/prefetch/PrefetchManager';
 import { RoutePreloader } from '@/lib/prefetch/RoutePreloader';
-import { PredictionEngine } from '@/lib/prefetch/PredictionEngine';
 
 export interface PrefetchProviderProps {
   children: React.ReactNode;

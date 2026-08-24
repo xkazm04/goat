@@ -6,9 +6,7 @@
  * Shows ranked, favorite, new, and other status indicators.
  */
 
-import React, { memo, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
 import {
   Check,
   Heart,
@@ -22,6 +20,10 @@ import {
   AlertCircle,
   type LucideIcon,
 } from 'lucide-react';
+import React, { memo, useMemo } from 'react';
+
+import { cn } from '@/lib/utils';
+
 
 /**
  * Indicator types
@@ -132,8 +134,8 @@ const INDICATOR_CONFIGS: Record<IndicatorType, Omit<IndicatorConfig, 'type'>> = 
   new: {
     icon: Sparkles,
     label: 'New',
-    color: 'text-cyan-400',
-    bgColor: 'bg-cyan-500/20 border-cyan-500/30',
+    color: 'text-brand-hover',
+    bgColor: 'bg-brand/20 border-brand/30',
     priority: 8,
   },
   recent: {
@@ -194,13 +196,13 @@ const SIZE_CONFIG = {
   xs: {
     container: 'w-4 h-4',
     icon: 'w-2.5 h-2.5',
-    text: 'text-[8px]',
+    text: 'text-3xs',
     gap: 'gap-0.5',
   },
   sm: {
     container: 'w-5 h-5',
     icon: 'w-3 h-3',
-    text: 'text-[10px]',
+    text: 'text-2xs',
     gap: 'gap-1',
   },
   md: {
@@ -246,7 +248,7 @@ const Indicator = memo(function Indicator({
         animate={{ scale: 1 }}
         exit={{ scale: 0 }}
         className={cn(
-          'flex items-center justify-center rounded-full border backdrop-blur-sm',
+          'flex items-center justify-center rounded-full border backdrop-blur-xs',
           sizeConfig.container,
           config.bgColor
         )}
@@ -265,10 +267,10 @@ const Indicator = memo(function Indicator({
       animate={{ scale: 1 }}
       exit={{ scale: 0 }}
       className={cn(
-        'flex items-center justify-center rounded-full border backdrop-blur-sm',
+        'flex items-center justify-center rounded-full border backdrop-blur-xs',
         sizeConfig.container,
         config.bgColor,
-        showLabel && 'rounded-md px-1.5'
+        showLabel && 'rounded-control px-1.5'
       )}
       title={config.label}
     >
@@ -401,7 +403,7 @@ export const RankedIndicator = memo(function RankedIndicator({
       initial={{ scale: 0 }}
       animate={{ scale: 1 }}
       className={cn(
-        'flex items-center justify-center rounded-full border backdrop-blur-sm',
+        'flex items-center justify-center rounded-full border backdrop-blur-xs',
         sizeConfig.container,
         config.bgColor,
         className
@@ -443,7 +445,7 @@ export const FavoriteIndicator = memo(function FavoriteIndicator({
         onClick?.();
       }}
       className={cn(
-        'flex items-center justify-center rounded-full border backdrop-blur-sm',
+        'flex items-center justify-center rounded-full border backdrop-blur-xs',
         sizeConfig.container,
         isFavorite
           ? 'bg-pink-500/20 border-pink-500/30'

@@ -1,9 +1,6 @@
 "use client";
 
-import { memo, useCallback } from "react";
 import { motion } from "framer-motion";
-import Link from "next/link";
-import Image from "next/image";
 import {
   Folder,
   MoreHorizontal,
@@ -12,7 +9,13 @@ import {
   Lock,
   Layers,
 } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { memo, useCallback } from "react";
+
 import { use3DTilt } from "@/hooks/use-3d-tilt";
+import { SPRING } from "@/lib/animations/motion-presets";
+
 import type { ListCollection, CollectionStats } from "@/types/collection";
 
 interface CollectionCardProps {
@@ -45,8 +48,8 @@ export const CollectionCard = memo(function CollectionCard({
 
   const { ref, style: tiltStyle, handlers } = use3DTilt({
     maxRotation: 6,
-    stiffness: 400,
-    damping: 30,
+    stiffness: SPRING.snappy.stiffness,
+    damping: SPRING.snappy.damping,
     scale: 1.02,
   });
 
@@ -78,9 +81,9 @@ export const CollectionCard = memo(function CollectionCard({
   if (variant === "minimal") {
     return (
       <motion.div
-        className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${
+        className={`flex items-center gap-3 p-3 rounded-container cursor-pointer transition-all ${
           isSelected
-            ? "bg-slate-700/50 border-cyan-500/50"
+            ? "bg-slate-700/50 border-brand/50"
             : "bg-slate-800/30 hover:bg-slate-800/60 border-transparent"
         } border`}
         onClick={handleClick}
@@ -88,7 +91,7 @@ export const CollectionCard = memo(function CollectionCard({
         whileTap={{ scale: 0.98 }}
       >
         <div
-          className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+          className="w-8 h-8 rounded-control flex items-center justify-center shrink-0"
           style={{ backgroundColor: `${color}20` }}
         >
           <Folder className="w-4 h-4" style={{ color }} />
@@ -108,9 +111,9 @@ export const CollectionCard = memo(function CollectionCard({
     return (
       <motion.div
         ref={ref}
-        className={`relative p-4 rounded-xl cursor-pointer group ${
+        className={`relative p-4 rounded-container cursor-pointer group ${
           isSelected
-            ? "ring-2 ring-cyan-500"
+            ? "ring-2 ring-brand"
             : "ring-1 ring-slate-700/50 hover:ring-slate-600"
         }`}
         style={{
@@ -123,7 +126,7 @@ export const CollectionCard = memo(function CollectionCard({
       >
         <div className="flex items-center gap-3">
           <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center"
+            className="w-10 h-10 rounded-card flex items-center justify-center"
             style={{
               background: `linear-gradient(135deg, ${color} 0%, ${color}80 100%)`,
               boxShadow: `0 4px 16px ${color}40`,
@@ -132,7 +135,7 @@ export const CollectionCard = memo(function CollectionCard({
             <Folder className="w-5 h-5 text-white" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-white truncate group-hover:text-cyan-400 transition-colors">
+            <h3 className="font-semibold text-white truncate group-hover:text-brand-hover transition-colors">
               {collection.name}
             </h3>
             <div className="flex items-center gap-2 mt-0.5">
@@ -153,8 +156,8 @@ export const CollectionCard = memo(function CollectionCard({
   return (
     <motion.div
       ref={ref}
-      className={`relative overflow-hidden rounded-2xl cursor-pointer group ${
-        isSelected ? "ring-2 ring-cyan-500" : ""
+      className={`relative overflow-hidden rounded-container cursor-pointer group ${
+        isSelected ? "ring-2 ring-brand" : ""
       }`}
       style={{
         ...tiltStyle,
@@ -175,7 +178,7 @@ export const CollectionCard = memo(function CollectionCard({
               fill
               className="object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/50 to-transparent" />
+            <div className="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-950/50 to-transparent" />
           </>
         ) : (
           <div
@@ -198,7 +201,7 @@ export const CollectionCard = memo(function CollectionCard({
         />
 
         {/* Visibility badge */}
-        <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/40 backdrop-blur-sm text-xs text-white/80">
+        <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-badge bg-black/40 backdrop-blur-xs text-xs text-white/80">
           {collection.isPublic ? (
             <>
               <Globe className="w-3 h-3" />
@@ -218,11 +221,11 @@ export const CollectionCard = memo(function CollectionCard({
             <div className="relative">
               <button
                 onClick={(e) => e.stopPropagation()}
-                className="p-2 rounded-lg bg-black/40 backdrop-blur-sm hover:bg-black/60 text-white/80 transition-colors"
+                className="p-2 rounded-control bg-black/40 backdrop-blur-xs hover:bg-black/60 text-white/80 transition-colors"
               >
                 <MoreHorizontal className="w-4 h-4" />
               </button>
-              <div className="absolute left-0 top-full mt-1 py-1 w-32 bg-slate-800 rounded-lg border border-slate-700 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+              <div className="absolute left-0 top-full mt-1 py-1 w-32 bg-slate-800 rounded-card border border-slate-700 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-dropdown">
                 {onEdit && (
                   <button
                     onClick={handleEdit}
@@ -252,7 +255,7 @@ export const CollectionCard = memo(function CollectionCard({
 
       {/* Content */}
       <div className="relative p-5">
-        <h3 className="text-lg font-semibold text-white mb-1 truncate group-hover:text-cyan-400 transition-colors">
+        <h3 className="text-lg font-semibold text-white mb-1 truncate group-hover:text-brand-hover transition-colors">
           {collection.name}
         </h3>
 
@@ -278,7 +281,7 @@ export const CollectionCard = memo(function CollectionCard({
 
         {/* Hover glow */}
         <motion.div
-          className="absolute inset-0 rounded-2xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+          className="absolute inset-0 rounded-container pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"
           style={{
             boxShadow: `inset 0 0 30px ${color}08, 0 0 40px ${color}10`,
           }}
@@ -290,7 +293,7 @@ export const CollectionCard = memo(function CollectionCard({
         <Link
           href={`/collections/${collection.shareSlug}`}
           onClick={(e) => e.stopPropagation()}
-          className="absolute bottom-4 right-4 flex items-center gap-1 text-xs text-slate-500 hover:text-cyan-400 transition-colors"
+          className="absolute bottom-4 right-4 flex items-center gap-1 text-xs text-slate-500 hover:text-brand-hover transition-colors"
         >
           View <ChevronRight className="w-3 h-3" />
         </Link>

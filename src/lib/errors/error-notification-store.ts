@@ -12,7 +12,9 @@
  */
 
 import { create } from 'zustand';
+
 import { GoatError, fromUnknown, isGoatError } from './GoatError';
+
 import type { ErrorCode, ErrorSeverity } from './types';
 
 // ============================================================================
@@ -139,7 +141,7 @@ export const useErrorNotificationStore = create<ErrorNotificationState>((set, ge
     );
 
     if (isDuplicate) {
-      console.log(`📢 Suppressed duplicate error notification: ${error.code}`);
+      // Suppressed duplicate error notification
       return existingNotifications.find((n) => n.code === error.code)?.id || '';
     }
 
@@ -183,15 +185,6 @@ export const useErrorNotificationStore = create<ErrorNotificationState>((set, ge
       notifications: [...state.notifications, newNotification],
       errorHistory: newHistory,
     }));
-
-    // Log the error
-    console.log(
-      `📢 Error notification: [${error.code}] ${notification.title}`,
-      {
-        traceId: error.traceId,
-        source: options?.source,
-      }
-    );
 
     return id;
   },
