@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint src",
+    "lint:ratchet": "node scripts/ratchet.mjs",
+    "lint:ratchet:update": "node scripts/ratchet.mjs --update",
     "typecheck": "tsc --noEmit",
     "docs:store-graph": "tsx scripts/generate-store-graph.ts",
     "test": "vitest run",

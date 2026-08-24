@@ -23,6 +23,9 @@ capabilities:
   # Was "next lint", which Next 16 removed: it parsed "lint" as a directory and
   # exited 1 having linted nothing. Now invokes eslint directly. Ran 2026-08-24.
   lint: { command: "npm run lint", verified: true, verifiedAt: "2026-08-24" }
+  # Holds the metrics that cannot be zeroed today. Exit 1 = a bucket diverged;
+  # exit 2 = the instrument could not run, which is neither pass nor fail.
+  lint-ratchet: { command: "npm run lint:ratchet", verified: true, verifiedAt: "2026-08-24" }
   typecheck: { command: "npm run typecheck", verified: true, verifiedAt: "2026-08-24" }
   docs-store-graph: { command: "npm run docs:store-graph", verified: true, verifiedAt: "2026-08-24" }
   # `test` is the unit runner (vitest), added 2026-08-24. The browser suite keeps
@@ -41,9 +44,24 @@ capabilityNotes:
     manifest + its derivations, the tier-boundary conventions, and the depth
     tokens. Every suite carries a recorded negative control in its header
     comment. `passWithNoTests: false`, so a run that executed zero files is red.
-  lint: "Runs, but every custom rule in eslint.config.mjs is `warn` — it cannot fail."
-  typecheck: "29 pre-existing errors as of 2026-08-24 (consensus route, bracket components, ranking-store). Not yet a clean baseline."
-  gates: "No CI, no git hooks, no lint-staged. Nothing consumes any exit code above."
+  lint: >-
+    Two tiers since 2026-08-24. 44 correctness rules are `error` — each measured
+    at 0 findings before promotion, so `npm run lint` now HAS an input that makes
+    it exit non-zero (proved: a seeded file with a conditional hook, a duplicate
+    object key and an invalid typeof gave 3 errors / exit 1). Everything with a
+    legacy population stays `warn` and is held by lint-ratchet instead.
+  lint-ratchet: >-
+    Symmetric per-rule ratchet over .ai/ratchet-baseline.json — fails on a rise
+    AND on an unexplained drop. Baseline 2026-08-24: 24 buckets, 750 findings,
+    981 files walked. Proved red four ways (rise, drop, broken-instrument
+    could-not-run, and green when matching).
+  typecheck: >-
+    29 pre-existing errors as of 2026-08-24 (consensus route, bracket components,
+    ranking-store). Still not a clean baseline, but it is now PINNED: a 30th
+    error fails `npm run lint:ratchet` at the `typecheck:errors` bucket.
+  gates: >-
+    No CI, no git hooks, no lint-staged. Nothing consumes any exit code above
+    automatically — the gates are real but still manual-invocation-only.
 
 # Pointers — these subsystems can change format underneath without breaking this contract.
 paths:
