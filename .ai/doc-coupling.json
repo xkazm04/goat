@@ -90,6 +90,19 @@
       "note": "DELIBERATELY EMPTY source set, and the reason is the finding: every file this document names (src/app/features/matching/components/SwipeableCard.tsx, ParticleThemeSettings.tsx) is absent, and the identifiers ParticleTheme / particleTheme / PARTICLE_THEMES have zero occurrences anywhere in src/. It is a design for an unbuilt feature. Recorded here with `sourceStatus: unimplemented` so the stale-glob check does not fail on it and the next reader is not left to rediscover it; the document itself carries the dated correction."
     },
     {
+      "id": "findings-ledger",
+      "source": ["docs/harness/ui-bug-combined-2026-06-16/*.md"],
+      "reference": ".ai/findings.json",
+      "generatedBy": "npm run findings:ingest",
+      "note": "DERIVED. The 63 report files are the authority for what was found; the ledger holds identity, state and probes. Editing a report re-derives the finding's key, so `npm run findings:check` fails until the ledger is re-ingested — which is stronger than a same-change nag, so this entry is declared but not nagged."
+    },
+    {
+      "id": "findings-reader",
+      "source": ["scripts/findings.mjs"],
+      "reference": ".ai/findings.json",
+      "note": "A change to the state vocabulary, the identity function or the probe semantics reaches the ledger's own header, which states all three. A message-wording change does not."
+    },
+    {
       "id": "agent-manifest",
       "source": ["package.json"],
       "reference": ".ai/manifest.yaml",

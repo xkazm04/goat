@@ -161,6 +161,15 @@ jobs:
       # judged here; it is a bucket in the ratchet step above, so the legacy
       # 69 unmapped areas cannot wall a change while the 70th is still refused.
       - run: npm run docs:coupling
+      # BLOCKS. Input: the tree plus .ai/findings.json. The ledger is DERIVED
+      # from docs/harness/ui-bug-combined-2026-06-16/, so this re-derives it and
+      # fails on divergence; it also refuses a finding whose state is outside
+      # the vocabulary or whose verdict carries no reason, and runs every
+      # regression probe attached to a `fixed` finding.
+      #
+      # Exit 2 (the parser stopped seeing 190 findings over 38 contexts) means
+      # the instrument could not run — the script's own output says which.
+      - run: npm run findings:check
 
   docs-same-change:
     name: docs same-change

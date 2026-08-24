@@ -56,6 +56,15 @@ npm run docs:coupling -- --changed --base main
                                 # trailer:  Docs-dismissed: <why>
 npm run scan:dead               # knip. Unused EXPORTS — the orphan class eslint
                                 # structurally cannot see.
+npm run findings:check          # the findings ledger (.ai/findings.json), DERIVED
+                                # from docs/harness/ui-bug-combined-2026-06-16/.
+                                # Fails if the ledger drifts from the reports, if
+                                # a finding's state is outside the vocabulary, if
+                                # a suppression carries no reason, or if a
+                                # regression probe on a `fixed` finding fires.
+npm run findings                # what the ledger can answer that a snapshot
+                                # cannot: state, severity, anchor liveness, age.
+npm run findings:ingest         # re-derive after editing a report file.
 ```
 
 There are deliberately **no git hooks**. CI covers the push rung; the unguarded

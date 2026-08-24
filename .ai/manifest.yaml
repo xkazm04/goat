@@ -32,6 +32,10 @@ capabilities:
   # bare = is the MAP honest (no stale glob, no missing reference doc);
   # --changed = does this CHANGE settle what it owes, read from the git diff.
   docs-coupling: { command: "npm run docs:coupling", verified: true, verifiedAt: "2026-08-24" }
+  # The findings ledger: identity, state and regression probes for the 190
+  # findings in docs/harness/ui-bug-combined-2026-06-16/, which had none.
+  findings: { command: "npm run findings", verified: true, verifiedAt: "2026-08-24" }
+  findings-check: { command: "npm run findings:check", verified: true, verifiedAt: "2026-08-24" }
   docs-coupling-same-change:
     { command: "npm run docs:coupling -- --changed --base <ref>", verified: true, verifiedAt: "2026-08-24" }
   # `test` is the unit runner (vitest), added 2026-08-24. The browser suite keeps
@@ -101,6 +105,31 @@ capabilityNotes:
     everything resolves (0). On its very first real run it found three genuine
     obligations in its own change — the manifest, CLAUDE.md and the ratchet
     baseline — all of which were settled rather than dismissed.
+  findings: >-
+    Added 2026-08-24. Before it, docs/harness/ui-bug-combined-2026-06-16/ was a
+    dead snapshot: 190 findings plus 19 FIXES-WAVE documents claiming closures,
+    with no dedup key, no notion of "fixed", no verification and no expiry — a
+    scanner output that could not tell progress from churn. `.ai/findings.json`
+    is now a DERIVED ledger (`npm run findings:ingest` recomputes it from those
+    reports; `--check` re-derives and refuses any divergence). Identity is
+    sha256(contextSlug | anchorFile | titleSlug) — the anchor FILE, never the
+    LINE, so a judged finding survives edits above its match site; 14 hand-written
+    verdicts were carried across a re-derivation to prove it.
+    Six findings are `fixed` — each RE-READ in the tree today rather than believed
+    from the fix log — and each carries a regression probe the CI check runs.
+    Five are `suppressed` under the operator's dated auth deferral, with owner and
+    revisit horizon: suppression is a verdict with provenance, and the finding
+    stays visible. Three are `needs-reanchor` (anchor file gone), deliberately NOT
+    "cleared": a deleted file and a repaired defect look identical from the ledger.
+    Proved red six ways: probe regression (1), state outside the vocabulary (1),
+    suppressed with no reason (1), fixed with no fixedIn (1), ledger drifting from
+    an edited report (1), and corpus/parser shrink (exit 2 — could not run).
+    Its own first negative control caught a probe that could NOT go red: an
+    unanchored /function getStudioItemId/ still matched after the symbol was
+    renamed. That is recorded on the probe.
+    NOT joined: 8 of 90 closure references in the FIXES-WAVE documents cannot be
+    resolved to a context, and the ingester refuses to guess. A fuzzy join would
+    make the ledger confidently wrong, which is worse than the snapshot.
   supply-chain: >-
     ABSENT, deliberately. An advisory-feed check reads an input that moves
     without this repository, so it must not block: a advisory published

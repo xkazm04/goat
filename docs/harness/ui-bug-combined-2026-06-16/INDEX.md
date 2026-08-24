@@ -1,5 +1,56 @@
 # Combined UI-Perfectionist + Bug-Hunter Scan — goat, 2026-06-16
 
+> ## Correction — 2026-08-24: these findings now have a lifecycle
+>
+> Until today this directory was a **snapshot**: 190 findings and 19
+> `FIXES-WAVE-*` documents claiming closures against them, with
+>
+> - **no dedup key**, so no finding could be joined to its own closure or to
+>   itself on a later sweep;
+> - **no notion of "fixed"**, so a defect repaired in June and one nobody had
+>   looked at since read identically;
+> - **no verification**, so a closure claim was believed because it was written
+>   down;
+> - **no expiry**, so the snapshot aged in place while the tree moved under it.
+>
+> The findings are now a **derived ledger** at `.ai/findings.json`, recomputed
+> from these files by `npm run findings:ingest` and checked in CI by
+> `npm run findings:check`. Every finding carries a stable identity —
+> `sha256(contextSlug | anchorFile | titleSlug)`, the anchor **file** and never
+> the anchor **line**, because a line-keyed identity changes the moment anyone
+> edits above the match site — and leaves through a named door: `open`,
+> `fixed`, `rejected`, `suppressed`, `expired`, or `needs-reanchor`.
+>
+> **These documents remain the authority.** The ledger is a view; only the
+> verdict fields are hand-written, and they survive a re-derivation. Do not edit
+> a finding's heading or `**File**` line without re-ingesting — the check will
+> refuse the divergence rather than let the ledger drift.
+>
+> State as of 2026-08-24, measured rather than asserted:
+>
+> | | |
+> |---|---:|
+> | findings | 190 |
+> | still `open` | 176 |
+> | `fixed` — each **re-read in the tree today**, not believed from the fix log, and each carrying a regression probe | 6 |
+> | `suppressed` — true, deliberately accepted, with provenance and a revisit horizon | 5 |
+> | `needs-reanchor` — anchor file gone; **not** "cleared", because a deleted file and a repaired defect look identical from here | 3 |
+> | anchor files that still exist | 187 of 190 |
+>
+> **The closure records cannot be joined.** The `FIXES-WAVE-*` documents name
+> what they closed as `<slug> #<n>`, but the slugs are abbreviated and
+> inconsistent (`achievements` for `achievements-awards`, `auth` for
+> `authentication-user-accounts`) and the same pattern also matches ordinary
+> prose. Of 90 references, 82 resolve to exactly one context and 8 do not, and
+> even a resolved one is only a *claim*. The ingester refuses to guess: a fuzzy
+> join would attach a closure to the wrong finding and the ledger would be
+> confidently wrong, which is worse than the snapshot it replaced. That
+> unresolvable count is itself the finding about how closures were recorded.
+>
+> Also note what the "5 per context" below is: a **cap**, not a measurement.
+> Five findings per context was the scan's instruction, so the per-context
+> counts measure the instruction, not the defect density.
+
 > A single combined design+reliability audit (🎨 UI Perfectionist + 🐛 Bug Hunter, blended) over **all 38 contexts** of the goat ranking app.
 > 38 parallel subagent runs, batched in 5 waves of ≤8. Exactly 5 highest-value findings per context (combined across both lenses).
 
