@@ -23,6 +23,8 @@ on:
   push:
     branches: [main]
   pull_request:
+  # The browser suite is manual-dispatch only; see the `e2e` job for why.
+  workflow_dispatch:
 
 concurrency:
   group: gates-${{ github.ref }}
@@ -210,3 +212,60 @@ jobs:
       # with a `Docs-dismissed: <reason>` trailer in one of the PR's commits.
       # Both outcomes leave an artifact; silence is the one thing that does not.
       - run: npm run docs:coupling -- --changed --base "origin/${{ github.base_ref }}"
+
+  e2e:
+    name: browser suite (manual)
+    runs-on: ubuntu-latest
+    # MANUAL DISPATCH ONLY, and this is a deliberate, dated decision rather than
+    # an oversight. The browser suite's input is not the tree: it needs a
+    # reachable Supabase and a Clerk configuration, neither of which this
+    # repository controls, and one of which (a shared development database) can
+    # change under a commit that did not touch it. A job whose verdict is a
+    # function of something outside the change cannot BLOCK the change — the
+    # same reasoning that keeps a supply-chain job out of this pipeline.
+    #
+    # It is also not wired as an auto-skipping job. A job that quietly skips
+    # when secrets are absent reports the same colour as a job that ran and
+    # passed, which is the failure-not-empty-success defect this whole workflow
+    # exists to avoid. Instead it FAILS LOUDLY with a named diagnostic when it
+    # is dispatched without configuration.
+    #
+    # Runtime, measured locally on 2026-08-25: the seed is ~4s; the suite needs
+    # a dev server plus a chromium download. Tolerable for a manual run,
+    # not for every push.
+    if: github.event_name == 'workflow_dispatch'
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+      CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+      E2E_SEED_ALLOW_REMOTE: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: refuse an unconfigured run, loudly
+        run: |
+          if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "E2E_PRECONDITION_FAILED: this job needs NEXT_PUBLIC_SUPABASE_URL and"
+            echo "SUPABASE_SERVICE_ROLE_KEY as repository secrets. They are not set."
+            echo ""
+            echo "This is a REFUSAL, not a skip. A skipped job reports the same colour as"
+            echo "a passing one, and the whole point of this suite's launcher is that a run"
+            echo "which could not do its job must not look like a run that did it perfectly."
+            exit 1
+          fi
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      # The fixtures are a precondition of the suite, not part of it. If this
+      # fails the suite does not run, which is correct: an unseeded run would
+      # execute nothing.
+      - run: npm run seed:e2e
+      - run: npm run test:e2e
+      # Remove exactly what was written, whether the suite passed or failed. The
+      # fixtures are namespaced, so this cannot touch anything else.
+      - if: always()
+        run: npm run seed:e2e -- --teardown

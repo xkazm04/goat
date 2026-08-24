@@ -4,6 +4,57 @@
 
 This document describes the methodology for end-to-end browser testing of G.O.A.T. using **Claude Code CLI** with the **Playwright MCP Server**. This approach combines exploratory testing (Claude navigates the real app) with formal Playwright test generation.
 
+## The suite's precondition — read this first
+
+The browser suite **cannot run against an empty database**. Every journey starts
+by clicking a list, so an unseeded run would execute nothing and report green.
+Two things exist to stop that:
+
+1. **`e2e/global-setup.ts` refuses the run.** One check before any worker, with
+   a greppable `E2E_PRECONDITION_FAILED` diagnostic. It does *not* seed — a
+   launcher that silently populated a database it found empty would hide the
+   exact condition it exists to report.
+2. **`npm run seed:e2e` writes deterministic fixtures**, added 2026-08-25. It is
+   a command somebody runs on purpose, never a side effect of the suite.
+
+```bash
+npm run seed:e2e                 # write the fixtures
+npm run seed:e2e -- --check      # verify without writing (safe anywhere)
+npm run seed:e2e -- --teardown   # remove exactly what it wrote
+```
+
+### What the fixtures contain
+
+| | |
+|---|---|
+| 1 user | `E2E Fixture User` |
+| 2 lists | *E2E Fixture — Greatest Games* (games, size 10) and *— Greatest Athletes* (sports, size 5) |
+| 18 items | 12 + 6, deterministic names and years |
+| 15 rankings | the first 10 / first 5 of each list |
+
+Two lists, because a suite that only ever sees one cannot tell "the first list"
+from "the list I chose". Each list is ranked to its size but has **more items
+than ranks**, so there are always unranked candidates to place — a fixture list
+that is already complete cannot exercise placing anything.
+
+### Why it is safe to point at a shared database
+
+Every row carries a **fixed UUID in the `e2e00000-…` namespace**, every write is
+an upsert on that id, and nothing outside the namespace is read, updated or
+deleted. `--teardown` removes exactly the same namespace. A non-local target is
+**refused** unless `E2E_SEED_ALLOW_REMOTE=1` records that the operator meant it.
+
+Verified end to end against a live database on 2026-08-25 — 11 users / 35 lists
+/ 1614 items / 421 rankings before, 12 / 37 / 1632 / 436 after, stable across
+three consecutive seeds, and back to 11 / 35 / 1614 / 421 after teardown.
+
+> **Found by that idempotence check, on the first re-run:** `list_items` carries
+> a `trigger_rerank_list_items` BEFORE INSERT/UPDATE trigger, and a batch upsert
+> makes it touch rows the same command already wrote — Postgres refuses with
+> *"tuple to be updated was already modified by an operation triggered by the
+> current command"*. The first run succeeded and the second failed. The seed now
+> deletes-then-inserts its own namespaced rankings.
+
 ## Setup
 
 ### 1. Install Playwright MCP Server

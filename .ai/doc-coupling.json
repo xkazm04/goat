@@ -3,23 +3,25 @@
   "$comment": "The ONE authority for which documents a source area owes. Registry: docs-sync/source-doc-mapping, docs-sync/coupled-surface-inventory, docs-sync/same-change-enforcement. Before this file existed the repo had exactly one declared coupling (registry.ts -> STORE_DEPENDENCY_GRAPH.md) and 69 documents nobody could attribute to anything. Read by scripts/doc-coupling.mjs and by nothing else -- a map without a reader is a good intention in a syntax that parses.",
   "checkWith": "npm run docs:coupling",
   "sameChangeWith": "npm run docs:coupling -- --changed --base <ref>",
-
   "surfaceTypes": {
     "reference": "The implemented-product contract a developer reads. REQUIRED on every entry. Satisfied only by the exact path named -- never by any file under docs/, because a prefix-shaped satisfaction is most cheaply discharged by accident.",
     "generatedBy": "Optional. When the reference doc is DERIVED from the source, name the generator. A derived doc is checked by recomputation (its own --check), not by this map's same-change nag, so declaring it here suppresses a nag the generator already answers better.",
     "note": "Optional prose stating this entry's DISMISSAL ALTITUDE -- what level of change reaches this surface. Written into the map so dismissal is a documented policy applied per change rather than a judgment call repeated per change."
   },
-
   "derivation": {
     "$comment": "Where a naming convention couples source to doc MECHANICALLY, derive the pair and let the map hold only exceptions -- the convention IS the recomputation, and a derived coupling is self-repairing under rename, which is a declared map's characteristic death. This repo has exactly one such convention.",
     "colocatedReadme": {
       "enabled": true,
       "rule": "A README.md inside a source directory D is coupled to every source file directly under D and its subdirectories, excluding subdirectories that carry a README.md of their own (the nearest README wins, so a change is never nagged about a grandparent's doc).",
-      "roots": ["src"],
-      "extensions": [".ts", ".tsx"]
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ]
     }
   },
-
   "coverage": {
     "$comment": "The map is the real gate: COVERAGE, not membership. Validating that every path a map names resolves on disk is structurally incapable of seeing what the map omits. `areaRoots` enumerates the coupling universe; every directory it yields must be claimed by an entry, by a derived colocated README, or by `unmappedAllowlist` with a reason. The residue is counted and held by the ratchet (bucket docs:unmappedAreas), because 40-odd unmapped areas is not a number anyone drives to zero this week -- what the bucket buys is that the next one is refused.",
     "areaRoots": [
@@ -43,26 +45,41 @@
       "src/lib/constants": "Constant tables. The values are the documentation."
     }
   },
-
   "entries": [
     {
       "id": "store-topology",
-      "source": ["src/stores/registry.ts"],
+      "source": [
+        "src/stores/registry.ts"
+      ],
       "reference": "docs/STORE_DEPENDENCY_GRAPH.md",
       "generatedBy": "npm run docs:store-graph",
       "note": "DERIVED. Any change to the manifest reaches this surface; the generator's --check enforces it byte-for-byte, which is stronger than a same-change nag, so this entry is declared but not nagged."
     },
     {
       "id": "store-implementations",
-      "source": ["src/stores/*.ts", "src/stores/**/*.ts"],
+      "source": [
+        "src/stores/*.ts",
+        "src/stores/**/*.ts"
+      ],
       "reference": "docs/STORE_DEPENDENCY_GRAPH.md",
       "note": "Adding, deleting or re-pointing a store reaches this surface -- the doc states the store COUNT and the edges. An internal change to a store's action bodies does not."
     },
     {
       "id": "e2e-suite",
-      "source": ["e2e/**/*.ts", "playwright.config.ts"],
+      "source": [
+        "e2e/**/*.ts",
+        "playwright.config.ts"
+      ],
       "reference": "docs/E2E_BROWSER_TESTING.md",
       "note": "That document carries a coverage table and a 'Not covered' table. Adding, deleting or skipping a spec reaches both. A locator change inside an existing test does not."
+    },
+    {
+      "id": "e2e-fixtures",
+      "source": [
+        "scripts/seed-e2e.ts"
+      ],
+      "reference": "docs/E2E_BROWSER_TESTING.md",
+      "note": "The fixture set is the suite's PRECONDITION, and that document states what a seeded database contains — list titles, item counts, how many are ranked. Changing the fixture inventory reaches it. Changing a diagnostic message does not."
     },
     {
       "id": "lazy-loading-ladder",
@@ -78,7 +95,9 @@
     },
     {
       "id": "stats-card",
-      "source": ["src/components/ui/stats-card.tsx"],
+      "source": [
+        "src/components/ui/stats-card.tsx"
+      ],
       "reference": "docs/components/StatsCard-Implementation-Summary.md",
       "note": "A prop or layout-variant change reaches this surface; the document enumerates both."
     },
@@ -91,49 +110,65 @@
     },
     {
       "id": "findings-ledger",
-      "source": ["docs/harness/ui-bug-combined-2026-06-16/*.md"],
+      "source": [
+        "docs/harness/ui-bug-combined-2026-06-16/*.md"
+      ],
       "reference": ".ai/findings.json",
       "generatedBy": "npm run findings:ingest",
       "note": "DERIVED. The 63 report files are the authority for what was found; the ledger holds identity, state and probes. Editing a report re-derives the finding's key, so `npm run findings:check` fails until the ledger is re-ingested — which is stronger than a same-change nag, so this entry is declared but not nagged."
     },
     {
       "id": "structural-backlog-reader",
-      "source": ["scripts/structural-backlog.mjs"],
+      "source": [
+        "scripts/structural-backlog.mjs"
+      ],
       "reference": ".ai/structural-backlog.json",
       "note": "A change to the status vocabulary, the grounding clause forms or the stop-condition semantics reaches the backlog's own header, which states all three. A message-wording change does not."
     },
     {
       "id": "findings-reader",
-      "source": ["scripts/findings.mjs"],
+      "source": [
+        "scripts/findings.mjs"
+      ],
       "reference": ".ai/findings.json",
       "note": "A change to the state vocabulary, the identity function or the probe semantics reaches the ledger's own header, which states all three. A message-wording change does not."
     },
     {
       "id": "agent-manifest",
-      "source": ["package.json"],
+      "source": [
+        "package.json"
+      ],
       "reference": ".ai/manifest.yaml",
       "note": "The manifest maps capabilities to COMMANDS. Renaming, adding or deleting a script reaches it -- that is precisely how `lint` sat pointing at a command Next 16 had removed. A dependency bump does not."
     },
     {
       "id": "repo-contract",
-      "source": ["package.json", "eslint.config.mjs", "knip.json", "vitest.config.ts"],
+      "source": [
+        "package.json",
+        "eslint.config.mjs",
+        "knip.json",
+        "vitest.config.ts"
+      ],
       "reference": "CLAUDE.md",
       "note": "CLAUDE.md is the agent-facing orientation. A change to how the repo is BUILT, LINTED or TESTED reaches it. Feature work does not."
     },
     {
       "id": "quality-ratchet",
-      "source": ["scripts/ratchet.mjs"],
+      "source": [
+        "scripts/ratchet.mjs"
+      ],
       "reference": ".ai/ratchet-baseline.json",
       "note": "A new counter needs a bucket in the same change, or it measures nothing. A message-wording change does not."
     },
     {
       "id": "doc-coupling-map",
-      "source": ["scripts/doc-coupling.mjs"],
+      "source": [
+        "scripts/doc-coupling.mjs"
+      ],
       "reference": ".ai/doc-coupling.json",
       "note": "This file and its reader are each other's coupled surface: a new check needs its configuration declared in the same change."
     }
   ],
-
   "crossRepoSurfaces": {
     "$comment": "Reported, never gated. A check whose outcome is a function of whether a sibling checkout exists at some relative path is present on the author's box and absent on every fresh clone and every runner.",
     "surfaces": []

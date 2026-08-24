@@ -76,6 +76,26 @@ npm run structure:check         # the structural improvement loop
 npm run structure               # the loop's memory, readable.
 ```
 
+### The browser suite
+
+`npm run test:e2e` **cannot run against an empty database** — every journey
+starts by clicking a list, so an unseeded run would execute nothing and report
+green. `e2e/global-setup.ts` refuses such a run; the fixtures are a separate,
+deliberate command:
+
+```bash
+npm run seed:e2e                 # deterministic fixtures (2 lists, 18 items)
+npm run seed:e2e -- --check      # verify without writing — safe anywhere
+npm run seed:e2e -- --teardown   # remove exactly what it wrote
+```
+
+Every row it writes carries a fixed UUID in the `e2e00000-…` namespace and
+nothing outside that namespace is touched, so it is safe against the shared
+development database. It refuses a non-local target unless
+`E2E_SEED_ALLOW_REMOTE=1`. In CI the suite is **manual dispatch only** — its
+input is not the tree — and it refuses loudly rather than skipping when
+unconfigured. See `.ai/manifest.yaml` `capabilityNotes.e2e-fixtures`.
+
 There are deliberately **no git hooks**. CI covers the push rung; the unguarded
 commit rung is a dated gap in `.ai/manifest.yaml`, not an oversight.
 

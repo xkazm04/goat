@@ -21,6 +21,18 @@
  * It does not seed. Seeding is a separate decision with separate blast radius,
  * and a setup that silently populates a database it found empty would hide the
  * very condition this file exists to report.
+ *
+ * As of 2026-08-25 there IS a seed, and it is a command a human or a pipeline
+ * runs on purpose:
+ *
+ *     npm run seed:e2e            write deterministic fixtures
+ *     npm run seed:e2e -- --check verify them without writing
+ *     npm run seed:e2e -- --teardown  remove exactly what it wrote
+ *
+ * Every row it writes carries a fixed UUID in the `e2e00000-…` namespace and
+ * nothing outside that namespace is read, updated or deleted, so it is safe to
+ * point at a shared development database. It refuses a non-local target unless
+ * E2E_SEED_ALLOW_REMOTE=1 says the operator meant it.
  */
 
 import type { FullConfig } from '@playwright/test';
@@ -71,8 +83,16 @@ async function globalSetup(config: FullConfig): Promise<void> {
     fail(
       `The lists API answered with ZERO lists. Every journey in this suite ` +
         `starts by clicking a list, so the run would execute nothing and then ` +
-        `report success. Seed the database, or set E2E_ALLOW_EMPTY_DB=1 to ` +
-        `state deliberately that you are running against an empty one.`,
+        `report success.
+
+` +
+        `  Fix it:      npm run seed:e2e
+` +
+        `  Inspect it:  npm run seed:e2e -- --check
+
+` +
+        `Or set E2E_ALLOW_EMPTY_DB=1 to state deliberately that you are running ` +
+        `against an empty one.`,
     );
   }
 

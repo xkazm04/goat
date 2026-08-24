@@ -44,6 +44,10 @@ capabilities:
   # `test` is the unit runner (vitest), added 2026-08-24. The browser suite keeps
   # its own capability name so a green report always says which population ran.
   test: { command: "npm test", verified: true, verifiedAt: "2026-08-24" }
+  # The browser suite's PRECONDITION, added 2026-08-25. Deterministic fixtures,
+  # fixed UUIDs in the e2e00000-… namespace, idempotent, with --check and
+  # --teardown. Refuses a non-local target without E2E_SEED_ALLOW_REMOTE=1.
+  seed-e2e: { command: "npm run seed:e2e", verified: true, verifiedAt: "2026-08-25" }
   test-e2e: { command: "npm run test:e2e", verified: false }
   test-ui: { command: "npm run test:e2e:ui", verified: false }
   storybook: { command: "npm run storybook", verified: false }
@@ -181,6 +185,41 @@ capabilityNotes:
     `mustNotContain` predicate fired on the AUTOPSY COMMENT left at a deletion
     site, so the grounding clauses now take regexes and assert on export
     statements rather than on substrings.
+  e2e-fixtures: >-
+    Added 2026-08-25. `e2e/global-setup.ts` had refused an unseeded run honestly
+    since 2026-08-24 — one check before any worker, a greppable
+    E2E_PRECONDITION_FAILED — but refusing is not the same as being runnable, and
+    it deliberately does not seed (a launcher that silently populated a database
+    it found empty would hide the condition it exists to report). `npm run
+    seed:e2e` is the other half: an explicit command, never a side effect.
+    CONTAINMENT is what makes it safe against the only database this project has,
+    which is shared: every row carries a fixed UUID in the e2e00000-… namespace,
+    every write is an upsert on that id, and nothing outside the namespace is
+    read, updated or deleted. --teardown removes exactly the same namespace. A
+    non-local target is REFUSED unless E2E_SEED_ALLOW_REMOTE=1 records that the
+    operator meant it (proved: the guard fired against the live URL).
+    FIXTURES: 1 user, 2 lists (games size 10, sports size 5), 18 items, 15
+    rankings. Two lists because a suite that only sees one cannot tell "the first
+    list" from "the list I chose"; more items than ranks in each because a
+    fixture list that is already complete cannot exercise placing anything.
+    VERIFIED end to end against the live database on 2026-08-25:
+    11 users / 35 lists / 1614 items / 421 rankings before,
+    12 / 37 / 1632 / 436 after, STABLE ACROSS THREE CONSECUTIVE SEEDS, and back
+    to 11 / 35 / 1614 / 421 after teardown. Nothing outside the namespace moved.
+    The idempotence check earned its keep on the first re-run: `list_items`
+    carries a BEFORE INSERT/UPDATE rerank trigger, and a batch upsert makes it
+    touch rows the same command already wrote ("tuple to be updated was already
+    modified by an operation triggered by the current command"). Run one passed,
+    run two failed. The seed now deletes-then-inserts its own namespaced rows.
+    Also caught by its own could-not-run path: the first id builder padded the
+    final UUID group to 6 characters instead of 12 and Postgres rejected every
+    insert — reported as exit 2, not as a failure.
+    CI: a `browser suite (manual)` job on workflow_dispatch ONLY. Its input is
+    not the tree (a reachable Supabase, a Clerk configuration, a shared database
+    that can change under a commit that did not touch it), so it must not block.
+    It is deliberately NOT an auto-skipping job: a job that quietly skips when
+    secrets are absent reports the same colour as one that ran and passed. It
+    REFUSES loudly instead, and tears the fixtures down with `if: always()`.
   supply-chain: >-
     ABSENT, deliberately. An advisory-feed check reads an input that moves
     without this repository, so it must not block: a advisory published

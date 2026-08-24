@@ -21,6 +21,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "seed:e2e": "node --env-file-if-exists=.env node_modules/tsx/dist/cli.mjs scripts/seed-e2e.ts",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
     "storybook": "storybook dev -p 6006",
