@@ -1,0 +1,105 @@
+# Quality gates. Until 2026-08-24 this repo had no CI, no git hooks and no
+# lint-staged: every command in package.json was manual-invocation-only, so no
+# check consumed any exit code and nothing could refuse anything.
+#
+# EVERY JOB HERE BLOCKS, and each one says why in terms of its INPUT, not its
+# severity (registry quality-gates/blocking-by-input-determinism). The test is:
+# can the same commit, checked again next month, produce a different answer
+# without anyone changing anything? For all four jobs below the answer is no —
+# the verdict is a function of the tree plus a committed lockfile, so the
+# promise a blocking gate makes to the author it stops ("you can make this
+# green, and doing so is part of your change") is true.
+#
+# There is deliberately NO supply-chain / advisory-feed job here. That input
+# DOES move on its own — an advisory published overnight would wall the next
+# unrelated pull request for something that did not exist when its author
+# started. Adding one is fine; adding one that blocks is not, and it would need
+# a scheduled trigger and a named reader before it was worth anything.
+# See .ai/manifest.yaml capabilityNotes.
+
+name: gates
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: gates-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit:
+    name: unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # BLOCKS. Input: the tree. vitest is configured with
+      # passWithNoTests:false, so a run that executed zero files is red rather
+      # than an empty success.
+      - run: npm test
+
+  typecheck:
+    name: typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # ADVISORY-BY-DISPLAY, BLOCKING-BY-RATCHET. `tsc --noEmit` currently
+      # exits 1 on 29 inherited errors, so running it bare would wall every
+      # change for debt that is not the author's. That is debt-shaped, not
+      # input-shaped: the work that makes it blockable is inside this
+      # repository. So the count is pinned by the ratchet job below instead,
+      # and this step reports.
+      #
+      # PROMOTION TRIGGER: when typecheck:errors reaches 0 in
+      # .ai/ratchet-baseline.json, delete the bucket and replace this step with
+      # a bare `npm run typecheck`.
+      - run: npm run typecheck || true
+      - name: typecheck error count (informational)
+        run: npm run typecheck 2>&1 | grep -c "error TS" || true
+
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # BLOCKS. Input: the tree. 44 correctness rules sit at `error`, each
+      # measured at 0 findings before promotion. The ~721 legacy warnings
+      # cannot fail this step by construction — they are held by the ratchet.
+      - run: npm run lint
+
+  ratchet:
+    name: ratchet + generated docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # BLOCKS. Input: the tree plus a committed baseline. Refuses a rise in
+      # any bucket AND an unexplained drop.
+      #
+      # Exit 2 means the instrument could not run — not a pass and not a code
+      # verdict. GitHub treats any non-zero as failure, which is the correct
+      # conservative reading here; the script's own output says which it was.
+      - run: npm run lint:ratchet
+      # BLOCKS. Input: src/stores/registry.ts. The doc is generated from it, so
+      # a store added without regenerating is a divergence the author caused.
+      - run: npm run docs:store-graph -- --check

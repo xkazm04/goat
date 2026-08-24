@@ -60,8 +60,20 @@ capabilityNotes:
     ranking-store). Still not a clean baseline, but it is now PINNED: a 30th
     error fails `npm run lint:ratchet` at the `typecheck:errors` bucket.
   gates: >-
-    No CI, no git hooks, no lint-staged. Nothing consumes any exit code above
-    automatically — the gates are real but still manual-invocation-only.
+    CI added 2026-08-24: .github/workflows/gates.yml runs on push to main and on
+    every pull request. Four jobs, all blocking, all with deterministic input
+    (the tree plus the committed lockfile): unit tests, lint, ratchet, and the
+    generated store-graph --check. `typecheck` reports rather than blocks
+    because its 29 inherited errors are debt-shaped, not input-shaped — the
+    count is pinned by the ratchet's typecheck:errors bucket instead, and the
+    written promotion trigger is "when that bucket reaches 0, delete it and run
+    tsc bare". Still no git hooks and no lint-staged; the commit rung remains
+    unguarded and that is a deliberate, dated gap.
+  supply-chain: >-
+    ABSENT, deliberately. An advisory-feed check reads an input that moves
+    without this repository, so it must not block: a advisory published
+    overnight would wall the next unrelated PR. Adding one requires a scheduled
+    trigger and a named reader first (quality-gates/blocking-by-input-determinism).
 
 # Pointers — these subsystems can change format underneath without breaking this contract.
 paths:
