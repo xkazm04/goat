@@ -56,9 +56,13 @@ capabilityNotes:
     981 files walked. Proved red four ways (rise, drop, broken-instrument
     could-not-run, and green when matching).
   typecheck: >-
-    29 pre-existing errors as of 2026-08-24 (consensus route, bracket components,
-    ranking-store). Still not a clean baseline, but it is now PINNED: a 30th
-    error fails `npm run lint:ratchet` at the `typecheck:errors` bucket.
+    23 pre-existing errors as of 2026-08-24, counted over SOURCE only —
+    12 in the consensus route, 6 in ranking-store, 5 in bracket components.
+    `tsc --noEmit` itself reports 29 in a tree where `next dev` has run,
+    because tsconfig deliberately includes .next/types/**; those 6 generated
+    errors are excluded from the count so the number does not depend on whether
+    someone started the dev server. Still not a clean baseline, but it is now
+    PINNED: a 24th source error fails `npm run lint:ratchet`.
   gates: >-
     CI added 2026-08-24: .github/workflows/gates.yml runs on push to main and on
     every pull request. Four jobs, all blocking, all with deterministic input

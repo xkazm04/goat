@@ -10,7 +10,15 @@
  *                      rules with a non-zero legacy population get a bucket;
  *                      rules at zero live at `error` severity in the config and
  *                      need no bucket (see "graduation" below).
- *   typecheck:errors   lines matching /error TS\d+/ from `tsc --noEmit`.
+ *   typecheck:errors   errors from `tsc --noEmit` in files OUTSIDE .next/.
+ *                      The exclusion is the predicate, and it is load-bearing:
+ *                      tsconfig deliberately includes .next/types/**, so a tree
+ *                      where `next dev` has run type-checks 6 extra generated
+ *                      files that a fresh checkout does not have. Counting them
+ *                      makes the number depend on whether someone has started
+ *                      the dev server, which is not a property of the code.
+ *                      Found by this ratchet's first CI run: 29 locally, 23 on
+ *                      the runner, same commit.
  *   knip:unusedFiles   modules knip finds unreachable from any declared entry
  *                      point (knip.json), i.e. the orphan class eslint's
  *                      unused-imports rule structurally cannot see: unused
@@ -142,8 +150,27 @@ function countTypecheck() {
     out = `${err.stdout ?? ''}${err.stderr ?? ''}`;
     if (!out) cannotRun('tsc produced no output', String(err.message).slice(0, 400));
   }
-  const matches = out.match(/error TS\d+/g) ?? [];
-  return { 'typecheck:errors': matches.length };
+  // Count per LINE so each error can be attributed to its file, then drop the
+  // generated ones. `out.match(/error TS\d+/g)` counted every occurrence with no
+  // idea where it came from — a count with no predicate.
+  const errorLines = out
+    .split(/\r?\n/)
+    .filter((line) => /error TS\d+/.test(line));
+  const counted = errorLines.filter((line) => !isGeneratedOutput(line));
+  const excluded = errorLines.length - counted.length;
+  if (excluded > 0) {
+    console.log(
+      `[ratchet] typecheck: ${counted.length} errors counted, ` +
+        `${excluded} excluded as generated .next/ output.`,
+    );
+  }
+  return { 'typecheck:errors': counted.length };
+}
+
+/** tsc prints `path/to/file.ts(12,34): error TS1234: ...` — read the path. */
+function isGeneratedOutput(line) {
+  const filePath = line.split('(')[0].trim().replace(/\\/g, '/');
+  return filePath.startsWith('.next/') || filePath.includes('/.next/');
 }
 
 /**

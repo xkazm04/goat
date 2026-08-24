@@ -10,8 +10,8 @@
   },
   "measuredAt": "2026-08-24",
   "instrument": {
-    "filesWalked": 974,
-    "minFilesWalked": 779
+    "filesWalked": 980,
+    "minFilesWalked": 784
   },
   "buckets": {
     "eslint:@next/next/no-html-link-for-pages": 1,
@@ -39,6 +39,6 @@
     "knip:unusedExports": 1330,
     "knip:unusedFiles": 241,
     "knip:unusedTypes": 735,
-    "typecheck:errors": 29
+    "typecheck:errors": 23
   }
 }
