@@ -130,6 +130,24 @@ capabilityNotes:
     NOT joined: 8 of 90 closure references in the FIXES-WAVE documents cannot be
     resolved to a context, and the ingester refuses to guess. A fuzzy join would
     make the ledger confidently wrong, which is worse than the snapshot.
+  dead-code: >-
+    knip (`npm run scan:dead`, knip.json) is the ONE reachability instrument, with
+    three ratchet buckets holding its population. On 2026-08-24 the three
+    hand-written never-expiring snapshots that predated it were DELETED, and every
+    entry in all three was attributed first rather than assumed stale:
+    docs/UNUSED_COMPONENTS.md — 47 entries: 12 files gone, 27 NOW IMPORTED (the
+    document called live code unused), 8 still orphaned and all 8 present in knip's
+    current population. 39 of 47 were simply wrong.
+    docs/analysis/unused-components-integration-analysis.md — all 7 components it
+    analysed are gone from the tree.
+    docs/unused/unused-code-scan-2025-11-06 — 46 paths: 43 gone, 3 now imported,
+    ZERO still holding. One of the three it declared unused was src/app/layout.tsx,
+    the Next.js root layout: its stated method only searched for JSX tags and
+    import statements, so every framework-convention entry point was a structural
+    false positive.
+    Nothing was lost. The only live findings any of them held are held by an
+    instrument that recomputes on demand, which is the difference between a
+    sensor and a souvenir.
   supply-chain: >-
     ABSENT, deliberately. An advisory-feed check reads an input that moves
     without this repository, so it must not block: a advisory published
