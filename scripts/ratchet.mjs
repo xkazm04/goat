@@ -11,6 +11,12 @@
  *                      rules at zero live at `error` severity in the config and
  *                      need no bucket (see "graduation" below).
  *   typecheck:errors   lines matching /error TS\d+/ from `tsc --noEmit`.
+ *   knip:unusedFiles   modules knip finds unreachable from any declared entry
+ *                      point (knip.json), i.e. the orphan class eslint's
+ *                      unused-imports rule structurally cannot see: unused
+ *                      EXPORTS, not unused imports.
+ *   knip:unusedExports named exports nothing imports.
+ *   knip:unusedTypes   exported types nothing imports.
  *
  * SYMMETRIC COMPARISON. A rise is a regression. A DROP IS ALSO A FAILURE, and
  * that is deliberate: a drop has at least three causes — the defect was fixed,
@@ -28,7 +34,7 @@
  *   node scripts/ratchet.mjs            check (npm run lint:ratchet)
  *   node scripts/ratchet.mjs --update   rewrite the baseline (human intent only;
  *                                       never wire this into a pipeline)
- *   node scripts/ratchet.mjs --only eslint   skip the slow typecheck bucket
+ *   node scripts/ratchet.mjs --only eslint   one metric only (eslint|typecheck|knip)
  */
 
 import { execFileSync } from 'node:child_process';
@@ -61,6 +67,7 @@ function cannotRun(what, detail) {
 // spawning one *with* a shell reintroduces quoting bugs.
 const ESLINT_BIN = path.join(repoRoot, 'node_modules', 'eslint', 'bin', 'eslint.js');
 const TSC_BIN = path.join(repoRoot, 'node_modules', 'typescript', 'bin', 'tsc');
+const KNIP_BIN = path.join(repoRoot, 'node_modules', 'knip', 'bin', 'knip.js');
 
 // ---------------------------------------------------------------------------
 // Counters
@@ -139,6 +146,64 @@ function countTypecheck() {
   return { 'typecheck:errors': matches.length };
 }
 
+/**
+ * Unused EXPORTS — the orphan class eslint-plugin-unused-imports structurally
+ * cannot see. It reports unused imports and locals; it has no opinion about an
+ * export nobody imports, which is exactly how src/lib/virtual/ (2,118 lines)
+ * and src/lib/orchestration/ (2,494 lines) sat orphaned. Every orphan in the
+ * 2026-08-24 audit was found by hand-grepping importers.
+ *
+ * This is a REPORT with a baseline, not a bar to clear: 241 unused files is
+ * not a number anyone will drive to zero soon. What the bucket buys is that
+ * the 242nd is refused.
+ */
+function countKnip() {
+  let raw;
+  try {
+    raw = execFileSync(process.execPath, [KNIP_BIN, '--reporter', 'json'], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      maxBuffer: 256 * 1024 * 1024,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+  } catch (err) {
+    // knip exits non-zero when it has findings; that is data, not a crash.
+    if (!err.stdout) cannotRun('knip produced no output', String(err.message).slice(0, 400));
+    raw = err.stdout;
+  }
+
+  let report;
+  try {
+    report = JSON.parse(raw);
+  } catch {
+    cannotRun('knip output was not JSON', raw.slice(0, 400));
+  }
+
+  const issues = report.issues ?? [];
+  if (issues.length === 0) {
+    // knip finding literally nothing in a repo this size means the entry-point
+    // config stopped matching, not that the repo went clean overnight.
+    cannotRun(
+      'knip reported zero issue entries',
+      'knip.json entry globs have probably stopped matching. Fix the config before trusting this.',
+    );
+  }
+
+  let files = 0;
+  let exports = 0;
+  let types = 0;
+  for (const issue of issues) {
+    files += issue.files?.length ?? 0;
+    exports += issue.exports?.length ?? 0;
+    types += issue.types?.length ?? 0;
+  }
+  return {
+    'knip:unusedFiles': files,
+    'knip:unusedExports': exports,
+    'knip:unusedTypes': types,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Baseline I/O
 // ---------------------------------------------------------------------------
@@ -170,6 +235,9 @@ if (!ONLY || ONLY === 'eslint') {
 if (!ONLY || ONLY === 'typecheck') {
   Object.assign(measured, countTypecheck());
 }
+if (!ONLY || ONLY === 'knip') {
+  Object.assign(measured, countKnip());
+}
 
 // ---------------------------------------------------------------------------
 // Update mode
@@ -193,6 +261,7 @@ if (UPDATE) {
     predicate: {
       'eslint:*': 'findings of that rule from `eslint src` under eslint.config.mjs, both severities',
       'typecheck:errors': 'lines matching /error TS[0-9]+/ from `tsc --noEmit`',
+      'knip:*': 'unused files / named exports / exported types from `knip --reporter json` under knip.json',
     },
     measuredAt: new Date().toISOString().slice(0, 10),
     instrument: {

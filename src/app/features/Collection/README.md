@@ -207,9 +207,12 @@ function MyComponent() {
 ### Configuring Lazy Loading
 
 > **Not wired.** The ladder predicates (`shouldUseLazyLoading`,
-> `shouldUseVirtualization`) have no call site — `CollectionPanel` renders every
-> filtered item regardless of count. Changing these numbers has no effect today.
-> See `docs/lazy-loading-implementation.md` for what exists and what does not.
+> `shouldUseVirtualization`) had no call site and were **deleted on
+> 2026-08-24** — `CollectionPanel` renders every filtered item regardless of
+> count, and changing the numbers below still has no effect today. Reinstate
+> the predicates in the same change as their first call site, never ahead of
+> it. See `docs/lazy-loading-implementation.md` for what exists and what does
+> not.
 
 `constants/lazyLoadConfig.ts` is the single threshold source (a duplicate ladder
 in `components/patterns/virtualization/useLazyLoad.ts` was removed 2026-08-24):

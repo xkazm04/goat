@@ -5,12 +5,13 @@
   "checkWith": "npm run lint:ratchet",
   "predicate": {
     "eslint:*": "findings of that rule from `eslint src` under eslint.config.mjs, both severities",
-    "typecheck:errors": "lines matching /error TS[0-9]+/ from `tsc --noEmit`"
+    "typecheck:errors": "lines matching /error TS[0-9]+/ from `tsc --noEmit`",
+    "knip:*": "unused files / named exports / exported types from `knip --reporter json` under knip.json"
   },
   "measuredAt": "2026-08-24",
   "instrument": {
-    "filesWalked": 981,
-    "minFilesWalked": 784
+    "filesWalked": 974,
+    "minFilesWalked": 779
   },
   "buckets": {
     "eslint:@next/next/no-html-link-for-pages": 1,
@@ -24,18 +25,20 @@
     "eslint:jsx-a11y/no-noninteractive-element-interactions": 1,
     "eslint:jsx-a11y/no-static-element-interactions": 23,
     "eslint:jsx-a11y/role-supports-aria-props": 2,
-    "eslint:react-hooks/exhaustive-deps": 40,
+    "eslint:react-hooks/exhaustive-deps": 38,
     "eslint:react-hooks/immutability": 3,
-    "eslint:react-hooks/incompatible-library": 1,
     "eslint:react-hooks/preserve-manual-memoization": 7,
-    "eslint:react-hooks/purity": 34,
+    "eslint:react-hooks/purity": 33,
     "eslint:react-hooks/refs": 93,
     "eslint:react-hooks/set-state-in-effect": 62,
     "eslint:react-hooks/set-state-in-render": 2,
     "eslint:react-hooks/static-components": 3,
     "eslint:react/no-unescaped-entities": 23,
     "eslint:storybook/no-renderer-packages": 1,
-    "eslint:unused-imports/no-unused-vars": 230,
+    "eslint:unused-imports/no-unused-vars": 229,
+    "knip:unusedExports": 1330,
+    "knip:unusedFiles": 241,
+    "knip:unusedTypes": 735,
     "typecheck:errors": 29
   }
 }

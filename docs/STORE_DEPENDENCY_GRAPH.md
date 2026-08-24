@@ -202,26 +202,22 @@ restructuring.
 3. Clear session selection (`session-store`)
 4. Reset UI state (`match-store`)
 
-## Orchestration layer — status
+## Orchestration layer — retired 2026-08-24
 
-`src/lib/orchestration/` holds a command-pattern orchestrator intended to absorb
-the cross-store coordination above:
+`src/lib/orchestration/` held a command-pattern orchestrator (5 modules, 2,494
+lines) intended to absorb the cross-store coordination above. It was never
+wired to anything: no file outside the directory ever imported
+`useOrchestrator`, `GlobalOrchestrator`, or any command factory. A
+`dragHandlers.ts` exporting `handleDragEndOrchestrated` was planned and never
+written; earlier revisions of this document listed it as shipped, which was
+false.
 
-```
-src/lib/orchestration/
-├── types.ts              # command, transaction, middleware types
-├── commands.ts           # command factory functions
-├── GlobalOrchestrator.ts # core orchestrator with transaction support
-├── useOrchestrator.ts    # React hooks for components
-└── index.ts              # public exports
-```
+**It has been deleted.** The choice this section previously left open — wire it
+or retire it — was resolved in favour of retiring, because half-adopted is what
+produced the drift this document keeps having to correct. The code is
+recoverable in one operation from git history if anyone wants to wire it.
 
-**It is not wired to anything.** As of 2026-08-24 no file outside
-`src/lib/orchestration/` imports `useOrchestrator`, `GlobalOrchestrator`, or any
-command factory — the drag path still coordinates stores directly through
-`getState()`. A `dragHandlers.ts` exporting `handleDragEndOrchestrated` was
-planned and never written; earlier revisions of this document listed it as
-shipped, which was false.
-
-Treat the directory as a design that has not landed. Either wire it or retire
-it; leaving it half-adopted is what produced the drift above.
+What is NOT fixed by that deletion, and should not be read as fixed: the
+cross-store coupling itself. The drag path still coordinates stores directly
+through `getState()`. Removing the unadopted seam removed a structure that made
+the coupling look like it had an owner; it did not give it one.

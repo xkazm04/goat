@@ -4,7 +4,7 @@
 **Category**: Performance
 **Impact**: none today (nothing calls the ladder)
 **Date**: November 7, 2025
-**Corrected**: 2026-08-24
+**Corrected**: 2026-08-24 (again, same day — see the second correction)
 
 > ## Correction — 2026-08-24
 >
@@ -24,7 +24,8 @@
 > What DID land, and is real:
 >
 > - `constants/lazyLoadConfig.ts` — `LAZY_LOAD_CONFIG` plus the two ladder
->   predicates. The predicates have **no call site**. The observer fields
+>   predicates. The predicates had **no call site** and were deleted later the
+>   same day; see the second correction. The observer fields
 >   (`INTERSECTION_ROOT_MARGIN`, `INTERSECTION_THRESHOLD`) are live.
 > - `components/LazyLoadTrigger.tsx` — real, and reads that config, but no
 >   component renders it; only the feature barrel re-exports it.
@@ -379,22 +380,38 @@ PREFETCH_COUNT: 20,                 // from 10
 | `src/app/features/Collection/components/CollectionPanel.tsx` | "integrated lazy loading" | exists; **no lazy/virtual/observer import** |
 | `src/app/features/Collection/README.md` | updated | exists |
 
-Related dead code, recorded rather than removed here: `src/lib/virtual/`
-(6 modules, ~2,100 lines — `VirtualCollectionList`, `InfiniteLoader`,
-`ScrollPositionManager`, `SkeletonLoader`, `PerformanceMonitor`) has **zero
-importers outside itself**. It is a second, more complete answer to the same
-problem, equally unwired. Deleting it is a judgement call for an owner, not a
-side effect of a documentation fix.
+## Second correction — 2026-08-24 (later the same day)
+
+The first correction recorded `src/lib/virtual/` as dead and deliberately did
+not remove it, calling the removal an owner's judgement. That judgement has now
+been made and the code is gone. This section reconciles the document to the
+tree as it stands after that change, so the two corrections cannot be read as
+disagreeing.
+
+| named above | status now |
+|---|---|
+| `src/lib/virtual/` (6 modules, 2,118 lines) | **deleted** — commit `chore(dead-code): delete src/lib/virtual/ …` |
+| `shouldUseVirtualization` / `shouldUseLazyLoading` | **deleted** — zero call sites, verified by grep and by knip |
+| `LAZY_LOAD_CONFIG` | **kept** — its observer fields are live via `LazyLoadTrigger.tsx`, and its thresholds are the recorded intent for whoever wires the ladder |
+| `src/app/features/Collection/components/LazyLoadTrigger.tsx` | **kept**, still with no consumer — a component is a decision about UI, not an obviously-inert helper, so it is left for an owner |
+| `hooks/useIntersectionObserver.ts` | **kept** — real and used elsewhere |
+
+The deletions were reversible in one operation and were shipped as their own
+commits precisely so they can be reverted independently if the ladder is
+finished from that direction instead.
 
 ## Conclusion
 
-The three-tier design is sound and the primitives for tier 2 largely exist. It
-was never connected to `CollectionPanel`, so no collection has ever taken the
-lazy or virtual path.
+The three-tier design is sound; tiers 2 and 3 do not exist in wired form and
+one of the two candidate implementations has now been removed rather than left
+to rot. No collection has ever taken the lazy or virtual path.
 
-To finish it: write `useCollectionLazyLoad`, decide between
-`src/lib/virtual/VirtualCollectionList` and a fresh
-`VirtualizedCollectionList`, and call the ladder predicates from
-`CollectionPanel`. Until then the numbers in the Performance section are
-projections, not measurements — they were reported here as results, which is
-the error this correction exists to stop repeating.
+To finish it: write `useCollectionLazyLoad`, build a `VirtualizedCollectionList`
+(the deleted `src/lib/virtual/VirtualCollectionList` is recoverable from git
+history if it is the better starting point), reinstate the two ladder
+predicates **in the same change as their call site**, and call them from
+`CollectionPanel`.
+
+Until then the numbers in the Performance section are projections, not
+measurements — they were reported here as results, which is the error this
+document's corrections exist to stop repeating.

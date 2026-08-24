@@ -260,7 +260,10 @@ export function calculateOptimalPageSize(
 // their own default thresholds (50 / 100) that disagreed with the ones in
 // src/app/features/Collection/constants/lazyLoadConfig.ts (20 / 100). Two
 // ladders with two answers to "is this list big enough" is one ladder too many.
-// The single source is now LAZY_LOAD_CONFIG in that file — import the
-// predicates from there.
+//
+// 2026-08-24: the surviving copy was deleted as well — neither predicate ever
+// had a call site anywhere in the repo. LAZY_LOAD_CONFIG in that file remains
+// the single source for the THRESHOLDS. Whoever wires the ladder writes the
+// predicate and its caller in the same change.
 
 export default useLazyLoad;
