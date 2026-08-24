@@ -26,7 +26,8 @@ npm run lint
 ## Architecture Overview
 
 ### Tech Stack
-- **Framework**: Next.js 15 (App Router)
+- **Framework**: Next.js 16 (App Router) — `next@^16.1.3`. Note `next lint` was
+  removed in 16; lint via `npm run lint`, which invokes `eslint` directly.
 - **Authentication**: Clerk (with planned migration to Supabase Auth - see .env.example)
 - **Database**: Supabase (PostgreSQL)
 - **State Management**: Zustand with persistence
@@ -46,15 +47,20 @@ The app follows a **feature-based architecture** where major features are organi
 
 ### State Management Architecture
 
-**Critical**: The app uses **multiple coordinated Zustand stores** that must stay in sync:
+**Critical**: The app uses **multiple coordinated Zustand stores** that must stay in sync.
 
-1. **`match-store.ts`**: UI state, keyboard navigation, match session orchestration
-2. **`grid-store.ts`**: Grid state (50 positions max), drag-and-drop handlers
-3. **`session-store.ts`**: Session persistence, backlog management
-4. **`comparison-store.ts`**: Item comparison modal state
-5. **`use-list-store.ts`**: Current list metadata
-6. **`item-store.ts`**: Item data management
-7. **`backlog-store.ts`**: Backlog group state
+The authority on how many stores there are and how they depend on each other is
+`src/stores/registry.ts` (`STORE_DEPENDENCIES`, 24 declared stores). It validates
+itself at module load — a cycle or an edge to an undeclared store throws in dev.
+`docs/STORE_DEPENDENCY_GRAPH.md` is generated from it (`npm run docs:store-graph`);
+do not hand-edit the generated block, and do not restate the store list here.
+
+The four that carry the match flow, deepest last:
+
+1. **`backlog-store.ts`**: Backlog group state
+2. **`session-store.ts`**: Session persistence, backlog management
+3. **`grid-store.ts`**: Grid state (50 positions max), drag-and-drop handlers
+4. **`match-store.ts`**: UI state, keyboard navigation, match session orchestration
 
 **Store Communication Pattern**: Stores cross-reference each other using `useXStore.getState()` pattern. For example, `match-store` orchestrates actions across `grid-store`, `session-store`, and `comparison-store`.
 
@@ -156,7 +162,10 @@ See `.env.example` for complete setup. Key variables:
 
 - **Strict mode** enabled
 - **Path alias**: `@/*` → `./src/*`
-- **ESLint**: Disabled during builds (`ignoreDuringBuilds: true`)
+- **ESLint**: NOT disabled during builds — `next.config.js` sets neither
+  `eslint.ignoreDuringBuilds` nor `typescript.ignoreBuildErrors`. Every custom
+  rule in `eslint.config.mjs` is nevertheless `warn`, including
+  `react-hooks/rules-of-hooks`, so lint cannot currently fail anything.
 
 ## Key Implementation Notes
 

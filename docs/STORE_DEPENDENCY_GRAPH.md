@@ -1,238 +1,227 @@
 # Store Dependency Graph
 
-## Overview
+<!-- GENERATED FILE — do not edit the block above the marker.
+     Source: src/stores/registry.ts (STORE_DEPENDENCIES)
+     Regenerate: npm run docs:store-graph
+     Verify:     npm run docs:store-graph -- --check -->
 
-The GOAT application uses 17 Zustand stores for state management. This document maps the dependencies between stores to help developers understand the architecture and guide the migration to the centralized orchestration layer.
+The GOAT application declares **24 stores** in
+`src/stores/registry.ts`. That manifest is the single authority on store names
+and the edges between them; this document is derived from it, so the two cannot
+disagree. If a store is missing here, it is missing from the manifest — add it
+there, not here.
 
-## Store Categories
+Edges include **deferred** ones. A `require()` inside an action, or a call through
+`createLazyStoreAccessor`, is still a dependency — it has only moved from module-
+evaluation time to call time, where no static tool can see it.
 
-### Core Match Stores (High Coordination)
-These stores are tightly coupled and require atomic operations:
+## Initialization order
 
-1. **match-store** - UI state, keyboard navigation, session orchestration
-2. **grid-store** - Grid state (50 positions max), drag-and-drop handlers
-3. **session-store** - Session persistence, backlog management
-4. **comparison-store** - Item comparison modal state
-5. **backlog-store** - Backlog groups and items management
+Derived by Kahn's algorithm from the manifest (`getStoreInitializationOrder()`).
+Every dependency appears before the store that declares it.
 
-### List & Configuration Stores
-6. **use-list-store** - Current list metadata, user info
-7. **composition-modal-store** - List creation modal state
+1. `activity-store`
+2. `audio-store`
+3. `collection-store`
+4. `comparison-store`
+5. `composition-modal-store`
+6. `consensus-store`
+7. `criteria-store`
+8. `debate-store`
+9. `drop-zone-highlight-store`
+10. `item-popup-store`
+11. `layout-store`
+12. `placement-store`
+13. `ranking-graph-store`
+14. `ranking-store`
+15. `selection-cursor`
+16. `studio-store`
+17. `undo-store`
+18. `use-list-store`
+19. `validation-notification-store`
+20. `wiki-image-store`
+21. `backlog-store`
+22. `session-store`
+23. `grid-store`
+24. `match-store`
 
-### Feature Stores (Low Coordination)
-8. **tier-store** - Tier classification state
-9. **filter-store** - Advanced multi-filter system
-10. **layout-store** - Adaptive responsive layout
-11. **heatmap-store** - Consensus heatmap visualization
-12. **item-popup-store** - Floating popups + inspector panel (unified)
+## Leaf stores (20)
 
-### Support Stores
-13. **validation-notification-store** - Validation error notifications
-14. **activity-store** - Activity feed state
-15. **consensus-store** - Community consensus data
-16. **task-store** - Background task management
-17. **wiki-image-store** - Wikipedia image fetching
+No store-to-store edges. Safe to construct first, and safe to touch in isolation.
 
-## Dependency Graph
+- `activity-store`
+- `audio-store`
+- `collection-store`
+- `comparison-store`
+- `composition-modal-store`
+- `consensus-store`
+- `criteria-store`
+- `debate-store`
+- `drop-zone-highlight-store`
+- `item-popup-store`
+- `layout-store`
+- `placement-store`
+- `ranking-graph-store`
+- `ranking-store`
+- `selection-cursor`
+- `studio-store`
+- `undo-store`
+- `use-list-store`
+- `validation-notification-store`
+- `wiki-image-store`
 
+## Dependent stores (4)
+
+| store | direct dependencies | transitive | depended on by |
+|---|---|---|---|
+| `backlog-store` | `selection-cursor` | 1 | `session-store`, `grid-store`, `match-store` |
+| `session-store` | `backlog-store`, `selection-cursor` | 2 | `grid-store`, `match-store` |
+| `grid-store` | `backlog-store`, `session-store`, `use-list-store`, `validation-notification-store` | 5 | `match-store` |
+| `match-store` | `backlog-store`, `comparison-store`, `grid-store`, `placement-store`, `selection-cursor`, `session-store`, `undo-store`, `use-list-store`, `validation-notification-store` | 9 | — |
+
+## Graph (DOT)
+
+Paste into Graphviz or any online DOT viewer.
+
+```dot
+digraph StoreDependencies {
+  rankdir=BT;
+  node [shape=box, style=rounded];
+
+  // Base stores (no dependencies)
+  "activity-store" [fillcolor=lightgreen, style="rounded,filled"];
+  "audio-store" [fillcolor=lightgreen, style="rounded,filled"];
+  "collection-store" [fillcolor=lightgreen, style="rounded,filled"];
+  "comparison-store" [fillcolor=lightgreen, style="rounded,filled"];
+  "composition-modal-store" [fillcolor=lightgreen, style="rounded,filled"];
+  "consensus-store" [fillcolor=lightgreen, style="rounded,filled"];
+  "criteria-store" [fillcolor=lightgreen, style="rounded,filled"];
+  "debate-store" [fillcolor=lightgreen, style="rounded,filled"];
+  "drop-zone-highlight-store" [fillcolor=lightgreen, style="rounded,filled"];
+  "item-popup-store" [fillcolor=lightgreen, style="rounded,filled"];
+  "layout-store" [fillcolor=lightgreen, style="rounded,filled"];
+  "placement-store" [fillcolor=lightgreen, style="rounded,filled"];
+  "ranking-graph-store" [fillcolor=lightgreen, style="rounded,filled"];
+  "ranking-store" [fillcolor=lightgreen, style="rounded,filled"];
+  "selection-cursor" [fillcolor=lightgreen, style="rounded,filled"];
+  "studio-store" [fillcolor=lightgreen, style="rounded,filled"];
+  "undo-store" [fillcolor=lightgreen, style="rounded,filled"];
+  "use-list-store" [fillcolor=lightgreen, style="rounded,filled"];
+  "validation-notification-store" [fillcolor=lightgreen, style="rounded,filled"];
+  "wiki-image-store" [fillcolor=lightgreen, style="rounded,filled"];
+
+  // Dependencies
+  "backlog-store" -> "selection-cursor";
+  "session-store" -> "backlog-store";
+  "session-store" -> "selection-cursor";
+  "grid-store" -> "backlog-store";
+  "grid-store" -> "session-store";
+  "grid-store" -> "use-list-store";
+  "grid-store" -> "validation-notification-store";
+  "match-store" -> "backlog-store";
+  "match-store" -> "comparison-store";
+  "match-store" -> "grid-store";
+  "match-store" -> "placement-store";
+  "match-store" -> "selection-cursor";
+  "match-store" -> "session-store";
+  "match-store" -> "undo-store";
+  "match-store" -> "use-list-store";
+  "match-store" -> "validation-notification-store";
+}
 ```
-                    ┌─────────────────┐
-                    │  use-list-store │
-                    └────────┬────────┘
-                             │
-                             ▼
-┌─────────────────┐   ┌─────────────────┐   ┌─────────────────────────┐
-│ backlog-store   │◄──│   match-store   │──►│ validation-notification │
-└────────┬────────┘   └────────┬────────┘   │        -store           │
-         │                     │            └─────────────────────────┘
-         │            ┌────────┼────────┐
-         │            │        │        │
-         │            ▼        ▼        ▼
-         │     ┌──────────┐ ┌──────────┐ ┌──────────────────┐
-         │     │grid-store│ │ session- │ │ comparison-store │
-         │     └────┬─────┘ │  store   │ └──────────────────┘
-         │          │       └────┬─────┘
-         │          │            │
-         └──────────┴────────────┘
-                    │
-                    ▼
-         ┌────────────────────────┐
-         │ Shared: grid items,    │
-         │ backlog state,         │
-         │ session persistence    │
-         └────────────────────────┘
-```
 
-## Detailed Dependencies
+<!-- END GENERATED — everything below is hand-written -->
 
-### match-store
-**Imports from:**
-- `session-store` - getState() for session operations
-- `grid-store` - getState() for grid operations
-- `comparison-store` - getState() for comparison modal sync
-- `use-list-store` - getState() for current list info
-- `validation-notification-store` - getState() for error notifications
+## Store ownership contracts
 
-**Operations requiring coordination:**
-- `initializeMatchSession()` - Coordinates list, session, and grid stores
-- `resetMatchSession()` - Clears grid, comparison, and session stores
-- `setShowComparisonModal()` - Syncs with comparison-store
-- `quickAssignToPosition()` - Coordinates session and grid stores
+Each store owns a domain of state exclusively. No two stores write the same
+domain. Cross-store reads use `getState()`; writes flow through the owning
+store's actions only. The machine-readable form is `STORE_OWNERSHIP` in
+`src/stores/registry.ts`.
 
-### grid-store
-**Imports from:**
-- `session-store` - getState() for session updates
-- `backlog-store` (lazy) - via lazy accessor for backlog operations
-- `validation-notification-store` (lazy) - via lazy accessor for error notifications
+| store | owns | persists to |
+|---|---|---|
+| `ranking-store` | canonical ranking array, item→tier assignments, tier config & boundaries, bracket state, smart tiers | localStorage (persist middleware) |
+| `grid-store` | drag-and-drop grid state, grid positions, per-list grid cache, mobile tap-to-place | localStorage (persist middleware) |
+| `session-store` | session persistence, normalized backlog data, session progress | localStorage + IndexedDB (offline) |
+| `match-store` | UI orchestration (keyboard, modals, navigation), match session lifecycle | none (ephemeral) |
+| `backlog-store` | backlog group state, item usage tracking | none |
 
-**Operations requiring coordination:**
-- `handleDragEnd()` - Full drag-and-drop coordination
-- `assignItemToGrid()` - Updates session store
-- `removeItemFromGrid()` - Updates session store
-- `moveGridItem()` - Updates session store
-- `clearGrid()` - Updates session store
+Sync rules:
 
-### session-store
-**No direct imports from other stores**
+- `grid-store` → `session-store`: derived sync via the `derived-session-sync` subscriber.
+- `ranking-store` is self-contained; tiers derive from `ranking[]` internally.
+- `match-store` → `grid-store`, `session-store`: orchestrates via `getState()` calls.
+- No store may write tier assignments except `ranking-store`.
+- No store may mutate grid positions except `grid-store`.
 
-**Operations that affect other stores:**
-- `updateSessionGridItems()` - Called by grid-store
-- `setSelectedBacklogItem()` - Used by match-store
-- `getAvailableBacklogItems()` - Used by match-store
+## How deferred edges are held
 
-### comparison-store
-**No direct imports from other stores**
-
-**Operations that affect other stores:**
-- `openComparison()` - Synced from match-store
-- `closeComparison()` - Synced from match-store
-
-### backlog-store
-**No direct imports from other stores**
-
-**Operations that affect other stores:**
-- `markItemAsUsed()` - Called by grid-store during drag-and-drop
-- `getItemById()` - Used by grid-store for validation
-
-## Circular Dependency Prevention
-
-The codebase uses the `createLazyStoreAccessor` pattern to prevent circular dependencies:
+Deferred edges are the ones a bundler cannot see. They are created with
+`createLazyStoreAccessor` (`src/lib/stores/lazy-store-accessor.ts`):
 
 ```typescript
-// src/lib/stores/lazy-store-accessor.ts
 const backlogStoreAccessor = createLazyStoreAccessor(
   () => require('@/stores/backlog-store').useBacklogStore,
   { storeName: 'backlog-store', maxRetries: 5, retryDelay: 20 }
 );
 ```
 
-This pattern:
-1. Defers store import until first access
-2. Provides retry logic for race conditions
-3. Caches the store reference after initialization
+The accessor resolves its target at **call** time, caches only success, and
+answers with a discriminated status so a caller can tell "not ready yet" from
+"this will never resolve". `reset()` clears a permanent-failure latch — without
+it, one early failure would poison the accessor for the life of the process.
 
-## Operations Requiring Atomic Transactions
+Every accessor is an admission that the graph has an edge the initialization
+order could not resolve. Three of them is the cost of doing business here; a
+dozen would mean the manifest is describing an architecture that wants
+restructuring.
 
-### Drag-and-Drop (Backlog → Grid)
-1. Validate item availability (backlog-store)
-2. Validate position availability (grid-store)
-3. Assign item to grid (grid-store)
-4. Mark item as used (backlog-store)
-5. Update session (session-store)
-6. Emit success/failure notification (validation-notification-store)
+## Operations requiring atomic coordination
 
-### Match Session Initialization
-1. Get current list (use-list-store)
-2. Sync/create session (session-store)
-3. Initialize/load grid (grid-store)
-4. Setup keyboard mode if enabled (match-store)
+**Drag-and-drop (backlog → grid)**
 
-### Match Session Reset
-1. Clear grid (grid-store)
-2. Clear comparison (comparison-store)
-3. Clear session selection (session-store)
-4. Reset UI state (match-store)
+1. Validate item availability (`backlog-store`)
+2. Validate position availability (`grid-store`)
+3. Assign item to grid (`grid-store`)
+4. Mark item as used (`backlog-store`)
+5. Update session (`session-store`)
+6. Emit success/failure notification (`validation-notification-store`)
 
-## Migration Strategy
+**Match session initialization**
 
-### Phase 1: Core Orchestrator
-Create `GlobalOrchestrator` with command pattern for:
-- Assign (backlog → grid)
-- Move (grid → grid)
-- Swap (grid ↔ grid)
-- Remove (grid → backlog)
+1. Get current list (`use-list-store`)
+2. Sync/create session (`session-store`)
+3. Initialize/load grid (`grid-store`)
+4. Set up keyboard mode if enabled (`match-store`)
 
-### Phase 2: Session Commands
-- InitializeSession
-- ResetSession
-- SaveSession
-- SwitchSession
+**Match session reset**
 
-### Phase 3: Feature Commands
-- OpenComparison
-- CloseComparison
-- ToggleKeyboardMode
+1. Clear grid (`grid-store`)
+2. Clear comparison (`comparison-store`)
+3. Clear session selection (`session-store`)
+4. Reset UI state (`match-store`)
 
-### Phase 4: Middleware
-- Logging middleware
-- Undo/redo middleware
-- Validation middleware
-- Persistence middleware
+## Orchestration layer — status
 
-## Success Criteria
-
-- [x] Dependency graph documentation exists in /docs
-- [x] GlobalOrchestrator implemented with command pattern
-- [x] Transaction support with rollback capability
-- [x] Undo/redo works for grid operations
-- [x] Middleware stack (logging, validation, persistence)
-- [x] React hooks for easy integration (useOrchestrator, useUndoRedo)
-- [x] Orchestrated drag handlers available (handleDragEndOrchestrated)
-- [ ] All drag-and-drop operations migrated to GlobalOrchestrator (incremental)
-- [ ] No direct getState() calls between match-related stores (incremental)
-
-## Implementation Status
-
-The orchestration layer has been implemented in `src/lib/orchestration/`:
+`src/lib/orchestration/` holds a command-pattern orchestrator intended to absorb
+the cross-store coordination above:
 
 ```
 src/lib/orchestration/
-├── types.ts              # Type definitions for commands, transactions, middleware
-├── commands.ts           # Command factory functions
-├── GlobalOrchestrator.ts # Core orchestrator with transaction support
+├── types.ts              # command, transaction, middleware types
+├── commands.ts           # command factory functions
+├── GlobalOrchestrator.ts # core orchestrator with transaction support
 ├── useOrchestrator.ts    # React hooks for components
-├── dragHandlers.ts       # Orchestrated drag-and-drop handlers
-└── index.ts              # Public exports
+└── index.ts              # public exports
 ```
 
-### Usage Example
+**It is not wired to anything.** As of 2026-08-24 no file outside
+`src/lib/orchestration/` imports `useOrchestrator`, `GlobalOrchestrator`, or any
+command factory — the drag path still coordinates stores directly through
+`getState()`. A `dragHandlers.ts` exporting `handleDragEndOrchestrated` was
+planned and never written; earlier revisions of this document listed it as
+shipped, which was false.
 
-```typescript
-// Using the React hook
-import { useOrchestrator } from '@/lib/orchestration';
-
-function MyComponent() {
-  const { assign, move, undo, redo, canUndo, canRedo } = useOrchestrator();
-
-  const handleDrop = async (item, position) => {
-    const success = await assign(item, position);
-    if (!success) {
-      // Handle error
-    }
-  };
-
-  return (
-    <button onClick={undo} disabled={!canUndo}>
-      Undo
-    </button>
-  );
-}
-```
-
-### Migration Path
-
-Existing stores can continue to work while components gradually migrate:
-
-1. **Immediate**: New components use `useOrchestrator` hook
-2. **Gradual**: Existing drag handlers replaced with `handleDragEndOrchestrated`
-3. **Future**: Direct store access replaced with orchestrator commands
+Treat the directory as a design that has not landed. Either wire it or retire
+it; leaving it half-adopted is what produced the drift above.

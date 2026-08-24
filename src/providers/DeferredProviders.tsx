@@ -3,6 +3,14 @@
 import dynamic from 'next/dynamic';
 import { useState, useEffect, type ReactNode } from 'react';
 
+// Side-effect import, deliberately not tree-shakeable by removal: the store
+// registry validates its declared dependency topology at module load (cycles,
+// dangling edges) and arms the dev sync-drift assertions. This provider is
+// rendered by the root layout on every startup path, which is what makes that
+// validation run unasked instead of waiting for a caller that never comes.
+// Do not remove without giving the registry another always-evaluated home.
+import '@/stores/registry';
+
 const CommandPaletteProvider = dynamic(
   () => import('@/app/features/CommandPalette/CommandPaletteProvider').then(m => ({ default: m.CommandPaletteProvider })),
   { ssr: false }

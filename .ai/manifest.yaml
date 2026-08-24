@@ -4,7 +4,9 @@
 schema: ai-manifest
 schemaVersion: 0.1.0
 generatedAt: "2026-08-24"
-generatedFrom: [package.json, CLAUDE.md, context_map.json]
+# context_map.json was listed here but was deleted from the repo in 2026-03 and is
+# gitignored; nothing generates it. Removed rather than left pointing at nothing.
+generatedFrom: [package.json, CLAUDE.md]
 
 repo:
   name: goat
@@ -18,19 +20,31 @@ capabilities:
   dev: { command: "npm run dev", verified: false }
   build: { command: "npm run build", verified: false }
   start: { command: "npm start", verified: false }
-  lint: { command: "npm run lint", verified: false }
-  typecheck: { command: "npx tsc --noEmit", verified: false }
+  # Was "next lint", which Next 16 removed: it parsed "lint" as a directory and
+  # exited 1 having linted nothing. Now invokes eslint directly. Ran 2026-08-24.
+  lint: { command: "npm run lint", verified: true, verifiedAt: "2026-08-24" }
+  typecheck: { command: "npm run typecheck", verified: true, verifiedAt: "2026-08-24" }
+  docs-store-graph: { command: "npm run docs:store-graph", verified: true, verifiedAt: "2026-08-24" }
   test: { command: "npm run test:e2e", verified: false }
   test-ui: { command: "npm run test:e2e:ui", verified: false }
   storybook: { command: "npm run storybook", verified: false }
   build-storybook: { command: "npm run build-storybook", verified: false }
 
+# What a green run of the above actually means. A capability that exists is not a
+# gate; recording the difference is the point.
+capabilityNotes:
+  unit-test: "ABSENT. No vitest/jest config or runner exists. `test` is Playwright e2e only."
+  lint: "Runs, but every custom rule in eslint.config.mjs is `warn` — it cannot fail."
+  typecheck: "29 pre-existing errors as of 2026-08-24 (consensus route, bracket components, ranking-store). Not yet a clean baseline."
+  gates: "No CI, no git hooks, no lint-staged. Nothing consumes any exit code above."
+
 # Pointers — these subsystems can change format underneath without breaking this contract.
 paths:
-  contextMap: context_map.json
   docs: docs/
   e2e: e2e/
   stores: src/stores/
+  storeTopology: src/stores/registry.ts
+  conformance: .ai/registry-conformance.md
 
 # The organization's AI registry - knowledge bundles this repo consumes and the skill
 # marketplace it installs from. Unknown fields MUST be ignored by a reader.

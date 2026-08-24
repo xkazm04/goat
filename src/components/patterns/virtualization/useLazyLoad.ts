@@ -256,24 +256,11 @@ export function calculateOptimalPageSize(
   return visibleCount + overscan * 2;
 }
 
-/**
- * Determine if lazy loading should be used based on item count
- */
-export function shouldUseLazyLoading(
-  itemCount: number,
-  threshold: number = 50
-): boolean {
-  return itemCount > threshold;
-}
-
-/**
- * Determine if virtualization should be used based on item count
- */
-export function shouldUseVirtualization(
-  itemCount: number,
-  threshold: number = 100
-): boolean {
-  return itemCount > threshold;
-}
+// shouldUseLazyLoading / shouldUseVirtualization used to live here too, with
+// their own default thresholds (50 / 100) that disagreed with the ones in
+// src/app/features/Collection/constants/lazyLoadConfig.ts (20 / 100). Two
+// ladders with two answers to "is this list big enough" is one ladder too many.
+// The single source is now LAZY_LOAD_CONFIG in that file — import the
+// predicates from there.
 
 export default useLazyLoad;

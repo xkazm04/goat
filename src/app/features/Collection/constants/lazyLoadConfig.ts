@@ -1,8 +1,18 @@
 /**
  * Collection Lazy Loading Configuration
  *
- * Defines thresholds and parameters for dynamic lazy loading
- * and virtualization of collection items.
+ * THE single source for the render-strategy ladder (normal → lazy → virtualized).
+ * A second copy of these predicates used to live in
+ * src/components/patterns/virtualization/useLazyLoad.ts with a different lazy
+ * threshold; it has been removed. If you need these numbers elsewhere, import
+ * them from here rather than defaulting a parameter.
+ *
+ * CURRENT STATUS: the ladder is declared but not wired. Neither
+ * shouldUseLazyLoading nor shouldUseVirtualization has a call site — the
+ * Collection panel renders every filtered item. LAZY_LOAD_CONFIG's observer
+ * fields ARE live, via components/LazyLoadTrigger.tsx. Changing the thresholds
+ * below therefore has no effect on what renders today. See
+ * docs/lazy-loading-implementation.md for what exists and what does not.
  */
 
 export const LAZY_LOAD_CONFIG = {
@@ -12,6 +22,16 @@ export const LAZY_LOAD_CONFIG = {
    * Collections with more items use virtualized rendering
    */
   VIRTUALIZATION_THRESHOLD: 100,
+
+  /**
+   * Item count above which lazy loading engages.
+   *
+   * Deliberately distinct from LAZY_LOAD_PAGE_SIZE. The two were previously
+   * conflated — shouldUseLazyLoading tested against the PAGE SIZE, which meant
+   * "more than one page" rather than "big enough to be worth paginating", and
+   * disagreed with the other copy of the ladder that used 50.
+   */
+  LAZY_LOAD_THRESHOLD: 50,
 
   /**
    * Number of items to load per page in lazy loading mode
@@ -73,5 +93,5 @@ export function shouldUseVirtualization(itemCount: number): boolean {
  * Determines if a collection should use lazy loading
  */
 export function shouldUseLazyLoading(itemCount: number): boolean {
-  return itemCount > LAZY_LOAD_CONFIG.LAZY_LOAD_PAGE_SIZE;
+  return itemCount > LAZY_LOAD_CONFIG.LAZY_LOAD_THRESHOLD;
 }

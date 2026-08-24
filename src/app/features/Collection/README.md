@@ -49,11 +49,11 @@ Collection/
 - Staggered entrance animation on initial load
 - Layout animations for reordering
 
-### 3. Dynamic Lazy Loading System ⚡
-- **Three rendering strategies** based on collection size:
-  - **Small (<20 items)**: Normal rendering for instant display
-  - **Medium (20-100 items)**: Lazy loading with progressive pagination
-  - **Large (>100 items)**: Virtual scrolling for optimal performance
+### 3. Dynamic Lazy Loading System — DESIGNED, NOT WIRED ⚠️
+- **Three rendering strategies** planned, selected by collection size:
+  - **Small (≤50 items)**: Normal rendering — *the only path that runs today*
+  - **Medium (51-100 items)**: Lazy loading with progressive pagination — not wired
+  - **Large (>100 items)**: Virtual scrolling — not written
 - **Intersection Observer**: Triggers loading when scrolling near bottom
 - **Prefetching**: Loads items ahead of viewport for smooth experience
 - **Progress indicators**: Shows loading state and completion percentage
@@ -205,11 +205,20 @@ function MyComponent() {
 ```
 
 ### Configuring Lazy Loading
+
+> **Not wired.** The ladder predicates (`shouldUseLazyLoading`,
+> `shouldUseVirtualization`) have no call site — `CollectionPanel` renders every
+> filtered item regardless of count. Changing these numbers has no effect today.
+> See `docs/lazy-loading-implementation.md` for what exists and what does not.
+
+`constants/lazyLoadConfig.ts` is the single threshold source (a duplicate ladder
+in `components/patterns/virtualization/useLazyLoad.ts` was removed 2026-08-24):
+
 ```tsx
-// Adjust thresholds in constants/lazyLoadConfig.ts
 export const LAZY_LOAD_CONFIG = {
-  VIRTUALIZATION_THRESHOLD: 100,  // Switch to virtual scrolling at 100+ items
-  LAZY_LOAD_PAGE_SIZE: 20,        // Load 20 items per page
+  VIRTUALIZATION_THRESHOLD: 100,  // Switch to virtual scrolling above 100 items
+  LAZY_LOAD_THRESHOLD: 50,        // Engage lazy loading above 50 items
+  LAZY_LOAD_PAGE_SIZE: 20,        // Load 20 items per page once engaged
   PREFETCH_COUNT: 10,             // Prefetch 10 items ahead
   INTERSECTION_ROOT_MARGIN: '200px', // Trigger 200px before scroll
   // ... more config
