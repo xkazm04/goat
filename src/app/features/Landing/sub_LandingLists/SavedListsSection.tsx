@@ -18,6 +18,7 @@ import { useListThumbnails } from "@/hooks/use-list-thumbnails";
 import { usePlayList } from "@/hooks/use-play-list";
 import { useTempUser } from "@/hooks/use-temp-user";
 import { DURATION } from "@/lib/animations/motion-presets";
+import { hasContent } from "@/lib/async-state";
 import { getCategoryColor } from "@/lib/helpers/getColors";
 import { TopList } from "@/types/top-lists";
 
@@ -241,6 +242,11 @@ export function SavedListsSection({ className }: SavedListsSectionProps) {
     folders,
     bookmarksByFolder,
     isLoading,
+    // The derived request state, added 2026-08-24. The precedence below used to
+    // be reassembled here out of `isLoading` + `error` + `bookmarks.length`; it
+    // now switches on one discriminated value that cannot represent the
+    // combinations nobody enumerated.
+    state: bookmarksState,
     // `error` was returned by useBookmarks all along and never taken here. The
     // result: a failed fetch left `bookmarks` at [], which fell into the
     // "no bookmarks" early return below and DELETED THE WHOLE SECTION —
@@ -300,6 +306,11 @@ export function SavedListsSection({ className }: SavedListsSectionProps) {
   // Precedence is load -> FAIL -> empty -> data, and the failure arm must come
   // before the empty arm or the two collapse into one. `list-grid.tsx` is the
   // one place in this repo that already got this right; this now matches it.
+  //
+  // The placeholder is shown only when NOTHING is held. Derived from the state
+  // rather than from `isLoading`, because `isLoading` is true for a background
+  // refresh too, and a refresh must not blank content the user is reading.
+  const showPlaceholder = !hasContent(bookmarksState);
   if (!isLoaded || !tempUserId) return null;
 
   // Nothing held AND nothing wrong: the section genuinely has no reason to
@@ -455,8 +466,14 @@ export function SavedListsSection({ className }: SavedListsSectionProps) {
           </div>
         )}
 
-        {/* Loading state */}
-        {isLoading ? (
+        {/* Loading placeholder — ONLY when nothing is held.
+            This used to read `{isLoading ? skeleton : content}`, which blanked
+            the whole grid into shimmer every time a background refresh ran over
+            bookmarks the user was already looking at: the forbidden
+            SETTLED-DATA -> LOADING edge. `showPlaceholder` is false whenever the
+            state carries data, so a refresh is now marked (aria-busy on the
+            region) instead of erasing it. */}
+        {showPlaceholder ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
             {Array.from({ length: 6 }).map((_, i) => (
               <div

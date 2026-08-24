@@ -12,6 +12,7 @@ import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { useTempUser } from "@/hooks/use-temp-user";
 import { toast } from "@/hooks/use-toast";
 import { useUserLists, useDeleteList } from "@/hooks/use-top-lists";
+import { asyncStateFromQuery } from "@/lib/async-state/from-query";
 
 import { SectionHeader } from "./SectionHeader";
 import { UserListCard } from "./UserListCard";
@@ -35,12 +36,13 @@ export function UserListsSection({ className }: UserListsSectionProps) {
     router.push("/studio");
   }, [router]);
 
-  const {
-    data: userLists = [],
-    isLoading,
-    error,
-    refetch,
-  } = useUserLists(tempUserId || "", { limit: 10 });
+  // The query result is passed WHOLE to asyncStateFromQuery rather than
+  // destructured into flags. The old `data: userLists = []` default was the
+  // quiet defect: it made `data` defined on the very first render, so the
+  // region could never distinguish "asking" from "answered with nothing".
+  const userListsQuery = useUserLists(tempUserId || "", { limit: 10 });
+  const listsState = asyncStateFromQuery(userListsQuery);
+  const refetch = userListsQuery.refetch;
 
   const handleDeleteList = useCallback(async (listId: string) => {
     try {
@@ -88,13 +90,12 @@ export function UserListsSection({ className }: UserListsSectionProps) {
             viewport={{ once: true }}
           >
             <ListGrid
-              items={userLists}
+              state={listsState}
               renderItem={(list) => (
                 <UserListCard list={list} onDelete={handleDeleteList} onPlay={handlePlayList} />
               )}
-              isLoading={isLoading}
-              error={error ? new Error("Failed to load your lists") : null}
               onRetry={refetch}
+              staleNotice="Showing your last loaded lists — the refresh failed." 
               emptyState={
                 <motion.div
                   className="py-16 text-center"

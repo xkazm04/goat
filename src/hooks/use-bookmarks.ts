@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useCallback } from 'react';
 
 import { toast } from '@/hooks/use-toast';
+import { asyncStateFromQuery } from '@/lib/async-state/from-query';
 import { CACHE_TTL_MS } from '@/lib/cache/unified-cache';
 import { bookmarkKeys } from '@/lib/query-keys/bookmarks';
 import { TopList } from '@/types/top-lists';
@@ -50,11 +51,30 @@ async function fetchBookmarks(userId: string): Promise<BookmarksData> {
 export function useBookmarks(userId: string) {
   const queryClient = useQueryClient();
 
-  const { data, isLoading, error, refetch } = useQuery({
+  const query = useQuery({
     queryKey: bookmarkKeys.user(userId),
     queryFn: () => fetchBookmarks(userId),
     enabled: !!userId,
     staleTime: CACHE_TTL_MS.SHORT,
+  });
+  const { data, isLoading, error, refetch } = query;
+
+  /**
+   * The request's state as ONE discriminated value, derived from the query
+   * rather than reassembled by each consumer from `isLoading` + `error` +
+   * `bookmarks.length`. Added 2026-08-24 (registry async-ui-states/state-model,
+   * client-state/status-fsms).
+   *
+   * `isLoading` and `error` are still returned for now, because several
+   * consumers read them; new consumers should switch on `state`. The two cannot
+   * disagree, because the flags and the state are derived from the same query
+   * object rather than maintained side by side.
+   */
+  const state = asyncStateFromQuery({
+    data: data?.bookmarks,
+    error: error as Error | null,
+    isFetching: query.isFetching,
+    isFetched: query.isFetched,
   });
 
   const bookmarks = data?.bookmarks ?? [];
@@ -265,6 +285,8 @@ export function useBookmarks(userId: string) {
     bookmarks,
     folders,
     bookmarksByFolder,
+    /** The derived request state. Prefer this over the flags below. */
+    state,
     isLoading,
     error,
     // A failure state without a retry that reissues the SAME request is not a
