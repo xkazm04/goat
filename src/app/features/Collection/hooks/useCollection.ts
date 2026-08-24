@@ -18,6 +18,13 @@ import { collectionApi, CollectionApiParams, CollectionItemCreate, CollectionIte
 import { trackError } from '@/lib/errors/error-analytics';
 import { fromUnknown } from '@/lib/errors/GoatError';
 import { collectionKeys } from '@/lib/query-keys/collection';
+import {
+  compareInstant,
+  compareNumeric,
+  compareText,
+  sortedBy,
+  withIdTiebreak,
+} from '@/lib/sorting/comparators';
 
 import { CollectionItem, ItemCategory, ItemPanelStats } from '../types';
 import { useVisibleCollectionItems, PlacementStats } from './useVisibleCollectionItems';
@@ -318,41 +325,54 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
       return [];
     }
 
-    let items = allItems.filter(item => {
+    const items = allItems.filter(item => {
       const itemGroupId = item.metadata?.group_id;
       if (!itemGroupId) return true; // Include items without group
       return selectedGroupIds.has(itemGroupId);
     });
 
-    // Apply client-side sorting
-    items = [...items].sort((a, b) => {
-      let comparison = 0;
-
+    // Client-side sorting through the shared comparators.
+    //
+    // This block used to coerce every absent value instead of placing it:
+    // `ranking ?? 0`, `popularity ?? 0`, and a missing date to the epoch. That
+    // made an UNRANKED item indistinguishable from the worst-ranked one, and
+    // then — because direction was applied by negating the whole comparison —
+    // floated all of them to the TOP under `asc`, where they read as the best.
+    // The comparators place absent values last in both directions instead, and
+    // apply direction internally so the negation cannot flip them.
+    //
+    // The identity tiebreak makes the order total: without it, the many items
+    // that share a ranking or a popularity landed in whatever sequence the
+    // engine produced, so an identical refetch could reshuffle the panel.
+    // (registry table/sorting)
+    const compare = withIdTiebreak<CollectionItem>((a, b) => {
       switch (sortBy) {
         case 'ranking':
-          const rankA = a.ranking ?? 0;
-          const rankB = b.ranking ?? 0;
-          comparison = rankB - rankA; // Higher rankings first by default
-          break;
+          // Ranking is "1 is best", so ascending order by rank IS the
+          // highest-first reading the previous code got by negating.
+          return compareNumeric(a.ranking, b.ranking, sortOrder);
         case 'name':
-          comparison = a.title.localeCompare(b.title);
-          break;
+          return compareText(a.title, b.title, sortOrder);
         case 'date':
-          const dateA = a.metadata?.created_at ? new Date(a.metadata.created_at as string).getTime() : 0;
-          const dateB = b.metadata?.created_at ? new Date(b.metadata.created_at as string).getTime() : 0;
-          comparison = dateB - dateA;
-          break;
+          return compareInstant(
+            a.metadata?.created_at as string | undefined,
+            b.metadata?.created_at as string | undefined,
+            sortOrder,
+          );
         case 'popularity':
-          const popA = a.metadata?.popularity ?? 0;
-          const popB = b.metadata?.popularity ?? 0;
-          comparison = popB - popA;
-          break;
+          return compareNumeric(
+            a.metadata?.popularity as number | undefined,
+            b.metadata?.popularity as number | undefined,
+            sortOrder,
+          );
+        default:
+          return 0;
       }
+    }, (item) => item.id);
 
-      return sortOrder === 'asc' ? comparison : -comparison;
-    });
-
-    return items;
+    // sortedBy copies: sorting in place here would mutate `allItems`, which is
+    // another memo's output.
+    return sortedBy(items, compare);
   }, [allItems, selectedGroupIds, sortBy, sortOrder]);
 
   // Get selected groups

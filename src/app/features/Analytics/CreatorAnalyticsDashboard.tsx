@@ -21,11 +21,17 @@ import {
 } from "recharts";
 
 import { useCreatorAnalytics } from "@/hooks/use-top-lists";
+import {
+  compareInstant,
+  compareNumeric,
+  sortedBy,
+  withIdTiebreak,
+} from "@/lib/sorting/comparators";
 import { cn } from "@/lib/utils";
 
 import { ListAnalyticsCard } from "./ListAnalyticsCard";
 
-import type { CreatorAnalyticsSummary } from "@/types/top-lists";
+import type { CreatorAnalyticsSummary, CreatorListAnalytics } from "@/types/top-lists";
 
 
 interface CreatorAnalyticsDashboardProps {
@@ -198,21 +204,25 @@ export function CreatorAnalyticsDashboard({
 
   const sortedLists = useMemo(() => {
     if (!summary?.lists) return [];
-    const lists = [...summary.lists];
-    switch (sortBy) {
-      case "views":
-        return lists.sort((a, b) => b.total_views - a.total_views);
-      case "shares":
-        return lists.sort((a, b) => b.share_count - a.share_count);
-      case "rankers":
-        return lists.sort((a, b) => b.unique_rankers - a.unique_rankers);
-      case "recent":
-        return lists.sort(
-          (a, b) =>
-            new Date(b.created_at).getTime() -
-            new Date(a.created_at).getTime()
-        );
-    }
+    // Every one of these metrics is zero for most of a creator's lists, so
+    // ties are the common case, not the edge case: without the identity
+    // tiebreak the card order reshuffled on every refetch of identical data.
+    // (registry table/sorting — "the order must be total and deterministic")
+    const compare = withIdTiebreak<CreatorListAnalytics>((a, b) => {
+      switch (sortBy) {
+        case "views":
+          return compareNumeric(a.total_views, b.total_views, "desc");
+        case "shares":
+          return compareNumeric(a.share_count, b.share_count, "desc");
+        case "rankers":
+          return compareNumeric(a.unique_rankers, b.unique_rankers, "desc");
+        case "recent":
+          return compareInstant(a.created_at, b.created_at, "desc");
+        default:
+          return 0;
+      }
+    }, (list) => list.list_id);
+    return sortedBy(summary.lists, compare);
   }, [summary, sortBy]);
 
   if (isLoading) {
