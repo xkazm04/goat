@@ -6,6 +6,21 @@ import { defineConfig, devices } from "@playwright/test";
  */
 export default defineConfig({
   testDir: "./e2e",
+  /**
+   * Environment preconditions are owned by a launcher, not by each test.
+   * Before this existed, specs called `test.skip()` when their fixture data
+   * was missing, so against an empty database the whole suite ran, executed
+   * nothing, and reported green. See e2e/global-setup.ts.
+   */
+  globalSetup: "./e2e/global-setup.ts",
+  /**
+   * The stub specs `list-search`, `ranking-completion` and `session-persistence`
+   * were deleted on 2026-08-24: 10 tests, zero assertions, hard-skipped since
+   * the day they were written and listed in docs/E2E_BROWSER_TESTING.md with
+   * behavioural descriptions as though they were coverage. A quarantine nobody
+   * reviews is worse than an honest gap. The gaps are now recorded in that
+   * document's "Not covered" table instead.
+   */
   /* Run tests in files in parallel */
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */

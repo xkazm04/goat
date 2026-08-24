@@ -234,14 +234,60 @@ Prompt to Claude Code:
 
 ## Existing E2E Tests
 
+> ### Correction — 2026-08-24
+>
+> The table below used to list six spec files with a behavioural description
+> each. Three of them — `session-persistence`, `ranking-completion` and
+> `list-search` — contained **10 tests, all `test.skip()`, with zero
+> assertions between them**, and had since the day they were written. Reading
+> this table, anyone would have concluded that reload persistence, the
+> completion modal and search were covered. Nothing about them was.
+>
+> Those three files are **deleted**. A quarantine nobody reviews is worse than
+> an honest gap, and an honest gap is what the "Not covered" table below is.
+> Deleting them does not reduce coverage — there was none to reduce — it
+> reduces the claim to match it.
+
 | Test File | Coverage |
 |-----------|----------|
 | `e2e/list-play-journey.spec.ts` | Landing → featured list click → /goat navigation |
-| `e2e/drag-drop-ranking.spec.ts` | Drag items from backlog to grid slots |
-| `e2e/session-persistence.spec.ts` | Grid state survives page reload |
-| `e2e/ranking-completion.spec.ts` | Fill all slots → completion modal |
-| `e2e/list-search.spec.ts` | Search/filter on landing page |
+| `e2e/drag-drop-ranking.spec.ts` | Drag items from backlog to grid slots; swap between occupied slots |
 | `e2e/backlog-items-loading.spec.ts` | Backlog groups load on match page |
+| `e2e/exploratory-smoke.spec.ts` | Landing render, list navigation, collection panel |
+
+### Not covered — known gaps, not silent ones
+
+These were previously *listed as covered*. They are real gaps, recorded here so
+the absence is visible rather than implied by a file that exists and does
+nothing.
+
+| Behaviour | Status |
+|---|---|
+| Grid state survives page reload | **no test** (was `session-persistence.spec.ts`, 3 empty stubs) |
+| Grid state survives browser close/reopen | **no test** |
+| LRU eviction keeps at most 15 cached lists | **no test** |
+| Fill all slots → completion modal, and its 4 actions | **no test** (was `ranking-completion.spec.ts`, 4 empty stubs) |
+| Search/filter on the landing page | **no test** (was `list-search.spec.ts`, 3 empty stubs) |
+| Keyboard drag (Space/arrows/Escape) on the grid | **no e2e test**; the arrow-stepping logic has 25 unit tests in `src/lib/dnd/keyboard-coordinates.test.ts` |
+
+## Environment preconditions
+
+`e2e/global-setup.ts` runs once before any worker and refuses the run if the
+lists API answers with zero lists.
+
+This exists because the suite previously called `test.skip()` inside individual
+specs when fixture data was missing. Against an empty database the whole suite
+therefore ran, executed almost nothing, and **reported green** — a run that
+could not do its job spelled its outcome identically to one that did it
+perfectly. The precondition now belongs to the launcher, fails once, and names
+itself `E2E_PRECONDITION_FAILED` so it is greppable.
+
+To run deliberately against an empty database, set `E2E_ALLOW_EMPTY_DB=1`. The
+setup then warns, in the run output, that a green result does not mean the
+fixtures existed.
+
+The setup does **not** seed. A setup that silently populated a database it
+found empty would hide the condition it exists to report.
 
 ## CI Integration
 
@@ -249,9 +295,11 @@ Playwright config (`playwright.config.ts`) is already set up:
 - Tests in `e2e/` directory
 - Chromium browser
 - Base URL: `http://localhost:3000`
-- Auto-starts dev server
+- Auto-starts dev server (`npm run dev` — note this suite has never run against
+  a production bundle; see backlog #13 in `.ai/registry-conformance.md`)
 - Screenshots on failure
 - Traces on retry
+- `globalSetup` asserts fixtures exist before any test runs
 
 ```bash
 # Run all e2e tests

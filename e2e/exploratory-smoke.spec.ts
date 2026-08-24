@@ -283,10 +283,17 @@ test.describe("Goat/Match Page", () => {
       .isVisible({ timeout: 20000 })
       .catch(() => false);
 
-    if (!hasLists) {
-      test.skip();
-      return;
-    }
+    // Was `test.skip(); return;`. The fixture precondition is established once,
+    // before any worker starts (e2e/global-setup.ts), so an absent list here is
+    // not "nothing to test" — it is a real failure of a precondition that was
+    // verified minutes ago. Skipping made an empty run indistinguishable from a
+    // passing one.
+    expect(
+      hasLists,
+      "No featured list rendered. global-setup verified the lists API is " +
+        "non-empty, so this is a rendering or data-plumbing failure, not a " +
+        "missing fixture.",
+    ).toBe(true);
 
     const testId = await firstList.getAttribute("data-testid");
     const listId = testId?.replace("featured-list-item-", "");
@@ -316,10 +323,17 @@ test.describe("Goat/Match Page", () => {
       .isVisible({ timeout: 20000 })
       .catch(() => false);
 
-    if (!hasLists) {
-      test.skip();
-      return;
-    }
+    // Was `test.skip(); return;`. The fixture precondition is established once,
+    // before any worker starts (e2e/global-setup.ts), so an absent list here is
+    // not "nothing to test" — it is a real failure of a precondition that was
+    // verified minutes ago. Skipping made an empty run indistinguishable from a
+    // passing one.
+    expect(
+      hasLists,
+      "No featured list rendered. global-setup verified the lists API is " +
+        "non-empty, so this is a rendering or data-plumbing failure, not a " +
+        "missing fixture.",
+    ).toBe(true);
 
     await firstList.click();
     await page.waitForURL("**/goat?list=*", { timeout: 15000 });
