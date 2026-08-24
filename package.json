@@ -9,6 +9,8 @@
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
     "docs:store-graph": "tsx scripts/generate-store-graph.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
@@ -76,10 +78,12 @@
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-storybook": "^10.1.11",
     "eslint-plugin-unused-imports": "^4.4.1",
+    "jsdom": "^29.1.1",
     "pg": "^8.20.0",
     "postcss-loader": "^8.2.0",
     "storybook": "^10.1.11",
     "style-loader": "^4.0.0",
-    "tsx": "^4.20.6"
+    "tsx": "^4.20.6",
+    "vitest": "^3.2.7"
   }
 }

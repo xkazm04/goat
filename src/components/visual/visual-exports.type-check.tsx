@@ -1,16 +1,21 @@
 /**
- * Visual Components Verification
+ * Visual barrel — compile-time export check. NOT A TEST.
  *
- * TypeScript-level verification that all Phase 2 exports work correctly.
- * This file validates imports at compile time.
+ * This file was named `__tests__/visual-components.test.tsx` until 2026-08-24,
+ * when the repo had no unit-test runner at all; the name claimed a harness that
+ * did not exist and asserted nothing at runtime. It is renamed rather than
+ * deleted because what it actually does is still useful: `npm run typecheck`
+ * fails if the `@/components/visual` barrel loses an export or changes a prop
+ * type. That is a real check with a real exit code — it is just typecheck's,
+ * not the test runner's.
  *
- * If a test runner (Jest/Vitest) is added later, this can be extended with
- * runtime tests by installing @types/jest.
+ * Runtime behaviour of the depth tokens is covered by the real suite at
+ * `__tests__/depth-tokens.test.ts`.
  *
- * For now, successful TypeScript compilation of this file verifies:
- * 1. All exports exist in @/components/visual barrel
+ * Compilation of this file verifies:
+ * 1. All exports exist in the @/components/visual barrel
  * 2. No naming collisions between depth and decoration modules
- * 3. Type definitions are correct
+ * 3. Component prop types accept the documented usage
  */
 
 import React from 'react';

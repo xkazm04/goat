@@ -25,7 +25,10 @@ capabilities:
   lint: { command: "npm run lint", verified: true, verifiedAt: "2026-08-24" }
   typecheck: { command: "npm run typecheck", verified: true, verifiedAt: "2026-08-24" }
   docs-store-graph: { command: "npm run docs:store-graph", verified: true, verifiedAt: "2026-08-24" }
-  test: { command: "npm run test:e2e", verified: false }
+  # `test` is the unit runner (vitest), added 2026-08-24. The browser suite keeps
+  # its own capability name so a green report always says which population ran.
+  test: { command: "npm test", verified: true, verifiedAt: "2026-08-24" }
+  test-e2e: { command: "npm run test:e2e", verified: false }
   test-ui: { command: "npm run test:e2e:ui", verified: false }
   storybook: { command: "npm run storybook", verified: false }
   build-storybook: { command: "npm run build-storybook", verified: false }
@@ -33,7 +36,11 @@ capabilities:
 # What a green run of the above actually means. A capability that exists is not a
 # gate; recording the difference is the point.
 capabilityNotes:
-  unit-test: "ABSENT. No vitest/jest config or runner exists. `test` is Playwright e2e only."
+  unit-test: >-
+    vitest, added 2026-08-24 (vitest.config.ts). 79 tests over the store-registry
+    manifest + its derivations, the tier-boundary conventions, and the depth
+    tokens. Every suite carries a recorded negative control in its header
+    comment. `passWithNoTests: false`, so a run that executed zero files is red.
   lint: "Runs, but every custom rule in eslint.config.mjs is `warn` — it cannot fail."
   typecheck: "29 pre-existing errors as of 2026-08-24 (consensus route, bracket components, ranking-store). Not yet a clean baseline."
   gates: "No CI, no git hooks, no lint-staged. Nothing consumes any exit code above."
