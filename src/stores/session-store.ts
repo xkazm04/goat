@@ -414,7 +414,6 @@ export const useSessionStore = create<SessionStoreState>()(
         // this, keyboard quick-assign/navigation re-target already-ranked items.
         // require() mirrors grid-store's circular-import-safe accessor.
         try {
-          // eslint-disable-next-line @typescript-eslint/no-require-imports
           const backlogState = require('@/stores/backlog-store').useBacklogStore.getState();
           if (typeof backlogState?.isItemUsed === 'function') {
             return allItems.filter((item) => !backlogState.isItemUsed(item.id));

@@ -17,7 +17,6 @@ import { createGridReceiverId, isGridReceiverId } from '@/lib/dnd/transfer-proto
 import { normalizeImageUrl, extractTitle, safeString, safeStringArray } from './item-utils';
 
 import type { BaseItem, PlacedItem, PlacedItemSource } from '@/types/placed-item';
-import type { TransferableItem } from '@/lib/dnd/transfer-protocol';
 import type { NormalizedItem } from '@/stores/item-store/normalized-session';
 import type { BacklogItem } from '@/types/backlog-groups';
 import type { GridItemType, BacklogItemType } from '@/types/match';

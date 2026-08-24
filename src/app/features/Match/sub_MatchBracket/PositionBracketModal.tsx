@@ -20,7 +20,6 @@ import {
   BracketMatchup,
   BracketSize,
   deriveBracketData,
-  bracketToRanking,
   getBracketSizeForItems,
   findMatchupById,
   SeedingStrategy,

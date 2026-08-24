@@ -43,12 +43,13 @@ function SavedListCard({
   onRemove: (listId: string) => void;
 }) {
   const list = bookmark.list;
-  if (!list) return null;
 
-  const colors = getCategoryColor(list.category);
-
+  // Both callbacks are declared ABOVE the absent-list guard. They used to sit
+  // below an early `return null`, so a bookmark whose list failed to join
+  // changed this component's hook order — react-hooks/rules-of-hooks, held at
+  // `warn` and therefore never surfaced.
   const handlePlay = useCallback(() => {
-    onPlay(list as TopList);
+    if (list) onPlay(list as TopList);
   }, [onPlay, list]);
 
   const handleRemove = useCallback(
@@ -58,6 +59,10 @@ function SavedListCard({
     },
     [onRemove, bookmark.list_id]
   );
+
+  if (!list) return null;
+
+  const colors = getCategoryColor(list.category);
 
   return (
     <motion.div

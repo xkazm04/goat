@@ -1,6 +1,6 @@
 // Match System Types
 
-import type { BaseItem, PlacedItem } from './placed-item';
+import type { PlacedItem } from './placed-item';
 
 /**
  * GridItemType is now a type alias for PlacedItem.

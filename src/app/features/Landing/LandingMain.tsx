@@ -16,7 +16,6 @@ import { getCategoryColor } from "@/lib/helpers/getColors";
 import { FloatingShowcase } from "./FloatingShowcase";
 import { NeonArenaTheme } from "./shared";
 import { ContinueRankingBar } from "./sub_LandingLists/ContinueRankingBar";
-import { SavedListsSection } from "./sub_LandingLists/SavedListsSection";
 import { SectionHeader } from "./sub_LandingLists/SectionHeader";
 
 

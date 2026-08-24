@@ -314,7 +314,10 @@ export function useIsMobile(): boolean {
 }
 
 export function useIsDesktop(): boolean {
-  return useLayout().isDesktop || useLayout().isUltrawide;
+  // One call, not two: `useLayout() || useLayout()` short-circuits, so the
+  // second call ran only when the first returned falsey — a conditional hook.
+  const layout = useLayout();
+  return layout.isDesktop || layout.isUltrawide;
 }
 
 export function useSidebarState(): {

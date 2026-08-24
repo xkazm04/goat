@@ -25,10 +25,7 @@ import { logActivity } from '@/lib/activity/activity-logger';
 import {
   TransferableItem,
   TransferResult,
-  isGridReceiverId,
-  extractGridPosition,
   createGridReceiverId,
-  assertCanonicalGridId,
   createGridOnlyRouter,
   type DragOperationRouter,
   type OperationStoreContext,
@@ -39,12 +36,10 @@ import {
   createEmptyGrid,
 } from '@/lib/grid';
 import { GRID_LIMITS, TUTORIAL_GRID } from '@/lib/grid/constants';
-import { extractTitle } from '@/lib/items/item-utils';
 import { gridLogger } from '@/lib/logger';
 import { createLazyStoreAccessor } from '@/lib/stores/lazy-store-accessor';
 import {
   getValidationAuthority,
-  logValidationFailure,
   ValidationErrorCode,
 } from '@/lib/validation';
 import { BacklogItem } from '@/types/backlog-groups';
