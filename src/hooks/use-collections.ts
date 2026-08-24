@@ -7,6 +7,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
+import { emitErrorNotification } from "@/lib/errors/error-notification-store";
 import { listCollectionKeys, getCollectionInvalidationKeys } from "@/lib/query-keys/list-collections";
 import { useCollectionStore } from "@/stores/collection-store";
 import { useCurrentUser } from "@/stores/use-list-store";
@@ -308,7 +309,38 @@ export function useAddListsToCollection() {
         });
       }
     },
+    onError: (error, { collectionId }) =>
+      onMembershipWriteFailed(queryClient, collectionId, "collection-add-lists", error),
   });
+}
+
+
+/**
+ * What a failed collection-membership write owes the user and the cache.
+ *
+ * Registry: client-state/optimistic-write-path.
+ *
+ * These three mutations paint nothing in the query cache themselves — the
+ * arrangement the user sees during a drag lives in CollectionView's local
+ * state. So there is no snapshot here to compare-and-swap; the honest revert is
+ * to make the AUTHORITY re-answer, which discards the local arrangement the
+ * server refused.
+ *
+ * The second half is the one that was missing entirely:
+ * CollectionsDashboard.tsx caught every rejection with `console.error` and did
+ * nothing else, so a rejected reorder left the list in an order the server had
+ * refused, with no reconciliation and NO USER-VISIBLE SIGNAL. A local state that
+ * quietly keeps a refused arrangement is indistinguishable from one the server
+ * accepted. Losing the revert must never mean losing the failure.
+ */
+function onMembershipWriteFailed(
+  queryClient: ReturnType<typeof useQueryClient>,
+  collectionId: string,
+  source: string,
+  error: unknown,
+) {
+  queryClient.invalidateQueries({ queryKey: listCollectionKeys.detail(collectionId) });
+  emitErrorNotification(error instanceof Error ? error : new Error(String(error)), { source });
 }
 
 /**
@@ -342,6 +374,8 @@ export function useRemoveListFromCollection() {
         });
       }
     },
+    onError: (error, { collectionId }) =>
+      onMembershipWriteFailed(queryClient, collectionId, "collection-remove-list", error),
   });
 }
 
@@ -367,6 +401,8 @@ export function useReorderCollectionLists() {
         });
       }
     },
+    onError: (error, { collectionId }) =>
+      onMembershipWriteFailed(queryClient, collectionId, "collection-reorder-lists", error),
   });
 }
 

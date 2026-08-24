@@ -68,13 +68,62 @@ and is what the conversion removed.
   placeholder is now gated on `hasContent`, which fixed a live
   `loaded -> loading` edge (a background refresh blanked the whole grid)
 
-## Not covered here
+## The write path
 
-Per-entity **operation** status (this row is saving, that row is deleting) is a
-different machine — one per independently-running operation instance, keyed by
-durable identity, because a single scalar `saving` flag for a list where each row
-has its own action corrupts the second operation's lifecycle whenever two
-overlap. That machine does not live here yet; `hooks/useOptimisticMutation.ts`
-currently takes a whole-query snapshot and restores it unconditionally on error,
-which is the same defect at the write end. Tracked as a `deviation` row in
-`.ai/registry-conformance.md` (`client-state/optimistic-write-path`).
+`entity-mutex.ts` and `optimistic-revert.ts` are the same discipline at the
+write end, and they address the **two sides of one defect**: an unconditional
+rollback assumes it is the only writer, and in a client with concurrent
+mutations and background revalidation it never is. Neither substitutes for the
+other.
+
+### `entity-mutex.ts` — serialize per entity
+
+At most one in-flight mutation per entity identity; a second attempt **waits**
+(it is not dropped — a discarded toggle reads as a broken control and the user
+presses it again). Then snapshot N is, by construction, the settled state of
+N−1, and overlapping snapshots stop existing rather than being detected after
+the fact.
+
+The details that are not optional:
+
+- the **whole attempt** is inside the critical section — snapshot, paint,
+  request, settle;
+- waiting on a predecessor **does not inherit its failure**, or one failed write
+  becomes a run of failures on unrelated intents;
+- `release()` clears the slot **only if this lease is still the holder**;
+- the holder **names its reaper** — a slot whose holder never settles would
+  wedge that entity permanently, so a lease expires and the abandoned attempt
+  discovers on settlement that it owns nothing and stays inert;
+- keys are built by `makeOperationKey(family, identity)`, which **refuses**
+  rather than producing a colliding key. A composite key whose separator can
+  appear in either component corrupts a *different* entity's lifecycle, which is
+  among the hardest defects to trace back.
+
+### `optimistic-revert.ts` — compare-and-swap
+
+Revert **only while the exact value this attempt wrote still holds**. A refetch
+landing between the patch and the failure commits the authority's truth; an
+unconditional rollback then resurrects a value the authority has just
+contradicted. Comparison is **structural, not by reference** — a patch is usually
+stored as the very object it was handed (identity comparison trivially true, the
+guard does nothing), and a refetch rebuilds every object (identity comparison
+false, a legitimate revert silently skipped).
+
+An entity that is **gone** is also a newer truth: the revert is dropped, never
+reinserted.
+
+A dropped revert is **normal, not an error** — but losing the revert must never
+mean losing the **failure**, which is why `useOptimisticMutation` emits its error
+notification outside every revert branch. That is the case where it most often
+goes wrong, because the row the failure would have been shown on is exactly the
+one that disappeared.
+
+### Adopted at
+
+- `hooks/useOptimisticMutation.ts` — the mutex and the CAS revert
+- `hooks/use-top-lists.ts` — `useUpdateList` and `useDeleteList` declare an
+  `entityKey`; `useCloneList` deliberately does not, and says why at the site
+- `hooks/use-collections.ts` — the three membership writes reconcile by re-asking
+  the authority and raise a user-visible failure
+- `features/Collections/CollectionsDashboard.tsx` — three `console.error`
+  swallows that were the only handler for a refused write

@@ -7,6 +7,7 @@ import {
 } from '@tanstack/react-query';
 
 import { goatApi } from '@/lib/api';
+import { makeOperationKey } from '@/lib/async-state/entity-mutex';
 import { CACHE_TTL_MS , CACHE_TAGS } from '@/lib/cache/unified-cache';
 import { topListsKeys , FeaturedListsParams } from '@/lib/query-keys/top-lists';
 import {
@@ -227,6 +228,10 @@ export const useCreateList = (
 export const useUpdateList = () => {
   return useOptimisticMutation<TopList, { listId: string; data: UpdateListRequest }>({
     mutationFn: ({ listId, data }) => goatApi.lists.update(listId, data),
+    // Serialized per list. Two rapid edits to ONE list used to have attempt B
+    // snapshot attempt A's unconfirmed paint; now B waits for A to settle, so
+    // every snapshot is the settled state by construction.
+    entityKey: ({ listId }) => makeOperationKey('list-update', listId),
     optimisticUpdates: (variables) => [
       {
         queryKey: topListsKeys.list(variables.listId),
@@ -248,6 +253,10 @@ export const useDeleteList = () => {
 
   return useOptimisticMutation<{ message: string }, string>({
     mutationFn: (listId: string) => goatApi.lists.delete(listId),
+    // Same list, different family: a delete and an update of one list are
+    // different operation kinds and do not need to exclude each other, but two
+    // deletes of the same list do.
+    entityKey: (listId) => makeOperationKey('list-delete', listId),
     optimisticUpdates: (listId) => [
       {
         // Optimistically remove from user lists cache
@@ -274,6 +283,9 @@ export const useCloneList = () => {
   >({
     mutationFn: ({ listId, userId, modifications }) =>
       goatApi.lists.clone(listId, userId, modifications),
+    // No entityKey, deliberately: a clone paints NOTHING optimistically
+    // (optimisticUpdates is empty), so there is no snapshot for a concurrent
+    // attempt to corrupt. Recorded here rather than left absent by default.
     optimisticUpdates: [],
     invalidateOnSettled: [topListsKeys.lists()],
     invalidateTags: [CACHE_TAGS.LISTS, CACHE_TAGS.USER_LISTS],

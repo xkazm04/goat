@@ -23,6 +23,8 @@
 
 import { useMutation, useQueryClient, type QueryKey } from '@tanstack/react-query';
 
+import { optimisticEntityMutex, type MutexLease } from '@/lib/async-state/entity-mutex';
+import { decideRevert, type OptimisticWrite } from '@/lib/async-state/optimistic-revert';
 import { invalidateByTags } from '@/lib/cache/query-cache-config';
 import { emitErrorNotification } from '@/lib/errors/error-notification-store';
 
@@ -43,18 +45,22 @@ export interface OptimisticUpdate<TVariables> {
 }
 
 /**
- * Snapshot of a query's previous data for rollback.
+ * What one attempt wrote to one query key: the value that was there before, and
+ * the value this attempt painted. Both halves are needed — the first to restore,
+ * the SECOND to decide whether restoring is still the right thing to do.
+ * Recording only the snapshot is the naive recipe.
  */
-interface CacheSnapshot {
+interface CacheWrite extends OptimisticWrite {
   queryKey: QueryKey;
-  data: unknown;
 }
 
 /**
- * Context carried through the mutation lifecycle for rollback.
+ * Context carried through the mutation lifecycle.
  */
 interface OptimisticContext {
-  snapshots: CacheSnapshot[];
+  writes: CacheWrite[];
+  /** Null when the caller declared no entityKey, i.e. opted out of the mutex. */
+  lease: MutexLease | null;
 }
 
 /**
@@ -99,6 +105,21 @@ export interface UseOptimisticMutationOptions<TData, TVariables> {
 
   /** Number of retries (default: 1 for mutations) */
   retry?: number;
+
+  /**
+   * The DURABLE identity of the entity this mutation writes, derived from the
+   * variables. When supplied, at most one attempt against that identity runs at
+   * a time and the next one WAITS — so a snapshot is, by construction, the
+   * settled state rather than a predecessor's unconfirmed paint.
+   *
+   * Must be the entity's minted identity, never a row index or a display name
+   * (identity-survives-reuse). Return `null` to opt an individual call out.
+   *
+   * Omitting it entirely is a deliberate choice with a cost: two rapid actions
+   * on one entity will corrupt each other's rollback. Say why in a comment at
+   * the call site rather than leaving it absent by default.
+   */
+  entityKey?: (variables: TVariables) => string | null;
 }
 
 // =============================================================================
@@ -130,6 +151,7 @@ export function useOptimisticMutation<TData = unknown, TVariables = void>(
     onRetry,
     mutationKey,
     retry = 1,
+    entityKey,
   } = options;
 
   return useMutation<TData, Error, TVariables, OptimisticContext>({
@@ -138,6 +160,13 @@ export function useOptimisticMutation<TData = unknown, TVariables = void>(
     retry,
 
     onMutate: async (variables) => {
+      // THE WHOLE ATTEMPT IS INSIDE THE CRITICAL SECTION — acquire, snapshot,
+      // paint, request, settle. Splitting the paint out to keep the interface
+      // responsive would reintroduce exactly the overlapping snapshot the mutex
+      // exists to prevent. The lease is released in onSettled.
+      const key = entityKey?.(variables) ?? null;
+      const lease = key ? await optimisticEntityMutex.acquire(key) : null;
+
       // Resolve update descriptors (static array or dynamic function)
       const updates =
         typeof optimisticUpdates === 'function'
@@ -149,35 +178,64 @@ export function useOptimisticMutation<TData = unknown, TVariables = void>(
         updates.map((u) => queryClient.cancelQueries({ queryKey: u.queryKey }))
       );
 
-      // Snapshot current cache state for each targeted query
-      const snapshots: CacheSnapshot[] = updates.map((u) => ({
-        queryKey: u.queryKey,
-        data: queryClient.getQueryData(u.queryKey),
-      }));
-
-      // Apply optimistic updates
+      // Snapshot AND record what we paint. The painted value is what makes the
+      // revert a compare-and-swap instead of a guess.
+      const writes: CacheWrite[] = [];
       for (const update of updates) {
-        const current = queryClient.getQueryData(update.queryKey);
-        const optimistic = update.updater(current, variables);
-        queryClient.setQueryData(update.queryKey, optimistic);
+        const previous = queryClient.getQueryData(update.queryKey);
+        const painted = update.updater(previous, variables);
+        queryClient.setQueryData(update.queryKey, painted);
+        writes.push({
+          queryKey: update.queryKey,
+          label: JSON.stringify(update.queryKey),
+          previous,
+          painted,
+        });
       }
 
-      return { snapshots };
+      return { writes, lease };
     },
 
     onError: (error, variables, context) => {
-      // Rollback all snapshots
-      if (context?.snapshots) {
-        for (const snapshot of context.snapshots) {
-          queryClient.setQueryData(snapshot.queryKey, snapshot.data);
+      // An attempt that no longer owns its slot — reaped after a timeout, or
+      // cleared by an eviction — must stay INERT. Something else has taken over
+      // this entity, and writing now would be two mutations proceeding
+      // concurrently in precisely the case the mutex was built for.
+      const stillOurs = !context?.lease || context.lease.isHeld();
+
+      let reverted = 0;
+      let dropped = 0;
+      if (stillOurs && context?.writes) {
+        for (const write of context.writes) {
+          const current = queryClient.getQueryData(write.queryKey);
+          const verdict = decideRevert(write, current);
+          if (verdict.action === 'revert') {
+            queryClient.setQueryData(write.queryKey, write.previous);
+            reverted += 1;
+          } else {
+            // A dropped revert is NORMAL, not an error: a refetch or a later
+            // mutation has already written a newer truth, and restoring the
+            // snapshot would resurrect a value the authority has contradicted.
+            dropped += 1;
+          }
         }
       }
 
-      // Show error notification toast
+      // LOSING THE REVERT MUST NEVER MEAN LOSING THE FAILURE. This emit is
+      // outside every branch above on purpose — including the case where the
+      // entity vanished, which is exactly when the row that would have shown
+      // the failure is the one that disappeared.
       emitErrorNotification(error, {
         source: notificationSource ?? 'optimistic-mutation',
         onRetry: onRetry ? () => onRetry(variables) : undefined,
       });
+
+      if (process.env.NODE_ENV !== 'production' && dropped > 0) {
+        console.debug(
+          `[optimistic] ${reverted} revert(s) applied, ${dropped} dropped as overwritten or gone. ` +
+            `Dropping is correct; the failure was still reported.`,
+        );
+      }
 
       // Call user's onError callback
       onError?.(error, variables);
@@ -193,7 +251,12 @@ export function useOptimisticMutation<TData = unknown, TVariables = void>(
       onSuccess?.(data, variables);
     },
 
-    onSettled: (data, error, variables) => {
+    onSettled: (data, error, variables, context) => {
+      // Release BEFORE invalidating, so the next queued attempt for this entity
+      // starts against a settled slot. `release()` clears the slot only if this
+      // lease is still the holder.
+      context?.lease?.release();
+
       // Always invalidate specified queries to ensure server truth
       if (invalidateOnSettled) {
         for (const queryKey of invalidateOnSettled) {

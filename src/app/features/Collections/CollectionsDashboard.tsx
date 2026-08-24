@@ -133,7 +133,13 @@ export const CollectionsDashboard = memo(function CollectionsDashboard({
       try {
         await removeList({ collectionId: selectedCollection.id, listId });
       } catch (error) {
-        console.error("Failed to remove list from collection:", error);
+        // Swallowed DELIBERATELY, and only since 2026-08-25: the mutation
+        // hook (useRemoveListFromCollection) now reconciles by re-asking the
+        // authority AND raises a user-visible notification. Catching here
+        // only stops a rejected promise becoming an unhandled rejection.
+        // Before that it was the ONLY handler, so a refused write left the
+        // arrangement on screen with no reconciliation and no signal.
+        console.debug("Failed to remove list from collection:", error);
       }
     },
     [removeList, selectedCollection]
@@ -148,7 +154,13 @@ export const CollectionsDashboard = memo(function CollectionsDashboard({
       try {
         await reorderLists({ collectionId: selectedCollection.id, listIds });
       } catch (error) {
-        console.error("Failed to reorder lists:", error);
+        // Swallowed DELIBERATELY, and only since 2026-08-25: the mutation
+        // hook (useReorderCollectionLists) now reconciles by re-asking the
+        // authority AND raises a user-visible notification. Catching here
+        // only stops a rejected promise becoming an unhandled rejection.
+        // Before that it was the ONLY handler, so a refused write left the
+        // arrangement on screen with no reconciliation and no signal.
+        console.debug("Failed to reorder lists:", error);
       }
     },
     [reorderLists, selectedCollection]
@@ -166,7 +178,13 @@ export const CollectionsDashboard = memo(function CollectionsDashboard({
       try {
         await addLists({ collectionId: selectedCollection.id, listIds });
       } catch (error) {
-        console.error("Failed to add lists to collection:", error);
+        // Swallowed DELIBERATELY, and only since 2026-08-25: the mutation
+        // hook (useAddListsToCollection) now reconciles by re-asking the
+        // authority AND raises a user-visible notification. Catching here
+        // only stops a rejected promise becoming an unhandled rejection.
+        // Before that it was the ONLY handler, so a refused write left the
+        // arrangement on screen with no reconciliation and no signal.
+        console.debug("Failed to add lists to collection:", error);
       }
     },
     [addLists, selectedCollection]
