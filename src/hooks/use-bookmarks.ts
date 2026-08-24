@@ -50,7 +50,7 @@ async function fetchBookmarks(userId: string): Promise<BookmarksData> {
 export function useBookmarks(userId: string) {
   const queryClient = useQueryClient();
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: bookmarkKeys.user(userId),
     queryFn: () => fetchBookmarks(userId),
     enabled: !!userId,
@@ -267,6 +267,10 @@ export function useBookmarks(userId: string) {
     bookmarksByFolder,
     isLoading,
     error,
+    // A failure state without a retry that reissues the SAME request is not a
+    // failure state, it is an apology. Exposed 2026-08-24 alongside the fix in
+    // SavedListsSection (registry async-ui-states/failure-states).
+    refetch,
     isBookmarked,
     toggleBookmark,
     addBookmark: addBookmark.mutate,

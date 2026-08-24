@@ -2,9 +2,11 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import {
+  AlertTriangle,
   Bookmark,
   FolderPlus,
   Clock,
+  RefreshCw,
   Trash2,
   X,
 } from "lucide-react";
@@ -239,6 +241,14 @@ export function SavedListsSection({ className }: SavedListsSectionProps) {
     folders,
     bookmarksByFolder,
     isLoading,
+    // `error` was returned by useBookmarks all along and never taken here. The
+    // result: a failed fetch left `bookmarks` at [], which fell into the
+    // "no bookmarks" early return below and DELETED THE WHOLE SECTION —
+    // indistinguishable, to the user, from having saved nothing.
+    // Failure must be spelled differently from empty success
+    // (registry async-ui-states/failure-states).
+    error,
+    refetch,
     isBookmarked,
     removeBookmark,
     createFolder,
@@ -287,9 +297,70 @@ export function SavedListsSection({ className }: SavedListsSectionProps) {
     return bookmarksByFolder[activeFolder] || [];
   }, [activeFolder, bookmarks, bookmarksByFolder]);
 
-  // Don't render if not loaded or no bookmarks
+  // Precedence is load -> FAIL -> empty -> data, and the failure arm must come
+  // before the empty arm or the two collapse into one. `list-grid.tsx` is the
+  // one place in this repo that already got this right; this now matches it.
   if (!isLoaded || !tempUserId) return null;
-  if (!isLoading && bookmarks.length === 0) return null;
+
+  // Nothing held AND nothing wrong: the section genuinely has no reason to
+  // exist on the page, so it stays absent. This is the ONLY honest use of the
+  // early return.
+  if (!isLoading && !error && bookmarks.length === 0) return null;
+
+  // Failed with nothing held: say so, and offer a retry that reissues exactly
+  // the request that failed. Deliberately NOT the empty state, and deliberately
+  // not silence.
+  if (error && bookmarks.length === 0) {
+    return (
+      <NeonArenaTheme
+        variant="minimal"
+        as="section"
+        className={`py-16 px-6 ${className}`}
+        config={{ showLineAccents: true, glowIntensity: 0.06 }}
+        data-testid="saved-lists-section"
+      >
+        <div className="max-w-6xl mx-auto relative">
+          <SectionHeader
+            icon={Bookmark}
+            title="Saved Lists"
+            subtitle="Your bookmarked rankings, organized just how you like"
+            testIdPrefix="saved-lists"
+            gradientColors={{
+              start: "rgba(251, 191, 36, 0.12)",
+              end: "rgba(245, 158, 11, 0.08)",
+            }}
+          />
+          <div
+            className="text-center py-12 bg-gray-800/40 border border-gray-700/50 rounded-lg"
+            data-testid="saved-lists-error"
+            role="alert"
+            aria-live="assertive"
+          >
+            <AlertTriangle className="w-8 h-8 text-amber-400 mx-auto mb-3" />
+            {/* States what is known, at the user's altitude — the claim is
+                "we could not look", never "you have none". */}
+            <p className="text-sm text-slate-300 mb-1">
+              Couldn&apos;t load your saved lists
+            </p>
+            <p className="text-xs text-slate-500 mb-4">
+              Your bookmarks are safe — we just couldn&apos;t reach them right now.
+            </p>
+            <button
+              onClick={() => refetch()}
+              disabled={isLoading}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600
+                disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-white text-xs
+                transition-colors focus-ring"
+              data-testid="saved-lists-retry-btn"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
+              {isLoading ? "Retrying…" : "Try again"}
+            </button>
+          </div>
+        </div>
+      </NeonArenaTheme>
+    );
+  }
 
   return (
     <NeonArenaTheme
@@ -416,8 +487,32 @@ export function SavedListsSection({ className }: SavedListsSectionProps) {
           </motion.div>
         )}
 
-        {/* Empty state for filtered view */}
-        {!isLoading && displayBookmarks.length === 0 && bookmarks.length > 0 && (
+        {/* Failed refresh while content is held: degrade, never destroy. The
+            bookmarks below were true recently and stay rendered; the failure is
+            admitted ambiently instead of blanking the region. */}
+        {error && bookmarks.length > 0 && (
+          <div
+            className="flex items-center justify-center gap-2 mb-4 text-xs text-amber-400/80"
+            role="status"
+            aria-live="polite"
+            data-testid="saved-lists-stale-notice"
+          >
+            <AlertTriangle className="w-3.5 h-3.5" />
+            <span>Couldn&apos;t refresh — showing your last loaded lists.</span>
+            <button
+              onClick={() => refetch()}
+              disabled={isLoading}
+              className="underline hover:text-amber-300 disabled:opacity-50 focus-ring rounded"
+              data-testid="saved-lists-stale-retry-btn"
+            >
+              {isLoading ? "Retrying…" : "Retry"}
+            </button>
+          </div>
+        )}
+
+        {/* Empty state for filtered view — gated on `!error` so a dead fetch
+            never renders as "this folder is empty". */}
+        {!isLoading && !error && displayBookmarks.length === 0 && bookmarks.length > 0 && (
           <div className="text-center py-12">
             <Clock className="w-8 h-8 text-slate-600 mx-auto mb-3" />
             <p className="text-sm text-slate-500">No lists in this folder yet</p>
