@@ -221,3 +221,18 @@ What is NOT fixed by that deletion, and should not be read as fixed: the
 cross-store coupling itself. The drag path still coordinates stores directly
 through `getState()`. Removing the unadopted seam removed a structure that made
 the coupling look like it had an owner; it did not give it one.
+
+That open question is now carried where it can be checked rather than in prose
+here: **`.ai/structural-backlog.json`, spec `match-store-getstate-fanout`** —
+accepted, grounded in two named files, with the trade stated (what it buys, what
+it spends, who collects each), an invariant, an ordered set of independently
+landable steps, and a review-by date. `npm run structure:check` asserts on every
+run that the spec is still grounded in a tree that has not moved under it.
+
+This section is where a four-phase migration plan used to live whose "Success
+Criteria" checkboxes were ticked for work that had not landed — `dragHandlers.ts`
+was listed as shipped and has never existed in this tree. A plan that marks
+itself complete is not a loop; it is a document that has stopped being able to be
+wrong. The backlog can be wrong, on purpose: a spec marked `executed` whose stop
+condition does not hold fails the check, which is the self-ticking checkbox
+caught by machine rather than by the next reader.

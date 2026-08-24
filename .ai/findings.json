@@ -1578,9 +1578,16 @@
       "anchorFile": "src/app/features/Match/sub_DropZone/hooks/useMagneticSnap.ts",
       "anchorLines": "62",
       "anchorRaw": "src/app/features/Match/sub_DropZone/hooks/useMagneticSnap.ts:62",
-      "state": "open",
+      "state": "fixed",
       "firstSeen": "2026-06-16",
-      "reason": "Re-read 2026-08-24 and STILL OPEN, and now worse than as filed: useMagneticSnap in sub_DropZone/hooks/ is still consumed by no component (only the sub_DropZone/index.ts barrel re-exports it, which is the shadow-declaration shape that makes a reference counter certify it alive), AND a SECOND independent implementation now exists at src/components/patterns/drag-drop/useMagneticSnap.ts. One dead capability became two."
+      "reason": "Closed by DELETION, which is one of the two exits this finding itself named (\"either consume useMagneticSnap in SimpleDropZone to deliver the feature, or delete the dead hook and drop the claim\"). Both implementations are gone — sub_DropZone/hooks/useMagneticSnap.ts and the second one at src/components/patterns/drag-drop/useMagneticSnap.ts that was written after this finding was filed. Verified in the tree: neither file exists and no barrel exports the symbol. NOT fully closed as a product matter: drop-zone-highlight-store still carries magneticState / updateMagneticState and DropZoneHighlightContext still reads them, so the store slice remains and is recorded on the structural spec magnetic-snap-one-implementation as surviving vocabulary.",
+      "fixedIn": "3afc62b",
+      "verifiedAt": "2026-08-24",
+      "probe": {
+        "file": "src/app/features/Match/sub_DropZone/index.ts",
+        "absent": "^[ \\t]*export[^\\n]*useMagneticSnap",
+        "note": "Regression probe on the BARREL EXPORT, not on the symbol name: the barrel still names useMagneticSnap in the autopsy comment left at the deletion site, deliberately, so a substring probe would fire on the very comment that explains the fix."
+      }
     },
     {
       "key": "e9a20670fd25",

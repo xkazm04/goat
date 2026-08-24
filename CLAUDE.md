@@ -65,6 +65,15 @@ npm run findings:check          # the findings ledger (.ai/findings.json), DERIV
 npm run findings                # what the ledger can answer that a snapshot
                                 # cannot: state, severity, anchor liveness, age.
 npm run findings:ingest         # re-derive after editing a report file.
+npm run structure:check         # the structural improvement loop
+                                # (.ai/structural-backlog.json). Fails if a spec
+                                # is no longer grounded in the tree it quotes, if
+                                # a spec marked `executed` does not meet its own
+                                # stop condition, or if a decline carries no
+                                # reason. Read this BEFORE proposing a structural
+                                # change — one of its five specs is a recorded
+                                # DECLINE, and re-proposing it needs new evidence.
+npm run structure               # the loop's memory, readable.
 ```
 
 There are deliberately **no git hooks**. CI covers the push rung; the unguarded

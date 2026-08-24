@@ -170,6 +170,18 @@ jobs:
       # Exit 2 (the parser stopped seeing 190 findings over 38 contexts) means
       # the instrument could not run — the script's own output says which.
       - run: npm run findings:check
+      # BLOCKS. Input: the tree plus .ai/structural-backlog.json. Asserts every
+      # structural spec is still GROUNDED — the files it names exist and still
+      # say what it quotes — and that a spec marked `executed` actually meets
+      # its stop condition. That last one is the check this file exists for: the
+      # store-graph document used to carry a migration plan whose success
+      # criteria were ticked for work that had never landed.
+      #
+      # The review-by DATE is reported, never gated: its input is the calendar,
+      # not the tree, so blocking on it would wall an unrelated change for
+      # something its author did not do. Same reasoning as the absent
+      # supply-chain job.
+      - run: npm run structure:check
 
   docs-same-change:
     name: docs same-change

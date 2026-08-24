@@ -97,6 +97,12 @@
       "note": "DERIVED. The 63 report files are the authority for what was found; the ledger holds identity, state and probes. Editing a report re-derives the finding's key, so `npm run findings:check` fails until the ledger is re-ingested — which is stronger than a same-change nag, so this entry is declared but not nagged."
     },
     {
+      "id": "structural-backlog-reader",
+      "source": ["scripts/structural-backlog.mjs"],
+      "reference": ".ai/structural-backlog.json",
+      "note": "A change to the status vocabulary, the grounding clause forms or the stop-condition semantics reaches the backlog's own header, which states all three. A message-wording change does not."
+    },
+    {
       "id": "findings-reader",
       "source": ["scripts/findings.mjs"],
       "reference": ".ai/findings.json",

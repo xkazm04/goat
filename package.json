@@ -16,6 +16,8 @@
     "findings": "node scripts/findings.mjs --report",
     "findings:check": "node scripts/findings.mjs --check",
     "findings:ingest": "node scripts/findings.mjs --ingest",
+    "structure": "node scripts/structural-backlog.mjs --report",
+    "structure:check": "node scripts/structural-backlog.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",

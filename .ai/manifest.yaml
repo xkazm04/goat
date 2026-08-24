@@ -36,6 +36,9 @@ capabilities:
   # findings in docs/harness/ui-bug-combined-2026-06-16/, which had none.
   findings: { command: "npm run findings", verified: true, verifiedAt: "2026-08-24" }
   findings-check: { command: "npm run findings:check", verified: true, verifiedAt: "2026-08-24" }
+  # The structural improvement loop's memory and its reader.
+  structure: { command: "npm run structure", verified: true, verifiedAt: "2026-08-24" }
+  structure-check: { command: "npm run structure:check", verified: true, verifiedAt: "2026-08-24" }
   docs-coupling-same-change:
     { command: "npm run docs:coupling -- --changed --base <ref>", verified: true, verifiedAt: "2026-08-24" }
   # `test` is the unit runner (vitest), added 2026-08-24. The browser suite keeps
@@ -148,6 +151,36 @@ capabilityNotes:
     Nothing was lost. The only live findings any of them held are held by an
     instrument that recomputes on demand, which is the difference between a
     sensor and a souvenir.
+  structure: >-
+    Added 2026-08-24. `.ai/structural-backlog.json` is the structural improvement
+    loop's MEMORY — what was accepted, declined, executed or retired, and never
+    what was computed. Every measurement is re-derived from the tree on each run
+    and is deliberately absent from the file: a derived number that outlives the
+    tree it came from is a proxy that has already diverged and does not announce
+    it. Five specs: 2 accepted, 2 executed, 1 DECLINED WITH ITS REASON RECORDED
+    (an undocumented decline is re-proposed every pass forever).
+    What replaced what: docs/STORE_DEPENDENCY_GRAPH.md used to carry a four-phase
+    migration plan whose "Success Criteria" checkboxes were ticked for work that
+    had not landed — dragHandlers.ts was listed as shipped and has never existed
+    in this tree. A plan that marks itself complete is not a loop. This one can be
+    wrong on purpose: a spec marked `executed` whose stop condition does not hold
+    FAILS the check.
+    Blocking checks are all input-deterministic (the tree): grounding files exist
+    and still say what the spec quotes; accepted specs carry target, trade
+    (buys/spends/who-collects), invariant, stop condition and review-by; declines
+    and retirements carry a reason; stop conditions are evaluated against the tree
+    in both directions. The review-by DATE is reported and never gated — its input
+    is the calendar, so blocking on it would wall an unrelated change, the same
+    reasoning that keeps the supply-chain job out of this pipeline.
+    Proved red six ways: self-ticking checkbox (executed, stop condition unmet),
+    grounding file gone, decline with no reason, accepted with no trade, quoted
+    relation changed, and an empty backlog (exit 2 — a loop that found nothing and
+    a loop that could not read the tree must be spelled differently).
+    Its very first run refused two specs this session had written, because their
+    deletions had not landed yet. Its second finding was about itself: a
+    `mustNotContain` predicate fired on the AUTOPSY COMMENT left at a deletion
+    site, so the grounding clauses now take regexes and assert on export
+    statements rather than on substrings.
   supply-chain: >-
     ABSENT, deliberately. An advisory-feed check reads an input that moves
     without this repository, so it must not block: a advisory published
