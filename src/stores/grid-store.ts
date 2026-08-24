@@ -44,6 +44,9 @@ import {
 } from '@/lib/validation';
 import { BacklogItem } from '@/types/backlog-groups';
 import { GridItemType } from '@/types/match';
+
+import { GRID_STORE_PERSIST_VERSION, migrateGridState } from './grid-store-migrations';
+
 /**
  * Resize a grid to the target size, rescuing matched items that would be
  * truncated by relocating them to empty slots within the new bounds.
@@ -1132,6 +1135,30 @@ export const useGridStore = create<GridStoreState>()(
     }),
     {
       name: 'grid-store',
+      // The persisted shape is a CONTRACT WITH FUTURE VERSIONS, so it carries a
+      // version and routes through an append-only chain. See
+      // ./grid-store-migrations.ts for the chain and the rule for adding steps.
+      //
+      // Introducing this strands nothing: zustand reports a stored payload with
+      // no `version` field as version 0, which is exactly what every payload
+      // written before 2026-08-24 is, and step 0->1 is the shape fix that used
+      // to run inline in onRehydrateStorage below.
+      version: GRID_STORE_PERSIST_VERSION,
+      migrate: (persisted, version) => {
+        const { state, outcome, detail } = migrateGridState(persisted, version);
+        if (outcome !== 'current') {
+          // A reset must be distinguishable from a first run — "your grid was
+          // reset" and "welcome" are different facts, and only one of them is
+          // worth investigating.
+          const log = outcome === 'migrated' ? gridLogger.info : gridLogger.warn;
+          log(`[grid-store persist] ${detail}`);
+        }
+        // null means "could not be rescued": zustand then keeps the store's
+        // own initial state. Never throw here — a corrupt payload that
+        // prevents launch turns a data problem into an unrecoverable product
+        // problem, because the payload survives the restart the user will try.
+        return (state ?? undefined) as unknown as GridStoreState | undefined;
+      },
       partialize: (state) => ({
         gridItems: state.gridItems,
         maxGridSize: state.maxGridSize,
@@ -1140,56 +1167,39 @@ export const useGridStore = create<GridStoreState>()(
         listGridCache: state.listGridCache,
         listGridCacheOrder: state.listGridCacheOrder,
       }),
-      // Re-compute statistics on hydration and restore correct list's grid from cache
+      /**
+       * NARROWING ONLY — no shape migration here any more.
+       *
+       * Everything that reshapes a payload now lives in the versioned chain
+       * above, which runs once per version bump. What remains is what genuinely
+       * belongs at rehydration: recomputing derived state from its inputs (a
+       * derivation must not outlive them), and resolving the persisted
+       * currentListId against the cache it points into.
+       */
       onRehydrateStorage: () => (state) => {
-        if (state) {
-          // Migrate pre-PlacedItem grid items: ensure every item has a `context` envelope
-          const migrateGridItems = (items: GridItemType[]) => {
-            for (let i = 0; i < items.length; i++) {
-              if (!items[i].context) {
-                const legacy = items[i] as GridItemType & { matched?: boolean };
-                items[i] = {
-                  ...items[i],
-                  context: {
-                    source: 'grid',
-                    matched: legacy.matched ?? (items[i].item != null),
-                  },
-                };
-              }
-            }
-          };
+        if (!state) return;
 
-          // Migrate current grid items
-          if (state.gridItems) {
-            migrateGridItems(state.gridItems);
-            state.gridStatistics = computeGridStatistics(state.gridItems);
-          }
+        // gridStatistics is DERIVED and is persisted only to avoid a first-paint
+        // flash; recompute it so it can never disagree with the items it
+        // summarises.
+        if (state.gridItems) {
+          state.gridStatistics = computeGridStatistics(state.gridItems);
+        }
 
-          // Migrate cached grids
-          if (state.listGridCache) {
-            for (const cached of Object.values(state.listGridCache)) {
-              if (cached.gridItems) {
-                migrateGridItems(cached.gridItems);
-              }
-            }
-          }
+        // A payload that skipped the chain (fresh install, or migrate returned
+        // defaults) may have neither field. Cheap and total.
+        if (!state.listGridCache) state.listGridCache = {};
+        if (!state.listGridCacheOrder) state.listGridCacheOrder = [];
 
-          // Ensure listGridCache and order exist
-          if (!state.listGridCache) {
-            state.listGridCache = {};
-          }
-          if (!state.listGridCacheOrder) {
-            // Reconstruct order from cache keys if missing (migration)
-            state.listGridCacheOrder = Object.keys(state.listGridCache);
-          }
-
-          // If we have a currentListId, ensure the current grid is from that list's cache
-          if (state.currentListId && state.listGridCache[state.currentListId]) {
-            const cached = state.listGridCache[state.currentListId];
-            state.gridItems = cached.gridItems;
-            state.maxGridSize = cached.maxGridSize;
-            state.gridStatistics = computeGridStatistics(cached.gridItems);
-          }
+        // Semantic check, not a shape check: currentListId is a reference into
+        // the cache, and a reference into data that no longer exists is
+        // resolved here rather than left to surface as a ghost three screens
+        // later.
+        if (state.currentListId && state.listGridCache[state.currentListId]) {
+          const cached = state.listGridCache[state.currentListId];
+          state.gridItems = cached.gridItems;
+          state.maxGridSize = cached.maxGridSize;
+          state.gridStatistics = computeGridStatistics(cached.gridItems);
         }
       },
     }
