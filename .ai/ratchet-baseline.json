@@ -11,15 +11,15 @@
   },
   "measuredAt": "2026-08-24",
   "instrument": {
-    "filesWalked": 981,
-    "minFilesWalked": 784
+    "filesWalked": 982,
+    "minFilesWalked": 785
   },
   "buckets": {
     "docs:unmappedAreas": 69,
     "eslint:@next/next/no-html-link-for-pages": 1,
     "eslint:@next/next/no-img-element": 31,
     "eslint:import/no-anonymous-default-export": 2,
-    "eslint:import/order": 68,
+    "eslint:import/order": 67,
     "eslint:jsx-a11y/click-events-have-key-events": 23,
     "eslint:jsx-a11y/html-has-lang": 2,
     "eslint:jsx-a11y/label-has-associated-control": 43,
@@ -38,7 +38,7 @@
     "eslint:react/no-unescaped-entities": 23,
     "eslint:storybook/no-renderer-packages": 1,
     "eslint:unused-imports/no-unused-vars": 223,
-    "knip:unusedExports": 1330,
+    "knip:unusedExports": 1329,
     "knip:unusedFiles": 230,
     "knip:unusedTypes": 735,
     "typecheck:errors": 23

@@ -35,12 +35,32 @@ export interface PlacePrimitive {
 export interface RemovePrimitive {
   readonly kind: 'remove';
   readonly position: number;
+  /**
+   * WHICH ITEM this statement is about, as of plan time.
+   *
+   * A drop is a statement about IDENTITIES, never about indices. The moment a
+   * drag begins the arrangement starts going stale — another surface writes, a
+   * rehydration lands, a second gesture finishes — and a primitive encoded
+   * purely positionally is evaluated against an arrangement that may no longer
+   * exist. It then lands on whatever occupies that slot NOW: the user watched
+   * item X being removed, the system removed slot 3.
+   *
+   * `null` means "the plan asserts this slot was EMPTY". `undefined` means the
+   * caller did not state an expectation and the check is skipped — kept only so
+   * older call sites are not silently reinterpreted, and every in-repo caller
+   * now states one.
+   */
+  readonly expectItemId?: string | null;
 }
 
 export interface SwapPrimitive {
   readonly kind: 'swap';
   readonly posA: number;
   readonly posB: number;
+  /** Which item the plan believed occupied posA. See RemovePrimitive.expectItemId. */
+  readonly expectItemA?: string | null;
+  /** Which item the plan believed occupied posB. `null` asserts an empty slot. */
+  readonly expectItemB?: string | null;
 }
 
 export type GridPrimitive = PlacePrimitive | RemovePrimitive | SwapPrimitive;
@@ -57,6 +77,46 @@ export interface GridState {
 // ============================================================================
 // Pure Validation
 // ============================================================================
+
+/**
+ * The identity of whatever occupies a slot right now, or null for empty.
+ *
+ * NOTE the two ids on a grid slot, which is the trap this whole check exists
+ * around: `slot.id` is the SLOT ADDRESS ("grid-7", rewritten whenever the slot's
+ * occupant changes) and `slot.item.id` is the ITEM'S DURABLE IDENTITY. Only the
+ * second one identifies anything. Reading the first as an item id gives you a
+ * value that is a function of position, which is exactly how a positional drop
+ * lands on the wrong record.
+ */
+function occupantIdentity(state: GridState, position: number): string | null {
+  const slot = state.gridItems[position];
+  if (!slot || !slot.context.matched) return null;
+  return slot.item?.id ?? null;
+}
+
+/**
+ * Refuse a primitive whose statement no longer matches the world.
+ *
+ * Returns null when the expectation holds (or was not stated).
+ */
+function checkExpectation(
+  state: GridState,
+  position: number,
+  expected: string | null | undefined,
+  label: string,
+): ValidationResult | null {
+  if (expected === undefined) return null;
+  const actual = occupantIdentity(state, position);
+  if (actual === expected) return null;
+  return {
+    isValid: false,
+    errorCode: actual === null ? 'SOURCE_NOT_FOUND' : 'SOURCE_ALREADY_USED',
+    errorMessage:
+      `${label} at position ${position} is no longer the item this drop was about ` +
+      `(expected ${expected ?? 'an empty slot'}, found ${actual ?? 'an empty slot'}).`,
+    debugInfo: { position, expected, actual },
+  };
+}
 
 /**
  * Validate a single primitive against grid state.
@@ -99,6 +159,8 @@ export function validatePrimitive(
           debugInfo: { position },
         };
       }
+      const drift = checkExpectation(state, position, primitive.expectItemId, 'Occupant');
+      if (drift) return drift;
       return { isValid: true };
     }
 
@@ -128,6 +190,10 @@ export function validatePrimitive(
           debugInfo: { posA, posB },
         };
       }
+      const driftA = checkExpectation(state, posA, primitive.expectItemA, 'Source occupant');
+      if (driftA) return driftA;
+      const driftB = checkExpectation(state, posB, primitive.expectItemB, 'Target occupant');
+      if (driftB) return driftB;
       const sourceSlot = state.gridItems[posA];
       if (!sourceSlot || !sourceSlot.context.matched) {
         return {

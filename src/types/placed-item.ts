@@ -81,7 +81,22 @@ export interface PlacedItemContext {
  * The DnD system serializes `item: BaseItem` directly (replaces TransferableItem).
  */
 export interface PlacedItem {
-  /** Slot identifier (e.g., "grid-0", "rank-0") */
+  /**
+   * The SLOT ADDRESS (e.g. "grid-0", "rank-0") — NOT an item identity.
+   *
+   * This field is a function of `position` and is rewritten whenever the slot's
+   * occupant changes, so it identifies WHERE, never WHAT. The item's durable
+   * identity is `item.id`, minted by the system of record and unchanged by any
+   * move.
+   *
+   * The two live side by side on the same object, which makes
+   * `placed.item?.id || placed.id` look like a harmless fallback. It is not: it
+   * yields an "item id" that is a function of position, and a consumer that
+   * keys on it re-keys the item every time it moves. A slot with no item has no
+   * item identity, and that is the honest answer. Documented here 2026-08-25
+   * after exactly that fallback was found in the drag plans' result metadata
+   * (registry drag-drop/payload-and-identity).
+   */
   id: string;
 
   /** 0-based position in the ranking */

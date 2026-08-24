@@ -133,7 +133,11 @@ export function calculateImageHash(items: GridItemType[], metadata: any): string
   const itemIds = items
     .filter(item => item.context.matched)
     .sort((a, b) => a.position - b.position)
-    .map(item => `${item.position}:${item.item?.id || item.id}`)
+    // `item.id` is the SLOT ADDRESS, not the item's identity (see PlacedItem's
+    // header). Falling back to it made this cache/prompt key change whenever an
+    // item MOVED, so two identical rankings differing only in how they were
+    // arranged produced different keys. Corrected 2026-08-25.
+    .map(item => `${item.position}:${item.item?.id ?? 'empty'}`)
     .join('|');
 
   const metadataString = JSON.stringify({

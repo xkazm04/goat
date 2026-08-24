@@ -182,7 +182,9 @@ export function planAssign(
   // If target is occupied, remove the existing item first
   const existing = grid.gridItems[position];
   if (existing && existing.context.matched && existing.item?.id) {
-    primitives.push({ kind: 'remove', position });
+    // The plan states WHICH ITEM it is displacing, not just which slot.
+    // Execution refuses if the occupant changed between plan and apply.
+    primitives.push({ kind: 'remove', position, expectItemId: existing.item.id });
     backlogEffects.push({ itemId: existing.item.id, markUsed: false });
     displacedItem = {
       id: existing.item.id,
@@ -264,13 +266,32 @@ export function planMove(
   }
 
   return {
-    primitives: [{ kind: 'swap', posA: fromPosition, posB: toPosition }],
+    primitives: [
+      {
+        kind: 'swap',
+        posA: fromPosition,
+        posB: toPosition,
+        // Identities as of PLAN time. Execution refuses if either slot's
+        // occupant changed in between — the drop was a statement about these
+        // items, and applying it to whoever occupies those indices now would be
+        // a different operation than the one the user watched.
+        expectItemA: grid.gridItems[fromPosition]?.item?.id ?? null,
+        expectItemB: grid.gridItems[toPosition]?.context.matched
+          ? (grid.gridItems[toPosition]?.item?.id ?? null)
+          : null,
+      },
+    ],
     backlogEffects: [],
     resultMeta: {
       operationType: 'move',
       action: 'move',
       item: {
-        id: sourceItem.item?.id || sourceItem.id,
+        // NEVER `|| sourceItem.id`: that field is the SLOT ADDRESS ("grid-7"),
+        // rewritten whenever the slot's occupant changes. Falling back to it
+        // hands downstream consumers an "item id" that is a function of
+        // position — the exact defect this pass exists to remove. A slot with
+        // no item has no item identity, and empty is the honest answer.
+        id: sourceItem.item?.id ?? '',
         title: sourceItem.item?.title ?? '',
         description: sourceItem.item?.description,
         image_url: sourceItem.item?.image_url,
@@ -326,13 +347,32 @@ export function planSwap(
   const targetItem = grid.gridItems[toPosition];
 
   return {
-    primitives: [{ kind: 'swap', posA: fromPosition, posB: toPosition }],
+    primitives: [
+      {
+        kind: 'swap',
+        posA: fromPosition,
+        posB: toPosition,
+        // Identities as of PLAN time. Execution refuses if either slot's
+        // occupant changed in between — the drop was a statement about these
+        // items, and applying it to whoever occupies those indices now would be
+        // a different operation than the one the user watched.
+        expectItemA: grid.gridItems[fromPosition]?.item?.id ?? null,
+        expectItemB: grid.gridItems[toPosition]?.context.matched
+          ? (grid.gridItems[toPosition]?.item?.id ?? null)
+          : null,
+      },
+    ],
     backlogEffects: [],
     resultMeta: {
       operationType: 'swap',
       action: 'swap',
       item: {
-        id: sourceItem.item?.id || sourceItem.id,
+        // NEVER `|| sourceItem.id`: that field is the SLOT ADDRESS ("grid-7"),
+        // rewritten whenever the slot's occupant changes. Falling back to it
+        // hands downstream consumers an "item id" that is a function of
+        // position — the exact defect this pass exists to remove. A slot with
+        // no item has no item identity, and empty is the honest answer.
+        id: sourceItem.item?.id ?? '',
         title: sourceItem.item?.title ?? '',
         description: sourceItem.item?.description,
         image_url: sourceItem.item?.image_url,
