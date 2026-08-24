@@ -12,6 +12,7 @@
     "lint:ratchet:update": "node scripts/ratchet.mjs --update",
     "typecheck": "tsc --noEmit",
     "docs:store-graph": "tsx scripts/generate-store-graph.ts",
+    "docs:coupling": "node scripts/doc-coupling.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",

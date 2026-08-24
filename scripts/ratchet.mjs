@@ -25,6 +25,14 @@
  *                      EXPORTS, not unused imports.
  *   knip:unusedExports named exports nothing imports.
  *   knip:unusedTypes   exported types nothing imports.
+ *   docs:unmappedAreas top-level source areas (as enumerated by
+ *                      .ai/doc-coupling.json coverage.areaRoots) that no
+ *                      coupling entry claims and that carry no reasoned
+ *                      exemption. Measured by scripts/doc-coupling.mjs --json.
+ *                      A REPORT with a baseline, not a bar to clear: 69 of 80
+ *                      areas are unmapped and nobody is writing 69 documents
+ *                      this month. What the bucket buys is that the 70th area
+ *                      cannot arrive undocumented and unnoticed.
  *
  * SYMMETRIC COMPARISON. A rise is a regression. A DROP IS ALSO A FAILURE, and
  * that is deliberate: a drop has at least three causes — the defect was fixed,
@@ -42,7 +50,7 @@
  *   node scripts/ratchet.mjs            check (npm run lint:ratchet)
  *   node scripts/ratchet.mjs --update   rewrite the baseline (human intent only;
  *                                       never wire this into a pipeline)
- *   node scripts/ratchet.mjs --only eslint   one metric only (eslint|typecheck|knip)
+ *   node scripts/ratchet.mjs --only eslint   one metric only (eslint|typecheck|knip|docs)
  */
 
 import { execFileSync } from 'node:child_process';
@@ -231,6 +239,63 @@ function countKnip() {
   };
 }
 
+/**
+ * Unmapped source areas — the docs-sync coverage residue.
+ *
+ * The coupling map's own checker validates that every path the map NAMES
+ * resolves. That is structurally incapable of seeing what the map OMITS, so
+ * the checker also enumerates the coupling universe and reports the areas
+ * nothing claims. That residue is the number held here.
+ *
+ * The distinction that matters for this ratchet: doc-coupling exits 1 for a
+ * BROKEN ENTRY (a stale glob, a missing reference doc) — a verdict the author
+ * must fix — and exits 2 when it could not measure. Neither is a count, so
+ * both are passed straight through rather than being folded into a bucket.
+ */
+function countDocCoupling() {
+  const SCRIPT = path.join(repoRoot, 'scripts', 'doc-coupling.mjs');
+  let raw;
+  try {
+    raw = execFileSync(process.execPath, [SCRIPT, '--json'], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      maxBuffer: 16 * 1024 * 1024,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+  } catch (err) {
+    if (err.status === 2 || !err.stdout) {
+      cannotRun(
+        'doc-coupling could not measure the coupling universe',
+        `${String(err.stderr ?? err.message).slice(0, 400)}`,
+      );
+    }
+    // exit 1 with JSON on stdout: it measured, and it also found broken
+    // entries. Report them here rather than losing them to the ratchet's
+    // bucket comparison, which has nothing to say about a stale glob.
+    raw = err.stdout;
+  }
+
+  let report;
+  try {
+    report = JSON.parse(raw);
+  } catch {
+    cannotRun('doc-coupling output was not JSON', raw.slice(0, 400));
+  }
+
+  if (report.problems?.length) {
+    console.error('[ratchet] doc-coupling reported broken entries:');
+    for (const p of report.problems) console.error(`[ratchet]   ${p}`);
+    console.error('[ratchet] Fix the map (npm run docs:coupling) before trusting its count.');
+    process.exit(EXIT_DIVERGED);
+  }
+
+  console.log(
+    `[ratchet] docs: ${report.mapped} of ${report.areasWalked} areas mapped, ` +
+      `${report.allowlisted} exempt, ${report.unmappedAreas} unmapped.`,
+  );
+  return { 'docs:unmappedAreas': report.unmappedAreas };
+}
+
 // ---------------------------------------------------------------------------
 // Baseline I/O
 // ---------------------------------------------------------------------------
@@ -265,6 +330,9 @@ if (!ONLY || ONLY === 'typecheck') {
 if (!ONLY || ONLY === 'knip') {
   Object.assign(measured, countKnip());
 }
+if (!ONLY || ONLY === 'docs') {
+  Object.assign(measured, countDocCoupling());
+}
 
 // ---------------------------------------------------------------------------
 // Update mode
@@ -289,6 +357,9 @@ if (UPDATE) {
       'eslint:*': 'findings of that rule from `eslint src` under eslint.config.mjs, both severities',
       'typecheck:errors': 'lines matching /error TS[0-9]+/ from `tsc --noEmit`',
       'knip:*': 'unused files / named exports / exported types from `knip --reporter json` under knip.json',
+      'docs:unmappedAreas':
+        'top-level source areas from .ai/doc-coupling.json coverage.areaRoots that no ' +
+        'coupling entry claims and that carry no reasoned exemption',
     },
     measuredAt: new Date().toISOString().slice(0, 10),
     instrument: {

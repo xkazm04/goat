@@ -155,3 +155,37 @@ jobs:
       # BLOCKS. Input: src/stores/registry.ts. The doc is generated from it, so
       # a store added without regenerating is a divergence the author caused.
       - run: npm run docs:store-graph -- --check
+      # BLOCKS. Input: the tree plus .ai/doc-coupling.json. Fails on a BROKEN
+      # ENTRY — a source glob matching nothing live, or a reference document
+      # that is not on disk. The coverage RESIDUE (areas nothing claims) is not
+      # judged here; it is a bucket in the ratchet step above, so the legacy
+      # 69 unmapped areas cannot wall a change while the 70th is still refused.
+      - run: npm run docs:coupling
+
+  docs-same-change:
+    name: docs same-change
+    runs-on: ubuntu-latest
+    # Only on pull requests: the check reads the diff against the merge base,
+    # and there is no meaningful base for a push to main that has already
+    # landed. A push-time run would be answering a question nobody can act on.
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The diff is the input. fetch-depth: 0 is load-bearing — with the
+          # default shallow clone `git merge-base` cannot resolve, and the
+          # script exits 2 (could not run) rather than pretending to pass.
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # BLOCKS. Input: the git diff of this pull request against its merge
+      # base — the only honest record of what changed, and the only one that
+      # knows renames and deletions.
+      #
+      # Satisfied by updating the NAMED document, or dismissed on the record
+      # with a `Docs-dismissed: <reason>` trailer in one of the PR's commits.
+      # Both outcomes leave an artifact; silence is the one thing that does not.
+      - run: npm run docs:coupling -- --changed --base "origin/${{ github.base_ref }}"

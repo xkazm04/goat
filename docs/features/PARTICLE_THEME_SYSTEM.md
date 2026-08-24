@@ -1,5 +1,42 @@
 # Custom Particle Theme Packs
 
+**Status**: ⚠️ NOT IMPLEMENTED — design document only
+**Corrected**: 2026-08-24
+
+> ## Correction — 2026-08-24
+>
+> This document was written in the present indicative ("The system includes",
+> "Successfully implemented") for a feature that **does not exist in this
+> repository**. The first source→doc coupling sweep checked every file and
+> identifier it names against the tree:
+>
+> | claimed | reality |
+> |---|---|
+> | `src/app/features/matching/components/SwipeableCard.tsx` | the directory `src/app/features/matching/` **does not exist** (the feature directory is `Match`, and it contains no such file) |
+> | `src/app/features/matching/components/ParticleThemeSettings.tsx` | **does not exist** |
+> | `src/stores/particle-theme-store.ts` | **does not exist**; it is not among the 24 stores in `src/stores/registry.ts` |
+> | `src/lib/particle-themes/theme-configs.ts` | **does not exist** |
+> | `src/types/particle-theme.types.ts` | **does not exist** |
+> | `src/app/api/themes/purchase/route.ts` | **does not exist** |
+> | the identifiers `ParticleTheme`, `particleTheme`, `PARTICLE_THEMES` | **zero occurrences anywhere in `src/`** |
+> | "11 Predefined Themes", "5 theme packs (1 free, 4 premium)", per-theme audio | describe nothing that runs |
+>
+> Everything below the line is therefore a **design**, not a description. It is
+> kept rather than deleted because the design itself is intact and reusable —
+> what was wrong was the tense, not the content. Nothing here has shipped, and
+> no revenue mechanism exists.
+>
+> Its entry in `.ai/doc-coupling.json` carries `sourceStatus: "unimplemented"`
+> with an empty source set, so the coverage checker records the absence as a
+> declared finding instead of silently matching nothing.
+>
+> Real particle code in this repo, none of it themed or purchasable:
+> `src/app/features/Match/sub_DropZone/components/celebrationParticles.tsx`,
+> `src/components/app/decorations/particles.tsx`,
+> `src/lib/feedback-pipeline/components/FeedbackParticles.tsx`.
+
+---
+
 ## Overview
 
 The Custom Particle Theme Packs feature allows users to personalize their swipe animation experience by selecting from various particle themes with different colors, shapes, and sound effects. The system includes both free and premium theme packs, creating a revenue stream through in-app purchases.

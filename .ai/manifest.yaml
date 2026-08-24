@@ -28,6 +28,12 @@ capabilities:
   lint-ratchet: { command: "npm run lint:ratchet", verified: true, verifiedAt: "2026-08-24" }
   typecheck: { command: "npm run typecheck", verified: true, verifiedAt: "2026-08-24" }
   docs-store-graph: { command: "npm run docs:store-graph", verified: true, verifiedAt: "2026-08-24" }
+  # The source->doc coupling map and its reader, added 2026-08-24. Two modes:
+  # bare = is the MAP honest (no stale glob, no missing reference doc);
+  # --changed = does this CHANGE settle what it owes, read from the git diff.
+  docs-coupling: { command: "npm run docs:coupling", verified: true, verifiedAt: "2026-08-24" }
+  docs-coupling-same-change:
+    { command: "npm run docs:coupling -- --changed --base <ref>", verified: true, verifiedAt: "2026-08-24" }
   # `test` is the unit runner (vitest), added 2026-08-24. The browser suite keeps
   # its own capability name so a green report always says which population ran.
   test: { command: "npm test", verified: true, verifiedAt: "2026-08-24" }
@@ -73,6 +79,28 @@ capabilityNotes:
     written promotion trigger is "when that bucket reaches 0, delete it and run
     tsc bare". Still no git hooks and no lint-staged; the commit rung remains
     unguarded and that is a deliberate, dated gap.
+  docs-coupling: >-
+    Added 2026-08-24. .ai/doc-coupling.json is the ONE authority for which
+    document a source area owes; scripts/doc-coupling.mjs is its only reader (a
+    map with no reader is a good intention in a syntax that parses). Before it,
+    this repo declared exactly one coupling and carried 69 markdown files nobody
+    could attribute to any source.
+    COVERAGE mode fails on a broken entry — a source glob matching nothing live,
+    or a reference document not on disk — and REPORTS the residue: 7 of 80 areas
+    mapped, 4 exempt with a written reason, 69 unmapped. That residue is a
+    ratchet bucket (docs:unmappedAreas), not a bar to clear: nobody is writing 69
+    documents this month, but the 70th area cannot arrive unnoticed.
+    SAME-CHANGE mode reads the git diff with rename detection (never a
+    transcript, never a list of editor destinations) and is satisfied only by the
+    exact document the entry names — a prefix-shaped satisfaction is discharged
+    by accident. Dismissal is first-class and leaves an artifact: a
+    `Docs-dismissed: <why>` commit trailer, countable from git history.
+    Proved red seven ways before being trusted: unsettled obligation (exit 1),
+    stale source glob (1), missing reference doc (1), stale allowlist entry (1),
+    unparseable map (exit 2), zero-area walk under the floor (2), and green when
+    everything resolves (0). On its very first real run it found three genuine
+    obligations in its own change — the manifest, CLAUDE.md and the ratchet
+    baseline — all of which were settled rather than dismissed.
   supply-chain: >-
     ABSENT, deliberately. An advisory-feed check reads an input that moves
     without this repository, so it must not block: a advisory published

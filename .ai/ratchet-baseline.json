@@ -6,7 +6,8 @@
   "predicate": {
     "eslint:*": "findings of that rule from `eslint src` under eslint.config.mjs, both severities",
     "typecheck:errors": "lines matching /error TS[0-9]+/ from `tsc --noEmit`",
-    "knip:*": "unused files / named exports / exported types from `knip --reporter json` under knip.json"
+    "knip:*": "unused files / named exports / exported types from `knip --reporter json` under knip.json",
+    "docs:unmappedAreas": "top-level source areas from .ai/doc-coupling.json coverage.areaRoots that no coupling entry claims and that carry no reasoned exemption"
   },
   "measuredAt": "2026-08-24",
   "instrument": {
@@ -14,6 +15,7 @@
     "minFilesWalked": 784
   },
   "buckets": {
+    "docs:unmappedAreas": 69,
     "eslint:@next/next/no-html-link-for-pages": 1,
     "eslint:@next/next/no-img-element": 31,
     "eslint:import/no-anonymous-default-export": 2,

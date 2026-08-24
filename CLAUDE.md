@@ -23,6 +23,44 @@ npm start
 npm run lint
 ```
 
+### Quality gates
+
+Every command below runs in CI (`.github/workflows/gates.yml`) and every one of
+them can go red — each was proved able to fail before being trusted. Run them
+before proposing a change; a change that reddens one of them is not finished.
+
+```bash
+npm test                        # vitest. passWithNoTests:false — a run that
+                                # executed zero files is RED, not green.
+npm run lint                    # eslint. 44 correctness rules are `error`;
+                                # everything with a legacy population is `warn`
+                                # and held by the ratchet instead.
+npm run lint:ratchet            # symmetric per-rule ratchet over
+                                # .ai/ratchet-baseline.json. A RISE fails. An
+                                # unexplained DROP also fails — re-baseline with
+                                # `npm run lint:ratchet:update` and say in the
+                                # commit message which of fixed / deleted /
+                                # counter-broke it was. Exit 2 = could not run,
+                                # which is neither pass nor fail.
+npm run typecheck               # 23 inherited errors; pinned by the ratchet
+                                # rather than blocking bare.
+npm run docs:store-graph -- --check   # the store graph is GENERATED from
+                                # src/stores/registry.ts. Regenerate in the same
+                                # change that touches the manifest.
+npm run docs:coupling           # source→doc coupling map (.ai/doc-coupling.json):
+                                # fails on a stale glob or a missing reference doc.
+npm run docs:coupling -- --changed --base main
+                                # same-change enforcement: reads the git diff and
+                                # names the document this change owes. Settle it,
+                                # or dismiss it on the record with a commit
+                                # trailer:  Docs-dismissed: <why>
+npm run scan:dead               # knip. Unused EXPORTS — the orphan class eslint
+                                # structurally cannot see.
+```
+
+There are deliberately **no git hooks**. CI covers the push rung; the unguarded
+commit rung is a dated gap in `.ai/manifest.yaml`, not an oversight.
+
 ## Architecture Overview
 
 ### Tech Stack
@@ -43,7 +81,15 @@ The app follows a **feature-based architecture** where major features are organi
 - **Landing**: Home page with list browsing and showcase
 - **Match**: Core ranking interface with drag-and-drop grid system
 - **Collection**: Item collection management panels
-- **matching**: (Legacy/alternate match implementation)
+
+> **Corrected 2026-08-24**: this list previously ended with
+> *"**matching**: (Legacy/alternate match implementation)"*. There is no
+> `src/app/features/matching/` directory and there has not been one in this
+> tree; the identifier survived only here and in
+> `docs/features/PARTICLE_THEME_SYSTEM.md`, which names six files under it that
+> also do not exist. The live feature directories are: `Achievement`,
+> `Analytics`, `Awards`, `Collection`, `Collections`, `CommandPalette`,
+> `Landing`, `Match`, `Studio`, `Templates`.
 
 ### State Management Architecture
 
