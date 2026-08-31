@@ -10,6 +10,7 @@ import { goatApi } from '@/lib/api';
 import { makeOperationKey } from '@/lib/async-state/entity-mutex';
 import { CACHE_TTL_MS , CACHE_TAGS } from '@/lib/cache/unified-cache';
 import { topListsKeys , FeaturedListsParams } from '@/lib/query-keys/top-lists';
+import { listOptions } from '@/lib/query-options/top-lists';
 import {
   TopList,
   ListWithItems,
@@ -45,7 +46,7 @@ const showErrorToast = (action: string, error: Error) => {
 // Query Hooks
 export const useTopLists = (
   params?: SearchListsParams,
-  options?: Omit<UseQueryOptions<TopList[], Error, TopList[], readonly unknown[]>, 'queryKey' | 'queryFn'>
+  options?: PerCallOptions
 ) => {
   return useQuery({
     queryKey: topListsKeys.listSearch(params || {}),
@@ -55,14 +56,29 @@ export const useTopLists = (
   });
 };
 
+/**
+ * Options a single call site may choose for itself.
+ *
+ * Deliberately narrow. The shared definition in `@/lib/query-options/top-lists`
+ * owns the key, the fetcher and the default lifetime; only the options below
+ * legitimately vary per screen. A full pass-through of the query option surface
+ * cannot be typed here without re-declaring every generic, and widening the key
+ * generic to `readonly unknown[]` to fake it is what forced callers into `as any`.
+ */
+type PerCallOptions = {
+  enabled?: boolean;
+  refetchOnWindowFocus?: boolean;
+  retry?: boolean | number | ((failureCount: number, error: Error) => boolean);
+  staleTime?: number;
+};
+
 export const useTopList = (
   listId: string,
   includeItems: boolean = true,
-  options?: Omit<UseQueryOptions<ListWithItems, Error, ListWithItems, readonly unknown[]>, 'queryKey' | 'queryFn'>
+  options?: PerCallOptions
 ) => {
   return useQuery({
-    queryKey: topListsKeys.list(listId, includeItems),
-    queryFn: () => goatApi.lists.get(listId, includeItems),
+    ...listOptions(listId, includeItems),
     enabled: !!listId,
     staleTime: CACHE_TTL_MS.SHORT,
     ...options,
