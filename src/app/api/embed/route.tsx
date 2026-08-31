@@ -59,7 +59,34 @@ function getColors(config: WidgetConfig): CustomThemeColors {
   if (config.theme === 'custom' && config.customColors) {
     return config.customColors;
   }
-  return THEME_PRESETS[config.theme === 'auto' ? 'dark' : config.theme as 'light' | 'dark'] || THEME_PRESETS.dark;
+  // `auto` means "follow the viewer", and this runs on the server where the
+  // viewer's preference is invisible. Resolving it to a constant here would not
+  // pick a default, it would erase the subscription. So `auto` emits the light
+  // palette as the base and defers the dark half to prefersColorSchemeBlock(),
+  // which resolves where the input actually exists.
+  return THEME_PRESETS[config.theme === 'auto' ? 'light' : config.theme as 'light' | 'dark'] || THEME_PRESETS.dark;
+}
+
+/**
+ * For `theme=auto` only: redefine the palette custom properties when the
+ * viewer's environment asks for dark. Empty for every explicit theme, so an
+ * explicitly pinned widget never moves with the viewer's preference.
+ */
+function prefersColorSchemeBlock(config: WidgetConfig): string {
+  if (config.theme !== 'auto') return '';
+  const d = THEME_PRESETS.dark;
+  return `
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --widget-bg: ${d.background};
+        --widget-surface: ${d.surface};
+        --widget-text: ${d.text};
+        --widget-text-secondary: ${d.textSecondary};
+        --widget-accent: ${d.accent};
+        --widget-border: ${d.border};
+      }
+    }
+`;
 }
 
 /**
@@ -135,7 +162,7 @@ function generateWidgetHTML(
       --widget-border: ${colors.border};
       --widget-border-radius: ${config.borderRadius}px;
     }
-
+${prefersColorSchemeBlock(config)}
     * {
       box-sizing: border-box;
       margin: 0;
