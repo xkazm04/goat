@@ -9,6 +9,7 @@
     "lint": "eslint src",
     "lint:ratchet": "node scripts/ratchet.mjs",
     "scan:dead": "knip",
+    "scan:recall": "node scripts/knip-recall.mjs",
     "lint:ratchet:update": "node scripts/ratchet.mjs --update",
     "typecheck": "tsc --noEmit",
     "docs:store-graph": "tsx scripts/generate-store-graph.ts",
