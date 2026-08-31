@@ -22,6 +22,8 @@ import { useGridStore, GridStoreState } from '@/stores/grid-store';
 
 import { CollectionItem } from '../types';
 
+const isDev = process.env.NODE_ENV === 'development';
+
 /**
  * Extract placed item IDs from grid state.
  *
@@ -65,10 +67,70 @@ export interface PlacementStats {
   hasStarted: boolean;
 }
 
+/**
+ * Compute placement statistics from one page of the collection plus the grid's
+ * own state.
+ *
+ * `completionPercentage` is a ratio over the GRID, so both of its terms are
+ * counted over the grid. The collection page cannot serve as the denominator:
+ * `placedCount` counts every matched cell in the grid, including items from
+ * pages this panel is not showing, so a page-sized denominator yields a ratio
+ * whose numerator and denominator have different predicates - and then needs a
+ * clamp to hide it. The grid store owns the real capacity; `fallbackGridSize`
+ * covers only the frame before the store has reported one.
+ *
+ * Exported so the invariant can be pinned in a test rather than trusted.
+ */
+export function computePlacementStats(args: {
+  /** Items on the current collection page (`items.length`) */
+  pageItemCount: number;
+  /** Matched cells across the whole grid (`placedItemIds.size`) */
+  placedCount: number;
+  /** Page items not yet placed (`visibleItems.length`) */
+  remainingCount: number;
+  /** The grid's real capacity, from the store that owns it */
+  gridCapacity: number;
+  /** Used only when the store has not reported a capacity yet */
+  fallbackGridSize?: number;
+}): PlacementStats {
+  const { pageItemCount, placedCount, remainingCount, gridCapacity, fallbackGridSize } = args;
+
+  const completionTarget = gridCapacity > 0 ? gridCapacity : (fallbackGridSize ?? 0);
+  const completionPercentage = completionTarget > 0
+    ? Math.round((placedCount / completionTarget) * 100)
+    : 0;
+
+  // With both terms counted over the grid, placedCount <= completionTarget holds
+  // by construction and no clamp is needed. If that ever stops being true the two
+  // numbers cannot both be right, and which one is wrong is not knowable here -
+  // so say so loudly rather than clamping the evidence away.
+  if (isDev && completionTarget > 0 && placedCount > completionTarget) {
+    console.warn(
+      `[useVisibleCollectionItems] placedCount (${placedCount}) exceeds grid capacity ` +
+      `(${completionTarget}). These cannot both be correct; completionPercentage is not ` +
+      `meaningful until one of them is traced.`
+    );
+  }
+
+  return {
+    totalItems: pageItemCount,
+    placedCount,
+    remainingCount,
+    completionPercentage,
+    isComplete: completionTarget > 0 && placedCount >= completionTarget,
+    hasStarted: placedCount > 0,
+  };
+}
+
 export interface UseVisibleCollectionItemsOptions {
   /** All items from the collection (before filtering by placement) */
   items: CollectionItem[];
-  /** Optional: Max grid size to calculate completion against */
+  /**
+   * Optional fallback for the completion denominator, used only before the grid
+   * store has reported a capacity. The grid store is the authority; do not pass
+   * a page size here, because completion is a ratio over the grid and a
+   * page-sized denominator does not share a predicate with placedCount.
+   */
   maxGridSize?: number;
 }
 
@@ -107,27 +169,36 @@ export function useVisibleCollectionItems(
 
   // Track placed item IDs with stable reference updates
   const [placedItemIds, setPlacedItemIds] = useState<Set<string>>(new Set());
-  const prevIdsStringRef = useRef<string>('');
+  // The grid's own capacity, read from the store that owns the grid. placedCount
+  // is counted over the grid, so the completion denominator has to be too.
+  const [gridCapacity, setGridCapacity] = useState<number>(0);
+  const prevKeyRef = useRef<string>('');
 
-  // Subscribe to grid store changes and update placed IDs only when they actually change
+  // Subscribe to grid store changes and update only when the placed IDs or the
+  // grid's capacity actually change. Capacity is part of the key because a
+  // resize moves the completion denominator without touching any placed ID.
   useEffect(() => {
-    const unsubscribe = useGridStore.subscribe((state) => {
+    const readKey = (state: GridStoreState) => {
       const ids = getPlacedItemIdsFromGrid(state);
-      const idsString = createPlacedIdsString(ids);
+      return { ids, key: `${createPlacedIdsString(ids)}|${state.maxGridSize}`, capacity: state.maxGridSize };
+    };
 
-      // Only update if the IDs actually changed (prevents infinite loops)
-      if (idsString !== prevIdsStringRef.current) {
-        prevIdsStringRef.current = idsString;
+    const unsubscribe = useGridStore.subscribe((state) => {
+      const { ids, key, capacity } = readKey(state);
+
+      // Only update if something actually changed (prevents infinite loops)
+      if (key !== prevKeyRef.current) {
+        prevKeyRef.current = key;
         setPlacedItemIds(new Set(ids));
+        setGridCapacity(capacity);
       }
     });
 
     // Initialize on mount
-    const state = useGridStore.getState();
-    const ids = getPlacedItemIdsFromGrid(state);
-    const idsString = createPlacedIdsString(ids);
-    prevIdsStringRef.current = idsString;
+    const { ids, key, capacity } = readKey(useGridStore.getState());
+    prevKeyRef.current = key;
     setPlacedItemIds(new Set(ids));
+    setGridCapacity(capacity);
 
     return unsubscribe;
   }, []);
@@ -138,26 +209,13 @@ export function useVisibleCollectionItems(
   }, [items, placedItemIds]);
 
   // Calculate placement statistics
-  const placementStats = useMemo((): PlacementStats => {
-    const totalItems = items.length;
-    const placedCount = placedItemIds.size;
-    const remainingCount = visibleItems.length;
-
-    // Use grid size for completion calculation if provided
-    const completionTarget = maxGridSize ?? totalItems;
-    const completionPercentage = completionTarget > 0
-      ? Math.round((placedCount / completionTarget) * 100)
-      : 0;
-
-    return {
-      totalItems,
-      placedCount,
-      remainingCount,
-      completionPercentage: Math.min(completionPercentage, 100), // Cap at 100%
-      isComplete: maxGridSize ? placedCount >= maxGridSize : remainingCount === 0,
-      hasStarted: placedCount > 0,
-    };
-  }, [items.length, placedItemIds.size, visibleItems.length, maxGridSize]);
+  const placementStats = useMemo((): PlacementStats => computePlacementStats({
+    pageItemCount: items.length,
+    placedCount: placedItemIds.size,
+    remainingCount: visibleItems.length,
+    gridCapacity,
+    fallbackGridSize: maxGridSize,
+  }), [items.length, placedItemIds.size, visibleItems.length, gridCapacity, maxGridSize]);
 
   // Utility function to check if a specific item is placed
   const isItemPlaced = useCallback(

@@ -316,7 +316,9 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
     isItemPlaced,
   } = useVisibleCollectionItems({
     items: rawItems,
-    maxGridSize: pageSize, // Use page size as proxy for grid size
+    // No maxGridSize: the grid store owns the real capacity and the hook reads
+    // it from there. Page size was standing in as a proxy, which made the
+    // completion ratio a global numerator over a per-page denominator.
   });
 
   // Client-side filtering by selected groups and sorting
