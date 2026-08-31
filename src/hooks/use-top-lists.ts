@@ -28,15 +28,6 @@ import {
 import { toast } from './use-toast';
 import { useOptimisticMutation } from './useOptimisticMutation';
 
-// Unified cache times - imported from unified-cache.ts for consistency
-const CACHE_TIMES = {
-  SHORT: CACHE_TTL_MS.EPHEMERAL,   // 30 seconds - for real-time/analytics data
-  MEDIUM: CACHE_TTL_MS.SHORT,      // 1 minute - for user-specific data
-  DEFAULT: CACHE_TTL_MS.STANDARD,  // 5 minutes - default
-  STANDARD: CACHE_TTL_MS.STANDARD, // 5 minutes - standard cache
-  LONG: CACHE_TTL_MS.LONG,         // 15 minutes - for reference data
-  VERY_LONG: CACHE_TTL_MS.STATIC,  // 1 hour - for static data
-} as const;
 
 // Helper for success toasts
 const showSuccessToast = (title: string, description: string) => {
@@ -59,7 +50,7 @@ export const useTopLists = (
   return useQuery({
     queryKey: topListsKeys.listSearch(params || {}),
     queryFn: () => goatApi.lists.search(params),
-    staleTime: CACHE_TIMES.STANDARD,
+    staleTime: CACHE_TTL_MS.STANDARD,
     ...options,
   });
 };
@@ -73,7 +64,7 @@ export const useTopList = (
     queryKey: topListsKeys.list(listId, includeItems),
     queryFn: () => goatApi.lists.get(listId, includeItems),
     enabled: !!listId,
-    staleTime: CACHE_TIMES.MEDIUM,
+    staleTime: CACHE_TTL_MS.SHORT,
     ...options,
   });
 };
@@ -87,7 +78,7 @@ export const useUserLists = (
     queryKey: topListsKeys.userLists(userId, params),
     queryFn: () => goatApi.lists.getByUser(userId, params),
     enabled: !!userId,
-    staleTime: CACHE_TIMES.DEFAULT,
+    staleTime: CACHE_TTL_MS.STANDARD,
     ...options,
   });
 };
@@ -100,7 +91,7 @@ export const usePredefinedLists = (
   return useQuery({
     queryKey: topListsKeys.predefinedLists(category, subcategory),
     queryFn: () => goatApi.lists.getPredefined(category, subcategory),
-    staleTime: CACHE_TIMES.LONG,
+    staleTime: CACHE_TTL_MS.LONG,
     ...options,
   });
 };
@@ -113,7 +104,7 @@ export const useListAnalytics = (
     queryKey: topListsKeys.analytics(listId),
     queryFn: () => goatApi.lists.getAnalytics(listId),
     enabled: !!listId,
-    staleTime: CACHE_TIMES.SHORT,
+    staleTime: CACHE_TTL_MS.EPHEMERAL,
     ...options,
   });
 };
@@ -126,7 +117,7 @@ export const useCreatorAnalytics = (
     queryKey: topListsKeys.creatorAnalytics(userId),
     queryFn: () => goatApi.lists.getCreatorAnalytics(userId),
     enabled: !!userId,
-    staleTime: CACHE_TIMES.SHORT,
+    staleTime: CACHE_TTL_MS.EPHEMERAL,
     ...options,
   });
 };
@@ -141,7 +132,7 @@ export const useVersionComparison = (
     queryKey: topListsKeys.versions(listId, version1, version2),
     queryFn: () => goatApi.lists.compareVersions(listId, version1, version2),
     enabled: !!listId && version1 > 0 && version2 > 0,
-    staleTime: CACHE_TIMES.VERY_LONG,
+    staleTime: CACHE_TTL_MS.STATIC,
     ...options,
   });
 };
@@ -154,7 +145,7 @@ export const useFeaturedLists = (
   return useQuery({
     queryKey: topListsKeys.featured(params),
     queryFn: () => goatApi.lists.getFeatured(params),
-    staleTime: CACHE_TIMES.STANDARD,
+    staleTime: CACHE_TTL_MS.STANDARD,
     ...options,
   });
 };

@@ -195,15 +195,23 @@ export function useBookmarks(userId: string) {
   });
 
   // Toggle bookmark
+  //
+  // Depend on the `mutate` functions, not on the mutation objects: a mutation
+  // result is NOT referentially stable, so depending on it rebuilds this
+  // callback on every mutation state change (and every consumer memoized on it).
+  // `mutate` is stable for the life of the mutation.
+  const { mutate: addBookmarkMutate } = addBookmark;
+  const { mutate: removeBookmarkMutate } = removeBookmark;
+
   const toggleBookmark = useCallback(
     (listId: string) => {
       if (isBookmarked(listId)) {
-        removeBookmark.mutate(listId);
+        removeBookmarkMutate(listId);
       } else {
-        addBookmark.mutate({ listId });
+        addBookmarkMutate({ listId });
       }
     },
-    [isBookmarked, addBookmark, removeBookmark]
+    [isBookmarked, addBookmarkMutate, removeBookmarkMutate]
   );
 
   // Create folder mutation

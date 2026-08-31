@@ -116,7 +116,7 @@ const ROUTE_CONFIGS: RouteConfig[] = [
           id: `list-analytics-${listId}`,
           queryKey: topListsKeys.analytics(listId),
           queryFn: () => goatApi.lists.getAnalytics(listId),
-          staleTime: CACHE_TTL_MS.SHORT,
+          staleTime: CACHE_TTL_MS.EPHEMERAL,
           priority: 'low',
           source: 'route',
           metadata: { dataType: 'analytics', listId },

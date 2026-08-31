@@ -9,12 +9,6 @@ import { GridItemType as OriginalGridItemType } from '@/types/match';
 import { useOptimisticMutation } from './useOptimisticMutation';
 
 
-// Unified cache time constants - imported from unified-cache.ts
-const CACHE_TIMES = {
-  SHORT: CACHE_TTL_MS.SHORT,     // 1 minute - for user-specific/detailed data
-  STANDARD: CACHE_TTL_MS.STANDARD, // 5 minutes - default cache duration
-  LONG: CACHE_TTL_MS.LONG,       // 15 minutes - for reference data
-} as const;
 
 // Retry configuration - centralized from unified-cache
 const RETRY_CONFIG = getRetryConfig('fast');
@@ -28,7 +22,7 @@ interface BaseQueryOptions {
 
 // Helper to build common query config
 const buildQueryConfig = (options?: BaseQueryOptions, defaultEnabled = true) => ({
-  staleTime: options?.staleTime ?? CACHE_TIMES.STANDARD,
+  staleTime: options?.staleTime ?? CACHE_TTL_MS.STANDARD,
   refetchOnWindowFocus: options?.refetchOnWindowFocus ?? false,
   enabled: options?.enabled ?? defaultEnabled,
 });
@@ -192,7 +186,7 @@ export function useItemGroup(groupId: string, options?: {
       return group;
     },
     enabled: options?.enabled ?? !!groupId,
-    staleTime: CACHE_TIMES.SHORT,
+    staleTime: CACHE_TTL_MS.SHORT,
     ...RETRY_CONFIG,
   });
 }

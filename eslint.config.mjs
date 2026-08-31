@@ -61,6 +61,7 @@ import storybookPlugin from "eslint-plugin-storybook";
 import unusedImports from "eslint-plugin-unused-imports";
 import importPlugin from "eslint-plugin-import";
 import jsxA11y from "eslint-plugin-jsx-a11y";
+import queryPlugin from "@tanstack/eslint-plugin-query";
 
 const eslintConfig = [
   ...coreWebVitals,
@@ -148,6 +149,44 @@ const eslintConfig = [
         },
       ],
       "import/no-duplicates": "error",
+    },
+  },
+
+  // ===========================================================================
+  // @tanstack/query — the contract the type system cannot hold.
+  //
+  // This data layer's correctness depends on facts TypeScript cannot express:
+  // the ORDER of inference-linked keys in an options object, the referential
+  // identity of a returned result, and — the one that bites here — WHICH FIELDS
+  // a consumer actually read. `useQuery` returns a recording proxy and wakes the
+  // consumer only for the fields it touched, so a rest-destructure or a spread
+  // of that result touches every field and silently subscribes to all of them.
+  // The code stays correct, only the wake-up frequency changes, and nothing in
+  // the type system or the test suite can see it.
+  //
+  // Measured before promotion, per the severity policy above. Both populations
+  // were fixed in this same change, so every rule here is at 0 today:
+  //   no-unstable-deps          2 -> 0  (use-bookmarks: a useCallback depending
+  //                                      on two mutation objects, which are not
+  //                                      referentially stable — it now depends
+  //                                      on their `mutate` functions)
+  //   no-rest-destructuring     1 -> 0  (useSupabaseQuery: the paginated hook
+  //                                      spread its inner result instead of
+  //                                      forwarding the declared surface field
+  //                                      by field, as its sibling already did)
+  //   the remaining four        0
+  // ===========================================================================
+  {
+    plugins: {
+      "@tanstack/query": queryPlugin,
+    },
+    rules: {
+      "@tanstack/query/no-rest-destructuring": "error",
+      "@tanstack/query/no-unstable-deps": "error",
+      "@tanstack/query/stable-query-client": "error",
+      "@tanstack/query/no-void-query-fn": "error",
+      "@tanstack/query/infinite-query-property-order": "error",
+      "@tanstack/query/mutation-property-order": "error",
     },
   },
 
