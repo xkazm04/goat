@@ -16,6 +16,8 @@
 import { dndLogger } from '@/lib/logger';
 import { getValidationAuthority, logValidationFailure } from '@/lib/validation';
 
+import { createGridItem } from '@/lib/grid';
+
 import { validateSequence, executeSequence } from './primitives';
 
 import type { GridPrimitive, GridState } from './primitives';
@@ -506,17 +508,28 @@ export function createUndoableOperation(
 
       switch (operationType) {
         case 'assign': {
-          // Reverse assign: remove placed item, mark unused
-          if (result.metadata?.toPosition !== undefined) {
-            grid.removeItemFromGrid(result.metadata.toPosition);
+          // Reverse assign: free the slot, then undo every backlog effect the
+          // plan recorded, then restore whatever the assign displaced.
+          //
+          // The displaced item is not lost information: buildAssignPlan captured
+          // it into resultMeta.metadata.displacedItem at the instant it was still
+          // on the grid, so the inverse reads it from the plan rather than trying
+          // to reconstruct it. Order matters — assignItemToGrid no-ops on a slot
+          // that is still filled, so the removal has to come first.
+          const toPosition = result.metadata?.toPosition;
+          if (toPosition !== undefined) {
+            grid.removeItemFromGrid(toPosition);
           }
-          if (plan.backlogEffects.length > 0) {
-            const assignEffect = plan.backlogEffects.find(e => e.markUsed);
-            if (assignEffect) backlog.markItemAsUsed(assignEffect.itemId, false);
+          for (const effect of plan.backlogEffects) {
+            backlog.markItemAsUsed(effect.itemId, !effect.markUsed);
           }
-          // If there was a displaced item, we can't restore it without more info
-          // (the displaced item's full data would be needed to re-place it)
-          dndLogger.debug('Rolled back assign operation');
+          const displaced = plan.resultMeta.metadata?.displacedItem;
+          if (displaced && toPosition !== undefined) {
+            grid.assignItemToGrid(createGridItem(displaced, toPosition), toPosition);
+          }
+          dndLogger.debug('Rolled back assign operation', {
+            restoredDisplacedItem: Boolean(displaced),
+          });
           break;
         }
 
