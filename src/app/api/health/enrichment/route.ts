@@ -108,7 +108,11 @@ function toSourceHealth(result: {
  * Requires TMDB_API_KEY env var.
  */
 async function probeTMDB(): Promise<SourceHealth> {
-  const apiKey = process.env.TMDB_API_KEY || process.env.NEXT_PUBLIC_TMDB_API_KEY;
+  // One name, matching TMDBFetcher.getApiKey and the four sibling probes below.
+  // Accepting NEXT_PUBLIC_TMDB_API_KEY here reported the source configured while
+  // every real fetch threw, and kept a bundle-exposed variable alive as a way to
+  // supply a secret. See route.test.ts.
+  const apiKey = process.env.TMDB_API_KEY;
   if (!apiKey) {
     return { status: 'unconfigured', latencyMs: 0, error: 'TMDB_API_KEY not set' };
   }
