@@ -12,6 +12,7 @@
  */
 
 import { create } from 'zustand';
+import { useShallow } from 'zustand/react/shallow';
 
 import { trackError } from './error-analytics';
 import { GoatError, fromUnknown, isGoatError } from './GoatError';
@@ -269,32 +270,50 @@ export const useErrorNotificationStore = create<ErrorNotificationState>((set, ge
 // ============================================================================
 
 /**
+ * Every selector below builds a fresh object, and zustand 5 reads selectors
+ * through `useSyncExternalStore`, which re-renders whenever the snapshot is not
+ * `Object.is`-equal to the last one. Unwrapped, these never settle: React
+ * re-renders, the selector returns another new object, and it climbs to
+ * "Maximum update depth exceeded". `collection-store` was fixed for exactly
+ * this on 2026-09-05 and this file — the same rule, the other implementation —
+ * was left behind. It has not been SEEN because the only consumer,
+ * `ErrorNotificationToastContainer`, is not mounted anywhere in the app; the
+ * loop would arrive with the first mount.
+ */
+
+/**
  * Hook for components that display notifications
  */
 export const useErrorNotifications = () =>
-  useErrorNotificationStore((state) => ({
-    notifications: state.notifications,
-    dismiss: state.dismiss,
-    clearAll: state.clearAll,
-  }));
+  useErrorNotificationStore(
+    useShallow((state) => ({
+      notifications: state.notifications,
+      dismiss: state.dismiss,
+      clearAll: state.clearAll,
+    }))
+  );
 
 /**
  * Hook for components that emit notifications
  */
 export const useErrorNotificationEmitter = () =>
-  useErrorNotificationStore((state) => ({
-    emitError: state.emitError,
-    emitGoatError: state.emitGoatError,
-  }));
+  useErrorNotificationStore(
+    useShallow((state) => ({
+      emitError: state.emitError,
+      emitGoatError: state.emitGoatError,
+    }))
+  );
 
 /**
  * Hook for error analytics
  */
 export const useErrorHistory = () =>
-  useErrorNotificationStore((state) => ({
-    errorHistory: state.errorHistory,
-    clearErrorHistory: state.clearErrorHistory,
-  }));
+  useErrorNotificationStore(
+    useShallow((state) => ({
+      errorHistory: state.errorHistory,
+      clearErrorHistory: state.clearErrorHistory,
+    }))
+  );
 
 // ============================================================================
 // Utility Functions
