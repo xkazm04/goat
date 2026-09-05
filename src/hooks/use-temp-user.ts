@@ -14,7 +14,9 @@ export function useTempUser() {
   // the mount: useAuthUser lists it as an effect dependency, and a function
   // minted per render restarts that effect per render.
   const tempUserIdRef = useRef(tempUserId);
-  tempUserIdRef.current = tempUserId;
+  useEffect(() => {
+    tempUserIdRef.current = tempUserId;
+  }, [tempUserId]);
 
   useEffect(() => {
     // Get or create temp user ID

@@ -66,7 +66,9 @@ export function useSupabaseAuth(options: UseSupabaseAuthOptions = {}): UseSupaba
   // flipped `mountedRef` off with nothing to flip it back, froze the hook on its
   // last-seen state. Registry: client-state / effect-identity-and-latched-callbacks.
   const onAuthStateChangeRef = useRef(onAuthStateChange);
-  onAuthStateChangeRef.current = onAuthStateChange;
+  useEffect(() => {
+    onAuthStateChangeRef.current = onAuthStateChange;
+  }, [onAuthStateChange]);
 
   // Action dependencies
   const actionDeps = {
