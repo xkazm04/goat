@@ -87,6 +87,20 @@ const TreeNode = memo(function TreeNode({
     onSelect(collection);
   }, [collection, onSelect]);
 
+  // The row hosts nested buttons (expand, menu), so it stays a div — and a div
+  // is only a keyboard destination when it declares itself one. Keys fired by
+  // the nested controls are theirs, not the row's.
+  const handleRowKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.target !== e.currentTarget) return;
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        onSelect(collection);
+      }
+    },
+    [collection, onSelect]
+  );
+
   const handleEdit = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -108,13 +122,17 @@ const TreeNode = memo(function TreeNode({
   return (
     <div>
       <motion.div
-        className={`group relative flex items-center gap-2 px-3 py-2 rounded-card cursor-pointer transition-colors ${
+        className={`group relative flex items-center gap-2 px-3 py-2 rounded-card cursor-pointer transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand ${
           isSelected
             ? "bg-slate-700/60 text-white"
             : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-200"
         }`}
         style={{ paddingLeft: `${12 + depth * 16}px` }}
         onClick={handleSelect}
+        onKeyDown={handleRowKeyDown}
+        role="button"
+        tabIndex={0}
+        aria-pressed={isSelected}
         whileHover={{ x: 2 }}
         whileTap={{ scale: 0.98 }}
       >

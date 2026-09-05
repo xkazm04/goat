@@ -19,6 +19,8 @@
  *    "No collections yet" / "Create your first collection" and had no Retry.
  *  - "a failed load inside a collection is not an empty collection": the view
  *    read "This collection is empty".
+ *  - "a sidebar row is a keyboard destination": the row was a div with no
+ *    role or tab stop; Enter on it selected nothing.
  */
 import React, { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
@@ -212,5 +214,19 @@ describe('CollectionsDashboard — when the collections request fails', () => {
 
     expect(host.textContent).not.toContain('This collection is empty');
     expect(host.textContent).toContain("Couldn't load this collection's lists");
+  });
+});
+
+describe('CollectionsDashboard — keyboard reach', () => {
+  it('a sidebar row is a keyboard destination: Tab reaches it, Enter selects it', async () => {
+    await render(<CollectionsDashboard />);
+    const row = sidebarRow('Alpha');
+    expect(row.getAttribute('role')).toBe('button');
+    expect(row.getAttribute('tabindex')).toBe('0');
+
+    await act(async () => {
+      row.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    });
+    expect(fake.actions.setSelectedCollection).toHaveBeenCalledWith('a');
   });
 });
