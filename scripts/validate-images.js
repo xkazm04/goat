@@ -17,6 +17,9 @@
 
 const fs = require('fs');
 
+const nextConfig = require('../next.config.js');
+const { fetchAllItems } = require('./api-items');
+
 // `next dev` serves 3000; the old default (3001) pointed at a port nothing listens on.
 const API_BASE = process.env.API_BASE || 'http://localhost:3000';
 const CONCURRENT_REQUESTS = 10;
@@ -24,9 +27,7 @@ const HTTP_TIMEOUT = 5000;
 
 // Whitelisted domains are READ from next.config.js `images.remotePatterns`,
 // never copied: the copy this replaced had 9 of the config's 13 hosts.
-const WHITELISTED_DOMAINS = require('../next.config.js').images.remotePatterns.map(
-  (p) => p.hostname,
-);
+const WHITELISTED_DOMAINS = nextConfig.images.remotePatterns.map((p) => p.hostname);
 
 // Parse args
 const args = process.argv.slice(2);
@@ -136,10 +137,10 @@ async function main() {
 
   // Fetch all items
   console.log('📥 Fetching items...');
-  const response = await fetch(`${API_BASE}/api/top/items?limit=5000`);
-  const data = await response.json();
-  const items = data.items || [];
-  console.log(`   Found ${items.length} items (total: ${data.total})\n`);
+  // The route clamps limit to 200; walk every page (scripts/api-items.js) so
+  // the report below is about the population, not its first fifth.
+  const { items, total, pages } = await fetchAllItems(API_BASE);
+  console.log(`   Found ${items.length} items (total: ${total}, ${pages} page(s))\n`);
 
   // Validate in batches
   console.log('🔄 Validating images...');
