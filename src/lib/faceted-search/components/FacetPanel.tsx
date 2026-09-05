@@ -228,6 +228,7 @@ function FacetSection({
           'focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-inset'
         )}
         onClick={onToggleExpanded}
+        aria-expanded={isExpanded}
       >
         <div className="flex items-center gap-2">
           <span className="font-medium">{facet.definition.label}</span>
@@ -262,6 +263,7 @@ function FacetSection({
                 <input
                   type="text"
                   placeholder={`Search ${facet.definition.label.toLowerCase()}...`}
+                  aria-label={`Search ${facet.definition.label.toLowerCase()}`}
                   value={searchTerm}
                   onChange={(e) => onSearchChange(e.target.value)}
                   className={cn(
@@ -348,6 +350,7 @@ function FacetValueItem({
           : 'filter-hover'
       )}
       onClick={onSelect}
+      aria-pressed={value.selected}
     >
       {/* Checkbox indicator */}
       <span
@@ -479,6 +482,7 @@ function HierarchicalFacetSection({
           'focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-inset'
         )}
         onClick={onToggleExpanded}
+        aria-expanded={isExpanded}
       >
         <div className="flex items-center gap-2">
           <span className="font-medium">{facet.definition.label}</span>
@@ -532,6 +536,7 @@ function HierarchicalFacetSection({
                 <input
                   type="text"
                   placeholder={`Search ${facet.definition.label.toLowerCase()}...`}
+                  aria-label={`Search ${facet.definition.label.toLowerCase()}`}
                   value={searchTerm}
                   onChange={(e) => onSearchChange(e.target.value)}
                   className={cn(
@@ -646,6 +651,8 @@ function HierarchicalNodeItem({
               e.stopPropagation();
               onToggleExpand();
             }}
+            aria-expanded={isExpanded}
+            aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${node.label}`}
           >
             <motion.span
               animate={{ rotate: isExpanded ? 90 : 0 }}
@@ -667,6 +674,8 @@ function HierarchicalNodeItem({
               : 'border-border hover:border-primary'
           )}
           onClick={() => onSelectValue(selectionValue)}
+          aria-pressed={node.selected}
+          aria-label={`Filter by ${node.label}`}
         >
           {node.selected && <span className="text-xs">✓</span>}
         </button>
