@@ -663,26 +663,3 @@ export class DragOperationRouter {
     return GRID_PRIMITIVE_OPS.has(operationType) || this.operations.has(operationType);
   }
 }
-
-// ============================================================================
-// Singleton Instance
-// ============================================================================
-
-let routerInstance: DragOperationRouter | null = null;
-
-/**
- * Get the global DragOperationRouter instance
- */
-export function getDragOperationRouter(config?: RouterConfig): DragOperationRouter {
-  if (!routerInstance) {
-    routerInstance = new DragOperationRouter(config);
-  }
-  return routerInstance;
-}
-
-/**
- * Reset the global router instance (useful for testing)
- */
-export function resetDragOperationRouter(): void {
-  routerInstance = null;
-}
