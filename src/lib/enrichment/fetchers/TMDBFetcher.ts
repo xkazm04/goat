@@ -5,6 +5,7 @@
  * Primary source for movies and TV shows.
  */
 
+import { SourceRouter } from '../SourceRouter';
 import { calculateSimilarity } from '../utils/string-similarity';
 
 import type { RawSourceData, EnrichmentInput } from '../types';
@@ -315,13 +316,17 @@ class TMDBFetcherClass {
    * Fetch data based on category
    */
   async fetch(input: EnrichmentInput): Promise<RawSourceData> {
-    const category = input.category.toLowerCase();
+    // Derive the category through the router that decided to call TMDB in the
+    // first place. A private alias list here recognised 6 of the 11 aliases
+    // SourceRouter routes to this fetcher, so "films", "cinema", "tv shows",
+    // "tv-shows" and "tv series" fell through to the generic multi-search.
+    const category = SourceRouter.normalizeCategory(input.category, input.subcategory);
 
-    if (category === 'movies' || category === 'movie' || category === 'film') {
+    if (category === 'movies') {
       return this.fetchMovie(input);
     }
 
-    if (category === 'tv' || category === 'television' || category === 'series') {
+    if (category === 'tv') {
       return this.fetchTV(input);
     }
 
