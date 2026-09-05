@@ -52,6 +52,8 @@
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
+import { E2E_FIXTURE_USER, E2E_LISTS, E2E_NS, e2eId, e2eItemsFor } from './seed-e2e-fixtures';
+
 const argv = process.argv.slice(2);
 const CHECK = argv.includes('--check');
 const TEARDOWN = argv.includes('--teardown');
@@ -68,64 +70,17 @@ function cannotRun(what: string, detail?: string): never {
 }
 
 // ---------------------------------------------------------------------------
-// The namespace. Every id here is fixed, so a re-run is an upsert and a
-// teardown is exact. The prefix is greppable on purpose: `e2e0` in a database
-// row is always this script's doing.
+// The namespace lives in scripts/seed-e2e-fixtures.ts so the specs can address
+// the same rows this script writes. Every id there is fixed, so a re-run is an
+// upsert and a teardown is exact. The prefix is greppable on purpose: `e2e0` in
+// a database row is always this script's doing.
 // ---------------------------------------------------------------------------
 
-export const NS = 'e2e00000';
-/**
- * A well-formed v4-shaped UUID whose final group is `<2-char kind><10 digits>`.
- * The group MUST be exactly 12 hex characters — Postgres rejects anything else
- * outright, which is how the first version of this function was caught: it
- * padded to 6 and every insert failed with "invalid input syntax for type
- * uuid". A malformed id is a could-not-run, and it said so — and since
- * 2026-09-05 scripts/seed-e2e-fixtures.test.ts says so BEFORE a database does.
- */
-export const id = (kind: string, n: number) =>
-  `${NS}-0000-4000-8000-${kind}${String(n).padStart(10, '0')}`;
-
-export const FIXTURE_USER = id('aa', 1);
-
-/**
- * Two lists, because a suite that only ever sees one cannot tell "the first
- * list" from "the list I chose". Sizes differ for the same reason.
- *
- * `predefined: true` keeps them out of any "my lists" view that filters on
- * ownership, so they are visible to browse journeys without pretending to
- * belong to a signed-in user the suite does not have.
- */
-export const LISTS = [
-  {
-    id: id('bb', 1),
-    title: 'E2E Fixture — Greatest Games',
-    category: 'games',
-    subcategory: 'E2E',
-    size: 10,
-    itemCount: 12,
-  },
-  {
-    id: id('bb', 2),
-    title: 'E2E Fixture — Greatest Athletes',
-    category: 'sports',
-    subcategory: 'E2E',
-    size: 5,
-    itemCount: 6,
-  },
-] as const;
-
-/** Deterministic, boring, and obviously synthetic. */
-export function itemsFor(listIndex: number, count: number) {
-  const list = LISTS[listIndex];
-  return Array.from({ length: count }, (_, i) => ({
-    id: id(`c${listIndex}`, i + 1),
-    name: `E2E ${list.category === 'games' ? 'Game' : 'Athlete'} ${String(i + 1).padStart(2, '0')}`,
-    category: list.category,
-    subcategory: 'E2E',
-    description: `Deterministic fixture item ${i + 1} for ${list.title}.`,
-    item_year: 2000 + i,
-  }));
-}
+const NS = E2E_NS;
+const id = e2eId;
+const FIXTURE_USER = E2E_FIXTURE_USER;
+const LISTS = E2E_LISTS;
+const itemsFor = e2eItemsFor;
 
 // ---------------------------------------------------------------------------
 // Client
@@ -353,17 +308,6 @@ async function main() {
   process.exit(EXIT_OK);
 }
 
-/**
- * Run only when invoked as the script (`npm run seed:e2e`, i.e. tsx with this
- * file as argv[1]). When imported — by scripts/seed-e2e-fixtures.test.ts, which
- * pins the id shape and the fixture invariants above — nothing executes, and in
- * particular nothing touches a database.
- */
-const invokedAsScript =
-  typeof process.argv[1] === 'string' && /seed-e2e\.(ts|js|mjs)$/.test(process.argv[1].replace(/\\/g, '/'));
-
-if (invokedAsScript) {
-  main().catch((err) => {
-    cannotRun('unhandled failure', String(err?.message ?? err));
-  });
-}
+main().catch((err) => {
+  cannotRun('unhandled failure', String(err?.message ?? err));
+});

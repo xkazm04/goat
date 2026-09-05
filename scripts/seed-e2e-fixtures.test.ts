@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { FIXTURE_USER, LISTS, NS, id, itemsFor } from './seed-e2e';
+import {
+  E2E_FIXTURE_USER as FIXTURE_USER,
+  E2E_LISTS as LISTS,
+  E2E_NS as NS,
+  e2eId as id,
+  e2eItemsFor as itemsFor,
+} from './seed-e2e-fixtures';
 
 /**
  * The fixtures seed-e2e.ts writes are the browser suite's whole population,
@@ -14,7 +20,9 @@ import { FIXTURE_USER, LISTS, NS, id, itemsFor } from './seed-e2e';
  * padStart(6), the shape assertion is red for every id; with two lists given
  * the same `id('bb', 1)`, the uniqueness assertion is red.
  *
- * Importing seed-e2e.ts executes nothing: main() runs only when the file is
+ * The definitions moved to seed-e2e-fixtures.ts on 2026-09-05 so the Playwright
+ * specs can address the same rows without importing the Supabase client.
+ * Importing that module executes nothing: main() runs only when seed-e2e.ts is
  * argv[1] (the `npm run seed:e2e` path).
  */
 
