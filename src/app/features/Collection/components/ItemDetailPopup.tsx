@@ -27,6 +27,8 @@ import { SPRING , DURATION } from "@/lib/animations/motion-presets";
 import { cn } from "@/lib/utils";
 import { useItemPopupStore, PopupInstance } from "@/stores/item-popup-store";
 
+import { hasRankingEvidence } from "./RankingDistribution";
+
 import type { ItemDetailResponse } from "@/types/item-details";
 import type { BarShapeProps } from "recharts";
 
@@ -275,11 +277,16 @@ export function ItemDetailPopup({ popup, onQuickAssign }: ItemDetailPopupProps) 
                 onQuickAssign={onQuickAssign ? handleQuickAssign : undefined}
               />
 
-              {/* Distribution chart */}
-              {data.rankingStats && (
+              {/* Distribution chart — only when someone has actually ranked the
+                  item; the API's zeroed stats object is not evidence. */}
+              {hasRankingEvidence(data.rankingStats) ? (
                 <div className="px-2 pb-2">
                   <CompactRankingChart stats={data.rankingStats} accent={accent} />
                 </div>
+              ) : (
+                <p className="px-2 pb-2 text-2xs text-slate-500 text-center" data-testid="popup-no-rankings">
+                  No community rankings yet
+                </p>
               )}
             </>
           )}

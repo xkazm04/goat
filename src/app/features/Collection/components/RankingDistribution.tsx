@@ -42,6 +42,22 @@ export interface RankingStats {
   };
 }
 
+/**
+ * Does this stats object carry ANY community evidence?
+ *
+ * `/api/items/[id]/details` returns a ZEROED stats object (not null) for an
+ * item nobody has ranked, so the presence of the object says nothing. Every
+ * surface that paints ranking figures must ask this ONE question first —
+ * otherwise a zeroed object renders as "#0.0 / Stable / 25th #0", which reads
+ * as real consensus. RankingDistribution and ItemDetailPopup's compact chart
+ * both read this predicate; until 2026-09-05 only the former checked.
+ */
+export function hasRankingEvidence<T extends { totalRankings: number }>(
+  stats: T | null | undefined,
+): stats is T {
+  return !!stats && stats.totalRankings > 0;
+}
+
 export interface RankingDistributionProps {
   /** Ranking statistics */
   stats: RankingStats | null;
@@ -219,7 +235,7 @@ export function RankingDistribution({
   // The API returns a *zeroed* stats object (not null) for unranked items so the
   // panel always shows — but rendering it produces a misleading "#0.0 / Very
   // Stable" that implies real consensus. Treat zero rankings as the empty state.
-  if (!stats || stats.totalRankings === 0) {
+  if (!hasRankingEvidence(stats)) {
     return (
       <div className={cn("text-center py-6 text-slate-500", className)}>
         <BarChart3 className="w-5 h-5 mx-auto mb-2 opacity-50" />
