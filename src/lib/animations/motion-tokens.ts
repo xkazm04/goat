@@ -9,6 +9,8 @@
  * micro-interactions.ts and the SPRING presets in motion-presets.ts.
  */
 
+import { DURATION } from './motion-presets';
+
 import type { Transition } from 'framer-motion';
 
 // ---------------------------------------------------------------------------
@@ -52,15 +54,22 @@ export const ENTRANCE = {
   ambient: 0.6,
 } as const;
 
+/**
+ * Entrance durations are ROLES over the one duration ladder in motion-presets.ts
+ * (design-tokens/token-taxonomy: semantic roles bind to raw scale values; they
+ * do not restate them). Until 2026-09-05 these four were literals that happened
+ * to equal ladder rungs, so retuning the ladder left entrances behind.
+ * Pinned by motion-tokens.test.ts.
+ */
 export const ENTRANCE_DURATION = {
-  /** Standard entrance (300ms) */
-  normal: 0.3,
-  /** Slow, dramatic entrance (500ms) */
-  slow: 0.5,
-  /** Background ambient fade (800ms) */
-  ambient: 0.8,
-  /** Spotlight / scenic effect (600ms) */
-  scenic: 0.6,
+  /** Standard entrance — DURATION.normal (300ms) */
+  normal: DURATION.normal,
+  /** Slow, dramatic entrance — DURATION.slow (500ms) */
+  slow: DURATION.slow,
+  /** Background ambient fade — DURATION.dramatic (800ms) */
+  ambient: DURATION.dramatic,
+  /** Spotlight / scenic effect — DURATION.emphasis (600ms) */
+  scenic: DURATION.emphasis,
 } as const;
 
 // ---------------------------------------------------------------------------
