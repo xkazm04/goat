@@ -215,7 +215,7 @@ function FacetSection({
   return (
     <div
       className={cn(
-        'border border-border rounded-lg overflow-hidden',
+        'border border-border rounded-card overflow-hidden',
         compact ? 'text-sm' : ''
       )}
     >
@@ -232,7 +232,7 @@ function FacetSection({
         <div className="flex items-center gap-2">
           <span className="font-medium">{facet.definition.label}</span>
           {selectedCount > 0 && (
-            <span className="px-1.5 py-0.5 text-xs bg-primary text-primary-foreground rounded-full">
+            <span className="badge-sm bg-primary text-primary-foreground">
               {selectedCount}
             </span>
           )}
@@ -466,7 +466,7 @@ function HierarchicalFacetSection({
   return (
     <div
       className={cn(
-        'border border-border rounded-lg overflow-hidden',
+        'border border-border rounded-card overflow-hidden',
         compact ? 'text-sm' : ''
       )}
     >
@@ -483,7 +483,7 @@ function HierarchicalFacetSection({
         <div className="flex items-center gap-2">
           <span className="font-medium">{facet.definition.label}</span>
           {selectedCount > 0 && (
-            <span className="px-1.5 py-0.5 text-xs bg-primary text-primary-foreground rounded-full">
+            <span className="badge-sm bg-primary text-primary-foreground">
               {selectedCount}
             </span>
           )}
