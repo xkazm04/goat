@@ -87,7 +87,8 @@ class EnrichmentPipelineClass {
    */
   private async fetchFromSource(
     source: DataSource,
-    input: EnrichmentInput
+    input: EnrichmentInput,
+    config: EnrichmentConfig
   ): Promise<RawSourceData> {
     const fetcher = SOURCE_FETCHERS[source];
 
@@ -126,9 +127,9 @@ class EnrichmentPipelineClass {
           fetchedAt: Date.now(),
           confidence: 0,
           fetchDurationMs: Date.now() - fetchStart,
-          error: `Timeout after ${this.config.sourceTimeoutMs}ms`,
+          error: `Timeout after ${config.sourceTimeoutMs}ms`,
         });
-      }, this.config.sourceTimeoutMs);
+      }, config.sourceTimeoutMs);
     });
 
     // Race fetch against timeout
@@ -165,26 +166,27 @@ class EnrichmentPipelineClass {
    */
   private async fetchFromSources(
     sources: DataSource[],
-    input: EnrichmentInput
+    input: EnrichmentInput,
+    config: EnrichmentConfig
   ): Promise<RawSourceData[]> {
     const results: RawSourceData[] = [];
     const chunks: DataSource[][] = [];
 
     // Split into chunks based on maxParallelSources
-    for (let i = 0; i < sources.length; i += this.config.maxParallelSources) {
-      chunks.push(sources.slice(i, i + this.config.maxParallelSources));
+    for (let i = 0; i < sources.length; i += config.maxParallelSources) {
+      chunks.push(sources.slice(i, i + config.maxParallelSources));
     }
 
     // Process chunks sequentially, sources within chunk in parallel
     for (const chunk of chunks) {
       const chunkResults = await Promise.all(
-        chunk.map((source) => this.fetchFromSource(source, input))
+        chunk.map((source) => this.fetchFromSource(source, input, config))
       );
       results.push(...chunkResults);
 
       // If we got a high-confidence result, we can stop early
       const highConfidence = chunkResults.find(
-        (r) => r.confidence >= this.config.minConfidence && !r.error
+        (r) => r.confidence >= config.minConfidence && !r.error
       );
       if (highConfidence && results.filter((r) => !r.error).length >= 2) {
         break;
@@ -198,6 +200,21 @@ class EnrichmentPipelineClass {
    * Enrich a single item
    */
   async enrich(input: EnrichmentInput): Promise<EnrichmentResult> {
+    return this.enrichWith(input, this.config);
+  }
+
+  /**
+   * Enrich a single item against an EXPLICIT config.
+   *
+   * The config travels with the call rather than through `this.config`:
+   * enrichBatch used to assign its per-request overrides onto the singleton
+   * and restore them at the end, so two batches -- or a batch and a plain
+   * enrich -- in flight at once read each other's settings.
+   */
+  private async enrichWith(
+    input: EnrichmentInput,
+    config: EnrichmentConfig
+  ): Promise<EnrichmentResult> {
     const startedAt = Date.now();
     const errors: Array<{ source: DataSource; error: string }> = [];
 
@@ -210,7 +227,7 @@ class EnrichmentPipelineClass {
       const allSources = SourceRouter.getAllSources(input.category, input.subcategory);
 
       // Fetch from all sources
-      const sourceResults = await this.fetchFromSources(allSources, input);
+      const sourceResults = await this.fetchFromSources(allSources, input, config);
 
       // Collect errors
       for (const result of sourceResults) {
@@ -253,14 +270,14 @@ class EnrichmentPipelineClass {
       if (normalizedData.images.length > 0) {
         normalizedData.selectedImage = ImageSelector.selectBest(
           normalizedData.images,
-          this.config.preferredImageSize
+          config.preferredImageSize
         );
       }
 
       // Check if we have minimum required data
       const hasMinimumData = Boolean(
         normalizedData.name &&
-        normalizedData.confidence >= this.config.minConfidence
+        normalizedData.confidence >= config.minConfidence
       );
 
       const completedAt = Date.now();
@@ -306,14 +323,12 @@ class EnrichmentPipelineClass {
   async enrichBatch(request: BatchEnrichmentRequest): Promise<BatchEnrichmentResult> {
     const startedAt = Date.now();
 
-    // Use a local merged config instead of mutating the singleton instance
-    const savedConfig = this.config;
+    // A local merged config, passed down the call chain. Nothing on the
+    // singleton is written, so concurrent batches cannot read each other's
+    // overrides.
     const batchConfig = request.config
       ? { ...this.config, ...request.config }
       : this.config;
-
-    // Temporarily apply batch config for the duration of this call
-    this.config = batchConfig;
 
     const results: EnrichmentResult[] = [];
     let successful = 0;
@@ -330,7 +345,7 @@ class EnrichmentPipelineClass {
 
       for (const chunk of chunks) {
         const chunkResults = await Promise.all(
-          chunk.map((item) => this.enrich(item))
+          chunk.map((item) => this.enrichWith(item, batchConfig))
         );
         for (const result of chunkResults) {
           results.push(result);
@@ -341,7 +356,7 @@ class EnrichmentPipelineClass {
     } else {
       // Normal/low priority - process sequentially
       for (const item of items) {
-        const result = await this.enrich(item);
+        const result = await this.enrichWith(item, batchConfig);
         results.push(result);
         if (result.success) successful++;
         else failed++;
@@ -349,9 +364,6 @@ class EnrichmentPipelineClass {
     }
 
     const completedAt = Date.now();
-
-    // Restore original singleton config so batch overrides don't leak
-    this.config = savedConfig;
 
     return {
       total: items.length,
