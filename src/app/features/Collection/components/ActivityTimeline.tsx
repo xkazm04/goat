@@ -60,6 +60,26 @@ const ACTION_CONFIG: Record<
 };
 
 /**
+ * The route casts `action` straight from the database row into the union above
+ * without validating it, so a value outside the vocabulary CAN reach this
+ * component. Indexing ACTION_CONFIG with it yields undefined, and `config.icon`
+ * then threw — taking the whole inspector down (ItemInspectorProvider sits
+ * outside CollectionErrorBoundary). An unknown action renders as a neutral
+ * event rather than a crash.
+ */
+const UNKNOWN_ACTION_CONFIG = {
+  icon: Activity,
+  label: "Activity",
+  color: "#94A3B8",
+  bgColor: "rgba(148,163,184,0.15)",
+} satisfies (typeof ACTION_CONFIG)[keyof typeof ACTION_CONFIG];
+
+function configFor(action: string) {
+  return (ACTION_CONFIG as Record<string, (typeof ACTION_CONFIG)[keyof typeof ACTION_CONFIG]>)[action]
+    ?? UNKNOWN_ACTION_CONFIG;
+}
+
+/**
  * ActivityTimeline - Vertical timeline showing item ranking history.
  * Used in ItemInspector as a collapsible section.
  */
@@ -167,7 +187,7 @@ export function ActivityTimeline({ itemId }: ActivityTimelineProps) {
 }
 
 function TimelineEvent({ event, index }: { event: ActivityEvent; index: number }) {
-  const config = ACTION_CONFIG[event.action];
+  const config = configFor(event.action);
   const Icon = config.icon;
 
   const positionChange = useMemo(() => {
