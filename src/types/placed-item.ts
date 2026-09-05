@@ -164,21 +164,3 @@ export function createEmptyPlacedItemArray(
     createEmptyPlacedItem(i, idPrefix)
   );
 }
-
-// ============================================================================
-// Accessors — Convenience helpers for common access patterns
-// ============================================================================
-
-/**
- * Get the item ID from a PlacedItem (null if empty slot)
- */
-export function getPlacedItemId(placed: PlacedItem): string | null {
-  return placed.item?.id ?? null;
-}
-
-/**
- * Check if a PlacedItem has an item assigned
- */
-export function isPlacedItemFilled(placed: PlacedItem): boolean {
-  return placed.context.matched && placed.item !== null;
-}
