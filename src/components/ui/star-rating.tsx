@@ -88,73 +88,96 @@ export function StarRating({
   };
 
   const displayRating = hoverRating ?? value;
+  const formattedValue = Number.isInteger(value) ? String(value) : value.toFixed(1);
+
+  const stars = Array.from({ length: maxRating }, (_, i) => {
+    const starValue = i + 1;
+    const fillPercentage = Math.min(Math.max((displayRating - i) * MAX_FILL_PERCENTAGE, MIN_FILL_PERCENTAGE), MAX_FILL_PERCENTAGE);
+    const glyph = (
+      <StarGlyph fillPercentage={fillPercentage} hot={interactive && hoverRating !== null} />
+    );
+
+    if (!interactive) {
+      // Display mode: the rating is ONE fact, announced once by the container
+      // (role="img" below). Each star is a decorative glyph — it used to be a
+      // disabled <button aria-label="Rate N out of M">, so a screen reader
+      // heard five disabled controls and never the value.
+      return (
+        <span
+          key={i}
+          aria-hidden="true"
+          className={cn("relative inline-block", SIZE_CLASSES[size])}
+          data-testid={`star-${starValue}`}
+        >
+          {glyph}
+        </span>
+      );
+    }
+
+    return (
+      <button
+        key={i}
+        type="button"
+        onClick={() => handleClick(starValue)}
+        onMouseEnter={() => handleMouseEnter(starValue)}
+        onMouseLeave={handleMouseLeave}
+        className={cn("relative cursor-pointer hover:scale-110 transition-transform", SIZE_CLASSES[size])}
+        aria-label={`Rate ${starValue} out of ${maxRating}`}
+        aria-pressed={value === starValue}
+        data-testid={`star-${starValue}`}
+      >
+        {glyph}
+      </button>
+    );
+  });
 
   return (
     <div
       className={cn("flex items-center gap-0.5", className)}
       data-testid={testId || "star-rating"}
+      {...(interactive
+        ? { role: "group", "aria-label": `Rating, ${formattedValue} out of ${maxRating}` }
+        : { role: "img", "aria-label": `Rated ${formattedValue} out of ${maxRating}` })}
     >
-      {Array.from({ length: maxRating }, (_, i) => {
-        const starValue = i + 1;
-        const fillPercentage = Math.min(Math.max((displayRating - i) * MAX_FILL_PERCENTAGE, MIN_FILL_PERCENTAGE), MAX_FILL_PERCENTAGE);
-
-        return (
-          <button
-            key={i}
-            type="button"
-            disabled={!interactive}
-            onClick={() => handleClick(starValue)}
-            onMouseEnter={() => handleMouseEnter(starValue)}
-            onMouseLeave={handleMouseLeave}
-            className={cn(
-              "relative",
-              SIZE_CLASSES[size],
-              interactive && "cursor-pointer hover:scale-110 transition-transform",
-              !interactive && "cursor-default"
-            )}
-            aria-label={`Rate ${starValue} out of ${maxRating}`}
-            data-testid={`star-${starValue}`}
-          >
-            {/* Background (empty star) */}
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox={SVG_VIEWBOX}
-              fill="none"
-              stroke="currentColor"
-              className="absolute inset-0 text-gray-600"
-              strokeWidth={SVG_STROKE_WIDTH}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polygon points={STAR_POLYGON_POINTS} />
-            </svg>
-
-            {/* Foreground (filled star) */}
-            <div
-              className="absolute inset-0 overflow-hidden"
-              style={{ width: `${fillPercentage}%` }}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox={SVG_VIEWBOX}
-                fill="currentColor"
-                className={cn(
-                  "text-yellow-500",
-                  interactive && hoverRating && "text-yellow-400"
-                )}
-              >
-                <polygon points={STAR_POLYGON_POINTS} />
-              </svg>
-            </div>
-          </button>
-        );
-      })}
+      {stars}
 
       {showValue && value > DEFAULT_VALUE && (
-        <span className="ml-1 text-xs text-gray-400">
+        <span className="ml-1 text-xs text-gray-400" aria-hidden="true">
           {value.toFixed(1)}
         </span>
       )}
     </div>
+  );
+}
+
+function StarGlyph({ fillPercentage, hot }: { fillPercentage: number; hot: boolean }) {
+  return (
+    <>
+      {/* Background (empty star) */}
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox={SVG_VIEWBOX}
+        fill="none"
+        stroke="currentColor"
+        className="absolute inset-0 text-gray-600"
+        strokeWidth={SVG_STROKE_WIDTH}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <polygon points={STAR_POLYGON_POINTS} />
+      </svg>
+
+      {/* Foreground (filled star) */}
+      <div className="absolute inset-0 overflow-hidden" style={{ width: `${fillPercentage}%` }}>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox={SVG_VIEWBOX}
+          fill="currentColor"
+          className={cn("text-yellow-500", hot && "text-yellow-400")}
+        >
+          <polygon points={STAR_POLYGON_POINTS} />
+        </svg>
+      </div>
+    </>
   );
 }
