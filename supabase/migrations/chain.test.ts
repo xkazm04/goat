@@ -190,12 +190,23 @@ describe('supabase/migrations — the chain read as a chain', () => {
       if (m) defined.add(ident(m[1]));
     }
     const queried = new Set<string>();
+    // A walk over a live tree races anything that writes into it. Concretely:
+    // scripts/doc-coupling.test.ts creates and removes an empty probe directory
+    // under src/lib/ to prove the coverage walker ignores it, and vitest runs
+    // the two files in parallel workers -- so this walk intermittently hit
+    // "ENOENT: scandir src/lib/__doc_coupling_probe_empty__" and failed a test
+    // about SQL for a reason that had nothing to do with SQL. A directory or
+    // file that vanishes mid-walk cannot contain a `.from('table')` this test
+    // needs to see, so skipping it is not a weakened assertion.
     const walk = (dir: string) => {
-      for (const n of readdirSync(dir, { withFileTypes: true })) {
+      let entries;
+      try { entries = readdirSync(dir, { withFileTypes: true }); } catch { return; }
+      for (const n of entries) {
         const p = path.join(dir, n.name);
         if (n.isDirectory()) { if (n.name !== 'node_modules') walk(p); continue; }
         if (!/\.(ts|tsx)$/.test(n.name) || /\.test\.tsx?$/.test(n.name)) continue;
-        const src = readFileSync(p, 'utf8');
+        let src: string;
+        try { src = readFileSync(p, 'utf8'); } catch { continue; }
         for (const m of src.matchAll(/\.from\(['"]([a-z_]+)['"]/g)) queried.add(m[1]);
       }
     };
