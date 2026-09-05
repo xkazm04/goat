@@ -63,15 +63,23 @@ export function useIntersectionObserver(
   );
 
   const ref = useRef<HTMLDivElement>(null);
+  // Without IntersectionObserver the element counts as visible from the first
+  // render (decided once; the server assumes the API exists, as every current
+  // browser does) rather than being flipped by a setState inside the effect.
   const [isIntersecting, setIsIntersecting] = useState(
-    mergedConfig.initialIsIntersecting ?? false
+    () =>
+      (mergedConfig.initialIsIntersecting ?? false) ||
+      (typeof window !== 'undefined' && !('IntersectionObserver' in window))
   );
   const [entry, setEntry] = useState<IntersectionObserverEntry | null>(null);
   const hasTriggeredRef = useRef(false);
 
-  // Store callback in ref to avoid re-creating observer
+  // Latest-callback ref so the observer is not re-created per render. Written
+  // from an effect, not during render (react-hooks/refs).
   const onChangeRef = useRef(mergedConfig.onChange);
-  onChangeRef.current = mergedConfig.onChange;
+  useEffect(() => {
+    onChangeRef.current = mergedConfig.onChange;
+  }, [mergedConfig.onChange]);
 
   useEffect(() => {
     const element = ref.current;
@@ -80,12 +88,8 @@ export function useIntersectionObserver(
     // Don't observe if triggerOnce and already triggered
     if (mergedConfig.triggerOnce && hasTriggeredRef.current) return;
 
-    // Check for Intersection Observer support
-    if (!('IntersectionObserver' in window)) {
-      // IntersectionObserver not supported — falling back to visible
-      setIsIntersecting(true);
-      return;
-    }
+    // No IntersectionObserver: already visible via the initial state above.
+    if (!('IntersectionObserver' in window)) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -191,9 +195,12 @@ export function LazyLoadTrigger({
   testId,
   className,
 }: LazyLoadTriggerProps) {
-  // Store callback in ref to prevent infinite loops from non-memoized props
+  // Latest-callback ref so a non-memoised prop cannot re-fire the effect below.
+  // Written from an effect, not during render (react-hooks/refs).
   const onVisibleRef = useRef(onVisible);
-  onVisibleRef.current = onVisible;
+  useEffect(() => {
+    onVisibleRef.current = onVisible;
+  }, [onVisible]);
 
   const { ref, isIntersecting } = useIntersectionObserver({
     rootMargin,
