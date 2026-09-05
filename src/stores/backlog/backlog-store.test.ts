@@ -22,8 +22,6 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { BacklogGroup, BacklogItem } from '@/types/backlog-groups';
-
 const api = vi.hoisted(() => ({
   getByCategory: vi.fn(),
   getBulkItems: vi.fn(),
@@ -47,6 +45,7 @@ import { MAX_PENDING_CHANGES } from '@/lib/offline/OfflinePersistence';
 import { narrowRehydratedBacklogState, partializeBacklogState, useBacklogStore } from './store';
 
 import type { BacklogState, PendingChange } from './types';
+import type { BacklogGroup, BacklogItem } from '@/types/backlog-groups';
 
 function group(id: string, items: BacklogItem[] = []): BacklogGroup {
   return {
