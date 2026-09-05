@@ -1,5 +1,5 @@
-import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { defineConfig } from 'vitest/config';
 
@@ -26,7 +26,7 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
-    include: ['src/**/*.test.{ts,tsx}', 'scripts/**/*.test.ts'],
+    include: ['src/**/*.test.{ts,tsx}', 'scripts/**/*.test.ts', 'supabase/**/*.test.ts'],
     exclude: ['**/node_modules/**', 'e2e/**', '.next/**'],
     // A run that executed zero files is a broken instrument, not a pass.
     // Without this, deleting/renaming the last spec would leave `npm test`
