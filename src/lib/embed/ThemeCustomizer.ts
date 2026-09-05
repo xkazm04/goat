@@ -19,12 +19,18 @@ export class ColorUtils {
    * Parse hex color to RGB
    */
   static hexToRgb(hex: string): { r: number; g: number; b: number } | null {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    // Accept exactly what validateColors accepts: 6-digit, or 3-digit shorthand
+    // (each digit doubled). Before 2026-09-05 only the 6-digit form parsed, so a
+    // validated `#fff` fell through every derived value as if it were black.
+    const short = /^#?([a-f\d])([a-f\d])([a-f\d])$/i.exec(hex);
+    const result = short
+      ? [null, short[1] + short[1], short[2] + short[2], short[3] + short[3]]
+      : /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     if (!result) return null;
     return {
-      r: parseInt(result[1], 16),
-      g: parseInt(result[2], 16),
-      b: parseInt(result[3], 16),
+      r: parseInt(result[1]!, 16),
+      g: parseInt(result[2]!, 16),
+      b: parseInt(result[3]!, 16),
     };
   }
 
