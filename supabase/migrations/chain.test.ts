@@ -156,7 +156,7 @@ describe('supabase/migrations — the chain read as a chain', () => {
     expect(disagreements).toEqual([]);
   });
 
-  it.fails('a SELECT * view is re-created after its base table last gained a column', () => {
+  it('a SELECT * view is re-created after its base table last gained a column', () => {
     // Postgres expands `*` when the view is CREATED. A column added to the base
     // table afterwards does not exist on the view, and a route that selects it
     // through the view fails on every call.
