@@ -75,8 +75,8 @@ describe('resolvePlacementItem', () => {
 
 /**
  * The prompt names the keys that will do something. Negative control (recorded
- * 2026-09-05): against the pre-fix constant 'Press 1-9 to select an item' the
- * first three cases fail and only the nine-item case passes.
+ * 2026-09-05): against the pre-fix constant 'Press 1-9 to select an item', 4 of
+ * the 5 tests below went red; only the over-range case (40 items) passed.
  */
 describe('selectItemPrompt', () => {
   it('names only the keys that have an item behind them', () => {
