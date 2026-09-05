@@ -40,6 +40,9 @@ export interface CreateListRequest {
   time_period: string;
   description?: string;
   allow_custom_items?: boolean;
+  // Resolved owner id (temp/guest UUID or authenticated user id). The
+  // create-with-user route reads this; without it every list is orphaned.
+  user_id?: string;
   user: {
     email: string;
     name?: string;
@@ -111,6 +114,9 @@ export function listIntentToCreateRequest(
     size: intent.size,
     time_period: intent.timePeriod,
     description: generateListDescription(intent),
+    // The route reads body.user_id to own the list; the user descriptor below is
+    // kept only as a fallback hint. Without user_id the list is created orphaned.
+    user_id: tempUserId,
     user: {
       email: `temp-${tempUserId}@goat.app`,
       name: `User ${tempUserId.slice(-6)}`,

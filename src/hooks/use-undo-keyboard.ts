@@ -8,6 +8,7 @@
 
 import { useEffect, useCallback } from 'react';
 
+import { useShortcutScope } from '@/lib/keyboard';
 import { useUndoStore } from '@/stores/undo-store';
 
 import type { OperationStoreContext } from '@/lib/dnd/operations/types';
@@ -22,6 +23,11 @@ interface UseUndoKeyboardOptions {
 /**
  * Hook that registers global Ctrl+Z (undo) and Ctrl+Shift+Z (redo) handlers.
  *
+ * This is the BASE scope: it claims the keyboard on mount and yields it to any
+ * overlay that claims one later (MatchupScreen's useMatchupKeyboard is the one
+ * that does today). Before 2026-08-24 there was no arbitration and one Ctrl+Z
+ * fired both handlers, because window listeners do not nest.
+ *
  * Usage:
  * ```tsx
  * useUndoKeyboard({
@@ -32,9 +38,13 @@ interface UseUndoKeyboardOptions {
 export function useUndoKeyboard({ getStoreContext, enabled = true }: UseUndoKeyboardOptions) {
   const undo = useUndoStore((s) => s.undo);
   const redo = useUndoStore((s) => s.redo);
+  const scope = useShortcutScope('grid-undo', enabled);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
+      // An overlay above us owns the keyboard; do not also act on its keypress.
+      if (!scope.isActive()) return;
+
       // Only handle Ctrl+Z / Cmd+Z variants
       const isCtrlOrCmd = e.ctrlKey || e.metaKey;
       if (!isCtrlOrCmd || e.key.toLowerCase() !== 'z') return;
@@ -57,7 +67,7 @@ export function useUndoKeyboard({ getStoreContext, enabled = true }: UseUndoKeyb
         undo(getStoreContext);
       }
     },
-    [undo, redo, getStoreContext]
+    [undo, redo, getStoreContext, scope]
   );
 
   useEffect(() => {

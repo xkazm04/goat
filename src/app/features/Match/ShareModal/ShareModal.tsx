@@ -122,6 +122,7 @@ export function ShareModal({ isOpen: controlledIsOpen, onClose }: ShareModalProp
   const handleGeneratePreview = useCallback(async () => {
     if (!renderRef.current) return;
     setIsCapturing(true);
+    setShareError(null);
     try {
       const { snapdom } = await import("@zumer/snapdom");
       const canvas = await snapdom.toCanvas(renderRef.current, { scale: 2 });
@@ -129,7 +130,11 @@ export function ShareModal({ isOpen: controlledIsOpen, onClose }: ShareModalProp
       setCapturedImageUrl(dataUrl);
       setStep("preview");
     } catch (err) {
+      // Capture can fail (offline dynamic import, tainted cross-origin image,
+      // CSP). Surface it instead of silently bouncing the button back, which
+      // left the user stuck on step 1 with no explanation.
       console.error("Image capture failed:", err);
+      setShareError("Couldn't generate the preview image. Please try again.");
     } finally {
       setIsCapturing(false);
     }
@@ -569,6 +574,13 @@ export function ShareModal({ isOpen: controlledIsOpen, onClose }: ShareModalProp
                             </>
                           )}
                         </button>
+
+                        {/* Capture error (theme step) */}
+                        {shareError && (
+                          <div className="p-3 rounded-card bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                            {shareError}
+                          </div>
+                        )}
 
                         {/* Skip */}
                         <button

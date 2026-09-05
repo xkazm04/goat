@@ -134,6 +134,8 @@ export function ItemDetailPopup({ popup, onQuickAssign }: ItemDetailPopupProps) 
       onMouseDown={handleFocus}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      role="dialog"
+      aria-label={data?.item.title ?? 'Item details'}
       style={{
         position: 'fixed',
         left: popup.position.x,
@@ -226,6 +228,7 @@ export function ItemDetailPopup({ popup, onQuickAssign }: ItemDetailPopupProps) 
           <div className="flex items-center gap-0.5">
             {/* Lock/Unlock button */}
             <button
+              type="button"
               onClick={handleToggleLock}
               className={cn(
                 "p-1 rounded-control transition-colors",
@@ -234,6 +237,7 @@ export function ItemDetailPopup({ popup, onQuickAssign }: ItemDetailPopupProps) 
                   : "text-slate-500 hover:text-white hover:bg-white/10"
               )}
               title={popup.locked ? 'Unlock (free movement)' : 'Lock to top row'}
+              aria-label={popup.locked ? 'Unlock popup (free movement)' : 'Lock popup to top row'}
             >
               {popup.locked
                 ? <Lock className="w-3 h-3" />
@@ -241,7 +245,9 @@ export function ItemDetailPopup({ popup, onQuickAssign }: ItemDetailPopupProps) 
               }
             </button>
             <button
+              type="button"
               onClick={handleClose}
+              aria-label="Close details"
               className="p-1 rounded-control text-slate-500 hover:text-white hover:bg-white/10 transition-colors"
             >
               <X className="w-3 h-3" />

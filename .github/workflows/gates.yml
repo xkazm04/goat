@@ -1,0 +1,271 @@
+# Quality gates. Until 2026-08-24 this repo had no CI, no git hooks and no
+# lint-staged: every command in package.json was manual-invocation-only, so no
+# check consumed any exit code and nothing could refuse anything.
+#
+# EVERY JOB HERE BLOCKS, and each one says why in terms of its INPUT, not its
+# severity (registry quality-gates/blocking-by-input-determinism). The test is:
+# can the same commit, checked again next month, produce a different answer
+# without anyone changing anything? For all four jobs below the answer is no —
+# the verdict is a function of the tree plus a committed lockfile, so the
+# promise a blocking gate makes to the author it stops ("you can make this
+# green, and doing so is part of your change") is true.
+#
+# There is deliberately NO supply-chain / advisory-feed job here. That input
+# DOES move on its own — an advisory published overnight would wall the next
+# unrelated pull request for something that did not exist when its author
+# started. Adding one is fine; adding one that blocks is not, and it would need
+# a scheduled trigger and a named reader before it was worth anything.
+# See .ai/manifest.yaml capabilityNotes.
+
+name: gates
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  # The browser suite is manual-dispatch only; see the `e2e` job for why.
+  workflow_dispatch:
+
+concurrency:
+  group: gates-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit:
+    name: unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          # node 24 because it SHIPS npm 11, which is the resolver that writes
+          # package-lock.json here. npm 10 (bundled with node 22) resolves this
+          # tree differently — it wants @emnapi/{core,runtime}@1.11.3 hoisted,
+          # npm 11 wants them nested under the two wasm32-wasi packages — and no
+          # single lockfile satisfies both, so `npm ci` failed before any check
+          # ran on this workflow's first four runs.
+          #
+          # Matching the runtime is deliberate and better than `npm i -g npm@11`,
+          # which was tried and did not replace the shim actually on PATH.
+          #
+          # The lockfile alone is not a reproducible input; the lockfile PLUS the
+          # resolver is. Bump them together, and re-verify in a clean directory:
+          #   npm ci --os=linux --cpu=x64 --dry-run
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # BLOCKS. Input: the tree. vitest is configured with
+      # passWithNoTests:false, so a run that executed zero files is red rather
+      # than an empty success.
+      - run: npm test
+
+  typecheck:
+    name: typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          # node 24 because it SHIPS npm 11, which is the resolver that writes
+          # package-lock.json here. npm 10 (bundled with node 22) resolves this
+          # tree differently — it wants @emnapi/{core,runtime}@1.11.3 hoisted,
+          # npm 11 wants them nested under the two wasm32-wasi packages — and no
+          # single lockfile satisfies both, so `npm ci` failed before any check
+          # ran on this workflow's first four runs.
+          #
+          # Matching the runtime is deliberate and better than `npm i -g npm@11`,
+          # which was tried and did not replace the shim actually on PATH.
+          #
+          # The lockfile alone is not a reproducible input; the lockfile PLUS the
+          # resolver is. Bump them together, and re-verify in a clean directory:
+          #   npm ci --os=linux --cpu=x64 --dry-run
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # ADVISORY-BY-DISPLAY, BLOCKING-BY-RATCHET. `tsc --noEmit` currently
+      # exits 1 on 29 inherited errors, so running it bare would wall every
+      # change for debt that is not the author's. That is debt-shaped, not
+      # input-shaped: the work that makes it blockable is inside this
+      # repository. So the count is pinned by the ratchet job below instead,
+      # and this step reports.
+      #
+      # PROMOTION TRIGGER: when typecheck:errors reaches 0 in
+      # .ai/ratchet-baseline.json, delete the bucket and replace this step with
+      # a bare `npm run typecheck`.
+      - run: npm run typecheck || true
+      - name: typecheck error count (informational)
+        run: npm run typecheck 2>&1 | grep -c "error TS" || true
+
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          # node 24 because it SHIPS npm 11, which is the resolver that writes
+          # package-lock.json here. npm 10 (bundled with node 22) resolves this
+          # tree differently — it wants @emnapi/{core,runtime}@1.11.3 hoisted,
+          # npm 11 wants them nested under the two wasm32-wasi packages — and no
+          # single lockfile satisfies both, so `npm ci` failed before any check
+          # ran on this workflow's first four runs.
+          #
+          # Matching the runtime is deliberate and better than `npm i -g npm@11`,
+          # which was tried and did not replace the shim actually on PATH.
+          #
+          # The lockfile alone is not a reproducible input; the lockfile PLUS the
+          # resolver is. Bump them together, and re-verify in a clean directory:
+          #   npm ci --os=linux --cpu=x64 --dry-run
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # BLOCKS. Input: the tree. 44 correctness rules sit at `error`, each
+      # measured at 0 findings before promotion. The ~721 legacy warnings
+      # cannot fail this step by construction — they are held by the ratchet.
+      - run: npm run lint
+
+  ratchet:
+    name: ratchet + generated docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          # node 24 because it SHIPS npm 11, which is the resolver that writes
+          # package-lock.json here. npm 10 (bundled with node 22) resolves this
+          # tree differently — it wants @emnapi/{core,runtime}@1.11.3 hoisted,
+          # npm 11 wants them nested under the two wasm32-wasi packages — and no
+          # single lockfile satisfies both, so `npm ci` failed before any check
+          # ran on this workflow's first four runs.
+          #
+          # Matching the runtime is deliberate and better than `npm i -g npm@11`,
+          # which was tried and did not replace the shim actually on PATH.
+          #
+          # The lockfile alone is not a reproducible input; the lockfile PLUS the
+          # resolver is. Bump them together, and re-verify in a clean directory:
+          #   npm ci --os=linux --cpu=x64 --dry-run
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # BLOCKS. Input: the tree plus a committed baseline. Refuses a rise in
+      # any bucket AND an unexplained drop.
+      #
+      # Exit 2 means the instrument could not run — not a pass and not a code
+      # verdict. GitHub treats any non-zero as failure, which is the correct
+      # conservative reading here; the script's own output says which it was.
+      - run: npm run lint:ratchet
+      # BLOCKS. Input: src/stores/registry.ts. The doc is generated from it, so
+      # a store added without regenerating is a divergence the author caused.
+      - run: npm run docs:store-graph -- --check
+      # BLOCKS. Input: the tree plus .ai/doc-coupling.json. Fails on a BROKEN
+      # ENTRY — a source glob matching nothing live, or a reference document
+      # that is not on disk. The coverage RESIDUE (areas nothing claims) is not
+      # judged here; it is a bucket in the ratchet step above, so the legacy
+      # 69 unmapped areas cannot wall a change while the 70th is still refused.
+      - run: npm run docs:coupling
+      # BLOCKS. Input: the tree plus .ai/findings.json. The ledger is DERIVED
+      # from docs/harness/ui-bug-combined-2026-06-16/, so this re-derives it and
+      # fails on divergence; it also refuses a finding whose state is outside
+      # the vocabulary or whose verdict carries no reason, and runs every
+      # regression probe attached to a `fixed` finding.
+      #
+      # Exit 2 (the parser stopped seeing 190 findings over 38 contexts) means
+      # the instrument could not run — the script's own output says which.
+      - run: npm run findings:check
+      # BLOCKS. Input: the tree plus .ai/structural-backlog.json. Asserts every
+      # structural spec is still GROUNDED — the files it names exist and still
+      # say what it quotes — and that a spec marked `executed` actually meets
+      # its stop condition. That last one is the check this file exists for: the
+      # store-graph document used to carry a migration plan whose success
+      # criteria were ticked for work that had never landed.
+      #
+      # The review-by DATE is reported, never gated: its input is the calendar,
+      # not the tree, so blocking on it would wall an unrelated change for
+      # something its author did not do. Same reasoning as the absent
+      # supply-chain job.
+      - run: npm run structure:check
+
+  docs-same-change:
+    name: docs same-change
+    runs-on: ubuntu-latest
+    # Only on pull requests: the check reads the diff against the merge base,
+    # and there is no meaningful base for a push to main that has already
+    # landed. A push-time run would be answering a question nobody can act on.
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The diff is the input. fetch-depth: 0 is load-bearing — with the
+          # default shallow clone `git merge-base` cannot resolve, and the
+          # script exits 2 (could not run) rather than pretending to pass.
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # BLOCKS. Input: the git diff of this pull request against its merge
+      # base — the only honest record of what changed, and the only one that
+      # knows renames and deletions.
+      #
+      # Satisfied by updating the NAMED document, or dismissed on the record
+      # with a `Docs-dismissed: <reason>` trailer in one of the PR's commits.
+      # Both outcomes leave an artifact; silence is the one thing that does not.
+      - run: npm run docs:coupling -- --changed --base "origin/${{ github.base_ref }}"
+
+  e2e:
+    name: browser suite (manual)
+    runs-on: ubuntu-latest
+    # MANUAL DISPATCH ONLY, and this is a deliberate, dated decision rather than
+    # an oversight. The browser suite's input is not the tree: it needs a
+    # reachable Supabase and a Clerk configuration, neither of which this
+    # repository controls, and one of which (a shared development database) can
+    # change under a commit that did not touch it. A job whose verdict is a
+    # function of something outside the change cannot BLOCK the change — the
+    # same reasoning that keeps a supply-chain job out of this pipeline.
+    #
+    # It is also not wired as an auto-skipping job. A job that quietly skips
+    # when secrets are absent reports the same colour as a job that ran and
+    # passed, which is the failure-not-empty-success defect this whole workflow
+    # exists to avoid. Instead it FAILS LOUDLY with a named diagnostic when it
+    # is dispatched without configuration.
+    #
+    # Runtime, measured locally on 2026-08-25: the seed is ~4s; the suite needs
+    # a dev server plus a chromium download. Tolerable for a manual run,
+    # not for every push.
+    if: github.event_name == 'workflow_dispatch'
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+      CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+      E2E_SEED_ALLOW_REMOTE: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: refuse an unconfigured run, loudly
+        run: |
+          if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "E2E_PRECONDITION_FAILED: this job needs NEXT_PUBLIC_SUPABASE_URL and"
+            echo "SUPABASE_SERVICE_ROLE_KEY as repository secrets. They are not set."
+            echo ""
+            echo "This is a REFUSAL, not a skip. A skipped job reports the same colour as"
+            echo "a passing one, and the whole point of this suite's launcher is that a run"
+            echo "which could not do its job must not look like a run that did it perfectly."
+            exit 1
+          fi
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      # The fixtures are a precondition of the suite, not part of it. If this
+      # fails the suite does not run, which is correct: an unseeded run would
+      # execute nothing.
+      - run: npm run seed:e2e
+      - run: npm run test:e2e
+      # Remove exactly what was written, whether the suite passed or failed. The
+      # fixtures are namespaced, so this cannot touch anything else.
+      - if: always()
+        run: npm run seed:e2e -- --teardown

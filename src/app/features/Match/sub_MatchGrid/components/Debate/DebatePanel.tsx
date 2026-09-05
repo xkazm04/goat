@@ -56,13 +56,27 @@ export const DebatePanel = memo(function DebatePanel({
     }
   }, [thread?.status]);
 
+  // Synchronous re-entrancy guard shared by the typed submit and the quick-reply
+  // buttons. isLoading is React state (set a tick after onReply), so two fast
+  // clicks — or a quick-reply fired at the same moment as the typed submit —
+  // could both pass the isLoading check and queue duplicate Gemini calls / turns.
+  const submittingRef = useRef(false);
+  useEffect(() => {
+    if (!isLoading) submittingRef.current = false;
+  }, [isLoading]);
+
+  const submitReply = useCallback((text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed || isLoading || submittingRef.current) return;
+    submittingRef.current = true;
+    onReply(trimmed);
+  }, [isLoading, onReply]);
+
   const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
-    const trimmed = input.trim();
-    if (!trimmed || isLoading) return;
-    onReply(trimmed);
+    submitReply(input);
     setInput('');
-  }, [input, isLoading, onReply]);
+  }, [input, submitReply]);
 
   if (!thread) return null;
 
@@ -160,9 +174,9 @@ export const DebatePanel = memo(function DebatePanel({
         {thread.status === 'active' && !isLoading && thread.messages.length > 0 && (
           <div className="shrink-0 px-4 pb-2">
             <div className="flex gap-2 overflow-x-auto pb-1">
-              <QuickReply onClick={() => onReply("I disagree, here's why...")} label="Push back" icon={ThumbsDown} />
-              <QuickReply onClick={() => onReply("Good point, but consider...")} label="Concede" icon={ThumbsUp} />
-              <QuickReply onClick={() => onReply("What about compared to the others?")} label="Compare" icon={MessageCircle} />
+              <QuickReply onClick={() => submitReply("I disagree, here's why...")} label="Push back" icon={ThumbsDown} />
+              <QuickReply onClick={() => submitReply("Good point, but consider...")} label="Concede" icon={ThumbsUp} />
+              <QuickReply onClick={() => submitReply("What about compared to the others?")} label="Compare" icon={MessageCircle} />
             </div>
           </div>
         )}

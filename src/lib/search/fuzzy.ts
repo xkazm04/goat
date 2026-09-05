@@ -49,10 +49,22 @@ export function fuzzyMatch(pattern: string, text: string): FuzzyMatchResult {
     };
   }
 
-  // Word start matching — compute actual word positions from regex
-  const patternWords = pLower.split(/\s+/);
+  // Word start matching.
+  // Tokenize with EXACT offsets (handles multi-space/tab separators that the old
+  // `indexOf(word) + (length+1)` cursor mis-handled) and let each pattern word
+  // claim at most one title word — the previous code scored 0.3 for every
+  // matching title word and could push duplicate/misaligned highlight indices for
+  // repeated words (e.g. "to" vs "top top tens").
+  const wordTokens: { text: string; start: number }[] = [];
+  const wordRe = /\S+/g;
+  let wm: RegExpExecArray | null;
+  while ((wm = wordRe.exec(tLower)) !== null) {
+    wordTokens.push({ text: wm[0], start: wm.index });
+  }
+  const patternWords = pLower.split(/\s+/).filter(Boolean);
   let wordMatchScore = 0;
-  const wordMatchedIndices: number[] = [];
+  const wordMatchedIndexSet = new Set<number>();
+  const claimedWordStarts = new Set<number>();
 
   const wordEntries: Array<{ word: string; start: number }> = [];
   const wordRegex = /\S+/g;
@@ -62,12 +74,14 @@ export function fuzzyMatch(pattern: string, text: string): FuzzyMatchResult {
   }
 
   for (const pw of patternWords) {
-    for (const { word, start } of wordEntries) {
-      if (word.startsWith(pw)) {
+    for (const { text, start } of wordTokens) {
+      if (text.startsWith(pw) && !claimedWordStarts.has(start)) {
+        claimedWordStarts.add(start);
         wordMatchScore += 0.3;
         for (let i = 0; i < pw.length; i++) {
-          wordMatchedIndices.push(start + i);
+          wordMatchedIndexSet.add(start + i);
         }
+        break; // one title word per pattern word
       }
     }
   }
@@ -76,7 +90,7 @@ export function fuzzyMatch(pattern: string, text: string): FuzzyMatchResult {
     return {
       matches: true,
       score: Math.min(wordMatchScore, 0.8),
-      matchedIndices: wordMatchedIndices,
+      matchedIndices: Array.from(wordMatchedIndexSet).sort((a, b) => a - b),
     };
   }
 

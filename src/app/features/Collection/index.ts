@@ -42,7 +42,7 @@ export { useEasterEggSpotlight, isEasterEggKeyword, EASTER_EGG_KEYWORDS, SPOTLIG
 export type { SpotlightableItem, UseEasterEggSpotlightResult, EasterEggKeyword } from './utils/easterEgg';
 
 // Configuration
-export { LAZY_LOAD_CONFIG, shouldUseVirtualization, shouldUseLazyLoading } from './constants/lazyLoadConfig';
+export { LAZY_LOAD_CONFIG } from './constants/lazyLoadConfig';
 
 // Context exports
 export { CollectionFiltersProvider, useCollectionFiltersContext, useCollectionFiltersContextOptional } from './context/CollectionFiltersContext';

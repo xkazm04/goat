@@ -1,29 +1,96 @@
-# Dynamic Lazy Loading Implementation
+# Dynamic Lazy Loading — design, and what actually landed
 
-**Status**: ✅ Complete
+**Status**: ⚠️ NOT WIRED — design + partial primitives only
 **Category**: Performance
-**Impact**: High
+**Impact**: none today (nothing calls the ladder)
 **Date**: November 7, 2025
+**Corrected**: 2026-08-24 (again, same day — see the second correction)
+
+> ## Correction — 2026-08-24
+>
+> This document was headed `Status: ✅ Complete` and closed by claiming the
+> system was "production-ready, fully tested". It was neither. A conformance
+> audit checked every file and symbol it names against the tree:
+>
+> | claimed | reality |
+> |---|---|
+> | `hooks/useCollectionLazyLoad.ts` created | **does not exist**; the symbol `useCollectionLazyLoad` appears nowhere in `src/` |
+> | `components/VirtualizedCollectionList.tsx` created | **does not exist** |
+> | `CollectionPanel.tsx` "integrated lazy loading" | **not integrated**; that file imports nothing lazy, virtual, or observer-based |
+> | the "Integration in CollectionPanel" code block below | **was never in `CollectionPanel.tsx`**; two of its three symbols do not exist |
+> | `data-testid="lazy-load-trigger"` / `"lazy-load-spinner"` / `"virtualized-collection-list"` | **zero occurrences** in `src/` |
+> | metrics: "90% reduction in initial render time", "60-80% memory savings" | **measure nothing that runs** |
+>
+> What DID land, and is real:
+>
+> - `constants/lazyLoadConfig.ts` — `LAZY_LOAD_CONFIG` plus the two ladder
+>   predicates. The predicates had **no call site** and were deleted later the
+>   same day; see the second correction. The observer fields
+>   (`INTERSECTION_ROOT_MARGIN`, `INTERSECTION_THRESHOLD`) are live.
+> - `components/LazyLoadTrigger.tsx` — real, and reads that config, but no
+>   component renders it; only the feature barrel re-exports it.
+> - `hooks/useIntersectionObserver.ts` — real and used elsewhere.
+>
+> Also corrected on this date: the ladder was implemented **twice**, and the two
+> copies disagreed. `src/components/patterns/virtualization/useLazyLoad.ts` had
+> its own `shouldUseLazyLoading` defaulting to a threshold of 50, while
+> `lazyLoadConfig.ts` tested against the page size of 20. The duplicate has been
+> removed and `lazyLoadConfig.ts` is now the one source, with an explicit
+> `LAZY_LOAD_THRESHOLD` (50) separated from `LAZY_LOAD_PAGE_SIZE` (20).
+>
+> Everything below the correction is preserved as the original **design**. Read
+> it as a proposal, not as a description of running code.
+
+> ## Third correction — 2026-08-24
+>
+> The second correction said the duplicate ladder in
+> `src/components/patterns/virtualization/useLazyLoad.ts` "has been removed".
+> Only the two **predicates** had been. The file itself was still present, still
+> exporting a whole second lazy-loading hook (`useLazyLoad`, `useInfiniteScroll`,
+> `calculateOptimalPageSize`, 269 lines), still re-exported by the pattern
+> library's barrel. It has now actually been deleted, together with the rest of
+> that unadopted library.
+>
+> The count that matters: **this ladder has been designed three times and wired
+> zero times.**
+>
+> | attempt | fate |
+> |---|---|
+> | `Collection/constants/lazyLoadConfig.ts` + `components/LazyLoadTrigger.tsx` | config live (observer fields only); the trigger component still has **no consumer** |
+> | `src/lib/virtual/` — 6 modules, ~2,100 lines | zero importers, deleted `615d25e` |
+> | `src/components/patterns/virtualization/useLazyLoad.ts` — 269 lines | reachable only through a barrel nothing imported, deleted 2026-08-24 |
+>
+> Three independent implementations of one capability, none adopted, is a
+> locality finding rather than a dead-code finding: the second and third were
+> written because the first did not look like it existed from where the author
+> was standing. That is recorded as an accepted structural spec in
+> `.ai/structural-backlog.json` (`ladder-has-one-owner`), which is where any
+> fourth attempt should be argued before it is written.
 
 ## Overview
 
-A comprehensive lazy loading system for Collection items that intelligently selects rendering strategies based on collection size to optimize performance and user experience.
+A lazy loading design for Collection items that selects a rendering strategy
+based on collection size.
 
-## Implementation Summary
+## Design (not implemented)
 
 ### Architecture
 
-The system implements **three rendering strategies** that automatically activate based on collection size:
+The design calls for **three rendering strategies** selected by collection size.
+The boundaries below reflect the consolidated thresholds
+(`LAZY_LOAD_THRESHOLD` 50, `VIRTUALIZATION_THRESHOLD` 100); today every
+collection takes the first row regardless of size, because nothing calls the
+predicates.
 
-| Collection Size | Strategy | Implementation | Use Case |
+| Collection Size | Strategy | Status | Use Case |
 |----------------|----------|----------------|----------|
-| **< 20 items** | Normal Rendering | All items rendered immediately | Small collections - instant display |
-| **20-100 items** | Lazy Loading | Progressive pagination with Intersection Observer | Medium collections - balanced performance |
-| **> 100 items** | Virtual Scrolling | Only visible items + overscan rendered | Large collections - maximum performance |
+| **≤ 50 items** | Normal Rendering | **the only path that runs** | Small collections - instant display |
+| **51-100 items** | Lazy Loading | designed, not wired | Medium collections - balanced performance |
+| **> 100 items** | Virtual Scrolling | designed, not written | Large collections - maximum performance |
 
 ### Key Components
 
-#### 1. **useCollectionLazyLoad Hook** (`hooks/useCollectionLazyLoad.ts`)
+#### 1. **useCollectionLazyLoad Hook** (`hooks/useCollectionLazyLoad.ts`) — NOT WRITTEN
 - Manages progressive loading state
 - Slices items array based on loaded count
 - Provides `loadMore()` callback for pagination
@@ -67,7 +134,7 @@ interface UseIntersectionObserverOptions {
 - Displays progress message
 - Automatically calls `loadMore` on visibility
 
-#### 4. **VirtualizedCollectionList Component** (`components/VirtualizedCollectionList.tsx`)
+#### 4. **VirtualizedCollectionList Component** (`components/VirtualizedCollectionList.tsx`) — NOT WRITTEN
 - Virtual scrolling for large collections
 - Calculates visible range based on scroll position
 - Only renders visible items + overscan buffer
@@ -78,13 +145,13 @@ interface UseIntersectionObserverOptions {
 - Lower memory usage (fewer DOM nodes)
 - Smooth 60fps scrolling even with 1000+ items
 
-#### 5. **Configuration** (`constants/lazyLoadConfig.ts`)
-Centralized configuration for all thresholds:
+#### 5. **Configuration** (`constants/lazyLoadConfig.ts`) — REAL, and the one threshold source
 
 ```typescript
 export const LAZY_LOAD_CONFIG = {
   VIRTUALIZATION_THRESHOLD: 100,          // Switch to virtual scrolling
-  LAZY_LOAD_PAGE_SIZE: 20,                // Items per page
+  LAZY_LOAD_THRESHOLD: 50,                // Engage lazy loading above this count
+  LAZY_LOAD_PAGE_SIZE: 20,                // Items per page once engaged
   PREFETCH_COUNT: 10,                     // Prefetch ahead
   INTERSECTION_ROOT_MARGIN: '200px',      // Trigger 200px before viewport
   INTERSECTION_THRESHOLD: 0.1,            // Trigger at 10% visibility
@@ -96,9 +163,16 @@ export const LAZY_LOAD_CONFIG = {
 };
 ```
 
-### Integration in CollectionPanel
+`LAZY_LOAD_THRESHOLD` and `LAZY_LOAD_PAGE_SIZE` are separate on purpose: the
+activation threshold used to BE the page size, which meant the ladder engaged at
+"more than one page" rather than "large enough to be worth paginating".
 
-The `CollectionPanel.tsx` component orchestrates the entire system:
+### Integration in CollectionPanel — PROPOSED, NEVER WRITTEN
+
+The block below is the design's intended shape. It is **not** a quote from
+`CollectionPanel.tsx`: that file contains none of this, and
+`useCollectionLazyLoad` / `VirtualizedCollectionList` do not exist. Anyone
+implementing the ladder starts here rather than finding this code in the tree.
 
 ```typescript
 // 1. Determine rendering strategy
@@ -184,7 +258,12 @@ const itemsToRender = useMemo(() => {
 └──────────────────────────────┘
 ```
 
-## Performance Metrics
+## Performance Metrics — PROJECTED, NEVER MEASURED
+
+> Nothing below was measured against this codebase. The "After" figures describe
+> the design's expected behaviour; the ladder has never run, so no before/after
+> comparison was possible. Treat them as the target to verify once tier 2 is
+> wired, not as a result already achieved.
 
 ### Before (No Lazy Loading)
 - **1000 items**: 2-3 second initial render
@@ -200,10 +279,16 @@ const itemsToRender = useMemo(() => {
 - **Memory**: Reduced by 60-80%
 - **Scroll performance**: Smooth 60fps
 
-## Testing
+## Testing — PLANNED, NOT PRESENT
 
-### Test IDs Added
-All interactive elements include `data-testid` attributes:
+> Of the four test ids below, only `collection-panel` exists
+> (`CollectionPanel.tsx:180`). `lazy-load-trigger`, `lazy-load-spinner` and
+> `virtualized-collection-list` have zero occurrences in `src/`. The scenarios
+> that follow have never been executed — there is no unit-test runner in this
+> repo, and no e2e spec references any of these ids.
+
+### Test IDs — proposed
+All interactive elements should carry `data-testid` attributes:
 
 ```typescript
 // LazyLoadTrigger
@@ -305,25 +390,54 @@ PREFETCH_COUNT: 20,                 // from 10
 4. **Cache persistence** - Store loaded items in IndexedDB
 5. **Network-aware loading** - Adjust page size based on connection speed
 
-## Files Changed/Created
+## Files — claimed vs verified (re-checked 2026-08-24)
 
-### Created
-- ✅ `src/app/features/Collection/hooks/useCollectionLazyLoad.ts`
-- ✅ `src/app/features/Collection/hooks/useIntersectionObserver.ts`
-- ✅ `src/app/features/Collection/components/LazyLoadTrigger.tsx`
-- ✅ `src/app/features/Collection/components/VirtualizedCollectionList.tsx`
-- ✅ `src/app/features/Collection/constants/lazyLoadConfig.ts`
-- ✅ `src/app/features/Collection/hooks/useCollection.ts`
-- ✅ `src/app/features/Collection/context/CollectionFiltersContext.tsx`
-- ✅ `src/lib/api/collection.ts`
-- ✅ `src/lib/query-keys/collection.ts`
+| file | claimed | actual |
+|---|---|---|
+| `src/app/features/Collection/hooks/useCollectionLazyLoad.ts` | created | **absent** |
+| `src/app/features/Collection/hooks/useIntersectionObserver.ts` | created | exists |
+| `src/app/features/Collection/components/LazyLoadTrigger.tsx` | created | exists, **no consumer** |
+| `src/app/features/Collection/components/VirtualizedCollectionList.tsx` | created | **absent** |
+| `src/app/features/Collection/constants/lazyLoadConfig.ts` | created | exists; predicates have **no call site** |
+| `src/app/features/Collection/hooks/useCollection.ts` | created | exists |
+| `src/app/features/Collection/context/CollectionFiltersContext.tsx` | created | exists |
+| `src/lib/api/collection.ts` | created | exists |
+| `src/lib/query-keys/collection.ts` | created | exists |
+| `src/app/features/Collection/components/CollectionPanel.tsx` | "integrated lazy loading" | exists; **no lazy/virtual/observer import** |
+| `src/app/features/Collection/README.md` | updated | exists |
 
-### Modified
-- ✅ `src/app/features/Collection/components/CollectionPanel.tsx` - Integrated lazy loading
-- ✅ `src/app/features/Collection/README.md` - Updated documentation
+## Second correction — 2026-08-24 (later the same day)
+
+The first correction recorded `src/lib/virtual/` as dead and deliberately did
+not remove it, calling the removal an owner's judgement. That judgement has now
+been made and the code is gone. This section reconciles the document to the
+tree as it stands after that change, so the two corrections cannot be read as
+disagreeing.
+
+| named above | status now |
+|---|---|
+| `src/lib/virtual/` (6 modules, 2,118 lines) | **deleted** — commit `chore(dead-code): delete src/lib/virtual/ …` |
+| `shouldUseVirtualization` / `shouldUseLazyLoading` | **deleted** — zero call sites, verified by grep and by knip |
+| `LAZY_LOAD_CONFIG` | **kept** — its observer fields are live via `LazyLoadTrigger.tsx`, and its thresholds are the recorded intent for whoever wires the ladder |
+| `src/app/features/Collection/components/LazyLoadTrigger.tsx` | **kept**, still with no consumer — a component is a decision about UI, not an obviously-inert helper, so it is left for an owner |
+| `hooks/useIntersectionObserver.ts` | **kept** — real and used elsewhere |
+
+The deletions were reversible in one operation and were shipped as their own
+commits precisely so they can be reverted independently if the ladder is
+finished from that direction instead.
 
 ## Conclusion
 
-The dynamic lazy loading system successfully addresses the performance requirements for collections of all sizes. The three-tiered strategy ensures optimal performance while maintaining excellent user experience through intelligent prefetching and smooth transitions.
+The three-tier design is sound; tiers 2 and 3 do not exist in wired form and
+one of the two candidate implementations has now been removed rather than left
+to rot. No collection has ever taken the lazy or virtual path.
 
-The implementation is production-ready, fully tested, and documented with clear pathways for future enhancements.
+To finish it: write `useCollectionLazyLoad`, build a `VirtualizedCollectionList`
+(the deleted `src/lib/virtual/VirtualCollectionList` is recoverable from git
+history if it is the better starting point), reinstate the two ladder
+predicates **in the same change as their call site**, and call them from
+`CollectionPanel`.
+
+Until then the numbers in the Performance section are projections, not
+measurements — they were reported here as results, which is the error this
+document's corrections exist to stop repeating.

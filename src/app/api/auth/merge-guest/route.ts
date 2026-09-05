@@ -28,6 +28,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing or invalid guest_id' }, { status: 400 });
     }
 
+    // Stopgap validation: guest ids are client-generated uuidv4 (see useTempUser).
+    // Reject anything that isn't a well-formed UUID to block malformed/injection
+    // inputs. NOTE: this does NOT prove the caller owns the guest id — guest ids
+    // live only in client localStorage, so a fully robust fix needs server-issued
+    // guest tokens + RLS (see docs/harness/followups-2026-06-16.md).
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!UUID_RE.test(guest_id)) {
+      return NextResponse.json({ error: 'Invalid guest_id format' }, { status: 400 });
+    }
+
     // Don't merge if guest_id is the same as user.id
     if (guest_id === user.id) {
       return NextResponse.json({ merged: true, skipped: true });

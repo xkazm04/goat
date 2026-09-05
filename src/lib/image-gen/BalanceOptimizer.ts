@@ -180,6 +180,13 @@ export class BalanceOptimizer {
       totalWeight += w.weight;
     }
 
+    // The length===0 guard above doesn't cover the all-zero-weight case (e.g. a
+    // degenerate zero-area cell), which would yield 0/0 = NaN that leaks into
+    // composition metadata and the AI prompt ("Center of Mass: (NaN, NaN)").
+    if (totalWeight === 0) {
+      return { x: this.targetWidth / 2, y: this.targetHeight / 2 };
+    }
+
     return {
       x: weightedX / totalWeight,
       y: weightedY / totalWeight,

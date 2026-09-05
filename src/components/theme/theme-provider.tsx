@@ -7,12 +7,13 @@ import type { ThemeProviderProps } from "next-themes";
 
 
 /**
- * Enhanced ThemeProvider that wraps next-themes ThemeProvider.
+ * Thin wrapper around the next-themes ThemeProvider.
  *
- * Features:
- * - Wraps next-themes ThemeProvider
- * - Falls back to 'dark' theme if experimental-dark is not supported via CSS @supports
- * - Provides all standard next-themes functionality
+ * Note: the `experimental-dark` → `dark` fallback for unsupported browsers is
+ * handled entirely in CSS via the `@supports not(...)` block in globals.css —
+ * this provider does NOT run any JS detection. (`src/lib/theme-support.ts`
+ * exports JS helpers for this but they are currently unused; don't assume a
+ * runtime JS guard exists here.)
  */
 export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
   return (

@@ -3,6 +3,8 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { ReactNode } from 'react';
 
+import { hasContent, isSettledEmpty, type AsyncState } from '@/lib/async-state';
+
 import { ShimmerSkeleton } from './shimmer-skeleton';
 
 // Default values
@@ -19,22 +21,31 @@ const LIST_SPACING = 'space-y-3';
 const GRID_COLS = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3';
 
 /**
- * Props for the ListGrid component
- * Simplified API with sensible defaults - unused optional props removed
+ * Props for the ListGrid component.
+ *
+ * The region's state arrives as ONE discriminated value, not as three
+ * independent booleans. See `src/lib/async-state` for why, and
+ * `asyncStateFromQuery` for how to build one from a TanStack query.
  */
 export interface ListGridProps<T> {
-  /** Array of items to render in the grid */
-  items: T[];
+  /**
+   * The region's async state. Replaces the former `items` / `isLoading` /
+   * `error` triple, which could represent ten states the domain does not have —
+   * and shipped four of them (see the render order below).
+   */
+  state: AsyncState<T[]>;
   /** Render function for each item */
   renderItem: (item: T, index: number) => ReactNode;
-  /** Loading state */
-  isLoading?: boolean;
-  /** Error state */
-  error?: Error | null;
-  /** Empty state component */
+  /** Empty state component. Rendered ONLY after a completed response. */
   emptyState?: ReactNode;
-  /** Callback when retry is clicked in error state */
+  /** Callback when retry is clicked in the failed state, or in the stale notice */
   onRetry?: () => void;
+  /**
+   * Ambient notice rendered ABOVE held content when a refresh has failed.
+   * Optional: when omitted a default line is used. It is never allowed to
+   * replace the content — that is the forbidden SETTLED-DATA -> FAILED edge.
+   */
+  staleNotice?: ReactNode;
   /** Layout mode: 'grid' for uniform grid, 'list' for vertical list (default: 'grid') */
   layout?: 'grid' | 'list';
   /** Number of skeleton loaders to show (default: 6) */
@@ -44,60 +55,125 @@ export interface ListGridProps<T> {
 }
 
 /**
- * Generic responsive list/grid component with built-in loading, empty, and error states.
- * Supports both grid and list layouts with sensible defaults.
+ * Generic responsive list/grid with the async state model applied.
+ *
+ * Registry: async-ui-states/state-model, empty-state-design, failure-states;
+ * client-state/status-fsms.
+ *
+ * RENDER ORDER, and what each ordering decision prevents. Until 2026-08-24 this
+ * component branched on `isLoading` -> `error` -> `!items.length` -> data, which
+ * is the right SEQUENCE over the wrong INPUTS: with held content invisible to
+ * the first two branches, it shipped three of the four named forbidden edges.
+ *
+ *   1. CONTENT DOMINATES. Held data outranks an outstanding request and even a
+ *      failure. `SETTLED-DATA -> LOADING` (a refresh blanking the surface) and
+ *      `SETTLED-DATA -> FAILED` (held data discarded because an update failed)
+ *      are both unreachable now, because a state carrying data cannot reach the
+ *      later branches at all.
+ *   2. FAILED, when nothing is held. Failure is never dressed as empty.
+ *   3. EMPTY, only via the sticky settled bit. `-> SETTLED-EMPTY while
+ *      unsettled` — the empty flash — is unreachable because `isSettledEmpty`
+ *      is false for every unsettled state by construction.
+ *   4. LOADING. Unstarted and in-flight render identically, on purpose.
  *
  * @example
  * ```tsx
+ * const q = useUserLists(userId);
  * <ListGrid
- *   items={lists}
+ *   state={asyncStateFromQuery(q)}
  *   renderItem={(list) => <ListCard list={list} />}
- *   isLoading={isLoading}
- *   error={error}
  *   emptyState={<EmptyState />}
- *   onRetry={refetch}
+ *   onRetry={q.refetch}
  * />
  * ```
  */
 export function ListGrid<T extends { id?: string | number }>({
-  items,
+  state,
   renderItem,
-  isLoading = false,
-  error = null,
   emptyState,
   onRetry,
+  staleNotice,
   layout = 'grid',
   skeletonCount = DEFAULT_SKELETON_COUNT,
   testId = 'list-grid',
 }: ListGridProps<T>) {
-  // Generate layout classes based on mode
   const layoutClasses = layout === 'grid'
     ? `${GRID_COLS} ${GRID_GAP}`
     : LIST_SPACING;
 
-  // Loading State
-  if (isLoading) {
+  const empty = isSettledEmpty(state, (items) => items.length === 0);
+
+  // ---------------------------------------------------------------------
+  // 1. Content dominates — including content whose last refresh failed.
+  // ---------------------------------------------------------------------
+  if (hasContent(state) && !empty) {
+    const items = state.data;
+    const isStale = state.status === 'stale';
     return (
-      <div
-        className={layoutClasses}
-        data-testid={`${testId}-loading`}
-        aria-busy="true"
-        aria-live="polite"
-      >
-        {Array.from({ length: skeletonCount }).map((_, i) => (
-          <ShimmerSkeleton
-            key={`skeleton-${i}`}
-            size={layout === 'grid' ? 'xl' : 'md'}
-            accentColor="cyan"
-            testId={`${testId}-skeleton-${i}`}
-          />
-        ))}
+      <div data-testid={`${testId}-region`} aria-busy={state.isRefreshing || undefined}>
+        {isStale && (
+          // AMBIENT. The failure is surfaced beside the content, never by
+          // demoting the region — the user keeps what they already had.
+          <div
+            className="mb-3 flex items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200"
+            data-testid={`${testId}-stale`}
+            role="status"
+            aria-live="polite"
+          >
+            <span>{staleNotice ?? 'Showing the last loaded results — refresh failed.'}</span>
+            {onRetry && (
+              <button
+                onClick={onRetry}
+                className="shrink-0 rounded-md bg-amber-500/20 px-2 py-1 text-amber-100 transition-colors hover:bg-amber-500/30 focus-ring"
+                data-testid={`${testId}-stale-retry-btn`}
+              >
+                Retry
+              </button>
+            )}
+          </div>
+        )}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className={layoutClasses}
+          data-testid={testId}
+          role="list"
+          aria-label="List of items"
+        >
+          <AnimatePresence mode="popLayout">
+            {items.map((item, index) => {
+              const key = item.id ?? `item-${index}`;
+
+              return (
+                <motion.div
+                  key={key}
+                  initial={{ opacity: 0, y: SLIDE_OFFSET }}
+                  animate={{
+                    opacity: 1,
+                    y: 0,
+                    transition: { delay: index * STAGGER_DELAY },
+                  }}
+                  exit={{ opacity: 0, scale: EXIT_SCALE }}
+                  layout
+                  className="focus-within:ring-2 focus-within:ring-brand/50 rounded-lg transition-shadow"
+                  data-testid={`${testId}-item-${key}`}
+                  role="listitem"
+                >
+                  {renderItem(item, index)}
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+        </motion.div>
       </div>
     );
   }
 
-  // Error State
-  if (error) {
+  // ---------------------------------------------------------------------
+  // 2. Failed — reachable only when nothing is held.
+  // ---------------------------------------------------------------------
+  if (state.status === 'failed' || (state.status === 'stale' && empty)) {
+    const error = state.error;
     return (
       <motion.div
         initial={{ opacity: 0 }}
@@ -108,7 +184,7 @@ export function ListGrid<T extends { id?: string | number }>({
         aria-live="assertive"
       >
         <p className="text-red-400 mb-4 text-sm">
-          {error.message || 'Failed to load content'}
+          {(error as Error)?.message || 'Failed to load content'}
         </p>
         {onRetry && (
           <button
@@ -123,8 +199,10 @@ export function ListGrid<T extends { id?: string | number }>({
     );
   }
 
-  // Empty State
-  if (!items || items.length === 0) {
+  // ---------------------------------------------------------------------
+  // 3. Empty — reachable ONLY through a completed response.
+  // ---------------------------------------------------------------------
+  if (empty) {
     return (
       <motion.div
         initial={{ opacity: 0, y: SLIDE_OFFSET }}
@@ -141,41 +219,28 @@ export function ListGrid<T extends { id?: string | number }>({
     );
   }
 
-  // Items Grid/List
+  // ---------------------------------------------------------------------
+  // 4. Loading. `idle` renders identically on purpose.
+  // ---------------------------------------------------------------------
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
+    <div
       className={layoutClasses}
-      data-testid={testId}
-      role="list"
-      aria-label="List of items"
+      data-testid={`${testId}-loading`}
+      aria-busy="true"
+      // HIDDEN from the accessibility tree, not announced. The placeholder used
+      // to carry aria-live="polite", so a screen reader was told about the
+      // shimmer rather than about the content. A placeholder is a visual stand-in
+      // for something that is not there yet; there is nothing to read out.
+      aria-hidden="true"
     >
-      <AnimatePresence mode="popLayout">
-        {items.map((item, index) => {
-          const key = item.id ?? `item-${index}`;
-
-          return (
-            <motion.div
-              key={key}
-              initial={{ opacity: 0, y: SLIDE_OFFSET }}
-              animate={{
-                opacity: 1,
-                y: 0,
-                transition: { delay: index * STAGGER_DELAY },
-              }}
-              exit={{ opacity: 0, scale: EXIT_SCALE }}
-              layout
-              className="focus-within:ring-2 focus-within:ring-brand/50 rounded-lg transition-shadow"
-              data-testid={`${testId}-item-${key}`}
-              role="listitem"
-            >
-              {renderItem(item, index)}
-            </motion.div>
-          );
-        })}
-      </AnimatePresence>
-    </motion.div>
+      {Array.from({ length: skeletonCount }).map((_, i) => (
+        <ShimmerSkeleton
+          key={`skeleton-${i}`}
+          size={layout === 'grid' ? 'xl' : 'md'}
+          accentColor="cyan"
+          testId={`${testId}-skeleton-${i}`}
+        />
+      ))}
+    </div>
   );
 }
-

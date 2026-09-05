@@ -138,8 +138,9 @@ export interface CreatorListAnalytics {
   }[];
   /** Consensus metrics */
   consensus: {
-    /** How often rankers agree on positions (0-1) */
-    agreement_rate: number;
+    /** How often rankers agree on positions (0-1), or null when there's no
+     *  real consensus signal (no item ranked by 2+ users). */
+    agreement_rate: number | null;
     /** Items with most positional variance */
     most_controversial: {
       item_id: string;

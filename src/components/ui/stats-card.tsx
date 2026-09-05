@@ -195,18 +195,11 @@ const StatItem = React.forwardRef<
   const handleClick = onClick ? () => onClick(metric) : undefined;
   const isClickable = !!onClick;
 
-  // Default color mappings
-  const defaultColors: Record<string, string> = {
-    total: "text-gray-300",
-    selected: "text-brand-hover",
-    active: "text-green-400",
-    pending: "text-yellow-400",
-    completed: "text-blue-400",
-    error: "text-red-400",
-    warning: "text-orange-400",
-  };
-
-  const valueColor = metric.color || defaultColors[metric.label.toLowerCase()] || "text-gray-300";
+  // Value color comes from the explicit `color` prop, defaulting to neutral.
+  // The previous defaultColors[label.toLowerCase()] lookup inferred color from
+  // the human-readable label ("Active"→green, "Error"→red), which is
+  // locale-fragile and silently overrode caller intent for common English words.
+  const valueColor = metric.color || "text-gray-300";
 
   // Change indicator styling
   const changeColorClass = metric.changeType === "positive"
@@ -241,7 +234,7 @@ const StatItem = React.forwardRef<
         )}
         data-testid="stat-item-label"
       >
-        {metric.label}:
+        {metric.label}{layout === "inline" ? ":" : ""}
       </span>
 
       {/* Value */}

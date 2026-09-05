@@ -56,6 +56,8 @@ const ListCreateButton = ({ intent, createListMutation, onSuccess, onClose }: Pr
     const [creationStep, setCreationStep] = useState<CreationStep | null>(null);
     const [showSuccess, setShowSuccess] = useState(false);
     const [isPressed, setIsPressed] = useState(false);
+    // Synchronous re-entrancy guard: creationStep/isPending update async, so a
+    // fast double-click could pass the disabled check twice and create two lists.
     const isCreatingRef = useRef(false);
 
     const reducedMotion = prefersReducedMotion();
@@ -68,11 +70,9 @@ const ListCreateButton = ({ intent, createListMutation, onSuccess, onClose }: Pr
     };
 
     const handleCreate = useCallback(async () => {
-        // Ref guard: immediately block duplicate submissions before React re-renders
-        if (isCreatingRef.current) return;
-
-        // Early return if button is disabled
-        if (isButtonDisabled) {
+        // Early return if disabled or a creation is already in flight (sync ref
+        // closes the double-click window that derived state can't).
+        if (isButtonDisabled || isCreatingRef.current) {
             return;
         }
 
@@ -88,6 +88,7 @@ const ListCreateButton = ({ intent, createListMutation, onSuccess, onClose }: Pr
         setIsCreating(true);
         setCreationError(null);
 
+        try {
         // Progress handler that maps service steps to component steps
         const onProgress = (step: ServiceCreationStep) => {
             // Map service steps to component steps (they use the same type)
@@ -164,9 +165,15 @@ const ListCreateButton = ({ intent, createListMutation, onSuccess, onClose }: Pr
             };
             onSuccess?.(failureResult);
         }
-
-        isCreatingRef.current = false;
-        setIsCreating(false);
+        } finally {
+            isCreatingRef.current = false;
+            setIsCreating(false);
+            // Clear the in-progress step on every exit — the success path never
+            // reset it, leaving the button stuck disabled (and the progress
+            // spinner visible) if navigation was blocked or the component stayed
+            // mounted.
+            setCreationStep(null);
+        }
     }, [
         isButtonDisabled,
         isLoaded,

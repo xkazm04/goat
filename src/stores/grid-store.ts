@@ -8,15 +8,14 @@
  *   Sync: grid-store → session-store (via derived-session-sync subscriber).
  *         NO other store may mutate grid positions directly.
  *
- * This store is the authoritative handler for all drag-and-drop operations in the application.
- * It uses TransferProtocol utilities for consistent ID parsing and handles:
- * - Backlog to grid assignment
- * - Grid to grid move/swap
- * - Position validation
- * - Session synchronization
+ * This store owns grid state and the atomic placement actions (assignItemToGrid,
+ * moveGridItem, assignToNextOpenSlot). Drag-END resolution is owned by the single
+ * DragOperationRouter (see src/lib/dnd/operations): the live path is
+ * SimpleMatchGrid -> getGridDragRouter().handleDragEnd(event, getStoreContext()).
+ * The store's handleDragEnd delegates to that same router so the two can never
+ * diverge (it previously reimplemented a second, contradictory assign engine).
  *
  * Session-store handles session persistence, backlog-store handles backlog groups.
- * Components should use useMatchGridState().handleDragEnd which delegates here.
  */
 import { DragEndEvent } from '@dnd-kit/core';
 import { create } from 'zustand';
@@ -26,10 +25,7 @@ import { logActivity } from '@/lib/activity/activity-logger';
 import {
   TransferableItem,
   TransferResult,
-  isGridReceiverId,
-  extractGridPosition,
   createGridReceiverId,
-  assertCanonicalGridId,
   createGridOnlyRouter,
   type DragOperationRouter,
   type OperationStoreContext,
@@ -40,16 +36,17 @@ import {
   createEmptyGrid,
 } from '@/lib/grid';
 import { GRID_LIMITS, TUTORIAL_GRID } from '@/lib/grid/constants';
-import { extractTitle } from '@/lib/items/item-utils';
 import { gridLogger } from '@/lib/logger';
 import { createLazyStoreAccessor } from '@/lib/stores/lazy-store-accessor';
 import {
   getValidationAuthority,
-  logValidationFailure,
   ValidationErrorCode,
 } from '@/lib/validation';
 import { BacklogItem } from '@/types/backlog-groups';
 import { GridItemType } from '@/types/match';
+
+import { GRID_STORE_PERSIST_VERSION, migrateGridState } from './grid-store-migrations';
+
 /**
  * Resize a grid to the target size, rescuing matched items that would be
  * truncated by relocating them to empty slots within the new bounds.
@@ -337,6 +334,14 @@ export interface GridStoreState {
 
   // Actions - Item placement
   assignItemToGrid: (item: BacklogItem | GridItemType, position: number) => void;
+  /**
+   * Atomically place an item into the next open grid slot: locks the item,
+   * reads fresh grid state, assigns, verifies the placement actually took, and
+   * only then marks the item used. Returns the placed position, or null if no
+   * slot was free / the placement did not take. Used by mobile swipe-to-rank so
+   * a contested slot can't "phantom-succeed".
+   */
+  assignToNextOpenSlot: (item: BacklogItem | GridItemType) => number | null;
   removeItemFromGrid: (position: number) => void;
   removeItemByItemId: (itemId: string) => void;
   moveGridItem: (fromPosition: number, toPosition: number) => void;
@@ -611,6 +616,49 @@ export const useGridStore = create<GridStoreState>()(
           return update;
         });
       },
+
+      // Atomically place an item into the next open slot (mobile swipe-to-rank).
+      assignToNextOpenSlot: (item): number | null => {
+        // Backlog item id used for locking + marking used (nested for a GridItemType).
+        const markId = ('item' in item && item.item?.id) ? item.item.id : (item as BacklogItem).id;
+        if (!markId) return null;
+
+        // Lock so a rapid double-swipe of the SAME card can't double-place it,
+        // mirroring the desktop drag path's acquireItemLock guard.
+        if (!acquireItemLock(markId)) {
+          gridLogger.warn(`assignToNextOpenSlot: ${markId} already being assigned`);
+          return null;
+        }
+
+        try {
+          // Read FRESH grid state inside the action (not a caller's stale snapshot)
+          // and find the next open slot.
+          const { gridItems, maxGridSize } = get();
+          let position: number | null = null;
+          for (let i = 0; i < maxGridSize; i++) {
+            if (!gridItems[i]?.context.matched) {
+              position = i;
+              break;
+            }
+          }
+          if (position === null) return null;
+
+          get().assignItemToGrid(item, position);
+
+          // assignItemToGrid silently no-ops on an already-filled slot. The slot
+          // was empty in our fresh read above, so if it is matched now WE placed
+          // it. Only then mark the item used — otherwise a contested slot would
+          // remove the item from the backlog without ever placing it (lost item).
+          const placed = get().gridItems[position]?.context.matched === true;
+          if (!placed) return null;
+
+          backlogStoreAccessor.getState()?.markItemAsUsed(markId, true);
+          return position;
+        } finally {
+          releaseItemLock(markId);
+        }
+      },
+
       // Remove an item from a grid position
       removeItemFromGrid: (position) => {
         set(state => {
@@ -849,150 +897,61 @@ export const useGridStore = create<GridStoreState>()(
           return;
         }
 
-        // If slot is occupied, displace existing item back to backlog
-        const existingItem = state.gridItems[position];
-        if (existingItem && existingItem.context.matched && existingItem.item?.id) {
-          const displacedItemId = existingItem.item.id;
-          get().removeItemFromGrid(position);
-          backlogState.markItemAsUsed(displacedItemId, false);
-          gridLogger.debug(`Tap-to-place: displaced item ${displacedItemId} from position ${position}`);
-        }
+        // UNDOABLE since 2026-08-25. Tap-to-place is the primary interaction
+        // on touch, and it used to bypass the undo stack entirely: an entire
+        // ranking built on a phone had no undo while the same ranking built by
+        // dragging on a desktop had one.
+        //
+        // The tag carries the ITEM identity, so tapping two different items in
+        // quick succession stays two steps.
+        //
+        // require() rather than a top-level import: this module is loaded by the
+        // undo recorder's own live-context accessor, and a static import here
+        // would close the cycle at module-evaluation time. Mirrors the pattern
+        // already used for backlog-store above.
+        const { recordGridChange } = require('@/lib/undo/record-grid-change');
+        recordGridChange(
+          {
+            description: `Place "${item.title ?? 'item'}" at position ${position + 1}`,
+            tag: `tap-place:${item.id}`,
+          },
+          () => {
+            // If slot is occupied, displace existing item back to backlog
+            const existingItem = get().gridItems[position];
+            if (existingItem && existingItem.context.matched && existingItem.item?.id) {
+              const displacedItemId = existingItem.item.id;
+              get().removeItemFromGrid(position);
+              backlogState.markItemAsUsed(displacedItemId, false);
+              gridLogger.debug(`Tap-to-place: displaced item ${displacedItemId} from position ${position}`);
+            }
 
-        // Place the item
-        const gridItem = createGridItem(item, position);
-        get().assignItemToGrid(gridItem, position);
-        backlogState.markItemAsUsed(item.id, true);
+            // Place the item
+            const gridItem = createGridItem(item, position);
+            get().assignItemToGrid(gridItem, position);
+            backlogState.markItemAsUsed(item.id, true);
+          },
+        );
 
-        // Clear selection after placement
+        // Clear selection after placement. OUT OF SCOPE for undo — this is
+        // transient interaction state, not something the user said about the
+        // document.
         set({ mobileSelectedItem: null });
         gridLogger.info(`Tap-to-place: placed item at position ${position}`);
       },
 
-      // Handle drag end events (uses TransferProtocol utilities for ID parsing)
+      // Delegate drag-end resolution to the single DragOperationRouter so this
+      // entry point can never diverge from the live SimpleMatchGrid path.
+      // (Previously this reimplemented a second assign engine that rejected
+      // occupied-slot drops instead of displacing — contradictory semantics
+      // depending on which path a caller happened to invoke.)
       handleDragEnd: (event) => {
-        const { active, over } = event;
-
-        if (!active || !over) {
+        if (!event.over) return;
+        const storeContext = get().getStoreContext();
+        if (!storeContext) {
+          gridLogger.error('Store context unavailable - cannot complete drag operation');
           return;
         }
-
-        const activeId = String(active.id);
-        const overId = String(over.id);
-
-        gridLogger.debug(`Drag end ${activeId} -> ${overId}`);
-
-        // Assert canonical grid ID format in development
-        assertCanonicalGridId(activeId, 'grid-store.handleDragEnd(active)');
-        assertCanonicalGridId(overId, 'grid-store.handleDragEnd(over)');
-
-        // Use TransferProtocol utilities for consistent ID parsing
-        const isActiveFromGrid = isGridReceiverId(activeId);
-        const isTargetGrid = isGridReceiverId(overId);
-
-        // Grid item to grid position (move/swap)
-        if (isActiveFromGrid && isTargetGrid) {
-          const fromPosition = extractGridPosition(activeId);
-          const toPosition = extractGridPosition(overId);
-
-          if (fromPosition !== null && toPosition !== null && fromPosition !== toPosition) {
-            get().moveGridItem(fromPosition, toPosition);
-          }
-          return;
-        }
-
-        // Backlog/external item to grid position (assign)
-        if (!isActiveFromGrid && isTargetGrid) {
-          const toPosition = extractGridPosition(overId);
-
-          if (toPosition === null) {
-            gridLogger.warn(`Invalid grid position from ${overId}`);
-            // Emit validation error to match-store
-            get().emitValidationError('TARGET_POSITION_INVALID');
-            return;
-          }
-
-          // Use lazy accessor to safely get backlog store state
-          // This handles race conditions if user drags before module initializes
-          const backlogState = backlogStoreAccessor.getState();
-
-          if (!backlogState) {
-            gridLogger.error('Backlog store not initialized - cannot complete drag operation');
-            get().emitValidationError('SOURCE_NOT_FOUND');
-            return;
-          }
-
-          // RACE CONDITION FIX: Acquire lock BEFORE validation to prevent
-          // double-click drag placing same item in two grid positions.
-          // If user double-clicks rapidly, second drag will fail to acquire lock.
-          if (!acquireItemLock(activeId)) {
-            gridLogger.warn(`Item ${activeId} is already being assigned (concurrent drag blocked)`);
-            get().emitValidationError('SOURCE_ALREADY_USED');
-            return;
-          }
-
-          try {
-            const state = get();
-
-            // Use ValidationAuthority for comprehensive validation
-            const authority = getValidationAuthority();
-            const validationResult = authority.canTransfer(
-              {
-                itemId: activeId,
-                from: 'backlog',
-                to: 'grid',
-                toPosition,
-              },
-              {
-                gridItems: state.gridItems,
-                maxGridSize: state.maxGridSize,
-              },
-              {
-                getItemById: backlogState.getItemById,
-                isItemUsed: backlogState.isItemUsed,
-                isItemLocked: (id) => itemsBeingAssigned.has(id) && id !== activeId,
-              }
-            );
-
-            // Handle validation failure
-            if (!validationResult.isValid) {
-              logValidationFailure(validationResult, {
-                activeId,
-                overId,
-                operation: 'backlog-to-grid',
-              });
-
-              // Emit error to match-store for UI notification
-              if (validationResult.errorCode) {
-                get().emitValidationError(validationResult.errorCode);
-              }
-              return;
-            }
-
-            // Validation passed - proceed with assignment
-            const item = validationResult.item;
-
-            if (item) {
-              gridLogger.debug(`Validated backlog item:`, {
-                id: item.id,
-                title: extractTitle(item),
-                hasImageUrl: !!item.image_url
-              });
-
-              // Use factory to create grid item with consistent image_url handling
-              const gridItem = createGridItem(item, toPosition);
-
-              // ATOMIC OPERATION: Assign item to grid and mark as used together
-              // This prevents race condition where item appears in multiple positions
-              get().assignItemToGrid(gridItem, toPosition);
-              backlogState.markItemAsUsed(item.id, true);
-
-              gridLogger.info(`Successfully assigned item to position ${toPosition}`);
-            }
-          } finally {
-            // Guarantee lock release regardless of success or error
-            releaseItemLock(activeId);
-          }
-        }
+        getGridDragRouter().handleDragEnd(event, storeContext);
       },
 
       // Emit validation error to validation-notification-store
@@ -1199,6 +1158,30 @@ export const useGridStore = create<GridStoreState>()(
     }),
     {
       name: 'grid-store',
+      // The persisted shape is a CONTRACT WITH FUTURE VERSIONS, so it carries a
+      // version and routes through an append-only chain. See
+      // ./grid-store-migrations.ts for the chain and the rule for adding steps.
+      //
+      // Introducing this strands nothing: zustand reports a stored payload with
+      // no `version` field as version 0, which is exactly what every payload
+      // written before 2026-08-24 is, and step 0->1 is the shape fix that used
+      // to run inline in onRehydrateStorage below.
+      version: GRID_STORE_PERSIST_VERSION,
+      migrate: (persisted, version) => {
+        const { state, outcome, detail } = migrateGridState(persisted, version);
+        if (outcome !== 'current') {
+          // A reset must be distinguishable from a first run — "your grid was
+          // reset" and "welcome" are different facts, and only one of them is
+          // worth investigating.
+          const log = outcome === 'migrated' ? gridLogger.info : gridLogger.warn;
+          log(`[grid-store persist] ${detail}`);
+        }
+        // null means "could not be rescued": zustand then keeps the store's
+        // own initial state. Never throw here — a corrupt payload that
+        // prevents launch turns a data problem into an unrecoverable product
+        // problem, because the payload survives the restart the user will try.
+        return (state ?? undefined) as unknown as GridStoreState | undefined;
+      },
       partialize: (state) => ({
         gridItems: state.gridItems,
         maxGridSize: state.maxGridSize,
@@ -1207,56 +1190,39 @@ export const useGridStore = create<GridStoreState>()(
         listGridCache: state.listGridCache,
         listGridCacheOrder: state.listGridCacheOrder,
       }),
-      // Re-compute statistics on hydration and restore correct list's grid from cache
+      /**
+       * NARROWING ONLY — no shape migration here any more.
+       *
+       * Everything that reshapes a payload now lives in the versioned chain
+       * above, which runs once per version bump. What remains is what genuinely
+       * belongs at rehydration: recomputing derived state from its inputs (a
+       * derivation must not outlive them), and resolving the persisted
+       * currentListId against the cache it points into.
+       */
       onRehydrateStorage: () => (state) => {
-        if (state) {
-          // Migrate pre-PlacedItem grid items: ensure every item has a `context` envelope
-          const migrateGridItems = (items: GridItemType[]) => {
-            for (let i = 0; i < items.length; i++) {
-              if (!items[i].context) {
-                const legacy = items[i] as GridItemType & { matched?: boolean };
-                items[i] = {
-                  ...items[i],
-                  context: {
-                    source: 'grid',
-                    matched: legacy.matched ?? (items[i].item != null),
-                  },
-                };
-              }
-            }
-          };
+        if (!state) return;
 
-          // Migrate current grid items
-          if (state.gridItems) {
-            migrateGridItems(state.gridItems);
-            state.gridStatistics = computeGridStatistics(state.gridItems);
-          }
+        // gridStatistics is DERIVED and is persisted only to avoid a first-paint
+        // flash; recompute it so it can never disagree with the items it
+        // summarises.
+        if (state.gridItems) {
+          state.gridStatistics = computeGridStatistics(state.gridItems);
+        }
 
-          // Migrate cached grids
-          if (state.listGridCache) {
-            for (const cached of Object.values(state.listGridCache)) {
-              if (cached.gridItems) {
-                migrateGridItems(cached.gridItems);
-              }
-            }
-          }
+        // A payload that skipped the chain (fresh install, or migrate returned
+        // defaults) may have neither field. Cheap and total.
+        if (!state.listGridCache) state.listGridCache = {};
+        if (!state.listGridCacheOrder) state.listGridCacheOrder = [];
 
-          // Ensure listGridCache and order exist
-          if (!state.listGridCache) {
-            state.listGridCache = {};
-          }
-          if (!state.listGridCacheOrder) {
-            // Reconstruct order from cache keys if missing (migration)
-            state.listGridCacheOrder = Object.keys(state.listGridCache);
-          }
-
-          // If we have a currentListId, ensure the current grid is from that list's cache
-          if (state.currentListId && state.listGridCache[state.currentListId]) {
-            const cached = state.listGridCache[state.currentListId];
-            state.gridItems = cached.gridItems;
-            state.maxGridSize = cached.maxGridSize;
-            state.gridStatistics = computeGridStatistics(cached.gridItems);
-          }
+        // Semantic check, not a shape check: currentListId is a reference into
+        // the cache, and a reference into data that no longer exists is
+        // resolved here rather than left to surface as a ghost three screens
+        // later.
+        if (state.currentListId && state.listGridCache[state.currentListId]) {
+          const cached = state.listGridCache[state.currentListId];
+          state.gridItems = cached.gridItems;
+          state.maxGridSize = cached.maxGridSize;
+          state.gridStatistics = computeGridStatistics(cached.gridItems);
         }
       },
     }

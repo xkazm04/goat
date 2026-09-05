@@ -9,21 +9,26 @@
  * - Animated generation skeleton with gradient sweep
  */
 
-import { DndContext, closestCenter, DragEndEvent , useSensor, useSensors, PointerSensor } from '@dnd-kit/core';
-import { SortableContext, rectSortingStrategy } from '@dnd-kit/sortable';
+import { DndContext, closestCenter, DragEndEvent , useSensor, useSensors, KeyboardSensor, PointerSensor } from '@dnd-kit/core';
+import { SortableContext, rectSortingStrategy, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { AnimatePresence, motion } from 'framer-motion';
 import { GripVertical, Database, Crown, Globe, Film } from 'lucide-react';
 
 import { SURFACE_ELEVATION } from '@/components/visual/depth/depth-tokens';
 import { GoatMascot } from '@/components/visual/GoatMascot';
 import { DURATION } from '@/lib/animations/motion-presets';
+import { DRAG_ACTIVATION_DISTANCE_PX } from '@/lib/dnd';
 import { useStudioItems, useStudioGeneration, useStudioValidation, useStudioStore } from '@/stores/studio-store';
+import { getStudioItemId } from '@/types/studio';
 
 import { StudioItemCard } from './StudioItemCard';
 
 
 
-const DEFAULT_GRID_CLASS = 'grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3';
+// Base at 2 columns for phones (the grid previously started at 4, giving ~70px
+// cards with truncated titles and untappable affordances), scaling up on larger
+// screens. All static literals so Tailwind generates them.
+const DEFAULT_GRID_CLASS = 'grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3';
 
 interface StudioItemsViewProps {
   gridClassName?: string;
@@ -37,13 +42,14 @@ export function StudioItemsView({ gridClassName = DEFAULT_GRID_CLASS }: StudioIt
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: { distance: 5 },
-    })
+      activationConstraint: { distance: DRAG_ACTIVATION_DISTANCE_PX },
+    }),
+    // Was pointer-only; generated items could not be reordered from a keyboard
+    // at all (drag-drop/keyboard-alternatives).
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  const sortableIds = generatedItems.map((_, index) =>
-    `item-${index}`
-  );
+  const sortableIds = generatedItems.map((item) => getStudioItemId(item));
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -184,13 +190,15 @@ export function StudioItemsView({ gridClassName = DEFAULT_GRID_CLASS }: StudioIt
           sensors={sensors}
           collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}
+          // No local drag state: the reorder is derived from the end event and
+          // dnd-kit owns the transforms, so cancel has nothing of ours to reap.
         >
           <SortableContext items={sortableIds} strategy={rectSortingStrategy}>
             <div className={gridClassName}>
               <AnimatePresence initial={false}>
                 {generatedItems.map((item, index) => (
                   <motion.div
-                    key={sortableIds[index]}
+                    key={getStudioItemId(item)}
                     initial={{ opacity: 0, scale: 0.85, y: 16 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.9, y: -8 }}

@@ -844,13 +844,16 @@ export class RankingEngineImpl implements IRankingEngine {
         });
       }
     } else if (config.algorithm === 'pyramid') {
-      // Pyramid distribution (fewer items in top tiers)
+      // Pyramid distribution (fewer items in top tiers).
+      // Weights must scale with tierCount, not a fixed 5-element table — otherwise
+      // tierCount > 5 reads undefined weights and produces NaN boundaries (tail tiers vanish).
       let position = 0;
-      const weights = [1, 2, 3, 4, 5].slice(0, config.tierCount);
-      const totalWeight = weights.reduce((a, b) => a + b, 0);
+      const weights = Array.from({ length: config.tierCount }, (_, i) => i + 1);
+      const totalWeight = weights.reduce((a, b) => a + b, 0) || 1;
 
       for (let i = 0; i < config.tierCount; i++) {
-        const tierSize = Math.ceil((weights[i] / totalWeight) * size);
+        const rawTierSize = Math.ceil((weights[i] / totalWeight) * size);
+        const tierSize = Number.isFinite(rawTierSize) ? Math.max(rawTierSize, 1) : 1;
         const startPosition = position;
         const endPosition = Math.min(position + tierSize, size);
         if (startPosition >= size) break;

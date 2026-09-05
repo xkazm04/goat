@@ -10,9 +10,8 @@ import { useState } from "react";
 
 import { GoatTrophy, GoatMusic, GoatGamepad, GoatBook } from "@/components/visual/GoatIcons";
 import { DURATION } from '@/lib/animations/motion-presets';
-import { goatApi } from "@/lib/api";
 import { getCategoryColor } from "@/lib/helpers/getColors";
-import { topListsKeys } from "@/lib/query-keys/top-lists";
+import { listOptions } from "@/lib/query-options/top-lists";
 import { TopListItem } from "@/types/top-lists";
 
 type IconComponent = React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
@@ -139,9 +138,7 @@ export function ListPreviewThumbnail({
 
   // Lazy-load list items to get images
   const { data: listData, isLoading } = useQuery({
-    queryKey: topListsKeys.list(listId, true),
-    queryFn: () => goatApi.lists.get(listId, true),
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    ...listOptions(listId),
     enabled: !!listId,
     select: (data) => {
       // Extract top N items with images

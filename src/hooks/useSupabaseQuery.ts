@@ -260,8 +260,25 @@ export function useSupabasePaginatedQuery<T = unknown>(
     setPage(Math.max(0, Math.min(newPage, totalPages - 1)));
   };
 
+  // Forward the declared surface field by field rather than spreading, matching
+  // `useSupabaseQuery` above. The spread was equivalent in value but hid which
+  // fields this hook actually promises, and `@tanstack/query/no-rest-destructuring`
+  // flags it because that idiom is how a tracked query result gets accidentally
+  // subscribed to in full.
   return {
-    ...query,
+    data: query.data,
+    error: query.error,
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+    isError: query.isError,
+    isSuccess: query.isSuccess,
+    refetch: query.refetch,
+    isPending: query.isPending,
+    isStale: query.isStale,
+    dataUpdatedAt: query.dataUpdatedAt,
+    errorUpdatedAt: query.errorUpdatedAt,
+    failureCount: query.failureCount,
+    status: query.status,
     page,
     pageSize,
     nextPage,

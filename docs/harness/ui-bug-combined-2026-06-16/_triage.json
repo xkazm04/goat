@@ -1,0 +1,460 @@
+{
+ "rows": [
+  {
+   "name": "Public API & SDK (v1)",
+   "fn": "public-api-sdk-v1.md",
+   "c": 2,
+   "h": 2,
+   "m": 0,
+   "l": 1,
+   "t": 5
+  },
+  {
+   "name": "Authentication & User Accounts",
+   "fn": "authentication-user-accounts.md",
+   "c": 1,
+   "h": 2,
+   "m": 1,
+   "l": 1,
+   "t": 5
+  },
+  {
+   "name": "Backlog & Match Collections Panel",
+   "fn": "backlog-match-collections-panel.md",
+   "c": 1,
+   "h": 2,
+   "m": 2,
+   "l": 0,
+   "t": 5
+  },
+  {
+   "name": "Bookmarks, Saved Lists & Collections",
+   "fn": "bookmarks-saved-lists-collections.md",
+   "c": 1,
+   "h": 2,
+   "m": 2,
+   "l": 0,
+   "t": 5
+  },
+  {
+   "name": "Criteria Editor & Scoring Config",
+   "fn": "criteria-editor-scoring-config.md",
+   "c": 1,
+   "h": 2,
+   "m": 2,
+   "l": 0,
+   "t": 5
+  },
+  {
+   "name": "List Creation & Composition",
+   "fn": "list-creation-composition.md",
+   "c": 1,
+   "h": 2,
+   "m": 2,
+   "l": 0,
+   "t": 5
+  },
+  {
+   "name": "Match Grid & Drag-Drop",
+   "fn": "match-grid-drag-drop.md",
+   "c": 1,
+   "h": 2,
+   "m": 1,
+   "l": 1,
+   "t": 5
+  },
+  {
+   "name": "Match Session & Keyboard Control",
+   "fn": "match-session-keyboard-control.md",
+   "c": 1,
+   "h": 2,
+   "m": 2,
+   "l": 0,
+   "t": 5
+  },
+  {
+   "name": "Motion & Gestures",
+   "fn": "motion-gestures.md",
+   "c": 1,
+   "h": 2,
+   "m": 2,
+   "l": 0,
+   "t": 5
+  },
+  {
+   "name": "Personalization & Recommendations",
+   "fn": "personalization-recommendations.md",
+   "c": 1,
+   "h": 2,
+   "m": 2,
+   "l": 0,
+   "t": 5
+  },
+  {
+   "name": "Ranking Engine & Tiers",
+   "fn": "ranking-engine-tiers.md",
+   "c": 1,
+   "h": 2,
+   "m": 2,
+   "l": 0,
+   "t": 5
+  },
+  {
+   "name": "Sharing & Social Embeds",
+   "fn": "sharing-social-embeds.md",
+   "c": 1,
+   "h": 2,
+   "m": 2,
+   "l": 0,
+   "t": 5
+  },
+  {
+   "name": "Studio Authoring Workspace",
+   "fn": "studio-authoring-workspace.md",
+   "c": 1,
+   "h": 2,
+   "m": 1,
+   "l": 1,
+   "t": 5
+  },
+  {
+   "name": "Offline & Persistence",
+   "fn": "offline-persistence.md",
+   "c": 1,
+   "h": 1,
+   "m": 3,
+   "l": 0,
+   "t": 5
+  },
+  {
+   "name": "Tournament Bracket Mode",
+   "fn": "tournament-bracket-mode.md",
+   "c": 1,
+   "h": 1,
+   "m": 2,
+   "l": 1,
+   "t": 5
+  },
+  {
+   "name": "Activity & Engagement Tracking",
+   "fn": "activity-engagement-tracking.md",
+   "c": 0,
+   "h": 3,
+   "m": 2,
+   "l": 0,
+   "t": 5
+  },
+  {
+   "name": "AI Item Generation",
+   "fn": "ai-item-generation.md",
+   "c": 0,
+   "h": 3,
+   "m": 2,
+   "l": 0,
+   "t": 5
+  },
+  {
+   "name": "API Client & Data Sync",
+   "fn": "api-client-data-sync.md",
+   "c": 0,
+   "h": 3,
+   "m": 2,
+   "l": 0,
+   "t": 5
+  },
+  {
+   "name": "Challenges & Streaks",
+   "fn": "challenges-streaks.md",
+   "c": 0,
+   "h": 3,
+   "m": 2,
+   "l": 0,
+   "t": 5
+  },
+  {
+   "name": "Faceted Search & Filters",
+   "fn": "faceted-search-filters.md",
+   "c": 0,
+   "h": 3,
+   "m": 2,
+   "l": 0,
+   "t": 5
+  },
+  {
+   "name": "Item Enrichment Pipeline",
+   "fn": "item-enrichment-pipeline.md",
+   "c": 0,
+   "h": 3,
+   "m": 2,
+   "l": 0,
+   "t": 5
+  },
+  {
+   "name": "Item Inspector & Details",
+   "fn": "item-inspector-details.md",
+   "c": 0,
+   "h": 3,
+   "m": 2,
+   "l": 0,
+   "t": 5
+  },
+  {
+   "name": "Landing & List Browsing",
+   "fn": "landing-list-browsing.md",
+   "c": 0,
+   "h": 3,
+   "m": 2,
+   "l": 0,
+   "t": 5
+  },
+  {
+   "name": "List Preview & Prefetch",
+   "fn": "list-preview-prefetch.md",
+   "c": 0,
+   "h": 3,
+   "m": 2,
+   "l": 0,
+   "t": 5
+  },
+  {
+   "name": "Result Image & Share Card",
+   "fn": "result-image-share-card.md",
+   "c": 0,
+   "h": 3,
+   "m": 2,
+   "l": 0,
+   "t": 5
+  },
+  {
+   "name": "Search & Command Palette",
+   "fn": "search-command-palette.md",
+   "c": 0,
+   "h": 3,
+   "m": 2,
+   "l": 0,
+   "t": 5
+  },
+  {
+   "name": "Top Groups & Backlog Source",
+   "fn": "top-groups-backlog-source.md",
+   "c": 0,
+   "h": 3,
+   "m": 2,
+   "l": 0,
+   "t": 5
+  },
+  {
+   "name": "Achievements & Awards",
+   "fn": "achievements-awards.md",
+   "c": 0,
+   "h": 2,
+   "m": 2,
+   "l": 1,
+   "t": 5
+  },
+  {
+   "name": "App Shell, Providers & Errors",
+   "fn": "app-shell-providers-errors.md",
+   "c": 0,
+   "h": 2,
+   "m": 2,
+   "l": 1,
+   "t": 5
+  },
+  {
+   "name": "Collection Panel & Item Cards",
+   "fn": "collection-panel-item-cards.md",
+   "c": 0,
+   "h": 2,
+   "m": 3,
+   "l": 0,
+   "t": 5
+  },
+  {
+   "name": "Consensus, Debate & Collaboration",
+   "fn": "consensus-debate-collaboration.md",
+   "c": 0,
+   "h": 2,
+   "m": 3,
+   "l": 0,
+   "t": 5
+  },
+  {
+   "name": "Creator Analytics Dashboard",
+   "fn": "creator-analytics-dashboard.md",
+   "c": 0,
+   "h": 2,
+   "m": 2,
+   "l": 1,
+   "t": 5
+  },
+  {
+   "name": "Design Tokens & Theming",
+   "fn": "design-tokens-theming.md",
+   "c": 0,
+   "h": 2,
+   "m": 2,
+   "l": 1,
+   "t": 5
+  },
+  {
+   "name": "Item Comparison",
+   "fn": "item-comparison.md",
+   "c": 0,
+   "h": 2,
+   "m": 3,
+   "l": 0,
+   "t": 5
+  },
+  {
+   "name": "Templates & Blueprints",
+   "fn": "templates-blueprints.md",
+   "c": 0,
+   "h": 2,
+   "m": 3,
+   "l": 0,
+   "t": 5
+  },
+  {
+   "name": "UI Primitives",
+   "fn": "ui-primitives.md",
+   "c": 0,
+   "h": 2,
+   "m": 3,
+   "l": 0,
+   "t": 5
+  },
+  {
+   "name": "Visual & 3D Components",
+   "fn": "visual-3d-components.md",
+   "c": 0,
+   "h": 2,
+   "m": 2,
+   "l": 1,
+   "t": 5
+  },
+  {
+   "name": "Wiki Images & Progressive Media",
+   "fn": "wiki-images-progressive-media.md",
+   "c": 0,
+   "h": 2,
+   "m": 3,
+   "l": 0,
+   "t": 5
+  }
+ ],
+ "crits": [
+  {
+   "ctx": "Authentication & User Accounts",
+   "title": "merge-guest trusts an attacker-supplied guest_id \u2014 IDOR / data theft",
+   "file": "src/app/api/auth/merge-guest/route.ts:27-64",
+   "lens": "bug-hunter",
+   "report": "authentication-user-accounts.md"
+  },
+  {
+   "ctx": "Backlog & Match Collections Panel",
+   "title": "Mobile swipe-to-rank bypasses the item-assignment lock \u2014 same item can land in two grid slots",
+   "file": "src/app/features/Match/sub_MatchCollections/components/MobileBacklogPanel.tsx:204",
+   "lens": "bug-hunter",
+   "report": "backlog-match-collections-panel.md"
+  },
+  {
+   "ctx": "Bookmarks, Saved Lists & Collections",
+   "title": "Bookmarks API trusts client-supplied user_id \u2014 IDOR / cross-user data access",
+   "file": "src/app/api/bookmarks/route.ts:21 (GET), :86 (POST), :154 (DELETE), :195 (PATCH)",
+   "lens": "bug-hunter",
+   "report": "bookmarks-saved-lists-collections.md"
+  },
+  {
+   "ctx": "Criteria Editor & Scoring Config",
+   "title": "Custom criteria are silently dropped at publish (selectedProfileId never set in custom mode)",
+   "file": "src/stores/studio-store.ts:552",
+   "lens": "bug-hunter",
+   "report": "criteria-editor-scoring-config.md"
+  },
+  {
+   "ctx": "List Creation & Composition",
+   "title": "Created lists are always orphaned \u2014 `user_id` never reaches the API",
+   "file": "src/types/list-intent-transformers.ts:103 (and src/app/api/lists/create-with-user/route.ts:25)",
+   "lens": "bug-hunter",
+   "report": "list-creation-composition.md"
+  },
+  {
+   "ctx": "Match Grid & Drag-Drop",
+   "title": "Two divergent `handleDragEnd` engines disagree on occupied-slot drops (silent data divergence)",
+   "file": "src/stores/grid-store.ts:872 (and src/lib/dnd/operations/grid-plans.ts:182)",
+   "lens": "bug-hunter",
+   "report": "match-grid-drag-drop.md"
+  },
+  {
+   "ctx": "Match Session & Keyboard Control",
+   "title": "Quick-assign auto-advance re-selects the same placed item (available list never excludes used items)",
+   "file": "src/stores/session-store.ts:407 (and src/stores/match-store.ts:134, 144)",
+   "lens": "bug-hunter",
+   "report": "match-session-keyboard-control.md"
+  },
+  {
+   "ctx": "Motion & Gestures",
+   "title": "PageTransition animates on every route change with no reduced-motion guard",
+   "file": "src/components/page-transition.tsx:57-73",
+   "lens": "ui-perfectionist",
+   "report": "motion-gestures.md"
+  },
+  {
+   "ctx": "Offline & Persistence",
+   "title": "processQueue strands operations in `in_progress` forever on a network drop mid-flight",
+   "file": "src/lib/offline/OfflinePersistence.ts:328 (flag set), :333 (fetch), :380 (catch)",
+   "lens": "bug-hunter",
+   "report": "offline-persistence.md"
+  },
+  {
+   "ctx": "Personalization & Recommendations",
+   "title": "Interest decay silently wipes all interests for returning users, disabling personalization",
+   "file": "src/lib/personalization/InterestTracker.ts:181 (decay) + 154-182, applied at :112",
+   "lens": "bug-hunter",
+   "report": "personalization-recommendations.md"
+  },
+  {
+   "ctx": "Public API & SDK (v1)",
+   "title": "API key validation is a mock that accepts ANY well-formed string \u2014 total auth bypass",
+   "file": "src/lib/api/public-api.ts:233-294",
+   "lens": "bug-hunter",
+   "report": "public-api-sdk-v1.md"
+  },
+  {
+   "ctx": "Public API & SDK (v1)",
+   "title": "Agent-bridge task API has no authentication and an unbounded in-memory store (RCE-adjacent DoS)",
+   "file": "src/app/api/agent-bridge/tasks/route.ts:101 (POST) ; src/lib/agent-bridge/task-memory-manager.ts:139-172",
+   "lens": "bug-hunter",
+   "report": "public-api-sdk-v1.md"
+  },
+  {
+   "ctx": "Ranking Engine & Tiers",
+   "title": "Pyramid tier mapping produces NaN boundaries for tierCount > 5",
+   "file": "src/lib/ranking/RankingEngine.ts:849",
+   "lens": "bug-hunter",
+   "report": "ranking-engine-tiers.md"
+  },
+  {
+   "ctx": "Sharing & Social Embeds",
+   "title": "OG image route `/api/og/[code]` does not exist \u2014 every social card 404s",
+   "file": "src/app/share/[code]/layout.tsx:68 (also src/app/api/share/route.ts:103, src/app/api/oembed/route.ts:122, src/lib/embed/EmbedCodeGenerator.ts:156, src/lib/og/OGCardGenerator.ts:264)",
+   "lens": "bug-hunter",
+   "report": "sharing-social-embeds.md"
+  },
+  {
+   "ctx": "Studio Authoring Workspace",
+   "title": "Duplicate item titles collide on React keys + DnD ids, corrupting the grid",
+   "file": "src/app/features/Studio/components/StudioItemsView.tsx:179 (and :44\u201345)",
+   "lens": "bug-hunter",
+   "report": "studio-authoring-workspace.md"
+  },
+  {
+   "ctx": "Tournament Bracket Mode",
+   "title": "Empty / under-filled bracket throws inside setTimeout and hangs the loader forever",
+   "file": "src/app/features/Match/sub_MatchBracket/BracketView.tsx:157-167",
+   "lens": "bug-hunter",
+   "report": "tournament-bracket-mode.md"
+  }
+ ]
+}

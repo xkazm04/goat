@@ -1,0 +1,17 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "src/app/**/{page,layout,route,template,error,loading,not-found,global-error,default,sitemap,robots,icon,opengraph-image,manifest}.{ts,tsx}",
+    "src/middleware.ts",
+    "src/instrumentation.ts",
+    "sentry.{client,server,edge}.config.ts",
+    "next.config.js",
+    "e2e/**/*.spec.ts",
+    "scripts/**/*.{ts,mjs}",
+    "src/**/*.test.{ts,tsx}",
+    "src/**/*.stories.{ts,tsx}"
+  ],
+  "project": ["src/**/*.{ts,tsx}"],
+  "ignore": ["src/**/*.usage-examples.tsx", "src/**/*.type-check.tsx"],
+  "ignoreDependencies": ["tailwindcss", "@tailwindcss/postcss", "postcss", "autoprefixer"]
+}

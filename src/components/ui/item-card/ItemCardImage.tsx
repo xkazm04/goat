@@ -24,6 +24,8 @@ export interface ItemCardImageProps {
   layout?: "grid" | "list" | "compact";
   /** Item title used for placeholder seed and wiki auto-fetch */
   itemTitle: string;
+  /** Category used to pick the branded fallback gradient when no image resolves */
+  category?: string | null;
   /** Custom image component override */
   imageComponent?: React.ReactNode;
 }
@@ -45,6 +47,7 @@ export function ItemCardImage({
   testId,
   layout = "grid",
   itemTitle,
+  category,
   imageComponent,
 }: ItemCardImageProps) {
   if (imageComponent) {
@@ -65,6 +68,7 @@ export function ItemCardImage({
         ariaDescription={`Image of ${itemTitle}`}
         autoFetchWiki={true}
         itemTitle={itemTitle}
+        category={category}
       />
     );
 

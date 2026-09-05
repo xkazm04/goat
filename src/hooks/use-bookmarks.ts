@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useCallback } from 'react';
 
 import { toast } from '@/hooks/use-toast';
+import { asyncStateFromQuery } from '@/lib/async-state/from-query';
 import { CACHE_TTL_MS } from '@/lib/cache/unified-cache';
 import { bookmarkKeys } from '@/lib/query-keys/bookmarks';
 import { TopList } from '@/types/top-lists';
@@ -50,11 +51,30 @@ async function fetchBookmarks(userId: string): Promise<BookmarksData> {
 export function useBookmarks(userId: string) {
   const queryClient = useQueryClient();
 
-  const { data, isLoading, error } = useQuery({
+  const query = useQuery({
     queryKey: bookmarkKeys.user(userId),
     queryFn: () => fetchBookmarks(userId),
     enabled: !!userId,
     staleTime: CACHE_TTL_MS.SHORT,
+  });
+  const { data, isLoading, error, refetch } = query;
+
+  /**
+   * The request's state as ONE discriminated value, derived from the query
+   * rather than reassembled by each consumer from `isLoading` + `error` +
+   * `bookmarks.length`. Added 2026-08-24 (registry async-ui-states/state-model,
+   * client-state/status-fsms).
+   *
+   * `isLoading` and `error` are still returned for now, because several
+   * consumers read them; new consumers should switch on `state`. The two cannot
+   * disagree, because the flags and the state are derived from the same query
+   * object rather than maintained side by side.
+   */
+  const state = asyncStateFromQuery({
+    data: data?.bookmarks,
+    error: error as Error | null,
+    isFetching: query.isFetching,
+    isFetched: query.isFetched,
   });
 
   const bookmarks = data?.bookmarks ?? [];
@@ -122,8 +142,15 @@ export function useBookmarks(userId: string) {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: bookmarkKeys.user(userId) });
     },
-    onSuccess: () => {
-      toast({ title: 'Saved', description: 'List bookmarked!' });
+    onSuccess: (data) => {
+      // The POST returns { alreadyExists: true } (200) when the list was already
+      // bookmarked (e.g. added in another tab). Don't claim "Saved" for a no-op —
+      // the optimistic temp row reconciles to the real one via onSettled invalidation.
+      if (data?.data?.alreadyExists) {
+        toast({ title: 'Already saved', description: 'This list is already in your bookmarks.' });
+      } else {
+        toast({ title: 'Saved', description: 'List bookmarked!' });
+      }
     },
   });
 
@@ -168,15 +195,23 @@ export function useBookmarks(userId: string) {
   });
 
   // Toggle bookmark
+  //
+  // Depend on the `mutate` functions, not on the mutation objects: a mutation
+  // result is NOT referentially stable, so depending on it rebuilds this
+  // callback on every mutation state change (and every consumer memoized on it).
+  // `mutate` is stable for the life of the mutation.
+  const { mutate: addBookmarkMutate } = addBookmark;
+  const { mutate: removeBookmarkMutate } = removeBookmark;
+
   const toggleBookmark = useCallback(
     (listId: string) => {
       if (isBookmarked(listId)) {
-        removeBookmark.mutate(listId);
+        removeBookmarkMutate(listId);
       } else {
-        addBookmark.mutate({ listId });
+        addBookmarkMutate({ listId });
       }
     },
-    [isBookmarked, addBookmark, removeBookmark]
+    [isBookmarked, addBookmarkMutate, removeBookmarkMutate]
   );
 
   // Create folder mutation
@@ -258,8 +293,14 @@ export function useBookmarks(userId: string) {
     bookmarks,
     folders,
     bookmarksByFolder,
+    /** The derived request state. Prefer this over the flags below. */
+    state,
     isLoading,
     error,
+    // A failure state without a retry that reissues the SAME request is not a
+    // failure state, it is an apology. Exposed 2026-08-24 alongside the fix in
+    // SavedListsSection (registry async-ui-states/failure-states).
+    refetch,
     isBookmarked,
     toggleBookmark,
     addBookmark: addBookmark.mutate,

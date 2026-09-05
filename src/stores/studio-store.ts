@@ -352,7 +352,9 @@ export const useStudioStore = create<StudioState>()(
 
             case 'item': {
               if (isStale()) { cleanupStream(); return; }
-              const item = parsed.data;
+              // Stamp a stable uid so duplicate titles never collide on React
+              // keys / dnd-kit sortable ids downstream.
+              const item = { ...parsed.data, uid: parsed.data.uid ?? crypto.randomUUID() };
               const titleKey = item.title.toLowerCase().trim();
               // Filter duplicates (case-insensitive)
               if (!existingTitles.includes(titleKey)) {
@@ -562,7 +564,8 @@ export const useStudioStore = create<StudioState>()(
 
   addItem: (item) => {
     const { generatedItems } = get();
-    set({ generatedItems: [...generatedItems, item] });
+    const withId = { ...item, uid: item.uid ?? crypto.randomUUID() };
+    set({ generatedItems: [...generatedItems, withId] });
   },
 
   // Metadata actions
@@ -591,7 +594,9 @@ export const useStudioStore = create<StudioState>()(
   getCriteriaConfig: () => {
     const { criteriaMode, selectedProfileId, customProfile } = get();
 
-    if (criteriaMode === 'none' || !selectedProfileId) {
+    // Only 'none' has no config. Do NOT gate on selectedProfileId here: custom
+    // mode never sets it, so gating on it silently discarded all custom criteria.
+    if (criteriaMode === 'none') {
       return null;
     }
 
@@ -607,7 +612,7 @@ export const useStudioStore = create<StudioState>()(
     }
 
     // For presets, resolve the template by ID
-    if (criteriaMode === 'preset') {
+    if (criteriaMode === 'preset' && selectedProfileId) {
       const template = getTemplateById(selectedProfileId);
       if (template) {
         const now = new Date().toISOString();
@@ -644,6 +649,7 @@ export const useStudioStore = create<StudioState>()(
       description: item.description,
       wikipedia_url: item.wikipedia_url,
       image_url: null,
+      uid: crypto.randomUUID(),
     }));
 
     set({

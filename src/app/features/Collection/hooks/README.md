@@ -2,6 +2,24 @@
 
 This directory contains hooks for managing collection data, filters, and statistics.
 
+## What lives here
+
+Verified against the tree on 2026-08-25. This document previously described only
+`useCollection` and named nothing else in the directory, so five hooks had no
+prose at all.
+
+| hook | job |
+|---|---|
+| `useCollection` | the unified data hook, documented in full below |
+| `useCollectionFilterState` | filter/search state for the panel toolbar |
+| `useIntersectionObserver` | viewport detection; the one live rung of the lazy-load ladder |
+| `useQuickSelect` | keyboard quick-placement (`q`, then digits). **Undoable since 2026-08-25** — it records a tagged step through `@/lib/undo/record-grid-change`, where before it mutated the grid with nothing on the undo stack |
+| `useVisibleCollectionItems` | the visible window, with its own re-entrancy guard |
+| `useCollection.usage-examples.tsx` | **not a test** — reference samples, renamed 2026-08-24 so it stops impersonating one |
+
+Any change under `src/app/features/Collection/hooks/` is checked against this
+file by `npm run docs:coupling -- --changed` (colocated-README convention).
+
 ## useCollection Hook
 
 The **unified collection hook** that provides a single source of truth for collection data with built-in:

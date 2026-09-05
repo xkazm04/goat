@@ -139,7 +139,9 @@ export function GlassModalHeader({
         {children}
       </div>
       <button
+        type="button"
         onClick={onClose}
+        aria-label="Close"
         className="p-1.5 rounded-control text-gray-400 hover:text-white hover:bg-gray-700/50 transition-colors shrink-0"
       >
         <X className="w-4 h-4" />

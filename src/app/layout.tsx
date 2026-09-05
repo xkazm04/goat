@@ -86,7 +86,13 @@ export default function RootLayout({
             attribute="class"
             defaultTheme="dark"
             enableSystem={false}
-            themes={['light', 'dark', 'experimental-dark']}
+            // 'light' is intentionally NOT registered: design-tokens.css defines
+            // tokens only as dark values under :root with no .light overrides, so
+            // a 'light' theme renders unreadable dark-on-light surfaces. No UI
+            // selects it and enableSystem is false, so dropping it is non-breaking
+            // and removes the broken state. Re-add once a real light palette
+            // exists (see docs/harness/followups-2026-06-16.md).
+            themes={['dark', 'experimental-dark']}
           >
             <QueryProvider>
               <DeferredProviders>

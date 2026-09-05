@@ -3,6 +3,8 @@
 import { useMotionValue, useSpring, useTransform, MotionValue } from "framer-motion";
 import { useRef, useCallback } from "react";
 
+import { useMotionCapabilities } from "@/hooks/use-motion-preference";
+
 interface Use3DTiltOptions {
   /** Maximum rotation in degrees (default: 10) */
   maxRotation?: number;
@@ -54,14 +56,21 @@ export function use3DTilt(options: Use3DTiltOptions = {}): Use3DTiltReturn {
 
   const ref = useRef<HTMLDivElement>(null);
 
+  // Respect the motion preference automatically — unlike the rest of the motion
+  // system, this interaction hook used to tilt on hover/focus regardless of the
+  // user's tier (the focus path even adds tilt during keyboard nav). Reduced/
+  // minimal tiers disable interaction animations.
+  const { allowInteraction } = useMotionCapabilities();
+  const effectiveDisabled = disabled || !allowInteraction;
+
   // Raw motion values for mouse position (normalized -1 to 1)
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
   const isHovered = useMotionValue(0);
 
   // When disabled, use 0 rotation and scale of 1
-  const effectiveMaxRotation = disabled ? 0 : maxRotation;
-  const effectiveHoverScale = disabled ? 1 : hoverScale;
+  const effectiveMaxRotation = effectiveDisabled ? 0 : maxRotation;
+  const effectiveHoverScale = effectiveDisabled ? 1 : hoverScale;
 
   // Spring configuration for smooth micro-ease transitions
   const springConfig = { stiffness, damping, mass: 0.5 };

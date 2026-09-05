@@ -159,8 +159,10 @@ export const OnboardingHero = memo(function OnboardingHero() {
           Rank anything. Debate everything. Crown the G.O.A.T.
         </motion.p>
 
-        {/* Category preview cards */}
-        <div className="flex gap-3 md:gap-4 mb-8">
+        {/* Category preview cards — stack on phones (a fixed 3-up flex row
+            truncated sample names like "Red Dead Redemption 2" in ~110px columns
+            for the new-user audience this hero targets), row on sm+. */}
+        <div className="flex flex-col sm:flex-row gap-3 md:gap-4 mb-8">
           {CATEGORY_PREVIEWS.map((preview, index) => (
             <PreviewCard
               key={preview.category}

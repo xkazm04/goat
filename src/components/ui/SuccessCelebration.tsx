@@ -16,8 +16,8 @@ import {
   EASING,
   celebrationPulseVariants,
   copyConfirmVariants,
-  prefersReducedMotion,
 } from '@/lib/animations/sharing';
+import { useMotionPreference } from '@/hooks/use-motion-preference';
 
 export type CelebrationVariant = 'check' | 'download' | 'share';
 
@@ -82,7 +82,10 @@ export const SuccessCelebration = memo(function SuccessCelebration({
   className = '',
 }: SuccessCelebrationProps) {
   const [isVisible, setIsVisible] = useState(false);
-  const reducedMotion = prefersReducedMotion();
+  // SSR-safe motion check (see AnimatedCounter): render-time prefersReducedMotion()
+  // diverged server (false) vs client (true), causing a hydration mismatch.
+  const { tier } = useMotionPreference();
+  const reducedMotion = tier !== 'full';
 
   const { icon: iconSize, ring: ringSize } = SIZE_CONFIG[size];
   const Icon = ICONS[variant];
@@ -250,7 +253,9 @@ export const DownloadProgress = memo(function DownloadProgress({
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference * (1 - progress);
 
-  const reducedMotion = prefersReducedMotion();
+  // SSR-safe motion check (avoids the render-time hydration mismatch).
+  const { tier } = useMotionPreference();
+  const reducedMotion = tier !== 'full';
 
   return (
     <div

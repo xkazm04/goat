@@ -9,6 +9,8 @@ import {
   TrendingUp,
   TrendingDown,
   Activity,
+  AlertTriangle,
+  RefreshCw,
 } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 
@@ -64,26 +66,33 @@ const ACTION_CONFIG: Record<
 export function ActivityTimeline({ itemId }: ActivityTimelineProps) {
   const [data, setData] = useState<ActivityTimelineData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     if (!itemId) return;
 
     const fetchActivity = async () => {
       setLoading(true);
+      setError(null);
       try {
         const res = await fetch(`/api/items/${itemId}/activity?limit=20`);
-        if (res.ok) {
-          setData(await res.json());
+        // Distinguish a real failure from "no activity" — a non-ok response was
+        // previously ignored and fell through to the cheerful empty state,
+        // presenting an outage as a confirmed empty history.
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
         }
-      } catch {
-        // Non-critical, silently fail
+        setData(await res.json());
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load activity");
       } finally {
         setLoading(false);
       }
     };
 
     fetchActivity();
-  }, [itemId]);
+  }, [itemId, reloadKey]);
 
   if (loading) {
     return (
@@ -97,6 +106,22 @@ export function ActivityTimeline({ itemId }: ActivityTimelineProps) {
             </div>
           </div>
         ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center text-center py-4">
+        <AlertTriangle className="w-8 h-8 text-amber-500/70 mb-2" />
+        <p className="text-sm text-slate-400">Couldn&apos;t load activity</p>
+        <button
+          onClick={() => setReloadKey((k) => k + 1)}
+          className="mt-2 inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition-colors"
+        >
+          <RefreshCw className="w-3 h-3" />
+          Retry
+        </button>
       </div>
     );
   }

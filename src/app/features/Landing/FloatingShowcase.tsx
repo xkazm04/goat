@@ -71,16 +71,24 @@ const TableRow = memo(function TableRow({
 
     return (
         <motion.div
-            className="flex items-center gap-2 px-2 py-1.5 cursor-pointer transition-colors focus-ring rounded-sm"
-            tabIndex={0}
+            className="flex items-center gap-2 px-2 py-1.5 cursor-pointer transition-colors rounded focus-ring"
             role="button"
+            tabIndex={0}
             aria-label={`Play ${list.title}`}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
             onFocus={() => setIsHovered(true)}
             onBlur={() => setIsHovered(false)}
             onClick={handleClick}
-            onKeyDown={handleKeyDown}
+            // The hero row is the most prominent ranking entry point; without a
+            // keydown handler it was mouse-only (WCAG 2.1.1), unlike the sibling
+            // MosaicCard. Activate on Enter/Space.
+            onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleClick();
+                }
+            }}
             onContextMenu={handleContextMenu}
             style={{
                 background: isHovered ? `${colors.primary}10` : 'transparent',
@@ -346,8 +354,10 @@ export const FloatingShowcase = memo(function FloatingShowcase() {
                         </button>
                     </div>
 
-                    {/* Three tables side by side */}
-                    <div className="flex flex-col md:flex-row gap-4">
+                    {/* Tables: stacked on phones, 2-up on small screens, 3-up on
+                        desktop. A non-wrapping flex row crammed all three into
+                        ~110px columns on mobile (the largest traffic segment). */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {SHOWCASE_CATEGORIES.map(category => (
                             <CategoryTable
                                 key={category}

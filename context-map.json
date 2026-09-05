@@ -1,0 +1,3915 @@
+{
+  "contexts": [
+    {
+      "api_surface": "GET/POST /api/v1/rankings/*, GET /api/v1/trends, GET /api/personalization/*, GET /api/ranking-graph/[itemId]",
+      "business_feature": "Rankings & Personalisation API",
+      "category": "api",
+      "cross_refs": [
+        "list-items-api",
+        "user-progress-analytics"
+      ],
+      "db_tables": [],
+      "description": "API routes for ranking aggregation, trend data, and personalisation — the public v1 REST API (rankings submit/aggregate/get, trends, analytics, categories, SDK info, embeddable widget JS), ranking graph by item over time, personalization profile/track/recommend endpoints, and the general recommendation route. These routes power third-party integrations and the personalised discovery layer.",
+      "entry_points": [
+        "src/app/api/v1/rankings/route.ts",
+        "src/app/api/personalization/recommend/route.ts",
+        "src/app/api/ranking-graph/route.ts"
+      ],
+      "file_paths": [
+        "src/app/api/ranking-graph/route.ts",
+        "src/app/api/ranking-graph/[itemId]/route.ts",
+        "src/app/api/v1/analytics/route.ts",
+        "src/app/api/v1/categories/route.ts",
+        "src/app/api/v1/rankings/route.ts",
+        "src/app/api/v1/rankings/[itemId]/route.ts",
+        "src/app/api/v1/rankings/aggregate/route.ts",
+        "src/app/api/v1/rankings/submit/route.ts",
+        "src/app/api/v1/sdk/route.ts",
+        "src/app/api/v1/trends/route.ts",
+        "src/app/api/v1/widgets/embed.js/route.ts",
+        "src/app/api/personalization/profile/route.ts",
+        "src/app/api/personalization/recommend/route.ts",
+        "src/app/api/personalization/track/route.ts",
+        "src/app/api/recommendation/route.ts"
+      ],
+      "group": "API Routes",
+      "group_id": "7934834b-28fa-4390-bbf0-be93a51bf969",
+      "id": "bbdb28f1-c189-46f3-afdf-f77731a72b0a",
+      "keywords": [
+        "rankings",
+        "aggregate",
+        "trends",
+        "personalization",
+        "recommendation",
+        "ranking graph",
+        "v1 API",
+        "SDK",
+        "embed widget",
+        "categories"
+      ],
+      "last_written_at": "2026-08-29T09:43:14.760760200+00:00",
+      "name": "analytics-rankings-api",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16.1.3",
+        "TypeScript",
+        "Supabase"
+      ]
+    },
+    {
+      "api_surface": "",
+      "business_feature": "Animations & Embed Widgets",
+      "category": "lib",
+      "cross_refs": [
+        "layout-and-gestures",
+        "sharing-platform"
+      ],
+      "db_tables": [],
+      "description": "Shared animation design system and embeddable widget toolkit. The animations module defines Framer Motion presets, micro-interaction tokens, scroll-triggered reveals, and sharing-specific transitions consumed across all features. The embed module generates iframe/script embed codes, applies per-consumer theme customisation, and tracks widget analytics for embedded ranking lists.",
+      "entry_points": [
+        "src/lib/animations/index.ts",
+        "src/lib/embed/index.ts",
+        "src/lib/animations/motion-presets.ts"
+      ],
+      "file_paths": [
+        "src/lib/animations/index.ts",
+        "src/lib/animations/micro-interactions.ts",
+        "src/lib/animations/motion-presets.ts",
+        "src/lib/animations/motion-tokens.ts",
+        "src/lib/animations/scroll-triggers.ts",
+        "src/lib/animations/sharing.ts",
+        "src/lib/embed/EmbedCodeGenerator.ts",
+        "src/lib/embed/ThemeCustomizer.ts",
+        "src/lib/embed/WidgetAnalytics.ts",
+        "src/lib/embed/index.ts",
+        "src/lib/embed/types.ts"
+      ],
+      "group": "Media & Visual",
+      "group_id": "1717add0-8d97-40ab-8c4c-78c33d9cd82c",
+      "id": "502c218e-3581-4f63-a641-40ac2874b92a",
+      "keywords": [
+        "animation",
+        "framer-motion",
+        "motion-preset",
+        "micro-interaction",
+        "scroll-trigger",
+        "embed",
+        "widget",
+        "theme-customizer",
+        "iframe",
+        "analytics"
+      ],
+      "last_written_at": "2026-08-29T09:41:26.609678800+00:00",
+      "name": "animations-and-embed",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16",
+        "React 19",
+        "Framer Motion",
+        "TypeScript"
+      ]
+    },
+    {
+      "api_surface": "GET/POST /api/lists, GET /api/top/groups, GET /api/top/items, GET /api/criteria, POST /api/match/generate-result-image",
+      "business_feature": "API Client & Data Fetching",
+      "category": "api",
+      "cross_refs": [
+        "offline-and-storage",
+        "feedback-and-errors",
+        "shared-utilities"
+      ],
+      "db_tables": [
+        "lists",
+        "top_items"
+      ],
+      "description": "Typed HTTP client, Supabase connection factories, TanStack Query cache configuration, and centralised query-key factories for all data domains. The ApiClient applies rate-limiting, circuit-breaking, request-ID tracing, and p50/p99 latency instrumentation before every call; a unified cache layer (server-side LRU + client TanStack config) and useCacheInvalidation hook keep React state consistent across mutations.",
+      "entry_points": [
+        "src/lib/api/client.ts",
+        "src/lib/supabase/client.ts",
+        "src/lib/query-keys/index.ts"
+      ],
+      "file_paths": [
+        "src/lib/api/CircuitBreaker.ts",
+        "src/lib/api/client.ts",
+        "src/lib/api/collection.ts",
+        "src/lib/api/criteria.ts",
+        "src/lib/api/goat-api.ts",
+        "src/lib/api/index.ts",
+        "src/lib/api/item-research.ts",
+        "src/lib/api/public-api.ts",
+        "src/lib/api/rate-limiter.ts",
+        "src/lib/api/request-id.ts",
+        "src/lib/api/request-timing.ts",
+        "src/lib/api/studio-utils.ts",
+        "src/lib/api/top-items.ts",
+        "src/lib/api/wiki-images.ts",
+        "src/lib/cache/index.ts",
+        "src/lib/cache/query-cache-config.ts",
+        "src/lib/cache/server-cache.ts",
+        "src/lib/cache/unified-cache.ts",
+        "src/lib/cache/useCacheInvalidation.ts",
+        "src/lib/query-keys/bookmarks.ts",
+        "src/lib/query-keys/collection.ts",
+        "src/lib/query-keys/criteria.ts",
+        "src/lib/query-keys/index.ts",
+        "src/lib/query-keys/list-collections.ts",
+        "src/lib/query-keys/top-items.ts",
+        "src/lib/query-keys/top-lists.ts",
+        "src/lib/supabase/client.ts",
+        "src/lib/supabase/server.ts",
+        "src/lib/supabase/types.ts"
+      ],
+      "group": "API & Data Layer",
+      "group_id": "2b4d1c69-7f7e-4456-9982-871360916ed4",
+      "id": "833b2a24-6352-4968-98fc-ea87d9a146d1",
+      "keywords": [
+        "api-client",
+        "supabase",
+        "query-keys",
+        "circuit-breaker",
+        "rate-limiter",
+        "cache",
+        "request-id",
+        "latency",
+        "TanStack-Query",
+        "collection"
+      ],
+      "last_written_at": "2026-08-29T09:41:26.992059300+00:00",
+      "name": "api-client",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16",
+        "Supabase",
+        "TanStack Query",
+        "TypeScript"
+      ]
+    },
+    {
+      "api_surface": "",
+      "business_feature": "App Decorations",
+      "category": "ui",
+      "cross_refs": [
+        "decorative-effects",
+        "visual-primitives"
+      ],
+      "db_tables": [],
+      "description": "App-specific decorative assets and animated buttons used on showcase and landing surfaces: card decorations, particle systems, showcase ornaments, tag chips, category sport icons, and the basket/trophy icon set. AnimButtons provides the branded animated CTA buttons. These are tightly coupled to the app's marketing and landing presentation layer.",
+      "entry_points": [
+        "src/components/app/decorations/ShowcaseDecor.tsx",
+        "src/components/app/button/AnimButtons.tsx"
+      ],
+      "file_paths": [
+        "src/components/app/decorations/cardDecor.tsx",
+        "src/components/app/decorations/particles.tsx",
+        "src/components/app/decorations/ShowcaseDecor.tsx",
+        "src/components/app/decorations/tags.tsx",
+        "src/components/app/icons/bg/bgBasket.tsx",
+        "src/components/app/icons/cats/sportIcons.tsx",
+        "src/components/app/icons/common/trophy.tsx",
+        "src/components/app/button/AnimButtons.tsx"
+      ],
+      "group": "Visual Design System",
+      "group_id": "2b8f1ddf-06f7-44e2-8f0e-0fc6e89ea560",
+      "id": "168ec719-6ce3-4fb2-9c4c-e6ff078f8503",
+      "keywords": [
+        "particles",
+        "card decoration",
+        "showcase",
+        "tags",
+        "sport icons",
+        "trophy",
+        "animated button",
+        "CTA"
+      ],
+      "last_written_at": "2026-08-29T09:38:54.182607800+00:00",
+      "name": "app-decorations",
+      "pinned": false,
+      "tech_stack": [
+        "React",
+        "Framer Motion",
+        "TypeScript",
+        "Tailwind CSS"
+      ]
+    },
+    {
+      "api_surface": "",
+      "business_feature": "App Provider Shell",
+      "category": "ui",
+      "cross_refs": [
+        "command-palette"
+      ],
+      "db_tables": [],
+      "description": "Composes and layers the React context tree for the entire application. Covers QueryProvider (TanStack Query client setup with unified cache config), BacklogProvider (network-status detection, coalescer lifecycle, periodic persistence), MatchProviders (match-route-scoped offline and item-detail popup providers deferred to idle), PrefetchProvider (PredictionEngine / PrefetchManager / RoutePreloader initialisation), and DeferredProviders (global non-critical providers mounted after first paint to reduce LCP-path JS). Depends on backlog-store, query-cache-config, and the lib/prefetch and lib/offline subsystems.",
+      "entry_points": [
+        "src/providers/DeferredProviders.tsx",
+        "src/providers/query-provider.tsx",
+        "src/providers/MatchProviders.tsx"
+      ],
+      "file_paths": [
+        "src/providers/BacklogProvider.tsx",
+        "src/providers/MatchProviders.tsx",
+        "src/providers/prefetch-provider.tsx",
+        "src/providers/query-provider.tsx",
+        "src/providers/DeferredProviders.tsx"
+      ],
+      "group": "App Shell",
+      "group_id": "73bec54d-abaa-4000-88ea-b550ae7ede28",
+      "id": "36858222-40b9-480e-b640-3e6fe3aa1d16",
+      "keywords": [
+        "provider",
+        "QueryClient",
+        "backlog",
+        "offline",
+        "prefetch",
+        "deferred",
+        "context",
+        "idle-callback",
+        "network-sync",
+        "coalescer"
+      ],
+      "last_written_at": "2026-08-29T09:44:13.771304700+00:00",
+      "name": "app-providers",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16",
+        "React",
+        "TanStack Query",
+        "Zustand",
+        "TypeScript"
+      ]
+    },
+    {
+      "api_surface": "GET /auth/callback (Supabase auth redirect)",
+      "business_feature": "App Shell & Bootstrap",
+      "category": "config",
+      "cross_refs": [
+        "platform-ops-api",
+        "landing-shell"
+      ],
+      "db_tables": [],
+      "description": "The Next.js application shell — root layout (ClerkProvider → ThemeProvider → BacklogProvider → QueryProvider hierarchy), global CSS and design tokens, error boundaries, offline page, auth callback handler, and the share-code public page. This is the bootstrapping layer that every other feature mounts into; it owns no business logic but controls provider wiring, font loading, and global styles.",
+      "entry_points": [
+        "src/app/layout.tsx"
+      ],
+      "file_paths": [
+        "src/app/layout.tsx",
+        "src/app/error.tsx",
+        "src/app/global-error.tsx",
+        "src/app/not-found.tsx",
+        "src/app/globals.css",
+        "src/app/design-tokens.css",
+        "src/app/dev-css-var-check.ts",
+        "src/app/offline/layout.tsx",
+        "src/app/offline/page.tsx",
+        "src/app/auth/callback/route.ts",
+        "src/app/share/[code]/page.tsx"
+      ],
+      "group": "App Shell",
+      "group_id": "73bec54d-abaa-4000-88ea-b550ae7ede28",
+      "id": "b07dfd03-c85a-4819-974f-23aed97b7433",
+      "keywords": [
+        "root layout",
+        "providers",
+        "Clerk",
+        "theme",
+        "global styles",
+        "design tokens",
+        "error boundary",
+        "offline",
+        "auth callback",
+        "share"
+      ],
+      "last_written_at": "2026-08-29T09:43:14.293830300+00:00",
+      "name": "app-shell",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16.1.3",
+        "React",
+        "TypeScript",
+        "Clerk",
+        "Tailwind CSS"
+      ]
+    },
+    {
+      "api_surface": "Supabase Auth API; Supabase PostgREST for criteria/scores tables",
+      "business_feature": "Authentication & Data Fetching",
+      "category": "lib",
+      "cross_refs": [
+        "match-and-ranking",
+        "list-and-content"
+      ],
+      "db_tables": [],
+      "description": "Provides all authentication primitives (Supabase Auth, guest/temp users) and the generic data-fetching layer (query, mutation, optimistic update wrappers) used throughout the app. The supabase-auth subdirectory handles session management, token refresh, and client configuration; the criteria hooks bridge TanStack Query with Zustand for criteria/scoring persistence. Everything here is consumed by feature hooks rather than components directly.",
+      "entry_points": [
+        "src/hooks/useSupabaseAuth.ts",
+        "src/hooks/useSupabaseQuery.ts",
+        "src/hooks/use-auth-user.ts"
+      ],
+      "file_paths": [
+        "src/hooks/supabase-auth/types.ts",
+        "src/hooks/supabase-auth/actions.ts",
+        "src/hooks/supabase-auth/client.ts",
+        "src/hooks/supabase-auth/index.ts",
+        "src/hooks/useSupabaseAuth.ts",
+        "src/hooks/use-auth-user.ts",
+        "src/hooks/use-temp-user.ts",
+        "src/hooks/useSupabaseQuery.ts",
+        "src/hooks/useSupabaseMutation.ts",
+        "src/hooks/useOptimisticMutation.ts",
+        "src/hooks/use-criteria-queries.ts",
+        "src/hooks/use-criteria-sync.ts"
+      ],
+      "group": "Authentication & Data Access",
+      "group_id": "ce1335d6-3022-4f79-9e9d-c6330ab3eecb",
+      "id": "ff174355-b2ba-483f-bd13-2ca7d25bd034",
+      "keywords": [
+        "supabase",
+        "authentication",
+        "session",
+        "query",
+        "mutation",
+        "optimistic",
+        "criteria",
+        "scoring",
+        "TanStack Query",
+        "guest"
+      ],
+      "last_written_at": "2026-08-29T09:37:01.881732400+00:00",
+      "name": "auth-and-data-layer",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16",
+        "Supabase",
+        "TanStack Query",
+        "Zustand",
+        "TypeScript"
+      ]
+    },
+    {
+      "api_surface": "GET /api/top/groups",
+      "business_feature": "Backlog & Item Management",
+      "category": "lib",
+      "cross_refs": [
+        "match-session-engine"
+      ],
+      "db_tables": [
+        "items"
+      ],
+      "description": "Manages the pool of candidate items a user can drag into the match grid: backlog groups, individual items, offline caching, item-usage tracking, and the floating item-popup inspector. The backlog-store and its sub-module actions provide CRUD over groups and items including an offline action queue; collection-store and wiki-image-store support browsing and enriching items with external images; use-list-store tracks the active list selection.",
+      "entry_points": [
+        "src/stores/backlog-store.ts",
+        "src/stores/backlog/store.ts",
+        "src/stores/backlog/types.ts"
+      ],
+      "file_paths": [
+        "src/stores/backlog-store.ts",
+        "src/stores/backlog/index.ts",
+        "src/stores/backlog/actions-data.ts",
+        "src/stores/backlog/actions-groups.ts",
+        "src/stores/backlog/actions-items.ts",
+        "src/stores/backlog/actions-offline.ts",
+        "src/stores/backlog/actions-utils.ts",
+        "src/stores/backlog/cache-utils.ts",
+        "src/stores/backlog/item-index.ts",
+        "src/stores/backlog/selectors.ts",
+        "src/stores/backlog/store.ts",
+        "src/stores/backlog/types.ts",
+        "src/stores/item-store/default-data.ts",
+        "src/stores/collection-store.ts",
+        "src/stores/wiki-image-store.ts",
+        "src/stores/item-popup-store.ts",
+        "src/stores/use-list-store.ts"
+      ],
+      "group": "Ranking & Match",
+      "group_id": "4fc3985e-267a-46a1-b887-928e47560cb7",
+      "id": "05c7b63b-2169-4673-86a1-4215d476a2d5",
+      "keywords": [
+        "backlog",
+        "items",
+        "groups",
+        "collection",
+        "wiki-image",
+        "offline",
+        "item-popup",
+        "cache",
+        "list-selection",
+        "item-usage"
+      ],
+      "last_written_at": "2026-08-29T09:44:51.300021200+00:00",
+      "name": "backlog-content-management",
+      "pinned": false,
+      "tech_stack": [
+        "Zustand",
+        "Next.js",
+        "TypeScript"
+      ]
+    },
+    {
+      "api_surface": "Reads /api/top/groups, /api/items/stats",
+      "business_feature": "Collection Data Layer",
+      "category": "lib",
+      "cross_refs": [
+        "collection-panel-ui",
+        "list-items-api"
+      ],
+      "db_tables": [
+        "items"
+      ],
+      "description": "Data and behaviour layer for the Collection panel — hooks for loading collection items, managing filter state, intersection-based lazy loading, adaptive loader config, visible-items slicing, quick-select keyboard interaction, and filter context. Transformers convert raw API data to display shape. This layer is consumed exclusively by collection-panel-ui components.",
+      "entry_points": [
+        "src/app/features/Collection/hooks/useCollection.ts",
+        "src/app/features/Collection/context/CollectionFiltersContext.tsx"
+      ],
+      "file_paths": [
+        "src/app/features/Collection/hooks/useCollection.ts",
+        "src/app/features/Collection/hooks/useCollection.usage-examples.tsx",
+        "src/app/features/Collection/hooks/useCollectionFilterState.ts",
+        "src/app/features/Collection/hooks/useIntersectionObserver.ts",
+        "src/app/features/Collection/hooks/useQuickSelect.ts",
+        "src/app/features/Collection/hooks/useVisibleCollectionItems.ts",
+        "src/app/features/Collection/context/CollectionFiltersContext.tsx",
+        "src/app/features/Collection/constants/lazyLoadConfig.ts",
+        "src/app/features/Collection/lib/adaptiveLoader.ts",
+        "src/app/features/Collection/types.ts",
+        "src/app/features/Collection/index.ts",
+        "src/app/features/Collection/utils/easterEgg.ts",
+        "src/app/features/Collection/utils/transformers.ts"
+      ],
+      "group": "List & Content Management",
+      "group_id": "04b9081d-d98f-44dd-b152-6f9599c0fe3e",
+      "id": "cbbe47a3-81aa-4665-a136-2a430d0b9cd2",
+      "keywords": [
+        "collection hooks",
+        "filter state",
+        "intersection observer",
+        "lazy load",
+        "quick select",
+        "adaptive loader",
+        "transformers",
+        "visible items"
+      ],
+      "last_written_at": "2026-08-29T09:43:14.761068300+00:00",
+      "name": "collection-panel-logic",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16.1.3",
+        "React",
+        "TypeScript",
+        "TanStack Query",
+        "Zustand"
+      ]
+    },
+    {
+      "api_surface": "Reads /api/items/[id]/details, /api/items/[id]/activity",
+      "business_feature": "Collection Panel UI",
+      "category": "ui",
+      "cross_refs": [
+        "collection-panel-logic",
+        "match-backlog-panel"
+      ],
+      "db_tables": [
+        "items"
+      ],
+      "description": "The 22-component UI layer of the Collection panel — the sidebar panel that shows ranked and unranked items during a match session. Includes the configurable item card, ranking distribution chart, mini trajectory chart, criteria scoring section, item inspector popup, activity timeline, spotlight tooltip, sticky context header, and drag handle indicator. These are the visible atoms composed by collection-panel-logic hooks.",
+      "entry_points": [
+        "src/app/features/Collection/components/CollectionPanel.tsx",
+        "src/app/features/Collection/components/ConfigurableCollectionItem.tsx"
+      ],
+      "file_paths": [
+        "src/app/features/Collection/components/ActivityTimeline.tsx",
+        "src/app/features/Collection/components/AddItemModal.tsx",
+        "src/app/features/Collection/components/AverageRankingBadge.tsx",
+        "src/app/features/Collection/components/CollectionErrorBoundary.tsx",
+        "src/app/features/Collection/components/CollectionFilterIntegration.tsx",
+        "src/app/features/Collection/components/CollectionPanel.tsx",
+        "src/app/features/Collection/components/CollectionStats.tsx",
+        "src/app/features/Collection/components/CollectionToolbar.tsx",
+        "src/app/features/Collection/components/ConfigurableCollectionItem.tsx",
+        "src/app/features/Collection/components/CriteriaScoringSection.tsx",
+        "src/app/features/Collection/components/DragHandleIndicator.tsx",
+        "src/app/features/Collection/components/FocusRingOverlay.tsx",
+        "src/app/features/Collection/components/ItemDetailPopup.tsx",
+        "src/app/features/Collection/components/ItemDetailPopupProvider.tsx",
+        "src/app/features/Collection/components/ItemInspector.tsx",
+        "src/app/features/Collection/components/ItemInspectorProvider.tsx",
+        "src/app/features/Collection/components/LazyLoadTrigger.tsx",
+        "src/app/features/Collection/components/MetadataGrid.tsx",
+        "src/app/features/Collection/components/MiniTrajectoryChart.tsx",
+        "src/app/features/Collection/components/RankingDistribution.tsx",
+        "src/app/features/Collection/components/SpotlightTooltip.tsx",
+        "src/app/features/Collection/components/StickyContext.tsx"
+      ],
+      "group": "List & Content Management",
+      "group_id": "04b9081d-d98f-44dd-b152-6f9599c0fe3e",
+      "id": "22c029f8-c37b-408c-9c2b-a98785d14d23",
+      "keywords": [
+        "collection panel",
+        "item card",
+        "ranking distribution",
+        "criteria scoring",
+        "item inspector",
+        "activity timeline",
+        "trajectory",
+        "drag handle",
+        "spotlight",
+        "sticky header"
+      ],
+      "last_written_at": "2026-08-29T09:43:14.761217100+00:00",
+      "name": "collection-panel-ui",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16.1.3",
+        "React",
+        "TypeScript",
+        "Framer Motion",
+        "Radix UI",
+        "Tailwind CSS"
+      ]
+    },
+    {
+      "api_surface": "Reads/writes /api/collections, /api/collections/[id], /api/collections/by-slug/[slug]",
+      "business_feature": "Collections Manager",
+      "category": "ui",
+      "cross_refs": [
+        "collection-panel-ui",
+        "collection-panel-logic",
+        "list-items-api",
+        "landing-shell"
+      ],
+      "db_tables": [
+        "lists"
+      ],
+      "description": "User-facing list-of-lists management — the Collections dashboard, collection cards, collection manager, sidebar, view, quick-switcher, and add-list modal let users organise their ranked lists into named collections. The collections/[slug] public page and my-collections pages are the routing entry points. Distinct from the single-list Collection panel that shows items inside one list.",
+      "entry_points": [
+        "src/app/my-collections/page.tsx",
+        "src/app/features/Collections/CollectionsDashboard.tsx"
+      ],
+      "file_paths": [
+        "src/app/my-collections/page.tsx",
+        "src/app/my-collections/layout.tsx",
+        "src/app/collections/[slug]/page.tsx",
+        "src/app/features/Collections/CollectionsDashboard.tsx",
+        "src/app/features/Collections/index.ts",
+        "src/app/features/Collections/components/AddListModal.tsx",
+        "src/app/features/Collections/components/CollectionCard.tsx",
+        "src/app/features/Collections/components/CollectionManager.tsx",
+        "src/app/features/Collections/components/CollectionSidebar.tsx",
+        "src/app/features/Collections/components/CollectionView.tsx",
+        "src/app/features/Collections/components/QuickCollectionSwitcher.tsx"
+      ],
+      "group": "List & Content Management",
+      "group_id": "04b9081d-d98f-44dd-b152-6f9599c0fe3e",
+      "id": "d70cf7eb-c585-407b-98c6-43fdcd8721b6",
+      "keywords": [
+        "collections",
+        "dashboard",
+        "list management",
+        "collection card",
+        "quick switcher",
+        "my collections",
+        "add list"
+      ],
+      "last_written_at": "2026-08-29T09:43:14.761417900+00:00",
+      "name": "collections-manager",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16.1.3",
+        "React",
+        "TypeScript",
+        "TanStack Query",
+        "Tailwind CSS"
+      ]
+    },
+    {
+      "api_surface": "Calls /api/search",
+      "business_feature": "Command Palette",
+      "category": "ui",
+      "cross_refs": [
+        "landing-shell",
+        "list-items-api"
+      ],
+      "db_tables": [],
+      "description": "A keyboard-triggered global command palette (⌘K) for quickly navigating to lists, launching actions, and searching content. The provider manages open/close state and registered commands; the trigger button opens it; parseListQuery parses raw search text into structured list queries for the search API. This is an isolated leaf feature with no sub-dependencies inside src/app.",
+      "entry_points": [
+        "src/app/features/CommandPalette/CommandPaletteProvider.tsx",
+        "src/app/features/CommandPalette/CommandPalette.tsx"
+      ],
+      "file_paths": [
+        "src/app/features/CommandPalette/CommandPalette.tsx",
+        "src/app/features/CommandPalette/CommandPaletteProvider.tsx",
+        "src/app/features/CommandPalette/CommandPaletteTrigger.tsx",
+        "src/app/features/CommandPalette/constants.ts",
+        "src/app/features/CommandPalette/index.ts",
+        "src/app/features/CommandPalette/lib/parseListQuery.ts",
+        "src/app/features/CommandPalette/useCommandPalette.ts"
+      ],
+      "group": "Engagement & Rewards",
+      "group_id": "2a46d74d-3e36-4533-83a0-ed6c0d4b0b4c",
+      "id": "24340bfc-caf4-456d-b95d-e2622a191abc",
+      "keywords": [
+        "command palette",
+        "keyboard shortcut",
+        "search",
+        "navigation",
+        "quick launch",
+        "query parser",
+        "cmdk"
+      ],
+      "last_written_at": "2026-08-29T09:43:14.292409800+00:00",
+      "name": "command-palette",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16.1.3",
+        "React",
+        "TypeScript",
+        "Radix UI"
+      ]
+    },
+    {
+      "api_surface": "POST /api/studio/generate, POST /api/generate-ai-image, GET/POST /api/blueprints/*, GET /api/search, GET /api/embed",
+      "business_feature": "Content Generation API",
+      "category": "api",
+      "cross_refs": [
+        "studio-content",
+        "match-ai-image",
+        "list-items-api"
+      ],
+      "db_tables": [
+        "blueprints"
+      ],
+      "description": "API routes that power content creation workflows — the Studio backend (generate list items via AI, find images, find YouTube videos, match items, save items), blueprint publishing and CRUD, AI image generation endpoint, admin image search, full-text search, and embeddable widget routes with analytics. These routes are the server-side counterparts to the Studio and embedding UI features.",
+      "entry_points": [
+        "src/app/api/studio/generate/route.ts",
+        "src/app/api/blueprints/route.ts",
+        "src/app/api/embed/route.tsx"
+      ],
+      "file_paths": [
+        "src/app/api/studio/find-image/route.ts",
+        "src/app/api/studio/find-youtube/route.ts",
+        "src/app/api/studio/generate/route.ts",
+        "src/app/api/studio/match-items/route.ts",
+        "src/app/api/studio/save-items/route.ts",
+        "src/app/api/blueprints/route.ts",
+        "src/app/api/blueprints/[slugOrId]/route.ts",
+        "src/app/api/blueprints/[slugOrId]/clone/route.ts",
+        "src/app/api/blueprints/[slugOrId]/rate/route.ts",
+        "src/app/api/blueprints/[slugOrId]/view/route.ts",
+        "src/app/api/blueprints/publish/route.ts",
+        "src/app/api/generate-ai-image/route.ts",
+        "src/app/api/admin/search-image/route.ts",
+        "src/app/api/search/route.ts",
+        "src/app/api/embed/route.tsx",
+        "src/app/api/embed/analytics/route.ts"
+      ],
+      "group": "API Routes",
+      "group_id": "7934834b-28fa-4390-bbf0-be93a51bf969",
+      "id": "d56c1c40-d04a-47e5-883e-164bda6c35e4",
+      "keywords": [
+        "studio",
+        "AI generation",
+        "image search",
+        "YouTube",
+        "blueprints",
+        "publish",
+        "clone",
+        "embed",
+        "search",
+        "rate"
+      ],
+      "last_written_at": "2026-08-29T09:43:14.761565700+00:00",
+      "name": "content-generation-api",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16.1.3",
+        "TypeScript",
+        "Supabase"
+      ]
+    },
+    {
+      "api_surface": "",
+      "business_feature": "Core Domain Types",
+      "category": "lib",
+      "cross_refs": [],
+      "db_tables": [],
+      "description": "Foundational TypeScript type definitions for the app's core business entities: items, users, groups, lists, matches, rankings, placed items, backlog groups, and consensus data. These contracts are consumed by Zustand stores, API clients, React components, and server actions across every major feature. They sit at the bottom of the dependency graph — almost every other context imports from this set.",
+      "entry_points": [
+        "src/types/items.ts",
+        "src/types/match.ts",
+        "src/types/database.ts"
+      ],
+      "file_paths": [
+        "src/types/database.ts",
+        "src/types/items.ts",
+        "src/types/users.ts",
+        "src/types/groups.ts",
+        "src/types/top-lists.ts",
+        "src/types/collection.ts",
+        "src/types/ranking.ts",
+        "src/types/match.ts",
+        "src/types/ranked-inventory.ts",
+        "src/types/placed-item.ts",
+        "src/types/backlog-groups.ts",
+        "src/types/consensus.ts",
+        "src/types/item-details.ts"
+      ],
+      "group": null,
+      "group_id": null,
+      "id": "e974bc8b-7c9e-4d47-a5bf-6f8c655ad3a4",
+      "keywords": [
+        "types",
+        "entities",
+        "items",
+        "ranking",
+        "match",
+        "backlog",
+        "collection",
+        "users",
+        "groups",
+        "placed-item",
+        "consensus"
+      ],
+      "last_written_at": "2026-08-29T09:44:32.918707500+00:00",
+      "name": "core-domain-types",
+      "pinned": false,
+      "tech_stack": [
+        "TypeScript"
+      ]
+    },
+    {
+      "api_surface": "",
+      "business_feature": "Core UI Primitives",
+      "category": "ui",
+      "cross_refs": [
+        "visual-primitives",
+        "rich-media-card"
+      ],
+      "db_tables": [],
+      "description": "General-purpose, reusable UI building blocks consumed across the entire application: layout grids (masonry, list-grid), image handling (progressive, placeholder, fallback), form controls (button, universal-select, star-rating), feedback surfaces (skeleton, shimmer, glass-modal, stats-card, collapsible), and cross-cutting utilities (page-transition, QuickShareMenu, SocialButton, ScorePreviewOverlay). Also houses the theme barrel export, the prefetch analytics dev tool, and the virtualization intersection-observer hook.",
+      "entry_points": [
+        "src/components/ui/index.ts",
+        "src/components/theme/index.ts"
+      ],
+      "file_paths": [
+        "src/components/ui/button.tsx",
+        "src/components/ui/collapsible.tsx",
+        "src/components/ui/skeleton.tsx",
+        "src/components/ui/shimmer-skeleton.tsx",
+        "src/components/ui/glass-modal.tsx",
+        "src/components/ui/masonry-grid.tsx",
+        "src/components/ui/list-grid.tsx",
+        "src/components/ui/universal-select.tsx",
+        "src/components/ui/ImageFallback.tsx",
+        "src/components/ui/placeholder-image.tsx",
+        "src/components/ui/progressive-image.tsx",
+        "src/components/ui/star-rating.tsx",
+        "src/components/ui/stats-card.tsx",
+        "src/components/ui/index.ts",
+        "src/components/ui/ScorePreviewOverlay.tsx",
+        "src/components/ui/SocialButton.tsx",
+        "src/components/QuickShareMenu.tsx",
+        "src/components/page-transition.tsx",
+        "src/components/patterns/virtualization/useIntersectionObserver.tsx",
+        "src/components/patterns/virtualization/types.ts",
+        "src/components/theme/index.ts",
+        "src/components/dev/PrefetchAnalytics.tsx"
+      ],
+      "group": "UI Primitives",
+      "group_id": "031343e3-fd17-4d4e-8eee-5b7e24b89214",
+      "id": "a1b3b042-9608-4858-bc82-28c604f33ff8",
+      "keywords": [
+        "masonry",
+        "grid",
+        "skeleton",
+        "modal",
+        "button",
+        "select",
+        "image",
+        "page transition",
+        "virtualization",
+        "intersection observer",
+        "share",
+        "theme"
+      ],
+      "last_written_at": "2026-08-29T09:38:54.182867900+00:00",
+      "name": "core-ui",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16",
+        "React",
+        "Radix UI",
+        "Tailwind CSS",
+        "TypeScript"
+      ]
+    },
+    {
+      "api_surface": "Reads/writes Supabase items table; queries Wikipedia API for image replacements",
+      "business_feature": "Content Data Maintenance",
+      "category": "data",
+      "cross_refs": [],
+      "db_tables": [
+        "items"
+      ],
+      "description": "One-off and recurring scripts that maintain image content quality in the database and seed deterministic test fixtures. Image scripts validate URLs against Next.js remotePatterns, query Wikipedia/external sources for replacements, and patch broken or non-whitelisted image references directly in Supabase. Seed scripts populate E2E fixture rows and category data for local and CI use.",
+      "entry_points": [
+        "scripts/fix-broken-images.mjs",
+        "scripts/seed-e2e.ts"
+      ],
+      "file_paths": [
+        "scripts/analyze-images.js",
+        "scripts/validate-images.js",
+        "scripts/fix-game-images.js",
+        "scripts/analyze-non-whitelisted.js",
+        "scripts/fix-sports-images.js",
+        "scripts/fix-broken-images.mjs",
+        "scripts/fix-final-images.mjs",
+        "scripts/fix-last-10.mjs",
+        "scripts/fix-remaining-images.mjs",
+        "scripts/seed-categories.ts",
+        "scripts/seed-e2e.ts"
+      ],
+      "group": "Developer Tooling",
+      "group_id": "fb190895-7241-4bb0-9e31-12522a7050d6",
+      "id": "a20d6c67-929c-4329-9fa1-45b10307c7ed",
+      "keywords": [
+        "image",
+        "url",
+        "whitelist",
+        "remotePatterns",
+        "seed",
+        "fixture",
+        "supabase",
+        "category",
+        "wikipedia",
+        "e2e"
+      ],
+      "last_written_at": "2026-08-29T09:46:24.567708100+00:00",
+      "name": "data-content-seeding",
+      "pinned": false,
+      "tech_stack": [
+        "Node.js",
+        "TypeScript",
+        "Supabase"
+      ]
+    },
+    {
+      "api_surface": "PostgreSQL RPC functions: replace_list_items(target_list_id, new_items), increment_fork_count(ranking_id), increment_view_count(ranking_id); Views: top_items, top_groups",
+      "business_feature": "Database Schema & Migrations",
+      "category": "data",
+      "cross_refs": [],
+      "db_tables": [
+        "challenges",
+        "blueprints",
+        "blueprint_ratings",
+        "shared_rankings",
+        "item_consensus_cache",
+        "ranking_aggregates",
+        "ai_generated_images",
+        "user_preferences",
+        "list_collections",
+        "ranking_activities",
+        "bookmark_folders",
+        "user_bookmarks",
+        "items",
+        "lists",
+        "list_items"
+      ],
+      "description": "Defines and evolves the entire PostgreSQL schema via ordered Supabase migrations. Covers core ranking tables (lists, items, shared_rankings, ranking_activities), community features (item_consensus_cache, ranking_aggregates, blueprints, community template ratings), user data (user_preferences, user_bookmarks, bookmark_folders), media (ai_generated_images), and schema hardening/RPC functions. Applied sequentially by the Supabase CLI to bring the database from zero to the current schema state.",
+      "entry_points": [
+        "supabase/migrations/20260322000001_schema_hardening.sql",
+        "supabase/migrations/20260315000002_create_views_and_missing_tables.sql",
+        "supabase/migrations/20260317000001_create_replace_list_items_rpc.sql"
+      ],
+      "file_paths": [
+        "supabase/migrations/20250124000000_create_challenges_system.sql",
+        "supabase/migrations/20251205000000_create_blueprints_table.sql",
+        "supabase/migrations/20251205100000_create_shared_rankings_table.sql",
+        "supabase/migrations/20260118000001_create_item_consensus_cache.sql",
+        "supabase/migrations/20260118000002_create_ranking_aggregates.sql",
+        "supabase/migrations/20260118000003_create_ai_generated_images.sql",
+        "supabase/migrations/20260118000004_create_user_preferences.sql",
+        "supabase/migrations/20260129000001_add_criteria_columns.sql",
+        "supabase/migrations/20260315000001_create_list_collections.sql",
+        "supabase/migrations/20260315000002_create_views_and_missing_tables.sql",
+        "supabase/migrations/20260317000001_create_replace_list_items_rpc.sql",
+        "supabase/migrations/20260317000002_create_ranking_activities.sql",
+        "supabase/migrations/20260317000003_add_allow_custom_items.sql",
+        "supabase/migrations/20260319000001_add_fork_count_to_shared_rankings.sql",
+        "supabase/migrations/20260319000002_create_user_bookmarks.sql",
+        "supabase/migrations/20260322000001_schema_hardening.sql",
+        "supabase/migrations/20260322000002_community_templates.sql",
+        "supabase/migrations/20260616000000_add_increment_counter_rpcs.sql"
+      ],
+      "group": "API & Data Layer",
+      "group_id": "2b4d1c69-7f7e-4456-9982-871360916ed4",
+      "id": "bddc01a9-98e5-4d68-88c4-ad4738c3ef8c",
+      "keywords": [
+        "migrations",
+        "schema",
+        "postgresql",
+        "supabase",
+        "rankings",
+        "blueprints",
+        "consensus",
+        "rpc",
+        "shared_rankings",
+        "user_preferences"
+      ],
+      "last_written_at": "2026-08-29T09:46:52.073016300+00:00",
+      "name": "database-migrations",
+      "pinned": false,
+      "tech_stack": [
+        "Supabase",
+        "PostgreSQL"
+      ]
+    },
+    {
+      "api_surface": "",
+      "business_feature": "Database Schema & Seeds",
+      "category": "data",
+      "cross_refs": [],
+      "db_tables": [
+        "items",
+        "item_groups",
+        "lists",
+        "list_items"
+      ],
+      "description": "Defines the PostgreSQL schema for all core tables (items, item_groups, lists, list_items) along with migrations and seed data. Handles table creation, indexes, foreign-key constraints, and row-level triggers for updated_at housekeeping. Seed scripts populate game catalogue data and awards; migration files evolve the schema incrementally.",
+      "entry_points": [
+        "db/items.sql",
+        "db/lists.sql",
+        "db/migrations/001_add_list_type.sql"
+      ],
+      "file_paths": [
+        "db/items.sql",
+        "db/item_groups.sql",
+        "db/lists.sql",
+        "db/list_items.sql",
+        "db/migrations/001_add_list_type.sql",
+        "db/scripts/fetch-game-images.js",
+        "db/scripts/seed-games-list.js",
+        "db/scripts/seed-yearly-games.js",
+        "db/scripts/update_games_images.sql",
+        "db/seeds/002_awards_seed.sql"
+      ],
+      "group": "API & Data Layer",
+      "group_id": "2b4d1c69-7f7e-4456-9982-871360916ed4",
+      "id": "12bce275-362f-43ec-9262-b4694ef08a7d",
+      "keywords": [
+        "schema",
+        "migration",
+        "seed",
+        "items",
+        "lists",
+        "item_groups",
+        "list_items",
+        "postgresql",
+        "supabase",
+        "category_enum"
+      ],
+      "last_written_at": "2026-08-29T09:45:58.358648900+00:00",
+      "name": "database-schema-and-seeds",
+      "pinned": false,
+      "tech_stack": [
+        "PostgreSQL",
+        "Supabase"
+      ]
+    },
+    {
+      "api_surface": "",
+      "business_feature": "Decorative Effects & Illustrations",
+      "category": "ui",
+      "cross_refs": [
+        "visual-primitives",
+        "app-decorations"
+      ],
+      "db_tables": [],
+      "description": "3D motion effects, static illustrations, and icon assets that add visual polish to landing and empty states. The 3d/ sub-package (Card3D, FloatingElements, ParallaxSection, InteractivePreview) provides perspective-driven animations with a ReducedMotionProvider for accessibility. The illustrations/ package covers empty, error, loading, and achievement states; icons/ holds the GOAT mascot and micro-illustration set.",
+      "entry_points": [
+        "src/components/3d/index.ts",
+        "src/components/illustrations/EmptyStateIllustrations.tsx"
+      ],
+      "file_paths": [
+        "src/components/3d/Card3D.tsx",
+        "src/components/3d/FloatingElements.tsx",
+        "src/components/3d/InteractivePreview.tsx",
+        "src/components/3d/ParallaxSection.tsx",
+        "src/components/3d/ReducedMotionProvider.tsx",
+        "src/components/3d/index.ts",
+        "src/components/illustrations/BracketDrawingLoader.tsx",
+        "src/components/illustrations/EmptyStateIllustrations.tsx",
+        "src/components/illustrations/GoatCrownTrophy.tsx",
+        "src/components/illustrations/SyncErrorIllustrations.tsx",
+        "src/components/illustrations/TierEmptyIllustration.tsx",
+        "src/components/icons/GoatMascot.tsx",
+        "src/components/icons/MicroIllustrations.tsx"
+      ],
+      "group": "Visual Design System",
+      "group_id": "2b8f1ddf-06f7-44e2-8f0e-0fc6e89ea560",
+      "id": "169cfedc-1296-410d-87a2-1b842fbb8ba6",
+      "keywords": [
+        "3d",
+        "parallax",
+        "floating elements",
+        "empty state",
+        "illustration",
+        "loading",
+        "trophy",
+        "reduced motion",
+        "mascot"
+      ],
+      "last_written_at": "2026-08-29T09:38:54.182413100+00:00",
+      "name": "decorative-effects",
+      "pinned": false,
+      "tech_stack": [
+        "React",
+        "Framer Motion",
+        "TypeScript",
+        "Tailwind CSS"
+      ]
+    },
+    {
+      "api_surface": "CLI: npm run lint:ratchet, npm run findings, npm run docs:store-graph, npm run docs:coupling, npm run structure",
+      "business_feature": "Dev Quality Gates",
+      "category": "config",
+      "cross_refs": [],
+      "db_tables": [],
+      "description": "CI quality-gate runners and implementation activity log scripts that enforce code health metrics and record engineering progress. Quality scripts run the ESLint ratchet, doc-coupling map, UI findings ledger, store dependency graph generator, and structural backlog checker as composable CLI commands invoked by npm scripts and GitHub Actions. Logging scripts write implementation completion records to a local SQLite database for tracking sprint activity.",
+      "entry_points": [
+        "scripts/ratchet.mjs",
+        "scripts/findings.mjs",
+        "scripts/log-implementation.ts"
+      ],
+      "file_paths": [
+        "scripts/generate-store-graph.ts",
+        "scripts/ratchet.mjs",
+        "scripts/doc-coupling.mjs",
+        "scripts/findings.mjs",
+        "scripts/structural-backlog.mjs",
+        "scripts/add-theme-log.js",
+        "scripts/execute-log.js",
+        "scripts/implementation-log-entry.sql",
+        "scripts/insert-log.js",
+        "scripts/log-implementation.ts",
+        "scripts/verify-log-entry.js",
+        "scripts/verify-log.ts",
+        "scripts/log-batch2-cleanup.ts",
+        "scripts/verify-logger.js"
+      ],
+      "group": "Developer Tooling",
+      "group_id": "fb190895-7241-4bb0-9e31-12522a7050d6",
+      "id": "e3bb7c42-d2fb-4b74-b413-00b3f813bb61",
+      "keywords": [
+        "ratchet",
+        "eslint",
+        "findings",
+        "doc-coupling",
+        "store-graph",
+        "structural-backlog",
+        "implementation-log",
+        "sqlite",
+        "quality-gate",
+        "CI"
+      ],
+      "last_written_at": "2026-08-29T09:46:23.890796800+00:00",
+      "name": "dev-quality-gates",
+      "pinned": false,
+      "tech_stack": [
+        "Node.js",
+        "TypeScript",
+        "ESLint",
+        "better-sqlite3"
+      ]
+    },
+    {
+      "api_surface": "",
+      "business_feature": "Drag and Drop Ranking",
+      "category": "lib",
+      "cross_refs": [
+        "ranking-and-tiers",
+        "match-configuration"
+      ],
+      "db_tables": [],
+      "description": "Implements the full drag-and-drop operation system used throughout the ranking interface. Routes drag events through typed operation classes (Assign, Move, Swap, Tier variants) using a unified transfer protocol with canonical ID schemes. Depends on @dnd-kit core primitives and feeds resolved grid/tier mutations upstream to the store layer.",
+      "entry_points": [
+        "src/lib/dnd/index.ts",
+        "src/lib/dnd/operations/DragOperationRouter.ts",
+        "src/lib/dnd/unified-protocol.ts"
+      ],
+      "file_paths": [
+        "src/lib/dnd/activation.ts",
+        "src/lib/dnd/index.ts",
+        "src/lib/dnd/keyboard-coordinates.test.ts",
+        "src/lib/dnd/keyboard-coordinates.ts",
+        "src/lib/dnd/keyboard-sensor.ts",
+        "src/lib/dnd/operations/DragOperationRouter.ts",
+        "src/lib/dnd/operations/DragResultHandler.ts",
+        "src/lib/dnd/operations/grid-plans.ts",
+        "src/lib/dnd/operations/index.ts",
+        "src/lib/dnd/operations/primitives.test.ts",
+        "src/lib/dnd/operations/primitives.ts",
+        "src/lib/dnd/operations/tier/BaseTierOperation.ts",
+        "src/lib/dnd/operations/tier/GridToTierOperation.ts",
+        "src/lib/dnd/operations/tier/RankFromPoolOperation.ts",
+        "src/lib/dnd/operations/tier/TierAssignOperation.ts",
+        "src/lib/dnd/operations/tier/TierMoveOperation.ts",
+        "src/lib/dnd/operations/tier/TierToGridOperation.ts",
+        "src/lib/dnd/operations/tier/TierTransferOperation.ts",
+        "src/lib/dnd/operations/tier/UnrankOperation.ts",
+        "src/lib/dnd/operations/tier/index.ts",
+        "src/lib/dnd/operations/types.ts",
+        "src/lib/dnd/operations/validation-helpers.ts",
+        "src/lib/dnd/transfer-protocol.ts",
+        "src/lib/dnd/type-guards.ts",
+        "src/lib/dnd/unified-protocol.ts"
+      ],
+      "group": "Ranking & Match Engine",
+      "group_id": "86e71cea-8ea2-44eb-8637-364d1a977f81",
+      "id": "e4dcbd0d-ef23-463d-a2c4-06fb15091f21",
+      "keywords": [
+        "drag-drop",
+        "dnd-kit",
+        "tier",
+        "grid",
+        "transfer-protocol",
+        "keyboard-sensor",
+        "operation-router",
+        "backlog",
+        "swap",
+        "assign"
+      ],
+      "last_written_at": "2026-08-29T09:41:26.603175700+00:00",
+      "name": "drag-drop-engine",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16",
+        "@dnd-kit/core",
+        "@dnd-kit/sortable",
+        "TypeScript"
+      ]
+    },
+    {
+      "api_surface": "GET /api/lists, GET /api/top/groups",
+      "business_feature": "E2E Browser Test Suite",
+      "category": "test",
+      "cross_refs": [],
+      "db_tables": [
+        "lists",
+        "items"
+      ],
+      "description": "End-to-end Playwright tests covering the core user journeys: smoke rendering, backlog item loading via API, drag-and-drop ranking, and the list-to-match navigation flow. A global setup guard (`global-setup.ts`) enforces that fixture data exists before any worker starts, preventing false-green runs against an empty database. Tests depend on deterministic seed fixtures (`npm run seed:e2e`) and exercise the full stack from UI interaction through grid-store and session persistence.",
+      "entry_points": [
+        "e2e/global-setup.ts",
+        "e2e/list-play-journey.spec.ts"
+      ],
+      "file_paths": [
+        "e2e/global-setup.ts",
+        "e2e/backlog-items-loading.spec.ts",
+        "e2e/drag-drop-ranking.spec.ts",
+        "e2e/exploratory-smoke.spec.ts",
+        "e2e/list-play-journey.spec.ts"
+      ],
+      "group": "Ranking & Match",
+      "group_id": "4fc3985e-267a-46a1-b887-928e47560cb7",
+      "id": "e5502e8c-fcd3-4b7f-b1af-abc28ea0ba48",
+      "keywords": [
+        "playwright",
+        "e2e",
+        "drag-drop",
+        "backlog",
+        "grid",
+        "session",
+        "fixture",
+        "smoke",
+        "ranking",
+        "match"
+      ],
+      "last_written_at": "2026-08-29T09:46:13.234951200+00:00",
+      "name": "e2e-browser-suite",
+      "pinned": false,
+      "tech_stack": [
+        "Playwright",
+        "Next.js",
+        "TypeScript"
+      ]
+    },
+    {
+      "api_surface": "",
+      "business_feature": "Faceted Search",
+      "category": "lib",
+      "cross_refs": [
+        "search-and-filter"
+      ],
+      "db_tables": [],
+      "description": "Facet extraction, aggregation, and interactive UI components for multi-dimension filtering of list items. FacetExtractor pulls dimension values from items, FacetAggregator counts occurrences per facet value, and the FacetContext React context surfaces state to FacetPanel and MobileFacetDrawer. The module exists in both a standalone faceted-search directory and a nested filters/facets variant, both mapped here.",
+      "entry_points": [
+        "src/lib/faceted-search/index.ts",
+        "src/lib/filters/facets/index.ts",
+        "src/lib/faceted-search/FacetContext.tsx"
+      ],
+      "file_paths": [
+        "src/lib/faceted-search/FacetAggregator.ts",
+        "src/lib/faceted-search/FacetContext.tsx",
+        "src/lib/faceted-search/FacetExtractor.ts",
+        "src/lib/faceted-search/components/FacetBreadcrumbs.tsx",
+        "src/lib/faceted-search/components/FacetPanel.tsx",
+        "src/lib/faceted-search/components/MobileFacetDrawer.tsx",
+        "src/lib/faceted-search/components/index.ts",
+        "src/lib/faceted-search/constants.ts",
+        "src/lib/faceted-search/index.ts",
+        "src/lib/faceted-search/types.ts",
+        "src/lib/faceted-search/useFacets.ts",
+        "src/lib/faceted-search/utils.ts",
+        "src/lib/filters/facets/FacetAggregator.ts",
+        "src/lib/filters/facets/FacetContext.tsx",
+        "src/lib/filters/facets/FacetExtractor.ts",
+        "src/lib/filters/facets/components/FacetBreadcrumbs.tsx",
+        "src/lib/filters/facets/components/FacetPanel.tsx",
+        "src/lib/filters/facets/components/MobileFacetDrawer.tsx",
+        "src/lib/filters/facets/components/index.ts",
+        "src/lib/filters/facets/index.ts",
+        "src/lib/filters/facets/types.ts",
+        "src/lib/filters/facets/useFacets.ts"
+      ],
+      "group": "Content Discovery",
+      "group_id": "c67aa295-631f-4014-a631-700a5f4c7991",
+      "id": "a2619bb9-28b6-46c5-8da1-04454ec32fe6",
+      "keywords": [
+        "facet",
+        "aggregation",
+        "breadcrumbs",
+        "mobile-drawer",
+        "multi-dimension",
+        "filter-panel",
+        "facet-extractor",
+        "useFacets",
+        "search",
+        "collection"
+      ],
+      "last_written_at": "2026-08-29T09:41:26.608257300+00:00",
+      "name": "faceted-search",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16",
+        "React 19",
+        "TypeScript"
+      ]
+    },
+    {
+      "api_surface": "",
+      "business_feature": "Feature & API Types",
+      "category": "lib",
+      "cross_refs": [],
+      "db_tables": [],
+      "description": "TypeScript type definitions for feature-specific contracts and external integration shapes: achievements, sharing, studio, templates, blueprints, list-intent transformers, YouTube media, AI-generated images, API responses, API keys, modal props, and user preferences. These types bridge raw API payloads and internal feature logic, including transformer types that reshape external data into domain-usable forms. Consumed by feature stores, API route handlers, and integration hooks.",
+      "entry_points": [
+        "src/types/api-responses.ts",
+        "src/types/list-intent.ts",
+        "src/types/blueprint.ts"
+      ],
+      "file_paths": [
+        "src/types/achievement.ts",
+        "src/types/share.ts",
+        "src/types/studio.ts",
+        "src/types/templates.ts",
+        "src/types/blueprint.ts",
+        "src/types/api-responses.ts",
+        "src/types/api-keys.ts",
+        "src/types/composition-to-api.ts",
+        "src/types/list-intent.ts",
+        "src/types/list-intent-transformers.ts",
+        "src/types/modal-props.ts",
+        "src/types/user-preferences.ts",
+        "src/types/youtube.ts",
+        "src/types/ai-images.ts"
+      ],
+      "group": null,
+      "group_id": null,
+      "id": "3455dfda-dc1e-4bf3-bc8f-bf695adefdc0",
+      "keywords": [
+        "achievement",
+        "share",
+        "studio",
+        "templates",
+        "blueprint",
+        "list-intent",
+        "api-responses",
+        "api-keys",
+        "youtube",
+        "ai-images",
+        "modal",
+        "user-preferences",
+        "transformers"
+      ],
+      "last_written_at": "2026-08-29T09:44:32.919028200+00:00",
+      "name": "feature-api-types",
+      "pinned": false,
+      "tech_stack": [
+        "TypeScript"
+      ]
+    },
+    {
+      "api_surface": "",
+      "business_feature": "Error Handling & User Feedback",
+      "category": "lib",
+      "cross_refs": [
+        "shared-utilities",
+        "api-client"
+      ],
+      "db_tables": [],
+      "description": "Two tightly related subsystems: a feedback pipeline that shows animated modal states (loading, success, error, empty) while async operations run; and a structured error layer with a GoatError class hierarchy, ErrorBoundary, toast notifications, and error analytics hooks. Both share the error-notification-store so a single Zustand atom drives both in-flight feedback UI and post-failure toasts.",
+      "entry_points": [
+        "src/lib/errors/index.ts",
+        "src/lib/feedback-pipeline/index.ts",
+        "src/lib/feedback-pipeline/useFeedbackPipeline.ts"
+      ],
+      "file_paths": [
+        "src/lib/feedback-pipeline/components/FeedbackEmptyState.tsx",
+        "src/lib/feedback-pipeline/components/FeedbackErrorState.tsx",
+        "src/lib/feedback-pipeline/components/FeedbackLoadingState.tsx",
+        "src/lib/feedback-pipeline/components/FeedbackModal.tsx",
+        "src/lib/feedback-pipeline/components/FeedbackParticles.tsx",
+        "src/lib/feedback-pipeline/components/FeedbackProgress.tsx",
+        "src/lib/feedback-pipeline/components/FeedbackStateIndicator.tsx",
+        "src/lib/feedback-pipeline/components/FeedbackSuccessState.tsx",
+        "src/lib/feedback-pipeline/components/index.ts",
+        "src/lib/feedback-pipeline/index.ts",
+        "src/lib/feedback-pipeline/types.ts",
+        "src/lib/feedback-pipeline/useFeedbackPipeline.ts",
+        "src/lib/errors/ErrorBoundary.tsx",
+        "src/lib/errors/ErrorNotificationToast.tsx",
+        "src/lib/errors/GoatError.ts",
+        "src/lib/errors/api-error-handler.ts",
+        "src/lib/errors/error-analytics-hooks.ts",
+        "src/lib/errors/error-analytics.ts",
+        "src/lib/errors/error-notification-store.ts",
+        "src/lib/errors/index.ts",
+        "src/lib/errors/types.ts"
+      ],
+      "group": "Feedback & UX Infrastructure",
+      "group_id": "fd016ee4-2a09-4d0f-b885-33a9646583ba",
+      "id": "7cf33a37-c794-435a-a24c-c7a252bde136",
+      "keywords": [
+        "error",
+        "GoatError",
+        "error-boundary",
+        "toast",
+        "feedback-modal",
+        "loading-state",
+        "analytics",
+        "notification",
+        "useFeedbackPipeline",
+        "particles"
+      ],
+      "last_written_at": "2026-08-29T09:41:26.609015700+00:00",
+      "name": "feedback-and-errors",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16",
+        "React 19",
+        "Zustand",
+        "Framer Motion",
+        "TypeScript"
+      ]
+    },
+    {
+      "api_surface": "GET external: IGDB, Spotify, TMDB, Wikipedia APIs",
+      "business_feature": "Item Metadata Enrichment",
+      "category": "lib",
+      "cross_refs": [
+        "api-client",
+        "media-generation",
+        "item-enrichment"
+      ],
+      "db_tables": [],
+      "description": "Fetches and normalises metadata for list items from external sources — IGDB (games), Spotify (music), TMDB (movies/TV), and Wikipedia. The EnrichmentPipeline orchestrates source routing, latency tracking, and image selection, while DataNormalizer converts heterogeneous API responses into a canonical item schema. String-similarity utilities deduplicate ambiguous matches across sources.",
+      "entry_points": [
+        "src/lib/enrichment/index.ts",
+        "src/lib/enrichment/EnrichmentPipeline.ts",
+        "src/lib/enrichment/SourceRouter.ts"
+      ],
+      "file_paths": [
+        "src/lib/enrichment/DataNormalizer.ts",
+        "src/lib/enrichment/EnrichmentPipeline.ts",
+        "src/lib/enrichment/ImageSelector.ts",
+        "src/lib/enrichment/SourceLatencyTracker.ts",
+        "src/lib/enrichment/SourceRouter.ts",
+        "src/lib/enrichment/fetchers/IGDBFetcher.ts",
+        "src/lib/enrichment/fetchers/SpotifyFetcher.ts",
+        "src/lib/enrichment/fetchers/TMDBFetcher.ts",
+        "src/lib/enrichment/fetchers/WikipediaFetcher.ts",
+        "src/lib/enrichment/fetchers/index.ts",
+        "src/lib/enrichment/index.ts",
+        "src/lib/enrichment/types.ts",
+        "src/lib/enrichment/utils/string-similarity.ts"
+      ],
+      "group": "Content Discovery",
+      "group_id": "c67aa295-631f-4014-a631-700a5f4c7991",
+      "id": "c0e6e386-6b05-4c8d-93bd-eb8a814d5e8d",
+      "keywords": [
+        "enrichment",
+        "IGDB",
+        "Spotify",
+        "TMDB",
+        "Wikipedia",
+        "metadata",
+        "image-selection",
+        "normalization",
+        "external-api",
+        "latency"
+      ],
+      "last_written_at": "2026-08-29T09:41:26.607466500+00:00",
+      "name": "item-enrichment",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16",
+        "TypeScript",
+        "TanStack Query"
+      ]
+    },
+    {
+      "api_surface": "Reads /api/lists, /api/lists/featured, /api/bookmarks; writes /api/lists/create-with-user",
+      "business_feature": "List Discovery & Creation",
+      "category": "ui",
+      "cross_refs": [
+        "landing-shell",
+        "list-items-api",
+        "collections-manager"
+      ],
+      "db_tables": [
+        "lists"
+      ],
+      "description": "The content discovery and list-creation sub-sections of the landing page — featured lists, saved lists, user lists, collections section, continue-ranking bar, search/filter bar, list preview popover with thumbnail, ranking progress indicator, and the create-list composition modal with template gallery and criteria templates. These sections allow users to find lists to rank and create new ones from scratch or from templates.",
+      "entry_points": [
+        "src/app/features/Landing/sub_LandingLists/FeaturedListsSection.tsx",
+        "src/app/features/Landing/sub_CreateList/CompositionModal.tsx"
+      ],
+      "file_paths": [
+        "src/app/features/Landing/sub_LandingLists/BookmarkButton.tsx",
+        "src/app/features/Landing/sub_LandingLists/CollectionsSection.tsx",
+        "src/app/features/Landing/sub_LandingLists/ContinueRankingBar.tsx",
+        "src/app/features/Landing/sub_LandingLists/FeaturedListsSection.tsx",
+        "src/app/features/Landing/sub_LandingLists/LazyListSections.tsx",
+        "src/app/features/Landing/sub_LandingLists/ListItemContent.tsx",
+        "src/app/features/Landing/sub_LandingLists/ListPreviewPopover.tsx",
+        "src/app/features/Landing/sub_LandingLists/ListPreviewThumbnail.tsx",
+        "src/app/features/Landing/sub_LandingLists/RankingProgressIndicator.tsx",
+        "src/app/features/Landing/sub_LandingLists/SavedListsSection.tsx",
+        "src/app/features/Landing/sub_LandingLists/SearchFilterBar.tsx",
+        "src/app/features/Landing/sub_LandingLists/SectionHeader.tsx",
+        "src/app/features/Landing/sub_LandingLists/UserListCard.tsx",
+        "src/app/features/Landing/sub_LandingLists/UserListsSection.tsx",
+        "src/app/features/Landing/sub_LandingLists/useListProgress.ts",
+        "src/app/features/Landing/sub_CreateList/CompositionModal.tsx",
+        "src/app/features/Landing/sub_CreateList/LazyCompositionModal.tsx",
+        "src/app/features/Landing/sub_CreateList/components/CreationProgressIndicator.tsx",
+        "src/app/features/Landing/sub_CreateList/components/CriteriaTemplateSection.tsx",
+        "src/app/features/Landing/sub_CreateList/components/TemplateGallery.tsx"
+      ],
+      "group": "List & Content Management",
+      "group_id": "04b9081d-d98f-44dd-b152-6f9599c0fe3e",
+      "id": "acd53237-a72b-4f50-b6cf-eb77a5e89e1b",
+      "keywords": [
+        "featured lists",
+        "user lists",
+        "bookmarks",
+        "search",
+        "filter",
+        "list creation",
+        "template gallery",
+        "composition modal",
+        "progress",
+        "collections"
+      ],
+      "last_written_at": "2026-08-29T09:43:14.761703300+00:00",
+      "name": "landing-discovery",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16.1.3",
+        "React",
+        "TypeScript",
+        "TanStack Query",
+        "Tailwind CSS"
+      ]
+    },
+    {
+      "api_surface": "Reads /api/lists/featured, /api/lists",
+      "business_feature": "Landing Page Shell",
+      "category": "ui",
+      "cross_refs": [
+        "landing-discovery",
+        "collections-manager",
+        "command-palette"
+      ],
+      "db_tables": [],
+      "description": "The home page shell — neon arena background and theme, the main landing layout, onboarding hero, showcase header, floating showcase, list create button, and the card primitives used across landing sections. Also serves as the app entry page (page.tsx). Animation presets and gradient utilities are co-located here as shared tokens for landing sub-features.",
+      "entry_points": [
+        "src/app/page.tsx",
+        "src/app/features/Landing/LandingMain.tsx"
+      ],
+      "file_paths": [
+        "src/app/page.tsx",
+        "src/app/features/Landing/FloatingShowcase.tsx",
+        "src/app/features/Landing/LandingLayout.tsx",
+        "src/app/features/Landing/LandingMain.tsx",
+        "src/app/features/Landing/ListCreateButton.tsx",
+        "src/app/features/Landing/OnboardingHero.tsx",
+        "src/app/features/Landing/ShowcaseHeader.tsx",
+        "src/app/features/Landing/components/CardFooter.tsx",
+        "src/app/features/Landing/components/CardHeader.tsx",
+        "src/app/features/Landing/components/index.ts",
+        "src/app/features/Landing/shared/NeonArenaBackground.tsx",
+        "src/app/features/Landing/shared/NeonArenaTheme.tsx",
+        "src/app/features/Landing/shared/animations.ts",
+        "src/app/features/Landing/shared/gradients.ts",
+        "src/app/features/Landing/shared/index.ts",
+        "src/app/features/Landing/shared/useCardClickHandler.ts",
+        "src/app/features/Landing/types.ts",
+        "src/app/features/Landing/useLandingPrefetch.ts"
+      ],
+      "group": "List & Content Management",
+      "group_id": "04b9081d-d98f-44dd-b152-6f9599c0fe3e",
+      "id": "9975f7a9-71c4-4f15-bc3a-f6202bc1813f",
+      "keywords": [
+        "landing",
+        "home",
+        "neon arena",
+        "showcase",
+        "hero",
+        "onboarding",
+        "animation",
+        "gradients",
+        "card"
+      ],
+      "last_written_at": "2026-08-29T09:43:14.290341100+00:00",
+      "name": "landing-shell",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16.1.3",
+        "React",
+        "TypeScript",
+        "Framer Motion",
+        "Tailwind CSS"
+      ]
+    },
+    {
+      "api_surface": "",
+      "business_feature": "Layout & Gesture Handling",
+      "category": "ui",
+      "cross_refs": [
+        "shared-utilities",
+        "drag-drop-engine",
+        "animations-and-embed"
+      ],
+      "db_tables": [],
+      "description": "Responsive layout primitives and interaction handlers used across the application's match and collection surfaces. LayoutManager and ContainerProvider drive collapsible panels, detachable windows, picture-in-picture, and resizable handles; GestureRecognizer and SwipeActionHandler translate touch events into domain actions; the keyboard module scopes shortcut registration so key bindings don't bleed across nested views.",
+      "entry_points": [
+        "src/lib/layout/index.ts",
+        "src/lib/keyboard/index.ts",
+        "src/lib/gestures/index.ts"
+      ],
+      "file_paths": [
+        "src/lib/layout/ContainerProvider.tsx",
+        "src/lib/layout/LayoutManager.tsx",
+        "src/lib/layout/components/CollapsiblePanel.tsx",
+        "src/lib/layout/components/DetachableWindow.tsx",
+        "src/lib/layout/components/LayoutPresetSelector.tsx",
+        "src/lib/layout/components/PictureInPicture.tsx",
+        "src/lib/layout/components/ResizableHandle.tsx",
+        "src/lib/layout/components/ResponsiveContainer.tsx",
+        "src/lib/layout/components/TouchGestureHandler.tsx",
+        "src/lib/layout/components/WindowManager.tsx",
+        "src/lib/layout/components/useDetachablePanel.tsx",
+        "src/lib/layout/constants.ts",
+        "src/lib/layout/index.ts",
+        "src/lib/layout/responsive-utils.ts",
+        "src/lib/layout/types.ts",
+        "src/lib/gestures/GestureRecognizer.ts",
+        "src/lib/gestures/SwipeActionHandler.ts",
+        "src/lib/gestures/index.ts",
+        "src/lib/keyboard/index.ts",
+        "src/lib/keyboard/shortcut-scope.test.ts",
+        "src/lib/keyboard/shortcut-scope.ts",
+        "src/lib/keyboard/useShortcutScope.ts"
+      ],
+      "group": "Feedback & UX Infrastructure",
+      "group_id": "fd016ee4-2a09-4d0f-b885-33a9646583ba",
+      "id": "99c2f059-698e-4266-94a8-23875fd83bfe",
+      "keywords": [
+        "layout",
+        "panel",
+        "collapsible",
+        "detachable",
+        "picture-in-picture",
+        "keyboard-shortcut",
+        "gesture",
+        "swipe",
+        "responsive",
+        "window-manager"
+      ],
+      "last_written_at": "2026-08-29T09:41:26.609229200+00:00",
+      "name": "layout-and-gestures",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16",
+        "React 19",
+        "Framer Motion",
+        "Radix UI",
+        "TypeScript"
+      ]
+    },
+    {
+      "api_surface": "GET /api/lists, POST /api/lists, GET /api/top/groups; Supabase tables for lists/items/collections",
+      "business_feature": "List & Content Management",
+      "category": "lib",
+      "cross_refs": [
+        "auth-and-data-layer",
+        "match-and-ranking"
+      ],
+      "db_tables": [
+        "lists",
+        "items",
+        "item_groups"
+      ],
+      "description": "Covers all hooks for browsing, creating, and managing lists, items, collections, and bookmarks — including blueprint templates, item stats, search, and thumbnail generation. Prefetch hooks (hover, scroll) accelerate navigation by warming the TanStack Query cache before a user clicks. Social hooks (Twitter share, screen capture) let users export and share their rankings. Wiki image loading provides progressive image enrichment for backlog items.",
+      "entry_points": [
+        "src/hooks/use-top-lists.ts",
+        "src/hooks/use-item-groups.ts",
+        "src/hooks/use-list-creation.ts"
+      ],
+      "file_paths": [
+        "src/hooks/use-list-creation.ts",
+        "src/hooks/use-list-preview.ts",
+        "src/hooks/use-list-thumbnails.ts",
+        "src/hooks/use-top-lists.ts",
+        "src/hooks/use-item-groups.ts",
+        "src/hooks/use-item-stats.ts",
+        "src/hooks/use-blueprints.ts",
+        "src/hooks/use-collections.ts",
+        "src/hooks/use-bookmarks.ts",
+        "src/hooks/use-progressive-wiki-image.ts",
+        "src/hooks/use-search.ts",
+        "src/hooks/use-hover-prefetch.ts",
+        "src/hooks/use-prefetch.ts",
+        "src/hooks/use-scroll-prefetch.ts",
+        "src/hooks/useTwitterShare.ts",
+        "src/hooks/useScreenCapture.ts"
+      ],
+      "group": "List & Content Management",
+      "group_id": "04b9081d-d98f-44dd-b152-6f9599c0fe3e",
+      "id": "8359fe08-1c2c-444d-b1b6-319b09805a6a",
+      "keywords": [
+        "lists",
+        "collections",
+        "bookmarks",
+        "blueprints",
+        "items",
+        "search",
+        "thumbnails",
+        "share",
+        "prefetch",
+        "wiki"
+      ],
+      "last_written_at": "2026-08-29T09:37:01.884079100+00:00",
+      "name": "list-and-content",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16",
+        "TanStack Query",
+        "Supabase",
+        "TypeScript"
+      ]
+    },
+    {
+      "api_surface": "GET /api/top/groups (category data)",
+      "business_feature": "List Composition Setup",
+      "category": "ui",
+      "cross_refs": [
+        "match-session-modals"
+      ],
+      "db_tables": [],
+      "description": "Handles the multi-step flow for creating a new ranked list: category selection, list size configuration, and time period scoping. The CategoryBrowser provides a hierarchical animated category picker with breadcrumb navigation, while the SizeVisualizer lets users preview grid dimensions and get time estimates. Depends on session-store and match-store to initialize the ranking session.",
+      "entry_points": [
+        "src/components/app/modals/composition/CompositionModalLeftContent.tsx",
+        "src/components/app/modals/composition/CategoryBrowser/CategoryBrowser.tsx",
+        "src/components/app/modals/composition/SizeVisualizer/SizeVisualizer.tsx"
+      ],
+      "file_paths": [
+        "src/components/app/modals/composition/CategoryBrowser/BreadcrumbNav.tsx",
+        "src/components/app/modals/composition/CategoryBrowser/CategoryBrowser.tsx",
+        "src/components/app/modals/composition/CategoryBrowser/CategoryCard.tsx",
+        "src/components/app/modals/composition/CategoryBrowser/CategorySearch.tsx",
+        "src/components/app/modals/composition/CategoryBrowser/NavigationAnimator.tsx",
+        "src/components/app/modals/composition/CategoryBrowser/categoryTree.ts",
+        "src/components/app/modals/composition/CategoryBrowser/types.ts",
+        "src/components/app/modals/composition/CategoryBrowser/index.ts",
+        "src/components/app/modals/composition/SizeVisualizer/CustomSizeSlider.tsx",
+        "src/components/app/modals/composition/SizeVisualizer/FormatSwitcher.tsx",
+        "src/components/app/modals/composition/SizeVisualizer/GridPreview.tsx",
+        "src/components/app/modals/composition/SizeVisualizer/MorphAnimator.tsx",
+        "src/components/app/modals/composition/SizeVisualizer/SizeRecommender.tsx",
+        "src/components/app/modals/composition/SizeVisualizer/SizeVisualizer.tsx",
+        "src/components/app/modals/composition/SizeVisualizer/TimeEstimator.tsx",
+        "src/components/app/modals/composition/SizeVisualizer/types.ts",
+        "src/components/app/modals/composition/SizeVisualizer/index.ts",
+        "src/components/app/modals/composition/CompositionModalHeader.tsx",
+        "src/components/app/modals/composition/CompositionModalLeftContent.tsx",
+        "src/components/app/modals/composition/CompositionModalRightContent.tsx",
+        "src/components/app/modals/composition/SetupCategory.tsx",
+        "src/components/app/modals/composition/SetupHeader.tsx",
+        "src/components/app/modals/composition/SetupListSize.tsx",
+        "src/components/app/modals/composition/SetupPreview.tsx",
+        "src/components/app/modals/composition/SetupTimePeriod.tsx"
+      ],
+      "group": "Match Workflow",
+      "group_id": "47fe8544-abb3-480a-81c0-ce7ef5b1ec4f",
+      "id": "c04a99d3-b6fd-4314-b49c-f600fbc71cd2",
+      "keywords": [
+        "category",
+        "list creation",
+        "size picker",
+        "grid preview",
+        "time period",
+        "composition",
+        "setup wizard",
+        "category tree",
+        "breadcrumb"
+      ],
+      "last_written_at": "2026-08-29T09:38:54.180980200+00:00",
+      "name": "list-composition-setup",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16",
+        "React",
+        "Framer Motion",
+        "TypeScript",
+        "Zustand"
+      ]
+    },
+    {
+      "api_surface": "POST /api/lists (via goatApi.lists.createWithUser)",
+      "business_feature": "List Creation",
+      "category": "lib",
+      "cross_refs": [],
+      "db_tables": [],
+      "description": "Unified service layer that consolidates all list creation entry points (CompositionModal, CommandPalette, ListCreateButton) into a single, consistent flow. It orchestrates validation via list-intent-validator, transforms a ListIntent into an API request, calls the GOAT API with retry logic, and optionally persists criteria config to the database after creation. Progress callbacks allow any UI to track the creation lifecycle.",
+      "entry_points": [
+        "src/services/list-creation-service.ts"
+      ],
+      "file_paths": [
+        "src/services/list-creation-service.ts"
+      ],
+      "group": "List & Content Management",
+      "group_id": "04b9081d-d98f-44dd-b152-6f9599c0fe3e",
+      "id": "0cefd6dd-ce82-45ca-b6c0-f493e0f94cdc",
+      "keywords": [
+        "list creation",
+        "ListIntent",
+        "validation",
+        "retry",
+        "criteria",
+        "progress tracking",
+        "createList",
+        "listCreationService"
+      ],
+      "last_written_at": "2026-08-29T09:44:08.716786900+00:00",
+      "name": "list-creation-service",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js",
+        "TypeScript",
+        "Zustand"
+      ]
+    },
+    {
+      "api_surface": "GET/POST /api/lists, GET/PUT/DELETE /api/lists/[id], GET /api/top/groups, GET/POST /api/items/*, GET/POST/DELETE /api/collections/*",
+      "business_feature": "List & Item Data API",
+      "category": "api",
+      "cross_refs": [
+        "studio-content",
+        "collection-panel-logic",
+        "landing-discovery",
+        "social-sharing-api"
+      ],
+      "db_tables": [
+        "lists",
+        "items",
+        "top_groups"
+      ],
+      "description": "CRUD API for lists, list items, scoring criteria, top-group backlog content, and collection management. Handles list lifecycle (create, read, update, delete, featured, thumbnails, criteria), item-level CRUD and enrichment triggers, bulk backlog item loading, category filtering, search suggestions, and collections by ID and slug. This is the primary data-access surface consumed by all list-facing features.",
+      "entry_points": [
+        "src/app/api/lists/route.ts",
+        "src/app/api/top/groups/route.ts",
+        "src/app/api/items/[id]/details/route.ts"
+      ],
+      "file_paths": [
+        "src/app/api/lists/route.ts",
+        "src/app/api/lists/[id]/route.ts",
+        "src/app/api/lists/[id]/items/route.ts",
+        "src/app/api/lists/[id]/items/[itemId]/scores/route.ts",
+        "src/app/api/lists/[id]/criteria/route.ts",
+        "src/app/api/lists/analytics/route.ts",
+        "src/app/api/lists/create-with-user/route.ts",
+        "src/app/api/lists/featured/route.ts",
+        "src/app/api/lists/thumbnails/route.ts",
+        "src/app/api/items/[id]/activity/route.ts",
+        "src/app/api/items/[id]/consensus/route.ts",
+        "src/app/api/items/[id]/details/route.ts",
+        "src/app/api/items/batch-enrich/route.ts",
+        "src/app/api/items/enrich/route.ts",
+        "src/app/api/items/stats/route.ts",
+        "src/app/api/items/validate/route.ts",
+        "src/app/api/top/groups/route.ts",
+        "src/app/api/top/groups/[id]/route.ts",
+        "src/app/api/top/groups/[id]/items/route.ts",
+        "src/app/api/top/groups/bulk-items/route.ts",
+        "src/app/api/top/groups/categories/[category]/route.ts",
+        "src/app/api/top/groups/search/suggestions/route.ts",
+        "src/app/api/top/items/route.ts",
+        "src/app/api/top/items/[id]/route.ts",
+        "src/app/api/collections/route.ts",
+        "src/app/api/collections/[id]/route.ts",
+        "src/app/api/collections/by-slug/[slug]/route.ts"
+      ],
+      "group": "API Routes",
+      "group_id": "7934834b-28fa-4390-bbf0-be93a51bf969",
+      "id": "1d199b41-c38a-4028-963c-c08891d811fd",
+      "keywords": [
+        "lists",
+        "items",
+        "backlog",
+        "top groups",
+        "collections",
+        "criteria",
+        "scores",
+        "enrichment",
+        "featured",
+        "thumbnails",
+        "CRUD"
+      ],
+      "last_written_at": "2026-08-29T09:43:14.761859200+00:00",
+      "name": "list-items-api",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16.1.3",
+        "TypeScript",
+        "Supabase"
+      ]
+    },
+    {
+      "api_surface": "Calls /api/generate-ai-image, /api/match/generate-result-image",
+      "business_feature": "AI Result Image Generation",
+      "category": "lib",
+      "cross_refs": [
+        "match-session-ui",
+        "content-generation-api"
+      ],
+      "db_tables": [],
+      "description": "Library layer for AI-powered result image generation within a match — builds prompts from the user's ranked grid, applies visual style presets, calls the image generation API, and configures physics animations and tier exporters. This is a pure utility module with no React components; it is consumed by match-session-ui and the image editor modal. Key external dependency is the AI image generation route.",
+      "entry_points": [
+        "src/app/features/Match/lib/aiImageGenerator.ts",
+        "src/app/features/Match/lib/promptBuilder.ts"
+      ],
+      "file_paths": [
+        "src/app/features/Match/lib/PhysicsConfig.ts",
+        "src/app/features/Match/lib/ai/index.ts",
+        "src/app/features/Match/lib/ai/stylePresets.ts",
+        "src/app/features/Match/lib/ai/types.ts",
+        "src/app/features/Match/lib/aiImageGenerator.ts",
+        "src/app/features/Match/lib/constants/image-styles.ts",
+        "src/app/features/Match/lib/medalStyling.ts",
+        "src/app/features/Match/lib/promptBuilder.ts",
+        "src/app/features/Match/lib/rankConfig.ts",
+        "src/app/features/Match/lib/resultImagePrompt.ts",
+        "src/app/features/Match/lib/tierListExporter.ts",
+        "src/app/features/Match/lib/tierPresets.ts"
+      ],
+      "group": "Ranking & Match",
+      "group_id": "4fc3985e-267a-46a1-b887-928e47560cb7",
+      "id": "c4e66a2e-fc8b-4662-9873-14fe0fd2b32c",
+      "keywords": [
+        "AI",
+        "image generation",
+        "prompt",
+        "tier list",
+        "style presets",
+        "physics",
+        "medal",
+        "rank config",
+        "export"
+      ],
+      "last_written_at": "2026-08-29T09:43:14.288016200+00:00",
+      "name": "match-ai-image",
+      "pinned": false,
+      "tech_stack": [
+        "TypeScript",
+        "Next.js 16.1.3"
+      ]
+    },
+    {
+      "api_surface": "",
+      "business_feature": "Match & Ranking Session",
+      "category": "lib",
+      "cross_refs": [
+        "auth-and-data-layer",
+        "list-and-content"
+      ],
+      "db_tables": [],
+      "description": "Encapsulates all hooks driving the core match/ranking session: item comparison, consensus overlays, debate flows, fork-based ranking branches, undo keyboard shortcuts, and progress tracking. These hooks read from and write to Zustand stores (comparison-store, grid-store, session-store) and expose the orchestration logic that the Match feature UI relies on. The composition hook combines several sub-capabilities into a single surface for the match page.",
+      "entry_points": [
+        "src/hooks/use-comparison.ts",
+        "src/hooks/use-ranking-progress.ts",
+        "src/hooks/use-play-list.ts"
+      ],
+      "file_paths": [
+        "src/hooks/use-comparison.ts",
+        "src/hooks/use-consensus.ts",
+        "src/hooks/use-debate.ts",
+        "src/hooks/use-fork-ranking.ts",
+        "src/hooks/use-ranking-graph.ts",
+        "src/hooks/use-ranking-progress.ts",
+        "src/hooks/use-backlog-selectors.ts",
+        "src/hooks/use-play-list.ts",
+        "src/hooks/use-undo-keyboard.ts",
+        "src/hooks/use-composition.ts"
+      ],
+      "group": "Ranking & Match",
+      "group_id": "4fc3985e-267a-46a1-b887-928e47560cb7",
+      "id": "52ff1e72-2d8c-47ec-83d8-07ff1e43c94a",
+      "keywords": [
+        "comparison",
+        "ranking",
+        "consensus",
+        "debate",
+        "fork",
+        "undo",
+        "backlog",
+        "grid",
+        "session",
+        "match"
+      ],
+      "last_written_at": "2026-08-29T09:36:47.455290800+00:00",
+      "name": "match-and-ranking",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16",
+        "Zustand",
+        "React",
+        "TypeScript"
+      ]
+    },
+    {
+      "api_surface": "Reads /api/top/groups",
+      "business_feature": "Match Backlog Panel",
+      "category": "ui",
+      "cross_refs": [
+        "match-session-ui",
+        "match-drop-zone-ui",
+        "collection-panel-ui"
+      ],
+      "db_tables": [
+        "top_groups"
+      ],
+      "description": "The sidebar panel that presents unranked backlog items to the user during a match session — includes a virtualized grid, search input, horizontal bar layout, mobile panel, swipeable items, panel resize handle, and filtering hooks. Items are dragged from this panel into drop zones on the grid. Depends on Collection panel data via the backlog store.",
+      "entry_points": [
+        "src/app/features/Match/sub_MatchCollections/SimpleCollectionPanel.tsx",
+        "src/app/features/Match/sub_MatchCollections/hooks/useCollectionFiltering.ts"
+      ],
+      "file_paths": [
+        "src/app/features/Match/sub_MatchCollections/SimpleCollectionPanel.tsx",
+        "src/app/features/Match/sub_MatchCollections/components/AddCustomItemForm.tsx",
+        "src/app/features/Match/sub_MatchCollections/components/CollectionHorizontalBar.tsx",
+        "src/app/features/Match/sub_MatchCollections/components/CollectionSearchInput.tsx",
+        "src/app/features/Match/sub_MatchCollections/components/CollectionSidebar.tsx",
+        "src/app/features/Match/sub_MatchCollections/components/CollectionToggleButton.tsx",
+        "src/app/features/Match/sub_MatchCollections/components/CompactCollectionHeader.tsx",
+        "src/app/features/Match/sub_MatchCollections/components/MobileBacklogPanel.tsx",
+        "src/app/features/Match/sub_MatchCollections/components/PanelResizeHandle.tsx",
+        "src/app/features/Match/sub_MatchCollections/components/SwipeableBacklogItem.tsx",
+        "src/app/features/Match/sub_MatchCollections/components/VirtualizedCollectionGrid.tsx",
+        "src/app/features/Match/sub_MatchCollections/components/index.ts",
+        "src/app/features/Match/sub_MatchCollections/components/useGridColumns.ts",
+        "src/app/features/Match/sub_MatchCollections/components/virtualizedGridTypes.ts",
+        "src/app/features/Match/sub_MatchCollections/hooks/index.ts",
+        "src/app/features/Match/sub_MatchCollections/hooks/useCollectionFiltering.ts",
+        "src/app/features/Match/sub_MatchCollections/hooks/usePanelResize.ts"
+      ],
+      "group": "Ranking & Match",
+      "group_id": "4fc3985e-267a-46a1-b887-928e47560cb7",
+      "id": "810b7293-dc28-4b9d-9623-2613d805294d",
+      "keywords": [
+        "backlog",
+        "collection panel",
+        "virtualized grid",
+        "search",
+        "filter",
+        "mobile panel",
+        "swipeable",
+        "panel resize",
+        "sidebar"
+      ],
+      "last_written_at": "2026-08-29T09:43:14.762068600+00:00",
+      "name": "match-backlog-panel",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16.1.3",
+        "React",
+        "TypeScript",
+        "@dnd-kit",
+        "Tailwind CSS"
+      ]
+    },
+    {
+      "api_surface": "",
+      "business_feature": "Bracket Tournament Mode",
+      "category": "ui",
+      "cross_refs": [
+        "match-session-ui"
+      ],
+      "db_tables": [],
+      "description": "Tournament bracket mode for ranking — users pick winners in head-to-head matchups until a champion emerges. Covers bracket generation and seeding logic, the matchup screen (participant cards, VS divider, keyboard voting), bracket visualization tree, standings/stats/trophy result tabs, and a voting history strip. The bracket engine is seeded from the current backlog and its completion state is surfaced back to the match session.",
+      "entry_points": [
+        "src/app/features/Match/sub_MatchBracket/BracketView.tsx",
+        "src/app/features/Match/sub_MatchBracket/lib/bracketGenerator.ts",
+        "src/app/features/Match/sub_MatchBracket/lib/seedingEngine.ts"
+      ],
+      "file_paths": [
+        "src/app/features/Match/sub_MatchBracket/BracketView.tsx",
+        "src/app/features/Match/sub_MatchBracket/PositionBracketModal.tsx",
+        "src/app/features/Match/sub_MatchBracket/components/BracketComplete/BracketComplete.tsx",
+        "src/app/features/Match/sub_MatchBracket/components/BracketComplete/StandingsTab.tsx",
+        "src/app/features/Match/sub_MatchBracket/components/BracketComplete/StatsTab.tsx",
+        "src/app/features/Match/sub_MatchBracket/components/BracketComplete/TrophyTab.tsx",
+        "src/app/features/Match/sub_MatchBracket/components/BracketComplete/index.ts",
+        "src/app/features/Match/sub_MatchBracket/components/BracketComplete/rankStyles.ts",
+        "src/app/features/Match/sub_MatchBracket/components/BracketSetup.tsx",
+        "src/app/features/Match/sub_MatchBracket/components/BracketVisualization.tsx",
+        "src/app/features/Match/sub_MatchBracket/components/MatchupScreen/MatchupScreen.tsx",
+        "src/app/features/Match/sub_MatchBracket/components/MatchupScreen/ParticipantCard.tsx",
+        "src/app/features/Match/sub_MatchBracket/components/MatchupScreen/VSDivider.tsx",
+        "src/app/features/Match/sub_MatchBracket/components/MatchupScreen/index.ts",
+        "src/app/features/Match/sub_MatchBracket/components/MatchupScreen/useMatchupKeyboard.ts",
+        "src/app/features/Match/sub_MatchBracket/components/PositionBracketComplete.tsx",
+        "src/app/features/Match/sub_MatchBracket/components/VotingHistoryStrip.tsx",
+        "src/app/features/Match/sub_MatchBracket/components/index.ts",
+        "src/app/features/Match/sub_MatchBracket/index.ts",
+        "src/app/features/Match/sub_MatchBracket/lib/bracketGenerator.ts",
+        "src/app/features/Match/sub_MatchBracket/lib/index.ts",
+        "src/app/features/Match/sub_MatchBracket/lib/seedingEngine.ts",
+        "src/app/features/Match/sub_MatchBracket/lib/useBracketDimensions.ts"
+      ],
+      "group": "Ranking & Match",
+      "group_id": "4fc3985e-267a-46a1-b887-928e47560cb7",
+      "id": "314cf9a7-0c66-4e0f-bc53-f73fcda5534b",
+      "keywords": [
+        "bracket",
+        "tournament",
+        "matchup",
+        "seeding",
+        "head-to-head",
+        "voting",
+        "standings",
+        "trophy",
+        "champion"
+      ],
+      "last_written_at": "2026-08-29T09:43:14.289120200+00:00",
+      "name": "match-bracket",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16.1.3",
+        "React",
+        "TypeScript",
+        "Framer Motion"
+      ]
+    },
+    {
+      "api_surface": "",
+      "business_feature": "Match Configuration & Criteria",
+      "category": "lib",
+      "cross_refs": [
+        "ranking-and-tiers",
+        "api-client"
+      ],
+      "db_tables": [],
+      "description": "Defines the structural rules and metadata for a match session: category configs, scoring constants, showcase examples, completion styles, icons, and weighted criteria. Criteria templates map domain themes to scoring dimensions, and validation authorities enforce list-creation rules before a session starts. These files are read-only configuration consumed by stores and UI, not mutated during a match.",
+      "entry_points": [
+        "src/lib/config/matchStructure.tsx",
+        "src/lib/criteria/index.ts",
+        "src/lib/validation/index.ts"
+      ],
+      "file_paths": [
+        "src/lib/config/category-config.ts",
+        "src/lib/config/matchStructure.tsx",
+        "src/lib/constants/catPreview.tsx",
+        "src/lib/constants/scoring.ts",
+        "src/lib/constants/showCaseExamples.tsx",
+        "src/lib/helpers/getColors.tsx",
+        "src/lib/helpers/getCompletionStyles.tsx",
+        "src/lib/helpers/getIcons.tsx",
+        "src/lib/criteria/calculateWeightedScore.ts",
+        "src/lib/criteria/index.ts",
+        "src/lib/criteria/templates/index.ts",
+        "src/lib/criteria/theme-mapping.ts",
+        "src/lib/criteria/types.ts",
+        "src/lib/templates/list-templates.ts",
+        "src/lib/validation/index.ts",
+        "src/lib/validation/list-intent-validator.ts",
+        "src/lib/validation/validation-authority.ts"
+      ],
+      "group": "Ranking & Match Engine",
+      "group_id": "86e71cea-8ea2-44eb-8637-364d1a977f81",
+      "id": "355e012d-1bd5-4cdf-a583-07259f0a2820",
+      "keywords": [
+        "criteria",
+        "scoring",
+        "category",
+        "template",
+        "validation",
+        "match-structure",
+        "theme-mapping",
+        "weighted-score",
+        "completion",
+        "showcase"
+      ],
+      "last_written_at": "2026-08-29T09:41:26.606991900+00:00",
+      "name": "match-configuration",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16",
+        "React 19",
+        "TypeScript"
+      ]
+    },
+    {
+      "api_surface": "Reads /api/items/[id]/consensus",
+      "business_feature": "Drop Zone & Item Badges",
+      "category": "ui",
+      "cross_refs": [
+        "match-backlog-panel",
+        "match-grid-components",
+        "match-session-ui"
+      ],
+      "db_tables": [],
+      "description": "Micro-UI elements that handle the drop target experience and item status overlays — animated drop zones (empty/occupied states, magnetic glow aura, celebration particles), and the badge overlays on ranked items (average rank, comparison selector, consensus overlay, quick-select badge, tier indicator). These components are composed inside grid slots and backlog items to communicate ranking status at a glance.",
+      "entry_points": [
+        "src/app/features/Match/sub_DropZone/SimpleDropZone.tsx",
+        "src/app/features/Match/sub_ItemBadges/index.ts"
+      ],
+      "file_paths": [
+        "src/app/features/Match/sub_DropZone/SimpleDropZone.tsx",
+        "src/app/features/Match/sub_DropZone/components/DropCelebration.tsx",
+        "src/app/features/Match/sub_DropZone/components/DropZoneCard.tsx",
+        "src/app/features/Match/sub_DropZone/components/DropZoneEmpty.tsx",
+        "src/app/features/Match/sub_DropZone/components/DropZoneOccupied.tsx",
+        "src/app/features/Match/sub_DropZone/components/MagneticGlowAura.tsx",
+        "src/app/features/Match/sub_DropZone/components/celebrationParticles.tsx",
+        "src/app/features/Match/sub_DropZone/hooks/useItemConsensus.ts",
+        "src/app/features/Match/sub_DropZone/index.ts",
+        "src/app/features/Match/sub_ItemBadges/AvgRankBadge.tsx",
+        "src/app/features/Match/sub_ItemBadges/ComparisonSelector.tsx",
+        "src/app/features/Match/sub_ItemBadges/ConsensusOverlay.tsx",
+        "src/app/features/Match/sub_ItemBadges/ItemStatsTooltip.tsx",
+        "src/app/features/Match/sub_ItemBadges/QuickSelectBadge.tsx",
+        "src/app/features/Match/sub_ItemBadges/RankBadge.tsx",
+        "src/app/features/Match/sub_ItemBadges/TierIndicator.tsx",
+        "src/app/features/Match/sub_ItemBadges/index.ts"
+      ],
+      "group": "Ranking & Match",
+      "group_id": "4fc3985e-267a-46a1-b887-928e47560cb7",
+      "id": "53539fca-9227-4e4c-9416-a682d317e489",
+      "keywords": [
+        "drop zone",
+        "celebration",
+        "particles",
+        "consensus",
+        "badge",
+        "average rank",
+        "tier indicator",
+        "quick select",
+        "magnetic",
+        "glow"
+      ],
+      "last_written_at": "2026-08-29T09:43:14.289963200+00:00",
+      "name": "match-drop-zone-ui",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16.1.3",
+        "React",
+        "TypeScript",
+        "Framer Motion",
+        "@dnd-kit"
+      ]
+    },
+    {
+      "api_surface": "Calls /api/debate, /api/consensus",
+      "business_feature": "Ranking Grid Display",
+      "category": "ui",
+      "cross_refs": [
+        "match-grid-engine",
+        "match-session-ui",
+        "match-drop-zone-ui"
+      ],
+      "db_tables": [],
+      "description": "All visual components that render the ranked grid itself — tier list view, podium, G.O.A.T. view, Mount Rushmore view, drag overlays with physics, tier rows, tier configurator UI, debate panel, and the view switcher. These components are purely presentational shells that receive state from the grid-engine hooks and stores. The ViewSwitcher component allows users to toggle between different ranking visualisation modes.",
+      "entry_points": [
+        "src/app/features/Match/sub_MatchGrid/components/GridRenderer.tsx",
+        "src/app/features/Match/sub_MatchGrid/components/TierListView.tsx",
+        "src/app/features/Match/sub_MatchGrid/components/ViewSwitcher.tsx"
+      ],
+      "file_paths": [
+        "src/app/features/Match/sub_MatchGrid/components/AnimationController.tsx",
+        "src/app/features/Match/sub_MatchGrid/components/Debate/ControversyBadge.tsx",
+        "src/app/features/Match/sub_MatchGrid/components/Debate/DebatePanel.tsx",
+        "src/app/features/Match/sub_MatchGrid/components/Debate/index.ts",
+        "src/app/features/Match/sub_MatchGrid/components/DragComponents.tsx",
+        "src/app/features/Match/sub_MatchGrid/components/DropZoneConnectors.tsx",
+        "src/app/features/Match/sub_MatchGrid/components/DropZoneHighlightContext.tsx",
+        "src/app/features/Match/sub_MatchGrid/components/GoatView.tsx",
+        "src/app/features/Match/sub_MatchGrid/components/GridRenderer.tsx",
+        "src/app/features/Match/sub_MatchGrid/components/GridSection.tsx",
+        "src/app/features/Match/sub_MatchGrid/components/KeyboardShortcutsPanel.tsx",
+        "src/app/features/Match/sub_MatchGrid/components/MatchGridHeader.tsx",
+        "src/app/features/Match/sub_MatchGrid/components/MountRushmoreView.tsx",
+        "src/app/features/Match/sub_MatchGrid/components/PhysicsDragOverlay.tsx",
+        "src/app/features/Match/sub_MatchGrid/components/PhysicsGridSlot.tsx",
+        "src/app/features/Match/sub_MatchGrid/components/PodiumView.tsx",
+        "src/app/features/Match/sub_MatchGrid/components/PortalDragOverlay.tsx",
+        "src/app/features/Match/sub_MatchGrid/components/ScreenReaderAnnouncer.tsx",
+        "src/app/features/Match/sub_MatchGrid/components/SimpleDragOverlay.tsx",
+        "src/app/features/Match/sub_MatchGrid/components/SwapAnimation.tsx",
+        "src/app/features/Match/sub_MatchGrid/components/TierConfigEditor.tsx",
+        "src/app/features/Match/sub_MatchGrid/components/TierConfigurator.tsx",
+        "src/app/features/Match/sub_MatchGrid/components/TierFocusProvider.tsx",
+        "src/app/features/Match/sub_MatchGrid/components/TierListView.tsx",
+        "src/app/features/Match/sub_MatchGrid/components/TierPresetGallery.tsx",
+        "src/app/features/Match/sub_MatchGrid/components/TierRow.tsx",
+        "src/app/features/Match/sub_MatchGrid/components/TierSection.tsx",
+        "src/app/features/Match/sub_MatchGrid/components/ViewSkeletons.tsx",
+        "src/app/features/Match/sub_MatchGrid/components/ViewSwitcher.tsx",
+        "src/app/features/Match/sub_MatchGrid/components/index.ts"
+      ],
+      "group": "Ranking & Match",
+      "group_id": "4fc3985e-267a-46a1-b887-928e47560cb7",
+      "id": "7c529e0d-10a8-471c-bfb6-0be981acd4a1",
+      "keywords": [
+        "grid",
+        "tier list",
+        "drag overlay",
+        "podium",
+        "G.O.A.T. view",
+        "physics",
+        "debate",
+        "keyboard shortcuts",
+        "view switcher",
+        "ranking display"
+      ],
+      "last_written_at": "2026-08-29T09:43:14.288520800+00:00",
+      "name": "match-grid-components",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16.1.3",
+        "React",
+        "TypeScript",
+        "@dnd-kit",
+        "Framer Motion",
+        "Tailwind CSS"
+      ]
+    },
+    {
+      "api_surface": "",
+      "business_feature": "Grid Layout Engine",
+      "category": "lib",
+      "cross_refs": [
+        "match-grid-components",
+        "match-session-ui"
+      ],
+      "db_tables": [],
+      "description": "The computation and layout engine behind the ranked grid — physics simulation, snap-to-grid, smart layout, auto-arrange, haptic feedback, tier configuration data, and the three hooks (tier item groups, keyboard navigation, layout) that drive the grid components. SimpleMatchGrid and its lazy wrapper are the top-level entry components that assemble engine hooks with the display components.",
+      "entry_points": [
+        "src/app/features/Match/sub_MatchGrid/SimpleMatchGrid.tsx",
+        "src/app/features/Match/sub_MatchGrid/hooks/index.ts"
+      ],
+      "file_paths": [
+        "src/app/features/Match/sub_MatchGrid/SimpleMatchGrid.tsx",
+        "src/app/features/Match/sub_MatchGrid/LazySimpleMatchGrid.tsx",
+        "src/app/features/Match/sub_MatchGrid/hooks/index.ts",
+        "src/app/features/Match/sub_MatchGrid/hooks/useTierItemGroups.ts",
+        "src/app/features/Match/sub_MatchGrid/hooks/useTierKeyboardNavigation.ts",
+        "src/app/features/Match/sub_MatchGrid/hooks/useTierLayout.ts",
+        "src/app/features/Match/sub_MatchGrid/lib/autoArrangeEngine.ts",
+        "src/app/features/Match/sub_MatchGrid/lib/hapticFeedback.ts",
+        "src/app/features/Match/sub_MatchGrid/lib/helpers.ts",
+        "src/app/features/Match/sub_MatchGrid/lib/physicsEngine.ts",
+        "src/app/features/Match/sub_MatchGrid/lib/smartGridLayout.ts",
+        "src/app/features/Match/sub_MatchGrid/lib/snapToGrid.ts",
+        "src/app/features/Match/sub_MatchGrid/lib/tierConfig.ts"
+      ],
+      "group": "Ranking & Match",
+      "group_id": "4fc3985e-267a-46a1-b887-928e47560cb7",
+      "id": "a5cd05d5-f7ad-4629-8693-3c08492a8fa4",
+      "keywords": [
+        "physics engine",
+        "snap-to-grid",
+        "auto-arrange",
+        "tier config",
+        "haptic feedback",
+        "smart layout",
+        "keyboard navigation",
+        "tier groups"
+      ],
+      "last_written_at": "2026-08-29T09:43:14.288853400+00:00",
+      "name": "match-grid-engine",
+      "pinned": false,
+      "tech_stack": [
+        "TypeScript",
+        "React",
+        "Next.js 16.1.3"
+      ]
+    },
+    {
+      "api_surface": "",
+      "business_feature": "Match Session Engine",
+      "category": "lib",
+      "cross_refs": [
+        "backlog-content-management"
+      ],
+      "db_tables": [],
+      "description": "Manages the full lifecycle of a match session: grid positions, drag-and-drop state, session persistence, undo/redo command stack, and the orchestrator store that coordinates all match-side stores. The match-store drives initialization and keyboard/modal UI; grid-store owns every drag event and position slot; session-store persists normalized progress to localStorage and IndexedDB; derived-session-sync keeps them in sync via a subscriber rather than direct coupling.",
+      "entry_points": [
+        "src/stores/match-store.ts",
+        "src/stores/grid-store.ts",
+        "src/stores/session-store.ts"
+      ],
+      "file_paths": [
+        "src/stores/match-store.ts",
+        "src/stores/grid-store.ts",
+        "src/stores/grid-store-migrations.ts",
+        "src/stores/grid-store-migrations.test.ts",
+        "src/stores/slices/grid-slice.ts",
+        "src/stores/session-store.ts",
+        "src/stores/derived-session-sync.ts",
+        "src/stores/item-store/comparison-manager.ts",
+        "src/stores/item-store/grid-operations.ts",
+        "src/stores/item-store/normalized-session.ts",
+        "src/stores/item-store/session-manager.ts",
+        "src/stores/item-store/types.ts",
+        "src/stores/undo-store.ts",
+        "src/stores/placement-store.ts",
+        "src/stores/selection-cursor.ts",
+        "src/stores/drop-zone-highlight-store.ts"
+      ],
+      "group": "Ranking & Match Engine",
+      "group_id": "86e71cea-8ea2-44eb-8637-364d1a977f81",
+      "id": "82a89899-d722-4f7e-b413-f18a95674019",
+      "keywords": [
+        "drag-drop",
+        "grid",
+        "match-session",
+        "undo",
+        "placement",
+        "keyboard-navigation",
+        "persistence",
+        "indexeddb",
+        "localstorage",
+        "session-sync"
+      ],
+      "last_written_at": "2026-08-29T09:44:51.300348600+00:00",
+      "name": "match-session-engine",
+      "pinned": false,
+      "tech_stack": [
+        "Zustand",
+        "Next.js",
+        "TypeScript"
+      ]
+    },
+    {
+      "api_surface": "POST /api/match/generate-result-image",
+      "business_feature": "Match Session Modals",
+      "category": "ui",
+      "cross_refs": [
+        "list-composition-setup",
+        "progress-badges"
+      ],
+      "db_tables": [],
+      "description": "Provides the two end-of-session overlay flows: the Comparison modal lets users judge two candidate items side-by-side during active ranking, while the Completion modal celebrates a finished list and offers sharing/export actions. Both modals read from match-store and grid-store and emit user decisions back into the ranking session.",
+      "entry_points": [
+        "src/components/app/modals/comparison/ComparisonModal.tsx",
+        "src/components/app/modals/completion/CompletionModal.tsx"
+      ],
+      "file_paths": [
+        "src/components/app/modals/comparison/ComparisonActions.tsx",
+        "src/components/app/modals/comparison/ComparisonHeader.tsx",
+        "src/components/app/modals/comparison/ComparisonItem.tsx",
+        "src/components/app/modals/comparison/ComparisonModal.tsx",
+        "src/components/app/modals/completion/CompletionModal.tsx",
+        "src/components/app/modals/completion/CompletionModalActionButton.tsx",
+        "src/components/app/modals/completion/CompletionModalActions.tsx",
+        "src/components/app/modals/completion/CompletionModalContent.tsx",
+        "src/components/app/modals/completion/CompletionModalHeader.tsx"
+      ],
+      "group": "Match Workflow",
+      "group_id": "47fe8544-abb3-480a-81c0-ce7ef5b1ec4f",
+      "id": "d6fccf8c-896b-42a6-99bf-267b8978dae0",
+      "keywords": [
+        "comparison",
+        "completion",
+        "ranking",
+        "side-by-side",
+        "share",
+        "celebrate",
+        "match result",
+        "export"
+      ],
+      "last_written_at": "2026-08-29T09:38:54.181317+00:00",
+      "name": "match-session-modals",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16",
+        "React",
+        "Framer Motion",
+        "Zustand",
+        "TypeScript"
+      ]
+    },
+    {
+      "api_surface": "Consumes /api/match/generate-result-image, /api/consensus, /api/share",
+      "business_feature": "Match Session UI",
+      "category": "ui",
+      "cross_refs": [
+        "match-ai-image",
+        "match-grid-components",
+        "match-grid-engine",
+        "match-backlog-panel",
+        "match-drop-zone-ui",
+        "match-bracket"
+      ],
+      "db_tables": [],
+      "description": "Orchestrates the active ranking session UI — the comparison modal, share flow, position history, smart-fill suggestions, and all modals visible during a match. Components and hooks here wire keyboard shortcuts, touch gestures, pinch-zoom, and sync-status indicators together into the interactive ranking experience. Depends on match-grid and match-backlog contexts for rendering the positioned items and the item source panel.",
+      "entry_points": [
+        "src/app/(match)/goat/page.tsx",
+        "src/app/features/Match/components/index.ts",
+        "src/app/features/Match/hooks/index.ts"
+      ],
+      "file_paths": [
+        "src/app/features/Match/ComparisonModal.tsx",
+        "src/app/features/Match/ShareModal/ShareModal.tsx",
+        "src/app/features/Match/ShareModal/index.ts",
+        "src/app/features/Match/components/AIStyleSelector.tsx",
+        "src/app/features/Match/components/ComparisonDrawer.tsx",
+        "src/app/features/Match/components/ConflictResolutionModal.tsx",
+        "src/app/features/Match/components/CriteriaProfileSelector.tsx",
+        "src/app/features/Match/components/CriteriaScoreInput.tsx",
+        "src/app/features/Match/components/ImageEditor.tsx",
+        "src/app/features/Match/components/LazyModals.tsx",
+        "src/app/features/Match/components/ListSettingsModal.tsx",
+        "src/app/features/Match/components/LongPressPreview.tsx",
+        "src/app/features/Match/components/PendingChangesPanel.tsx",
+        "src/app/features/Match/components/PositionBadge.tsx",
+        "src/app/features/Match/components/PositionChangeIndicator.tsx",
+        "src/app/features/Match/components/PositionHistoryContext.tsx",
+        "src/app/features/Match/components/SmartFillPanel.tsx",
+        "src/app/features/Match/components/SuggestionOverlay.tsx",
+        "src/app/features/Match/components/SyncStatusIndicator.tsx",
+        "src/app/features/Match/components/index.ts",
+        "src/app/features/Match/hooks/index.ts",
+        "src/app/features/Match/hooks/useGridPinchZoom.ts",
+        "src/app/features/Match/hooks/usePositionHistory.ts",
+        "src/app/features/Match/hooks/useSwipeToRank.ts",
+        "src/app/features/Match/hooks/useTierIntegration.ts",
+        "src/app/features/Match/hooks/useTouchGestures.ts",
+        "src/app/(match)/layout.tsx",
+        "src/app/(match)/goat/layout.tsx",
+        "src/app/(match)/goat/page.tsx",
+        "src/app/(match)/award/page.tsx"
+      ],
+      "group": "Ranking & Match",
+      "group_id": "4fc3985e-267a-46a1-b887-928e47560cb7",
+      "id": "93bfce6d-f73e-4316-8a96-7fcbe198187a",
+      "keywords": [
+        "match",
+        "ranking",
+        "session",
+        "comparison",
+        "keyboard",
+        "touch",
+        "share",
+        "position history",
+        "sync",
+        "criteria"
+      ],
+      "last_written_at": "2026-08-29T09:43:14.284715200+00:00",
+      "name": "match-session-ui",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16.1.3",
+        "React",
+        "TypeScript",
+        "Zustand",
+        "Framer Motion",
+        "@dnd-kit"
+      ]
+    },
+    {
+      "api_surface": "POST /api/match/generate-result-image, GET /api/og/[listId]",
+      "business_feature": "Result Image & OG Card Generation",
+      "category": "lib",
+      "cross_refs": [
+        "api-client",
+        "sharing-platform"
+      ],
+      "db_tables": [],
+      "description": "Generates and serves visual media for list results: result-card images (LayoutEngine, ColorAnalyzer, ImageEnhancer), Open Graph cards in three layouts (Featured, Grid, List), and AI-generated placeholder art via the Leonardo service and Gemini client. A CacheManager reduces redundant generation; PlaceholderGenerator produces deterministic gradient thumbnails when no image is available.",
+      "entry_points": [
+        "src/lib/image-gen/index.ts",
+        "src/lib/og/index.ts",
+        "src/lib/og/OGCardGenerator.ts"
+      ],
+      "file_paths": [
+        "src/lib/image-gen/BalanceOptimizer.ts",
+        "src/lib/image-gen/ColorAnalyzer.ts",
+        "src/lib/image-gen/ImageEnhancer.ts",
+        "src/lib/image-gen/LayoutEngine.ts",
+        "src/lib/image-gen/PlaceholderGenerator.ts",
+        "src/lib/image-gen/index.ts",
+        "src/lib/image-gen/types.ts",
+        "src/lib/og/CacheManager.ts",
+        "src/lib/og/OGCardGenerator.ts",
+        "src/lib/og/card-layouts/FeaturedLayout.tsx",
+        "src/lib/og/card-layouts/GridLayout.tsx",
+        "src/lib/og/card-layouts/ListLayout.tsx",
+        "src/lib/og/card-layouts/index.tsx",
+        "src/lib/og/index.ts",
+        "src/lib/og/types.ts",
+        "src/lib/services/leonardo.ts",
+        "src/lib/providers/gemini-client.ts",
+        "src/lib/providers/gemini.ts",
+        "src/lib/image-utils.ts"
+      ],
+      "group": "Media & Visual",
+      "group_id": "1717add0-8d97-40ab-8c4c-78c33d9cd82c",
+      "id": "f597012e-456a-4a0c-b220-4551c96801e9",
+      "keywords": [
+        "image-gen",
+        "og-card",
+        "Leonardo",
+        "Gemini",
+        "placeholder",
+        "color-analysis",
+        "layout-engine",
+        "open-graph",
+        "result-image",
+        "cache"
+      ],
+      "last_written_at": "2026-08-29T09:41:26.609500200+00:00",
+      "name": "media-generation",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16",
+        "React 19",
+        "TypeScript",
+        "Gemini API",
+        "Leonardo API"
+      ]
+    },
+    {
+      "api_surface": "",
+      "business_feature": "Offline Sync & Local Storage",
+      "category": "lib",
+      "cross_refs": [
+        "api-client",
+        "shared-utilities"
+      ],
+      "db_tables": [],
+      "description": "Offline-first resilience layer: detects network status, queues mutations in IndexedDB when offline, syncs on reconnect, and shows an unsaved-changes banner. The storage module provides safe localStorage/IndexedDB adapters used by Zustand's persist middleware. The async-state module handles optimistic writes, entity mutexes preventing concurrent edits of the same record, and revert logic when a mutation fails.",
+      "entry_points": [
+        "src/lib/offline/index.ts",
+        "src/lib/async-state/index.ts",
+        "src/lib/storage/storage-registry.ts"
+      ],
+      "file_paths": [
+        "src/lib/offline/OfflinePersistence.ts",
+        "src/lib/offline/OfflineProvider.tsx",
+        "src/lib/offline/UnsavedChangesBanner.tsx",
+        "src/lib/offline/index.ts",
+        "src/lib/offline/sessionStoreIntegration.ts",
+        "src/lib/offline/sync-status-colors.ts",
+        "src/lib/offline/types.ts",
+        "src/lib/offline/useNetworkStatus.ts",
+        "src/lib/offline/useOfflineSync.ts",
+        "src/lib/offline/useServiceWorker.ts",
+        "src/lib/offline/useUnsavedChangesGuard.ts",
+        "src/lib/storage/create-safe-storage.ts",
+        "src/lib/storage/indexed-db-storage.ts",
+        "src/lib/storage/safe-storage.ts",
+        "src/lib/storage/storage-registry.ts",
+        "src/lib/async-state/async-state.test.ts",
+        "src/lib/async-state/entity-mutex.ts",
+        "src/lib/async-state/from-query.ts",
+        "src/lib/async-state/index.ts",
+        "src/lib/async-state/optimistic-revert.ts",
+        "src/lib/async-state/optimistic-write.test.ts"
+      ],
+      "group": "API & Data Layer",
+      "group_id": "2b4d1c69-7f7e-4456-9982-871360916ed4",
+      "id": "37fd0131-fa19-4b0c-854a-f37f5bfdd56f",
+      "keywords": [
+        "offline",
+        "sync",
+        "IndexedDB",
+        "localStorage",
+        "optimistic-write",
+        "entity-mutex",
+        "revert",
+        "service-worker",
+        "network-status",
+        "unsaved-changes"
+      ],
+      "last_written_at": "2026-08-29T09:41:26.610223800+00:00",
+      "name": "offline-and-storage",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16",
+        "Zustand",
+        "TypeScript",
+        "IndexedDB"
+      ]
+    },
+    {
+      "api_surface": "",
+      "business_feature": "Prefetch & Performance",
+      "category": "lib",
+      "cross_refs": [
+        "api-client",
+        "shared-utilities"
+      ],
+      "db_tables": [],
+      "description": "Client-side performance infrastructure: predictive prefetching (bandwidth-aware, hover-triggered, scroll-triggered, route-level), a priority queue to budget concurrent fetches, and a perf timer / debug-config logger used in dev. BandwidthDetector gates prefetch aggressiveness to avoid flooding slow connections, while ScrollPrefetcher preloads the next page of list items before the user reaches the fold.",
+      "entry_points": [
+        "src/lib/prefetch/index.ts",
+        "src/lib/prefetch/PrefetchManager.ts",
+        "src/lib/logger/index.ts"
+      ],
+      "file_paths": [
+        "src/lib/prefetch/BandwidthDetector.ts",
+        "src/lib/prefetch/HoverPrefetcher.ts",
+        "src/lib/prefetch/PredictionEngine.ts",
+        "src/lib/prefetch/PrefetchManager.ts",
+        "src/lib/prefetch/PriorityQueue.ts",
+        "src/lib/prefetch/RoutePreloader.ts",
+        "src/lib/prefetch/ScrollPrefetcher.ts",
+        "src/lib/prefetch/index.ts",
+        "src/lib/perf/perfTimer.ts",
+        "src/lib/timing/constants.ts",
+        "src/lib/timing/index.ts",
+        "src/lib/logger/debug-config.ts",
+        "src/lib/logger/index.ts"
+      ],
+      "group": "API & Data Layer",
+      "group_id": "2b4d1c69-7f7e-4456-9982-871360916ed4",
+      "id": "9152c099-c07d-404b-9dad-2b00fa135145",
+      "keywords": [
+        "prefetch",
+        "bandwidth",
+        "scroll-prefetch",
+        "hover-prefetch",
+        "priority-queue",
+        "route-preload",
+        "perf-timer",
+        "logger",
+        "timing",
+        "prediction-engine"
+      ],
+      "last_written_at": "2026-08-29T09:41:26.610430700+00:00",
+      "name": "performance-prefetch",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16",
+        "TypeScript",
+        "TanStack Query"
+      ]
+    },
+    {
+      "api_surface": "",
+      "business_feature": "Personalization & Consensus Analytics",
+      "category": "lib",
+      "cross_refs": [
+        "api-client",
+        "shared-utilities"
+      ],
+      "db_tables": [],
+      "description": "Adapts the landing page and browse experience to each user's interests using interest tracking, A/B testing, and a ShowcaseSelector that picks relevant featured lists. The consensus subsystem computes cross-user agreement scores, controversy indices, and heatmap overlays for popular ranking positions. RankingGraphService and CrossListAnalyzer build a graph of item co-occurrences across all public lists to power universal item ratings.",
+      "entry_points": [
+        "src/lib/personalization/index.ts",
+        "src/lib/consensus/index.ts",
+        "src/lib/ranking-graph/index.ts"
+      ],
+      "file_paths": [
+        "src/lib/personalization/ContextAnalyzer.ts",
+        "src/lib/personalization/InterestTracker.ts",
+        "src/lib/personalization/PersonalizationEngine.ts",
+        "src/lib/personalization/ShowcaseSelector.ts",
+        "src/lib/personalization/index.ts",
+        "src/lib/personalization/types.ts",
+        "src/lib/personalization/useABTesting.ts",
+        "src/lib/personalization/usePersonalization.ts",
+        "src/lib/consensus/ConsensusDataService.ts",
+        "src/lib/consensus/ControversyCalculator.ts",
+        "src/lib/consensus/HeatmapRenderer.tsx",
+        "src/lib/consensus/TrendAnalyzer.ts",
+        "src/lib/consensus/components/ConsensusOverlay.tsx",
+        "src/lib/consensus/index.ts",
+        "src/lib/consensus/types.ts",
+        "src/lib/ranking-graph/CrossListAnalyzer.ts",
+        "src/lib/ranking-graph/RankingGraphService.ts",
+        "src/lib/ranking-graph/UniversalRatingEngine.ts",
+        "src/lib/ranking-graph/index.ts",
+        "src/lib/ranking-graph/types.ts",
+        "src/lib/activity/activity-logger.ts"
+      ],
+      "group": "Personalization & Analytics",
+      "group_id": "35f2d59f-0912-4b6e-a313-c8d58d873152",
+      "id": "8f79d92d-46e3-4a48-8379-9eebb36c64b4",
+      "keywords": [
+        "personalization",
+        "interest-tracking",
+        "A/B-testing",
+        "consensus",
+        "controversy",
+        "heatmap",
+        "ranking-graph",
+        "universal-rating",
+        "cross-list",
+        "activity-logger"
+      ],
+      "last_written_at": "2026-08-29T09:41:26.610654600+00:00",
+      "name": "personalization",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16",
+        "React 19",
+        "TypeScript",
+        "Zustand"
+      ]
+    },
+    {
+      "api_surface": "POST /api/agent-bridge/tasks, GET /api/health, GET /api/og/[listId], GET /api/oembed, POST /api/sync, POST /api/batch",
+      "business_feature": "Platform Operations API",
+      "category": "api",
+      "cross_refs": [
+        "match-session-ui",
+        "app-shell"
+      ],
+      "db_tables": [],
+      "description": "Infrastructure and cross-cutting API routes — the agent-bridge task queue (create, get, cleanup, stats) for AI background tasks, data sync endpoint, batch processing route, guest auth merge, health checks including enrichment health, match result image generation, grid preview, oEmbed for external link previews, and Open Graph image generation for list social cards. These routes support devops, integrations, and SEO needs.",
+      "entry_points": [
+        "src/app/api/agent-bridge/tasks/route.ts",
+        "src/app/api/health/route.ts",
+        "src/app/api/og/[listId]/route.tsx"
+      ],
+      "file_paths": [
+        "src/app/api/agent-bridge/cleanup/route.ts",
+        "src/app/api/agent-bridge/stats/route.ts",
+        "src/app/api/agent-bridge/tasks/route.ts",
+        "src/app/api/agent-bridge/tasks/[id]/route.ts",
+        "src/app/api/sync/route.ts",
+        "src/app/api/batch/route.ts",
+        "src/app/api/auth/merge-guest/route.ts",
+        "src/app/api/health/route.ts",
+        "src/app/api/health/enrichment/route.ts",
+        "src/app/api/match/generate-result-image/route.ts",
+        "src/app/api/grid/preview/route.ts",
+        "src/app/api/oembed/route.ts",
+        "src/app/api/og/[listId]/route.tsx"
+      ],
+      "group": "API Routes",
+      "group_id": "7934834b-28fa-4390-bbf0-be93a51bf969",
+      "id": "507238f9-422d-4ce3-90c2-036cdfb9910d",
+      "keywords": [
+        "agent bridge",
+        "task queue",
+        "sync",
+        "batch",
+        "health check",
+        "OG image",
+        "oEmbed",
+        "grid preview",
+        "guest merge",
+        "result image"
+      ],
+      "last_written_at": "2026-08-29T09:43:14.762215700+00:00",
+      "name": "platform-ops-api",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16.1.3",
+        "TypeScript",
+        "Supabase"
+      ]
+    },
+    {
+      "api_surface": "",
+      "business_feature": "Progress Badges",
+      "category": "ui",
+      "cross_refs": [
+        "match-session-modals",
+        "score-display"
+      ],
+      "db_tables": [],
+      "description": "Visual indicators that communicate a user's ranking progress: position badges, tier indicators, goal rings and bursts, and a top-level ProgressMain tracker. SuccessCelebration and AnimatedCounter supply the celebration and counting animations triggered when a user hits a milestone. Consumes patterns/badges for reusable badge primitives and types.",
+      "entry_points": [
+        "src/components/app/ProgressMain.tsx",
+        "src/components/patterns/badges/Badge.tsx",
+        "src/components/patterns/badges/GoalProgressRing.tsx"
+      ],
+      "file_paths": [
+        "src/components/patterns/badges/Badge.tsx",
+        "src/components/patterns/badges/Badge.stories.tsx",
+        "src/components/patterns/badges/GoalCompletionBurst.tsx",
+        "src/components/patterns/badges/GoalProgressRing.tsx",
+        "src/components/patterns/badges/GoalStatusBadge.tsx",
+        "src/components/patterns/badges/PositionBadge.tsx",
+        "src/components/patterns/badges/TierIndicator.tsx",
+        "src/components/patterns/badges/index.ts",
+        "src/components/patterns/badges/types.ts",
+        "src/components/app/ProgressMain.tsx",
+        "src/components/ui/SuccessCelebration.tsx",
+        "src/components/ui/AnimatedCounter.tsx"
+      ],
+      "group": "Ranking Scores & Progress",
+      "group_id": "540d96e5-8d46-4516-802c-44bbdc87aac4",
+      "id": "227e4422-e68b-4fdf-8519-4ca1bb0ca733",
+      "keywords": [
+        "badge",
+        "tier",
+        "goal progress",
+        "position",
+        "celebration",
+        "animated counter",
+        "ranking milestone",
+        "burst animation"
+      ],
+      "last_written_at": "2026-08-29T09:38:54.182020900+00:00",
+      "name": "progress-badges",
+      "pinned": false,
+      "tech_stack": [
+        "React",
+        "Framer Motion",
+        "TypeScript",
+        "Tailwind CSS"
+      ]
+    },
+    {
+      "api_surface": "",
+      "business_feature": "Ranking Analysis & UI State",
+      "category": "lib",
+      "cross_refs": [
+        "match-session-engine",
+        "backlog-content-management"
+      ],
+      "db_tables": [],
+      "description": "Houses stores for ranking output, cross-item comparison, scoring criteria, social consensus, debate flows, and ambient UI state (layout, audio, studio, activity). ranking-store owns the canonical tier-and-bracket ranking array; comparison-store and criteria-store support structured head-to-head evaluation; consensus-store and debate-store enable multi-user or social ranking sessions; registry.ts is the authoritative store-dependency graph validated at startup.",
+      "entry_points": [
+        "src/stores/ranking-store.ts",
+        "src/stores/registry.ts",
+        "src/stores/comparison-store.ts"
+      ],
+      "file_paths": [
+        "src/stores/ranking-store.ts",
+        "src/stores/ranking-graph-store.ts",
+        "src/stores/comparison-store.ts",
+        "src/stores/criteria-store.ts",
+        "src/stores/consensus-store.ts",
+        "src/stores/debate-store.ts",
+        "src/stores/audio-store.ts",
+        "src/stores/activity-store.ts",
+        "src/stores/layout-store.ts",
+        "src/stores/studio-store.ts",
+        "src/stores/composition-modal-store.ts",
+        "src/stores/validation-notification-store.ts",
+        "src/stores/dev-sync-assertions.ts",
+        "src/stores/registry.ts",
+        "src/stores/registry.test.ts"
+      ],
+      "group": "Personalization & Analytics",
+      "group_id": "35f2d59f-0912-4b6e-a313-c8d58d873152",
+      "id": "d741d1bf-8645-4f47-a685-70351ee0436b",
+      "keywords": [
+        "ranking",
+        "tiers",
+        "brackets",
+        "comparison",
+        "criteria",
+        "consensus",
+        "debate",
+        "audio",
+        "activity",
+        "studio",
+        "store-registry",
+        "validation"
+      ],
+      "last_written_at": "2026-08-29T09:44:50.892302900+00:00",
+      "name": "ranking-analysis-state",
+      "pinned": false,
+      "tech_stack": [
+        "Zustand",
+        "Next.js",
+        "TypeScript"
+      ]
+    },
+    {
+      "api_surface": "",
+      "business_feature": "Ranking & Tier System",
+      "category": "lib",
+      "cross_refs": [
+        "drag-drop-engine",
+        "api-client",
+        "match-configuration"
+      ],
+      "db_tables": [],
+      "description": "Provides the core algorithms for ranking items in grid and tier-list views, including score calculation, tier boundary detection, undo/redo history, and drop-zone scoring. The tier module converts between flat grid positions and labelled tiers (S, A, B …) while the undo module records per-grid-change snapshots for multi-step revert. Placement predictors help the UI hint likely drop targets during a drag gesture.",
+      "entry_points": [
+        "src/lib/ranking/index.ts",
+        "src/lib/tiers/index.ts",
+        "src/lib/undo/grid-slice.ts"
+      ],
+      "file_paths": [
+        "src/lib/ranking/RankingEngine.ts",
+        "src/lib/ranking/index.ts",
+        "src/lib/ranking/types.ts",
+        "src/lib/tiers/TierCalculator.ts",
+        "src/lib/tiers/TierConverter.ts",
+        "src/lib/tiers/TierRow.tsx",
+        "src/lib/tiers/boundary.test.ts",
+        "src/lib/tiers/boundary.ts",
+        "src/lib/tiers/constants.ts",
+        "src/lib/tiers/index.ts",
+        "src/lib/tiers/types.ts",
+        "src/lib/grid/constants.ts",
+        "src/lib/grid/index.ts",
+        "src/lib/grid/item-factory.ts",
+        "src/lib/undo/grid-slice.test.ts",
+        "src/lib/undo/grid-slice.ts",
+        "src/lib/undo/live-context.ts",
+        "src/lib/undo/record-grid-change.ts",
+        "src/lib/placement/DropZoneScorer.ts",
+        "src/lib/placement/PlacementPredictor.ts",
+        "src/lib/placement/index.ts"
+      ],
+      "group": "Ranking & Match Engine",
+      "group_id": "86e71cea-8ea2-44eb-8637-364d1a977f81",
+      "id": "b9821f85-c6f5-4326-810f-d5727bb644dd",
+      "keywords": [
+        "ranking",
+        "tier",
+        "grid",
+        "undo",
+        "placement",
+        "score",
+        "boundary",
+        "snapshot",
+        "revert",
+        "drop-zone"
+      ],
+      "last_written_at": "2026-08-29T09:41:26.606085800+00:00",
+      "name": "ranking-and-tiers",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16",
+        "Zustand",
+        "TypeScript",
+        "React 19"
+      ]
+    },
+    {
+      "api_surface": "",
+      "business_feature": "Rich Item Card",
+      "category": "ui",
+      "cross_refs": [
+        "score-display",
+        "decorative-effects"
+      ],
+      "db_tables": [],
+      "description": "A rich, interactive card component that presents a ranked item with flip-reveal animation, expanded preview, metadata badges, a mini gallery, and quick-action affordances. The AudioPlayer sub-package (AudioPlayer, PlayButton, YouTubeEmbed) embeds media playback inline. The ui/item-card primitives (ItemCard, content, flip, image) form the structural shell consumed by RichItemCard.",
+      "entry_points": [
+        "src/components/RichItemCard/RichItemCard.tsx",
+        "src/components/AudioPlayer/AudioPlayer.tsx",
+        "src/components/ui/item-card/ItemCard.tsx"
+      ],
+      "file_paths": [
+        "src/components/RichItemCard/RichItemCard.tsx",
+        "src/components/RichItemCard/CardFlipReveal.tsx",
+        "src/components/RichItemCard/ExpandedPreview.tsx",
+        "src/components/RichItemCard/ItemIndicators.tsx",
+        "src/components/RichItemCard/MetadataBadges.tsx",
+        "src/components/RichItemCard/MiniGallery.tsx",
+        "src/components/RichItemCard/QuickActions.tsx",
+        "src/components/RichItemCard/index.ts",
+        "src/components/AudioPlayer/AudioPlayer.tsx",
+        "src/components/AudioPlayer/PlayButton.tsx",
+        "src/components/AudioPlayer/YouTubeEmbed.tsx",
+        "src/components/AudioPlayer/index.ts",
+        "src/components/ui/item-card/ItemCard.tsx",
+        "src/components/ui/item-card/ItemCardContent.tsx",
+        "src/components/ui/item-card/ItemCardFlip.tsx",
+        "src/components/ui/item-card/ItemCardImage.tsx",
+        "src/components/ui/item-card/index.ts"
+      ],
+      "group": "Item & Media Display",
+      "group_id": "6c28e6d8-9b6d-4d6a-9987-fe46bc7cc114",
+      "id": "6c170cb1-6757-4de3-a8ae-cb3047ee4f85",
+      "keywords": [
+        "item card",
+        "flip animation",
+        "audio player",
+        "YouTube embed",
+        "metadata",
+        "gallery",
+        "expanded preview",
+        "quick actions"
+      ],
+      "last_written_at": "2026-08-29T09:38:54.181541300+00:00",
+      "name": "rich-media-card",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16",
+        "React",
+        "Framer Motion",
+        "TypeScript"
+      ]
+    },
+    {
+      "api_surface": "",
+      "business_feature": "Score Display",
+      "category": "ui",
+      "cross_refs": [
+        "rich-media-card",
+        "progress-badges"
+      ],
+      "db_tables": [],
+      "description": "Renders item scores in multiple themed visual styles (bars, rings, labels) with per-genre renderers for Movies, Music, Sports, and Games. ThemedScoreDisplay selects the appropriate renderer based on category metadata; ScoreOverlayContainer positions an overlay atop item cards. Used wherever a numerical score needs to be shown in the ranking UI.",
+      "entry_points": [
+        "src/components/ui/themed-scores/ThemedScoreDisplay.tsx",
+        "src/components/ui/score-overlays/ScoreOverlayContainer.tsx"
+      ],
+      "file_paths": [
+        "src/components/ui/themed-scores/ThemedScoreDisplay.tsx",
+        "src/components/ui/themed-scores/ScoreBar.tsx",
+        "src/components/ui/themed-scores/index.ts",
+        "src/components/ui/themed-scores/renderers/AnimatedProgressBar.tsx",
+        "src/components/ui/themed-scores/renderers/DefaultScoreRenderer.tsx",
+        "src/components/ui/themed-scores/renderers/GamesScoreRenderer.tsx",
+        "src/components/ui/themed-scores/renderers/MoviesScoreRenderer.tsx",
+        "src/components/ui/themed-scores/renderers/MusicScoreRenderer.tsx",
+        "src/components/ui/themed-scores/renderers/SportsScoreRenderer.tsx",
+        "src/components/ui/themed-scores/renderers/index.ts",
+        "src/components/ui/themed-scores/renderers/types.ts",
+        "src/components/ui/score-overlays/BarScoreOverlay.tsx",
+        "src/components/ui/score-overlays/LabelScoreOverlay.tsx",
+        "src/components/ui/score-overlays/RingScoreOverlay.tsx",
+        "src/components/ui/score-overlays/ScoreOverlayContainer.tsx",
+        "src/components/ui/score-overlays/index.ts"
+      ],
+      "group": "Ranking Scores & Progress",
+      "group_id": "540d96e5-8d46-4516-802c-44bbdc87aac4",
+      "id": "6af76d2c-4bb6-4176-962f-059a287dd4d1",
+      "keywords": [
+        "score",
+        "rating",
+        "themed renderer",
+        "bar overlay",
+        "ring overlay",
+        "genre-specific",
+        "progress bar",
+        "animated score"
+      ],
+      "last_written_at": "2026-08-29T09:38:54.181782900+00:00",
+      "name": "score-display",
+      "pinned": false,
+      "tech_stack": [
+        "React",
+        "Framer Motion",
+        "TypeScript",
+        "Tailwind CSS"
+      ]
+    },
+    {
+      "api_surface": "",
+      "business_feature": "Search & Filter",
+      "category": "lib",
+      "cross_refs": [
+        "faceted-search",
+        "item-enrichment",
+        "shared-utilities"
+      ],
+      "db_tables": [],
+      "description": "Full-text and smart-query search over collections and backlog items, with preset management, live-count updates, and sorting. FilterEngine applies multi-predicate rules while SmartQueryParser handles natural-language filter expressions. The UI layer (FilterPanel, QuickFilterBar, SearchAutocomplete) renders the filtering surface and reacts to real-time search state.",
+      "entry_points": [
+        "src/lib/filters/index.ts",
+        "src/lib/search/index.ts",
+        "src/lib/filters/FilterEngine.ts"
+      ],
+      "file_paths": [
+        "src/lib/filters/CollectionFilterIntegration.tsx",
+        "src/lib/filters/FilterEngine.ts",
+        "src/lib/filters/FullTextSearcher.ts",
+        "src/lib/filters/SmartQueryParser.ts",
+        "src/lib/filters/constants.ts",
+        "src/lib/filters/index.ts",
+        "src/lib/filters/presets.ts",
+        "src/lib/filters/types.ts",
+        "src/lib/filters/utils.ts",
+        "src/lib/filters/components/FilterPanel.tsx",
+        "src/lib/filters/components/FilterPresetManager.tsx",
+        "src/lib/filters/components/FilterResultsCounter.tsx",
+        "src/lib/filters/components/FilterStatistics.tsx",
+        "src/lib/filters/components/LiveSearchPreview.tsx",
+        "src/lib/filters/components/QuickFilterBar.tsx",
+        "src/lib/filters/components/SearchAutocomplete.tsx",
+        "src/lib/filters/components/SmartFilterSuggestions.tsx",
+        "src/lib/filters/components/SortSelector.tsx",
+        "src/lib/filters/hooks/useLiveSearchCounts.ts",
+        "src/lib/search/SearchEngine.ts",
+        "src/lib/search/fuzzy.ts",
+        "src/lib/search/index.ts",
+        "src/lib/search/types.ts",
+        "src/lib/sorting/comparators.test.ts",
+        "src/lib/sorting/comparators.ts",
+        "src/lib/sorting/index.ts",
+        "src/lib/sorting/inventory-sorter.ts"
+      ],
+      "group": "Content Discovery",
+      "group_id": "c67aa295-631f-4014-a631-700a5f4c7991",
+      "id": "2e07b34b-e9f4-4834-93e2-4de5fd50c27e",
+      "keywords": [
+        "filter",
+        "search",
+        "full-text",
+        "fuzzy",
+        "sort",
+        "autocomplete",
+        "preset",
+        "live-count",
+        "query-parser",
+        "collection"
+      ],
+      "last_written_at": "2026-08-29T09:41:26.607947300+00:00",
+      "name": "search-and-filter",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16",
+        "React 19",
+        "TypeScript",
+        "TanStack Query"
+      ]
+    },
+    {
+      "api_surface": "",
+      "business_feature": "Shared Utilities & Primitives",
+      "category": "lib",
+      "cross_refs": [
+        "api-client",
+        "offline-and-storage",
+        "feedback-and-errors"
+      ],
+      "db_tables": [],
+      "description": "Cross-cutting primitives shared by every feature: a cn() utility (clsx + tailwind-merge), deep-equal, request coalescer, set operations, YouTube URL helpers, item transform functions, design tokens (badge variants), and the agent-bridge that connects the app to the Claude agent SDK for AI-powered task memory. The stores/lazy-store-accessor and theme-support utilities are also here, providing hydration-safe store access and dark-mode helpers.",
+      "entry_points": [
+        "src/lib/utils.ts",
+        "src/lib/agent-bridge/index.ts",
+        "src/lib/items/index.ts"
+      ],
+      "file_paths": [
+        "src/lib/utils.ts",
+        "src/lib/utils/animations.ts",
+        "src/lib/utils/deep-equal.ts",
+        "src/lib/utils/request-coalescer.ts",
+        "src/lib/utils/search.ts",
+        "src/lib/set-utils.ts",
+        "src/lib/items/index.ts",
+        "src/lib/items/item-transforms.ts",
+        "src/lib/items/item-utils.ts",
+        "src/lib/stores/index.ts",
+        "src/lib/stores/lazy-store-accessor.ts",
+        "src/lib/agent-bridge/index.ts",
+        "src/lib/agent-bridge/require-secret.ts",
+        "src/lib/agent-bridge/task-memory-manager.ts",
+        "src/lib/agent-bridge/types.ts",
+        "src/lib/theme-support.ts",
+        "src/lib/tokens/badge-tokens.ts",
+        "src/lib/youtube.ts"
+      ],
+      "group": "Shared Utilities",
+      "group_id": "64c62ca9-2b52-4c53-9e4d-9b49a4635902",
+      "id": "c281e52f-59b5-4648-9827-258aa0dc10b6",
+      "keywords": [
+        "utils",
+        "cn",
+        "deep-equal",
+        "set-utils",
+        "youtube",
+        "agent-bridge",
+        "item-transforms",
+        "badge-tokens",
+        "theme",
+        "lazy-store"
+      ],
+      "last_written_at": "2026-08-29T09:41:26.610872500+00:00",
+      "name": "shared-utilities",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16",
+        "TypeScript",
+        "Zustand",
+        "Tailwind CSS",
+        "clsx"
+      ]
+    },
+    {
+      "api_surface": "Web Share API (navigator.share), platform-specific share URLs",
+      "business_feature": "Social Sharing",
+      "category": "lib",
+      "cross_refs": [
+        "media-generation",
+        "social-challenges"
+      ],
+      "db_tables": [],
+      "description": "Multi-platform social sharing library that generates deep-links, optimises content per platform, and tracks share analytics. ShareManager dispatches to concrete platform adapters (Twitter, Reddit, Discord, WhatsApp, etc.) and falls back to the Web Share API on supported devices. ContentOptimizer trims text and images to per-platform limits before dispatch.",
+      "entry_points": [
+        "src/lib/sharing/index.ts",
+        "src/lib/sharing/ShareManager.ts",
+        "src/lib/sharing/DeepLinkGenerator.ts"
+      ],
+      "file_paths": [
+        "src/lib/sharing/ContentOptimizer.ts",
+        "src/lib/sharing/DeepLinkGenerator.ts",
+        "src/lib/sharing/ShareAnalytics.ts",
+        "src/lib/sharing/ShareManager.ts",
+        "src/lib/sharing/index.ts",
+        "src/lib/sharing/platforms/base.ts",
+        "src/lib/sharing/platforms/copy.ts",
+        "src/lib/sharing/platforms/discord.ts",
+        "src/lib/sharing/platforms/email.ts",
+        "src/lib/sharing/platforms/facebook.ts",
+        "src/lib/sharing/platforms/index.ts",
+        "src/lib/sharing/platforms/instagram.ts",
+        "src/lib/sharing/platforms/linkedin.ts",
+        "src/lib/sharing/platforms/native.ts",
+        "src/lib/sharing/platforms/reddit.ts",
+        "src/lib/sharing/platforms/telegram.ts",
+        "src/lib/sharing/platforms/twitter.ts",
+        "src/lib/sharing/platforms/whatsapp.ts",
+        "src/lib/sharing/types.ts"
+      ],
+      "group": "Social & Sharing",
+      "group_id": "694c77fd-1eed-4135-85f2-1f256db89218",
+      "id": "2f011342-30a3-4ca2-8706-e7617cab4505",
+      "keywords": [
+        "sharing",
+        "deep-link",
+        "twitter",
+        "discord",
+        "reddit",
+        "whatsapp",
+        "analytics",
+        "platform-adapter",
+        "web-share",
+        "content-optimizer"
+      ],
+      "last_written_at": "2026-08-29T09:41:26.608498800+00:00",
+      "name": "sharing-platform",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16",
+        "TypeScript"
+      ]
+    },
+    {
+      "api_surface": "",
+      "business_feature": "Challenges & Collaboration",
+      "category": "lib",
+      "cross_refs": [
+        "sharing-platform",
+        "api-client"
+      ],
+      "db_tables": [],
+      "description": "Gamification layer that drives user engagement through challenges, streaks, viral share chains, and collaborative ranking sessions. ChallengeManager evaluates completion conditions; StreakTracker persists daily activity; ShareChainTracker records how a ranking spreads through shares. CollaborativeRanking enables real-time co-ranking and Debate surfaces structured argument threads around list positions.",
+      "entry_points": [
+        "src/lib/challenges/index.ts",
+        "src/lib/challenges/ChallengeManager.ts",
+        "src/lib/collaboration/index.ts"
+      ],
+      "file_paths": [
+        "src/lib/challenges/ChallengeManager.ts",
+        "src/lib/challenges/InvitationSystem.ts",
+        "src/lib/challenges/ShareChainTracker.ts",
+        "src/lib/challenges/StreakTracker.ts",
+        "src/lib/challenges/index.ts",
+        "src/lib/challenges/types.ts",
+        "src/lib/collaboration/CollaborativeRanking.ts",
+        "src/lib/collaboration/index.ts",
+        "src/lib/debate/debate-provider.ts",
+        "src/lib/debate/index.ts",
+        "src/lib/debate/types.ts"
+      ],
+      "group": "Social & Sharing",
+      "group_id": "694c77fd-1eed-4135-85f2-1f256db89218",
+      "id": "ace8d564-daa9-44d6-99f2-9c452a24dc5c",
+      "keywords": [
+        "challenge",
+        "streak",
+        "invitation",
+        "share-chain",
+        "collaboration",
+        "debate",
+        "gamification",
+        "viral",
+        "co-ranking",
+        "engagement"
+      ],
+      "last_written_at": "2026-08-29T09:41:26.608763400+00:00",
+      "name": "social-challenges",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16",
+        "TypeScript"
+      ]
+    },
+    {
+      "api_surface": "GET/POST /api/challenges/*, POST /api/consensus/submit, GET/POST /api/share/*, GET /api/badges, GET /api/activities",
+      "business_feature": "Social & Sharing API",
+      "category": "api",
+      "cross_refs": [
+        "list-items-api",
+        "user-progress-analytics",
+        "match-session-ui"
+      ],
+      "db_tables": [
+        "challenges",
+        "badges"
+      ],
+      "description": "API routes for all social engagement features — community challenges (create, join, leaderboard, invite, chain, submit, streaks), consensus voting on items and lists, debate threads, achievement OG images and share links, user badges, activity feeds, bookmarks, and shareable result links with fork, analytics, and OG image generation. These routes power the competition and social layers on top of the core ranking product.",
+      "entry_points": [
+        "src/app/api/challenges/route.ts",
+        "src/app/api/share/route.ts",
+        "src/app/api/consensus/route.ts"
+      ],
+      "file_paths": [
+        "src/app/api/challenges/route.ts",
+        "src/app/api/challenges/[id]/route.ts",
+        "src/app/api/challenges/[id]/chain/route.ts",
+        "src/app/api/challenges/[id]/invite/route.ts",
+        "src/app/api/challenges/[id]/leaderboard/route.ts",
+        "src/app/api/challenges/[id]/submit/route.ts",
+        "src/app/api/challenges/join/route.ts",
+        "src/app/api/challenges/streaks/route.ts",
+        "src/app/api/consensus/route.ts",
+        "src/app/api/consensus/[listId]/route.ts",
+        "src/app/api/consensus/submit/route.ts",
+        "src/app/api/debate/route.ts",
+        "src/app/api/achievement/og/route.tsx",
+        "src/app/api/achievement/share/route.ts",
+        "src/app/api/badges/route.ts",
+        "src/app/api/activities/route.ts",
+        "src/app/api/bookmarks/route.ts",
+        "src/app/api/share/route.ts",
+        "src/app/api/share/[code]/route.ts",
+        "src/app/api/share/[code]/fork/route.ts",
+        "src/app/api/share/analytics/route.ts",
+        "src/app/api/share/og-image/route.tsx"
+      ],
+      "group": "API Routes",
+      "group_id": "7934834b-28fa-4390-bbf0-be93a51bf969",
+      "id": "e86bd330-ab3f-4630-ae62-730ffe2e1ef3",
+      "keywords": [
+        "challenges",
+        "leaderboard",
+        "invite",
+        "chain",
+        "consensus",
+        "debate",
+        "share",
+        "fork",
+        "achievement",
+        "badges",
+        "bookmarks",
+        "activities",
+        "OG image"
+      ],
+      "last_written_at": "2026-08-29T09:43:14.762352400+00:00",
+      "name": "social-sharing-api",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16.1.3",
+        "TypeScript",
+        "Supabase"
+      ]
+    },
+    {
+      "api_surface": "Reads/writes /api/studio/*, /api/blueprints/*, /api/lists",
+      "business_feature": "List Studio & Blueprint Authoring",
+      "category": "ui",
+      "cross_refs": [
+        "content-generation-api",
+        "list-items-api"
+      ],
+      "db_tables": [
+        "blueprints",
+        "lists",
+        "items"
+      ],
+      "description": "The Studio feature lets users author and publish new list blueprints — the studio layout, form panel, item grid, sidebar, criteria editor, metadata panel, card preview, template gallery picker, and publish success flow. Also owns the single Templates community card component, the template browser page, and the blueprint detail page. AI-powered item generation and image search are driven through the studio API routes.",
+      "entry_points": [
+        "src/app/studio/page.tsx",
+        "src/app/features/Studio/StudioLayout.tsx"
+      ],
+      "file_paths": [
+        "src/app/studio/page.tsx",
+        "src/app/templates/page.tsx",
+        "src/app/blueprint/[slug]/page.tsx",
+        "src/app/features/Studio/StudioLayout.tsx",
+        "src/app/features/Studio/index.ts",
+        "src/app/features/Studio/components/AddItemForm.tsx",
+        "src/app/features/Studio/components/CardPreviewPanel.tsx",
+        "src/app/features/Studio/components/CriteriaDisplayConfigurator.tsx",
+        "src/app/features/Studio/components/CriteriaEditor.tsx",
+        "src/app/features/Studio/components/MetadataPanel.tsx",
+        "src/app/features/Studio/components/PublishSuccess.tsx",
+        "src/app/features/Studio/components/StudioContentTabs.tsx",
+        "src/app/features/Studio/components/StudioError.tsx",
+        "src/app/features/Studio/components/StudioFormPanel.tsx",
+        "src/app/features/Studio/components/StudioHeader.tsx",
+        "src/app/features/Studio/components/StudioItemCard.tsx",
+        "src/app/features/Studio/components/StudioItemsGrid.tsx",
+        "src/app/features/Studio/components/StudioItemsView.tsx",
+        "src/app/features/Studio/components/StudioSidebar.tsx",
+        "src/app/features/Studio/components/StudioSkeleton.tsx",
+        "src/app/features/Studio/components/TemplateGallery.tsx",
+        "src/app/features/Studio/components/TopicInputForm.tsx",
+        "src/app/features/Templates/CommunityTemplateCard.tsx"
+      ],
+      "group": "List & Content Management",
+      "group_id": "04b9081d-d98f-44dd-b152-6f9599c0fe3e",
+      "id": "fe4fd10c-1a9a-49b1-b8b8-bf40e7d46fb1",
+      "keywords": [
+        "studio",
+        "blueprint",
+        "template",
+        "publish",
+        "criteria",
+        "item grid",
+        "metadata",
+        "AI generate",
+        "card preview",
+        "author"
+      ],
+      "last_written_at": "2026-08-29T09:43:14.762486+00:00",
+      "name": "studio-content",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16.1.3",
+        "React",
+        "TypeScript",
+        "TanStack Query",
+        "Tailwind CSS",
+        "Radix UI"
+      ]
+    },
+    {
+      "api_surface": "",
+      "business_feature": "UI Interaction Utilities",
+      "category": "lib",
+      "cross_refs": [
+        "match-and-ranking",
+        "list-and-content",
+        "auth-and-data-layer"
+      ],
+      "db_tables": [],
+      "description": "Shared UI primitives consumed across all features: responsive media queries, swipe gesture detection for mobile, 3D tilt effects, copy animations, motion-preference tiers (full/reduced/minimal), modal accessibility, animation pause control, and toast notifications. The central index.ts re-exports every hook in the directory as the public API boundary for the entire hooks layer. None of these hooks touch business data directly.",
+      "entry_points": [
+        "src/hooks/index.ts",
+        "src/hooks/use-motion-preference.ts",
+        "src/hooks/useMediaQuery.ts"
+      ],
+      "file_paths": [
+        "src/hooks/useSwipeGesture.ts",
+        "src/hooks/useSwipeGesture.types.ts",
+        "src/hooks/useMediaQuery.ts",
+        "src/hooks/use-3d-tilt.ts",
+        "src/hooks/use-animation-pause.ts",
+        "src/hooks/use-motion-preference.ts",
+        "src/hooks/use-reduced-motion.ts",
+        "src/hooks/use-modal-accessibility.ts",
+        "src/hooks/useCopyAnimation.ts",
+        "src/hooks/use-toast.ts",
+        "src/hooks/index.ts"
+      ],
+      "group": "UI Utilities",
+      "group_id": "31327e28-f8e6-4bbb-b1ef-3531418cf375",
+      "id": "50d1cf0d-7f03-4441-a647-05ce9dc49e48",
+      "keywords": [
+        "media-query",
+        "swipe",
+        "gesture",
+        "motion",
+        "animation",
+        "accessibility",
+        "toast",
+        "tilt",
+        "responsive",
+        "mobile"
+      ],
+      "last_written_at": "2026-08-29T09:36:47.455909600+00:00",
+      "name": "ui-interaction-utilities",
+      "pinned": false,
+      "tech_stack": [
+        "React",
+        "TypeScript",
+        "Framer Motion",
+        "Next.js 16"
+      ]
+    },
+    {
+      "api_surface": "POST /api/webhooks/clerk",
+      "business_feature": "User Authentication",
+      "category": "ui",
+      "cross_refs": [
+        "core-ui"
+      ],
+      "db_tables": [],
+      "description": "Authentication UI components built on top of Clerk: the AuthModal (sign-in/sign-up gate), AuthPrompt (inline nudge), AuthHeader, UserMenu (avatar + dropdown for signed-in users), and a Toaster for auth event notifications. Exposes a barrel index for clean imports throughout the app.",
+      "entry_points": [
+        "src/components/auth/AuthModal.tsx",
+        "src/components/auth/UserMenu.tsx"
+      ],
+      "file_paths": [
+        "src/components/auth/AuthHeader.tsx",
+        "src/components/auth/AuthModal.tsx",
+        "src/components/auth/AuthPrompt.tsx",
+        "src/components/auth/Toaster.tsx",
+        "src/components/auth/UserMenu.tsx",
+        "src/components/auth/index.ts"
+      ],
+      "group": "Authentication & Data Access",
+      "group_id": "ce1335d6-3022-4f79-9e9d-c6330ab3eecb",
+      "id": "0a58457a-b5aa-4f53-a7c9-33c7f2dbc893",
+      "keywords": [
+        "auth",
+        "sign in",
+        "sign up",
+        "user menu",
+        "Clerk",
+        "authentication gate",
+        "toaster"
+      ],
+      "last_written_at": "2026-08-29T09:48:17.533350800+00:00",
+      "name": "user-auth",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16",
+        "React",
+        "Clerk",
+        "TypeScript"
+      ]
+    },
+    {
+      "api_surface": "Reads /api/badges, /api/activities, /api/lists/analytics, /api/achievement/share; generates /api/achievement/og",
+      "business_feature": "Achievements & Analytics",
+      "category": "ui",
+      "cross_refs": [
+        "social-sharing-api",
+        "list-items-api"
+      ],
+      "db_tables": [
+        "badges"
+      ],
+      "description": "Tracks and surfaces user achievement milestones and ranking analytics — achievement cards, reveal animations, share modal, embed view, showcase, and the award list with lazy loading. The analytics feature provides a creator dashboard with sparkline charts and per-list analytics cards. Achievement and embed pages expose public-facing achievement URLs.",
+      "entry_points": [
+        "src/app/achievement/[code]/page.tsx",
+        "src/app/features/Analytics/CreatorAnalyticsDashboard.tsx",
+        "src/app/features/Awards/AwardList.tsx"
+      ],
+      "file_paths": [
+        "src/app/achievement/[code]/page.tsx",
+        "src/app/achievement/[code]/embed/page.tsx",
+        "src/app/analytics/page.tsx",
+        "src/app/features/Achievement/components/AchievementCard.tsx",
+        "src/app/features/Achievement/components/AchievementEmbed.tsx",
+        "src/app/features/Achievement/components/AchievementReveal.tsx",
+        "src/app/features/Achievement/components/AchievementShareModal.tsx",
+        "src/app/features/Achievement/components/AchievementShowcase.tsx",
+        "src/app/features/Achievement/index.ts",
+        "src/app/features/Awards/AwardList.tsx",
+        "src/app/features/Awards/LazyAwardList.tsx",
+        "src/app/features/Awards/components/AwardItem.tsx",
+        "src/app/features/Awards/index.ts",
+        "src/app/features/Analytics/CreatorAnalyticsDashboard.tsx",
+        "src/app/features/Analytics/ListAnalyticsCard.tsx",
+        "src/app/features/Analytics/SparklineChart.tsx",
+        "src/app/features/Analytics/index.ts"
+      ],
+      "group": "Engagement & Rewards",
+      "group_id": "2a46d74d-3e36-4533-83a0-ed6c0d4b0b4c",
+      "id": "a604008c-43db-489a-859b-0164e3a946a5",
+      "keywords": [
+        "achievement",
+        "award",
+        "badge",
+        "analytics",
+        "creator dashboard",
+        "sparkline",
+        "milestone",
+        "share",
+        "embed",
+        "showcase"
+      ],
+      "last_written_at": "2026-08-29T09:43:14.762614200+00:00",
+      "name": "user-progress-analytics",
+      "pinned": false,
+      "tech_stack": [
+        "Next.js 16.1.3",
+        "React",
+        "TypeScript",
+        "TanStack Query",
+        "Framer Motion",
+        "Tailwind CSS"
+      ]
+    },
+    {
+      "api_surface": "",
+      "business_feature": "Visual Design Tokens",
+      "category": "ui",
+      "cross_refs": [
+        "decorative-effects",
+        "core-ui"
+      ],
+      "db_tables": [],
+      "description": "Low-level visual tokens and surface primitives that the rest of the app builds on: depth tokens (Elevated/Surface), decoration effects (Glow, GradientBorder, Shimmer), and branding icons (GoatIcons, GoatMascot). EnrichmentSourceBadges and RankingProgressLayer sit here as the visual vocabulary for data provenance and ranking state. Includes the type-check export and unit tests for depth-tokens.",
+      "entry_points": [
+        "src/components/visual/index.ts",
+        "src/components/visual/depth/depth-tokens.ts"
+      ],
+      "file_paths": [
+        "src/components/visual/index.ts",
+        "src/components/visual/visual-exports.type-check.tsx",
+        "src/components/visual/EnrichmentSourceBadges.tsx",
+        "src/components/visual/GoatIcons.tsx",
+        "src/components/visual/GoatMascot.tsx",
+        "src/components/visual/RankingProgressLayer.tsx",
+        "src/components/visual/decorations/Glow.tsx",
+        "src/components/visual/decorations/GradientBorder.tsx",
+        "src/components/visual/decorations/Shimmer.tsx",
+        "src/components/visual/decorations/index.ts",
+        "src/components/visual/depth/Elevated.tsx",
+        "src/components/visual/depth/Surface.tsx",
+        "src/components/visual/depth/depth-tokens.ts",
+        "src/components/visual/depth/index.ts",
+        "src/components/visual/__tests__/depth-tokens.test.ts"
+      ],
+      "group": "Visual Design System",
+      "group_id": "2b8f1ddf-06f7-44e2-8f0e-0fc6e89ea560",
+      "id": "50caca46-9527-44c3-abf8-1c8b457945bf",
+      "keywords": [
+        "depth tokens",
+        "surface",
+        "elevated",
+        "glow",
+        "gradient border",
+        "shimmer",
+        "goat mascot",
+        "visual tokens",
+        "branding"
+      ],
+      "last_written_at": "2026-08-29T09:38:54.182211800+00:00",
+      "name": "visual-primitives",
+      "pinned": false,
+      "tech_stack": [
+        "React",
+        "TypeScript",
+        "Tailwind CSS"
+      ]
+    }
+  ],
+  "generated_at": "2026-08-29T09:48:21.294174700+00:00",
+  "generator": "personas-context-scan",
+  "groups": [
+    {
+      "color": "violet",
+      "context_count": 2,
+      "domain": "infrastructure",
+      "id": "ce1335d6-3022-4f79-9e9d-c6330ab3eecb",
+      "name": "Authentication & Data Access"
+    },
+    {
+      "color": "amber",
+      "context_count": 10,
+      "domain": "feature",
+      "id": "4fc3985e-267a-46a1-b887-928e47560cb7",
+      "name": "Ranking & Match"
+    },
+    {
+      "color": "blue",
+      "context_count": 8,
+      "domain": "feature",
+      "id": "04b9081d-d98f-44dd-b152-6f9599c0fe3e",
+      "name": "List & Content Management"
+    },
+    {
+      "color": "emerald",
+      "context_count": 1,
+      "domain": "shared",
+      "id": "31327e28-f8e6-4bbb-b1ef-3531418cf375",
+      "name": "UI Utilities"
+    },
+    {
+      "color": "amber",
+      "context_count": 2,
+      "domain": "feature",
+      "id": "47fe8544-abb3-480a-81c0-ce7ef5b1ec4f",
+      "name": "Match Workflow"
+    },
+    {
+      "color": "blue",
+      "context_count": 1,
+      "domain": "shared",
+      "id": "6c28e6d8-9b6d-4d6a-9987-fe46bc7cc114",
+      "name": "Item & Media Display"
+    },
+    {
+      "color": "orange",
+      "context_count": 2,
+      "domain": "feature",
+      "id": "540d96e5-8d46-4516-802c-44bbdc87aac4",
+      "name": "Ranking Scores & Progress"
+    },
+    {
+      "color": "violet",
+      "context_count": 3,
+      "domain": "shared",
+      "id": "2b8f1ddf-06f7-44e2-8f0e-0fc6e89ea560",
+      "name": "Visual Design System"
+    },
+    {
+      "color": "emerald",
+      "context_count": 1,
+      "domain": "shared",
+      "id": "031343e3-fd17-4d4e-8eee-5b7e24b89214",
+      "name": "UI Primitives"
+    },
+    {
+      "color": "amber",
+      "context_count": 4,
+      "domain": "feature",
+      "id": "86e71cea-8ea2-44eb-8637-364d1a977f81",
+      "name": "Ranking & Match Engine"
+    },
+    {
+      "color": "blue",
+      "context_count": 3,
+      "domain": "feature",
+      "id": "c67aa295-631f-4014-a631-700a5f4c7991",
+      "name": "Content Discovery"
+    },
+    {
+      "color": "pink",
+      "context_count": 2,
+      "domain": "feature",
+      "id": "694c77fd-1eed-4135-85f2-1f256db89218",
+      "name": "Social & Sharing"
+    },
+    {
+      "color": "violet",
+      "context_count": 2,
+      "domain": "feature",
+      "id": "1717add0-8d97-40ab-8c4c-78c33d9cd82c",
+      "name": "Media & Visual"
+    },
+    {
+      "color": "red",
+      "context_count": 2,
+      "domain": "shared",
+      "id": "fd016ee4-2a09-4d0f-b885-33a9646583ba",
+      "name": "Feedback & UX Infrastructure"
+    },
+    {
+      "color": "emerald",
+      "context_count": 5,
+      "domain": "infrastructure",
+      "id": "2b4d1c69-7f7e-4456-9982-871360916ed4",
+      "name": "API & Data Layer"
+    },
+    {
+      "color": "orange",
+      "context_count": 2,
+      "domain": "feature",
+      "id": "35f2d59f-0912-4b6e-a313-c8d58d873152",
+      "name": "Personalization & Analytics"
+    },
+    {
+      "color": "indigo",
+      "context_count": 1,
+      "domain": "shared",
+      "id": "64c62ca9-2b52-4c53-9e4d-9b49a4635902",
+      "name": "Shared Utilities"
+    },
+    {
+      "color": "emerald",
+      "context_count": 2,
+      "domain": "feature",
+      "id": "2a46d74d-3e36-4533-83a0-ed6c0d4b0b4c",
+      "name": "Engagement & Rewards"
+    },
+    {
+      "color": "amber",
+      "context_count": 5,
+      "domain": "infrastructure",
+      "id": "7934834b-28fa-4390-bbf0-be93a51bf969",
+      "name": "API Routes"
+    },
+    {
+      "color": "indigo",
+      "context_count": 2,
+      "domain": "infrastructure",
+      "id": "73bec54d-abaa-4000-88ea-b550ae7ede28",
+      "name": "App Shell"
+    },
+    {
+      "color": "amber",
+      "context_count": 2,
+      "domain": "infrastructure",
+      "id": "fb190895-7241-4bb0-9e31-12522a7050d6",
+      "name": "Developer Tooling"
+    }
+  ],
+  "project": {
+    "id": "56505f42-bea8-40e7-b602-4b7aab90c3fc",
+    "name": "goat",
+    "root": "C:\\Users\\mkdol\\dolla\\goat"
+  },
+  "provenance": {
+    "git_commit": "73fd2a23679bcdb0b86c2396468d2b5184dcaaa6",
+    "git_commit_count": 406
+  },
+  "stats": {
+    "contexts": 64,
+    "files": 1038,
+    "groups": 21,
+    "use_cases": 0
+  },
+  "taxonomy": {
+    "context_categories": [
+      "ui",
+      "api",
+      "lib",
+      "data",
+      "test",
+      "config"
+    ],
+    "group_domains": [
+      "feature",
+      "infrastructure",
+      "shared",
+      "integration",
+      "data"
+    ]
+  },
+  "use_cases": [],
+  "version": 2
+}

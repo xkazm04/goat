@@ -63,6 +63,9 @@ export const enrichedItemSchema = generatedItemSchema.extend({
     genres: z.array(z.string()).optional(),
     sources: z.array(z.string()).optional(),
   }).optional(),
+  // Stable client-side identity, assigned at creation/seed/add time. Used as the
+  // React key and dnd-kit sortable id so duplicate titles never collide.
+  uid: z.string().optional(),
 });
 
 /** Response schema for /api/studio/generate */
@@ -80,6 +83,16 @@ export type GenerateRequest = z.infer<typeof generateRequestSchema>;
 export type GeneratedItem = z.infer<typeof generatedItemSchema>;
 export type EnrichedItem = z.infer<typeof enrichedItemSchema>;
 export type GenerateResponse = z.infer<typeof generateResponseSchema>;
+
+/**
+ * Stable identity for a studio item — used for BOTH the React key and the
+ * dnd-kit sortable id. Prefers the client-generated uid (unique even when two
+ * items share a title); falls back to db_item_id/title only for legacy items
+ * persisted before uid existed.
+ */
+export function getStudioItemId(item: EnrichedItem): string {
+  return item.uid ?? `item-${item.db_item_id ?? item.title}`;
+}
 
 // ─────────────────────────────────────────────────────────────
 // List Template Types

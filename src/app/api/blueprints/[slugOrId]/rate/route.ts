@@ -52,14 +52,12 @@ export const POST = withErrorHandler(
       throw fromSupabaseError(findError);
     }
 
-     
     const bpAny = blueprintData as any;
     if (!bpAny.is_community) {
       badRequest('Only community templates can be rated');
     }
 
     // blueprint_ratings table added via migration — not yet in generated Supabase types
-     
     const db = supabase as any;
 
     const { error: rateError } = await db
@@ -84,7 +82,6 @@ export const POST = withErrorHandler(
       .eq('id', bpAny.id)
       .single();
 
-     
     const updatedAny = updated as any;
 
     return successResponse({
@@ -125,7 +122,6 @@ export const GET = withErrorHandler(
       throw fromSupabaseError(findError);
     }
 
-     
     const db = supabase as any;
     const { data: ratingData } = await db
       .from('blueprint_ratings')

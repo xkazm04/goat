@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
 
+import { recordGridChange } from '@/lib/undo/record-grid-change';
 import { useBacklogStore } from '@/stores/backlog-store';
 import { useGridStore } from '@/stores/grid-store';
 
@@ -176,11 +177,21 @@ export function useQuickSelect({
       created_at: new Date().toISOString(),
     };
 
-    // Assign to grid
-    assignItemToGrid(backlogItem, gridPosition);
-
-    // Mark as used in backlog store
-    markItemAsUsed(item.id, true);
+    // UNDOABLE since 2026-08-25. Keyboard placement (`q` then digits) used to
+    // bypass the stack entirely, so a whole ranking built by keyboard had no
+    // undo at all while the same ranking built by mouse had one.
+    //
+    // The tag carries the ITEM identity, so placing two different items in quick
+    // succession stays two steps. Re-placing the SAME item after other edits is
+    // also two steps, because a merge is only legal into the current top of the
+    // stack — reusing a tag later must not resurrect a closed step.
+    recordGridChange(
+      { description: `Place "${item.title}" at position ${position}`, tag: `quick-place:${item.id}` },
+      () => {
+        assignItemToGrid(backlogItem, gridPosition);
+        markItemAsUsed(item.id, true);
+      },
+    );
 
     // Call callback
     onItemAssigned?.(item, position);

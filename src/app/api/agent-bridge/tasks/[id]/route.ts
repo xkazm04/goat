@@ -11,6 +11,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getTaskMemoryManager, TaskError } from '@/lib/agent-bridge';
+import { checkAgentBridgeSecret } from '@/lib/agent-bridge/require-secret';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -25,6 +26,8 @@ interface RouteParams {
  * - chunkPageSize: number - Chunk page size (default: 10)
  */
 export async function GET(request: NextRequest, { params }: RouteParams) {
+  const authError = checkAgentBridgeSecret(request);
+  if (authError) return authError;
   try {
     const { id: taskId } = await params;
     const { searchParams } = new URL(request.url);
@@ -84,6 +87,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
  * - error?: TaskError (for 'fail' action)
  */
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
+  const authError = checkAgentBridgeSecret(request);
+  if (authError) return authError;
   try {
     const { id: taskId } = await params;
     const body = await request.json();
@@ -177,6 +182,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
  * Force delete a task regardless of expiration status.
  */
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  const authError = checkAgentBridgeSecret(request);
+  if (authError) return authError;
   try {
     const { id: taskId } = await params;
     const manager = getTaskMemoryManager();

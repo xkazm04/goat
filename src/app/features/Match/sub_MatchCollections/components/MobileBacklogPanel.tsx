@@ -200,27 +200,19 @@ export function MobileBacklogPanel({ items, totalCount }: MobileBacklogPanelProp
     [mobileSelectedItem, setMobileSelectedItem]
   );
 
-  // Swipe-to-rank: assign item to next open slot
+  // Swipe-to-rank: assign item to next open slot.
+  // Routes through the grid-store's atomic assignToNextOpenSlot, which locks the
+  // item, reads fresh grid state, and only marks it used once the placement is
+  // confirmed. Previously this scanned/assigned in the component and marked used
+  // unconditionally, so a contested slot removed the item from the backlog
+  // without placing it (lost item / phantom success).
   const handleSwipeAssign = useCallback((item: CollectionItem): boolean => {
-    const { gridItems, maxGridSize, assignItemToGrid } = useGridStore.getState();
-    const backlogState = useBacklogStore.getState();
-
-    // Resolve to BacklogItem (required by assignItemToGrid)
-    const backlogItem = backlogState.getItemById(item.id);
+    const backlogItem = useBacklogStore.getState().getItemById(item.id);
     if (!backlogItem) return false;
 
-    // Find next empty slot
-    let position: number | null = null;
-    for (let i = 0; i < maxGridSize; i++) {
-      if (!gridItems[i]?.context.matched) {
-        position = i;
-        break;
-      }
-    }
+    const position = useGridStore.getState().assignToNextOpenSlot(backlogItem);
     if (position === null) return false;
 
-    assignItemToGrid(backlogItem, position);
-    backlogState.markItemAsUsed(item.id, true);
     triggerHaptic(position < 3 ? "dropPosition3" : "dropPositionRegular");
     return true;
   }, []);

@@ -288,8 +288,7 @@ export function assignTiersToItems(
   const sorted = [...filledPositions].sort((a, b) => a.position - b.position);
   const total = sorted.length;
 
-  for (let rank = 0; rank < sorted.length; rank++) {
-    const item = sorted[rank];
+  sorted.forEach((item, rankIndex) => {
     const tier = getTierForPosition(item.position, tiers);
     if (tier) {
       const currentCount = tierCounts.get(tier.id) || 0;
@@ -299,11 +298,16 @@ export function assignTiersToItems(
         itemId: item.itemId,
         position: item.position,
         tier,
-        percentile: total > 0 ? Math.round(((total - rank - 1) / total) * 100) : 0,
+        // Percentile must come from the item's RANK INDEX within the sorted
+        // filled set, not its absolute grid slot. In a partially-filled list
+        // `position` routinely exceeds the filled count, so the old
+        // ((total - position - 1) / total) produced negative percentiles
+        // (e.g. position 49 of 5 filled → -900th percentile).
+        percentile: total > 0 ? Math.round(((total - rankIndex - 1) / total) * 100) : 0,
         tierRank: currentCount + 1,
       });
     }
-  }
+  });
 
   return tieredItems;
 }

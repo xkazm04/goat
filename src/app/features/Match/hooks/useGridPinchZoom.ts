@@ -146,11 +146,13 @@ export function useGridPinchZoom(gridSize: number) {
       const pinch = pinchRef.current;
       if (!pinch) return;
 
-      // Pinch zoom
+      // Pinch zoom — track the raw clamped scale 1:1 with the fingers. Snapping
+      // is applied only on release (handleTouchEnd); calling snapScale on every
+      // move force-pinned the scale to a preset within the 0.08 tolerance band,
+      // making the pinch feel sticky/notched (a dead zone around each preset).
       const scaleRatio = currentDistance / pinch.startDistance;
       let newScale = pinch.startScale * scaleRatio;
       newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, newScale));
-      newScale = snapScale(newScale);
 
       // Two-finger scroll (vertical movement of the pinch center)
       const startY = twoFingerStartY.current;

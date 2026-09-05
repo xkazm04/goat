@@ -22,7 +22,7 @@ import { ProgressiveImage } from '@/components/ui/progressive-image';
 import { Elevated } from '@/components/visual';
 import { cn } from '@/lib/utils';
 
-import type { EnrichedItem } from '@/types/studio';
+import { getStudioItemId, type EnrichedItem } from '@/types/studio';
 
 /**
  * Local stacking context for card sub-elements.
@@ -119,7 +119,7 @@ export const StudioItemCard = memo(function StudioItemCard({ item, index, onRemo
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: `item-${index}` });
+  } = useSortable({ id: getStudioItemId(item) });
 
   const style = {
     transform: CSS.Transform.toString(transform),

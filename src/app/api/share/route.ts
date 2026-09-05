@@ -183,10 +183,9 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      // Increment view count atomically (fire and forget)
-      supabase
-        .rpc('increment_share_view_count', { share_id: data.id })
-        .then(() => {});
+      // Increment view count (fire and forget) — atomic RPC to avoid lost
+      // concurrent increments (a JS read-modify-write under-counts under traffic).
+      supabase.rpc('increment_share_view_count', { share_id: data.id }).then(() => {});
 
       const baseUrl = getServerBaseUrl();
 

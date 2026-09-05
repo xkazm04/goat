@@ -69,10 +69,13 @@ export async function POST(request: NextRequest) {
     const userId = user.id;
 
     const body = await request.json();
-    const { type, score } = body as {
+    const { type, score, timeZone } = body as {
       type: StreakType;
       score?: number;
+      timeZone?: string;
     };
+    // Client's IANA zone so the daily streak is computed in the user's local day.
+    const userTimeZone = typeof timeZone === 'string' && timeZone ? timeZone : undefined;
 
     if (!type) {
       return NextResponse.json(
@@ -90,7 +93,7 @@ export async function POST(request: NextRequest) {
     }
 
     const streakTracker = getStreakTracker();
-    const result = await streakTracker.recordActivity(userId, type, score);
+    const result = await streakTracker.recordActivity(userId, type, score, userTimeZone);
 
     return NextResponse.json(result);
   } catch (error) {

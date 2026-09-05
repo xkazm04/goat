@@ -51,11 +51,11 @@ export const GET = withErrorHandler(
 
     const blueprint = blueprintFromRow(data as BlueprintRow);
 
-    // Increment usage count (view tracking)
-    await supabase
-      .from('blueprints')
-      .update({ usage_count: (data.usage_count || 0) + 1 })
-      .eq('id', data.id);
+    // View counting is intentionally NOT done here. This GET runs on every
+    // React Query refetch/remount and is also hit by the clone/highlighted-
+    // template flows, so incrementing here over-counts a single real view.
+    // View tracking lives in the dedicated fire-once POST /view route, called
+    // once when a user actually opens a blueprint deep link.
 
     return successResponse(blueprint);
   }

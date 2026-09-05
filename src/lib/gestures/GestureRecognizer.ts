@@ -487,11 +487,18 @@ export class GestureRecognizer {
     // Reset if no more touches
     if (touches.length === 0) {
       this.reset();
+    } else if (touches.length === 1) {
+      // Pinch→drag handoff (one finger lifted, one remains). Re-seed the gesture
+      // from the surviving touch — otherwise startTouches keeps the 2-finger
+      // snapshot, so distance/velocity are measured from the original pinch start
+      // and can fire a phantom swipe (e.g. an unintended grid-item remove).
+      this.startTouches = touches;
+      this.currentTouches = touches;
+      this.velocityHistory = [];
+      this.isLongPressTriggered = false;
+      this.state = "dragging";
     } else {
       this.currentTouches = touches;
-      if (touches.length === 1) {
-        this.state = "dragging";
-      }
     }
   }
 

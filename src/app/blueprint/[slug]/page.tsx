@@ -3,9 +3,9 @@
 import { motion } from "framer-motion";
 import { Loader2, AlertCircle, Sparkles, Users, Clock } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
-import { useBlueprint } from "@/hooks/use-blueprints";
+import { useBlueprint, trackBlueprintView } from "@/hooks/use-blueprints";
 import { useComposition } from "@/hooks/use-composition";
 import { getCategoryIcon } from "@/lib/constants/showCaseExamples";
 
@@ -16,6 +16,16 @@ export default function BlueprintPage() {
   const { openWithBlueprint } = useComposition();
 
   const { data: blueprint, isLoading, error } = useBlueprint(slug);
+
+  // Count a view exactly once per deep-link visit. A ref guard keeps StrictMode's
+  // double-mount and any query refetch from firing it twice.
+  const viewTracked = useRef(false);
+  useEffect(() => {
+    if (blueprint && slug && !viewTracked.current) {
+      viewTracked.current = true;
+      void trackBlueprintView(slug);
+    }
+  }, [blueprint, slug]);
 
   // When blueprint loads, open the composition modal and redirect to home
   useEffect(() => {

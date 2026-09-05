@@ -235,12 +235,15 @@ test.describe("Drag-Drop Ranking Workflow", () => {
     );
     await expect(collectionItems.first()).toBeVisible({ timeout: 15000 });
 
-    // Need at least 2 items for swap test
+    // Need at least 2 items for the swap test. Was `test.skip()`, which made
+    // a list with too few items report as a pass; a list that cannot exercise
+    // the behaviour under test is a fixture defect, and the run should say so.
     const itemCount = await collectionItems.count();
-    if (itemCount < 2) {
-      test.skip();
-      return;
-    }
+    expect(
+      itemCount,
+      "The opened list has fewer than 2 collection items, so the swap cannot " +
+        "be exercised. Seed a list with at least 2 items.",
+    ).toBeGreaterThanOrEqual(2);
 
     // Get grid slots
     const gridSlot1 = page.getByTestId("match-grid-slot-1");

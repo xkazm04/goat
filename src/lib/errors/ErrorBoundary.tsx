@@ -8,6 +8,7 @@ import { ToppledTrophy } from '@/components/illustrations/EmptyStateIllustration
 import { GoatMascot } from '@/components/visual/GoatMascot';
 import { cn } from '@/lib/utils';
 
+import { trackError as recordError } from './error-analytics';
 import { GoatError, fromUnknown, isGoatError } from './GoatError';
 
 import type { ErrorCategory } from './types';
@@ -94,18 +95,19 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   trackError(error: GoatError, errorInfo: React.ErrorInfo): void {
-    // Error analytics tracking
-    // This would integrate with your analytics service
-    if (typeof window !== 'undefined' && (window as any).__GOAT_ERROR_TRACKER__) {
-      (window as any).__GOAT_ERROR_TRACKER__({
-        type: 'react_error',
-        code: error.code,
-        traceId: error.traceId,
-        componentStack: errorInfo.componentStack,
-        name: this.props.name,
-        timestamp: new Date().toISOString(),
-      });
-    }
+    // Record directly via the analytics module rather than probing
+    // window.__GOAT_ERROR_TRACKER__, which is only installed as a transitive
+    // import of lazy feature modules — so early-boot / pre-hydration crashes
+    // (exactly the most severe ones) were caught but never recorded. Importing
+    // here also installs the tracker eagerly on the critical path.
+    recordError({
+      code: error.code,
+      category: error.category,
+      severity: error.severity,
+      traceId: error.traceId,
+      source: this.props.name,
+      context: { componentStack: errorInfo.componentStack, type: 'react_error' },
+    });
   }
 
   resetError = (): void => {

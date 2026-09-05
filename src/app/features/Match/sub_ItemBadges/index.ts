@@ -14,5 +14,3 @@ export { ItemStatsTooltip } from './ItemStatsTooltip';
 
 // Comparison components
 export { SelectionCheckbox, ComparisonSelector } from './ComparisonSelector';
-export { AttributeRow } from './AttributeRow';
-export { DiffIndicator } from './DiffIndicator';

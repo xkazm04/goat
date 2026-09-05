@@ -100,18 +100,22 @@ function searchLists(
  * Parse domain filter prefix from query (e.g., "/list batman" -> domain: "lists", query: "batman")
  */
 function parseDomainFilter(query: string): { domain?: SearchDomain; cleanQuery: string } {
-  const lowerQuery = query.toLowerCase().trim();
+  // Slice the remainder from the TRIMMED query (same length/offset as lowerQuery),
+  // not the raw query — leading whitespace previously shifted the slice offset so
+  // the prefix leaked into the search term or the wrong chars were dropped.
+  const trimmedQuery = query.trim();
+  const lowerQuery = trimmedQuery.toLowerCase();
 
   for (const [prefix, domain] of Object.entries(DOMAIN_FILTERS)) {
     if (lowerQuery.startsWith(prefix + " ") || lowerQuery === prefix) {
       return {
         domain,
-        cleanQuery: query.slice(prefix.length).trim(),
+        cleanQuery: trimmedQuery.slice(prefix.length).trim(),
       };
     }
   }
 
-  return { cleanQuery: query };
+  return { cleanQuery: trimmedQuery };
 }
 
 interface CommandPaletteProps {
@@ -416,6 +420,10 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     (e: React.KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
+        // Stop the global document-level Escape handler from also firing — it
+        // unconditionally closes the palette, so without this the "clear filter
+        // first, close on second Escape" affordance was dead (Escape always closed).
+        e.stopPropagation();
         if (categoryFilter) {
           setCategoryFilter(undefined);
         } else {

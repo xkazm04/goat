@@ -7,8 +7,10 @@ import {
 } from '@tanstack/react-query';
 
 import { goatApi } from '@/lib/api';
+import { makeOperationKey } from '@/lib/async-state/entity-mutex';
 import { CACHE_TTL_MS , CACHE_TAGS } from '@/lib/cache/unified-cache';
 import { topListsKeys , FeaturedListsParams } from '@/lib/query-keys/top-lists';
+import { listOptions } from '@/lib/query-options/top-lists';
 import {
   TopList,
   ListWithItems,
@@ -27,15 +29,6 @@ import {
 import { toast } from './use-toast';
 import { useOptimisticMutation } from './useOptimisticMutation';
 
-// Unified cache times - imported from unified-cache.ts for consistency
-const CACHE_TIMES = {
-  SHORT: CACHE_TTL_MS.EPHEMERAL,   // 30 seconds - for real-time/analytics data
-  MEDIUM: CACHE_TTL_MS.SHORT,      // 1 minute - for user-specific data
-  DEFAULT: CACHE_TTL_MS.STANDARD,  // 5 minutes - default
-  STANDARD: CACHE_TTL_MS.STANDARD, // 5 minutes - standard cache
-  LONG: CACHE_TTL_MS.LONG,         // 15 minutes - for reference data
-  VERY_LONG: CACHE_TTL_MS.STATIC,  // 1 hour - for static data
-} as const;
 
 // Helper for success toasts
 const showSuccessToast = (title: string, description: string) => {
@@ -53,26 +46,41 @@ const showErrorToast = (action: string, error: Error) => {
 // Query Hooks
 export const useTopLists = (
   params?: SearchListsParams,
-  options?: Omit<UseQueryOptions<TopList[], Error, TopList[], readonly unknown[]>, 'queryKey' | 'queryFn'>
+  options?: PerCallOptions
 ) => {
   return useQuery({
     queryKey: topListsKeys.listSearch(params || {}),
     queryFn: () => goatApi.lists.search(params),
-    staleTime: CACHE_TIMES.STANDARD,
+    staleTime: CACHE_TTL_MS.STANDARD,
     ...options,
   });
+};
+
+/**
+ * Options a single call site may choose for itself.
+ *
+ * Deliberately narrow. The shared definition in `@/lib/query-options/top-lists`
+ * owns the key, the fetcher and the default lifetime; only the options below
+ * legitimately vary per screen. A full pass-through of the query option surface
+ * cannot be typed here without re-declaring every generic, and widening the key
+ * generic to `readonly unknown[]` to fake it is what forced callers into `as any`.
+ */
+type PerCallOptions = {
+  enabled?: boolean;
+  refetchOnWindowFocus?: boolean;
+  retry?: boolean | number | ((failureCount: number, error: Error) => boolean);
+  staleTime?: number;
 };
 
 export const useTopList = (
   listId: string,
   includeItems: boolean = true,
-  options?: Omit<UseQueryOptions<ListWithItems, Error, ListWithItems, readonly unknown[]>, 'queryKey' | 'queryFn'>
+  options?: PerCallOptions
 ) => {
   return useQuery({
-    queryKey: topListsKeys.list(listId, includeItems),
-    queryFn: () => goatApi.lists.get(listId, includeItems),
+    ...listOptions(listId, includeItems),
     enabled: !!listId,
-    staleTime: CACHE_TIMES.MEDIUM,
+    staleTime: CACHE_TTL_MS.SHORT,
     ...options,
   });
 };
@@ -86,7 +94,7 @@ export const useUserLists = (
     queryKey: topListsKeys.userLists(userId, params),
     queryFn: () => goatApi.lists.getByUser(userId, params),
     enabled: !!userId,
-    staleTime: CACHE_TIMES.DEFAULT,
+    staleTime: CACHE_TTL_MS.STANDARD,
     ...options,
   });
 };
@@ -99,7 +107,7 @@ export const usePredefinedLists = (
   return useQuery({
     queryKey: topListsKeys.predefinedLists(category, subcategory),
     queryFn: () => goatApi.lists.getPredefined(category, subcategory),
-    staleTime: CACHE_TIMES.LONG,
+    staleTime: CACHE_TTL_MS.LONG,
     ...options,
   });
 };
@@ -112,7 +120,7 @@ export const useListAnalytics = (
     queryKey: topListsKeys.analytics(listId),
     queryFn: () => goatApi.lists.getAnalytics(listId),
     enabled: !!listId,
-    staleTime: CACHE_TIMES.SHORT,
+    staleTime: CACHE_TTL_MS.EPHEMERAL,
     ...options,
   });
 };
@@ -125,7 +133,7 @@ export const useCreatorAnalytics = (
     queryKey: topListsKeys.creatorAnalytics(userId),
     queryFn: () => goatApi.lists.getCreatorAnalytics(userId),
     enabled: !!userId,
-    staleTime: CACHE_TIMES.SHORT,
+    staleTime: CACHE_TTL_MS.EPHEMERAL,
     ...options,
   });
 };
@@ -140,7 +148,7 @@ export const useVersionComparison = (
     queryKey: topListsKeys.versions(listId, version1, version2),
     queryFn: () => goatApi.lists.compareVersions(listId, version1, version2),
     enabled: !!listId && version1 > 0 && version2 > 0,
-    staleTime: CACHE_TIMES.VERY_LONG,
+    staleTime: CACHE_TTL_MS.STATIC,
     ...options,
   });
 };
@@ -153,7 +161,7 @@ export const useFeaturedLists = (
   return useQuery({
     queryKey: topListsKeys.featured(params),
     queryFn: () => goatApi.lists.getFeatured(params),
-    staleTime: CACHE_TIMES.STANDARD,
+    staleTime: CACHE_TTL_MS.STANDARD,
     ...options,
   });
 };
@@ -227,6 +235,10 @@ export const useCreateList = (
 export const useUpdateList = () => {
   return useOptimisticMutation<TopList, { listId: string; data: UpdateListRequest }>({
     mutationFn: ({ listId, data }) => goatApi.lists.update(listId, data),
+    // Serialized per list. Two rapid edits to ONE list used to have attempt B
+    // snapshot attempt A's unconfirmed paint; now B waits for A to settle, so
+    // every snapshot is the settled state by construction.
+    entityKey: ({ listId }) => makeOperationKey('list-update', listId),
     optimisticUpdates: (variables) => [
       {
         queryKey: topListsKeys.list(variables.listId),
@@ -248,6 +260,10 @@ export const useDeleteList = () => {
 
   return useOptimisticMutation<{ message: string }, string>({
     mutationFn: (listId: string) => goatApi.lists.delete(listId),
+    // Same list, different family: a delete and an update of one list are
+    // different operation kinds and do not need to exclude each other, but two
+    // deletes of the same list do.
+    entityKey: (listId) => makeOperationKey('list-delete', listId),
     optimisticUpdates: (listId) => [
       {
         // Optimistically remove from user lists cache
@@ -274,6 +290,9 @@ export const useCloneList = () => {
   >({
     mutationFn: ({ listId, userId, modifications }) =>
       goatApi.lists.clone(listId, userId, modifications),
+    // No entityKey, deliberately: a clone paints NOTHING optimistically
+    // (optimisticUpdates is empty), so there is no snapshot for a concurrent
+    // attempt to corrupt. Recorded here rather than left absent by default.
     optimisticUpdates: [],
     invalidateOnSettled: [topListsKeys.lists()],
     invalidateTags: [CACHE_TAGS.LISTS, CACHE_TAGS.USER_LISTS],

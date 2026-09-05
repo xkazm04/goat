@@ -1,8 +1,48 @@
 /**
  * Collection Lazy Loading Configuration
  *
- * Defines thresholds and parameters for dynamic lazy loading
- * and virtualization of collection items.
+ * THE single source for the render-strategy ladder (normal → lazy → virtualized).
+ * A second copy of these predicates used to live in
+ * src/components/patterns/virtualization/useLazyLoad.ts with a different lazy
+ * threshold; it has been removed. If you need these numbers elsewhere, import
+ * them from here rather than defaulting a parameter.
+ *
+ * CORRECTION 2026-08-24 (later the same day): the sentence above said the
+ * duplicate "has been removed", and only the two PREDICATES had been — the file
+ * src/components/patterns/virtualization/useLazyLoad.ts itself was still there,
+ * still exporting a whole second lazy-loading hook, still reachable through the
+ * pattern-library barrel. It has now actually been deleted, along with the rest
+ * of the unadopted pattern library. Surviving in that directory, and genuinely
+ * live: useIntersectionObserver.tsx (one consumer, FloatingShowcase.tsx) and
+ * badges/ (three consumers). Do not "finish the job" on those.
+ *
+ * CURRENT STATUS (2026-08-24): only the observer fields are live, via
+ * components/LazyLoadTrigger.tsx. The VIRTUALIZATION_* and LAZY_LOAD_* numbers
+ * are still declared but nothing reads them — the Collection panel renders
+ * every filtered item.
+ *
+ * AUTOPSY — the two predicates that used to live at the bottom of this file:
+ *
+ *   shouldUseVirtualization(count)  ->  count > VIRTUALIZATION_THRESHOLD
+ *   shouldUseLazyLoading(count)     ->  count > LAZY_LOAD_THRESHOLD
+ *
+ * Both were exported from the Collection barrel and called from NOWHERE — not
+ * a single call site anywhere in src/, e2e/ or scripts/, verified by grep and
+ * independently by knip. Their presence read as protection ("the ladder is
+ * handled"), and it is that appearance, not the twelve lines, that cost
+ * something: it is why a SECOND and more complete answer to the same problem
+ * (src/lib/virtual/, ~2,100 lines) was written and also left unwired.
+ *
+ * They are deleted rather than kept, per dead-code/deletion-protocols: a
+ * control that looks like protection and is inert is worse than none, because
+ * it teaches everyone to stop looking.
+ *
+ * To re-add them, you must first refute this: name the call site that will
+ * consume the verdict, in the same change. The thresholds above are kept
+ * because they are the recorded intent for whoever wires the ladder — they are
+ * data, and data does not pretend to be a control.
+ *
+ * See docs/lazy-loading-implementation.md for what exists and what does not.
  */
 
 export const LAZY_LOAD_CONFIG = {
@@ -12,6 +52,16 @@ export const LAZY_LOAD_CONFIG = {
    * Collections with more items use virtualized rendering
    */
   VIRTUALIZATION_THRESHOLD: 100,
+
+  /**
+   * Item count above which lazy loading engages.
+   *
+   * Deliberately distinct from LAZY_LOAD_PAGE_SIZE. The two were previously
+   * conflated — shouldUseLazyLoading tested against the PAGE SIZE, which meant
+   * "more than one page" rather than "big enough to be worth paginating", and
+   * disagreed with the other copy of the ladder that used 50.
+   */
+  LAZY_LOAD_THRESHOLD: 50,
 
   /**
    * Number of items to load per page in lazy loading mode
@@ -61,17 +111,3 @@ export const LAZY_LOAD_CONFIG = {
    */
   SCROLL_DEBOUNCE_MS: 150,
 } as const;
-
-/**
- * Determines if a collection should use virtualization
- */
-export function shouldUseVirtualization(itemCount: number): boolean {
-  return itemCount > LAZY_LOAD_CONFIG.VIRTUALIZATION_THRESHOLD;
-}
-
-/**
- * Determines if a collection should use lazy loading
- */
-export function shouldUseLazyLoading(itemCount: number): boolean {
-  return itemCount > LAZY_LOAD_CONFIG.LAZY_LOAD_PAGE_SIZE;
-}

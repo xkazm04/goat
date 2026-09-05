@@ -97,7 +97,10 @@ function generateMockCommunityData(
   return {
     listId,
     categoryId,
-    totalRankings: items.reduce((sum, item) => sum + item.sampleSize, 0) / items.length,
+    // Guard divide-by-zero on an empty consensus (mirrors ConsensusDataService).
+    totalRankings: items.length > 0
+      ? items.reduce((sum, item) => sum + item.sampleSize, 0) / items.length
+      : 0,
     items,
     overallConsensus,
     mostControversial: sortedByControversy.slice(0, 5),

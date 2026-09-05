@@ -62,7 +62,7 @@ function MatchTestContent() {
       enabled: shouldFetch,
       refetchOnWindowFocus: false,
       retry: (failureCount: number) => failureCount < MAX_RETRY_COUNT,
-    } as any
+    }
   );
 
   // Track which listId we've already initialized to prevent double-firing.

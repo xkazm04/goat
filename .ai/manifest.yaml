@@ -1,0 +1,262 @@
+# .ai/manifest.yaml — the agent-facing contract for this repo.
+# Capabilities are tool-NEUTRAL (a name -> the command that fulfils it) and unknown fields MUST be
+# ignored — so this survives tool churn and schema growth.
+schema: ai-manifest
+schemaVersion: 0.1.0
+generatedAt: "2026-08-24"
+# context_map.json was listed here but was deleted from the repo in 2026-03 and is
+# gitignored; nothing generates it. Removed rather than left pointing at nothing.
+generatedFrom: [package.json, CLAUDE.md]
+
+repo:
+  name: goat
+  purpose: "G.O.A.T. — Next.js app for building and ranking custom top-N lists via a drag-and-drop match grid"
+  languages: [typescript]
+
+# Capabilities, not tools. Add keys freely; older readers ignore unknown ones.
+# `verified` is a claim a doctor flips to true once it has actually run the command.
+# Every command below exists in package.json scripts (or is tsc against the repo's tsconfig.json).
+capabilities:
+  dev: { command: "npm run dev", verified: false }
+  build: { command: "npm run build", verified: false }
+  start: { command: "npm start", verified: false }
+  # Was "next lint", which Next 16 removed: it parsed "lint" as a directory and
+  # exited 1 having linted nothing. Now invokes eslint directly. Ran 2026-08-24.
+  lint: { command: "npm run lint", verified: true, verifiedAt: "2026-08-24" }
+  # Holds the metrics that cannot be zeroed today. Exit 1 = a bucket diverged;
+  # exit 2 = the instrument could not run, which is neither pass nor fail.
+  lint-ratchet: { command: "npm run lint:ratchet", verified: true, verifiedAt: "2026-08-24" }
+  typecheck: { command: "npm run typecheck", verified: true, verifiedAt: "2026-08-24" }
+  docs-store-graph: { command: "npm run docs:store-graph", verified: true, verifiedAt: "2026-08-24" }
+  # The source->doc coupling map and its reader, added 2026-08-24. Two modes:
+  # bare = is the MAP honest (no stale glob, no missing reference doc);
+  # --changed = does this CHANGE settle what it owes, read from the git diff.
+  docs-coupling: { command: "npm run docs:coupling", verified: true, verifiedAt: "2026-08-24" }
+  # The findings ledger: identity, state and regression probes for the 190
+  # findings in docs/harness/ui-bug-combined-2026-06-16/, which had none.
+  findings: { command: "npm run findings", verified: true, verifiedAt: "2026-08-24" }
+  findings-check: { command: "npm run findings:check", verified: true, verifiedAt: "2026-08-24" }
+  # The structural improvement loop's memory and its reader.
+  structure: { command: "npm run structure", verified: true, verifiedAt: "2026-08-24" }
+  structure-check: { command: "npm run structure:check", verified: true, verifiedAt: "2026-08-24" }
+  docs-coupling-same-change:
+    { command: "npm run docs:coupling -- --changed --base <ref>", verified: true, verifiedAt: "2026-08-24" }
+  # `test` is the unit runner (vitest), added 2026-08-24. The browser suite keeps
+  # its own capability name so a green report always says which population ran.
+  test: { command: "npm test", verified: true, verifiedAt: "2026-08-24" }
+  # The browser suite's PRECONDITION, added 2026-08-25. Deterministic fixtures,
+  # fixed UUIDs in the e2e00000-… namespace, idempotent, with --check and
+  # --teardown. Refuses a non-local target without E2E_SEED_ALLOW_REMOTE=1.
+  seed-e2e: { command: "npm run seed:e2e", verified: true, verifiedAt: "2026-08-25" }
+  test-e2e: { command: "npm run test:e2e", verified: false }
+  test-ui: { command: "npm run test:e2e:ui", verified: false }
+  storybook: { command: "npm run storybook", verified: false }
+  build-storybook: { command: "npm run build-storybook", verified: false }
+
+# What a green run of the above actually means. A capability that exists is not a
+# gate; recording the difference is the point.
+capabilityNotes:
+  unit-test: >-
+    vitest, added 2026-08-24 (vitest.config.ts). 79 tests over the store-registry
+    manifest + its derivations, the tier-boundary conventions, and the depth
+    tokens. Every suite carries a recorded negative control in its header
+    comment. `passWithNoTests: false`, so a run that executed zero files is red.
+  lint: >-
+    Two tiers since 2026-08-24. 44 correctness rules are `error` — each measured
+    at 0 findings before promotion, so `npm run lint` now HAS an input that makes
+    it exit non-zero (proved: a seeded file with a conditional hook, a duplicate
+    object key and an invalid typeof gave 3 errors / exit 1). Everything with a
+    legacy population stays `warn` and is held by lint-ratchet instead.
+  lint-ratchet: >-
+    Symmetric per-rule ratchet over .ai/ratchet-baseline.json — fails on a rise
+    AND on an unexplained drop. Baseline 2026-08-24: 24 buckets, 750 findings,
+    981 files walked. Proved red four ways (rise, drop, broken-instrument
+    could-not-run, and green when matching).
+  typecheck: >-
+    23 pre-existing errors as of 2026-08-24, counted over SOURCE only —
+    12 in the consensus route, 6 in ranking-store, 5 in bracket components.
+    `tsc --noEmit` itself reports 29 in a tree where `next dev` has run,
+    because tsconfig deliberately includes .next/types/**; those 6 generated
+    errors are excluded from the count so the number does not depend on whether
+    someone started the dev server. Still not a clean baseline, but it is now
+    PINNED: a 24th source error fails `npm run lint:ratchet`.
+  gates: >-
+    CI added 2026-08-24: .github/workflows/gates.yml runs on push to main and on
+    every pull request. Four jobs, all blocking, all with deterministic input
+    (the tree plus the committed lockfile): unit tests, lint, ratchet, and the
+    generated store-graph --check. `typecheck` reports rather than blocks
+    because its 29 inherited errors are debt-shaped, not input-shaped — the
+    count is pinned by the ratchet's typecheck:errors bucket instead, and the
+    written promotion trigger is "when that bucket reaches 0, delete it and run
+    tsc bare". Still no git hooks and no lint-staged; the commit rung remains
+    unguarded and that is a deliberate, dated gap.
+  docs-coupling: >-
+    Added 2026-08-24. .ai/doc-coupling.json is the ONE authority for which
+    document a source area owes; scripts/doc-coupling.mjs is its only reader (a
+    map with no reader is a good intention in a syntax that parses). Before it,
+    this repo declared exactly one coupling and carried 69 markdown files nobody
+    could attribute to any source.
+    COVERAGE mode fails on a broken entry — a source glob matching nothing live,
+    or a reference document not on disk — and REPORTS the residue: 7 of 80 areas
+    mapped, 4 exempt with a written reason, 69 unmapped. That residue is a
+    ratchet bucket (docs:unmappedAreas), not a bar to clear: nobody is writing 69
+    documents this month, but the 70th area cannot arrive unnoticed.
+    SAME-CHANGE mode reads the git diff with rename detection (never a
+    transcript, never a list of editor destinations) and is satisfied only by the
+    exact document the entry names — a prefix-shaped satisfaction is discharged
+    by accident. Dismissal is first-class and leaves an artifact: a
+    `Docs-dismissed: <why>` commit trailer, countable from git history.
+    Proved red seven ways before being trusted: unsettled obligation (exit 1),
+    stale source glob (1), missing reference doc (1), stale allowlist entry (1),
+    unparseable map (exit 2), zero-area walk under the floor (2), and green when
+    everything resolves (0). On its very first real run it found three genuine
+    obligations in its own change — the manifest, CLAUDE.md and the ratchet
+    baseline — all of which were settled rather than dismissed.
+  findings: >-
+    Added 2026-08-24. Before it, docs/harness/ui-bug-combined-2026-06-16/ was a
+    dead snapshot: 190 findings plus 19 FIXES-WAVE documents claiming closures,
+    with no dedup key, no notion of "fixed", no verification and no expiry — a
+    scanner output that could not tell progress from churn. `.ai/findings.json`
+    is now a DERIVED ledger (`npm run findings:ingest` recomputes it from those
+    reports; `--check` re-derives and refuses any divergence). Identity is
+    sha256(contextSlug | anchorFile | titleSlug) — the anchor FILE, never the
+    LINE, so a judged finding survives edits above its match site; 14 hand-written
+    verdicts were carried across a re-derivation to prove it.
+    Six findings are `fixed` — each RE-READ in the tree today rather than believed
+    from the fix log — and each carries a regression probe the CI check runs.
+    Five are `suppressed` under the operator's dated auth deferral, with owner and
+    revisit horizon: suppression is a verdict with provenance, and the finding
+    stays visible. Three are `needs-reanchor` (anchor file gone), deliberately NOT
+    "cleared": a deleted file and a repaired defect look identical from the ledger.
+    Proved red six ways: probe regression (1), state outside the vocabulary (1),
+    suppressed with no reason (1), fixed with no fixedIn (1), ledger drifting from
+    an edited report (1), and corpus/parser shrink (exit 2 — could not run).
+    Its own first negative control caught a probe that could NOT go red: an
+    unanchored /function getStudioItemId/ still matched after the symbol was
+    renamed. That is recorded on the probe.
+    NOT joined: 8 of 90 closure references in the FIXES-WAVE documents cannot be
+    resolved to a context, and the ingester refuses to guess. A fuzzy join would
+    make the ledger confidently wrong, which is worse than the snapshot.
+  dead-code: >-
+    knip (`npm run scan:dead`, knip.json) is the ONE reachability instrument, with
+    three ratchet buckets holding its population. On 2026-08-24 the three
+    hand-written never-expiring snapshots that predated it were DELETED, and every
+    entry in all three was attributed first rather than assumed stale:
+    docs/UNUSED_COMPONENTS.md — 47 entries: 12 files gone, 27 NOW IMPORTED (the
+    document called live code unused), 8 still orphaned and all 8 present in knip's
+    current population. 39 of 47 were simply wrong.
+    docs/analysis/unused-components-integration-analysis.md — all 7 components it
+    analysed are gone from the tree.
+    docs/unused/unused-code-scan-2025-11-06 — 46 paths: 43 gone, 3 now imported,
+    ZERO still holding. One of the three it declared unused was src/app/layout.tsx,
+    the Next.js root layout: its stated method only searched for JSX tags and
+    import statements, so every framework-convention entry point was a structural
+    false positive.
+    Nothing was lost. The only live findings any of them held are held by an
+    instrument that recomputes on demand, which is the difference between a
+    sensor and a souvenir.
+  structure: >-
+    Added 2026-08-24. `.ai/structural-backlog.json` is the structural improvement
+    loop's MEMORY — what was accepted, declined, executed or retired, and never
+    what was computed. Every measurement is re-derived from the tree on each run
+    and is deliberately absent from the file: a derived number that outlives the
+    tree it came from is a proxy that has already diverged and does not announce
+    it. Five specs: 2 accepted, 2 executed, 1 DECLINED WITH ITS REASON RECORDED
+    (an undocumented decline is re-proposed every pass forever).
+    What replaced what: docs/STORE_DEPENDENCY_GRAPH.md used to carry a four-phase
+    migration plan whose "Success Criteria" checkboxes were ticked for work that
+    had not landed — dragHandlers.ts was listed as shipped and has never existed
+    in this tree. A plan that marks itself complete is not a loop. This one can be
+    wrong on purpose: a spec marked `executed` whose stop condition does not hold
+    FAILS the check.
+    Blocking checks are all input-deterministic (the tree): grounding files exist
+    and still say what the spec quotes; accepted specs carry target, trade
+    (buys/spends/who-collects), invariant, stop condition and review-by; declines
+    and retirements carry a reason; stop conditions are evaluated against the tree
+    in both directions. The review-by DATE is reported and never gated — its input
+    is the calendar, so blocking on it would wall an unrelated change, the same
+    reasoning that keeps the supply-chain job out of this pipeline.
+    Proved red six ways: self-ticking checkbox (executed, stop condition unmet),
+    grounding file gone, decline with no reason, accepted with no trade, quoted
+    relation changed, and an empty backlog (exit 2 — a loop that found nothing and
+    a loop that could not read the tree must be spelled differently).
+    Its very first run refused two specs this session had written, because their
+    deletions had not landed yet. Its second finding was about itself: a
+    `mustNotContain` predicate fired on the AUTOPSY COMMENT left at a deletion
+    site, so the grounding clauses now take regexes and assert on export
+    statements rather than on substrings.
+  e2e-fixtures: >-
+    Added 2026-08-25. `e2e/global-setup.ts` had refused an unseeded run honestly
+    since 2026-08-24 — one check before any worker, a greppable
+    E2E_PRECONDITION_FAILED — but refusing is not the same as being runnable, and
+    it deliberately does not seed (a launcher that silently populated a database
+    it found empty would hide the condition it exists to report). `npm run
+    seed:e2e` is the other half: an explicit command, never a side effect.
+    CONTAINMENT is what makes it safe against the only database this project has,
+    which is shared: every row carries a fixed UUID in the e2e00000-… namespace,
+    every write is an upsert on that id, and nothing outside the namespace is
+    read, updated or deleted. --teardown removes exactly the same namespace. A
+    non-local target is REFUSED unless E2E_SEED_ALLOW_REMOTE=1 records that the
+    operator meant it (proved: the guard fired against the live URL).
+    FIXTURES: 1 user, 2 lists (games size 10, sports size 5), 18 items, 15
+    rankings. Two lists because a suite that only sees one cannot tell "the first
+    list" from "the list I chose"; more items than ranks in each because a
+    fixture list that is already complete cannot exercise placing anything.
+    VERIFIED end to end against the live database on 2026-08-25:
+    11 users / 35 lists / 1614 items / 421 rankings before,
+    12 / 37 / 1632 / 436 after, STABLE ACROSS THREE CONSECUTIVE SEEDS, and back
+    to 11 / 35 / 1614 / 421 after teardown. Nothing outside the namespace moved.
+    The idempotence check earned its keep on the first re-run: `list_items`
+    carries a BEFORE INSERT/UPDATE rerank trigger, and a batch upsert makes it
+    touch rows the same command already wrote ("tuple to be updated was already
+    modified by an operation triggered by the current command"). Run one passed,
+    run two failed. The seed now deletes-then-inserts its own namespaced rows.
+    Also caught by its own could-not-run path: the first id builder padded the
+    final UUID group to 6 characters instead of 12 and Postgres rejected every
+    insert — reported as exit 2, not as a failure.
+    CI: a `browser suite (manual)` job on workflow_dispatch ONLY. Its input is
+    not the tree (a reachable Supabase, a Clerk configuration, a shared database
+    that can change under a commit that did not touch it), so it must not block.
+    It is deliberately NOT an auto-skipping job: a job that quietly skips when
+    secrets are absent reports the same colour as one that ran and passed. It
+    REFUSES loudly instead, and tears the fixtures down with `if: always()`.
+  supply-chain: >-
+    ABSENT, deliberately. An advisory-feed check reads an input that moves
+    without this repository, so it must not block: a advisory published
+    overnight would wall the next unrelated PR. Adding one requires a scheduled
+    trigger and a named reader first (quality-gates/blocking-by-input-determinism).
+
+# Pointers — these subsystems can change format underneath without breaking this contract.
+paths:
+  docs: docs/
+  e2e: e2e/
+  stores: src/stores/
+  storeTopology: src/stores/registry.ts
+  conformance: .ai/registry-conformance.md
+
+# The organization's AI registry - knowledge bundles this repo consumes and the skill
+# marketplace it installs from. Unknown fields MUST be ignored by a reader.
+# registered from the secondary machine (mkdol) 2026-08-24
+registry:
+  remote: github:xkazm04/ai-registry
+  local: ../ai-registry
+  machine: secondary
+  contributor: mkdol-dev-box
+knowledge:
+  domains: [software-engineering, media-generation]
+
+# Shared skills this project uses, from the registry's skills/ lane. The LINK is machine
+# state (gitignored, made by ai-registry/scripts/link-skills.mjs); THIS list is the
+# reviewable declaration. A skill not listed here is project-owned and lives in
+# .claude/skills/ as a real directory.
+skills:
+  - architect
+  - conform
+  - consult
+  - explorer
+  - research
+  - ship-loop
+  - motionize
+  - npm-updates
+  - tiger
+  - uat

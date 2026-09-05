@@ -6,9 +6,10 @@
  * GET /api/agent-bridge/stats - Get current memory statistics
  */
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 import { getTaskMemoryManager } from '@/lib/agent-bridge';
+import { checkAgentBridgeSecret } from '@/lib/agent-bridge/require-secret';
 
 /**
  * GET /api/agent-bridge/stats
@@ -20,7 +21,9 @@ import { getTaskMemoryManager } from '@/lib/agent-bridge';
  * - Estimated memory usage
  * - Cleanup information
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const authError = checkAgentBridgeSecret(request);
+  if (authError) return authError;
   try {
     const manager = getTaskMemoryManager();
     const stats = manager.getStats();

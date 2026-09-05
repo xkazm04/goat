@@ -4,6 +4,57 @@
 
 This document describes the methodology for end-to-end browser testing of G.O.A.T. using **Claude Code CLI** with the **Playwright MCP Server**. This approach combines exploratory testing (Claude navigates the real app) with formal Playwright test generation.
 
+## The suite's precondition — read this first
+
+The browser suite **cannot run against an empty database**. Every journey starts
+by clicking a list, so an unseeded run would execute nothing and report green.
+Two things exist to stop that:
+
+1. **`e2e/global-setup.ts` refuses the run.** One check before any worker, with
+   a greppable `E2E_PRECONDITION_FAILED` diagnostic. It does *not* seed — a
+   launcher that silently populated a database it found empty would hide the
+   exact condition it exists to report.
+2. **`npm run seed:e2e` writes deterministic fixtures**, added 2026-08-25. It is
+   a command somebody runs on purpose, never a side effect of the suite.
+
+```bash
+npm run seed:e2e                 # write the fixtures
+npm run seed:e2e -- --check      # verify without writing (safe anywhere)
+npm run seed:e2e -- --teardown   # remove exactly what it wrote
+```
+
+### What the fixtures contain
+
+| | |
+|---|---|
+| 1 user | `E2E Fixture User` |
+| 2 lists | *E2E Fixture — Greatest Games* (games, size 10) and *— Greatest Athletes* (sports, size 5) |
+| 18 items | 12 + 6, deterministic names and years |
+| 15 rankings | the first 10 / first 5 of each list |
+
+Two lists, because a suite that only ever sees one cannot tell "the first list"
+from "the list I chose". Each list is ranked to its size but has **more items
+than ranks**, so there are always unranked candidates to place — a fixture list
+that is already complete cannot exercise placing anything.
+
+### Why it is safe to point at a shared database
+
+Every row carries a **fixed UUID in the `e2e00000-…` namespace**, every write is
+an upsert on that id, and nothing outside the namespace is read, updated or
+deleted. `--teardown` removes exactly the same namespace. A non-local target is
+**refused** unless `E2E_SEED_ALLOW_REMOTE=1` records that the operator meant it.
+
+Verified end to end against a live database on 2026-08-25 — 11 users / 35 lists
+/ 1614 items / 421 rankings before, 12 / 37 / 1632 / 436 after, stable across
+three consecutive seeds, and back to 11 / 35 / 1614 / 421 after teardown.
+
+> **Found by that idempotence check, on the first re-run:** `list_items` carries
+> a `trigger_rerank_list_items` BEFORE INSERT/UPDATE trigger, and a batch upsert
+> makes it touch rows the same command already wrote — Postgres refuses with
+> *"tuple to be updated was already modified by an operation triggered by the
+> current command"*. The first run succeeded and the second failed. The seed now
+> deletes-then-inserts its own namespaced rankings.
+
 ## Setup
 
 ### 1. Install Playwright MCP Server
@@ -234,14 +285,60 @@ Prompt to Claude Code:
 
 ## Existing E2E Tests
 
+> ### Correction — 2026-08-24
+>
+> The table below used to list six spec files with a behavioural description
+> each. Three of them — `session-persistence`, `ranking-completion` and
+> `list-search` — contained **10 tests, all `test.skip()`, with zero
+> assertions between them**, and had since the day they were written. Reading
+> this table, anyone would have concluded that reload persistence, the
+> completion modal and search were covered. Nothing about them was.
+>
+> Those three files are **deleted**. A quarantine nobody reviews is worse than
+> an honest gap, and an honest gap is what the "Not covered" table below is.
+> Deleting them does not reduce coverage — there was none to reduce — it
+> reduces the claim to match it.
+
 | Test File | Coverage |
 |-----------|----------|
 | `e2e/list-play-journey.spec.ts` | Landing → featured list click → /goat navigation |
-| `e2e/drag-drop-ranking.spec.ts` | Drag items from backlog to grid slots |
-| `e2e/session-persistence.spec.ts` | Grid state survives page reload |
-| `e2e/ranking-completion.spec.ts` | Fill all slots → completion modal |
-| `e2e/list-search.spec.ts` | Search/filter on landing page |
+| `e2e/drag-drop-ranking.spec.ts` | Drag items from backlog to grid slots; swap between occupied slots |
 | `e2e/backlog-items-loading.spec.ts` | Backlog groups load on match page |
+| `e2e/exploratory-smoke.spec.ts` | Landing render, list navigation, collection panel |
+
+### Not covered — known gaps, not silent ones
+
+These were previously *listed as covered*. They are real gaps, recorded here so
+the absence is visible rather than implied by a file that exists and does
+nothing.
+
+| Behaviour | Status |
+|---|---|
+| Grid state survives page reload | **no test** (was `session-persistence.spec.ts`, 3 empty stubs) |
+| Grid state survives browser close/reopen | **no test** |
+| LRU eviction keeps at most 15 cached lists | **no test** |
+| Fill all slots → completion modal, and its 4 actions | **no test** (was `ranking-completion.spec.ts`, 4 empty stubs) |
+| Search/filter on the landing page | **no test** (was `list-search.spec.ts`, 3 empty stubs) |
+| Keyboard drag (Space/arrows/Escape) on the grid | **no e2e test**; the arrow-stepping logic has 25 unit tests in `src/lib/dnd/keyboard-coordinates.test.ts` |
+
+## Environment preconditions
+
+`e2e/global-setup.ts` runs once before any worker and refuses the run if the
+lists API answers with zero lists.
+
+This exists because the suite previously called `test.skip()` inside individual
+specs when fixture data was missing. Against an empty database the whole suite
+therefore ran, executed almost nothing, and **reported green** — a run that
+could not do its job spelled its outcome identically to one that did it
+perfectly. The precondition now belongs to the launcher, fails once, and names
+itself `E2E_PRECONDITION_FAILED` so it is greppable.
+
+To run deliberately against an empty database, set `E2E_ALLOW_EMPTY_DB=1`. The
+setup then warns, in the run output, that a green result does not mean the
+fixtures existed.
+
+The setup does **not** seed. A setup that silently populated a database it
+found empty would hide the condition it exists to report.
 
 ## CI Integration
 
@@ -249,9 +346,11 @@ Playwright config (`playwright.config.ts`) is already set up:
 - Tests in `e2e/` directory
 - Chromium browser
 - Base URL: `http://localhost:3000`
-- Auto-starts dev server
+- Auto-starts dev server (`npm run dev` — note this suite has never run against
+  a production bundle; see backlog #13 in `.ai/registry-conformance.md`)
 - Screenshots on failure
 - Traces on retry
+- `globalSetup` asserts fixtures exist before any test runs
 
 ```bash
 # Run all e2e tests

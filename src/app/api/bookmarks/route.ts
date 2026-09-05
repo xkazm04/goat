@@ -7,10 +7,27 @@ import {
   successResponse,
   createdResponse,
   assertRequired,
+  forbidden,
 } from '@/lib/errors';
 import { createClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
+
+/**
+ * STOPGAP IDOR guard. Bookmarks intentionally serve guests (client-generated
+ * UUID, no Supabase session), so we can't require auth outright. But when a real
+ * session exists, the caller must only touch their OWN data — this blocks an
+ * authenticated user from reading/mutating another account's bookmarks/folders
+ * by passing a different user_id (the route previously trusted it blindly).
+ * Guests (no session) are unaffected.
+ * Real fix: server-issued guest identity + RLS (docs/harness/followups-2026-06-16.md).
+ */
+async function getSessionUserId(
+  supabase: Awaited<ReturnType<typeof createClient>>
+): Promise<string | null> {
+  const { data: { user } } = await supabase.auth.getUser();
+  return user?.id ?? null;
+}
 
 /**
  * GET /api/bookmarks - Get user's bookmarks and folders
@@ -24,6 +41,11 @@ export const GET = withTiming(withErrorHandler(async (request: NextRequest) => {
   const userId = searchParams.get('user_id');
 
   assertRequired(userId, 'user_id');
+
+  const sessionId = await getSessionUserId(supabase);
+  if (sessionId && sessionId !== userId) {
+    forbidden("Cannot access another user's bookmarks");
+  }
 
   // Fetch bookmarks with list data
   let bookmarksQuery = supabase
@@ -89,6 +111,11 @@ export const POST = withTiming(withErrorHandler<any>(async (request: NextRequest
 
   assertRequired(body.user_id, 'user_id');
   assertRequired(body.type, 'type');
+
+  const sessionId = await getSessionUserId(supabase);
+  if (sessionId && sessionId !== body.user_id) {
+    forbidden("Cannot create bookmarks for another user");
+  }
 
   if (body.type === 'folder') {
     assertRequired(body.name, 'name');
@@ -157,8 +184,23 @@ export const DELETE = withTiming(withErrorHandler(async (request: NextRequest) =
 
   assertRequired(body.type, 'type');
 
+  const sessionId = await getSessionUserId(supabase);
+
   if (body.type === 'folder') {
     assertRequired(body.folder_id, 'folder_id');
+
+    // Folder DELETE/PATCH carry no user_id, so an authed caller could otherwise
+    // delete any folder by id. Verify ownership when a session exists.
+    if (sessionId) {
+      const { data: folder } = await supabase
+        .from('bookmark_folders')
+        .select('user_id')
+        .eq('id', body.folder_id)
+        .single();
+      if (folder && folder.user_id !== sessionId) {
+        forbidden("Cannot modify another user's folder");
+      }
+    }
 
     // Move bookmarks in this folder to uncategorized
     await supabase
@@ -179,6 +221,10 @@ export const DELETE = withTiming(withErrorHandler(async (request: NextRequest) =
   assertRequired(body.user_id, 'user_id');
   assertRequired(body.list_id, 'list_id');
 
+  if (sessionId && sessionId !== body.user_id) {
+    forbidden("Cannot remove another user's bookmark");
+  }
+
   const { error } = await supabase
     .from('user_bookmarks')
     .delete()
@@ -198,8 +244,21 @@ export const PATCH = withTiming(withErrorHandler<any>(async (request: NextReques
 
   assertRequired(body.type, 'type');
 
+  const sessionId = await getSessionUserId(supabase);
+
   if (body.type === 'folder') {
     assertRequired(body.folder_id, 'folder_id');
+
+    if (sessionId) {
+      const { data: folder } = await supabase
+        .from('bookmark_folders')
+        .select('user_id')
+        .eq('id', body.folder_id)
+        .single();
+      if (folder && folder.user_id !== sessionId) {
+        forbidden("Cannot modify another user's folder");
+      }
+    }
 
     const updates: Record<string, any> = {};
     if (body.name !== undefined) updates.name = body.name;
@@ -221,6 +280,17 @@ export const PATCH = withTiming(withErrorHandler<any>(async (request: NextReques
 
   // Move bookmark to different folder
   assertRequired(body.bookmark_id, 'bookmark_id');
+
+  if (sessionId) {
+    const { data: bm } = await supabase
+      .from('user_bookmarks')
+      .select('user_id')
+      .eq('id', body.bookmark_id)
+      .single();
+    if (bm && bm.user_id !== sessionId) {
+      forbidden("Cannot modify another user's bookmark");
+    }
+  }
 
   const { data, error } = await supabase
     .from('user_bookmarks')

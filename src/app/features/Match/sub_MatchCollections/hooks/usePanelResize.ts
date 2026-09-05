@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 
 interface UsePanelResizeOptions {
   defaultHeight?: number;
@@ -40,6 +40,13 @@ export function usePanelResize(options: UsePanelResizeOptions = {}): UsePanelRes
   const panelHeightRef = useRef(panelHeight);
   panelHeightRef.current = panelHeight;
 
+  // Teardown for an in-progress drag, so document listeners are removed if the
+  // component unmounts before mouseup (e.g. the layout collapses to mobile, route
+  // change, or match ends) — otherwise the listeners leak and the passive:false
+  // touchmove keeps preventing real page scrolls until reload.
+  const activeTeardownRef = useRef<(() => void) | null>(null);
+  useEffect(() => () => { activeTeardownRef.current?.(); }, []);
+
   const handleResizeStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     // Don't allow resize during active DnD operations
     if (isDndActive) return;
@@ -76,12 +83,14 @@ export function usePanelResize(options: UsePanelResizeOptions = {}): UsePanelRes
       document.removeEventListener('mouseup', handleEnd);
       document.removeEventListener('touchmove', handleMove);
       document.removeEventListener('touchend', handleEnd);
+      activeTeardownRef.current = null;
     };
 
     document.addEventListener('mousemove', handleMove);
     document.addEventListener('mouseup', handleEnd);
     document.addEventListener('touchmove', handleMove, { passive: false });
     document.addEventListener('touchend', handleEnd);
+    activeTeardownRef.current = handleEnd;
   }, [isDndActive, minHeight, maxHeightVh]);
 
   return { panelHeight, isResizing, isDndActive, handleResizeStart, setDndActive };
