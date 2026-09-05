@@ -74,7 +74,7 @@ describe('withErrorHandler — the API error door', () => {
     expect((await body(res)).details?.fieldErrors).toEqual({ title: ['This field is required'] });
   });
 
-  it.fails('a network-class failure inside a route is a structured 502, not a crash', async () => {
+  it('a network-class failure inside a route is a structured 502, not a crash', async () => {
     const err = errorSpy();
     const wrapped = withErrorHandler(async () => {
       throw new TypeError('fetch failed');

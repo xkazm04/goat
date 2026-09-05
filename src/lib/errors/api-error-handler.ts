@@ -55,17 +55,34 @@ interface ErrorLogEntry {
 // ============================================================================
 
 /**
+ * The HTTP status to put on the wire for a GoatError.
+ *
+ * `GoatError.status` is the CLIENT-side vocabulary: the `network` category
+ * carries status 0, meaning "no response was received", which is a true
+ * statement in a browser and not an HTTP status at all. Handing it to
+ * `NextResponse.json` threw `RangeError: init["status"] must be in the range
+ * of 200 to 599`, so a route whose upstream was down answered with Next's bare
+ * 500 and no structured body — and `logError` never fired either, because 0 is
+ * not >= 400. One classification, two consumers (§ error-handling: one
+ * taxonomy, many consumers); this is the projection onto the HTTP consumer.
+ */
+function toHttpStatus(error: GoatError): number {
+  return error.status >= 200 && error.status <= 599 ? error.status : 502;
+}
+
+/**
  * Build a standardized error response
  */
 function buildErrorResponse(error: GoatError, req: NextRequest): NextResponse<ErrorResponse> {
   const isDev = process.env.NODE_ENV === 'development';
+  const httpStatus = toHttpStatus(error);
 
   const response: ErrorResponse = {
     success: false,
     category: error.category,
     code: error.code,
     message: error.message,
-    status: error.status,
+    status: httpStatus,
     details: {
       traceId: error.traceId,
       timestamp: error.timestamp,
@@ -90,7 +107,7 @@ function buildErrorResponse(error: GoatError, req: NextRequest): NextResponse<Er
     };
   }
 
-  return NextResponse.json(response, { status: error.status });
+  return NextResponse.json(response, { status: httpStatus });
 }
 
 // ============================================================================
@@ -101,12 +118,13 @@ function buildErrorResponse(error: GoatError, req: NextRequest): NextResponse<Er
  * Log error for monitoring and debugging
  */
 function logError(error: GoatError, req: NextRequest, userId?: string): void {
+  const httpStatus = toHttpStatus(error);
   const entry: ErrorLogEntry = {
     traceId: error.traceId,
     timestamp: error.timestamp,
     code: error.code,
     message: error.message,
-    status: error.status,
+    status: httpStatus,
     path: new URL(req.url).pathname,
     method: req.method,
     userId,
@@ -121,9 +139,9 @@ function logError(error: GoatError, req: NextRequest, userId?: string): void {
   }
 
   // Log based on severity
-  if (error.status >= 500) {
+  if (httpStatus >= 500) {
     console.error('🚨 API Error:', JSON.stringify(entry, null, 2));
-  } else if (error.status >= 400) {
+  } else if (httpStatus >= 400) {
     console.warn('⚠️ API Warning:', JSON.stringify(entry, null, 2));
   }
 }
