@@ -15,7 +15,7 @@ interface IllustrationProps {
  * Confused goat tangled in ethernet cables - for network errors
  * 120x120px, flat geometric style, red-500 accent
  */
-export function GoatNetworkError({ className, width = 120, height = 120 }: IllustrationProps) {
+function GoatNetworkError({ className, width = 120, height = 120 }: IllustrationProps) {
   const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const { allowAmbient: ambient } = useMotionCapabilities();
   return (
@@ -98,7 +98,7 @@ export function GoatNetworkError({ className, width = 120, height = 120 }: Illus
  * Goat shrugging with a broken cloud - for server errors
  * 120x120px, flat geometric style, red-500 accent
  */
-export function GoatServerError({ className, width = 120, height = 120 }: IllustrationProps) {
+function GoatServerError({ className, width = 120, height = 120 }: IllustrationProps) {
   const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const { allowAmbient: ambient } = useMotionCapabilities();
   return (
@@ -189,7 +189,7 @@ export function GoatServerError({ className, width = 120, height = 120 }: Illust
  * Goat balancing two stacks of items - for quota exceeded errors
  * 120x120px, flat geometric style, amber-500 accent
  */
-export function GoatQuotaExceeded({ className, width = 120, height = 120 }: IllustrationProps) {
+function GoatQuotaExceeded({ className, width = 120, height = 120 }: IllustrationProps) {
   const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const { allowAmbient: ambient } = useMotionCapabilities();
   return (
