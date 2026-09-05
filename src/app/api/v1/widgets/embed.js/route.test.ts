@@ -39,4 +39,22 @@ describe('embed.js', () => {
     expect(text).toContain("'goat-widget-empty'");
     expect(text).toContain('No rankings yet');
   });
+
+  it('is publicly cacheable without a per-origin CORS header', async () => {
+    // Negative control (2026-09-05): the GET echoed the request Origin into
+    // Access-Control-Allow-Origin under `Cache-Control: public` with no Vary,
+    // so this case was RED with Origin: https://partner.example.
+    const res = await GET(
+      new NextRequest('http://localhost/api/v1/widgets/embed.js', {
+        headers: { origin: 'https://partner.example' },
+      })
+    );
+    const acao = res.headers.get('access-control-allow-origin');
+    const cache = res.headers.get('cache-control') ?? '';
+    const vary = res.headers.get('vary') ?? '';
+    if (cache.includes('public')) {
+      expect(acao === '*' || /\borigin\b/i.test(vary)).toBe(true);
+    }
+    expect(acao).toBe('*');
+  });
 });

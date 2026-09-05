@@ -8,9 +8,7 @@ export const dynamic = 'force-dynamic';
  * Returns the embeddable JavaScript widget loader.
  * This script can be included on any website to display GOAT rankings.
  */
-export async function GET(request: NextRequest) {
-  const origin = request.headers.get('origin') || '*';
-
+export async function GET(_request: NextRequest) {
   // The embed script that will be served to third-party websites
   const embedScript = `
 (function() {
@@ -754,11 +752,16 @@ export async function GET(request: NextRequest) {
 })();
 `;
 
+  // A public, credential-free script: `*` is the honest CORS answer, and it is
+  // what the OPTIONS handler below already says. Echoing the request Origin
+  // here while also sending `Cache-Control: public, max-age=3600` with no
+  // `Vary: Origin` let a shared cache store one partner's origin and serve it
+  // to the next, whose browser then refused the script.
   return new NextResponse(embedScript, {
     status: 200,
     headers: {
       'Content-Type': 'application/javascript; charset=utf-8',
-      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, OPTIONS',
       'Cache-Control': 'public, max-age=3600',
       'X-GOAT-Api-Version': '1.0',
