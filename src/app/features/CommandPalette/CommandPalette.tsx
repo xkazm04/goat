@@ -163,17 +163,25 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   });
 
   // Fetch user lists for client-side search fallback
-  const { data: userLists = [], isLoading: isLoadingUserLists } = useUserLists(
+  const { data: userLists = [], isLoading: isLoadingUserLists, error: userListsError } = useUserLists(
     tempUserId,
     { limit: 50 },
     { enabled: isOpen && isLoaded && !!tempUserId && !filterDomain }
   );
 
   // Fetch featured lists for broader search
-  const { data: featuredLists = [], isLoading: isLoadingFeatured } = useTopLists(
+  const { data: featuredLists = [], isLoading: isLoadingFeatured, error: featuredListsError } = useTopLists(
     { limit: 50 },
     { enabled: isOpen && !filterDomain }
   );
+
+  // A failed data path is a different state from an empty one. Both sources the
+  // client-side fallback reads can fail, and so can every universal-search
+  // domain; any of those must be SAID, or a network outage paints "No lists
+  // found" and tells the user to stop looking.
+  const listsUnavailable = Boolean(userListsError || featuredListsError);
+  const failedDomainLabels = failedDomains.map((d) => DOMAIN_LABELS[d.domain] || d.domain).join(', ');
+  const searchUnavailable = failedDomains.length > 0 || listsUnavailable;
 
   // Combine all lists for client-side search
   const allLists = useMemo(() => {
@@ -799,8 +807,8 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                       // API search results (grouped by domain)
                       <>
                         {failedDomains.length > 0 && (
-                          <div className="mx-3 mb-2 px-3 py-2 rounded-card bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300/80">
-                            {failedDomains.map(d => DOMAIN_LABELS[d.domain] || d.domain).join(', ')} results unavailable
+                          <div className="mx-3 mb-2 px-3 py-2 rounded-card bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300/80" role="status">
+                            {failedDomainLabels} results unavailable
                           </div>
                         )}
                         {apiResults.length > 0 ? (
@@ -809,7 +817,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                               renderSearchResult(result, i, selectedIndex === i)
                             )}
                           </>
-                        ) : !isSearchLoading ? (
+                        ) : !isSearchLoading && failedDomains.length === 0 ? (
                           <div className="px-3 py-6 text-center flex flex-col items-center text-white/40">
                             <GoatMascot variant="searching" size={80} />
                             <p className="text-sm text-amber-200/70 mt-1">No results for &ldquo;{searchQuery}&rdquo;</p>
@@ -847,6 +855,12 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                     ) : (
                       // Client-side list search results
                       <>
+                        {searchUnavailable && (
+                          <div className="mx-3 mb-2 px-3 py-2 rounded-card bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300/80" role="status">
+                            {failedDomains.length > 0 && <div>{failedDomainLabels} results unavailable</div>}
+                            {listsUnavailable && <div>Your lists are unavailable right now</div>}
+                          </div>
+                        )}
                         {filteredLists.length > 0 ? (
                           <>
                             <div className="px-3 py-2 text-xs text-white/40 uppercase tracking-wider flex items-center gap-2">
@@ -857,6 +871,12 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                               renderListItem(list, i, selectedIndex === i)
                             )}
                           </>
+                        ) : searchUnavailable ? (
+                          <div className="px-3 py-6 text-center text-white/40">
+                            <Search className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                            <p className="text-sm">Search is unavailable right now</p>
+                            <p className="text-xs mt-1">Check your connection and try again, or type &quot;new {searchQuery}&quot; to create a list</p>
+                          </div>
                         ) : (
                           <div className="px-3 py-6 text-center text-white/40">
                             <Search className="w-8 h-8 mx-auto mb-2 opacity-50" />
