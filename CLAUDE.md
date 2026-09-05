@@ -30,10 +30,12 @@ them can go red — each was proved able to fail before being trusted. Run them
 before proposing a change; a change that reddens one of them is not finished.
 
 ```bash
-npm test                        # vitest over src/, scripts/ and supabase/
+npm test                        # vitest over src/, scripts/, supabase/ and db/
                                 # (supabase/migrations/chain.test.ts reads the
-                                # migration chain in order). passWithNoTests:
-                                # false — a run that executed zero files is RED.
+                                # migration chain in order; db/ holds the seed
+                                # scripts' tests, both added 2026-09-05).
+                                # passWithNoTests:false — a run that executed
+                                # zero files is RED, not green.
 npm run lint                    # eslint. 47 correctness rules are `error` (three
                                 # graduated 2026-09-05 when their ratchet buckets
                                 # hit 0); everything with a legacy population is
