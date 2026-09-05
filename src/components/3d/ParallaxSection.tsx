@@ -14,11 +14,14 @@ import {
   useTransform,
   useSpring,
   type MotionStyle,
- MotionValue } from 'framer-motion';
+  type MotionValue,
+} from 'framer-motion';
 import {
-  memo,
-  useRef,
+  createContext,
   forwardRef,
+  memo,
+  useContext,
+  useRef,
   type ReactNode,
 } from 'react';
 
@@ -29,7 +32,7 @@ import { cn } from '@/lib/utils';
 // Types
 // =============================================================================
 
-export interface ParallaxSectionProps {
+interface ParallaxSectionProps {
   children: ReactNode;
   /** Scroll offset range (default: ['start end', 'end start']) */
   offset?: ['start end' | 'end start' | 'start start' | 'end end', 'start end' | 'end start' | 'start start' | 'end end'];
@@ -39,7 +42,7 @@ export interface ParallaxSectionProps {
   className?: string;
 }
 
-export interface ParallaxLayerProps {
+interface ParallaxLayerProps {
   children: ReactNode;
   /** Vertical speed multiplier (-1 to 1, negative = opposite direction) */
   speedY?: number;
@@ -77,13 +80,8 @@ export interface ParallaxLayerProps {
 // ParallaxContext - Share scroll progress with layers
 // =============================================================================
 
-import { createContext, useContext } from 'react';
-
-
-
 interface ParallaxContextValue {
   scrollYProgress: MotionValue<number>;
-  containerRef: React.RefObject<HTMLDivElement | null>;
 }
 
 const ParallaxContext = createContext<ParallaxContextValue | null>(null);
@@ -117,7 +115,6 @@ export const ParallaxLayer = memo(function ParallaxLayer({
   motionStyle,
   disabled = false,
   className,
-  ..._props
 }: ParallaxLayerProps) {
   const { scrollYProgress } = useParallaxContext();
   const { allowAmbient } = useMotionCapabilities();
@@ -216,7 +213,7 @@ export const ParallaxSection = memo(
     });
 
     return (
-      <ParallaxContext.Provider value={{ scrollYProgress, containerRef }}>
+      <ParallaxContext.Provider value={{ scrollYProgress }}>
         <div
           ref={(node) => {
             // Handle both refs
@@ -235,41 +232,3 @@ export const ParallaxSection = memo(
     );
   })
 );
-
-// =============================================================================
-// Utility Hooks
-// =============================================================================
-
-/**
- * Hook to create parallax transforms relative to viewport scroll
- * Use outside of ParallaxSection for global scroll effects
- */
-export function useViewportParallax(options: {
-  speedY?: number;
-  speedX?: number;
-  stiffness?: number;
-  damping?: number;
-} = {}) {
-  const { speedY = 0.5, speedX = 0, stiffness = 100, damping = 30 } = options;
-  const { allowAmbient } = useMotionCapabilities();
-
-  const { scrollYProgress } = useScroll();
-  const springConfig = { stiffness, damping };
-
-  const effectiveSpeedY = allowAmbient ? speedY : 0;
-  const effectiveSpeedX = allowAmbient ? speedX : 0;
-
-  const y = useSpring(
-    useTransform(scrollYProgress, [0, 1], [0, effectiveSpeedY * -500]),
-    springConfig
-  );
-
-  const x = useSpring(
-    useTransform(scrollYProgress, [0, 1], [0, effectiveSpeedX * -500]),
-    springConfig
-  );
-
-  return { y, x, scrollYProgress };
-}
-
-export default ParallaxSection;
