@@ -319,7 +319,7 @@ export default function CollectionSharePage() {
                   transition={{ delay: index * 0.05 }}
                 >
                   <Link
-                    href={`/match/${list.id}`}
+                    href={`/goat?list=${list.id}`}
                     className="block group"
                   >
                     <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700/50 transition-all hover:bg-slate-800/80 hover:border-slate-600/50 hover:shadow-xl hover:-translate-y-1">
@@ -361,7 +361,7 @@ export default function CollectionSharePage() {
                   transition={{ delay: index * 0.03 }}
                 >
                   <Link
-                    href={`/match/${list.id}`}
+                    href={`/goat?list=${list.id}`}
                     className="flex items-center gap-4 p-4 bg-slate-800/30 hover:bg-slate-800/60 rounded-xl border border-slate-700/30 hover:border-slate-600/50 transition-all group"
                   >
                     <div className="w-10 h-10 rounded-lg bg-slate-700/50 flex items-center justify-center text-slate-400 group-hover:text-brand-hover transition-colors">

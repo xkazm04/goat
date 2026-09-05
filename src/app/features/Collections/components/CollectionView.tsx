@@ -82,7 +82,7 @@ const ListCard = memo(function ListCard({
       exit={{ opacity: 0, scale: 0.95 }}
       className="group relative bg-slate-800/50 rounded-xl border border-slate-700/50 overflow-hidden hover:border-slate-600/50 hover:bg-slate-800/70 transition-all"
     >
-      <Link href={`/match/${list.id}`} className="block p-5">
+      <Link href={`/goat?list=${list.id}`} className="block p-5">
         <div className="flex items-start gap-3">
           {showDragHandle && (
             <div
@@ -156,7 +156,7 @@ const ListRow = memo(function ListRow({
       className="group"
     >
       <Link
-        href={`/match/${list.id}`}
+        href={`/goat?list=${list.id}`}
         className="flex items-center gap-4 p-4 bg-slate-800/30 hover:bg-slate-800/60 rounded-xl border border-slate-700/30 hover:border-slate-600/50 transition-all"
       >
         {showDragHandle && (
