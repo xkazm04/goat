@@ -38,7 +38,7 @@
  *
  *   1. Relaxed core-web-vitals overrides — downgrades pre-existing errors from the
  *      Next.js preset to warnings until the codebase is cleaned up:
- *      - react-hooks/rules-of-hooks, set-state-in-effect, set-state-in-render,
+ *      - react-hooks/rules-of-hooks, set-state-in-effect,
  *        purity, refs, immutability, static-components, preserve-manual-memoization
  *      - @next/next/no-html-link-for-pages
  *      - jsx-a11y/no-static-element-interactions, no-noninteractive-element-interactions
@@ -83,7 +83,7 @@ const eslintConfig = [
   {
     rules: {
       "react-hooks/set-state-in-effect": "warn",
-      "react-hooks/set-state-in-render": "warn",
+
       "react-hooks/purity": "warn",
       "react-hooks/refs": "warn",
       "react-hooks/immutability": "warn",
@@ -210,6 +210,10 @@ const eslintConfig = [
       // lint-cleanup sweep 74573c2. The ratchet's own rule is that a bucket at
       // 0 is deleted and its rule promoted, so the first regression is refused
       // by `npm run lint` rather than counted.
+      // Graduated 2026-09-06: its ratchet bucket reached 0 during the sweep
+      // (2 findings fixed in the faceted-search round), which is the trigger.
+      "react-hooks/set-state-in-render": "error",
+
       "@next/next/no-img-element": "error",
       "jsx-a11y/label-has-associated-control": "error",
       "react/no-unescaped-entities": "error",

@@ -1,6 +1,6 @@
 {
   "$schema": "ai-ratchet-baseline/0.1.0",
-  "$comment": "Baseline for npm run lint:ratchet. NEVER auto-updated by a pipeline \u2014 a baseline that rewrites itself is a recorder, not a gate. Every change to this file must state, in its commit message, WHY a number moved: fixed, deleted, or the counter broke.",
+  "$comment": "Baseline for npm run lint:ratchet. NEVER auto-updated by a pipeline — a baseline that rewrites itself is a recorder, not a gate. Every change to this file must state, in its commit message, WHY a number moved: fixed, deleted, or the counter broke.",
   "recomputeWith": "node scripts/ratchet.mjs --update",
   "checkWith": "npm run lint:ratchet",
   "predicate": {
@@ -11,32 +11,31 @@
   },
   "measuredAt": "2026-09-05",
   "instrument": {
-    "filesWalked": 1018,
-    "minFilesWalked": 814
+    "filesWalked": 1067,
+    "minFilesWalked": 853
   },
   "buckets": {
     "docs:unmappedAreas": 70,
     "eslint:@next/next/no-html-link-for-pages": 1,
     "eslint:import/no-anonymous-default-export": 2,
-    "eslint:import/order": 21,
-    "eslint:jsx-a11y/click-events-have-key-events": 18,
+    "eslint:import/order": 16,
+    "eslint:jsx-a11y/click-events-have-key-events": 17,
     "eslint:jsx-a11y/html-has-lang": 2,
     "eslint:jsx-a11y/no-autofocus": 11,
     "eslint:jsx-a11y/no-noninteractive-element-interactions": 1,
-    "eslint:jsx-a11y/no-static-element-interactions": 18,
-    "eslint:jsx-a11y/role-supports-aria-props": 2,
-    "eslint:react-hooks/exhaustive-deps": 38,
-    "eslint:react-hooks/immutability": 3,
+    "eslint:jsx-a11y/no-static-element-interactions": 16,
+    "eslint:jsx-a11y/role-supports-aria-props": 1,
+    "eslint:react-hooks/exhaustive-deps": 37,
+    "eslint:react-hooks/immutability": 2,
     "eslint:react-hooks/preserve-manual-memoization": 7,
     "eslint:react-hooks/purity": 31,
-    "eslint:react-hooks/refs": 84,
-    "eslint:react-hooks/set-state-in-effect": 60,
-    "eslint:react-hooks/set-state-in-render": 2,
+    "eslint:react-hooks/refs": 68,
+    "eslint:react-hooks/set-state-in-effect": 57,
     "eslint:react-hooks/static-components": 3,
     "eslint:storybook/no-renderer-packages": 1,
-    "eslint:unused-imports/no-unused-vars": 10,
-    "knip:unusedExports": 1293,
-    "knip:unusedFiles": 228,
-    "knip:unusedTypes": 728
+    "eslint:unused-imports/no-unused-vars": 6,
+    "knip:unusedExports": 1149,
+    "knip:unusedFiles": 202,
+    "knip:unusedTypes": 631
   }
 }
