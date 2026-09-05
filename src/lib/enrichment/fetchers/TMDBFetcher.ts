@@ -180,8 +180,12 @@ class TMDBFetcherClass {
         }
       }
 
-      // Consider popularity as tiebreaker
-      confidence += (result.popularity / 1000) * 0.05;
+      // Consider popularity as tiebreaker. Clamped: TMDB popularity is
+      // unbounded (blockbusters run into the thousands), and an unclamped
+      // term reached +0.30 on its own -- enough to clear the 0.3 accept
+      // threshold below with a title similarity of exactly 0. The other three
+      // fetchers' tiebreakers are bounded 0-100 scores; this one was not.
+      confidence += Math.min(result.popularity / 1000, 1) * 0.05;
 
       if (confidence > bestConfidence) {
         bestConfidence = confidence;
