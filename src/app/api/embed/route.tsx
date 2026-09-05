@@ -3,54 +3,66 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   WidgetConfig,
   WidgetData,
-  DEFAULT_WIDGET_CONFIG,
   WIDGET_DIMENSIONS,
   THEME_PRESETS,
   CustomThemeColors,
+  normalizeWidgetConfig,
 } from '@/lib/embed';
 import { getShareUrl, getServerBaseUrl } from '@/lib/sharing/share-urls';
 
 /**
- * Parse widget config from URL parameters
+ * Parse widget config from URL parameters.
+ *
+ * Every field goes through `normalizeWidgetConfig` — the ONE door for the widget
+ * vocabulary (registry: public-verdict-badge/embed-snippet-contract; _laws
+ * one-validation-door). Before 2026-09-05 this route cast `params.get('size')`
+ * straight to the union, so `?size=huge` reached `WIDGET_DIMENSIONS[size].width`
+ * and threw a 500 out of a public, cacheable GET.
  */
 function parseConfig(params: URLSearchParams): WidgetConfig | null {
   const listId = params.get('id');
   if (!listId) return null;
 
-  const config: WidgetConfig = {
-    listId,
-    size: (params.get('size') as WidgetConfig['size']) || DEFAULT_WIDGET_CONFIG.size,
-    theme: (params.get('theme') as WidgetConfig['theme']) || DEFAULT_WIDGET_CONFIG.theme,
-    displayStyle: (params.get('display') as WidgetConfig['displayStyle']) || DEFAULT_WIDGET_CONFIG.displayStyle,
-    itemCount: Math.min(20, Math.max(1, parseInt(params.get('count') || '5', 10))),
-    showRanks: params.get('ranks') !== '0',
-    showImages: params.get('images') !== '0',
-    showTitle: params.get('title') !== '0',
-    showBranding: params.get('branding') !== '0',
-    interactive: params.get('interactive') !== '0',
-    borderRadius: parseInt(params.get('radius') || '12', 10),
+  const flag = (key: string): boolean | undefined => {
+    const v = params.get(key);
+    return v === null ? undefined : v !== '0';
+  };
+  const int = (key: string): number | undefined => {
+    const v = params.get(key);
+    return v === null ? undefined : parseInt(v, 10);
   };
 
-  const locale = params.get('locale');
-  if (locale) config.locale = locale;
-
-  // Parse custom colors
+  // Six dash-separated hex bodies; the normalizer validates each as a colour
+  // and drops the whole set (falling back to the default theme) when any fails.
   const colorsStr = params.get('colors');
-  if (colorsStr && config.theme === 'custom') {
-    const colors = colorsStr.split('-').map(c => `#${c}`);
-    if (colors.length === 6) {
-      config.customColors = {
-        background: colors[0],
-        surface: colors[1],
-        text: colors[2],
-        textSecondary: colors[3],
-        accent: colors[4],
-        border: colors[5],
-      };
-    }
-  }
+  const colorParts = colorsStr ? colorsStr.split('-').map((c) => `#${c}`) : null;
+  const customColors =
+    colorParts && colorParts.length === 6
+      ? {
+          background: colorParts[0],
+          surface: colorParts[1],
+          text: colorParts[2],
+          textSecondary: colorParts[3],
+          accent: colorParts[4],
+          border: colorParts[5],
+        }
+      : undefined;
 
-  return config;
+  return normalizeWidgetConfig({
+    listId,
+    size: (params.get('size') ?? undefined) as WidgetConfig['size'] | undefined,
+    theme: (params.get('theme') ?? undefined) as WidgetConfig['theme'] | undefined,
+    displayStyle: (params.get('display') ?? undefined) as WidgetConfig['displayStyle'] | undefined,
+    itemCount: int('count'),
+    showRanks: flag('ranks'),
+    showImages: flag('images'),
+    showTitle: flag('title'),
+    showBranding: flag('branding'),
+    interactive: flag('interactive'),
+    borderRadius: int('radius'),
+    customColors,
+    locale: params.get('locale') ?? undefined,
+  });
 }
 
 /**
