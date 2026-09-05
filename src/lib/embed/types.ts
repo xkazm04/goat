@@ -96,15 +96,22 @@ export interface CustomThemeColors {
 }
 
 /**
- * Default theme presets
+ * Default theme presets.
+ *
+ * `accent` and `textSecondary` are painted as TEXT (rank numbers, footer CTA,
+ * 12px subtitles) on both `background` and `surface`, so each preset holds the
+ * WCAG AA floor (4.5:1) for every text role on every surface — pinned by
+ * theme-contrast.test.ts. Retuned 2026-09-05: the shared accent #e94560 read at
+ * 3.83:1 on the light background and 4.46:1 on the dark one, and the light
+ * secondary text at 4.45:1 on its surface.
  */
 export const THEME_PRESETS: Record<'light' | 'dark', CustomThemeColors> = {
   light: {
     background: '#ffffff',
     surface: '#f8f9fa',
     text: '#1a1a2e',
-    textSecondary: '#6c757d',
-    accent: '#e94560',
+    textSecondary: '#677078',
+    accent: '#dc1a3a',
     border: '#e9ecef',
   },
   dark: {
@@ -112,7 +119,7 @@ export const THEME_PRESETS: Record<'light' | 'dark', CustomThemeColors> = {
     surface: '#16213e',
     text: '#ffffff',
     textSecondary: '#a0a0a0',
-    accent: '#e94560',
+    accent: '#ec5870',
     border: '#2d4059',
   },
 };
