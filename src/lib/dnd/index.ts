@@ -46,15 +46,9 @@ export {
 export {
   type UnifiedDragData,
   type UnifiedDropData,
-  type TransferRoute,
-
-  isUnifiedDragData,
-  isUnifiedDropData,
 
   createUnifiedTierDragData,
   createUnifiedTierRowDropData,
-
-  determineTransferRoute,
 } from './unified-protocol';
 
 // DragOperation Router System
