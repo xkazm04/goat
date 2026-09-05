@@ -184,6 +184,35 @@ describe('CommandPalette surface', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it('still navigates when localStorage refuses the recent-list write, and reports the refusal', () => {
+    h.topLists = { data: [makeList('l1', 'NBA Legends')], isLoading: false, error: null };
+    const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('QuotaExceededError', 'QuotaExceededError');
+    });
+    const errors: unknown[] = [];
+    const onError = (e: ErrorEvent) => { errors.push(e.error); e.preventDefault(); };
+    window.addEventListener('error', onError);
+    try {
+      mount();
+      type('nba');
+      click(byTestId('command-palette-list-0'));
+      expect(errors, 'no exception escaped the click handler').toEqual([]);
+      expect(h.push).toHaveBeenCalledWith('/goat?list=l1');
+      expect(h.trackError).toHaveBeenCalledTimes(1);
+      expect(h.trackError.mock.calls[0][0]).toMatchObject({ code: 'CLIENT_STORAGE_ERROR', source: 'CommandPalette' });
+    } finally {
+      window.removeEventListener('error', onError);
+      setItem.mockRestore();
+    }
+  });
+
+  it('a stored recent-lists value of the wrong shape is ignored, not rendered', () => {
+    localStorage.setItem('command-palette-recent-lists', JSON.stringify([{ id: 'x' }, { id: 'ok', title: 'Kept', category: 'Music' }, 42]));
+    mount();
+    expect(byTestId('command-palette-recent-list-0')?.textContent).toContain('Kept');
+    expect(byTestId('command-palette-recent-list-1')).toBeNull();
+  });
+
   it('clicking a client-side list result navigates to /goat?list=<id>', () => {
     h.topLists = { data: [makeList('l1', 'NBA Legends'), makeList('l2', 'Best Albums', 'Music')], isLoading: false, error: null };
     const { onClose } = mount();

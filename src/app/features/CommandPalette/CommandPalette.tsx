@@ -28,7 +28,6 @@ import { toast } from "@/hooks/use-toast";
 import { useTopLists, useUserLists } from "@/hooks/use-top-lists";
 import { DURATION } from "@/lib/animations/motion-presets";
 import { CATEGORY_CONFIG } from "@/lib/config/category-config";
-import { trackError } from "@/lib/errors/error-analytics";
 import { fuzzyMatch } from "@/lib/search/fuzzy";
 import { listCreationService } from "@/services/list-creation-service";
 import { useListStore } from "@/stores/use-list-store";
@@ -44,13 +43,10 @@ import {
   DOMAIN_FILTERS,
 } from "./constants";
 import { parseListQuery, generateListTitle, getExampleQueries } from "./lib/parseListQuery";
+import { pushRecentList, readRecentLists, type RecentListEntry } from "./lib/recentLists";
 import { useCommandPaletteStore } from "./useCommandPalette";
 
 import type { SearchResult, SearchDomain } from "@/lib/search";
-
-// Recent list storage key
-const RECENT_LISTS_KEY = "command-palette-recent-lists";
-const MAX_RECENT_LISTS = 5;
 
 /**
  * Filter and sort lists based on search query
@@ -121,14 +117,6 @@ function parseDomainFilter(query: string): { domain?: SearchDomain; cleanQuery: 
 interface CommandPaletteProps {
   isOpen: boolean;
   onClose: () => void;
-}
-
-interface RecentListEntry {
-  id: string;
-  title: string;
-  category: string;
-  subcategory?: string;
-  accessedAt: number;
 }
 
 export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
@@ -259,26 +247,14 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     return recentLists.length + history.length + getExampleQueries().length + Object.keys(CATEGORY_CONFIG).length;
   }, [query, isCreateCommand, createSuggestions.length, useApiSearch, apiResults.length, filteredLists.length, recentLists.length, history.length]);
 
-  // Load recent lists from localStorage
+  // Load recent lists from localStorage (shape-checked; a bad value reads as empty)
   useEffect(() => {
-    const storedLists = localStorage.getItem(RECENT_LISTS_KEY);
-    if (storedLists) {
-      try {
-        setRecentLists(JSON.parse(storedLists).slice(0, MAX_RECENT_LISTS));
-      } catch (error) {
-        trackError({
-          code: 'CLIENT_STORAGE_ERROR',
-          category: 'client',
-          severity: 'warning',
-          traceId: `command-palette-parse-${Date.now()}`,
-          source: 'CommandPalette',
-          context: { operation: 'parseRecentLists', message: error instanceof Error ? error.message : String(error) },
-        });
-      }
-    }
+    const stored = readRecentLists();
+    if (stored.length > 0) setRecentLists(stored);
   }, []);
 
-  // Save recent list
+  // Save recent list. The write is total: a refused write is reported, and the
+  // caller (which also navigates) never sees an exception.
   const saveRecentList = useCallback((list: TopList) => {
     const entry: RecentListEntry = {
       id: list.id,
@@ -287,9 +263,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       subcategory: list.subcategory,
       accessedAt: Date.now(),
     };
-    const updated = [entry, ...recentLists.filter((r) => r.id !== list.id)].slice(0, MAX_RECENT_LISTS);
-    setRecentLists(updated);
-    localStorage.setItem(RECENT_LISTS_KEY, JSON.stringify(updated));
+    setRecentLists(pushRecentList(recentLists, entry).entries);
   }, [recentLists]);
 
   // Read initialQuery from store for programmatic opening
