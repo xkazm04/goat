@@ -219,6 +219,41 @@ describe('DragOperationRouter — grid operations', () => {
     expect(result.success).toBe(true);
   });
 
+  // The router mints an opId per drag "for tracing from UI error toast to log
+  // entry" (types.ts). Before 2026-09-05 it reached only tier FAILURES: grid
+  // results never carried it and neither did tier successes, so the one
+  // outcome most worth correlating — what actually landed — left no handle.
+  it('every routed result carries the drag opId, success or failure, grid or tier', () => {
+    const router = createStandardRouter();
+
+    const okGrid = harness([null, null], ['x']);
+    const gridOk = router.handleDragEnd(dragEnd(backlogDrag('x'), gridSlotDrop(okGrid, 0)), okGrid.stores);
+
+    const usedGrid = harness(['x', null], ['x']);
+    const gridRejected = router.handleDragEnd(
+      dragEnd(backlogDrag('x'), gridSlotDrop(usedGrid, 1)),
+      usedGrid.stores,
+    );
+
+    const tier = harness([], ['x']);
+    const tierOk = router.handleDragEnd(dragEnd(backlogDrag('x'), tierRowDrop('tier-s')), tier.stores);
+
+    const noTierStore = harness([], ['x']);
+    delete noTierStore.stores.tier;
+    const tierRejected = router.handleDragEnd(
+      dragEnd(backlogDrag('x'), tierRowDrop('tier-s')),
+      noTierStore.stores,
+    );
+
+    expect(gridOk.success).toBe(true);
+    expect(gridRejected.success).toBe(false);
+    expect(tierOk.success).toBe(true);
+    expect(tierRejected.success).toBe(false);
+    for (const r of [gridOk, gridRejected, tierOk, tierRejected]) {
+      expect(r.opId, `${r.operationType} ${r.success ? 'ok' : 'rejected'}`).toMatch(/\S/);
+    }
+  });
+
   it('a grid-only router still routes the three grid operations without any registration', () => {
     const router = new DragOperationRouter();
     expect(router.getRegisteredOperations()).toEqual(['assign', 'move', 'swap']);

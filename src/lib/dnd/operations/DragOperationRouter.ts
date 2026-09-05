@@ -416,6 +416,7 @@ export class DragOperationRouter {
       return {
         success: true,
         operationType: 'noop',
+        opId: context.opId,
         action: 'reject',
       };
     }
@@ -464,6 +465,7 @@ export class DragOperationRouter {
         return {
           success: false,
           operationType: context.operationType,
+          opId: context.opId,
           action: 'reject',
           errorCode: 'UNKNOWN_ERROR',
           errorMessage: `Unknown grid operation: ${context.operationType}`,
@@ -495,6 +497,7 @@ export class DragOperationRouter {
       return {
         success: false,
         operationType: context.operationType,
+        opId: context.opId,
         action: 'reject',
         errorCode: planResult.errorCode,
         errorMessage: planResult.errorMessage,
@@ -507,7 +510,10 @@ export class DragOperationRouter {
       executeStart = performance.now();
     }
 
-    const result = executePlan(planResult, stores);
+    // The opId is the handle that joins a toast to its log line; every result
+    // that leaves this router carries it, not only the failures that happened
+    // to set it themselves.
+    const result: DragOperationResult = { ...executePlan(planResult, stores), opId: context.opId };
 
     if (debug) {
       executeDuration = performance.now() - executeStart;
@@ -562,6 +568,7 @@ export class DragOperationRouter {
       return {
         success: false,
         operationType: context.operationType,
+        opId: context.opId,
         action: 'reject',
         errorCode: 'UNKNOWN_ERROR',
         errorMessage: `No handler for operation type: ${context.operationType}`,
@@ -600,6 +607,7 @@ export class DragOperationRouter {
       return {
         success: false,
         operationType: context.operationType,
+        opId: context.opId,
         action: 'reject',
         errorCode: validationResult.errorCode,
         errorMessage: validationResult.errorMessage,
@@ -612,7 +620,8 @@ export class DragOperationRouter {
       executeStart = performance.now();
     }
 
-    const result = operation.execute(context, stores);
+    const executed = operation.execute(context, stores);
+    const result: DragOperationResult = { ...executed, opId: executed.opId ?? context.opId };
 
     if (debug) {
       executeDuration = performance.now() - executeStart;
