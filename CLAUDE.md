@@ -32,9 +32,10 @@ before proposing a change; a change that reddens one of them is not finished.
 ```bash
 npm test                        # vitest. passWithNoTests:false — a run that
                                 # executed zero files is RED, not green.
-npm run lint                    # eslint. 44 correctness rules are `error`;
-                                # everything with a legacy population is `warn`
-                                # and held by the ratchet instead.
+npm run lint                    # eslint. 47 correctness rules are `error` (three
+                                # graduated 2026-09-05 when their ratchet buckets
+                                # hit 0); everything with a legacy population is
+                                # `warn` and held by the ratchet instead.
 npm run lint:ratchet            # symmetric per-rule ratchet over
                                 # .ai/ratchet-baseline.json. A RISE fails. An
                                 # unexplained DROP also fails — re-baseline with
@@ -42,8 +43,9 @@ npm run lint:ratchet            # symmetric per-rule ratchet over
                                 # commit message which of fixed / deleted /
                                 # counter-broke it was. Exit 2 = could not run,
                                 # which is neither pass nor fail.
-npm run typecheck               # 23 inherited errors; pinned by the ratchet
-                                # rather than blocking bare.
+npm run typecheck               # 0 errors since 74573c2; BLOCKING in CI since
+                                # 2026-09-05 (the typecheck:errors bucket was
+                                # deleted per its promotion trigger).
 npm run docs:store-graph -- --check   # the store graph is GENERATED from
                                 # src/stores/registry.ts. Regenerate in the same
                                 # change that touches the manifest.
@@ -247,9 +249,10 @@ See `.env.example` for complete setup. Key variables:
 - **Strict mode** enabled
 - **Path alias**: `@/*` → `./src/*`
 - **ESLint**: NOT disabled during builds — `next.config.js` sets neither
-  `eslint.ignoreDuringBuilds` nor `typescript.ignoreBuildErrors`. Every custom
-  rule in `eslint.config.mjs` is nevertheless `warn`, including
-  `react-hooks/rules-of-hooks`, so lint cannot currently fail anything.
+  `eslint.ignoreDuringBuilds` nor `typescript.ignoreBuildErrors`. The
+  `correctness` block in `eslint.config.mjs` (47 rules incl.
+  `react-hooks/rules-of-hooks`) is `error`, so `npm run lint` fails on the
+  first violation; rules with a legacy population stay `warn` under the ratchet.
 
 ## Key Implementation Notes
 
