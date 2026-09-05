@@ -175,6 +175,20 @@ export function TemplateGallery({ onSelectTemplate, onClose: _onClose }: Templat
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
                     onClick={() => handleTemplateClick(template)}
+                    /* Adopting a template is the gallery's only action, so the
+                       card is a control. framer-motion's whileTap already put
+                       it in the tab order, which made it worse than a plain
+                       div: focusable, unnamed, and inert on Enter. Same shape
+                       as MosaicCard in FeaturedListsSection and CollectionCard. */
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Use template ${template.title}`}
+                    onKeyDown={(e: React.KeyboardEvent) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleTemplateClick(template);
+                      }
+                    }}
                     className={`
                       relative group rounded-card overflow-hidden cursor-pointer
                       border transition-all duration-200
