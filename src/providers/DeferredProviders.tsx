@@ -1,7 +1,9 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useState, useEffect, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
+
+import { useDeferredMount } from '@/providers/deferred-mount';
 
 // Side-effect import, deliberately not tree-shakeable by removal: the store
 // registry validates its declared dependency topology at module load (cycles,
@@ -42,27 +44,7 @@ const PrefetchProvider = dynamic(
  * are scoped to the (match) route group layout instead.
  */
 export function DeferredProviders({ children }: { children: ReactNode }) {
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    if (typeof requestIdleCallback === 'function') {
-      const id = requestIdleCallback(() => setReady(true), { timeout: 2000 });
-      return () => cancelIdleCallback(id);
-    } else {
-      // rAF ignores its callback's return value, so the inner setTimeout was
-      // never cleared (and the effect cleanup only cancelled the already-fired
-      // rAF) — a leaked timer + setState-on-unmounted on no-requestIdleCallback
-      // browsers. Capture both ids and clear both from the single effect cleanup.
-      let timer: ReturnType<typeof setTimeout> | undefined;
-      const raf = requestAnimationFrame(() => {
-        timer = setTimeout(() => setReady(true), 0);
-      });
-      return () => {
-        cancelAnimationFrame(raf);
-        if (timer) clearTimeout(timer);
-      };
-    }
-  }, []);
+  const ready = useDeferredMount();
 
   return (
     <>

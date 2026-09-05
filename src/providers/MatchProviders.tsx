@@ -1,9 +1,10 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useState, useEffect, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 
 import { BacklogProvider } from '@/providers/BacklogProvider';
+import { useDeferredMount } from '@/providers/deferred-mount';
 
 const OfflineProvider = dynamic(
   () => import('@/lib/offline/OfflineProvider').then(m => ({ default: m.OfflineProvider })),
@@ -27,20 +28,7 @@ const ItemDetailPopupProvider = dynamic(
  * to reduce JS execution on the critical path.
  */
 export function MatchProviders({ children }: { children: ReactNode }) {
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    if (typeof requestIdleCallback === 'function') {
-      const id = requestIdleCallback(() => setReady(true), { timeout: 2000 });
-      return () => cancelIdleCallback(id);
-    } else {
-      const raf = requestAnimationFrame(() => {
-        const timer = setTimeout(() => setReady(true), 0);
-        return () => clearTimeout(timer);
-      });
-      return () => cancelAnimationFrame(raf);
-    }
-  }, []);
+  const ready = useDeferredMount();
 
   if (!ready) {
     return <BacklogProvider>{children}</BacklogProvider>;
