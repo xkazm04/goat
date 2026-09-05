@@ -53,6 +53,8 @@ export function BracketDrawingLoader({ className }: BracketDrawingLoaderProps) {
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         data-motion={loop ? 'loop' : 'still'}
+        aria-hidden="true"
+        focusable="false"
       >
         {/* Round 1: 4 matchup slots (left side) */}
         <motion.line x1="4" y1="8" x2="18" y2="8" stroke="#22d3ee" strokeWidth="2" strokeLinecap="round" {...drawProps(loop, 14, 0)} />

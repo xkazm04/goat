@@ -39,6 +39,8 @@ export function GoatCrownTrophy({ className, size = 120 }: GoatCrownTrophyProps)
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       data-motion={allowAmbient ? 'loop' : 'still'}
+      aria-hidden="true"
+      focusable="false"
     >
       {/* Glow backdrop */}
       <circle cx="60" cy="60" r="50" fill="url(#glow)" opacity="0.3" />

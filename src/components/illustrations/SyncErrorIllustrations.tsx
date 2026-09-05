@@ -22,6 +22,8 @@ export function GoatNetworkError({ className, width = 120, height = 120 }: Illus
       width={width}
       height={height}
       className={cn('opacity-85', className)}
+      aria-hidden="true"
+      focusable="false"
     >
       <defs>
         <radialGradient id="net-err-glow" cx="50%" cy="50%" r="50%">
@@ -102,6 +104,8 @@ export function GoatServerError({ className, width = 120, height = 120 }: Illust
       width={width}
       height={height}
       className={cn('opacity-85', className)}
+      aria-hidden="true"
+      focusable="false"
     >
       <defs>
         <radialGradient id="srv-err-glow" cx="50%" cy="50%" r="50%">
@@ -190,6 +194,8 @@ export function GoatQuotaExceeded({ className, width = 120, height = 120 }: Illu
       width={width}
       height={height}
       className={cn('opacity-85', className)}
+      aria-hidden="true"
+      focusable="false"
     >
       <defs>
         <radialGradient id="quota-glow" cx="50%" cy="50%" r="50%">

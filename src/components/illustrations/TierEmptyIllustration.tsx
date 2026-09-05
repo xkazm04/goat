@@ -19,7 +19,7 @@ interface TierEmptyIllustrationProps {
 /** Trophy outline for S-tier */
 function TrophySVG({ color }: { color: string }) {
   return (
-    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
       <path
         d="M10 6h12v10c0 3.314-2.686 6-6 6s-6-2.686-6-6V6z"
         stroke={color}
@@ -51,7 +51,7 @@ function TrophySVG({ color }: { color: string }) {
 /** Ribbon/medal for A-tier */
 function RibbonSVG({ color }: { color: string }) {
   return (
-    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
       <circle
         cx="16"
         cy="14"
@@ -83,7 +83,7 @@ function RibbonSVG({ color }: { color: string }) {
 /** Scattered stars for B-tier */
 function StarsSVG({ color }: { color: string }) {
   return (
-    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
       <path
         d="M16 6l1.8 3.6 4 .6-2.9 2.8.7 4L16 15l-3.6 2 .7-4-2.9-2.8 4-.6L16 6z"
         stroke={color}
@@ -112,7 +112,7 @@ function StarsSVG({ color }: { color: string }) {
 /** Shield/chevron for C-tier */
 function ShieldSVG({ color }: { color: string }) {
   return (
-    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
       <path
         d="M16 4L6 9v7c0 6.5 4.3 10.5 10 13 5.7-2.5 10-6.5 10-13V9L16 4z"
         stroke={color}
@@ -135,7 +135,7 @@ function ShieldSVG({ color }: { color: string }) {
 /** Down arrow for D-tier */
 function ArrowSVG({ color }: { color: string }) {
   return (
-    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
       <circle
         cx="16"
         cy="16"
@@ -159,7 +159,7 @@ function ArrowSVG({ color }: { color: string }) {
 /** Broken circle for F-tier */
 function FragmentSVG({ color }: { color: string }) {
   return (
-    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
       <path
         d="M16 6a10 10 0 0 1 8.66 5"
         stroke={color}

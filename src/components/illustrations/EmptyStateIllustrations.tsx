@@ -22,6 +22,8 @@ export function EmptyTrophyCase({ className, width = 200, height = 160 }: Illust
       width={width}
       height={height}
       className={cn('opacity-80', className)}
+      aria-hidden="true"
+      focusable="false"
     >
       {/* Glow background */}
       <defs>
@@ -89,6 +91,8 @@ export function NoSearchResults({ className, width = 200, height = 160 }: Illust
       width={width}
       height={height}
       className={cn('opacity-80', className)}
+      aria-hidden="true"
+      focusable="false"
     >
       <defs>
         <radialGradient id="search-glow" cx="50%" cy="45%" r="45%">
@@ -152,6 +156,8 @@ export function NoMetadata({ className, width = 80, height = 64 }: IllustrationP
       width={width}
       height={height}
       className={cn('opacity-80', className)}
+      aria-hidden="true"
+      focusable="false"
     >
       <defs>
         <linearGradient id="crown-gradient" x1="0" y1="0" x2="1" y2="1">
@@ -195,6 +201,8 @@ export function EmptyFilmReel({ className, width = 140, height = 112 }: Illustra
       width={width}
       height={height}
       className={cn('opacity-80', className)}
+      aria-hidden="true"
+      focusable="false"
     >
       <defs>
         <radialGradient id="film-glow" cx="50%" cy="50%" r="50%">
@@ -264,6 +272,8 @@ export function EmptyVinylRecord({ className, width = 140, height = 112 }: Illus
       width={width}
       height={height}
       className={cn('opacity-80', className)}
+      aria-hidden="true"
+      focusable="false"
     >
       <defs>
         <radialGradient id="vinyl-glow" cx="50%" cy="50%" r="50%">
@@ -327,6 +337,8 @@ export function EmptyGameController({ className, width = 140, height = 112 }: Il
       width={width}
       height={height}
       className={cn('opacity-80', className)}
+      aria-hidden="true"
+      focusable="false"
     >
       <defs>
         <radialGradient id="game-glow" cx="50%" cy="50%" r="50%">
@@ -415,6 +427,8 @@ export function ToppledTrophy({ className, width = 120, height = 120 }: Illustra
       width={width}
       height={height}
       className={cn('opacity-80', className)}
+      aria-hidden="true"
+      focusable="false"
     >
       <defs>
         <radialGradient id="error-glow" cx="50%" cy="50%" r="50%">
@@ -470,7 +484,7 @@ export function ToppledTrophy({ className, width = 120, height = 120 }: Illustra
 
 function SlotFilmReel() {
   return (
-    <svg viewBox="0 0 48 48" width={48} height={48} fill="none" className="opacity-60">
+    <svg viewBox="0 0 48 48" width={48} height={48} fill="none" className="opacity-60" aria-hidden="true" focusable="false">
       <circle cx="24" cy="24" r="14" stroke="#22d3ee" strokeWidth="1.5" strokeOpacity="0.3" />
       <circle cx="24" cy="24" r="10" stroke="#22d3ee" strokeWidth="0.5" strokeOpacity="0.15" />
       <circle cx="24" cy="24" r="4" stroke="#22d3ee" strokeWidth="1" strokeOpacity="0.25" />
@@ -485,7 +499,7 @@ function SlotFilmReel() {
 
 function SlotVinylRecord() {
   return (
-    <svg viewBox="0 0 48 48" width={48} height={48} fill="none" className="opacity-60">
+    <svg viewBox="0 0 48 48" width={48} height={48} fill="none" className="opacity-60" aria-hidden="true" focusable="false">
       <circle cx="24" cy="24" r="15" stroke="#22d3ee" strokeWidth="1.5" strokeOpacity="0.3" />
       <circle cx="24" cy="24" r="12" stroke="#22d3ee" strokeWidth="0.5" strokeOpacity="0.1" />
       <circle cx="24" cy="24" r="9" stroke="#22d3ee" strokeWidth="0.5" strokeOpacity="0.08" />
@@ -499,7 +513,7 @@ function SlotVinylRecord() {
 
 function SlotTrophy() {
   return (
-    <svg viewBox="0 0 48 48" width={48} height={48} fill="none" className="opacity-60">
+    <svg viewBox="0 0 48 48" width={48} height={48} fill="none" className="opacity-60" aria-hidden="true" focusable="false">
       <path d="M17 14h14l-2.5 14h-9z" stroke="#22d3ee" strokeWidth="1.5" strokeOpacity="0.3" strokeLinejoin="round" />
       <path d="M17 16h-3a3 3 0 0 0 0 6h3" stroke="#22d3ee" strokeWidth="1" strokeOpacity="0.2" />
       <path d="M31 16h3a3 3 0 0 1 0 6h-3" stroke="#22d3ee" strokeWidth="1" strokeOpacity="0.2" />
@@ -511,7 +525,7 @@ function SlotTrophy() {
 
 function SlotGameController() {
   return (
-    <svg viewBox="0 0 48 48" width={48} height={48} fill="none" className="opacity-60">
+    <svg viewBox="0 0 48 48" width={48} height={48} fill="none" className="opacity-60" aria-hidden="true" focusable="false">
       <path
         d="M14 22c0-5 6-8 10-8s10 3 10 8l2 8c0 3-2 5-4 5h-3c-1 0-2-1-3-3l-1-2c-1-1-1-1-2 0l-1 2c-1 2-2 3-3 3h-3c-2 0-4-2-4-5z"
         stroke="#22d3ee" strokeWidth="1.5" strokeOpacity="0.3" strokeLinejoin="round"
@@ -536,6 +550,8 @@ export function GoatSearching({ className, width = 120, height = 96 }: Illustrat
       width={width}
       height={height}
       className={cn('opacity-80', className)}
+      aria-hidden="true"
+      focusable="false"
     >
       <defs>
         <radialGradient id="goat-search-glow" cx="50%" cy="50%" r="50%">
@@ -587,6 +603,8 @@ export function GoatBookmark({ className, width = 120, height = 96 }: Illustrati
       width={width}
       height={height}
       className={cn('opacity-80', className)}
+      aria-hidden="true"
+      focusable="false"
     >
       <defs>
         <radialGradient id="goat-bm-glow" cx="50%" cy="50%" r="50%">
@@ -641,6 +659,8 @@ export function GoatBlocks({ className, width = 120, height = 96 }: Illustration
       width={width}
       height={height}
       className={cn('opacity-80', className)}
+      aria-hidden="true"
+      focusable="false"
     >
       <defs>
         <radialGradient id="goat-blocks-glow" cx="50%" cy="50%" r="50%">
@@ -700,6 +720,8 @@ export function GoatFilterEmpty({ className, width = 120, height = 96 }: Illustr
       width={width}
       height={height}
       className={cn('opacity-80', className)}
+      aria-hidden="true"
+      focusable="false"
     >
       <defs>
         <radialGradient id="goat-filter-glow" cx="50%" cy="50%" r="50%">
@@ -756,6 +778,8 @@ export function GoatZeroResults({ className, width = 120, height = 96 }: Illustr
       width={width}
       height={height}
       className={cn('opacity-80', className)}
+      aria-hidden="true"
+      focusable="false"
     >
       <defs>
         <radialGradient id="goat-zero-glow" cx="50%" cy="50%" r="50%">
@@ -814,6 +838,8 @@ export function GoatBrokenFrame({ className, width = 120, height = 96 }: Illustr
       width={width}
       height={height}
       className={cn('opacity-80', className)}
+      aria-hidden="true"
+      focusable="false"
     >
       <defs>
         <radialGradient id="goat-frame-glow" cx="50%" cy="50%" r="50%">
@@ -886,6 +912,8 @@ export function GoatDisconnected({ className, width = 120, height = 96 }: Illust
       width={width}
       height={height}
       className={cn('opacity-80', className)}
+      aria-hidden="true"
+      focusable="false"
     >
       <defs>
         <radialGradient id="goat-disc-glow" cx="50%" cy="50%" r="50%">
