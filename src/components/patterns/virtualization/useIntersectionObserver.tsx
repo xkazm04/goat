@@ -4,30 +4,32 @@
  * Wrapper around the Intersection Observer API for detecting
  * when elements enter/exit the viewport.
  *
+ * This module used to be the entry of a "virtualization pattern library"
+ * (types for a VirtualizedList, a ScrollPredictor, an AdaptiveLoader, a second
+ * LazyLoadTrigger, useVisibleItems) that was never wired: on 2026-09-05 each of
+ * those had 0 consumers — the live LazyLoadTrigger and its hook live in
+ * `src/app/features/Collection/{components,hooks}/`. What remains is what is
+ * reached: `useInView`, consumed by the landing showcase.
+ *
  * @example
  * ```tsx
- * const { ref, isIntersecting } = useIntersectionObserver({
- *   threshold: 0.1,
- *   rootMargin: '200px',
- * });
+ * const { ref, inView } = useInView({ rootMargin: '200px', once: true });
  *
  * return (
  *   <div ref={ref}>
- *     {isIntersecting ? <Content /> : <Placeholder />}
+ *     {inView ? <Content /> : <Placeholder />}
  *   </div>
  * );
  * ```
  */
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-
-import type { UseIntersectionObserverReturn } from './types';
+import { useState, useEffect, useRef, useMemo } from 'react';
 
 // =============================================================================
 // Configuration Types
 // =============================================================================
 
-export interface IntersectionObserverConfig {
+interface IntersectionObserverConfig {
   /** Element to use as viewport for checking visibility */
   root?: Element | null;
   /** Margin around the root */
@@ -42,6 +44,12 @@ export interface IntersectionObserverConfig {
   onChange?: (isIntersecting: boolean, entry: IntersectionObserverEntry) => void;
 }
 
+interface UseIntersectionObserverReturn {
+  ref: React.RefObject<HTMLDivElement | null>;
+  isIntersecting: boolean;
+  entry: IntersectionObserverEntry | null;
+}
+
 const DEFAULT_CONFIG: IntersectionObserverConfig = {
   root: null,
   rootMargin: '0px',
@@ -54,7 +62,7 @@ const DEFAULT_CONFIG: IntersectionObserverConfig = {
 // useIntersectionObserver Hook
 // =============================================================================
 
-export function useIntersectionObserver(
+function useIntersectionObserver(
   config: IntersectionObserverConfig = {}
 ): UseIntersectionObserverReturn {
   const mergedConfig = useMemo(
@@ -164,127 +172,3 @@ export function useInView(config: UseInViewConfig = {}): UseInViewReturn {
     inView: isIntersecting,
   };
 }
-
-// =============================================================================
-// LazyLoadTrigger Component
-// =============================================================================
-
-export interface LazyLoadTriggerProps {
-  /** Callback when trigger becomes visible */
-  onVisible: () => void;
-  /** Enable/disable trigger */
-  enabled?: boolean;
-  /** Show loading state */
-  isLoading?: boolean;
-  /** Loading message */
-  loadingMessage?: string;
-  /** Intersection root margin */
-  rootMargin?: string;
-  /** Test ID for testing */
-  testId?: string;
-  /** Custom class name */
-  className?: string;
-}
-
-export function LazyLoadTrigger({
-  onVisible,
-  enabled = true,
-  isLoading = false,
-  loadingMessage = 'Loading more items...',
-  rootMargin = '200px',
-  testId,
-  className,
-}: LazyLoadTriggerProps) {
-  // Latest-callback ref so a non-memoised prop cannot re-fire the effect below.
-  // Written from an effect, not during render (react-hooks/refs).
-  const onVisibleRef = useRef(onVisible);
-  useEffect(() => {
-    onVisibleRef.current = onVisible;
-  }, [onVisible]);
-
-  const { ref, isIntersecting } = useIntersectionObserver({
-    rootMargin,
-    threshold: 0.1,
-  });
-
-  useEffect(() => {
-    if (isIntersecting && enabled && !isLoading) {
-      onVisibleRef.current();
-    }
-  }, [isIntersecting, enabled, isLoading]);
-
-  if (!enabled) return null;
-
-  return (
-    <div
-      ref={ref}
-      data-testid={testId}
-      className={className}
-      style={{ minHeight: 1 }}
-    >
-      {isLoading && (
-        <div className="flex items-center justify-center py-4 text-sm text-zinc-500">
-          <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-zinc-500 border-t-transparent" />
-          {loadingMessage}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// =============================================================================
-// useVisibleItems Hook
-// =============================================================================
-
-export interface UseVisibleItemsConfig {
-  /** Number of items */
-  itemCount: number;
-  /** Estimated item height */
-  itemHeight: number;
-  /** Container height */
-  containerHeight: number;
-  /** Overscan items */
-  overscan?: number;
-}
-
-export interface UseVisibleItemsReturn {
-  startIndex: number;
-  endIndex: number;
-  visibleCount: number;
-  scrollHandler: (scrollTop: number) => void;
-}
-
-export function useVisibleItems(
-  config: UseVisibleItemsConfig
-): UseVisibleItemsReturn {
-  const { itemCount, itemHeight, containerHeight, overscan = 5 } = config;
-
-  const [scrollTop, setScrollTop] = useState(0);
-
-  const visibleCount = useMemo(() => {
-    return Math.ceil(containerHeight / itemHeight) + overscan * 2;
-  }, [containerHeight, itemHeight, overscan]);
-
-  const startIndex = useMemo(() => {
-    const rawStart = Math.floor(scrollTop / itemHeight) - overscan;
-    return Math.max(0, rawStart);
-  }, [scrollTop, itemHeight, overscan]);
-
-  const endIndex = useMemo(() => {
-    const rawEnd = startIndex + visibleCount;
-    return Math.min(itemCount - 1, rawEnd);
-  }, [startIndex, visibleCount, itemCount]);
-
-  const scrollHandler = useCallback((newScrollTop: number) => {
-    setScrollTop(newScrollTop);
-  }, []);
-
-  return {
-    startIndex,
-    endIndex,
-    visibleCount,
-    scrollHandler,
-  };
-}
-
-export default useIntersectionObserver;
