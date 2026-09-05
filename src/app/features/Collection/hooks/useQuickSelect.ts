@@ -5,9 +5,10 @@ import { useState, useCallback, useEffect, useMemo } from 'react';
 import { recordGridChange } from '@/lib/undo/record-grid-change';
 import { useBacklogStore } from '@/stores/backlog-store';
 import { useGridStore } from '@/stores/grid-store';
-import type { BacklogItem } from '@/types/backlog-groups';
 
 import { CollectionItem } from '../types';
+
+import type { BacklogItem } from '@/types/backlog-groups';
 
 /**
  * Resolve the BacklogItem a quick-select placement writes into the grid.

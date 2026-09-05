@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
 
-import type { BacklogItem } from '@/types/backlog-groups';
+import { resolvePlacementItem } from './useQuickSelect';
 
 import type { CollectionItem } from '../types';
-import { resolvePlacementItem } from './useQuickSelect';
+import type { BacklogItem } from '@/types/backlog-groups';
 
 /**
  * Keyboard placement (`q`, then digits) must write the SAME record into the
