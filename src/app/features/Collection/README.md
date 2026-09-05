@@ -13,7 +13,9 @@
 >
 > **2026-09-05:** `lib/adaptiveLoader.ts` (494 lines, zero importers since it was
 > written, in knip's unused-files population) was deleted; the `lib/` directory
-> is gone with it.
+> is gone with it. So was `context/CollectionFiltersContext.tsx` with its README:
+> `CollectionFiltersProvider` and both `useCollectionFiltersContext*` hooks were
+> exported from the barrel and rendered or called by nothing.
 >
 > This README is now a **derived coupling target**: any change under
 > `src/app/features/Collection/` is checked against it by
@@ -64,9 +66,6 @@ Collection/
 │   ├── useIntersectionObserver.ts      # Viewport detection
 │   ├── useQuickSelect.ts               # `q` + digits quick placement
 │   └── useVisibleCollectionItems.ts
-│
-├── context/                            # React Context (see context/README.md)
-│   └── CollectionFiltersContext.tsx    # Filter state provider
 │
 ├── constants/                          # Configuration
 │   └── lazyLoadConfig.ts               # Lazy load thresholds — declared, mostly unread
@@ -193,9 +192,8 @@ Determines rendering strategy:
     ↓
 useCollection (unified filtering, stats & data)
     ↓
-CollectionFiltersContext (provides to children)
-    ↓
 CollectionToolbar + CollectionItem (consume & display)
+    (CollectionFiltersContext, once drawn here, never had a consumer — deleted 2026-09-05)
 ```
 
 ## ⚡ Lazy Loading Flow

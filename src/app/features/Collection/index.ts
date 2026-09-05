@@ -44,10 +44,6 @@ export type { SpotlightableItem, UseEasterEggSpotlightResult, EasterEggKeyword }
 // Configuration
 export { LAZY_LOAD_CONFIG } from './constants/lazyLoadConfig';
 
-// Context exports
-export { CollectionFiltersProvider, useCollectionFiltersContext, useCollectionFiltersContextOptional } from './context/CollectionFiltersContext';
-export type { CollectionFiltersContextValue, CollectionFiltersProviderProps } from './context/CollectionFiltersContext';
-
 // Filter Integration components
 export {
   CollectionFilterIntegration,
