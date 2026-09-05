@@ -25,6 +25,17 @@ const eventBuffer: TrackingEvent[] = [];
 const MAX_BUFFER_SIZE = 1000;
 
 /**
+ * Upper bound on events accepted in ONE request. The buffer trims itself to
+ * MAX_BUFFER_SIZE after the push, but `eventBuffer.push(...validEvents)` first
+ * spreads the whole array onto the stack and into memory — a 10^6-event body
+ * from an unauthenticated caller is a crash, not a trim. The client engine
+ * flushes in batches of a few dozen. Not exported: Next rejects non-handler
+ * exports from a route module at build time; the 413 body carries the value,
+ * and route.test.ts pins it there.
+ */
+const MAX_EVENTS_PER_REQUEST = 100;
+
+/**
  * POST /api/personalization/track
  * Track user behavior events
  */
@@ -37,6 +48,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'events array is required' },
         { status: 400 }
+      );
+    }
+
+    if (events.length > MAX_EVENTS_PER_REQUEST) {
+      return NextResponse.json(
+        {
+          error: `at most ${MAX_EVENTS_PER_REQUEST} events per request`,
+          received: events.length,
+          max: MAX_EVENTS_PER_REQUEST,
+        },
+        { status: 413 }
       );
     }
 

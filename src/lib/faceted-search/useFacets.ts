@@ -32,8 +32,6 @@ interface UseFacetsOptions<T> {
   persistToUrl?: boolean;
   /** URL param key prefix */
   urlParamPrefix?: string;
-  /** Debounce aggregation (ms) */
-  debounceMs?: number;
   /** Initial selections */
   initialSelections?: FacetSelection[];
 }
@@ -54,8 +52,6 @@ interface UseFacetsReturn extends FacetActions {
   totalCount: number;
   /** Filtered item count */
   filteredCount: number;
-  /** Whether facets are computing */
-  isComputing: boolean;
   /** Last compute time in ms */
   computeTime: number;
   /** Search terms for facet value filtering */
@@ -72,7 +68,6 @@ export function useFacets<T extends Record<string, unknown>>({
   definitions = DEFAULT_FACET_DEFINITIONS,
   persistToUrl = false,
   urlParamPrefix = 'f_',
-  debounceMs: _debounceMs = 100,
   initialSelections = [],
 }: UseFacetsOptions<T>): UseFacetsReturn {
   // Router for URL persistence
@@ -101,15 +96,17 @@ export function useFacets<T extends Record<string, unknown>>({
     return initial;
   });
   const [facetSearchTerms, setFacetSearchTerms] = useState<Record<string, string>>({});
-  const [isComputing, setIsComputing] = useState(false);
-  const [computeTime, setComputeTime] = useState(0);
 
   // Compute facets — expandedFacets is excluded from deps since it's UI-only state
-  const rawAggregationResult = useMemo(() => {
-    const result = aggregator.aggregate(items, selections);
-    setComputeTime(result.computeTime);
-    return result;
-  }, [items, selections, aggregator]);
+  const rawAggregationResult = useMemo(
+    () => aggregator.aggregate(items, selections),
+    [items, selections, aggregator]
+  );
+
+  // Derived, never stored: the aggregation result already carries the number,
+  // and writing it to state from inside the memo that produced it is the shape
+  // react-hooks/set-state-in-render exists to catch.
+  const computeTime = rawAggregationResult.computeTime;
 
   // Apply UI-only expanded state separately (lightweight O(facets) pass)
   const aggregationResult = useMemo(() => ({
@@ -295,7 +292,6 @@ export function useFacets<T extends Record<string, unknown>>({
     filteredItems,
     totalCount: items.length,
     filteredCount: filteredItems.length,
-    isComputing,
     computeTime,
     facetSearchTerms,
     expandedFacets,

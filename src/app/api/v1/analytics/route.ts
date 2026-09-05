@@ -41,8 +41,10 @@ export async function GET(request: NextRequest) {
 
   // Check if analytics feature is available
   if (!keyValidation.features.analytics) {
+    // No /pricing route exists in this app (src/app has no such segment), so
+    // the old "Upgrade at goat.app/pricing" sent a paying integrator to a 404.
     return apiError(
-      'Analytics requires Basic tier or higher. Upgrade at goat.app/pricing',
+      'Analytics requires the Basic tier or higher',
       403,
       'FEATURE_NOT_AVAILABLE'
     );
@@ -104,7 +106,7 @@ export async function GET(request: NextRequest) {
 
     // Generate analytics data (placeholder values since selection_count/view_count not tracked)
     const totalSelections = items?.length || 0;
-    const _totalViews = items?.length || 0;
+    const totalViews = items?.length || 0;
 
     // Generate distribution data
     const byPosition: Record<number, number> = {};
@@ -180,7 +182,7 @@ export async function GET(request: NextRequest) {
         totalRankings: totalSelections,
         uniqueUsers: Math.floor(totalSelections / 8), // Mock estimate
         averageListSize: 10,
-        mostActiveDay: getMostActiveDay(startDate),
+        mostActiveDay: getMostActiveDay(hashCode(category + (subcategory || ''))),
       },
       topItems,
       distribution: {
@@ -210,10 +212,12 @@ function hashCode(str: string): number {
   return Math.abs(hash);
 }
 
-function getMostActiveDay(_startDate: Date): string {
-  // Mock: Return a random weekday within the period
+function getMostActiveDay(seed: number): string {
+  // Mock, like every other figure in this response — but a mock that changes
+  // between two identical requests is not a placeholder, it is noise a B2B
+  // caller will try to explain. Seed it the way topItems/byVolatility already are.
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-  return days[Math.floor(Math.random() * 7)];
+  return days[seed % 7];
 }
 
 export async function OPTIONS() {

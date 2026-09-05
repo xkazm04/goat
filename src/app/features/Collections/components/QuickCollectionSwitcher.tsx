@@ -12,13 +12,14 @@ import {
 import Link from "next/link";
 import { memo, useState, useCallback, useRef, useEffect } from "react";
 
-import { useUserCollections } from "@/hooks/use-collections";
 import { DURATION } from '@/lib/animations/motion-presets';
 import {
   useCollections,
   useCollectionActions,
   useCollectionStore,
 } from "@/stores/collection-store";
+
+import { safeCollectionColor } from "../lib/collection-color";
 
 import type { ListCollection } from "@/types/collection";
 
@@ -41,8 +42,10 @@ export const QuickCollectionSwitcher = memo(function QuickCollectionSwitcher({
   );
   const { setSelectedCollection } = useCollectionActions();
 
-  // Fetch collections if not already loaded
-  useUserCollections();
+  // The collections come from the store; whoever hosts this switcher owns the
+  // fetch (CollectionsDashboard asks with include_stats). Fetching here too
+  // shared the dashboard's query key with different params and raced it for
+  // what landed in the store.
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -166,12 +169,12 @@ export const QuickCollectionSwitcher = memo(function QuickCollectionSwitcher({
                   <div
                     className="w-6 h-6 rounded-control flex items-center justify-center"
                     style={{
-                      backgroundColor: `${collection.color || "#06b6d4"}20`,
+                      backgroundColor: `${safeCollectionColor(collection.color)}20`,
                     }}
                   >
                     <Folder
                       className="w-3.5 h-3.5"
-                      style={{ color: collection.color || "#06b6d4" }}
+                      style={{ color: safeCollectionColor(collection.color) }}
                     />
                   </div>
                   <span className="flex-1 truncate">{collection.name}</span>

@@ -14,6 +14,8 @@ import {
   Trash2,
   Globe,
   Lock,
+  AlertTriangle,
+  RefreshCw,
 } from "lucide-react";
 import { memo, useCallback, useState } from "react";
 
@@ -25,6 +27,8 @@ import {
 } from "@/stores/collection-store";
 import { DEFAULT_COLLECTIONS } from "@/types/collection";
 
+import { safeCollectionColor } from "../lib/collection-color";
+
 import type { ListCollection, CollectionTreeNode } from "@/types/collection";
 
 interface CollectionSidebarProps {
@@ -33,6 +37,9 @@ interface CollectionSidebarProps {
   onCreateCollection?: () => void;
   onEditCollection?: (collection: ListCollection) => void;
   onDeleteCollection?: (collection: ListCollection) => void;
+  /** The collections request failed. With nothing loaded this is a failure state, not an empty one. */
+  loadFailed?: boolean;
+  onRetry?: () => void;
 }
 
 const ICONS: Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
@@ -67,7 +74,7 @@ const TreeNode = memo(function TreeNode({
   const { collection, children, isExpanded, depth } = node;
   const hasChildren = children.length > 0;
   const isSelected = selectedId === collection.id;
-  const color = collection.color || "#06b6d4";
+  const color = safeCollectionColor(collection.color);
   const IconComponent = getIconComponent(collection.icon);
 
   const handleToggle = useCallback(
@@ -81,6 +88,20 @@ const TreeNode = memo(function TreeNode({
   const handleSelect = useCallback(() => {
     onSelect(collection);
   }, [collection, onSelect]);
+
+  // The row hosts nested buttons (expand, menu), so it stays a div — and a div
+  // is only a keyboard destination when it declares itself one. Keys fired by
+  // the nested controls are theirs, not the row's.
+  const handleRowKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.target !== e.currentTarget) return;
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        onSelect(collection);
+      }
+    },
+    [collection, onSelect]
+  );
 
   const handleEdit = useCallback(
     (e: React.MouseEvent) => {
@@ -103,13 +124,17 @@ const TreeNode = memo(function TreeNode({
   return (
     <div>
       <motion.div
-        className={`group relative flex items-center gap-2 px-3 py-2 rounded-card cursor-pointer transition-colors ${
+        className={`group relative flex items-center gap-2 px-3 py-2 rounded-card cursor-pointer transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand ${
           isSelected
             ? "bg-slate-700/60 text-white"
             : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-200"
         }`}
         style={{ paddingLeft: `${12 + depth * 16}px` }}
         onClick={handleSelect}
+        onKeyDown={handleRowKeyDown}
+        role="button"
+        tabIndex={0}
+        aria-pressed={isSelected}
         whileHover={{ x: 2 }}
         whileTap={{ scale: 0.98 }}
       >
@@ -240,6 +265,8 @@ export const CollectionSidebar = memo(function CollectionSidebar({
   onCreateCollection,
   onEditCollection,
   onDeleteCollection,
+  loadFailed = false,
+  onRetry,
 }: CollectionSidebarProps) {
   const tree = useCollectionTree();
   const { toggleCollectionExpanded } = useCollectionActions();
@@ -305,6 +332,26 @@ export const CollectionSidebar = memo(function CollectionSidebar({
               </div>
             ))}
             <span className="sr-only">Loading collections...</span>
+          </div>
+        ) : loadFailed && tree.length === 0 ? (
+          // A failed request used to fall through to the empty state below and
+          // invite the user to "create your first collection" over data that
+          // exists but did not arrive. Zero rows, a failure and a request that
+          // never returned are three states; this is the second one.
+          <div className="px-3 py-8 text-center" role="alert">
+            <AlertTriangle className="w-10 h-10 text-amber-500/70 mx-auto mb-3" />
+            <p className="text-sm text-slate-400 mb-1">Couldn&apos;t load your collections</p>
+            <p className="text-xs text-slate-600 mb-3">Your collections are still there; the request failed.</p>
+            {onRetry && (
+              <button
+                type="button"
+                onClick={onRetry}
+                className="inline-flex items-center gap-1.5 text-sm text-brand-hover hover:text-brand-hover transition-colors"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                Retry
+              </button>
+            )}
           </div>
         ) : tree.length === 0 ? (
           <div className="px-3 py-8 text-center">

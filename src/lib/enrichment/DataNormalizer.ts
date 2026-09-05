@@ -332,7 +332,11 @@ class DataNormalizerClass {
       normalized.title = titleField;
     }
 
-    const descField = data.description || data.overview || data.summary || data.extract;
+    // `storyline` is IGDB's long-form description and the only description a
+    // game without a `summary` has. SOURCE_FIELD_MAPPINGS declared it and
+    // IGDBFetcher ships it; this chain was the one place that dropped it.
+    const descField =
+      data.description || data.overview || data.summary || data.extract || data.storyline;
     if (descField && typeof descField === 'string') {
       normalized.description = descField;
     }
@@ -474,9 +478,15 @@ class DataNormalizerClass {
     sources: Array<{ source: DataSource; data: Partial<NormalizedItemData>; confidence: number }>,
     category: EnrichmentCategory
   ): NormalizedItemData {
-    // Sort by priority (highest first)
+    // Sort by priority WEIGHTED BY the source's own confidence in its match
+    // (highest first). Unweighted, a specialist source that barely cleared its
+    // own accept threshold still supplied every field ahead of a general
+    // source that matched almost exactly -- so a near-miss title match landed
+    // the wrong item's synopsis and poster on the record.
     const sortedSources = [...sources].sort(
-      (a, b) => SOURCE_PRIORITIES[b.source] - SOURCE_PRIORITIES[a.source]
+      (a, b) =>
+        SOURCE_PRIORITIES[b.source] * b.confidence -
+        SOURCE_PRIORITIES[a.source] * a.confidence
     );
 
     const merged: NormalizedItemData = {

@@ -9,52 +9,31 @@
 export {
   type TransferableItem,
   type TransferResult,
-  type TransferContext,
 
-  GRID_ID_PREFIX,
   extractGridPosition,
   createGridReceiverId,
   isGridReceiverId,
   assertCanonicalGridId,
 } from './transfer-protocol';
 
-// Type Guards - Data types and creators
+// Payload shapes and the factories the surfaces call
 export {
-  type BacklogDragData,
   type GridDragData,
   type CollectionDragData,
   type GridSlotDropData,
-  type CollectionDropData,
 
-  isBacklogDragData,
-  isGridDragData,
-  isGridSlotDropData,
-  isCollectionDragData,
-
-  backlogToTransferable,
-
-  createBacklogDragData,
   createGridDragData,
   createGridSlotDropData,
   createCollectionDragData,
-
-  extractDragData,
-  extractDropData,
 } from './type-guards';
 
 // Unified Protocol - Tier drag/drop support
 export {
   type UnifiedDragData,
   type UnifiedDropData,
-  type TransferRoute,
-
-  isUnifiedDragData,
-  isUnifiedDropData,
 
   createUnifiedTierDragData,
   createUnifiedTierRowDropData,
-
-  determineTransferRoute,
 } from './unified-protocol';
 
 // DragOperation Router System

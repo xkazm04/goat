@@ -25,7 +25,7 @@ export { RankingDistribution } from './components/RankingDistribution';
 export type { RankingDistributionProps, RankingStats } from './components/RankingDistribution';
 
 // Types
-export type { CollectionItem as CollectionItemType, ItemCategory, ItemPanelStats, CollectionPaginationState, CollectionMutationHelpers } from './types';
+export type { CollectionItem as CollectionItemType, ItemCategory, ItemPanelStats } from './types';
 
 // Hooks
 export { useCollection } from './hooks/useCollection';
@@ -33,20 +33,16 @@ export type { UseCollectionOptions, UseCollectionResult } from './hooks/useColle
 export { useIntersectionObserver } from './hooks/useIntersectionObserver';
 export type { UseIntersectionObserverOptions, UseIntersectionObserverResult } from './hooks/useIntersectionObserver';
 // Derived state hook for Collection-Grid relationship
-export { useVisibleCollectionItems, usePlacedItemIds, getPlacedItemIdsFromGrid } from './hooks/useVisibleCollectionItems';
+export { useVisibleCollectionItems } from './hooks/useVisibleCollectionItems';
 export type { UseVisibleCollectionItemsOptions, UseVisibleCollectionItemsResult, PlacementStats } from './hooks/useVisibleCollectionItems';
 
 // Utilities
-export { backlogGroupsToItemCategories, backlogGroupToItemCategory, backlogItemToCollectionItem } from './utils/transformers';
-export { useEasterEggSpotlight, isEasterEggKeyword, EASTER_EGG_KEYWORDS, SPOTLIGHT_DURATION } from './utils/easterEgg';
-export type { SpotlightableItem, UseEasterEggSpotlightResult, EasterEggKeyword } from './utils/easterEgg';
+export { backlogGroupsToItemCategories } from './utils/transformers';
+export { useEasterEggSpotlight } from './utils/easterEgg';
+export type { SpotlightableItem, UseEasterEggSpotlightResult } from './utils/easterEgg';
 
 // Configuration
 export { LAZY_LOAD_CONFIG } from './constants/lazyLoadConfig';
-
-// Context exports
-export { CollectionFiltersProvider, useCollectionFiltersContext, useCollectionFiltersContextOptional } from './context/CollectionFiltersContext';
-export type { CollectionFiltersContextValue, CollectionFiltersProviderProps } from './context/CollectionFiltersContext';
 
 // Filter Integration components
 export {

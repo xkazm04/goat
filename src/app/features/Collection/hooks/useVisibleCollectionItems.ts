@@ -28,13 +28,14 @@ const isDev = process.env.NODE_ENV === 'development';
  * Extract placed item IDs from grid state.
  *
  * This is the single source of truth for determining which backlog items
- * are currently placed in the grid. Used by both useVisibleCollectionItems
- * and usePlacedItemIds to ensure consistent behavior.
+ * are currently placed in the grid. (A second subscriber, `usePlacedItemIds`,
+ * duplicated the subscription below without the capacity term and had no
+ * consumer; removed 2026-09-05.)
  *
  * @param state - The grid store state
  * @returns Array of backlog item IDs that are currently placed in the grid
  */
-export function getPlacedItemIdsFromGrid(state: GridStoreState): string[] {
+function getPlacedItemIdsFromGrid(state: GridStoreState): string[] {
   const matchedItems = state.gridItems.filter(item => item.context.matched);
   return matchedItems
     .map(item => item.item?.id)
@@ -229,38 +230,4 @@ export function useVisibleCollectionItems(
     placementStats,
     isItemPlaced,
   };
-}
-
-/**
- * Standalone hook to get only the placed item IDs from the grid.
- * Useful when you don't need the full visible items computation.
- *
- * Uses the shared getPlacedItemIdsFromGrid utility to ensure consistent
- * behavior with useVisibleCollectionItems.
- */
-export function usePlacedItemIds(): Set<string> {
-  const [placedItemIds, setPlacedItemIds] = useState<Set<string>>(new Set());
-  const prevIdsStringRef = useRef<string>('');
-
-  useEffect(() => {
-    const unsubscribe = useGridStore.subscribe((state) => {
-      const ids = getPlacedItemIdsFromGrid(state);
-      const idsString = createPlacedIdsString(ids);
-
-      if (idsString !== prevIdsStringRef.current) {
-        prevIdsStringRef.current = idsString;
-        setPlacedItemIds(new Set(ids));
-      }
-    });
-
-    // Initialize
-    const state = useGridStore.getState();
-    const ids = getPlacedItemIdsFromGrid(state);
-    prevIdsStringRef.current = createPlacedIdsString(ids);
-    setPlacedItemIds(new Set(ids));
-
-    return unsubscribe;
-  }, []);
-
-  return placedItemIds;
 }

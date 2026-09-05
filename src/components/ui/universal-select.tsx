@@ -63,6 +63,7 @@ export function UniversalSelect({
   const optionRefs = useRef<(HTMLButtonElement | null)[]>([]);
   // Stable ids for combobox/listbox/option ARIA wiring.
   const listboxId = useId();
+  const labelId = `${listboxId}-label`;
   const optionId = (index: number) => `${listboxId}-opt-${index}`;
   const sizeStyles = SIZE_STYLES[size];
 
@@ -93,20 +94,35 @@ export function UniversalSelect({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
-  // Focus search on open and reset highlight
+  // Focus the search box once the dropdown has mounted. The highlight reset
+  // happens at the events that invalidate it (open, query change) rather than
+  // in an effect that re-renders to do it.
   useEffect(() => {
-    if (isOpen) {
-      setHighlightedIndex(-1);
-      if (showSearch && searchInputRef.current) {
-        setTimeout(() => searchInputRef.current?.focus(), 50);
-      }
-    }
+    if (!isOpen || !showSearch) return;
+    const focusTimer = setTimeout(() => searchInputRef.current?.focus(), 50);
+    return () => clearTimeout(focusTimer);
   }, [isOpen, showSearch]);
 
-  // Reset highlight when search changes
-  useEffect(() => {
+  const open = () => {
     setHighlightedIndex(-1);
-  }, [searchQuery]);
+    setIsOpen(true);
+  };
+
+  const updateSearch = (query: string) => {
+    setSearchQuery(query);
+    setHighlightedIndex(-1);
+  };
+
+  // Declared BEFORE the key handler that calls it. It used to be a plain
+  // function declared after `handleKeyDown`, whose dependency list did not
+  // name it — so the memoised handler kept the `onChange` of whichever render
+  // last changed `isOpen` / `filteredOptions` / `highlightedIndex`, and Enter
+  // could call a stale callback.
+  const handleSelect = useCallback((optionValue: string) => {
+    onChange(optionValue);
+    setIsOpen(false);
+    setSearchQuery('');
+  }, [onChange]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
@@ -118,7 +134,7 @@ export function UniversalSelect({
     if (!isOpen) {
       if (e.key === 'Enter' || e.key === 'ArrowDown' || e.key === 'ArrowUp') {
         e.preventDefault();
-        setIsOpen(true);
+        open();
       }
       return;
     }
@@ -168,35 +184,35 @@ export function UniversalSelect({
         }
       }
     }
-  }, [isOpen, filteredOptions, highlightedIndex]);
-
-  const handleSelect = (optionValue: string) => {
-    onChange(optionValue);
-    setIsOpen(false);
-    setSearchQuery('');
-  };
+  }, [isOpen, filteredOptions, highlightedIndex, handleSelect]);
 
   const handleToggle = () => {
-    if (!disabled) {
-      setIsOpen(!isOpen);
-      if (isOpen) setSearchQuery('');
+    if (disabled) return;
+    if (isOpen) {
+      setIsOpen(false);
+      setSearchQuery('');
+    } else {
+      open();
     }
   };
 
   return (
-    <div className={cn('relative', className)} ref={containerRef} onKeyDown={handleKeyDown}>
+    <div className={cn('relative', className)} ref={containerRef}>
       {label && (
-        <label className="block mb-1.5 text-xs font-medium text-gray-400">
+        <span id={labelId} className="block mb-1.5 text-xs font-medium text-gray-400">
           {label}
-        </label>
+        </span>
       )}
 
-      {/* Trigger */}
+      {/* Trigger. Key handling lives on the focusable elements (trigger, search,
+          options) rather than on the wrapper div, which is not interactive. */}
       <button
         type="button"
         onClick={handleToggle}
+        onKeyDown={handleKeyDown}
         disabled={disabled}
         role="combobox"
+        aria-labelledby={label ? labelId : undefined}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-controls={isOpen ? listboxId : undefined}
@@ -232,7 +248,12 @@ export function UniversalSelect({
       <AnimatePresence>
         {isOpen && (
           <>
-            <div className="fixed inset-0 z-dropdown" onClick={() => { setIsOpen(false); setSearchQuery(''); }} />
+            {/* Click-outside catcher; keyboard users close with Escape. */}
+            <div
+              className="fixed inset-0 z-dropdown"
+              aria-hidden="true"
+              onClick={() => { setIsOpen(false); setSearchQuery(''); }}
+            />
 
             <motion.div
               className="absolute top-full left-0 right-0 mt-1 z-dropdown rounded-card border shadow-xl overflow-hidden bg-[var(--surface-deep)] border-[var(--border-card-subtle)]"
@@ -249,7 +270,9 @@ export function UniversalSelect({
                       ref={searchInputRef}
                       type="text"
                       value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onChange={(e) => updateSearch(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      aria-label={searchPlaceholder}
                       placeholder={searchPlaceholder}
                       className={cn(
                         'w-full pl-8 pr-3 rounded-control border transition-all outline-hidden',
@@ -261,7 +284,7 @@ export function UniversalSelect({
                     {searchQuery && (
                       <button
                         type="button"
-                        onClick={() => setSearchQuery('')}
+                        onClick={() => updateSearch('')}
                         aria-label="Clear search"
                         className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
                       >
@@ -299,7 +322,9 @@ export function UniversalSelect({
                         id={optionId(index)}
                         aria-selected={isSelected}
                         onClick={() => !isDisabled && handleSelect(option.value)}
+                        onKeyDown={handleKeyDown}
                         onMouseEnter={() => setHighlightedIndex(index)}
+                        onFocus={() => setHighlightedIndex(index)}
                         disabled={isDisabled}
                         className={cn(
                           'w-full flex items-center justify-between gap-2 transition-colors',

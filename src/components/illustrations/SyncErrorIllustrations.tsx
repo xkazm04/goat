@@ -1,5 +1,8 @@
 'use client';
 
+import { useId } from 'react';
+
+import { useMotionCapabilities } from '@/hooks/use-motion-preference';
 import { cn } from '@/lib/utils';
 
 interface IllustrationProps {
@@ -12,7 +15,9 @@ interface IllustrationProps {
  * Confused goat tangled in ethernet cables - for network errors
  * 120x120px, flat geometric style, red-500 accent
  */
-export function GoatNetworkError({ className, width = 120, height = 120 }: IllustrationProps) {
+function GoatNetworkError({ className, width = 120, height = 120 }: IllustrationProps) {
+  const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '');
+  const { allowAmbient: ambient } = useMotionCapabilities();
   return (
     <svg
       viewBox="0 0 120 120"
@@ -20,19 +25,21 @@ export function GoatNetworkError({ className, width = 120, height = 120 }: Illus
       width={width}
       height={height}
       className={cn('opacity-85', className)}
+      aria-hidden="true"
+      focusable="false"
     >
       <defs>
-        <radialGradient id="net-err-glow" cx="50%" cy="50%" r="50%">
+        <radialGradient id={`${uid}-net-err-glow`} cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor="#ef4444" stopOpacity="0.08" />
           <stop offset="100%" stopColor="#ef4444" stopOpacity="0" />
         </radialGradient>
-        <linearGradient id="cable-grad" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id={`${uid}-cable-grad`} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#ef4444" stopOpacity="0.4" />
           <stop offset="100%" stopColor="#ef4444" stopOpacity="0.2" />
         </linearGradient>
       </defs>
 
-      <circle cx="60" cy="60" r="55" fill="url(#net-err-glow)" />
+      <circle cx="60" cy="60" r="55" fill={`url(#${uid}-net-err-glow)`} />
 
       {/* Goat body */}
       <ellipse cx="60" cy="72" rx="18" ry="14" stroke="#a1a1aa" strokeWidth="1.5" fill="none" strokeOpacity="0.35" />
@@ -65,8 +72,8 @@ export function GoatNetworkError({ className, width = 120, height = 120 }: Illus
       <line x1="72" y1="82" x2="74" y2="96" stroke="#a1a1aa" strokeWidth="1.5" strokeOpacity="0.25" strokeLinecap="round" />
 
       {/* Ethernet cables tangled around body */}
-      <path d="M20 30c15 5 10 25 40 30s15 20 35 25" stroke="url(#cable-grad)" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-      <path d="M95 25c-10 10-20 15-30 25s-25 10-40 20" stroke="url(#cable-grad)" strokeWidth="2" strokeLinecap="round" fill="none" strokeDasharray="6 4" />
+      <path d="M20 30c15 5 10 25 40 30s15 20 35 25" stroke={`url(#${uid}-cable-grad)`} strokeWidth="2.5" strokeLinecap="round" fill="none" />
+      <path d="M95 25c-10 10-20 15-30 25s-25 10-40 20" stroke={`url(#${uid}-cable-grad)`} strokeWidth="2" strokeLinecap="round" fill="none" strokeDasharray="6 4" />
 
       {/* Cable connector plugs */}
       <rect x="14" y="27" width="8" height="6" rx="1" stroke="#ef4444" strokeOpacity="0.4" strokeWidth="1" fill="none" />
@@ -74,10 +81,10 @@ export function GoatNetworkError({ className, width = 120, height = 120 }: Illus
 
       {/* Disconnect spark */}
       <circle cx="35" cy="45" r="2" fill="#ef4444" opacity="0.4">
-        <animate attributeName="opacity" values="0.4;0.15;0.4" dur="1.5s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.4;0.15;0.4" dur="1.5s" repeatCount="indefinite" />}
       </circle>
       <circle cx="85" cy="50" r="1.5" fill="#ef4444" opacity="0.3">
-        <animate attributeName="opacity" values="0.3;0.1;0.3" dur="2s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.3;0.1;0.3" dur="2s" repeatCount="indefinite" />}
       </circle>
 
       {/* Question marks floating */}
@@ -91,7 +98,9 @@ export function GoatNetworkError({ className, width = 120, height = 120 }: Illus
  * Goat shrugging with a broken cloud - for server errors
  * 120x120px, flat geometric style, red-500 accent
  */
-export function GoatServerError({ className, width = 120, height = 120 }: IllustrationProps) {
+function GoatServerError({ className, width = 120, height = 120 }: IllustrationProps) {
+  const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '');
+  const { allowAmbient: ambient } = useMotionCapabilities();
   return (
     <svg
       viewBox="0 0 120 120"
@@ -99,15 +108,17 @@ export function GoatServerError({ className, width = 120, height = 120 }: Illust
       width={width}
       height={height}
       className={cn('opacity-85', className)}
+      aria-hidden="true"
+      focusable="false"
     >
       <defs>
-        <radialGradient id="srv-err-glow" cx="50%" cy="50%" r="50%">
+        <radialGradient id={`${uid}-srv-err-glow`} cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor="#ef4444" stopOpacity="0.08" />
           <stop offset="100%" stopColor="#ef4444" stopOpacity="0" />
         </radialGradient>
       </defs>
 
-      <circle cx="60" cy="60" r="55" fill="url(#srv-err-glow)" />
+      <circle cx="60" cy="60" r="55" fill={`url(#${uid}-srv-err-glow)`} />
 
       {/* Broken cloud - left half */}
       <path
@@ -165,10 +176,10 @@ export function GoatServerError({ className, width = 120, height = 120 }: Illust
 
       {/* Falling debris from cloud */}
       <circle cx="50" cy="48" r="1" fill="#ef4444" opacity="0.3">
-        <animate attributeName="opacity" values="0.3;0.1;0.3" dur="2s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.3;0.1;0.3" dur="2s" repeatCount="indefinite" />}
       </circle>
       <circle cx="70" cy="50" r="1.5" fill="#ef4444" opacity="0.25">
-        <animate attributeName="opacity" values="0.25;0.08;0.25" dur="2.5s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.25;0.08;0.25" dur="2.5s" repeatCount="indefinite" />}
       </circle>
     </svg>
   );
@@ -178,7 +189,9 @@ export function GoatServerError({ className, width = 120, height = 120 }: Illust
  * Goat balancing two stacks of items - for quota exceeded errors
  * 120x120px, flat geometric style, amber-500 accent
  */
-export function GoatQuotaExceeded({ className, width = 120, height = 120 }: IllustrationProps) {
+function GoatQuotaExceeded({ className, width = 120, height = 120 }: IllustrationProps) {
+  const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '');
+  const { allowAmbient: ambient } = useMotionCapabilities();
   return (
     <svg
       viewBox="0 0 120 120"
@@ -186,19 +199,21 @@ export function GoatQuotaExceeded({ className, width = 120, height = 120 }: Illu
       width={width}
       height={height}
       className={cn('opacity-85', className)}
+      aria-hidden="true"
+      focusable="false"
     >
       <defs>
-        <radialGradient id="quota-glow" cx="50%" cy="50%" r="50%">
+        <radialGradient id={`${uid}-quota-glow`} cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.08" />
           <stop offset="100%" stopColor="#f59e0b" stopOpacity="0" />
         </radialGradient>
-        <linearGradient id="stack-grad" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id={`${uid}-stack-grad`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.35" />
           <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.15" />
         </linearGradient>
       </defs>
 
-      <circle cx="60" cy="60" r="55" fill="url(#quota-glow)" />
+      <circle cx="60" cy="60" r="55" fill={`url(#${uid}-quota-glow)`} />
 
       {/* Goat body */}
       <ellipse cx="60" cy="78" rx="14" ry="11" stroke="#a1a1aa" strokeWidth="1.5" fill="none" strokeOpacity="0.35" />
@@ -228,10 +243,10 @@ export function GoatQuotaExceeded({ className, width = 120, height = 120 }: Illu
 
       {/* Left stack of items (taller, wobbling) */}
       <g>
-        <rect x="18" y="42" width="16" height="6" rx="1" stroke="url(#stack-grad)" strokeWidth="1" fill="none" />
-        <rect x="18" y="34" width="16" height="6" rx="1" stroke="url(#stack-grad)" strokeWidth="1" fill="none" />
-        <rect x="17" y="26" width="16" height="6" rx="1" stroke="url(#stack-grad)" strokeWidth="1" fill="none" transform="rotate(-3 25 29)" />
-        <rect x="16" y="18" width="16" height="6" rx="1" stroke="url(#stack-grad)" strokeWidth="1" fill="none" transform="rotate(-6 24 21)" />
+        <rect x="18" y="42" width="16" height="6" rx="1" stroke={`url(#${uid}-stack-grad)`} strokeWidth="1" fill="none" />
+        <rect x="18" y="34" width="16" height="6" rx="1" stroke={`url(#${uid}-stack-grad)`} strokeWidth="1" fill="none" />
+        <rect x="17" y="26" width="16" height="6" rx="1" stroke={`url(#${uid}-stack-grad)`} strokeWidth="1" fill="none" transform="rotate(-3 25 29)" />
+        <rect x="16" y="18" width="16" height="6" rx="1" stroke={`url(#${uid}-stack-grad)`} strokeWidth="1" fill="none" transform="rotate(-6 24 21)" />
         {/* Wobble lines */}
         <line x1="15" y1="16" x2="12" y2="13" stroke="#f59e0b" strokeOpacity="0.3" strokeWidth="1" strokeLinecap="round" />
         <line x1="14" y1="20" x2="11" y2="19" stroke="#f59e0b" strokeOpacity="0.2" strokeWidth="0.8" strokeLinecap="round" />
@@ -239,9 +254,9 @@ export function GoatQuotaExceeded({ className, width = 120, height = 120 }: Illu
 
       {/* Right stack of items */}
       <g>
-        <rect x="84" y="42" width="16" height="6" rx="1" stroke="url(#stack-grad)" strokeWidth="1" fill="none" />
-        <rect x="84" y="34" width="16" height="6" rx="1" stroke="url(#stack-grad)" strokeWidth="1" fill="none" />
-        <rect x="85" y="26" width="16" height="6" rx="1" stroke="url(#stack-grad)" strokeWidth="1" fill="none" transform="rotate(2 93 29)" />
+        <rect x="84" y="42" width="16" height="6" rx="1" stroke={`url(#${uid}-stack-grad)`} strokeWidth="1" fill="none" />
+        <rect x="84" y="34" width="16" height="6" rx="1" stroke={`url(#${uid}-stack-grad)`} strokeWidth="1" fill="none" />
+        <rect x="85" y="26" width="16" height="6" rx="1" stroke={`url(#${uid}-stack-grad)`} strokeWidth="1" fill="none" transform="rotate(2 93 29)" />
       </g>
 
       {/* Legs */}
@@ -255,10 +270,10 @@ export function GoatQuotaExceeded({ className, width = 120, height = 120 }: Illu
 
       {/* Warning sparkles */}
       <circle cx="10" cy="35" r="1.5" fill="#f59e0b" opacity="0.3">
-        <animate attributeName="opacity" values="0.3;0.1;0.3" dur="1.8s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.3;0.1;0.3" dur="1.8s" repeatCount="indefinite" />}
       </circle>
       <circle cx="110" cy="30" r="1" fill="#f59e0b" opacity="0.25">
-        <animate attributeName="opacity" values="0.25;0.08;0.25" dur="2.2s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.25;0.08;0.25" dur="2.2s" repeatCount="indefinite" />}
       </circle>
     </svg>
   );
@@ -270,15 +285,17 @@ export function GoatQuotaExceeded({ className, width = 120, height = 120 }: Illu
  */
 export type SyncErrorType = 'network' | 'server' | 'quota';
 
+// Whole words, not substrings: `includes('full')` classified "Sync unsuccessful"
+// as a quota problem and `includes('space')` did the same for "Namespace", so the
+// popover told the user to free storage when the remedy was to retry.
+const NETWORK_WORDS = /(^|[^a-z])(network|offline|fetch|connect|connection|timeout|dns)([^a-z]|$)/;
+const QUOTA_WORDS = /(^|[^a-z])(quota|storage|exceeded|full|space)([^a-z]|$)/;
+
 export function classifySyncError(error: string | null): SyncErrorType {
   if (!error) return 'server';
   const lower = error.toLowerCase();
-  if (lower.includes('network') || lower.includes('offline') || lower.includes('fetch') || lower.includes('connect') || lower.includes('timeout') || lower.includes('dns')) {
-    return 'network';
-  }
-  if (lower.includes('quota') || lower.includes('storage') || lower.includes('exceeded') || lower.includes('full') || lower.includes('space')) {
-    return 'quota';
-  }
+  if (NETWORK_WORDS.test(lower)) return 'network';
+  if (QUOTA_WORDS.test(lower)) return 'quota';
   return 'server';
 }
 

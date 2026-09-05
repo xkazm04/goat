@@ -1,19 +1,30 @@
 'use client';
 
+import * as Sentry from '@sentry/nextjs';
+import { useEffect } from 'react';
+
 /**
  * Global Error Handler for Next.js App Router
  *
  * Catches errors in the root layout. Must be completely self-contained —
- * no external library imports that use React context.
+ * no external library imports that use React context. `@sentry/nextjs`'s
+ * `captureException` is a plain function call, not a context consumer, and
+ * this is the boundary for the most severe failure the app has: without the
+ * report, a root-layout crash is the one error class that leaves no trace
+ * (route-level `error.tsx` already reports).
  */
 
 export default function GlobalError({
-  error: _error,
+  error,
   reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  useEffect(() => {
+    Sentry.captureException(error);
+  }, [error]);
+
   return (
     <html lang="en">
       <body style={{ margin: 0 }}>

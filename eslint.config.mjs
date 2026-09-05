@@ -32,14 +32,13 @@
  * `no-undef` is deliberately NOT promoted: it reports 204 findings here, all of
  * them TypeScript globals and DOM lib types it cannot see. The no-undef-class
  * authority for this repo is `npm run typecheck`, whose error count is a ratchet
- * bucket of its own (29 at baseline).
+ * bucket that reached 0 on 2026-09-05; `npm run typecheck` is now blocking in CI.
  *
  * Custom rule layers:
  *
  *   1. Relaxed core-web-vitals overrides — downgrades pre-existing errors from the
  *      Next.js preset to warnings until the codebase is cleaned up:
- *      - react/no-unescaped-entities
- *      - react-hooks/rules-of-hooks, set-state-in-effect, set-state-in-render,
+ *      - react-hooks/rules-of-hooks, set-state-in-effect,
  *        purity, refs, immutability, static-components, preserve-manual-memoization
  *      - @next/next/no-html-link-for-pages
  *      - jsx-a11y/no-static-element-interactions, no-noninteractive-element-interactions
@@ -83,9 +82,8 @@ const eslintConfig = [
   // This block MUST come after jsx-a11y recommended to override any re-escalations.
   {
     rules: {
-      "react/no-unescaped-entities": "warn",
       "react-hooks/set-state-in-effect": "warn",
-      "react-hooks/set-state-in-render": "warn",
+
       "react-hooks/purity": "warn",
       "react-hooks/refs": "warn",
       "react-hooks/immutability": "warn",
@@ -206,6 +204,19 @@ const eslintConfig = [
       // violations across 3 files (PhysicsDragOverlay, SavedListsSection,
       // LayoutManager); those were fixed in the same change that promoted it.
       "react-hooks/rules-of-hooks": "error",
+
+      // Graduated 2026-09-05: each of these three had a legacy population held
+      // by the ratchet (31 / 43 / 23 on 2026-08-24) and reached 0 in the
+      // lint-cleanup sweep 74573c2. The ratchet's own rule is that a bucket at
+      // 0 is deleted and its rule promoted, so the first regression is refused
+      // by `npm run lint` rather than counted.
+      // Graduated 2026-09-06: its ratchet bucket reached 0 during the sweep
+      // (2 findings fixed in the faceted-search round), which is the trigger.
+      "react-hooks/set-state-in-render": "error",
+
+      "@next/next/no-img-element": "error",
+      "jsx-a11y/label-has-associated-control": "error",
+      "react/no-unescaped-entities": "error",
 
       // Unused imports: mechanical, auto-fixable, and 0 after `--fix`.
       // (no-unused-VARS stays a warn/ratchet bucket at 230 — a different job.)

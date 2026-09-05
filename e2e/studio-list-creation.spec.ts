@@ -299,17 +299,14 @@ test.describe('Studio: AI List Creation', () => {
     const titleValue = await titleInput.inputValue();
     expect(titleValue).toBe('');
 
-    // Without items, the metadata panel publish section shouldn't be fully active
-    // Verify via the checklist items (should show unchecked states)
-    const publishSection = page.locator('text=/Ready to Publish/i');
-    // This section only appears when items exist, so it may not be visible
-    // That itself validates the constraint
-    const isVisible = await publishSection.isVisible().catch(() => false);
-    if (isVisible) {
-      // If visible, verify checklist shows incomplete
-      const titleCheck = page.locator('text=Title set');
-      await expect(titleCheck).toBeVisible({ timeout: 10000 });
-    }
+    // The publish checklist appears only once items exist, so with no items it
+    // must NOT be there. That is the constraint this test is named for, and it
+    // used to be written as `if (isVisible) { … }` — which passes either way,
+    // including if publishing became available with nothing to publish.
+    await expect(
+      page.locator('text=/Ready to Publish/i'),
+      "the publish checklist is offered with no items generated",
+    ).not.toBeVisible({ timeout: 5000 });
   });
 
   test('full journey: generate items, configure, verify publish readiness', async ({

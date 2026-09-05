@@ -37,6 +37,10 @@ interface FormData {
 export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) {
   const currentList = useCurrentList();
   const category = currentList?.category || '';
+  // A new item is filed under the current list's category. Without a list the
+  // form cannot submit — and until 2026-09-05 it failed SILENTLY: validation
+  // wrote errors.category, nothing rendered it, and the button stayed live.
+  const categoryMissing = !category;
 
   const initialFormData: FormData = { name: '', subcategory: '' };
   const [formData, setFormData] = useState<FormData>(initialFormData);
@@ -241,9 +245,21 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
               id="add-item-category"
               type="text"
               value={category}
-              className={`${GLASS_INPUT_CLASS} opacity-50 cursor-not-allowed`}
+              className={`${GLASS_INPUT_CLASS} opacity-50 cursor-not-allowed ${errors.category ? 'border-red-500' : ''}`}
               disabled
+              aria-describedby={categoryMissing ? 'add-item-category-missing' : undefined}
             />
+            {categoryMissing ? (
+              <p
+                id="add-item-category-missing"
+                className="text-amber-400 text-xs mt-1"
+                data-testid="add-item-category-missing"
+              >
+                Open a list first — new items are filed under its category.
+              </p>
+            ) : errors.category ? (
+              <p className="text-red-400 text-xs mt-1">{errors.category}</p>
+            ) : null}
           </div>
 
           {/* Subcategory Field */}
@@ -386,7 +402,8 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
               </button>
               <button
                 type="submit"
-                disabled={isSubmitting || !formData.name.trim()}
+                disabled={isSubmitting || categoryMissing || !formData.name.trim()}
+                data-testid="add-item-submit-btn"
                 className="px-6 py-2 bg-linear-to-r from-brand to-blue-500 hover:from-brand-hover hover:to-blue-400 disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed text-white rounded-control transition-all font-medium flex items-center gap-2"
               >
                 {isSubmitting ? (

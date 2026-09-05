@@ -19,6 +19,7 @@ import {
   ListIntentColor,
   ListIntentTimePeriod,
   createListIntent,
+  parseHierarchySize,
   DEFAULT_LIST_INTENT_COLOR,
   DEFAULT_LIST_INTENT,
 } from './list-intent';
@@ -227,9 +228,7 @@ export interface ShowcasePreset {
 export function showcasePresetToIntent(preset: ShowcasePreset): ListIntent {
   const category = preset.category || DEFAULT_LIST_INTENT.category;
   const subcategory = getInitialSubcategory(category, preset.subcategory);
-  const size = preset.hierarchy
-    ? parseInt(preset.hierarchy.replace('Top ', ''), 10)
-    : DEFAULT_LIST_INTENT.size;
+  const size = parseHierarchySize(preset.hierarchy, DEFAULT_LIST_INTENT.size);
 
   return createListIntent({
     category,

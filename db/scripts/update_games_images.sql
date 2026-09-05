@@ -1,8 +1,12 @@
 -- SQL Script to update games items with local image URLs
 -- These images are stored in /public/games/ folder
 
--- Update games with matching local images
--- Using exact name matching with URL-encoded paths for special characters
+-- Update games with matching local images.
+-- Every predicate must match exactly ONE title. A LIKE pattern reaches
+-- siblings — '%Civilization%VI%' also matched Civilization VII, '%GTA%V%'
+-- matched GTA IV and GTA VI — so a sequel's cover was painted onto its
+-- neighbour. db/scripts/update-games-images.test.ts runs every predicate
+-- over the seed corpus and refuses a second hit.
 
 UPDATE public.items SET image_url = '/games/Age Of Empires 2.jpg', updated_at = NOW()
 WHERE category = 'games' AND LOWER(name) = LOWER('Age of Empires II');
@@ -38,7 +42,7 @@ UPDATE public.items SET image_url = '/games/Chrono Trigger.jpg', updated_at = NO
 WHERE category = 'games' AND LOWER(name) = LOWER('Chrono Trigger');
 
 UPDATE public.items SET image_url = '/games/Civilization VI.jpg', updated_at = NOW()
-WHERE category = 'games' AND LOWER(name) LIKE LOWER('%Civilization%VI%');
+WHERE category = 'games' AND LOWER(name) = LOWER('Civilization VI');
 
 UPDATE public.items SET image_url = '/games/Command & Conquer Red Alert 2.jpg', updated_at = NOW()
 WHERE category = 'games' AND LOWER(name) LIKE LOWER('%Command%Conquer%Red Alert%2%');
@@ -119,7 +123,7 @@ UPDATE public.items SET image_url = '/games/GTA San Andreas.jpg', updated_at = N
 WHERE category = 'games' AND LOWER(name) LIKE LOWER('%GTA%San Andreas%');
 
 UPDATE public.items SET image_url = '/games/GTA V.png', updated_at = NOW()
-WHERE category = 'games' AND (LOWER(name) LIKE LOWER('%GTA%V%') OR LOWER(name) LIKE LOWER('%Grand Theft Auto%V%'));
+WHERE category = 'games' AND (LOWER(name) = LOWER('GTA V') OR LOWER(name) = LOWER('Grand Theft Auto V'));
 
 UPDATE public.items SET image_url = '/games/Hades.jpg', updated_at = NOW()
 WHERE category = 'games' AND LOWER(name) = LOWER('Hades');

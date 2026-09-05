@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import * as React from "react";
-import { useState, useEffect } from "react";
+import { useId, useState } from "react";
 
 import { useProgressiveWikiImage } from "@/hooks/use-progressive-wiki-image";
 import { cn } from "@/lib/utils";
@@ -57,9 +57,6 @@ export const ProgressiveImage = React.forwardRef<HTMLDivElement, ProgressiveImag
     },
     ref
   ) => {
-    const [imageLoaded, setImageLoaded] = useState(false);
-    const [imageError, setImageError] = useState(false);
-
     const { imageUrl: wikiImageUrl, isFetching: wikiIsFetching } = useProgressiveWikiImage({
       itemTitle: itemTitle || alt,
       existingImage: src,
@@ -67,24 +64,31 @@ export const ProgressiveImage = React.forwardRef<HTMLDivElement, ProgressiveImag
       fetchDelay: WIKI_FETCH_DELAY,
     });
 
-    const finalSrc = src || (autoFetchWiki ? wikiImageUrl : null);
-    const [currentSrc, setCurrentSrc] = useState<string | null>(finalSrc);
+    const currentSrc = src || (autoFetchWiki ? wikiImageUrl : null);
 
-    useEffect(() => {
-      setCurrentSrc(finalSrc);
-      setImageLoaded(false);
-      setImageError(false);
-    }, [finalSrc]);
+    // Load/error state is keyed by the URL it was reported FOR, so a change of
+    // source invalidates it by derivation rather than by an effect that
+    // re-renders to reset three flags. The previous shape (a `currentSrc`
+    // mirror + `useEffect` resetting `imageLoaded`/`imageError`) painted one
+    // frame with the old image's loaded flag applied to the new URL.
+    const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
+    const [erroredSrc, setErroredSrc] = useState<string | null>(null);
+    const imageLoaded = currentSrc !== null && loadedSrc === currentSrc;
+    const imageError = currentSrc !== null && erroredSrc === currentSrc;
 
     const handleImageLoad = () => {
-      setImageLoaded(true);
+      setLoadedSrc(currentSrc);
       onLoad?.();
     };
 
     const handleImageError = () => {
-      setImageError(true);
+      setErroredSrc(currentSrc);
       onError?.();
     };
+
+    // `aria-description` is not a supported attribute on role="img"; the
+    // supported form is a described-by reference to text in the DOM.
+    const descriptionId = useId();
 
     const showFallback = !currentSrc || imageError;
     const isLoading = loading || (!imageLoaded && !showFallback) || wikiIsFetching;
@@ -99,8 +103,13 @@ export const ProgressiveImage = React.forwardRef<HTMLDivElement, ProgressiveImag
         data-testid={testId || "progressive-image"}
         role="img"
         aria-label={alt}
-        aria-description={ariaDescription}
+        aria-describedby={ariaDescription ? descriptionId : undefined}
       >
+        {ariaDescription && (
+          <span id={descriptionId} className="sr-only">
+            {ariaDescription}
+          </span>
+        )}
         <AnimatePresence>
           {!imageLoaded && !showFallback && placeholder && (
             <motion.img
@@ -108,7 +117,7 @@ export const ProgressiveImage = React.forwardRef<HTMLDivElement, ProgressiveImag
               exit={{ opacity: 0 }}
               transition={{ duration: PLACEHOLDER_EXIT_DURATION }}
               src={placeholder}
-              alt="Loading placeholder"
+              alt=""
               className={cn(
                 "absolute inset-0 w-full h-full object-cover blur-md scale-110",
                 className

@@ -10,7 +10,8 @@
  *   node scripts/fix-game-images.js --update     # Actually update database
  */
 
-const API_BASE = process.env.API_BASE || 'http://localhost:3001';
+// `next dev` serves 3000; the old default (3001) pointed at a port nothing listens on.
+const API_BASE = process.env.API_BASE || 'http://localhost:3000';
 const args = process.argv.slice(2);
 const DRY_RUN = !args.includes('--update');
 
@@ -34,7 +35,7 @@ const WIKIPEDIA_OVERRIDES = {
 
 function gameNameToWikipediaTitle(name) {
   // Check overrides first
-  if (WIKIPEDIA_OVERRIDES.hasOwnProperty(name)) {
+  if (Object.prototype.hasOwnProperty.call(WIKIPEDIA_OVERRIDES, name)) {
     return WIKIPEDIA_OVERRIDES[name];
   }
 
@@ -157,4 +158,9 @@ async function main() {
   console.log('\n✅ Done!');
 }
 
-main().catch(console.error);
+main().catch((err) => {
+  // A failed run must exit non-zero: the terminal reads the exit code, not the
+  // stack trace. `.catch(console.error)` printed the error and exited 0.
+  console.error(err);
+  process.exit(1);
+});

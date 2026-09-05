@@ -149,19 +149,15 @@ export const useWikiImageStore = create<WikiImageStore>()(
         return get().fetching.has(itemTitle);
       },
 
+      // A READ. useProgressiveWikiImage calls this during render, so it must not
+      // write: until 2026-09-05 an expired entry was deleted from here via set(),
+      // which is a store update inside a React render for every card whose
+      // lookup failed more than FAILURE_TTL_MS ago. The expired entry is pruned
+      // by the write path (fetchImage / setImage) instead.
       hasFailed: (itemTitle: string) => {
         const failedAt = get().failures.get(itemTitle);
         if (failedAt === undefined) return false;
-        if (Date.now() - failedAt > FAILURE_TTL_MS) {
-          // TTL expired — allow retry
-          set((state) => {
-            const newFailures = new Map(state.failures);
-            newFailures.delete(itemTitle);
-            return { failures: newFailures };
-          });
-          return false;
-        }
-        return true;
+        return Date.now() - failedAt <= FAILURE_TTL_MS;
       },
 
       fetchImage: async (itemTitle: string) => {
@@ -203,11 +199,15 @@ export const useWikiImageStore = create<WikiImageStore>()(
               const evicted = evictLRU(newImages, newOrder, MAX_CACHE_SIZE);
               const newFetching = new Set(state.fetching);
               newFetching.delete(itemTitle);
+              // A success after an expired failure retires that failure entry.
+              const newFailures = new Map(state.failures);
+              newFailures.delete(itemTitle);
               logCacheSizeIfNeeded(evicted.images);
               return {
                 images: evicted.images,
                 accessOrder: evicted.accessOrder,
                 fetching: newFetching,
+                failures: newFailures,
               };
             });
             wikiImageLogger.debug("Cached Wikipedia image for:", itemTitle);

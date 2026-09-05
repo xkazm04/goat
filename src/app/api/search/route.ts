@@ -94,10 +94,9 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
 
   // Parse other options
   const category = searchParams.get('category');
-  const limit = Math.min(
-    parseInt(searchParams.get('limit') || String(DEFAULT_LIMIT)),
-    MAX_LIMIT
-  );
+  // `Math.min(NaN, MAX)` is NaN: a non-numeric limit used to reach `.limit(NaN)`.
+  const rawLimit = parseInt(searchParams.get('limit') ?? '', 10);
+  const limit = Number.isFinite(rawLimit) ? Math.min(MAX_LIMIT, Math.max(1, rawLimit)) : DEFAULT_LIMIT;
   const includeSuggestions = searchParams.get('includeSuggestions') !== 'false';
   const userId = searchParams.get('userId');
 

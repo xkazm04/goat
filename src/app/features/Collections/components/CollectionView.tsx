@@ -31,6 +31,8 @@ import {
   Calendar,
   ExternalLink,
   GripVertical,
+  AlertTriangle,
+  RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
 import { memo, useMemo, useState, useCallback, useEffect } from "react";
@@ -38,6 +40,8 @@ import { memo, useMemo, useState, useCallback, useEffect } from "react";
 import { EmptyTrophyCase, NoSearchResults } from "@/components/illustrations/EmptyStateIllustrations";
 import { useMotionCapabilities } from "@/hooks/use-motion-preference";
 import { DRAG_ACTIVATION_DISTANCE_PX } from "@/lib/dnd";
+
+import { safeCollectionColor } from "../lib/collection-color";
 
 import type { ListCollection, CollectionStats } from "@/types/collection";
 import type { TopList } from "@/types/top-lists";
@@ -47,6 +51,9 @@ interface CollectionViewProps {
   lists: TopList[];
   stats?: CollectionStats;
   isLoading?: boolean;
+  /** The collections request failed; an empty list is then unknown, not empty. */
+  loadFailed?: boolean;
+  onRetry?: () => void;
   onAddList?: () => void;
   onRemoveList?: (listId: string) => void;
   onReorderLists?: (listIds: string[]) => void;
@@ -82,7 +89,7 @@ const ListCard = memo(function ListCard({
       exit={{ opacity: 0, scale: 0.95 }}
       className="group relative bg-slate-800/50 rounded-xl border border-slate-700/50 overflow-hidden hover:border-slate-600/50 hover:bg-slate-800/70 transition-all"
     >
-      <Link href={`/match/${list.id}`} className="block p-5">
+      <Link href={`/goat?list=${list.id}`} className="block p-5">
         <div className="flex items-start gap-3">
           {showDragHandle && (
             <div
@@ -156,7 +163,7 @@ const ListRow = memo(function ListRow({
       className="group"
     >
       <Link
-        href={`/match/${list.id}`}
+        href={`/goat?list=${list.id}`}
         className="flex items-center gap-4 p-4 bg-slate-800/30 hover:bg-slate-800/60 rounded-xl border border-slate-700/30 hover:border-slate-600/50 transition-all"
       >
         {showDragHandle && (
@@ -224,6 +231,8 @@ export const CollectionView = memo(function CollectionView({
   lists,
   stats,
   isLoading = false,
+  loadFailed = false,
+  onRetry,
   onAddList,
   onRemoveList,
   onReorderLists,
@@ -358,7 +367,7 @@ export const CollectionView = memo(function CollectionView({
     );
   }
 
-  const color = collection.color || "#06b6d4";
+  const color = safeCollectionColor(collection.color);
 
   return (
     <div className="flex-1 p-6">
@@ -453,6 +462,22 @@ export const CollectionView = memo(function CollectionView({
             animate={{ rotate: 360 }}
             transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
           />
+        </div>
+      ) : loadFailed && filteredLists.length === 0 && !searchTerm ? (
+        <div className="text-center py-16 flex flex-col items-center" role="alert">
+          <AlertTriangle className="w-10 h-10 text-amber-500/70 mb-3" />
+          <p className="text-slate-400 mb-1">Couldn&apos;t load this collection&apos;s lists</p>
+          <p className="text-sm text-slate-600 mb-4">The request failed; nothing here has been removed.</p>
+          {onRetry && (
+            <button
+              type="button"
+              onClick={onRetry}
+              className="inline-flex items-center gap-1.5 text-brand-hover hover:text-brand-hover text-sm"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              Retry
+            </button>
+          )}
         </div>
       ) : filteredLists.length === 0 ? (
         <div className="text-center py-16 flex flex-col items-center">

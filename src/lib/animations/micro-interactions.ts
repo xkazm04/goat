@@ -11,13 +11,14 @@
  * - Accessible: Respect prefers-reduced-motion
  */
 
-import { DURATION, EASING } from './motion-presets';
+import { DURATION, EASING, prefersReducedMotion } from './motion-presets';
 
 import type { Variants, Transition, TargetAndTransition } from 'framer-motion';
 
 
-// Re-export canonical tokens so existing consumers keep working.
-export { DURATION, EASING };
+// Re-export canonical tokens so existing consumers keep working. The
+// reduced-motion read is ONE function (motion/reduced-motion-mechanics).
+export { DURATION, EASING, prefersReducedMotion };
 
 /**
  * Scale factors for press states
@@ -52,14 +53,6 @@ export const SHADOWS = {
 // =============================================================================
 // Utility Functions
 // =============================================================================
-
-/**
- * Check for reduced motion preference
- */
-export function prefersReducedMotion(): boolean {
-  if (typeof window === 'undefined') return false;
-  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
-}
 
 /**
  * Get appropriate transition based on reduced motion preference

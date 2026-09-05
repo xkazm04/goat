@@ -1,46 +1,14 @@
 /**
  * 3D Effects and Animation Components
  *
- * Interactive 3D card effects, parallax scrolling, floating elements,
- * and preview modals. All components respect reduced motion preferences.
+ * Parallax scrolling and ambient floating elements for the landing page.
+ * Both respect the motion tier from `useMotionCapabilities` (ambient motion
+ * is off under the `reduced` and `minimal` tiers).
+ *
+ * 2026-09-05: Card3D, InteractivePreview and ReducedMotionProvider were
+ * removed from this package — zero importers outside it since the barrel was
+ * created (grep + knip). This barrel exports exactly what is consumed.
  */
 
-// Core 3D components
-export { Card3D, Card3DLayer, type Card3DProps, type Card3DLayerProps } from './Card3D';
-export {
-  ParallaxSection,
-  ParallaxLayer,
-  useViewportParallax,
-  type ParallaxSectionProps,
-  type ParallaxLayerProps,
-} from './ParallaxSection';
-
-// Interactive components
-export {
-  InteractivePreview,
-  QuickPreview,
-  type InteractivePreviewProps,
-  type QuickPreviewProps,
-} from './InteractivePreview';
-
-// Decorative components
-export {
-  FloatingElements,
-  FloatingPresets,
-  type FloatingElementsProps,
-  type FloatingElement,
-  type FloatingPattern,
-  type FloatingShape,
-} from './FloatingElements';
-
-// Accessibility
-export {
-  ReducedMotionProvider,
-  useReducedMotion,
-  MotionGate,
-  NoMotionWrapper,
-  type ReducedMotionContextValue,
-  type ReducedMotionProviderProps,
-  type MotionGateProps,
-  type NoMotionWrapperProps,
-} from './ReducedMotionProvider';
+export { ParallaxSection, ParallaxLayer } from './ParallaxSection';
+export { FloatingElements, FloatingPresets } from './FloatingElements';

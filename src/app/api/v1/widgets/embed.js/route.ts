@@ -8,9 +8,7 @@ export const dynamic = 'force-dynamic';
  * Returns the embeddable JavaScript widget loader.
  * This script can be included on any website to display GOAT rankings.
  */
-export async function GET(request: NextRequest) {
-  const origin = request.headers.get('origin') || '*';
-
+export async function GET(_request: NextRequest) {
   // The embed script that will be served to third-party websites
   const embedScript = `
 (function() {
@@ -189,10 +187,12 @@ export async function GET(request: NextRequest) {
       .goat-widget-link:hover {
         text-decoration: underline;
       }
-      .goat-widget-loading {
+      .goat-widget-loading,
+      .goat-widget-empty {
         padding: 24px;
         text-align: center;
         color: var(--goat-muted);
+        font-size: 13px;
       }
       .goat-widget-error {
         padding: 16px;
@@ -335,10 +335,13 @@ export async function GET(request: NextRequest) {
 
     var widgetContainer = createElement('div', { className: 'goat-widget-container' });
 
-    // Header
+    // Header. Zero rows is a real state, not "Top 0": the API answered and had
+    // nothing for this category, so the header must not read as a count.
+    var title = rankings.length
+      ? 'Top ' + rankings.length + ' ' + (config.category || 'Rankings')
+      : (config.category || 'Rankings');
     var header = createElement('div', { className: 'goat-widget-header' }, [
-      createElement('h3', { className: 'goat-widget-title' },
-        'Top ' + rankings.length + ' ' + (config.category || 'Rankings')),
+      createElement('h3', { className: 'goat-widget-title' }, title),
       createElement('a', {
         className: 'goat-widget-powered',
         href: GOAT.baseUrl,
@@ -347,6 +350,22 @@ export async function GET(request: NextRequest) {
         'data-testid': 'goat-embed-powered'
       }, 'Powered by GOAT')
     ]);
+
+    // Empty result: say so, instead of rendering an empty list under a header
+    // that looks like a successful ranking.
+    if (rankings.length === 0) {
+      var empty = createElement('div', {
+        className: 'goat-widget-empty',
+        role: 'status',
+        'data-testid': 'goat-embed-empty'
+      }, 'No rankings yet' + (config.category ? ' for ' + config.category : ''));
+      widgetContainer.appendChild(header);
+      widgetContainer.appendChild(empty);
+      widget.appendChild(widgetContainer);
+      container.innerHTML = '';
+      container.appendChild(widget);
+      return;
+    }
 
     // List
     var list = createElement('ul', { className: 'goat-widget-list' });
@@ -379,11 +398,14 @@ export async function GET(request: NextRequest) {
       list.appendChild(itemEl);
     });
 
-    // Footer
+    // Footer. There is no /explore/<category> route in this app (src/app has
+    // no explore segment), so the deep link 404'd on every partner site; the
+    // home page is the one destination that exists for every category.
+    // NOTE: this whole script is a template literal — no backticks in comments.
     var footer = createElement('div', { className: 'goat-widget-footer' }, [
       createElement('a', {
         className: 'goat-widget-link',
-        href: GOAT.baseUrl + '/explore/' + (config.category || '').toLowerCase(),
+        href: GOAT.baseUrl,
         target: '_blank',
         rel: 'noopener noreferrer',
         'data-testid': 'goat-embed-view-all'
@@ -404,9 +426,11 @@ export async function GET(request: NextRequest) {
     var theme = config.theme || GOAT.defaults.theme;
     var item = data.item;
 
+    // No /item/<id> route exists in this app either (see the footer note in
+    // renderRankingWidget); link to the home page rather than a 404.
     var badge = createElement('a', {
       className: 'goat-widget goat-badge goat-badge-' + theme,
-      href: GOAT.baseUrl + '/item/' + item.id,
+      href: GOAT.baseUrl,
       target: '_blank',
       rel: 'noopener noreferrer',
       'data-testid': 'goat-embed-badge'
@@ -728,11 +752,16 @@ export async function GET(request: NextRequest) {
 })();
 `;
 
+  // A public, credential-free script: `*` is the honest CORS answer, and it is
+  // what the OPTIONS handler below already says. Echoing the request Origin
+  // here while also sending `Cache-Control: public, max-age=3600` with no
+  // `Vary: Origin` let a shared cache store one partner's origin and serve it
+  // to the next, whose browser then refused the script.
   return new NextResponse(embedScript, {
     status: 200,
     headers: {
       'Content-Type': 'application/javascript; charset=utf-8',
-      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, OPTIONS',
       'Cache-Control': 'public, max-age=3600',
       'X-GOAT-Api-Version': '1.0',

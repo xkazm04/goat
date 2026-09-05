@@ -10,8 +10,31 @@ import {
   EmbedCode,
   EmbedFormat,
   WIDGET_DIMENSIONS,
-  DEFAULT_WIDGET_CONFIG,
+  WIDGET_DEFAULT_BORDER_RADIUS,
+  normalizeWidgetConfig,
 } from './types';
+
+/**
+ * A list id is DATA. Every snippet below puts it into a slot with its own
+ * grammar — a URL path segment, an HTML attribute, a JS string literal, a
+ * shortcode attribute — and each slot gets the encoding that slot needs.
+ * Ids are UUIDs today; the guard is for the day they are not.
+ */
+// RFC 3986 strict: encodeURIComponent leaves !'()* alone, and a bare ")" is
+// exactly the byte that closes a markdown link.
+const encodePathSegment = (s: string): string =>
+  encodeURIComponent(s).replace(/[!'()*]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`);
+
+/** Token safe for an HTML id attribute AND a single-quoted JS string. */
+const elementToken = (s: string): string => encodeURIComponent(s).replace(/[^A-Za-z0-9_-]/g, '_');
+
+const escapeAttr = (s: string): string =>
+  s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 
 /**
  * Serialize config to URL parameters
@@ -31,7 +54,7 @@ function configToParams(config: WidgetConfig): URLSearchParams {
   if (!config.showBranding) params.set('branding', '0');
   if (!config.interactive) params.set('interactive', '0');
 
-  if (config.borderRadius !== undefined && config.borderRadius !== 12) {
+  if (config.borderRadius !== undefined && config.borderRadius !== WIDGET_DEFAULT_BORDER_RADIUS) {
     params.set('radius', config.borderRadius.toString());
   }
 
@@ -68,7 +91,7 @@ export function generateWidgetUrl(config: WidgetConfig): string {
  * Generate full ranking URL
  */
 export function generateFullUrl(listId: string): string {
-  return getShareUrl(listId);
+  return getShareUrl(encodePathSegment(listId));
 }
 
 /**
@@ -98,8 +121,9 @@ export function generateScriptEmbed(config: WidgetConfig): string {
   const baseUrl = getBaseUrl();
   const params = configToParams(config);
   const dimensions = WIDGET_DIMENSIONS[config.size];
+  const mount = `goat-widget-${elementToken(config.listId)}`;
 
-  return `<div id="goat-widget-${config.listId}" data-goat-widget></div>
+  return `<div id="${mount}" data-goat-widget></div>
 <script>
 (function() {
   var d = document;
@@ -109,7 +133,7 @@ export function generateScriptEmbed(config: WidgetConfig): string {
   s.dataset.config = '${params.toString()}';
   s.dataset.width = '${dimensions.width}';
   s.dataset.height = '${dimensions.height}';
-  d.getElementById('goat-widget-${config.listId}').appendChild(s);
+  d.getElementById('${mount}').appendChild(s);
 })();
 </script>`.trim();
 }
@@ -134,7 +158,7 @@ export function generateOEmbedUrl(config: WidgetConfig): string {
  */
 export function generateWordPressShortcode(config: WidgetConfig): string {
   const dimensions = WIDGET_DIMENSIONS[config.size];
-  return `[goat_ranking id="${config.listId}" width="${dimensions.width}" height="${dimensions.height}" theme="${config.theme}"]`;
+  return `[goat_ranking id="${escapeAttr(config.listId)}" width="${dimensions.width}" height="${dimensions.height}" theme="${config.theme}"]`;
 }
 
 /**
@@ -142,7 +166,7 @@ export function generateWordPressShortcode(config: WidgetConfig): string {
  */
 export function generateMarkdownEmbed(config: WidgetConfig): string {
   const fullUrl = generateFullUrl(config.listId);
-  return `[![GOAT Ranking](${getOGImageUrl(config.listId)})](${fullUrl})`;
+  return `[![GOAT Ranking](${getOGImageUrl(encodePathSegment(config.listId))})](${fullUrl})`;
 }
 
 /**
@@ -153,11 +177,7 @@ export class EmbedCodeGenerator {
   private config: WidgetConfig;
 
   constructor(listId: string, options: Partial<Omit<WidgetConfig, 'listId'>> = {}) {
-    this.config = {
-      listId,
-      ...DEFAULT_WIDGET_CONFIG,
-      ...options,
-    };
+    this.config = normalizeWidgetConfig({ listId, ...options });
   }
 
   /**
@@ -269,7 +289,7 @@ export class EmbedCodeGenerator {
    * Update configuration
    */
   updateConfig(options: Partial<WidgetConfig>): void {
-    this.config = { ...this.config, ...options };
+    this.config = normalizeWidgetConfig({ ...this.config, ...options });
   }
 
   /**
@@ -308,29 +328,31 @@ export function parseEmbedUrl(url: string): WidgetConfig | null {
     const listId = params.get('id');
     if (!listId) return null;
 
-    const config: WidgetConfig = {
+    // Read raw strings here; membership, clamping and the custom-palette rule
+    // are the normalizer's job, so a hostile URL cannot yield a config that
+    // indexes WIDGET_DIMENSIONS with a key that does not exist.
+    const raw: Parameters<typeof normalizeWidgetConfig>[0] = {
       listId,
-      size: (params.get('size') as WidgetConfig['size']) || 'standard',
-      theme: (params.get('theme') as WidgetConfig['theme']) || 'dark',
-      displayStyle: (params.get('display') as WidgetConfig['displayStyle']) || 'list',
-      itemCount: parseInt(params.get('count') || '5', 10),
+      size: (params.get('size') ?? undefined) as WidgetConfig['size'] | undefined,
+      theme: (params.get('theme') ?? undefined) as WidgetConfig['theme'] | undefined,
+      displayStyle: (params.get('display') ?? undefined) as WidgetConfig['displayStyle'] | undefined,
+      itemCount: params.has('count') ? Number.parseInt(params.get('count')!, 10) : undefined,
       showRanks: params.get('ranks') !== '0',
       showImages: params.get('images') !== '0',
       showTitle: params.get('title') !== '0',
       showBranding: params.get('branding') !== '0',
       interactive: params.get('interactive') !== '0',
-      borderRadius: parseInt(params.get('radius') || '12', 10),
+      borderRadius: params.has('radius') ? Number.parseInt(params.get('radius')!, 10) : undefined,
     };
 
     const locale = params.get('locale');
-    if (locale) config.locale = locale;
+    if (locale) raw.locale = locale;
 
-    // Parse custom colors
     const colorsStr = params.get('colors');
-    if (colorsStr && config.theme === 'custom') {
+    if (colorsStr) {
       const colors = colorsStr.split('-').map(c => `#${c}`);
       if (colors.length === 6) {
-        config.customColors = {
+        raw.customColors = {
           background: colors[0],
           surface: colors[1],
           text: colors[2],
@@ -341,7 +363,7 @@ export function parseEmbedUrl(url: string): WidgetConfig | null {
       }
     }
 
-    return config;
+    return normalizeWidgetConfig(raw);
   } catch {
     return null;
   }

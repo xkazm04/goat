@@ -46,12 +46,16 @@ export const ContinueRankingBar = memo(function ContinueRankingBar() {
   const { handlePlayList } = usePlayList();
 
   // Get featured lists to resolve names/metadata
-  const { data: featuredData, isLoading: isFeaturedLoading } = useFeaturedLists({
+  const featuredQuery = useFeaturedLists({
     popular_limit: 80,
     trending_limit: 80,
     latest_limit: 80,
     awards_limit: 80,
   });
+  const { data: featuredData, isLoading: isFeaturedLoading } = featuredQuery;
+  // Whether the title lookup could not be performed, as opposed to performed
+  // and finding nothing. The two must not be reported with one sentence.
+  const lookupFailed = !!featuredQuery.error;
 
   // Build a lookup map of all known lists
   const listLookup = useMemo(() => {
@@ -146,11 +150,25 @@ export const ContinueRankingBar = memo(function ContinueRankingBar() {
                 if (item.list) {
                   handlePlayList(item.list);
                 } else {
-                  // Orphaned session: list was deleted or is no longer accessible
-                  toast({
-                    title: "List Unavailable",
-                    description: "This list may have been deleted. Navigating to your session data.",
-                  });
+                  // The lookup did not resolve this list. That is NOT evidence
+                  // of deletion: `listLookup` is built from the featured
+                  // request's top-80 windows, so it is empty whenever that
+                  // request FAILED, and it omits any list outside those windows
+                  // even when the list is perfectly alive. Say only what is
+                  // known — the session itself is local and opens either way.
+                  toast(
+                    lookupFailed
+                      ? {
+                          title: "Couldn't load list details",
+                          description:
+                            "We couldn't reach the list catalogue, so we're opening your saved progress directly.",
+                        }
+                      : {
+                          title: "Opening saved progress",
+                          description:
+                            "We don't have this list's details here — opening your saved progress directly.",
+                        },
+                  );
                   router.push(`/goat?list=${item.listId}`);
                 }
               }}

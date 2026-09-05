@@ -41,8 +41,10 @@ export async function GET(request: NextRequest) {
 
   // Check if trends feature is available
   if (!keyValidation.features.trends) {
+    // No /pricing route exists in this app (see analytics/route.ts); the old
+    // message pointed a 403'd caller at a 404.
     return apiError(
-      'Trends require Pro tier or higher. Upgrade at goat.app/pricing',
+      'Trends require the Pro tier or higher',
       403,
       'FEATURE_NOT_AVAILABLE'
     );
@@ -96,6 +98,7 @@ export async function GET(request: NextRequest) {
 
     // Generate trend data points
     const normalizedItem = { ...item, selection_count: undefined };
+    const seed = hashCode(item.id);
     const dataPoints = generateTrendDataPoints(normalizedItem, startDate, endDate, granularity);
 
     // Calculate trend direction
@@ -121,7 +124,9 @@ export async function GET(request: NextRequest) {
         magnitude: Math.abs(rankChange),
         startRank,
         endRank,
-        volatilityChange: Math.random() * 2 - 1, // Mock volatility change
+        // Mock volatility change in [-1, 1) — seeded, so two identical requests
+        // agree (the rest of this response is already seed-derived).
+        volatilityChange: ((seed % 200) - 100) / 100,
       },
       dataPoints,
     };
@@ -181,9 +186,10 @@ function generateTrendDataPoints(
     // Confidence increases with more data
     const confidence = Math.min(0.95, 0.5 + (index / (totalDays / stepDays)) * 0.3);
 
-    // Ranking count varies
+    // Ranking count varies per point — deterministically, from the same seed
+    // as the rank noise, so a replayed request yields the same series.
     const rankingCount = Math.floor(
-      (item.selection_count || 50) / (totalDays / stepDays) + (Math.random() - 0.5) * 20
+      (item.selection_count || 50) / (totalDays / stepDays) + Math.sin(index * 1.3 + seed) * 10
     );
 
     dataPoints.push({

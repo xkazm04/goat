@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useState, useCallback } from "react";
+import { memo, useState, useCallback, useEffect, useRef } from "react";
 
 import {
   useUserCollections,
@@ -16,6 +16,7 @@ import { AddListModal } from "./components/AddListModal";
 import { CollectionManager } from "./components/CollectionManager";
 import { CollectionSidebar } from "./components/CollectionSidebar";
 import { CollectionView } from "./components/CollectionView";
+import { QuickCollectionSwitcher } from "./components/QuickCollectionSwitcher";
 
 import type {
   ListCollection,
@@ -25,23 +26,45 @@ import type {
 
 interface CollectionsDashboardProps {
   className?: string;
+  /**
+   * Collection to open with. The landing page deep-links private collections
+   * as `/my-collections?selected=<id>` (CollectionsSection.tsx); until this
+   * prop existed the dashboard ignored the parameter and every such link
+   * landed on "All Lists".
+   */
+  initialSelectedId?: string | null;
 }
 
 export const CollectionsDashboard = memo(function CollectionsDashboard({
   className = "",
+  initialSelectedId = null,
 }: CollectionsDashboardProps) {
   const user = useCurrentUser();
   const userLists = useUserLists();
   const { setSelectedCollection } = useCollectionActions();
+
+  // Honour the deep link once, on arrival. Later navigation inside the
+  // dashboard owns the selection; a re-render with the same URL must not
+  // yank the user back.
+  const appliedInitialRef = useRef(false);
+  useEffect(() => {
+    if (appliedInitialRef.current || !initialSelectedId) return;
+    appliedInitialRef.current = true;
+    setSelectedCollection(initialSelectedId);
+  }, [initialSelectedId, setSelectedCollection]);
   const collections = useCollectionStore((state) => state.collections);
   const selectedCollectionId = useCollectionStore(
     (state) => state.selectedCollectionId
   );
 
-  // Fetch user collections
-  const { data: _fetchedCollections, isLoading } = useUserCollections({
+  // Fetch user collections. `isError`/`refetch` travel to the surfaces that
+  // used to paint a failed load as "No collections yet".
+  const { data: _fetchedCollections, isLoading, isError, refetch } = useUserCollections({
     includeStats: true,
   });
+  const handleRetryLoad = useCallback(() => {
+    void refetch();
+  }, [refetch]);
 
   // Collection operations
   const { create, update, remove, addLists, removeList, reorderLists, isPending } =
@@ -52,6 +75,9 @@ export const CollectionsDashboard = memo(function CollectionsDashboard({
   const [isAddListOpen, setIsAddListOpen] = useState(false);
   const [editingCollection, setEditingCollection] =
     useState<ListCollection | null>(null);
+  // Set when the delete was requested from the sidebar menu: the dialog opens
+  // straight on its confirmation step instead of the edit form.
+  const [deleteRequested, setDeleteRequested] = useState(false);
 
   // Get selected collection
   const selectedCollection = selectedCollectionId
@@ -91,19 +117,27 @@ export const CollectionsDashboard = memo(function CollectionsDashboard({
     setIsManagerOpen(true);
   }, []);
 
+  // Deleting is irreversible, so BOTH doors to it go through the dialog's
+  // "Are you sure?" step: the dialog's own footer, and the sidebar menu, which
+  // used to call `remove` directly with no confirmation. The rejection is NOT
+  // caught here any more — useDeleteCollection raises no notification of its
+  // own, and this wrapper's catch used to resolve, so the dialog read a failed
+  // delete as success and closed over a collection that still existed.
   const handleDeleteCollection = useCallback(
     async (collection: ListCollection) => {
-      try {
-        await remove({ collectionId: collection.id });
-        if (selectedCollectionId === collection.id) {
-          setSelectedCollection(null);
-        }
-      } catch (error) {
-        console.error("Failed to delete collection:", error);
+      await remove({ collectionId: collection.id });
+      if (selectedCollectionId === collection.id) {
+        setSelectedCollection(null);
       }
     },
     [remove, selectedCollectionId, setSelectedCollection]
   );
+
+  const handleRequestDeleteCollection = useCallback((collection: ListCollection) => {
+    setEditingCollection(collection);
+    setDeleteRequested(true);
+    setIsManagerOpen(true);
+  }, []);
 
   const handleSaveCollection = useCallback(
     async (data: CreateCollectionRequest | UpdateCollectionRequest) => {
@@ -122,6 +156,7 @@ export const CollectionsDashboard = memo(function CollectionsDashboard({
   const handleCloseManager = useCallback(() => {
     setIsManagerOpen(false);
     setEditingCollection(null);
+    setDeleteRequested(false);
   }, []);
 
   // Remove a list from the selected collection. Previously CollectionView was
@@ -200,36 +235,47 @@ export const CollectionsDashboard = memo(function CollectionsDashboard({
 
   return (
     <div className={`flex h-[calc(100vh-4rem)] ${className}`}>
-      {/* Sidebar */}
-      <div className="w-64 shrink-0">
+      {/* Sidebar — desktop only. At 375px a fixed 256px column plus the view's
+          48px of padding left 71px for the lists themselves; below `md` the
+          switcher in the content header takes over collection navigation. */}
+      <div className="hidden md:block w-64 shrink-0">
         <CollectionSidebar
           selectedCollectionId={selectedCollectionId}
           onSelectCollection={handleSelectCollection}
           onCreateCollection={handleCreateCollection}
           onEditCollection={handleEditCollection}
-          onDeleteCollection={handleDeleteCollection}
+          onDeleteCollection={handleRequestDeleteCollection}
+          loadFailed={isError}
+          onRetry={handleRetryLoad}
         />
       </div>
 
       {/* Main content */}
-      <CollectionView
-        collection={selectedCollection}
-        lists={listsInCollection}
-        isLoading={isLoading}
-        onRemoveList={selectedCollection ? handleRemoveListFromCollection : undefined}
-        onReorderLists={selectedCollection ? handleReorderLists : undefined}
-        onAddList={selectedCollection ? handleOpenAddList : undefined}
-        stats={
-          selectedCollection
-            ? {
-                listCount: selectedCollection.listIds.length,
-                totalItems: 0,
-                completedLists: 0,
-                lastActivity: selectedCollection.updatedAt,
-              }
-            : undefined
-        }
-      />
+      <div className="flex-1 min-w-0 flex flex-col">
+        <div className="md:hidden px-6 pt-4" data-testid="mobile-collection-nav">
+          <QuickCollectionSwitcher onCreateCollection={handleCreateCollection} />
+        </div>
+        <CollectionView
+          collection={selectedCollection}
+          lists={listsInCollection}
+          isLoading={isLoading}
+          loadFailed={isError}
+          onRetry={handleRetryLoad}
+          onRemoveList={selectedCollection ? handleRemoveListFromCollection : undefined}
+          onReorderLists={selectedCollection ? handleReorderLists : undefined}
+          onAddList={selectedCollection ? handleOpenAddList : undefined}
+          stats={
+            selectedCollection
+              ? {
+                  listCount: selectedCollection.listIds.length,
+                  totalItems: 0,
+                  completedLists: 0,
+                  lastActivity: selectedCollection.updatedAt,
+                }
+              : undefined
+          }
+        />
+      </div>
 
       {/* Collection Manager Modal */}
       <CollectionManager
@@ -239,6 +285,7 @@ export const CollectionsDashboard = memo(function CollectionsDashboard({
         parentCollections={collections.filter((c) => !c.parentId)}
         onSave={handleSaveCollection}
         onDelete={editingCollection ? handleDeleteCollection : undefined}
+        confirmDeleteOnOpen={deleteRequested}
       />
 
       {/* Add-List Picker Modal */}

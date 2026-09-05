@@ -8,9 +8,10 @@
  * No API key required - uses the free MediaWiki API.
  */
 
+import { SourceRouter } from '../SourceRouter';
 import { calculateSimilarity } from '../utils/string-similarity';
 
-import type { RawSourceData, EnrichmentInput } from '../types';
+import type { EnrichmentCategory, RawSourceData, EnrichmentInput } from '../types';
 
 const WIKIPEDIA_API_BASE = 'https://en.wikipedia.org/w/api.php';
 
@@ -180,14 +181,17 @@ class WikipediaFetcherClass {
     let bestMatch: WikipediaSearchResult | null = null;
     let bestConfidence = 0;
 
+    // One derivation of the category for the whole fetcher, through the router
+    // that owns the alias table (see buildSearchQuery).
+    const category = SourceRouter.normalizeCategory(input.category, input.subcategory);
+
     for (const result of results) {
       let confidence = calculateSimilarity(result.title, input.name);
 
       // Check snippet for category hints
       const snippet = result.snippet.toLowerCase();
-      const category = input.category.toLowerCase();
 
-      if (category === 'movies' || category === 'film') {
+      if (category === 'movies') {
         if (snippet.includes('film') || snippet.includes('movie')) {
           confidence = Math.min(1, confidence + 0.15);
         }
@@ -235,10 +239,13 @@ class WikipediaFetcherClass {
    */
   private buildSearchQuery(input: EnrichmentInput): string {
     const name = input.name;
-    const category = input.category.toLowerCase();
+    // The keys below are EnrichmentCategory values, so the raw category has to
+    // be resolved through the router's alias table first; read raw, a "cinema"
+    // or "video games" item lost its disambiguation term entirely.
+    const category = SourceRouter.normalizeCategory(input.category, input.subcategory);
 
     // Add category disambiguation
-    const categoryTerms: Record<string, string[]> = {
+    const categoryTerms: Partial<Record<EnrichmentCategory, string[]>> = {
       movies: ['film'],
       tv: ['TV series', 'television'],
       games: ['video game'],

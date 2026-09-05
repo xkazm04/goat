@@ -1,4 +1,6 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
+
+import { dndDrag, openFirstFeaturedList } from "./helpers/test-utils";
 
 /**
  * E2E Test: Drag-Drop Ranking Workflow
@@ -12,7 +14,58 @@ import { test, expect } from "@playwright/test";
  *
  * This ensures the complete drag-drop-persist cycle works correctly,
  * testing the integration of dnd-kit, grid-store, and session-store.
+ *
+ * ---------------------------------------------------------------------------
+ * Rewritten 2026-09-05. Every test here addressed the grid through identifiers
+ * the app has never rendered — `match-grid-slot-1`, `grid-slot-empty-1`,
+ * `grid-item-image-1`, `grid-item-title-1` — so all four failed on their first
+ * `toBeVisible`, before any dragging happened, and reported it as a broken
+ * grid. The identifiers the grid actually publishes are:
+ *
+ *   drop-zone-wrapper-<position>   the slot's outer node        (SimpleDropZone)
+ *   drop-zone-<position>           the droppable card           (DropZoneCard)
+ *   remove-item-btn-<position>     present ONLY when occupied   (DropZoneOccupied)
+ *   drop-zone-image-<position>     the item's image when occupied
+ *
+ * and `<position>` is ZERO-based: `DropZoneOccupied` renders the visible rank
+ * as `position + 1`. The old constants were 1-based as well as misnamed, so
+ * even a corrected name would have addressed the wrong slot.
+ *
+ * There is no empty-state test id at all — `DropZoneEmpty` renders none — so
+ * "this slot is empty" is asserted as the ABSENCE of `remove-item-btn-<n>`,
+ * which is the same oracle `countFilledSlots` in the helpers already uses.
+ * ---------------------------------------------------------------------------
  */
+
+/** The grid publishes 0-based positions; the UI labels them from 1. */
+const SLOT_A = 0;
+const SLOT_B = 1;
+
+const slot = (page: Page, position: number) =>
+  page.getByTestId(`drop-zone-wrapper-${position}`);
+/** Occupied ⇔ the slot carries a remove button. DropZoneEmpty renders no id. */
+const occupancyMarker = (page: Page, position: number) =>
+  page.getByTestId(`remove-item-btn-${position}`);
+
+async function openMatchPageWithItems(page: Page) {
+  const featuredSection = page.getByTestId("featured-lists-section");
+  await expect(featuredSection).toBeVisible({ timeout: 15000 });
+  await openFirstFeaturedList(page);
+  await page.waitForLoadState("networkidle");
+
+  const collectionPanel = page.getByTestId("collection-panel");
+  await expect(collectionPanel).toBeVisible({ timeout: 20000 });
+
+  const items = page.locator('[data-testid^="collection-item-wrapper-"]');
+  await expect(
+    items.first(),
+    "the collection panel rendered no items, so nothing can be dragged",
+  ).toBeVisible({ timeout: 15000 });
+
+  await expect(slot(page, SLOT_A)).toBeVisible({ timeout: 10000 });
+  return items;
+}
+
 test.describe("Drag-Drop Ranking Workflow", () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to the landing page first to get a valid list ID
@@ -23,414 +76,160 @@ test.describe("Drag-Drop Ranking Workflow", () => {
   test("should drag item from collection to grid slot and persist on reload", async ({
     page,
   }) => {
-    // Step 1: Navigate to goat page with a featured list
-    const featuredSection = page.getByTestId("featured-lists-section");
-    await expect(featuredSection).toBeVisible({ timeout: 15000 });
+    const items = await openMatchPageWithItems(page);
 
-    const firstListItem = page
-      .locator('[data-testid^="featured-list-item-"]')
-      .first();
-    await expect(firstListItem).toBeVisible({ timeout: 15000 });
+    // The slot starts empty: no remove button exists for it.
+    await expect(occupancyMarker(page, SLOT_A)).toHaveCount(0);
 
-    // Get the list ID for later verification
-    const testId = await firstListItem.getAttribute("data-testid");
-    const listId = testId?.replace("featured-list-item-", "");
-    expect(listId).toBeTruthy();
+    await dndDrag(page, items.first(), slot(page, SLOT_A));
 
-    // Click to navigate to match page
-    await firstListItem.click();
-    await page.waitForURL(`**/goat?list=${listId}`, { timeout: 15000 });
-    await page.waitForLoadState("networkidle");
+    // Occupied now — and this is the assertion the old `grid-item-image-1`
+    // locator was trying and failing to make.
+    await expect(
+      occupancyMarker(page, SLOT_A),
+      "the dragged item did not land in the first slot",
+    ).toHaveCount(1, { timeout: 5000 });
 
-    // Step 2: Wait for collection panel to load
-    const collectionPanel = page.getByTestId("collection-panel");
-    await expect(collectionPanel).toBeVisible({ timeout: 20000 });
-
-    // Wait for collection grid to have items
-    const collectionGrid = page.getByTestId("virtualized-collection-grid");
-    await expect(collectionGrid).toBeVisible({ timeout: 15000 });
-
-    // Wait for at least one collection item to be visible
-    // Items have testid format: collection-item-wrapper-{id}
-    const firstCollectionItem = page
-      .locator('[data-testid^="collection-item-wrapper-"]')
-      .first();
-    await expect(firstCollectionItem).toBeVisible({ timeout: 15000 });
-
-    // Get the item's ID for verification after drop
-    const collectionItemTestId =
-      await firstCollectionItem.getAttribute("data-testid");
-    const itemId = collectionItemTestId?.replace("collection-item-wrapper-", "");
-    expect(itemId).toBeTruthy();
-
-    // Step 3: Find the first empty grid slot (position 1)
-    const gridSlot1 = page.getByTestId("match-grid-slot-1");
-    await expect(gridSlot1).toBeVisible({ timeout: 10000 });
-
-    // Verify the slot is initially empty
-    const emptyIndicator = page.getByTestId("grid-slot-empty-1");
-    await expect(emptyIndicator).toBeVisible({ timeout: 5000 });
-
-    // Step 4: Perform drag and drop operation
-    // Get bounding boxes for drag source and drop target
-    const sourceBox = await firstCollectionItem.boundingBox();
-    const targetBox = await gridSlot1.boundingBox();
-
-    expect(sourceBox).not.toBeNull();
-    expect(targetBox).not.toBeNull();
-
-    if (sourceBox && targetBox) {
-      // Calculate center points
-      const sourceCenter = {
-        x: sourceBox.x + sourceBox.width / 2,
-        y: sourceBox.y + sourceBox.height / 2,
-      };
-      const targetCenter = {
-        x: targetBox.x + targetBox.width / 2,
-        y: targetBox.y + targetBox.height / 2,
-      };
-
-      // Perform drag operation with mouse events
-      await page.mouse.move(sourceCenter.x, sourceCenter.y);
-      await page.mouse.down();
-
-      // Move in small steps for dnd-kit to detect drag properly
-      const steps = 20;
-      for (let i = 1; i <= steps; i++) {
-        const progress = i / steps;
-        const x = sourceCenter.x + (targetCenter.x - sourceCenter.x) * progress;
-        const y = sourceCenter.y + (targetCenter.y - sourceCenter.y) * progress;
-        await page.mouse.move(x, y);
-        // Small delay to allow dnd-kit to process
-        await page.waitForTimeout(20);
-      }
-
-      // Complete the drop
-      await page.mouse.up();
-    }
-
-    // Step 5: Wait for and verify the item appeared in the grid slot
-    // After drop, the slot should show either the item image or title
-    // Give it time for animation and state update
-    await page.waitForTimeout(500);
-
-    // The slot should no longer show the "Drop here" empty indicator
-    await expect(emptyIndicator).not.toBeVisible({ timeout: 5000 });
-
-    // The slot should now contain the item (image or title)
-    // Grid items have testid: grid-item-image-{position} or grid-item-title-{position}
-    const gridItemContent = page
-      .locator(
-        '[data-testid="grid-item-image-1"], [data-testid="grid-item-title-1"]'
-      )
-      .first();
-    await expect(gridItemContent).toBeVisible({ timeout: 5000 });
-
-    // Step 6: Verify session persistence - reload the page
+    // Session persistence across a reload.
     await page.reload();
     await page.waitForLoadState("networkidle");
-
-    // Wait for the match interface to reload
-    await expect(collectionPanel).toBeVisible({ timeout: 20000 });
-    await expect(gridSlot1).toBeVisible({ timeout: 10000 });
-
-    // Verify the item is still in the grid slot after reload
-    const gridItemAfterReload = page
-      .locator(
-        '[data-testid="grid-item-image-1"], [data-testid="grid-item-title-1"]'
-      )
-      .first();
-    await expect(gridItemAfterReload).toBeVisible({ timeout: 10000 });
-
-    // The empty indicator should still not be visible
-    const emptyIndicatorAfterReload = page.getByTestId("grid-slot-empty-1");
-    await expect(emptyIndicatorAfterReload).not.toBeVisible({ timeout: 5000 });
+    await expect(page.getByTestId("collection-panel")).toBeVisible({ timeout: 20000 });
+    await expect(slot(page, SLOT_A)).toBeVisible({ timeout: 10000 });
+    await expect(
+      occupancyMarker(page, SLOT_A),
+      "the placed item did not survive a reload — session persistence is broken",
+    ).toHaveCount(1, { timeout: 10000 });
   });
 
-  test("should show drop zone highlighting during drag", async ({ page }) => {
-    // Navigate to goat with a featured list
-    const featuredSection = page.getByTestId("featured-lists-section");
-    await expect(featuredSection).toBeVisible({ timeout: 15000 });
+  test("should highlight a valid drop zone while an item is being dragged", async ({
+    page,
+  }) => {
+    const items = await openMatchPageWithItems(page);
 
-    const firstListItem = page
-      .locator('[data-testid^="featured-list-item-"]')
-      .first();
-    await expect(firstListItem).toBeVisible({ timeout: 15000 });
+    const box = await items.first().boundingBox();
+    const target = await slot(page, SLOT_A).boundingBox();
+    expect(box, "the collection item has no bounding box").not.toBeNull();
+    expect(target, "the first grid slot has no bounding box").not.toBeNull();
+    if (!box || !target) return;
 
-    await firstListItem.click();
-    await page.waitForURL(/\/goat\?list=/, { timeout: 15000 });
-    await page.waitForLoadState("networkidle");
+    const from = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+    const to = { x: target.x + target.width / 2, y: target.y + target.height / 2 };
 
-    // Wait for collection panel
-    const collectionPanel = page.getByTestId("collection-panel");
-    await expect(collectionPanel).toBeVisible({ timeout: 20000 });
+    await page.mouse.move(from.x, from.y);
+    await page.mouse.down();
+    // `ValidDropIndicator` is gated on `isOver && !isOccupied`, so the pointer
+    // has to actually reach the slot; dnd-kit also needs several moves before
+    // it reports a drag at all.
+    for (let i = 1; i <= 20; i++) {
+      const t = i / 20;
+      await page.mouse.move(from.x + (to.x - from.x) * t, from.y + (to.y - from.y) * t);
+      await page.waitForTimeout(20);
+    }
 
-    // Wait for collection items
-    const firstCollectionItem = page
-      .locator('[data-testid^="collection-item-wrapper-"]')
-      .first();
-    await expect(firstCollectionItem).toBeVisible({ timeout: 15000 });
-
-    // Find grid slot
-    const gridSlot1 = page.getByTestId("match-grid-slot-1");
-    await expect(gridSlot1).toBeVisible({ timeout: 10000 });
-
-    // Start dragging
-    const sourceBox = await firstCollectionItem.boundingBox();
-    expect(sourceBox).not.toBeNull();
-
-    if (sourceBox) {
-      const sourceCenter = {
-        x: sourceBox.x + sourceBox.width / 2,
-        y: sourceBox.y + sourceBox.height / 2,
-      };
-
-      // Start drag
-      await page.mouse.move(sourceCenter.x, sourceCenter.y);
-      await page.mouse.down();
-
-      // Move slightly to initiate drag
-      await page.mouse.move(sourceCenter.x + 10, sourceCenter.y + 10);
-      await page.waitForTimeout(200);
-
-      // Check that valid drop zone indicators appear during drag
-      // These have testid: valid-drop-zone-indicator-{position}
-      const dropZoneIndicator = page
-        .locator('[data-testid^="valid-drop-zone-indicator-"]')
-        .first();
-
-      // The drop zone indicator should be visible while dragging over empty slots
-      // (This is animated and may appear after a short delay)
-      await page.waitForTimeout(300);
-
-      // Cancel the drag
+    try {
+      // This test previously assigned the indicator locator and asserted
+      // NOTHING, so it passed whether or not the highlight ever appeared.
+      await expect(
+        page.getByTestId(`valid-drop-zone-indicator-${SLOT_A}`),
+        "no valid-drop-zone indicator appeared while dragging over an empty slot",
+      ).toBeVisible({ timeout: 5000 });
+    } finally {
+      // Release the button whatever the assertion did, so a failure here does
+      // not leave the next test with a stuck drag.
       await page.mouse.up();
     }
   });
 
   test("should allow swapping items between grid slots", async ({ page }) => {
-    // This test requires two items already placed in the grid
-    // First, place two items, then verify swap functionality
+    const items = await openMatchPageWithItems(page);
 
-    // Navigate to goat with a featured list
-    const featuredSection = page.getByTestId("featured-lists-section");
-    await expect(featuredSection).toBeVisible({ timeout: 15000 });
+    // Two items are needed for the swap. Was `test.skip()`, which made a list
+    // with too few items report as a pass; a list that cannot exercise the
+    // behaviour under test is a fixture defect, and the run should say so.
+    await expect
+      .poll(() => items.count(), {
+        message:
+          "the opened list has fewer than 2 collection items, so the swap " +
+          "cannot be exercised. Seed a list with at least 2 items.",
+        timeout: 10000,
+      })
+      .toBeGreaterThanOrEqual(2);
 
-    const firstListItem = page
-      .locator('[data-testid^="featured-list-item-"]')
-      .first();
-    await expect(firstListItem).toBeVisible({ timeout: 15000 });
+    await expect(slot(page, SLOT_B)).toBeVisible({ timeout: 10000 });
 
-    await firstListItem.click();
-    await page.waitForURL(/\/goat\?list=/, { timeout: 15000 });
-    await page.waitForLoadState("networkidle");
+    await dndDrag(page, items.first(), slot(page, SLOT_A));
+    await expect(occupancyMarker(page, SLOT_A)).toHaveCount(1, { timeout: 5000 });
 
-    // Wait for collection panel
-    const collectionPanel = page.getByTestId("collection-panel");
-    await expect(collectionPanel).toBeVisible({ timeout: 20000 });
-
-    // Wait for collection items
-    const collectionItems = page.locator(
-      '[data-testid^="collection-item-wrapper-"]'
+    // Re-query: the placed item is filtered out of the collection.
+    await dndDrag(
+      page,
+      page.locator('[data-testid^="collection-item-wrapper-"]').first(),
+      slot(page, SLOT_B),
     );
-    await expect(collectionItems.first()).toBeVisible({ timeout: 15000 });
+    await expect(occupancyMarker(page, SLOT_B)).toHaveCount(1, { timeout: 5000 });
 
-    // Need at least 2 items for the swap test. Was `test.skip()`, which made
-    // a list with too few items report as a pass; a list that cannot exercise
-    // the behaviour under test is a fixture defect, and the run should say so.
-    const itemCount = await collectionItems.count();
-    expect(
-      itemCount,
-      "The opened list has fewer than 2 collection items, so the swap cannot " +
-        "be exercised. Seed a list with at least 2 items.",
-    ).toBeGreaterThanOrEqual(2);
+    // Capture which item is where, so the swap can be asserted rather than
+    // merely "both slots are still full", which a no-op also satisfies.
+    // `ProgressiveImage` puts its testId on a `role="img"` container whose
+    // accessible name is the item title (progressive-image.tsx) — there is no
+    // `alt` to read, because there need not be an <img> at all when the image
+    // falls back.
+    const titleAt = async (position: number) =>
+      slot(page, position)
+        .getByTestId(`drop-zone-image-${position}`)
+        .getAttribute("aria-label");
+    const beforeA = await titleAt(SLOT_A);
+    const beforeB = await titleAt(SLOT_B);
+    expect(beforeA, "slot A rendered no item image to identify").toBeTruthy();
+    expect(beforeB, "slot B rendered no item image to identify").toBeTruthy();
+    expect(beforeA).not.toBe(beforeB);
 
-    // Get grid slots
-    const gridSlot1 = page.getByTestId("match-grid-slot-1");
-    const gridSlot2 = page.getByTestId("match-grid-slot-2");
-    await expect(gridSlot1).toBeVisible({ timeout: 10000 });
-    await expect(gridSlot2).toBeVisible({ timeout: 10000 });
+    await dndDrag(page, slot(page, SLOT_A), slot(page, SLOT_B));
 
-    // Helper function for drag and drop
-    const dragAndDrop = async (source: any, target: any) => {
-      const sourceBox = await source.boundingBox();
-      const targetBox = await target.boundingBox();
-
-      if (sourceBox && targetBox) {
-        const sourceCenter = {
-          x: sourceBox.x + sourceBox.width / 2,
-          y: sourceBox.y + sourceBox.height / 2,
-        };
-        const targetCenter = {
-          x: targetBox.x + targetBox.width / 2,
-          y: targetBox.y + targetBox.height / 2,
-        };
-
-        await page.mouse.move(sourceCenter.x, sourceCenter.y);
-        await page.mouse.down();
-
-        const steps = 15;
-        for (let i = 1; i <= steps; i++) {
-          const progress = i / steps;
-          const x =
-            sourceCenter.x + (targetCenter.x - sourceCenter.x) * progress;
-          const y =
-            sourceCenter.y + (targetCenter.y - sourceCenter.y) * progress;
-          await page.mouse.move(x, y);
-          await page.waitForTimeout(20);
-        }
-
-        await page.mouse.up();
-        await page.waitForTimeout(300);
-      }
-    };
-
-    // Place first item in slot 1
-    const firstItem = collectionItems.first();
-    await dragAndDrop(firstItem, gridSlot1);
-
-    // Place second item in slot 2
-    // Need to re-query as items may have shifted
-    const remainingItems = page.locator(
-      '[data-testid^="collection-item-wrapper-"]'
-    );
-    await expect(remainingItems.first()).toBeVisible({ timeout: 5000 });
-    await dragAndDrop(remainingItems.first(), gridSlot2);
-
-    // Verify both slots are now occupied
-    const gridItem1 = page
-      .locator(
-        '[data-testid="grid-item-image-1"], [data-testid="grid-item-title-1"]'
-      )
-      .first();
-    const gridItem2 = page
-      .locator(
-        '[data-testid="grid-item-image-2"], [data-testid="grid-item-title-2"]'
-      )
-      .first();
-
-    await expect(gridItem1).toBeVisible({ timeout: 5000 });
-    await expect(gridItem2).toBeVisible({ timeout: 5000 });
-
-    // Record what's in each slot before swap
-    // (We could capture more specific data here if needed)
-
-    // Now the swap test: drag item from slot 1 to slot 2
-    // This tests the swap functionality when dropping on an occupied slot
-    await dragAndDrop(gridSlot1, gridSlot2);
-
-    // Both slots should still be occupied after swap
-    await expect(gridItem1).toBeVisible({ timeout: 5000 });
-    await expect(gridItem2).toBeVisible({ timeout: 5000 });
+    await expect(occupancyMarker(page, SLOT_A)).toHaveCount(1, { timeout: 5000 });
+    await expect(occupancyMarker(page, SLOT_B)).toHaveCount(1, { timeout: 5000 });
+    await expect
+      .poll(() => titleAt(SLOT_A), {
+        message: "dropping an occupied slot on another did not swap their items",
+        timeout: 5000,
+      })
+      .toBe(beforeB);
+    expect(await titleAt(SLOT_B)).toBe(beforeA);
   });
 
   test("should support removing item from grid back to collection", async ({
     page,
   }) => {
-    // Navigate to goat with a featured list
-    const featuredSection = page.getByTestId("featured-lists-section");
-    await expect(featuredSection).toBeVisible({ timeout: 15000 });
+    const items = await openMatchPageWithItems(page);
+    const initialItemCount = await items.count();
 
-    const firstListItem = page
-      .locator('[data-testid^="featured-list-item-"]')
-      .first();
-    await expect(firstListItem).toBeVisible({ timeout: 15000 });
+    await dndDrag(page, items.first(), slot(page, SLOT_A));
+    await expect(occupancyMarker(page, SLOT_A)).toHaveCount(1, { timeout: 5000 });
 
-    await firstListItem.click();
-    await page.waitForURL(/\/goat\?list=/, { timeout: 15000 });
-    await page.waitForLoadState("networkidle");
+    // A placed item is filtered out of the collection.
+    await expect
+      .poll(() => items.count(), {
+        message: "the placed item was not removed from the collection panel",
+        timeout: 5000,
+      })
+      .toBeLessThan(initialItemCount);
+    const afterDropCount = await items.count();
 
-    // Wait for collection panel
-    const collectionPanel = page.getByTestId("collection-panel");
-    await expect(collectionPanel).toBeVisible({ timeout: 20000 });
+    // The remove button is `opacity-0 group-hover:opacity-100`, so hover first.
+    await slot(page, SLOT_A).hover();
+    await occupancyMarker(page, SLOT_A).click();
 
-    // Wait for collection items
-    const firstCollectionItem = page
-      .locator('[data-testid^="collection-item-wrapper-"]')
-      .first();
-    await expect(firstCollectionItem).toBeVisible({ timeout: 15000 });
-
-    // Count initial items in collection
-    const initialItemCount = await page
-      .locator('[data-testid^="collection-item-wrapper-"]')
-      .count();
-
-    // Find grid slot
-    const gridSlot1 = page.getByTestId("match-grid-slot-1");
-    await expect(gridSlot1).toBeVisible({ timeout: 10000 });
-
-    // Drag item to grid
-    const sourceBox = await firstCollectionItem.boundingBox();
-    const targetBox = await gridSlot1.boundingBox();
-
-    if (sourceBox && targetBox) {
-      const sourceCenter = {
-        x: sourceBox.x + sourceBox.width / 2,
-        y: sourceBox.y + sourceBox.height / 2,
-      };
-      const targetCenter = {
-        x: targetBox.x + targetBox.width / 2,
-        y: targetBox.y + targetBox.height / 2,
-      };
-
-      await page.mouse.move(sourceCenter.x, sourceCenter.y);
-      await page.mouse.down();
-
-      const steps = 15;
-      for (let i = 1; i <= steps; i++) {
-        const progress = i / steps;
-        const x = sourceCenter.x + (targetCenter.x - sourceCenter.x) * progress;
-        const y = sourceCenter.y + (targetCenter.y - sourceCenter.y) * progress;
-        await page.mouse.move(x, y);
-        await page.waitForTimeout(20);
-      }
-
-      await page.mouse.up();
-      await page.waitForTimeout(500);
-    }
-
-    // Verify item is in grid
-    const gridItemContent = page
-      .locator(
-        '[data-testid="grid-item-image-1"], [data-testid="grid-item-title-1"]'
-      )
-      .first();
-    await expect(gridItemContent).toBeVisible({ timeout: 5000 });
-
-    // Collection should have one less item (item is marked as "used")
-    // The used items are filtered out from the display
-    await page.waitForTimeout(500);
-    const afterDropCount = await page
-      .locator('[data-testid^="collection-item-wrapper-"]')
-      .count();
-
-    // The item should now be hidden from collection (marked as used)
-    expect(afterDropCount).toBeLessThan(initialItemCount);
-
-    // Now remove the item by clicking the remove button
-    // Remove buttons have testid: remove-item-btn-{position}
-    const removeBtn = page.getByTestId("remove-item-btn-1");
-
-    // Hover over the slot to reveal the remove button
-    await gridSlot1.hover();
-    await page.waitForTimeout(200);
-
-    // Check if remove button is visible (it shows on hover)
-    const isRemoveBtnVisible = await removeBtn.isVisible();
-
-    if (isRemoveBtnVisible) {
-      await removeBtn.click();
-      await page.waitForTimeout(500);
-
-      // Verify the slot is now empty
-      const emptyIndicator = page.getByTestId("grid-slot-empty-1");
-      await expect(emptyIndicator).toBeVisible({ timeout: 5000 });
-
-      // The item should return to the collection
-      const afterRemoveCount = await page
-        .locator('[data-testid^="collection-item-wrapper-"]')
-        .count();
-      expect(afterRemoveCount).toBeGreaterThanOrEqual(afterDropCount);
-    }
+    // Was wrapped in `if (isRemoveBtnVisible)`, so a remove button that never
+    // appeared made this a silent pass — the exact case the test is for.
+    await expect(
+      occupancyMarker(page, SLOT_A),
+      "removing the item left the slot occupied",
+    ).toHaveCount(0, { timeout: 5000 });
+    await expect
+      .poll(() => items.count(), {
+        message: "the removed item did not return to the collection panel",
+        timeout: 5000,
+      })
+      .toBeGreaterThanOrEqual(afterDropCount);
   });
 });

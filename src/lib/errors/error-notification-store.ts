@@ -12,7 +12,9 @@
  */
 
 import { create } from 'zustand';
+import { useShallow } from 'zustand/react/shallow';
 
+import { trackError } from './error-analytics';
 import { GoatError, fromUnknown, isGoatError } from './GoatError';
 
 import type { ErrorCode, ErrorSeverity } from './types';
@@ -102,7 +104,15 @@ interface ErrorNotificationState {
 // Auto-dismiss durations (ms)
 // ============================================================================
 
-const DISMISS_DELAYS: Record<ErrorSeverity, number> = {
+/**
+ * How long a notification of each severity stays up.
+ *
+ * Exported because `ErrorNotificationToast` draws a progress bar that must
+ * empty exactly as the timer fires. It had its own copy of these three numbers
+ * inline in a ternary, so editing one of the two made the bar lie about how
+ * long the toast had left — one rule, two implementations.
+ */
+export const DISMISS_DELAYS: Record<ErrorSeverity, number> = {
   error: 10000, // Errors stay longer
   warning: 6000,
   info: 4000,
@@ -131,6 +141,29 @@ export const useErrorNotificationStore = create<ErrorNotificationState>((set, ge
   emitGoatError: (error, options) => {
     const notification = error.toNotification();
     const now = Date.now();
+
+    // Record BEFORE the dedup check, and unconditionally.
+    //
+    // This context had two independent error recorders and only one of them was
+    // wired: `error-analytics` was fed solely by ErrorBoundary (React render
+    // crashes), while every emit site — mutation rollbacks, the guest-data
+    // merge, criteria saves — fed only this store's local `errorHistory`, which
+    // nothing reads outside this file. So `getErrorMetrics()`, the thing that
+    // answers "what is failing", could not see a single non-render failure.
+    // One classification, many consumers (registry: error-handling § "one
+    // taxonomy, many consumers"); the notification is the user's door, this is
+    // the operator's, and a failure owes both.
+    //
+    // Placement matters: dedup suppresses the visible TOAST, which is a
+    // rendering decision. Counting only the first of a burst would make the
+    // metric a counter that reconciles only when little went wrong.
+    trackError({
+      code: error.code,
+      category: error.category,
+      severity: notification.severity,
+      traceId: error.traceId,
+      source: options?.source,
+    });
 
     // Check for duplicate errors (same code within dedup window)
     const existingNotifications = get().notifications;
@@ -237,32 +270,50 @@ export const useErrorNotificationStore = create<ErrorNotificationState>((set, ge
 // ============================================================================
 
 /**
+ * Every selector below builds a fresh object, and zustand 5 reads selectors
+ * through `useSyncExternalStore`, which re-renders whenever the snapshot is not
+ * `Object.is`-equal to the last one. Unwrapped, these never settle: React
+ * re-renders, the selector returns another new object, and it climbs to
+ * "Maximum update depth exceeded". `collection-store` was fixed for exactly
+ * this on 2026-09-05 and this file — the same rule, the other implementation —
+ * was left behind. It has not been SEEN because the only consumer,
+ * `ErrorNotificationToastContainer`, is not mounted anywhere in the app; the
+ * loop would arrive with the first mount.
+ */
+
+/**
  * Hook for components that display notifications
  */
 export const useErrorNotifications = () =>
-  useErrorNotificationStore((state) => ({
-    notifications: state.notifications,
-    dismiss: state.dismiss,
-    clearAll: state.clearAll,
-  }));
+  useErrorNotificationStore(
+    useShallow((state) => ({
+      notifications: state.notifications,
+      dismiss: state.dismiss,
+      clearAll: state.clearAll,
+    }))
+  );
 
 /**
  * Hook for components that emit notifications
  */
 export const useErrorNotificationEmitter = () =>
-  useErrorNotificationStore((state) => ({
-    emitError: state.emitError,
-    emitGoatError: state.emitGoatError,
-  }));
+  useErrorNotificationStore(
+    useShallow((state) => ({
+      emitError: state.emitError,
+      emitGoatError: state.emitGoatError,
+    }))
+  );
 
 /**
  * Hook for error analytics
  */
 export const useErrorHistory = () =>
-  useErrorNotificationStore((state) => ({
-    errorHistory: state.errorHistory,
-    clearErrorHistory: state.clearErrorHistory,
-  }));
+  useErrorNotificationStore(
+    useShallow((state) => ({
+      errorHistory: state.errorHistory,
+      clearErrorHistory: state.clearErrorHistory,
+    }))
+  );
 
 // ============================================================================
 // Utility Functions

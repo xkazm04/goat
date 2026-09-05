@@ -55,17 +55,58 @@ interface ErrorLogEntry {
 // ============================================================================
 
 /**
+ * The HTTP status to put on the wire for a GoatError.
+ *
+ * `GoatError.status` is the CLIENT-side vocabulary: the `network` category
+ * carries status 0, meaning "no response was received", which is a true
+ * statement in a browser and not an HTTP status at all. Handing it to
+ * `NextResponse.json` threw `RangeError: init["status"] must be in the range
+ * of 200 to 599`, so a route whose upstream was down answered with Next's bare
+ * 500 and no structured body — and `logError` never fired either, because 0 is
+ * not >= 400. One classification, two consumers (§ error-handling: one
+ * taxonomy, many consumers); this is the projection onto the HTTP consumer.
+ */
+function toHttpStatus(error: GoatError): number {
+  return error.status >= 200 && error.status <= 599 ? error.status : 502;
+}
+
+/**
+ * Classify a value thrown inside a route.
+ *
+ * `fromUnknown` is the CLIENT-side classifier: anything it does not recognise
+ * becomes `CLIENT_UNKNOWN_ERROR`, whose category is `client` and whose status
+ * is therefore 400 — and its message is the raw thrown text. At an API door
+ * that is wrong twice over. An exception the server did not anticipate is the
+ * SERVER's fault (500, not 400 — a 400 tells the caller to change their
+ * request, which cannot help), and its raw text is internal detail:
+ * `connect ECONNREFUSED 10.0.0.5:5432` named a private host and port to any
+ * HTTP client of the 20 routes this wrapper guards. The cause is preserved on
+ * the error so `logError` still writes it to the operator's door.
+ */
+function toApiError(error: unknown): GoatError {
+  if (isGoatError(error)) return error;
+
+  const classified = fromUnknown(error);
+  if (classified.code !== 'CLIENT_UNKNOWN_ERROR') return classified;
+
+  return new ServerError('SERVER_INTERNAL_ERROR', undefined, {
+    cause: error instanceof Error ? error : new Error(String(error)),
+  });
+}
+
+/**
  * Build a standardized error response
  */
 function buildErrorResponse(error: GoatError, req: NextRequest): NextResponse<ErrorResponse> {
   const isDev = process.env.NODE_ENV === 'development';
+  const httpStatus = toHttpStatus(error);
 
   const response: ErrorResponse = {
     success: false,
     category: error.category,
     code: error.code,
     message: error.message,
-    status: error.status,
+    status: httpStatus,
     details: {
       traceId: error.traceId,
       timestamp: error.timestamp,
@@ -90,40 +131,64 @@ function buildErrorResponse(error: GoatError, req: NextRequest): NextResponse<Er
     };
   }
 
-  return NextResponse.json(response, { status: error.status });
+  return NextResponse.json(response, { status: httpStatus });
 }
 
 // ============================================================================
 // Error Logging
 // ============================================================================
 
+/** Bound on a client-supplied correlation id before it enters a log line. */
+const MAX_REQUEST_ID_LENGTH = 128;
+
+/**
+ * The caller's correlation id, if it sent one.
+ *
+ * `ErrorLogEntry.requestId` was declared and never assigned, so the
+ * `x-request-id` a client (or an edge proxy) put on the request could not be
+ * joined to the error line it caused — the operator had `traceId`, which the
+ * client never sees, and the client had nothing. The value is untrusted input
+ * on its way into a log, so it is length-bounded. It needs no control-character
+ * strip: undici rejects those in a header value before a route ever runs,
+ * which api-error-handler.test.ts verified before this guard was left out.
+ */
+function readRequestId(req: NextRequest): string | undefined {
+  const raw = req.headers.get('x-request-id');
+  if (!raw) return undefined;
+  return raw.slice(0, MAX_REQUEST_ID_LENGTH) || undefined;
+}
+
 /**
  * Log error for monitoring and debugging
  */
 function logError(error: GoatError, req: NextRequest, userId?: string): void {
+  const httpStatus = toHttpStatus(error);
   const entry: ErrorLogEntry = {
     traceId: error.traceId,
     timestamp: error.timestamp,
     code: error.code,
     message: error.message,
-    status: error.status,
+    status: httpStatus,
     path: new URL(req.url).pathname,
     method: req.method,
     userId,
+    requestId: readRequestId(req),
   };
 
-  // Include stack in development
+  // The cause is the ONLY record of what actually failed once the wire message
+  // is sanitised (see `toApiError`), so it goes to the operator's door in every
+  // environment. The stack stays development-only.
+  if (error.cause instanceof Error) {
+    entry.cause = error.cause.message;
+  }
   if (process.env.NODE_ENV === 'development') {
     entry.stack = error.stack;
-    if (error.cause instanceof Error) {
-      entry.cause = error.cause.message;
-    }
   }
 
   // Log based on severity
-  if (error.status >= 500) {
+  if (httpStatus >= 500) {
     console.error('🚨 API Error:', JSON.stringify(entry, null, 2));
-  } else if (error.status >= 400) {
+  } else if (httpStatus >= 400) {
     console.warn('⚠️ API Warning:', JSON.stringify(entry, null, 2));
   }
 }
@@ -165,12 +230,21 @@ export function fromSupabaseError(error: {
   const mapping = error.code ? SUPABASE_ERROR_MAP[error.code] : undefined;
 
   if (mapping) {
-    return new GoatError(mapping.code, error.message, {
+    // Omit the message so the GoatError falls back to the ERROR_MESSAGES copy
+    // for the mapped code. The driver's own text names the constraint, the
+    // table and often the column ("duplicate key value violates unique
+    // constraint \"lists_slug_key\""), and `buildErrorResponse` puts the
+    // message on the wire verbatim — so this branch, the one that HAD a
+    // structured classification, leaked more schema than the unmapped
+    // fallbacks below, which were already sanitised. The raw text stays
+    // reachable in development for debugging.
+    return new GoatError(mapping.code, undefined, {
       status: mapping.status,
       details: {
         context: {
           supabaseCode: error.code,
           hint: error.hint,
+          ...(process.env.NODE_ENV === 'development' ? { original: error.message } : {}),
         },
       },
     });
@@ -239,7 +313,7 @@ export function withErrorHandler<T = unknown>(
       return await handler(req, context);
     } catch (error) {
       // Convert to GoatError
-      const goatError = isGoatError(error) ? error : fromUnknown(error);
+      const goatError = toApiError(error);
 
       // Extract user ID for logging
       const userId = options?.getUserId?.(req);

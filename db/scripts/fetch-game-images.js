@@ -9,15 +9,18 @@
  * 2. Get the page summary with image (REST API)
  *
  * Usage:
- *   node db/scripts/fetch-game-images.js              # All yearly games missing images
- *   node db/scripts/fetch-game-images.js --lists-only  # Only games linked to yearly lists
+ *   node --env-file=.env db/scripts/fetch-game-images.js              # All yearly games missing images
+ *   node --env-file=.env db/scripts/fetch-game-images.js --lists-only  # Only games linked to yearly lists
+ *
+ * DATABASE_URL (or SUPABASE_DB_URL) must be set, and a non-local host additionally
+ * needs DB_SCRIPTS_ALLOW_REMOTE=1; see db/README.md.
  */
 
-const { Client } = require('pg');
 const https = require('https');
 
-const POOLER_URL =
-  'postgresql://postgres.pvfwxilvzjzzjhdcpucu:hPYJVZFK3oh5RgQ7@aws-0-eu-central-1.pooler.supabase.com:5432/postgres';
+const { Client } = require('pg');
+
+const { resolveConnectionString } = require('./connection');
 
 const LISTS_ONLY = process.argv.includes('--lists-only');
 
@@ -98,7 +101,7 @@ async function sleep(ms) {
 
 async function main() {
   const client = new Client({
-    connectionString: POOLER_URL,
+    connectionString: resolveConnectionString(process.env),
     ssl: { rejectUnauthorized: false },
   });
   await client.connect();

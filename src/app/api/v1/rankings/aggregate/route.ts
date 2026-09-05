@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const category = searchParams.get('category');
   const widgetId = searchParams.get('widgetId');
-  const limit = Math.min(parseInt(searchParams.get('limit') || '10', 10), 50);
+  const limit = parseBoundedInt(searchParams.get('limit'), 10, 1, 50);
 
   if (!category) {
     return apiError('Category is required', 400, 'MISSING_CATEGORY');
@@ -161,6 +161,18 @@ export async function GET(request: NextRequest) {
     console.error('Error in rankings aggregate API:', error);
     return apiError('Internal server error', 500, 'INTERNAL_ERROR');
   }
+}
+
+/**
+ * Parse an integer query param into [min, max], falling back when absent or not
+ * a number. `Math.min(parseInt('abc'), 50)` is NaN and `slice(0, NaN)` is an
+ * empty list, so a mistyped limit read as "no consensus yet"; a negative limit
+ * sliced the BEST entries off the end instead of capping the count.
+ */
+function parseBoundedInt(raw: string | null, fallback: number, min: number, max: number): number {
+  const n = raw === null || raw === '' ? fallback : parseInt(raw, 10);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, n));
 }
 
 export async function OPTIONS() {

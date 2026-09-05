@@ -89,9 +89,20 @@ export const PlaceholderImage = React.forwardRef<HTMLDivElement, PlaceholderImag
     },
     ref
   ) => {
-    const [isInView, setIsInView] = useState(eager);
-    const [imageLoaded, setImageLoaded] = useState(false);
-    const [imageError, setImageError] = useState(false);
+    // Without IntersectionObserver the image must load rather than stay
+    // blurred forever (the guard patterns/virtualization/useIntersectionObserver
+    // already has). Decided once at mount: on the server the API is assumed
+    // present so the markup matches every current browser.
+    const [isInView, setIsInView] = useState(
+      () => eager || (typeof window !== 'undefined' && !('IntersectionObserver' in window)),
+    );
+    // Keyed by the URL the event was reported for — a new `src` invalidates
+    // both by derivation, with no reset effect and no extra render (the same
+    // shape as progressive-image.tsx, which shared the reset-effect defect).
+    const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
+    const [erroredSrc, setErroredSrc] = useState<string | null>(null);
+    const imageLoaded = !!src && loadedSrc === src;
+    const imageError = !!src && erroredSrc === src;
     const containerRef = useRef<HTMLDivElement>(null);
     const imgRef = useRef<HTMLImageElement>(null);
 
@@ -105,7 +116,7 @@ export const PlaceholderImage = React.forwardRef<HTMLDivElement, PlaceholderImag
 
     // Intersection observer for lazy loading
     useEffect(() => {
-      if (eager || !containerRef.current) return;
+      if (eager || !containerRef.current || !('IntersectionObserver' in window)) return;
 
       const observer = new IntersectionObserver(
         (entries) => {
@@ -127,21 +138,15 @@ export const PlaceholderImage = React.forwardRef<HTMLDivElement, PlaceholderImag
       return () => observer.disconnect();
     }, [eager, intersectionThreshold, intersectionRootMargin]);
 
-    // Reset states when src changes
-    useEffect(() => {
-      setImageLoaded(false);
-      setImageError(false);
-    }, [src]);
-
     const handleImageLoad = useCallback(() => {
-      setImageLoaded(true);
+      setLoadedSrc(src ?? null);
       onLoad?.();
-    }, [onLoad]);
+    }, [src, onLoad]);
 
     const handleImageError = useCallback(() => {
-      setImageError(true);
+      setErroredSrc(src ?? null);
       onError?.();
-    }, [onError]);
+    }, [src, onError]);
 
     const showPlaceholder = !src || imageError;
     const showBlur = !imageLoaded && !showPlaceholder;

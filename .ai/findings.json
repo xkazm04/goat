@@ -2636,8 +2636,11 @@
       "anchorFile": "src/components/3d/InteractivePreview.tsx",
       "anchorLines": "128",
       "anchorRaw": "src/components/3d/InteractivePreview.tsx:128 (set), :136 (only reset path)",
-      "state": "open",
-      "firstSeen": "2026-06-16"
+      "state": "fixed",
+      "firstSeen": "2026-06-16",
+      "fixedIn": "ace1964",
+      "verifiedAt": "2026-09-05",
+      "reason": "The defect surface was removed, not patched: src/components/3d/InteractivePreview.tsx was deleted in ace1964 after the decorative-effects sweep round proved it had zero importers (knip unused-files plus a repo-wide grep for the identifier). The scroll-lock leak needed the component to mount, and no successor renders it, so the flow the finding describes is unreachable. Recorded as fixed rather than needs-reanchor because the deletion itself was verified, which is the condition scripts/findings.mjs states for that choice; no probe can be written for a file that does not exist."
     },
     {
       "key": "b81acbbfb08b",
@@ -2678,8 +2681,11 @@
       "anchorFile": "src/components/3d/Card3D.tsx",
       "anchorLines": "203-232",
       "anchorRaw": "src/components/3d/Card3D.tsx:203-232",
-      "state": "open",
-      "firstSeen": "2026-06-16"
+      "state": "fixed",
+      "firstSeen": "2026-06-16",
+      "fixedIn": "ace1964",
+      "verifiedAt": "2026-09-05",
+      "reason": "Same deletion as 37419ee6fe9e: src/components/3d/Card3D.tsx was removed in ace1964 with a verified zero-importer count. The touch-tilt defect required the component to render; nothing renders it and nothing replaced it. No probe is writable for a deleted file."
     },
     {
       "key": "539a117debba",

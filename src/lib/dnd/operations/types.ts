@@ -230,11 +230,6 @@ export interface DragOperation {
 export interface RouterConfig {
   /** Enable debug logging */
   debug?: boolean;
-  /** Custom validation rules */
-  validationRules?: {
-    allowSwap?: boolean;
-    requireAvailableItem?: boolean;
-  };
 }
 
 /**

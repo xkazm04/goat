@@ -78,8 +78,11 @@ FOR EACH ROW EXECUTE FUNCTION update_shared_rankings_updated_at();
 
 ALTER TABLE public.shared_rankings ENABLE ROW LEVEL SECURITY;
 
+-- 20251205100000 creates these two policy names; see the trigger note above.
+DROP POLICY IF EXISTS "Shared rankings are viewable by everyone" ON public.shared_rankings;
 CREATE POLICY "Shared rankings are viewable by everyone"
   ON public.shared_rankings FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Anyone can create shared rankings" ON public.shared_rankings;
 CREATE POLICY "Anyone can create shared rankings"
   ON public.shared_rankings FOR INSERT WITH CHECK (true);
 CREATE POLICY "Anyone can update shared rankings"
@@ -125,12 +128,18 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- 20251205000000 creates a trigger of this name; on a database replaying the
+-- whole chain the bare CREATE aborts the step. Guarded 2026-09-05; a no-op on
+-- any database that already ran this step.
+DROP TRIGGER IF EXISTS blueprints_updated_at ON public.blueprints;
 CREATE TRIGGER blueprints_updated_at
   BEFORE UPDATE ON public.blueprints
   FOR EACH ROW EXECUTE FUNCTION update_blueprints_updated_at();
 
 ALTER TABLE public.blueprints ENABLE ROW LEVEL SECURITY;
 
+-- 20251205000000 creates this policy name; see the trigger note above.
+DROP POLICY IF EXISTS "Blueprints are viewable by everyone" ON public.blueprints;
 CREATE POLICY "Blueprints are viewable by everyone"
   ON public.blueprints FOR SELECT USING (true);
 CREATE POLICY "Anyone can create blueprints"

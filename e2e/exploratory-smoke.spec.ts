@@ -1,5 +1,7 @@
 import { test, expect } from "@playwright/test";
 
+import { openFirstFeaturedList } from "./helpers/test-utils";
+
 /**
  * Exploratory Smoke Tests
  *
@@ -56,9 +58,13 @@ test.describe("Landing Page", () => {
         !err.includes("net::")
     );
 
-    if (criticalErrors.length > 0) {
-      console.log("Console errors found:", criticalErrors);
-    }
+    // The title says "renders without errors". That was only logged, so the
+    // test passed over any number of them. It is asserted now; the filter above
+    // is the predicate the count carries.
+    expect(
+      criticalErrors,
+      "the landing page logged console errors that are not in the known-benign filter",
+    ).toEqual([]);
   });
 
   test("search filter bar accepts input and responds", async ({ page }) => {
@@ -92,23 +98,24 @@ test.describe("Landing Page", () => {
     // Press Cmd/Ctrl+K to open command palette
     await page.keyboard.press("Control+k");
 
-    // Command palette should appear
+    // Command palette should appear. This was wrapped in
+    // `if (isPaletteVisible)`, so a shortcut that stopped working was a pass —
+    // and "opens with keyboard shortcut" is the entire claim of the test.
     const palette = page.getByTestId("command-palette-container");
-    const isPaletteVisible = await palette
-      .isVisible({ timeout: 5000 })
-      .catch(() => false);
+    await expect(
+      palette,
+      "Control+K did not open the command palette",
+    ).toBeVisible({ timeout: 5000 });
 
-    if (isPaletteVisible) {
-      const input = page.getByTestId("command-palette-input");
-      await expect(input).toBeVisible();
+    const input = page.getByTestId("command-palette-input");
+    await expect(input).toBeVisible();
 
-      await input.fill("Top 10");
-      await page.waitForTimeout(300);
+    await input.fill("Top 10");
+    await expect(input).toHaveValue("Top 10");
 
-      // Close with Escape
-      await page.keyboard.press("Escape");
-      await expect(palette).not.toBeVisible({ timeout: 3000 });
-    }
+    // Close with Escape
+    await page.keyboard.press("Escape");
+    await expect(palette).not.toBeVisible({ timeout: 3000 });
   });
 
   test("create button navigates to studio or opens modal", async ({
@@ -295,11 +302,9 @@ test.describe("Goat/Match Page", () => {
         "missing fixture.",
     ).toBe(true);
 
-    const testId = await firstList.getAttribute("data-testid");
-    const listId = testId?.replace("featured-list-item-", "");
-
-    await firstList.click();
-    await page.waitForURL(`**/goat?list=${listId}`, { timeout: 15000 });
+    // The card's test-id suffix is its INDEX, not the list id — the id is read
+    // from the URL the app navigates to. See openFirstFeaturedList.
+    await openFirstFeaturedList(page);
 
     // Goat page should render
     await expect(page.getByTestId("goat-page")).toBeVisible({ timeout: 15000 });
@@ -335,30 +340,32 @@ test.describe("Goat/Match Page", () => {
         "missing fixture.",
     ).toBe(true);
 
-    await firstList.click();
-    await page.waitForURL("**/goat?list=*", { timeout: 15000 });
+    await openFirstFeaturedList(page);
 
-    // Wait for match grid container
-    const matchGrid = page.getByTestId("match-grid-container");
-    const gridVisible = await matchGrid
-      .isVisible({ timeout: 20000 })
-      .catch(() => false);
+    // Every assertion below used to sit inside `if (gridVisible)`, so a match
+    // page that never rendered a grid — the one thing this test is named for —
+    // reported as a pass.
+    await expect(
+      page.getByTestId("match-grid-container"),
+      "the match page rendered no grid container",
+    ).toBeVisible({ timeout: 20000 });
 
-    if (gridVisible) {
-      // Grid slots should exist
-      const slots = page.locator('[data-testid^="grid-slot-"]');
-      const slotCount = await slots.count();
-      expect(slotCount).toBeGreaterThan(0);
+    // Grid slots should exist
+    await expect
+      .poll(() => page.locator('[data-testid^="grid-slot-"]').count(), {
+        message: "the match grid rendered no slots",
+        timeout: 10000,
+      })
+      .toBeGreaterThan(0);
 
-      // Header should be visible
-      await expect(page.getByTestId("match-grid-header")).toBeVisible({
-        timeout: 5000,
-      });
+    // Header should be visible
+    await expect(page.getByTestId("match-grid-header")).toBeVisible({
+      timeout: 5000,
+    });
 
-      // Back button
-      await expect(page.getByTestId("match-back-btn")).toBeVisible({
-        timeout: 5000,
-      });
-    }
+    // Back button
+    await expect(page.getByTestId("match-back-btn")).toBeVisible({
+      timeout: 5000,
+    });
   });
 });

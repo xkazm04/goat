@@ -37,7 +37,6 @@ export type UseSupabaseAuthReturn = AuthState & AuthActions;
 export interface UseSupabaseAuthOptions {
   redirectTo?: string;
   onAuthStateChange?: (event: AuthChangeEvent, session: Session | null) => void;
-  autoRefresh?: boolean;
 }
 
 /**

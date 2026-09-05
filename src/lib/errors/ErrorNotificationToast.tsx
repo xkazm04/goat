@@ -13,7 +13,11 @@ import { useState } from 'react';
 
 import { cn } from '@/lib/utils';
 
-import { useErrorNotifications, type ErrorNotification } from './error-notification-store';
+import {
+  DISMISS_DELAYS,
+  useErrorNotifications,
+  type ErrorNotification,
+} from './error-notification-store';
 
 import type { ErrorSeverity } from './types';
 
@@ -144,12 +148,9 @@ function ErrorToast({ notification, onDismiss }: ErrorToastProps) {
         initial={{ scaleX: 1 }}
         animate={{ scaleX: 0 }}
         transition={{
-          duration:
-            notification.severity === 'error'
-              ? 10
-              : notification.severity === 'warning'
-              ? 6
-              : 4,
+          // The bar must empty exactly when the store's auto-dismiss timer
+          // fires, so it reads that timer's own table rather than restating it.
+          duration: DISMISS_DELAYS[notification.severity] / 1000,
           ease: 'linear',
         }}
         className="absolute bottom-0 left-0 right-0 h-0.5 origin-left opacity-30"

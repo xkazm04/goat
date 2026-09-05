@@ -2,9 +2,27 @@
 
 This directory contains hooks for managing collection data, filters, and statistics.
 
+> ## Correction — 2026-09-05
+>
+> Four claims below described an API `useCollection` does not have and are
+> struck: an `enableInfiniteScroll` option, an `infiniteScroll` return block
+> (and the example built on it), a `stats: CollectionStats` type (the type is
+> `ItemPanelStats`), and a `sortBy` union missing `'ranking'`, which is the
+> hook's DEFAULT sort. Verified by reading `UseCollectionOptions` and
+> `UseCollectionResult` in `useCollection.ts`.
+>
+> Also recorded here because a reader of this file would otherwise assume it:
+> **`useCollection` has no rendering consumer.** Its only caller is
+> `components/CollectionPanel.tsx`, and no page or component renders
+> `CollectionPanel` — the live panel on the match page is
+> `Match/sub_MatchCollections/SimpleCollectionPanel.tsx`, which reads the
+> backlog store directly. Of the hooks in this directory only `useQuickSelect`
+> is on a rendered path. This is a finding, not a decision; see the
+> `collection-panel-logic` sweep report of 2026-09-05.
+
 ## What lives here
 
-Verified against the tree on 2026-08-25. This document previously described only
+Verified against the tree on 2026-08-25; reachability re-verified 2026-09-05. This document previously described only
 `useCollection` and named nothing else in the directory, so five hooks had no
 prose at all.
 
@@ -12,9 +30,9 @@ prose at all.
 |---|---|
 | `useCollection` | the unified data hook, documented in full below |
 | `useCollectionFilterState` | filter/search state for the panel toolbar |
-| `useIntersectionObserver` | viewport detection; the one live rung of the lazy-load ladder |
-| `useQuickSelect` | keyboard quick-placement (`q`, then digits). **Undoable since 2026-08-25** — it records a tagged step through `@/lib/undo/record-grid-change`, where before it mutated the grid with nothing on the undo stack |
-| `useVisibleCollectionItems` | the visible window, with its own re-entrancy guard |
+| `useIntersectionObserver` | viewport detection; consumed only by `components/LazyLoadTrigger.tsx`, which nothing renders |
+| `useQuickSelect` | keyboard quick-placement (`q`, then digits). **Undoable since 2026-08-25** — it records a tagged step through `@/lib/undo/record-grid-change`, where before it mutated the grid with nothing on the undo stack. **Since 2026-09-05** it places the BacklogItem the store holds (`resolvePlacementItem`, the same record the touch path places) instead of a synthesised stand-in, and its prompts name only the keys that have an item behind them (`selectItemPrompt`); both are pinned in `useQuickSelect.test.ts` |
+| `useVisibleCollectionItems` | the visible window, with its own re-entrancy guard. `usePlacedItemIds`, a consumer-less duplicate of its grid subscription, was removed 2026-09-05 |
 | `useCollection.usage-examples.tsx` | **not a test** — reference samples, renamed 2026-08-24 so it stops impersonating one |
 
 Any change under `src/app/features/Collection/hooks/` is checked against this
@@ -68,11 +86,10 @@ interface UseCollectionOptions {
   subcategory?: string;               // Filter by subcategory
   initialSearchTerm?: string;         // Initial search value
   initialSelectedGroupIds?: string[]; // Pre-selected group IDs
-  sortBy?: 'name' | 'date' | 'popularity';
-  sortOrder?: 'asc' | 'desc';
+  sortBy?: 'name' | 'date' | 'popularity' | 'ranking';  // default: 'ranking'
+  sortOrder?: 'asc' | 'desc';         // default: 'desc'
   pageSize?: number;                  // Items per page (default: 50)
   enablePagination?: boolean;         // Enable pagination (default: false)
-  enableInfiniteScroll?: boolean;     // Enable infinite scroll (default: false)
   staleTime?: number;                 // Cache stale time in ms (default: 5 min)
   cacheTime?: number;                 // Cache garbage collection time (default: 10 min)
 }
@@ -84,10 +101,10 @@ The hook returns a comprehensive object with:
 
 #### Data
 - `groups: ItemCategory[]` - All groups
-- `items: CollectionItem[]` - All items (paginated or infinite)
-- `filteredItems: CollectionItem[]` - Items filtered by search and selected groups
+- `items: CollectionItem[]` - Items on the current page, minus those already placed in the grid
+- `filteredItems: CollectionItem[]` - Items filtered by selected groups and sorted
 - `selectedGroups: ItemCategory[]` - Currently selected groups
-- `stats: CollectionStats` - Computed statistics
+- `stats: ItemPanelStats` - Computed statistics (`types.ts`)
 
 #### Loading States
 - `isLoading: boolean` - Initial loading state
@@ -109,21 +126,12 @@ pagination: {
 }
 ```
 
-#### Infinite Scroll (when enabled)
-```typescript
-infiniteScroll?: {
-  hasNextPage: boolean;
-  isFetchingNextPage: boolean;
-  fetchNextPage: () => void;
-}
-```
-
 #### Filter State & Actions
 ```typescript
 filter: {
   searchTerm: string;
   selectedGroupIds: Set<string>;
-  sortBy: 'name' | 'date' | 'popularity';
+  sortBy: 'name' | 'date' | 'popularity' | 'ranking';
   sortOrder: 'asc' | 'desc';
 }
 
@@ -224,46 +232,8 @@ function PaginatedCollection() {
 
 #### Example 3: Infinite Scroll Collection
 
-```tsx
-function InfiniteScrollCollection() {
-  const collection = useCollection({
-    category: 'posts',
-    enableInfiniteScroll: true,
-    pageSize: 30
-  });
-
-  const loadMoreRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && collection.infiniteScroll?.hasNextPage) {
-          collection.infiniteScroll.fetchNextPage();
-        }
-      },
-      { threshold: 1.0 }
-    );
-
-    if (loadMoreRef.current) {
-      observer.observe(loadMoreRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, [collection.infiniteScroll]);
-
-  return (
-    <div>
-      {collection.filteredItems.map(item => (
-        <PostCard key={item.id} post={item} />
-      ))}
-
-      <div ref={loadMoreRef}>
-        {collection.infiniteScroll?.isFetchingNextPage && <Spinner />}
-      </div>
-    </div>
-  );
-}
-```
+> Struck 2026-09-05. The hook has no `enableInfiniteScroll` option and no
+> `infiniteScroll` return; the example that stood here called both.
 
 #### Example 4: Optimistic Mutations
 

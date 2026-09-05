@@ -42,6 +42,112 @@ let _prevPartializeInputs: {
 } | null = null;
 let _prevPartializeResult: Record<string, unknown> | null = null;
 
+/**
+ * The persisted projection of the store, as a pure function so the shape can be
+ * pinned by a test (backlog-store.test.ts). Runtime-only fields stay out:
+ * `syncDiagnostics.isSyncing` is a latch that only means anything inside the
+ * tab that set it — persisted, a tab closed mid-sync came back with
+ * processPendingChanges refusing every call as "already in progress", forever
+ * (registry: client-state/rehydration-narrowing).
+ */
+export function partializeBacklogState(state: BacklogState) {
+  // Create a serialization-friendly version of the state
+  const serializedCache: SerializedBacklogCache = {};
+
+  // Only persist the 10 most recently used cache entries to prevent IndexedDB bloat
+  const MAX_PERSISTED_CATEGORIES = 10;
+  const cacheKeys = Object.keys(state.cache)
+    .filter(key => state.cache[key])
+    .sort((a, b) => (state.cache[b]?.lastUpdated || 0) - (state.cache[a]?.lastUpdated || 0))
+    .slice(0, MAX_PERSISTED_CATEGORIES);
+
+  // Convert each cache entry
+  cacheKeys.forEach(key => {
+    const cacheEntry = state.cache[key];
+    if (cacheEntry) {
+      serializedCache[key] = {
+        groups: cacheEntry.groups || [],
+        loadedAt: cacheEntry.loadedAt || Date.now(),
+        loadedGroupIds: setToArray(cacheEntry.loadedGroupIds || new Set()),
+        lastUpdated: cacheEntry.lastUpdated || Date.now()
+      };
+    }
+  });
+
+  // Log cache size for debugging (DEV only — avoids JSON.stringify in production)
+  if (process.env.NODE_ENV !== 'production') {
+    backlogLogger.debug(`Persisting cache: ${Object.keys(serializedCache).length} keys, ${JSON.stringify(serializedCache).length} bytes`);
+  }
+
+  return {
+    selectedGroupId: state.selectedGroupId,
+    cache: serializedCache,
+    pendingChanges: state.pendingChanges,
+    syncDiagnostics: { ...state.syncDiagnostics, isSyncing: false },
+    lastSyncTimestamp: state.lastSyncTimestamp,
+    isOfflineMode: state.isOfflineMode,
+    // Also persist groups to have immediate data on load
+    groups: state.groups
+  };
+}
+
+/**
+ * Narrow a rehydrated payload back into today's runtime shape. Mutates in place
+ * (it runs inside persist's onRehydrateStorage callback, which hands over the
+ * live state object). Idempotent over an already-narrowed state.
+ */
+export function narrowRehydratedBacklogState(state: BacklogState): void {
+  // Migration: drop deprecated persisted fields that are no longer used.
+  // selectedItemId → useSelectionCursor is the source of truth.
+  // activeItemId → hover/preview state is component-local.
+  if ('selectedItemId' in (state as any)) delete (state as any).selectedItemId;
+  if ('activeItemId' in (state as any)) delete (state as any).activeItemId;
+
+  // Convert serialized data back to proper structure with Sets
+  if (state.cache) {
+    const properCache = { ...state.cache };
+
+    Object.keys(properCache).forEach(key => {
+      const entry = properCache[key];
+      if (entry) {
+        // Make sure we have all properties with defaults if missing
+        const loadedIds = entry.loadedGroupIds;
+        // Handle both array (from storage) and Set (already hydrated)
+        const loadedGroupIds = Array.isArray(loadedIds)
+          ? arrayToSet(loadedIds)
+          : (loadedIds instanceof Set ? loadedIds : new Set<string>());
+
+        properCache[key] = {
+          groups: entry.groups || [],
+          loadedAt: entry.loadedAt || Date.now(),
+          loadedGroupIds,
+          lastUpdated: entry.lastUpdated || Date.now()
+        };
+      }
+    });
+
+    // Update the state with proper Sets
+    state.cache = properCache;
+    state.loadingGroupIds = new Set<string>();
+
+    backlogLogger.debug(`Rehydrated cache has ${Object.keys(properCache).length} categories`);
+  }
+
+  // A sync that was in flight when the previous tab closed is not in flight now.
+  // Older payloads persisted the latch; clear it or every later sync is refused.
+  if (state.syncDiagnostics) {
+    state.syncDiagnostics.isSyncing = false;
+  }
+
+  // Check if we have cached groups
+  if (state.groups && state.groups.length > 0) {
+    backlogLogger.debug(`Rehydrated with ${state.groups.length} groups from persistence`);
+    // Rebuild runtime item index and loaded-groups counter from persisted groups
+    state._itemIndex = rebuildItemIndex(state.groups);
+    state._loadedGroupsCount = countLoadedGroups(state.groups);
+  }
+}
+
 // Create store with safeguards for SSR
 export const useBacklogStore = create<BacklogState>()(
   persist(
@@ -116,44 +222,7 @@ export const useBacklogStore = create<BacklogState>()(
           return _prevPartializeResult;
         }
 
-        // Create a serialization-friendly version of the state
-        const serializedCache: SerializedBacklogCache = {};
-
-        // Only persist the 10 most recently used cache entries to prevent IndexedDB bloat
-        const MAX_PERSISTED_CATEGORIES = 10;
-        const cacheKeys = Object.keys(state.cache)
-          .filter(key => state.cache[key])
-          .sort((a, b) => (state.cache[b]?.lastUpdated || 0) - (state.cache[a]?.lastUpdated || 0))
-          .slice(0, MAX_PERSISTED_CATEGORIES);
-
-        // Convert each cache entry
-        cacheKeys.forEach(key => {
-          const cacheEntry = state.cache[key];
-          if (cacheEntry) {
-            serializedCache[key] = {
-              groups: cacheEntry.groups || [],
-              loadedAt: cacheEntry.loadedAt || Date.now(),
-              loadedGroupIds: setToArray(cacheEntry.loadedGroupIds || new Set()),
-              lastUpdated: cacheEntry.lastUpdated || Date.now()
-            };
-          }
-        });
-
-        // Log cache size for debugging (DEV only — avoids JSON.stringify in production)
-        if (process.env.NODE_ENV !== 'production') {
-          backlogLogger.debug(`Persisting cache: ${Object.keys(serializedCache).length} keys, ${JSON.stringify(serializedCache).length} bytes`);
-        }
-
-        const result = {
-          selectedGroupId: state.selectedGroupId,
-          cache: serializedCache,
-          pendingChanges: state.pendingChanges,
-          syncDiagnostics: state.syncDiagnostics,
-          lastSyncTimestamp: state.lastSyncTimestamp,
-          isOfflineMode: state.isOfflineMode,
-          // Also persist groups to have immediate data on load
-          groups: state.groups
-        };
+        const result = partializeBacklogState(state);
 
         // Cache inputs and result for next call
         _prevPartializeInputs = {
@@ -177,50 +246,7 @@ export const useBacklogStore = create<BacklogState>()(
         if (!state || !isBrowser) return;
 
         backlogLogger.debug('BacklogStore rehydrated successfully');
-
-        // Migration: drop deprecated persisted fields that are no longer used.
-        // selectedItemId → useSelectionCursor is the source of truth.
-        // activeItemId → hover/preview state is component-local.
-        if ('selectedItemId' in (state as any)) delete (state as any).selectedItemId;
-        if ('activeItemId' in (state as any)) delete (state as any).activeItemId;
-        
-        // Convert serialized data back to proper structure with Sets
-        if (state.cache) {
-          const properCache = { ...state.cache };
-          
-          Object.keys(properCache).forEach(key => {
-            const entry = properCache[key];
-            if (entry) {
-              // Make sure we have all properties with defaults if missing
-              const loadedIds = entry.loadedGroupIds;
-              // Handle both array (from storage) and Set (already hydrated)
-              const loadedGroupIds = Array.isArray(loadedIds)
-                ? arrayToSet(loadedIds)
-                : (loadedIds instanceof Set ? loadedIds : new Set<string>());
-
-              properCache[key] = {
-                groups: entry.groups || [],
-                loadedAt: entry.loadedAt || Date.now(),
-                loadedGroupIds,
-                lastUpdated: entry.lastUpdated || Date.now()
-              };
-            }
-          });
-          
-          // Update the state with proper Sets
-          state.cache = properCache;
-          state.loadingGroupIds = new Set<string>();
-          
-          backlogLogger.debug(`Rehydrated cache has ${Object.keys(properCache).length} categories`);
-        }
-        
-        // Check if we have cached groups
-        if (state.groups && state.groups.length > 0) {
-          backlogLogger.debug(`Rehydrated with ${state.groups.length} groups from persistence`);
-          // Rebuild runtime item index and loaded-groups counter from persisted groups
-          state._itemIndex = rebuildItemIndex(state.groups);
-          state._loadedGroupsCount = countLoadedGroups(state.groups);
-        }
+        narrowRehydratedBacklogState(state);
       }
     }
   )

@@ -67,8 +67,8 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const category = searchParams.get('category');
   const subcategory = searchParams.get('subcategory');
-  const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
-  const pageSize = Math.min(100, Math.max(1, parseInt(searchParams.get('pageSize') || '20', 10)));
+  const page = parseBoundedInt(searchParams.get('page'), 1, 1, Number.MAX_SAFE_INTEGER);
+  const pageSize = parseBoundedInt(searchParams.get('pageSize'), 20, 1, 100);
   const sort = searchParams.get('sort') || 'rank';
   const order = searchParams.get('order') || 'asc';
 
@@ -250,6 +250,18 @@ function hashCode(str: string): number {
     hash = hash & hash;
   }
   return Math.abs(hash);
+}
+
+/**
+ * Parse an integer query param into [min, max], falling back when it is absent
+ * or not a number. `Math.max(1, parseInt('abc'))` is NaN, and NaN reached
+ * `.range(NaN, NaN)` as a 500 DATABASE_ERROR for a caller who only mistyped a
+ * page number.
+ */
+function parseBoundedInt(raw: string | null, fallback: number, min: number, max: number): number {
+  const n = raw === null || raw === '' ? fallback : parseInt(raw, 10);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, n));
 }
 
 export async function OPTIONS() {

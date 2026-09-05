@@ -20,6 +20,20 @@ interface ContentItem {
   createdAt?: number;
 }
 
+const MAX_RECOMMENDATIONS = 100;
+
+/**
+ * Parse a limit into [min, max], falling back when absent or not a number.
+ * `slice(0, NaN)` is an empty list and `slice(0, -1)` drops the LAST item, so
+ * `?limit=abc` returned zero recommendations and `?limit=-1` returned all but
+ * one, both as 200 responses that read as "nothing to recommend".
+ */
+function parseBoundedInt(raw: string | null, fallback: number, min: number, max: number): number {
+  const n = raw === null || raw === '' ? fallback : parseInt(raw, 10);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, n));
+}
+
 /**
  * Simple deterministic hash from a string, returning a number in [0, 1).
  * Ensures the same item always produces the same pseudo-random value.
@@ -133,7 +147,7 @@ function scoreForNewUser(
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const limit = parseInt(searchParams.get('limit') || '10', 10);
+    const limit = parseBoundedInt(searchParams.get('limit'), 10, 1, MAX_RECOMMENDATIONS);
     const timezone = searchParams.get('timezone') || 'UTC';
 
     // Get current time context
@@ -200,7 +214,13 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { interests = [], limit = 10, excludeIds = [] } = body;
+    const { interests = [], excludeIds = [] } = body;
+    const limit = parseBoundedInt(
+      body.limit === undefined || body.limit === null ? null : String(body.limit),
+      10,
+      1,
+      MAX_RECOMMENDATIONS
+    );
 
     // Convert showcase data to content items with deterministic metrics
     const items: ContentItem[] = showcaseData

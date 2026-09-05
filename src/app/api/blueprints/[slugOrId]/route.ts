@@ -5,6 +5,7 @@ import {
   fromSupabaseError,
   notFound,
   forbidden,
+  unauthorized,
   successResponse,
 } from '@/lib/errors';
 import { createClient } from '@/lib/supabase/server';
@@ -20,6 +21,34 @@ export const dynamic = 'force-dynamic';
 // Helper to check if a string is a UUID
 const isUUID = (str: string) =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+
+/**
+ * The route is the ONLY authorization door for blueprint writes: migration
+ * 20260315000002 replaced the owner-scoped RLS policies with
+ * `"Anyone can update/delete blueprints" USING (true)`. Before 2026-09-05 PATCH
+ * and DELETE checked nothing but `is_system`, so any anonymous request could
+ * rewrite or remove any community template.
+ *
+ * A row with no `author_id` (published without a session) has no owner and is
+ * therefore not editable through the API at all — that is the conservative
+ * reading, not an oversight.
+ */
+async function assertCanMutate(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  existing: Pick<BlueprintRow, 'is_system' | 'author_id'>,
+  verb: 'modify' | 'delete',
+): Promise<void> {
+  if (existing.is_system) {
+    forbidden(`Cannot ${verb} system blueprints`);
+  }
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    unauthorized(`You must be signed in to ${verb} a blueprint`);
+  }
+  if (!existing.author_id || existing.author_id !== user.id) {
+    forbidden(`You can only ${verb} your own blueprints`);
+  }
+}
 
 // GET /api/blueprints/[slugOrId] - Get a specific blueprint by slug or ID
 export const GET = withErrorHandler(
@@ -90,12 +119,12 @@ export const PATCH = withErrorHandler(
       throw fromSupabaseError(findError);
     }
 
-    // Prevent editing system blueprints
-    if (existingData.is_system) {
-      forbidden('Cannot modify system blueprints');
-    }
+    // The generated Database type predates the author_id column (migration
+    // 20251205000000); the file already reads rows as BlueprintRow for that reason.
+    await assertCanMutate(supabase, existingData as unknown as BlueprintRow, 'modify');
 
-    // Prepare update data
+    // Prepare update data. `is_featured` is server-owned curation, not a field
+    // the author may set on their own template — it is deliberately absent.
     const updateData: Partial<BlueprintRow> = {};
 
     if (body.title !== undefined) updateData.title = body.title;
@@ -104,7 +133,6 @@ export const PATCH = withErrorHandler(
     if (body.size !== undefined) updateData.size = body.size;
     if (body.timePeriod !== undefined) updateData.time_period = body.timePeriod;
     if (body.description !== undefined) updateData.description = body.description;
-    if (body.isFeatured !== undefined) updateData.is_featured = body.isFeatured;
     if (body.color) {
       updateData.color_primary = body.color.primary;
       updateData.color_secondary = body.color.secondary;
@@ -157,10 +185,7 @@ export const DELETE = withErrorHandler(
       throw fromSupabaseError(findError);
     }
 
-    // Prevent deleting system blueprints
-    if (existingData.is_system) {
-      forbidden('Cannot delete system blueprints');
-    }
+    await assertCanMutate(supabase, existingData as unknown as BlueprintRow, 'delete');
 
     // Delete the blueprint
     const { error } = await supabase.from('blueprints').delete().eq('id', existingData.id);

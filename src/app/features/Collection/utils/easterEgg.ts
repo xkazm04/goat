@@ -11,12 +11,10 @@
 import { useState, useEffect, useRef } from 'react';
 
 // Easter egg keywords that trigger the spotlight effect
-export const EASTER_EGG_KEYWORDS = ['wizard', 'magic', 'secret', 'hidden'] as const;
+const EASTER_EGG_KEYWORDS = ['wizard', 'magic', 'secret', 'hidden'] as const;
 
 // Duration the spotlight effect stays visible (in milliseconds)
-export const SPOTLIGHT_DURATION = 5000; // 5 seconds
-
-export type EasterEggKeyword = (typeof EASTER_EGG_KEYWORDS)[number];
+const SPOTLIGHT_DURATION = 5000; // 5 seconds
 
 export interface SpotlightableItem {
   id: string;
@@ -108,16 +106,4 @@ export function useEasterEggSpotlight<T extends SpotlightableItem>(
     spotlightItemId,
     isEasterEggActive,
   };
-}
-
-/**
- * Utility function to check if a search term is an Easter egg keyword.
- * Useful for conditional styling or behavior without needing the full hook.
- *
- * @param searchTerm - The search term to check
- * @returns Whether the search term matches an Easter egg keyword
- */
-export function isEasterEggKeyword(searchTerm: string): boolean {
-  const searchLower = searchTerm.toLowerCase().trim();
-  return EASTER_EGG_KEYWORDS.some((keyword) => searchLower === keyword);
 }

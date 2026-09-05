@@ -5,13 +5,15 @@
  * Provides consistent timing, easing, and motion patterns across all sharing surfaces.
  */
 
-import { DURATION, EASING } from './motion-presets';
+import { DURATION, EASING, prefersReducedMotion } from './motion-presets';
 
 import type { Variants, Transition } from 'framer-motion';
 
 
-// Re-export canonical tokens so existing consumers keep working.
-export { DURATION, EASING };
+// Re-export canonical tokens so existing consumers keep working. The
+// reduced-motion read is ONE function (motion/reduced-motion-mechanics); this
+// module used to carry its own copy without the matchMedia guard.
+export { DURATION, EASING, prefersReducedMotion };
 
 /** Stagger delay between items */
 export const STAGGER = {
@@ -286,14 +288,6 @@ export function getPlatformGlow(platform: SocialPlatform, intensity: number = 0.
  */
 export function getStaggerDelay(index: number, type: keyof typeof STAGGER = 'normal'): number {
   return index * STAGGER[type];
-}
-
-/**
- * Check if user prefers reduced motion
- */
-export function prefersReducedMotion(): boolean {
-  if (typeof window === 'undefined') return false;
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
 /**

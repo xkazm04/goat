@@ -64,10 +64,49 @@ export function generateApiKey(): string {
  */
 const rateLimitCache = new Map<string, { count: number; resetAt: number }>();
 
+/**
+ * Reap expired windows at most once per minute. The key is the caller's API
+ * key, and validateApiKey() accepts any well-formed string when GOAT_API_KEYS
+ * is unset — so the key set is world-controlled and, with no reaper, this map
+ * grew by one entry per distinct key forever (the sibling limiter in
+ * rate-limiter.ts has always reaped; this one did not). Registry:
+ * rate-limiting/key-design — "an unbounded per-key state map is a memory leak
+ * with a policy name".
+ */
+let lastRateLimitCleanup = 0;
+const RATE_LIMIT_CLEANUP_INTERVAL_MS = 60_000;
+
+function reapExpiredRateLimitWindows(now: number): void {
+  if (now - lastRateLimitCleanup < RATE_LIMIT_CLEANUP_INTERVAL_MS) return;
+  lastRateLimitCleanup = now;
+  rateLimitCache.forEach((entry, key) => {
+    if (now > entry.resetAt) rateLimitCache.delete(key);
+  });
+}
+
+/** Number of API keys currently holding a rate-limit window (observability / tests). */
+export function getRateLimitWindowCount(): number {
+  return rateLimitCache.size;
+}
+
+/** Drop every rate-limit window (tests). */
+export function resetRateLimitWindows(): void {
+  rateLimitCache.clear();
+  lastRateLimitCleanup = 0;
+}
+
+export interface RateLimitVerdict {
+  allowed: boolean;
+  /** The per-minute ceiling for this tier — published so the refusal states its rule. */
+  limit: number;
+  remaining: number;
+  resetIn: number;
+}
+
 export function checkRateLimit(
   apiKey: string,
   tier: ApiKeyTier
-): { allowed: boolean; remaining: number; resetIn: number } {
+): RateLimitVerdict {
   const limits = {
     free: { perMinute: 10, perDay: 100, perMonth: 1000 },
     basic: { perMinute: 60, perDay: 1000, perMonth: 30000 },
@@ -79,31 +118,36 @@ export function checkRateLimit(
   const now = Date.now();
   const windowMs = 60 * 1000; // 1 minute window
 
+  reapExpiredRateLimitWindows(now);
+
   const cached = rateLimitCache.get(apiKey);
 
   if (!cached || now > cached.resetAt) {
     // Start new window
     rateLimitCache.set(apiKey, { count: 1, resetAt: now + windowMs });
-    return { allowed: true, remaining: limit - 1, resetIn: windowMs };
+    return { allowed: true, limit, remaining: limit - 1, resetIn: windowMs };
   }
 
   if (cached.count >= limit) {
-    return { allowed: false, remaining: 0, resetIn: cached.resetAt - now };
+    return { allowed: false, limit, remaining: 0, resetIn: cached.resetAt - now };
   }
 
   cached.count++;
-  return { allowed: true, remaining: limit - cached.count, resetIn: cached.resetAt - now };
+  return { allowed: true, limit, remaining: limit - cached.count, resetIn: cached.resetAt - now };
 }
 
 /**
  * Create standardized API response headers
  */
 export function createApiHeaders(
-  rateLimit: { remaining: number; resetIn: number },
+  rateLimit: { limit?: number; remaining: number; resetIn: number },
   tier: ApiKeyTier
 ): Headers {
   const headers = new Headers();
   headers.set('X-GOAT-Api-Version', '1.0');
+  if (rateLimit.limit !== undefined) {
+    headers.set('X-RateLimit-Limit', String(rateLimit.limit));
+  }
   headers.set('X-RateLimit-Remaining', String(rateLimit.remaining));
   headers.set('X-RateLimit-Reset', String(Math.ceil(rateLimit.resetIn / 1000)));
   headers.set('X-Api-Tier', tier);

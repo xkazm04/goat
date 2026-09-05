@@ -231,7 +231,7 @@ export function validateSequence(
  * Execute a single primitive against the grid store.
  * This is the only function that causes side effects.
  */
-export function executePrimitive(
+function executePrimitive(
   primitive: GridPrimitive,
   grid: GridStoreContext
 ): void {

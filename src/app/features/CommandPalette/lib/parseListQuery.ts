@@ -35,25 +35,33 @@ const SIZE_PATTERNS = [
 // Valid list sizes
 const VALID_SIZES = [5, 10, 20, 25, 50];
 
-// Time period patterns
+// Time period patterns. The YEAR read is deliberately generic: any bare
+// four-digit year (19xx/20xx) is the year the list is about. An earlier version
+// listed `2024|2025` under "this year", so "top 50 songs 2024" — one of this
+// module's own example queries — parsed to whatever year the clock said.
+// Decade ("2020s") is checked before year so the suffix form wins.
 const TIME_PATTERNS = {
-  allTime: /all[- ]?time|ever|history|all time/i,
-  decade: /(\d{4})s|in the (\d{4})s/i,
-  year: /in (\d{4})|from (\d{4})|(\d{4}) edition/i,
-  thisYear: /this year|current year|2024|2025/i,
-  lastDecade: /last decade|recent|modern|2020s/i,
+  allTime: /\b(?:all[- ]?time|ever|history)\b/i,
+  decade: /\b(\d{3})0s\b/i,
+  thisYear: /\b(?:this|current) year\b/i,
+  lastDecade: /\blast decade\b|\brecent\b|\bmodern\b/i,
+  year: /\b((?:19|20)\d{2})\b/,
 };
 
-// Category keywords (lowercase for matching)
-const CATEGORY_KEYWORDS: Record<string, string[]> = {
+const currentYear = (): number => new Date().getFullYear();
+const currentDecade = (): string => String(Math.floor(currentYear() / 10) * 10);
+
+// Category keywords (lowercase for matching). Exported so a test can check the
+// keys against CATEGORY_CONFIG — this table is hand-maintained.
+export const CATEGORY_KEYWORDS: Record<string, string[]> = {
   Sports: ['sports', 'sport', 'athletes', 'players', 'teams'],
   Music: ['music', 'songs', 'albums', 'artists', 'bands', 'musicians', 'tracks'],
   Games: ['games', 'gaming', 'video games', 'videogames', 'esports'],
   Stories: ['stories', 'movies', 'films', 'books', 'shows', 'tv', 'series', 'anime', 'manga'],
 };
 
-// Subcategory keywords for Sports
-const SUBCATEGORY_KEYWORDS: Record<string, string[]> = {
+// Subcategory keywords for Sports. Exported for the same vocabulary test.
+export const SUBCATEGORY_KEYWORDS: Record<string, string[]> = {
   Basketball: ['basketball', 'nba', 'hoops', 'bball', 'dunks', 'lebron', 'jordan'],
   'Ice-Hockey': ['hockey', 'nhl', 'ice hockey', 'puck'],
   Soccer: ['soccer', 'football', 'fifa', 'premier league', 'messi', 'ronaldo', 'futbol'],
@@ -107,29 +115,26 @@ function extractTimePeriod(query: string): {
     return { timePeriod: 'all-time', confidence: 1 };
   }
 
-  // Check for specific decade
+  // Check for a decade suffix ("2020s") before any year read
   const decadeMatch = lowerQuery.match(TIME_PATTERNS.decade);
   if (decadeMatch) {
-    const decade = (decadeMatch[1] || decadeMatch[2]).slice(0, 3) + '0';
-    return { timePeriod: 'decade', decade, confidence: 1 };
+    return { timePeriod: 'decade', decade: `${decadeMatch[1]}0`, confidence: 1 };
   }
 
-  // Check for last decade / modern
+  // Check for last decade / modern — the decade the clock is in
   if (TIME_PATTERNS.lastDecade.test(lowerQuery)) {
-    return { timePeriod: 'decade', decade: '2020', confidence: 0.9 };
+    return { timePeriod: 'decade', decade: currentDecade(), confidence: 0.9 };
   }
 
-  // Check for specific year
+  // Check for this year — the year the clock is in
+  if (TIME_PATTERNS.thisYear.test(lowerQuery)) {
+    return { timePeriod: 'year', year: String(currentYear()), confidence: 0.9 };
+  }
+
+  // Check for a bare year ("songs 2024", "in 1999", "2019 edition")
   const yearMatch = lowerQuery.match(TIME_PATTERNS.year);
   if (yearMatch) {
-    const year = yearMatch[1] || yearMatch[2] || yearMatch[3];
-    return { timePeriod: 'year', year, confidence: 1 };
-  }
-
-  // Check for this year
-  if (TIME_PATTERNS.thisYear.test(lowerQuery)) {
-    const currentYear = new Date().getFullYear().toString();
-    return { timePeriod: 'year', year: currentYear, confidence: 0.9 };
+    return { timePeriod: 'year', year: yearMatch[1], confidence: 1 };
   }
 
   // Default to all-time

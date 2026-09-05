@@ -21,8 +21,14 @@ export type {
 
 export {
   WIDGET_DIMENSIONS,
+  WIDGET_SIZES,
+  WIDGET_THEMES,
+  WIDGET_DISPLAY_STYLES,
+  WIDGET_ITEM_COUNT,
+  WIDGET_DEFAULT_BORDER_RADIUS,
   THEME_PRESETS,
   DEFAULT_WIDGET_CONFIG,
+  normalizeWidgetConfig,
 } from './types';
 
 // Theme Customizer

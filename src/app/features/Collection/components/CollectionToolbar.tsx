@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronDown, ChevronUp, Grid3x3, List, Plus, Search, X, EyeOff, Filter, Save, Bookmark, MoreHorizontal } from "lucide-react";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 
 import { UnrankedIcon, InGridIcon, TopRatedIcon, RecentIcon } from "@/components/icons/MicroIllustrations";
 import { QuickFilterBar } from "@/lib/filters/components/QuickFilterBar";
@@ -561,7 +561,12 @@ export function CollectionToolbar({
 
   // Animation state for category bar
   const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const [prevGroupIds, setPrevGroupIds] = useState<string[]>([]);
+  // The previous group order is a comparison baseline, not render state: held in
+  // a ref so writing it back cannot schedule another render. As state in the
+  // effect's own dependency list, every run produced a fresh array and scheduled
+  // the next — the toolbar committed ~130 times per second for as long as it was
+  // mounted (measured 2026-09-05; see CollectionToolbar.test.tsx).
+  const prevGroupIdsRef = useRef<string[]>([]);
   const [highlightedGroups, setHighlightedGroups] = useState<Set<string>>(new Set());
 
   const groups = propGroups ?? [];
@@ -573,20 +578,20 @@ export function CollectionToolbar({
   // Detect group reordering and trigger highlight effect
   useEffect(() => {
     const currentGroupIds = groups.map(g => g.id);
+    const prevGroupIds = prevGroupIdsRef.current;
+    prevGroupIdsRef.current = currentGroupIds;
 
-    if (prevGroupIds.length > 0 && prevGroupIds.length === currentGroupIds.length) {
-      const orderChanged = prevGroupIds.some((id, index) => id !== currentGroupIds[index]);
+    if (prevGroupIds.length === 0 || prevGroupIds.length !== currentGroupIds.length) return;
 
-      if (orderChanged) {
-        setHighlightedGroups(new Set(currentGroupIds));
-        setTimeout(() => {
-          setHighlightedGroups(new Set());
-        }, 800);
-      }
-    }
+    const orderChanged = prevGroupIds.some((id, index) => id !== currentGroupIds[index]);
+    if (!orderChanged) return;
 
-    setPrevGroupIds(currentGroupIds);
-  }, [groups, prevGroupIds]);
+    setHighlightedGroups(new Set(currentGroupIds));
+    const timer = setTimeout(() => {
+      setHighlightedGroups(new Set());
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [groups]);
 
   // Clear initial load flag after first render
   useEffect(() => {

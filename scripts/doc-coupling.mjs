@@ -59,7 +59,7 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -243,18 +243,31 @@ const ENTRIES = [...declaredEntries(), ...derivedEntries()];
 // Coverage
 // ---------------------------------------------------------------------------
 
+/**
+ * The area population is derived from the TRACKED tree (`git ls-files`), the
+ * same population every other number in this script is computed over — never
+ * from a directory walk. A walk counts what git cannot track: an EMPTY
+ * directory, which is exactly what deleting the last file in a folder leaves
+ * behind on the machine that did it. Measured 2026-09-05: one checkout read
+ * 72 unmapped areas where a clean clone of the same commit read 70, and the
+ * docs:unmappedAreas ratchet bucket went red for two folders holding nothing.
+ * A coverage number that depends on which machine ran it is not a property
+ * of the code (quality-gates/blocking-by-input-determinism).
+ */
 function enumerateAreas() {
   const areas = new Set();
   for (const rootGlob of map.coverage?.areaRoots ?? []) {
     if (rootGlob.endsWith('/*')) {
       const parent = rootGlob.slice(0, -2);
-      const abs = path.join(repoRoot, parent);
-      if (!existsSync(abs)) continue;
-      for (const name of readdirSync(abs)) {
-        const child = path.join(abs, name);
-        if (statSync(child).isDirectory()) areas.add(`${parent}/${name}`);
+      const prefix = `${parent}/`;
+      for (const f of ALL_FILES) {
+        if (!f.startsWith(prefix)) continue;
+        const rest = f.slice(prefix.length);
+        const slash = rest.indexOf('/');
+        // A file directly under the parent belongs to no child area.
+        if (slash > 0) areas.add(`${parent}/${rest.slice(0, slash)}`);
       }
-    } else if (existsSync(path.join(repoRoot, rootGlob))) {
+    } else if (ALL_FILES.some((f) => f.startsWith(`${rootGlob}/`))) {
       areas.add(rootGlob);
     }
   }

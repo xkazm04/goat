@@ -3,54 +3,66 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   WidgetConfig,
   WidgetData,
-  DEFAULT_WIDGET_CONFIG,
   WIDGET_DIMENSIONS,
   THEME_PRESETS,
   CustomThemeColors,
+  normalizeWidgetConfig,
 } from '@/lib/embed';
 import { getShareUrl, getServerBaseUrl } from '@/lib/sharing/share-urls';
 
 /**
- * Parse widget config from URL parameters
+ * Parse widget config from URL parameters.
+ *
+ * Every field goes through `normalizeWidgetConfig` — the ONE door for the widget
+ * vocabulary (registry: public-verdict-badge/embed-snippet-contract; _laws
+ * one-validation-door). Before 2026-09-05 this route cast `params.get('size')`
+ * straight to the union, so `?size=huge` reached `WIDGET_DIMENSIONS[size].width`
+ * and threw a 500 out of a public, cacheable GET.
  */
 function parseConfig(params: URLSearchParams): WidgetConfig | null {
   const listId = params.get('id');
   if (!listId) return null;
 
-  const config: WidgetConfig = {
-    listId,
-    size: (params.get('size') as WidgetConfig['size']) || DEFAULT_WIDGET_CONFIG.size,
-    theme: (params.get('theme') as WidgetConfig['theme']) || DEFAULT_WIDGET_CONFIG.theme,
-    displayStyle: (params.get('display') as WidgetConfig['displayStyle']) || DEFAULT_WIDGET_CONFIG.displayStyle,
-    itemCount: Math.min(20, Math.max(1, parseInt(params.get('count') || '5', 10))),
-    showRanks: params.get('ranks') !== '0',
-    showImages: params.get('images') !== '0',
-    showTitle: params.get('title') !== '0',
-    showBranding: params.get('branding') !== '0',
-    interactive: params.get('interactive') !== '0',
-    borderRadius: parseInt(params.get('radius') || '12', 10),
+  const flag = (key: string): boolean | undefined => {
+    const v = params.get(key);
+    return v === null ? undefined : v !== '0';
+  };
+  const int = (key: string): number | undefined => {
+    const v = params.get(key);
+    return v === null ? undefined : parseInt(v, 10);
   };
 
-  const locale = params.get('locale');
-  if (locale) config.locale = locale;
-
-  // Parse custom colors
+  // Six dash-separated hex bodies; the normalizer validates each as a colour
+  // and drops the whole set (falling back to the default theme) when any fails.
   const colorsStr = params.get('colors');
-  if (colorsStr && config.theme === 'custom') {
-    const colors = colorsStr.split('-').map(c => `#${c}`);
-    if (colors.length === 6) {
-      config.customColors = {
-        background: colors[0],
-        surface: colors[1],
-        text: colors[2],
-        textSecondary: colors[3],
-        accent: colors[4],
-        border: colors[5],
-      };
-    }
-  }
+  const colorParts = colorsStr ? colorsStr.split('-').map((c) => `#${c}`) : null;
+  const customColors =
+    colorParts && colorParts.length === 6
+      ? {
+          background: colorParts[0],
+          surface: colorParts[1],
+          text: colorParts[2],
+          textSecondary: colorParts[3],
+          accent: colorParts[4],
+          border: colorParts[5],
+        }
+      : undefined;
 
-  return config;
+  return normalizeWidgetConfig({
+    listId,
+    size: (params.get('size') ?? undefined) as WidgetConfig['size'] | undefined,
+    theme: (params.get('theme') ?? undefined) as WidgetConfig['theme'] | undefined,
+    displayStyle: (params.get('display') ?? undefined) as WidgetConfig['displayStyle'] | undefined,
+    itemCount: int('count'),
+    showRanks: flag('ranks'),
+    showImages: flag('images'),
+    showTitle: flag('title'),
+    showBranding: flag('branding'),
+    interactive: flag('interactive'),
+    borderRadius: int('radius'),
+    customColors,
+    locale: params.get('locale') ?? undefined,
+  });
 }
 
 /**
@@ -129,14 +141,19 @@ function generateWidgetHTML(
   colors: CustomThemeColors
 ): string {
   const dimensions = WIDGET_DIMENSIONS[config.size];
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://goat.app';
+  // `data.fullUrl` is already absolute (share-urls builds it with the server
+  // base). Prefixing it again produced `https://goat.apphttps://goat.app/share/…`
+  // in both the CTA and the click handler — every deep link out of the widget
+  // was dead (measured 2026-09-05: 2 origins per href).
+  const baseUrl = getServerBaseUrl();
+  const fullUrl = data.fullUrl;
 
   const itemsHTML = data.items
     .slice(0, config.itemCount)
     .map(item => `
-      <div class="goat-widget-item" ${config.interactive ? `onclick="window.open('${baseUrl}${data.fullUrl}', '_blank')"` : ''}>
-        ${config.showRanks ? `<div class="goat-widget-rank">#${item.rank}</div>` : ''}
-        ${config.showImages && item.imageUrl ? `<img class="goat-widget-image" src="${item.imageUrl}" alt="${item.title}" loading="lazy" />` : ''}
+      <div class="goat-widget-item" ${config.interactive ? `onclick="window.open(${escapeHtml(jsString(fullUrl))}, '_blank')"` : ''}>
+        ${config.showRanks ? `<div class="goat-widget-rank">#${Number(item.rank)}</div>` : ''}
+        ${config.showImages && item.imageUrl ? `<img class="goat-widget-image" src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.title)}" loading="lazy" />` : ''}
         <div class="goat-widget-info">
           <div class="goat-widget-item-title">${escapeHtml(item.title)}</div>
           ${item.subtitle ? `<div class="goat-widget-item-subtitle">${escapeHtml(item.subtitle)}</div>` : ''}
@@ -376,11 +393,11 @@ ${prefersColorSchemeBlock(config)}
     </div>
 
     <div class="goat-widget-footer">
-      <a href="${baseUrl}${data.fullUrl}" target="_blank" rel="noopener" class="goat-widget-cta">
+      <a href="${escapeHtml(fullUrl)}" target="_blank" rel="noopener" class="goat-widget-cta">
         View Full Ranking &rarr;
       </a>
       ${config.showBranding ? `
-      <a href="${baseUrl}" target="_blank" rel="noopener" class="goat-widget-branding">
+      <a href="${escapeHtml(baseUrl)}" target="_blank" rel="noopener" class="goat-widget-branding">
         Powered by GOAT
       </a>
       ` : ''}
@@ -390,12 +407,23 @@ ${prefersColorSchemeBlock(config)}
   <script>
     // Send ready message to parent
     if (window.parent !== window) {
-      window.parent.postMessage({ type: 'ready', listId: '${config.listId}' }, '*');
+      window.parent.postMessage({ type: 'ready', listId: ${jsString(config.listId)} }, '*');
     }
 
   </script>
 </body>
 </html>`;
+}
+
+/**
+ * A value that lands inside an inline <script> or an event handler is a JS
+ * string literal, not HTML: JSON.stringify closes the quote problem and the
+ * `<` escape closes the `</script>` one. `?id=` is caller-controlled and, before
+ * 2026-09-05, was interpolated raw into both — a reflected XSS on a route that
+ * is served with `frame-ancestors *` and cached for an hour.
+ */
+function jsString(value: string): string {
+  return JSON.stringify(value).replace(/</g, '\\u003c');
 }
 
 /**

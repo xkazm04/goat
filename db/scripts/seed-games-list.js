@@ -8,11 +8,17 @@
  * 4. ranking_activities events
  * 5. item_consensus_cache entries
  * 6. Updated selection_count on items
+ *
+ * Usage:
+ *   node --env-file=.env db/scripts/seed-games-list.js
+ * DATABASE_URL (or SUPABASE_DB_URL) must be set, and a non-local host additionally
+ * needs DB_SCRIPTS_ALLOW_REMOTE=1; see db/README.md.
  */
 
 const { Client } = require('pg');
 
-const POOLER_URL = 'postgresql://postgres.pvfwxilvzjzzjhdcpucu:hPYJVZFK3oh5RgQ7@aws-0-eu-central-1.pooler.supabase.com:5432/postgres';
+const { resolveConnectionString } = require('./connection');
+
 const PARENT_LIST_ID = '06261cf8-c6a1-4117-8597-114924d81718';
 const OWNER_USER_ID = '4d1e9364-9f84-4a3b-996c-c584fcc81ebf'; // You - existing user
 
@@ -35,7 +41,10 @@ function getConsensusLevel(stdDev, totalRankings) {
 }
 
 async function main() {
-  const client = new Client({ connectionString: POOLER_URL, ssl: { rejectUnauthorized: false } });
+  const client = new Client({
+    connectionString: resolveConnectionString(process.env),
+    ssl: { rejectUnauthorized: false },
+  });
   await client.connect();
   console.log('Connected to database');
 

@@ -4,19 +4,37 @@
  */
 
 /**
+ * Closed vocabularies. Each is the ONE authority for its axis: the type is
+ * derived from the list, and `normalizeWidgetConfig` checks membership against
+ * the list, so a value that reaches `WIDGET_DIMENSIONS[size]` is always a key.
+ * Before 2026-09-05 the types were bare unions and the URL parsers cast
+ * `params.get('size') as WidgetSize`, so `?size=huge` produced
+ * `WIDGET_DIMENSIONS.huge` → undefined → TypeError in every embed generator.
+ */
+export const WIDGET_SIZES = ['compact', 'standard', 'full'] as const;
+export const WIDGET_THEMES = ['light', 'dark', 'auto', 'custom'] as const;
+export const WIDGET_DISPLAY_STYLES = ['list', 'grid', 'podium', 'minimal'] as const;
+
+/**
  * Widget size presets
  */
-export type WidgetSize = 'compact' | 'standard' | 'full';
+export type WidgetSize = (typeof WIDGET_SIZES)[number];
 
 /**
  * Widget theme options
  */
-export type WidgetTheme = 'light' | 'dark' | 'auto' | 'custom';
+export type WidgetTheme = (typeof WIDGET_THEMES)[number];
 
 /**
  * Widget display style
  */
-export type WidgetDisplayStyle = 'list' | 'grid' | 'podium' | 'minimal';
+export type WidgetDisplayStyle = (typeof WIDGET_DISPLAY_STYLES)[number];
+
+/** Inclusive bounds for `itemCount`. Mirrors the clamp the embed route applies. */
+export const WIDGET_ITEM_COUNT = { min: 1, max: 20 } as const;
+
+/** Default corner radius (px); also what a non-numeric or negative `radius` falls back to. */
+export const WIDGET_DEFAULT_BORDER_RADIUS = 12;
 
 /**
  * Widget dimensions by size
@@ -78,15 +96,22 @@ export interface CustomThemeColors {
 }
 
 /**
- * Default theme presets
+ * Default theme presets.
+ *
+ * `accent` and `textSecondary` are painted as TEXT (rank numbers, footer CTA,
+ * 12px subtitles) on both `background` and `surface`, so each preset holds the
+ * WCAG AA floor (4.5:1) for every text role on every surface — pinned by
+ * theme-contrast.test.ts. Retuned 2026-09-05: the shared accent #e94560 read at
+ * 3.83:1 on the light background and 4.46:1 on the dark one, and the light
+ * secondary text at 4.45:1 on its surface.
  */
 export const THEME_PRESETS: Record<'light' | 'dark', CustomThemeColors> = {
   light: {
     background: '#ffffff',
     surface: '#f8f9fa',
     text: '#1a1a2e',
-    textSecondary: '#6c757d',
-    accent: '#e94560',
+    textSecondary: '#677078',
+    accent: '#dc1a3a',
     border: '#e9ecef',
   },
   dark: {
@@ -94,7 +119,7 @@ export const THEME_PRESETS: Record<'light' | 'dark', CustomThemeColors> = {
     surface: '#16213e',
     text: '#ffffff',
     textSecondary: '#a0a0a0',
-    accent: '#e94560',
+    accent: '#ec5870',
     border: '#2d4059',
   },
 };
@@ -112,8 +137,72 @@ export const DEFAULT_WIDGET_CONFIG: Omit<WidgetConfig, 'listId'> = {
   showTitle: true,
   showBranding: true,
   interactive: true,
-  borderRadius: 12,
+  borderRadius: WIDGET_DEFAULT_BORDER_RADIUS,
 };
+
+const HEX_COLOR = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
+
+function oneOf<T extends readonly string[]>(list: T, value: unknown, fallback: T[number]): T[number] {
+  return typeof value === 'string' && (list as readonly string[]).includes(value)
+    ? (value as T[number])
+    : fallback;
+}
+
+function clampInt(value: unknown, min: number, max: number, fallback: number): number {
+  const n = typeof value === 'number' ? value : Number.parseInt(String(value ?? ''), 10);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, Math.trunc(n)));
+}
+
+function normalizeRadius(value: unknown): number {
+  const n = typeof value === 'number' ? value : Number.parseInt(String(value ?? ''), 10);
+  return Number.isFinite(n) && n >= 0 ? Math.trunc(n) : WIDGET_DEFAULT_BORDER_RADIUS;
+}
+
+/**
+ * Coerce an untrusted, partial config (URL params, a caller's options object)
+ * into a `WidgetConfig` whose every field is a member of its vocabulary.
+ *
+ * - enum fields outside their list fall back to `DEFAULT_WIDGET_CONFIG`
+ * - `itemCount` is clamped to `WIDGET_ITEM_COUNT`; non-numeric → default
+ * - `borderRadius` non-numeric or negative → `WIDGET_DEFAULT_BORDER_RADIUS`
+ * - `theme: 'custom'` without six valid hex colors falls back to the default
+ *   theme, because the custom palette is what that theme *means*
+ *
+ * This is the single normalizer for the config vocabulary. Parsers build a
+ * `Partial` and hand it here rather than casting.
+ */
+export function normalizeWidgetConfig(
+  input: Partial<Omit<WidgetConfig, 'listId'>> & { listId: string }
+): WidgetConfig {
+  const d = DEFAULT_WIDGET_CONFIG;
+  const theme = oneOf(WIDGET_THEMES, input.theme, d.theme);
+  const colors = input.customColors;
+  const colorsValid =
+    !!colors &&
+    (['background', 'surface', 'text', 'textSecondary', 'accent', 'border'] as const).every(
+      (k) => typeof colors[k] === 'string' && HEX_COLOR.test(colors[k])
+    );
+
+  const config: WidgetConfig = {
+    listId: input.listId,
+    size: oneOf(WIDGET_SIZES, input.size, d.size),
+    theme: theme === 'custom' && !colorsValid ? d.theme : theme,
+    displayStyle: oneOf(WIDGET_DISPLAY_STYLES, input.displayStyle, d.displayStyle),
+    itemCount: clampInt(input.itemCount, WIDGET_ITEM_COUNT.min, WIDGET_ITEM_COUNT.max, d.itemCount),
+    showRanks: input.showRanks ?? d.showRanks,
+    showImages: input.showImages ?? d.showImages,
+    showTitle: input.showTitle ?? d.showTitle,
+    showBranding: input.showBranding ?? d.showBranding,
+    interactive: input.interactive ?? d.interactive,
+    borderRadius: normalizeRadius(input.borderRadius),
+  };
+
+  if (config.theme === 'custom' && colorsValid) config.customColors = colors;
+  if (input.locale) config.locale = input.locale;
+
+  return config;
+}
 
 /**
  * Embed code output format

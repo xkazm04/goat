@@ -6,6 +6,7 @@
  */
 
 import { getTierForPositionGeneric, rangeFromInclusiveBoundary } from '@/lib/tiers/boundary';
+import { createEmptyPlacedItem, createEmptyPlacedItemArray, createPlacedItem } from '@/types/placed-item';
 
 import type { BracketState, BracketSize } from '@/app/features/Match/sub_MatchBracket/lib/bracketGenerator';
 import type { SeedingStrategy } from '@/app/features/Match/sub_MatchBracket/lib/seedingEngine';
@@ -334,18 +335,16 @@ export interface RankingOperationResult {
 // ============================================================================
 
 /**
- * Create an empty ranked item for a position
+ * Create an empty ranked item for a position.
+ *
+ * Corrected 2026-09-05: this and the two factories below used to re-implement
+ * `createEmptyPlacedItem` / `createPlacedItem` / `createEmptyPlacedItemArray`
+ * from placed-item.ts with the `rank-` slot prefix baked in, while the
+ * placed-item originals had zero importers. One implementation of the
+ * PlacedItem envelope now; these are the `rank-`-prefixed entry points.
  */
 export function createEmptyRankedItem(position: number): RankedItem {
-  return {
-    id: `rank-${position}`,
-    position,
-    item: null,
-    context: {
-      source: 'grid',
-      matched: false,
-    },
-  };
+  return createEmptyPlacedItem(position, 'rank');
 }
 
 /**
@@ -356,26 +355,14 @@ export function createRankedItem(
   item: BaseItem,
   assignedBy: RankingMode = 'direct'
 ): RankedItem {
-  return {
-    id: `rank-${position}`,
-    position,
-    item,
-    context: {
-      source: 'grid',
-      matched: true,
-      metadata: {
-        assignedAt: Date.now(),
-        assignedBy,
-      },
-    },
-  };
+  return createPlacedItem(position, item, 'grid', { assignedAt: Date.now(), assignedBy }, 'rank');
 }
 
 /**
  * Initialize an empty ranking of given size
  */
 export function createEmptyRanking(size: number): RankedItem[] {
-  return Array.from({ length: size }, (_, i) => createEmptyRankedItem(i));
+  return createEmptyPlacedItemArray(size, 'rank');
 }
 
 /**
@@ -507,8 +494,13 @@ export function computeTierBoundaries(
     currentPosition = endPosition + 1;
   }
 
-  // Ensure all positions are covered
-  if (boundaries.length > 0 && currentPosition < rankingSize) {
+  // Ensure all positions are covered. Corrected 2026-09-05: for a size where
+  // every tier rounds to zero (size 1) there was no last boundary to extend and
+  // the ranking had NO tier — getTierForPosition(0) answered null. The whole
+  // range then belongs to the first tier.
+  if (boundaries.length === 0 && rankingSize > 0 && tierIds.length > 0) {
+    boundaries.push({ tierId: tierIds[0], startPosition: 0, endPosition: rankingSize - 1 });
+  } else if (boundaries.length > 0 && currentPosition < rankingSize) {
     boundaries[boundaries.length - 1].endPosition = rankingSize - 1;
   }
 
