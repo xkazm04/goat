@@ -88,14 +88,16 @@ function buildTree(
     });
   });
 
-  // Build tree structure
+  // Link children to parents. Depth is NOT assigned here: a child that appears
+  // in the array before its parent would read the parent's depth while it is
+  // still 0, so a grandchild listed first landed at depth 1. Depth is a
+  // property of the linked tree and is assigned once the links exist.
   collections.forEach((collection) => {
     const node = nodeMap.get(collection.id)!;
 
     if (collection.parentId) {
       const parent = nodeMap.get(collection.parentId);
       if (parent) {
-        node.depth = parent.depth + 1;
         parent.children.push(node);
       } else {
         roots.push(node);
@@ -111,6 +113,14 @@ function buildTree(
 
   roots.sort(sortByOrder);
   nodeMap.forEach((node) => node.children.sort(sortByOrder));
+
+  const assignDepth = (nodes: CollectionTreeNode[], depth: number) => {
+    for (const node of nodes) {
+      node.depth = depth;
+      assignDepth(node.children, depth + 1);
+    }
+  };
+  assignDepth(roots, 0);
 
   return roots;
 }

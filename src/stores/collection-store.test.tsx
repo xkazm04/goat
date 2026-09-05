@@ -103,3 +103,20 @@ describe('collection-store selectors settle under useSyncExternalStore', () => {
     seen = [];
   });
 });
+
+describe('buildTree depth', () => {
+  it('assigns depth from the parent chain regardless of array order', () => {
+    // Child listed BEFORE its parent: the pre-fix single pass read the parent's
+    // depth while it was still 0, so the grandchild landed at depth 1.
+    useCollectionStore.getState().setCollections([
+      collection('grandchild', 'child', 0),
+      collection('child', 'root', 0),
+      collection('root', null, 0),
+    ]);
+    const tree = useCollectionStore.getState().getCollectionTree();
+    expect(tree).toHaveLength(1);
+    expect(tree[0].depth).toBe(0);
+    expect(tree[0].children[0].depth).toBe(1);
+    expect(tree[0].children[0].children[0].depth).toBe(2);
+  });
+});
