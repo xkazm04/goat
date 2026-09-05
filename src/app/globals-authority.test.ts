@@ -117,6 +117,9 @@ describe('globals.css — one unconditional author per animation and per keyfram
   it('no @keyframes name is defined twice', () => {
     const seen = new Map<string, number>();
     root.walkAtRules('keyframes', (at) => {
+      // A redefinition inside @media (the reduced-motion override) is the
+      // legitimate case the header names; only unconditional twins conflict.
+      if (isConditional(at)) return;
       const name = at.params.trim();
       seen.set(name, (seen.get(name) ?? 0) + 1);
     });

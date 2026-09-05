@@ -41,10 +41,13 @@ describe('withTiming request correlation', () => {
   });
 
   it('logs the client-provided id, not a freshly minted one', async () => {
-    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
-    const wrapped = withTiming(okHandler, '/api/collections');
+    // The success path no longer logs (main's no-console sweep, 74573c2); the
+    // ERROR path is the one [timing] line left, and it must carry the client id.
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const throwing = async () => { throw new Error('boom'); };
+    const wrapped = withTiming(throwing as unknown as typeof okHandler, '/api/collections');
 
-    await wrapped(requestWithId('goat-abc123-xyz789'));
+    await expect(wrapped(requestWithId('goat-abc123-xyz789'))).rejects.toThrow('boom');
 
     const line = log.mock.calls.map((c) => String(c[0])).find((l) => l.startsWith('[timing]'));
     expect(line).toContain('goat-abc123-xyz789');

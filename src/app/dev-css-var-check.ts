@@ -48,6 +48,8 @@ export const REQUIRED_CSS_VARS = [
   '--glow-brand-sm',
   '--glow-brand-md',
   '--glow-brand-lg',
+  // Brand gradient
+  '--gradient-brand',
   // Motion duration
   '--duration-instant',
   '--duration-quick',
