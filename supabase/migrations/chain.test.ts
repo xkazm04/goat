@@ -178,7 +178,7 @@ describe('supabase/migrations — the chain read as a chain', () => {
     expect(stale).toEqual([]);
   });
 
-  it.fails('every table the application queries is created by SQL in the tree, or is allowlisted with a reason', () => {
+  it('every table the application queries is created by SQL in the tree, or is allowlisted with a reason', () => {
     // A query is a string no compiler checks against the schema (registry:
     // schema-drift-detection, class 2). This is the compile step.
     const ALLOW: Record<string, string> = {

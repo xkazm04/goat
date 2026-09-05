@@ -44,6 +44,7 @@ const KNOWN_UNTYPED = [
   'challenges',
   'item_consensus_cache',
   'ranking_aggregates',
+  'ranking_submissions',
   'user_preferences',
   'user_stats',
 ].sort();
