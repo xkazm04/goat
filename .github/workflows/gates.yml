@@ -82,19 +82,13 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      # ADVISORY-BY-DISPLAY, BLOCKING-BY-RATCHET. `tsc --noEmit` currently
-      # exits 1 on 29 inherited errors, so running it bare would wall every
-      # change for debt that is not the author's. That is debt-shaped, not
-      # input-shaped: the work that makes it blockable is inside this
-      # repository. So the count is pinned by the ratchet job below instead,
-      # and this step reports.
-      #
-      # PROMOTION TRIGGER: when typecheck:errors reaches 0 in
-      # .ai/ratchet-baseline.json, delete the bucket and replace this step with
-      # a bare `npm run typecheck`.
-      - run: npm run typecheck || true
-      - name: typecheck error count (informational)
-        run: npm run typecheck 2>&1 | grep -c "error TS" || true
+      # BLOCKING since 2026-09-05. This step was advisory (`|| true`) while
+      # `tsc --noEmit` carried 23 inherited errors, with the count pinned by the
+      # ratchet's typecheck:errors bucket. The lint-cleanup sweep 74573c2 took
+      # that bucket to 0, so per its own written promotion trigger the bucket
+      # is deleted and the bare command gates. A new type error now fails here
+      # directly instead of being counted.
+      - run: npm run typecheck
 
   lint:
     name: lint

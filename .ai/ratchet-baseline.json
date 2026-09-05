@@ -1,6 +1,6 @@
 {
   "$schema": "ai-ratchet-baseline/0.1.0",
-  "$comment": "Baseline for npm run lint:ratchet. NEVER auto-updated by a pipeline — a baseline that rewrites itself is a recorder, not a gate. Every change to this file must state, in its commit message, WHY a number moved: fixed, deleted, or the counter broke.",
+  "$comment": "Baseline for npm run lint:ratchet. NEVER auto-updated by a pipeline \u2014 a baseline that rewrites itself is a recorder, not a gate. Every change to this file must state, in its commit message, WHY a number moved: fixed, deleted, or the counter broke.",
   "recomputeWith": "node scripts/ratchet.mjs --update",
   "checkWith": "npm run lint:ratchet",
   "predicate": {
@@ -37,7 +37,6 @@
     "eslint:unused-imports/no-unused-vars": 10,
     "knip:unusedExports": 1293,
     "knip:unusedFiles": 228,
-    "knip:unusedTypes": 728,
-    "typecheck:errors": 0
+    "knip:unusedTypes": 728
   }
 }
