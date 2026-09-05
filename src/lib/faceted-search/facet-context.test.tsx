@@ -5,6 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { FacetProvider, useFacetContext } from './FacetContext';
 
+import type { FacetDefinition } from './types';
+
 /**
  * FacetProvider is the module's React seam. Two things it must not do:
  *
@@ -88,6 +90,47 @@ describe('FacetProvider', () => {
     expect(totals[0]).toBe(items.length);
     expect(computeTimes[0]).toBeGreaterThan(0);
     expect(computeTimes).toHaveLength(1);
+  });
+
+  it('re-aggregates when the definitions prop changes', async () => {
+    const seenFacetIds: string[][] = [];
+    const seenLabels: string[][] = [];
+    function Probe() {
+      const ctx = useFacetContext();
+      seenFacetIds.push(ctx.facets.map((f) => f.definition.id));
+      seenLabels.push(ctx.facets.map((f) => f.definition.label));
+      return null;
+    }
+
+    const byCategory: FacetDefinition[] = [
+      { id: 'category', field: 'category', label: 'Category', type: 'enum' },
+    ];
+    const byStatus: FacetDefinition[] = [
+      { id: 'used', field: 'used', label: 'Status', type: 'boolean' },
+    ];
+
+    root = createRoot(container);
+    const r = root;
+    await act(async () => {
+      r.render(
+        <FacetProvider items={items} definitions={byCategory}>
+          <Probe />
+        </FacetProvider>,
+      );
+    });
+    expect(seenFacetIds.at(-1)).toEqual(['category']);
+
+    // The aggregator used to be built once into a ref, so a caller that swaps
+    // its facet definitions kept getting facets for the old ones forever.
+    await act(async () => {
+      r.render(
+        <FacetProvider items={items} definitions={byStatus}>
+          <Probe />
+        </FacetProvider>,
+      );
+    });
+    expect(seenFacetIds.at(-1)).toEqual(['used']);
+    expect(seenLabels.at(-1)).toEqual(['Status']);
   });
 
   it('exposes no dead members: no isComputing flag, no recompute()', async () => {

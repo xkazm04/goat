@@ -13,12 +13,11 @@ import React, {
   useCallback,
   useMemo,
   useState,
-  useRef,
   useEffect,
   ReactNode,
 } from 'react';
 
-import { FacetAggregator, createFacetAggregator } from './FacetAggregator';
+import { createFacetAggregator } from './FacetAggregator';
 import { DEFAULT_FACET_DEFINITIONS } from './types';
 
 import type {
@@ -103,13 +102,15 @@ export function FacetProvider({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // Aggregator ref
-  const aggregatorRef = useRef<FacetAggregator<Record<string, unknown>> | null>(null);
-
-  // Initialize aggregator
-  if (!aggregatorRef.current) {
-    aggregatorRef.current = createFacetAggregator({ definitions });
-  }
+  // The aggregator is derived from `definitions`, not stashed in a ref. A ref
+  // initialised on first render is written and read during render (which is
+  // what react-hooks/refs flags) and, worse, never notices the prop changing:
+  // a caller that swapped its facet definitions kept getting facets built from
+  // the ones it passed on mount. useFacets.ts already derived it this way.
+  const aggregator = useMemo(
+    () => createFacetAggregator<Record<string, unknown>>({ definitions }),
+    [definitions]
+  );
 
   // State
   const [selections, setSelections] = useState<FacetSelection[]>(() => {
@@ -131,7 +132,7 @@ export function FacetProvider({
 
   // Compute facet aggregation
   const aggregationResult = useMemo((): FacetAggregationResult => {
-    if (!aggregatorRef.current || items.length === 0) {
+    if (items.length === 0) {
       return {
         facets: [],
         hierarchicalFacets: [],
@@ -141,8 +142,8 @@ export function FacetProvider({
       };
     }
 
-    return aggregatorRef.current.aggregate(items, selections, expandedFacets);
-  }, [items, selections, expandedFacets]);
+    return aggregator.aggregate(items, selections, expandedFacets);
+  }, [aggregator, items, selections, expandedFacets]);
 
   // Derived, never stored: writing this to state during the memo above scheduled
   // a second pass over the provider body for a value the result already carries.
