@@ -49,7 +49,7 @@ export * from './types';
  * ```
  */
 export function useSupabaseAuth(options: UseSupabaseAuthOptions = {}): UseSupabaseAuthReturn {
-  const { redirectTo, onAuthStateChange, autoRefresh = true } = options;
+  const { redirectTo, onAuthStateChange } = options;
 
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -57,7 +57,7 @@ export function useSupabaseAuth(options: UseSupabaseAuthOptions = {}): UseSupaba
   const [error, setError] = useState<AuthError | null>(null);
 
   const mountedRef = useRef(true);
-  const { getClient } = useSupabaseClient(autoRefresh);
+  const { getClient } = useSupabaseClient();
 
   // The caller's callback is LATCHED, not depended on. Callers pass it inline,
   // so its identity changes on every one of their renders; making it an effect
