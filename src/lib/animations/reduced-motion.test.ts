@@ -15,11 +15,17 @@
  * NEGATIVE CONTROL (test-harness/negative-control-tests), run 2026-09-05
  * against the three separate definitions: reds 2 of these 4 tests (measured) —
  * the no-matchMedia case for sharing.ts and the same-function identity check.
+ *
+ * Why `./micro-interactions` is NOT imported here: knip counts that module as
+ * an unreachable FILE (its two importers are themselves unreachable), and a
+ * test import would re-file its 34 dead exports under `knip:unusedExports`
+ * instead — the same debt, moved between two ratchet buckets. Its re-export is
+ * `export { prefersReducedMotion }` straight from motion-presets, identity by
+ * construction; the check below covers the copy that actually diverged.
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { prefersReducedMotion as fromMicro } from './micro-interactions';
 import { prefersReducedMotion as fromPresets } from './motion-presets';
 import { prefersReducedMotion as fromSharing } from './sharing';
 
@@ -28,13 +34,11 @@ afterEach(() => vi.unstubAllGlobals());
 describe('prefersReducedMotion — one door', () => {
   it('is the same function from every module that exports it', () => {
     expect(fromSharing).toBe(fromPresets);
-    expect(fromMicro).toBe(fromPresets);
   });
 
   it('is false on the server (no window)', () => {
     expect(fromPresets()).toBe(false);
     expect(fromSharing()).toBe(false);
-    expect(fromMicro()).toBe(false);
   });
 
   it('is false, not a throw, when window exists but matchMedia does not', () => {
@@ -42,13 +46,11 @@ describe('prefersReducedMotion — one door', () => {
     expect(() => fromSharing()).not.toThrow();
     expect(fromSharing()).toBe(false);
     expect(fromPresets()).toBe(false);
-    expect(fromMicro()).toBe(false);
   });
 
   it('reads the media query when it is there', () => {
     vi.stubGlobal('window', { matchMedia: () => ({ matches: true }) });
     expect(fromPresets()).toBe(true);
     expect(fromSharing()).toBe(true);
-    expect(fromMicro()).toBe(true);
   });
 });
