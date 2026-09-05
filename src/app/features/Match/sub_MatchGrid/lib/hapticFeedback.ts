@@ -179,8 +179,10 @@ export function isHapticSupported(): boolean {
  * Get user's reduced motion preference
  */
 function prefersReducedMotion(): boolean {
+  // Optional call, matching the canonical read in lib/animations/motion-presets:
+  // no `matchMedia` means no stated preference, which is `false`.
   if (typeof window === 'undefined') return false;
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 }
 
 // Global haptic configuration state
