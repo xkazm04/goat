@@ -58,6 +58,38 @@ export function hasRankingEvidence<T extends { totalRankings: number }>(
   return !!stats && stats.totalRankings > 0;
 }
 
+export type VolatilityLevel = 'stable' | 'moderate' | 'contested' | 'polarizing';
+
+export interface VolatilityInfo {
+  level: VolatilityLevel;
+  /** The one label every surface shows for this band. */
+  label: string;
+  /** Tailwind text colour class, for surfaces styled by class. */
+  className: string;
+  /** The same colour as a hex, for surfaces styled inline (charts, badges). */
+  hex: string;
+  bgColor: string;
+}
+
+/**
+ * The ONE volatility vocabulary. RankingDistribution and ItemDetailPopup each
+ * carried their own threshold table until 2026-09-05; the bands agreed but the
+ * first band did not ("Very Stable" here, "Stable" in the popup) — two names
+ * for one concept, one click apart.
+ */
+export function getVolatilityInfo(volatility: number): VolatilityInfo {
+  if (volatility < 2) {
+    return { level: 'stable', label: 'Stable', className: 'text-emerald-400', hex: '#10B981', bgColor: 'rgba(16,185,129,0.15)' };
+  }
+  if (volatility < 4) {
+    return { level: 'moderate', label: 'Moderate', className: 'text-brand-hover', hex: '#22d3ee', bgColor: 'rgba(34,211,238,0.15)' };
+  }
+  if (volatility < 6) {
+    return { level: 'contested', label: 'Contested', className: 'text-amber-400', hex: '#F59E0B', bgColor: 'rgba(245,158,11,0.15)' };
+  }
+  return { level: 'polarizing', label: 'Polarizing', className: 'text-rose-400', hex: '#EF4444', bgColor: 'rgba(239,68,68,0.15)' };
+}
+
 export interface RankingDistributionProps {
   /** Ranking statistics */
   stats: RankingStats | null;
@@ -205,20 +237,11 @@ export function RankingDistribution({
     return data;
   }, [stats]);
 
-  // Determine volatility level and color
-  const volatilityInfo = useMemo(() => {
-    if (!stats) return { level: 'unknown', color: 'text-slate-400', label: 'Unknown' };
-
-    if (stats.volatility < 2) {
-      return { level: 'stable', color: 'text-emerald-400', label: 'Very Stable' };
-    } else if (stats.volatility < 4) {
-      return { level: 'moderate', color: 'text-brand-hover', label: 'Moderate' };
-    } else if (stats.volatility < 6) {
-      return { level: 'contested', color: 'text-amber-400', label: 'Contested' };
-    } else {
-      return { level: 'polarizing', color: 'text-rose-400', label: 'Polarizing' };
-    }
-  }, [stats]);
+  // Determine volatility level and color (the shared vocabulary)
+  const volatilityInfo = useMemo(
+    () => (stats ? getVolatilityInfo(stats.volatility) : { level: 'unknown', className: 'text-slate-400', label: 'Unknown' }),
+    [stats],
+  );
 
   if (loading) {
     return (
@@ -277,7 +300,7 @@ export function RankingDistribution({
           icon={<TrendingUp className="w-4 h-4" />}
           label="Volatility"
           value={volatilityInfo.label}
-          color={volatilityInfo.color}
+          color={volatilityInfo.className}
         />
       </div>
 
