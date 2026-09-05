@@ -18,8 +18,9 @@
  *   node scripts/fix-broken-images.mjs --limit 100            # process first N items only
  *   node scripts/fix-broken-images.mjs --skip-search          # validate only, no Wikipedia search
  */
-import { createClient } from '@supabase/supabase-js';
 import { readFileSync } from 'fs';
+
+import { createClient } from '@supabase/supabase-js';
 
 // ── Config ────────────────────────────────────────────────────────────
 const PAGE_SIZE = 1000;   // Supabase max rows per request
@@ -455,4 +456,9 @@ async function run() {
   }
 }
 
-run().catch(console.error);
+run().catch((err) => {
+  // A failed run must exit non-zero: the terminal reads the exit code, not the
+  // stack trace. `.catch(console.error)` printed the error and exited 0.
+  console.error(err);
+  process.exit(1);
+});

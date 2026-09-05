@@ -255,4 +255,9 @@ async function main() {
   console.log('\n✅ Validation complete!');
 }
 
-main().catch(console.error);
+main().catch((err) => {
+  // A failed run must exit non-zero: the terminal reads the exit code, not the
+  // stack trace. `.catch(console.error)` printed the error and exited 0.
+  console.error(err);
+  process.exit(1);
+});
