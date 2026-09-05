@@ -25,7 +25,7 @@ export { RankingDistribution } from './components/RankingDistribution';
 export type { RankingDistributionProps, RankingStats } from './components/RankingDistribution';
 
 // Types
-export type { CollectionItem as CollectionItemType, ItemCategory, ItemPanelStats, CollectionPaginationState, CollectionMutationHelpers } from './types';
+export type { CollectionItem as CollectionItemType, ItemCategory, ItemPanelStats } from './types';
 
 // Hooks
 export { useCollection } from './hooks/useCollection';
