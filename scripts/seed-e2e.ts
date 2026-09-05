@@ -73,18 +73,19 @@ function cannotRun(what: string, detail?: string): never {
 // row is always this script's doing.
 // ---------------------------------------------------------------------------
 
-const NS = 'e2e00000';
+export const NS = 'e2e00000';
 /**
  * A well-formed v4-shaped UUID whose final group is `<2-char kind><10 digits>`.
  * The group MUST be exactly 12 hex characters — Postgres rejects anything else
  * outright, which is how the first version of this function was caught: it
  * padded to 6 and every insert failed with "invalid input syntax for type
- * uuid". A malformed id is a could-not-run, and it said so.
+ * uuid". A malformed id is a could-not-run, and it said so — and since
+ * 2026-09-05 scripts/seed-e2e-fixtures.test.ts says so BEFORE a database does.
  */
-const id = (kind: string, n: number) =>
+export const id = (kind: string, n: number) =>
   `${NS}-0000-4000-8000-${kind}${String(n).padStart(10, '0')}`;
 
-const FIXTURE_USER = id('aa', 1);
+export const FIXTURE_USER = id('aa', 1);
 
 /**
  * Two lists, because a suite that only ever sees one cannot tell "the first
@@ -94,7 +95,7 @@ const FIXTURE_USER = id('aa', 1);
  * ownership, so they are visible to browse journeys without pretending to
  * belong to a signed-in user the suite does not have.
  */
-const LISTS = [
+export const LISTS = [
   {
     id: id('bb', 1),
     title: 'E2E Fixture — Greatest Games',
@@ -114,7 +115,7 @@ const LISTS = [
 ] as const;
 
 /** Deterministic, boring, and obviously synthetic. */
-function itemsFor(listIndex: number, count: number) {
+export function itemsFor(listIndex: number, count: number) {
   const list = LISTS[listIndex];
   return Array.from({ length: count }, (_, i) => ({
     id: id(`c${listIndex}`, i + 1),
@@ -352,6 +353,17 @@ async function main() {
   process.exit(EXIT_OK);
 }
 
-main().catch((err) => {
-  cannotRun('unhandled failure', String(err?.message ?? err));
-});
+/**
+ * Run only when invoked as the script (`npm run seed:e2e`, i.e. tsx with this
+ * file as argv[1]). When imported — by scripts/seed-e2e-fixtures.test.ts, which
+ * pins the id shape and the fixture invariants above — nothing executes, and in
+ * particular nothing touches a database.
+ */
+const invokedAsScript =
+  typeof process.argv[1] === 'string' && /seed-e2e\.(ts|js|mjs)$/.test(process.argv[1].replace(/\\/g, '/'));
+
+if (invokedAsScript) {
+  main().catch((err) => {
+    cannotRun('unhandled failure', String(err?.message ?? err));
+  });
+}
