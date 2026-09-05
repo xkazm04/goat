@@ -320,6 +320,7 @@ nothing.
 | Fill all slots → completion modal, and its 4 actions | **no test** (was `ranking-completion.spec.ts`, 4 empty stubs) |
 | Search/filter on the landing page | **no test** (was `list-search.spec.ts`, 3 empty stubs) |
 | Keyboard drag (Space/arrows/Escape) on the grid | **no e2e test**; the arrow-stepping logic has 25 unit tests in `src/lib/dnd/keyboard-coordinates.test.ts` |
+| Sign-in prompt shown to a guest after completing a ranking | **no test** (was `goat-voting-completion.spec.ts › should show auth prompt for guest users after completion`, removed 2026-09-05: it drove the full 90 s journey and then asserted `expect(true).toBeTruthy()`, having declared both outcomes acceptable) |
 
 ## Environment preconditions
 

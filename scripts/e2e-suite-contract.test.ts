@@ -171,6 +171,80 @@ function requestedTestIds() {
   return { exact, prefixes };
 }
 
+// ---------------------------------------------------------------------------
+// Tests that cannot fail on their own claim.
+//
+// A browser test whose every assertion sits inside `if (somethingWasVisible)`
+// reports GREEN when the thing it is about never appeared — the empty-success
+// lie, in the one place it is hardest to notice, because the run says "passed"
+// and the count is arithmetically correct. `expect(true).toBeTruthy()` is the
+// same defect written down explicitly. Six of this suite's 41 tests were in one
+// of those two shapes on 2026-09-05.
+//
+// The check: strip comments, take each test's body, delete every `if (…) { … }`
+// block from it, and require an `expect(` to survive. A test whose only
+// assertions were conditional has none left.
+// ---------------------------------------------------------------------------
+
+/** Spec tests with no unconditional assertion. Drains to []. */
+const KNOWN_UNFALSIFIABLE: readonly string[] = [];
+
+/** Spec files containing a tautological assertion (`expect(true)`). Drains to []. */
+const KNOWN_TAUTOLOGIES: readonly string[] = [];
+
+const TAUTOLOGY_RE = /expect\(\s*(?:true|false)\s*\)/;
+
+/** The `{ … }` block starting at `open`, brace-matched. Returns [start, end). */
+function blockAt(text: string, open: number): [number, number] {
+  let depth = 0;
+  for (let i = open; i < text.length; i++) {
+    if (text[i] === '{') depth++;
+    else if (text[i] === '}') {
+      depth--;
+      if (depth === 0) return [open, i + 1];
+    }
+  }
+  return [open, text.length];
+}
+
+/** The body with every `if (…) { … }` block (and its `else`) removed. */
+function withoutConditionalBlocks(body: string): string {
+  let out = body;
+  for (;;) {
+    const m = /\bif\s*\(/.exec(out);
+    if (!m) return out;
+    const brace = out.indexOf('{', m.index);
+    if (brace === -1) return out.slice(0, m.index) + out.slice(m.index + 2);
+    const [, end] = blockAt(out, brace);
+    let tail = end;
+    const elseM = /^\s*else\s*/.exec(out.slice(end));
+    if (elseM) {
+      const elseBrace = out.indexOf('{', end);
+      if (elseBrace !== -1 && elseBrace <= end + elseM[0].length) tail = blockAt(out, elseBrace)[1];
+    }
+    out = out.slice(0, m.index) + out.slice(tail);
+  }
+}
+
+function unfalsifiableTests() {
+  const offenders: string[] = [];
+  for (const { rel, text } of specFiles) {
+    const src = withoutComments(text);
+    for (const m of src.matchAll(/\btest(?:\.only)?\(\s*(["'`])((?:(?!\1).)*)\1/g)) {
+      const arrow = src.indexOf('=> {', m.index);
+      if (arrow === -1) continue;
+      const [start, end] = blockAt(src, src.indexOf('{', arrow));
+      const body = src.slice(start, end);
+      const unconditional = withoutConditionalBlocks(body).replace(
+        new RegExp(TAUTOLOGY_RE.source, 'g'),
+        '',
+      );
+      if (!/\bexpect\(/.test(unconditional)) offenders.push(`${rel}: ${m[2]}`);
+    }
+  }
+  return offenders.sort();
+}
+
 describe('e2e suite ↔ app contract', () => {
   const { exact, prefixes } = requestedTestIds();
 
@@ -187,6 +261,25 @@ describe('e2e suite ↔ app contract', () => {
       ...[...prefixes.keys()].filter((p) => !hasPrefixProducer(p)).map((p) => `${p}*`),
     ].sort();
     expect(missing).toEqual([...KNOWN_MISSING].sort());
+  });
+
+  it('every test has an assertion that is not inside an if (register may only shrink)', () => {
+    // Guard the guard: this must be looking at every test in the suite, or an
+    // empty offender list means nothing.
+    const testCount = specFiles.reduce(
+      (n, { text }) => n + [...withoutComments(text).matchAll(/\btest(?:\.only)?\(\s*["'`]/g)].length,
+      0,
+    );
+    expect(testCount).toBeGreaterThan(35);
+    expect(unfalsifiableTests()).toEqual([...KNOWN_UNFALSIFIABLE].sort());
+  });
+
+  it('no spec asserts a tautology (expect(true)) — say what is expected, or record the gap', () => {
+    const offenders = specFiles
+      .filter(({ text }) => TAUTOLOGY_RE.test(withoutComments(text)))
+      .map(({ rel }) => rel)
+      .sort();
+    expect(offenders).toEqual([...KNOWN_TAUTOLOGIES].sort());
   });
 
   it('no spec parses a list id out of featured-list-item-* (its suffix is the card index)', () => {

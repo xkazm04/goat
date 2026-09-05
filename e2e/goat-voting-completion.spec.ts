@@ -54,22 +54,30 @@ test.describe('Goat: Drag & Drop', () => {
     await navigateToGoatWithList(page);
     await waitForMatchGrid(page);
 
+    // `test.skip(true, 'No backlog items…')` used to stand here. global-setup
+    // establishes the fixture precondition before any worker starts, so an
+    // empty collection panel is a data or plumbing failure that already got
+    // past a check minutes ago — not a reason to opt out.
     const hasItems = await waitForCollectionPanel(page);
-    if (!hasItems) {
-      test.skip(true, 'No backlog items in collection panel');
-      return;
-    }
+    expect(
+      hasItems,
+      'the collection panel rendered no backlog items. global-setup verified ' +
+        'the lists API is non-empty, so this is a plumbing failure, not a ' +
+        'missing fixture.',
+    ).toBe(true);
 
     const collectionItem = page.locator('[data-testid^="collection-item-wrapper-"]').first();
     const dropZone = page.getByTestId('drop-zone-0');
     await dndDrag(page, collectionItem, dropZone);
 
-    // DnD sensor timing can be flaky — log but don't fail hard
-    const removeBtn = page.getByTestId('remove-item-btn-0');
-    const wasPlaced = await removeBtn.isVisible({ timeout: 5000 }).catch(() => false);
-    if (!wasPlaced) {
-      console.log('Drag did not register — dnd-kit sensor timing issue (expected)');
-    }
+    // Was: log "sensor timing issue (expected)" and pass. A drag that does not
+    // register IS the failure this test exists to report; if it turns out to be
+    // intermittent it belongs in a named quarantine with an owner and a date
+    // (registry test-harness/flake-lifecycle), not behind a console.log.
+    await expect(
+      page.getByTestId('remove-item-btn-0'),
+      'the dragged item did not land in position 1',
+    ).toHaveCount(1, { timeout: 5000 });
   });
 });
 
@@ -143,33 +151,18 @@ test.describe('Goat: Complete Voting Journey', () => {
     }).toPass({ timeout: 15_000 });
   });
 
-  test('should show auth prompt for guest users after completion', async ({ page }) => {
-    test.setTimeout(90_000);
-
-    await page.goto('/', { waitUntil: 'commit' });
-    await navigateToGoatWithList(page);
-    await waitForMatchGrid(page);
-
-    // Wait for backlog items to load
-    await expect(async () => {
-      const itemCount = await page.evaluate(() =>
-        document.querySelectorAll('[data-testid^="collection-item-wrapper-"]').length
-      );
-      expect(itemCount).toBeGreaterThan(0);
-    }).toPass({ timeout: 30_000, intervals: [1000, 2000, 3000] });
-
-    await autoFillGrid(page);
-
-    // Guest users may see sign-in prompt
-    const authPrompt = page.locator('text=/sign.?in|save.*ranking|create.*account/i');
-    const promptVisible = await authPrompt.first()
-      .isVisible({ timeout: 10_000 })
-      .catch(() => false);
-
-    // Both states valid — pass regardless
-    if (promptVisible) {
-      await expect(authPrompt.first()).toBeVisible();
-    }
-    expect(true).toBeTruthy();
-  });
+  /*
+   * REMOVED 2026-09-05: `should show auth prompt for guest users after
+   * completion`.
+   *
+   * It spent 90 s driving a full ranking to completion and then asserted
+   * `expect(true).toBeTruthy()`, having declared both outcomes acceptable
+   * ("Both states valid — pass regardless"). A test that cannot fail on its own
+   * title is not coverage of that title, and leaving it in place asserted to
+   * the next reader that guest-completion behaviour was tested. Whether a
+   * signed-out user is prompted to save is a real question with a real answer,
+   * and this run cannot execute the suite to find out which it is; the gap is
+   * recorded in docs/E2E_BROWSER_TESTING.md under "Not covered" rather than
+   * implied by a green test.
+   */
 });
