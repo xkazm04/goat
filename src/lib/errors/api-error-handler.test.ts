@@ -89,7 +89,7 @@ describe('withErrorHandler — the API error door', () => {
     expect(err).toHaveBeenCalled();
   });
 
-  it.fails('an unexpected exception is a 500 with a sanitised message; the raw one stays in the log', async () => {
+  it('an unexpected exception is a 500 with a sanitised message; the raw one stays in the log', async () => {
     const err = errorSpy();
     const wrapped = withErrorHandler(async () => {
       throw new Error('connect ECONNREFUSED 10.0.0.5:5432');

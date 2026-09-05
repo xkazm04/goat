@@ -71,6 +71,30 @@ function toHttpStatus(error: GoatError): number {
 }
 
 /**
+ * Classify a value thrown inside a route.
+ *
+ * `fromUnknown` is the CLIENT-side classifier: anything it does not recognise
+ * becomes `CLIENT_UNKNOWN_ERROR`, whose category is `client` and whose status
+ * is therefore 400 — and its message is the raw thrown text. At an API door
+ * that is wrong twice over. An exception the server did not anticipate is the
+ * SERVER's fault (500, not 400 — a 400 tells the caller to change their
+ * request, which cannot help), and its raw text is internal detail:
+ * `connect ECONNREFUSED 10.0.0.5:5432` named a private host and port to any
+ * HTTP client of the 20 routes this wrapper guards. The cause is preserved on
+ * the error so `logError` still writes it to the operator's door.
+ */
+function toApiError(error: unknown): GoatError {
+  if (isGoatError(error)) return error;
+
+  const classified = fromUnknown(error);
+  if (classified.code !== 'CLIENT_UNKNOWN_ERROR') return classified;
+
+  return new ServerError('SERVER_INTERNAL_ERROR', undefined, {
+    cause: error instanceof Error ? error : new Error(String(error)),
+  });
+}
+
+/**
  * Build a standardized error response
  */
 function buildErrorResponse(error: GoatError, req: NextRequest): NextResponse<ErrorResponse> {
@@ -130,12 +154,14 @@ function logError(error: GoatError, req: NextRequest, userId?: string): void {
     userId,
   };
 
-  // Include stack in development
+  // The cause is the ONLY record of what actually failed once the wire message
+  // is sanitised (see `toApiError`), so it goes to the operator's door in every
+  // environment. The stack stays development-only.
+  if (error.cause instanceof Error) {
+    entry.cause = error.cause.message;
+  }
   if (process.env.NODE_ENV === 'development') {
     entry.stack = error.stack;
-    if (error.cause instanceof Error) {
-      entry.cause = error.cause.message;
-    }
   }
 
   // Log based on severity
@@ -257,7 +283,7 @@ export function withErrorHandler<T = unknown>(
       return await handler(req, context);
     } catch (error) {
       // Convert to GoatError
-      const goatError = isGoatError(error) ? error : fromUnknown(error);
+      const goatError = toApiError(error);
 
       // Extract user ID for logging
       const userId = options?.getUserId?.(req);
