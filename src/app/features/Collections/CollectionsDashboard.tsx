@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useState, useCallback } from "react";
+import { memo, useState, useCallback, useEffect, useRef } from "react";
 
 import {
   useUserCollections,
@@ -25,14 +25,32 @@ import type {
 
 interface CollectionsDashboardProps {
   className?: string;
+  /**
+   * Collection to open with. The landing page deep-links private collections
+   * as `/my-collections?selected=<id>` (CollectionsSection.tsx); until this
+   * prop existed the dashboard ignored the parameter and every such link
+   * landed on "All Lists".
+   */
+  initialSelectedId?: string | null;
 }
 
 export const CollectionsDashboard = memo(function CollectionsDashboard({
   className = "",
+  initialSelectedId = null,
 }: CollectionsDashboardProps) {
   const user = useCurrentUser();
   const userLists = useUserLists();
   const { setSelectedCollection } = useCollectionActions();
+
+  // Honour the deep link once, on arrival. Later navigation inside the
+  // dashboard owns the selection; a re-render with the same URL must not
+  // yank the user back.
+  const appliedInitialRef = useRef(false);
+  useEffect(() => {
+    if (appliedInitialRef.current || !initialSelectedId) return;
+    appliedInitialRef.current = true;
+    setSelectedCollection(initialSelectedId);
+  }, [initialSelectedId, setSelectedCollection]);
   const collections = useCollectionStore((state) => state.collections);
   const selectedCollectionId = useCollectionStore(
     (state) => state.selectedCollectionId

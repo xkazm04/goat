@@ -13,10 +13,14 @@
  *  - "a refused delete is reported, not closed over": the dashboard's own
  *    catch swallowed the rejection, so the dialog read success and closed —
  *    no error text, no dialog.
+ *  - "?selected=<id> opens that collection": setSelectedCollection was never
+ *    called; the landing page's deep link landed on "All Lists".
  */
 import React, { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import MyCollectionsPage from '@/app/my-collections/page';
 
 import { CollectionsDashboard } from './CollectionsDashboard';
 
@@ -74,6 +78,10 @@ vi.mock('@/lib/dnd', () => ({ DRAG_ACTIVATION_DISTANCE_PX: 6 }));
 vi.mock('@/components/illustrations/EmptyStateIllustrations', () => ({
   EmptyTrophyCase: () => <span data-testid="empty-illustration" />,
   NoSearchResults: () => <span data-testid="no-results-illustration" />,
+}));
+const nav = vi.hoisted(() => ({ selected: null as string | null }));
+vi.mock('next/navigation', () => ({
+  useSearchParams: () => new URLSearchParams(nav.selected ? { selected: nav.selected } : {}),
 }));
 vi.mock('next/link', () => ({
   default: ({ href, children, ...rest }: { href: string; children: React.ReactNode } & Record<string, unknown>) => (
@@ -158,5 +166,20 @@ describe('CollectionsDashboard — deleting a collection', () => {
     expect(fake.ops.remove).toHaveBeenCalledTimes(1);
     expect(host.textContent).toContain('still referenced');
     expect(dialogHeading()).toBe('Edit Collection');
+  });
+});
+
+describe('CollectionsDashboard — arriving from a deep link', () => {
+  it('?selected=<id> opens that collection (the landing page links this way)', async () => {
+    nav.selected = 'b';
+    await render(<MyCollectionsPage />);
+    expect(fake.actions.setSelectedCollection).toHaveBeenCalledWith('b');
+    expect(fake.actions.setSelectedCollection).toHaveBeenCalledTimes(1);
+  });
+
+  it('without the parameter the selection is left alone', async () => {
+    nav.selected = null;
+    await render(<MyCollectionsPage />);
+    expect(fake.actions.setSelectedCollection).not.toHaveBeenCalled();
   });
 });
