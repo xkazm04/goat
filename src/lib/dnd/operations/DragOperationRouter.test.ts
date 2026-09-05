@@ -192,6 +192,23 @@ describe('DragOperationRouter — grid operations', () => {
     expect(h.grid.map((s) => s.item?.id ?? null)).toEqual(['b', 'a', null]);
   });
 
+  // GridDragData.item is the PlacedItem: its `id` is the SLOT ADDRESS ("grid-7",
+  // rewritten whenever the occupant changes) and its `item.id` is the item's
+  // durable identity. Before 2026-09-05 parseSource took `data.item.id`, so the
+  // "item identity" of every grid-sourced drag was a function of position —
+  // the exact defect the primitives' expectItemId check exists to catch.
+  it('a grid-sourced drag identifies the ITEM, never the slot address', () => {
+    const h = harness(['the-real-item', null]);
+    const router = createStandardRouter();
+
+    const context = router.parseContext(dragEnd(gridItemDrag(h, 0), gridSlotDrop(h, 1)));
+
+    expect(context?.source.type).toBe('grid');
+    expect(context?.source.gridPosition).toBe(0);
+    expect(context?.source.itemId).toBe('the-real-item');
+    expect(context?.source.itemId).not.toBe('grid-0');
+  });
+
   it('dropping a grid item on its own slot is a noop, not a rejection the user sees', () => {
     const h = harness(['a', null]);
     const router = createStandardRouter();

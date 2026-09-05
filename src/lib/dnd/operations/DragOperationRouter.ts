@@ -56,6 +56,27 @@ const GRID_PRIMITIVE_OPS = new Set<DragOperationType>(['assign', 'move', 'swap']
 // ============================================================================
 
 /**
+ * The durable identity of a grid-sourced drag payload.
+ *
+ * GridDragData.item is the PlacedItem, which carries TWO ids: `id` is the SLOT
+ * ADDRESS ("grid-7", rewritten whenever the occupant changes) and `item.id` is
+ * the item's identity. Only the second identifies anything. Until 2026-09-05
+ * this read `data.item.id`, so every grid-sourced drag reported an "item id"
+ * that was a function of position — the defect the primitives' expectItemId
+ * check exists around (registry drag-drop/payload-and-identity). A slot address
+ * is never returned as an identity; an unresolvable payload yields '' — empty
+ * is the honest answer, a position dressed as an id is not.
+ */
+function gridPayloadIdentity(data: Record<string, unknown> | undefined): string {
+  const placed = data?.item as { id?: unknown; item?: { id?: unknown } | null } | undefined;
+  const inner = placed?.item?.id;
+  if (typeof inner === 'string' && inner) return inner;
+  const outer = placed?.id;
+  if (typeof outer === 'string' && outer && !isGridReceiverId(outer)) return outer;
+  return '';
+}
+
+/**
  * Parse the source information from a drag event's active element
  */
 function parseSource(event: DragEndEvent): DragSource | null {
@@ -71,7 +92,7 @@ function parseSource(event: DragEndEvent): DragSource | null {
     const position = extractGridPosition(activeId);
     return {
       type: 'grid',
-      itemId: data?.item?.backlogItemId || data?.item?.id || activeId,
+      itemId: gridPayloadIdentity(data),
       item: data?.item,
       gridPosition: position ?? undefined,
     };
@@ -93,7 +114,7 @@ function parseSource(event: DragEndEvent): DragSource | null {
     const position = data?.position ?? data?.source?.gridPosition;
     return {
       type: 'grid',
-      itemId: data?.item?.backlogItemId || data?.item?.id || activeId,
+      itemId: gridPayloadIdentity(data),
       item: data?.item,
       gridPosition: typeof position === 'number' ? position : undefined,
     };
