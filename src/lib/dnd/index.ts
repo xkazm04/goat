@@ -18,28 +18,15 @@ export {
   assertCanonicalGridId,
 } from './transfer-protocol';
 
-// Type Guards - Data types and creators
+// Payload shapes and the factories the surfaces call
 export {
-  type BacklogDragData,
   type GridDragData,
   type CollectionDragData,
   type GridSlotDropData,
-  type CollectionDropData,
 
-  isBacklogDragData,
-  isGridDragData,
-  isGridSlotDropData,
-  isCollectionDragData,
-
-  backlogToTransferable,
-
-  createBacklogDragData,
   createGridDragData,
   createGridSlotDropData,
   createCollectionDragData,
-
-  extractDragData,
-  extractDropData,
 } from './type-guards';
 
 // Unified Protocol - Tier drag/drop support
