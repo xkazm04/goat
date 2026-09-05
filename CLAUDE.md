@@ -36,10 +36,11 @@ npm test                        # vitest over src/, scripts/, supabase/ and db/
                                 # scripts' tests, both added 2026-09-05).
                                 # passWithNoTests:false — a run that executed
                                 # zero files is RED, not green.
-npm run lint                    # eslint. 47 correctness rules are `error` (three
-                                # graduated 2026-09-05 when their ratchet buckets
-                                # hit 0); everything with a legacy population is
-                                # `warn` and held by the ratchet instead.
+npm run lint                    # eslint. 48 correctness rules are `error` (four
+                                # graduated during the 2026-09-05/06 sweep when
+                                # their ratchet buckets hit 0); everything with a
+                                # legacy population is `warn` and held by the
+                                # ratchet instead (23 buckets).
 npm run lint:ratchet            # symmetric per-rule ratchet over
                                 # .ai/ratchet-baseline.json. A RISE fails. An
                                 # unexplained DROP also fails — re-baseline with
@@ -254,7 +255,7 @@ See `.env.example` for complete setup. Key variables:
 - **Path alias**: `@/*` → `./src/*`
 - **ESLint**: NOT disabled during builds — `next.config.js` sets neither
   `eslint.ignoreDuringBuilds` nor `typescript.ignoreBuildErrors`. The
-  `correctness` block in `eslint.config.mjs` (47 rules incl.
+  `correctness` block in `eslint.config.mjs` (48 rules incl.
   `react-hooks/rules-of-hooks`) is `error`, so `npm run lint` fails on the
   first violation; rules with a legacy population stay `warn` under the ratchet.
 
