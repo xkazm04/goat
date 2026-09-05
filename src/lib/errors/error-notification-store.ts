@@ -13,6 +13,7 @@
 
 import { create } from 'zustand';
 
+import { trackError } from './error-analytics';
 import { GoatError, fromUnknown, isGoatError } from './GoatError';
 
 import type { ErrorCode, ErrorSeverity } from './types';
@@ -131,6 +132,29 @@ export const useErrorNotificationStore = create<ErrorNotificationState>((set, ge
   emitGoatError: (error, options) => {
     const notification = error.toNotification();
     const now = Date.now();
+
+    // Record BEFORE the dedup check, and unconditionally.
+    //
+    // This context had two independent error recorders and only one of them was
+    // wired: `error-analytics` was fed solely by ErrorBoundary (React render
+    // crashes), while every emit site — mutation rollbacks, the guest-data
+    // merge, criteria saves — fed only this store's local `errorHistory`, which
+    // nothing reads outside this file. So `getErrorMetrics()`, the thing that
+    // answers "what is failing", could not see a single non-render failure.
+    // One classification, many consumers (registry: error-handling § "one
+    // taxonomy, many consumers"); the notification is the user's door, this is
+    // the operator's, and a failure owes both.
+    //
+    // Placement matters: dedup suppresses the visible TOAST, which is a
+    // rendering decision. Counting only the first of a burst would make the
+    // metric a counter that reconciles only when little went wrong.
+    trackError({
+      code: error.code,
+      category: error.category,
+      severity: notification.severity,
+      traceId: error.traceId,
+      source: options?.source,
+    });
 
     // Check for duplicate errors (same code within dedup window)
     const existingNotifications = get().notifications;
