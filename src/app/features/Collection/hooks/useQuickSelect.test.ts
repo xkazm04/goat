@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import { resolvePlacementItem } from './useQuickSelect';
+import { resolvePlacementItem, selectItemPrompt } from './useQuickSelect';
 
 import type { CollectionItem } from '../types';
 import type { BacklogItem } from '@/types/backlog-groups';
@@ -70,5 +70,36 @@ describe('resolvePlacementItem', () => {
     const placed = resolvePlacementItem({ ...shown, category: 'display-only' }, () => stored);
     expect(placed.category).toBe('movies');
     expect(placed.created_at).toBe(stored.created_at);
+  });
+});
+
+/**
+ * The prompt names the keys that will do something. Negative control (recorded
+ * 2026-09-05): against the pre-fix constant 'Press 1-9 to select an item' the
+ * first three cases fail and only the nine-item case passes.
+ */
+describe('selectItemPrompt', () => {
+  it('names only the keys that have an item behind them', () => {
+    expect(selectItemPrompt(3, 9)).toBe('Press 1-3 to select an item');
+    expect(selectItemPrompt(9, 9)).toBe('Press 1-9 to select an item');
+  });
+
+  it('never names more keys than the quick-select range allows', () => {
+    expect(selectItemPrompt(40, 9)).toBe('Press 1-9 to select an item');
+  });
+
+  it('does not prescribe a keypress when there is nothing to select', () => {
+    expect(selectItemPrompt(0, 9)).toBe('No items to select. Clear the search or filters first');
+    expect(selectItemPrompt(0, 9)).not.toMatch(/Press/);
+  });
+
+  it('does not offer a range for a single item', () => {
+    expect(selectItemPrompt(1, 9)).toBe('Press 1 to select the only item');
+  });
+
+  it('agrees with the range for every count the panel can show', () => {
+    for (let n = 2; n <= 9; n++) {
+      expect(selectItemPrompt(n, 9)).toBe(`Press 1-${n} to select an item`);
+    }
   });
 });

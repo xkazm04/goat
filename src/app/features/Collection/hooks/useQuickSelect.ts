@@ -47,6 +47,24 @@ export function resolvePlacementItem(
 }
 
 /**
+ * The instruction quick-select shows when it opens, when a selection is
+ * cleared, and when a key outside the item range is pressed.
+ *
+ * It names the keys that will actually do something. Until 2026-09-05 every
+ * one of those messages read "Press 1-9" regardless of how many items were on
+ * screen - with three items it named six keys that answered "No item at
+ * position N", and with a search that matched nothing it told the user to
+ * press keys that could select nothing at all (registry: copy that prescribes
+ * a remedy that cannot help).
+ */
+export function selectItemPrompt(visibleCount: number, maxQuickSelectItems: number): string {
+  const n = Math.min(visibleCount, maxQuickSelectItems);
+  if (n <= 0) return 'No items to select. Clear the search or filters first';
+  if (n === 1) return 'Press 1 to select the only item';
+  return `Press 1-${n} to select an item`;
+}
+
+/**
  * Quick-select mode states
  */
 export type QuickSelectMode = 'off' | 'item-selection' | 'position-assignment';
@@ -145,10 +163,10 @@ export function useQuickSelect({
       setSelectedIndex(null);
       if (mode === 'position-assignment') {
         setMode('item-selection');
-        setStatusMessage('Item no longer available. Select another item (1-9)');
+        setStatusMessage(`Item no longer available. ${selectItemPrompt(visibleItems.length, maxQuickSelectItems)}`);
       }
     }
-  }, [visibleItems, selectedItemId, mode]);
+  }, [visibleItems, selectedItemId, mode, maxQuickSelectItems]);
 
   // Reset status message after delay
   useEffect(() => {
@@ -161,21 +179,21 @@ export function useQuickSelect({
   const toggleQuickSelect = useCallback(() => {
     if (mode === 'off') {
       setMode('item-selection');
-      setStatusMessage('Quick-select: Press 1-9 to select an item');
+      setStatusMessage(`Quick-select: ${selectItemPrompt(quickSelectItems.length, maxQuickSelectItems)}`);
     } else {
       setMode('off');
       setSelectedItemId(null);
       setSelectedIndex(null);
       setStatusMessage('');
     }
-  }, [mode]);
+  }, [mode, quickSelectItems.length, maxQuickSelectItems]);
 
   const activateQuickSelect = useCallback(() => {
     if (mode === 'off') {
       setMode('item-selection');
-      setStatusMessage('Quick-select: Press 1-9 to select an item');
+      setStatusMessage(`Quick-select: ${selectItemPrompt(quickSelectItems.length, maxQuickSelectItems)}`);
     }
-  }, [mode]);
+  }, [mode, quickSelectItems.length, maxQuickSelectItems]);
 
   const deactivateQuickSelect = useCallback(() => {
     setMode('off');
@@ -189,9 +207,9 @@ export function useQuickSelect({
     setSelectedIndex(null);
     if (mode === 'position-assignment') {
       setMode('item-selection');
-      setStatusMessage('Selection cleared. Press 1-9 to select an item');
+      setStatusMessage(`Selection cleared. ${selectItemPrompt(quickSelectItems.length, maxQuickSelectItems)}`);
     }
-  }, [mode]);
+  }, [mode, quickSelectItems.length, maxQuickSelectItems]);
 
   const assignToPosition = useCallback((item: CollectionItem, position: number) => {
     // Convert 1-based position to 0-based index
@@ -253,7 +271,7 @@ export function useQuickSelect({
       // In item-selection mode, 1-9 selects an item
       if (num === 0) {
         // 0 is not valid for item selection (only 1-9)
-        setStatusMessage('Press 1-9 to select an item');
+        setStatusMessage(selectItemPrompt(quickSelectItems.length, maxQuickSelectItems));
         return true;
       }
 
@@ -276,7 +294,7 @@ export function useQuickSelect({
       const selectedItem = visibleItems.find(item => item.id === selectedItemId);
       if (!selectedItem) {
         setMode('item-selection');
-        setStatusMessage('Selection lost. Press 1-9 to select an item');
+        setStatusMessage(`Selection lost. ${selectItemPrompt(quickSelectItems.length, maxQuickSelectItems)}`);
         return true;
       }
 
@@ -284,7 +302,7 @@ export function useQuickSelect({
     }
 
     return false;
-  }, [enabled, mode, quickSelectItems, visibleItems, selectedItemId, deactivateQuickSelect, assignToPosition]);
+  }, [enabled, mode, quickSelectItems, visibleItems, selectedItemId, deactivateQuickSelect, assignToPosition, maxQuickSelectItems]);
 
   // Handle Enter key for next available position
   useEffect(() => {
