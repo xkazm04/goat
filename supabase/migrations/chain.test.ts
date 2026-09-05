@@ -206,7 +206,7 @@ describe('supabase/migrations — the chain read as a chain', () => {
     for (const t of Object.keys(ALLOW)) expect(defined.has(t), `${t} now has DDL — drop it from ALLOW`).toBe(false);
   });
 
-  it.fails('a SECURITY DEFINER function pins search_path and revokes PUBLIC execute', () => {
+  it('a SECURITY DEFINER function pins search_path and revokes PUBLIC execute', () => {
     // A definer function runs as its owner. Without SET search_path it resolves
     // unqualified names through the caller's path; without a REVOKE it is
     // callable by every PostgREST role, anon included.
