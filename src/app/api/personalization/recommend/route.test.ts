@@ -8,8 +8,8 @@
  * zero, POST) — expected 5 / 1 / 1 / 5, got 0 / 4 / 0 / 0 over a 5-item
  * showcase population.
  */
-import { describe, it, expect } from 'vitest';
 import { NextRequest } from 'next/server';
+import { describe, it, expect } from 'vitest';
 
 import { showcaseData } from '@/lib/constants/showCaseExamples';
 
