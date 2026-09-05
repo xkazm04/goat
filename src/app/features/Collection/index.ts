@@ -37,9 +37,9 @@ export { useVisibleCollectionItems } from './hooks/useVisibleCollectionItems';
 export type { UseVisibleCollectionItemsOptions, UseVisibleCollectionItemsResult, PlacementStats } from './hooks/useVisibleCollectionItems';
 
 // Utilities
-export { backlogGroupsToItemCategories, backlogGroupToItemCategory, backlogItemToCollectionItem } from './utils/transformers';
-export { useEasterEggSpotlight, isEasterEggKeyword, EASTER_EGG_KEYWORDS, SPOTLIGHT_DURATION } from './utils/easterEgg';
-export type { SpotlightableItem, UseEasterEggSpotlightResult, EasterEggKeyword } from './utils/easterEgg';
+export { backlogGroupsToItemCategories } from './utils/transformers';
+export { useEasterEggSpotlight } from './utils/easterEgg';
+export type { SpotlightableItem, UseEasterEggSpotlightResult } from './utils/easterEgg';
 
 // Configuration
 export { LAZY_LOAD_CONFIG } from './constants/lazyLoadConfig';
