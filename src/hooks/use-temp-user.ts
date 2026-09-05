@@ -31,15 +31,8 @@ export function useTempUser() {
     setIsLoaded(true);
   }, []);
 
-  const clearTempUser = () => {
-    localStorage.removeItem(TEMP_USER_KEY);
-    localStorage.removeItem(TEMP_USER_FLAG_KEY);
-    setTempUserId('');
-    setIsTempUser(true);
-  };
-
-  // Shared implementation for converting temp user to registered user
-  // Called when user registers/logs in
+  // Converts the temp user to a registered user. Called by useAuthUser when
+  // a Supabase session appears for a browser that was holding a guest UUID.
   const upgradeToRegisteredUser = (realUserId: string) => {
     const oldTempId = tempUserId;
 
@@ -56,9 +49,6 @@ export function useTempUser() {
     tempUserId,
     isLoaded,
     isTempUser,
-    clearTempUser,
-    // Aliases for backwards compatibility - both call the same implementation
     migrateTempUserToReal: upgradeToRegisteredUser,
-    convertToRegisteredUser: upgradeToRegisteredUser,
   };
 }
