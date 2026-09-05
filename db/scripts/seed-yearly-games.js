@@ -8,15 +8,18 @@
  * 4. Fetches Wikipedia images for all new items (with --with-images flag)
  *
  * Usage:
- *   node db/scripts/seed-yearly-games.js              # Insert data only
- *   node db/scripts/seed-yearly-games.js --with-images # Insert data + fetch images
+ *   node --env-file=.env db/scripts/seed-yearly-games.js              # Insert data only
+ *   node --env-file=.env db/scripts/seed-yearly-games.js --with-images # Insert data + fetch images
+ *
+ * DATABASE_URL (or SUPABASE_DB_URL) must be set; see db/README.md.
  */
 
-const { Client } = require('pg');
 const https = require('https');
 
-const POOLER_URL =
-  'postgresql://postgres.pvfwxilvzjzzjhdcpucu:hPYJVZFK3oh5RgQ7@aws-0-eu-central-1.pooler.supabase.com:5432/postgres';
+const { Client } = require('pg');
+
+const { connectionStringFromEnv } = require('./connection');
+
 const OWNER_USER_ID = '4d1e9364-9f84-4a3b-996c-c584fcc81ebf';
 
 const WITH_IMAGES = process.argv.includes('--with-images');
@@ -751,7 +754,10 @@ async function sleep(ms) {
 // MAIN
 // ---------------------------------------------------------------------------
 async function main() {
-  const client = new Client({ connectionString: POOLER_URL, ssl: { rejectUnauthorized: false } });
+  const client = new Client({
+    connectionString: connectionStringFromEnv(process.env),
+    ssl: { rejectUnauthorized: false },
+  });
   await client.connect();
   console.log('Connected to database');
 
@@ -760,7 +766,6 @@ async function main() {
     console.log(`Seeding ${years.length} years: ${years[0]}–${years[years.length - 1]}`);
 
     let totalItemsInserted = 0;
-    let totalItemsSkipped = 0;
     let totalListsCreated = 0;
     let totalListItems = 0;
 
