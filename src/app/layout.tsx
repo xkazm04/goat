@@ -115,7 +115,7 @@ export default function RootLayout({
                     <div className="fixed top-4 right-4 z-toast">
                       <AuthHeader />
                     </div>
-                    <main id="main-content" className="gradient-to-b" tabIndex={-1}>
+                    <main id="main-content" tabIndex={-1}>
                       <PageTransition>{children}</PageTransition>
                     </main>
                   </div>
