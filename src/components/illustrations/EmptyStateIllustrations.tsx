@@ -1,5 +1,6 @@
 'use client';
 
+import { useMotionCapabilities } from '@/hooks/use-motion-preference';
 import { cn } from '@/lib/utils';
 
 interface IllustrationProps {
@@ -13,6 +14,7 @@ interface IllustrationProps {
  * Cyan-to-purple gradient palette on dark background
  */
 export function EmptyTrophyCase({ className, width = 200, height = 160 }: IllustrationProps) {
+  const { allowAmbient: ambient } = useMotionCapabilities();
   return (
     <svg
       viewBox="0 0 200 160"
@@ -63,13 +65,13 @@ export function EmptyTrophyCase({ className, width = 200, height = 160 }: Illust
 
       {/* Sparkle particles */}
       <circle cx="70" cy="45" r="1.5" fill="#22d3ee" opacity="0.4">
-        <animate attributeName="opacity" values="0.4;0.1;0.4" dur="3s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.4;0.1;0.4" dur="3s" repeatCount="indefinite" />}
       </circle>
       <circle cx="130" cy="50" r="1" fill="#a855f7" opacity="0.3">
-        <animate attributeName="opacity" values="0.3;0.1;0.3" dur="2.5s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.3;0.1;0.3" dur="2.5s" repeatCount="indefinite" />}
       </circle>
       <circle cx="80" cy="115" r="1" fill="#22d3ee" opacity="0.25">
-        <animate attributeName="opacity" values="0.25;0.05;0.25" dur="4s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.25;0.05;0.25" dur="4s" repeatCount="indefinite" />}
       </circle>
     </svg>
   );
@@ -79,6 +81,7 @@ export function EmptyTrophyCase({ className, width = 200, height = 160 }: Illust
  * Magnifying glass with sparkle trails - for "no search results" states
  */
 export function NoSearchResults({ className, width = 200, height = 160 }: IllustrationProps) {
+  const { allowAmbient: ambient } = useMotionCapabilities();
   return (
     <svg
       viewBox="0 0 200 160"
@@ -116,22 +119,22 @@ export function NoSearchResults({ className, width = 200, height = 160 }: Illust
 
       {/* Sparkle trail particles */}
       <circle cx="55" cy="42" r="2" fill="#22d3ee" opacity="0.35">
-        <animate attributeName="opacity" values="0.35;0.1;0.35" dur="2s" repeatCount="indefinite" />
-        <animate attributeName="r" values="2;1.5;2" dur="2s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.35;0.1;0.35" dur="2s" repeatCount="indefinite" />}
+        {ambient && <animate attributeName="r" values="2;1.5;2" dur="2s" repeatCount="indefinite" />}
       </circle>
       <circle cx="65" cy="35" r="1.5" fill="#a855f7" opacity="0.3">
-        <animate attributeName="opacity" values="0.3;0.05;0.3" dur="2.8s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.3;0.05;0.3" dur="2.8s" repeatCount="indefinite" />}
       </circle>
       <circle cx="48" cy="55" r="1" fill="#22d3ee" opacity="0.2">
-        <animate attributeName="opacity" values="0.2;0.05;0.2" dur="3.5s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.2;0.05;0.2" dur="3.5s" repeatCount="indefinite" />}
       </circle>
 
       {/* Star sparkles */}
       <path d="M140 40l2 4 2-4-4 2 4 2z" fill="#22d3ee" fillOpacity="0.25">
-        <animate attributeName="fill-opacity" values="0.25;0.08;0.25" dur="2.5s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="fill-opacity" values="0.25;0.08;0.25" dur="2.5s" repeatCount="indefinite" />}
       </path>
       <path d="M45 95l1.5 3 1.5-3-3 1.5 3 1.5z" fill="#a855f7" fillOpacity="0.2">
-        <animate attributeName="fill-opacity" values="0.2;0.05;0.2" dur="3s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="fill-opacity" values="0.2;0.05;0.2" dur="3s" repeatCount="indefinite" />}
       </path>
     </svg>
   );
@@ -141,6 +144,7 @@ export function NoSearchResults({ className, width = 200, height = 160 }: Illust
  * Crown resting on question mark - for "no metadata" states
  */
 export function NoMetadata({ className, width = 80, height = 64 }: IllustrationProps) {
+  const { allowAmbient: ambient } = useMotionCapabilities();
   return (
     <svg
       viewBox="0 0 80 64"
@@ -170,10 +174,10 @@ export function NoMetadata({ className, width = 80, height = 64 }: IllustrationP
 
       {/* Sparkles */}
       <circle cx="18" cy="15" r="1" fill="#22d3ee" opacity="0.3">
-        <animate attributeName="opacity" values="0.3;0.05;0.3" dur="2s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.3;0.05;0.3" dur="2s" repeatCount="indefinite" />}
       </circle>
       <circle cx="62" cy="18" r="0.8" fill="#a855f7" opacity="0.25">
-        <animate attributeName="opacity" values="0.25;0.05;0.25" dur="3s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.25;0.05;0.25" dur="3s" repeatCount="indefinite" />}
       </circle>
     </svg>
   );
@@ -183,6 +187,7 @@ export function NoMetadata({ className, width = 80, height = 64 }: IllustrationP
  * Film reel with dotted film strip - for movies/tv empty states
  */
 export function EmptyFilmReel({ className, width = 140, height = 112 }: IllustrationProps) {
+  const { allowAmbient: ambient } = useMotionCapabilities();
   return (
     <svg
       viewBox="0 0 200 160"
@@ -235,13 +240,13 @@ export function EmptyFilmReel({ className, width = 140, height = 112 }: Illustra
 
       {/* Sparkles */}
       <circle cx="60" cy="50" r="1.5" fill="#22d3ee" opacity="0.35">
-        <animate attributeName="opacity" values="0.35;0.1;0.35" dur="2.5s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.35;0.1;0.35" dur="2.5s" repeatCount="indefinite" />}
       </circle>
       <circle cx="145" cy="55" r="1" fill="#a855f7" opacity="0.3">
-        <animate attributeName="opacity" values="0.3;0.08;0.3" dur="3s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.3;0.08;0.3" dur="3s" repeatCount="indefinite" />}
       </circle>
       <circle cx="70" cy="110" r="1" fill="#22d3ee" opacity="0.2">
-        <animate attributeName="opacity" values="0.2;0.05;0.2" dur="3.5s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.2;0.05;0.2" dur="3.5s" repeatCount="indefinite" />}
       </circle>
     </svg>
   );
@@ -251,6 +256,7 @@ export function EmptyFilmReel({ className, width = 140, height = 112 }: Illustra
  * Vinyl record with tonearm - for music empty states
  */
 export function EmptyVinylRecord({ className, width = 140, height = 112 }: IllustrationProps) {
+  const { allowAmbient: ambient } = useMotionCapabilities();
   return (
     <svg
       viewBox="0 0 200 160"
@@ -292,18 +298,18 @@ export function EmptyVinylRecord({ className, width = 140, height = 112 }: Illus
 
       {/* Needle tip glow */}
       <circle cx="115" cy="72" r="2" fill="#22d3ee" opacity="0.4">
-        <animate attributeName="opacity" values="0.4;0.15;0.4" dur="2s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.4;0.15;0.4" dur="2s" repeatCount="indefinite" />}
       </circle>
 
       {/* Sparkles */}
       <circle cx="50" cy="50" r="1.5" fill="#a855f7" opacity="0.3">
-        <animate attributeName="opacity" values="0.3;0.08;0.3" dur="2.8s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.3;0.08;0.3" dur="2.8s" repeatCount="indefinite" />}
       </circle>
       <circle cx="150" cy="100" r="1" fill="#22d3ee" opacity="0.25">
-        <animate attributeName="opacity" values="0.25;0.05;0.25" dur="3.2s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.25;0.05;0.25" dur="3.2s" repeatCount="indefinite" />}
       </circle>
       <circle cx="60" cy="115" r="1" fill="#a855f7" opacity="0.2">
-        <animate attributeName="opacity" values="0.2;0.05;0.2" dur="4s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.2;0.05;0.2" dur="4s" repeatCount="indefinite" />}
       </circle>
     </svg>
   );
@@ -313,6 +319,7 @@ export function EmptyVinylRecord({ className, width = 140, height = 112 }: Illus
  * Game controller outline - for games empty states
  */
 export function EmptyGameController({ className, width = 140, height = 112 }: IllustrationProps) {
+  const { allowAmbient: ambient } = useMotionCapabilities();
   return (
     <svg
       viewBox="0 0 200 160"
@@ -358,13 +365,13 @@ export function EmptyGameController({ className, width = 140, height = 112 }: Il
 
       {/* Sparkles */}
       <circle cx="55" cy="48" r="1.5" fill="#22d3ee" opacity="0.35">
-        <animate attributeName="opacity" values="0.35;0.1;0.35" dur="2.5s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.35;0.1;0.35" dur="2.5s" repeatCount="indefinite" />}
       </circle>
       <circle cx="148" cy="52" r="1" fill="#a855f7" opacity="0.3">
-        <animate attributeName="opacity" values="0.3;0.08;0.3" dur="3s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.3;0.08;0.3" dur="3s" repeatCount="indefinite" />}
       </circle>
       <circle cx="100" cy="125" r="1" fill="#22d3ee" opacity="0.2">
-        <animate attributeName="opacity" values="0.2;0.05;0.2" dur="3.5s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.2;0.05;0.2" dur="3.5s" repeatCount="indefinite" />}
       </circle>
     </svg>
   );
@@ -400,6 +407,7 @@ export function CategoryEmptyState({
  * Larger 120x120 illustration with cyan/purple accent glows
  */
 export function ToppledTrophy({ className, width = 120, height = 120 }: IllustrationProps) {
+  const { allowAmbient: ambient } = useMotionCapabilities();
   return (
     <svg
       viewBox="0 0 120 120"
@@ -443,13 +451,13 @@ export function ToppledTrophy({ className, width = 120, height = 120 }: Illustra
 
       {/* Scattered stars */}
       <circle cx="30" cy="35" r="2" fill="#22d3ee" opacity="0.3">
-        <animate attributeName="opacity" values="0.3;0.1;0.3" dur="2s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.3;0.1;0.3" dur="2s" repeatCount="indefinite" />}
       </circle>
       <circle cx="90" cy="40" r="1.5" fill="#a855f7" opacity="0.25">
-        <animate attributeName="opacity" values="0.25;0.08;0.25" dur="2.5s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.25;0.08;0.25" dur="2.5s" repeatCount="indefinite" />}
       </circle>
       <circle cx="35" cy="90" r="1" fill="#22d3ee" opacity="0.2">
-        <animate attributeName="opacity" values="0.2;0.05;0.2" dur="3s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.2;0.05;0.2" dur="3s" repeatCount="indefinite" />}
       </circle>
     </svg>
   );
@@ -520,6 +528,7 @@ function SlotGameController() {
  * Goat peering through a magnifying glass - for "no filter results" states
  */
 export function GoatSearching({ className, width = 120, height = 96 }: IllustrationProps) {
+  const { allowAmbient: ambient } = useMotionCapabilities();
   return (
     <svg
       viewBox="0 0 120 96"
@@ -557,10 +566,10 @@ export function GoatSearching({ className, width = 120, height = 96 }: Illustrat
       <path d="M61 34c4-2 6 0 5 3" stroke="#22d3ee" strokeOpacity="0.15" strokeWidth="1" strokeLinecap="round" fill="none" />
       {/* Sparkles */}
       <circle cx="25" cy="25" r="1.5" fill="#22d3ee" opacity="0.3">
-        <animate attributeName="opacity" values="0.3;0.08;0.3" dur="2.5s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.3;0.08;0.3" dur="2.5s" repeatCount="indefinite" />}
       </circle>
       <circle cx="90" cy="30" r="1" fill="#a855f7" opacity="0.25">
-        <animate attributeName="opacity" values="0.25;0.05;0.25" dur="3s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.25;0.05;0.25" dur="3s" repeatCount="indefinite" />}
       </circle>
     </svg>
   );
@@ -570,6 +579,7 @@ export function GoatSearching({ className, width = 120, height = 96 }: Illustrat
  * Goat holding a bookmark/ribbon - for "no saved presets" states
  */
 export function GoatBookmark({ className, width = 120, height = 96 }: IllustrationProps) {
+  const { allowAmbient: ambient } = useMotionCapabilities();
   return (
     <svg
       viewBox="0 0 120 96"
@@ -610,10 +620,10 @@ export function GoatBookmark({ className, width = 120, height = 96 }: Illustrati
       <path d="M65 55c3-2 6-4 7-8" stroke="#22d3ee" strokeOpacity="0.15" strokeWidth="1" strokeLinecap="round" fill="none" />
       {/* Sparkles */}
       <circle cx="30" cy="25" r="1.5" fill="#22d3ee" opacity="0.3">
-        <animate attributeName="opacity" values="0.3;0.08;0.3" dur="2.8s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.3;0.08;0.3" dur="2.8s" repeatCount="indefinite" />}
       </circle>
       <circle cx="95" cy="60" r="1" fill="#a855f7" opacity="0.25">
-        <animate attributeName="opacity" values="0.25;0.05;0.25" dur="3.2s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.25;0.05;0.25" dur="3.2s" repeatCount="indefinite" />}
       </circle>
     </svg>
   );
@@ -623,6 +633,7 @@ export function GoatBookmark({ className, width = 120, height = 96 }: Illustrati
  * Goat with building blocks - for "empty filter group" states
  */
 export function GoatBlocks({ className, width = 120, height = 96 }: IllustrationProps) {
+  const { allowAmbient: ambient } = useMotionCapabilities();
   return (
     <svg
       viewBox="0 0 120 96"
@@ -668,10 +679,10 @@ export function GoatBlocks({ className, width = 120, height = 96 }: Illustration
       <path d="M48 52c5 2 10 4 14 6" stroke="#22d3ee" strokeOpacity="0.15" strokeWidth="1" strokeLinecap="round" fill="none" />
       {/* Sparkles */}
       <circle cx="20" cy="25" r="1.5" fill="#22d3ee" opacity="0.3">
-        <animate attributeName="opacity" values="0.3;0.08;0.3" dur="2.5s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.3;0.08;0.3" dur="2.5s" repeatCount="indefinite" />}
       </circle>
       <circle cx="95" cy="35" r="1" fill="#a855f7" opacity="0.25">
-        <animate attributeName="opacity" values="0.25;0.05;0.25" dur="3s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.25;0.05;0.25" dur="3s" repeatCount="indefinite" />}
       </circle>
     </svg>
   );
@@ -681,6 +692,7 @@ export function GoatBlocks({ className, width = 120, height = 96 }: Illustration
  * Goat looking confused at an empty funnel - for "no filters matching" states
  */
 export function GoatFilterEmpty({ className, width = 120, height = 96 }: IllustrationProps) {
+  const { allowAmbient: ambient } = useMotionCapabilities();
   return (
     <svg
       viewBox="0 0 120 96"
@@ -723,10 +735,10 @@ export function GoatFilterEmpty({ className, width = 120, height = 96 }: Illustr
       <text x="54" y="24" fill="#a855f7" fillOpacity="0.3" fontSize="12" fontWeight="bold">?</text>
       {/* Sparkles */}
       <circle cx="20" cy="22" r="1.5" fill="#22d3ee" opacity="0.3">
-        <animate attributeName="opacity" values="0.3;0.08;0.3" dur="2.5s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.3;0.08;0.3" dur="2.5s" repeatCount="indefinite" />}
       </circle>
       <circle cx="98" cy="55" r="1" fill="#a855f7" opacity="0.25">
-        <animate attributeName="opacity" values="0.25;0.05;0.25" dur="3.2s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.25;0.05;0.25" dur="3.2s" repeatCount="indefinite" />}
       </circle>
     </svg>
   );
@@ -736,6 +748,7 @@ export function GoatFilterEmpty({ className, width = 120, height = 96 }: Illustr
  * Goat shrugging next to a zero - for "zero results" states
  */
 export function GoatZeroResults({ className, width = 120, height = 96 }: IllustrationProps) {
+  const { allowAmbient: ambient } = useMotionCapabilities();
   return (
     <svg
       viewBox="0 0 120 96"
@@ -779,10 +792,10 @@ export function GoatZeroResults({ className, width = 120, height = 96 }: Illustr
       <path d="M55 43c1-1.5 2.5-1.5 3.5 0s2.5 1.5 3.5 0" stroke="#a855f7" strokeOpacity="0.2" strokeWidth="0.8" strokeLinecap="round" fill="none" />
       {/* Sparkles */}
       <circle cx="22" cy="20" r="1.5" fill="#22d3ee" opacity="0.3">
-        <animate attributeName="opacity" values="0.3;0.08;0.3" dur="2.8s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.3;0.08;0.3" dur="2.8s" repeatCount="indefinite" />}
       </circle>
       <circle cx="100" cy="65" r="1" fill="#a855f7" opacity="0.25">
-        <animate attributeName="opacity" values="0.25;0.05;0.25" dur="3.5s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.25;0.05;0.25" dur="3.5s" repeatCount="indefinite" />}
       </circle>
     </svg>
   );
@@ -793,6 +806,7 @@ export function GoatZeroResults({ className, width = 120, height = 96 }: Illustr
  * Brand palette: slate-800 body, #22d3ee accents, rose-400 highlights
  */
 export function GoatBrokenFrame({ className, width = 120, height = 96 }: IllustrationProps) {
+  const { allowAmbient: ambient } = useMotionCapabilities();
   return (
     <svg
       viewBox="0 0 120 96"
@@ -847,13 +861,13 @@ export function GoatBrokenFrame({ className, width = 120, height = 96 }: Illustr
       <text x="30" y="26" fill="#fb7185" fillOpacity="0.3" fontSize="10" fontWeight="bold">?</text>
       {/* Sparkles */}
       <circle cx="20" cy="20" r="1.5" fill="#fb7185" opacity="0.3">
-        <animate attributeName="opacity" values="0.3;0.08;0.3" dur="2.5s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.3;0.08;0.3" dur="2.5s" repeatCount="indefinite" />}
       </circle>
       <circle cx="95" cy="50" r="1" fill="#22d3ee" opacity="0.25">
-        <animate attributeName="opacity" values="0.25;0.05;0.25" dur="3s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.25;0.05;0.25" dur="3s" repeatCount="indefinite" />}
       </circle>
       <circle cx="88" cy="76" r="1" fill="#a855f7" opacity="0.2">
-        <animate attributeName="opacity" values="0.2;0.05;0.2" dur="3.5s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.2;0.05;0.2" dur="3.5s" repeatCount="indefinite" />}
       </circle>
     </svg>
   );
@@ -864,6 +878,7 @@ export function GoatBrokenFrame({ className, width = 120, height = 96 }: Illustr
  * Brand palette: slate-800 body, #22d3ee accents, rose-400 highlights
  */
 export function GoatDisconnected({ className, width = 120, height = 96 }: IllustrationProps) {
+  const { allowAmbient: ambient } = useMotionCapabilities();
   return (
     <svg
       viewBox="0 0 120 96"
@@ -896,7 +911,7 @@ export function GoatDisconnected({ className, width = 120, height = 96 }: Illust
       <line x1="63" y1="57" x2="66" y2="55" stroke="#fb7185" strokeOpacity="0.4" strokeWidth="1" strokeLinecap="round" />
       <line x1="63" y1="59" x2="66" y2="60" stroke="#fb7185" strokeOpacity="0.3" strokeWidth="0.8" strokeLinecap="round" />
       <circle cx="64" cy="58" r="1" fill="#fb7185" opacity="0.3">
-        <animate attributeName="opacity" values="0.3;0.1;0.3" dur="1.5s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.3;0.1;0.3" dur="1.5s" repeatCount="indefinite" />}
       </circle>
       {/* Cable plug end - right */}
       <rect x="67" y="54" width="6" height="8" rx="1.5" stroke="#fb7185" strokeOpacity="0.3" strokeWidth="1.5" fill="none" />
@@ -925,13 +940,13 @@ export function GoatDisconnected({ className, width = 120, height = 96 }: Illust
       <path d="M46 50c2 1 3 2 4 3" stroke="#22d3ee" strokeOpacity="0.15" strokeWidth="1" strokeLinecap="round" fill="none" />
       {/* Sparkles */}
       <circle cx="18" cy="22" r="1.5" fill="#22d3ee" opacity="0.3">
-        <animate attributeName="opacity" values="0.3;0.08;0.3" dur="2.5s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.3;0.08;0.3" dur="2.5s" repeatCount="indefinite" />}
       </circle>
       <circle cx="100" cy="40" r="1" fill="#a855f7" opacity="0.25">
-        <animate attributeName="opacity" values="0.25;0.05;0.25" dur="3.2s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.25;0.05;0.25" dur="3.2s" repeatCount="indefinite" />}
       </circle>
       <circle cx="25" cy="75" r="1" fill="#fb7185" opacity="0.2">
-        <animate attributeName="opacity" values="0.2;0.05;0.2" dur="3.8s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.2;0.05;0.2" dur="3.8s" repeatCount="indefinite" />}
       </circle>
     </svg>
   );

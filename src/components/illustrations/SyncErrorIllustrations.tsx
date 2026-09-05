@@ -1,5 +1,6 @@
 'use client';
 
+import { useMotionCapabilities } from '@/hooks/use-motion-preference';
 import { cn } from '@/lib/utils';
 
 interface IllustrationProps {
@@ -13,6 +14,7 @@ interface IllustrationProps {
  * 120x120px, flat geometric style, red-500 accent
  */
 export function GoatNetworkError({ className, width = 120, height = 120 }: IllustrationProps) {
+  const { allowAmbient: ambient } = useMotionCapabilities();
   return (
     <svg
       viewBox="0 0 120 120"
@@ -74,10 +76,10 @@ export function GoatNetworkError({ className, width = 120, height = 120 }: Illus
 
       {/* Disconnect spark */}
       <circle cx="35" cy="45" r="2" fill="#ef4444" opacity="0.4">
-        <animate attributeName="opacity" values="0.4;0.15;0.4" dur="1.5s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.4;0.15;0.4" dur="1.5s" repeatCount="indefinite" />}
       </circle>
       <circle cx="85" cy="50" r="1.5" fill="#ef4444" opacity="0.3">
-        <animate attributeName="opacity" values="0.3;0.1;0.3" dur="2s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.3;0.1;0.3" dur="2s" repeatCount="indefinite" />}
       </circle>
 
       {/* Question marks floating */}
@@ -92,6 +94,7 @@ export function GoatNetworkError({ className, width = 120, height = 120 }: Illus
  * 120x120px, flat geometric style, red-500 accent
  */
 export function GoatServerError({ className, width = 120, height = 120 }: IllustrationProps) {
+  const { allowAmbient: ambient } = useMotionCapabilities();
   return (
     <svg
       viewBox="0 0 120 120"
@@ -165,10 +168,10 @@ export function GoatServerError({ className, width = 120, height = 120 }: Illust
 
       {/* Falling debris from cloud */}
       <circle cx="50" cy="48" r="1" fill="#ef4444" opacity="0.3">
-        <animate attributeName="opacity" values="0.3;0.1;0.3" dur="2s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.3;0.1;0.3" dur="2s" repeatCount="indefinite" />}
       </circle>
       <circle cx="70" cy="50" r="1.5" fill="#ef4444" opacity="0.25">
-        <animate attributeName="opacity" values="0.25;0.08;0.25" dur="2.5s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.25;0.08;0.25" dur="2.5s" repeatCount="indefinite" />}
       </circle>
     </svg>
   );
@@ -179,6 +182,7 @@ export function GoatServerError({ className, width = 120, height = 120 }: Illust
  * 120x120px, flat geometric style, amber-500 accent
  */
 export function GoatQuotaExceeded({ className, width = 120, height = 120 }: IllustrationProps) {
+  const { allowAmbient: ambient } = useMotionCapabilities();
   return (
     <svg
       viewBox="0 0 120 120"
@@ -255,10 +259,10 @@ export function GoatQuotaExceeded({ className, width = 120, height = 120 }: Illu
 
       {/* Warning sparkles */}
       <circle cx="10" cy="35" r="1.5" fill="#f59e0b" opacity="0.3">
-        <animate attributeName="opacity" values="0.3;0.1;0.3" dur="1.8s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.3;0.1;0.3" dur="1.8s" repeatCount="indefinite" />}
       </circle>
       <circle cx="110" cy="30" r="1" fill="#f59e0b" opacity="0.25">
-        <animate attributeName="opacity" values="0.25;0.08;0.25" dur="2.2s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.25;0.08;0.25" dur="2.2s" repeatCount="indefinite" />}
       </circle>
     </svg>
   );
