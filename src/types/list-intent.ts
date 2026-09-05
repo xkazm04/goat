@@ -213,7 +213,16 @@ export function validateListIntent(intent: ListIntent): ListIntentValidation {
     errors.push('Time period is required');
   }
 
-  if (intent.size < GRID_LIMITS.MIN_SIZE || intent.size > GRID_LIMITS.MAX_SIZE) {
+  // Integrality is checked FIRST and separately, because the two comparisons
+  // below are both false for NaN and for a fraction — so a size the server's
+  // assertIntRange (src/lib/errors/api-error-handler.ts, `!Number.isInteger`)
+  // rejects with a 400 would otherwise pass client validation. One rule, two
+  // implementations: keep the range message byte-identical to the sibling rule
+  // in src/lib/validation/list-intent-validator.ts so the merged error set in
+  // validateListIntentComplete still deduplicates to one line.
+  if (!Number.isInteger(intent.size)) {
+    errors.push('Size must be a whole number');
+  } else if (intent.size < GRID_LIMITS.MIN_SIZE || intent.size > GRID_LIMITS.MAX_SIZE) {
     errors.push(`Size must be between ${GRID_LIMITS.MIN_SIZE} and ${GRID_LIMITS.MAX_SIZE}`);
   }
 
