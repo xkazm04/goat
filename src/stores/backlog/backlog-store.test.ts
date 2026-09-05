@@ -42,6 +42,7 @@ vi.mock('@/lib/offline/OfflinePersistence', async (importOriginal) => ({
   getOfflinePersistence: () => persistence,
 }));
 
+import { MAX_PENDING_CHANGES } from '@/lib/offline/OfflinePersistence';
 
 import { narrowRehydratedBacklogState, partializeBacklogState, useBacklogStore } from './store';
 import type { BacklogState, PendingChange } from './types';
@@ -132,3 +133,35 @@ describe('persisted shape — rehydration narrowing', () => {
   });
 });
 
+describe('offline queue — capacity is checked before the local write', () => {
+  function fillQueue() {
+    const full: PendingChange[] = Array.from({ length: MAX_PENDING_CHANGES }, (_, i) => ({
+      type: 'remove', groupId: 'g1', itemId: `old-${i}`, timestamp: i,
+    }));
+    useBacklogStore.setState({ isOfflineMode: true, pendingChanges: full, groups: [group('g1', [item('keep')])] });
+  }
+
+  it('a full offline queue refuses the local add too', () => {
+    fillQueue();
+    useBacklogStore.getState().addItemToGroup('g1', item('new'));
+    const s = useBacklogStore.getState();
+    expect(s.groups[0].items).toHaveLength(1);
+    expect(s.pendingChanges).toHaveLength(MAX_PENDING_CHANGES);
+  });
+
+  it('a full offline queue refuses the local remove too', () => {
+    fillQueue();
+    useBacklogStore.getState().removeItemFromGroup('g1', 'keep');
+    const s = useBacklogStore.getState();
+    expect(s.groups[0].items).toHaveLength(1);
+    expect(s.pendingChanges).toHaveLength(MAX_PENDING_CHANGES);
+  });
+
+  it('with room in the queue the add lands in both places (control)', () => {
+    useBacklogStore.setState({ isOfflineMode: true, pendingChanges: [], groups: [group('g1')] });
+    useBacklogStore.getState().addItemToGroup('g1', item('new'));
+    const s = useBacklogStore.getState();
+    expect(s.groups[0].items).toHaveLength(1);
+    expect(s.pendingChanges).toHaveLength(1);
+  });
+});

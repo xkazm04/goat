@@ -29,6 +29,15 @@ export const createItemActions = (
         return;
       }
 
+      // Capacity is a precondition of the WHOLE write, checked before anything
+      // is mutated. Checking it after the local push (as this did until
+      // 2026-09-05) left the item in the group and out of the queue — a local
+      // tree the server would never learn about, with no record that it diverged.
+      if (state.isOfflineMode && state.pendingChanges.length >= MAX_PENDING_CHANGES) {
+        backlogLogger.warn(`Offline queue full (${MAX_PENDING_CHANGES}). Rejecting add for item ${item.id}`);
+        return;
+      }
+
       if (!group.items) group.items = [];
       const prevCount = group.items.length;
       group.items.push(item);
@@ -43,12 +52,8 @@ export const createItemActions = (
       // Sync cache from state.groups (single reference copy, not re-iteration)
       syncCacheFromGroups(state, groupId);
 
-      // Add to pending changes if offline
+      // Add to pending changes if offline (capacity was checked above)
       if (state.isOfflineMode) {
-        if (state.pendingChanges.length >= MAX_PENDING_CHANGES) {
-          backlogLogger.warn(`Offline queue full (${MAX_PENDING_CHANGES}). Rejecting add for item ${item.id}`);
-          return;
-        }
         const pendingChange: PendingChange = {
           type: 'add',
           groupId,
@@ -81,6 +86,13 @@ export const createItemActions = (
         return;
       }
 
+      // Same precondition as addItemToGroup: refuse before mutating, or the
+      // local tree and the offline queue disagree by one item.
+      if (state.isOfflineMode && state.pendingChanges.length >= MAX_PENDING_CHANGES) {
+        backlogLogger.warn(`Offline queue full (${MAX_PENDING_CHANGES}). Rejecting remove for item ${itemId}`);
+        return;
+      }
+
       const originalCount = group.items.length;
       group.items.splice(itemIndex, 1);
       group.item_count = group.items.length;
@@ -101,12 +113,8 @@ export const createItemActions = (
         useSelectionCursor.getState().clear();
       }
 
-      // Add to pending changes if offline
+      // Add to pending changes if offline (capacity was checked above)
       if (state.isOfflineMode) {
-        if (state.pendingChanges.length >= MAX_PENDING_CHANGES) {
-          backlogLogger.warn(`Offline queue full (${MAX_PENDING_CHANGES}). Rejecting remove for item ${itemId}`);
-          return;
-        }
         const pendingChange: PendingChange = {
           type: 'remove',
           groupId,
