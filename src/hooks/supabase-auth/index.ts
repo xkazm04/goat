@@ -59,6 +59,15 @@ export function useSupabaseAuth(options: UseSupabaseAuthOptions = {}): UseSupaba
   const mountedRef = useRef(true);
   const { getClient } = useSupabaseClient(autoRefresh);
 
+  // The caller's callback is LATCHED, not depended on. Callers pass it inline,
+  // so its identity changes on every one of their renders; making it an effect
+  // dependency turned each render into an unsubscribe/resubscribe (measured: 4
+  // subscriptions across mount + 2 re-renders) and, because the teardown also
+  // flipped `mountedRef` off with nothing to flip it back, froze the hook on its
+  // last-seen state. Registry: client-state / effect-identity-and-latched-callbacks.
+  const onAuthStateChangeRef = useRef(onAuthStateChange);
+  onAuthStateChangeRef.current = onAuthStateChange;
+
   // Action dependencies
   const actionDeps = {
     getClient,
@@ -82,43 +91,54 @@ export function useSupabaseAuth(options: UseSupabaseAuthOptions = {}): UseSupaba
   const refreshSession = useRefreshSession(actionDeps);
 
   /**
-   * Initialize auth state and setup listener
+   * Initialize auth state and setup listener.
+   *
+   * ONE session per client: the dependency list names the client and nothing
+   * else. The listener is registered BEFORE the initial getSession() resolves
+   * so an event that lands during that await is not lost, and every write is
+   * guarded by a session-local `cancelled` flag as well as `mountedRef`, so a
+   * torn-down session's late completion writes nothing.
    */
   useEffect(() => {
+    // Re-arm on every (re)start: the previous teardown disarmed it.
+    mountedRef.current = true;
+    let cancelled = false;
     let authListener: { data: { subscription: { unsubscribe: () => void } } } | null = null;
+
+    const live = () => mountedRef.current && !cancelled;
 
     const initAuth = async () => {
       try {
         const client = await getClient();
+        if (!live()) return;
 
-        // Get initial session
+        // Subscribe first, then read: the listener sees anything that happens
+        // while getSession() is in flight.
+        authListener = client.auth.onAuthStateChange((event, newSession) => {
+          if (!live()) return;
+
+          setSession(newSession);
+          setUser(newSession?.user ?? null);
+          setIsLoading(false);
+
+          // Read at CALL time, never at session start — a caller's newest
+          // callback must see the event without restarting the session.
+          onAuthStateChangeRef.current?.(event, newSession);
+        });
+
         const { data: { session: initialSession }, error: sessionError } = await client.auth.getSession();
 
         if (sessionError) {
           throw sessionError;
         }
 
-        if (mountedRef.current) {
+        if (live()) {
           setSession(initialSession);
           setUser(initialSession?.user ?? null);
           setIsLoading(false);
         }
-
-        // Setup auth state change listener
-        authListener = client.auth.onAuthStateChange(async (event, newSession) => {
-          if (!mountedRef.current) return;
-
-          setSession(newSession);
-          setUser(newSession?.user ?? null);
-          setIsLoading(false);
-
-          // Call custom callback if provided
-          if (onAuthStateChange) {
-            onAuthStateChange(event, newSession);
-          }
-        });
       } catch (err) {
-        if (mountedRef.current) {
+        if (live()) {
           setError(err as AuthError);
           setIsLoading(false);
         }
@@ -128,12 +148,14 @@ export function useSupabaseAuth(options: UseSupabaseAuthOptions = {}): UseSupaba
     initAuth();
 
     return () => {
+      cancelled = true;
       mountedRef.current = false;
       if (authListener) {
         authListener.data.subscription.unsubscribe();
+        authListener = null;
       }
     };
-  }, [getClient, onAuthStateChange]);
+  }, [getClient]);
 
   return {
     // State
