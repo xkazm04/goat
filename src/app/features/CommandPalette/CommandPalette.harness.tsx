@@ -78,8 +78,6 @@ import { CommandPalette } from './CommandPalette';
 
 import type { TopList } from '@/types/top-lists';
 
-export { CommandPalette };
-
 // ---------------------------------------------------------------------------
 // Mount / query / interact
 // ---------------------------------------------------------------------------

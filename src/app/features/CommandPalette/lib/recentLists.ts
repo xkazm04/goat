@@ -9,8 +9,8 @@
  */
 import { trackError } from '@/lib/errors/error-analytics';
 
-export const RECENT_LISTS_KEY = 'command-palette-recent-lists';
-export const MAX_RECENT_LISTS = 5;
+const RECENT_LISTS_KEY = 'command-palette-recent-lists';
+const MAX_RECENT_LISTS = 5;
 
 export interface RecentListEntry {
   id: string;
