@@ -1,6 +1,8 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion, type TargetAndTransition, type Transition } from 'framer-motion';
+
+import { useMotionCapabilities } from '@/hooks/use-motion-preference';
 
 interface GoatCrownTrophyProps {
   className?: string;
@@ -8,11 +10,26 @@ interface GoatCrownTrophyProps {
 }
 
 /**
+ * An infinite loop is either running or still — there is no "slower" reduced
+ * form for a forever-repeating pulse, because a pulse that never ends is the
+ * flashing stimulus the reduced-motion preference exists to suppress
+ * (registry: motion/reduced-motion-mechanics). When the motion tier disallows
+ * ambient loops the sparkles render at their resting opacity.
+ */
+function loop(enabled: boolean, animate: TargetAndTransition, transition: Transition) {
+  return enabled ? { animate, transition } : {};
+}
+
+/**
  * Custom G.O.A.T. crown/trophy hybrid SVG illustration.
  * Geometric, flat-style trophy with goat horns incorporated into handles.
  * 120x120px default, yellow-400/yellow-300 with brand-hover accent sparkles.
+ * The sparkle loops are framer-motion `repeat: Infinity` gestures, gated on the
+ * motion tier (`data-motion` on the root says which branch rendered).
  */
 export function GoatCrownTrophy({ className, size = 120 }: GoatCrownTrophyProps) {
+  const { allowAmbient } = useMotionCapabilities();
+
   return (
     <svg
       width={size}
@@ -21,6 +38,7 @@ export function GoatCrownTrophy({ className, size = 120 }: GoatCrownTrophyProps)
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
+      data-motion={allowAmbient ? 'loop' : 'still'}
     >
       {/* Glow backdrop */}
       <circle cx="60" cy="60" r="50" fill="url(#glow)" opacity="0.3" />
@@ -89,10 +107,9 @@ export function GoatCrownTrophy({ className, size = 120 }: GoatCrownTrophyProps)
       <circle cx="60" cy="23" r="2.5" fill="#22d3ee" />
       <circle cx="76" cy="27" r="2" fill="#22d3ee" />
 
-      {/* Sparkle accents - animated via CSS */}
+      {/* Sparkle accents */}
       <motion.g
-        animate={{ opacity: [0.4, 1, 0.4] }}
-        transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+        {...loop(allowAmbient, { opacity: [0.4, 1, 0.4] }, { duration: 1.5, repeat: Infinity, ease: 'easeInOut' })}
       >
         {/* Top-left sparkle */}
         <path d="M20 50 L22 46 L24 50 L22 54Z" fill="#22d3ee" opacity="0.8" />
@@ -101,8 +118,11 @@ export function GoatCrownTrophy({ className, size = 120 }: GoatCrownTrophyProps)
       </motion.g>
 
       <motion.g
-        animate={{ opacity: [1, 0.3, 1] }}
-        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
+        {...loop(
+          allowAmbient,
+          { opacity: [1, 0.3, 1] },
+          { duration: 2, repeat: Infinity, ease: 'easeInOut', delay: 0.5 },
+        )}
       >
         {/* Small sparkle left */}
         <path d="M26 66 L27.5 63 L29 66 L27.5 69Z" fill="#22d3ee" opacity="0.6" />
@@ -114,8 +134,7 @@ export function GoatCrownTrophy({ className, size = 120 }: GoatCrownTrophyProps)
       <motion.path
         d="M60 48 L62 52 L66 52 L63 55 L64 59 L60 57 L56 59 L57 55 L54 52 L58 52Z"
         fill="#fef3c7"
-        animate={{ scale: [1, 1.1, 1], opacity: [0.8, 1, 0.8] }}
-        transition={{ duration: 2, repeat: Infinity }}
+        {...loop(allowAmbient, { scale: [1, 1.1, 1], opacity: [0.8, 1, 0.8] }, { duration: 2, repeat: Infinity })}
         style={{ transformOrigin: '60px 53px' }}
       />
 
