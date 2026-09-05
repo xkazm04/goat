@@ -17,8 +17,11 @@ import type { PlacedItem } from './placed-item';
  */
 export type GridItemType = PlacedItem;
 
-// Re-export PlacedItem types for convenience
-export type { BaseItem, PlacedItem } from './placed-item';
+// Corrected 2026-09-05: MatchSession, DragItem, DropResult and MatchAnalytics
+// were declared here with zero importers (knip + grep), and BaseItem /
+// PlacedItem were re-exported for a convenience nobody used — the live
+// import path for both is '@/types/placed-item'. Removed; what stays is what
+// the 42 importing modules actually reach for.
 
 export interface BacklogItemType {
   id: string;
@@ -62,38 +65,6 @@ export interface BacklogGroupType {
   isExpanded?: boolean;
 }
 
-export interface MatchSession {
-  id: string;
-  listId: string;
-  listSize: number;
-  gridItems: GridItemType[];
-  backlogGroups: BacklogGroupType[];
-  selectedBacklogItem: string | null;
-  selectedGridItem: string | null;
-  createdAt: string;
-  updatedAt: string;
-  progress: {
-    matched: number;
-    total: number;
-    percentage: number;
-  };
-}
-
-export interface DragItem {
-  id: string;
-  type: 'backlog-item' | 'grid-item';
-  data: BacklogItemType | GridItemType;
-  groupId?: string;
-}
-
-export interface DropResult {
-  success: boolean;
-  fromPosition?: number;
-  toPosition?: number;
-  item?: BacklogItemType | GridItemType;
-  action: 'assign' | 'move' | 'remove' | 'swap';
-}
-
 export interface ComparisonItem {
   id: string;
   title: string;
@@ -104,15 +75,4 @@ export interface ComparisonItem {
   subcategory?: string;
   item_year?: number;
   selected?: boolean;
-}
-
-export interface MatchAnalytics {
-  sessionId: string;
-  listId: string;
-  totalMatches: number;
-  averageMatchTime: number;
-  completionPercentage: number;
-  mostUsedCategories: string[];
-  sessionDuration: number;
-  createdAt: string;
 }
