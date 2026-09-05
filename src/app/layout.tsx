@@ -44,22 +44,27 @@ export const metadata: Metadata = {
     siteName: 'G.O.A.T.',
     title: 'G.O.A.T. - Greatest Of All Time',
     description: 'Create, rank, and share your definitive lists. Discover the Greatest Of All Time in movies, music, games, and more.',
+    // Every asset path here must exist under public/ — src/app/layout-assets.test.ts
+    // checks that, and that the declared size is the PNG's real size. The
+    // previous og-default.png / favicon set was never committed, so crawlers
+    // and browsers 404'd on all four. goat.png is the artwork the repo has.
     images: [
       {
-        url: `${baseUrl}/og-default.png`,
-        width: 1200,
-        height: 630,
+        url: `${baseUrl}/goat.png`,
+        width: 896,
+        height: 896,
         alt: 'G.O.A.T. - Greatest Of All Time Rankings',
       },
     ],
   },
   twitter: {
-    card: 'summary_large_image',
+    // A square card image; `summary_large_image` expects a ~2:1 crop.
+    card: 'summary',
     title: 'G.O.A.T. - Greatest Of All Time',
     description: 'Create, rank, and share your definitive lists.',
     site: '@goat_rankings',
     creator: '@goat_rankings',
-    images: [`${baseUrl}/og-default.png`],
+    images: [`${baseUrl}/goat.png`],
   },
   robots: {
     index: true,
@@ -73,9 +78,8 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: '/favicon.ico',
-    shortcut: '/favicon-16x16.png',
-    apple: '/apple-touch-icon.png',
+    icon: '/goat.png',
+    apple: '/goat.png',
   },
 };
 
