@@ -10,7 +10,8 @@ import {
   EmbedCode,
   EmbedFormat,
   WIDGET_DIMENSIONS,
-  DEFAULT_WIDGET_CONFIG,
+  WIDGET_DEFAULT_BORDER_RADIUS,
+  normalizeWidgetConfig,
 } from './types';
 
 /**
@@ -31,7 +32,7 @@ function configToParams(config: WidgetConfig): URLSearchParams {
   if (!config.showBranding) params.set('branding', '0');
   if (!config.interactive) params.set('interactive', '0');
 
-  if (config.borderRadius !== undefined && config.borderRadius !== 12) {
+  if (config.borderRadius !== undefined && config.borderRadius !== WIDGET_DEFAULT_BORDER_RADIUS) {
     params.set('radius', config.borderRadius.toString());
   }
 
@@ -153,11 +154,7 @@ export class EmbedCodeGenerator {
   private config: WidgetConfig;
 
   constructor(listId: string, options: Partial<Omit<WidgetConfig, 'listId'>> = {}) {
-    this.config = {
-      listId,
-      ...DEFAULT_WIDGET_CONFIG,
-      ...options,
-    };
+    this.config = normalizeWidgetConfig({ listId, ...options });
   }
 
   /**
@@ -269,7 +266,7 @@ export class EmbedCodeGenerator {
    * Update configuration
    */
   updateConfig(options: Partial<WidgetConfig>): void {
-    this.config = { ...this.config, ...options };
+    this.config = normalizeWidgetConfig({ ...this.config, ...options });
   }
 
   /**
@@ -308,29 +305,31 @@ export function parseEmbedUrl(url: string): WidgetConfig | null {
     const listId = params.get('id');
     if (!listId) return null;
 
-    const config: WidgetConfig = {
+    // Read raw strings here; membership, clamping and the custom-palette rule
+    // are the normalizer's job, so a hostile URL cannot yield a config that
+    // indexes WIDGET_DIMENSIONS with a key that does not exist.
+    const raw: Parameters<typeof normalizeWidgetConfig>[0] = {
       listId,
-      size: (params.get('size') as WidgetConfig['size']) || 'standard',
-      theme: (params.get('theme') as WidgetConfig['theme']) || 'dark',
-      displayStyle: (params.get('display') as WidgetConfig['displayStyle']) || 'list',
-      itemCount: parseInt(params.get('count') || '5', 10),
+      size: (params.get('size') ?? undefined) as WidgetConfig['size'] | undefined,
+      theme: (params.get('theme') ?? undefined) as WidgetConfig['theme'] | undefined,
+      displayStyle: (params.get('display') ?? undefined) as WidgetConfig['displayStyle'] | undefined,
+      itemCount: params.has('count') ? Number.parseInt(params.get('count')!, 10) : undefined,
       showRanks: params.get('ranks') !== '0',
       showImages: params.get('images') !== '0',
       showTitle: params.get('title') !== '0',
       showBranding: params.get('branding') !== '0',
       interactive: params.get('interactive') !== '0',
-      borderRadius: parseInt(params.get('radius') || '12', 10),
+      borderRadius: params.has('radius') ? Number.parseInt(params.get('radius')!, 10) : undefined,
     };
 
     const locale = params.get('locale');
-    if (locale) config.locale = locale;
+    if (locale) raw.locale = locale;
 
-    // Parse custom colors
     const colorsStr = params.get('colors');
-    if (colorsStr && config.theme === 'custom') {
+    if (colorsStr) {
       const colors = colorsStr.split('-').map(c => `#${c}`);
       if (colors.length === 6) {
-        config.customColors = {
+        raw.customColors = {
           background: colors[0],
           surface: colors[1],
           text: colors[2],
@@ -341,7 +340,7 @@ export function parseEmbedUrl(url: string): WidgetConfig | null {
       }
     }
 
-    return config;
+    return normalizeWidgetConfig(raw);
   } catch {
     return null;
   }
