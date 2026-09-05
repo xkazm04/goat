@@ -45,6 +45,7 @@ vi.mock('@/lib/offline/OfflinePersistence', async (importOriginal) => ({
 import { MAX_PENDING_CHANGES } from '@/lib/offline/OfflinePersistence';
 
 import { narrowRehydratedBacklogState, partializeBacklogState, useBacklogStore } from './store';
+
 import type { BacklogState, PendingChange } from './types';
 
 function group(id: string, items: BacklogItem[] = []): BacklogGroup {
