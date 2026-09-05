@@ -141,12 +141,17 @@ function generateWidgetHTML(
   colors: CustomThemeColors
 ): string {
   const dimensions = WIDGET_DIMENSIONS[config.size];
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://goat.app';
+  // `data.fullUrl` is already absolute (share-urls builds it with the server
+  // base). Prefixing it again produced `https://goat.apphttps://goat.app/share/…`
+  // in both the CTA and the click handler — every deep link out of the widget
+  // was dead (measured 2026-09-05: 2 origins per href).
+  const baseUrl = getServerBaseUrl();
+  const fullUrl = data.fullUrl;
 
   const itemsHTML = data.items
     .slice(0, config.itemCount)
     .map(item => `
-      <div class="goat-widget-item" ${config.interactive ? `onclick="window.open('${baseUrl}${data.fullUrl}', '_blank')"` : ''}>
+      <div class="goat-widget-item" ${config.interactive ? `onclick="window.open('${fullUrl}', '_blank')"` : ''}>
         ${config.showRanks ? `<div class="goat-widget-rank">#${item.rank}</div>` : ''}
         ${config.showImages && item.imageUrl ? `<img class="goat-widget-image" src="${item.imageUrl}" alt="${item.title}" loading="lazy" />` : ''}
         <div class="goat-widget-info">
@@ -388,7 +393,7 @@ ${prefersColorSchemeBlock(config)}
     </div>
 
     <div class="goat-widget-footer">
-      <a href="${baseUrl}${data.fullUrl}" target="_blank" rel="noopener" class="goat-widget-cta">
+      <a href="${fullUrl}" target="_blank" rel="noopener" class="goat-widget-cta">
         View Full Ranking &rarr;
       </a>
       ${config.showBranding ? `

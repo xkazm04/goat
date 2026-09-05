@@ -31,4 +31,17 @@ describe('/api/embed config door', () => {
     const res = await get('size=compact');
     expect(res.status).toBe(400);
   });
+
+  it('links the CTA to the share URL exactly once (no doubled origin)', async () => {
+    const res = await get('id=list-1');
+    const html = await res.text();
+    const hrefs = Array.from(html.matchAll(/href="([^"]+)"/g)).map((m) => m[1]);
+    const cta = hrefs.find((h) => h.includes('/share/'));
+    expect(cta).toBeDefined();
+    expect((cta!.match(/https?:\/\//g) ?? []).length).toBe(1);
+    expect(cta).toMatch(/^https?:\/\/[^/]+\/share\/list-1$/);
+    // The click handler on interactive items opens the same URL.
+    const onclick = html.match(/window\.open\('([^']+)'/)?.[1];
+    expect(onclick).toBe(cta);
+  });
 });
