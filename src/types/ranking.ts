@@ -494,8 +494,13 @@ export function computeTierBoundaries(
     currentPosition = endPosition + 1;
   }
 
-  // Ensure all positions are covered
-  if (boundaries.length > 0 && currentPosition < rankingSize) {
+  // Ensure all positions are covered. Corrected 2026-09-05: for a size where
+  // every tier rounds to zero (size 1) there was no last boundary to extend and
+  // the ranking had NO tier — getTierForPosition(0) answered null. The whole
+  // range then belongs to the first tier.
+  if (boundaries.length === 0 && rankingSize > 0 && tierIds.length > 0) {
+    boundaries.push({ tierId: tierIds[0], startPosition: 0, endPosition: rankingSize - 1 });
+  } else if (boundaries.length > 0 && currentPosition < rankingSize) {
     boundaries[boundaries.length - 1].endPosition = rankingSize - 1;
   }
 
