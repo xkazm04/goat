@@ -113,9 +113,13 @@ class EnrichmentPipelineClass {
 
     const fetchStart = Date.now();
 
-    // Create timeout promise
+    // Create timeout promise. The handle is kept so the loser of the race can
+    // be cancelled: an uncleared timer stayed live for the whole
+    // sourceTimeoutMs after the source had already answered, and a batch
+    // parked one of them per source per item.
+    let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
     const timeoutPromise = new Promise<RawSourceData>((resolve) => {
-      setTimeout(() => {
+      timeoutHandle = setTimeout(() => {
         resolve({
           source,
           rawData: {},
@@ -151,6 +155,8 @@ class EnrichmentPipelineClass {
         fetchDurationMs: durationMs,
         error: error instanceof Error ? error.message : 'Unknown error',
       };
+    } finally {
+      if (timeoutHandle !== undefined) clearTimeout(timeoutHandle);
     }
   }
 
