@@ -12,14 +12,15 @@
  *   node --env-file=.env db/scripts/fetch-game-images.js              # All yearly games missing images
  *   node --env-file=.env db/scripts/fetch-game-images.js --lists-only  # Only games linked to yearly lists
  *
- * DATABASE_URL (or SUPABASE_DB_URL) must be set; see db/README.md.
+ * DATABASE_URL (or SUPABASE_DB_URL) must be set, and a non-local host additionally
+ * needs DB_SCRIPTS_ALLOW_REMOTE=1; see db/README.md.
  */
 
 const https = require('https');
 
 const { Client } = require('pg');
 
-const { connectionStringFromEnv } = require('./connection');
+const { resolveConnectionString } = require('./connection');
 
 const LISTS_ONLY = process.argv.includes('--lists-only');
 
@@ -100,7 +101,7 @@ async function sleep(ms) {
 
 async function main() {
   const client = new Client({
-    connectionString: connectionStringFromEnv(process.env),
+    connectionString: resolveConnectionString(process.env),
     ssl: { rejectUnauthorized: false },
   });
   await client.connect();

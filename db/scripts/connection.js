@@ -10,8 +10,8 @@
  * scripts/seed-e2e.ts refuses without its keys.
  *
  * Usage from a script:
- *   const { connectionStringFromEnv } = require('./connection');
- *   const client = new Client({ connectionString: connectionStringFromEnv(process.env) });
+ *   const { resolveConnectionString } = require('./connection');
+ *   const client = new Client({ connectionString: resolveConnectionString(process.env) });
  *
  * Load the variable from .env without exporting it:
  *   node --env-file=.env db/scripts/<script>.js
@@ -39,4 +39,44 @@ function connectionStringFromEnv(env) {
   );
 }
 
-module.exports = { connectionStringFromEnv, ENV_KEYS };
+const REMOTE_FLAG = 'DB_SCRIPTS_ALLOW_REMOTE';
+const LOCAL_HOST = /^(localhost|127\.0\.0\.1|\[::1\]|::1)$/i;
+
+/**
+ * Refuse a non-local target unless the operator says so explicitly.
+ *
+ * Mirror of scripts/seed-e2e.ts (E2E_SEED_ALLOW_REMOTE): every script in this
+ * directory WRITES — deletes list_items, rewrites view_count, inserts users —
+ * and until 2026-09-05 each pointed, unguarded, at the production pooler. A
+ * localhost / 127.0.0.1 / ::1 host needs no flag; anything else needs
+ * DB_SCRIPTS_ALLOW_REMOTE=1. Returns the connection string unchanged.
+ *
+ * @param {string} connectionString
+ * @param {Record<string, string | undefined>} env
+ * @returns {string}
+ */
+function assertTargetAllowed(connectionString, env) {
+  let host;
+  try {
+    host = new URL(connectionString).hostname;
+  } catch {
+    throw new Error('DATABASE_URL is not a parseable URL (expected a postgresql:// URL with user, password, host, port and database)');
+  }
+  if (LOCAL_HOST.test(host)) return connectionString;
+  if (env[REMOTE_FLAG] === '1') return connectionString;
+  throw new Error(
+    `Refusing to run against non-local database host "${host}". ` +
+      `These scripts write; if you mean it, set ${REMOTE_FLAG}=1.`,
+  );
+}
+
+/**
+ * The one call a script makes: read the URL from env, then apply the guard.
+ * @param {Record<string, string | undefined>} env
+ * @returns {string}
+ */
+function resolveConnectionString(env) {
+  return assertTargetAllowed(connectionStringFromEnv(env), env);
+}
+
+module.exports = { connectionStringFromEnv, assertTargetAllowed, resolveConnectionString, ENV_KEYS, REMOTE_FLAG };

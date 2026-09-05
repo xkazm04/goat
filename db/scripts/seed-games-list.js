@@ -11,12 +11,13 @@
  *
  * Usage:
  *   node --env-file=.env db/scripts/seed-games-list.js
- * DATABASE_URL (or SUPABASE_DB_URL) must be set; see db/README.md.
+ * DATABASE_URL (or SUPABASE_DB_URL) must be set, and a non-local host additionally
+ * needs DB_SCRIPTS_ALLOW_REMOTE=1; see db/README.md.
  */
 
 const { Client } = require('pg');
 
-const { connectionStringFromEnv } = require('./connection');
+const { resolveConnectionString } = require('./connection');
 
 const PARENT_LIST_ID = '06261cf8-c6a1-4117-8597-114924d81718';
 const OWNER_USER_ID = '4d1e9364-9f84-4a3b-996c-c584fcc81ebf'; // You - existing user
@@ -41,7 +42,7 @@ function getConsensusLevel(stdDev, totalRankings) {
 
 async function main() {
   const client = new Client({
-    connectionString: connectionStringFromEnv(process.env),
+    connectionString: resolveConnectionString(process.env),
     ssl: { rejectUnauthorized: false },
   });
   await client.connect();
