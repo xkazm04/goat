@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import {
+  AlertTriangle,
   Sparkles,
   Trophy,
   TrendingUp,
@@ -9,7 +10,8 @@ import {
   Calendar,
   ChevronRight,
   Copy,
-  Check
+  Check,
+  RefreshCw
 } from "lucide-react";
 import { useState } from "react";
 
@@ -37,39 +39,45 @@ export function TemplateGallery({ onSelectTemplate, onClose: _onClose }: Templat
   const [activeTab, setActiveTab] = useState<TabId>('starters');
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
 
-  // Fetch popular and trending lists for templates
-  const { data: popularLists = [], isLoading: loadingPopular } = useTopLists(
+  // Fetch popular and trending lists for templates.
+  //
+  // The whole query result is kept rather than destructured into
+  // `data = []`: that default made a FAILED request indistinguishable from an
+  // empty catalogue, and the gallery then rendered "No templates available /
+  // Check back soon!" over a network error. Render order below is
+  // load -> FAILED -> data -> empty, the same precedence `list-grid.tsx` and
+  // `SavedListsSection` already enforce in this repo.
+  const popularQuery = useTopLists(
     { limit: 8, sort: 'popular', type: 'top' },
     { enabled: activeTab === 'popular' }
   );
-  const { data: trendingLists = [], isLoading: loadingTrending } = useTopLists(
+  const trendingQuery = useTopLists(
     { limit: 8, sort: 'trending', type: 'top' },
     { enabled: activeTab === 'trending' }
   );
-  const { data: classicLists = [], isLoading: loadingClassics } = useTopLists(
+  const classicsQuery = useTopLists(
     { limit: 8, sort: 'latest', type: 'top' },
     { enabled: activeTab === 'classics' }
   );
 
+  // 'starters' is served from a constant and asks nothing, so it has no query
+  // and can neither load nor fail.
+  const activeQuery =
+    activeTab === 'popular'
+      ? popularQuery
+      : activeTab === 'trending'
+        ? trendingQuery
+        : activeTab === 'classics'
+          ? classicsQuery
+          : null;
+
   const getTemplatesForTab = (): ListTemplate[] => {
-    switch (activeTab) {
-      case 'starters':
-        return STARTER_TEMPLATES;
-      case 'popular':
-        return popularLists.map(topListToTemplate);
-      case 'trending':
-        return trendingLists.map(topListToTemplate);
-      case 'classics':
-        return classicLists.map(topListToTemplate);
-      default:
-        return [];
-    }
+    if (activeTab === 'starters') return STARTER_TEMPLATES;
+    return (activeQuery?.data ?? []).map(topListToTemplate);
   };
 
-  const isLoading =
-    (activeTab === 'popular' && loadingPopular) ||
-    (activeTab === 'trending' && loadingTrending) ||
-    (activeTab === 'classics' && loadingClassics);
+  const isLoading = activeQuery?.isLoading ?? false;
+  const loadFailed = !isLoading && !!activeQuery?.error;
 
   const templates = getTemplatesForTab();
 
@@ -153,6 +161,37 @@ export function TemplateGallery({ onSelectTemplate, onClose: _onClose }: Templat
                   />
                 </div>
               ))}
+            </motion.div>
+          ) : loadFailed ? (
+            /* FAILED, and strictly before the empty arm. The claim is about the
+               request ("we could not look"), never about the catalogue ("there
+               are none"), and the remedy offered is the one that can actually
+               help. */
+            <motion.div
+              key="failed"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex flex-col items-center justify-center py-12 text-center"
+              data-testid="template-gallery-error"
+              role="alert"
+              aria-live="assertive"
+            >
+              <AlertTriangle className="w-8 h-8 text-amber-400 mb-3" />
+              <p className="text-sm text-slate-300 mb-1">Couldn&apos;t load templates</p>
+              <p className="text-xs text-slate-500 mb-4">
+                The catalogue is still there — we just couldn&apos;t reach it right now.
+              </p>
+              <button
+                type="button"
+                onClick={() => activeQuery?.refetch()}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600
+                  rounded-card text-white text-xs transition-colors focus-ring"
+                data-testid="template-gallery-retry-btn"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                Try again
+              </button>
             </motion.div>
           ) : templates.length > 0 ? (
             <motion.div
