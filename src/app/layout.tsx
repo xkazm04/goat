@@ -1,7 +1,3 @@
-// Import dev CSS variable contract check (development only)
-if (process.env.NODE_ENV === 'development') {
-  import('./dev-css-var-check').then(mod => mod.checkCssVariableContract());
-}
 import './globals.css';
 import { Inter, Space_Grotesk } from 'next/font/google';
 
@@ -10,6 +6,8 @@ import { PageTransition } from '@/components/page-transition';
 import { ThemeProvider } from '@/components/theme/theme-provider';
 import { DeferredProviders } from '@/providers/DeferredProviders';
 import { QueryProvider } from '@/providers/query-provider';
+
+import { DevCssVarCheck } from './dev-css-var-check';
 
 import type { Metadata } from 'next';
 
@@ -122,6 +120,10 @@ export default function RootLayout({
                     </main>
                   </div>
                   <Toaster />
+                  {/* Design-token contract check: a client component, so it
+                      actually runs in a browser (this file is a server
+                      component and never does). Renders nothing; dev only. */}
+                  {process.env.NODE_ENV === 'development' ? <DevCssVarCheck /> : null}
               </DeferredProviders>
             </QueryProvider>
           </ThemeProvider>
