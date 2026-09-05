@@ -109,8 +109,14 @@ export type ResponseFormat = 'raw' | 'envelope' | 'paginated';
  * Only fixed paths are registered — dynamic paths like `/lists/:id` are not
  * matched and won't trigger assertions. Longest-prefix match is NOT used;
  * keys must be exact `"METHOD /path"` strings.
+ *
+ * Every key must name a route that exists under `src/app/api/` (the default
+ * base is `/api`); `client.contracts.test.ts` derives that check from the
+ * route files so this list cannot drift again. Four keys were removed on
+ * 2026-09-05 because nothing served them: `GET /top/items/trending`,
+ * `POST /top/research`, `POST /top/research/validate`, `GET /users/me`.
  */
-const API_RESPONSE_CONTRACTS = new Map<string, ResponseFormat>([
+export const API_RESPONSE_CONTRACTS = new Map<string, ResponseFormat>([
   // ── Envelope: { success: true, data: T } (auto-unwrapped by ApiClient) ──
   ['GET /collections',    'envelope'],
   ['POST /collections',   'envelope'],
@@ -124,7 +130,6 @@ const API_RESPONSE_CONTRACTS = new Map<string, ResponseFormat>([
   // ── Raw: T returned directly ──
   ['GET /top/groups',           'raw'],
   ['POST /top/groups',          'raw'],
-  ['GET /top/items/trending',   'raw'],
   ['GET /items/stats',          'raw'],
   ['GET /lists',                'raw'],
   ['POST /lists',               'raw'],
@@ -132,9 +137,6 @@ const API_RESPONSE_CONTRACTS = new Map<string, ResponseFormat>([
   ['GET /sync',                 'raw'],
   ['POST /sync',                'raw'],
   ['POST /consensus/submit',    'raw'],
-  ['POST /top/research',        'raw'],
-  ['POST /top/research/validate', 'raw'],
-  ['GET /users/me',             'raw'],
   ['GET /blueprints',           'raw'],
   ['POST /blueprints',          'raw'],
 ]);
