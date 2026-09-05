@@ -43,8 +43,8 @@ vi.mock('@/lib/offline/OfflinePersistence', async (importOriginal) => ({
 }));
 
 
-import { useBacklogStore } from './store';
-
+import { narrowRehydratedBacklogState, partializeBacklogState, useBacklogStore } from './store';
+import type { BacklogState, PendingChange } from './types';
 
 function group(id: string, items: BacklogItem[] = []): BacklogGroup {
   return {
@@ -97,6 +97,38 @@ describe('initializeGroups — loading state machine', () => {
     expect(s.groups[0].items).toHaveLength(1);
     expect(s.loadingProgress.isLoading).toBe(false);
     expect(s.enrichmentSources.active).toBe(false);
+  });
+});
+
+describe('persisted shape — rehydration narrowing', () => {
+  // A factory, not a shared literal: narrowRehydratedBacklogState mutates in place.
+  const syncing = (): BacklogState['syncDiagnostics'] => ({
+    totalQueued: 1, failedChanges: [], lastSuccessfulSync: 0, isSyncing: true, dataLossRisk: 'low',
+  });
+
+  it('isSyncing is never written to storage', () => {
+    const out = partializeBacklogState({ ...useBacklogStore.getState(), syncDiagnostics: syncing() });
+    expect(out.syncDiagnostics.isSyncing).toBe(false);
+    expect(out.syncDiagnostics.totalQueued).toBe(1);
+  });
+
+  it('isSyncing is cleared on rehydrate even if an older payload carried it', () => {
+    const rehydrated = { ...useBacklogStore.getState(), syncDiagnostics: syncing() } as BacklogState;
+    narrowRehydratedBacklogState(rehydrated);
+    expect(rehydrated.syncDiagnostics.isSyncing).toBe(false);
+  });
+
+  it('a rehydrated in-progress latch would otherwise block every sync (control)', async () => {
+    const change: PendingChange = { type: 'remove', groupId: 'g1', itemId: 'i1', timestamp: 1 };
+    useBacklogStore.setState({ pendingChanges: [change], syncDiagnostics: syncing() });
+    await useBacklogStore.getState().processPendingChanges();
+    expect(persistence.enqueue).not.toHaveBeenCalled(); // the latch, as persisted today, blocks
+
+    const state = useBacklogStore.getState() as BacklogState;
+    narrowRehydratedBacklogState(state);
+    useBacklogStore.setState({ syncDiagnostics: state.syncDiagnostics });
+    await useBacklogStore.getState().processPendingChanges();
+    expect(persistence.enqueue).toHaveBeenCalledTimes(1);
   });
 });
 
