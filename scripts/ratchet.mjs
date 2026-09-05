@@ -169,6 +169,19 @@ function countTypecheck() {
   } catch (err) {
     out = `${err.stdout ?? ''}${err.stderr ?? ''}`;
     if (!out) cannotRun('tsc produced no output', String(err.message).slice(0, 400));
+    // tsc exits non-zero for exactly one reason we accept as DATA: it reported
+    // diagnostics, and every one of them is a line matching /error TS\d+/. A
+    // non-zero exit with no such line is the process dying — out of memory, a
+    // missing binary, a crash in the compiler — and it used to be counted as
+    // ZERO errors, which is a pass. Measured 2026-09-05 with a stub tsc that
+    // wrote "heap out of memory" to stderr and exited 134: "1 buckets checked,
+    // 0 findings ... every bucket matches", exit 0.
+    if (!/error TS\d+/.test(out)) {
+      cannotRun(
+        `tsc exited ${err.status ?? 'non-zero'} without reporting a single diagnostic`,
+        `${out.trim().split(/\r?\n/)[0]?.slice(0, 300) ?? ''}\nThe compiler did not run to completion. Nothing was counted.`,
+      );
+    }
   }
   // Count per LINE so each error can be attributed to its file, then drop the
   // generated ones. `out.match(/error TS\d+/g)` counted every occurrence with no
