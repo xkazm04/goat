@@ -7,6 +7,15 @@
  * 3. list_items linking top 10 games to each list (for thumbnails + default ranking)
  * 4. Fetches Wikipedia images for all new items (with --with-images flag)
  *
+ * Re-runnable: items and lists are looked up by their natural key before any
+ * insert (see upsertGameItem / ensureYearList), and each list's list_items are
+ * rebuilt. Until 2026-09-05 the item upsert relied on
+ * `ON CONFLICT (name, category, subcategory)` with a NULL subcategory — NULLs
+ * are distinct under a plain UNIQUE constraint, so the clause never fired and
+ * every re-run inserted another ~630 rows — and the list insert used
+ * `ON CONFLICT DO NOTHING` with no unique constraint to conflict on, so every
+ * re-run created another 21 lists and the "already exists" branch was dead.
+ *
  * Usage:
  *   node --env-file=.env db/scripts/seed-yearly-games.js              # Insert data only
  *   node --env-file=.env db/scripts/seed-yearly-games.js --with-images # Insert data + fetch images
@@ -752,6 +761,67 @@ async function sleep(ms) {
 }
 
 // ---------------------------------------------------------------------------
+// Idempotent writes (registry: migrations / idempotent-steps — a guard must
+// look before it writes; a write that "conflicts" on a key that can never
+// match is a guard that always skips its own check)
+// ---------------------------------------------------------------------------
+
+/**
+ * Find-or-create one game item by its natural key
+ * (name, category = 'games', subcategory IS NULL). An existing row keeps its
+ * item_year unless it has none.
+ *
+ * @param {{ query: (sql: string, params?: unknown[]) => Promise<{ rows: any[] }> }} client
+ * @param {string} name
+ * @param {number} year
+ * @returns {Promise<{ id: string, created: boolean }>}
+ */
+async function upsertGameItem(client, name, year) {
+  const { rows: existing } = await client.query(
+    `SELECT id, item_year FROM items
+     WHERE name = $1 AND category = 'games' AND subcategory IS NULL
+     LIMIT 1`,
+    [name]
+  );
+  if (existing.length > 0) {
+    if (existing[0].item_year == null) {
+      await client.query(`UPDATE items SET item_year = $2 WHERE id = $1`, [existing[0].id, year]);
+    }
+    return { id: existing[0].id, created: false };
+  }
+  const { rows } = await client.query(
+    `INSERT INTO items (name, category, subcategory, item_year, image_url)
+     VALUES ($1, 'games', NULL, $2, NULL)
+     RETURNING id`,
+    [name, year]
+  );
+  return { id: rows[0].id, created: true };
+}
+
+/**
+ * Find-or-create the "Top 10 Games of <year>" list. `lists` has no unique
+ * constraint on title, so the lookup IS the guard.
+ *
+ * @param {{ query: (sql: string, params?: unknown[]) => Promise<{ rows: any[] }> }} client
+ * @param {{ title: string, ownerId: string, year: number, description: string }} list
+ * @returns {Promise<{ id: string, created: boolean }>}
+ */
+async function ensureYearList(client, { title, ownerId, year, description }) {
+  const { rows: existing } = await client.query(
+    `SELECT id FROM lists WHERE title = $1 AND category = 'games' AND type = 'top' LIMIT 1`,
+    [title]
+  );
+  if (existing.length > 0) return { id: existing[0].id, created: false };
+  const { rows } = await client.query(
+    `INSERT INTO lists (title, category, subcategory, user_id, predefined, size, time_period, type, description)
+     VALUES ($1, 'games', NULL, $2, true, 10, $3, 'top', $4)
+     RETURNING id`,
+    [title, ownerId, String(year), description]
+  );
+  return { id: rows[0].id, created: true };
+}
+
+// ---------------------------------------------------------------------------
 // MAIN
 // ---------------------------------------------------------------------------
 async function main() {
@@ -767,6 +837,7 @@ async function main() {
     console.log(`Seeding ${years.length} years: ${years[0]}–${years[years.length - 1]}`);
 
     let totalItemsInserted = 0;
+    let totalItemsExisting = 0;
     let totalListsCreated = 0;
     let totalListItems = 0;
 
@@ -774,60 +845,34 @@ async function main() {
       const games = GAMES_BY_YEAR[year];
       console.log(`\n--- ${year} (${games.length} games) ---`);
 
-      // 1. Upsert items
+      // 1. Find-or-create items
       const itemIds = []; // ordered: index 0 = rank 1
+      let createdHere = 0;
       for (const gameName of games) {
-        const { rows } = await client.query(
-          `INSERT INTO items (name, category, subcategory, item_year, image_url)
-           VALUES ($1, 'games', NULL, $2, NULL)
-           ON CONFLICT (name, category, subcategory)
-           DO UPDATE SET item_year = COALESCE(EXCLUDED.item_year, items.item_year)
-           RETURNING id`,
-          [gameName, year]
-        );
-        itemIds.push(rows[0].id);
+        const { id, created } = await upsertGameItem(client, gameName, year);
+        itemIds.push(id);
+        if (created) createdHere++;
       }
-      const newCount = itemIds.length;
-      totalItemsInserted += newCount;
-      console.log(`  Items upserted: ${newCount}`);
+      totalItemsInserted += createdHere;
+      totalItemsExisting += itemIds.length - createdHere;
+      console.log(`  Items: ${createdHere} inserted, ${itemIds.length - createdHere} already present`);
 
-      // 2. Create parent list for this year
+      // 2. Find-or-create the parent list for this year
       const listTitle = `Top 10 Games of ${year}`;
-      const { rows: listRows } = await client.query(
-        `INSERT INTO lists (title, category, subcategory, user_id, predefined, size, time_period, type, description)
-         VALUES ($1, 'games', NULL, $2, true, 10, $3, 'top', $4)
-         ON CONFLICT DO NOTHING
-         RETURNING id`,
-        [
-          listTitle,
-          OWNER_USER_ID,
-          String(year),
-          `Rank the 10 greatest games released in ${year}. Drag from the backlog to build your definitive list.`,
-        ]
-      );
-
-      let listId;
-      if (listRows.length > 0) {
-        listId = listRows[0].id;
+      const { id: listId, created: listCreated } = await ensureYearList(client, {
+        title: listTitle,
+        ownerId: OWNER_USER_ID,
+        year,
+        description: `Rank the 10 greatest games released in ${year}. Drag from the backlog to build your definitive list.`,
+      });
+      if (listCreated) {
         totalListsCreated++;
         console.log(`  List created: "${listTitle}" (${listId})`);
       } else {
-        // List already exists — fetch its id
-        const { rows: existing } = await client.query(
-          `SELECT id FROM lists WHERE title = $1 AND category = 'games' AND type = 'top' LIMIT 1`,
-          [listTitle]
-        );
-        if (existing.length > 0) {
-          listId = existing[0].id;
-          console.log(`  List already exists: "${listTitle}" (${listId})`);
-        } else {
-          console.error(`  ERROR: Could not create or find list "${listTitle}"`);
-          continue;
-        }
+        console.log(`  List already exists: "${listTitle}" (${listId})`);
       }
 
-      // 3. Insert list_items for top 10 (default consensus ranking)
-      // Clear existing list_items for this list first (idempotent re-runs)
+      // 3. Rebuild list_items for the top 10 (default consensus ranking)
       await client.query(`DELETE FROM list_items WHERE list_id = $1`, [listId]);
 
       for (let rank = 0; rank < Math.min(10, itemIds.length); rank++) {
@@ -842,7 +887,7 @@ async function main() {
     }
 
     console.log('\n=== PHASE 1 COMPLETE: Data Inserted ===');
-    console.log(`  Items upserted: ${totalItemsInserted}`);
+    console.log(`  Items inserted: ${totalItemsInserted} (already present: ${totalItemsExisting})`);
     console.log(`  Lists created: ${totalListsCreated}`);
     console.log(`  List items: ${totalListItems}`);
 
@@ -908,7 +953,11 @@ async function main() {
   }
 }
 
-main().catch((e) => {
-  console.error('SEED FAILED:', e.message, e.stack);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((e) => {
+    console.error('SEED FAILED:', e.message, e.stack);
+    process.exit(1);
+  });
+}
+
+module.exports = { GAMES_BY_YEAR, upsertGameItem, ensureYearList };
