@@ -40,22 +40,15 @@ import { e2eAllIds } from './seed-e2e-fixtures';
  * that id reported; restored. Re-run the same day against the prefix-aware
  * producer matcher with both `bogus-not-real` and `bogus-not-real-section-title`
  * — the second is the shape that matcher newly resolves — and both were
- * reported; restored.
+ * reported; restored. Third run the same day for the composed-request path: a
+ * `` getByTestId(`bogus-stem-${P}`) `` was reported as `bogus-stem-*`; restored.
  */
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const e2eDir = path.join(repoRoot, 'e2e');
 
 /** Test ids asked for by a spec that no component produces. Drains to []. */
-const KNOWN_MISSING: readonly string[] = [
-  'grid-item-image-1',
-  'grid-item-image-2',
-  'grid-item-title-1',
-  'grid-item-title-2',
-  'grid-slot-empty-1',
-  'match-grid-slot-1',
-  'match-grid-slot-2',
-];
+const KNOWN_MISSING: readonly string[] = [];
 
 /** Spec files that still parse a list id out of the index-bearing featured card test id. */
 const KNOWN_INDEX_DERIVATIONS: readonly string[] = [];
@@ -161,6 +154,13 @@ function requestedTestIds() {
     map.set(key, (map.get(key) ?? new Set()).add(file));
   for (const { rel, text } of specFiles) {
     for (const m of text.matchAll(/getByTestId\(\s*["'`]([^"'`$]+)["'`]/g)) add(exact, m[1], rel);
+    // `getByTestId(`drop-zone-wrapper-${position}`)` — a spec that composes the
+    // id from a constant is asking for a STEM, and used to be invisible here.
+    // drag-drop-ranking.spec.ts addresses the whole grid that way, so without
+    // this the register could drain to [] while checking none of it.
+    for (const m of text.matchAll(/getByTestId\(\s*`([^`]*?)\$\{/g)) {
+      if (m[1]) add(prefixes, m[1], rel);
+    }
     for (const m of text.matchAll(/data-testid(\^)?=\\?["']([^"'\\$]+)\\?["']/g)) {
       if (m[1]) add(prefixes, m[2], rel);
       else add(exact, m[2], rel);
