@@ -2,6 +2,8 @@
 // A Blueprint is a shareable list configuration that can be created by users,
 // shared via URL, stored in the database, and loaded dynamically
 
+import { parseHierarchySize } from './list-intent';
+
 
 // Color scheme for visual theming
 export interface BlueprintColor {
@@ -313,9 +315,9 @@ export interface LegacyShowcaseItem {
 }
 
 export function legacyShowcaseToBlueprint(item: LegacyShowcaseItem): Blueprint {
-  // Parse hierarchy like "Top 50" to get size
-  const sizeMatch = item.hierarchy.match(/\d+/);
-  const size = sizeMatch ? parseInt(sizeMatch[0], 10) : 50;
+  // Parse hierarchy like "Top 50" to get size — one implementation, shared
+  // with showcasePresetToIntent (see parseHierarchySize's header).
+  const size = parseHierarchySize(item.hierarchy, 50);
 
   return {
     id: `system-showcase-${item.id}`,

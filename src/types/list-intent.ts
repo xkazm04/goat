@@ -159,32 +159,23 @@ export function createListIntent(partial?: Partial<ListIntent>): ListIntent {
 }
 
 /**
- * Create a ListIntent from a preset (showcase card)
+ * Parse a list size out of a free-text hierarchy label ("Top 50", "50",
+ * "Top-50"). THE one implementation of this rule for src/types.
+ *
+ * `parseInt(label.replace('Top ', ''), 10)` — the shape this replaced — returns
+ * NaN for every label that is not exactly `Top <digits>`, and a NaN size then
+ * passes both client validators (`<` and `>` are false for NaN) and is rejected
+ * by the server's assertIntRange with a 400. This never returns NaN: a label
+ * carrying no digits yields the caller's fallback.
  */
-export interface PresetConfig {
-  category?: string;
-  subcategory?: string;
-  timePeriod?: ListIntentTimePeriod;
-  hierarchy?: string; // e.g., "Top 50"
-  title?: string;
-  color?: ListIntentColor;
-}
-
-export function createListIntentFromPreset(preset: PresetConfig): ListIntent {
-  const size = preset.hierarchy
-    ? parseInt(preset.hierarchy.replace('Top ', ''), 10)
-    : DEFAULT_LIST_INTENT.size;
-
-  return createListIntent({
-    category: preset.category ?? DEFAULT_LIST_INTENT.category,
-    subcategory: preset.subcategory,
-    timePeriod: preset.timePeriod ?? DEFAULT_LIST_INTENT.timePeriod,
-    size,
-    title: preset.title,
-    color: preset.color,
-    isPredefined: true,
-    source: 'preset',
-  });
+export function parseHierarchySize(
+  hierarchy: string | undefined | null,
+  fallback: number = DEFAULT_LIST_INTENT.size
+): number {
+  const digits = hierarchy?.match(/\d+/);
+  if (!digits) return fallback;
+  const size = parseInt(digits[0], 10);
+  return Number.isInteger(size) ? size : fallback;
 }
 
 // ============================================================================
