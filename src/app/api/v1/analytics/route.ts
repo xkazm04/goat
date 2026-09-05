@@ -41,8 +41,10 @@ export async function GET(request: NextRequest) {
 
   // Check if analytics feature is available
   if (!keyValidation.features.analytics) {
+    // No /pricing route exists in this app (src/app has no such segment), so
+    // the old "Upgrade at goat.app/pricing" sent a paying integrator to a 404.
     return apiError(
-      'Analytics requires Basic tier or higher. Upgrade at goat.app/pricing',
+      'Analytics requires the Basic tier or higher',
       403,
       'FEATURE_NOT_AVAILABLE'
     );

@@ -41,8 +41,10 @@ export async function GET(request: NextRequest) {
 
   // Check if trends feature is available
   if (!keyValidation.features.trends) {
+    // No /pricing route exists in this app (see analytics/route.ts); the old
+    // message pointed a 403'd caller at a 404.
     return apiError(
-      'Trends require Pro tier or higher. Upgrade at goat.app/pricing',
+      'Trends require the Pro tier or higher',
       403,
       'FEATURE_NOT_AVAILABLE'
     );
