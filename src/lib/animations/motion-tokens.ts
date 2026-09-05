@@ -5,8 +5,9 @@
  * Use these tokens instead of hardcoding delay/duration/spring values so
  * the entire app's kinetic feel can be tuned from one place.
  *
- * Complements the lower-level DURATION / EASING constants in
- * micro-interactions.ts and the SPRING presets in motion-presets.ts.
+ * Complements the lower-level DURATION / EASING constants and SPRING presets in
+ * motion-presets.ts (the one authority for the ladder; micro-interactions.ts
+ * only re-exports them).
  */
 
 import { DURATION } from './motion-presets';

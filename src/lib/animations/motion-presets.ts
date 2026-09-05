@@ -1,12 +1,18 @@
 /**
  * Shared Motion Presets
  *
- * Centralized spring/transition configs for consistent kinetic feel.
- * All Collection-context components should use these instead of
- * inventing their own spring parameters.
+ * The ONE authority for the app's duration ladder (DURATION), easing
+ * vocabulary (EASE / EASING) and spring presets (SPRING). Consumed app-wide —
+ * 132 modules across features, components and lib imported from here on
+ * 2026-09-05 — and
+ * re-exported by `./micro-interactions` and `./sharing` so their consumers
+ * read the same values. Components should use these instead of inventing
+ * their own spring parameters.
  *
- * Pair with useMotionCapabilities() from '@/hooks/use-motion-preference'
- * to respect the user's motion tier preference.
+ * Reduced motion: inside a component, pair with `useMotionPreference()` /
+ * `useMotionCapabilities()` from '@/hooks/use-motion-preference' (the 3-tier
+ * preference; `use-reduced-motion` is deprecated in favour of it). Outside a
+ * component, `prefersReducedMotion()` below is the non-hook read.
  */
 
 import type { Transition, Variant } from 'framer-motion';
