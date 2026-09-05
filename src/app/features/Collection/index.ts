@@ -33,7 +33,7 @@ export type { UseCollectionOptions, UseCollectionResult } from './hooks/useColle
 export { useIntersectionObserver } from './hooks/useIntersectionObserver';
 export type { UseIntersectionObserverOptions, UseIntersectionObserverResult } from './hooks/useIntersectionObserver';
 // Derived state hook for Collection-Grid relationship
-export { useVisibleCollectionItems, usePlacedItemIds, getPlacedItemIdsFromGrid } from './hooks/useVisibleCollectionItems';
+export { useVisibleCollectionItems } from './hooks/useVisibleCollectionItems';
 export type { UseVisibleCollectionItemsOptions, UseVisibleCollectionItemsResult, PlacementStats } from './hooks/useVisibleCollectionItems';
 
 // Utilities
