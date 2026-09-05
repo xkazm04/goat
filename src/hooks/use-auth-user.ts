@@ -30,6 +30,7 @@ export function useAuthUser() {
     user,
     session,
     isLoading: authLoading,
+    error: authError,
     signInWithOAuth,
     signOut: supabaseSignOut,
   } = useSupabaseAuth();
@@ -126,6 +127,13 @@ export function useAuthUser() {
     isGuest,
     /** True while auth state is being determined */
     isLoading: authLoading || !guestLoaded,
+    /**
+     * Non-null when the auth backend itself failed (client could not be built,
+     * getSession rejected). Distinct from `isGuest`: a guest CHOSE not to sign
+     * in; here the sign-in machinery is unavailable, and a surface that shows
+     * "sign in" as if it would work is misdirecting. (state-coverage)
+     */
+    authError,
     /** Trigger Google OAuth sign-in flow */
     signInWithGoogle,
     /** Sign out -- returns user to guest mode */

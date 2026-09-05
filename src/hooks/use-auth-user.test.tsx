@@ -20,7 +20,8 @@
  * NEGATIVE CONTROL (recorded 2026-09-05, scan-sweep auth-and-data-layer):
  * against the pre-fix hook, "surfaces a 200 whose body reports a table that
  * did not move" and "surfaces a non-2xx merge response" each saw 0 error
- * notifications.
+ * notifications, and "exposes the auth backend's error" saw `authError`
+ * undefined.
  */
 import React, { act, useEffect } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
@@ -181,5 +182,27 @@ describe('useAuthUser guest merge', () => {
     // ordering (29be9b16174e) is a separate decision; this test pins only that
     // the failure is no longer silent.
     expect(fake.upgraded).toEqual(['user-9']);
+  });
+});
+
+describe('useAuthUser backend failure state', () => {
+  it('exposes the auth backend\'s error so a surface can tell it from "guest"', async () => {
+    const boom = new Error('supabaseUrl is required');
+    fake.auth = { user: null, session: null, isLoading: false, error: boom };
+    await act(async () => {
+      root.render(<Caller />);
+    });
+    await flush();
+    expect(seen.value?.isAuthenticated).toBe(false);
+    expect(seen.value?.authError).toBe(boom);
+  });
+
+  it('reports no error on the ordinary guest path', async () => {
+    await act(async () => {
+      root.render(<Caller />);
+    });
+    await flush();
+    expect(seen.value?.isGuest).toBe(true);
+    expect(seen.value?.authError).toBeNull();
   });
 });
