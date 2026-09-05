@@ -56,9 +56,25 @@ export function useFeedbackPipeline<TData = unknown, TResult = unknown>(
   const resetTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const cachedResultRef = useRef<TResult | null>(null);
 
-  // Clear reset timeout on unmount
+  /**
+   * Which `execute` call owns the visible state.
+   *
+   * `execute` is not guarded against being called again while it is still
+   * running, and its awaited `operation` resolves in completion order, not in
+   * invocation order. So a fast second call finished, painted its result, and
+   * was then overwritten by a slow first call that the user had already
+   * superseded — a stale result presented as the current one, with no signal
+   * that it was stale. Each call takes a token; only the newest one may write
+   * state. Superseded work is discarded, not cancelled: the hook does not own
+   * the operation and cannot abort it.
+   */
+  const runIdRef = useRef(0);
+
+  // Clear reset timeout on unmount, and retire any run still in flight so a
+  // late resolution cannot set state on an unmounted hook.
   useEffect(() => {
     return () => {
+      runIdRef.current += 1;
       if (resetTimeoutRef.current) {
         clearTimeout(resetTimeoutRef.current);
       }
@@ -102,12 +118,19 @@ export function useFeedbackPipeline<TData = unknown, TResult = unknown>(
         return cachedResultRef.current;
       }
 
+      const runId = (runIdRef.current += 1);
+      const isCurrent = () => runIdRef.current === runId;
+
       try {
         setState('processing');
         setError(null);
         setProgress({ value: 0, indeterminate: true });
 
         const operationResult = await operation(data);
+
+        // A newer execute (or an unmount) has taken over: hand the caller its
+        // own result, but do not repaint the surface with it.
+        if (!isCurrent()) return operationResult;
 
         setResult(operationResult);
         if (cacheResult) {
@@ -127,6 +150,10 @@ export function useFeedbackPipeline<TData = unknown, TResult = unknown>(
         return operationResult;
       } catch (err) {
         const errorInstance = err instanceof Error ? err : new Error(String(err));
+        // A superseded run's failure must not overwrite the current run's
+        // state either — that is how a live surface flips to 'error' because
+        // an abandoned request died.
+        if (!isCurrent()) return null;
         setError(errorInstance);
         setState('error');
         setProgress(null);
