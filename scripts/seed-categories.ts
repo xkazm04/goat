@@ -14,6 +14,7 @@
  */
 
 import { createClient } from "@supabase/supabase-js";
+
 import { getGeminiClient, GEMINI_MODEL_FLASH } from "@/lib/providers/gemini-client";
 
 // ---------------------------------------------------------------------------
@@ -21,6 +22,11 @@ import { getGeminiClient, GEMINI_MODEL_FLASH } from "@/lib/providers/gemini-clie
 // ---------------------------------------------------------------------------
 
 const DRY_RUN = process.argv.includes("--dry-run");
+
+// `category` is a Postgres enum written in lowercase everywhere the app reads
+// it (12 `category: 'games'` sites in src/, and seed-e2e.ts — verified against
+// the live database on 2026-08-25). The first version wrote "Games".
+const CATEGORY_VALUE = "games";
 
 const CATEGORIES = [
   { name: "Best RPGs of All Time", subcategory: "RPG" },
@@ -377,48 +383,35 @@ async function seedCategory(
   console.log(`${tag} Enriching ${titles.length} items...`);
   const items = await enrichItems(titles);
 
-  // Step 3: Upsert category group
-  const groupSlug = category.name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-
+  // Step 3: Upsert category group.
+  // db/item_groups.sql declares NO slug column; the group's identity is the
+  // constraint unique_group_category (name, category, subcategory). The first
+  // version upserted on `slug`, which Postgres refuses outright, so every
+  // category logged "Failed to upsert group" and nothing was ever written
+  // (scripts/seed-conflict-targets.test.ts pins the target to the schema).
+  const groupRow = {
+    name: category.name,
+    category: CATEGORY_VALUE,
+    subcategory: category.subcategory,
+    description: `Top ${category.name.replace("Best ", "")} — ranked by the community`,
+  };
   const { data: groupData, error: groupError } = await supabase
     .from("item_groups")
-    .upsert(
-      {
-        name: category.name,
-        category: "Games",
-        subcategory: category.subcategory,
-        description: `Top ${category.name.replace("Best ", "")} — ranked by the community`,
-        slug: groupSlug,
-      },
-      { onConflict: "slug" }
-    )
+    .upsert(groupRow, { onConflict: "name,category,subcategory" })
     .select("id")
     .single();
 
-  if (groupError) {
-    // Try to fetch existing
-    const { data: existing } = await supabase
-      .from("item_groups")
-      .select("id")
-      .eq("slug", groupSlug)
-      .single();
-
-    if (!existing) {
-      console.error(`${tag} Failed to upsert group:`, groupError.message);
-      return { saved: 0, skipped: 0, total: titles.length };
-    }
-    var groupId = existing.id;
-  } else {
-    var groupId = groupData.id;
+  if (groupError || !groupData) {
+    console.error(`${tag} Failed to upsert group:`, groupError?.message ?? "no row returned");
+    return { saved: 0, skipped: 0, total: titles.length };
   }
+  const groupId = groupData.id as string;
 
   // Step 4: Upsert items
   const itemRows = items.map((item) => ({
     name: item.title,
-    category: "Games",
+    category: CATEGORY_VALUE,
+    subcategory: category.subcategory,
     group_id: groupId,
     description: null as string | null,
     image_url: item.imageUrl,
@@ -434,7 +427,7 @@ async function seedCategory(
     const batch = itemRows.slice(i, i + BATCH_SIZE);
     const { data, error } = await supabase
       .from("items")
-      .upsert(batch, { onConflict: "name,group_id", ignoreDuplicates: true })
+      .upsert(batch, { onConflict: "name,category,subcategory", ignoreDuplicates: true })
       .select("id");
 
     if (error) {
