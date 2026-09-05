@@ -1,6 +1,8 @@
+import { EventEmitter } from 'node:events';
+
 import { describe, expect, it } from 'vitest';
 
-import { GAMES_BY_YEAR, ensureYearList, upsertGameItem } from './seed-yearly-games';
+import { GAMES_BY_YEAR, ensureYearList, httpsGet, upsertGameItem } from './seed-yearly-games';
 
 /**
  * seed-yearly-games.js claims to be re-runnable. Before 2026-09-05 it was not:
@@ -105,5 +107,31 @@ describe('GAMES_BY_YEAR corpus', () => {
     expect(years).toEqual(Array.from({ length: 21 }, (_, i) => 2005 + i));
     const byYear = GAMES_BY_YEAR as Record<number, string[]>;
     for (const y of years) expect(byYear[y], String(y)).toHaveLength(30);
+  });
+});
+
+describe('httpsGet (Wikipedia fetcher)', () => {
+  /** A fake https.get: invokes the callback with a response emitter, then feeds it. */
+  function fakeGet(body: string) {
+    return (_url: string, _opts: unknown, cb: (res: EventEmitter) => void) => {
+      const res = new EventEmitter();
+      queueMicrotask(() => {
+        cb(res);
+        res.emit('data', body);
+        res.emit('end');
+      });
+      return new EventEmitter();
+    };
+  }
+
+  it('resolves parsed JSON', async () => {
+    await expect(httpsGet('https://x', fakeGet('{"ok":1}') as never)).resolves.toEqual({ ok: 1 });
+  });
+
+  it('a non-JSON body REJECTS the promise instead of throwing out of the event loop', async () => {
+    // Before the fix the parse ran inside the 'end' listener: the promise stayed
+    // pending forever and the throw became an uncaughtException (recorded
+    // 2026-09-05 against the pre-fix shape: `res.emit('end')` threw in the fake).
+    await expect(httpsGet('https://x', fakeGet('<html>rate limited</html>') as never)).rejects.toThrow(/non-JSON response from https:\/\/x/);
   });
 });

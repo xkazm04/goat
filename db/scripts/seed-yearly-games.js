@@ -714,14 +714,34 @@ const GAMES_BY_YEAR = {
 };
 
 // ---------------------------------------------------------------------------
-// Wikipedia image fetcher (mirrors src/lib/api/wiki-images.ts)
+// Wikipedia image fetcher (a third implementation beside
+// db/scripts/fetch-game-images.js and src/lib/api/wiki-images.ts — see
+// db/README.md)
 // ---------------------------------------------------------------------------
-function httpsGet(url) {
+
+/**
+ * GET a JSON document. A non-JSON body (Wikipedia's HTML error page, a
+ * truncated read) REJECTS; before 2026-09-05 `JSON.parse` ran inside the
+ * 'end' listener, so its throw left the promise pending and surfaced as an
+ * uncaught exception that killed the seed mid-phase-2 — after the database
+ * writes, outside every try/catch the callers had.
+ *
+ * @param {string} url
+ * @param {typeof https.get} [get] injectable for tests
+ * @returns {Promise<any>}
+ */
+function httpsGet(url, get = https.get) {
   return new Promise((resolve, reject) => {
-    https.get(url, { headers: { 'User-Agent': 'GOATSeeder/1.0' } }, (res) => {
+    get(url, { headers: { 'User-Agent': 'GOATSeeder/1.0' } }, (res) => {
       let data = '';
       res.on('data', (chunk) => (data += chunk));
-      res.on('end', () => resolve(JSON.parse(data)));
+      res.on('end', () => {
+        try {
+          resolve(JSON.parse(data));
+        } catch (e) {
+          reject(new Error(`non-JSON response from ${url}: ${e instanceof Error ? e.message : String(e)}`));
+        }
+      });
       res.on('error', reject);
     }).on('error', reject);
   });
@@ -960,4 +980,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { GAMES_BY_YEAR, upsertGameItem, ensureYearList };
+module.exports = { GAMES_BY_YEAR, upsertGameItem, ensureYearList, httpsGet };
