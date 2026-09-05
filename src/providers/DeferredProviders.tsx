@@ -24,9 +24,19 @@ const PrefetchProvider = dynamic(
 /**
  * DeferredProviders
  *
- * Wraps globally-needed non-critical providers (CommandPalette, Prefetch)
- * and defers their mounting until after the first paint. This reduces JS execution
- * on the critical rendering path, improving LCP and TTI.
+ * Mounts globally-needed non-critical providers (CommandPalette, Prefetch)
+ * after the first paint. This reduces JS execution on the critical rendering
+ * path, improving LCP and TTI.
+ *
+ * The deferred providers are rendered as a SIBLING of `children`, never as an
+ * ancestor. React remounts a subtree whenever an ancestor changes type, and
+ * `children` here is the whole app body from the root layout — so the earlier
+ * shape (`ready ? <Prefetch><Palette>{children}</Palette></Prefetch> : children`)
+ * unmounted and re-created every page one idle tick after it first painted:
+ * a blank flash while the deferred chunks loaded, every component's local
+ * state lost, every mount effect run twice. Both deferred providers provide no
+ * React context (they are side-effect-only and read zustand stores), so they
+ * do not need to wrap anything. Pinned by DeferredProviders.test.tsx.
  *
  * Match-specific providers (OfflineProvider, BacklogProvider, ItemDetailPopupProvider)
  * are scoped to the (match) route group layout instead.
@@ -54,15 +64,14 @@ export function DeferredProviders({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  if (!ready) {
-    return <>{children}</>;
-  }
-
   return (
-    <PrefetchProvider>
-      <CommandPaletteProvider>
-        {children}
-      </CommandPaletteProvider>
-    </PrefetchProvider>
+    <>
+      {children}
+      {ready && (
+        <PrefetchProvider>
+          <CommandPaletteProvider>{null}</CommandPaletteProvider>
+        </PrefetchProvider>
+      )}
+    </>
   );
 }
