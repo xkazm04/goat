@@ -15,6 +15,28 @@ import {
 } from './types';
 
 /**
+ * A list id is DATA. Every snippet below puts it into a slot with its own
+ * grammar — a URL path segment, an HTML attribute, a JS string literal, a
+ * shortcode attribute — and each slot gets the encoding that slot needs.
+ * Ids are UUIDs today; the guard is for the day they are not.
+ */
+// RFC 3986 strict: encodeURIComponent leaves !'()* alone, and a bare ")" is
+// exactly the byte that closes a markdown link.
+const encodePathSegment = (s: string): string =>
+  encodeURIComponent(s).replace(/[!'()*]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`);
+
+/** Token safe for an HTML id attribute AND a single-quoted JS string. */
+const elementToken = (s: string): string => encodeURIComponent(s).replace(/[^A-Za-z0-9_-]/g, '_');
+
+const escapeAttr = (s: string): string =>
+  s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+/**
  * Serialize config to URL parameters
  */
 function configToParams(config: WidgetConfig): URLSearchParams {
@@ -69,7 +91,7 @@ export function generateWidgetUrl(config: WidgetConfig): string {
  * Generate full ranking URL
  */
 export function generateFullUrl(listId: string): string {
-  return getShareUrl(listId);
+  return getShareUrl(encodePathSegment(listId));
 }
 
 /**
@@ -99,8 +121,9 @@ export function generateScriptEmbed(config: WidgetConfig): string {
   const baseUrl = getBaseUrl();
   const params = configToParams(config);
   const dimensions = WIDGET_DIMENSIONS[config.size];
+  const mount = `goat-widget-${elementToken(config.listId)}`;
 
-  return `<div id="goat-widget-${config.listId}" data-goat-widget></div>
+  return `<div id="${mount}" data-goat-widget></div>
 <script>
 (function() {
   var d = document;
@@ -110,7 +133,7 @@ export function generateScriptEmbed(config: WidgetConfig): string {
   s.dataset.config = '${params.toString()}';
   s.dataset.width = '${dimensions.width}';
   s.dataset.height = '${dimensions.height}';
-  d.getElementById('goat-widget-${config.listId}').appendChild(s);
+  d.getElementById('${mount}').appendChild(s);
 })();
 </script>`.trim();
 }
@@ -135,7 +158,7 @@ export function generateOEmbedUrl(config: WidgetConfig): string {
  */
 export function generateWordPressShortcode(config: WidgetConfig): string {
   const dimensions = WIDGET_DIMENSIONS[config.size];
-  return `[goat_ranking id="${config.listId}" width="${dimensions.width}" height="${dimensions.height}" theme="${config.theme}"]`;
+  return `[goat_ranking id="${escapeAttr(config.listId)}" width="${dimensions.width}" height="${dimensions.height}" theme="${config.theme}"]`;
 }
 
 /**
@@ -143,7 +166,7 @@ export function generateWordPressShortcode(config: WidgetConfig): string {
  */
 export function generateMarkdownEmbed(config: WidgetConfig): string {
   const fullUrl = generateFullUrl(config.listId);
-  return `[![GOAT Ranking](${getOGImageUrl(config.listId)})](${fullUrl})`;
+  return `[![GOAT Ranking](${getOGImageUrl(encodePathSegment(config.listId))})](${fullUrl})`;
 }
 
 /**
