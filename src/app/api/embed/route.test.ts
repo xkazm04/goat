@@ -41,7 +41,19 @@ describe('/api/embed config door', () => {
     expect((cta!.match(/https?:\/\//g) ?? []).length).toBe(1);
     expect(cta).toMatch(/^https?:\/\/[^/]+\/share\/list-1$/);
     // The click handler on interactive items opens the same URL.
-    const onclick = html.match(/window\.open\('([^']+)'/)?.[1];
+    const onclick = html.match(/window\.open\(&quot;([^&]+)&quot;/)?.[1];
     expect(onclick).toBe(cta);
+  });
+
+  it('never places the raw id inside the inline script or an attribute', async () => {
+    // A quote closes the JS string literal; </script> closes the block.
+    const payload = `x'</script><img src=x onerror=alert(1)>`;
+    const res = await get(`id=${encodeURIComponent(payload)}`);
+    expect(res.status).toBe(200);
+    const html = await res.text();
+    expect(html).not.toContain(payload);
+    expect(html).not.toContain('<img src=x onerror');
+    // The postMessage still carries the id, as a JSON literal.
+    expect(html).toContain(`listId: ${JSON.stringify(payload).replace(/</g, '\\u003c')}`);
   });
 });

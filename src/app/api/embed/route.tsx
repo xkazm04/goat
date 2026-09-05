@@ -151,9 +151,9 @@ function generateWidgetHTML(
   const itemsHTML = data.items
     .slice(0, config.itemCount)
     .map(item => `
-      <div class="goat-widget-item" ${config.interactive ? `onclick="window.open('${fullUrl}', '_blank')"` : ''}>
-        ${config.showRanks ? `<div class="goat-widget-rank">#${item.rank}</div>` : ''}
-        ${config.showImages && item.imageUrl ? `<img class="goat-widget-image" src="${item.imageUrl}" alt="${item.title}" loading="lazy" />` : ''}
+      <div class="goat-widget-item" ${config.interactive ? `onclick="window.open(${escapeHtml(jsString(fullUrl))}, '_blank')"` : ''}>
+        ${config.showRanks ? `<div class="goat-widget-rank">#${Number(item.rank)}</div>` : ''}
+        ${config.showImages && item.imageUrl ? `<img class="goat-widget-image" src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.title)}" loading="lazy" />` : ''}
         <div class="goat-widget-info">
           <div class="goat-widget-item-title">${escapeHtml(item.title)}</div>
           ${item.subtitle ? `<div class="goat-widget-item-subtitle">${escapeHtml(item.subtitle)}</div>` : ''}
@@ -393,11 +393,11 @@ ${prefersColorSchemeBlock(config)}
     </div>
 
     <div class="goat-widget-footer">
-      <a href="${fullUrl}" target="_blank" rel="noopener" class="goat-widget-cta">
+      <a href="${escapeHtml(fullUrl)}" target="_blank" rel="noopener" class="goat-widget-cta">
         View Full Ranking &rarr;
       </a>
       ${config.showBranding ? `
-      <a href="${baseUrl}" target="_blank" rel="noopener" class="goat-widget-branding">
+      <a href="${escapeHtml(baseUrl)}" target="_blank" rel="noopener" class="goat-widget-branding">
         Powered by GOAT
       </a>
       ` : ''}
@@ -407,12 +407,23 @@ ${prefersColorSchemeBlock(config)}
   <script>
     // Send ready message to parent
     if (window.parent !== window) {
-      window.parent.postMessage({ type: 'ready', listId: '${config.listId}' }, '*');
+      window.parent.postMessage({ type: 'ready', listId: ${jsString(config.listId)} }, '*');
     }
 
   </script>
 </body>
 </html>`;
+}
+
+/**
+ * A value that lands inside an inline <script> or an event handler is a JS
+ * string literal, not HTML: JSON.stringify closes the quote problem and the
+ * `<` escape closes the `</script>` one. `?id=` is caller-controlled and, before
+ * 2026-09-05, was interpolated raw into both — a reflected XSS on a route that
+ * is served with `frame-ancestors *` and cached for an hour.
+ */
+function jsString(value: string): string {
+  return JSON.stringify(value).replace(/</g, '\\u003c');
 }
 
 /**
