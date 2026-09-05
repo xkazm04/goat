@@ -9,9 +9,7 @@
 export {
   type TransferableItem,
   type TransferResult,
-  type TransferContext,
 
-  GRID_ID_PREFIX,
   extractGridPosition,
   createGridReceiverId,
   isGridReceiverId,
