@@ -12,7 +12,6 @@ import {
 import Link from "next/link";
 import { memo, useState, useCallback, useRef, useEffect } from "react";
 
-import { useUserCollections } from "@/hooks/use-collections";
 import { DURATION } from '@/lib/animations/motion-presets';
 import {
   useCollections,
@@ -41,8 +40,10 @@ export const QuickCollectionSwitcher = memo(function QuickCollectionSwitcher({
   );
   const { setSelectedCollection } = useCollectionActions();
 
-  // Fetch collections if not already loaded
-  useUserCollections();
+  // The collections come from the store; whoever hosts this switcher owns the
+  // fetch (CollectionsDashboard asks with include_stats). Fetching here too
+  // shared the dashboard's query key with different params and raced it for
+  // what landed in the store.
 
   // Close dropdown when clicking outside
   useEffect(() => {

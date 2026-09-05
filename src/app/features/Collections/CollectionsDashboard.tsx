@@ -16,6 +16,7 @@ import { AddListModal } from "./components/AddListModal";
 import { CollectionManager } from "./components/CollectionManager";
 import { CollectionSidebar } from "./components/CollectionSidebar";
 import { CollectionView } from "./components/CollectionView";
+import { QuickCollectionSwitcher } from "./components/QuickCollectionSwitcher";
 
 import type {
   ListCollection,
@@ -234,8 +235,10 @@ export const CollectionsDashboard = memo(function CollectionsDashboard({
 
   return (
     <div className={`flex h-[calc(100vh-4rem)] ${className}`}>
-      {/* Sidebar */}
-      <div className="w-64 shrink-0">
+      {/* Sidebar — desktop only. At 375px a fixed 256px column plus the view's
+          48px of padding left 71px for the lists themselves; below `md` the
+          switcher in the content header takes over collection navigation. */}
+      <div className="hidden md:block w-64 shrink-0">
         <CollectionSidebar
           selectedCollectionId={selectedCollectionId}
           onSelectCollection={handleSelectCollection}
@@ -248,26 +251,31 @@ export const CollectionsDashboard = memo(function CollectionsDashboard({
       </div>
 
       {/* Main content */}
-      <CollectionView
-        collection={selectedCollection}
-        lists={listsInCollection}
-        isLoading={isLoading}
-        loadFailed={isError}
-        onRetry={handleRetryLoad}
-        onRemoveList={selectedCollection ? handleRemoveListFromCollection : undefined}
-        onReorderLists={selectedCollection ? handleReorderLists : undefined}
-        onAddList={selectedCollection ? handleOpenAddList : undefined}
-        stats={
-          selectedCollection
-            ? {
-                listCount: selectedCollection.listIds.length,
-                totalItems: 0,
-                completedLists: 0,
-                lastActivity: selectedCollection.updatedAt,
-              }
-            : undefined
-        }
-      />
+      <div className="flex-1 min-w-0 flex flex-col">
+        <div className="md:hidden px-6 pt-4" data-testid="mobile-collection-nav">
+          <QuickCollectionSwitcher onCreateCollection={handleCreateCollection} />
+        </div>
+        <CollectionView
+          collection={selectedCollection}
+          lists={listsInCollection}
+          isLoading={isLoading}
+          loadFailed={isError}
+          onRetry={handleRetryLoad}
+          onRemoveList={selectedCollection ? handleRemoveListFromCollection : undefined}
+          onReorderLists={selectedCollection ? handleReorderLists : undefined}
+          onAddList={selectedCollection ? handleOpenAddList : undefined}
+          stats={
+            selectedCollection
+              ? {
+                  listCount: selectedCollection.listIds.length,
+                  totalItems: 0,
+                  completedLists: 0,
+                  lastActivity: selectedCollection.updatedAt,
+                }
+              : undefined
+          }
+        />
+      </div>
 
       {/* Collection Manager Modal */}
       <CollectionManager

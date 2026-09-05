@@ -21,6 +21,8 @@
  *    read "This collection is empty".
  *  - "a sidebar row is a keyboard destination": the row was a div with no
  *    role or tab stop; Enter on it selected nothing.
+ *  - "below md the sidebar yields to the switcher": the sidebar column had no
+ *    responsive class and no switcher rendered anywhere (0 consumers).
  */
 import React, { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
@@ -228,5 +230,23 @@ describe('CollectionsDashboard — keyboard reach', () => {
       row.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
     });
     expect(fake.actions.setSelectedCollection).toHaveBeenCalledWith('a');
+  });
+});
+
+describe('CollectionsDashboard — narrow viewports', () => {
+  it('below md the sidebar yields to the quick switcher', async () => {
+    await render(<CollectionsDashboard />);
+    const sidebarColumn = host.querySelector('.w-64');
+    expect(sidebarColumn?.className.split(' ')).toEqual(expect.arrayContaining(['hidden', 'md:block']));
+
+    const mobileNav = host.querySelector('[data-testid="mobile-collection-nav"]');
+    expect(mobileNav?.className.split(' ')).toContain('md:hidden');
+    // The switcher's trigger names the current selection; "All Lists" when none.
+    expect(mobileNav?.textContent).toContain('All Lists');
+
+    await click(mobileNav?.querySelector('button') ?? undefined);
+    // Option text is the name followed by its list count ("Beta0").
+    await click(buttons().filter((b) => b.textContent?.startsWith('Beta')).at(-1));
+    expect(fake.actions.setSelectedCollection).toHaveBeenCalledWith('b');
   });
 });
