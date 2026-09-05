@@ -1693,15 +1693,11 @@ layer(base);
       animation: none;
     }
   }
-
-  @keyframes ambient-shimmer {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(300%); }
-  }
-
-  .animate-ambient-shimmer {
-    animation: ambient-shimmer 2s ease-in-out infinite;
-  }
+  /* `animate-ambient-shimmer` and its keyframes are authored ONCE, in the
+     ambient-effects pool above (@utility animate-ambient-shimmer). A second
+     copy used to live here with different keyframes (a translateX sweep) and,
+     being later in the file, silently won for every consumer. Do not re-add;
+     src/app/globals-authority.test.ts fails on a second unconditional author. */
 }
 
 /* ===== LIVING DESIGN TOKENS — RANKING PROGRESS SYSTEM ===== */
