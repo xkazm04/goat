@@ -391,7 +391,18 @@ if (UPDATE) {
       filesWalked,
       minFilesWalked: Math.floor((filesWalked ?? 200) * 0.8),
     },
-    buckets: Object.fromEntries(Object.entries(measured).sort(([a], [b]) => a.localeCompare(b))),
+    // A bucket measured at 0 is not written. Check mode reads a missing bucket
+    // as 0 (`buckets[key] ?? 0`), so a rise from 0 still fails; what changes is
+    // that the file no longer carries a bucket that has graduated. eslint rules
+    // at 0 were always absent (eslint reports no zero counts); typecheck:errors
+    // was re-added at 0 on every --update even after its promotion trigger had
+    // been followed (measured 2026-09-05), contradicting the deletion CLAUDE.md
+    // records. One rule for every family: zero means the ban has taken over.
+    buckets: Object.fromEntries(
+      Object.entries(measured)
+        .filter(([, n]) => n > 0)
+        .sort(([a], [b]) => a.localeCompare(b)),
+    ),
   };
   writeFileSync(BASELINE_PATH, `${JSON.stringify(next, null, 2)}\n`);
   const total = Object.values(next.buckets).reduce((a, b) => a + b, 0);
@@ -399,6 +410,33 @@ if (UPDATE) {
     `[ratchet] baseline written: ${Object.keys(next.buckets).length} buckets, ` +
       `${total} findings, ${filesWalked} files walked.`,
   );
+
+  // The baseline is the metric's audit log, so a re-baseline must SAY what it
+  // did to the bucket SET, not only to the counts. An eslint rule that reached
+  // 0 simply stops appearing in `measured` and was deleted from the file with
+  // no line of output — measured 2026-09-05: three buckets vanished from one
+  // --update and the operator found out by diffing the JSON. A vanished bucket
+  // is the graduation moment (ratchet-design: a ratchet at zero becomes a ban),
+  // and the moment must be announced where the human is looking.
+  const before = baseline.buckets ?? {};
+  const vanished = Object.keys(before).filter((k) => !(k in next.buckets));
+  const added = Object.keys(next.buckets).filter((k) => !(k in before));
+  for (const k of vanished) {
+    console.log(`[ratchet] bucket REMOVED  ${k}: ${before[k]} -> 0 (a rise from 0 still fails the check)`);
+  }
+  for (const k of added) {
+    console.log(`[ratchet] bucket ADDED    ${k}: (absent) -> ${next.buckets[k]}`);
+  }
+  if (vanished.length) {
+    console.log("[ratchet] GRADUATION due: a bucket at 0 is a ban wearing a ratchet's clothes.");
+    for (const k of vanished) {
+      console.log(
+        k.startsWith('eslint:')
+          ? `[ratchet]   ${k} -> promote the rule to "error" in eslint.config.mjs`
+          : `[ratchet]   ${k} -> follow its written promotion trigger (see .github/workflows/gates.yml)`,
+      );
+    }
+  }
   console.log('[ratchet] Say in the commit message why each number moved.');
   process.exit(EXIT_OK);
 }
