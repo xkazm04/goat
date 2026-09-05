@@ -25,6 +25,8 @@ interface CollectionManagerProps {
   parentCollections?: ListCollection[];
   onSave: (data: CreateCollectionRequest | UpdateCollectionRequest) => Promise<void>;
   onDelete?: (collection: ListCollection) => Promise<void>;
+  /** Open directly on the delete confirmation (the sidebar's Delete entry). */
+  confirmDeleteOnOpen?: boolean;
 }
 
 const PRESET_COLORS = [
@@ -79,6 +81,7 @@ function CollectionManagerDialog({
   parentCollections = [],
   onSave,
   onDelete,
+  confirmDeleteOnOpen = false,
 }: Omit<CollectionManagerProps, "isOpen">) {
   const { allowTransitions } = useMotionCapabilities();
   const isEdit = !!collection;
@@ -91,7 +94,9 @@ function CollectionManagerDialog({
   const [isPublic, setIsPublic] = useState(collection?.isPublic || false);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(
+    confirmDeleteOnOpen && isEdit && !!onDelete
+  );
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = useCallback(async () => {

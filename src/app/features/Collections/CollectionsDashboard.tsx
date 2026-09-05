@@ -52,6 +52,9 @@ export const CollectionsDashboard = memo(function CollectionsDashboard({
   const [isAddListOpen, setIsAddListOpen] = useState(false);
   const [editingCollection, setEditingCollection] =
     useState<ListCollection | null>(null);
+  // Set when the delete was requested from the sidebar menu: the dialog opens
+  // straight on its confirmation step instead of the edit form.
+  const [deleteRequested, setDeleteRequested] = useState(false);
 
   // Get selected collection
   const selectedCollection = selectedCollectionId
@@ -91,19 +94,27 @@ export const CollectionsDashboard = memo(function CollectionsDashboard({
     setIsManagerOpen(true);
   }, []);
 
+  // Deleting is irreversible, so BOTH doors to it go through the dialog's
+  // "Are you sure?" step: the dialog's own footer, and the sidebar menu, which
+  // used to call `remove` directly with no confirmation. The rejection is NOT
+  // caught here any more — useDeleteCollection raises no notification of its
+  // own, and this wrapper's catch used to resolve, so the dialog read a failed
+  // delete as success and closed over a collection that still existed.
   const handleDeleteCollection = useCallback(
     async (collection: ListCollection) => {
-      try {
-        await remove({ collectionId: collection.id });
-        if (selectedCollectionId === collection.id) {
-          setSelectedCollection(null);
-        }
-      } catch (error) {
-        console.error("Failed to delete collection:", error);
+      await remove({ collectionId: collection.id });
+      if (selectedCollectionId === collection.id) {
+        setSelectedCollection(null);
       }
     },
     [remove, selectedCollectionId, setSelectedCollection]
   );
+
+  const handleRequestDeleteCollection = useCallback((collection: ListCollection) => {
+    setEditingCollection(collection);
+    setDeleteRequested(true);
+    setIsManagerOpen(true);
+  }, []);
 
   const handleSaveCollection = useCallback(
     async (data: CreateCollectionRequest | UpdateCollectionRequest) => {
@@ -122,6 +133,7 @@ export const CollectionsDashboard = memo(function CollectionsDashboard({
   const handleCloseManager = useCallback(() => {
     setIsManagerOpen(false);
     setEditingCollection(null);
+    setDeleteRequested(false);
   }, []);
 
   // Remove a list from the selected collection. Previously CollectionView was
@@ -207,7 +219,7 @@ export const CollectionsDashboard = memo(function CollectionsDashboard({
           onSelectCollection={handleSelectCollection}
           onCreateCollection={handleCreateCollection}
           onEditCollection={handleEditCollection}
-          onDeleteCollection={handleDeleteCollection}
+          onDeleteCollection={handleRequestDeleteCollection}
         />
       </div>
 
@@ -239,6 +251,7 @@ export const CollectionsDashboard = memo(function CollectionsDashboard({
         parentCollections={collections.filter((c) => !c.parentId)}
         onSave={handleSaveCollection}
         onDelete={editingCollection ? handleDeleteCollection : undefined}
+        confirmDeleteOnOpen={deleteRequested}
       />
 
       {/* Add-List Picker Modal */}

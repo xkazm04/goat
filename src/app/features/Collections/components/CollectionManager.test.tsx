@@ -18,13 +18,13 @@ import React, { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { CollectionManager } from './CollectionManager';
+
 import type { ListCollection } from '@/types/collection';
 
 vi.mock('@/hooks/use-motion-preference', () => ({
   useMotionCapabilities: () => ({ allowTransitions: false, allowAmbient: false }),
 }));
-
-import { CollectionManager } from './CollectionManager';
 
 const collection = (over: Partial<ListCollection>): ListCollection => ({
   id: 'c',
@@ -95,5 +95,28 @@ describe('CollectionManager form state follows the collection it is opened for',
     expect(heading()).toBe('New Collection');
     expect(nameInput()?.value).toBe('');
     expect(host.textContent).toContain('Only you can see this collection');
+  });
+
+  it('opens straight on the confirmation step when the delete was requested elsewhere', async () => {
+    const onDelete = vi.fn(async () => {});
+    await render(
+      <CollectionManager isOpen collection={alpha} onClose={noop} onSave={noop} onDelete={onDelete} confirmDeleteOnOpen />
+    );
+    expect(host.textContent).toContain('Are you sure?');
+    expect(onDelete).not.toHaveBeenCalled();
+  });
+
+  it('a rejected delete stays open and says so, instead of closing over the surviving collection', async () => {
+    const onClose = vi.fn();
+    const onDelete = vi.fn(async () => { throw new Error('server said no'); });
+    await render(
+      <CollectionManager isOpen collection={alpha} onClose={onClose} onSave={noop} onDelete={onDelete} confirmDeleteOnOpen />
+    );
+    const confirm = Array.from(host.querySelectorAll('button')).find((b) => b.textContent === 'Delete');
+    expect(confirm).toBeDefined();
+    await act(async () => confirm!.click());
+    expect(onDelete).toHaveBeenCalledTimes(1);
+    expect(onClose).not.toHaveBeenCalled();
+    expect(host.textContent).toContain('server said no');
   });
 });
