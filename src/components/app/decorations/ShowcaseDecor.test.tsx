@@ -6,9 +6,11 @@ import ShowcaseDecor from './ShowcaseDecor';
 /**
  * Render contract for the landing hero's decorative background layer.
  *
- * Negative control (recorded 2026-09-05, before the fix this pins): with
- * `alt="GOAT Background"` the alt assertion failed on the literal
- * `alt="GOAT Background"`. Red-then-green.
+ * Negative controls (recorded 2026-09-05, before the fixes these pin): with
+ * `alt="GOAT Background"` the alt assertion failed on that literal; with
+ * `priority` set, the markup opened with `<link rel="preload" as="image"
+ * imageSrcSet="/_next/image?url=%2Fgoat.png…"` and the preload assertion
+ * failed on it. Both red-then-green.
  */
 describe('ShowcaseDecor', () => {
   const html = renderToStaticMarkup(<ShowcaseDecor />);
@@ -24,4 +26,12 @@ describe('ShowcaseDecor', () => {
     expect(layers.length).toBeGreaterThanOrEqual(2);
   });
 
+  it('does not preload the 1 MB watermark ahead of the page content', () => {
+    // `priority` on next/image hoists a <link rel="preload" as="image"> for
+    // public/goat.png (1,063,718 bytes) to the head of the landing response,
+    // competing with the text and lists for a layer painted at opacity 0.05
+    // behind a 5-second fade.
+    expect(html).not.toMatch(/<link[^>]*rel="preload"/);
+    expect(html).not.toMatch(/fetchpriority="high"/i);
+  });
 });

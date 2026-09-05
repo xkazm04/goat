@@ -41,7 +41,12 @@ const ShowcaseDecor = ({ shouldAnimate = true }: ShowcaseDecorProps) => {
                         objectPosition: "left center",
                         transform: "translateX(-20%)"
                     }}
-                    priority
+                    // Deliberately NOT `priority`: that emits a <link rel="preload">
+                    // for public/goat.png (1,063,718 bytes, served unoptimized) at
+                    // the top of the landing response, ahead of the text and lists
+                    // the visitor came for. The watermark paints at opacity 0.05
+                    // behind a 5-second fade, so the browser's default scheduling
+                    // costs nothing visible.
                 />
             </motion.div>
 
