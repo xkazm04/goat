@@ -237,7 +237,10 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   const totalItems = useMemo(() => {
     if (query.trim()) {
       if (isCreateCommand) {
-        return createSuggestions.length + 1;
+        // Only the suggestion rows are rendered in create mode; the "+1 create
+        // row" the other branches count does not exist here, and counting it let
+        // ArrowDown highlight a row nobody could see.
+        return Math.max(createSuggestions.length, 1);
       }
       if (useApiSearch) {
         return apiResults.length + 1; // +1 for create new option
@@ -411,7 +414,11 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
 
         if (query.trim()) {
           if (isCreateCommand) {
-            handleCreateList();
+            // Enter creates the HIGHLIGHTED suggestion — the same list a click
+            // on that row creates. With no suggestion under the cursor it falls
+            // back to the raw query, exactly as handleCreateList does for a click
+            // on the footer button.
+            handleCreateList(createSuggestions[selectedIndex]);
           } else if (useApiSearch && apiResults.length > 0 && selectedIndex < apiResults.length) {
             handleNavigateToResult(apiResults[selectedIndex]);
           } else if (!useApiSearch && filteredLists.length > 0 && selectedIndex < filteredLists.length) {
