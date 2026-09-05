@@ -58,9 +58,9 @@ export function hasRankingEvidence<T extends { totalRankings: number }>(
   return !!stats && stats.totalRankings > 0;
 }
 
-export type VolatilityLevel = 'stable' | 'moderate' | 'contested' | 'polarizing';
+type VolatilityLevel = 'stable' | 'moderate' | 'contested' | 'polarizing';
 
-export interface VolatilityInfo {
+interface VolatilityInfo {
   level: VolatilityLevel;
   /** The one label every surface shows for this band. */
   label: string;
