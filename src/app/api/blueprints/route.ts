@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 
+import { DEFAULT_LIST_COLOR } from '@/lib/config/category-config';
 import {
   withErrorHandler,
   fromSupabaseError,
@@ -23,10 +24,19 @@ import {
 // Force dynamic rendering for this route since it uses cookies
 export const dynamic = 'force-dynamic';
 
-import { DEFAULT_LIST_COLOR } from '@/lib/config/category-config';
-
 // Default color for blueprints
 const DEFAULT_COLOR = DEFAULT_LIST_COLOR;
+
+const DEFAULT_LIMIT = 50;
+const MAX_LIMIT = 100;
+const MAX_OFFSET = 100_000;
+
+/** Integer query parameter with a floor, a ceiling and a fallback for garbage. */
+function clampInt(raw: string | null, fallback: number, min: number, max: number): number {
+  const n = raw === null ? NaN : parseInt(raw, 10);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, n));
+}
 
 // GET /api/blueprints - Get blueprints with optional filters
 export const GET = withErrorHandler(async (request: NextRequest) => {
@@ -41,8 +51,10 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
   const isCommunity = searchParams.get('is_community');
   const search = searchParams.get('search');
   const slug = searchParams.get('slug');
-  const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 50;
-  const offset = searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : 0;
+  // Bounded before PostgREST sees them: `?limit=abc` used to reach
+  // `.range(0, NaN)` and `?limit=100000` asked for that many rows.
+  const limit = clampInt(searchParams.get('limit'), DEFAULT_LIMIT, 1, MAX_LIMIT);
+  const offset = clampInt(searchParams.get('offset'), 0, 0, MAX_OFFSET);
   const sort = searchParams.get('sort') || 'recent';
 
   // Build query
