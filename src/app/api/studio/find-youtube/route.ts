@@ -14,6 +14,7 @@ import {
   StudioErrorCodes,
 } from '@/lib/api/studio-utils';
 import { getGeminiClient, GEMINI_MODEL_PRIMARY } from '@/lib/providers/gemini-client';
+import { emitLightTrackEvent, sanitizeForTelemetry, usageFromGeminiMetadata } from '@/lib/telemetry/lighttrack';
 import { extractYouTubeId } from '@/lib/youtube';
 
 export const dynamic = 'force-dynamic';
@@ -95,15 +96,36 @@ If no suitable video is found, respond with:
 }`;
 
     const geminiStart = performance.now();
-    const response = await ai.models.generateContent({
-      model: GEMINI_MODEL_PRIMARY,
-      contents: prompt,
-      config: {
-        tools: [{ googleSearch: {} }],
-        responseMimeType: 'application/json',
-        responseJsonSchema: GEMINI_RESPONSE_SCHEMA,
-      },
-    });
+    let response;
+    try {
+      response = await ai.models.generateContent({
+        model: GEMINI_MODEL_PRIMARY,
+        contents: prompt,
+        config: {
+          tools: [{ googleSearch: {} }],
+          responseMimeType: 'application/json',
+          responseJsonSchema: GEMINI_RESPONSE_SCHEMA,
+        },
+      });
+      emitLightTrackEvent({
+        name: 'studio.find_youtube_video',
+        provider: 'google',
+        model: GEMINI_MODEL_PRIMARY,
+        status: 'success',
+        usage: usageFromGeminiMetadata(response.usageMetadata),
+        latencyMs: performance.now() - geminiStart,
+      });
+    } catch (err) {
+      emitLightTrackEvent({
+        name: 'studio.find_youtube_video',
+        provider: 'google',
+        model: GEMINI_MODEL_PRIMARY,
+        status: 'error',
+        latencyMs: performance.now() - geminiStart,
+        error: sanitizeForTelemetry(err instanceof Error ? err.message : String(err)),
+      });
+      throw err;
+    }
     const geminiMs = Math.round(performance.now() - geminiStart);
 
     const responseText = stripCodeFences(response.text || '{}') || '{}';

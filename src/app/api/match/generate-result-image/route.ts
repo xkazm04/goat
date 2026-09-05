@@ -14,6 +14,7 @@ import {
   type ColorHarmony,
 } from '@/lib/image-gen';
 import { GEMINI_MODEL_REST } from '@/lib/providers/gemini-client';
+import { emitLightTrackEvent, sanitizeForTelemetry, usageFromGeminiMetadata } from '@/lib/telemetry/lighttrack';
 import { GridItemType } from '@/types/match';
 
 interface GenerateImageRequest {
@@ -125,6 +126,7 @@ export async function POST(request: NextRequest) {
     const prompt = buildImagePrompt(matchedItems, listMetadata, style, composition);
 
     // Call Gemini Flash API
+    const geminiCallStart = performance.now();
     const geminiResponse = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL_REST}:generateContent?key=${apiKey}`,
       {
@@ -151,10 +153,22 @@ export async function POST(request: NextRequest) {
         }),
       }
     );
+    const geminiCallMs = performance.now() - geminiCallStart;
 
     if (!geminiResponse.ok) {
       const errorData = await geminiResponse.text();
       console.error('Gemini API error:', errorData);
+      // Sanitize before it ever reaches telemetry — the raw REST error body
+      // can echo request details, so it goes through the same auth-error
+      // detection as the SDK call sites rather than being sent verbatim.
+      emitLightTrackEvent({
+        name: 'match.generate_result_image_copy',
+        provider: 'google',
+        model: GEMINI_MODEL_REST,
+        status: 'error',
+        latencyMs: geminiCallMs,
+        error: sanitizeForTelemetry(errorData),
+      });
       // Still return composition data on API error
       return NextResponse.json({
         success: true,
@@ -184,6 +198,15 @@ export async function POST(request: NextRequest) {
 
     const geminiData = await geminiResponse.json();
     const generatedContent = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    emitLightTrackEvent({
+      name: 'match.generate_result_image_copy',
+      provider: 'google',
+      model: GEMINI_MODEL_REST,
+      status: 'success',
+      usage: usageFromGeminiMetadata(geminiData.usageMetadata),
+      latencyMs: geminiCallMs,
+    });
 
     // Return enhanced data with composition
     return NextResponse.json({

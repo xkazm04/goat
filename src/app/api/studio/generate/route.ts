@@ -27,6 +27,7 @@ import { fetchWikipediaImage } from '@/lib/api/wiki-images';
 import { EnrichmentPipeline } from '@/lib/enrichment';
 import { getGeminiClient, GEMINI_MODEL_PRIMARY } from '@/lib/providers/gemini-client';
 import { createClient } from '@/lib/supabase/server';
+import { emitLightTrackEvent, sanitizeForTelemetry, usageFromGeminiMetadata } from '@/lib/telemetry/lighttrack';
 import {
   generateRequestSchema,
   geminiResponseSchema,
@@ -320,6 +321,7 @@ async function callGeminiWithRetry(
 
       const parsed = geminiResponseSchema.parse(JSON.parse(responseText));
       const totalMs = Math.round(performance.now() - callStart);
+      const attemptMs = Math.round(performance.now() - attemptStart);
 
       console.log(`${tag} gemini_call`, JSON.stringify({
         operation: 'gemini_generate',
@@ -328,6 +330,15 @@ async function callGeminiWithRetry(
         retry_count: attempt,
         item_count: parsed.items.length,
       }));
+
+      emitLightTrackEvent({
+        name: 'studio.generate_list_items',
+        provider: 'google',
+        model: GEMINI_MODEL_PRIMARY,
+        status: 'success',
+        usage: usageFromGeminiMetadata(response.usageMetadata),
+        latencyMs: attemptMs,
+      });
 
       return {
         result: parsed,
@@ -340,6 +351,14 @@ async function callGeminiWithRetry(
       if (attempt === 0) {
         console.warn(`${tag} Gemini attempt 1 failed (${attemptMs}ms), retrying silently:`, lastError.message);
       }
+      emitLightTrackEvent({
+        name: 'studio.generate_list_items',
+        provider: 'google',
+        model: GEMINI_MODEL_PRIMARY,
+        status: 'error',
+        latencyMs: attemptMs,
+        error: sanitizeForTelemetry(lastError.message),
+      });
     }
   }
 

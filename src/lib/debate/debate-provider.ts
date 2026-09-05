@@ -7,6 +7,7 @@
  */
 
 import { getGeminiClient, GEMINI_MODEL_FLASH } from '@/lib/providers/gemini-client';
+import { emitLightTrackEvent, sanitizeForTelemetry, usageFromGeminiMetadata } from '@/lib/telemetry/lighttrack';
 
 import type { DebateChallengeRequest, DebateChallengeResponse } from './types';
 
@@ -141,6 +142,7 @@ export async function generateDebateChallenge(
 ): Promise<DebateChallengeResponse> {
   const client = getGeminiClient();
   const prompt = buildDebatePrompt(request);
+  const callStart = performance.now();
 
   try {
     const response = await client.models.generateContent({
@@ -148,16 +150,34 @@ export async function generateDebateChallenge(
       contents: prompt,
     });
 
+    emitLightTrackEvent({
+      name: 'match.debate_challenge',
+      provider: 'google',
+      model: GEMINI_MODEL_FLASH,
+      status: 'success',
+      usage: usageFromGeminiMetadata(response.usageMetadata),
+      latencyMs: performance.now() - callStart,
+    });
+
     const text = response.text ?? '';
     return parseDebateResponse(text);
   } catch (error) {
     console.error('Error generating debate challenge:', error);
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    emitLightTrackEvent({
+      name: 'match.debate_challenge',
+      provider: 'google',
+      model: GEMINI_MODEL_FLASH,
+      status: 'error',
+      latencyMs: performance.now() - callStart,
+      error: sanitizeForTelemetry(message),
+    });
     return {
       argument: 'I wanted to challenge this placement, but I\'m having trouble formulating my argument right now.',
       challengeStrength: 0,
       controversyScore: 0,
       isHotTake: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: message,
     };
   }
 }

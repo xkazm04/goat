@@ -5,6 +5,8 @@
  * Uses Google Gemini API with Google Search tool
  */
 
+import { emitLightTrackEvent, sanitizeForTelemetry, usageFromGeminiMetadata } from '@/lib/telemetry/lighttrack';
+
 import { getGeminiClient, GEMINI_MODEL_FLASH } from './gemini-client';
 
 export interface ItemRecommendationRequest {
@@ -52,11 +54,29 @@ export async function getItemRecommendation(
       has_image: !!result.image_url,
     }));
 
+    emitLightTrackEvent({
+      name: 'match.recommend_item_metadata',
+      provider: 'google',
+      model: GEMINI_MODEL_FLASH,
+      status: 'success',
+      usage: usageFromGeminiMetadata(response.usageMetadata),
+      latencyMs: durationMs,
+    });
+
     return result;
   } catch (error) {
     const durationMs = Math.round(performance.now() - callStart);
     console.error(`[Gemini] recommendation_error (${durationMs}ms):`, error);
-    throw new Error(`Failed to get recommendation: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    emitLightTrackEvent({
+      name: 'match.recommend_item_metadata',
+      provider: 'google',
+      model: GEMINI_MODEL_FLASH,
+      status: 'error',
+      latencyMs: durationMs,
+      error: sanitizeForTelemetry(message),
+    });
+    throw new Error(`Failed to get recommendation: ${message}`);
   }
 }
 

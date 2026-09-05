@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { emitLightTrackEvent, sanitizeForTelemetry } from '@/lib/telemetry/lighttrack';
+
 import type { AIGenerationRequest, AIGenerationResponse, GeneratedImage } from '@/app/features/Match/lib/ai/types';
 
 // Force dynamic rendering
@@ -296,6 +298,16 @@ async function generateWithReplicate(
       })
     );
 
+    // Replicate's predictions API reports no token/credit usage counts —
+    // `usage` is omitted rather than invented.
+    emitLightTrackEvent({
+      name: 'match.generate_ai_artwork',
+      provider: 'replicate',
+      model: 'stability-ai/sdxl',
+      status: 'success',
+      latencyMs: Date.now() - startTime,
+    });
+
     return {
       images: generatedImages,
       generationId: prediction.id,
@@ -305,6 +317,14 @@ async function generateWithReplicate(
     };
   } catch (error) {
     console.error('Replicate generation error:', error);
+    emitLightTrackEvent({
+      name: 'match.generate_ai_artwork',
+      provider: 'replicate',
+      model: 'stability-ai/sdxl',
+      status: 'error',
+      latencyMs: Date.now() - startTime,
+      error: sanitizeForTelemetry(error instanceof Error ? error.message : String(error)),
+    });
     // Fall back to mock on error
     return generateMockImage(request, prompt);
   }
@@ -360,6 +380,16 @@ async function generateWithOpenAI(
       })
     );
 
+    // DALL-E 3's images endpoint reports no token usage — `usage` is
+    // omitted rather than invented.
+    emitLightTrackEvent({
+      name: 'match.generate_ai_artwork',
+      provider: 'openai',
+      model: 'dall-e-3',
+      status: 'success',
+      latencyMs: Date.now() - startTime,
+    });
+
     return {
       images: generatedImages,
       generationId: `openai-${Date.now()}`,
@@ -369,6 +399,14 @@ async function generateWithOpenAI(
     };
   } catch (error) {
     console.error('OpenAI generation error:', error);
+    emitLightTrackEvent({
+      name: 'match.generate_ai_artwork',
+      provider: 'openai',
+      model: 'dall-e-3',
+      status: 'error',
+      latencyMs: Date.now() - startTime,
+      error: sanitizeForTelemetry(error instanceof Error ? error.message : String(error)),
+    });
     return generateMockImage(request, prompt);
   }
 }

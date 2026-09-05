@@ -12,6 +12,7 @@ import { rateLimit, getRateLimitKey } from '@/lib/api/rate-limiter';
 import { handleStudioError, StudioErrorCodes } from '@/lib/api/studio-utils';
 import { fetchWikipediaImage } from '@/lib/api/wiki-images';
 import { getGeminiClient, GEMINI_MODEL_PRIMARY } from '@/lib/providers/gemini-client';
+import { emitLightTrackEvent, sanitizeForTelemetry, usageFromGeminiMetadata } from '@/lib/telemetry/lighttrack';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
@@ -68,13 +69,34 @@ Common patterns:
 Return ONLY the title, nothing else. If truly unfindable, return the original: "${title}"`;
 
     const s2Start = performance.now();
-    const wikiResponse = await ai.models.generateContent({
-      model: GEMINI_MODEL_PRIMARY,
-      contents: wikiPrompt,
-      config: {
-        tools: [{ googleSearch: {} }],
-      },
-    });
+    let wikiResponse;
+    try {
+      wikiResponse = await ai.models.generateContent({
+        model: GEMINI_MODEL_PRIMARY,
+        contents: wikiPrompt,
+        config: {
+          tools: [{ googleSearch: {} }],
+        },
+      });
+      emitLightTrackEvent({
+        name: 'studio.find_wikipedia_title',
+        provider: 'google',
+        model: GEMINI_MODEL_PRIMARY,
+        status: 'success',
+        usage: usageFromGeminiMetadata(wikiResponse.usageMetadata),
+        latencyMs: performance.now() - s2Start,
+      });
+    } catch (err) {
+      emitLightTrackEvent({
+        name: 'studio.find_wikipedia_title',
+        provider: 'google',
+        model: GEMINI_MODEL_PRIMARY,
+        status: 'error',
+        latencyMs: performance.now() - s2Start,
+        error: sanitizeForTelemetry(err instanceof Error ? err.message : String(err)),
+      });
+      throw err;
+    }
     const s2GeminiMs = Math.round(performance.now() - s2Start);
 
     const suggestedTitle = wikiResponse.text?.trim();
@@ -139,13 +161,34 @@ If no reliable image found, return: null
 Return ONLY the URL or null, nothing else.`;
 
     const s4Start = performance.now();
-    const imageResponse = await ai.models.generateContent({
-      model: GEMINI_MODEL_PRIMARY,
-      contents: imagePrompt,
-      config: {
-        tools: [{ googleSearch: {} }],
-      },
-    });
+    let imageResponse;
+    try {
+      imageResponse = await ai.models.generateContent({
+        model: GEMINI_MODEL_PRIMARY,
+        contents: imagePrompt,
+        config: {
+          tools: [{ googleSearch: {} }],
+        },
+      });
+      emitLightTrackEvent({
+        name: 'studio.find_image_url',
+        provider: 'google',
+        model: GEMINI_MODEL_PRIMARY,
+        status: 'success',
+        usage: usageFromGeminiMetadata(imageResponse.usageMetadata),
+        latencyMs: performance.now() - s4Start,
+      });
+    } catch (err) {
+      emitLightTrackEvent({
+        name: 'studio.find_image_url',
+        provider: 'google',
+        model: GEMINI_MODEL_PRIMARY,
+        status: 'error',
+        latencyMs: performance.now() - s4Start,
+        error: sanitizeForTelemetry(err instanceof Error ? err.message : String(err)),
+      });
+      throw err;
+    }
     const s4Ms = Math.round(performance.now() - s4Start);
 
     const imageUrl = imageResponse.text?.trim();
