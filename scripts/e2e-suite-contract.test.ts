@@ -4,6 +4,8 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
+import { e2eAllIds } from './seed-e2e-fixtures';
+
 /**
  * The browser suite's STATIC contract with the app it drives.
  *
@@ -59,7 +61,9 @@ const KNOWN_INDEX_DERIVATIONS: readonly string[] = [
 ];
 
 /** Spec files that still hard-code a host:port instead of using the config's baseURL. */
-const KNOWN_HARDCODED_HOSTS: readonly string[] = ['backlog-items-loading.spec.ts'];
+const KNOWN_HARDCODED_HOSTS: readonly string[] = [];
+
+const UUID_RE = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi;
 
 function walk(dir: string, acc: string[] = []): string[] {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -106,6 +110,15 @@ function hasPrefixProducer(prefix: string): boolean {
   return templateStems.has(stem);
 }
 
+/**
+ * A spec that EXPLAINS a defect in a comment must not read as committing it —
+ * the backlog spec's header describes the :3001 override it removed. Match
+ * over code only (registry: scan-sweep §7.7, "strip comments before it matches").
+ */
+function withoutComments(text: string): string {
+  return text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`])\/\/.*$/gm, '$1');
+}
+
 function requestedTestIds() {
   const exact = new Map<string, Set<string>>();
   const prefixes = new Map<string, Set<string>>();
@@ -143,7 +156,7 @@ describe('e2e suite ↔ app contract', () => {
 
   it('no spec parses a list id out of featured-list-item-* (its suffix is the card index)', () => {
     const offenders = specFiles
-      .filter(({ text }) => /replace\(\s*["'`]featured-list-item-["'`]/.test(text))
+      .filter(({ text }) => /replace\(\s*["'`]featured-list-item-["'`]/.test(withoutComments(text)))
       .map(({ rel }) => rel)
       .sort();
     expect(offenders).toEqual([...KNOWN_INDEX_DERIVATIONS].sort());
@@ -151,9 +164,22 @@ describe('e2e suite ↔ app contract', () => {
 
   it('no spec hard-codes a host:port — the config owns baseURL', () => {
     const offenders = specFiles
-      .filter(({ text }) => /localhost:\d+/.test(text))
+      .filter(({ text }) => /localhost:\d+/.test(withoutComments(text)))
       .map(({ rel }) => rel)
       .sort();
     expect(offenders).toEqual([...KNOWN_HARDCODED_HOSTS].sort());
+  });
+
+  it('every UUID a spec names is one the seed writes (scripts/seed-e2e-fixtures.ts)', () => {
+    // Before 2026-09-05 backlog-items-loading.spec.ts addressed `06ca05fd-…`, a
+    // row from one developer's database that no seed ever wrote.
+    const fixtureIds = e2eAllIds();
+    const foreign = specFiles.flatMap(({ rel, text }) =>
+      Array.from(withoutComments(text).matchAll(UUID_RE))
+        .map((m) => m[0].toLowerCase())
+        .filter((id) => !fixtureIds.has(id))
+        .map((id) => `${rel}: ${id}`),
+    );
+    expect(foreign).toEqual([]);
   });
 });
