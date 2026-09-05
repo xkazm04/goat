@@ -1,5 +1,7 @@
 import { test, expect } from "@playwright/test";
 
+import { openFirstFeaturedList } from "./helpers/test-utils";
+
 /**
  * E2E Test: Drag-Drop Ranking Workflow
  *
@@ -27,19 +29,9 @@ test.describe("Drag-Drop Ranking Workflow", () => {
     const featuredSection = page.getByTestId("featured-lists-section");
     await expect(featuredSection).toBeVisible({ timeout: 15000 });
 
-    const firstListItem = page
-      .locator('[data-testid^="featured-list-item-"]')
-      .first();
-    await expect(firstListItem).toBeVisible({ timeout: 15000 });
-
-    // Get the list ID for later verification
-    const testId = await firstListItem.getAttribute("data-testid");
-    const listId = testId?.replace("featured-list-item-", "");
-    expect(listId).toBeTruthy();
-
-    // Click to navigate to match page
-    await firstListItem.click();
-    await page.waitForURL(`**/goat?list=${listId}`, { timeout: 15000 });
+    // The card's test-id suffix is its INDEX, not the list id — the id is read
+    // from the URL the app navigates to. See openFirstFeaturedList.
+    await openFirstFeaturedList(page);
     await page.waitForLoadState("networkidle");
 
     // Step 2: Wait for collection panel to load
@@ -152,13 +144,7 @@ test.describe("Drag-Drop Ranking Workflow", () => {
     const featuredSection = page.getByTestId("featured-lists-section");
     await expect(featuredSection).toBeVisible({ timeout: 15000 });
 
-    const firstListItem = page
-      .locator('[data-testid^="featured-list-item-"]')
-      .first();
-    await expect(firstListItem).toBeVisible({ timeout: 15000 });
-
-    await firstListItem.click();
-    await page.waitForURL(/\/goat\?list=/, { timeout: 15000 });
+    await openFirstFeaturedList(page);
     await page.waitForLoadState("networkidle");
 
     // Wait for collection panel
@@ -216,13 +202,7 @@ test.describe("Drag-Drop Ranking Workflow", () => {
     const featuredSection = page.getByTestId("featured-lists-section");
     await expect(featuredSection).toBeVisible({ timeout: 15000 });
 
-    const firstListItem = page
-      .locator('[data-testid^="featured-list-item-"]')
-      .first();
-    await expect(firstListItem).toBeVisible({ timeout: 15000 });
-
-    await firstListItem.click();
-    await page.waitForURL(/\/goat\?list=/, { timeout: 15000 });
+    await openFirstFeaturedList(page);
     await page.waitForLoadState("networkidle");
 
     // Wait for collection panel
@@ -331,13 +311,7 @@ test.describe("Drag-Drop Ranking Workflow", () => {
     const featuredSection = page.getByTestId("featured-lists-section");
     await expect(featuredSection).toBeVisible({ timeout: 15000 });
 
-    const firstListItem = page
-      .locator('[data-testid^="featured-list-item-"]')
-      .first();
-    await expect(firstListItem).toBeVisible({ timeout: 15000 });
-
-    await firstListItem.click();
-    await page.waitForURL(/\/goat\?list=/, { timeout: 15000 });
+    await openFirstFeaturedList(page);
     await page.waitForLoadState("networkidle");
 
     // Wait for collection panel

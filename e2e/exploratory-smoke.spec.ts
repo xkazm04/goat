@@ -1,5 +1,7 @@
 import { test, expect } from "@playwright/test";
 
+import { openFirstFeaturedList } from "./helpers/test-utils";
+
 /**
  * Exploratory Smoke Tests
  *
@@ -295,11 +297,9 @@ test.describe("Goat/Match Page", () => {
         "missing fixture.",
     ).toBe(true);
 
-    const testId = await firstList.getAttribute("data-testid");
-    const listId = testId?.replace("featured-list-item-", "");
-
-    await firstList.click();
-    await page.waitForURL(`**/goat?list=${listId}`, { timeout: 15000 });
+    // The card's test-id suffix is its INDEX, not the list id — the id is read
+    // from the URL the app navigates to. See openFirstFeaturedList.
+    await openFirstFeaturedList(page);
 
     // Goat page should render
     await expect(page.getByTestId("goat-page")).toBeVisible({ timeout: 15000 });
@@ -335,8 +335,7 @@ test.describe("Goat/Match Page", () => {
         "missing fixture.",
     ).toBe(true);
 
-    await firstList.click();
-    await page.waitForURL("**/goat?list=*", { timeout: 15000 });
+    await openFirstFeaturedList(page);
 
     // Wait for match grid container
     const matchGrid = page.getByTestId("match-grid-container");

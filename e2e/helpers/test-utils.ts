@@ -47,6 +47,33 @@ export async function goToStudio(page: Page) {
 }
 
 /**
+ * Click the first featured card and return the list id the app navigated to.
+ *
+ * WHERE THE LIST ID ACTUALLY IS. The card's own attribute is
+ * `featured-list-item-${index}` (FeaturedListsSection.tsx) — the suffix is the
+ * card's position in the mosaic, not the list. Four files used to read it as an
+ * id and then wait for `/goat?list=0`, a URL the app never produces, so every
+ * one of those journeys failed on its navigation step and reported it as a
+ * product defect. The id exists in exactly one place the harness can see: the
+ * query parameter `usePlayList` puts in the URL. Read it from there.
+ *
+ * The identifier itself is the app's to fix (registry test-harness/
+ * live-app-harness: an identifier for a repeated element composes the role with
+ * the entity's stable id, never with its index) and is recorded as such — but
+ * the harness must not encode a value the attribute does not carry meanwhile.
+ */
+export async function openFirstFeaturedList(page: Page): Promise<string> {
+  const card = page.locator('[data-testid^="featured-list-item-"]').first();
+  await expect(card, 'no featured list card rendered on the landing page')
+    .toBeVisible({ timeout: 20000 });
+  await card.click();
+  await page.waitForURL(/\/goat\?list=/, { timeout: 15000 });
+  const listId = new URL(page.url()).searchParams.get('list') ?? '';
+  expect(listId, `the goat URL carried no list parameter: ${page.url()}`).not.toBe('');
+  return listId;
+}
+
+/**
  * Navigate to /goat?list=X by finding a playable list.
  * Tries featured items, page links, then the API.
  */
@@ -57,14 +84,9 @@ export async function navigateToGoatWithList(page: Page): Promise<string> {
   // Strategy 1: Featured list items
   const featuredItem = page.locator('[data-testid^="featured-list-item-"]').first();
   if (await featuredItem.isVisible({ timeout: 3000 }).catch(() => false)) {
-    const testId = await featuredItem.getAttribute('data-testid');
-    const listId = testId?.replace('featured-list-item-', '') ?? '';
-    if (listId) {
-      await featuredItem.click();
-      await page.waitForURL('**/goat**', { timeout: 15000 });
-      await page.waitForLoadState('networkidle');
-      return listId;
-    }
+    const listId = await openFirstFeaturedList(page);
+    await page.waitForLoadState('networkidle');
+    return listId;
   }
 
   // Strategy 2: Any link to /goat

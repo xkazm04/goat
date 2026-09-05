@@ -21,12 +21,16 @@ import { e2eAllIds } from './seed-e2e-fixtures';
  * What it asserts, and the figure each assertion carried when it landed
  * (2026-09-05, e2e-browser-suite sweep):
  *   1. every test id a spec or helper asks for has a producer in src/ —
- *      9 did not (KNOWN_MISSING below, drained to [] by the fix commits);
+ *      9 did not, of which 1 (`featured-lists-section-title`) turned out to be
+ *      the matcher's own false positive and 1 (`featured-list-title-*`) was
+ *      removed by reading the card's accessible name instead; 7 remain in
+ *      KNOWN_MISSING below, and the register drains to [];
  *   2. no spec parses a list id out of `featured-list-item-*`, whose suffix is
- *      the card's INDEX (`FeaturedListsSection.tsx`), not the list id — 3 spec
- *      files did, so 6 tests waited for `/goat?list=0`;
+ *      the card's INDEX (`FeaturedListsSection.tsx`), not the list id — 4 files
+ *      did, so 6 tests waited for `/goat?list=0`. Drained.
  *   3. no spec hard-codes a host:port — one file targeted :3001 while
- *      playwright.config.ts starts :3000.
+ *      playwright.config.ts starts :3000. Drained.
+ *   4. every UUID a spec names is one the seed writes.
  *
  * The registers are allowed to SHRINK only. Adding an entry is the wrong fix;
  * the right one is a producer, or a spec that reads what the app renders.
@@ -44,7 +48,6 @@ const e2eDir = path.join(repoRoot, 'e2e');
 
 /** Test ids asked for by a spec that no component produces. Drains to []. */
 const KNOWN_MISSING: readonly string[] = [
-  'featured-list-title-*',
   'grid-item-image-1',
   'grid-item-image-2',
   'grid-item-title-1',
@@ -55,12 +58,7 @@ const KNOWN_MISSING: readonly string[] = [
 ];
 
 /** Spec files that still parse a list id out of the index-bearing featured card test id. */
-const KNOWN_INDEX_DERIVATIONS: readonly string[] = [
-  'drag-drop-ranking.spec.ts',
-  'exploratory-smoke.spec.ts',
-  'helpers/test-utils.ts',
-  'list-play-journey.spec.ts',
-];
+const KNOWN_INDEX_DERIVATIONS: readonly string[] = [];
 
 /** Spec files that still hard-code a host:port instead of using the config's baseURL. */
 const KNOWN_HARDCODED_HOSTS: readonly string[] = [];
