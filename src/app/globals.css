@@ -1520,14 +1520,12 @@ layer(base);
     --severity-info-text: hsl(var(--accent));
     --severity-info-progress: hsl(var(--accent));
 
-    /* Surface Tokens — shared UI components (cards, selects, stats) */
-    --surface-card: rgba(31, 41, 55, 1);
-    --surface-card-hover: rgba(55, 65, 81, 1);
-    --surface-deep: rgba(17, 24, 39, 1);
-    --surface-overlay: rgba(31, 41, 55, 0.6);
-    --border-card: rgba(55, 65, 81, 1);
-    --border-card-subtle: rgba(55, 65, 81, 0.5);
-    --border-card-hover: rgba(75, 85, 99, 0.5);
+    /* Surface / border tokens (--surface-*, --border-card*) are declared ONCE,
+       in design-tokens.css (imported unlayered at the top of this file). A
+       :root copy used to sit here too; it was inside @layer base, so it never
+       won the cascade and only read as the live value. Note the .dark block
+       below still carries overrides for these tokens — they are equally
+       layered, so they do not apply either; see the sweep card for that. */
 
     /* Glass Dock - Panel Layout Tokens */
     --panel-header-height: 36px;

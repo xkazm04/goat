@@ -84,6 +84,36 @@ describe('globals.css — one unconditional author per animation and per keyfram
     expect(conflicts).toEqual([]);
   });
 
+  it('a token declared on :root in design-tokens.css is not re-declared on :root in globals.css', () => {
+    // design-tokens.css calls itself "the central contract"; a second :root
+    // declaration of the same custom property in globals.css is a second
+    // authority, and because globals.css declares it inside @layer base while
+    // the imported file is unlayered, the copy in globals.css never even wins
+    // — it is pure duplication that reads as the live value to anyone editing it.
+    //
+    // Negative control (2026-09-05, before the fix): 7 of the 30 tokens
+    // (--surface-card, --surface-card-hover, --surface-deep, --surface-overlay,
+    // --border-card, --border-card-subtle, --border-card-hover) were declared
+    // on :root in both files — test red.
+    const contract = new Set<string>();
+    parse('design-tokens.css').walkRules(':root', (rule) => {
+      rule.walkDecls((d) => {
+        if (d.prop.startsWith('--')) contract.add(d.prop);
+      });
+    });
+    expect(contract.size).toBeGreaterThan(0);
+
+    const redeclared: string[] = [];
+    root.walkRules((rule) => {
+      const isRoot = rule.selector.split(',').some((s) => s.trim() === ':root');
+      if (!isRoot) return;
+      rule.walkDecls((d) => {
+        if (contract.has(d.prop)) redeclared.push(`${d.prop} (globals.css line ${d.source?.start?.line})`);
+      });
+    });
+    expect(redeclared).toEqual([]);
+  });
+
   it('no @keyframes name is defined twice', () => {
     const seen = new Map<string, number>();
     root.walkAtRules('keyframes', (at) => {
