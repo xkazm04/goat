@@ -332,7 +332,11 @@ class DataNormalizerClass {
       normalized.title = titleField;
     }
 
-    const descField = data.description || data.overview || data.summary || data.extract;
+    // `storyline` is IGDB's long-form description and the only description a
+    // game without a `summary` has. SOURCE_FIELD_MAPPINGS declared it and
+    // IGDBFetcher ships it; this chain was the one place that dropped it.
+    const descField =
+      data.description || data.overview || data.summary || data.extract || data.storyline;
     if (descField && typeof descField === 'string') {
       normalized.description = descField;
     }
