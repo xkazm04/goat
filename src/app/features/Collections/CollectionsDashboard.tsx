@@ -56,10 +56,14 @@ export const CollectionsDashboard = memo(function CollectionsDashboard({
     (state) => state.selectedCollectionId
   );
 
-  // Fetch user collections
-  const { data: _fetchedCollections, isLoading } = useUserCollections({
+  // Fetch user collections. `isError`/`refetch` travel to the surfaces that
+  // used to paint a failed load as "No collections yet".
+  const { data: _fetchedCollections, isLoading, isError, refetch } = useUserCollections({
     includeStats: true,
   });
+  const handleRetryLoad = useCallback(() => {
+    void refetch();
+  }, [refetch]);
 
   // Collection operations
   const { create, update, remove, addLists, removeList, reorderLists, isPending } =
@@ -238,6 +242,8 @@ export const CollectionsDashboard = memo(function CollectionsDashboard({
           onCreateCollection={handleCreateCollection}
           onEditCollection={handleEditCollection}
           onDeleteCollection={handleRequestDeleteCollection}
+          loadFailed={isError}
+          onRetry={handleRetryLoad}
         />
       </div>
 
@@ -246,6 +252,8 @@ export const CollectionsDashboard = memo(function CollectionsDashboard({
         collection={selectedCollection}
         lists={listsInCollection}
         isLoading={isLoading}
+        loadFailed={isError}
+        onRetry={handleRetryLoad}
         onRemoveList={selectedCollection ? handleRemoveListFromCollection : undefined}
         onReorderLists={selectedCollection ? handleReorderLists : undefined}
         onAddList={selectedCollection ? handleOpenAddList : undefined}

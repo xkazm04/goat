@@ -31,6 +31,8 @@ import {
   Calendar,
   ExternalLink,
   GripVertical,
+  AlertTriangle,
+  RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
 import { memo, useMemo, useState, useCallback, useEffect } from "react";
@@ -47,6 +49,9 @@ interface CollectionViewProps {
   lists: TopList[];
   stats?: CollectionStats;
   isLoading?: boolean;
+  /** The collections request failed; an empty list is then unknown, not empty. */
+  loadFailed?: boolean;
+  onRetry?: () => void;
   onAddList?: () => void;
   onRemoveList?: (listId: string) => void;
   onReorderLists?: (listIds: string[]) => void;
@@ -224,6 +229,8 @@ export const CollectionView = memo(function CollectionView({
   lists,
   stats,
   isLoading = false,
+  loadFailed = false,
+  onRetry,
   onAddList,
   onRemoveList,
   onReorderLists,
@@ -453,6 +460,22 @@ export const CollectionView = memo(function CollectionView({
             animate={{ rotate: 360 }}
             transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
           />
+        </div>
+      ) : loadFailed && filteredLists.length === 0 && !searchTerm ? (
+        <div className="text-center py-16 flex flex-col items-center" role="alert">
+          <AlertTriangle className="w-10 h-10 text-amber-500/70 mb-3" />
+          <p className="text-slate-400 mb-1">Couldn&apos;t load this collection&apos;s lists</p>
+          <p className="text-sm text-slate-600 mb-4">The request failed; nothing here has been removed.</p>
+          {onRetry && (
+            <button
+              type="button"
+              onClick={onRetry}
+              className="inline-flex items-center gap-1.5 text-brand-hover hover:text-brand-hover text-sm"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              Retry
+            </button>
+          )}
         </div>
       ) : filteredLists.length === 0 ? (
         <div className="text-center py-16 flex flex-col items-center">

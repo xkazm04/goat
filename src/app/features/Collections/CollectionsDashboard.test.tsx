@@ -15,6 +15,10 @@
  *    no error text, no dialog.
  *  - "?selected=<id> opens that collection": setSelectedCollection was never
  *    called; the landing page's deep link landed on "All Lists".
+ *  - "a failed load is not an empty collection list": the sidebar read
+ *    "No collections yet" / "Create your first collection" and had no Retry.
+ *  - "a failed load inside a collection is not an empty collection": the view
+ *    read "This collection is empty".
  */
 import React, { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
@@ -137,6 +141,8 @@ beforeEach(() => {
   fake.ops.remove.mockReset();
   fake.ops.remove.mockImplementation(async () => {});
   fake.actions.setSelectedCollection.mockClear();
+  fake.query.isError = false;
+  fake.query.refetch.mockClear();
 });
 afterEach(async () => {
   await act(async () => root.unmount());
@@ -181,5 +187,30 @@ describe('CollectionsDashboard — arriving from a deep link', () => {
     nav.selected = null;
     await render(<MyCollectionsPage />);
     expect(fake.actions.setSelectedCollection).not.toHaveBeenCalled();
+  });
+});
+
+describe('CollectionsDashboard — when the collections request fails', () => {
+  it('a failed load is not an empty collection list', async () => {
+    fake.state.collections = [];
+    fake.query.isError = true;
+    await render(<CollectionsDashboard />);
+
+    expect(host.textContent).not.toContain('No collections yet');
+    expect(host.textContent).not.toContain('Create your first collection');
+    expect(host.textContent).toContain("Couldn't load your collections");
+
+    await click(buttonNamed('Retry'));
+    expect(fake.query.refetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('a failed load inside a collection is not an empty collection', async () => {
+    fake.state.collections = [collection({ id: 'a', name: 'Alpha', listIds: ['l1'] })];
+    fake.state.selectedCollectionId = 'a';
+    fake.query.isError = true;
+    await render(<CollectionsDashboard />);
+
+    expect(host.textContent).not.toContain('This collection is empty');
+    expect(host.textContent).toContain("Couldn't load this collection's lists");
   });
 });
