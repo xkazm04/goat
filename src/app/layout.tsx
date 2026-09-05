@@ -14,10 +14,15 @@ import { QueryProvider } from '@/providers/query-provider';
 import type { Metadata } from 'next';
 
 const inter = Inter({ subsets: ['latin'] });
+// Exposed as --font-space-grotesk (not --font-grotesk: that name is the
+// Tailwind theme key that `font-grotesk` compiles to, and it reads THIS
+// variable — see the @theme inline block in globals.css). Weights cover every
+// `font-grotesk` call site: medium/unweighted (400/500) as well as
+// semibold/bold/black, so no heading is snapped to a heavier face.
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
-  weight: ['600', '700'],
-  variable: '--font-grotesk',
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-space-grotesk',
 });
 
 const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://goat.app';
