@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { useShallow } from 'zustand/react/shallow';
 
 import { createLogger } from '@/lib/logger';
 
@@ -114,6 +115,24 @@ function buildTree(
   return roots;
 }
 
+// `getCollectionTree` is read through a zustand selector. zustand 5 re-renders a
+// consumer whenever the selected snapshot is not Object.is-equal to the last
+// one, so a selector that rebuilt the tree on every call never settled and
+// React threw "Maximum update depth exceeded" (see collection-store.test.tsx).
+// The tree is a pure derivation of (collections, expandedCollectionIds); cache
+// the last result keyed on those two references and rebuild only when one of
+// them is replaced.
+let _treeInputs: { collections: ListCollection[]; expanded: Set<string> } | null = null;
+let _treeResult: CollectionTreeNode[] = [];
+function memoisedTree(collections: ListCollection[], expanded: Set<string>): CollectionTreeNode[] {
+  if (_treeInputs && _treeInputs.collections === collections && _treeInputs.expanded === expanded) {
+    return _treeResult;
+  }
+  _treeInputs = { collections, expanded };
+  _treeResult = buildTree(collections, expanded);
+  return _treeResult;
+}
+
 const initialState = {
   collections: [],
   collectionStats: {},
@@ -157,7 +176,7 @@ export const useCollectionStore = create<CollectionStoreState>()(
       },
 
       getCollectionTree: () => {
-        return buildTree(get().collections, get().expandedCollectionIds);
+        return memoisedTree(get().collections, get().expandedCollectionIds);
       },
 
       getUserCollections: (userId: string) => {
@@ -402,7 +421,7 @@ export const useCollections = () =>
   useCollectionStore((state) => state.collections);
 
 export const useRootCollections = () =>
-  useCollectionStore((state) => state.getRootCollections());
+  useCollectionStore(useShallow((state) => state.getRootCollections()));
 
 export const useSelectedCollection = () =>
   useCollectionStore((state) => {
@@ -413,16 +432,19 @@ export const useSelectedCollection = () =>
 export const useCollectionTree = () =>
   useCollectionStore((state) => state.getCollectionTree());
 
+// Object- and array-valued selectors go through useShallow: without it every
+// store write produced a fresh object, the snapshot never compared equal, and
+// the three consumers on /my-collections re-rendered until React threw.
 export const useCollectionUIState = () =>
-  useCollectionStore((state) => ({
+  useCollectionStore(useShallow((state) => ({
     selectedCollectionId: state.selectedCollectionId,
     isLoading: state.isLoading,
     hasLoaded: state.hasLoaded,
     isSyncing: state.isSyncing,
-  }));
+  })));
 
 export const useCollectionActions = () =>
-  useCollectionStore((state) => ({
+  useCollectionStore(useShallow((state) => ({
     setCollections: state.setCollections,
     addCollection: state.addCollection,
     updateCollection: state.updateCollection,
@@ -434,4 +456,4 @@ export const useCollectionActions = () =>
     moveListBetweenCollections: state.moveListBetweenCollections,
     reorderCollections: state.reorderCollections,
     moveCollection: state.moveCollection,
-  }));
+  })));
