@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+
+import { rateLimit, getRateLimitKey } from '@/lib/api/rate-limiter';
 
 import type { AIGenerationRequest, AIGenerationResponse, GeneratedImage } from '@/app/features/Match/lib/ai/types';
 
@@ -9,19 +12,29 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
 
 /**
- * AI Provider types we support
+ * Request body — the one validation door in front of paid vendors (registry:
+ * generative-provider-routing, spend gated before a vendor is touched). Before
+ * 2026-09-05 the body was destructured untyped, `request.dimensions.width` threw
+ * on a malformed body, and the TypeError's text was echoed to the browser.
  */
-type AIProvider = 'replicate' | 'openai' | 'stability' | 'mock';
-
-/**
- * Request body structure
- */
-interface GenerateRequestBody {
-  request: AIGenerationRequest;
-  prompt: string;
-  negativePrompt?: string;
-  provider: AIProvider;
-}
+const generateBodySchema = z.object({
+  provider: z.enum(['replicate', 'openai', 'stability', 'mock']),
+  prompt: z.string().min(1).max(4000),
+  negativePrompt: z.string().max(2000).optional(),
+  request: z.object({
+    listTitle: z.string().max(300),
+    category: z.string().max(100),
+    subcategory: z.string().max(100).optional(),
+    items: z.array(z.object({ position: z.number().int(), title: z.string().max(300) })).max(50),
+    style: z.string().min(1).max(50),
+    customPrompt: z.string().max(4000).optional(),
+    dimensions: z.object({
+      width: z.number().int().min(64).max(4096),
+      height: z.number().int().min(64).max(4096),
+    }),
+    numVariations: z.number().int().min(1).max(4).optional(),
+  }),
+});
 
 /**
  * Mock image generation for development/demo
@@ -380,17 +393,30 @@ async function generateWithOpenAI(
  * - mock: Development placeholder images
  */
 export async function POST(req: NextRequest) {
-  try {
-    const body: GenerateRequestBody = await req.json();
-    const { request, prompt, negativePrompt, provider } = body;
+  // Rate limit: 10 generations per minute per IP — the same door every studio
+  // Gemini route already has; this one fronts paid image vendors.
+  const limited = rateLimit(getRateLimitKey(req, 'generate-ai-image'), 10, 60_000);
+  if (limited) return limited;
 
-    // Validate request
-    if (!request || !prompt) {
+  try {
+    let raw: unknown;
+    try {
+      raw = await req.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
+    const parsed = generateBodySchema.safeParse(raw);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Missing required fields: request, prompt' },
+        { error: 'Invalid request', details: parsed.error.issues },
         { status: 400 }
       );
     }
+    const { prompt, negativePrompt, provider } = parsed.data;
+    // `style` is validated as a string here; the preset vocabulary is the
+    // client's (Match/lib/ai/types) and an unknown style falls to the
+    // minimalist palette in getStyleColors.
+    const request = parsed.data.request as AIGenerationRequest;
 
     // Generate based on provider
     let response: AIGenerationResponse;
@@ -410,10 +436,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(response);
   } catch (error) {
+    // Full error in the server log; the client gets a closed vocabulary.
     console.error('AI generation error:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Generation failed' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Generation failed' }, { status: 500 });
   }
 }
