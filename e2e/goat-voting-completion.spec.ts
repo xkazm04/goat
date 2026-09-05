@@ -98,18 +98,27 @@ test.describe('Goat: Complete Voting Journey', () => {
     await page.goto('/', { waitUntil: 'commit' });
     await navigateToGoatWithList(page);
     await waitForMatchGrid(page);
-    // Wait for backlog items: poll for collection items OR the grid empty state to clear
-    // The backlog loads via: list metadata → category → initializeGroups → API fetch → render
-    await expect(async () => {
-      const hasCollectionItems = await page.evaluate(() =>
-        document.querySelectorAll('[data-testid^="collection-item-wrapper-"]').length > 0
-      );
-      // Also check if the "No items" message is gone (items loading in background)
-      const noItemsGone = await page.evaluate(() =>
-        !document.querySelector('[data-testid="virtualized-collection-grid-empty"]')
-      );
-      expect(hasCollectionItems || noItemsGone).toBeTruthy();
-    }).toPass({ timeout: 45_000, intervals: [2000, 3000, 5000] });
+    // Wait for backlog items. The backlog loads via: list metadata → category →
+    // initializeGroups → API fetch → render.
+    //
+    // This used to accept `hasCollectionItems || noItemsGone`, where
+    // `noItemsGone` was the ABSENCE of the empty-state marker. A page on which
+    // the collection panel never rendered at all has no empty-state marker
+    // either, so the disjunction was satisfied on the first poll by a blank
+    // screen — and the auto-fill below then had nothing to place. The absence
+    // of an "it is empty" sign is not evidence that it is full.
+    await expect
+      .poll(
+        () => page.locator('[data-testid^="collection-item-wrapper-"]').count(),
+        {
+          message:
+            'the collection panel rendered no backlog items within 45s, so ' +
+            'auto-fill has nothing to place',
+          timeout: 45_000,
+          intervals: [2000, 3000, 5000],
+        },
+      )
+      .toBeGreaterThan(0);
 
     const totalSlots = await getTotalSlots(page);
     expect(totalSlots).toBeGreaterThan(0);
