@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Play } from "lucide-react";
+import { Play, RefreshCw } from "lucide-react";
 import { useState, useCallback, useMemo, memo } from "react";
 
 import { ELEVATION, GLOW_PRESET } from "@/components/visual/depth";
@@ -222,15 +222,13 @@ export function FeaturedListsSection({ className }: FeaturedListsSectionProps) {
 
   // Single consolidated API call for all featured lists
   // Uses same limits as FloatingShowcase so TanStack Query serves both from one cache entry
-  const {
-    data: featuredData,
-    isLoading,
-  } = useFeaturedLists({
+  const featuredQuery = useFeaturedLists({
     popular_limit: 80,
     trending_limit: 80,
     latest_limit: 80,
     awards_limit: 80,
   });
+  const { data: featuredData, isLoading } = featuredQuery;
 
   // Combine and dedupe all lists
   const allLists = useMemo(() => {
@@ -272,6 +270,14 @@ export function FeaturedListsSection({ className }: FeaturedListsSectionProps) {
   const displayLists = isSearchActive
     ? filteredResults.map(r => r.list)
     : allLists;
+
+  // FAILED, and only when nothing is held. Held content outranks a failed
+  // refresh (the SETTLED-DATA -> FAILED edge `src/lib/async-state` forbids), and
+  // the failure arm sits strictly BEFORE the empty arm — otherwise a dead
+  // request renders as "No rankings found / Try adjusting your search or
+  // filters", which blames the reader's own filters for a server fault and
+  // prescribes a remedy that cannot work.
+  const loadFailed = !isLoading && !!featuredQuery.error && allLists.length === 0;
 
   return (
     <NeonArenaTheme
@@ -324,6 +330,31 @@ export function FeaturedListsSection({ className }: FeaturedListsSectionProps) {
                   className="aspect-4/3 rounded-control bg-slate-800/30 animate-pulse"
                 />
               ))
+            ) : loadFailed ? (
+              <div
+                className="col-span-full py-16 text-center flex flex-col items-center"
+                data-testid="featured-lists-error"
+                role="alert"
+                aria-live="assertive"
+              >
+                <GoatMascot variant="confused" size={100} />
+                <p className="text-amber-200/70 text-sm font-medium mt-3">
+                  Couldn&apos;t load rankings
+                </p>
+                <p className="text-xs text-slate-500 mt-1 mb-4">
+                  The rankings are still there — we just couldn&apos;t reach them right now.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => featuredQuery.refetch()}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600
+                    rounded-control text-white text-xs transition-colors focus-ring"
+                  data-testid="featured-lists-retry-btn"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  Try again
+                </button>
+              </div>
             ) : displayLists.length > 0 ? (
               displayLists.map((list, index) => (
                 <MosaicCard
