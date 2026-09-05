@@ -61,6 +61,22 @@ export interface GroupedItemsResponse {
 
 const ITEMS_ENDPOINT = '/top';
 
+/**
+ * GET /api/top/items answers in the server 'paginated' shape
+ * ({ items, total, limit, offset, has_more } — see API_RESPONSE_CONTRACTS in
+ * client.ts). Every method here had typed that response as `TopItem[]` and read
+ * `.length` / `.reduce` / `.slice` off an object, so the Match "add custom item"
+ * search always reported not-found. Unwrap both shapes; anything else is empty.
+ */
+export function unwrapItems(response: unknown): TopItem[] {
+  if (Array.isArray(response)) return response as TopItem[];
+  if (response && typeof response === 'object') {
+    const items = (response as { items?: unknown }).items;
+    if (Array.isArray(items)) return items as TopItem[];
+  }
+  return [];
+}
+
 export const topItemsApi = {
   // Create a new item
   createItem: async (item: TopItemCreate): Promise<TopItem> => {
@@ -69,15 +85,18 @@ export const topItemsApi = {
 
   // Get items with search/filter
   searchItems: async (params?: ItemSearchParams): Promise<TopItem[]> => {
-    return apiClient.get<TopItem[]>(`${ITEMS_ENDPOINT}/items`, params);
+    const response = await apiClient.get<unknown>(`${ITEMS_ENDPOINT}/items`, params);
+    return unwrapItems(response);
   },
 
   // Get items grouped by their group field
   getItemsGrouped: async (params?: ItemSearchParams): Promise<GroupedItemsResponse> => {
-    const items = await apiClient.get<TopItem[]>(`${ITEMS_ENDPOINT}/items`, {
-      ...params,
-      limit: params?.limit || 1000,
-    });
+    const items = unwrapItems(
+      await apiClient.get<unknown>(`${ITEMS_ENDPOINT}/items`, {
+        ...params,
+        limit: params?.limit || 1000,
+      })
+    );
 
     const grouped = items.reduce((acc, item) => {
       const groupName = item.group || 'Ungrouped';
@@ -111,8 +130,8 @@ export const topItemsApi = {
     const limit = params?.limit || 50;
     const offset = params?.offset || 0;
     
-    const items = await apiClient.get<TopItem[]>(`${ITEMS_ENDPOINT}/items`, params);
-    
+    const items = unwrapItems(await apiClient.get<unknown>(`${ITEMS_ENDPOINT}/items`, params));
+
     const total = items.length;
     const paginatedItems = items.slice(offset, offset + limit);
     const has_more = offset + limit < total;
