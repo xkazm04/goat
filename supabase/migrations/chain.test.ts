@@ -96,7 +96,7 @@ describe('supabase/migrations — the chain read as a chain', () => {
     for (const f of files) expect(f).toMatch(/^\d{14}_[a-z0-9_]+\.sql$/);
   });
 
-  it.fails('a policy or trigger name is created once per table unless a DROP … IF EXISTS precedes the re-creation', () => {
+  it('a policy or trigger name is created once per table unless a DROP … IF EXISTS precedes the re-creation', () => {
     // A fresh database replays every step; CREATE POLICY / CREATE TRIGGER have
     // no IF NOT EXISTS form, so a re-used name aborts the chain at that step —
     // an error a production database that skipped the earlier step never saw.
