@@ -33,7 +33,10 @@ import { e2eAllIds } from './seed-e2e-fixtures';
  *
  * Negative control (recorded 2026-09-05): a `getByTestId('bogus-not-real')`
  * seeded into exploratory-smoke.spec.ts turned assertion 1 red with exactly
- * that id reported; restored.
+ * that id reported; restored. Re-run the same day against the prefix-aware
+ * producer matcher with both `bogus-not-real` and `bogus-not-real-section-title`
+ * — the second is the shape that matcher newly resolves — and both were
+ * reported; restored.
  */
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -42,7 +45,6 @@ const e2eDir = path.join(repoRoot, 'e2e');
 /** Test ids asked for by a spec that no component produces. Drains to []. */
 const KNOWN_MISSING: readonly string[] = [
   'featured-list-title-*',
-  'featured-lists-section-title',
   'grid-item-image-1',
   'grid-item-image-2',
   'grid-item-title-1',
@@ -82,14 +84,49 @@ const producers = walk(path.join(repoRoot, 'src'))
   .filter((p) => /\.(tsx?|jsx?)$/.test(p) && !/\.test\.|\.stories\./.test(p))
   .map((p) => readFileSync(p, 'utf8'));
 
-/** `data-testid={`stem-${x}`}` templates, as regexes over a concrete id. */
+/**
+ * `data-testid={`stem-${x}`}` templates, as regexes over a concrete id.
+ *
+ * A substituted segment is `[A-Za-z0-9_]+` — right for a position, an index or
+ * a bare uuid, and deliberately hyphen-FREE, because widening the class for
+ * every substitution was measured here and rejected: it made `grid-item-image-1`,
+ * `grid-item-title-1/2` and `grid-slot-empty-1` — all genuinely absent — match
+ * unrelated multi-segment templates, which is the far worse direction for a
+ * checker to be wrong in.
+ *
+ * One substitution is not that shape. A `testIdPrefix` is passed in kebab-case
+ * by the caller (`<SectionHeader testIdPrefix="featured-lists" …>` renders
+ * `${testIdPrefix}-section-title`), so instead of loosening the class this
+ * enumerates the literals actually passed anywhere in src/ and substitutes an
+ * alternation of exactly those. `featured-lists-section-title` therefore
+ * resolves to its real producer while `bogus-not-real-section-title` still does
+ * not — which a guessed `[A-Za-z0-9_-]+` could not distinguish.
+ */
+const SUBSTITUTION_RE = /\$\{([^}]+)\}/g;
+const PREFIX_VALUES = [
+  ...new Set(producers.flatMap((s) => Array.from(s.matchAll(/[Pp]refix[=:]\s*["']([^"']+)["']/g)).map((m) => m[1]))),
+];
+const prefixAlternation = PREFIX_VALUES.length
+  ? `(?:${PREFIX_VALUES.map((v) => v.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')).join('|')})`
+  : '[A-Za-z0-9_]+';
+/**
+ * The template literal need not be the WHOLE expression. `SectionHeader` writes
+ * `data-testid={testIdPrefix ? `${testIdPrefix}-section-title` : undefined}`,
+ * and a matcher anchored on `data-testid={`` skipped it entirely — which is the
+ * other half of why `featured-lists-section-title` read as unproduced.
+ */
+const TEMPLATE_ATTR_RE = /(?:data-testid|testId)=\{[^{}`]*`([^`]+)`/g;
 const templateProducers = producers.flatMap((s) =>
-  Array.from(s.matchAll(/data-testid=\{`([^`]+)`\}|testId=\{`([^`]+)`\}/g)).map((m) => {
-    const tpl = m[1] ?? m[2];
-    const re = tpl
-      .split(/\$\{[^}]+\}/)
-      .map((lit) => lit.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&'))
-      .join('[A-Za-z0-9_]+');
+  Array.from(s.matchAll(TEMPLATE_ATTR_RE)).map((m) => {
+    const tpl = m[1];
+    let re = '';
+    let last = 0;
+    for (const sub of tpl.matchAll(SUBSTITUTION_RE)) {
+      re += tpl.slice(last, sub.index).replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+      re += /prefix/i.test(sub[1]) ? prefixAlternation : '[A-Za-z0-9_]+';
+      last = sub.index + sub[0].length;
+    }
+    re += tpl.slice(last).replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
     return { tpl, re: new RegExp(`^${re}$`) };
   }),
 );
