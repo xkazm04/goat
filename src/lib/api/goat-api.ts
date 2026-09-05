@@ -3,7 +3,8 @@
  *
  * A single, unified API client for all GOAT application endpoints.
  * Consolidates multiple specialized clients into one consistent interface
- * with retry logic, circuit breaking, and full TypeScript coverage.
+ * with circuit breaking, GET coalescing, and full TypeScript coverage. It does
+ * NOT retry — React Query owns retries (see RequestConfig below).
  *
  * @example
  * ```ts
