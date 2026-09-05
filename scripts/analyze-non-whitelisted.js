@@ -3,7 +3,8 @@
  * Analyze non-whitelisted domains and items
  */
 
-const API_BASE = process.env.API_BASE || 'http://localhost:3001';
+// `next dev` serves 3000; the old default (3001) pointed at a port nothing listens on.
+const API_BASE = process.env.API_BASE || 'http://localhost:3000';
 
 async function main() {
   const response = await fetch(`${API_BASE}/api/items/validate?issue=non_whitelisted&limit=200`);

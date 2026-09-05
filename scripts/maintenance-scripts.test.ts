@@ -60,3 +60,15 @@ describe('maintenance scripts exit non-zero when they fail', () => {
     expect(offenders).toEqual([]);
   });
 });
+
+describe('maintenance scripts default to the port `next dev` actually serves', () => {
+  // Negative control (2026-09-05): all five API scripts defaulted to localhost:3001
+  // while `next dev` serves 3000, so every default invocation was a refused
+  // connection — and, before ae34b84, an exit 0. Red 5/5 before the fix.
+  it('no API script defaults API_BASE to a port other than 3000', () => {
+    const offenders = API_SCRIPTS.filter((s) =>
+      /localhost:(?!3000\b)\d+/.test(stripComments(readFileSync(path.join(scriptsDir, s), 'utf8'))),
+    );
+    expect(offenders).toEqual([]);
+  });
+});

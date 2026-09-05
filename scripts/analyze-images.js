@@ -4,7 +4,8 @@
  * Usage: node scripts/analyze-images.js
  */
 
-const API_BASE = process.env.API_BASE || 'http://localhost:3001';
+// `next dev` serves 3000; the old default (3001) pointed at a port nothing listens on.
+const API_BASE = process.env.API_BASE || 'http://localhost:3000';
 
 async function main() {
   console.log('Fetching items from', API_BASE);

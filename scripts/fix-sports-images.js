@@ -9,7 +9,8 @@
  *   node scripts/fix-sports-images.js --update     # Actually update
  */
 
-const API_BASE = process.env.API_BASE || 'http://localhost:3001';
+// `next dev` serves 3000; the old default (3001) pointed at a port nothing listens on.
+const API_BASE = process.env.API_BASE || 'http://localhost:3000';
 const args = process.argv.slice(2);
 const DRY_RUN = !args.includes('--update');
 

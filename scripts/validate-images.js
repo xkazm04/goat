@@ -17,7 +17,8 @@
 
 const fs = require('fs');
 
-const API_BASE = process.env.API_BASE || 'http://localhost:3001';
+// `next dev` serves 3000; the old default (3001) pointed at a port nothing listens on.
+const API_BASE = process.env.API_BASE || 'http://localhost:3000';
 const CONCURRENT_REQUESTS = 10;
 const HTTP_TIMEOUT = 5000;
 
