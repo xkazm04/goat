@@ -12,7 +12,11 @@ CREATE TABLE IF NOT EXISTS blueprints (
   time_period TEXT NOT NULL DEFAULT 'all-time',
   description TEXT,
   author TEXT,
-  author_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  -- TEXT, not a UUID FK to auth.users: the app writes temp-user ids here and
+  -- 20260315000002 (the definition production actually ran) declares it TEXT.
+  -- Two CREATE TABLE IF NOT EXISTS definitions of one table must agree, or the
+  -- shape a database has depends on which step it ran first. Aligned 2026-09-05.
+  author_id TEXT,
 
   -- Color scheme
   color_primary TEXT NOT NULL DEFAULT '#f59e0b',

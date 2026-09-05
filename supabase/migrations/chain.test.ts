@@ -125,7 +125,7 @@ describe('supabase/migrations — the chain read as a chain', () => {
     expect(dupes).toEqual([]);
   });
 
-  it.fails('a table CREATE TABLE IF NOT EXISTS defines twice has one column definition', () => {
+  it('a table CREATE TABLE IF NOT EXISTS defines twice has one column definition', () => {
     // Two definitions of one table are two authorities for its shape; the
     // guarded second one silently skips, so whichever step a given database
     // ran first decides the shape it has (registry: schema-drift-detection,
