@@ -104,7 +104,7 @@ describe('withErrorHandler — the API error door', () => {
     expect(logged).toContain('ECONNREFUSED');
   });
 
-  it.fails('the error log line carries the x-request-id the client sent', async () => {
+  it('the error log line carries the x-request-id the client sent', async () => {
     const err = errorSpy();
     const wrapped = withErrorHandler(async () => {
       throw new GoatError('SERVER_INTERNAL_ERROR');
@@ -112,6 +112,21 @@ describe('withErrorHandler — the API error door', () => {
     await wrapped(request({ 'x-request-id': 'goat-abc123-xyz789' }));
     const logged = err.mock.calls.map((c) => c.map(String).join(' ')).join('\n');
     expect(logged).toContain('"requestId": "goat-abc123-xyz789"');
+  });
+
+  // Negative control for the bound: the id is untrusted input on its way into
+  // a log line, so seed an oversized one and watch it not survive whole.
+  // (Control characters need no guard here — undici rejects them in a header
+  // value before the route sees the request, which this file verified.)
+  it('bounds the length of a client-supplied x-request-id', async () => {
+    const err = errorSpy();
+    const wrapped = withErrorHandler(async () => {
+      throw new GoatError('SERVER_INTERNAL_ERROR');
+    });
+    await wrapped(request({ 'x-request-id': 'x'.repeat(500) }));
+    const logged = err.mock.calls.map((c) => c.map(String).join(' ')).join('|');
+    expect(logged).toContain('"requestId": "' + 'x'.repeat(128) + '"');
+    expect(logged).not.toContain('x'.repeat(129));
   });
 });
 

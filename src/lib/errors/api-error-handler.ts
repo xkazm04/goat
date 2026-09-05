@@ -138,6 +138,26 @@ function buildErrorResponse(error: GoatError, req: NextRequest): NextResponse<Er
 // Error Logging
 // ============================================================================
 
+/** Bound on a client-supplied correlation id before it enters a log line. */
+const MAX_REQUEST_ID_LENGTH = 128;
+
+/**
+ * The caller's correlation id, if it sent one.
+ *
+ * `ErrorLogEntry.requestId` was declared and never assigned, so the
+ * `x-request-id` a client (or an edge proxy) put on the request could not be
+ * joined to the error line it caused — the operator had `traceId`, which the
+ * client never sees, and the client had nothing. The value is untrusted input
+ * on its way into a log, so it is length-bounded. It needs no control-character
+ * strip: undici rejects those in a header value before a route ever runs,
+ * which api-error-handler.test.ts verified before this guard was left out.
+ */
+function readRequestId(req: NextRequest): string | undefined {
+  const raw = req.headers.get('x-request-id');
+  if (!raw) return undefined;
+  return raw.slice(0, MAX_REQUEST_ID_LENGTH) || undefined;
+}
+
 /**
  * Log error for monitoring and debugging
  */
@@ -152,6 +172,7 @@ function logError(error: GoatError, req: NextRequest, userId?: string): void {
     path: new URL(req.url).pathname,
     method: req.method,
     userId,
+    requestId: readRequestId(req),
   };
 
   // The cause is the ONLY record of what actually failed once the wire message
