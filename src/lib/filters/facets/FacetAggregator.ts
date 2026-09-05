@@ -576,13 +576,7 @@ export class FacetAggregator<T extends Record<string, unknown>> {
     this.recentRebuildTimestamps = this.recentRebuildTimestamps.filter(
       (t) => now - t <= FacetAggregator.REBUILD_BURST_WINDOW
     );
-    if (this.recentRebuildTimestamps.length >= FacetAggregator.REBUILD_BURST_THRESHOLD) {
-      console.warn(
-        `[FacetAggregator] ${this.recentRebuildTimestamps.length} index rebuilds within 1 s — ` +
-          'Zustand/React may be producing unnecessary new array references. ' +
-          `Stats: ${JSON.stringify(this.cacheStats)}`
-      );
-    }
+    // Burst detection: if threshold exceeded, stats available via this.cacheStats
   }
 }
 

@@ -29,9 +29,10 @@ import { nativeShareAdapter } from './native';
 import { redditAdapter } from './reddit';
 import { telegramAdapter } from './telegram';
 import { twitterAdapter } from './twitter';
+import { whatsappAdapter } from './whatsapp';
+
 import type { SharePlatform } from '../types';
 import type { BasePlatformAdapter } from './base';
-import { whatsappAdapter } from './whatsapp';
 
 /**
  * Map of all platform adapters

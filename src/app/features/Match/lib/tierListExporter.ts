@@ -3,6 +3,7 @@
  * Generates shareable tier list images optimized for social media
  */
 
+import { getTierListShareUrl } from '@/lib/sharing/share-urls';
 import { BacklogItemType } from '@/types/match';
 
 import { TierListTier } from './tierPresets';
@@ -154,7 +155,7 @@ async function drawItemCard(
 
       ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
       ctx.restore();
-    } catch (error) {
+    } catch {
       // Draw placeholder
       ctx.fillStyle = '#334155'; // slate-700
       drawRoundedRect(ctx, x + padding, y + padding, innerSize, innerSize, radius - padding);
@@ -346,9 +347,8 @@ export function generateShareUrl(
   }));
 
   const encoded = btoa(JSON.stringify(placements));
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
 
-  return `${baseUrl}/share/tierlist/${listId}?data=${encoded}`;
+  return getTierListShareUrl(listId, encoded);
 }
 
 /**

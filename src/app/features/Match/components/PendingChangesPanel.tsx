@@ -13,8 +13,8 @@ import {
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
-import { useOffline } from '@/lib/offline/OfflineProvider';
 import { getOfflinePersistence } from '@/lib/offline/OfflinePersistence';
+import { useOffline } from '@/lib/offline/OfflineProvider';
 
 import type { SyncOperation, OperationStatus } from '@/lib/offline/types';
 
@@ -115,7 +115,7 @@ export function PendingChangesPanel({
 
   const pendingOps = operations.filter((op) => op.status === 'pending');
   const failedOps = operations.filter((op) => op.status === 'failed');
-  const conflictOps = operations.filter((op) => op.status === 'conflict');
+  const _conflictOps = operations.filter((op) => op.status === 'conflict');
 
   return (
     <div className={`bg-gray-900 border border-gray-700 rounded-card overflow-hidden ${className}`}>
@@ -266,7 +266,7 @@ export function PendingChangesPanel({
                 <div className="px-4 py-2 bg-yellow-900/20 border-t border-yellow-900/30 flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 text-yellow-400" />
                   <span className="text-xs text-yellow-400">
-                    You're offline. Changes will sync when you reconnect.
+                    You&apos;re offline. Changes will sync when you reconnect.
                   </span>
                 </div>
               )}

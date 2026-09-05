@@ -8,38 +8,40 @@ import { AudioPlayer } from "@/components/AudioPlayer";
 import { AuthPrompt } from "@/components/auth";
 import { RankingProgressLayer } from "@/components/visual/RankingProgressLayer";
 import { useAuthUser } from "@/hooks/use-auth-user";
+import { useUndoKeyboard } from "@/hooks/use-undo-keyboard";
 import { createStandardRouter, type OperationStoreContext } from "@/lib/dnd";
+import { getDisplaySlots } from "@/lib/grid/view-registry";
 import { useBacklogStore } from "@/stores/backlog-store";
+import { useDropZoneHighlightStore } from "@/stores/drop-zone-highlight-store";
 import { useGridStore } from "@/stores/grid-store";
-import { BacklogItem } from "@/types/backlog-groups";
-import { backlogGroupsToItemCategories } from "../../Collection";
-import { CollectionItem } from "../../Collection/types";
-import { SimpleCollectionPanel } from "../sub_MatchCollections/SimpleCollectionPanel";
-import { useCurrentList } from "@/stores/use-list-store";
 import { useMatchStore } from "@/stores/match-store";
 import { useRankingStore } from "@/stores/ranking-store";
+import { useCurrentList } from "@/stores/use-list-store";
+import { BacklogItem } from "@/types/backlog-groups";
 
+import { backlogGroupsToItemCategories } from "../../Collection";
+import { CollectionItem } from "../../Collection/types";
 import { LazyShareModal } from "../components/LazyModals";
+import { BracketView } from "../sub_MatchBracket";
+import { SimpleCollectionPanel } from "../sub_MatchCollections/SimpleCollectionPanel";
+
 
 
 // Import modular components
 import { DropZoneHighlightProvider } from "./components/DropZoneHighlightContext";
-import { useDropZoneHighlightStore } from "@/stores/drop-zone-highlight-store";
 import { ViewSelector } from "./components/GridRenderer";
 import { GridSection } from "./components/GridSection";
 import { MatchGridHeader } from "./components/MatchGridHeader";
 import { PortalDragOverlay } from "./components/PortalDragOverlay";
+import { StandaloneAnnouncer } from "./components/ScreenReaderAnnouncer";
 import { TierListView } from "./components/TierListView";
 import { ViewSwitcher, ViewMode } from "./components/ViewSwitcher";
-import { BracketView } from "../sub_MatchBracket";
-import { PositionBracketModal } from "../sub_MatchBracket/PositionBracketModal";
-import { StandaloneAnnouncer } from "./components/ScreenReaderAnnouncer";
-
-
 import { ComparisonDrawer } from "../components/ComparisonDrawer";
 import { PositionHistoryProvider } from "../components/PositionHistoryContext";
+import { PositionBracketModal } from "../sub_MatchBracket/PositionBracketModal";
 
-import { useUndoKeyboard } from "@/hooks/use-undo-keyboard";
+
+
 
 /**
  * "Neon Arena" Match Grid
@@ -88,7 +90,7 @@ function SimpleMatchGridInner() {
   const markItemAsUsed = useBacklogStore(state => state.markItemAsUsed);
 
   // Match store for share modal
-  const setShowResultShareModal = useMatchStore(state => state.setShowResultShareModal);
+  const _setShowResultShareModal = useMatchStore(state => state.setShowResultShareModal);
 
   // Ranking store for tier mode operations
   const assignToTier = useRankingStore(state => state.assignToTier);
@@ -134,7 +136,7 @@ function SimpleMatchGridInner() {
       onDragStart({ active }) {
         return `Dragging ${getItemName(active)}`;
       },
-      onDragOver({ active, over }) {
+      onDragOver({ active: _active, over }) {
         const target = getDropTarget(over);
         if (target) return `Over ${target}`;
         return undefined;
@@ -197,7 +199,7 @@ function SimpleMatchGridInner() {
   // Drag state - simple: just track active item and target position
   // The activeItem is a simplified representation for the drag overlay
   const [activeItem, setActiveItem] = useState<{ id?: string; title: string; image_url?: string | null } | null>(null);
-  const [activeType, setActiveType] = useState<'collection' | 'grid' | null>(null);
+  const [_activeType, setActiveType] = useState<'collection' | 'grid' | null>(null);
   const [targetPosition, setTargetPosition] = useState<number | null>(null);
 
   // Auth state for post-completion prompt
@@ -276,6 +278,9 @@ function SimpleMatchGridInner() {
 
   // Handle bracket ranking completion - apply ranked items to grid
   const handleBracketRankingComplete = useCallback((rankedItems: BacklogItem[]) => {
+    // Clear existing grid to prevent stale rankings from mixing with new results
+    clearGrid();
+
     // Apply each ranked item to the grid in order
     rankedItems.forEach((item, index) => {
       if (index < maxGridSize) {
@@ -286,7 +291,7 @@ function SimpleMatchGridInner() {
 
     // Switch back to podium view to show results
     handleViewModeChange('podium');
-  }, [assignItemToGrid, markItemAsUsed, maxGridSize, handleViewModeChange]);
+  }, [clearGrid, assignItemToGrid, markItemAsUsed, maxGridSize, handleViewModeChange]);
 
   // Unused backlog items (for position bracket)
   const unusedBacklogItems = useMemo(() => {
@@ -533,7 +538,7 @@ function SimpleMatchGridInner() {
             <div className="max-w-7xl mx-auto px-8">
               <div className="flex justify-end pt-8">
                 {/* View Switcher - Top Right */}
-                <ViewSwitcher currentView={viewMode} onViewChange={handleViewModeChange} />
+                <ViewSwitcher currentView={viewMode} onViewChange={handleViewModeChange} listSize={gridItems.length} />
               </div>
             </div>
           </div>
@@ -572,7 +577,7 @@ function SimpleMatchGridInner() {
             {/* Unified Grid - hidden in bracket and tierlist mode */}
             {viewMode !== 'bracket' && viewMode !== 'tierlist' && (
               <GridSection
-                startPosition={viewMode === 'rushmore' ? 4 : 3}
+                startPosition={getDisplaySlots(viewMode)}
                 endPosition={gridItems.length}
                 columns={10}
                 gap={3}

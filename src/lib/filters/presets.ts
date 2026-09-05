@@ -34,7 +34,7 @@ export interface FilterPresetDefinition {
  * Generate a unique condition ID
  */
 function condId(prefix: string): string {
-  return `preset-${prefix}-${Date.now().toString(36)}`;
+  return `preset-${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).substr(2, 9)}`;
 }
 
 /**

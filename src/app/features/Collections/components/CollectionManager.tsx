@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { memo, useState, useCallback } from "react";
 
-import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import { useMotionCapabilities } from "@/hooks/use-motion-preference";
 
 
 import type { ListCollection, CreateCollectionRequest, UpdateCollectionRequest } from "@/types/collection";
@@ -38,7 +38,7 @@ const PRESET_COLORS = [
   "#84cc16", // lime
 ];
 
-const PRESET_ICONS = [
+const _PRESET_ICONS = [
   { id: "folder", label: "Folder" },
   { id: "star", label: "Star" },
   { id: "heart", label: "Heart" },
@@ -57,13 +57,13 @@ export const CollectionManager = memo(function CollectionManager({
   onSave,
   onDelete,
 }: CollectionManagerProps) {
-  const reducedMotion = useReducedMotion();
+  const { allowTransitions } = useMotionCapabilities();
   const isEdit = !!collection;
 
   const [name, setName] = useState(collection?.name || "");
   const [description, setDescription] = useState(collection?.description || "");
   const [color, setColor] = useState(collection?.color || PRESET_COLORS[0]);
-  const [icon, setIcon] = useState(collection?.icon || "folder");
+  const [icon, _setIcon] = useState(collection?.icon || "folder");
   const [parentId, setParentId] = useState<string | null>(collection?.parentId || null);
   const [isPublic, setIsPublic] = useState(collection?.isPublic || false);
   const [isSaving, setIsSaving] = useState(false);
@@ -139,8 +139,8 @@ export const CollectionManager = memo(function CollectionManager({
 
           {/* Modal */}
           <motion.div
-            initial={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.95, y: 20 }}
-            animate={reducedMotion ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
+            initial={!allowTransitions ? { opacity: 0 } : { opacity: 0, scale: 0.95, y: 20 }}
+            animate={!allowTransitions ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg z-modal"
           >
@@ -177,10 +177,11 @@ export const CollectionManager = memo(function CollectionManager({
 
                 {/* Name */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label htmlFor="collection-name" className="block text-sm font-medium text-slate-300 mb-2">
                     Name <span className="text-red-400">*</span>
                   </label>
                   <input
+                    id="collection-name"
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
@@ -192,10 +193,11 @@ export const CollectionManager = memo(function CollectionManager({
 
                 {/* Description */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label htmlFor="collection-description" className="block text-sm font-medium text-slate-300 mb-2">
                     Description
                   </label>
                   <textarea
+                    id="collection-description"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Optional description..."
@@ -206,10 +208,10 @@ export const CollectionManager = memo(function CollectionManager({
 
                 {/* Color Picker */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <span className="block text-sm font-medium text-slate-300 mb-2">
                     <Palette className="w-4 h-4 inline-block mr-1.5" />
                     Color
-                  </label>
+                  </span>
                   <div className="flex items-center gap-2">
                     {PRESET_COLORS.map((c) => (
                       <button
@@ -233,12 +235,13 @@ export const CollectionManager = memo(function CollectionManager({
                 {/* Parent Collection */}
                 {availableParents.length > 0 && (
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                    <label htmlFor="collection-parent" className="block text-sm font-medium text-slate-300 mb-2">
                       <Folder className="w-4 h-4 inline-block mr-1.5" />
                       Parent Collection
                     </label>
                     <div className="relative">
                       <select
+                        id="collection-parent"
                         value={parentId || ""}
                         onChange={(e) => setParentId(e.target.value || null)}
                         className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-card text-white appearance-none focus:outline-hidden focus:border-brand/50 transition-colors"
@@ -257,9 +260,9 @@ export const CollectionManager = memo(function CollectionManager({
 
                 {/* Visibility Toggle */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <span className="block text-sm font-medium text-slate-300 mb-2">
                     Visibility
-                  </label>
+                  </span>
                   <div className="flex gap-3">
                     <button
                       onClick={() => setIsPublic(false)}

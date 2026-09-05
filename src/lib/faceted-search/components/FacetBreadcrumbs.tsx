@@ -42,7 +42,7 @@ export function FacetBreadcrumbs({
   hierarchicalFacets = [],
   onRemove,
   onClearAll,
-  onClearFacet,
+  onClearFacet: _onClearFacet,
   className,
   maxVisible = 10,
   compact = false,
@@ -99,7 +99,7 @@ export function FacetBreadcrumbs({
   }, [selections, facets, hierarchicalFacets]);
 
   // Group by facet for collapsed view
-  const groupedBreadcrumbs = useMemo(() => {
+  const _groupedBreadcrumbs = useMemo(() => {
     const groups = new Map<string, FacetBreadcrumb[]>();
     for (const crumb of breadcrumbs) {
       const existing = groups.get(crumb.facetId) ?? [];

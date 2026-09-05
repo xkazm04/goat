@@ -8,6 +8,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import Image from "next/image";
 import { useState, useCallback, useMemo } from "react";
 
 import { ELEVATION } from "@/components/visual/depth";
@@ -73,11 +74,12 @@ function SavedListCard({
       {/* Image */}
       <div className="aspect-[3/2] relative overflow-hidden">
         {imageUrl ? (
-          <img
+          <Image
             src={imageUrl}
             alt=""
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            loading="lazy"
+            fill
+            className="object-cover group-hover:scale-105 transition-transform duration-300"
+            unoptimized
           />
         ) : (
           <div
@@ -234,7 +236,7 @@ export function SavedListsSection({ className }: SavedListsSectionProps) {
     folders,
     bookmarksByFolder,
     isLoading,
-    isBookmarked,
+    isBookmarked: _isBookmarked,
     removeBookmark,
     createFolder,
     deleteFolder,

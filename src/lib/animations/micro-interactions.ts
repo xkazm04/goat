@@ -11,9 +11,10 @@
  * - Accessible: Respect prefers-reduced-motion
  */
 
+import { DURATION, EASING } from './motion-presets';
+
 import type { Variants, Transition, TargetAndTransition } from 'framer-motion';
 
-import { DURATION, EASING } from './motion-presets';
 
 // Re-export canonical tokens so existing consumers keep working.
 export { DURATION, EASING };

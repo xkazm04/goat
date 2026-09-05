@@ -93,9 +93,9 @@ const SimpleCategorySelector = memo(function SimpleCategorySelector({
   return (
     <>
       <div className="mb-8">
-        <label className="block text-sm font-medium text-slate-300 mb-4">
+        <span className="block text-sm font-medium text-slate-300 mb-4">
           Category
-        </label>
+        </span>
         <div className="flex flex-wrap gap-2">
           {categories.map((category, index) => (
             <motion.button
@@ -154,9 +154,9 @@ const SimpleCategorySelector = memo(function SimpleCategorySelector({
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
             className="mb-8"
           >
-            <label className="block text-sm font-medium text-slate-300 mb-4">
+            <span className="block text-sm font-medium text-slate-300 mb-4">
               Subcategory
-            </label>
+            </span>
             <div className="space-y-3">
               {subcategories.map((subcategory, index) => (
                 <motion.button

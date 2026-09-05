@@ -88,7 +88,7 @@ export const useScreenCapture = () => {
       // Clean up
       URL.revokeObjectURL(url);
       
-      console.log(`Screenshot saved as ${filename}`);
+      // Screenshot saved successfully
       
     } catch (error) {
       console.error('Failed to capture screenshot:', error);

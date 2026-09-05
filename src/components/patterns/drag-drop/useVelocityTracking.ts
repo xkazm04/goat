@@ -228,7 +228,7 @@ export function useVelocityTracking(
   }, []);
 
   // Return stable reference to velocity
-  const velocity = useMemo(() => velocityRef.current, []);
+  const _velocity = useMemo(() => velocityRef.current, []);
 
   return {
     velocity: velocityRef.current,

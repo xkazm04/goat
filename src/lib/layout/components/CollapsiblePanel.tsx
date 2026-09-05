@@ -63,7 +63,7 @@ interface CollapsiblePanelProps {
 export function CollapsiblePanel({
   children,
   className,
-  id = 'sidebar',
+  id: _id = 'sidebar',
   position: propPosition,
   state: controlledState,
   defaultState = 'expanded',
@@ -157,7 +157,7 @@ export function CollapsiblePanel({
       const velocity = info.velocity.x;
       const offset = info.offset.x;
       const isLeftPanel = position === 'left';
-      const isRightPanel = position === 'right';
+      const _isRightPanel = position === 'right';
 
       // Determine action based on velocity and offset
       const shouldCollapse =

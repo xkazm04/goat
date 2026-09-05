@@ -175,7 +175,7 @@ function calculateBellBoundaries(listSize: number, tierCount: number): number[] 
 function calculatePercentileBoundaries(
   listSize: number,
   tierCount: number,
-  params: Record<string, number> = {}
+  _params: Record<string, number> = {}
 ): number[] {
   // Default percentiles for different tier counts
   const defaultPercentiles: Record<number, number[]> = {
@@ -288,7 +288,8 @@ export function assignTiersToItems(
   const sorted = [...filledPositions].sort((a, b) => a.position - b.position);
   const total = sorted.length;
 
-  for (const item of sorted) {
+  for (let rank = 0; rank < sorted.length; rank++) {
+    const item = sorted[rank];
     const tier = getTierForPosition(item.position, tiers);
     if (tier) {
       const currentCount = tierCounts.get(tier.id) || 0;
@@ -298,7 +299,7 @@ export function assignTiersToItems(
         itemId: item.itemId,
         position: item.position,
         tier,
-        percentile: total > 0 ? Math.round(((total - item.position - 1) / total) * 100) : 0,
+        percentile: total > 0 ? Math.round(((total - rank - 1) / total) * 100) : 0,
         tierRank: currentCount + 1,
       });
     }
@@ -550,8 +551,8 @@ export function calculateDistributionStats(
   }
 
   // Calculate evenness (inverse of coefficient of variation)
-  const avg = tierSizes.reduce((a, b) => a + b, 0) / tierSizes.length;
-  const variance = tierSizes.reduce((sum, s) => sum + Math.pow(s - avg, 2), 0) / tierSizes.length;
+  const avg = tierSizes.length > 0 ? tierSizes.reduce((a, b) => a + b, 0) / tierSizes.length : 0;
+  const variance = tierSizes.length > 0 ? tierSizes.reduce((sum, s) => sum + Math.pow(s - avg, 2), 0) / tierSizes.length : 0;
   const stdDev = Math.sqrt(variance);
   const cv = avg > 0 ? stdDev / avg : 0;
   const evenness = Math.round((1 - Math.min(cv, 1)) * 100);

@@ -85,9 +85,8 @@ async function pLimit<T>(tasks: (() => Promise<T>)[], concurrency: number): Prom
 async function findExistingItems(
   titles: string[],
   category?: string,
-  requestId?: string
+  _requestId?: string
 ): Promise<Map<string, { id: string; name: string; image_url: string | null }>> {
-  const tag = requestId ? `[Studio Generate][${requestId}]` : '[Studio Generate]';
   const resultMap = new Map<string, { id: string; name: string; image_url: string | null }>();
 
   if (titles.length === 0) return resultMap;
@@ -120,7 +119,6 @@ async function findExistingItems(
     const { data, error } = await query;
 
     if (error) {
-      console.warn(`${tag} Supabase lookup error:`, error.message);
       return resultMap;
     }
 
@@ -140,8 +138,7 @@ async function findExistingItems(
     }
 
     return resultMap;
-  } catch (err) {
-    console.warn(`${tag} Failed to search existing items:`, err);
+  } catch {
     return resultMap;
   }
 }
@@ -158,9 +155,8 @@ async function enrichItem(
   existingItems: Map<string, { id: string; name: string; image_url: string | null }>,
   category?: string,
   useEnrichmentPipeline = false,
-  requestId?: string
+  _requestId?: string
 ): Promise<Record<string, unknown> & { enrichment_source: EnrichmentSource; enrich_duration_ms: number }> {
-  const tag = requestId ? `[Studio Generate][${requestId}]` : '[Studio Generate]';
   const enrichStart = performance.now();
 
   // Check if item exists in database first
@@ -181,22 +177,14 @@ async function enrichItem(
 
   // If enrichment pipeline is enabled, use it for better image quality
   if (useEnrichmentPipeline && category) {
-    const pipelineStart = performance.now();
     try {
       const enrichResult = await EnrichmentPipeline.enrich({
         name: item.title,
         category: category,
         hints: extractYearFromTitle(item.title),
       });
-      const pipelineMs = Math.round(performance.now() - pipelineStart);
 
       if (enrichResult.success && enrichResult.data?.selectedImage?.url) {
-        console.log(`${tag} enrich_item`, JSON.stringify({
-          operation: 'enrichment_pipeline',
-          title: item.title,
-          duration_ms: pipelineMs,
-          sources: enrichResult.sourcesUsed,
-        }));
         return {
           ...item,
           image_url: enrichResult.data.selectedImage.url,
@@ -213,28 +201,16 @@ async function enrichItem(
           enrich_duration_ms: Math.round(performance.now() - enrichStart),
         };
       }
-    } catch (err) {
-      const pipelineMs = Math.round(performance.now() - pipelineStart);
-      console.warn(`${tag} Enrichment pipeline failed for "${item.title}" (${pipelineMs}ms):`, err instanceof Error ? err.message : err);
+    } catch {
+      // Enrichment pipeline failed — falling back to other sources
     }
   }
 
   // Fallback: Wikipedia-only image lookup
-  const wikiStart = performance.now();
-  let wikiAttempts = 0;
 
   // Strategy 1: Try direct Wikipedia lookup with exact title
-  wikiAttempts++;
   let wikiImage = await fetchWikipediaImage(item.title);
   if (wikiImage?.url) {
-    const wikiMs = Math.round(performance.now() - wikiStart);
-    console.log(`${tag} enrich_item`, JSON.stringify({
-      operation: 'wiki_fallback',
-      title: item.title,
-      duration_ms: wikiMs,
-      strategy: 'direct',
-      attempts: wikiAttempts,
-    }));
     return { ...item, image_url: wikiImage.url, db_matched: false, server_image_attempted: true, enrichment_source: 'wiki_fallback' as const, enrich_duration_ms: Math.round(performance.now() - enrichStart) };
   }
 
@@ -242,17 +218,8 @@ async function enrichItem(
   if (item.wikipedia_url) {
     const wikiTitle = extractWikiTitle(item.wikipedia_url);
     if (wikiTitle && wikiTitle !== item.title) {
-      wikiAttempts++;
       wikiImage = await fetchWikipediaImage(wikiTitle);
       if (wikiImage?.url) {
-        const wikiMs = Math.round(performance.now() - wikiStart);
-        console.log(`${tag} enrich_item`, JSON.stringify({
-          operation: 'wiki_fallback',
-          title: item.title,
-          duration_ms: wikiMs,
-          strategy: 'url_extract',
-          attempts: wikiAttempts,
-        }));
         return { ...item, image_url: wikiImage.url, db_matched: false, server_image_attempted: true, enrichment_source: 'wiki_fallback' as const, enrich_duration_ms: Math.round(performance.now() - enrichStart) };
       }
     }
@@ -261,28 +228,13 @@ async function enrichItem(
   // Strategy 3: Try common title variations
   const variations = generateTitleVariations(item.title);
   for (const variation of variations.slice(0, 3)) {
-    wikiAttempts++;
     wikiImage = await fetchWikipediaImage(variation);
     if (wikiImage?.url) {
-      const wikiMs = Math.round(performance.now() - wikiStart);
-      console.log(`${tag} enrich_item`, JSON.stringify({
-        operation: 'wiki_fallback',
-        title: item.title,
-        duration_ms: wikiMs,
-        strategy: 'variation',
-        attempts: wikiAttempts,
-      }));
       return { ...item, image_url: wikiImage.url, db_matched: false, server_image_attempted: true, enrichment_source: 'wiki_fallback' as const, enrich_duration_ms: Math.round(performance.now() - enrichStart) };
     }
   }
 
   const totalMs = Math.round(performance.now() - enrichStart);
-  console.log(`${tag} enrich_item`, JSON.stringify({
-    operation: 'enrich_miss',
-    title: item.title,
-    duration_ms: totalMs,
-    wiki_attempts: wikiAttempts,
-  }));
   return { ...item, image_url: null, db_matched: false, server_image_attempted: true, enrichment_source: 'none' as const, enrich_duration_ms: totalMs };
 }
 
@@ -294,14 +246,12 @@ async function callGeminiWithRetry(
   ai: ReturnType<typeof getGeminiClient>,
   prompt: string,
   jsonSchema: Record<string, unknown>,
-  requestId?: string
+  _requestId?: string
 ) {
-  const tag = requestId ? `[Studio Generate][${requestId}]` : '[Studio Generate]';
   let lastError: Error | null = null;
   const callStart = performance.now();
 
   for (let attempt = 0; attempt < 2; attempt++) {
-    const attemptStart = performance.now();
     try {
       const response = await ai.models.generateContent({
         model: GEMINI_MODEL_PRIMARY,
@@ -321,14 +271,6 @@ async function callGeminiWithRetry(
       const parsed = geminiResponseSchema.parse(JSON.parse(responseText));
       const totalMs = Math.round(performance.now() - callStart);
 
-      console.log(`${tag} gemini_call`, JSON.stringify({
-        operation: 'gemini_generate',
-        duration_ms: totalMs,
-        attempt: attempt + 1,
-        retry_count: attempt,
-        item_count: parsed.items.length,
-      }));
-
       return {
         result: parsed,
         gemini_retries: attempt,
@@ -336,10 +278,7 @@ async function callGeminiWithRetry(
       };
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
-      const attemptMs = Math.round(performance.now() - attemptStart);
-      if (attempt === 0) {
-        console.warn(`${tag} Gemini attempt 1 failed (${attemptMs}ms), retrying silently:`, lastError.message);
-      }
+      // Retry silently
     }
   }
 
@@ -401,67 +340,27 @@ export async function POST(request: NextRequest) {
  */
 async function handleClassicGenerate(request: NextRequest) {
   const requestId = crypto.randomUUID();
-  const tag = `[Studio Generate][${requestId}]`;
-  const startTime = Date.now();
   try {
     const body = await request.json();
     const { topic, count, category, excludeTitles } = generateRequestSchema.parse(body);
 
-    console.log(`${tag} Starting classic generation`, JSON.stringify({ topic, count, category }));
-
     const ai = getGeminiClient();
     const prompt = buildPrompt(topic, count, category, excludeTitles);
 
-    const { result: geminiResult, gemini_retries, gemini_duration_ms } = await callGeminiWithRetry(ai, prompt, GEMINI_RESPONSE_SCHEMA as Record<string, unknown>, requestId);
+    const { result: geminiResult } = await callGeminiWithRetry(ai, prompt, GEMINI_RESPONSE_SCHEMA as Record<string, unknown>, requestId);
 
     // Search Supabase for existing items to reuse images/IDs
-    const dbLookupStart = performance.now();
     const titles = geminiResult.items.map(item => item.title);
     const existingItems = await findExistingItems(titles, category, requestId);
-    const dbLookupMs = Math.round(performance.now() - dbLookupStart);
 
     const useEnrichmentPipeline = process.env.ENABLE_ENRICHMENT_PIPELINE !== 'false';
     const WIKI_CONCURRENCY = 6;
-
-    const enrichmentStart = performance.now();
     const itemsWithImages = await pLimit(
       geminiResult.items.map((item) => async () =>
         enrichItem(item, existingItems, category, useEnrichmentPipeline, requestId)
       ),
       WIKI_CONCURRENCY
     );
-    const enrichmentMs = Math.round(performance.now() - enrichmentStart);
-
-    // Emit structured generation summary with timing breakdown
-    const dbMatched = itemsWithImages.filter(i => i.enrichment_source === 'database').length;
-    const imagesFound = itemsWithImages.filter(i => i.image_url).length;
-    const wikiFallbacks = itemsWithImages.filter(i => i.enrichment_source === 'wiki_fallback').length;
-    const enrichDurations = itemsWithImages.map(i => (i as { enrich_duration_ms?: number }).enrich_duration_ms ?? 0);
-
-    console.log(`${tag} generation_complete`, JSON.stringify({
-      event: 'generation_complete',
-      requestId,
-      mode: 'classic',
-      topic,
-      category: category || null,
-      items_requested: count,
-      items_generated: itemsWithImages.length,
-      db_matched: dbMatched,
-      images_found: imagesFound,
-      images_missing: itemsWithImages.length - imagesFound,
-      enrichment_pipeline_used: useEnrichmentPipeline,
-      wiki_fallbacks: wikiFallbacks,
-      gemini_retries,
-      total_duration_ms: Date.now() - startTime,
-      timing: {
-        gemini_ms: gemini_duration_ms,
-        db_lookup_ms: dbLookupMs,
-        enrichment_total_ms: enrichmentMs,
-        enrichment_avg_ms: enrichDurations.length > 0 ? Math.round(enrichDurations.reduce((a, b) => a + b, 0) / enrichDurations.length) : 0,
-        enrichment_max_ms: enrichDurations.length > 0 ? Math.max(...enrichDurations) : 0,
-      },
-    }));
-
     return NextResponse.json({
       items: itemsWithImages,
       suggested_title: geminiResult.suggested_title,
@@ -483,7 +382,6 @@ async function handleClassicGenerate(request: NextRequest) {
  */
 async function handleStreamingGenerate(request: NextRequest) {
   const requestId = crypto.randomUUID();
-  const tag = `[Studio Generate][${requestId}]`;
 
   let body;
   try {
@@ -507,7 +405,6 @@ async function handleStreamingGenerate(request: NextRequest) {
 
   const stream = new ReadableStream({
     async start(controller) {
-      const startTime = Date.now();
       const encoder = new TextEncoder();
       let closed = false;
 
@@ -524,20 +421,14 @@ async function handleStreamingGenerate(request: NextRequest) {
       }
 
       try {
-        console.log(`${tag} Starting streaming generation`, JSON.stringify({ topic, count, category }));
-
         const ai = getGeminiClient();
         const prompt = buildPrompt(topic, count, category, excludeTitles);
 
         // Call Gemini with silent retry
         let geminiResult;
-        let geminiRetries = 0;
-        let geminiDurationMs = 0;
         try {
           const geminiResponse = await callGeminiWithRetry(ai, prompt, GEMINI_RESPONSE_SCHEMA as Record<string, unknown>, requestId);
           geminiResult = geminiResponse.result;
-          geminiRetries = geminiResponse.gemini_retries;
-          geminiDurationMs = geminiResponse.gemini_duration_ms;
         } catch (err) {
           const rawMsg = err instanceof Error ? err.message : '';
           // Sanitize API key / provider errors — show generic message to user
@@ -561,17 +452,14 @@ async function handleStreamingGenerate(request: NextRequest) {
         });
 
         // Find existing DB items
-        const dbLookupStart = performance.now();
         const titles = geminiResult.items.map(item => item.title);
         const existingItems = await findExistingItems(titles, category, requestId);
-        const dbLookupMs = Math.round(performance.now() - dbLookupStart);
 
         const useEnrichmentPipeline = process.env.ENABLE_ENRICHMENT_PIPELINE !== 'false';
         const WIKI_CONCURRENCY = 6;
         const totalItems = geminiResult.items.length;
 
         // Process items in batches of WIKI_CONCURRENCY, streaming each as it completes
-        const enrichmentStart = performance.now();
         const allEnrichedItems: Array<Record<string, unknown> & { enrichment_source: EnrichmentSource }> = [];
         let streamedIndex = 0;
         for (let batchStart = 0; batchStart < totalItems; batchStart += WIKI_CONCURRENCY) {
@@ -595,38 +483,6 @@ async function handleStreamingGenerate(request: NextRequest) {
             streamedIndex++;
           }
         }
-
-        const enrichmentMs = Math.round(performance.now() - enrichmentStart);
-
-        // Emit structured generation summary with timing breakdown
-        const dbMatched = allEnrichedItems.filter(i => i.enrichment_source === 'database').length;
-        const imagesFound = allEnrichedItems.filter(i => i.image_url).length;
-        const wikiFallbacks = allEnrichedItems.filter(i => i.enrichment_source === 'wiki_fallback').length;
-        const enrichDurations = allEnrichedItems.map(i => (i as { enrich_duration_ms?: number }).enrich_duration_ms ?? 0);
-
-        console.log(`${tag} generation_complete`, JSON.stringify({
-          event: 'generation_complete',
-          requestId,
-          mode: 'streaming',
-          topic,
-          category: category || null,
-          items_requested: count,
-          items_generated: allEnrichedItems.length,
-          db_matched: dbMatched,
-          images_found: imagesFound,
-          images_missing: allEnrichedItems.length - imagesFound,
-          enrichment_pipeline_used: useEnrichmentPipeline,
-          wiki_fallbacks: wikiFallbacks,
-          gemini_retries: geminiRetries,
-          total_duration_ms: Date.now() - startTime,
-          timing: {
-            gemini_ms: geminiDurationMs,
-            db_lookup_ms: dbLookupMs,
-            enrichment_total_ms: enrichmentMs,
-            enrichment_avg_ms: enrichDurations.length > 0 ? Math.round(enrichDurations.reduce((a, b) => a + b, 0) / enrichDurations.length) : 0,
-            enrichment_max_ms: enrichDurations.length > 0 ? Math.max(...enrichDurations) : 0,
-          },
-        }));
 
         // Send done line
         sendLine({ type: 'done', total: streamedIndex });

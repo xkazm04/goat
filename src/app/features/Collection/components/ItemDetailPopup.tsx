@@ -22,7 +22,7 @@ import {
 } from "recharts";
 
 import { GoatBrokenFrame } from "@/components/illustrations/EmptyStateIllustrations";
-import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import { useMotionCapabilities } from "@/hooks/use-motion-preference";
 import { SPRING , DURATION } from "@/lib/animations/motion-presets";
 import { cn } from "@/lib/utils";
 import { useItemPopupStore, PopupInstance } from "@/stores/item-popup-store";
@@ -56,7 +56,7 @@ const getAccentColor = (medianPosition?: number) => {
  * - Quick-assign to grid
  */
 export function ItemDetailPopup({ popup, onQuickAssign }: ItemDetailPopupProps) {
-  const reducedMotion = useReducedMotion();
+  const { allowTransitions } = useMotionCapabilities();
   const [data, setData] = useState<ItemDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -120,8 +120,8 @@ export function ItemDetailPopup({ popup, onQuickAssign }: ItemDetailPopupProps) 
 
   return (
     <motion.div
-      initial={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.92, y: 20 }}
-      animate={reducedMotion ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
+      initial={!allowTransitions ? { opacity: 0 } : { opacity: 0, scale: 0.92, y: 20 }}
+      animate={!allowTransitions ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.92, y: 20 }}
       transition={SPRING.smooth}
       drag={!popup.locked}
@@ -399,7 +399,7 @@ function CompactRankingChart({ stats, accent }: CompactRankingChartProps) {
           <span className="text-2xs font-medium text-slate-500 uppercase tracking-wide">Distribution</span>
         </div>
         <span
-          className="text-3xs font-medium px-1 py-px rounded"
+          className="badge-sm font-medium"
           style={{
             background: volatilityInfo.bgColor,
             color: volatilityInfo.color,
@@ -510,7 +510,7 @@ function MiniTooltip({ active, payload, label, accent }: {
   if (!active || !payload?.[0]) return null;
   return (
     <div
-      className="px-1.5 py-0.5 rounded shadow-lg text-2xs"
+      className="badge-sm shadow-lg"
       style={{
         background: 'rgba(15,23,42,0.95)',
         border: `1px solid ${accent}40`,

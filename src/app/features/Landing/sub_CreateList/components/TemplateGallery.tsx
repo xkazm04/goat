@@ -33,7 +33,7 @@ const TEMPLATE_TABS = [
 
 type TabId = typeof TEMPLATE_TABS[number]['id'];
 
-export function TemplateGallery({ onSelectTemplate, onClose }: TemplateGalleryProps) {
+export function TemplateGallery({ onSelectTemplate, onClose: _onClose }: TemplateGalleryProps) {
   const [activeTab, setActiveTab] = useState<TabId>('starters');
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
 

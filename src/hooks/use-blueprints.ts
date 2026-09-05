@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { CACHE_TTL_MS, GC_TIME_MS } from '@/lib/cache/unified-cache';
+import { getBlueprintUrl } from '@/lib/sharing/share-urls';
 import {
   Blueprint,
   CreateBlueprintRequest,
@@ -336,8 +337,7 @@ export function useUserRating(slugOrId: string) {
 
 // Generate share URL for a blueprint
 export function generateBlueprintShareUrl(blueprint: Blueprint): string {
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-  return `${baseUrl}/blueprint/${blueprint.slug || blueprint.id}`;
+  return getBlueprintUrl(blueprint.slug || blueprint.id);
 }
 
 // Copy share URL to clipboard

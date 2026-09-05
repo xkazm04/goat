@@ -232,7 +232,7 @@ function FacetSection({
         <div className="flex items-center gap-2">
           <span className="font-medium">{facet.definition.label}</span>
           {selectedCount > 0 && (
-            <span className="px-1.5 py-0.5 text-xs bg-primary text-primary-foreground rounded-badge">
+            <span className="badge-sm bg-primary text-primary-foreground">
               {selectedCount}
             </span>
           )}
@@ -483,7 +483,7 @@ function HierarchicalFacetSection({
         <div className="flex items-center gap-2">
           <span className="font-medium">{facet.definition.label}</span>
           {selectedCount > 0 && (
-            <span className="px-1.5 py-0.5 text-xs bg-primary text-primary-foreground rounded-badge">
+            <span className="badge-sm bg-primary text-primary-foreground">
               {selectedCount}
             </span>
           )}

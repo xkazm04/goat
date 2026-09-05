@@ -179,7 +179,7 @@ export function useGravityWells(
   /**
    * Register a well center position dynamically
    */
-  const registerWellCenter = useCallback(
+  const _registerWellCenter = useCallback(
     (position: number, center: Vector2D) => {
       wellCentersRef.current.set(position, center);
     },
@@ -189,7 +189,7 @@ export function useGravityWells(
   /**
    * Get the snap target position for current drag position
    */
-  const getSnapTarget = useCallback(
+  const _getSnapTarget = useCallback(
     (position: Vector2D): Vector2D | null => {
       const well = checkPosition(position);
       if (!well) return null;

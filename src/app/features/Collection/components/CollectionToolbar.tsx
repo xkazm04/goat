@@ -198,7 +198,7 @@ function CategoryBar({ groups, selectedGroupIds, onToggleGroup, isInitialLoad, h
             >
               <span className="font-semibold">{group.name}</span>
               {itemCount > 0 && (
-                <span className={`ml-1.5 px-1.5 py-0.5 rounded-badge text-xs ${
+                <span className={`ml-1.5 badge-sm ${
                   isSelected
                     ? 'bg-brand/30 text-brand-hover'
                     : 'bg-slate-700/50 text-slate-500'
@@ -350,7 +350,7 @@ function QuickFiltersSection({
         {hasActiveFilters && (
           <div className="flex items-center gap-1.5">
             <span
-              className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-badge bg-brand/20 text-brand-hover border border-brand/30 animate-[category-enter_0.2s_ease-out_both]"
+              className="inline-flex items-center badge-md bg-brand/20 text-brand-hover border border-brand/30 animate-[category-enter_0.2s_ease-out_both]"
             >
               {activeFilterCount} active
             </span>
@@ -371,25 +371,33 @@ function QuickFiltersSection({
         <div className="flex items-center gap-2 mt-2 overflow-x-auto scrollbar-hide">
           <Bookmark className="w-3 h-3 text-slate-500 shrink-0" />
           {presets.map((preset) => (
-            <button
+            <div
               key={preset.id}
-              onClick={() => onLoadPreset(preset.id)}
-              className={`shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-control text-xs border transition-all ${
+              role="group"
+              aria-label={`Preset: ${preset.name}`}
+              className={`shrink-0 inline-flex items-center gap-1 rounded-control text-xs border transition-all ${
                 preset.id === activePresetId
                   ? 'bg-brand/20 border-brand/40 text-brand-hover'
                   : 'bg-slate-800/40 border-slate-700/50 text-slate-400 hover:border-slate-600 hover:text-slate-300'
               }`}
             >
-              <span>{preset.icon || '🎯'}</span>
-              <span>{preset.name}</span>
               <button
-                onClick={(e) => { e.stopPropagation(); onDeletePreset(preset.id); }}
-                className="ml-1 text-slate-500 hover:text-red-400 touch-target-sm"
+                onClick={() => onLoadPreset(preset.id)}
+                aria-label={`Load preset: ${preset.name}`}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-l-control hover:bg-slate-700/30 transition-colors"
+              >
+                <span>{preset.icon || '🎯'}</span>
+                <span>{preset.name}</span>
+              </button>
+              <button
+                onClick={() => onDeletePreset(preset.id)}
+                aria-label={`Delete preset: ${preset.name}`}
+                className="px-1.5 py-1 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-r-control transition-colors"
                 title="Remove preset"
               >
                 <X className="w-3 h-3" />
               </button>
-            </button>
+            </div>
           ))}
         </div>
       )}
@@ -613,7 +621,7 @@ export function CollectionToolbar({
               )}
               {(stats.hiddenInGridCount ?? 0) > 0 && (
                 <span
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-badge text-xs font-medium bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                  className="inline-flex items-center gap-1 badge-md bg-amber-500/20 text-amber-400 border border-amber-500/30"
                   title={`${stats.hiddenInGridCount} items are hidden because they are already in your ranking grid`}
                   data-testid="hidden-items-badge"
                 >

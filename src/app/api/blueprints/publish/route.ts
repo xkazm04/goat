@@ -5,9 +5,12 @@ import {
   withErrorHandler,
   fromSupabaseError,
   assertRequired,
+  assertIntRange,
   badRequest,
   createdResponse,
 } from '@/lib/errors';
+import { GRID_LIMITS } from '@/lib/grid/constants';
+import { getTemplateViewUrl, getServerBaseUrl } from '@/lib/sharing/share-urls';
 import { createClient } from '@/lib/supabase/server';
 import {
   BlueprintRow,
@@ -18,11 +21,9 @@ import {
 
 export const dynamic = 'force-dynamic';
 
-const DEFAULT_COLOR = {
-  primary: '#f59e0b',
-  secondary: '#d97706',
-  accent: '#fbbf24',
-};
+import { DEFAULT_LIST_COLOR } from '@/lib/config/category-config';
+
+const DEFAULT_COLOR = DEFAULT_LIST_COLOR;
 
 // POST /api/blueprints/publish - Publish a list as a community template
 export const POST = withErrorHandler(async (request: NextRequest) => {
@@ -35,6 +36,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
   assertRequired(title, 'title');
   assertRequired(category, 'category');
   assertRequired(size, 'size');
+  assertIntRange(size, 'size', GRID_LIMITS.MIN_SIZE, GRID_LIMITS.MAX_SIZE);
 
   if (!items || items.length === 0) {
     badRequest('At least one item is required to publish as template');
@@ -124,8 +126,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
 
   const blueprint = blueprintFromRow(data as unknown as BlueprintRow);
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://goat.app';
-  const shareUrl = `${baseUrl}/templates?view=${blueprint.slug}`;
+  const shareUrl = getTemplateViewUrl(blueprint.slug ?? blueprint.id, getServerBaseUrl());
 
   return createdResponse({ blueprint, shareUrl });
 });

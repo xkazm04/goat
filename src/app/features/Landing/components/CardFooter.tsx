@@ -72,7 +72,7 @@ export function CardFooter({ author, comment, color, rating = 5 }: CardFooterPro
 
       {/* Comment */}
       <p className="text-xs text-slate-400 mt-2.5 italic leading-relaxed line-clamp-2">
-        "{comment}"
+        &quot;{comment}&quot;
       </p>
     </div>
   );

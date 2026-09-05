@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
+import Image from "next/image";
 import { useState, useCallback, useEffect, useMemo } from "react";
 
 import { DURATION } from "@/lib/animations/motion-presets";
@@ -283,7 +284,7 @@ export function SmartFillPanel({
 function SmartFillToggleButton({
   onClick,
   remainingItems,
-  progress,
+  progress: _progress,
 }: {
   onClick: () => void;
   remainingItems: number;
@@ -339,10 +340,13 @@ function ItemSuggestionCard({
       {/* Item preview */}
       <div className="flex gap-4 mb-4">
         {item.image_url ? (
-          <img
+          <Image
             src={item.image_url}
             alt={item.title || item.name}
+            width={64}
+            height={64}
             className="w-16 h-16 rounded-control object-cover"
+            unoptimized
           />
         ) : (
           <div className="w-16 h-16 rounded-control bg-gray-700 flex items-center justify-center text-2xl">
@@ -529,7 +533,7 @@ function CompletedState({
         {filledCount >= targetSize ? "Ranking Complete!" : "All Items Placed!"}
       </h3>
       <p className="text-gray-400 mb-4">
-        You've filled {filledCount} of {targetSize} positions
+        You&apos;ve filled {filledCount} of {targetSize} positions
       </p>
 
       <button

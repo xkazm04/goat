@@ -243,8 +243,8 @@ export function triggerHaptic(
   try {
     navigator.vibrate(finalPattern);
     return true;
-  } catch (error) {
-    console.warn('Haptic feedback failed:', error);
+  } catch {
+    // Haptic feedback failed — silently degrade
     return false;
   }
 }
@@ -270,8 +270,8 @@ export function triggerCustomHaptic(
   try {
     navigator.vibrate(finalPattern);
     return true;
-  } catch (error) {
-    console.warn('Haptic feedback failed:', error);
+  } catch {
+    // Haptic feedback failed — silently degrade
     return false;
   }
 }

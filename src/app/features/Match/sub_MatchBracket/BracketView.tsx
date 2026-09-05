@@ -1,11 +1,12 @@
 "use client";
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { RotateCcw, Play } from 'lucide-react';
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { RotateCcw, Play, AlertTriangle } from 'lucide-react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
 import { BracketDrawingLoader } from '@/components/illustrations/BracketDrawingLoader';
+import { GlassModal, GlassModalBody } from '@/components/ui/glass-modal';
 import { DURATION } from '@/lib/animations/motion-presets';
 import { useRankingStore } from '@/stores/ranking-store';
 import { BacklogItem } from '@/types/backlog-groups';
@@ -25,6 +26,8 @@ import {
   getBracketSizeForItems,
   findMatchupById,
   SeedingStrategy,
+  seedParticipants,
+  generateSeedOrder,
 } from './lib';
 
 
@@ -40,7 +43,7 @@ interface BracketViewProps {
 type BracketPhase = 'setup' | 'playing' | 'complete';
 
 /**
- * Progress bar for bracket completion
+ * Progress bar for bracket completion with round milestone markers
  */
 function BracketProgress({
   stats,
@@ -49,6 +52,8 @@ function BracketProgress({
   stats: ReturnType<typeof deriveBracketData>['stats'];
   currentRoundName: string;
 }) {
+  const [hoveredMilestone, setHoveredMilestone] = useState<number | null>(null);
+
   return (
     <div className="bg-slate-800/50 border border-slate-700 rounded-card p-3">
       <div className="flex items-center justify-between mb-1.5">
@@ -57,13 +62,51 @@ function BracketProgress({
           {stats.completedMatchups} / {stats.totalMatchups}
         </span>
       </div>
-      <div className="relative h-1.5 bg-slate-700 rounded-full overflow-hidden">
-        <motion.div
-          className="absolute inset-y-0 left-0 bg-linear-to-r from-brand to-blue-500"
-          initial={{ width: 0 }}
-          animate={{ width: `${stats.progressPercentage}%` }}
-          transition={{ duration: DURATION.normal }}
-        />
+      <div className="relative h-3 flex items-center">
+        {/* Track */}
+        <div className="absolute inset-x-0 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+          <motion.div
+            className="absolute inset-y-0 left-0 bg-linear-to-r from-brand to-blue-500"
+            initial={{ width: 0 }}
+            animate={{ width: `${stats.progressPercentage}%` }}
+            transition={{ duration: DURATION.normal }}
+          />
+        </div>
+
+        {/* Round milestone markers (skip the last one at 100%) */}
+        {stats.roundMilestones.slice(0, -1).map((milestone, i) => (
+          <div
+            key={i}
+            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 group"
+            style={{ left: `${milestone.percentage}%` }}
+            onMouseEnter={() => setHoveredMilestone(i)}
+            onMouseLeave={() => setHoveredMilestone(null)}
+          >
+            {/* Marker dot */}
+            <div
+              className={`w-2 h-2 rounded-full border transition-colors ${
+                milestone.completed
+                  ? 'bg-brand border-brand/80'
+                  : 'bg-slate-600 border-slate-500'
+              }`}
+            />
+
+            {/* Tooltip on hover */}
+            <AnimatePresence>
+              {hoveredMilestone === i && (
+                <motion.div
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 4 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute left-1/2 -translate-x-1/2 top-full mt-1.5 px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-2xs text-slate-300 whitespace-nowrap pointer-events-none"
+                >
+                  {milestone.name}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -86,7 +129,7 @@ export function BracketView({
   gridItems,
   backlogItems,
   onRankingComplete,
-  listSize,
+  listSize: _listSize,
   onCancel,
 }: BracketViewProps) {
   // User-configurable bracket settings
@@ -97,6 +140,7 @@ export function BracketView({
   const [isVotingActive, setIsVotingActive] = useState(false);
   const [currentMatchup, setCurrentMatchup] = useState<BracketMatchup | null>(null);
   const [isInitializing, setIsInitializing] = useState(false);
+  const initTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Connect to ranking store for bracket state
   // Grouped into 2 selectors: reactive state (re-renders on change) and stable actions
@@ -143,6 +187,32 @@ export function BracketView({
     return backlogItems.filter((item) => !usedIds.has(item.id));
   }, [gridItems, backlogItems]);
 
+  // Compute preview matchup pairs using actual seeding logic
+  const previewMatchups = useMemo(() => {
+    if (availableItems.length < 2) return [];
+    const participants = seedParticipants(
+      availableItems as unknown as import('@/types/match').BacklogItemType[],
+      bracketSize,
+      { strategy: seedingStrategy }
+    );
+    const seedOrder = generateSeedOrder(bracketSize);
+    const numMatchups = Math.min(4, Math.floor(bracketSize / 2));
+    const pairs: { a: string; b: string }[] = [];
+    for (let i = 0; i < numMatchups; i++) {
+      const seed1 = seedOrder[i * 2];
+      const seed2 = seedOrder[i * 2 + 1];
+      const p1 = participants.find(p => p.seed === seed1);
+      const p2 = participants.find(p => p.seed === seed2);
+      if (p1?.item && p2?.item) {
+        pairs.push({
+          a: p1.item.title || p1.item.name || '',
+          b: p2.item.title || p2.item.name || '',
+        });
+      }
+    }
+    return pairs;
+  }, [availableItems, bracketSize, seedingStrategy]);
+
   // Derive stats, playable matchups, and completed votes in a single pass
   const derived = useMemo(() => {
     if (!bracket) return null;
@@ -157,7 +227,8 @@ export function BracketView({
   const handleSetupStart = useCallback(() => {
     setIsInitializing(true);
     // Show bracket-drawing animation briefly before initializing
-    setTimeout(() => {
+    initTimerRef.current = setTimeout(() => {
+      initTimerRef.current = null;
       storeInitializeBracket(availableItems, {
         size: bracketSize,
         seedingStrategy: seedingStrategy,
@@ -165,6 +236,15 @@ export function BracketView({
       setIsInitializing(false);
     }, 1500);
   }, [availableItems, bracketSize, seedingStrategy, storeInitializeBracket]);
+
+  // Cleanup init timer on unmount to prevent state updates on unmounted component
+  useEffect(() => {
+    return () => {
+      if (initTimerRef.current) {
+        clearTimeout(initTimerRef.current);
+      }
+    };
+  }, []);
 
   // On mount, detect in-progress bracket and auto-resume voting
   const [hasAutoResumed, setHasAutoResumed] = useState(false);
@@ -291,11 +371,19 @@ export function BracketView({
     onRankingComplete(rankedItems);
   }, [bracket, onRankingComplete, storeApplyBracketToRanking]);
 
-  // Reset bracket
-  const handleRestart = useCallback(() => {
+  // Restart confirmation dialog
+  const [showRestartConfirm, setShowRestartConfirm] = useState(false);
+
+  const handleRestartRequest = useCallback(() => {
+    setShowRestartConfirm(true);
+  }, []);
+
+  // Reset bracket (only called after confirmation)
+  const handleRestartConfirm = useCallback(() => {
     storeResetBracket();
     setIsVotingActive(false);
     setCurrentMatchup(null);
+    setShowRestartConfirm(false);
   }, [storeResetBracket]);
 
   return (
@@ -336,8 +424,8 @@ export function BracketView({
               onCancel={onCancel || (() => {})}
             />
 
-            {/* Seed preview - show first round matchup pairs */}
-            {availableItems.length >= 2 && (
+            {/* Seed preview - show first round matchup pairs using actual seeding */}
+            {previewMatchups.length > 0 && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -346,24 +434,22 @@ export function BracketView({
               >
                 <div className="bg-slate-800/50 border border-slate-700/50 rounded-card p-3">
                   <p className="text-2xs uppercase tracking-wide text-slate-500 font-medium mb-2">
-                    Preview: First {Math.min(4, Math.floor(Math.min(availableItems.length, bracketSize) / 2))} matchups
+                    Preview: First {previewMatchups.length} matchups
+                    {seedingStrategy === 'random' && (
+                      <span className="text-slate-600 normal-case"> (randomized on start)</span>
+                    )}
                   </p>
                   <div className="space-y-1">
-                    {Array.from({ length: Math.min(4, Math.floor(Math.min(availableItems.length, bracketSize) / 2)) }).map((_, i) => {
-                      const a = availableItems[i * 2];
-                      const b = availableItems[i * 2 + 1];
-                      if (!a || !b) return null;
-                      return (
-                        <div key={i} className="flex items-center gap-2 text-xs">
-                          <span className="text-slate-300 truncate flex-1 text-right">{a.title || a.name}</span>
-                          <span className="text-slate-600 text-2xs font-bold shrink-0">VS</span>
-                          <span className="text-slate-300 truncate flex-1">{b.title || b.name}</span>
-                        </div>
-                      );
-                    })}
-                    {Math.floor(Math.min(availableItems.length, bracketSize) / 2) > 4 && (
+                    {previewMatchups.map((pair, i) => (
+                      <div key={i} className="flex items-center gap-2 text-xs">
+                        <span className="text-slate-300 truncate flex-1 text-right">{pair.a}</span>
+                        <span className="text-slate-600 text-2xs font-bold shrink-0">VS</span>
+                        <span className="text-slate-300 truncate flex-1">{pair.b}</span>
+                      </div>
+                    ))}
+                    {Math.floor(Math.min(availableItems.length, bracketSize) / 2) > previewMatchups.length && (
                       <p className="text-2xs text-slate-600 text-center">
-                        +{Math.floor(Math.min(availableItems.length, bracketSize) / 2) - 4} more
+                        +{Math.floor(Math.min(availableItems.length, bracketSize) / 2) - previewMatchups.length} more
                       </p>
                     )}
                   </div>
@@ -412,7 +498,7 @@ export function BracketView({
                   )}
 
                   <button
-                    onClick={handleRestart}
+                    onClick={handleRestartRequest}
                     className="p-2 rounded-card bg-slate-800 hover:bg-slate-700 text-slate-400 transition-colors"
                     title="Restart"
                   >
@@ -439,10 +525,45 @@ export function BracketView({
             key="complete"
             bracket={bracket}
             onApplyRanking={handleApplyRanking}
-            onRestart={handleRestart}
+            onRestart={handleRestartRequest}
           />
         )}
       </AnimatePresence>
+
+      {/* Restart Confirmation Dialog */}
+      <GlassModal
+        open={showRestartConfirm}
+        onClose={() => setShowRestartConfirm(false)}
+        size="sm:w-[400px]"
+      >
+        <GlassModalBody>
+          <div className="text-center py-2">
+            <div className="mx-auto w-12 h-12 rounded-full bg-red-500/15 flex items-center justify-center mb-4">
+              <AlertTriangle className="w-6 h-6 text-red-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-white mb-2">Restart Tournament?</h3>
+            <p className="text-sm text-slate-400 mb-6">
+              {stats && stats.completedMatchups > 0
+                ? `You have ${stats.completedMatchups} completed vote${stats.completedMatchups !== 1 ? 's' : ''}. All progress will be lost.`
+                : 'This will reset the entire bracket.'}
+            </p>
+            <div className="flex items-center gap-3 justify-center">
+              <button
+                onClick={() => setShowRestartConfirm(false)}
+                className="px-4 py-2 rounded-card text-sm font-medium bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRestartConfirm}
+                className="px-4 py-2 rounded-card text-sm font-medium bg-red-500/20 border border-red-500/40 text-red-400 hover:bg-red-500/30 hover:text-red-300 transition-colors"
+              >
+                Restart
+              </button>
+            </div>
+          </div>
+        </GlassModalBody>
+      </GlassModal>
 
       {/* MatchupScreen Overlay - renders on top of everything when voting is active */}
       <AnimatePresence>

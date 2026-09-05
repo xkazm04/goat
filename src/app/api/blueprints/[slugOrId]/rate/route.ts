@@ -52,14 +52,14 @@ export const POST = withErrorHandler(
       throw fromSupabaseError(findError);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const bpAny = blueprintData as any;
     if (!bpAny.is_community) {
       badRequest('Only community templates can be rated');
     }
 
     // blueprint_ratings table added via migration — not yet in generated Supabase types
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const db = supabase as any;
 
     const { error: rateError } = await db
@@ -84,7 +84,7 @@ export const POST = withErrorHandler(
       .eq('id', bpAny.id)
       .single();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const updatedAny = updated as any;
 
     return successResponse({
@@ -125,7 +125,7 @@ export const GET = withErrorHandler(
       throw fromSupabaseError(findError);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const db = supabase as any;
     const { data: ratingData } = await db
       .from('blueprint_ratings')

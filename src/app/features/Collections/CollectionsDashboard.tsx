@@ -38,12 +38,12 @@ export const CollectionsDashboard = memo(function CollectionsDashboard({
   );
 
   // Fetch user collections
-  const { data: fetchedCollections, isLoading } = useUserCollections({
+  const { data: _fetchedCollections, isLoading } = useUserCollections({
     includeStats: true,
   });
 
   // Collection operations
-  const { create, update, remove, isPending } = useCollectionOperations();
+  const { create, update, remove, isPending: _isPending } = useCollectionOperations();
 
   // Modal state
   const [isManagerOpen, setIsManagerOpen] = useState(false);

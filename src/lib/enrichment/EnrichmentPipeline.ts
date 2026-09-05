@@ -136,15 +136,7 @@ class EnrichmentPipelineClass {
       // Record latency for histogram tracking
       SourceLatencyTracker.record(source, durationMs);
 
-      // Warn when a source exceeds 80% of the timeout threshold
-      const slowThreshold = this.config.sourceTimeoutMs * 0.8;
-      if (durationMs > slowThreshold) {
-        console.warn(
-          `[EnrichmentPipeline] Slow source: ${source} took ${durationMs}ms ` +
-          `(${Math.round((durationMs / this.config.sourceTimeoutMs) * 100)}% of ${this.config.sourceTimeoutMs}ms timeout) ` +
-          `for "${input.name}"`
-        );
-      }
+      // Track when a source exceeds 80% of the timeout threshold via SourceLatencyTracker
 
       return result;
     } catch (error) {
@@ -233,17 +225,7 @@ class EnrichmentPipelineClass {
       }
 
       if (successfulResults.length === 0) {
-        const durationMs = Date.now() - startedAt;
-        console.log('[EnrichmentPipeline] enrich_complete', JSON.stringify({
-          operation: 'enrich',
-          item: input.name,
-          category: input.category,
-          success: false,
-          duration_ms: durationMs,
-          sources_attempted: sourceResults.length,
-          sources_succeeded: 0,
-          source_timing: sourceTiming,
-        }));
+        const completedAt = Date.now();
         return {
           success: false,
           input,
@@ -252,8 +234,8 @@ class EnrichmentPipelineClass {
           errors,
           timing: {
             startedAt,
-            completedAt: Date.now(),
-            durationMs,
+            completedAt,
+            durationMs: completedAt - startedAt,
           },
         };
       }
@@ -277,18 +259,6 @@ class EnrichmentPipelineClass {
 
       const completedAt = Date.now();
       const durationMs = completedAt - startedAt;
-
-      console.log('[EnrichmentPipeline] enrich_complete', JSON.stringify({
-        operation: 'enrich',
-        item: input.name,
-        category: input.category,
-        success: hasMinimumData,
-        duration_ms: durationMs,
-        sources_attempted: sourceResults.length,
-        sources_succeeded: successfulResults.length,
-        has_image: !!normalizedData.selectedImage,
-        source_timing: sourceTiming,
-      }));
 
       return {
         success: hasMinimumData,

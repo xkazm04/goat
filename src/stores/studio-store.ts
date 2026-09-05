@@ -10,6 +10,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useShallow } from 'zustand/react/shallow';
 
+import { toast } from '@/hooks/use-toast';
 import { apiClient, getApiErrorMessage } from '@/lib/api/client';
 import { getTemplateById } from '@/lib/criteria/templates';
 import { getListTemplateById } from '@/lib/templates/list-templates';
@@ -50,22 +51,39 @@ interface StreamErrorLine {
 type StreamLine = StreamMetaLine | StreamItemLine | StreamDoneLine | StreamErrorLine;
 
 // ─────────────────────────────────────────────────────────────
-// Generation concurrency control
+// Scoped streaming context — isolates state per generation request
 // ─────────────────────────────────────────────────────────────
 
-/** Active AbortController — aborted when a new generation starts */
-let activeAbortController: AbortController | null = null;
+interface StreamContext {
+  controller: AbortController;
+  buffer: EnrichedItem[];
+  rafId: number | null;
+  progressMsg: string | null;
+}
 
 /** Monotonically increasing nonce — guards stale set() calls */
 let generationNonce = 0;
 
-// ─────────────────────────────────────────────────────────────
-// Streaming batch buffer — collects items and flushes once per frame
-// ─────────────────────────────────────────────────────────────
+/** Map of active stream contexts keyed by nonce */
+const streamContexts = new Map<number, StreamContext>();
 
-let streamBuffer: EnrichedItem[] = [];
-let streamRafId: number | null = null;
-let streamProgressMsg: string | null = null;
+/** Returns the current (latest) nonce's context, or null if none */
+function getActiveContext(nonce: number): StreamContext | null {
+  return streamContexts.get(nonce) ?? null;
+}
+
+/** Tears down a stream context: cancels rAF, clears buffer, removes from map */
+function destroyContext(nonce: number): void {
+  const ctx = streamContexts.get(nonce);
+  if (!ctx) return;
+  if (ctx.rafId !== null) {
+    cancelAnimationFrame(ctx.rafId);
+    ctx.rafId = null;
+  }
+  ctx.buffer = [];
+  ctx.progressMsg = null;
+  streamContexts.delete(nonce);
+}
 
 // ─────────────────────────────────────────────────────────────
 // Store State Interface
@@ -227,16 +245,29 @@ export const useStudioStore = create<StudioState>()(
       return;
     }
 
-    // Abort any in-flight generation
-    if (activeAbortController) {
-      activeAbortController.abort();
-    }
-    const controller = new AbortController();
-    activeAbortController = controller;
+    // Abort any in-flight generation(s)
+    streamContexts.forEach((oldCtx, oldNonce) => {
+      oldCtx.controller.abort();
+      destroyContext(oldNonce);
+    });
+
     const myNonce = ++generationNonce;
+    const ctx: StreamContext = {
+      controller: new AbortController(),
+      buffer: [],
+      rafId: null,
+      progressMsg: null,
+    };
+    streamContexts.set(myNonce, ctx);
 
     /** Guard: returns true if this generation is still the active one */
     const isStale = () => myNonce !== generationNonce;
+
+    /** Clean up streaming state when exiting early (stale, abort, etc.) */
+    const cleanupStream = () => {
+      destroyContext(myNonce);
+      set({ isGenerating: false, generationProgress: null });
+    };
 
     // Start generation with progress message
     set({ isGenerating: true, error: null, generationProgress: 'Generating ideas...' });
@@ -255,7 +286,7 @@ export const useStudioStore = create<StudioState>()(
           category,
           excludeTitles: existingTitles.length > 0 ? existingTitles : undefined,
         }),
-        signal: controller.signal,
+        signal: ctx.controller.signal,
       });
 
       if (!response.ok) {
@@ -278,6 +309,7 @@ export const useStudioStore = create<StudioState>()(
         // If a newer generation has started, stop processing
         if (isStale()) {
           reader.cancel();
+          cleanupStream();
           return;
         }
 
@@ -288,7 +320,7 @@ export const useStudioStore = create<StudioState>()(
         buffer = lines.pop() || ''; // Keep incomplete line in buffer
 
         for (const line of lines) {
-          if (isStale()) return;
+          if (isStale()) { cleanupStream(); return; }
 
           const trimmed = line.trim();
           if (!trimmed) continue;
@@ -302,7 +334,7 @@ export const useStudioStore = create<StudioState>()(
 
           switch (parsed.type) {
             case 'meta': {
-              if (isStale()) return;
+              if (isStale()) { cleanupStream(); return; }
               // Auto-fill title and description if empty (read fresh state)
               const currentMeta = get();
               const metaUpdates: Partial<{ listTitle: string; listDescription: string }> = {};
@@ -319,7 +351,7 @@ export const useStudioStore = create<StudioState>()(
             }
 
             case 'item': {
-              if (isStale()) return;
+              if (isStale()) { cleanupStream(); return; }
               const item = parsed.data;
               const titleKey = item.title.toLowerCase().trim();
               // Filter duplicates (case-insensitive)
@@ -327,35 +359,41 @@ export const useStudioStore = create<StudioState>()(
                 existingTitles.push(titleKey);
                 newItems.push(item);
                 // Batch: buffer the item and schedule a single rAF flush
-                streamBuffer.push(item);
-                streamProgressMsg = `Loading item ${parsed.index + 1}/${parsed.total}...`;
-                if (streamRafId === null) {
-                  streamRafId = requestAnimationFrame(() => {
-                    streamRafId = null;
-                    const buffered = streamBuffer;
-                    const progress = streamProgressMsg;
-                    streamBuffer = [];
-                    streamProgressMsg = null;
-                    if (buffered.length > 0) {
-                      set({
-                        generatedItems: [...get().generatedItems, ...buffered],
-                        generationProgress: progress,
-                      });
-                    }
-                  });
+                const activeCtx = getActiveContext(myNonce);
+                if (activeCtx) {
+                  activeCtx.buffer.push(item);
+                  activeCtx.progressMsg = `Loading item ${parsed.index + 1}/${parsed.total}...`;
+                  if (activeCtx.rafId === null) {
+                    activeCtx.rafId = requestAnimationFrame(() => {
+                      const flushCtx = getActiveContext(myNonce);
+                      if (!flushCtx) return;
+                      flushCtx.rafId = null;
+                      const buffered = flushCtx.buffer;
+                      const progress = flushCtx.progressMsg;
+                      flushCtx.buffer = [];
+                      flushCtx.progressMsg = null;
+                      if (buffered.length > 0) {
+                        set({
+                          generatedItems: [...get().generatedItems, ...buffered],
+                          generationProgress: progress,
+                        });
+                      }
+                    });
+                  }
                 }
               }
               break;
             }
 
             case 'done': {
-              if (isStale()) return;
+              if (isStale()) { cleanupStream(); return; }
               // Flush any remaining buffered items before marking done
-              if (streamBuffer.length > 0) {
-                if (streamRafId !== null) { cancelAnimationFrame(streamRafId); streamRafId = null; }
-                set({ generatedItems: [...get().generatedItems, ...streamBuffer] });
-                streamBuffer = [];
-                streamProgressMsg = null;
+              const doneCtx = getActiveContext(myNonce);
+              if (doneCtx && doneCtx.buffer.length > 0) {
+                if (doneCtx.rafId !== null) { cancelAnimationFrame(doneCtx.rafId); doneCtx.rafId = null; }
+                set({ generatedItems: [...get().generatedItems, ...doneCtx.buffer] });
+                doneCtx.buffer = [];
+                doneCtx.progressMsg = null;
               }
               set({
                 isGenerating: false,
@@ -374,13 +412,14 @@ export const useStudioStore = create<StudioState>()(
             }
 
             case 'error': {
-              if (isStale()) return;
+              if (isStale()) { cleanupStream(); return; }
               // Flush buffered items before reporting error
-              if (streamBuffer.length > 0) {
-                if (streamRafId !== null) { cancelAnimationFrame(streamRafId); streamRafId = null; }
-                set({ generatedItems: [...get().generatedItems, ...streamBuffer] });
-                streamBuffer = [];
-                streamProgressMsg = null;
+              const errCtx = getActiveContext(myNonce);
+              if (errCtx && errCtx.buffer.length > 0) {
+                if (errCtx.rafId !== null) { cancelAnimationFrame(errCtx.rafId); errCtx.rafId = null; }
+                set({ generatedItems: [...get().generatedItems, ...errCtx.buffer] });
+                errCtx.buffer = [];
+                errCtx.progressMsg = null;
               }
               set({
                 error: `${parsed.message} Try a more specific topic, or rephrase your request.`,
@@ -393,14 +432,15 @@ export const useStudioStore = create<StudioState>()(
         }
       }
 
-      if (isStale()) return;
+      if (isStale()) { cleanupStream(); return; }
 
       // Flush any remaining buffered items after stream ends
-      if (streamBuffer.length > 0) {
-        if (streamRafId !== null) { cancelAnimationFrame(streamRafId); streamRafId = null; }
-        set({ generatedItems: [...get().generatedItems, ...streamBuffer] });
-        streamBuffer = [];
-        streamProgressMsg = null;
+      const postCtx = getActiveContext(myNonce);
+      if (postCtx && postCtx.buffer.length > 0) {
+        if (postCtx.rafId !== null) { cancelAnimationFrame(postCtx.rafId); postCtx.rafId = null; }
+        set({ generatedItems: [...get().generatedItems, ...postCtx.buffer] });
+        postCtx.buffer = [];
+        postCtx.progressMsg = null;
       }
 
       // If we exited the loop without a done/error line, finalize
@@ -431,7 +471,7 @@ export const useStudioStore = create<StudioState>()(
             category,
           });
 
-          if (isStale()) return;
+          if (isStale()) { cleanupStream(); return; }
 
           // Merge DB matches back into the items
           const currentItems = get().generatedItems;
@@ -450,26 +490,28 @@ export const useStudioStore = create<StudioState>()(
             return item;
           });
           set({ generatedItems: updatedItems });
-        } catch (err) {
-          console.warn('[Studio] DB match-items failed:', err instanceof Error ? err.message : err);
+        } catch {
+          toast({
+            title: 'Item enrichment incomplete',
+            description: 'Some items could not be matched to the database. Images or metadata may be missing.',
+          });
         }
       }
     } catch (error) {
       // Ignore abort errors from intentional cancellation
       if (error instanceof DOMException && error.name === 'AbortError') {
+        cleanupStream();
         return;
       }
-      if (isStale()) return;
+      if (isStale()) { cleanupStream(); return; }
       set({
         error: getApiErrorMessage(error),
         isGenerating: false,
         generationProgress: null,
       });
     } finally {
-      // Clean up controller reference if this is still the active one
-      if (activeAbortController === controller) {
-        activeAbortController = null;
-      }
+      // Clean up this generation's context
+      destroyContext(myNonce);
     }
   },
 
@@ -625,11 +667,11 @@ export const useStudioStore = create<StudioState>()(
 
   // Full reset
   reset: () => {
-    // Abort any in-flight generation stream
-    if (activeAbortController) {
-      activeAbortController.abort();
-      activeAbortController = null;
-    }
+    // Abort any in-flight generation streams
+    streamContexts.forEach((ctx, nonce) => {
+      ctx.controller.abort();
+      destroyContext(nonce);
+    });
     set({
       topic: '',
       listSize: 10,
@@ -655,13 +697,16 @@ export const useStudioStore = create<StudioState>()(
     }),
     {
       name: 'goat-studio-store',
+      version: 1,
       partialize: (state) => ({
         generatedItems: state.generatedItems,
         listTitle: state.listTitle,
         listDescription: state.listDescription,
         category: state.category,
         topic: state.topic,
+        listSize: state.listSize,
         generateCount: state.generateCount,
+        allowCustomItems: state.allowCustomItems,
         criteriaMode: state.criteriaMode,
         selectedProfileId: state.selectedProfileId,
         customProfile: state.customProfile,

@@ -4,6 +4,8 @@
  * Supports multiple layouts, themes, and platform optimizations
  */
 
+import { getShareUrl as getShareUrlUtil } from '@/lib/sharing/share-urls';
+
 import {
   DEFAULT_OG_OPTIONS,
   PLATFORM_DIMENSIONS,
@@ -66,7 +68,7 @@ export function getMedalColor(position: number, theme: OGCardTheme): string {
 /**
  * Get medal background gradient based on position
  */
-export function getMedalGradient(position: number, theme: OGCardTheme): string {
+export function getMedalGradient(position: number, _theme: OGCardTheme): string {
   if (position === 1) {
     return `linear-gradient(135deg, rgba(250, 204, 21, 0.15) 0%, rgba(250, 204, 21, 0.05) 100%)`;
   }
@@ -117,7 +119,7 @@ export function generateOGMetadata(
   data: OGCardData,
   imageUrl: string,
   shareUrl: string,
-  options: Partial<OGCardOptions> = {}
+  _options: Partial<OGCardOptions> = {}
 ): OGMetadata {
   const itemCount = data.totalItems || data.items.length;
   const description = data.items.slice(0, 3)
@@ -268,7 +270,7 @@ export class OGCardGenerator {
    * Get share URL for a share code
    */
   getShareUrl(shareCode: string): string {
-    return `${this.baseUrl}/share/${shareCode}`;
+    return getShareUrlUtil(shareCode, this.baseUrl);
   }
 
   /**

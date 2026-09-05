@@ -117,10 +117,10 @@ export const ParallaxLayer = memo(function ParallaxLayer({
   motionStyle,
   disabled = false,
   className,
-  ...props
+  ..._props
 }: ParallaxLayerProps) {
   const { scrollYProgress } = useParallaxContext();
-  const { allowAmbient, allowTransitions } = useMotionCapabilities();
+  const { allowAmbient } = useMotionCapabilities();
 
   // Disable if motion preferences disallow or explicitly disabled
   const effectsDisabled = disabled || !allowAmbient;

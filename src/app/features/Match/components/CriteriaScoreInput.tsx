@@ -59,8 +59,8 @@ export function CriteriaScoreInput({
   className,
   compact = false,
   showNote = true,
-  showPreview = false,
-  category,
+  showPreview: _showPreview = false,
+  category: _category,
 }: CriteriaScoreInputProps) {
   const [note, setNote] = useState(currentScore?.note ?? '');
   const [showNoteInput, setShowNoteInput] = useState(false);
@@ -571,8 +571,8 @@ export function BulkCriteriaScoreInput({
   className,
   compact = false,
   category,
-  showWeightedPreview = false,
-  weightedScore = 0,
+  showWeightedPreview: _showWeightedPreview = false,
+  weightedScore: _weightedScore = 0,
 }: BulkCriteriaScoreInputProps) {
   return (
     <div className={cn('space-y-3', className)}>

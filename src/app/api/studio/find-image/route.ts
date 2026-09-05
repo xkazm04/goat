@@ -27,25 +27,13 @@ export async function POST(request: NextRequest) {
   const limited = rateLimit(getRateLimitKey(request, 'studio-find-image'), 30, 60_000);
   if (limited) return limited;
 
-  const requestStart = performance.now();
-
   try {
     const body = await request.json();
     const { title, context } = findImageRequestSchema.parse(body);
 
     // Strategy 1: Direct Wikipedia lookup
-    const s1Start = performance.now();
     let wikiImage = await fetchWikipediaImage(title);
-    const s1Ms = Math.round(performance.now() - s1Start);
     if (wikiImage?.url) {
-      console.log('[Find Image] find_image_complete', JSON.stringify({
-        operation: 'find_image',
-        title,
-        source: 'wikipedia_direct',
-        resolved: true,
-        duration_ms: Math.round(performance.now() - requestStart),
-        strategy_timing: { direct_wiki_ms: s1Ms },
-      }));
       return NextResponse.json({ image_url: wikiImage.url, source: 'wikipedia_direct' });
     }
 
@@ -67,7 +55,6 @@ Common patterns:
 
 Return ONLY the title, nothing else. If truly unfindable, return the original: "${title}"`;
 
-    const s2Start = performance.now();
     const wikiResponse = await ai.models.generateContent({
       model: GEMINI_MODEL_PRIMARY,
       contents: wikiPrompt,
@@ -75,21 +62,11 @@ Return ONLY the title, nothing else. If truly unfindable, return the original: "
         tools: [{ googleSearch: {} }],
       },
     });
-    const s2GeminiMs = Math.round(performance.now() - s2Start);
 
     const suggestedTitle = wikiResponse.text?.trim();
     if (suggestedTitle && suggestedTitle !== title) {
       wikiImage = await fetchWikipediaImage(suggestedTitle);
       if (wikiImage?.url) {
-        const s2Ms = Math.round(performance.now() - s2Start);
-        console.log('[Find Image] find_image_complete', JSON.stringify({
-          operation: 'find_image',
-          title,
-          source: 'wikipedia_ai',
-          resolved: true,
-          duration_ms: Math.round(performance.now() - requestStart),
-          strategy_timing: { direct_wiki_ms: s1Ms, gemini_wiki_lookup_ms: s2GeminiMs, strategy2_total_ms: s2Ms },
-        }));
         return NextResponse.json({
           image_url: wikiImage.url,
           suggested_title: suggestedTitle,
@@ -99,21 +76,11 @@ Return ONLY the title, nothing else. If truly unfindable, return the original: "
     }
 
     // Strategy 3: Try variations of the title
-    const s3Start = performance.now();
     const variations = generateTitleVariations(title);
     for (const variation of variations) {
       if (variation !== title && variation !== suggestedTitle) {
         wikiImage = await fetchWikipediaImage(variation);
         if (wikiImage?.url) {
-          const s3Ms = Math.round(performance.now() - s3Start);
-          console.log('[Find Image] find_image_complete', JSON.stringify({
-            operation: 'find_image',
-            title,
-            source: 'wikipedia_variation',
-            resolved: true,
-            duration_ms: Math.round(performance.now() - requestStart),
-            strategy_timing: { direct_wiki_ms: s1Ms, gemini_wiki_lookup_ms: s2GeminiMs, variations_ms: s3Ms },
-          }));
           return NextResponse.json({
             image_url: wikiImage.url,
             suggested_title: variation,
@@ -122,7 +89,6 @@ Return ONLY the title, nothing else. If truly unfindable, return the original: "
         }
       }
     }
-    const s3Ms = Math.round(performance.now() - s3Start);
 
     // Strategy 4: Ask Gemini to find a direct image URL from reliable sources
     const imagePrompt = `Find a high-quality image URL for: "${title}"${context ? ` (${context})` : ''}.
@@ -138,7 +104,6 @@ If no reliable image found, return: null
 
 Return ONLY the URL or null, nothing else.`;
 
-    const s4Start = performance.now();
     const imageResponse = await ai.models.generateContent({
       model: GEMINI_MODEL_PRIMARY,
       contents: imagePrompt,
@@ -146,32 +111,14 @@ Return ONLY the URL or null, nothing else.`;
         tools: [{ googleSearch: {} }],
       },
     });
-    const s4Ms = Math.round(performance.now() - s4Start);
 
     const imageUrl = imageResponse.text?.trim();
     if (imageUrl && imageUrl !== 'null' && isValidImageUrl(imageUrl)) {
-      console.log('[Find Image] find_image_complete', JSON.stringify({
-        operation: 'find_image',
-        title,
-        source: 'gemini_search',
-        resolved: true,
-        duration_ms: Math.round(performance.now() - requestStart),
-        strategy_timing: { direct_wiki_ms: s1Ms, gemini_wiki_lookup_ms: s2GeminiMs, variations_ms: s3Ms, gemini_image_search_ms: s4Ms },
-      }));
       return NextResponse.json({
         image_url: imageUrl,
         source: 'gemini_search'
       });
     }
-
-    console.log('[Find Image] find_image_complete', JSON.stringify({
-      operation: 'find_image',
-      title,
-      source: 'none',
-      resolved: false,
-      duration_ms: Math.round(performance.now() - requestStart),
-      strategy_timing: { direct_wiki_ms: s1Ms, gemini_wiki_lookup_ms: s2GeminiMs, variations_ms: s3Ms, gemini_image_search_ms: s4Ms },
-    }));
 
     return NextResponse.json({
       image_url: null,

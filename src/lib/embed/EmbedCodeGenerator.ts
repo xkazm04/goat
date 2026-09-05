@@ -3,6 +3,8 @@
  * Generates embed codes for widgets in various formats
  */
 
+import { getBaseUrl, getShareUrl, getOGImageUrl } from '@/lib/sharing/share-urls';
+
 import {
   WidgetConfig,
   EmbedCode,
@@ -10,17 +12,6 @@ import {
   WIDGET_DIMENSIONS,
   DEFAULT_WIDGET_CONFIG,
 } from './types';
-
-/**
- * Base URL for the application
- * In production, this should be the actual domain
- */
-const getBaseUrl = (): string => {
-  if (typeof window !== 'undefined') {
-    return window.location.origin;
-  }
-  return process.env.NEXT_PUBLIC_APP_URL || 'https://goat.app';
-};
 
 /**
  * Serialize config to URL parameters
@@ -77,8 +68,7 @@ export function generateWidgetUrl(config: WidgetConfig): string {
  * Generate full ranking URL
  */
 export function generateFullUrl(listId: string): string {
-  const baseUrl = getBaseUrl();
-  return `${baseUrl}/share/${listId}`;
+  return getShareUrl(listId);
 }
 
 /**
@@ -152,8 +142,7 @@ export function generateWordPressShortcode(config: WidgetConfig): string {
  */
 export function generateMarkdownEmbed(config: WidgetConfig): string {
   const fullUrl = generateFullUrl(config.listId);
-  const baseUrl = getBaseUrl();
-  return `[![GOAT Ranking](${baseUrl}/api/og/${config.listId})](${fullUrl})`;
+  return `[![GOAT Ranking](${getOGImageUrl(config.listId)})](${fullUrl})`;
 }
 
 /**

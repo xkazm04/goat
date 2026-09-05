@@ -116,9 +116,9 @@ export function SyncStatusIndicator({
           >
             <WifiOff className={`w-5 h-5 ${syncStatusColors.offline.text}`} />
             <div>
-              <p className="text-white font-medium">You're offline</p>
+              <p className="text-white font-medium">You&apos;re offline</p>
               <p className="text-gray-400 text-sm">
-                Changes will sync when you're back online
+                Changes will sync when you&apos;re back online
               </p>
             </div>
           </motion.div>

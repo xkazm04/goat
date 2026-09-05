@@ -5,9 +5,10 @@
  * Provides consistent timing, easing, and motion patterns across all sharing surfaces.
  */
 
+import { DURATION, EASING } from './motion-presets';
+
 import type { Variants, Transition } from 'framer-motion';
 
-import { DURATION, EASING } from './motion-presets';
 
 // Re-export canonical tokens so existing consumers keep working.
 export { DURATION, EASING };

@@ -82,7 +82,7 @@ export function useIntersectionObserver(
 
     // Check for Intersection Observer support
     if (!('IntersectionObserver' in window)) {
-      console.warn('IntersectionObserver not supported');
+      // IntersectionObserver not supported — falling back to visible
       setIsIntersecting(true);
       return;
     }

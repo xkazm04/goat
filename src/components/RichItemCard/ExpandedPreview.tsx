@@ -8,6 +8,7 @@
 
 import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
+import Image from 'next/image';
 import React, { memo, useCallback, useRef, useEffect } from 'react';
 
 import { DURATION } from '@/lib/animations/motion-presets';
@@ -129,10 +130,12 @@ export const ExpandedPreview = memo(function ExpandedPreview({
           transition={{ delay: 0.05 }}
           className="relative h-24 bg-gray-800 overflow-hidden shrink-0"
         >
-          <img
+          <Image
             src={item.image}
             alt={item.title}
-            className="w-full h-full object-cover opacity-60"
+            fill
+            className="object-cover opacity-60"
+            unoptimized
           />
           <div className="absolute inset-0 bg-linear-to-b from-transparent via-gray-900/50 to-gray-900" />
         </motion.div>

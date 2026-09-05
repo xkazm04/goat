@@ -151,7 +151,7 @@ export function FeaturedLayout({ data, options, theme = DEFAULT_THEME }: Feature
 
           const isWinner = item.position === 1;
           const isSecond = item.position === 2;
-          const isThird = item.position === 3;
+          const _isThird = item.position === 3;
 
           // Heights: 1st = tallest, 2nd = medium, 3rd = shortest
           const cardHeight = isWinner ? 320 : isSecond ? 280 : 250;

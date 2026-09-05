@@ -71,7 +71,7 @@ export function PictureInPicture({
     ...configOverride,
   };
 
-  const [isResizing, setIsResizing] = useState(false);
+  const [_isResizing, setIsResizing] = useState(false);
   const [size, setSize] = useState(pipConfig.size);
 
   // Get dock position coordinates

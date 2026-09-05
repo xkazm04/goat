@@ -22,6 +22,7 @@ import { GoatFilter, GoatSearch } from '@/components/visual/GoatIcons';
 import { cn } from '@/lib/utils';
 
 import { useFilterIntegrationOptional } from '../CollectionFilterIntegration';
+import { ICON_SIZES } from '../constants';
 
 import type { FilterConfig } from '../types';
 
@@ -102,12 +103,12 @@ export function FilterResultsCounter({
   // Compact variant
   if (variant === 'compact') {
     return (
-      <div className={cn('flex items-center gap-2 text-sm', className)}>
+      <div className={cn('flex items-center gap-2 text-sm', className)} aria-live="polite" aria-atomic="true">
         {isLoading ? (
-          <Loader2 size={14} className="animate-spin text-primary" />
+          <Loader2 size={ICON_SIZES.md} className="animate-spin text-primary" />
         ) : (
           <GoatFilter
-            size={14}
+            size={ICON_SIZES.md}
             className={isFiltering ? 'text-primary' : 'text-muted-foreground'}
           />
         )}
@@ -129,15 +130,17 @@ export function FilterResultsCounter({
           'rounded-card border border-border/50 bg-background/50 p-3',
           className
         )}
+        aria-live="polite"
+        aria-atomic="true"
       >
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             {isLoading ? (
-              <Loader2 size={16} className="animate-spin text-primary" />
+              <Loader2 size={ICON_SIZES.lg} className="animate-spin text-primary" />
             ) : isFiltering ? (
-              <GoatFilter size={16} className="text-primary" />
+              <GoatFilter size={ICON_SIZES.lg} className="text-primary" />
             ) : (
-              <CheckCircle2 size={16} className="text-emerald-400" />
+              <CheckCircle2 size={ICON_SIZES.lg} className="text-success" />
             )}
             <span className="text-sm font-medium text-foreground">
               {isFiltering ? 'Filtered Results' : 'All Items'}
@@ -145,7 +148,7 @@ export function FilterResultsCounter({
           </div>
           {showExecution && executionTime > 0 && (
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Clock size={12} />
+              <Clock size={ICON_SIZES.sm} />
               {executionTime.toFixed(1)}ms
             </span>
           )}
@@ -166,9 +169,9 @@ export function FilterResultsCounter({
               className={cn(
                 'text-2xl font-bold',
                 matchPercentage === 100
-                  ? 'text-emerald-400'
+                  ? 'text-success'
                   : matchPercentage === 0
-                  ? 'text-red-400'
+                  ? 'text-destructive'
                   : 'text-foreground'
               )}
             >
@@ -184,13 +187,13 @@ export function FilterResultsCounter({
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               {hasSearch && (
                 <span className="flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-primary">
-                  <GoatSearch size={10} />
+                  <GoatSearch size={ICON_SIZES.xs} />
                   Search active
                 </span>
               )}
               {hasFilters && (
-                <span className="flex items-center gap-1 rounded bg-purple-500/10 px-1.5 py-0.5 text-purple-400">
-                  <GoatFilter size={10} />
+                <span className="flex items-center gap-1 rounded bg-info/10 px-1.5 py-0.5 text-info">
+                  <GoatFilter size={ICON_SIZES.xs} />
                   {activeFilters} filter{activeFilters !== 1 ? 's' : ''}
                 </span>
               )}
@@ -208,6 +211,8 @@ export function FilterResultsCounter({
         'flex items-center gap-3 rounded-card border border-border/50 bg-background/30 px-3 py-2',
         className
       )}
+      aria-live="polite"
+      aria-atomic="true"
     >
       {/* Icon */}
       <div className="shrink-0">
@@ -219,7 +224,7 @@ export function FilterResultsCounter({
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
             >
-              <Loader2 size={18} className="animate-spin text-primary" />
+              <Loader2 size={ICON_SIZES.xl} className="animate-spin text-primary" />
             </motion.div>
           ) : trend === 'none' ? (
             <motion.div
@@ -237,7 +242,7 @@ export function FilterResultsCounter({
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
             >
-              <CheckCircle2 size={18} className="text-emerald-400" />
+              <CheckCircle2 size={ICON_SIZES.xl} className="text-success" />
             </motion.div>
           ) : (
             <motion.div
@@ -246,7 +251,7 @@ export function FilterResultsCounter({
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
             >
-              <GoatFilter size={18} className="text-primary" />
+              <GoatFilter size={ICON_SIZES.xl} className="text-primary" />
             </motion.div>
           )}
         </AnimatePresence>
@@ -261,9 +266,9 @@ export function FilterResultsCounter({
           className={cn(
             'text-lg font-bold',
             trend === 'none'
-              ? 'text-red-400'
+              ? 'text-destructive'
               : trend === 'all' || !isFiltering
-              ? 'text-emerald-400'
+              ? 'text-success'
               : 'text-primary'
           )}
         >
@@ -284,10 +289,10 @@ export function FilterResultsCounter({
       {isFiltering && trend && (
         <div className="shrink-0">
           {trend === 'low' && (
-            <TrendingDown size={14} className="text-orange-400" />
+            <TrendingDown size={ICON_SIZES.md} className="text-warning" />
           )}
           {trend === 'high' && (
-            <TrendingUp size={14} className="text-emerald-400" />
+            <TrendingUp size={ICON_SIZES.md} className="text-success" />
           )}
         </div>
       )}
@@ -295,7 +300,7 @@ export function FilterResultsCounter({
       {/* Execution time */}
       {showExecution && executionTime > 0 && (
         <div className="flex items-center gap-1 text-xs text-muted-foreground ml-auto">
-          <Clock size={12} />
+          <Clock size={ICON_SIZES.sm} />
           <span>{executionTime.toFixed(1)}ms</span>
         </div>
       )}

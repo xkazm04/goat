@@ -80,15 +80,6 @@ interface PlacementStoreState {
   reset: () => void;
 }
 
-/**
- * Initial user patterns
- */
-const emptyPatterns: UserPatterns = {
-  categoryPreferences: new Map(),
-  recentPlacements: [],
-  placementSpeed: new Map(),
-};
-
 export const usePlacementStore = create<PlacementStoreState>()(
   persist(
     (set, get) => ({

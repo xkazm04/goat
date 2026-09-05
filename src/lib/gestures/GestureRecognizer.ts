@@ -498,7 +498,7 @@ export class GestureRecognizer {
   /**
    * Handle touch cancel
    */
-  handleTouchCancel(event: TouchEvent): void {
+  handleTouchCancel(_event: TouchEvent): void {
     this.clearLongPressTimer();
     const gesture = this.buildGestureData("none");
     this.callbacks.onGestureEnd?.(gesture);

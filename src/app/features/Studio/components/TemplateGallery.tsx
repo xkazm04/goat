@@ -160,6 +160,7 @@ export function TemplateGallery({ open, onClose, onSelect }: TemplateGalleryProp
               onClick={() => setActiveCategory(cat)}
               className={cn(
                 'px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900',
                 activeCategory === cat ? GLASS_PILL_ACTIVE : GLASS_PILL_INACTIVE,
               )}
             >

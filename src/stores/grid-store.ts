@@ -399,7 +399,7 @@ export const useGridStore = create<GridStoreState>()(
       gridStatistics: emptyGridStatistics,
 
       // Initialize a new grid
-      initializeGrid: (size, listId, category) => {
+      initializeGrid: (size, listId, _category) => {
         const state = get();
         const emptyGridItems = createEmptyGrid(size);
 

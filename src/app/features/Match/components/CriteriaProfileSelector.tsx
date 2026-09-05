@@ -17,7 +17,7 @@ import {
   Star,
   Edit2,
 } from 'lucide-react';
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 
 import { DURATION } from '@/lib/animations/motion-presets';
 import { mapCategoryToTemplate } from '@/lib/criteria/templates';
@@ -48,6 +48,19 @@ export function CriteriaProfileSelector({
   const [isOpen, setIsOpen] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingProfile, setEditingProfile] = useState<CriteriaProfile | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Click-outside listener to close dropdown
+  useEffect(() => {
+    if (!isOpen) return;
+    function handleMouseDown(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleMouseDown);
+    return () => document.removeEventListener('mousedown', handleMouseDown);
+  }, [isOpen]);
 
   const {
     profiles,
@@ -131,7 +144,7 @@ export function CriteriaProfileSelector({
   const customProfiles = filteredProfiles.filter((p) => !p.isTemplate);
 
   return (
-    <div className={cn('relative', className)}>
+    <div ref={containerRef} className={cn('relative', className)}>
       {/* Trigger Button */}
       <button
         className={cn(
@@ -140,6 +153,8 @@ export function CriteriaProfileSelector({
           'hover:bg-accent/50 hover:shadow-xs transition-all duration-200',
           'focus:outline-hidden focus:ring-2 focus:ring-ring'
         )}
+        aria-expanded={isOpen}
+        aria-haspopup="listbox"
         onClick={() => setIsOpen(!isOpen)}
       >
         <div className="flex items-center gap-2">
@@ -169,6 +184,8 @@ export function CriteriaProfileSelector({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: DURATION.quick }}
+            role="listbox"
+            aria-label="Criteria profiles"
             className={cn(
               'absolute z-dropdown w-full mt-2',
               'rounded-card border border-border bg-card shadow-xl',
@@ -260,13 +277,6 @@ export function CriteriaProfileSelector({
         />
       )}
 
-      {/* Click outside to close */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-dropdown"
-          onClick={() => setIsOpen(false)}
-        />
-      )}
     </div>
   );
 }
@@ -299,12 +309,16 @@ function ProfileOption({
 
   return (
     <div
+      role="option"
+      tabIndex={0}
+      aria-selected={isActive}
       className={cn(
         'relative flex items-center justify-between px-3 py-2 rounded-card',
         'cursor-pointer transition-all duration-200',
         isActive ? 'bg-primary/10' : 'hover:bg-accent/50 hover:translate-x-0.5'
       )}
       onClick={onSelect}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(); } }}
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
     >
@@ -504,8 +518,9 @@ function CriteriaProfileEditor({
         <div className="p-4 space-y-4">
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium mb-1">Name</label>
+            <label htmlFor="criteria-name" className="block text-sm font-medium mb-1">Name</label>
             <input
+              id="criteria-name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -519,10 +534,11 @@ function CriteriaProfileEditor({
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium mb-1">
+            <label htmlFor="criteria-description" className="block text-sm font-medium mb-1">
               Description (optional)
             </label>
             <textarea
+              id="criteria-description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe your criteria profile..."
@@ -554,7 +570,7 @@ function CriteriaProfileEditor({
             </div>
 
             <div className="space-y-2">
-              {criteria.map((criterion, index) => (
+              {criteria.map((criterion, _index) => (
                 <div
                   key={criterion.id}
                   className="p-3 rounded-card border border-border bg-muted/30 transition-all duration-200 hover:border-border/80 hover:shadow-xs"
@@ -590,8 +606,9 @@ function CriteriaProfileEditor({
                         )}
                       />
                       <div className="flex items-center gap-2">
-                        <label className="text-xs">Weight:</label>
+                        <label htmlFor={`criterion-weight-${criterion.id}`} className="text-xs">Weight:</label>
                         <input
+                          id={`criterion-weight-${criterion.id}`}
                           type="number"
                           value={criterion.weight}
                           onChange={(e) =>

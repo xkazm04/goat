@@ -176,7 +176,7 @@ export const ComparisonDot = memo(function ComparisonDot({
   size = "md",
 }: ComparisonDotProps) {
   const sizeConfig = SIZE_CONFIG[size];
-  const statusConfig = STATUS_CONFIG[status];
+  const _statusConfig = STATUS_CONFIG[status];
 
   return (
     <motion.div

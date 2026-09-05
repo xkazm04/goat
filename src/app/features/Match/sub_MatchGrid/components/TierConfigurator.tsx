@@ -296,9 +296,9 @@ export function TierConfigurator({
             <div className="p-4 space-y-6">
               {/* Preset selector */}
               <div>
-                <label className="block text-sm font-medium text-slate-400 mb-2">
+                <span className="block text-sm font-medium text-slate-400 mb-2">
                   Preset
-                </label>
+                </span>
                 <PresetSelector
                   currentPreset={currentPreset}
                   onSelect={onPresetChange}
@@ -311,9 +311,9 @@ export function TierConfigurator({
               {/* Tier list */}
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <label className="text-sm font-medium text-slate-400">
+                  <span className="text-sm font-medium text-slate-400">
                     Tiers
-                  </label>
+                  </span>
                   <button
                     onClick={handleAddTier}
                     className="flex items-center gap-1 px-2 py-1 rounded-control text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
@@ -324,7 +324,7 @@ export function TierConfigurator({
                 </div>
 
                 <div className="space-y-2">
-                  {tiers.map((tier, index) => (
+                  {tiers.map((tier, _index) => (
                     <TierEditor
                       key={tier.id}
                       tier={tier}

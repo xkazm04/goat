@@ -246,7 +246,7 @@ export class ThemeCustomizer {
    */
   generateWidgetCSS(): string {
     const cssVars = this.generateCSSVariables();
-    const isDark = ColorUtils.isDark(this.colors.background);
+    const _isDark = ColorUtils.isDark(this.colors.background);
 
     return `
       :root {

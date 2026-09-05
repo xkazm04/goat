@@ -25,6 +25,8 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const { isAuthenticated, signInWithGoogle, isLoading } = useAuthUser();
   const wasOpenRef = useRef(false);
   const isSigningInRef = useRef(false);
+  const triggerRef = useRef<Element | null>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
 
   // Track when modal opens so we can detect sign-in completion
   useEffect(() => {
@@ -55,15 +57,66 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     }
   }, [signInWithGoogle]);
 
-  // Handle escape key
+  // Snapshot trigger element on open, restore focus on close
+  useEffect(() => {
+    if (isOpen) {
+      triggerRef.current = document.activeElement;
+    } else if (triggerRef.current) {
+      (triggerRef.current as HTMLElement).focus?.();
+      triggerRef.current = null;
+    }
+  }, [isOpen]);
+
+  // Focus trap + Escape key
   useEffect(() => {
     if (!isOpen) return;
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') {
+        onClose();
+        return;
+      }
+
+      if (e.key === 'Tab') {
+        const modal = modalRef.current;
+        if (!modal) return;
+        const focusable = modal.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+      }
     };
+
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
+
+  // Auto-focus sign-in button on open
+  useEffect(() => {
+    if (!isOpen) return;
+    // Delay to allow animation to start rendering the modal
+    const id = requestAnimationFrame(() => {
+      const modal = modalRef.current;
+      if (!modal) return;
+      const signInBtn = modal.querySelector<HTMLElement>('button:not([aria-label])');
+      signInBtn?.focus();
+    });
+    return () => cancelAnimationFrame(id);
+  }, [isOpen]);
 
   return (
     <AnimatePresence>
@@ -84,6 +137,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
           {/* Modal card */}
           <motion.div
+            ref={modalRef}
             initial={{ scale: 0.9, opacity: 0, y: 12 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 12 }}

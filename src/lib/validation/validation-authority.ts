@@ -296,7 +296,7 @@ export class ValidationAuthority {
    * @returns Validation result
    */
   isValidPosition(position: number, gridContext: GridContext): ValidationResult {
-    const { gridItems, maxGridSize } = gridContext;
+    const { gridItems, maxGridSize: _maxGridSize } = gridContext;
 
     // Check grid initialization
     if (!gridItems || gridItems.length === 0) {
@@ -560,12 +560,15 @@ export function logValidationFailure(
 ): void {
   if (result.isValid) return;
 
-  console.warn(
-    `⚠️ ValidationAuthority [${result.errorCode}]:`,
-    result.errorMessage,
-    {
-      ...context,
-      debugInfo: result.debugInfo,
-    }
-  );
+  if (process.env.NODE_ENV === 'development') {
+     
+    console.warn(
+      `ValidationAuthority [${result.errorCode}]:`,
+      result.errorMessage,
+      {
+        ...context,
+        debugInfo: result.debugInfo,
+      }
+    );
+  }
 }

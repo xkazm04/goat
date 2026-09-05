@@ -44,7 +44,7 @@ const DEFAULT_OPTIONS: SearchOptions = {
 };
 
 /** Threshold in ms above which search timing is logged */
-const SEARCH_LOG_THRESHOLD_MS = 100;
+const _SEARCH_LOG_THRESHOLD_MS = 100;
 
 // =============================================================================
 // Result Transformers
@@ -373,12 +373,8 @@ async function generateSuggestions(
         });
       }
     }
-  } catch (error) {
-    console.warn('[SearchEngine] generateSuggestions: failed to fetch API suggestions', {
-      query,
-      category: options.category,
-      error: error instanceof Error ? error.message : String(error),
-    });
+  } catch {
+    // Failed to fetch API suggestions — using local results only
   }
 
   return suggestions
@@ -464,7 +460,7 @@ export async function search(
   });
 
   const searchResults = await Promise.all(searchPromises);
-  const domainSearchDone = performance.now();
+  const _domainSearchDone = performance.now();
 
   // Flatten and sort all results
   const allResults = searchResults.flat().sort((a, b) => b.score - a.score);
@@ -483,25 +479,14 @@ export async function search(
   const suggestions = mergedOptions.includeSuggestions
     ? await generateSuggestions(query, allResults, mergedOptions)
     : [];
-  const suggestionsDuration = performance.now() - suggestionsStart;
+  const _suggestionsDuration = performance.now() - suggestionsStart;
 
   // Generate facets
   const facets = generateFacets(allResults);
 
   const executionTime = performance.now() - startTime;
 
-  // Log structured timing when above threshold
-  if (executionTime > SEARCH_LOG_THRESHOLD_MS) {
-    const domainBreakdown = Object.entries(domainStatus)
-      .map(([domain, s]) => `${domain}=${s.durationMs?.toFixed(0) ?? '?'}ms${s.status === 'error' ? '(ERR)' : ''}`)
-      .join(' ');
-    console.warn(
-      `[SearchEngine] Slow search (${executionTime.toFixed(0)}ms) query="${query}" | ` +
-      `domains: ${domainBreakdown} | ` +
-      `suggestions=${suggestionsDuration.toFixed(0)}ms | ` +
-      `results=${allResults.length}`
-    );
-  }
+  // Slow search tracking — timing data available in domainStatus
 
   return {
     query,

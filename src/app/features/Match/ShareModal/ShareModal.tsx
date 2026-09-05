@@ -7,6 +7,7 @@ import { SURFACE_ELEVATION, ELEVATION, INSET } from "@/components/visual/depth/d
 import { useModalAccessibility } from "@/hooks/use-modal-accessibility";
 import { useTempUser } from "@/hooks/use-temp-user";
 import { DURATION } from '@/lib/animations/motion-presets';
+import { buildSocialShareUrl, type SocialSharePlatform } from "@/lib/sharing/share-urls";
 import { useActivityStore } from "@/stores/activity-store";
 import { useGridStore } from "@/stores/grid-store";
 import { useMatchStore } from "@/stores/match-store";
@@ -202,33 +203,24 @@ export function ShareModal({ isOpen: controlledIsOpen, onClose }: ShareModalProp
       if (!url) return;
 
       const text = `I just ranked my ${listTitle}!\n\nThink you can do better? Challenge my ranking:\n${url}`;
-      let shareLink = "";
 
-      switch (platformId) {
-        case "twitter":
-          shareLink = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&hashtags=GOAT,Rankings`;
-          break;
-        case "facebook":
-          shareLink = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
-          break;
-        case "reddit":
-          shareLink = `https://reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(`My Top ${rankedItems.length} ${category} - "${listTitle}"`)}`;
-          break;
-        case "whatsapp":
-          shareLink = `https://wa.me/?text=${encodeURIComponent(text)}`;
-          break;
-        case "discord":
-          navigator.clipboard.writeText(url);
-          setLinkCopied(true);
-          setTimeout(() => setLinkCopied(false), 2000);
-          return;
-      }
+      const shareLink = buildSocialShareUrl({
+        platform: platformId as SocialSharePlatform,
+        url,
+        text,
+        hashtags: "GOAT,Rankings",
+      });
 
       if (shareLink) {
         window.open(shareLink, "_blank", "noopener,noreferrer,width=600,height=400");
+      } else {
+        // Platform like Discord that prefers clipboard copy
+        navigator.clipboard.writeText(url);
+        setLinkCopied(true);
+        setTimeout(() => setLinkCopied(false), 2000);
       }
     },
-    [createShareableLink, category, rankedItems.length, listTitle]
+    [createShareableLink, listTitle]
   );
 
   // Download with optional size preset
@@ -410,6 +402,7 @@ export function ShareModal({ isOpen: controlledIsOpen, onClose }: ShareModalProp
                 <button
                   onClick={handleClose}
                   className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-colors z-10"
+                  aria-label="Close share modal"
                   data-testid="share-modal-close-btn"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -429,6 +422,7 @@ export function ShareModal({ isOpen: controlledIsOpen, onClose }: ShareModalProp
                           setCapturedImageUrl(null);
                         }}
                         className="absolute left-4 top-4 w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-colors z-10"
+                        aria-label="Back to theme selection"
                         data-testid="share-back-top-btn"
                       >
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -551,9 +545,8 @@ export function ShareModal({ isOpen: controlledIsOpen, onClose }: ShareModalProp
                         <button
                           onClick={handleGeneratePreview}
                           disabled={isCapturing || rankedItems.length === 0}
-                          className="w-full flex items-center justify-center gap-3 px-4 py-4 rounded-card font-semibold text-white transition-all hover:scale-[1.02] disabled:opacity-50"
+                          className="w-full flex items-center justify-center gap-3 px-4 py-4 rounded-card font-semibold text-white transition-all hover:scale-[1.02] disabled:opacity-50 bg-gradient-brand"
                           style={{
-                            background: "linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%)",
                             boxShadow: "0 4px 20px rgba(6, 182, 212, 0.3)",
                           }}
                           data-testid="generate-preview-btn"
@@ -598,6 +591,7 @@ export function ShareModal({ isOpen: controlledIsOpen, onClose }: ShareModalProp
                         {/* Captured image preview */}
                         {capturedImageUrl && (
                           <div className="rounded-card overflow-hidden border border-white/10">
+                            {/* eslint-disable-next-line @next/next/no-img-element -- needs crossOrigin for canvas capture */}
                             <img
                               src={capturedImageUrl}
                               alt="Your ranking"
@@ -618,9 +612,8 @@ export function ShareModal({ isOpen: controlledIsOpen, onClose }: ShareModalProp
                         <button
                           onClick={handleCopyLink}
                           disabled={isGeneratingShare}
-                          className="w-full flex items-center justify-center gap-3 px-4 py-4 rounded-card font-semibold text-white transition-all hover:scale-[1.02] disabled:opacity-50"
+                          className="w-full flex items-center justify-center gap-3 px-4 py-4 rounded-card font-semibold text-white transition-all hover:scale-[1.02] disabled:opacity-50 bg-gradient-brand"
                           style={{
-                            background: "linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%)",
                             boxShadow: "0 4px 20px rgba(6, 182, 212, 0.3)",
                           }}
                           data-testid="share-copy-link-btn"
@@ -667,6 +660,8 @@ export function ShareModal({ isOpen: controlledIsOpen, onClose }: ShareModalProp
                             <button
                               onClick={() => setShowSizeDropdown(!showSizeDropdown)}
                               className="px-3 py-3 rounded-card font-medium text-white bg-gray-700 hover:bg-gray-600 transition-colors"
+                              aria-label="Choose download size preset"
+                              aria-expanded={showSizeDropdown}
                               data-testid="size-preset-btn"
                               title="Download for specific platform"
                             >
@@ -717,6 +712,7 @@ export function ShareModal({ isOpen: controlledIsOpen, onClose }: ShareModalProp
                               <button
                                 key={platform.id}
                                 onClick={() => handleSocialShare(platform.id)}
+                                aria-label={`Share on ${platform.name}`}
                                 className="flex flex-col items-center gap-1.5 p-3 rounded-card transition-all hover:scale-105"
                                 style={{
                                   background: `rgba(${platform.id === "twitter" ? "29, 161, 242" : platform.id === "facebook" ? "66, 103, 178" : platform.id === "reddit" ? "255, 69, 0" : platform.id === "whatsapp" ? "37, 211, 102" : "88, 101, 242"}, 0.15)`,

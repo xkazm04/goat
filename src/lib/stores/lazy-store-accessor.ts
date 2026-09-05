@@ -66,16 +66,15 @@ export function createLazyStoreAccessor<T extends { getState: () => any }>(
         const state = store.getState();
         if (state !== undefined) {
           cachedStore = store;
-          console.log(`✅ LazyStoreAccessor: ${storeName} initialized successfully`);
           return store;
         }
       }
 
-      console.warn(`⚠️ LazyStoreAccessor: ${storeName} returned invalid store object`);
+      // Store returned invalid object
       return null;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      console.warn(`⚠️ LazyStoreAccessor: Failed to access ${storeName}: ${errorMessage}`);
+      const _errorMessage = error instanceof Error ? error.message : String(error);
+      // Failed to access store
       return null;
     }
   };
@@ -111,7 +110,7 @@ export function createLazyStoreAccessor<T extends { getState: () => any }>(
     // All retries exhausted
     initializationFailed = true;
     failureReason = `Failed to initialize ${storeName} after ${maxRetries} attempts`;
-    console.error(`❌ LazyStoreAccessor: ${failureReason}`);
+    // All retries exhausted for store initialization
 
     return null;
   };

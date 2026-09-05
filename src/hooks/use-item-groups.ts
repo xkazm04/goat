@@ -247,7 +247,7 @@ export function useCreateItemGroup() {
 export function useSyncBacklogData() {
   // TODO: Implement sync functionality later
   return {
-    syncGroups: async () => console.log('Sync groups - to be implemented'),
-    syncItems: async () => console.log('Sync items - to be implemented'),
+    syncGroups: async () => { /* TODO: Implement sync functionality */ },
+    syncItems: async () => { /* TODO: Implement sync functionality */ },
   };
 }

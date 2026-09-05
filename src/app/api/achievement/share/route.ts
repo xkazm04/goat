@@ -1,11 +1,13 @@
 import { nanoid } from 'nanoid';
 import { NextRequest, NextResponse } from 'next/server';
 
+import { getServerBaseUrl, getAchievementUrl, getAchievementOGUrl, getAchievementEmbedCode } from '@/lib/sharing/share-urls';
+
 // POST /api/achievement/share - Create a shareable achievement link
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { achievement_id, user_id, config } = body;
+    const { achievement_id } = body;
 
     if (!achievement_id) {
       return NextResponse.json(
@@ -18,14 +20,14 @@ export async function POST(request: NextRequest) {
     const shareCode = nanoid(10);
 
     // Build share URL
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const shareUrl = `${baseUrl}/achievement/${shareCode}`;
+    const baseUrl = getServerBaseUrl();
+    const shareUrl = getAchievementUrl(shareCode, baseUrl);
 
     // Generate OG image URL (will be rendered on-demand)
-    const ogImageUrl = `${baseUrl}/api/achievement/og?code=${shareCode}`;
+    const ogImageUrl = getAchievementOGUrl(shareCode, baseUrl);
 
     // Generate embed code
-    const embedCode = `<iframe src="${shareUrl}/embed" width="400" height="300" frameborder="0" title="G.O.A.T. Achievement"></iframe>`;
+    const embedCode = getAchievementEmbedCode(shareCode, baseUrl);
 
     // In a real implementation, this would:
     // 1. Verify the achievement exists

@@ -11,6 +11,8 @@ import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 
 import { SearchEngine, type SearchOptions, type SearchResponse, type SearchResult, type SearchDomain } from '@/lib/search';
 
+import { useDebouncedValue } from './use-debounced-value';
+
 // =============================================================================
 // Query Keys
 // =============================================================================
@@ -62,16 +64,7 @@ export function useSearch(
     ...searchOptions
   } = options;
 
-  // Debounced query
-  const [debouncedQuery, setDebouncedQuery] = useState(query);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedQuery(query);
-    }, debounceMs);
-
-    return () => clearTimeout(timer);
-  }, [query, debounceMs]);
+  const debouncedQuery = useDebouncedValue(query, debounceMs);
 
   const shouldSearch = enabled && debouncedQuery.trim().length >= minQueryLength;
 
@@ -129,16 +122,7 @@ export function useQuickSearch(
     domains,
   } = options;
 
-  // Debounced query with shorter delay
-  const [debouncedQuery, setDebouncedQuery] = useState(query);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedQuery(query);
-    }, debounceMs);
-
-    return () => clearTimeout(timer);
-  }, [query, debounceMs]);
+  const debouncedQuery = useDebouncedValue(query, debounceMs);
 
   const shouldSearch = enabled && debouncedQuery.trim().length >= 1;
 
@@ -187,16 +171,7 @@ export function useDomainSearch(
     ...searchOptions
   } = options;
 
-  // Debounced query
-  const [debouncedQuery, setDebouncedQuery] = useState(query);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedQuery(query);
-    }, debounceMs);
-
-    return () => clearTimeout(timer);
-  }, [query, debounceMs]);
+  const debouncedQuery = useDebouncedValue(query, debounceMs);
 
   const shouldSearch = enabled && debouncedQuery.trim().length >= 1;
 

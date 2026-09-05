@@ -47,7 +47,7 @@ export function PhysicsDragOverlay({
   if (!activeItem) return null;
 
   const speed = getSpeed(velocity);
-  const direction = getDirection(velocity);
+  const _direction = getDirection(velocity);
 
   // Calculate rotation based on velocity (subtle tilt effect)
   const rotation = useMemo(() => {
@@ -97,12 +97,12 @@ export function PhysicsDragOverlay({
     damping: 22,
   });
 
-  const springScale = useSpring(dynamicScale, {
+  const _springScale = useSpring(dynamicScale, {
     stiffness: 300,
     damping: 20,
   });
 
-  const springRotation = useSpring(rotation, {
+  const _springRotation = useSpring(rotation, {
     stiffness: 200,
     damping: 15,
   });
@@ -209,7 +209,7 @@ export function PhysicsDragOverlay({
         eager={true}
         blurAmount={15}
         fallbackComponent={
-          <span className="text-xs text-gray-400 text-center px-2">
+          <span className="text-xs text-gray-400 text-center px-2 truncate max-w-full">
             {activeItem.title}
           </span>
         }

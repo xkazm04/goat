@@ -57,7 +57,7 @@ function DraggableMobileItem({
       className={cn(
         "flex flex-col items-center gap-1 p-2 rounded-card transition-all touch-manipulation",
         "bg-white/5 hover:bg-white/10 active:scale-95",
-        isSelected && "ring-2 ring-brand-primary scale-105 bg-brand-primary/10",
+        isSelected && "ring-2 ring-brand scale-105 bg-brand/10",
         isDragging && "opacity-50 scale-95"
       )}
     >
@@ -115,7 +115,7 @@ export function MobileBacklogPanel({ items, totalCount }: MobileBacklogPanelProp
   const fullHeight = Math.round(viewportHeight * FULL_HEIGHT_RATIO);
 
   // Motion value for the panel y offset (0 = current snap position)
-  const y = useRef(0);
+  const _y = useRef(0);
 
   // Get current height based on panel state
   const getHeight = useCallback(
@@ -241,7 +241,7 @@ export function MobileBacklogPanel({ items, totalCount }: MobileBacklogPanelProp
 
   return (
     <motion.div
-      className="fixed bottom-0 left-0 right-0 z-sticky bg-gray-900 rounded-t-container shadow-[0_-4px_20px_rgba(0,0,0,0.5)]"
+      className="fixed bottom-0 left-0 right-0 z-sticky bg-slate-900 rounded-t-container shadow-[0_-4px_20px_rgba(0,0,0,0.5)]"
       style={{ height: currentHeight }}
       animate={{ height: currentHeight }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
@@ -295,7 +295,7 @@ export function MobileBacklogPanel({ items, totalCount }: MobileBacklogPanelProp
 
       {/* Selected item indicator */}
       {mobileSelectedItem && (
-        <div className="mx-3 mb-2 px-3 py-1.5 bg-brand-primary/20 border border-brand-primary/40 rounded-card flex items-center gap-2 text-sm text-brand-primary">
+        <div className="mx-3 mb-2 px-3 py-1.5 bg-brand/20 border border-brand/40 rounded-card flex items-center gap-2 text-sm text-brand-hover">
           <span className="truncate">Tap a grid slot to place: <strong>{mobileSelectedItem.title}</strong></span>
           <button
             onClick={() => setMobileSelectedItem(null)}

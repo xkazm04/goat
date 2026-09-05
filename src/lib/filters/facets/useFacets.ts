@@ -72,7 +72,7 @@ export function useFacets<T extends Record<string, unknown>>({
   definitions = DEFAULT_FACET_DEFINITIONS,
   persistToUrl = false,
   urlParamPrefix = 'f_',
-  debounceMs = 100,
+  debounceMs: _debounceMs = 100,
   initialSelections = [],
 }: UseFacetsOptions<T>): UseFacetsReturn {
   // Router for URL persistence

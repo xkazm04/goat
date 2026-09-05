@@ -50,11 +50,7 @@ export function withTiming(
     }
 
     const duration = (performance.now() - start).toFixed(1);
-    const status = response.status;
-
-    console.log(
-      `[timing] ${requestId} ${method} ${label} ${status} ${duration}ms`,
-    );
+    const _status = response.status;
 
     // Attach tracing headers
     response.headers.set('x-request-id', requestId);

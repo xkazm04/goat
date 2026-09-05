@@ -179,7 +179,7 @@ function createTier(
   displayName?: string
 ): TierDefinition {
   return {
-    id: `tier-${label.toLowerCase().replace('+', '-plus').replace('-', '-minus')}`,
+    id: `tier-${label.toLowerCase().replace(/[+-]/g, c => c === '+' ? '-plus' : '-minus')}`,
     label,
     displayName: displayName || `${label} Tier`,
     description: TIER_DESCRIPTIONS[label],

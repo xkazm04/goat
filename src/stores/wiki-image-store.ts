@@ -3,6 +3,7 @@
  *
  * Manages auto-fetched Wikipedia images with localStorage caching.
  * Automatically fetches missing item images and persists URLs.
+ * Uses LRU eviction to bound cache size and prevent localStorage bloat.
  */
 
 import { create } from "zustand";
@@ -14,6 +15,80 @@ import { wikiImageLogger } from "@/lib/logger";
 /** How long failed lookups are cached before retrying (24 hours) */
 const FAILURE_TTL_MS = 24 * 60 * 60 * 1000;
 
+/** Maximum number of cached image entries before LRU eviction kicks in */
+const MAX_CACHE_SIZE = 500;
+
+/** Maximum number of cached failure entries */
+const MAX_FAILURES_SIZE = 200;
+
+/** Log cache size every N writes in dev mode */
+const DEV_LOG_INTERVAL = 100;
+
+/** Write counter for dev-mode logging */
+let writeCount = 0;
+
+/**
+ * Move a key to the end of the access order array (most recently used).
+ * Returns a new array if the key was moved, or the same array with key appended.
+ */
+function touchLRU(accessOrder: string[], key: string): string[] {
+  const idx = accessOrder.indexOf(key);
+  if (idx === accessOrder.length - 1) return accessOrder; // already MRU
+  const next = idx >= 0
+    ? [...accessOrder.slice(0, idx), ...accessOrder.slice(idx + 1), key]
+    : [...accessOrder, key];
+  return next;
+}
+
+/**
+ * Evict least-recently-used entries from the images map until it fits maxSize.
+ * Returns updated images map and access order.
+ */
+function evictLRU(
+  images: Map<string, string>,
+  accessOrder: string[],
+  maxSize: number
+): { images: Map<string, string>; accessOrder: string[] } {
+  if (images.size <= maxSize) return { images, accessOrder };
+
+  const newImages = new Map(images);
+  const newOrder = [...accessOrder];
+  while (newImages.size > maxSize && newOrder.length > 0) {
+    const evicted = newOrder.shift()!;
+    newImages.delete(evicted);
+  }
+  return { images: newImages, accessOrder: newOrder };
+}
+
+/**
+ * Evict oldest failure entries when over the limit.
+ */
+function evictFailures(
+  failures: Map<string, number>,
+  maxSize: number
+): Map<string, number> {
+  if (failures.size <= maxSize) return failures;
+
+  // Sort by timestamp ascending (oldest first), evict oldest
+  const entries = Array.from(failures.entries()).sort((a, b) => a[1] - b[1]);
+  const newFailures = new Map<string, number>();
+  const keep = entries.slice(entries.length - maxSize);
+  for (const [k, v] of keep) {
+    newFailures.set(k, v);
+  }
+  return newFailures;
+}
+
+function logCacheSizeIfNeeded(images: Map<string, string>) {
+  if (process.env.NODE_ENV !== "development") return;
+  writeCount++;
+  if (writeCount % DEV_LOG_INTERVAL === 0) {
+    console.info(
+      `[wiki-image-store] Cache size: ${images.size}/${MAX_CACHE_SIZE} images (write #${writeCount})`
+    );
+  }
+}
+
 export interface WikiImageCache {
   /** Item title -> Image URL mapping */
   images: Map<string, string>;
@@ -21,6 +96,8 @@ export interface WikiImageCache {
   failures: Map<string, number>;
   /** Currently fetching items */
   fetching: Set<string>;
+  /** LRU access order (oldest first, newest last) */
+  accessOrder: string[];
 }
 
 export interface WikiImageStore extends WikiImageCache {
@@ -47,7 +124,7 @@ export interface WikiImageStore extends WikiImageCache {
 }
 
 /**
- * Create Wiki Image Store with localStorage persistence
+ * Create Wiki Image Store with localStorage persistence and LRU eviction
  */
 export const useWikiImageStore = create<WikiImageStore>()(
   persist(
@@ -55,10 +132,17 @@ export const useWikiImageStore = create<WikiImageStore>()(
       images: new Map(),
       failures: new Map(),
       fetching: new Set(),
+      accessOrder: [],
 
       getImage: (itemTitle: string) => {
         const state = get();
-        return state.images.get(itemTitle) || null;
+        const url = state.images.get(itemTitle);
+        if (url) {
+          // Touch LRU on read
+          set({ accessOrder: touchLRU(state.accessOrder, itemTitle) });
+          return url;
+        }
+        return null;
       },
 
       isFetching: (itemTitle: string) => {
@@ -83,8 +167,9 @@ export const useWikiImageStore = create<WikiImageStore>()(
       fetchImage: async (itemTitle: string) => {
         const state = get();
 
-        // Return cached if available
+        // Return cached if available (touch LRU)
         if (state.images.has(itemTitle)) {
+          set({ accessOrder: touchLRU(state.accessOrder, itemTitle) });
           return state.images.get(itemTitle) || null;
         }
 
@@ -110,13 +195,20 @@ export const useWikiImageStore = create<WikiImageStore>()(
           const imageUrl = await fetchItemImage(itemTitle);
 
           if (imageUrl) {
-            // Cache successful fetch
+            // Cache successful fetch with LRU tracking + eviction
             set((state) => {
               const newImages = new Map(state.images);
               newImages.set(itemTitle, imageUrl);
+              const newOrder = touchLRU(state.accessOrder, itemTitle);
+              const evicted = evictLRU(newImages, newOrder, MAX_CACHE_SIZE);
               const newFetching = new Set(state.fetching);
               newFetching.delete(itemTitle);
-              return { images: newImages, fetching: newFetching };
+              logCacheSizeIfNeeded(evicted.images);
+              return {
+                images: evicted.images,
+                accessOrder: evicted.accessOrder,
+                fetching: newFetching,
+              };
             });
             wikiImageLogger.debug("Cached Wikipedia image for:", itemTitle);
             return imageUrl;
@@ -127,20 +219,26 @@ export const useWikiImageStore = create<WikiImageStore>()(
               newFailures.set(itemTitle, Date.now());
               const newFetching = new Set(state.fetching);
               newFetching.delete(itemTitle);
-              return { failures: newFailures, fetching: newFetching };
+              return {
+                failures: evictFailures(newFailures, MAX_FAILURES_SIZE),
+                fetching: newFetching,
+              };
             });
             wikiImageLogger.debug("No Wikipedia image found for:", itemTitle);
             return null;
           }
         } catch (error) {
           wikiImageLogger.error("Error fetching Wikipedia image:", error);
-          // Mark as failed with timestamp for TTL-based retry
+          // Mark as failed + clear from fetching to prevent deadlock
           set((state) => {
             const newFailures = new Map(state.failures);
             newFailures.set(itemTitle, Date.now());
             const newFetching = new Set(state.fetching);
             newFetching.delete(itemTitle);
-            return { failures: newFailures, fetching: newFetching };
+            return {
+              failures: evictFailures(newFailures, MAX_FAILURES_SIZE),
+              fetching: newFetching,
+            };
           });
           return null;
         }
@@ -150,9 +248,16 @@ export const useWikiImageStore = create<WikiImageStore>()(
         set((state) => {
           const newImages = new Map(state.images);
           newImages.set(itemTitle, url);
+          const newOrder = touchLRU(state.accessOrder, itemTitle);
+          const evicted = evictLRU(newImages, newOrder, MAX_CACHE_SIZE);
           const newFailures = new Map(state.failures);
           newFailures.delete(itemTitle);
-          return { images: newImages, failures: newFailures };
+          logCacheSizeIfNeeded(evicted.images);
+          return {
+            images: evicted.images,
+            accessOrder: evicted.accessOrder,
+            failures: newFailures,
+          };
         });
       },
 
@@ -162,7 +267,8 @@ export const useWikiImageStore = create<WikiImageStore>()(
           newImages.delete(itemTitle);
           const newFailures = new Map(state.failures);
           newFailures.delete(itemTitle);
-          return { images: newImages, failures: newFailures };
+          const newOrder = state.accessOrder.filter((k) => k !== itemTitle);
+          return { images: newImages, failures: newFailures, accessOrder: newOrder };
         });
       },
 
@@ -171,6 +277,7 @@ export const useWikiImageStore = create<WikiImageStore>()(
           images: new Map(),
           failures: new Map(),
           fetching: new Set(),
+          accessOrder: [],
         });
       },
     }),
@@ -195,12 +302,30 @@ export const useWikiImageStore = create<WikiImageStore>()(
                 ([k, v]) => [k, v as number]
               ));
             }
+
+            const imagesMap = new Map(Object.entries(parsed.state.images || {}));
+
+            // Restore or rebuild accessOrder from persisted data
+            let accessOrder: string[] = parsed.state.accessOrder;
+            if (!Array.isArray(accessOrder)) {
+              // Migration: no accessOrder persisted yet — seed from image keys
+              accessOrder = Array.from(imagesMap.keys());
+            }
+
+            // Apply size bounds on load in case MAX_CACHE_SIZE was lowered
+            const evicted = evictLRU(
+              imagesMap as Map<string, string>,
+              accessOrder,
+              MAX_CACHE_SIZE
+            );
+
             return {
               state: {
                 ...parsed.state,
-                images: new Map(Object.entries(parsed.state.images || {})),
-                failures: failuresMap,
+                images: evicted.images,
+                failures: evictFailures(failuresMap, MAX_FAILURES_SIZE),
                 fetching: new Set(), // Don't persist fetching state
+                accessOrder: evicted.accessOrder,
               },
             };
           } catch (error) {
@@ -219,6 +344,7 @@ export const useWikiImageStore = create<WikiImageStore>()(
             state: {
               images: Object.fromEntries(value.state.images),
               failures: Object.fromEntries(value.state.failures),
+              accessOrder: value.state.accessOrder,
               // Don't persist fetching state
             },
           };
@@ -231,3 +357,17 @@ export const useWikiImageStore = create<WikiImageStore>()(
     }
   )
 );
+
+// Safety net: clear the fetching Set on unhandled rejections to prevent deadlocks
+// where items get stuck in a permanent "fetching" state
+if (typeof window !== "undefined") {
+  window.addEventListener("unhandledrejection", () => {
+    const state = useWikiImageStore.getState();
+    if (state.fetching.size > 0) {
+      useWikiImageStore.setState({ fetching: new Set() });
+      wikiImageLogger.debug(
+        "Cleared fetching set after unhandled rejection to prevent deadlock"
+      );
+    }
+  });
+}

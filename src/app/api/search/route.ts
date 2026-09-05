@@ -399,9 +399,9 @@ async function searchBlueprints(
  * Search users (basic implementation - expand as needed)
  */
 async function searchUsers(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  query: string,
-  options: { category?: string | null; limit: number; userId?: string | null }
+  _supabase: Awaited<ReturnType<typeof createClient>>,
+  _query: string,
+  _options: { category?: string | null; limit: number; userId?: string | null }
 ): Promise<ApiSearchResult[]> {
   // Users search is a placeholder - implement based on your user table structure
   // For now, return empty results

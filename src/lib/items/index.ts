@@ -8,6 +8,8 @@
 
 // Utilities & display helpers
 export {
+  MAX_DISPLAY_TITLE_LENGTH,
+  truncateTitle,
   normalizeImageUrl,
   extractTitle,
   safeString,

@@ -14,23 +14,21 @@ import { RankBadge } from "@/app/features/Match/sub_ItemBadges/RankBadge";
 import { TierIndicator } from "@/app/features/Match/sub_ItemBadges/TierIndicator";
 import { ItemCard } from "@/components/ui/item-card";
 import { StarRating } from "@/components/ui/star-rating";
+import { ThemedScoreDisplay } from "@/components/ui/themed-scores";
 import { useProgressiveWikiImage } from "@/hooks/use-progressive-wiki-image";
 import { SPRING, DURATION } from "@/lib/animations/motion-presets";
+import { createCollectionDragData } from "@/lib/dnd";
+import { highlightMatch } from "@/lib/utils/search";
+import { useConsensusStore, useConsensusSortBy } from "@/stores/consensus-store";
+import { useCriteriaStore } from "@/stores/criteria-store";
+import { useItemPopupStore } from "@/stores/item-popup-store";
+import { useListStore } from "@/stores/use-list-store";
+
 import { CollectionItem as CollectionItemType } from "../types";
-
-
 import { AverageRankingBadge } from "./AverageRankingBadge";
 import { DragHandleIndicator } from "./DragHandleIndicator";
-import { FocusRingOverlay } from "./FocusRingOverlay";
 import { SpotlightTooltip } from "./SpotlightTooltip";
 
-import { useConsensusStore, useConsensusSortBy } from "@/stores/consensus-store";
-import { highlightMatch } from "@/lib/utils/search";
-import { createCollectionDragData } from "@/lib/dnd";
-import { ThemedScoreDisplay } from "@/components/ui/themed-scores";
-import { useCriteriaStore } from "@/stores/criteria-store";
-import { useListStore } from "@/stores/use-list-store";
-import { useItemPopupStore } from "@/stores/item-popup-store";
 
 /**
  * Swipe action icon mapping
@@ -55,7 +53,7 @@ export interface CollectionItemConfig {
   showTierIndicator?: boolean;
   /** Show keyboard drag handles */
   showKeyboardHandles?: boolean;
-  /** Show focus ring overlay for accessibility */
+  /** @deprecated Focus ring is now handled natively via focus-visible CSS */
   showFocusRing?: boolean;
   /** Show spotlight tooltip for easter eggs */
   showSpotlight?: boolean;
@@ -223,7 +221,7 @@ export const ConfigurableCollectionItem = memo(function ConfigurableCollectionIt
     showAvgRank = false,
     showTierIndicator = false,
     showKeyboardHandles = false,
-    showFocusRing = false,
+
     showSpotlight = false,
     showStarRating = false,
     showAverageRankingBadge = false,
@@ -506,10 +504,11 @@ export const ConfigurableCollectionItem = memo(function ConfigurableCollectionIt
           onFocus={handleFocus}
           onBlur={handleBlur}
           className={`
-            absolute inset-0 z-10
+            absolute inset-0 z-10 rounded-lg
             cursor-grab active:cursor-grabbing
             focus:outline-hidden
-            ${isDragging ? 'cursor-grabbing' : ''}
+            focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-1 focus-visible:ring-offset-slate-900
+            ${isDragging ? 'cursor-grabbing ring-0' : ''}
           `}
           data-testid={`draggable-handle-${item.id}`}
         >
@@ -526,15 +525,6 @@ export const ConfigurableCollectionItem = memo(function ConfigurableCollectionIt
           {...listeners}
           className="absolute inset-0 z-10 cursor-grab active:cursor-grabbing"
           data-testid={`draggable-overlay-${item.id}`}
-        />
-      )}
-
-      {/* Focus ring overlay */}
-      {showFocusRing && (
-        <FocusRingOverlay
-          itemId={item.id}
-          isFocused={isFocused}
-          isDragging={isDragging}
         />
       )}
 

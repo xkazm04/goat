@@ -70,7 +70,7 @@ export function useTierIntegration(
   // Ranking store actions
   const setSmartTierEnabled = useRankingStore((state) => state.setSmartTierEnabled);
   const calculateSmartTiers = useRankingStore((state) => state.calculateSmartTiers);
-  const recalculateSmartTiers = useRankingStore((state) => state.recalculateSmartTiers);
+  const _recalculateSmartTiers = useRankingStore((state) => state.recalculateSmartTiers);
 
   // Get filled positions from grid
   const filledPositions = useMemo(() => {
@@ -163,7 +163,7 @@ export function useTierForSlot(position: number) {
  */
 export function useTierStatistics() {
   const summary = useRankingStore(selectSmartTierSummary);
-  const tieredItems = useRankingStore(selectSmartTieredItems);
+  const _tieredItems = useRankingStore(selectSmartTieredItems);
   const currentTiers = useRankingStore(selectCurrentSmartTiers);
 
   return useMemo(() => {

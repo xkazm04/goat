@@ -199,7 +199,7 @@ function VirtualCollectionListInner<T>(
 
   const parentRef = useRef<HTMLDivElement>(null);
   const lastScrollOffset = useRef(initialScrollOffset);
-  const frameRef = useRef<number>(0);
+  const _frameRef = useRef<number>(0);
   const lastFrameTime = useRef(window.performance.now());
   const [metrics, setMetrics] = useState<PerformanceMetrics>({
     fps: 60,

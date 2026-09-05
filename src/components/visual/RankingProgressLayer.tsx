@@ -2,8 +2,8 @@
 
 import { CSSProperties, ReactNode, useMemo, useEffect, useState } from "react";
 
+import { useMotionCapabilities } from "@/hooks/use-motion-preference";
 import { useRankingProgress, type ProgressTier } from "@/hooks/use-ranking-progress";
-import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { cn } from "@/lib/utils";
 
 interface RankingProgressLayerProps {
@@ -22,7 +22,7 @@ function lerp(a: number, b: number, t: number): number {
  * Computes CSS custom properties that react to ranking progress.
  * These override the Glass Dock tokens as progress increases.
  */
-function useProgressTokens(normalized: number, tier: ProgressTier, prefersReducedMotion: boolean) {
+function useProgressTokens(normalized: number, tier: ProgressTier, allowTransitions: boolean) {
   return useMemo(() => {
     // Glass morphism intensity ramps up with progress
     const blurIntensity = lerp(24, 40, normalized);
@@ -31,7 +31,7 @@ function useProgressTokens(normalized: number, tier: ProgressTier, prefersReduce
     const shadowGlowSpread = lerp(20, 40, normalized);
 
     // Animation speed multiplier (1x idle -> 2x at complete)
-    const animSpeed = prefersReducedMotion ? 1 : lerp(1, 0.5, normalized); // lower = faster duration
+    const animSpeed = !allowTransitions ? 1 : lerp(1, 0.5, normalized); // lower = faster duration
 
     // Badge color temperature: cool cyan -> warm gold
     // We shift hue from 187 (cyan) toward 45 (gold)
@@ -63,7 +63,7 @@ function useProgressTokens(normalized: number, tier: ProgressTier, prefersReduce
       "--float-duration": `${lerp(15, 7, normalized)}s`,
       "--particle-duration": `${lerp(3.5, 1.8, normalized)}s`,
     } as CSSProperties;
-  }, [normalized, tier, prefersReducedMotion]);
+  }, [normalized, tier, allowTransitions]);
 }
 
 /**
@@ -79,16 +79,16 @@ function useProgressTokens(normalized: number, tier: ProgressTier, prefersReduce
  * Respects prefers-reduced-motion via the 3-tier motion system.
  */
 export function RankingProgressLayer({ children, className }: RankingProgressLayerProps) {
-  const { normalized, tier, isComplete, percentage } = useRankingProgress();
-  const prefersReducedMotion = useReducedMotion();
-  const tokens = useProgressTokens(normalized, tier, prefersReducedMotion);
+  const { normalized, tier, isComplete, percentage: _percentage } = useRankingProgress();
+  const { allowTransitions, allowCelebrations } = useMotionCapabilities();
+  const tokens = useProgressTokens(normalized, tier, allowTransitions);
 
   // Celebration state: triggers once when completion is first reached
   const [showCelebration, setShowCelebration] = useState(false);
   const [celebrationDone, setCelebrationDone] = useState(false);
 
   useEffect(() => {
-    if (isComplete && !celebrationDone && !prefersReducedMotion) {
+    if (isComplete && !celebrationDone && allowCelebrations) {
       setShowCelebration(true);
       // Auto-dismiss celebration after 3s
       const timer = setTimeout(() => {
@@ -101,7 +101,7 @@ export function RankingProgressLayer({ children, className }: RankingProgressLay
     if (!isComplete && celebrationDone) {
       setCelebrationDone(false);
     }
-  }, [isComplete, celebrationDone, prefersReducedMotion]);
+  }, [isComplete, celebrationDone, allowCelebrations]);
 
   return (
     <div

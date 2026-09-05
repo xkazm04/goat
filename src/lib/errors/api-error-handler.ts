@@ -125,8 +125,6 @@ function logError(error: GoatError, req: NextRequest, userId?: string): void {
     console.error('🚨 API Error:', JSON.stringify(entry, null, 2));
   } else if (error.status >= 400) {
     console.warn('⚠️ API Warning:', JSON.stringify(entry, null, 2));
-  } else {
-    console.log('ℹ️ API Info:', JSON.stringify(entry, null, 2));
   }
 }
 
@@ -281,6 +279,24 @@ export function assertValid(
 ): asserts condition {
   if (!condition) {
     throw new ValidationError(message, fieldErrors);
+  }
+}
+
+/**
+ * Assert that a numeric value is an integer within a given range, or throw a validation error
+ */
+export function assertIntRange(
+  value: unknown,
+  fieldName: string,
+  min: number,
+  max: number
+): asserts value is number {
+  const num = typeof value === 'string' ? Number(value) : value;
+  if (typeof num !== 'number' || !Number.isInteger(num) || num < min || num > max) {
+    throw new ValidationError(
+      `${fieldName} must be an integer between ${min} and ${max}`,
+      { [fieldName]: [`Must be an integer between ${min} and ${max}`] }
+    );
   }
 }
 

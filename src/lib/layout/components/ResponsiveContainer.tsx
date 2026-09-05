@@ -161,7 +161,7 @@ interface ResponsiveShowProps {
 export function ResponsiveShow({
   children,
   on,
-  useContainer = false,
+  useContainer: _useContainer = false,
   fallback = null,
 }: ResponsiveShowProps) {
   const { breakpoint } = useLayout();

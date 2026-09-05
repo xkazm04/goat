@@ -34,22 +34,6 @@ interface WikipediaPage {
   links?: Array<{ title: string }>;
 }
 
-interface WikipediaParseResult {
-  title: string;
-  pageid: number;
-  text?: { '*': string };
-  categories?: Array<{ '*': string }>;
-  images?: string[];
-  sections?: Array<{ line: string; index: string }>;
-}
-
-/**
- * Strip HTML tags from text
- */
-function stripHtml(html: string): string {
-  return html.replace(/<[^>]*>/g, '').trim();
-}
-
 /**
  * Clean up Wikipedia extract
  */

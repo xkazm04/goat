@@ -215,7 +215,7 @@ export function AchievementReveal({
 
             {/* Trophy burst animation */}
             <motion.div
-              className="relative mb-6"
+              className="relative mb-4"
               initial={{ scale: 0, rotate: -20 }}
               animate={{ scale: 1, rotate: 0 }}
               transition={{
@@ -289,7 +289,7 @@ export function AchievementReveal({
 
             {/* Title announcement */}
             <motion.div
-              className="text-center mb-6"
+              className="text-center mb-4"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
@@ -346,7 +346,7 @@ export function AchievementReveal({
 
             {/* Action buttons */}
             <motion.div
-              className="flex items-center gap-4 mt-6"
+              className="flex items-center gap-4 mt-4"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1.2 }}
@@ -354,9 +354,8 @@ export function AchievementReveal({
               {onShare && (
                 <motion.button
                   onClick={onShare}
-                  className="flex items-center gap-2 px-6 py-3 rounded-card font-semibold text-white"
+                  className="flex items-center gap-2 px-6 py-3 rounded-card font-semibold text-white bg-gradient-brand"
                   style={{
-                    background: 'linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%)',
                     boxShadow: '0 4px 20px rgba(6, 182, 212, 0.3)',
                   }}
                   whileHover={{ scale: 1.05 }}

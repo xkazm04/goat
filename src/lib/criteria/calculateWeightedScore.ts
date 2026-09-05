@@ -223,7 +223,7 @@ export function calculateWeightedScoreDetailed(
   }
 
   const {
-    normalization = 'linear',
+    normalization: _normalization = 'linear',
     roundResult = DEFAULT_SCORE_OPTIONS.roundResult,
     decimalPlaces = DEFAULT_SCORE_OPTIONS.decimalPlaces,
     skipZeroWeight = true,

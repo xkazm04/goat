@@ -24,6 +24,7 @@ import React, {
   useCallback,
   useRef,
   useEffect,
+  useId,
   KeyboardEvent,
 } from 'react';
 
@@ -35,7 +36,7 @@ import {
   useFilterIntegrationOptional,
   type FilterableItem,
 } from '../CollectionFilterIntegration';
-import { FILTER_TIMING } from '../constants';
+import { FILTER_TIMING, ICON_SIZES } from '../constants';
 import { useLiveSearchCounts } from '../hooks/useLiveSearchCounts';
 import { QUERY_TEMPLATES } from '../SmartQueryParser';
 
@@ -74,10 +75,10 @@ interface SearchAutocompleteProps {
  * Type icons
  */
 const TYPE_ICONS: Record<AutocompleteSuggestion['type'], React.ReactNode> = {
-  history: <Clock size={14} className="text-muted-foreground" />,
-  suggestion: <GoatSparkles size={14} className="text-primary" />,
-  template: <GoatFilter size={14} className="text-purple-400" />,
-  item: <Tag size={14} className="text-emerald-400" />,
+  history: <Clock size={ICON_SIZES.md} className="text-muted-foreground" />,
+  suggestion: <GoatSparkles size={ICON_SIZES.md} className="text-primary" />,
+  template: <GoatFilter size={ICON_SIZES.md} className="text-purple-400" />,
+  item: <Tag size={ICON_SIZES.md} className="text-emerald-400" />,
 };
 
 /**
@@ -115,6 +116,10 @@ export function SearchAutocomplete({
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  // ARIA IDs
+  const listboxId = useId();
+  const optionIdPrefix = useId();
 
   // Determine value (controlled vs uncontrolled)
   const isControlled = controlledValue !== undefined;
@@ -366,12 +371,20 @@ export function SearchAutocomplete({
       {/* Input */}
       <div className="relative">
         <GoatSearch
-          size={18}
+          size={ICON_SIZES.xl}
           className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
         />
         <input
           ref={inputRef}
           type="text"
+          role="combobox"
+          aria-expanded={isOpen && suggestions.length > 0}
+          aria-haspopup="listbox"
+          aria-controls={listboxId}
+          aria-activedescendant={
+            selectedIndex >= 0 ? `${optionIdPrefix}-${selectedIndex}` : undefined
+          }
+          aria-autocomplete="list"
           value={inputValue}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
@@ -405,7 +418,7 @@ export function SearchAutocomplete({
               )}
             >
               {liveCounts.isCalculating ? (
-                <Loader2 size={10} className="animate-spin" />
+                <Loader2 size={ICON_SIZES.xs} className="animate-spin" />
               ) : (
                 <>
                   <span>{liveCounts.totalMatches}</span>
@@ -418,9 +431,10 @@ export function SearchAutocomplete({
         {inputValue && (
           <button
             onClick={handleClear}
+            aria-label="Clear search"
             className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground"
           >
-            <X size={16} />
+            <X size={ICON_SIZES.lg} />
           </button>
         )}
       </div>
@@ -434,6 +448,7 @@ export function SearchAutocomplete({
       <AnimatePresence>
         {isOpen && suggestions.length > 0 && (
           <motion.div
+            key="suggestions"
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
@@ -443,10 +458,16 @@ export function SearchAutocomplete({
               'rounded-card border border-border bg-background shadow-xl'
             )}
           >
-            <ul className="py-1">
+            <ul id={listboxId} role="listbox" className="py-1">
               {suggestions.map((suggestion, index) => (
-                <li key={suggestion.id}>
+                <li
+                  key={suggestion.id}
+                  id={`${optionIdPrefix}-${index}`}
+                  role="option"
+                  aria-selected={index === selectedIndex}
+                >
                   <button
+                    tabIndex={-1}
                     onClick={() => handleSelectSuggestion(suggestion)}
                     onMouseEnter={() => setSelectedIndex(index)}
                     className={cn(
@@ -467,7 +488,7 @@ export function SearchAutocomplete({
                       )}
                     </div>
                     <ChevronRight
-                      size={14}
+                      size={ICON_SIZES.md}
                       className={cn(
                         'shrink-0 transition-opacity',
                         index === selectedIndex ? 'opacity-100' : 'opacity-0'
@@ -493,6 +514,31 @@ export function SearchAutocomplete({
                 <kbd className="rounded bg-muted px-1">esc</kbd>
                 close
               </span>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Zero results empty state */}
+        {isOpen && suggestions.length === 0 && inputValue.trim() && (
+          <motion.div
+            key="empty-state"
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: FILTER_TIMING.fast }}
+            className={cn(
+              'absolute left-0 right-0 top-full z-dropdown mt-1',
+              'rounded-card border border-border bg-background shadow-xl'
+            )}
+          >
+            <div className="flex flex-col items-center gap-2 px-4 py-5">
+              <GoatSearch size={ICON_SIZES['2xl']} className="text-muted-foreground/50" />
+              <p className="text-sm text-muted-foreground">
+                No results for &ldquo;{inputValue.trim()}&rdquo;
+              </p>
+              <p className="text-xs text-muted-foreground/70">
+                Try a broader search or check spelling
+              </p>
             </div>
           </motion.div>
         )}
@@ -544,7 +590,7 @@ export function CompactSearchInput({
   return (
     <div className={cn('relative', className)}>
       <GoatSearch
-        size={16}
+        size={ICON_SIZES.lg}
         className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
       />
       <input
@@ -562,9 +608,10 @@ export function CompactSearchInput({
       {inputValue && (
         <button
           onClick={handleClear}
+          aria-label="Clear search"
           className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
         >
-          <X size={14} />
+          <X size={ICON_SIZES.md} />
         </button>
       )}
     </div>
@@ -596,7 +643,7 @@ function LiveFacetCounts({
             key={`${field}-${facet.value}`}
             className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-2xs bg-muted/50 text-muted-foreground"
           >
-            <Hash size={8} className="text-muted-foreground" />
+            <Hash size={ICON_SIZES['2xs']} className="text-muted-foreground" />
             <span className="text-muted-foreground">{facet.value}</span>
             <span className="text-primary/70">{facet.count}</span>
           </span>

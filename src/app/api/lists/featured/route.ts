@@ -23,9 +23,6 @@ async function timedQuery<T>(queryFn: () => PromiseLike<T>): Promise<{ result: T
 // GET /api/lists/featured - Get all featured lists in one request
 // Returns popular, trending, latest, and awards lists consolidated
 export const GET = withErrorHandler(async (request: NextRequest) => {
-  const correlationId = crypto.randomUUID();
-  const requestStart = performance.now();
-
   const supabase = await createClient();
   const searchParams = request.nextUrl.searchParams;
 
@@ -47,31 +44,31 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
   const FEATURED_CACHE_TTL = 3 * 60 * 1000;
 
   const response = await cachedFetch<FeaturedListsData>(cacheKey, FEATURED_CACHE_TTL, async () => {
-    // Execute all 4 queries in parallel for better performance
+    // Execute queries in parallel for better performance
     // All queries exclude child/fork lists (parent_list_id IS NULL) to show only
     // top-level templates — user rankings are aggregated into consensus stats instead
-    const [popular, trending, latest, awards] = await Promise.all([
-      // Popular lists - ordered by updated_at as engagement proxy (recently active = popular)
+
+    // Step 1: Fetch engagement data from shared_rankings to differentiate popular vs trending
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const sevenDaysAgoISO = sevenDaysAgo.toISOString();
+
+    const [engagementData, recentEngagementData, latest, awards] = await Promise.all([
+      // All-time engagement: shared_rankings grouped by list_id
       timedQuery(() =>
         supabase
-          .from('lists')
-          .select('*')
-          .eq('type', 'top')
-          .is('parent_list_id', null)
-          .order('updated_at', { ascending: false })
-          .order('created_at', { ascending: false })
-          .limit(popularLimit)
+          .from('shared_rankings')
+          .select('list_id, view_count, fork_count')
+          .not('list_id', 'is', null)
       ),
 
-      // Trending lists - ordered by updated_at (recently active)
+      // Recent engagement (last 7 days): shared_rankings created recently
       timedQuery(() =>
         supabase
-          .from('lists')
-          .select('*')
-          .eq('type', 'top')
-          .is('parent_list_id', null)
-          .order('updated_at', { ascending: false, nullsFirst: false })
-          .limit(trendingLimit)
+          .from('shared_rankings')
+          .select('list_id, view_count, fork_count, created_at')
+          .not('list_id', 'is', null)
+          .gte('created_at', sevenDaysAgoISO)
       ),
 
       // Latest lists - ordered by created_at
@@ -97,6 +94,79 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
       ),
     ]);
 
+    // Step 2: Aggregate engagement scores per list_id
+    // Popular = total views + (forks * 10) — all-time engagement
+    const popularScores = new Map<string, number>();
+    if (engagementData.result.data) {
+      for (const row of engagementData.result.data) {
+        if (!row.list_id) continue;
+        const prev = popularScores.get(row.list_id) ?? 0;
+        popularScores.set(row.list_id, prev + (row.view_count ?? 0) + (row.fork_count ?? 0) * 10);
+      }
+    }
+
+    // Trending = recent views + (recent forks * 10) — last 7 days only
+    const trendingScores = new Map<string, number>();
+    if (recentEngagementData.result.data) {
+      for (const row of recentEngagementData.result.data) {
+        if (!row.list_id) continue;
+        const prev = trendingScores.get(row.list_id) ?? 0;
+        trendingScores.set(row.list_id, prev + (row.view_count ?? 0) + (row.fork_count ?? 0) * 10);
+      }
+    }
+
+    // Step 3: Get the top list IDs for popular and trending
+    const popularListIds = Array.from(popularScores.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, popularLimit)
+      .map(([id]) => id);
+
+    const trendingListIds = Array.from(trendingScores.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, trendingLimit)
+      .map(([id]) => id);
+
+    // Step 4: Fetch the actual list data for popular and trending
+    const [popular, trending] = await Promise.all([
+      timedQuery(async () => {
+        if (popularListIds.length === 0) {
+          // Fallback: if no engagement data, use updated_at as proxy
+          return supabase
+            .from('lists')
+            .select('*')
+            .eq('type', 'top')
+            .is('parent_list_id', null)
+            .order('updated_at', { ascending: false })
+            .limit(popularLimit);
+        }
+        return supabase
+          .from('lists')
+          .select('*')
+          .in('id', popularListIds)
+          .eq('type', 'top')
+          .is('parent_list_id', null);
+      }),
+
+      timedQuery(async () => {
+        if (trendingListIds.length === 0) {
+          // Fallback: if no recent engagement, use recently created lists
+          return supabase
+            .from('lists')
+            .select('*')
+            .eq('type', 'top')
+            .is('parent_list_id', null)
+            .order('created_at', { ascending: false })
+            .limit(trendingLimit);
+        }
+        return supabase
+          .from('lists')
+          .select('*')
+          .in('id', trendingListIds)
+          .eq('type', 'top')
+          .is('parent_list_id', null);
+      }),
+    ]);
+
     const popularResult = popular.result;
     const trendingResult = trending.result;
     const latestResult = latest.result;
@@ -104,6 +174,8 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
 
     // Check for errors and throw with proper error handling
     const errors = [
+      { name: 'engagement', error: engagementData.result.error },
+      { name: 'recentEngagement', error: recentEngagementData.result.error },
       { name: 'popular', error: popularResult.error },
       { name: 'trending', error: trendingResult.error },
       { name: 'latest', error: latestResult.error },
@@ -141,29 +213,21 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
       parent_list_id: list.parent_list_id,
     });
 
+    // Sort popular and trending by their engagement scores (Supabase `in()` doesn't preserve order)
+    const sortedPopular = (popularResult.data || [])
+      .map(toListData)
+      .sort((a, b) => (popularScores.get(b.id) ?? 0) - (popularScores.get(a.id) ?? 0));
+
+    const sortedTrending = (trendingResult.data || [])
+      .map(toListData)
+      .sort((a, b) => (trendingScores.get(b.id) ?? 0) - (trendingScores.get(a.id) ?? 0));
+
     const result: FeaturedListsData = {
-      popular: (popularResult.data || []).map(toListData),
-      trending: (trendingResult.data || []).map(toListData),
+      popular: sortedPopular,
+      trending: sortedTrending,
       latest: (latestResult.data || []).map(toListData),
       awards: filteredAwards.map(toListData),
     };
-
-    const totalMs = Math.round((performance.now() - requestStart) * 100) / 100;
-    console.log(JSON.stringify({
-      endpoint: '/api/lists/featured',
-      correlationId,
-      popularMs: popular.durationMs,
-      trendingMs: trending.durationMs,
-      latestMs: latest.durationMs,
-      awardsMs: awards.durationMs,
-      totalMs,
-      resultCounts: {
-        popular: result.popular.length,
-        trending: result.trending.length,
-        latest: result.latest.length,
-        awards: result.awards.length,
-      },
-    }));
 
     return result;
   });

@@ -5,6 +5,7 @@ import { ArrowLeft, RefreshCw, Share2, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback } from 'react';
 
+import { useMotionCapabilities } from '@/hooks/use-motion-preference';
 import { DURATION } from '@/lib/animations/motion-presets';
 import { useOffline } from '@/lib/offline/OfflineProvider';
 import { useBacklogStore } from '@/stores/backlog-store';
@@ -23,6 +24,7 @@ export function MatchGridHeader({
     const isComplete = useGridStore(s => s.gridStatistics.isComplete);
     const setShowResultShareModal = useMatchStore(s => s.setShowResultShareModal);
     const { isSyncing, hasPendingChanges, syncNow } = useOffline();
+    const { allowCelebrations } = useMotionCapabilities();
 
     const handleAutoFill = useCallback(() => {
         const gridState = useGridStore.getState();
@@ -102,16 +104,20 @@ export function MatchGridHeader({
                     animate={{
                         opacity: 1,
                         scale: 1,
-                        boxShadow: [
-                            '0 0 0 0 rgba(6,182,212,0.4)',
-                            '0 0 0 12px rgba(6,182,212,0)',
-                            '0 0 0 0 rgba(6,182,212,0.4)',
-                        ],
+                        ...(allowCelebrations && {
+                            boxShadow: [
+                                '0 0 0 0 rgba(6,182,212,0.4)',
+                                '0 0 0 12px rgba(6,182,212,0)',
+                                '0 0 0 0 rgba(6,182,212,0.4)',
+                            ],
+                        }),
                     }}
                     transition={{
                         opacity: { duration: DURATION.normal },
                         scale: { duration: DURATION.normal },
-                        boxShadow: { duration: 2, repeat: Infinity },
+                        ...(allowCelebrations && {
+                            boxShadow: { duration: 2, repeat: Infinity },
+                        }),
                     }}
                     data-testid="share-results-btn"
                 >

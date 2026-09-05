@@ -317,7 +317,7 @@ export const TimeEstimator = memo(function TimeEstimator({
 export const TimeBadge = memo(function TimeBadge({
   size,
   category,
-  color,
+  color: _color,
 }: {
   size: number;
   category?: string;

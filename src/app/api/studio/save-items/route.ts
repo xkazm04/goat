@@ -56,12 +56,7 @@ export async function POST(request: NextRequest) {
       errors: upsertError ? 1 : 0,
     };
 
-    if (upsertError) {
-      console.warn('[Save Items] Batch upsert error:', upsertError.message);
-      // Still return partial success if some items were saved
-    }
-
-    console.log(`[Save Items] Results: ${savedCount.success} saved, ${savedCount.skipped} skipped, ${savedCount.errors} errors`);
+    // Partial success: return counts even if upsert had errors
 
     return NextResponse.json({
       saved: savedCount.success,

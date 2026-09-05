@@ -20,7 +20,6 @@ import {
   BracketMatchup,
   BracketSize,
   deriveBracketData,
-  bracketToRanking,
   getBracketSizeForItems,
   findMatchupById,
   SeedingStrategy,
@@ -314,10 +313,11 @@ export function PositionBracketModal({
               const next = playableMatchups[(nextIdx + 1) % playableMatchups.length];
               if (next) setCurrentMatchup(next);
             } : undefined}
+            bracket={bracket}
             completedVotes={completedVotes}
             roundName={derived?.stats?.currentRoundName ?? ''}
             matchNumber={derived?.stats ? derived.stats.completedMatchups + 1 : 1}
-            totalMatches={derived?.stats?.totalMatchups ?? 0}
+            totalMatchesInRound={derived?.stats?.totalMatchups ?? 0}
           />
         )}
       </AnimatePresence>

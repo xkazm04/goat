@@ -221,6 +221,9 @@ export const useSessionStore = create<SessionStoreState>()(
         const state = get();
         const zustandSession = state.listSessions[listId] ?? null;
 
+        // Clear selection cursor immediately to prevent orphaned cursor from old list
+        useSelectionCursor.getState().clear();
+
         // Reconcile Zustand persist (localStorage) with offline-db (goat-offline-db).
         // See src/lib/storage/storage-registry.ts for the dual-write architecture.
         let session: ListSession | null = zustandSession;
@@ -240,8 +243,10 @@ export const useSessionStore = create<SessionStoreState>()(
           // This conversion happens once on load, then normalized data is used for all operations
           const normalizedData = migrateFromLegacyFormat(session.backlogGroups || []);
 
-          // Restore selection cursor from the persisted session
-          useSelectionCursor.getState().select(session.selectedBacklogItem, 'auto');
+          // Only restore cursor if the saved item exists in the new session's data
+          if (session.selectedBacklogItem && normalizedData.itemsById.has(session.selectedBacklogItem)) {
+            useSelectionCursor.getState().select(session.selectedBacklogItem, 'auto');
+          }
           bumpNormalizedVersion();
           set({
             activeSessionId: listId,
@@ -259,7 +264,7 @@ export const useSessionStore = create<SessionStoreState>()(
 
       deleteSession: (listId: string) => {
         set((state) => {
-          const { [listId]: deleted, ...remainingSessions } = state.listSessions;
+          const { [listId]: _deleted, ...remainingSessions } = state.listSessions;
           
           return {
             listSessions: remainingSessions,
@@ -268,7 +273,7 @@ export const useSessionStore = create<SessionStoreState>()(
         });
       },
 
-      syncWithList: (listId: string, category: string = 'general') => {
+      syncWithList: (listId: string, _category: string = 'general') => {
         const state = get();
         
         if (!state.listSessions[listId]) {

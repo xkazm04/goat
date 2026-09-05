@@ -283,6 +283,11 @@ export interface RankingStoreState {
   /** Maximum undo entries kept in memory (prevents bloat in long tournaments) */
   bracketUndoMaxDepth: number;
 
+  // === Position Bracket State ===
+
+  /** Ephemeral session for bracket-to-fill-a-single-position (null if inactive) */
+  positionBracketSession: PositionBracketSession | null;
+
   // === Tier State ===
 
   /** Current tier state */

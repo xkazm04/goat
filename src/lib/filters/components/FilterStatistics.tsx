@@ -165,6 +165,11 @@ function CardStatistics({
           initial={{ width: 0 }}
           animate={{ width: `${statistics.matchPercentage}%` }}
           transition={{ duration: FILTER_TIMING.slow, ease: 'easeOut' }}
+          role="progressbar"
+          aria-valuenow={Math.round(statistics.matchPercentage)}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label={`${Math.round(statistics.matchPercentage)}% of items match filters`}
         />
       </div>
 
@@ -260,8 +265,8 @@ function StatCard({
 }) {
   const colorClasses = {
     primary: 'text-primary',
-    success: 'text-green-500',
-    info: 'text-blue-500',
+    success: 'text-success',
+    info: 'text-info',
   };
 
   return (
@@ -315,7 +320,7 @@ function FieldBreakdown({
  * Field Distribution Chart
  */
 function FieldDistributionChart({
-  fieldName,
+  fieldName: _fieldName,
   distribution,
 }: {
   fieldName: string;
@@ -347,6 +352,11 @@ function FieldDistributionChart({
                 initial={{ width: 0 }}
                 animate={{ width: `${(item.count / maxCount) * 100}%` }}
                 transition={{ duration: FILTER_TIMING.slow, delay: 0.1 }}
+                role="progressbar"
+                aria-valuenow={item.count}
+                aria-valuemin={0}
+                aria-valuemax={maxCount}
+                aria-label={`${String(item.value)}: ${item.count} items`}
               />
             </div>
             <span className="text-xs font-medium w-10 text-right font-mono tabular-nums">

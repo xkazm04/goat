@@ -21,6 +21,7 @@ import { DURATION } from '@/lib/animations/motion-presets';
 import {
   useCollectionTree,
   useCollectionActions,
+  useCollectionUIState,
 } from "@/stores/collection-store";
 import { DEFAULT_COLLECTIONS } from "@/types/collection";
 
@@ -242,6 +243,7 @@ export const CollectionSidebar = memo(function CollectionSidebar({
 }: CollectionSidebarProps) {
   const tree = useCollectionTree();
   const { toggleCollectionExpanded } = useCollectionActions();
+  const { isLoading, hasLoaded } = useCollectionUIState();
 
   const handleSelect = useCallback(
     (collection: ListCollection) => {
@@ -294,10 +296,21 @@ export const CollectionSidebar = memo(function CollectionSidebar({
 
       {/* Collection tree */}
       <div className="flex-1 overflow-y-auto px-2 pb-4">
-        {tree.length === 0 ? (
+        {!hasLoaded && isLoading ? (
+          <div className="space-y-2 px-3 py-4" role="status" aria-label="Loading collections">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-2 py-2">
+                <div className="w-6 h-6 rounded-control bg-slate-800 animate-pulse" />
+                <div className="flex-1 h-4 rounded bg-slate-800 animate-pulse" />
+              </div>
+            ))}
+            <span className="sr-only">Loading collections...</span>
+          </div>
+        ) : tree.length === 0 ? (
           <div className="px-3 py-8 text-center">
-            <Folder className="w-10 h-10 text-slate-700 mx-auto mb-3" />
-            <p className="text-sm text-slate-500 mb-3">No collections yet</p>
+            <FolderPlus className="w-10 h-10 text-slate-700 mx-auto mb-3" />
+            <p className="text-sm text-slate-500 mb-1">No collections yet</p>
+            <p className="text-xs text-slate-600 mb-3">Organize your lists into collections</p>
             {onCreateCollection && (
               <button
                 onClick={onCreateCollection}

@@ -346,10 +346,12 @@ export const useMatchStore = create<MatchStoreState>((set, get) => ({
   resetMatchSession: () => {
     const gridStore = useGridStore.getState();
     const comparisonStore = useComparisonStore.getState();
+    const sessionStore = useSessionStore.getState();
 
     // Clear all stores
     gridStore.clearGrid();
     comparisonStore.clearAll();
+    sessionStore.updateSessionGridItems([]);
     useSelectionCursor.getState().clear();
     useUndoStore.getState().clear();
 

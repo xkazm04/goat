@@ -48,6 +48,7 @@ export {
   fromSupabaseError,
   assertRequired,
   assertValid,
+  assertIntRange,
   parseBody,
   successResponse,
   createdResponse,

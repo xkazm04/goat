@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 
 import { ShimmerBtn } from "@/components/app/button/AnimButtons";
 import { useTempUser } from "@/hooks/use-temp-user";
@@ -56,6 +56,7 @@ const ListCreateButton = ({ intent, createListMutation, onSuccess, onClose }: Pr
     const [creationStep, setCreationStep] = useState<CreationStep | null>(null);
     const [showSuccess, setShowSuccess] = useState(false);
     const [isPressed, setIsPressed] = useState(false);
+    const isCreatingRef = useRef(false);
 
     const reducedMotion = prefersReducedMotion();
     const isButtonDisabled = createListMutation.isPending || !isLoaded || !tempUserId || creationStep !== null;
@@ -67,6 +68,9 @@ const ListCreateButton = ({ intent, createListMutation, onSuccess, onClose }: Pr
     };
 
     const handleCreate = useCallback(async () => {
+        // Ref guard: immediately block duplicate submissions before React re-renders
+        if (isCreatingRef.current) return;
+
         // Early return if button is disabled
         if (isButtonDisabled) {
             return;
@@ -80,6 +84,7 @@ const ListCreateButton = ({ intent, createListMutation, onSuccess, onClose }: Pr
             return;
         }
 
+        isCreatingRef.current = true;
         setIsCreating(true);
         setCreationError(null);
 
@@ -160,6 +165,7 @@ const ListCreateButton = ({ intent, createListMutation, onSuccess, onClose }: Pr
             onSuccess?.(failureResult);
         }
 
+        isCreatingRef.current = false;
         setIsCreating(false);
     }, [
         isButtonDisabled,

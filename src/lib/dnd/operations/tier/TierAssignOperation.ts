@@ -1,14 +1,12 @@
 import { dndLogger } from '@/lib/logger';
 
-import { backlogToTransferable } from '../../type-guards';
+import { backlogToTransferable, gridToTransferable, isBacklogItem, isGridItem, isTransferableItem , DndTypeAssertionError } from '../../type-guards';
 import { requireStore, requireTierTarget, validateAll } from '../validation-helpers';
 import { BaseTierOperation } from './BaseTierOperation';
 
-import type { DragContext, DragOperationResult, OperationStoreContext } from '../types';
 import type { TransferableItem } from '../../transfer-protocol';
+import type { DragContext, DragOperationResult, OperationStoreContext } from '../types';
 import type { ValidationResult } from '@/lib/validation';
-import type { BacklogItem } from '@/types/backlog-groups';
-import type { GridItemType } from '@/types/match';
 
 
 
@@ -19,7 +17,7 @@ export class TierAssignOperation extends BaseTierOperation {
   readonly type = 'tier-assign' as const;
 
   validate(context: DragContext, stores: OperationStoreContext): ValidationResult {
-    const { source, target } = context;
+    const { source: _source, target } = context;
 
     // Tier assign only requires a tier store and a valid tier target.
     // We intentionally skip requireAvailableBacklogItem here because:
@@ -54,17 +52,30 @@ export class TierAssignOperation extends BaseTierOperation {
       };
     }
 
-    // Normalize to TransferableItem (BaseItem):
-    // - BacklogItem has 'category' → use backlogToTransferable
-    // - PlacedItem has 'context' → extract inner .item
-    // - TransferableItem → use directly
+    // Normalize to TransferableItem using exhaustive type guards
     let transferable: TransferableItem;
-    if ('category' in item && typeof (item as BacklogItem).category === 'string') {
-      transferable = backlogToTransferable(item as BacklogItem);
-    } else if ('context' in item && (item as GridItemType).item) {
-      transferable = (item as GridItemType).item!;
+    if (isBacklogItem(item)) {
+      transferable = backlogToTransferable(item);
+    } else if (isGridItem(item)) {
+      const converted = gridToTransferable(item);
+      if (!converted) {
+        throw new DndTypeAssertionError(
+          'GridItem could not be converted to TransferableItem (missing inner item data)',
+          'TransferableItem',
+          item,
+          `tier-assign to tier ${tierId}`,
+        );
+      }
+      transferable = converted;
+    } else if (isTransferableItem(item)) {
+      transferable = item;
     } else {
-      transferable = item as TransferableItem;
+      throw new DndTypeAssertionError(
+        'Item does not match BacklogItem, GridItemType, or TransferableItem',
+        'BacklogItem | GridItemType | TransferableItem',
+        item,
+        `tier-assign to tier ${tierId}`,
+      );
     }
 
     dndLogger.debug('Executing tier-assign operation', {

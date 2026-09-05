@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Trophy, Star, Users, Compass, Flag, Sparkles, LucideIcon } from "lucide-react";
+import Image from "next/image";
 
 import { DURATION } from "@/lib/animations/motion-presets";
 import {
@@ -166,7 +167,7 @@ export function AchievementCard({
         </motion.div>
       )}
 
-      <div className="relative p-6">
+      <div className="relative p-4">
         {/* Header: Category badge and tier */}
         <div className="flex items-start justify-between mb-4">
           {/* Category badge */}
@@ -200,7 +201,7 @@ export function AchievementCard({
         </div>
 
         {/* Achievement icon/visual */}
-        <div className="flex items-center gap-4 mb-5">
+        <div className="flex items-center gap-4 mb-4">
           <motion.div
             className="relative shrink-0"
             animate={config.animated && achievement.unlocked ? {
@@ -331,10 +332,13 @@ export function AchievementCard({
             style={{ borderTop: `1px solid ${stylePreset.border}` }}
           >
             {userAvatar ? (
-              <img
+              <Image
                 src={userAvatar}
                 alt={username}
+                width={32}
+                height={32}
                 className="w-8 h-8 rounded-full object-cover"
+                unoptimized
               />
             ) : (
               <div
@@ -412,7 +416,7 @@ export function AchievementCardCompact({
   return (
     <motion.button
       onClick={onClick}
-      className={`flex items-center gap-3 p-3 rounded-card transition-all ${className}`}
+      className={`flex items-center gap-4 p-4 rounded-card transition-all ${className}`}
       style={{
         background: 'rgba(255, 255, 255, 0.03)',
         border: `1px solid ${achievement.unlocked ? tierConfig.borderColor : 'rgba(255, 255, 255, 0.05)'}`,

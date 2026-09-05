@@ -49,25 +49,26 @@ export function fuzzyMatch(pattern: string, text: string): FuzzyMatchResult {
     };
   }
 
-  // Word start matching
-  const words = tLower.split(/\s+/);
+  // Word start matching — compute actual word positions from regex
   const patternWords = pLower.split(/\s+/);
   let wordMatchScore = 0;
   const wordMatchedIndices: number[] = [];
 
+  const wordEntries: Array<{ word: string; start: number }> = [];
+  const wordRegex = /\S+/g;
+  let wordExec: RegExpExecArray | null;
+  while ((wordExec = wordRegex.exec(tLower)) !== null) {
+    wordEntries.push({ word: wordExec[0], start: wordExec.index });
+  }
+
   for (const pw of patternWords) {
-    let charOffset = 0;
-    for (const word of words) {
+    for (const { word, start } of wordEntries) {
       if (word.startsWith(pw)) {
         wordMatchScore += 0.3;
-        const wordStart = tLower.indexOf(word, charOffset);
-        if (wordStart !== -1) {
-          for (let i = 0; i < pw.length; i++) {
-            wordMatchedIndices.push(wordStart + i);
-          }
+        for (let i = 0; i < pw.length; i++) {
+          wordMatchedIndices.push(start + i);
         }
       }
-      charOffset += word.length + 1; // +1 for space
     }
   }
 
@@ -202,7 +203,7 @@ export function recencyBoost(
   if (isNaN(date.getTime())) return 0;
 
   const now = Date.now();
-  const age = now - date.getTime();
+  const age = Math.max(0, now - date.getTime());
   const ageDays = age / (1000 * 60 * 60 * 24);
 
   // Exponential decay

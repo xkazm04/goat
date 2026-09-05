@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { WIDGET_DIMENSIONS, generateIframeEmbed, DEFAULT_WIDGET_CONFIG } from '@/lib/embed';
+import { getServerBaseUrl, getOGImageUrl } from '@/lib/sharing/share-urls';
 
 import type { OEmbedResponse } from '@/lib/embed';
 
@@ -31,7 +32,7 @@ function parseListIdFromUrl(url: string): string | null {
  * Fetch list metadata
  * In production, this would query the database
  */
-async function fetchListMetadata(listId: string): Promise<{
+async function fetchListMetadata(_listId: string): Promise<{
   title: string;
   author?: string;
   thumbnailUrl?: string;
@@ -107,7 +108,7 @@ export async function GET(request: NextRequest) {
     size,
   });
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://goat.app';
+  const baseUrl = getServerBaseUrl();
 
   // Build oEmbed response
   const response: OEmbedResponse = {
@@ -119,7 +120,7 @@ export async function GET(request: NextRequest) {
     provider_name: 'GOAT Rankings',
     provider_url: baseUrl,
     cache_age: 3600, // 1 hour
-    thumbnail_url: metadata.thumbnailUrl || `${baseUrl}/api/og/${listId}`,
+    thumbnail_url: metadata.thumbnailUrl || getOGImageUrl(listId, {}, baseUrl),
     thumbnail_width: 1200,
     thumbnail_height: 630,
     html: embedHtml,

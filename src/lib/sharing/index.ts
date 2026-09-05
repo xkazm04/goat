@@ -3,6 +3,24 @@
  * Multi-platform social sharing with native integrations
  */
 
+// Share URL utilities
+export {
+  getBaseUrl,
+  getServerBaseUrl,
+  getShareUrl,
+  getChallengeUrl,
+  getOGImageUrl,
+  getBlueprintUrl,
+  getTemplateViewUrl,
+  getTierListShareUrl,
+  getAchievementUrl,
+  getAchievementOGUrl,
+  getAchievementEmbedCode,
+  buildSocialShareUrl,
+  type OGImageOptions,
+  type SocialSharePlatform,
+} from './share-urls';
+
 // Types
 export type {
   SharePlatform,

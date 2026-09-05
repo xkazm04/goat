@@ -5,8 +5,8 @@
  * All Collection-context components should use these instead of
  * inventing their own spring parameters.
  *
- * Pair with useReducedMotion() from '@/hooks/use-reduced-motion'
- * to respect prefers-reduced-motion.
+ * Pair with useMotionCapabilities() from '@/hooks/use-motion-preference'
+ * to respect the user's motion tier preference.
  */
 
 import type { Transition, Variant } from 'framer-motion';

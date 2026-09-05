@@ -11,11 +11,9 @@ import { GoatMascot } from "@/components/visual/GoatMascot";
 import { useComposition } from "@/hooks/use-composition";
 import { useListThumbnails } from "@/hooks/use-list-thumbnails";
 import { usePlayList } from "@/hooks/use-play-list";
+import { useTempUser } from "@/hooks/use-temp-user";
 import { useFeaturedLists } from "@/hooks/use-top-lists";
 import { DURATION } from '@/lib/animations/motion-presets';
-
-
-import { useTempUser } from "@/hooks/use-temp-user";
 import { getCategoryColor } from "@/lib/helpers/getColors";
 import { TopList } from "@/types/top-lists";
 
@@ -76,7 +74,15 @@ const MosaicCard = memo(function MosaicCard({
       aria-label={`Play ${list.title}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onFocus={() => setIsHovered(true)}
+      onBlur={() => setIsHovered(false)}
       onClick={handleClick}
+      onKeyDown={(e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleClick();
+        }
+      }}
       onContextMenu={handleContextMenu}
       layout
       initial={{ opacity: 0, y: 8 }}
@@ -146,7 +152,7 @@ const MosaicCard = memo(function MosaicCard({
       )}
 
       {/* Bookmark button - top right */}
-      <div className="absolute top-1.5 right-1.5 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+      <div className="absolute top-1.5 right-1.5 z-20 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-200">
         <BookmarkButton
           isBookmarked={isBookmarked}
           onToggle={() => onToggleBookmark(list.id)}
@@ -205,7 +211,7 @@ const MosaicCard = memo(function MosaicCard({
 export function FeaturedListsSection({ className }: FeaturedListsSectionProps) {
   const { openWithSourceList } = useComposition();
   const { handlePlayList } = usePlayList();
-  const { tempUserId } = useTempUser();
+  const { tempUserId: _tempUserId } = useTempUser();
   // Bookmarks disabled until API is ready
   const isBookmarked = (_id: string) => false;
   const toggleBookmark = (_id: string) => {};

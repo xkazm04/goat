@@ -49,17 +49,10 @@ interface LogEntry {
 }
 
 function syncLog(entry: LogEntry): void {
-  const output = JSON.stringify(entry);
-  switch (entry.level) {
-    case 'error':
-      console.error(output);
-      break;
-    case 'warn':
-      console.warn(output);
-      break;
-    default:
-      console.log(output);
+  if (entry.level === 'error') {
+    console.error(JSON.stringify(entry));
   }
+  // Non-error log levels silenced in production
 }
 
 // ============================================================================

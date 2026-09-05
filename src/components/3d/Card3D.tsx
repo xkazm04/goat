@@ -115,7 +115,7 @@ export const Card3D = memo(
     forwardedRef
   ) {
     const cardRef = useRef<HTMLDivElement>(null);
-    const { allowInteraction, allowTransitions } = useMotionCapabilities();
+    const { allowInteraction } = useMotionCapabilities();
 
     // Disable effects if motion preference disallows or explicitly disabled
     const effectsDisabled = disabled || !allowInteraction;

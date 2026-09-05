@@ -34,7 +34,6 @@ const safeStorage = isBrowser
 let _prevPartializeInputs: {
   cache: BacklogState['cache'];
   selectedGroupId: string | null;
-  selectedItemId: string | null;
   pendingChanges: BacklogState['pendingChanges'];
   syncDiagnostics: BacklogState['syncDiagnostics'];
   lastSyncTimestamp: number;
@@ -56,8 +55,6 @@ export const useBacklogStore = create<BacklogState>()(
         _itemIndex: new Map(),
         _loadedGroupsCount: 0,
         selectedGroupId: null,
-        selectedItemId: null,
-        activeItemId: null,
         searchTerm: '',
         isLoading: false,
         loadingGroupIds: new Set<string>(),
@@ -110,7 +107,6 @@ export const useBacklogStore = create<BacklogState>()(
           _prevPartializeResult &&
           _prevPartializeInputs.cache === state.cache &&
           _prevPartializeInputs.selectedGroupId === state.selectedGroupId &&
-          _prevPartializeInputs.selectedItemId === state.selectedItemId &&
           _prevPartializeInputs.pendingChanges === state.pendingChanges &&
           _prevPartializeInputs.syncDiagnostics === state.syncDiagnostics &&
           _prevPartializeInputs.lastSyncTimestamp === state.lastSyncTimestamp &&
@@ -150,7 +146,6 @@ export const useBacklogStore = create<BacklogState>()(
 
         const result = {
           selectedGroupId: state.selectedGroupId,
-          selectedItemId: state.selectedItemId,
           cache: serializedCache,
           pendingChanges: state.pendingChanges,
           syncDiagnostics: state.syncDiagnostics,
@@ -164,7 +159,6 @@ export const useBacklogStore = create<BacklogState>()(
         _prevPartializeInputs = {
           cache: state.cache,
           selectedGroupId: state.selectedGroupId,
-          selectedItemId: state.selectedItemId,
           pendingChanges: state.pendingChanges,
           syncDiagnostics: state.syncDiagnostics,
           lastSyncTimestamp: state.lastSyncTimestamp,
@@ -181,8 +175,14 @@ export const useBacklogStore = create<BacklogState>()(
       // Handle rehydration
       onRehydrateStorage: () => (state) => {
         if (!state || !isBrowser) return;
-        
+
         backlogLogger.debug('BacklogStore rehydrated successfully');
+
+        // Migration: drop deprecated persisted fields that are no longer used.
+        // selectedItemId → useSelectionCursor is the source of truth.
+        // activeItemId → hover/preview state is component-local.
+        if ('selectedItemId' in (state as any)) delete (state as any).selectedItemId;
+        if ('activeItemId' in (state as any)) delete (state as any).activeItemId;
         
         // Convert serialized data back to proper structure with Sets
         if (state.cache) {

@@ -8,6 +8,7 @@
 import { useDroppable, useDraggable } from '@dnd-kit/core';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronUp, ChevronDown, X, GripVertical } from 'lucide-react';
+import Image from 'next/image';
 import React, { useMemo, useRef } from 'react';
 
 import { cn } from '@/lib/utils';
@@ -213,11 +214,13 @@ function TierRowItem({
 
       {/* Item image */}
       {item.image_url && (
-        <div className="w-10 h-10 rounded overflow-hidden flex-shrink-0 bg-muted">
-          <img
+        <div className="relative w-10 h-10 rounded overflow-hidden flex-shrink-0 bg-muted">
+          <Image
             src={item.image_url}
             alt={item.title}
-            className="w-full h-full object-cover"
+            fill
+            className="object-cover"
+            unoptimized
           />
         </div>
       )}
@@ -286,7 +289,7 @@ export function TierRow({
   isOver: externalIsOver,
   isDragging: externalIsDragging,
   onRemoveItem,
-  onReorderItem,
+  onReorderItem: _onReorderItem,
   onPromote,
   onDemote,
   canPromote = true,
@@ -306,7 +309,7 @@ export function TierRow({
 
   // Check capacity
   const atCapacity = capacity !== undefined && items.length >= capacity;
-  const remainingCapacity = capacity !== undefined ? capacity - items.length : null;
+  const _remainingCapacity = capacity !== undefined ? capacity - items.length : null;
 
   // Determine highlight state
   const isHighlighted = isOver || externalIsOver;
@@ -414,7 +417,7 @@ export function TierRow({
  */
 export function TierRowCompact({
   tier,
-  tierIndex,
+  tierIndex: _tierIndex,
   itemCount,
   capacity,
   isOver,

@@ -198,11 +198,8 @@ function loadHistory(): SearchHistoryEntry[] {
   try {
     const stored = localStorage.getItem(HISTORY_STORAGE_KEY);
     return stored ? JSON.parse(stored) : [];
-  } catch (error) {
-    console.warn('[CollectionFilter] loadHistory: failed to load search history from localStorage', {
-      storageKey: HISTORY_STORAGE_KEY,
-      error: error instanceof Error ? error.message : String(error),
-    });
+  } catch {
+    // Failed to load search history from localStorage — returning empty
     return [];
   }
 }
@@ -214,12 +211,8 @@ function saveHistory(history: SearchHistoryEntry[]): void {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
-  } catch (error) {
-    console.warn('[CollectionFilter] saveHistory: failed to persist search history to localStorage', {
-      storageKey: HISTORY_STORAGE_KEY,
-      entryCount: history.length,
-      error: error instanceof Error ? error.message : String(error),
-    });
+  } catch {
+    // Failed to persist search history to localStorage
   }
 }
 
@@ -274,6 +267,15 @@ export function FilterIntegrationProvider({
 
   // Debounce timer ref
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Clear debounce timer on unmount to prevent state updates after unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
 
   // Fingerprint tracking to skip redundant index rebuilds when Zustand/React
   // produces a new array reference without changing the actual content.

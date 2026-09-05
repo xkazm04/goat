@@ -302,9 +302,6 @@ interface ExtendedRankingStoreState extends RankingStoreState {
 /** Complete store type combining state and actions */
 type RankingStore = ExtendedRankingStoreState & RankingActions;
 
-/** Selector type helper */
-type RankingState = ExtendedRankingStoreState;
-
 export const useRankingStore = create<RankingStore>()(
   subscribeWithSelector(
     persist(
@@ -720,7 +717,7 @@ export const useRankingStore = create<RankingStore>()(
         },
 
         // === Tier Actions ===
-        assignToTier: (itemId, tierId, item) => {
+        assignToTier: (itemId, tierId, _item) => {
           set(state => {
             const tierIndex = state.tierState.tiers.findIndex(t => t.id === tierId);
             if (tierIndex === -1) return state;
@@ -841,7 +838,7 @@ export const useRankingStore = create<RankingStore>()(
           });
         },
 
-        addToUnranked: (itemId, item) => {
+        addToUnranked: (itemId, _item) => {
           set(state => {
             if (state.tierState.unrankedItemIds.includes(itemId)) return state;
 
@@ -1179,7 +1176,7 @@ export const useRankingStore = create<RankingStore>()(
             const tiers = createTiersFromBoundaries(boundaries, adjustedPreset);
 
             // Convert filled positions to item format
-            const itemData = filledPositions.map((pos, idx) => ({
+            const itemData = filledPositions.map((pos, _idx) => ({
               itemId: `item-${pos}`,
               position: pos,
             }));

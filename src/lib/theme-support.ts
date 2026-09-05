@@ -79,14 +79,6 @@ export function getSafeTheme(requestedTheme: string): string {
   const support = checkExperimentalDarkSupport();
 
   if (!support.isSupported) {
-    console.warn(
-      '[Theme] Experimental dark theme not fully supported. Missing features:',
-      Object.entries(support.features)
-        .filter(([_, supported]) => !supported)
-        .map(([feature]) => feature)
-        .join(', '),
-      `Falling back to ${support.fallbackTheme} theme.`
-    );
     return support.fallbackTheme;
   }
 

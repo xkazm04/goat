@@ -66,11 +66,9 @@ async function generateMockImage(
 /**
  * Generate a placeholder URL for demo purposes
  */
-function generatePlaceholderUrl(request: AIGenerationRequest, seed: number): string {
+function generatePlaceholderUrl(request: AIGenerationRequest, _seed: number): string {
   // Use a gradient placeholder service
   const colors = getStyleColors(request.style);
-  const width = request.dimensions.width;
-  const height = request.dimensions.height;
 
   // Create an SVG-based placeholder that looks like a ranking image
   // In production, this would be an actual AI-generated image URL
@@ -232,7 +230,7 @@ async function generateWithReplicate(
   const apiKey = process.env.REPLICATE_API_TOKEN;
 
   if (!apiKey) {
-    console.warn('REPLICATE_API_TOKEN not set, falling back to mock');
+    // REPLICATE_API_TOKEN not set — falling back to mock
     return generateMockImage(request, prompt);
   }
 
@@ -320,7 +318,7 @@ async function generateWithOpenAI(
   const apiKey = process.env.OPENAI_API_KEY;
 
   if (!apiKey) {
-    console.warn('OPENAI_API_KEY not set, falling back to mock');
+    // OPENAI_API_KEY not set — falling back to mock
     return generateMockImage(request, prompt);
   }
 

@@ -1,6 +1,9 @@
+import { randomBytes } from 'crypto';
+
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
+import { getServerBaseUrl, getShareUrl, getOGImageUrl } from '@/lib/sharing/share-urls';
 import { requireAuth } from '@/lib/supabase/server';
 import { CreateSharedRankingRequest } from '@/types/share';
 
@@ -18,12 +21,13 @@ function getSupabaseClient() {
   return createClient(supabaseUrl, supabaseServiceKey);
 }
 
-// Generate a unique share code
+// Generate a unique share code using cryptographically secure randomness
 function generateShareCode(): string {
   const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const bytes = randomBytes(12);
   let result = '';
-  for (let i = 0; i < 8; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  for (let i = 0; i < 12; i++) {
+    result += chars.charAt(bytes[i] % chars.length);
   }
   return result;
 }
@@ -94,15 +98,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Get base URL for OG image
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://goat.app';
+    const baseUrl = getServerBaseUrl();
 
     // Determine the best layout for this content
     const suggestedLayout = suggestLayout(items);
 
     // Generate OG image URLs for different platforms
-    const ogImageUrl = `${baseUrl}/api/og/${shareCode}?layout=${suggestedLayout}`;
-    const twitterImageUrl = `${baseUrl}/api/og/${shareCode}?layout=${suggestedLayout}&platform=twitter`;
-    const facebookImageUrl = `${baseUrl}/api/og/${shareCode}?layout=${suggestedLayout}&platform=facebook`;
+    const ogImageUrl = getOGImageUrl(shareCode, { layout: suggestedLayout }, baseUrl);
+    const twitterImageUrl = getOGImageUrl(shareCode, { layout: suggestedLayout, platform: 'twitter' }, baseUrl);
+    const facebookImageUrl = getOGImageUrl(shareCode, { layout: suggestedLayout, platform: 'facebook' }, baseUrl);
 
     // Create the shared ranking
     const { data, error } = await supabase
@@ -130,7 +134,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const shareUrl = `${baseUrl}/share/${shareCode}`;
+    const shareUrl = getShareUrl(shareCode, baseUrl);
 
     return NextResponse.json({
       success: true,
@@ -179,29 +183,26 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      // Increment view count (fire and forget)
+      // Increment view count atomically (fire and forget)
       supabase
-        .from('shared_rankings')
-        .update({ view_count: data.view_count + 1 })
-        .eq('id', data.id)
+        .rpc('increment_share_view_count', { share_id: data.id })
         .then(() => {});
 
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://goat.app';
+      const baseUrl = getServerBaseUrl();
 
       // Generate OG image URLs
       const suggestedLayout = suggestLayout(data.items || []);
-      const ogImageUrl = `${baseUrl}/api/og/${data.share_code}?layout=${suggestedLayout}`;
 
       return NextResponse.json({
         success: true,
         data: {
           ...data,
-          share_url: `${baseUrl}/share/${data.share_code}`,
+          share_url: getShareUrl(data.share_code, baseUrl),
           og_images: {
-            default: ogImageUrl,
-            twitter: `${ogImageUrl}&platform=twitter`,
-            facebook: `${ogImageUrl}&platform=facebook`,
-            discord: `${ogImageUrl}&platform=discord`,
+            default: getOGImageUrl(data.share_code, { layout: suggestedLayout }, baseUrl),
+            twitter: getOGImageUrl(data.share_code, { layout: suggestedLayout, platform: 'twitter' }, baseUrl),
+            facebook: getOGImageUrl(data.share_code, { layout: suggestedLayout, platform: 'facebook' }, baseUrl),
+            discord: getOGImageUrl(data.share_code, { layout: suggestedLayout }, baseUrl),
           },
         },
       });

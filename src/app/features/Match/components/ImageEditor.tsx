@@ -259,6 +259,7 @@ export function ImageEditor({
             {/* Image preview */}
             <div className="flex-1 flex items-center justify-center p-4 overflow-hidden">
               <div className="relative max-w-full max-h-full">
+                {/* eslint-disable-next-line @next/next/no-img-element -- needs ref + crossOrigin + dynamic CSS filter for canvas export */}
                 <img
                   ref={imageRef}
                   src={imageUrl}
@@ -357,6 +358,7 @@ export function ImageEditor({
                               : "ring-1 ring-gray-700 hover:ring-gray-500"
                           )}
                         >
+                          {/* eslint-disable-next-line @next/next/no-img-element -- needs dynamic CSS filter for preview thumbnails */}
                           <img
                             src={imageUrl}
                             alt={filter.name}

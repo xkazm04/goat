@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState, useRef, useCallback } from "react";
 
 import { DURATION } from '@/lib/animations/motion-presets';
-
 import { useDropZoneHighlightStore } from "@/stores/drop-zone-highlight-store";
 
 interface ConnectorLine {

@@ -7,7 +7,7 @@
 import {
   CATEGORY_CONFIG,
   getDefaultSubcategory
-} from '@/lib/config/category-config';
+ } from '@/lib/config/category-config';
 
 export interface ParsedListQuery {
   category: string;
@@ -21,12 +21,7 @@ export interface ParsedListQuery {
   originalQuery: string;
 }
 
-// Default color palette
-const DEFAULT_COLOR = {
-  primary: "#f59e0b",
-  secondary: "#d97706",
-  accent: "#fbbf24"
-};
+
 
 // Size patterns
 const SIZE_PATTERNS = [

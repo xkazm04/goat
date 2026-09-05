@@ -61,7 +61,7 @@ export const SizeVisualizer = memo(function SizeVisualizer({
   );
 
   // Is current size a standard preset?
-  const isPresetSize = SIZE_OPTIONS.some((opt) => opt.value === selectedSize);
+  const _isPresetSize = SIZE_OPTIONS.some((opt) => opt.value === selectedSize);
 
   // Get current size option
   const currentOption = useMemo(
@@ -85,9 +85,9 @@ export const SizeVisualizer = memo(function SizeVisualizer({
     <div className="w-full space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <label className="text-sm font-medium text-slate-300">
+        <span className="text-sm font-medium text-slate-300">
           List Size
-        </label>
+        </span>
         {showTimeEstimate && (
           <TimeBadge size={selectedSize} category={category} color={color} />
         )}
@@ -395,7 +395,7 @@ const CompactSizeVisualizer = memo(function CompactSizeVisualizer({
   return (
     <div className="w-full">
       <div className="flex items-center justify-between mb-3">
-        <label className="text-sm font-medium text-slate-300">List Size</label>
+        <span className="text-sm font-medium text-slate-300">List Size</span>
         {showTimeEstimate && (
           <TimeBadge size={selectedSize} category={category} color={color} />
         )}
@@ -442,7 +442,7 @@ const CompactSizeVisualizer = memo(function CompactSizeVisualizer({
 const SizeComparisonView = memo(function SizeComparisonView({
   color,
   selectedSize,
-  category,
+  category: _category,
 }: {
   color: { primary: string; secondary: string; accent: string };
   selectedSize: ListSize | number;

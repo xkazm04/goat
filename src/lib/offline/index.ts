@@ -12,6 +12,8 @@ export * from './types';
 export {
   getOfflinePersistence,
   resetOfflinePersistence,
+  MAX_PENDING_CHANGES,
+  PENDING_CHANGES_WARNING_THRESHOLD,
 } from './OfflinePersistence';
 
 // React hooks

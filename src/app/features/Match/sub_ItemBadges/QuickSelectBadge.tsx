@@ -159,7 +159,7 @@ export function QuickSelectStatusBar({
         {mode === "position-assignment" && selectedItemTitle && (
           <div className="flex items-center gap-2">
             <span className="text-xs text-brand-hover font-medium truncate max-w-[150px]">
-              "{selectedItemTitle}"
+              &quot;{selectedItemTitle}&quot;
             </span>
             <span className="text-2xs text-gray-400">
               → <kbd className="px-1 py-0.5 bg-gray-700/80 rounded text-gray-300 font-mono">1-0</kbd> or{" "}

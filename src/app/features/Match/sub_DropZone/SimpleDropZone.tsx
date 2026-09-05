@@ -5,10 +5,11 @@ import { ChevronUp, ChevronDown, Swords, X } from "lucide-react";
 import { useState, useEffect, useRef, useMemo, memo } from "react";
 
 import { createGridDragData, createGridSlotDropData, createGridReceiverId } from "@/lib/dnd";
-import { useItemConsensus } from "./hooks/useItemConsensus";
 import { useCriteriaStore, useActiveProfile } from '@/stores/criteria-store';
+import { useDropZoneHighlightStore } from "@/stores/drop-zone-highlight-store";
 import { useListStore } from '@/stores/use-list-store';
 import { GridItemType } from "@/types/match";
+
 
 
 import { DropCelebration } from "./components/DropCelebration";
@@ -16,9 +17,10 @@ import { DropZoneCard, ActiveSelectionRing, HoverGlowBorder, ItemTitle } from ".
 import { DropZoneEmpty, RankNumberBackground, HoloGridPattern } from "./components/DropZoneEmpty";
 import { DropZoneOccupied } from "./components/DropZoneOccupied";
 import { ValidDropIndicator, SnapConfirmationGlow } from "./components/MagneticGlowAura";
+import { useItemConsensus } from "./hooks/useItemConsensus";
 import { getMedalGradient, MEDAL_HINT_COLORS } from "../lib/medalStyling";
 import { getRankConfig, isPodiumPosition } from "../lib/rankConfig";
-import { useDropZoneHighlightStore } from "@/stores/drop-zone-highlight-store";
+
 
 
 interface SimpleDropZoneProps {
@@ -43,7 +45,7 @@ interface SimpleDropZoneProps {
  */
 export const SimpleDropZone = memo(function SimpleDropZone({
   position, isOccupied, occupiedBy, imageUrl, gridItem,
-  onRemove, dropId, tierAccent, tierGlow, showBadge = true, hideTitle = false, onFillViaBracket,
+  onRemove, dropId, tierAccent, tierGlow: _tierGlow, showBadge = true, hideTitle = false, onFillViaBracket,
 }: SimpleDropZoneProps) {
   const rankConfig = getRankConfig(position);
   const isTop3 = isPodiumPosition(position);
@@ -191,7 +193,7 @@ export const SimpleDropZone = memo(function SimpleDropZone({
           />
         ) : (
           <>
-            <DropZoneEmpty position={position} isTop3={isTop3} isOver={isOver} accentColor={accentColor} />
+            <DropZoneEmpty position={position} isTop3={isTop3} isOver={isOver} isDragActive={isGlobalDragActive} accentColor={accentColor} />
             {onFillViaBracket && (
               <button
                 onClick={(e) => { e.stopPropagation(); onFillViaBracket(); }}

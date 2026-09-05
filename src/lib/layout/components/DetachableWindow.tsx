@@ -79,7 +79,7 @@ export function DetachableWindow({
   const config = store.detachedWindows.get(windowId);
   const dragControls = useDragControls();
   const containerRef = useRef<HTMLDivElement>(null);
-  const [isResizing, setIsResizing] = useState(false);
+  const [_isResizing, setIsResizing] = useState(false);
 
   // Focus on pointer down
   const handleFocus = useCallback(() => {

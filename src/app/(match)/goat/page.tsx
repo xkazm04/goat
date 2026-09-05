@@ -4,6 +4,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useEffect, useRef, Suspense } from 'react';
 
 import { useTopList } from '@/hooks/use-top-lists';
+import { DEFAULT_LIST_COLOR } from '@/lib/config/category-config';
 import { sessionLogger } from '@/lib/logger';
 import { useBacklogStore } from '@/stores/backlog-store';
 import { useGridStore } from '@/stores/grid-store';
@@ -13,12 +14,9 @@ import { useListStore } from '@/stores/use-list-store';
 // Lazy-load the match grid to defer loading of @dnd-kit (~25KB gzipped)
 import { LazySimpleMatchGrid } from '../../features/Match/sub_MatchGrid/LazySimpleMatchGrid';
 
+
 // Default list metadata colors
-const DEFAULT_LIST_COLORS = {
-  primary: "#3b82f6",
-  secondary: "#1e40af",
-  accent: "#60a5fa"
-} as const;
+const DEFAULT_LIST_COLORS = DEFAULT_LIST_COLOR;
 
 // Retry configuration
 const MAX_RETRY_COUNT = 3;

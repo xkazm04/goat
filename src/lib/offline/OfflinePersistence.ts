@@ -23,6 +23,12 @@ const STORES = {
   SYNC_QUEUE: 'syncQueue',
 } as const;
 
+/** Maximum number of pending sync operations allowed in the queue. */
+export const MAX_PENDING_CHANGES = 50;
+
+/** Threshold at which the UI warns users they are approaching the cap. */
+export const PENDING_CHANGES_WARNING_THRESHOLD = 40;
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -107,7 +113,26 @@ class OfflinePersistence {
         reject(new Error(`Failed to open database: ${request.error?.message}`));
       };
 
-      request.onsuccess = () => resolve(request.result);
+      request.onsuccess = () => {
+        const db = request.result;
+
+        // Clear cached reference if browser closes connection (storage pressure,
+        // incognito cleanup, etc.) so the next operation re-opens automatically.
+        db.onclose = () => {
+          this.db = null;
+          this.dbPromise = null;
+        };
+
+        // Another tab opened a newer DB version — close gracefully so the
+        // upgrade can proceed, and reset cache for re-open on next access.
+        db.onversionchange = () => {
+          db.close();
+          this.db = null;
+          this.dbPromise = null;
+        };
+
+        resolve(db);
+      };
 
       request.onupgradeneeded = () => {
         const db = request.result;
@@ -128,6 +153,17 @@ class OfflinePersistence {
 
   private async getDB(): Promise<IDBDatabase> {
     if (!this.isInitialized) await this.initialize();
+
+    // Verify cached connection is still usable
+    if (this.db) {
+      try {
+        this.db.objectStoreNames;
+      } catch {
+        this.db = null;
+        this.dbPromise = null;
+      }
+    }
+
     if (!this.db) this.db = await this.openDatabase();
     return this.db;
   }
@@ -202,6 +238,16 @@ class OfflinePersistence {
     payload: unknown,
     priority: number = 1
   ): Promise<SyncOperation> {
+    // Enforce queue capacity limit
+    const currentCount = await this.getPendingCount();
+    if (currentCount >= MAX_PENDING_CHANGES) {
+      this.notifyQueueChange();
+      throw new Error(
+        `Offline queue is full (${MAX_PENDING_CHANGES} pending changes). ` +
+        `Go online and sync before making more changes.`
+      );
+    }
+
     const db = await this.getDB();
 
     const operation: SyncOperation = {

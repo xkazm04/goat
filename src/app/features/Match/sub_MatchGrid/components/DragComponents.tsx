@@ -101,7 +101,7 @@ export function DragOverlayContent({
                 eager={true}
                 blurAmount={15}
                 fallbackComponent={
-                    <span className="text-xs text-gray-400 text-center px-2">
+                    <span className="text-xs text-gray-400 text-center px-2 truncate max-w-full">
                         {activeItem.title}
                     </span>
                 }

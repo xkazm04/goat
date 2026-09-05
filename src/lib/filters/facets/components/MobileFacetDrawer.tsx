@@ -158,7 +158,7 @@ export function MobileFacetDrawer({
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-semibold font-grotesk">Filters</h2>
                 {activeCount > 0 && (
-                  <span className="px-2 py-0.5 text-xs bg-primary text-primary-foreground rounded-badge">
+                  <span className="badge-md bg-primary text-primary-foreground">
                     {activeCount}
                   </span>
                 )}
@@ -270,7 +270,7 @@ export function MobileFilterButton({
       <FilterIcon className="w-5 h-5" />
       <span className="font-medium">Filters</span>
       {activeCount > 0 && (
-        <span className="px-2 py-0.5 text-xs bg-primary-foreground text-primary rounded-badge">
+        <span className="badge-md bg-primary-foreground text-primary">
           {activeCount}
         </span>
       )}

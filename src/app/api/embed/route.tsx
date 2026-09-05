@@ -8,6 +8,7 @@ import {
   THEME_PRESETS,
   CustomThemeColors,
 } from '@/lib/embed';
+import { getShareUrl, getServerBaseUrl } from '@/lib/sharing/share-urls';
 
 /**
  * Parse widget config from URL parameters
@@ -86,7 +87,7 @@ async function fetchListData(listId: string, itemCount: number): Promise<WidgetD
       subtitle: 'Description',
     })),
     totalItems: 10,
-    fullUrl: `/share/${listId}`,
+    fullUrl: getShareUrl(listId, getServerBaseUrl()),
   };
 
   return mockData;
@@ -365,20 +366,6 @@ function generateWidgetHTML(
       window.parent.postMessage({ type: 'ready', listId: '${config.listId}' }, '*');
     }
 
-    // Track impression
-    fetch('${baseUrl}/api/embed/analytics', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        events: [{
-          type: 'impression',
-          listId: '${config.listId}',
-          configHash: 'widget',
-          referrer: document.referrer || undefined,
-          timestamp: Date.now()
-        }]
-      })
-    }).catch(() => {});
   </script>
 </body>
 </html>`;

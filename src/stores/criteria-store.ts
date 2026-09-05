@@ -374,7 +374,7 @@ export const useCriteriaStore = create<CriteriaStore>()(
         const key = `${itemId}:${state.activeProfileId}`;
 
         set((state) => {
-          const { [key]: removed, ...rest } = state.itemScores;
+          const { [key]: _removed, ...rest } = state.itemScores;
           return { itemScores: rest };
         });
       },
@@ -452,7 +452,7 @@ export const useCriteriaStore = create<CriteriaStore>()(
         const profile = state.profiles.find((p) => p.id === profileId);
         if (!profile) return null;
 
-        const { id, createdAt, updatedAt, usageCount, ...rest } = profile;
+        const { id: _id, createdAt: _createdAt, updatedAt: _updatedAt, usageCount: _usageCount, ...rest } = profile;
         return {
           version: '1.0',
           profile: rest,

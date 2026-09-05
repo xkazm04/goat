@@ -41,7 +41,7 @@ export function AwardItem({
   gridItem,
   candidates = [],
   onRemove,
-  onAddCandidate,
+  onAddCandidate: _onAddCandidate,
   onShare,
   getItemTitle,
   index = 0,
@@ -112,7 +112,7 @@ export function AwardItem({
         </div>
 
         {/* Header - Title & Description (Compact, at top) */}
-        <div className="relative px-5 pt-4 pb-3 border-b border-white/5">
+        <div className="relative px-4 pt-4 pb-4 border-b border-white/5">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3 min-w-0">
               {/* Trophy Icon */}
@@ -142,12 +142,12 @@ export function AwardItem({
         </div>
 
         {/* Content Area - Candidates + Winner */}
-        <div className="relative p-5">
-          <div className="flex items-start gap-6">
+        <div className="relative p-4">
+          <div className="flex items-start gap-4">
 
             {/* Candidates Section (5 slots) */}
             <div className="flex-1">
-              <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center gap-2 mb-2">
                 <span className="text-2xs font-semibold text-gray-500 uppercase tracking-wider">
                   Nominees
                 </span>
@@ -179,7 +179,7 @@ export function AwardItem({
 
             {/* Winner Podium - 2X LARGER */}
             <div className="shrink-0">
-              <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center gap-2 mb-2">
                 <Crown className="w-4 h-4 text-yellow-500" />
                 <span className="text-xs font-semibold text-yellow-500 uppercase tracking-wider">
                   Winner

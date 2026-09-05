@@ -1,8 +1,9 @@
 import { backlogLogger } from '@/lib/logger';
+import { MAX_PENDING_CHANGES } from '@/lib/offline/OfflinePersistence';
 import { BacklogItem } from '@/types/backlog-groups';
 
 import { syncCacheFromGroups } from './cache-utils';
-import { replaceGroupInIndex } from './item-index';
+import { replaceGroupInIndex, warnIndexFallback } from './item-index';
 import { BacklogState, PendingChange } from './types';
 import { useSelectionCursor } from '../selection-cursor';
 
@@ -44,6 +45,10 @@ export const createItemActions = (
 
       // Add to pending changes if offline
       if (state.isOfflineMode) {
+        if (state.pendingChanges.length >= MAX_PENDING_CHANGES) {
+          backlogLogger.warn(`Offline queue full (${MAX_PENDING_CHANGES}). Rejecting add for item ${item.id}`);
+          return;
+        }
         const pendingChange: PendingChange = {
           type: 'add',
           groupId,
@@ -95,16 +100,13 @@ export const createItemActions = (
       if (useSelectionCursor.getState().itemId === itemId) {
         useSelectionCursor.getState().clear();
       }
-      // Clear deprecated local shadows
-      if (state.selectedItemId === itemId) {
-        state.selectedItemId = null;
-      }
-      if (state.activeItemId === itemId) {
-        state.activeItemId = null;
-      }
 
       // Add to pending changes if offline
       if (state.isOfflineMode) {
+        if (state.pendingChanges.length >= MAX_PENDING_CHANGES) {
+          backlogLogger.warn(`Offline queue full (${MAX_PENDING_CHANGES}). Rejecting remove for item ${itemId}`);
+          return;
+        }
         const pendingChange: PendingChange = {
           type: 'remove',
           groupId,
@@ -163,17 +165,6 @@ export const createItemActions = (
     } else {
       useSelectionCursor.getState().clear();
     }
-    // Keep deprecated local shadow in sync for storage compat
-    set(state => {
-      state.selectedItemId = itemId;
-    });
-  },
-
-  // Set active item (deprecated — hover/preview state should be component-local)
-  setActiveItem: (itemId: string | null) => {
-    set(state => {
-      state.activeItemId = itemId;
-    });
   },
 
   // Toggle group selection
@@ -243,6 +234,7 @@ export const createItemActions = (
       }
     }
     // Fallback: linear scan
+    warnIndexFallback(itemId, 'isItemUsed');
     for (const group of state.groups) {
       if (group.items) {
         const item = group.items.find(i => i.id === itemId);
@@ -251,25 +243,6 @@ export const createItemActions = (
     }
     return false;
   },
-
-  // Clear cache
-  clearCache: (category?: string) => {
-    set(state => {
-      if (category) {
-        // Clear specific category caches
-        Object.keys(state.cache).forEach(key => {
-          if (key.startsWith(category)) {
-            delete state.cache[key];
-          }
-        });
-        backlogLogger.debug(`Cleared cache for category: ${category}`);
-      } else {
-        // Clear all caches
-        state.cache = {};
-        backlogLogger.debug(`Cleared all cache`);
-      }
-    });
-  }
 });
 
 export type ItemActions = ReturnType<typeof createItemActions>;

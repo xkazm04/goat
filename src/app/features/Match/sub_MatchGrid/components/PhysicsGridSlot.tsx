@@ -59,13 +59,13 @@ export function PhysicsGridSlot({
   position,
   gridItem,
   size = "medium",
-  selectedBacklogItem,
+  selectedBacklogItem: _selectedBacklogItem,
   selectedGridItem,
   onGridItemClick,
   itemTenure = 0,
   enablePhysics = true,
   isSwapping = false,
-  swapPath,
+  swapPath: _swapPath,
   onRegisterSlot,
   gravityInfluence = 0,
   suggestionIndicator: externalIndicator,
@@ -208,10 +208,14 @@ export function PhysicsGridSlot({
           },
         rotate: { duration: DURATION.emphasis, ease: "easeOut" },
       }}
+      tabIndex={0}
+      role={isOccupied && onGridItemClick ? "button" : undefined}
       onClick={handleClick}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClick(); } }}
       className={`
         ${sizeClasses[size]}
         relative rounded-card border-2 transition-colors duration-200
+        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-hover/60 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900
         ${isOver
           ? "border-blue-500 bg-blue-500/10"
           : "border-gray-700 bg-gray-800/50"

@@ -145,7 +145,7 @@ export class AdaptiveLoader {
     const cpuCores = nav?.hardwareConcurrency || 4;
 
     // Memory (Chrome only)
-    // @ts-ignore - deviceMemory is not in all browser types
+    // @ts-expect-error - deviceMemory is a non-standard Navigator property (Chrome/Android only)
     const memoryGB = nav?.deviceMemory || null;
 
     // Check for GPU
@@ -156,8 +156,7 @@ export class AdaptiveLoader {
       const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
       if (gl) {
         hasGPU = true;
-        // @ts-ignore - WebGL context types
-        maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+        maxTextureSize = (gl as WebGLRenderingContext).getParameter((gl as WebGLRenderingContext).MAX_TEXTURE_SIZE);
       }
     }
 
@@ -199,7 +198,7 @@ export class AdaptiveLoader {
   detectNetworkConditions(): NetworkConditions {
     const nav = typeof navigator !== 'undefined' ? navigator : null;
 
-    // @ts-ignore - Network Information API
+    // @ts-expect-error - Network Information API is non-standard (Chrome/Android only)
     const connection = nav?.connection || nav?.mozConnection || nav?.webkitConnection;
 
     let tier: NetworkTier = 'medium';
@@ -249,8 +248,7 @@ export class AdaptiveLoader {
    * Check memory pressure
    */
   checkMemoryPressure(): MemoryPressure {
-    // @ts-ignore - Memory API is Chrome only
-    const memory = typeof performance !== 'undefined' ? (performance as any).memory : null;
+    const memory = typeof performance !== 'undefined' ? (performance as unknown as { memory?: { jsHeapSizeLimit: number; usedJSHeapSize: number } }).memory : null;
 
     let isUnderPressure = false;
     let usedHeapRatio: number | null = null;
@@ -296,7 +294,7 @@ export class AdaptiveLoader {
           });
         });
         this.performanceObserver.observe({ entryTypes: ['longtask'] });
-      } catch (e) {
+      } catch {
         // longtask not supported in all browsers
       }
     }

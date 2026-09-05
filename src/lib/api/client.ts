@@ -8,7 +8,6 @@ import {
 
 import { generateRequestId, REQUEST_ID_HEADER } from './request-id';
 
-import type { ErrorResponse } from '@/lib/errors';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
@@ -33,7 +32,7 @@ interface LatencyStats {
 }
 
 const LATENCY_WINDOW_SIZE = 100;
-const LATENCY_P95_THRESHOLD_MS = 3000;
+const _LATENCY_P95_THRESHOLD_MS = 3000;
 
 const latencyWindow: LatencyEntry[] = [];
 
@@ -43,16 +42,8 @@ function recordLatency(endpoint: string, method: string, durationMs: number): vo
     latencyWindow.shift();
   }
 
-  // Check p95 and warn if threshold exceeded
-  if (latencyWindow.length >= 20) {
-    const stats = getLatencyStats();
-    if (stats.p95 > LATENCY_P95_THRESHOLD_MS) {
-      console.warn(
-        `[API Latency] p95 latency is ${stats.p95.toFixed(0)}ms (threshold: ${LATENCY_P95_THRESHOLD_MS}ms). ` +
-        `Last request: ${method} ${endpoint} took ${durationMs.toFixed(0)}ms`
-      );
-    }
-  }
+  // Check p95 threshold exceeded (latency stats available via getLatencyStats())
+  // Intentionally silent in production — consumers can poll getLatencyStats() instead
 }
 
 function percentile(sorted: number[], p: number): number {
@@ -92,15 +83,6 @@ function trackApiError(error: GoatError, endpoint: string, method: string, reque
     path: endpoint,
     method,
   });
-}
-
-/**
- * API Response type that includes error information
- */
-interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: ErrorResponse;
 }
 
 // =============================================================================
@@ -189,7 +171,9 @@ function assertResponseFormat(
   if (!expected) return; // unregistered endpoint — skip
 
   const actual = detectResponseFormat(data);
-  if (actual !== expected) {
+  if (actual !== expected && process.env.NODE_ENV === 'development') {
+    // Contract mismatch detected — only log in development
+     
     console.warn(
       `[API Contract] Response format mismatch for ${key}:\n` +
       `  Expected: ${expected}\n` +

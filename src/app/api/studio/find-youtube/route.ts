@@ -38,8 +38,6 @@ export async function POST(request: NextRequest) {
   const limited = rateLimit(getRateLimitKey(request, 'studio-find-youtube'), 20, 60_000);
   if (limited) return limited;
 
-  const requestStart = performance.now();
-
   try {
     const body = await request.json();
     const { title, artist, context } = findYouTubeRequestSchema.parse(body);
@@ -74,7 +72,6 @@ If no suitable video is found, respond with:
   "video_title": null
 }`;
 
-    const geminiStart = performance.now();
     const response = await ai.models.generateContent({
       model: GEMINI_MODEL_PRIMARY,
       contents: prompt,
@@ -83,16 +80,14 @@ If no suitable video is found, respond with:
         responseMimeType: 'application/json',
       },
     });
-    const geminiMs = Math.round(performance.now() - geminiStart);
-
     const responseText = response.text?.trim() || '{}';
 
     // Parse the JSON response
     let parsedResponse: { youtube_url?: string; video_title?: string };
     try {
       parsedResponse = JSON.parse(responseText);
-    } catch (err) {
-      console.warn(`[Find YouTube] JSON parse failed for "${title}":`, err instanceof Error ? err.message : err);
+    } catch {
+      // JSON parse failed — try to extract URL from text
       // Try to extract URL from text if JSON parsing fails
       const urlMatch = responseText.match(
         /https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/
@@ -107,15 +102,6 @@ If no suitable video is found, respond with:
     const youtubeUrl = parsedResponse.youtube_url || null;
     const videoTitle = parsedResponse.video_title || null;
     const youtubeId = youtubeUrl ? extractYouTubeId(youtubeUrl) : null;
-
-    console.log('[Find YouTube] find_youtube_complete', JSON.stringify({
-      operation: 'gemini_find_youtube',
-      title,
-      artist: artist || null,
-      resolved: !!youtubeUrl,
-      duration_ms: Math.round(performance.now() - requestStart),
-      gemini_ms: geminiMs,
-    }));
 
     const result: FindYouTubeResponse = {
       youtube_url: youtubeUrl,

@@ -116,13 +116,12 @@ export interface ListIntent {
 // ============================================================================
 
 /**
- * Default color scheme
+ * Default color scheme — canonical value lives in category-config
  */
-export const DEFAULT_LIST_INTENT_COLOR: ListIntentColor = {
-  primary: '#f59e0b',
-  secondary: '#d97706',
-  accent: '#fbbf24',
-} as const;
+import { DEFAULT_LIST_COLOR } from '@/lib/config/category-config';
+import { GRID_LIMITS } from '@/lib/grid/constants';
+
+export const DEFAULT_LIST_INTENT_COLOR: ListIntentColor = DEFAULT_LIST_COLOR;
 
 /**
  * Default ListIntent for fresh creation
@@ -214,8 +213,8 @@ export function validateListIntent(intent: ListIntent): ListIntentValidation {
     errors.push('Time period is required');
   }
 
-  if (intent.size < 1 || intent.size > 100) {
-    errors.push('Size must be between 1 and 100');
+  if (intent.size < GRID_LIMITS.MIN_SIZE || intent.size > GRID_LIMITS.MAX_SIZE) {
+    errors.push(`Size must be between ${GRID_LIMITS.MIN_SIZE} and ${GRID_LIMITS.MAX_SIZE}`);
   }
 
   if (intent.timePeriod === 'decade' && !intent.selectedDecade) {

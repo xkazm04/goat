@@ -62,6 +62,12 @@
   --glow-brand-md: 0 0 16px rgba(34, 211, 238, 0.25);
   --glow-brand-lg: 0 0 24px rgba(34, 211, 238, 0.4);
 
+  /* ── Brand Gradient Token ──
+     Cyan-to-purple gradient used for primary CTAs, share buttons, and brand accents.
+     Used by: ShareModal, AchievementShowcase, AchievementReveal, AchievementShareModal, share/[code] page
+  */
+  --gradient-brand: linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%);
+
   /* ── Motion Duration Tokens ──
      4-tier scale: instant → quick → normal → slow
      Each interaction type maps to exactly one tier.

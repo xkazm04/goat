@@ -85,7 +85,7 @@ export const AnimatedCounter = memo(function AnimatedCounter({
   const display = useTransform(spring, (current) => formatter(current));
 
   // Track displayed value for non-motion version
-  const [displayValue, setDisplayValue] = useState(reducedMotion ? value : 0);
+  const [_displayValue, setDisplayValue] = useState(reducedMotion ? value : 0);
 
   useEffect(() => {
     if (reducedMotion) {

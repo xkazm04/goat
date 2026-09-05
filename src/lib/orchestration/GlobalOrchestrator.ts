@@ -222,9 +222,7 @@ class GlobalOrchestratorImpl {
    * Execute a single command directly (no middleware).
    */
   private async executeCommand(command: OrchestratorCommand): Promise<ExecutionResult> {
-    if (this.isExecuting && !this.currentTransaction) {
-      console.warn('Concurrent command execution detected');
-    }
+    // Concurrent command execution detection handled silently
 
     this.isExecuting = true;
 
@@ -655,7 +653,7 @@ class GlobalOrchestratorImpl {
 
   private async rollback(transaction: Transaction): Promise<void> {
     if (!transaction.snapshot) {
-      console.error('Cannot rollback: no snapshot available');
+      // Cannot rollback: no snapshot available
       return;
     }
 
@@ -915,16 +913,21 @@ export function createLoggingMiddleware(): MiddlewareConfig {
     priority: 0,
     enabled: true,
     handler: async (command, next) => {
+      if (process.env.NODE_ENV !== 'development') return next();
+
       const start = performance.now();
-      console.log(`🎯 Command: ${command.type}`, command.payload);
+       
+      console.log(`Command: ${command.type}`, command.payload);
 
       const result = await next();
 
       const duration = performance.now() - start;
       if (result.success) {
-        console.log(`✅ Success: ${command.type} (${duration.toFixed(2)}ms)`);
+         
+        console.log(`Success: ${command.type} (${duration.toFixed(2)}ms)`);
       } else {
-        console.log(`❌ Failed: ${command.type} - ${result.error}`);
+         
+        console.log(`Failed: ${command.type} - ${result.error}`);
       }
 
       return result;

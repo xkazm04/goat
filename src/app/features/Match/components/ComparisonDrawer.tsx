@@ -11,8 +11,10 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { Pin, X, Plus } from 'lucide-react';
+import Image from 'next/image';
 import React, { memo, useCallback, useMemo } from 'react';
 
+import { toast } from '@/hooks/use-toast';
 import { PictureInPicture } from '@/lib/layout';
 import { cn } from '@/lib/utils';
 import { useBacklogStore } from '@/stores/backlog-store';
@@ -78,24 +80,29 @@ const ComparisonDrawerContent = memo(function ComparisonDrawerContent({
   const gridItems = useGridStore((s) => s.gridItems);
   const markItemAsUsed = useBacklogStore((s) => s.markItemAsUsed);
 
-  // Find the first empty grid slot
-  const firstEmptySlot = useMemo(() => {
-    return gridItems.findIndex((item) => !item.context.matched);
+  // Derive whether any empty slot exists (for UI disable state)
+  const hasEmptySlot = useMemo(() => {
+    return gridItems.some((item) => !item.context.matched);
   }, [gridItems]);
 
   const handleAssign = useCallback(
     (item: BacklogItemType) => {
-      if (firstEmptySlot === -1) return;
-      // Coerce to BacklogItem (name is required there but optional on BacklogItemType)
+      // Re-read grid at assignment time to avoid stale slot references
+      const currentGrid = useGridStore.getState().gridItems;
+      const emptySlot = currentGrid.findIndex((g) => !g.context.matched);
+      if (emptySlot === -1) {
+        toast({ title: 'Grid is full', description: 'Remove an item to make room.' });
+        return;
+      }
       const backlogItem: BacklogItem = {
         ...item,
         name: item.name || item.title,
       };
-      assignItemToGrid(backlogItem, firstEmptySlot);
+      assignItemToGrid(backlogItem, emptySlot);
       markItemAsUsed(item.id, true);
       removeItem(item.id);
     },
-    [firstEmptySlot, assignItemToGrid, markItemAsUsed, removeItem]
+    [assignItemToGrid, markItemAsUsed, removeItem]
   );
 
   const handleRemove = useCallback(
@@ -122,7 +129,7 @@ const ComparisonDrawerContent = memo(function ComparisonDrawerContent({
               <ComparisonCard
                 key={item.id}
                 item={item}
-                canAssign={firstEmptySlot !== -1}
+                canAssign={hasEmptySlot}
                 onAssign={() => handleAssign(item)}
                 onRemove={() => handleRemove(item.id)}
               />
@@ -180,11 +187,12 @@ const ComparisonCard = memo(function ComparisonCard({
       {/* Image */}
       <div className="relative w-full aspect-[3/4] bg-muted/40 overflow-hidden">
         {item.image_url ? (
-          <img
+          <Image
             src={item.image_url}
             alt={title}
-            className="w-full h-full object-cover"
-            loading="lazy"
+            fill
+            className="object-cover"
+            unoptimized
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">

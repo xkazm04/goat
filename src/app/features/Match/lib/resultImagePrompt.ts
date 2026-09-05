@@ -29,7 +29,7 @@ export function generateResultImagePrompt(config: ImagePromptConfig): string {
   const topItems = matchedItems.slice(0, 10);
   const remainingCount = matchedItems.length - 10;
 
-  const itemsList = matchedItems
+  const _itemsList = matchedItems
     .map((item, index) => `${index + 1}. ${item.item?.title ?? ''}`)
     .join('\n');
 

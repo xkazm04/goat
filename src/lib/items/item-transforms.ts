@@ -16,11 +16,10 @@ import { createGridReceiverId, isGridReceiverId } from '@/lib/dnd/transfer-proto
 
 import { normalizeImageUrl, extractTitle, safeString, safeStringArray } from './item-utils';
 
-import type { BaseItem, PlacedItem, PlacedItemSource } from '@/types/placed-item';
-import type { TransferableItem } from '@/lib/dnd/transfer-protocol';
 import type { NormalizedItem } from '@/stores/item-store/normalized-session';
 import type { BacklogItem } from '@/types/backlog-groups';
 import type { GridItemType, BacklogItemType } from '@/types/match';
+import type { BaseItem, PlacedItem, PlacedItemSource } from '@/types/placed-item';
 import type { RankedItem, RankingMode } from '@/types/ranking';
 
 
@@ -607,11 +606,15 @@ export function validateGridItem(item: GridItemType): ItemValidation {
   }
 
   if (item.context.matched && !item.item) {
-    warnings.push('Matched item has no item data');
+    errors.push('Contradictory state: matched is true but item data is null');
+  }
+
+  if (!item.context.matched && item.item) {
+    warnings.push('Unmatched slot contains item data — may indicate stale state');
   }
 
   if (item.context.matched && item.item && !item.item.title) {
-    warnings.push('Matched item has empty title');
+    errors.push('Matched item has empty title');
   }
 
   const expectedId = createGridReceiverId(item.position);

@@ -72,6 +72,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Cap dimensions to prevent DoS via excessive memory/CPU usage
+    const MAX_DIMENSION = 4096;
+    if (targetWidth > MAX_DIMENSION || targetHeight > MAX_DIMENSION || targetWidth < 1 || targetHeight < 1) {
+      return NextResponse.json(
+        { error: `Dimensions must be between 1 and ${MAX_DIMENSION}` },
+        { status: 400 }
+      );
+    }
+
     // Filter matched items and sort by position
     const matchedItems = gridItems
       .filter(item => item.context.matched && item.item?.title)
@@ -126,11 +135,12 @@ export async function POST(request: NextRequest) {
 
     // Call Gemini Flash API
     const geminiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL_REST}:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL_REST}:generateContent`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey,
         },
         body: JSON.stringify({
           contents: [

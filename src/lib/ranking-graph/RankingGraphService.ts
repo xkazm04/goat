@@ -184,7 +184,7 @@ export async function getItemRating(
   // Generate trajectory from context breakdown (simulated historical snapshots)
   const trajectory = computeTrajectory(
     itemId,
-    rating.contextBreakdown.map(ctx => ({
+    rating.contextBreakdown.map(_ctx => ({
       timestamp: Date.now() - Math.random() * 30 * 86400000, // Spread over 30 days
       eloScore: rating!.eloScore + (Math.random() - 0.5) * 100,
       listAppearances: rating!.listAppearances,
@@ -192,7 +192,7 @@ export async function getItemRating(
   );
 
   // Find related items (items that co-appear in the same lists)
-  const relatedItemIds = new Set<string>();
+  const _relatedItemIds = new Set<string>();
   // For now, return empty related items - would need additional queries
   const relatedItems: UniversalRatingResponse['relatedItems'] = [];
 

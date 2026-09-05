@@ -19,6 +19,7 @@ import {
   FILTER_ANIMATIONS,
   FILTER_TIMING,
   FILTER_SCALE,
+  ICON_SIZES,
 } from '../constants';
 
 import type { FilterPreset, FilterConfig } from '../types';
@@ -83,20 +84,20 @@ export function FilterPresetManager({
         </h4>
         <button
           className={cn(
-            'flex items-center gap-1.5 px-2 py-1 text-xs',
+            'flex items-center gap-1.5 px-2 py-1 text-xs touch-target',
             'bg-accent hover:bg-accent/80 rounded transition-colors',
             'disabled:filter-disabled'
           )}
           onClick={() => setShowSaveDialog(true)}
           disabled={currentConfig.conditions.length === 0}
         >
-          <GoatSave size={12} />
+          <GoatSave size={ICON_SIZES.sm} />
           <span>Save Current</span>
         </button>
       </div>
 
       {/* Preset List */}
-      <div className="space-y-2">
+      <div className="space-y-2" role="listbox" aria-label="Filter presets">
         <AnimatePresence mode="popLayout">
           {sortedPresets.map((preset, index) => (
             <motion.div
@@ -130,8 +131,8 @@ export function FilterPresetManager({
 
       {/* Unsaved changes indicator */}
       {hasUnsavedChanges && activePresetId && (
-        <div className="flex items-center gap-2 text-xs text-amber-500">
-          <AlertTriangle size={12} />
+        <div className="flex items-center gap-2 text-xs text-warning">
+          <AlertTriangle size={ICON_SIZES.sm} />
           <span>You have unsaved changes</span>
           <button
             className="underline hover:no-underline"
@@ -226,13 +227,18 @@ function PresetCard({
       onMouseLeave={() => setShowActions(false)}
       whileHover={{ scale: FILTER_SCALE.hover }}
       whileTap={{ scale: FILTER_SCALE.tap }}
+      role="option"
+      aria-selected={isActive}
     >
       {/* Icon */}
       <div
-        className="shrink-0 w-8 h-8 rounded-control flex items-center justify-center text-lg"
-        style={{ backgroundColor: preset.color ? `${preset.color}20` : undefined }}
+        className={cn(
+          'shrink-0 w-8 h-8 rounded-control flex items-center justify-center text-lg',
+          !preset.color && 'bg-muted'
+        )}
+        style={preset.color ? { backgroundColor: `color-mix(in srgb, ${preset.color} 12%, transparent)` } : undefined}
       >
-        {preset.icon || <GoatTarget size={16} />}
+        {preset.icon || <GoatTarget size={ICON_SIZES.lg} />}
       </div>
 
       {/* Info */}
@@ -262,24 +268,26 @@ function PresetCard({
             exit={{ opacity: 0 }}
           >
             <button
-              className="p-1.5 rounded hover:bg-accent transition-colors"
+              className="p-1.5 rounded hover:bg-accent transition-colors touch-target"
               onClick={(e) => {
                 e.stopPropagation();
                 onEdit();
               }}
               title="Edit preset"
+              aria-label={`Edit preset ${preset.name}`}
             >
-              <Pencil size={14} />
+              <Pencil size={ICON_SIZES.md} />
             </button>
             <button
-              className="p-1.5 rounded hover:bg-destructive/10 hover:text-destructive transition-colors"
+              className="p-1.5 rounded hover:bg-destructive/10 hover:text-destructive transition-colors touch-target"
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete();
               }}
               title="Delete preset"
+              aria-label={`Delete preset ${preset.name}`}
             >
-              <Trash2 size={14} />
+              <Trash2 size={ICON_SIZES.md} />
             </button>
           </motion.div>
         )}
@@ -340,8 +348,9 @@ function SavePresetDialog({ onSave, onCancel }: SavePresetDialogProps) {
         <div className="space-y-4">
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium mb-1">Name</label>
+            <label htmlFor="save-preset-name" className="block text-sm font-medium mb-1">Name</label>
             <input
+              id="save-preset-name"
               type="text"
               className={cn(
                 'w-full px-3 py-2 rounded-control border border-border',
@@ -356,10 +365,11 @@ function SavePresetDialog({ onSave, onCancel }: SavePresetDialogProps) {
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium mb-1">
+            <label htmlFor="save-preset-description" className="block text-sm font-medium mb-1">
               Description (optional)
             </label>
             <textarea
+              id="save-preset-description"
               className={cn(
                 'w-full px-3 py-2 rounded-control border border-border resize-none',
                 'bg-background focus:outline-hidden focus:ring-2 focus:ring-ring'
@@ -373,13 +383,13 @@ function SavePresetDialog({ onSave, onCancel }: SavePresetDialogProps) {
 
           {/* Icon */}
           <div>
-            <label className="block text-sm font-medium mb-2">Icon</label>
+            <span className="block text-sm font-medium mb-2">Icon</span>
             <div className="flex flex-wrap gap-2">
               {PRESET_ICONS.map((i) => (
                 <button
                   key={i}
                   className={cn(
-                    'w-8 h-8 rounded-control border transition-all',
+                    'w-8 h-8 rounded-control border transition-all touch-target',
                     icon === i
                       ? 'border-primary bg-primary/10 scale-110'
                       : 'border-border hover:border-primary/50'
@@ -394,13 +404,13 @@ function SavePresetDialog({ onSave, onCancel }: SavePresetDialogProps) {
 
           {/* Color */}
           <div>
-            <label className="block text-sm font-medium mb-2">Color</label>
+            <span className="block text-sm font-medium mb-2">Color</span>
             <div className="flex flex-wrap gap-2">
               {PRESET_COLORS.map((c) => (
                 <button
                   key={c}
                   className={cn(
-                    'w-6 h-6 rounded-full border-2 transition-all',
+                    'relative w-6 h-6 rounded-full border-2 transition-all touch-target-sm',
                     color === c ? 'border-foreground scale-125' : 'border-transparent'
                   )}
                   style={{ backgroundColor: c }}
@@ -487,8 +497,9 @@ function EditPresetDialog({ preset, onSave, onCancel }: EditPresetDialogProps) {
         <div className="space-y-4">
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium mb-1">Name</label>
+            <label htmlFor="edit-preset-name" className="block text-sm font-medium mb-1">Name</label>
             <input
+              id="edit-preset-name"
               type="text"
               className={cn(
                 'w-full px-3 py-2 rounded-control border border-border',
@@ -502,8 +513,9 @@ function EditPresetDialog({ preset, onSave, onCancel }: EditPresetDialogProps) {
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium mb-1">Description</label>
+            <label htmlFor="edit-preset-description" className="block text-sm font-medium mb-1">Description</label>
             <textarea
+              id="edit-preset-description"
               className={cn(
                 'w-full px-3 py-2 rounded-control border border-border resize-none',
                 'bg-background focus:outline-hidden focus:ring-2 focus:ring-ring'
@@ -516,13 +528,13 @@ function EditPresetDialog({ preset, onSave, onCancel }: EditPresetDialogProps) {
 
           {/* Icon */}
           <div>
-            <label className="block text-sm font-medium mb-2">Icon</label>
+            <span className="block text-sm font-medium mb-2">Icon</span>
             <div className="flex flex-wrap gap-2">
               {PRESET_ICONS.map((i) => (
                 <button
                   key={i}
                   className={cn(
-                    'w-8 h-8 rounded-control border transition-all',
+                    'w-8 h-8 rounded-control border transition-all touch-target',
                     icon === i
                       ? 'border-primary bg-primary/10 scale-110'
                       : 'border-border hover:border-primary/50'
@@ -537,13 +549,13 @@ function EditPresetDialog({ preset, onSave, onCancel }: EditPresetDialogProps) {
 
           {/* Color */}
           <div>
-            <label className="block text-sm font-medium mb-2">Color</label>
+            <span className="block text-sm font-medium mb-2">Color</span>
             <div className="flex flex-wrap gap-2">
               {PRESET_COLORS.map((c) => (
                 <button
                   key={c}
                   className={cn(
-                    'w-6 h-6 rounded-full border-2 transition-all',
+                    'relative w-6 h-6 rounded-full border-2 transition-all touch-target-sm',
                     color === c ? 'border-foreground scale-125' : 'border-transparent'
                   )}
                   style={{ backgroundColor: c }}
@@ -606,7 +618,7 @@ export function PresetQuickAccess({
         <motion.button
           key={preset.id}
           className={cn(
-            'flex items-center gap-1 px-2 py-1 rounded-control text-xs',
+            'flex items-center gap-1 px-2 py-1 rounded-control text-xs touch-target',
             'border transition-all',
             preset.id === activePresetId
               ? 'bg-primary/10 border-primary text-primary'
@@ -616,6 +628,8 @@ export function PresetQuickAccess({
           whileHover={{ scale: FILTER_SCALE.hover }}
           whileTap={{ scale: FILTER_SCALE.tap }}
           title={preset.description}
+          aria-selected={preset.id === activePresetId}
+          role="option"
         >
           <span>{preset.icon}</span>
           <span className="hidden sm:inline">{preset.name}</span>

@@ -1,5 +1,6 @@
 import { backlogLogger } from '@/lib/logger';
 
+import { rebuildItemIndex } from './item-index';
 import { BacklogState } from "./types";
 
 // Type for immer-compatible set function
@@ -92,15 +93,24 @@ export const createUtilActions = (
       }
       
       state.groups = updatedGroups;
-      
-      // Update cache as well
-      const currentCategory = state.groups[0]?.category;
-      const currentSubcategory = state.groups[0]?.subcategory;
-      const cacheKey = `${currentCategory}-${currentSubcategory || ''}`;
-      
-      if (state.cache[cacheKey]) {
-        state.cache[cacheKey].groups = updatedGroups;
-        state.cache[cacheKey].lastUpdated = Date.now();
+      // Rebuild index after full groups array replacement to prevent staleness
+      state._itemIndex = rebuildItemIndex(updatedGroups);
+
+      // Update all cache entries that contain groups affected by this mutation.
+      // Filter to only groups matching each cache key's category/subcategory
+      // to avoid storing unrelated cross-category groups in a cache entry.
+      for (const cacheKey of Object.keys(state.cache)) {
+        const cacheEntry = state.cache[cacheKey];
+        if (!cacheEntry?.groups) continue;
+
+        const hadGroup = cacheEntry.groups.some(g => g.items?.some(i => i.id === itemId));
+        if (hadGroup) {
+          const [cat, subcat] = cacheKey.split('-');
+          cacheEntry.groups = updatedGroups.filter(
+            g => g.category === cat && (g.subcategory || '') === (subcat || '')
+          );
+          cacheEntry.lastUpdated = Date.now();
+        }
       }
     });
   },
@@ -116,10 +126,9 @@ export const createUtilActions = (
   clearAllData: () => {
     set(state => {
       state.groups = [];
+      state._itemIndex = new Map();
       state._loadedGroupsCount = 0;
       state.selectedGroupId = null;
-      state.selectedItemId = null;
-      state.activeItemId = null;
       state.searchTerm = '';
       state.cache = {};
       state.error = null;

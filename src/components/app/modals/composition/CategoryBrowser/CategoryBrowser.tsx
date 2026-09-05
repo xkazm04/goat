@@ -168,7 +168,7 @@ const NavigationHeader = memo(function NavigationHeader({
  */
 const EmptyState = memo(function EmptyState({
   message,
-  color,
+  color: _color,
 }: {
   message: string;
   color: { primary: string; secondary: string; accent: string };
@@ -248,10 +248,10 @@ export const CategoryBrowser = memo(function CategoryBrowser({
   selectedSubcategory,
   color,
   showSearch = true,
-  showRecents = true,
+  showRecents: _showRecents = true,
   showPopularity = true,
   variant: initialVariant = "grid",
-  maxRecents = 5,
+  maxRecents: _maxRecents = 5,
 }: CategoryBrowserProps) {
   // Get category tree
   const tree = useMemo(() => getCategoryTree(), []);

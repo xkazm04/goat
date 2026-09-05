@@ -71,10 +71,6 @@ export interface BacklogState {
   /** Runtime-only counter: number of groups with at least one item loaded. O(1) reads. */
   _loadedGroupsCount: number;
   selectedGroupId: string | null;
-  /** @deprecated Read from useSelectionCursor instead. Kept for storage compat. */
-  selectedItemId: string | null;
-  /** @deprecated Unused — hover/preview state is local to components. */
-  activeItemId: string | null;
   searchTerm: string;
 
   // UI State
@@ -122,7 +118,6 @@ export interface BacklogState {
   // Actions - Selection
   selectGroup: (groupId: string | null) => void;
   selectItem: (itemId: string | null) => void;
-  setActiveItem: (itemId: string | null) => void;
 
   // Actions - Search & Filter
   setSearchTerm: (term: string) => void;

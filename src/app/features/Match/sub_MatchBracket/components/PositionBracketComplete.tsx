@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Trophy, RotateCcw, X } from 'lucide-react';
+import Image from 'next/image';
 
 import { DURATION } from '@/lib/animations/motion-presets';
 
@@ -27,13 +28,14 @@ export function PositionBracketComplete({
   onCancel,
 }: PositionBracketCompleteProps) {
   const champion = bracket.champion;
-  const title = champion?.item
-    ? (champion.item as Record<string, unknown>).name as string ||
-      (champion.item as Record<string, unknown>).title as string ||
+  const championItem = champion?.item as unknown as Record<string, unknown> | undefined;
+  const title = championItem
+    ? (championItem.name as string) ||
+      (championItem.title as string) ||
       'Champion'
     : 'Champion';
-  const imageUrl = champion?.item
-    ? (champion.item as Record<string, unknown>).image_url as string | null
+  const imageUrl = championItem
+    ? (championItem.image_url as string | null)
     : null;
 
   return (
@@ -60,11 +62,13 @@ export function PositionBracketComplete({
         className="flex flex-col items-center gap-3"
       >
         {imageUrl && (
-          <div className="w-32 h-40 rounded-card overflow-hidden border-2 border-yellow-500/40 shadow-lg">
-            <img
+          <div className="relative w-32 h-40 rounded-card overflow-hidden border-2 border-yellow-500/40 shadow-lg">
+            <Image
               src={imageUrl}
               alt={title}
-              className="w-full h-full object-cover"
+              fill
+              className="object-cover"
+              unoptimized
             />
           </div>
         )}

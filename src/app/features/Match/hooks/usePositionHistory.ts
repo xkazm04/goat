@@ -109,7 +109,7 @@ export function usePositionHistory(
    * Call this to update the stored snapshot after the user finishes editing.
    * This way, next session load will compare against the final state.
    */
-  const commitSnapshot = useCallback(() => {
+  const _commitSnapshot = useCallback(() => {
     if (!listId) return;
     const currentSnapshot = snapshotFromGrid(gridItems);
     saveSnapshot(listId, currentSnapshot);

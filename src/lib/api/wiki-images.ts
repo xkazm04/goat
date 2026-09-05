@@ -47,7 +47,7 @@ export async function fetchWikipediaImage(
 
     const searchResponse = await fetch(searchUrl.toString());
     if (!searchResponse.ok) {
-      console.error("❌ Wikipedia search failed:", searchResponse.statusText);
+      apiLogger.debug("Wikipedia search failed: " + searchResponse.statusText);
       return null;
     }
 
@@ -59,7 +59,7 @@ export async function fetchWikipediaImage(
       return null;
     }
 
-    const pageTitle = searchResults[0].title;
+    const _pageTitle = searchResults[0].title;
     const pageId = searchResults[0].pageid;
 
     // Step 2: Get page info with image
@@ -73,7 +73,7 @@ export async function fetchWikipediaImage(
 
     const pageResponse = await fetch(pageUrl.toString());
     if (!pageResponse.ok) {
-      console.error("❌ Wikipedia page fetch failed:", pageResponse.statusText);
+      apiLogger.debug("Wikipedia page fetch failed: " + pageResponse.statusText);
       return null;
     }
 
@@ -113,7 +113,7 @@ export async function fetchWikipediaImage(
       source: "wikipedia",
     };
   } catch (error) {
-    console.error("❌ Error fetching Wikipedia image:", error);
+    apiLogger.debug("Error fetching Wikipedia image: " + String(error));
     return null;
   }
 }

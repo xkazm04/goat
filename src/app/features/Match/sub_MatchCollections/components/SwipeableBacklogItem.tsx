@@ -136,7 +136,7 @@ export function SwipeableBacklogItem({
         className={cn(
           "relative z-10 flex items-center gap-3 w-full p-2 rounded-lg transition-colors touch-pan-y",
           "bg-white/5 active:bg-white/10",
-          isSelected && "ring-2 ring-brand-primary bg-brand-primary/10"
+          isSelected && "ring-2 ring-brand bg-brand/10"
         )}
       >
         <div className="w-10 h-10 rounded-md overflow-hidden bg-white/10 shrink-0">

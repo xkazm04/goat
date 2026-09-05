@@ -21,6 +21,7 @@ interface CollectionStoreState {
   selectedCollectionId: string | null;
   expandedCollectionIds: Set<string>;
   isLoading: boolean;
+  hasLoaded: boolean;
   isSyncing: boolean;
 
   // Computed getters
@@ -48,6 +49,7 @@ interface CollectionStoreState {
   expandAll: () => void;
   collapseAll: () => void;
   setIsLoading: (loading: boolean) => void;
+  setHasLoaded: (loaded: boolean) => void;
   setIsSyncing: (syncing: boolean) => void;
 
   // Actions - List management within collections
@@ -118,6 +120,7 @@ const initialState = {
   selectedCollectionId: null,
   expandedCollectionIds: new Set<string>(),
   isLoading: false,
+  hasLoaded: false,
   isSyncing: false,
 };
 
@@ -164,7 +167,7 @@ export const useCollectionStore = create<CollectionStoreState>()(
       // CRUD Actions
       setCollections: (collections) => {
         collectionLogger.debug(`Setting ${collections.length} collections`);
-        set({ collections });
+        set({ collections, hasLoaded: true });
       },
 
       addCollection: (collection) => {
@@ -192,7 +195,7 @@ export const useCollectionStore = create<CollectionStoreState>()(
             .map((c) => (c.parentId === id ? { ...c, parentId: null } : c));
 
           // Clean up stats
-          const { [id]: removedStats, ...remainingStats } = state.collectionStats;
+          const { [id]: _removedStats, ...remainingStats } = state.collectionStats;
 
           // Clear selection if removed
           const selectedId =
@@ -266,6 +269,10 @@ export const useCollectionStore = create<CollectionStoreState>()(
 
       setIsLoading: (isLoading) => {
         set({ isLoading });
+      },
+
+      setHasLoaded: (hasLoaded) => {
+        set({ hasLoaded });
       },
 
       setIsSyncing: (isSyncing) => {
@@ -365,6 +372,7 @@ export const useCollectionStore = create<CollectionStoreState>()(
         collectionLogger.debug('Resetting collection store');
         set({
           ...initialState,
+          hasLoaded: false,
           expandedCollectionIds: new Set(),
         });
       },
@@ -409,6 +417,7 @@ export const useCollectionUIState = () =>
   useCollectionStore((state) => ({
     selectedCollectionId: state.selectedCollectionId,
     isLoading: state.isLoading,
+    hasLoaded: state.hasLoaded,
     isSyncing: state.isSyncing,
   }));
 

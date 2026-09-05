@@ -13,7 +13,7 @@ interface CompletionModalContentProps {
   completionData: CompletionData;
 }
 
-export function CompletionModalContent({ listTitle, completionData }: CompletionModalContentProps) {
+export function CompletionModalContent({ listTitle: _listTitle, completionData: _completionData }: CompletionModalContentProps) {
 
   return (
     <div className="p-8">

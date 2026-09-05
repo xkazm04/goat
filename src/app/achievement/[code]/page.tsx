@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 import { AchievementCard } from '@/app/features/Achievement';
+import { getAchievementOGUrl, getServerBaseUrl } from '@/lib/sharing/share-urls';
 
 // Generate metadata for Open Graph sharing
 export async function generateMetadata({
@@ -13,8 +14,7 @@ export async function generateMetadata({
 
   // In a real implementation, fetch achievement data from database
   // For now, return default metadata
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-  const ogImageUrl = `${baseUrl}/api/achievement/og?code=${code}`;
+  const ogImageUrl = getAchievementOGUrl(code, getServerBaseUrl());
 
   return {
     title: 'Achievement Unlocked - G.O.A.T.',
@@ -90,10 +90,7 @@ export default async function AchievementPage({
         <div className="mt-6 text-center">
           <a
             href="/"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white transition-all hover:scale-105"
-            style={{
-              background: 'linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%)',
-            }}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white transition-all hover:scale-105 bg-gradient-brand"
           >
             Start Your Own Rankings
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

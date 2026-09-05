@@ -188,7 +188,7 @@ export async function GET(request: NextRequest) {
  */
 async function generateConsensusData(
   items: Array<{ id: string; name?: string; selection_count?: number }>,
-  category: string
+  _category: string
 ): Promise<Record<string, ItemConsensusWithClusters>> {
   const consensusData: Record<string, ItemConsensusWithClusters> = {};
 

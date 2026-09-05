@@ -6,7 +6,9 @@ import {
   successResponse,
   createdResponse,
   assertRequired,
+  assertIntRange,
 } from '@/lib/errors';
+import { GRID_LIMITS } from '@/lib/grid/constants';
 import { createClient } from '@/lib/supabase/server';
 
 import type { ListCriteriaConfig } from '@/lib/criteria/types';
@@ -93,6 +95,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
   assertRequired(title, 'title');
   assertRequired(category, 'category');
   assertRequired(size, 'size');
+  assertIntRange(size, 'size', GRID_LIMITS.MIN_SIZE, GRID_LIMITS.MAX_SIZE);
 
   // Insert the new list
   // Support both camelCase (frontend) and snake_case (legacy) for criteria_config

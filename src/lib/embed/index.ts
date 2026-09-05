@@ -13,7 +13,6 @@ export type {
   EmbedFormat,
   EmbedCode,
   OEmbedResponse,
-  WidgetAnalyticsEvent,
   WidgetData,
   WidgetItem,
   WidgetMessage,
@@ -45,11 +44,3 @@ export {
   parseEmbedUrl,
 } from './EmbedCodeGenerator';
 
-// Widget Analytics
-export {
-  WidgetAnalytics,
-  createWidgetAnalytics,
-  trackServerImpression,
-  getAnalyticsSummary,
-  type WidgetAnalyticsSummary,
-} from './WidgetAnalytics';

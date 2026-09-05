@@ -6,6 +6,9 @@
 
 import { z } from 'zod';
 
+import type { CategoryName } from '@/lib/config/category-config';
+import type { CriteriaProfileId } from '@/lib/criteria/templates';
+
 // ─────────────────────────────────────────────────────────────
 // Request/Response Schemas (used for validation AND types)
 // ─────────────────────────────────────────────────────────────
@@ -32,6 +35,15 @@ export const geminiResponseSchema = z.object({
   suggested_description: z.string().optional(),
 });
 
+/** Enrichment source tracking — matches the server's EnrichmentSource type */
+export const enrichmentSourceSchema = z.enum([
+  'database',
+  'enrichment_pipeline',
+  'wiki_fallback',
+  'none',
+]);
+export type EnrichmentSource = z.infer<typeof enrichmentSourceSchema>;
+
 /** Final item schema (with image from Wikipedia API and optional YouTube URL) */
 export const enrichedItemSchema = generatedItemSchema.extend({
   image_url: z.string().nullable(),
@@ -42,6 +54,15 @@ export const enrichedItemSchema = generatedItemSchema.extend({
   db_matched: z.boolean().optional(),
   // Server already attempted Wikipedia image lookup — skip redundant client-side fetch
   server_image_attempted: z.boolean().optional(),
+  // Enrichment status — how the item's data was resolved
+  enrichment_source: enrichmentSourceSchema.optional(),
+  enriched_data: z.object({
+    description: z.string().optional(),
+    year: z.number().optional(),
+    rating: z.number().optional(),
+    genres: z.array(z.string()).optional(),
+    sources: z.array(z.string()).optional(),
+  }).optional(),
 });
 
 /** Response schema for /api/studio/generate */
@@ -76,11 +97,13 @@ export interface ListTemplate {
   id: string;
   name: string;
   description: string;
-  category: string;
+  /** Must match a key in CATEGORY_CONFIG — enforced at compile time */
+  category: CategoryName;
   topic: string;
   listSize: number;
   generateCount: number;
-  criteriaProfileId: string | null;
+  /** Must match an existing criteria profile ID — enforced at compile time */
+  criteriaProfileId: CriteriaProfileId | null;
   starterItems: TemplateItem[];
   tags: string[];
   icon: string;

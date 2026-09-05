@@ -209,8 +209,8 @@ export function useGridSync() {
 
   // Sync matched count to composition store
   useEffect(() => {
-    const matchedCount = gridItems.filter((item) => item.context.matched).length;
-    const totalSlots = gridItems.length;
+    const _matchedCount = gridItems.filter((item) => item.context.matched).length;
+    const _totalSlots = gridItems.length;
 
     // Could update composition store with progress if needed
     // compositionStore.updateFormData({ progress: matchedCount / totalSlots });

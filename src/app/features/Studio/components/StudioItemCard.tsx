@@ -11,7 +11,7 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { motion } from 'framer-motion';
-import { X, Database, GripVertical } from 'lucide-react';
+import { X, Database, GripVertical, Film, Music, Gamepad2, Globe, AlertCircle } from 'lucide-react';
 import { memo, useState, useCallback, useRef } from 'react';
 
 
@@ -23,6 +23,54 @@ import { Elevated } from '@/components/visual';
 import { cn } from '@/lib/utils';
 
 import type { EnrichedItem } from '@/types/studio';
+
+/**
+ * Local stacking context for card sub-elements.
+ * Single source of truth — avoids scattered z-index values and stacking bugs.
+ */
+const CARD_Z = {
+  shimmer: 5,      // enrichment shimmer overlay (below badges)
+  badge: 10,       // rank badge, DB indicator, source badge
+  playButton: 15,  // play button overlay, title bar
+  handle: 20,      // drag handle
+  action: 30,      // remove button (highest interactive)
+  dragOverlay: 40, // drag-in-progress overlay (above all card content)
+} as const;
+
+/**
+ * Resolves the enrichment source to a source-specific icon and label.
+ * For 'enrichment_pipeline', inspects enriched_data.sources to pick the primary source icon.
+ */
+function getSourceBadge(item: EnrichedItem): { icon: React.ElementType; label: string; color: string } | null {
+  const source = item.enrichment_source;
+  if (!source || source === 'none') return null;
+
+  if (source === 'database') {
+    return { icon: Database, label: 'Matched from database', color: 'text-green-400 bg-green-500/20 border-green-500/40' };
+  }
+
+  if (source === 'wiki_fallback') {
+    return { icon: Globe, label: 'Enriched from Wikipedia', color: 'text-blue-400 bg-blue-500/20 border-blue-500/40' };
+  }
+
+  // enrichment_pipeline — pick icon based on the primary data source
+  const sources = item.enriched_data?.sources;
+  if (sources?.includes('tmdb')) {
+    return { icon: Film, label: 'Enriched from TMDB', color: 'text-sky-400 bg-sky-500/20 border-sky-500/40' };
+  }
+  if (sources?.includes('spotify')) {
+    return { icon: Music, label: 'Enriched from Spotify', color: 'text-emerald-400 bg-emerald-500/20 border-emerald-500/40' };
+  }
+  if (sources?.includes('igdb')) {
+    return { icon: Gamepad2, label: 'Enriched from IGDB', color: 'text-purple-400 bg-purple-500/20 border-purple-500/40' };
+  }
+  if (sources?.includes('wikipedia')) {
+    return { icon: Globe, label: 'Enriched from Wikipedia', color: 'text-blue-400 bg-blue-500/20 border-blue-500/40' };
+  }
+
+  // Generic pipeline badge
+  return { icon: Database, label: 'Enriched', color: 'text-green-400 bg-green-500/20 border-green-500/40' };
+}
 
 interface StudioItemCardProps {
   item: EnrichedItem;
@@ -71,7 +119,7 @@ export const StudioItemCard = memo(function StudioItemCard({ item, index, onRemo
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: `item-${item.db_item_id || item.title}` });
+  } = useSortable({ id: `item-${index}` });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -114,17 +162,69 @@ export const StudioItemCard = memo(function StudioItemCard({ item, index, onRemo
           <div className="absolute inset-0 bg-linear-to-b from-black/20 via-transparent to-black/60 pointer-events-none" />
         </div>
 
-        {/* DB matched indicator - top left */}
-        {item.db_matched && (
+        {/* Enrichment shimmer overlay — shown while enrichment is in-flight */}
+        {!item.enrichment_source && !item.server_image_attempted && (
           <div
-            className="absolute top-1.5 left-1.5 z-20 w-5 h-5 rounded-full flex items-center justify-center
-              bg-green-500/20 border border-green-500/40 backdrop-blur-xs"
-            role="img"
-            aria-label="Matched with existing database item"
-          >
-            <Database className="w-2.5 h-2.5 text-green-400" />
-          </div>
+            className="absolute inset-0 pointer-events-none animate-shimmer-slow"
+            style={{
+              zIndex: CARD_Z.shimmer,
+              background: 'linear-gradient(105deg, transparent 30%, rgba(251,191,36,0.06) 45%, rgba(251,191,36,0.12) 50%, rgba(251,191,36,0.06) 55%, transparent 70%)',
+              backgroundSize: '200% 100%',
+            }}
+          />
         )}
+
+        {/* Source badge - top left: shows enrichment source or failure */}
+        {(() => {
+          const badge = getSourceBadge(item);
+          if (badge) {
+            const Icon = badge.icon;
+            return (
+              <div
+                className={cn(
+                  'absolute top-1.5 left-1.5 w-5 h-5 rounded-full flex items-center justify-center border backdrop-blur-xs',
+                  badge.color
+                )}
+                style={{ zIndex: CARD_Z.badge }}
+                role="img"
+                aria-label={badge.label}
+                title={badge.label}
+              >
+                <Icon className="w-2.5 h-2.5" />
+              </div>
+            );
+          }
+          // Enrichment failed or no source — show warning dot
+          if (item.enrichment_source === 'none') {
+            return (
+              <div
+                className="absolute top-1.5 left-1.5 w-5 h-5 rounded-full flex items-center justify-center
+                  bg-amber-500/15 border border-amber-500/30 backdrop-blur-xs"
+                style={{ zIndex: CARD_Z.badge }}
+                role="img"
+                aria-label="Enrichment failed — no data source matched"
+                title="Enrichment failed"
+              >
+                <AlertCircle className="w-2.5 h-2.5 text-amber-400/70" />
+              </div>
+            );
+          }
+          // Legacy fallback: show db_matched badge if no enrichment_source is set
+          if (item.db_matched) {
+            return (
+              <div
+                className="absolute top-1.5 left-1.5 w-5 h-5 rounded-full flex items-center justify-center
+                  bg-green-500/20 border border-green-500/40 backdrop-blur-xs"
+                style={{ zIndex: CARD_Z.badge }}
+                role="img"
+                aria-label="Matched with existing database item"
+              >
+                <Database className="w-2.5 h-2.5 text-green-400" />
+              </div>
+            );
+          }
+          return null;
+        })()}
 
         {/* Remove button - top right */}
         <motion.button
@@ -136,7 +236,8 @@ export const StudioItemCard = memo(function StudioItemCard({ item, index, onRemo
             onRemove(index);
           }}
           className="absolute top-2 right-2 p-1.5 rounded-full bg-black/50 text-white/70 hover:text-red-400
-            backdrop-blur-md border border-white/20 z-30 opacity-0 group-hover:opacity-100 transition-opacity"
+            backdrop-blur-md border border-white/20 opacity-0 group-hover:opacity-100 transition-opacity"
+          style={{ zIndex: CARD_Z.action }}
           aria-label={`Remove ${item.title} from list`}
           data-testid={`studio-item-remove-btn-${index}`}
         >
@@ -153,16 +254,17 @@ export const StudioItemCard = memo(function StudioItemCard({ item, index, onRemo
           aria-roledescription="draggable item"
           data-testid={`studio-item-drag-handle-${index}`}
           className="absolute bottom-12 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100
-            cursor-grab active:cursor-grabbing transition-opacity z-20
+            cursor-grab active:cursor-grabbing transition-opacity
             bg-black/60 backdrop-blur-xs rounded-control p-1.5 border border-white/20
             focus-visible:opacity-100 focus-ring"
+          style={{ zIndex: CARD_Z.handle }}
         >
           <GripVertical className="w-4 h-4 text-white" />
         </div>
 
         {/* Play button for Music - centered */}
         {isMusicCategory && (
-          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-15">
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" style={{ zIndex: CARD_Z.playButton }}>
             <PlayButton
               item={{
                 id: item.db_item_id || `studio-item-${index}`,
@@ -177,13 +279,19 @@ export const StudioItemCard = memo(function StudioItemCard({ item, index, onRemo
           </div>
         )}
 
-        {/* Rank Badge - top right */}
-        <div className="absolute top-1.5 right-1.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+        {/* Rank Badge - top left (below source badge if present) */}
+        <div
+          className={cn(
+            'absolute left-1.5 opacity-0 group-hover:opacity-100 transition-opacity',
+            (item.enrichment_source || item.db_matched) ? 'top-8' : 'top-1.5'
+          )}
+          style={{ zIndex: CARD_Z.badge }}
+        >
           <PositionBadge position={index} size="xs" />
         </div>
 
         {/* Title at bottom - click to edit inline */}
-        <div className="absolute bottom-0 left-0 right-0 p-2 z-15">
+        <div className="absolute bottom-0 left-0 right-0 p-2" style={{ zIndex: CARD_Z.playButton }}>
           {isEditing ? (
             <input
               ref={inputRef}
@@ -211,7 +319,7 @@ export const StudioItemCard = memo(function StudioItemCard({ item, index, onRemo
 
         {/* Active Drag Overlay */}
         {isDragging && (
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px] flex items-center justify-center z-sticky rounded-card">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px] flex items-center justify-center rounded-card" style={{ zIndex: CARD_Z.dragOverlay }}>
             <div className="w-8 h-8 rounded-full border-2 border-white/30 border-t-white animate-spin" />
           </div>
         )}

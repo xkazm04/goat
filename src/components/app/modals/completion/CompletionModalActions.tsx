@@ -14,7 +14,7 @@ interface CompletionModalActionsProps {
 export function CompletionModalActions({
   onClose,
   onKeepEditing,
-  listTitle
+  listTitle: _listTitle
 }: CompletionModalActionsProps) {
   const router = useRouter();
   const [comingSoonLabel, setComingSoonLabel] = useState<string | null>(null);

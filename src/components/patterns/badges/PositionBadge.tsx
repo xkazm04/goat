@@ -150,7 +150,7 @@ export interface PositionBadgeWithIconProps extends PositionBadgeProps {
 export const PositionBadgeWithIcon = React.memo(function PositionBadgeWithIcon({
   position: rawPosition,
   size = 'sm',
-  showTier = true,
+  showTier: _showTier = true,
   showIcon = false,
   className,
 }: PositionBadgeWithIconProps) {

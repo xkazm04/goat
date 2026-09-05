@@ -166,7 +166,7 @@ export const useCreateListWithUser = (
 
   return useMutation({
     mutationFn: (data: CreateListRequest) => goatApi.lists.createWithUser(data),
-    onSuccess: (data, variables) => {
+    onSuccess: (data, _variables) => {
       // Invalidate and refetch lists
       queryClient.invalidateQueries({ queryKey: topListsKeys.lists() });
 

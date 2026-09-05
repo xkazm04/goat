@@ -12,7 +12,7 @@ import { useState, useEffect, useCallback } from "react";
 
 import { EmptyTrophyCase, GoatDisconnected } from "@/components/illustrations/EmptyStateIllustrations";
 import { PlaceholderImage } from "@/components/ui/placeholder-image";
-import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import { useMotionCapabilities } from "@/hooks/use-motion-preference";
 import { SPRING, DURATION } from "@/lib/animations/motion-presets";
 import { cn } from "@/lib/utils";
 
@@ -99,7 +99,7 @@ export function ItemInspector({
   const [data, setData] = useState<ItemDetailResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const reducedMotion = useReducedMotion();
+  const { allowTransitions } = useMotionCapabilities();
   const [expandedSections, setExpandedSections] = useState({
     metadata: true,
     rankings: true,
@@ -188,8 +188,8 @@ export function ItemInspector({
       >
         {/* Panel - Slide up from bottom on mobile, side panel on desktop */}
         <motion.div
-          initial={reducedMotion ? { opacity: 0 } : { y: '100%', opacity: 0 }}
-          animate={reducedMotion ? { opacity: 1 } : { y: 0, opacity: 1 }}
+          initial={!allowTransitions ? { opacity: 0 } : { y: '100%', opacity: 0 }}
+          animate={!allowTransitions ? { opacity: 1 } : { y: 0, opacity: 1 }}
           exit={{ y: '100%', opacity: 0 }}
           transition={SPRING.smooth}
           className={cn(
@@ -411,7 +411,7 @@ function CollapsibleSection({ title, isExpanded, onToggle, badge, children }: Co
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-slate-200">{title}</span>
           {badge !== undefined && (
-            <span className="px-1.5 py-0.5 text-xs font-medium bg-brand/20 text-brand-hover rounded-badge">
+            <span className="badge-sm bg-brand/20 text-brand-hover">
               {badge}
             </span>
           )}
@@ -469,7 +469,7 @@ function RecentRankingsList({ rankings }: { rankings: RecentRanking[] }) {
               })}
             </p>
           </div>
-          <div className="shrink-0 px-2 py-1 bg-brand/20 text-brand-hover rounded text-sm font-bold">
+          <div className="shrink-0 badge-md bg-brand/20 text-brand-hover font-bold">
             #{ranking.position}
           </div>
         </motion.div>

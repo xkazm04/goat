@@ -203,7 +203,7 @@ export const ItemCard = React.forwardRef<HTMLDivElement, ItemCardProps>(
       className,
       onClick,
       onKeyDown,
-      ...props
+      ..._props
     },
     ref
   ) => {

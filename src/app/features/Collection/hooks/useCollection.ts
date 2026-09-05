@@ -304,7 +304,7 @@ export function useCollection(options: UseCollectionOptions = {}): UseCollection
   // This makes the relationship first-class: VisibleItems = AllItems - GridPlacedItems
   const {
     visibleItems: allItems,
-    placedItemIds,
+    placedItemIds: _placedItemIds,
     placementStats,
     isItemPlaced,
   } = useVisibleCollectionItems({

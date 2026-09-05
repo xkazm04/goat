@@ -59,7 +59,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     // Return full task or without output
     if (!includeOutput) {
-      const { output, outputChunks, ...metadata } = task;
+      const { output: _output, outputChunks: _outputChunks, ...metadata } = task;
       return NextResponse.json(metadata);
     }
 

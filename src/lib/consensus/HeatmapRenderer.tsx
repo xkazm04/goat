@@ -271,7 +271,7 @@ export const HeatmapLegend = memo(function HeatmapLegend({
   const currentLabels = labels[mode] || labels.consensus;
 
   return (
-    <div className="flex items-center gap-3 px-3 py-2 rounded-card bg-slate-800/50">
+    <div className="flex items-center gap-3 px-4 py-2 rounded-card bg-slate-800/50">
       <span className="text-xs text-slate-400">{currentLabels.low}</span>
       <div
         className="h-3 w-32 rounded-full"
@@ -303,7 +303,7 @@ export const HeatmapTooltip = memo(function HeatmapTooltip({
   return (
     <AnimatePresence>
       <motion.div
-        className="fixed z-toast p-3 rounded-card shadow-xl pointer-events-none backdrop-blur-sm"
+        className="fixed z-toast p-4 rounded-card shadow-xl pointer-events-none backdrop-blur-sm"
         style={{
           left: x + 10,
           top: y + 10,

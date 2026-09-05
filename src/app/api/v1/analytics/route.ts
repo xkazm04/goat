@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
 
     // Generate analytics data (placeholder values since selection_count/view_count not tracked)
     const totalSelections = items?.length || 0;
-    const totalViews = items?.length || 0;
+    const _totalViews = items?.length || 0;
 
     // Generate distribution data
     const byPosition: Record<number, number> = {};
@@ -210,7 +210,7 @@ function hashCode(str: string): number {
   return Math.abs(hash);
 }
 
-function getMostActiveDay(startDate: Date): string {
+function getMostActiveDay(_startDate: Date): string {
   // Mock: Return a random weekday within the period
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   return days[Math.floor(Math.random() * 7)];

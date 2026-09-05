@@ -85,6 +85,7 @@ async function getData<T>(key: string): Promise<T | null> {
 export class InterestTracker {
   private profile: UserProfile | null = null;
   private initialized = false;
+  private initPromise: Promise<UserProfile> | null = null;
   private saveDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
   /**
@@ -95,6 +96,16 @@ export class InterestTracker {
       return this.profile;
     }
 
+    // Guard against concurrent initialization: reuse the pending promise
+    if (this.initPromise) {
+      return this.initPromise;
+    }
+
+    this.initPromise = this.doInitialize();
+    return this.initPromise;
+  }
+
+  private async doInitialize(): Promise<UserProfile> {
     try {
       // Try to load existing profile
       const existingProfile = await getData<UserProfile>(STORAGE_KEYS.USER_PROFILE);
@@ -120,11 +131,13 @@ export class InterestTracker {
       this.initialized = true;
 
       return this.profile;
-    } catch (error) {
-      console.warn('Failed to initialize InterestTracker, using in-memory fallback:', error);
+    } catch {
+      // Failed to initialize — using in-memory fallback
       this.profile = this.createNewProfile();
       this.initialized = true;
       return this.profile;
+    } finally {
+      this.initPromise = null;
     }
   }
 
@@ -269,8 +282,8 @@ export class InterestTracker {
 
     try {
       await storeData(STORAGE_KEYS.USER_PROFILE, this.profile);
-    } catch (error) {
-      console.warn('Failed to save profile:', error);
+    } catch {
+      // Failed to save profile — silent fallback
     }
   }
 
@@ -368,14 +381,15 @@ export class InterestTracker {
   async clearData(): Promise<void> {
     this.profile = null;
     this.initialized = false;
+    this.initPromise = null;
 
     try {
       const db = await getDatabase();
       const transaction = db.transaction(STORE_NAME, 'readwrite');
       const store = transaction.objectStore(STORE_NAME);
       store.clear();
-    } catch (error) {
-      console.warn('Failed to clear data:', error);
+    } catch {
+      // Failed to clear data — silent fallback
     }
   }
 }

@@ -145,7 +145,7 @@ export const CategorySearch = memo(function CategorySearch({
       if (stored) {
         setRecents(JSON.parse(stored));
       }
-    } catch (e) {
+    } catch {
       // Ignore storage errors
     }
   }, []);
@@ -167,7 +167,7 @@ export const CategorySearch = memo(function CategorySearch({
 
       try {
         localStorage.setItem(STORAGE_KEYS.RECENT_CATEGORIES, JSON.stringify(updated));
-      } catch (e) {
+      } catch {
         // Ignore storage errors
       }
 

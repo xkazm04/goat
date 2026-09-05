@@ -14,6 +14,8 @@ export type {
   PersonalizationContext,
   PersonalizedShowcaseItem,
   SelectionReason,
+  ShowcaseSlot,
+  AllowedSelectionReason,
   BoostFactor,
   ABTest,
   ABTestVariant,

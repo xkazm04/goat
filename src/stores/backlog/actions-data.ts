@@ -51,6 +51,7 @@ function classifyError(error: unknown): { type: LoadingErrorType; message: strin
 
 // Maximum number of groups to load at once
 const MAX_CONCURRENT_LOADS = 30;
+const MAX_LOADING_ERRORS = 50;
 
 /** Count groups that have at least one item loaded. Used to initialize/recompute _loadedGroupsCount. */
 export function countLoadedGroups(groups: { items?: unknown[] | null }[]): number {
@@ -500,6 +501,9 @@ export const createDataActions = (
           message: classified.message,
           timestamp: Date.now(),
         });
+        if (state.loadingErrors.length > MAX_LOADING_ERRORS) {
+          state.loadingErrors = state.loadingErrors.slice(-MAX_LOADING_ERRORS);
+        }
       });
 
       // Fallback: try loading groups individually if bulk fails
@@ -726,6 +730,9 @@ export const createDataActions = (
           message: classified.message,
           timestamp: Date.now(),
         });
+        if (state.loadingErrors.length > MAX_LOADING_ERRORS) {
+          state.loadingErrors = state.loadingErrors.slice(-MAX_LOADING_ERRORS);
+        }
       });
     } finally {
       // Always remove from loading state to prevent stale loadingGroupIds leak

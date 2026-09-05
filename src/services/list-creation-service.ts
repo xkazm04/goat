@@ -164,9 +164,8 @@ export class ListCreationService {
           const criteriaStore = useCriteriaStore.getState();
           criteriaStore.setActiveProfile(intent.criteriaProfileId);
           await criteriaStore.saveToDatabase(response.list.id);
-        } catch (criteriaError) {
-          // Log but don't fail list creation if criteria save fails
-          console.warn('Failed to save criteria config:', criteriaError);
+        } catch {
+          // Criteria save failed — non-blocking, list creation continues
         }
       }
 

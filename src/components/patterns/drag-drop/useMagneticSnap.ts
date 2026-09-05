@@ -166,7 +166,7 @@ export function useMagneticSnap(
   /**
    * Update state based on cursor position (debounced)
    */
-  const updateFromPosition = useCallback(
+  const _updateFromPosition = useCallback(
     (position: Vector2D) => {
       const now = performance.now();
       if (now - lastUpdateRef.current < mergedConfig.debounceMs) return;

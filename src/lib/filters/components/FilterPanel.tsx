@@ -21,6 +21,7 @@ import {
   FILTER_TIMING,
   FILTER_SCALE,
   DEFAULT_FILTER_FIELDS,
+  ICON_SIZES,
 } from '../constants';
 
 import type {
@@ -95,7 +96,7 @@ export function FilterPanel({
 
     const defaultField = fields[0];
     const newCondition: FilterCondition = {
-      id: `condition-${Date.now()}`,
+      id: `condition-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       field: defaultField.field,
       operator: defaultField.defaultOperator,
       value: '',
@@ -160,11 +161,13 @@ export function FilterPanel({
             'focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-inset'
           )}
           onClick={toggleExpand}
+          aria-expanded={isExpanded}
+          aria-label={`Filters${activeCount > 0 ? ` (${activeCount} active)` : ''}`}
         >
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">Filters</span>
             {activeCount > 0 && (
-              <span className="px-2 py-0.5 text-xs bg-primary text-primary-foreground rounded-badge">
+              <span className="badge-md bg-primary text-primary-foreground">
                 {activeCount}
               </span>
             )}
@@ -174,7 +177,7 @@ export function FilterPanel({
             transition={{ duration: FILTER_TIMING.standard }}
             className="text-muted-foreground"
           >
-            <ChevronDown size={16} />
+            <ChevronDown size={ICON_SIZES.lg} />
           </motion.span>
         </button>
       )}
@@ -233,7 +236,7 @@ export function FilterPanel({
               <div className="flex items-center gap-2 pt-2">
                 <button
                   className={cn(
-                    'flex items-center gap-1.5 px-3 py-1.5 text-sm',
+                    'flex items-center gap-1.5 px-3 py-1.5 text-sm touch-target',
                     'bg-accent hover:bg-accent/80 rounded-control transition-colors',
                     config.conditions.length >= maxConditions &&
                       'filter-disabled'
@@ -241,13 +244,13 @@ export function FilterPanel({
                   onClick={handleAddCondition}
                   disabled={config.conditions.length >= maxConditions}
                 >
-                  <Plus size={14} />
+                  <Plus size={ICON_SIZES.md} />
                   <span>Add Filter</span>
                 </button>
 
                 {activeCount > 0 && onClear && (
                   <button
-                    className="px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    className="px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors touch-target"
                     onClick={onClear}
                   >
                     Clear All
@@ -285,7 +288,7 @@ function CombinatorToggle({
         <button
           key={combinator}
           className={cn(
-            'relative px-2 py-1 rounded transition-colors',
+            'relative px-2 py-1 rounded transition-colors touch-target',
             size === 'sm' ? 'text-xs' : 'text-sm',
             value === combinator
               ? 'text-primary-foreground'
@@ -371,15 +374,17 @@ function FilterConditionRow({
       {/* Enable toggle */}
       <button
         className={cn(
-          'w-4 h-4 rounded border flex items-center justify-center transition-colors',
+          'relative w-4 h-4 rounded border flex items-center justify-center transition-colors touch-target-sm',
           condition.enabled
             ? 'bg-primary border-primary text-primary-foreground'
             : 'border-border hover:border-primary'
         )}
         onClick={() => onUpdate({ enabled: !condition.enabled })}
         title={condition.enabled ? 'Disable filter' : 'Enable filter'}
+        aria-label={condition.enabled ? 'Disable filter' : 'Enable filter'}
+        aria-pressed={condition.enabled}
       >
-        {condition.enabled && <Check size={10} />}
+        {condition.enabled && <Check size={ICON_SIZES.xs} />}
       </button>
 
       {/* Field selector */}
@@ -427,14 +432,15 @@ function FilterConditionRow({
       {/* Remove button */}
       <button
         className={cn(
-          'shrink-0 w-6 h-6 rounded flex items-center justify-center',
+          'relative shrink-0 w-6 h-6 rounded flex items-center justify-center',
           'text-muted-foreground hover:text-destructive hover:bg-destructive/10',
-          'transition-colors'
+          'transition-colors touch-target-sm'
         )}
         onClick={onRemove}
         title="Remove filter"
+        aria-label="Remove filter condition"
       >
-        <X size={14} />
+        <X size={ICON_SIZES.md} />
       </button>
     </div>
   );
@@ -517,7 +523,7 @@ function FilterValueInput({
           <button
             key={opt.value}
             className={cn(
-              'px-2 py-0.5 text-xs rounded border transition-colors',
+              'px-2 py-0.5 text-xs rounded border transition-colors touch-target',
               selectedValues.includes(opt.value)
                 ? 'bg-primary text-primary-foreground border-primary'
                 : 'bg-background border-border hover:border-primary'
@@ -660,7 +666,7 @@ export function FilterPill({
   return (
     <motion.div
       className={cn(
-        'inline-flex items-center gap-1 px-2 py-1 rounded-badge text-xs',
+        'inline-flex items-center gap-1 badge-md',
         'border transition-all cursor-pointer',
         condition.enabled
           ? `${colors.bg} ${colors.border} ${colors.text}`
@@ -677,13 +683,14 @@ export function FilterPill({
         <span className="font-semibold">{getDisplayValue()}</span>
       )}
       <button
-        className="ml-1 hover:text-destructive transition-colors"
+        className="relative ml-1 hover:text-destructive transition-colors touch-target-sm"
         onClick={(e) => {
           e.stopPropagation();
           onRemove();
         }}
+        aria-label="Remove filter"
       >
-        <X size={12} />
+        <X size={ICON_SIZES.sm} />
       </button>
     </motion.div>
   );

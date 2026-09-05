@@ -84,22 +84,22 @@ export function SwapAnimation({
   const [phase, setPhase] = useState<"idle" | "swapping" | "settling">("idle");
 
   // Calculate spring configs based on positions
-  const springConfigA = useMemo(() => {
+  const _springConfigA = useMemo(() => {
     const config = getPositionAwareSpringConfig(itemA.position);
     return getFramerSpringConfig(config);
   }, [itemA.position]);
 
-  const springConfigB = useMemo(() => {
+  const _springConfigB = useMemo(() => {
     const config = getPositionAwareSpringConfig(itemB.position);
     return getFramerSpringConfig(config);
   }, [itemB.position]);
 
   // Calculate swap paths
-  const pathA = useMemo(() => {
+  const _pathA = useMemo(() => {
     return calculateSwapPath(positionA, positionB, 20, curveIntensity);
   }, [positionA, positionB, curveIntensity]);
 
-  const pathB = useMemo(() => {
+  const _pathB = useMemo(() => {
     return calculateSwapPath(positionB, positionA, 20, curveIntensity);
   }, [positionA, positionB, curveIntensity]);
 

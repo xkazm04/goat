@@ -12,7 +12,7 @@
 import { DndContext, closestCenter, DragEndEvent , useSensor, useSensors, PointerSensor } from '@dnd-kit/core';
 import { SortableContext, rectSortingStrategy } from '@dnd-kit/sortable';
 import { AnimatePresence, motion } from 'framer-motion';
-import { GripVertical, Database, Crown } from 'lucide-react';
+import { GripVertical, Database, Crown, Globe, Film } from 'lucide-react';
 
 import { SURFACE_ELEVATION } from '@/components/visual/depth/depth-tokens';
 import { GoatMascot } from '@/components/visual/GoatMascot';
@@ -41,8 +41,8 @@ export function StudioItemsView({ gridClassName = DEFAULT_GRID_CLASS }: StudioIt
     })
   );
 
-  const sortableIds = generatedItems.map((item) =>
-    `item-${item.db_item_id || item.title}`
+  const sortableIds = generatedItems.map((_, index) =>
+    `item-${index}`
   );
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -56,7 +56,9 @@ export function StudioItemsView({ gridClassName = DEFAULT_GRID_CLASS }: StudioIt
     }
   };
 
-  const matchedCount = generatedItems.filter(item => item.db_matched).length;
+  const matchedCount = generatedItems.filter(item => item.db_matched || item.enrichment_source === 'database').length;
+  const enrichedCount = generatedItems.filter(item => item.enrichment_source === 'enrichment_pipeline').length;
+  const wikiCount = generatedItems.filter(item => item.enrichment_source === 'wiki_fallback').length;
 
   // Empty state with mascot
   if (!isGenerating && generatedItems.length === 0) {
@@ -115,7 +117,19 @@ export function StudioItemsView({ gridClassName = DEFAULT_GRID_CLASS }: StudioIt
           {matchedCount > 0 && (
             <span className="flex items-center gap-1.5 text-green-400/80">
               <Database className="w-3.5 h-3.5" />
-              {matchedCount} from DB
+              {matchedCount} DB
+            </span>
+          )}
+          {enrichedCount > 0 && (
+            <span className="flex items-center gap-1.5 text-sky-400/80">
+              <Film className="w-3.5 h-3.5" />
+              {enrichedCount} enriched
+            </span>
+          )}
+          {wikiCount > 0 && (
+            <span className="flex items-center gap-1.5 text-blue-400/80">
+              <Globe className="w-3.5 h-3.5" />
+              {wikiCount} wiki
             </span>
           )}
           {generatedItems.length > 0 && (
@@ -176,7 +190,7 @@ export function StudioItemsView({ gridClassName = DEFAULT_GRID_CLASS }: StudioIt
               <AnimatePresence initial={false}>
                 {generatedItems.map((item, index) => (
                   <motion.div
-                    key={item.title}
+                    key={sortableIds[index]}
                     initial={{ opacity: 0, scale: 0.85, y: 16 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.9, y: -8 }}

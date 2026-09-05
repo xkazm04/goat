@@ -77,8 +77,8 @@ export function usePersonalization(): UsePersonalizationReturn {
         engineRef.current.setContext(currentContext);
 
         setIsInitialized(true);
-      } catch (error) {
-        console.warn('Failed to initialize personalization:', error);
+      } catch {
+        // Failed to initialize personalization — non-blocking fallback
         setIsInitialized(true); // Still mark as initialized to avoid blocking
       }
     };

@@ -208,10 +208,10 @@ export function TopicInputForm() {
               animate={{ opacity: 1, scale: 1 }}
               className="w-[140px] space-y-1.5"
             >
-              <label className="flex items-center gap-1.5 text-sm font-medium text-gray-300">
+              <span className="flex items-center gap-1.5 text-sm font-medium text-gray-300">
                 <Tag className="w-3.5 h-3.5 text-gray-400" />
                 Category
-              </label>
+              </span>
               <UniversalSelect
                 value={category}
                 onChange={setCategory}
@@ -436,11 +436,11 @@ export function TopicInputForm() {
             {/* List Size & Generate Count */}
             <motion.div variants={fieldVariants} className="grid grid-cols-2 gap-3">
               {/* List Size (Top N) */}
-              <div className="space-y-2">
-                <label className="flex items-center gap-1.5 text-xs font-medium text-gray-400">
+              <div className="space-y-1.5">
+                <span className="flex items-center gap-1.5 text-xs font-medium text-gray-400">
                   <ListOrdered className="w-3.5 h-3.5" />
                   List Size
-                </label>
+                </span>
                 <div className="flex gap-1.5">
                   {LIST_SIZE_OPTIONS.map((size) => (
                     <button
@@ -464,12 +464,12 @@ export function TopicInputForm() {
               </div>
 
               {/* Generate Count */}
-              <div className="space-y-2">
-                <label className="flex items-center gap-1.5 text-xs font-medium text-gray-400">
+              <div className="space-y-1.5">
+                <span className="flex items-center gap-1.5 text-xs font-medium text-gray-400">
                   <Wand2 className="w-3.5 h-3.5" />
                   Items to Generate
-                </label>
-                <div className="flex gap-1">
+                </span>
+                <div className="flex gap-1.5">
                   {GENERATE_COUNT_OPTIONS.map((count) => (
                     <button
                       key={count}

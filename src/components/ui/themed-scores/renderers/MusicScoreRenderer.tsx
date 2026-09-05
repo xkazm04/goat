@@ -12,7 +12,7 @@ const ANIMATION_DELAY_STEP = 0.05;
 const ANIMATION_DURATION = 0.4;
 
 // Bar configuration
-const BAR_COUNT = 5;
+const _BAR_COUNT = 5;
 const BAR_FACTORS = [0.6, 1, 0.8, 0.9, 0.5];
 const VARIATION_SEED_MULTIPLIER = 17;
 const VARIATION_MOD = 20;

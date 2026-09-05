@@ -11,6 +11,7 @@ import {
   Sparkles,
   Lock,
 } from "lucide-react";
+import Image from "next/image";
 import { useState, useMemo } from "react";
 
 import {
@@ -142,10 +143,13 @@ export function AchievementShowcase({
           {/* User info */}
           <div className="flex items-center gap-6 mb-8">
             {showcase.userAvatar ? (
-              <img
+              <Image
                 src={showcase.userAvatar}
                 alt={showcase.username}
+                width={96}
+                height={96}
                 className="w-24 h-24 rounded-2xl object-cover border-2 border-white/10"
+                unoptimized
               />
             ) : (
               <div
@@ -181,10 +185,7 @@ export function AchievementShowcase({
             {/* Share showcase button */}
             {showcase.shareCode && (
               <button
-                className="flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-white transition-all hover:scale-105"
-                style={{
-                  background: 'linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%)',
-                }}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-white transition-all hover:scale-105 bg-gradient-brand"
               >
                 <Share2 className="w-4 h-4" />
                 Share Showcase
@@ -265,12 +266,12 @@ export function AchievementShowcase({
             background: 'rgba(255, 255, 255, 0.03)',
             border: '1px solid rgba(255, 255, 255, 0.05)',
           }}>
-            <p className="text-sm text-gray-400 mb-3">Tier Progress</p>
+            <p className="text-sm text-gray-400 mb-2">Tier Progress</p>
             <div className="flex items-center gap-6">
               {TIER_ORDER.map((tier) => {
                 const tierConfig = TIER_CONFIG[tier];
                 const tierStats = stats.byTier[tier];
-                const percent = tierStats.total > 0
+                const _percent = tierStats.total > 0
                   ? Math.round((tierStats.unlocked / tierStats.total) * 100)
                   : 0;
 
@@ -363,7 +364,7 @@ export function AchievementShowcase({
               >
                 {/* Category filter */}
                 <div>
-                  <label className="block text-sm text-gray-400 mb-2">Category</label>
+                  <span className="block text-sm text-gray-400 mb-2">Category</span>
                   <div className="flex flex-wrap gap-2">
                     <button
                       onClick={() => setFilterCategory('all')}
@@ -393,7 +394,7 @@ export function AchievementShowcase({
 
                 {/* Tier filter */}
                 <div>
-                  <label className="block text-sm text-gray-400 mb-2">Tier</label>
+                  <span className="block text-sm text-gray-400 mb-2">Tier</span>
                   <div className="flex flex-wrap gap-2">
                     <button
                       onClick={() => setFilterTier('all')}
@@ -501,7 +502,7 @@ function LockedAchievementCard({ achievement }: { achievement: Achievement }) {
 
   return (
     <div
-      className="relative overflow-hidden rounded-2xl p-6 h-full"
+      className="relative overflow-hidden rounded-2xl p-4 h-full"
       style={{
         background: 'rgba(255, 255, 255, 0.02)',
         border: '1px solid rgba(255, 255, 255, 0.05)',

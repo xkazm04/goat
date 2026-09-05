@@ -136,9 +136,9 @@ export class DragResultHandler {
    */
   private createSuccessNotification(
     result: DragOperationResult,
-    context: DragContext
+    _context: DragContext
   ): DragNotification | null {
-    const { operationType, action, metadata } = result;
+    const { operationType, action: _action, metadata } = result;
 
     // Build notification based on operation type
     switch (operationType) {
@@ -192,7 +192,7 @@ export class DragResultHandler {
    */
   private createErrorNotification(
     result: DragOperationResult,
-    context: DragContext
+    _context: DragContext
   ): DragNotification {
     const { errorCode, errorMessage } = result;
 

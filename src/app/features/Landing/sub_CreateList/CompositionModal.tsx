@@ -11,6 +11,7 @@ import { CompositionModalRightContent } from "@/components/app/modals/compositio
 import { SURFACE_ELEVATION, ELEVATION, INSET } from "@/components/visual/depth/depth-tokens";
 import { useCreateBlueprint, copyBlueprintShareUrl } from "@/hooks/use-blueprints";
 import { useComposition } from "@/hooks/use-composition";
+import { useFieldValidation } from "@/hooks/use-field-validation";
 import { useModalAccessibility } from "@/hooks/use-modal-accessibility";
 import { useTempUser } from "@/hooks/use-temp-user";
 import { toast } from "@/hooks/use-toast";
@@ -73,6 +74,8 @@ export function CompositionModal({
     openWithTemplate,
     clearTemplateData,
   } = useComposition();
+
+  const fieldValidation = useFieldValidation(intent);
 
   const handleCategoryChange = (category: string) => {
     updateIntent({
@@ -457,6 +460,8 @@ export function CompositionModal({
                         customName={intent.title || ""}
                         setCustomName={(name) => updateIntent({ title: name, isPredefined: false })}
                         color={intent.color}
+                        validation={fieldValidation}
+                        autoFocusTitle={!intent.title}
                       />
 
                       {/* Center - Create Button */}

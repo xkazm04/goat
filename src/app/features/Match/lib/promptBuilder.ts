@@ -134,7 +134,7 @@ export function buildPrompt(request: AIGenerationRequest): BuiltPrompt {
   // Build items list
   const itemsList = request.items
     .slice(0, 10)
-    .map((item, idx) => `${item.position}. ${item.title}`)
+    .map((item, _idx) => `${item.position}. ${item.title}`)
     .join('\n');
 
   // Get style elements
@@ -248,7 +248,7 @@ export function buildDALLEPrompt(request: AIGenerationRequest): BuiltPrompt {
 
   const topItems = request.items.slice(0, 5);
   const itemDescriptions = topItems
-    .map((item, idx) => `#${item.position} "${item.title}"`)
+    .map((item, _idx) => `#${item.position} "${item.title}"`)
     .join(', ');
 
   // DALL-E prefers natural language descriptions

@@ -18,7 +18,7 @@ import Link from "next/link";
 import { memo, useMemo, useState, useCallback } from "react";
 
 import { EmptyTrophyCase, NoSearchResults } from "@/components/illustrations/EmptyStateIllustrations";
-import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import { useMotionCapabilities } from "@/hooks/use-motion-preference";
 
 import type { ListCollection, CollectionStats } from "@/types/collection";
 import type { TopList } from "@/types/top-lists";
@@ -44,11 +44,11 @@ const ListCard = memo(function ListCard({
   onRemove?: () => void;
   showDragHandle?: boolean;
 }) {
-  const reducedMotion = useReducedMotion();
+  const { allowTransitions } = useMotionCapabilities();
   return (
     <motion.div
       layout
-      initial={reducedMotion ? false : { opacity: 0, scale: 0.95 }}
+      initial={!allowTransitions ? false : { opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
       className="group relative bg-slate-800/50 rounded-xl border border-slate-700/50 overflow-hidden hover:border-slate-600/50 hover:bg-slate-800/70 transition-all"
@@ -102,18 +102,18 @@ const ListCard = memo(function ListCard({
 
 const ListRow = memo(function ListRow({
   list,
-  onRemove,
+  onRemove: _onRemove,
   showDragHandle,
 }: {
   list: TopList;
   onRemove?: () => void;
   showDragHandle?: boolean;
 }) {
-  const reducedMotion = useReducedMotion();
+  const { allowTransitions } = useMotionCapabilities();
   return (
     <motion.div
       layout
-      initial={reducedMotion ? false : { opacity: 0, x: -10 }}
+      initial={!allowTransitions ? false : { opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -10 }}
       className="group"
@@ -174,7 +174,7 @@ export const CollectionView = memo(function CollectionView({
     );
   }, [lists, searchTerm]);
 
-  const handleReorder = useCallback(
+  const _handleReorder = useCallback(
     (newOrder: string[]) => {
       setOrderedListIds(newOrder);
       onReorderLists?.(newOrder);
@@ -182,7 +182,7 @@ export const CollectionView = memo(function CollectionView({
     [onReorderLists]
   );
 
-  const orderedLists = useMemo(() => {
+  const _orderedLists = useMemo(() => {
     const listMap = new Map(lists.map((l) => [l.id, l]));
     return orderedListIds
       .map((id) => listMap.get(id))

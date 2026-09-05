@@ -17,6 +17,7 @@ import {
   isValidSubcategory,
   CATEGORY_CONFIG,
 } from '@/lib/config/category-config';
+import { GRID_LIMITS } from '@/lib/grid/constants';
 import {
   ListIntent,
   validateListIntent as basicValidateListIntent,
@@ -119,8 +120,8 @@ export const STANDARD_VALIDATION_RULES: ValidationRule[] = [
     id: 'size-valid',
     field: 'size',
     validate: (intent) => {
-      if (intent.size < 1 || intent.size > 100) {
-        return 'Size must be between 1 and 100';
+      if (intent.size < GRID_LIMITS.MIN_SIZE || intent.size > GRID_LIMITS.MAX_SIZE) {
+        return `Size must be between ${GRID_LIMITS.MIN_SIZE} and ${GRID_LIMITS.MAX_SIZE}`;
       }
       return null;
     },

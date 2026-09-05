@@ -23,6 +23,7 @@ interface ActivityStoreState {
   // Polling configuration
   pollingInterval: number;
   isPolling: boolean;
+  pollingIntervalId: NodeJS.Timeout | null;
 
   // Actions
   addActivity: (activity: ActivityItem) => void;
@@ -78,8 +79,6 @@ const generateDemoActivities = (): ActivityItem[] => {
   }));
 };
 
-let pollingIntervalId: NodeJS.Timeout | null = null;
-
 export const useActivityStore = create<ActivityStoreState>((set, get) => ({
   // Initial state - start empty to avoid hydration mismatch
   // Demo activities will be generated client-side via initializeDemoActivities
@@ -89,6 +88,7 @@ export const useActivityStore = create<ActivityStoreState>((set, get) => ({
   isInitialized: false,
   pollingInterval: 10000, // 10 seconds
   isPolling: false,
+  pollingIntervalId: null,
 
   // Add a new activity to the top of the feed
   addActivity: (activity) => {
@@ -129,31 +129,31 @@ export const useActivityStore = create<ActivityStoreState>((set, get) => ({
   // Start polling for new activities
   startPolling: () => {
     const state = get();
-    if (state.isPolling || pollingIntervalId) return;
+    if (state.isPolling || state.pollingIntervalId) return;
 
     // Initialize demo activities if not already done
     if (!state.isInitialized) {
       get().initializeDemoActivities();
     }
 
-    set({ isPolling: true });
-
     // Initial fetch
     get().fetchRecentActivities();
 
-    // Set up polling
-    pollingIntervalId = setInterval(() => {
+    // Set up polling — store the interval ID in state
+    const intervalId = setInterval(() => {
       get().fetchRecentActivities();
     }, state.pollingInterval);
+
+    set({ isPolling: true, pollingIntervalId: intervalId });
   },
 
   // Stop polling
   stopPolling: () => {
+    const { pollingIntervalId } = get();
     if (pollingIntervalId) {
       clearInterval(pollingIntervalId);
-      pollingIntervalId = null;
     }
-    set({ isPolling: false });
+    set({ isPolling: false, pollingIntervalId: null });
   },
 
   // Fetch recent activities from API
@@ -197,7 +197,7 @@ export const useActivityStore = create<ActivityStoreState>((set, get) => ({
           set({ isLoading: false });
         }
       }
-    } catch (error) {
+    } catch {
       activityLogger.warn('Activity feed API not available, using demo data');
       // Generate a random demo activity on failure
       const demoActivity = generateDemoActivities()[Math.floor(Math.random() * 5)];

@@ -30,7 +30,7 @@ export function AchievementEmbed({
         href={shareUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center gap-3 p-3 rounded-xl bg-gray-900 border border-gray-800 hover:border-gray-700 transition-colors text-decoration-none"
+        className="inline-flex items-center gap-4 p-4 rounded-xl bg-gray-900 border border-gray-800 hover:border-gray-700 transition-colors text-decoration-none"
         style={{
           fontFamily: 'system-ui, -apple-system, sans-serif',
         }}
@@ -101,7 +101,7 @@ export function AchievementEmbed({
         }}
       />
 
-      <div className="relative p-5">
+      <div className="relative p-4">
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
           {/* Category badge */}
@@ -181,7 +181,7 @@ export function AchievementEmbed({
 
         {/* Username footer */}
         {username && (
-          <div className="flex items-center gap-3 mt-4 pt-4 border-t border-white/5">
+          <div className="flex items-center gap-4 mt-4 pt-4 border-t border-white/5">
             <div
               className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
               style={{
@@ -216,7 +216,7 @@ export function AchievementEmbed({
  */
 export function AchievementEmbedStandalone({
   achievement,
-  username,
+  username: _username,
   shareUrl,
 }: {
   achievement: Achievement;

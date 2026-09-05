@@ -192,6 +192,7 @@ export const PlaceholderImage = React.forwardRef<HTMLDivElement, PlaceholderImag
                   {fallbackComponent}
                 </div>
               ) : (
+                // eslint-disable-next-line @next/next/no-img-element -- decorative blur-up placeholder, not primary content
                 <img
                   src={currentPlaceholder}
                   alt=""

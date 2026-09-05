@@ -141,7 +141,7 @@ function normalizeRating(
 /**
  * Extract genres as string array
  */
-function normalizeGenres(genres: unknown, source: DataSource): string[] {
+function normalizeGenres(genres: unknown, _source: DataSource): string[] {
   if (!genres) return [];
 
   if (Array.isArray(genres)) {

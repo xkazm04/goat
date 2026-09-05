@@ -35,53 +35,54 @@ export function CompletionModal({
     onClose,
   });
 
-  if (!isOpen) return null;
-
   return (
     <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-modal flex items-center justify-center p-4 modal-overlay"
-        onClick={onClose}
-        data-exclude-capture="true"
-      >
+      {isOpen && (
         <motion.div
-          ref={modalRef}
-          {...modalProps}
-          onKeyDown={handleKeyDown}
-          initial={{ scale: 0.8, opacity: 0, y: 20 }}
-          animate={{ scale: 1, opacity: 1, y: 0 }}
-          exit={{ scale: 0.8, opacity: 0, y: 20 }}
-          className="w-full max-w-2xl max-h-[90vh] rounded-container overflow-hidden border border-gray-700/50"
-          style={{
-            backgroundColor: SURFACE_ELEVATION.overlay,
-            boxShadow: `${ELEVATION.modal}, ${INSET.glassHighlight}`,
-          }}
-          onClick={(e) => e.stopPropagation()}
-          data-modal="completion"
+          key="completion-backdrop"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-modal flex items-center justify-center p-4 modal-overlay"
+          onClick={onClose}
+          data-exclude-capture="true"
         >
-          {/* Header */}
-          <CompletionModalHeader
-            onClose={onClose}
-            listTitle={listTitle}
-          />
+          <motion.div
+            ref={modalRef}
+            {...modalProps}
+            onKeyDown={handleKeyDown}
+            initial={{ scale: 0.8, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.8, opacity: 0, y: 20 }}
+            className="w-full max-w-2xl max-h-[90vh] rounded-container overflow-hidden border border-gray-700/50"
+            style={{
+              backgroundColor: SURFACE_ELEVATION.overlay,
+              boxShadow: `${ELEVATION.modal}, ${INSET.glassHighlight}`,
+            }}
+            onClick={(e) => e.stopPropagation()}
+            data-modal="completion"
+          >
+            {/* Header */}
+            <CompletionModalHeader
+              onClose={onClose}
+              listTitle={listTitle}
+            />
 
-          {/* Content */}
-          <CompletionModalContent
-            listTitle={listTitle}
-            completionData={completionData}
-          />
+            {/* Content */}
+            <CompletionModalContent
+              listTitle={listTitle}
+              completionData={completionData}
+            />
 
-          {/* Actions */}
-          <CompletionModalActions
-            onClose={onClose}
-            onKeepEditing={onKeepEditing}
-            listTitle={listTitle}
-          />
+            {/* Actions */}
+            <CompletionModalActions
+              onClose={onClose}
+              onKeepEditing={onKeepEditing}
+              listTitle={listTitle}
+            />
+          </motion.div>
         </motion.div>
-      </motion.div>
+      )}
     </AnimatePresence>
   );
 }

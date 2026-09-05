@@ -232,7 +232,7 @@ export function computeTrajectory(
   }
 
   // Predict 30 days ahead
-  const lastTimestamp = sorted[sorted.length - 1].timestamp;
+  const _lastTimestamp = sorted[sorted.length - 1].timestamp;
   const predictedElo = Math.round(
     Math.max(
       MIN_ELO,

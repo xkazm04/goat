@@ -32,7 +32,7 @@ export function DeferredProviders({ children }: { children: ReactNode }) {
       return () => cancelIdleCallback(id);
     } else {
       const raf = requestAnimationFrame(() => {
-        const timer = setTimeout(() => setReady(true), 0);
+        const _timer = setTimeout(() => setReady(true), 0);
         return () => cancelAnimationFrame(raf);
       });
       return () => cancelAnimationFrame(raf);

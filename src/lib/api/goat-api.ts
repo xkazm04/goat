@@ -201,7 +201,7 @@ async function request<T>(
   endpoint: string,
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
   data?: unknown,
-  config: RequestConfig = {}
+  _config: RequestConfig = {}
 ): Promise<T> {
   const requestId = generateRequestId();
   const circuitBreaker = getGlobalCircuitBreaker();
@@ -211,7 +211,6 @@ async function request<T>(
     // If HALF_OPEN, wait for probe to complete instead of failing immediately
     const probeResult = await circuitBreaker.waitForProbe(endpoint);
     if (!probeResult) {
-      console.warn(`[${requestId}] Circuit open for ${endpoint} — failing fast`);
       throw new GoatError('NETWORK_CONNECTION_REFUSED', `Circuit open for ${endpoint} — failing fast`, {
         category: 'network',
         status: 503,

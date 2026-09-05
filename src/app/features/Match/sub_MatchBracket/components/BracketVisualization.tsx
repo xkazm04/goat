@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, ChevronLeft, ChevronRight } from 'lucide-react';
+import Image from 'next/image';
 import { useMemo, useRef, useEffect, useState, useCallback } from 'react';
 
 import { STAGGER, ENTRANCE, ENTRANCE_DURATION, CONNECTOR, CELEBRATION, SPRING_CONFIG, GLOW_SHADOWS } from '@/lib/animations/motion-tokens';
@@ -97,11 +98,13 @@ function ParticipantSlot({
       </span>
 
       {participant.item?.image_url && (
-        <div className="w-4 h-4 rounded overflow-hidden shrink-0">
-          <img
+        <div className="relative w-4 h-4 rounded overflow-hidden shrink-0">
+          <Image
             src={participant.item.image_url}
             alt=""
-            className="w-full h-full object-cover"
+            fill
+            className="object-cover"
+            unoptimized
           />
         </div>
       )}
@@ -235,8 +238,8 @@ function ChampionDisplay({ champion }: { champion: BracketParticipant }) {
       </div>
 
       {champion.item?.image_url && (
-        <div className="w-16 h-16 rounded-card overflow-hidden border-2 border-yellow-400/50 shadow-lg mb-2">
-          <img src={champion.item.image_url} alt={title} className="w-full h-full object-cover" />
+        <div className="relative w-16 h-16 rounded-card overflow-hidden border-2 border-yellow-400/50 shadow-lg mb-2">
+          <Image src={champion.item.image_url} alt={title} fill className="object-cover" unoptimized />
         </div>
       )}
 

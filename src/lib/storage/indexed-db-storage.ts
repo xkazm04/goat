@@ -27,11 +27,11 @@ const isBrowser = typeof window !== 'undefined' && window.indexedDB;
 export const createIndexedDBStorage = (storeName: string): StorageAdapter => {
   // If we're not in a browser, return a noop storage adapter
   if (!isBrowser) {
-    console.log('IndexedDB not available - using fallback storage');
+    // IndexedDB not available - using fallback storage
     return {
-      getItem: async (name: string) => null,
-      setItem: async (name: string, value: string) => {},
-      removeItem: async (name: string) => {}
+      getItem: async (_name: string) => null,
+      setItem: async (_name: string, _value: string) => {},
+      removeItem: async (_name: string) => {}
     };
   }
 

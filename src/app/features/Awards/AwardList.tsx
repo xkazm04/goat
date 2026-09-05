@@ -173,7 +173,7 @@ export function AwardList({ parentListId, title = "Annual Awards", description }
         };
 
         setWinners(prev => ({ ...prev, [targetListId]: newWinner }));
-        console.log(`🏆 Awarding "${props.title}" to category`);
+        // Item awarded to category
 
         if ('id' in item) {
             markItemAsUsed(item.id, true);
@@ -199,7 +199,7 @@ export function AwardList({ parentListId, title = "Annual Awards", description }
             return { ...prev, [listId]: currentCandidates };
         });
 
-        console.log(`📋 Added "${props.title}" as candidate #${slotIndex + 1}`);
+        // Candidate added to slot
 
         if ('id' in item) {
             markItemAsUsed(item.id, true);

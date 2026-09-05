@@ -3,8 +3,10 @@
 import { useCallback } from "react";
 
 import { gridLogger } from "@/lib/logger";
+import { useBacklogStore } from "@/stores/backlog-store";
 import { useGridStore } from "@/stores/grid-store";
 import { useItemPopupStore } from "@/stores/item-popup-store";
+import { useSessionStore } from "@/stores/session-store";
 
 import { ItemInspector, RelatedItem } from "./ItemInspector";
 
@@ -31,15 +33,24 @@ export function ItemInspectorProvider() {
   // Handle quick assign from inspector
   const handleQuickAssign = useCallback((id: string) => {
     const nextPosition = getNextAvailableGridPosition();
-    if (nextPosition !== null) {
-      // We need the full item data - for now we'll need to get it from the API
-      // This is a simplified version that just assigns by ID
-      // In a full implementation, we'd fetch the item data first
-      gridLogger.debug('Quick assign item', { id, position: nextPosition });
-      // Note: The actual assignment would need the full item data
-      // This would typically be done via a store action or API call
+    if (nextPosition === null) {
+      gridLogger.debug('Quick assign failed: no available grid position');
+      return;
     }
-  }, [getNextAvailableGridPosition]);
+
+    // Find the item in backlog
+    const backlogItem = useSessionStore.getState().getAvailableBacklogItems()
+      .find(item => item.id === id);
+
+    if (!backlogItem) {
+      gridLogger.debug('Quick assign failed: item not found in backlog', { id });
+      return;
+    }
+
+    assignItemToGrid(backlogItem, nextPosition);
+    useBacklogStore.getState().markItemAsUsed(id, true);
+    gridLogger.debug('Quick assign item', { id, position: nextPosition });
+  }, [getNextAvailableGridPosition, assignItemToGrid]);
 
   // Handle clicking a related item - opens that item in inspector
   const handleRelatedItemClick = useCallback((item: RelatedItem) => {

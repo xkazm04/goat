@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import { useMemo } from 'react';
 
 import { GoatCrownTrophy } from '@/components/illustrations/GoatCrownTrophy';
@@ -143,10 +144,13 @@ export function TrophyTab({
           transition={{ delay: 0.3 }}
           className="w-20 h-20 rounded-card overflow-hidden border-2 border-yellow-400/50 mx-auto mb-3 shadow-lg shadow-yellow-400/20"
         >
-          <img
+          <Image
             src={champion.item.image_url}
             alt={championTitle}
+            width={80}
+            height={80}
             className="w-full h-full object-cover"
+            unoptimized
           />
         </motion.div>
       )}

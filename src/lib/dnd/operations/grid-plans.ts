@@ -28,6 +28,7 @@ import type {
   OperationStoreContext,
 } from './types';
 import type { ValidationResult } from '@/lib/validation';
+import type { GridItemType } from '@/types/match';
 
 // ============================================================================
 // Plan Types
@@ -41,6 +42,8 @@ export interface BacklogEffect {
 export interface GridOperationPlan {
   primitives: GridPrimitive[];
   backlogEffects: BacklogEffect[];
+  /** Full GridItemType snapshot of displaced item, used for undo rollback */
+  displacedGridItem?: GridItemType;
   resultMeta: {
     operationType: DragOperationType;
     action: TransferableItem extends never ? never : string;
@@ -178,12 +181,15 @@ export function planAssign(
   const primitives: GridPrimitive[] = [];
   const backlogEffects: BacklogEffect[] = [];
   let displacedItem: TransferableItem | undefined;
+  let displacedGridItem: GridItemType | undefined;
 
   // If target is occupied, remove the existing item first
   const existing = grid.gridItems[position];
   if (existing && existing.context.matched && existing.item?.id) {
     primitives.push({ kind: 'remove', position });
     backlogEffects.push({ itemId: existing.item.id, markUsed: false });
+    // Capture full GridItemType for undo rollback restoration
+    displacedGridItem = structuredClone(existing);
     displacedItem = {
       id: existing.item.id,
       title: existing.item.title,
@@ -207,6 +213,7 @@ export function planAssign(
   return {
     primitives,
     backlogEffects,
+    displacedGridItem,
     resultMeta: {
       operationType: 'assign',
       action: 'assign',
@@ -514,9 +521,17 @@ export function createUndoableOperation(
             const assignEffect = plan.backlogEffects.find(e => e.markUsed);
             if (assignEffect) backlog.markItemAsUsed(assignEffect.itemId, false);
           }
-          // If there was a displaced item, we can't restore it without more info
-          // (the displaced item's full data would be needed to re-place it)
-          dndLogger.debug('Rolled back assign operation');
+          // Restore displaced item if one was captured during planning
+          if (plan.displacedGridItem && result.metadata?.toPosition !== undefined) {
+            const displaced = plan.displacedGridItem;
+            grid.assignItemToGrid(displaced, result.metadata.toPosition);
+            if (displaced.item?.id) {
+              backlog.markItemAsUsed(displaced.item.id, true);
+            }
+            dndLogger.debug('Rolled back assign operation (displaced item restored)');
+          } else {
+            dndLogger.debug('Rolled back assign operation');
+          }
           break;
         }
 

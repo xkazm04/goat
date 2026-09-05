@@ -34,18 +34,39 @@ export function PodiumViewSkeleton() {
 
 export function GoatViewSkeleton() {
   return (
-    <div className="mb-16 relative">
-      <div className="flex flex-col items-center gap-6">
+    <div className="mb-8 relative">
+      {/* Goat illustration placeholder - left side */}
+      <div className="absolute left-0 top-0 bottom-0 w-1/4 flex items-center justify-center pointer-events-none z-0">
+        <div className="w-24 h-24 rounded-full bg-white/5" />
+      </div>
+
+      <div className="flex flex-col items-center gap-4">
         {/* GOAT Badge placeholder */}
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded bg-white/5" />
           <div className="h-9 w-48 rounded bg-white/5" />
           <div className="w-8 h-8 rounded bg-white/5" />
         </div>
-        {/* Main circle */}
-        <div className={`w-96 h-96 rounded-full ${pulseClass}`} />
-        {/* Description placeholder */}
+
+        {/* 1st Place — rectangular card matching actual dimensions */}
+        <div className={`w-72 h-[22rem] md:w-80 md:h-[25rem] lg:w-96 lg:h-[30rem] ${pulseClass}`} />
+
+        {/* "Greatest Of All Time" text placeholder */}
         <div className="h-4 w-40 rounded bg-white/5" />
+
+        {/* 2nd & 3rd Place row */}
+        <div className="flex items-start justify-center gap-6 mt-2">
+          {/* 2nd Place */}
+          <div className="flex flex-col items-center gap-2">
+            <div className="h-5 w-16 rounded bg-white/5" />
+            <div className={`w-32 h-40 md:w-36 md:h-44 lg:w-40 lg:h-48 ${pulseClass}`} />
+          </div>
+          {/* 3rd Place */}
+          <div className="flex flex-col items-center gap-2">
+            <div className="h-5 w-16 rounded bg-white/5" />
+            <div className={`w-32 h-40 md:w-36 md:h-44 lg:w-40 lg:h-48 ${pulseClass}`} />
+          </div>
+        </div>
       </div>
     </div>
   );

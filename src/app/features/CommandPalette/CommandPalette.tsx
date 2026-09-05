@@ -17,14 +17,11 @@ import {
   Loader2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 
 
-import { GoatMascot } from "@/components/visual/GoatMascot";
-import { TopList } from "@/types/top-lists";
-import { createListIntent } from "@/types/list-intent";
-import { listCreationService } from "@/services/list-creation-service";
 import { ELEVATION } from "@/components/visual/depth";
+import { GoatMascot } from "@/components/visual/GoatMascot";
 import { useQuickSearch, useSearchHistory } from "@/hooks/use-search";
 import { useTempUser } from "@/hooks/use-temp-user";
 import { toast } from "@/hooks/use-toast";
@@ -33,7 +30,10 @@ import { DURATION } from "@/lib/animations/motion-presets";
 import { CATEGORY_CONFIG } from "@/lib/config/category-config";
 import { trackError } from "@/lib/errors/error-analytics";
 import { fuzzyMatch } from "@/lib/search/fuzzy";
+import { listCreationService } from "@/services/list-creation-service";
 import { useListStore } from "@/stores/use-list-store";
+import { createListIntent } from "@/types/list-intent";
+import { TopList } from "@/types/top-lists";
 
 import {
   CATEGORY_COLORS,
@@ -498,7 +498,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   const categoryColor = CATEGORY_COLORS[parsedQuery.category] || CATEGORY_COLORS.Sports;
 
   // Check if loading
-  const isLoading = isSearchLoading || isLoadingUserLists || isLoadingFeatured;
+  const _isLoading = isSearchLoading || isLoadingUserLists || isLoadingFeatured;
 
   // Render an API search result item
   const renderSearchResult = (result: SearchResult, index: number, isSelected: boolean) => {
@@ -686,23 +686,30 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                       const isActive = categoryFilter === cat;
                       const catColor = CATEGORY_COLORS[cat] || CATEGORY_COLORS.Sports;
                       return (
-                        <button
+                        <motion.button
                           key={cat}
                           onClick={() => setCategoryFilter(isActive ? undefined : cat)}
-                          className={`px-2.5 py-1 rounded-badge text-xs font-medium transition-all flex items-center gap-1.5 shrink-0 ${
+                          whileTap={{ scale: 1.02 }}
+                          animate={{
+                            background: isActive ? `${catColor.primary}40` : "rgba(255,255,255,0.05)",
+                            boxShadow: isActive
+                              ? `0 0 0 2px rgba(0,0,0,0), 0 0 0 4px ${catColor.accent}66`
+                              : "0 0 0 2px rgba(0,0,0,0), 0 0 0 4px rgba(0,0,0,0)",
+                          }}
+                          transition={{ duration: 0.2 }}
+                          className={`px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-black/80 ${
                             isActive
                               ? "text-white"
                               : "text-white/50 hover:text-white/80"
                           }`}
                           style={{
-                            background: isActive ? `${catColor.primary}40` : "rgba(255,255,255,0.05)",
-                            borderColor: isActive ? catColor.primary : "transparent",
-                          }}
+                            "--tw-ring-color": `${catColor.accent}66`,
+                          } as React.CSSProperties}
                           data-testid={`command-palette-filter-${cat.toLowerCase()}`}
                         >
                           {CATEGORY_ICONS[cat]}
                           <span>{cat}</span>
-                        </button>
+                        </motion.button>
                       );
                     })}
                     <div className="w-px h-4 bg-white/10 shrink-0 mx-1" />
@@ -840,7 +847,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                                 <Plus className="w-4 h-4" style={{ color: categoryColor.primary }} />
                               </div>
                               <div className="flex-1">
-                                <div className="text-sm font-medium">Create "{generatedTitle}"</div>
+                                <div className="text-sm font-medium">Create &quot;{generatedTitle}&quot;</div>
                                 <div className="text-xs text-white/40">New list from your query</div>
                               </div>
                               <Zap className="w-4 h-4 text-white/30" />
@@ -864,8 +871,8 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                         ) : (
                           <div className="px-3 py-6 text-center text-white/40">
                             <Search className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                            <p className="text-sm">No lists found for "{searchQuery}"</p>
-                            <p className="text-xs mt-1">Try typing "new {searchQuery}" to create one</p>
+                            <p className="text-sm">No lists found for &quot;{searchQuery}&quot;</p>
+                            <p className="text-xs mt-1">Try typing &quot;new {searchQuery}&quot; to create one</p>
                           </div>
                         )}
 
@@ -887,7 +894,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                               <Plus className="w-4 h-4" style={{ color: categoryColor.primary }} />
                             </div>
                             <div className="flex-1">
-                              <div className="text-sm font-medium">Create "{generatedTitle}"</div>
+                              <div className="text-sm font-medium">Create &quot;{generatedTitle}&quot;</div>
                               <div className="text-xs text-white/40">New list from your query</div>
                             </div>
                             <Zap className="w-4 h-4 text-white/30" />

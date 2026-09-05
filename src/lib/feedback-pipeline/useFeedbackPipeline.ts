@@ -91,7 +91,7 @@ export function useFeedbackPipeline<TData = unknown, TResult = unknown>(
   const execute = useCallback(
     async (data: TData): Promise<TResult | null> => {
       if (!operation) {
-        console.warn('[FeedbackPipeline] No operation configured');
+        // No operation configured
         return null;
       }
 

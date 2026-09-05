@@ -319,7 +319,7 @@ async function handleStreamingResponse(
  * Create a fallback response when AI generation fails
  */
 function createFallbackResponse(request: AIGenerationRequest, error: Error): AIGenerationResponse {
-  const styleConfig = getAIStyleConfig(request.style);
+  const _styleConfig = getAIStyleConfig(request.style);
 
   // Return empty images array to signal fallback to template
   return {

@@ -362,7 +362,7 @@ export function useScrollProgress(options: {
   /** End measuring at this offset (default: 'end start') */
   offsetEnd?: string;
 } = {}) {
-  const { target, offsetStart = 'start end', offsetEnd = 'end start' } = options;
+  const { target, offsetStart: _offsetStart = 'start end', offsetEnd: _offsetEnd = 'end start' } = options;
   const [progress, setProgress] = useState(0);
   const rafRef = useRef<number | undefined>(undefined);
 

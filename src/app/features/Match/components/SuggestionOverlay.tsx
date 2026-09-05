@@ -167,7 +167,7 @@ interface QuickPlaceIndicatorProps {
  * Keyboard shortcut indicator for quick placement
  */
 export const QuickPlaceIndicator = memo(function QuickPlaceIndicator({
-  position,
+  position: _position,
   shortcut,
   confidence,
   isActive = false,

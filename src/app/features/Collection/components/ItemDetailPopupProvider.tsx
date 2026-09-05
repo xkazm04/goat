@@ -31,14 +31,14 @@ export function ItemDetailPopupProvider() {
     // Find next available position (first empty slot)
     const nextPosition = gridItems.findIndex(item => !item.context.matched) + 1;
     if (nextPosition === 0 || nextPosition > gridItems.length) {
-      console.warn('No available grid positions');
+      // No available grid positions
       return;
     }
 
     // Get the full item data from backlog
     const item = getItemById?.(itemId);
     if (!item) {
-      console.warn('Item not found in backlog:', itemId);
+      // Item not found in backlog
       return;
     }
 

@@ -9,7 +9,7 @@ import { CollectionCard } from "@/app/features/Collections";
 import { ListGrid } from "@/components/ui/list-grid";
 import { ELEVATION, INSET, withInset } from "@/components/visual/depth";
 import { useUserCollections } from "@/hooks/use-collections";
-import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import { useMotionCapabilities } from "@/hooks/use-motion-preference";
 import { useCurrentUser } from "@/stores/use-list-store";
 
 import { SectionHeader } from "./SectionHeader";
@@ -26,7 +26,7 @@ interface CollectionsSectionProps {
 export function CollectionsSection({ className }: CollectionsSectionProps) {
   const router = useRouter();
   const user = useCurrentUser();
-  const prefersReducedMotion = useReducedMotion();
+  const { allowInteraction, allowAmbient, allowTransitions } = useMotionCapabilities();
 
   const handleManageCollections = useCallback(() => {
     router.push("/my-collections");
@@ -86,12 +86,12 @@ export function CollectionsSection({ className }: CollectionsSectionProps) {
                 background: `linear-gradient(135deg, rgba(168, 85, 247, 0.9), rgba(139, 92, 246, 0.9))`,
                 boxShadow: withInset(ELEVATION.high, INSET.glassHighlightStrong),
               }}
-              whileHover={prefersReducedMotion ? {} : { scale: 1.03, y: -2 }}
-              whileTap={prefersReducedMotion ? {} : { scale: 0.98 }}
+              whileHover={!allowInteraction ? {} : { scale: 1.03, y: -2 }}
+              whileTap={!allowInteraction ? {} : { scale: 0.98 }}
               data-testid="manage-collections-btn"
             >
               {/* Shimmer effect */}
-              {!prefersReducedMotion && (
+              {allowAmbient && (
                 <div
                   className="absolute inset-0 opacity-0 group-hover:opacity-100 animate-ambient-shimmer"
                   style={{
@@ -131,11 +131,11 @@ export function CollectionsSection({ className }: CollectionsSectionProps) {
             emptyState={
               <motion.div
                 className="py-16 text-center"
-                initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
+                initial={!allowTransitions ? {} : { opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
               >
                 <div
-                  className={`mx-auto w-20 h-20 rounded-2xl flex items-center justify-center mb-6 ${prefersReducedMotion ? "" : "animate-ambient-card-float"}`}
+                  className={`mx-auto w-20 h-20 rounded-2xl flex items-center justify-center mb-6 ${!allowAmbient ? "" : "animate-ambient-card-float"}`}
                   style={{
                     background: `linear-gradient(135deg, rgba(168, 85, 247, 0.1), rgba(139, 92, 246, 0.1))`,
                     "--card-float-duration": "3s",
@@ -159,8 +159,8 @@ export function CollectionsSection({ className }: CollectionsSectionProps) {
                     background: `linear-gradient(135deg, rgba(168, 85, 247, 0.9), rgba(139, 92, 246, 0.9))`,
                     boxShadow: ELEVATION.high,
                   }}
-                  whileHover={prefersReducedMotion ? {} : { scale: 1.05 }}
-                  whileTap={prefersReducedMotion ? {} : { scale: 0.98 }}
+                  whileHover={!allowInteraction ? {} : { scale: 1.05 }}
+                  whileTap={!allowInteraction ? {} : { scale: 0.98 }}
                   data-testid="create-first-collection-btn"
                 >
                   <span className="flex items-center gap-2">

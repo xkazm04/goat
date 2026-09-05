@@ -8,6 +8,7 @@
 
 import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import Image from 'next/image';
 import React, { memo, useCallback, useRef, useEffect, useState } from 'react';
 
 import { cn } from '@/lib/utils';
@@ -243,10 +244,13 @@ export const ThumbnailStrip = memo(function ThumbnailStrip({
               : 'border-transparent hover:border-gray-500'
           )}
         >
-          <img
+          <Image
             src={image}
             alt={`Thumbnail ${index + 1}`}
+            width={32}
+            height={32}
             className="w-full h-full object-cover"
+            unoptimized
           />
         </motion.button>
       ))}

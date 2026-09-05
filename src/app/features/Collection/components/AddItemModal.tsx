@@ -1,7 +1,8 @@
 "use client";
 
 import { Sparkles, Loader2 } from "lucide-react";
-import { useState } from "react";
+import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
 
 import {
   GlassModal,
@@ -37,14 +38,24 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
   const currentList = useCurrentList();
   const category = currentList?.category || '';
 
-  const [formData, setFormData] = useState<FormData>({
-    name: '',
-    subcategory: '',
-  });
-
+  const initialFormData: FormData = { name: '', subcategory: '' };
+  const [formData, setFormData] = useState<FormData>(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingAI, setIsLoadingAI] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const aiRequestInFlight = useRef(false);
+
+  // Reset all form state whenever the modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setFormData(initialFormData);
+      setErrors({});
+      setIsSubmitting(false);
+      setIsLoadingAI(false);
+      aiRequestInFlight.current = false;
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   const handleInputChange = (field: keyof FormData, value: string | number | undefined) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -64,11 +75,13 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
       return;
     }
 
+    if (aiRequestInFlight.current) return;
+    aiRequestInFlight.current = true;
     setIsLoadingAI(true);
     setErrors({});
 
     try {
-      const response = await fetch('/api/recommendation', {
+      const response = await fetch('/api/items/enrich', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -84,28 +97,38 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
         let errorMessage = 'Failed to get AI recommendation';
         try {
           const errorData = await response.json();
-          errorMessage = errorData.error || errorMessage;
+          errorMessage = errorData.error || errorData.message || errorMessage;
         } catch {
           // Response body wasn't valid JSON - use default message
         }
         throw new Error(errorMessage);
       }
 
-      const recommendation = await response.json();
+      const result = await response.json();
 
-      // Update form with AI suggestions
+      if (!result.success || !result.data) {
+        throw new Error('Enrichment returned no data');
+      }
+
+      const enriched = result.data;
+
+      // Update form with enriched data
       setFormData(prev => ({
         ...prev,
-        item_year: recommendation.item_year || prev.item_year,
-        item_year_to: recommendation.item_year_to || prev.item_year_to,
-        image_url: recommendation.image_url || prev.image_url,
-        description: recommendation.description || prev.description,
+        item_year: enriched.year || prev.item_year,
+        item_year_to: enriched.yearEnd || prev.item_year_to,
+        image_url: enriched.selectedImage?.url || prev.image_url,
+        description: enriched.description || prev.description,
       }));
+
+      const sourceLabel = result.sources?.length
+        ? ` from ${result.sources.join(', ')}`
+        : '';
 
       toast({
         title: "AI Completion Successful",
-        description: recommendation.confidence
-          ? `Found information with ${Math.round(recommendation.confidence * 100)}% confidence`
+        description: enriched.confidence
+          ? `Found information with ${Math.round(enriched.confidence * 100)}% confidence${sourceLabel}`
           : "Information retrieved successfully",
       });
     } catch (error) {
@@ -116,6 +139,7 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
       });
     } finally {
       setIsLoadingAI(false);
+      aiRequestInFlight.current = false;
     }
   };
 
@@ -155,12 +179,6 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
         description: `"${formData.name}" has been added to the collection`,
       });
 
-      // Reset form
-      setFormData({
-        name: '',
-        subcategory: '',
-      });
-
       onSuccess?.();
       onClose();
     } catch (error: any) {
@@ -197,10 +215,11 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Name Field */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label htmlFor="add-item-name" className="block text-sm font-medium text-slate-300 mb-2">
               Name <span className="text-red-400">*</span>
             </label>
             <input
+              id="add-item-name"
               type="text"
               value={formData.name}
               onChange={(e) => handleInputChange('name', e.target.value)}
@@ -215,10 +234,11 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
 
           {/* Category (read-only) */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label htmlFor="add-item-category" className="block text-sm font-medium text-slate-300 mb-2">
               Category
             </label>
             <input
+              id="add-item-category"
               type="text"
               value={category}
               className={`${GLASS_INPUT_CLASS} opacity-50 cursor-not-allowed`}
@@ -228,10 +248,11 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
 
           {/* Subcategory Field */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label htmlFor="add-item-subcategory" className="block text-sm font-medium text-slate-300 mb-2">
               Subcategory
             </label>
             <input
+              id="add-item-subcategory"
               type="text"
               value={formData.subcategory}
               onChange={(e) => handleInputChange('subcategory', e.target.value)}
@@ -247,7 +268,7 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
               type="button"
               onClick={handleAICompletion}
               disabled={isLoadingAI || isSubmitting || !formData.name.trim()}
-              className="flex items-center gap-2 px-4 py-2 bg-linear-to-r from-purple-600 to-brand-muted hover:from-purple-500 hover:to-brand disabled:from-gray-700 disabled:to-gray-700 disabled:cursor-not-allowed text-white rounded-control transition-all text-sm font-medium"
+              className="flex items-center gap-2 px-4 py-2 bg-linear-to-r from-purple-600 to-brand-muted hover:from-purple-500 hover:to-brand disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed text-white rounded-control transition-all text-sm font-medium"
             >
               {isLoadingAI ? (
                 <>
@@ -261,7 +282,7 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
                 </>
               )}
             </button>
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-slate-500">
               AI will fill in year, image, and description
             </span>
           </div>
@@ -270,10 +291,11 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
           <div className="grid grid-cols-2 gap-4">
             {/* Item Year */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label htmlFor="add-item-year" className="block text-sm font-medium text-slate-300 mb-2">
                 Year Created
               </label>
               <input
+                id="add-item-year"
                 type="number"
                 value={formData.item_year || ''}
                 onChange={(e) => handleInputChange('item_year', e.target.value ? parseInt(e.target.value) : undefined)}
@@ -287,10 +309,11 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
 
             {/* Item Year To */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label htmlFor="add-item-year-to" className="block text-sm font-medium text-slate-300 mb-2">
                 Year To (optional)
               </label>
               <input
+                id="add-item-year-to"
                 type="number"
                 value={formData.item_year_to || ''}
                 onChange={(e) => handleInputChange('item_year_to', e.target.value ? parseInt(e.target.value) : undefined)}
@@ -305,10 +328,11 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
 
           {/* Image URL */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label htmlFor="add-item-image-url" className="block text-sm font-medium text-slate-300 mb-2">
               Image URL
             </label>
             <input
+              id="add-item-image-url"
               type="url"
               value={formData.image_url || ''}
               onChange={(e) => handleInputChange('image_url', e.target.value)}
@@ -318,13 +342,16 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
             />
             {formData.image_url && (
               <div className="mt-2">
-                <img
+                <Image
                   src={formData.image_url}
                   alt="Preview"
+                  width={96}
+                  height={96}
                   className="w-24 h-24 object-cover rounded-card border border-white/10"
                   onError={(e) => {
                     e.currentTarget.style.display = 'none';
                   }}
+                  unoptimized
                 />
               </div>
             )}
@@ -332,10 +359,11 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label htmlFor="add-item-description" className="block text-sm font-medium text-slate-300 mb-2">
               Description
             </label>
             <textarea
+              id="add-item-description"
               value={formData.description || ''}
               onChange={(e) => handleInputChange('description', e.target.value)}
               placeholder="Enter description (optional)"
@@ -352,14 +380,14 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
                 type="button"
                 onClick={onClose}
                 disabled={isSubmitting}
-                className="px-4 py-2 text-gray-400 hover:text-gray-300 transition-colors disabled:opacity-50"
+                className="px-4 py-2 text-slate-400 hover:text-slate-300 transition-colors disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting || !formData.name.trim()}
-                className="px-6 py-2 bg-linear-to-r from-brand to-blue-500 hover:from-brand-hover hover:to-blue-400 disabled:from-gray-700 disabled:to-gray-700 disabled:cursor-not-allowed text-white rounded-control transition-all font-medium flex items-center gap-2"
+                className="px-6 py-2 bg-linear-to-r from-brand to-blue-500 hover:from-brand-hover hover:to-blue-400 disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed text-white rounded-control transition-all font-medium flex items-center gap-2"
               >
                 {isSubmitting ? (
                   <>

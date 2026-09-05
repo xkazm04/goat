@@ -311,12 +311,12 @@ section('Edge case: single-tier list');
 section('Edge case: empty tiers array');
 {
   assertEqual(
-    getTierForPositionGeneric(0, [], (t: never) => ({ start: 0, end: 0 })),
+    getTierForPositionGeneric(0, [], (_t: never) => ({ start: 0, end: 0 })),
     null,
     'empty tiers → null',
   );
   assert(
-    !isAtBoundaryGeneric(0, [], (t: never) => ({ start: 0, end: 0 })),
+    !isAtBoundaryGeneric(0, [], (_t: never) => ({ start: 0, end: 0 })),
     'empty tiers → not at boundary',
   );
 }

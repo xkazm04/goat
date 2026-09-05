@@ -51,9 +51,10 @@ export function isValidApiKeyFormat(key: string): boolean {
  */
 export function generateApiKey(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const randomValues = crypto.getRandomValues(new Uint32Array(32));
   let key = '';
   for (let i = 0; i < 32; i++) {
-    key += chars.charAt(Math.floor(Math.random() * chars.length));
+    key += chars.charAt(randomValues[i] % chars.length);
   }
   return `goat_${key}`;
 }
