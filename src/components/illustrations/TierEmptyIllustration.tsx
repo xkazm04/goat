@@ -262,4 +262,3 @@ export const TierEmptyIllustration = memo(function TierEmptyIllustration({
   );
 });
 
-export default TierEmptyIllustration;

@@ -192,7 +192,7 @@ export function NoMetadata({ className, width = 80, height = 64 }: IllustrationP
 /**
  * Film reel with dotted film strip - for movies/tv empty states
  */
-export function EmptyFilmReel({ className, width = 140, height = 112 }: IllustrationProps) {
+function EmptyFilmReel({ className, width = 140, height = 112 }: IllustrationProps) {
   const { allowAmbient: ambient } = useMotionCapabilities();
   return (
     <svg
@@ -263,7 +263,7 @@ export function EmptyFilmReel({ className, width = 140, height = 112 }: Illustra
 /**
  * Vinyl record with tonearm - for music empty states
  */
-export function EmptyVinylRecord({ className, width = 140, height = 112 }: IllustrationProps) {
+function EmptyVinylRecord({ className, width = 140, height = 112 }: IllustrationProps) {
   const { allowAmbient: ambient } = useMotionCapabilities();
   return (
     <svg
@@ -328,7 +328,7 @@ export function EmptyVinylRecord({ className, width = 140, height = 112 }: Illus
 /**
  * Game controller outline - for games empty states
  */
-export function EmptyGameController({ className, width = 140, height = 112 }: IllustrationProps) {
+function EmptyGameController({ className, width = 140, height = 112 }: IllustrationProps) {
   const { allowAmbient: ambient } = useMotionCapabilities();
   return (
     <svg
@@ -539,59 +539,6 @@ function SlotGameController() {
 }
 
 /**
- * Goat peering through a magnifying glass - for "no filter results" states
- */
-export function GoatSearching({ className, width = 120, height = 96 }: IllustrationProps) {
-  const { allowAmbient: ambient } = useMotionCapabilities();
-  return (
-    <svg
-      viewBox="0 0 120 96"
-      fill="none"
-      width={width}
-      height={height}
-      className={cn('opacity-80', className)}
-      aria-hidden="true"
-      focusable="false"
-    >
-      <defs>
-        <radialGradient id="goat-search-glow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.1" />
-          <stop offset="100%" stopColor="#a855f7" stopOpacity="0" />
-        </radialGradient>
-        <linearGradient id="goat-search-lens" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.3" />
-          <stop offset="100%" stopColor="#a855f7" stopOpacity="0.2" />
-        </linearGradient>
-      </defs>
-      <circle cx="60" cy="48" r="45" fill="url(#goat-search-glow)" />
-      {/* Magnifying glass */}
-      <circle cx="52" cy="42" r="18" stroke="url(#goat-search-lens)" strokeWidth="2.5" fill="none" />
-      <line x1="65" y1="55" x2="82" y2="72" stroke="#22d3ee" strokeOpacity="0.3" strokeWidth="3.5" strokeLinecap="round" />
-      {/* Goat head peering from behind */}
-      <ellipse cx="50" cy="40" rx="10" ry="12" stroke="#22d3ee" strokeOpacity="0.2" strokeWidth="1.5" fill="none" />
-      {/* Horns */}
-      <path d="M42 32c-3-6-1-12 2-14" stroke="#a855f7" strokeOpacity="0.3" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-      <path d="M58 32c3-6 1-12-2-14" stroke="#a855f7" strokeOpacity="0.3" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-      {/* Eyes */}
-      <circle cx="46" cy="38" r="1.5" fill="#22d3ee" opacity="0.4" />
-      <circle cx="54" cy="38" r="1.5" fill="#22d3ee" opacity="0.4" />
-      {/* Nose */}
-      <ellipse cx="50" cy="44" rx="3" ry="2" stroke="#22d3ee" strokeOpacity="0.2" strokeWidth="1" fill="none" />
-      {/* Ears */}
-      <path d="M39 34c-4-2-6 0-5 3" stroke="#22d3ee" strokeOpacity="0.15" strokeWidth="1" strokeLinecap="round" fill="none" />
-      <path d="M61 34c4-2 6 0 5 3" stroke="#22d3ee" strokeOpacity="0.15" strokeWidth="1" strokeLinecap="round" fill="none" />
-      {/* Sparkles */}
-      <circle cx="25" cy="25" r="1.5" fill="#22d3ee" opacity="0.3">
-        {ambient && <animate attributeName="opacity" values="0.3;0.08;0.3" dur="2.5s" repeatCount="indefinite" />}
-      </circle>
-      <circle cx="90" cy="30" r="1" fill="#a855f7" opacity="0.25">
-        {ambient && <animate attributeName="opacity" values="0.25;0.05;0.25" dur="3s" repeatCount="indefinite" />}
-      </circle>
-    </svg>
-  );
-}
-
-/**
  * Goat holding a bookmark/ribbon - for "no saved presets" states
  */
 export function GoatBookmark({ className, width = 120, height = 96 }: IllustrationProps) {
@@ -642,67 +589,6 @@ export function GoatBookmark({ className, width = 120, height = 96 }: Illustrati
       </circle>
       <circle cx="95" cy="60" r="1" fill="#a855f7" opacity="0.25">
         {ambient && <animate attributeName="opacity" values="0.25;0.05;0.25" dur="3.2s" repeatCount="indefinite" />}
-      </circle>
-    </svg>
-  );
-}
-
-/**
- * Goat with building blocks - for "empty filter group" states
- */
-export function GoatBlocks({ className, width = 120, height = 96 }: IllustrationProps) {
-  const { allowAmbient: ambient } = useMotionCapabilities();
-  return (
-    <svg
-      viewBox="0 0 120 96"
-      fill="none"
-      width={width}
-      height={height}
-      className={cn('opacity-80', className)}
-      aria-hidden="true"
-      focusable="false"
-    >
-      <defs>
-        <radialGradient id="goat-blocks-glow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.08" />
-          <stop offset="100%" stopColor="#a855f7" stopOpacity="0" />
-        </radialGradient>
-        <linearGradient id="goat-block-fill" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.15" />
-          <stop offset="100%" stopColor="#a855f7" stopOpacity="0.1" />
-        </linearGradient>
-      </defs>
-      <circle cx="60" cy="48" r="45" fill="url(#goat-blocks-glow)" />
-      {/* Goat head */}
-      <ellipse cx="40" cy="42" rx="10" ry="12" stroke="#22d3ee" strokeOpacity="0.2" strokeWidth="1.5" fill="none" />
-      {/* Horns */}
-      <path d="M32 34c-3-6-1-12 2-14" stroke="#a855f7" strokeOpacity="0.3" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-      <path d="M48 34c3-6 1-12-2-14" stroke="#a855f7" strokeOpacity="0.3" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-      {/* Eyes */}
-      <circle cx="36" cy="40" r="1.5" fill="#22d3ee" opacity="0.4" />
-      <circle cx="44" cy="40" r="1.5" fill="#22d3ee" opacity="0.4" />
-      {/* Nose */}
-      <ellipse cx="40" cy="47" rx="3" ry="2" stroke="#22d3ee" strokeOpacity="0.2" strokeWidth="1" fill="none" />
-      {/* Ears */}
-      <path d="M29 36c-4-2-6 0-5 3" stroke="#22d3ee" strokeOpacity="0.15" strokeWidth="1" strokeLinecap="round" fill="none" />
-      <path d="M51 36c4-2 6 0 5 3" stroke="#22d3ee" strokeOpacity="0.15" strokeWidth="1" strokeLinecap="round" fill="none" />
-      {/* Building blocks stacked */}
-      <rect x="62" y="55" width="16" height="14" rx="2" stroke="#22d3ee" strokeOpacity="0.25" strokeWidth="1.5" fill="url(#goat-block-fill)" />
-      <rect x="66" y="41" width="16" height="14" rx="2" stroke="#a855f7" strokeOpacity="0.25" strokeWidth="1.5" fill="url(#goat-block-fill)" />
-      <rect x="70" y="27" width="16" height="14" rx="2" stroke="#22d3ee" strokeOpacity="0.25" strokeWidth="1.5" fill="url(#goat-block-fill)" />
-      {/* Plus signs on blocks */}
-      <line x1="70" y1="60" x2="70" y2="66" stroke="#22d3ee" strokeOpacity="0.2" strokeWidth="1" />
-      <line x1="67" y1="63" x2="73" y2="63" stroke="#22d3ee" strokeOpacity="0.2" strokeWidth="1" />
-      <line x1="74" y1="46" x2="74" y2="52" stroke="#a855f7" strokeOpacity="0.2" strokeWidth="1" />
-      <line x1="71" y1="49" x2="77" y2="49" stroke="#a855f7" strokeOpacity="0.2" strokeWidth="1" />
-      {/* Hoof reaching toward blocks */}
-      <path d="M48 52c5 2 10 4 14 6" stroke="#22d3ee" strokeOpacity="0.15" strokeWidth="1" strokeLinecap="round" fill="none" />
-      {/* Sparkles */}
-      <circle cx="20" cy="25" r="1.5" fill="#22d3ee" opacity="0.3">
-        {ambient && <animate attributeName="opacity" values="0.3;0.08;0.3" dur="2.5s" repeatCount="indefinite" />}
-      </circle>
-      <circle cx="95" cy="35" r="1" fill="#a855f7" opacity="0.25">
-        {ambient && <animate attributeName="opacity" values="0.25;0.05;0.25" dur="3s" repeatCount="indefinite" />}
       </circle>
     </svg>
   );
