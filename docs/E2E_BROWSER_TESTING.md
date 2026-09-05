@@ -267,7 +267,15 @@ Prompt to Claude Code:
 ### Rules
 1. **Feature prefix**: Match the feature directory name (`landing-`, `studio-`, `match-`, `collection-`, `auth-`, `share-`)
 2. **Element type**: Use semantic names (`btn`, `input`, `section`, `card`, `modal`, `panel`)
-3. **Dynamic qualifier**: Append IDs for lists of items (`featured-list-item-{id}`)
+3. **Dynamic qualifier**: Append the ENTITY'S OWN ID for lists of items
+   (`collection-item-wrapper-{item.id}`, `user-list-play-btn-{list.id}`) — never
+   its array index, which changes when the list is re-sorted, filtered or
+   paged, and which a harness cannot turn back into an entity.
+   `featured-list-item-{index}` (`FeaturedListsSection.tsx:71`) is the standing
+   violation and used to be quoted here as the example of the rule; it is what
+   made four spec files wait for `/goat?list=0`. Until it is fixed, the list id
+   is read from the URL the app navigates to — see `openFirstFeaturedList` in
+   `e2e/helpers/test-utils.ts`.
 4. **State variants**: Use suffixes for states (`-skeleton`, `-error`, `-empty`)
 5. **No nested prefixes**: Keep flat (`match-grid-header` not `match-sub-match-grid-header`)
 
@@ -299,12 +307,31 @@ Prompt to Claude Code:
 > Deleting them does not reduce coverage — there was none to reduce — it
 > reduces the claim to match it.
 
+> ### Correction — 2026-09-05
+>
+> Six statements below disagreed with the tree. The table listed **four** spec
+> files while `npx playwright test --list` walks **six**; three "Not covered"
+> rows named behaviours that two of the unlisted files do cover; and the
+> test-id convention above cites `featured-list-item-{id}` as its own example
+> of appending an entity id, while `FeaturedListsSection.tsx:71` appends the
+> card's **array index**. That last one is not a documentation slip: four spec
+> files read the attribute as an id and waited for `/goat?list=0`.
+>
+> The counts here are taken from `npx playwright test --list`, which is the
+> cheapest honest denominator, and `scripts/e2e-suite-contract.test.ts` keeps
+> the id claims true under `npm test`.
+
+The suite is **40 tests across 6 files** (`npx playwright test --list`,
+2026-09-05).
+
 | Test File | Coverage |
 |-----------|----------|
-| `e2e/list-play-journey.spec.ts` | Landing → featured list click → /goat navigation |
-| `e2e/drag-drop-ranking.spec.ts` | Drag items from backlog to grid slots; swap between occupied slots |
-| `e2e/backlog-items-loading.spec.ts` | Backlog groups load on match page |
-| `e2e/exploratory-smoke.spec.ts` | Landing render, list navigation, collection panel |
+| `e2e/list-play-journey.spec.ts` | Landing → featured list click → /goat navigation; list-store population |
+| `e2e/drag-drop-ranking.spec.ts` | Drag items from backlog to grid slots; drop-zone highlight; swap between occupied slots; remove back to collection; reload persistence |
+| `e2e/backlog-items-loading.spec.ts` | Backlog groups load on match page, against the seeded fixture list |
+| `e2e/exploratory-smoke.spec.ts` | Landing render, studio render, list navigation, match grid |
+| `e2e/goat-voting-completion.spec.ts` | Auto-fill → completion modal → its actions → share button → reload persistence |
+| `e2e/studio-list-creation.spec.ts` | Studio AI generation, metadata auto-fill, item removal, template gallery, publish readiness. **Hits the real Gemini + Supabase backend**; 30–90 s per generating test |
 
 ### Not covered — known gaps, not silent ones
 
@@ -314,11 +341,9 @@ nothing.
 
 | Behaviour | Status |
 |---|---|
-| Grid state survives page reload | **no test** (was `session-persistence.spec.ts`, 3 empty stubs) |
-| Grid state survives browser close/reopen | **no test** |
+| Grid state survives browser close/reopen | **no test** (a reload is covered; a fresh browser context is not) |
 | LRU eviction keeps at most 15 cached lists | **no test** |
-| Fill all slots → completion modal, and its 4 actions | **no test** (was `ranking-completion.spec.ts`, 4 empty stubs) |
-| Search/filter on the landing page | **no test** (was `list-search.spec.ts`, 3 empty stubs) |
+| Search/filter actually filters the landing list | **partial** — `exploratory-smoke.spec.ts › search filter bar accepts input and responds` asserts the input takes and keeps a value; nothing asserts the result set changes |
 | Keyboard drag (Space/arrows/Escape) on the grid | **no e2e test**; the arrow-stepping logic has 25 unit tests in `src/lib/dnd/keyboard-coordinates.test.ts` |
 | Sign-in prompt shown to a guest after completing a ranking | **no test** (was `goat-voting-completion.spec.ts › should show auth prompt for guest users after completion`, removed 2026-09-05: it drove the full 90 s journey and then asserted `expect(true).toBeTruthy()`, having declared both outcomes acceptable) |
 
