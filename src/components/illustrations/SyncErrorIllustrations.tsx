@@ -1,5 +1,7 @@
 'use client';
 
+import { useId } from 'react';
+
 import { useMotionCapabilities } from '@/hooks/use-motion-preference';
 import { cn } from '@/lib/utils';
 
@@ -14,6 +16,7 @@ interface IllustrationProps {
  * 120x120px, flat geometric style, red-500 accent
  */
 export function GoatNetworkError({ className, width = 120, height = 120 }: IllustrationProps) {
+  const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const { allowAmbient: ambient } = useMotionCapabilities();
   return (
     <svg
@@ -26,17 +29,17 @@ export function GoatNetworkError({ className, width = 120, height = 120 }: Illus
       focusable="false"
     >
       <defs>
-        <radialGradient id="net-err-glow" cx="50%" cy="50%" r="50%">
+        <radialGradient id={`${uid}-net-err-glow`} cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor="#ef4444" stopOpacity="0.08" />
           <stop offset="100%" stopColor="#ef4444" stopOpacity="0" />
         </radialGradient>
-        <linearGradient id="cable-grad" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id={`${uid}-cable-grad`} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#ef4444" stopOpacity="0.4" />
           <stop offset="100%" stopColor="#ef4444" stopOpacity="0.2" />
         </linearGradient>
       </defs>
 
-      <circle cx="60" cy="60" r="55" fill="url(#net-err-glow)" />
+      <circle cx="60" cy="60" r="55" fill={`url(#${uid}-net-err-glow)`} />
 
       {/* Goat body */}
       <ellipse cx="60" cy="72" rx="18" ry="14" stroke="#a1a1aa" strokeWidth="1.5" fill="none" strokeOpacity="0.35" />
@@ -69,8 +72,8 @@ export function GoatNetworkError({ className, width = 120, height = 120 }: Illus
       <line x1="72" y1="82" x2="74" y2="96" stroke="#a1a1aa" strokeWidth="1.5" strokeOpacity="0.25" strokeLinecap="round" />
 
       {/* Ethernet cables tangled around body */}
-      <path d="M20 30c15 5 10 25 40 30s15 20 35 25" stroke="url(#cable-grad)" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-      <path d="M95 25c-10 10-20 15-30 25s-25 10-40 20" stroke="url(#cable-grad)" strokeWidth="2" strokeLinecap="round" fill="none" strokeDasharray="6 4" />
+      <path d="M20 30c15 5 10 25 40 30s15 20 35 25" stroke={`url(#${uid}-cable-grad)`} strokeWidth="2.5" strokeLinecap="round" fill="none" />
+      <path d="M95 25c-10 10-20 15-30 25s-25 10-40 20" stroke={`url(#${uid}-cable-grad)`} strokeWidth="2" strokeLinecap="round" fill="none" strokeDasharray="6 4" />
 
       {/* Cable connector plugs */}
       <rect x="14" y="27" width="8" height="6" rx="1" stroke="#ef4444" strokeOpacity="0.4" strokeWidth="1" fill="none" />
@@ -96,6 +99,7 @@ export function GoatNetworkError({ className, width = 120, height = 120 }: Illus
  * 120x120px, flat geometric style, red-500 accent
  */
 export function GoatServerError({ className, width = 120, height = 120 }: IllustrationProps) {
+  const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const { allowAmbient: ambient } = useMotionCapabilities();
   return (
     <svg
@@ -108,13 +112,13 @@ export function GoatServerError({ className, width = 120, height = 120 }: Illust
       focusable="false"
     >
       <defs>
-        <radialGradient id="srv-err-glow" cx="50%" cy="50%" r="50%">
+        <radialGradient id={`${uid}-srv-err-glow`} cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor="#ef4444" stopOpacity="0.08" />
           <stop offset="100%" stopColor="#ef4444" stopOpacity="0" />
         </radialGradient>
       </defs>
 
-      <circle cx="60" cy="60" r="55" fill="url(#srv-err-glow)" />
+      <circle cx="60" cy="60" r="55" fill={`url(#${uid}-srv-err-glow)`} />
 
       {/* Broken cloud - left half */}
       <path
@@ -186,6 +190,7 @@ export function GoatServerError({ className, width = 120, height = 120 }: Illust
  * 120x120px, flat geometric style, amber-500 accent
  */
 export function GoatQuotaExceeded({ className, width = 120, height = 120 }: IllustrationProps) {
+  const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const { allowAmbient: ambient } = useMotionCapabilities();
   return (
     <svg
@@ -198,17 +203,17 @@ export function GoatQuotaExceeded({ className, width = 120, height = 120 }: Illu
       focusable="false"
     >
       <defs>
-        <radialGradient id="quota-glow" cx="50%" cy="50%" r="50%">
+        <radialGradient id={`${uid}-quota-glow`} cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.08" />
           <stop offset="100%" stopColor="#f59e0b" stopOpacity="0" />
         </radialGradient>
-        <linearGradient id="stack-grad" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id={`${uid}-stack-grad`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.35" />
           <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.15" />
         </linearGradient>
       </defs>
 
-      <circle cx="60" cy="60" r="55" fill="url(#quota-glow)" />
+      <circle cx="60" cy="60" r="55" fill={`url(#${uid}-quota-glow)`} />
 
       {/* Goat body */}
       <ellipse cx="60" cy="78" rx="14" ry="11" stroke="#a1a1aa" strokeWidth="1.5" fill="none" strokeOpacity="0.35" />
@@ -238,10 +243,10 @@ export function GoatQuotaExceeded({ className, width = 120, height = 120 }: Illu
 
       {/* Left stack of items (taller, wobbling) */}
       <g>
-        <rect x="18" y="42" width="16" height="6" rx="1" stroke="url(#stack-grad)" strokeWidth="1" fill="none" />
-        <rect x="18" y="34" width="16" height="6" rx="1" stroke="url(#stack-grad)" strokeWidth="1" fill="none" />
-        <rect x="17" y="26" width="16" height="6" rx="1" stroke="url(#stack-grad)" strokeWidth="1" fill="none" transform="rotate(-3 25 29)" />
-        <rect x="16" y="18" width="16" height="6" rx="1" stroke="url(#stack-grad)" strokeWidth="1" fill="none" transform="rotate(-6 24 21)" />
+        <rect x="18" y="42" width="16" height="6" rx="1" stroke={`url(#${uid}-stack-grad)`} strokeWidth="1" fill="none" />
+        <rect x="18" y="34" width="16" height="6" rx="1" stroke={`url(#${uid}-stack-grad)`} strokeWidth="1" fill="none" />
+        <rect x="17" y="26" width="16" height="6" rx="1" stroke={`url(#${uid}-stack-grad)`} strokeWidth="1" fill="none" transform="rotate(-3 25 29)" />
+        <rect x="16" y="18" width="16" height="6" rx="1" stroke={`url(#${uid}-stack-grad)`} strokeWidth="1" fill="none" transform="rotate(-6 24 21)" />
         {/* Wobble lines */}
         <line x1="15" y1="16" x2="12" y2="13" stroke="#f59e0b" strokeOpacity="0.3" strokeWidth="1" strokeLinecap="round" />
         <line x1="14" y1="20" x2="11" y2="19" stroke="#f59e0b" strokeOpacity="0.2" strokeWidth="0.8" strokeLinecap="round" />
@@ -249,9 +254,9 @@ export function GoatQuotaExceeded({ className, width = 120, height = 120 }: Illu
 
       {/* Right stack of items */}
       <g>
-        <rect x="84" y="42" width="16" height="6" rx="1" stroke="url(#stack-grad)" strokeWidth="1" fill="none" />
-        <rect x="84" y="34" width="16" height="6" rx="1" stroke="url(#stack-grad)" strokeWidth="1" fill="none" />
-        <rect x="85" y="26" width="16" height="6" rx="1" stroke="url(#stack-grad)" strokeWidth="1" fill="none" transform="rotate(2 93 29)" />
+        <rect x="84" y="42" width="16" height="6" rx="1" stroke={`url(#${uid}-stack-grad)`} strokeWidth="1" fill="none" />
+        <rect x="84" y="34" width="16" height="6" rx="1" stroke={`url(#${uid}-stack-grad)`} strokeWidth="1" fill="none" />
+        <rect x="85" y="26" width="16" height="6" rx="1" stroke={`url(#${uid}-stack-grad)`} strokeWidth="1" fill="none" transform="rotate(2 93 29)" />
       </g>
 
       {/* Legs */}

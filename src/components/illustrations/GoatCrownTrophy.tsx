@@ -1,6 +1,8 @@
 'use client';
 
 import { motion, type TargetAndTransition, type Transition } from 'framer-motion';
+import { useId } from 'react';
+
 
 import { useMotionCapabilities } from '@/hooks/use-motion-preference';
 
@@ -28,6 +30,7 @@ function loop(enabled: boolean, animate: TargetAndTransition, transition: Transi
  * motion tier (`data-motion` on the root says which branch rendered).
  */
 export function GoatCrownTrophy({ className, size = 120 }: GoatCrownTrophyProps) {
+  const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const { allowAmbient } = useMotionCapabilities();
 
   return (
@@ -43,7 +46,7 @@ export function GoatCrownTrophy({ className, size = 120 }: GoatCrownTrophyProps)
       focusable="false"
     >
       {/* Glow backdrop */}
-      <circle cx="60" cy="60" r="50" fill="url(#glow)" opacity="0.3" />
+      <circle cx="60" cy="60" r="50" fill={`url(#${uid}-glow)`} opacity="0.3" />
 
       {/* Trophy base */}
       <rect x="42" y="92" width="36" height="6" rx="3" fill="#fbbf24" />
@@ -55,7 +58,7 @@ export function GoatCrownTrophy({ className, size = 120 }: GoatCrownTrophyProps)
       {/* Trophy cup body */}
       <path
         d="M32 38 C32 38 34 72 60 72 C86 72 88 38 88 38 L32 38Z"
-        fill="url(#cupGradient)"
+        fill={`url(#${uid}-cupGradient)`}
         stroke="#fcd34d"
         strokeWidth="1.5"
       />
@@ -141,11 +144,11 @@ export function GoatCrownTrophy({ className, size = 120 }: GoatCrownTrophyProps)
       />
 
       <defs>
-        <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+        <radialGradient id={`${uid}-glow`} cx="0.5" cy="0.5" r="0.5">
           <stop offset="0%" stopColor="#fbbf24" stopOpacity="0.4" />
           <stop offset="100%" stopColor="#fbbf24" stopOpacity="0" />
         </radialGradient>
-        <linearGradient id="cupGradient" x1="60" y1="38" x2="60" y2="72" gradientUnits="userSpaceOnUse">
+        <linearGradient id={`${uid}-cupGradient`} x1="60" y1="38" x2="60" y2="72" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor="#fcd34d" />
           <stop offset="50%" stopColor="#f59e0b" />
           <stop offset="100%" stopColor="#d97706" />
