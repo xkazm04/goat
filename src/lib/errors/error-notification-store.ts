@@ -103,7 +103,15 @@ interface ErrorNotificationState {
 // Auto-dismiss durations (ms)
 // ============================================================================
 
-const DISMISS_DELAYS: Record<ErrorSeverity, number> = {
+/**
+ * How long a notification of each severity stays up.
+ *
+ * Exported because `ErrorNotificationToast` draws a progress bar that must
+ * empty exactly as the timer fires. It had its own copy of these three numbers
+ * inline in a ternary, so editing one of the two made the bar lie about how
+ * long the toast had left — one rule, two implementations.
+ */
+export const DISMISS_DELAYS: Record<ErrorSeverity, number> = {
   error: 10000, // Errors stay longer
   warning: 6000,
   info: 4000,
