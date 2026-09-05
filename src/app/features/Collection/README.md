@@ -45,7 +45,6 @@ Collection/
 │   ├── ConfigurableCollectionItem.tsx  # Draggable item component
 │   ├── CriteriaScoringSection.tsx
 │   ├── DragHandleIndicator.tsx
-│   ├── FocusRingOverlay.tsx
 │   ├── ItemDetailPopup.tsx
 │   ├── ItemDetailPopupProvider.tsx
 │   ├── ItemInspector.tsx
@@ -102,6 +101,14 @@ Collection/
 - **Configurable thresholds**: declared in `lazyLoadConfig.ts`; as of 2026-08-24
   only the observer fields (`INTERSECTION_ROOT_MARGIN`,
   `INTERSECTION_THRESHOLD`) are read by anything
+
+> **Corrected 2026-09-05.** `components/FocusRingOverlay.tsx` was removed: it had no
+> importer anywhere in `src/` or `e2e/`, and the `showFocusRing` config flag it served is
+> documented `@deprecated` in `ConfigurableCollectionItem.tsx` (focus rings are native
+> `focus-visible` CSS). The same sweep added the first unit tests in this directory —
+> `*.test.ts(x)` files beside the components they pin, each with a recorded negative
+> control in its header — and consolidated quick-assign into `quickAssignFromBacklog`
+> (`ItemDetailPopupProvider.tsx`), used by both detail surfaces.
 
 > **Corrected 2026-08-24.** `components/LazyLoadTrigger.tsx` exists and reads the
 > config, but **no component renders it** — the feature barrel is its only
