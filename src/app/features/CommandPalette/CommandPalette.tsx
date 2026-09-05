@@ -491,6 +491,20 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     ]
   );
 
+  // The option the keyboard cursor is on, by element id, for aria-activedescendant.
+  // Ids mirror the rows' data-testids so the DOM has one name per row.
+  const activeDescendantId = (() => {
+    if (query.trim()) {
+      if (isCreateCommand) return `command-palette-create-suggestion-${selectedIndex}`;
+      if (useApiSearch) return selectedIndex < apiResults.length ? `command-palette-result-${selectedIndex}` : 'command-palette-create-new';
+      return selectedIndex < filteredLists.length ? `command-palette-list-${selectedIndex}` : 'command-palette-create-new';
+    }
+    if (selectedIndex < recentLists.length) return `command-palette-recent-list-${selectedIndex}`;
+    const historyIdx = selectedIndex - recentLists.length;
+    if (historyIdx < Math.min(history.length, 5)) return `command-palette-recent-query-${historyIdx}`;
+    return `command-palette-example-${selectedIndex - recentLists.length - history.length}`;
+  })();
+
   // Get current category color
   const categoryColor = CATEGORY_COLORS[parsedQuery.category] || CATEGORY_COLORS.Sports;
 
@@ -504,6 +518,9 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     return (
       <button
         key={`${result.domain}-${result.id}`}
+        id={`command-palette-result-${index}`}
+        role="option"
+        aria-selected={isSelected}
         onClick={() => handleNavigateToResult(result)}
         className={`w-full px-3 py-2.5 rounded-card text-left flex items-center gap-3 transition-colors group ${
           isSelected ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/5"
@@ -551,6 +568,9 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     return (
       <button
         key={list.id}
+        id={`command-palette-list-${index}`}
+        role="option"
+        aria-selected={isSelected}
         onClick={() => handleNavigateToList(list)}
         className={`w-full px-3 py-2.5 rounded-card text-left flex items-center gap-3 transition-colors group ${
           isSelected
@@ -610,6 +630,9 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
             transition={{ duration: DURATION.quick, ease: "easeOut" }}
             className="w-full max-w-2xl mx-4"
             onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Command palette"
             data-testid="command-palette-container"
           >
             <div
@@ -638,6 +661,12 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                     onKeyDown={handleKeyDown}
                     placeholder="Search everything, or type 'new action movies'..."
                     className="flex-1 ml-4 bg-transparent text-white text-lg placeholder:text-white/30 focus:outline-hidden"
+                    role="combobox"
+                    aria-label="Search lists, items and collections, or type new to create a list"
+                    aria-expanded="true"
+                    aria-controls="command-palette-results"
+                    aria-autocomplete="list"
+                    aria-activedescendant={activeDescendantId}
                     data-testid="command-palette-input"
                     disabled={isCreating}
                   />
@@ -648,6 +677,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                     <button
                       onClick={() => setQuery("")}
                       className="p-1 rounded-full hover:bg-white/10 transition-colors"
+                      aria-label="Clear search"
                       data-testid="command-palette-clear-btn"
                     >
                       <X className="w-4 h-4 text-white/40" />
@@ -772,8 +802,8 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                 )}
               </div>
 
-              {/* Main content area */}
-              <div className="max-h-[50vh] overflow-y-auto">
+              {/* Main content area — the listbox the combobox controls */}
+              <div id="command-palette-results" role="listbox" aria-label="Results" className="max-h-[50vh] overflow-y-auto">
                 {query.trim() ? (
                   <div className="p-2">
                     {isCreateCommand ? (
@@ -788,6 +818,9 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                             {createSuggestions.map((suggestion, i) => (
                               <button
                                 key={`suggestion-${i}`}
+                                id={`command-palette-create-suggestion-${i}`}
+                                role="option"
+                                aria-selected={selectedIndex === i}
                                 onClick={() => handleCreateList(suggestion)}
                                 className={`w-full px-3 py-2.5 rounded-card text-left flex items-center gap-3 transition-colors ${
                                   selectedIndex === i
@@ -835,6 +868,9 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                                   ? "bg-white/10 text-white"
                                   : "text-white/70 hover:bg-white/5"
                               }`}
+                              id="command-palette-create-new"
+                              role="option"
+                              aria-selected={selectedIndex === apiResults.length}
                               data-testid="command-palette-create-new"
                             >
                               <div
@@ -894,6 +930,9 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                                 ? "bg-white/10 text-white"
                                 : "text-white/70 hover:bg-white/5"
                             }`}
+                            id="command-palette-create-new"
+                            role="option"
+                            aria-selected={selectedIndex === filteredLists.length}
                             data-testid="command-palette-create-new"
                           >
                             <div
@@ -927,6 +966,9 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                           return (
                             <button
                               key={`recent-list-${entry.id}`}
+                              id={`command-palette-recent-list-${i}`}
+                              role="option"
+                              aria-selected={selectedIndex === i}
                               onClick={() => handleNavigateToRecentList(entry)}
                               className={`w-full px-3 py-2.5 rounded-card text-left flex items-center gap-3 transition-colors group ${
                                 selectedIndex === i
@@ -977,6 +1019,9 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                           return (
                             <button
                               key={`history-${i}`}
+                              id={`command-palette-recent-query-${i}`}
+                              role="option"
+                              aria-selected={selectedIndex === idx}
                               onClick={() => setQuery(entry.query)}
                               className={`w-full px-3 py-2.5 rounded-card text-left flex items-center gap-3 transition-colors ${
                                 selectedIndex === idx
@@ -1015,6 +1060,9 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                       return (
                         <button
                           key={`example-${i}`}
+                          id={`command-palette-example-${i}`}
+                          role="option"
+                          aria-selected={selectedIndex === idx}
                           onClick={() => setQuery(`new ${example}`)}
                           className={`w-full px-3 py-2.5 rounded-card text-left flex items-center gap-3 transition-colors ${
                             selectedIndex === idx
