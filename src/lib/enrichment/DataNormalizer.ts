@@ -478,9 +478,15 @@ class DataNormalizerClass {
     sources: Array<{ source: DataSource; data: Partial<NormalizedItemData>; confidence: number }>,
     category: EnrichmentCategory
   ): NormalizedItemData {
-    // Sort by priority (highest first)
+    // Sort by priority WEIGHTED BY the source's own confidence in its match
+    // (highest first). Unweighted, a specialist source that barely cleared its
+    // own accept threshold still supplied every field ahead of a general
+    // source that matched almost exactly -- so a near-miss title match landed
+    // the wrong item's synopsis and poster on the record.
     const sortedSources = [...sources].sort(
-      (a, b) => SOURCE_PRIORITIES[b.source] - SOURCE_PRIORITIES[a.source]
+      (a, b) =>
+        SOURCE_PRIORITIES[b.source] * b.confidence -
+        SOURCE_PRIORITIES[a.source] * a.confidence
     );
 
     const merged: NormalizedItemData = {
