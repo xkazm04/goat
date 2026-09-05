@@ -18,6 +18,11 @@ const ShowcaseDecor = ({ shouldAnimate = true }: ShowcaseDecorProps) => {
 
     return (
         <>
+            {/* Decorative watermark at opacity 0.05. It carries no information, so
+                it is hidden from assistive technology: empty alt (a named image
+                would be announced on every landing visit) and aria-hidden on the
+                layer, matching the noise-texture overlay beside it in
+                FloatingShowcase. */}
             <motion.div
                 className="absolute inset-0 w-full h-full"
                 initial={skipAnimation ? { opacity: 0.05, x: "-20%" } : { opacity: 0, x: "-40%" }}
@@ -25,10 +30,11 @@ const ShowcaseDecor = ({ shouldAnimate = true }: ShowcaseDecorProps) => {
                 transition={skipAnimation ? { duration: 0 } : { duration: 5 }}
                 data-testid="showcase-decor-image"
                 data-framer-motion-reducible="true"
+                aria-hidden="true"
             >
                 <Image
                     src="/goat.png"
-                    alt="GOAT Background"
+                    alt=""
                     fill
                     className="object-cover opacity-5"
                     style={{
@@ -42,6 +48,7 @@ const ShowcaseDecor = ({ shouldAnimate = true }: ShowcaseDecorProps) => {
             {/* Background gradient overlay to ensure readability */}
             <div
                 className="absolute inset-0"
+                aria-hidden="true"
                 style={{
                     background: `
                         linear-gradient(135deg,
