@@ -22,6 +22,9 @@ import type { AddressInfo } from 'node:net';
 const scriptsDir = path.dirname(fileURLToPath(import.meta.url));
 const TOTAL = 450;
 const CEILING = 200;
+// validate-images.js loads the Sentry-wrapped next.config.js; under a full
+// parallel run that exceeded vitest's 5 s default (measured 2026-09-05).
+const SPAWN_TIMEOUT_MS = 60_000;
 
 let server: Server;
 let apiBase: string;
@@ -74,7 +77,7 @@ describe('image scripts read the whole item population, not the first page', () 
     expect(res.code, res.stderr).toBe(0);
     expect(res.stdout).toMatch(new RegExp(`Total items:\\s+${TOTAL}\\b`));
     expect(requests.length).toBe(Math.ceil(TOTAL / CEILING));
-  });
+  }, SPAWN_TIMEOUT_MS);
 
   it('validate-images.js walks every page and reports all items', async () => {
     requests.length = 0;
@@ -82,5 +85,5 @@ describe('image scripts read the whole item population, not the first page', () 
     expect(res.code, res.stderr).toBe(0);
     expect(res.stdout).toMatch(new RegExp(`Found ${TOTAL} items`));
     expect(requests.length).toBe(Math.ceil(TOTAL / CEILING));
-  });
+  }, SPAWN_TIMEOUT_MS);
 });

@@ -11,14 +11,14 @@
  *   3. HTTP HEAD returns 200 (with retry on 429)
  *   4. Content-Length > 0 (not an empty file)
  *
- * Usage:
- *   node scripts/fix-broken-images.mjs                        # dry-run (default)
- *   node scripts/fix-broken-images.mjs --apply                # actually update DB
- *   node scripts/fix-broken-images.mjs --category hockey      # filter by category
- *   node scripts/fix-broken-images.mjs --limit 100            # process first N items only
- *   node scripts/fix-broken-images.mjs --skip-search          # validate only, no Wikipedia search
+ * Usage (credentials via --env-file or exported NEXT_PUBLIC_SUPABASE_URL /
+ * SUPABASE_SERVICE_ROLE_KEY):
+ *   node --env-file=.env scripts/fix-broken-images.mjs                   # dry-run (default)
+ *   node --env-file=.env scripts/fix-broken-images.mjs --apply           # actually update DB
+ *   node --env-file=.env scripts/fix-broken-images.mjs --category hockey # filter by category
+ *   node --env-file=.env scripts/fix-broken-images.mjs --limit 100       # process first N items only
+ *   node --env-file=.env scripts/fix-broken-images.mjs --skip-search     # validate only, no Wikipedia search
  */
-import { readFileSync } from 'fs';
 import { createRequire } from 'module';
 
 import { createClient } from '@supabase/supabase-js';
@@ -43,16 +43,16 @@ const ALLOWED_HOSTS = new Set(
 const USER_AGENT = 'GOATApp/1.0 (https://goat.app; contact@goat.app) fix-broken-images';
 
 // ── Env ───────────────────────────────────────────────────────────────
-const env = readFileSync('.env', 'utf8');
-const getEnv = (key) => {
-  const m = env.match(new RegExp(`^${key}=(.+)$`, 'm'));
-  return m ? m[1].trim() : null;
-};
-
-const url = getEnv('NEXT_PUBLIC_SUPABASE_URL');
-const serviceKey = getEnv('SUPABASE_SERVICE_ROLE_KEY');
+// Credentials come from the environment, the way seed-e2e.ts takes them
+// (`node --env-file=.env scripts/fix-broken-images.mjs`, or exported). The
+// previous hand-rolled `.env` regex reader bound the script to the current
+// directory (ENOENT stack trace from anywhere else), could not read exported
+// or quoted values, and was the fourth copy of that reader in this directory.
+const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 if (!url || !serviceKey) {
-  console.error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env');
+  console.error('[fix-broken-images] COULD NOT RUN — NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY are not set.');
+  console.error('[fix-broken-images] Load them with `node --env-file=.env scripts/fix-broken-images.mjs` or export them.');
   process.exit(1);
 }
 const supabase = createClient(url, serviceKey);

@@ -19,6 +19,11 @@ import { describe, expect, it } from 'vitest';
 
 const scriptsDir = path.dirname(fileURLToPath(import.meta.url));
 
+// Spawning node and loading the Sentry-wrapped next.config.js takes ~0.6 s
+// alone and several seconds under a full parallel test run; vitest's 5 s
+// default timed these out (measured 2026-09-05).
+const SPAWN_TIMEOUT_MS = 60_000;
+
 /** Scripts that talk to the app's HTTP API and read API_BASE. */
 const API_SCRIPTS = [
   'analyze-images.js',
@@ -50,8 +55,21 @@ describe('maintenance scripts exit non-zero when they fail', () => {
       // Port 1 is reserved and refused immediately; nothing here touches the network.
       const res = run(script, { API_BASE: 'http://127.0.0.1:1' });
       expect(res.status, `stdout:\n${res.stdout}\nstderr:\n${res.stderr}`).toBe(1);
-    });
+    }, SPAWN_TIMEOUT_MS);
   }
+
+  it('fix-broken-images.mjs exits 1 without credentials, with a message rather than a stack trace', () => {
+    // Negative control (2026-09-05): the script read `.env` from the current
+    // directory by regex; run from anywhere else it died with an ENOENT stack
+    // trace (exit 1 by accident, no statement). Red before the fix.
+    const res = run('fix-broken-images.mjs', {
+      NEXT_PUBLIC_SUPABASE_URL: '',
+      SUPABASE_SERVICE_ROLE_KEY: '',
+    });
+    expect(res.status).toBe(1);
+    expect(res.stderr).toMatch(/SUPABASE_SERVICE_ROLE_KEY/);
+    expect(res.stderr).not.toMatch(/ENOENT/);
+  }, SPAWN_TIMEOUT_MS);
 
   it('no script ends in a bare `.catch(console.error)`, which swallows the exit code', () => {
     const offenders = ALL_SCRIPTS.filter((s) =>
