@@ -15,6 +15,7 @@ import { memo, useState, useCallback } from "react";
 
 import { useMotionCapabilities } from "@/hooks/use-motion-preference";
 
+import { safeCollectionColor } from "../lib/collection-color";
 
 import type { ListCollection, CreateCollectionRequest, UpdateCollectionRequest } from "@/types/collection";
 
@@ -88,7 +89,7 @@ function CollectionManagerDialog({
 
   const [name, setName] = useState(collection?.name || "");
   const [description, setDescription] = useState(collection?.description || "");
-  const [color, setColor] = useState(collection?.color || PRESET_COLORS[0]);
+  const [color, setColor] = useState(safeCollectionColor(collection?.color, PRESET_COLORS[0]));
   const [icon, _setIcon] = useState(collection?.icon || "folder");
   const [parentId, setParentId] = useState<string | null>(collection?.parentId || null);
   const [isPublic, setIsPublic] = useState(collection?.isPublic || false);

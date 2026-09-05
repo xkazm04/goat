@@ -41,6 +41,8 @@ import { EmptyTrophyCase, NoSearchResults } from "@/components/illustrations/Emp
 import { useMotionCapabilities } from "@/hooks/use-motion-preference";
 import { DRAG_ACTIVATION_DISTANCE_PX } from "@/lib/dnd";
 
+import { safeCollectionColor } from "../lib/collection-color";
+
 import type { ListCollection, CollectionStats } from "@/types/collection";
 import type { TopList } from "@/types/top-lists";
 
@@ -365,7 +367,7 @@ export const CollectionView = memo(function CollectionView({
     );
   }
 
-  const color = collection.color || "#06b6d4";
+  const color = safeCollectionColor(collection.color);
 
   return (
     <div className="flex-1 p-6">

@@ -27,6 +27,8 @@ import {
 } from "@/stores/collection-store";
 import { DEFAULT_COLLECTIONS } from "@/types/collection";
 
+import { safeCollectionColor } from "../lib/collection-color";
+
 import type { ListCollection, CollectionTreeNode } from "@/types/collection";
 
 interface CollectionSidebarProps {
@@ -72,7 +74,7 @@ const TreeNode = memo(function TreeNode({
   const { collection, children, isExpanded, depth } = node;
   const hasChildren = children.length > 0;
   const isSelected = selectedId === collection.id;
-  const color = collection.color || "#06b6d4";
+  const color = safeCollectionColor(collection.color);
   const IconComponent = getIconComponent(collection.icon);
 
   const handleToggle = useCallback(

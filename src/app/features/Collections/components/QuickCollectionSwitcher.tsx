@@ -19,6 +19,8 @@ import {
   useCollectionStore,
 } from "@/stores/collection-store";
 
+import { safeCollectionColor } from "../lib/collection-color";
+
 import type { ListCollection } from "@/types/collection";
 
 interface QuickCollectionSwitcherProps {
@@ -167,12 +169,12 @@ export const QuickCollectionSwitcher = memo(function QuickCollectionSwitcher({
                   <div
                     className="w-6 h-6 rounded-control flex items-center justify-center"
                     style={{
-                      backgroundColor: `${collection.color || "#06b6d4"}20`,
+                      backgroundColor: `${safeCollectionColor(collection.color)}20`,
                     }}
                   >
                     <Folder
                       className="w-3.5 h-3.5"
-                      style={{ color: collection.color || "#06b6d4" }}
+                      style={{ color: safeCollectionColor(collection.color) }}
                     />
                   </div>
                   <span className="flex-1 truncate">{collection.name}</span>

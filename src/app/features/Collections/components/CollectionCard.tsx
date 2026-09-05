@@ -16,6 +16,8 @@ import { memo, useCallback } from "react";
 import { use3DTilt } from "@/hooks/use-3d-tilt";
 import { SPRING } from "@/lib/animations/motion-presets";
 
+import { safeCollectionColor } from "../lib/collection-color";
+
 import type { ListCollection, CollectionStats } from "@/types/collection";
 
 interface CollectionCardProps {
@@ -44,7 +46,7 @@ export const CollectionCard = memo(function CollectionCard({
   showActions = true,
   variant = "default",
 }: CollectionCardProps) {
-  const color = collection.color || DEFAULT_COLORS.primary;
+  const color = safeCollectionColor(collection.color, DEFAULT_COLORS.primary);
 
   const { ref, style: tiltStyle, handlers } = use3DTilt({
     maxRotation: 6,
