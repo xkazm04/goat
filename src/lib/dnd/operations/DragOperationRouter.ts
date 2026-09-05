@@ -149,12 +149,20 @@ function parseTarget(event: DragEndEvent): DragTarget | null {
     };
   }
 
-  // Tier item detection (for reordering)
+  // Tier item detection (for reordering). A tier item is a `useSortable`, so
+  // what its droppable half carries is its DRAG payload (UnifiedDragData:
+  // `source.tierId` / `source.orderInTier`), not a drop payload. Until
+  // 2026-09-05 this branch read only the drop shape, found no tier, and every
+  // drop onto another card — the ordinary way to reorder — was refused as
+  // "Target must be a different tier". Both shapes are read; the live one is
+  // the fallback because the drop shape is the one a future surface might send.
   if (dataType === 'tier-item') {
+    const tierId: string | undefined = data?.tierId ?? data?.source?.tierId;
+    const position: number | undefined = data?.position ?? data?.source?.orderInTier;
     return {
       type: 'tier-item',
-      tierId: data?.tierId,
-      position: data?.position,
+      tierId,
+      position: typeof position === 'number' ? position : undefined,
     };
   }
 

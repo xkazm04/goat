@@ -250,4 +250,39 @@ describe('DragOperationRouter — tier operations', () => {
     expect(result.operationType).toBe('unrank');
     expect(h.tierCalls).toEqual(['addToUnranked:x']);
   });
+
+  // A tier ITEM is a droppable too (useSortable), and pointerWithin ranks the
+  // smaller rect under the pointer ahead of the row around it — so dropping
+  // onto another card is the ordinary way a user reorders or transfers. The
+  // payload a tier item carries is DRAG data (source.tierId / source.orderInTier).
+  // Before 2026-09-05 parseTarget read the never-produced DROP shape
+  // (data.tierId / data.position), saw no tier, and refused every such drop
+  // as "Target must be a different tier".
+  it('tier item onto another item in the SAME tier is a reorder at that item', () => {
+    const h = harness([]);
+    const router = createStandardRouter();
+
+    const result = router.handleDragEnd(
+      dragEnd(tierItemSortable('x', 'tier-s', 0), tierItemSortable('y', 'tier-s', 2)),
+      h.stores,
+    );
+
+    expect(result.success).toBe(true);
+    expect(result.operationType).toBe('tier-move');
+    expect(h.tierCalls).toEqual(['moveWithinTier:tier-s:0:2']);
+  });
+
+  it('tier item onto an item in ANOTHER tier transfers to that position', () => {
+    const h = harness([]);
+    const router = createStandardRouter();
+
+    const result = router.handleDragEnd(
+      dragEnd(tierItemSortable('x', 'tier-s', 0), tierItemSortable('y', 'tier-a', 1)),
+      h.stores,
+    );
+
+    expect(result.success).toBe(true);
+    expect(result.operationType).toBe('tier-transfer');
+    expect(h.tierCalls).toEqual(['moveBetweenTiers:x:tier-s:tier-a:1']);
+  });
 });
