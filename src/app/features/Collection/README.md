@@ -11,6 +11,10 @@
 > the lazy-loading ladder are marked for what they are: a design, not a
 > description.
 >
+> **2026-09-05:** `lib/adaptiveLoader.ts` (494 lines, zero importers since it was
+> written, in knip's unused-files population) was deleted; the `lib/` directory
+> is gone with it.
+>
 > This README is now a **derived coupling target**: any change under
 > `src/app/features/Collection/` is checked against it by
 > `npm run docs:coupling -- --changed` (colocated-README convention). That is
@@ -66,9 +70,6 @@ Collection/
 │
 ├── constants/                          # Configuration
 │   └── lazyLoadConfig.ts               # Lazy load thresholds — declared, mostly unread
-│
-├── lib/
-│   └── adaptiveLoader.ts               # orphaned; in knip's population
 │
 └── utils/                              # Utility functions
     ├── easterEgg.ts
