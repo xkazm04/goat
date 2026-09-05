@@ -280,15 +280,17 @@ export function GoatQuotaExceeded({ className, width = 120, height = 120 }: Illu
  */
 export type SyncErrorType = 'network' | 'server' | 'quota';
 
+// Whole words, not substrings: `includes('full')` classified "Sync unsuccessful"
+// as a quota problem and `includes('space')` did the same for "Namespace", so the
+// popover told the user to free storage when the remedy was to retry.
+const NETWORK_WORDS = /(^|[^a-z])(network|offline|fetch|connect|connection|timeout|dns)([^a-z]|$)/;
+const QUOTA_WORDS = /(^|[^a-z])(quota|storage|exceeded|full|space)([^a-z]|$)/;
+
 export function classifySyncError(error: string | null): SyncErrorType {
   if (!error) return 'server';
   const lower = error.toLowerCase();
-  if (lower.includes('network') || lower.includes('offline') || lower.includes('fetch') || lower.includes('connect') || lower.includes('timeout') || lower.includes('dns')) {
-    return 'network';
-  }
-  if (lower.includes('quota') || lower.includes('storage') || lower.includes('exceeded') || lower.includes('full') || lower.includes('space')) {
-    return 'quota';
-  }
+  if (NETWORK_WORDS.test(lower)) return 'network';
+  if (QUOTA_WORDS.test(lower)) return 'quota';
   return 'server';
 }
 
