@@ -22,21 +22,11 @@ const API_BASE = process.env.API_BASE || 'http://localhost:3000';
 const CONCURRENT_REQUESTS = 10;
 const HTTP_TIMEOUT = 5000;
 
-// Whitelisted domains from next.config.js
-const WHITELISTED_DOMAINS = [
-  // Primary sources
-  'upload.wikimedia.org',
-  'm.media-amazon.com',
-  'static.wikia.nocookie.net',
-  // Secondary sources
-  'cdn.britannica.com',
-  'media.d3.nhle.com',
-  'files.eliteprospects.com',
-  // WordPress-hosted
-  'i0.wp.com',
-  'i1.wp.com',
-  'i2.wp.com',
-];
+// Whitelisted domains are READ from next.config.js `images.remotePatterns`,
+// never copied: the copy this replaced had 9 of the config's 13 hosts.
+const WHITELISTED_DOMAINS = require('../next.config.js').images.remotePatterns.map(
+  (p) => p.hostname,
+);
 
 // Parse args
 const args = process.argv.slice(2);

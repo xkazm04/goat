@@ -7,7 +7,7 @@
  *
  * Checks performed:
  *   1. URL is non-null/non-empty
- *   2. Host is in the Next.js remotePatterns allow-list
+ *   2. Host is in the Next.js remotePatterns allow-list (read from next.config.js)
  *   3. HTTP HEAD returns 200 (with retry on 429)
  *   4. Content-Length > 0 (not an empty file)
  *
@@ -19,6 +19,7 @@
  *   node scripts/fix-broken-images.mjs --skip-search          # validate only, no Wikipedia search
  */
 import { readFileSync } from 'fs';
+import { createRequire } from 'module';
 
 import { createClient } from '@supabase/supabase-js';
 
@@ -30,19 +31,14 @@ const RATE_LIMIT_MS = 500; // delay between Wikipedia API calls
 const HEAD_TIMEOUT_MS = 10000;
 const MAX_RETRIES = 3;    // retry on 429
 
-// Next.js allowed image hostnames (from next.config.js remotePatterns)
-const ALLOWED_HOSTS = new Set([
-  'upload.wikimedia.org',
-  'm.media-amazon.com',
-  'static.wikia.nocookie.net',
-  'cdn.britannica.com',
-  'media.d3.nhle.com',
-  'files.eliteprospects.com',
-  'i0.wp.com',
-  'i1.wp.com',
-  'i2.wp.com',
-  'cdn.cloudflare.steamstatic.com',
-]);
+// The allow-list is READ from next.config.js `images.remotePatterns`, never
+// copied: a copy that lagged the config (10 of 13 hosts on 2026-09-05) made
+// this script call every IGDB / TMDB / Spotify image `host-not-allowed` and,
+// with --apply, replace it with a Wikipedia thumbnail.
+const require = createRequire(import.meta.url);
+const ALLOWED_HOSTS = new Set(
+  require('../next.config.js').images.remotePatterns.map((p) => p.hostname),
+);
 
 const USER_AGENT = 'GOATApp/1.0 (https://goat.app; contact@goat.app) fix-broken-images';
 
