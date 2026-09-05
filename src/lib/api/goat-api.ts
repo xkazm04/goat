@@ -194,7 +194,27 @@ function cleanParams<T extends object>(params: T): Record<string, unknown> {
 }
 
 /**
- * Execute request with retry logic and GET request coalescing.
+ * Serialize query params into a key-order-independent string.
+ *
+ * `JSON.stringify` preserves insertion order, so `{ category, subcategory }`
+ * and `{ subcategory, category }` — the same request — produced two different
+ * coalescing keys and two network calls. Sorting keys makes the identity of a
+ * request depend only on its contents (registry: client-fetch-cache /
+ * cache-key-discipline — "canonical serialization").
+ */
+export function canonicalParamsKey(data: unknown): string {
+  if (data === undefined) return '';
+  if (data === null || typeof data !== 'object') return JSON.stringify(data);
+  if (Array.isArray(data)) return `[${data.map(canonicalParamsKey).join(',')}]`;
+  const entries = Object.entries(data as Record<string, unknown>)
+    .filter(([, v]) => v !== undefined)
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    .map(([k, v]) => `${JSON.stringify(k)}:${canonicalParamsKey(v)}`);
+  return `{${entries.join(',')}}`;
+}
+
+/**
+ * Execute a request with circuit breaking and GET request coalescing.
  * Identical in-flight GET requests share a single network call via withCoalescing.
  */
 async function request<T>(
@@ -242,7 +262,7 @@ async function request<T>(
     // Coalesce identical in-flight GET requests to avoid duplicate network calls
     const result = method === 'GET'
       ? await withCoalescing<T>(
-          `${method}:${endpoint}:${data ? JSON.stringify(data) : ''}`,
+          `${method}:${endpoint}:${canonicalParamsKey(data)}`,
           executeFn
         )
       : await executeFn();
