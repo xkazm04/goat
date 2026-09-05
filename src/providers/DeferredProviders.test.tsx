@@ -21,8 +21,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 // replaced by a shape-preserving stand-in so the assertion is about
 // DeferredProviders' tree, not about what the palette or prefetcher do.
 vi.mock('@/stores/registry', () => ({}));
+const runtime = vi.hoisted(() => ({ prefetchThrows: false }));
 vi.mock('@/providers/prefetch-provider', () => ({
-  PrefetchProvider: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+  PrefetchProvider: ({ children }: { children?: React.ReactNode }) => {
+    if (runtime.prefetchThrows) throw new Error('chunk failed to load');
+    return <>{children}</>;
+  },
 }));
 const paletteRender = vi.fn();
 vi.mock('@/app/features/CommandPalette/CommandPaletteProvider', () => ({
@@ -66,6 +70,7 @@ beforeEach(() => {
   globalThis.IS_REACT_ACT_ENVIRONMENT = true;
   counters.mounts = 0;
   counters.unmounts = 0;
+  runtime.prefetchThrows = false;
   paletteRender.mockClear();
   idleCallbacks = [];
   vi.stubGlobal('requestIdleCallback', (cb: () => void) => {
@@ -110,6 +115,31 @@ describe('DeferredProviders', () => {
     expect(counters.unmounts).toBe(0);
     expect(counters.mounts).toBe(1);
     expect(container.querySelector('[data-testid="probe"]')).not.toBeNull();
+  });
+
+  it('survives a deferred provider that throws — the body stays, the failure is logged', async () => {
+    runtime.prefetchThrows = true;
+    const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    await act(async () => {
+      root.render(
+        <DeferredProviders>
+          <Probe />
+        </DeferredProviders>,
+      );
+    });
+    await act(async () => {
+      idleCallbacks[0]();
+    });
+    await flush();
+
+    // The optional runtime failed; the page it was optional FOR did not.
+    expect(container.querySelector('[data-testid="probe"]')).not.toBeNull();
+    expect(counters.unmounts).toBe(0);
+    // Silence toward the user is not silence toward the log.
+    expect(
+      errorLog.mock.calls.some((args) => args.some((a) => a instanceof Error && a.message === 'chunk failed to load')),
+    ).toBe(true);
   });
 
   it('keeps the body mounted when the idle callback never fires', async () => {

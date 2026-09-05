@@ -1,7 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { type ReactNode } from 'react';
+import { Component, type ReactNode } from 'react';
 
 import { useDeferredMount } from '@/providers/deferred-mount';
 
@@ -22,6 +22,30 @@ const PrefetchProvider = dynamic(
   () => import('@/providers/prefetch-provider').then(m => ({ default: m.PrefetchProvider })),
   { ssr: false }
 );
+
+/**
+ * The deferred runtime is optional; the page it is mounted beside is not.
+ * Without this boundary a failed chunk load (or a throw inside the palette or
+ * prefetcher) propagates to the nearest boundary above — the route's
+ * error.tsx — and replaces the whole page with an error screen because a
+ * non-critical provider did not arrive. The failure is still recorded:
+ * console.error is not subject to the category logger's off-by-default gate.
+ */
+class DeferredRuntimeBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  componentDidCatch(error: unknown) {
+    console.error('[DeferredProviders] deferred runtime failed to mount; continuing without it', error);
+  }
+
+  render() {
+    return this.state.failed ? null : this.props.children;
+  }
+}
 
 /**
  * DeferredProviders
@@ -50,9 +74,11 @@ export function DeferredProviders({ children }: { children: ReactNode }) {
     <>
       {children}
       {ready && (
-        <PrefetchProvider>
-          <CommandPaletteProvider>{null}</CommandPaletteProvider>
-        </PrefetchProvider>
+        <DeferredRuntimeBoundary>
+          <PrefetchProvider>
+            <CommandPaletteProvider>{null}</CommandPaletteProvider>
+          </PrefetchProvider>
+        </DeferredRuntimeBoundary>
       )}
     </>
   );
