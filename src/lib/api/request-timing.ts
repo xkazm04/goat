@@ -8,32 +8,32 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
+import { getRequestId } from './request-id';
+
 type RouteHandler = (
   req: NextRequest,
   context?: { params?: Promise<Record<string, string>> }
 ) => Promise<NextResponse> | NextResponse;
-
-let requestCounter = 0;
-
-/** Generate a short correlation ID: timestamp-based + counter */
-function generateRequestId(): string {
-  const ts = Date.now().toString(36);
-  const count = (++requestCounter).toString(36);
-  return `req-${ts}-${count}`;
-}
 
 /**
  * Wrap an API route handler with request timing and tracing.
  *
  * Logs: requestId, method, path, duration (ms), and response status.
  * Attaches `x-request-id` and `server-timing` headers to the response.
+ *
+ * The requestId is the one the CLIENT sent in `X-Request-ID` (request-id.ts —
+ * ApiClient stamps every outgoing call with it), or a fresh one for requests
+ * that did not carry it. This wrapper used to mint its own `req-…` id from a
+ * private counter, so the client's `goat-…` id and the server's log line
+ * could never be joined — the end-to-end correlation that request-id.ts
+ * describes existed only on the client half.
  */
 export function withTiming(
   handler: RouteHandler,
   routeLabel?: string,
 ): RouteHandler {
   return async (req, context) => {
-    const requestId = generateRequestId();
+    const requestId = getRequestId(req);
     const start = performance.now();
     const method = req.method;
     const path = new URL(req.url).pathname;
