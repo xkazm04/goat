@@ -78,6 +78,18 @@ function cannotRun(what, detail) {
   process.exit(EXIT_CANNOT_RUN);
 }
 
+// `--only` names one of the four metric families below. An unknown name used to
+// measure NOTHING and then report "0 buckets checked ... every bucket matches
+// its baseline", exit 0 — a false green from a typo (measured 2026-09-05:
+// `--only foo` exited 0). The instrument is asserted before the result.
+const METRICS = ['eslint', 'typecheck', 'knip', 'docs'];
+if (onlyIdx >= 0 && !METRICS.includes(ONLY)) {
+  cannotRun(
+    `--only ${ONLY ?? '(nothing)'} names no metric`,
+    `Pass one of: ${METRICS.join(', ')}. Nothing was measured, so nothing can match.`,
+  );
+}
+
 // Resolve the local binaries and run them under THIS node, rather than through
 // npx/.cmd shims — spawning a .cmd without a shell is EINVAL on Windows, and
 // spawning one *with* a shell reintroduces quoting bugs.
