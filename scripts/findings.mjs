@@ -417,6 +417,9 @@ function runVerify({ silent = false } = {}) {
       `[findings] ${findings.filter((f) => f.probe).length} findings carry a regression probe; ` +
         `${probeFailures.length} fired.`,
     );
+    for (const { f, why } of probeFailures) {
+      console.error(`[findings]   ${f.key}  ${f.context} #${f.ordinal}  ${why}`);
+    }
     if (gone.length) {
       console.log('');
       console.log(
@@ -503,9 +506,25 @@ function runCheck() {
   }
 
   // (4) Regression probes. The louder state.
-  const { probeFailures } = runVerify({ silent: true });
+  const { probeFailures, gone } = runVerify({ silent: true });
   for (const { f, why } of probeFailures) {
     problems.push(`${f.key} (${f.context} #${f.ordinal}) [${f.state}]: ${why}`);
+  }
+
+  // (5) An OPEN finding whose anchor file is gone. The vocabulary has a door
+  //     for exactly this — `needs-reanchor` — and --verify has always listed
+  //     the population; until 2026-09-05 --check let it through, so a sweep
+  //     that deleted a file left an open finding pointing at nothing, which
+  //     nobody can act on and which reads as live work in every report.
+  //     Walking through the door is a hand-written verdict: needs-reanchor
+  //     when the defect may live on in a successor, fixed (with fixedIn) when
+  //     the deletion was verified to remove it.
+  for (const f of gone) {
+    problems.push(
+      `${f.key} (${f.context} #${f.ordinal}) is "open" but its anchor ${f.anchorFile} no longer ` +
+        `exists. Mark it needs-reanchor (or fixed, with fixedIn, if the deletion was verified). ` +
+        `An open finding on a deleted file is not a finding anyone can act on.`,
+    );
   }
 
   console.log(
@@ -570,7 +589,12 @@ function runReport() {
 
 if (INGEST) runIngest();
 else if (CHECK) runCheck();
-else if (VERIFY) runVerify(), process.exit(EXIT_OK);
+else if (VERIFY) {
+  // A fired probe is a verdict (exit 1, per the header) in every mode that
+  // runs probes. Until 2026-09-05 --verify printed "N fired" and exited 0.
+  const { probeFailures } = runVerify();
+  process.exit(probeFailures.length ? EXIT_VERDICT : EXIT_OK);
+}
 else if (REPORT) runReport();
 else {
   console.error('Usage: node scripts/findings.mjs --ingest | --check | --verify | --report');
