@@ -116,7 +116,7 @@ describe('withErrorHandler — the API error door', () => {
 });
 
 describe('fromSupabaseError — what the driver said vs what the wire gets', () => {
-  it.fails('a mapped driver code keeps constraint and table names off the wire', () => {
+  it('a mapped driver code keeps constraint and table names off the wire', () => {
     const e = fromSupabaseError({
       code: '23505',
       message: 'duplicate key value violates unique constraint "lists_slug_key"',

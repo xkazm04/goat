@@ -209,12 +209,21 @@ export function fromSupabaseError(error: {
   const mapping = error.code ? SUPABASE_ERROR_MAP[error.code] : undefined;
 
   if (mapping) {
-    return new GoatError(mapping.code, error.message, {
+    // Omit the message so the GoatError falls back to the ERROR_MESSAGES copy
+    // for the mapped code. The driver's own text names the constraint, the
+    // table and often the column ("duplicate key value violates unique
+    // constraint \"lists_slug_key\""), and `buildErrorResponse` puts the
+    // message on the wire verbatim — so this branch, the one that HAD a
+    // structured classification, leaked more schema than the unmapped
+    // fallbacks below, which were already sanitised. The raw text stays
+    // reachable in development for debugging.
+    return new GoatError(mapping.code, undefined, {
       status: mapping.status,
       details: {
         context: {
           supabaseCode: error.code,
           hint: error.hint,
+          ...(process.env.NODE_ENV === 'development' ? { original: error.message } : {}),
         },
       },
     });
