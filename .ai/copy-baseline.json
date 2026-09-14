@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "checker": "native-copy/copy-check 1.0.0",
+  "generatedAt": "2026-09-14T10:14:41.346Z",
+  "count": 8,
+  "fingerprints": [
+    "EN-CASE|src/app/features/Landing/sub_CreateList/components/TemplateGallery.tsx|<h3>|2d2f79997cb737a77a96f5be8414544632da346e",
+    "EN-EXCLAIM|src/app/features/Landing/ListCreateButton.tsx|description|2f6ea31d11ee7d26365bd5a5177b3dd77b37c812",
+    "EN-EXCLAIM|src/app/features/Landing/ListCreateButton.tsx|message|894161f63cf53a9231e51db026267ca42ba5ef0a",
+    "EN-EXCLAIM|src/app/features/Landing/sub_CreateList/CompositionModal.tsx|<span>|c182fd30fc2190c72ee5453fe3ea343e3c83c729",
+    "EN-EXCLAIM|src/app/features/Landing/sub_CreateList/CompositionModal.tsx|description|2f6ea31d11ee7d26365bd5a5177b3dd77b37c812",
+    "EN-EXCLAIM|src/app/features/Landing/sub_CreateList/CompositionModal.tsx|description|7346bf9bf33adcaec1b30994ee648743f0108cc0",
+    "EN-EXCLAIM|src/app/features/Landing/sub_CreateList/CompositionModal.tsx|message|894161f63cf53a9231e51db026267ca42ba5ef0a",
+    "EN-EXCLAIM|src/app/features/Landing/sub_CreateList/CompositionModal.tsx|title|efdba665fcc636a784d3ae5835bdcb6cccf8851e"
+  ]
+}

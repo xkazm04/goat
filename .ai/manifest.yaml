@@ -1,0 +1,24 @@
+# .ai/manifest.yaml - the agent-facing contract for this repo (ai-manifest spec; the
+# capability blocks can be added later - unknown/missing fields are ignored by readers).
+schema: ai-manifest
+schemaVersion: 0.1.0
+generatedAt: "2026-09-14"
+
+repo:
+  name: goat
+  purpose: "G.O.A.T. - create, rank and share definitive top lists (movies, music, games and more)"
+
+# The organization's AI registry - knowledge bundles this repo consumes and the skill
+# marketplace it installs from. Unknown fields MUST be ignored by a reader.
+registry:
+  remote: github:xkazm04/ai-registry
+  local: ../ai-registry
+knowledge:
+  domains: [software-engineering, localization]
+
+# Shared skills this project uses, from the registry's skills/ lane. The LINK is machine
+# state (gitignored, made by ai-registry/scripts/link-registry.mjs); THIS list is the
+# reviewable declaration. A skill not listed here is project-owned and lives in
+# .claude/skills/ as a real directory.
+skills:
+  - native-copy

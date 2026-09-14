@@ -57,3 +57,11 @@ landing-scrolled.png
 context_map.json
 BACKLOG_COALESCING_IMPLEMENTATION.md
 DEV_ARTIFACTS_REPORT.md
+
+# BEGIN ai-registry linked skills (managed by ai-registry/scripts/link-registry.mjs)
+# Links are machine state; the declarations live in .ai/manifest.yaml (`skills:` and `knowledge.domains`).
+/.claude/skills/native-copy
+/.claude/rules/ai-registry-access.md
+/.claude/rules/ai-registry-software-engineering.md
+/.claude/rules/ai-registry-localization.md
+# END ai-registry linked skills
