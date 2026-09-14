@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**G.O.A.T. (Greatest Of All Time)** - A Next.js application for creating and ranking custom lists using an interactive drag-and-drop match system. Users can create ranked lists (Top 10, Top 50, etc.) by matching items from a backlog through an intuitive grid-based interface.
+**G.O.A.T. (Greatest of All Time)** - A Next.js application for creating and ranking custom lists using an interactive drag-and-drop match system. Users can create ranked lists (Top 10, Top 50, etc.) by matching items from a backlog through an intuitive grid-based interface.
 
 ## Common Commands
 

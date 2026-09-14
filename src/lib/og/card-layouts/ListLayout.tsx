@@ -155,7 +155,7 @@ export function ListLayout({ data, options, theme = DEFAULT_THEME }: ListLayoutP
               marginTop: 4,
             }}
           >
-            Greatest Of All Time
+            Greatest of All Time
           </div>
         </div>
       </div>

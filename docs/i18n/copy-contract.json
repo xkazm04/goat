@@ -23,7 +23,7 @@
   "ellipsis": "dots",
   "case": { "style": "sentence" },
   "terms": {
-    "accept": ["G.O.A.T.", "GOAT", "Greatest Of All Time"],
+    "accept": ["G.O.A.T.", "GOAT", "Greatest of All Time"],
     "reject": []
   },
   "rules": { "EN-CASE": "warn" },

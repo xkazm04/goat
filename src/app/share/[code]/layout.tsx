@@ -88,7 +88,7 @@ export async function generateMetadata({ params }: LayoutProps): Promise<Metadat
       title,
       description,
       url: shareUrl,
-      siteName: "G.O.A.T. - Greatest Of All Time",
+      siteName: "G.O.A.T. - Greatest of All Time",
       images: [
         {
           url: ogImageUrl,

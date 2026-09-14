@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "checker": "native-copy/copy-check 1.0.0",
-  "generatedAt": "2026-09-14T10:14:41.346Z",
+  "checker": "native-copy/copy-check 1.1.0",
+  "generatedAt": "2026-09-14T10:44:22.963Z",
   "count": 8,
   "fingerprints": [
     "EN-CASE|src/app/features/Landing/sub_CreateList/components/TemplateGallery.tsx|<h3>|2d2f79997cb737a77a96f5be8414544632da346e",

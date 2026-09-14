@@ -24,10 +24,10 @@ const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://goat.app';
 
 export const metadata: Metadata = {
   title: {
-    default: 'G.O.A.T. - Greatest Of All Time',
+    default: 'G.O.A.T. - Greatest of All Time',
     template: '%s | G.O.A.T.',
   },
-  description: 'Create, rank, and share your definitive lists. Discover the Greatest Of All Time in movies, music, games, and more.',
+  description: 'Create, rank, and share your definitive lists. Discover the Greatest of All Time in movies, music, games, and more.',
   keywords: ['ranking', 'top lists', 'greatest of all time', 'GOAT', 'movies', 'music', 'games', 'lists'],
   authors: [{ name: 'G.O.A.T.' }],
   creator: 'G.O.A.T.',
@@ -37,20 +37,20 @@ export const metadata: Metadata = {
     locale: 'en_US',
     url: baseUrl,
     siteName: 'G.O.A.T.',
-    title: 'G.O.A.T. - Greatest Of All Time',
-    description: 'Create, rank, and share your definitive lists. Discover the Greatest Of All Time in movies, music, games, and more.',
+    title: 'G.O.A.T. - Greatest of All Time',
+    description: 'Create, rank, and share your definitive lists. Discover the Greatest of All Time in movies, music, games, and more.',
     images: [
       {
         url: `${baseUrl}/og-default.png`,
         width: 1200,
         height: 630,
-        alt: 'G.O.A.T. - Greatest Of All Time Rankings',
+        alt: 'G.O.A.T. - Greatest of All Time Rankings',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'G.O.A.T. - Greatest Of All Time',
+    title: 'G.O.A.T. - Greatest of All Time',
     description: 'Create, rank, and share your definitive lists.',
     site: '@goat_rankings',
     creator: '@goat_rankings',

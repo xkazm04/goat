@@ -159,7 +159,7 @@ export function GoatView({ gridItems, onRemove, getItemTitle, onFillViaBracket }
                 </motion.div>
 
                 <p className="text-yellow-500/70 text-sm font-mono uppercase tracking-widest">
-                    Greatest Of All Time
+                    Greatest of All Time
                 </p>
 
                 {/* 2nd & 3rd Place — row below */}

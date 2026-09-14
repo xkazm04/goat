@@ -27,15 +27,20 @@ the gate outside the landing.
 - **2026-09-14 - US English** (operator, fleet-wide).
 - **2026-09-14 - em dash banned in product copy** (operator, fleet-wide; EN-DASH). A standalone
   no-data glyph and code comments are not copy. The metadata title uses a spaced hyphen
-  (`G.O.A.T. - Greatest Of All Time`); keep it or use a colon, never an em dash.
+  (`G.O.A.T. - Greatest of All Time`); keep it or use a colon, never an em dash.
 - **2026-09-14 - sentence case declared, Title Case kept as debt** (operator fleet standard).
   Section headers use Title Case consistently today (Browse by Category, My Collections, Featured
   Rankings, Saved Lists, My Rankings, Continue Ranking, Start from Template), as do toast titles and
   several buttons. EN-CASE stays a warning; convert a surface as a whole when it is redesigned,
   never one header at a time (mixing is the defect). The checker judges only JSX `h1`-`h6`, so
   most of this debt is invisible to it: `SectionHeader title` props are not heading-class.
-- Brand names in `terms.accept`: G.O.A.T., GOAT, Greatest Of All Time. The tagline is spelled
-  `Greatest of All Time` in `CardHeader.tsx` (EN-ONE-TERM candidate; one spelling should win).
+- Brand names in `terms.accept`: G.O.A.T., GOAT, Greatest of All Time.
+- **2026-09-14 - the tagline is `Greatest of All Time`** (operator delegated the choice; EN-ONE-TERM).
+  Title style lowercases a short preposition even when a phrase spells out an acronym, and the
+  lowercase form already rendered in `CardHeader.tsx` and the tier presets. Converted the same day
+  from `Greatest Of All Time` in the site metadata, PWA manifest, share and achievement pages, the
+  OG image routes and the landing showcase header. Lowercase running-text uses ("discover the
+  greatest of all time") are ordinary prose, not the tagline.
 
 ## Voice today
 

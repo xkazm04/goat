@@ -217,7 +217,7 @@ export function ShowcaseHeader() {
               animationPlayState: animState,
             }}
           >
-            Greatest Of All Time
+            Greatest of All Time
           </p>
 
           {/* Subtle glow under subtitle (soft gradient, no blur filter) */}

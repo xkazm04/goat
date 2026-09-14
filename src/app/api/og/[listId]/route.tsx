@@ -342,7 +342,7 @@ function renderListLayout(data: OGCardData, options: OGCardOptions, theme: OGCar
               marginTop: 4,
             }}
           >
-            Greatest Of All Time
+            Greatest of All Time
           </div>
         </div>
       </div>

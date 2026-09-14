@@ -216,7 +216,7 @@ export async function GET(request: NextRequest) {
                   marginTop: 4,
                 }}
               >
-                Greatest Of All Time
+                Greatest of All Time
               </div>
             </div>
           </div>

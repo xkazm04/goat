@@ -18,10 +18,10 @@ export async function generateMetadata({
 
   return {
     title: 'Achievement Unlocked - G.O.A.T.',
-    description: 'Check out this achievement on G.O.A.T. - Greatest Of All Time',
+    description: 'Check out this achievement on G.O.A.T. - Greatest of All Time',
     openGraph: {
       title: 'Achievement Unlocked - G.O.A.T.',
-      description: 'Check out this achievement on G.O.A.T. - Greatest Of All Time',
+      description: 'Check out this achievement on G.O.A.T. - Greatest of All Time',
       images: [
         {
           url: ogImageUrl,
@@ -118,7 +118,7 @@ export default async function AchievementPage({
           >
             G.O.A.T.
           </div>
-          <p className="text-xs text-gray-600 mt-1">Greatest Of All Time</p>
+          <p className="text-xs text-gray-600 mt-1">Greatest of All Time</p>
         </div>
       </div>
     </div>

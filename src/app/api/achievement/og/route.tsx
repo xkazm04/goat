@@ -300,7 +300,7 @@ export async function GET(request: NextRequest) {
               G.O.A.T.
             </div>
             <div style={{ color: '#64748b', fontSize: 14 }}>
-              Greatest Of All Time
+              Greatest of All Time
             </div>
           </div>
         </div>
