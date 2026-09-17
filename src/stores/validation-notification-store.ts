@@ -15,6 +15,7 @@
  */
 
 import { create } from 'zustand';
+import { useShallow } from 'zustand/react/shallow';
 
 import { validationLogger } from '@/lib/logger';
 import {
@@ -152,17 +153,17 @@ export const useValidationNotificationStore = create<ValidationNotificationStore
  * Returns notifications array and dismiss function
  */
 export const useValidationNotifications = () =>
-  useValidationNotificationStore((state) => ({
+  useValidationNotificationStore(useShallow((state) => ({
     notifications: state.notifications,
     dismissNotification: state.dismissNotification,
     clearAll: state.clearAllNotifications,
-  }));
+  })));
 
 /**
  * Hook for stores/services that need to emit notifications
  * Returns only the emit function for minimal subscription
  */
 export const useValidationNotificationEmitter = () =>
-  useValidationNotificationStore((state) => ({
+  useValidationNotificationStore(useShallow((state) => ({
     emitValidationError: state.emitValidationError,
-  }));
+  })));

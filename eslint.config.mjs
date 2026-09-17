@@ -29,11 +29,16 @@
  *      import/no-duplicates catches redundant import statements.
  */
 
+import { createRequire } from "node:module";
+
 import coreWebVitals from "eslint-config-next/core-web-vitals";
 import storybookPlugin from "eslint-plugin-storybook";
 import unusedImports from "eslint-plugin-unused-imports";
 import importPlugin from "eslint-plugin-import";
 import jsxA11y from "eslint-plugin-jsx-a11y";
+
+const require = createRequire(import.meta.url);
+const noUnstableStoreSelector = require("./eslint-rules/no-unstable-store-selector.cjs");
 
 const eslintConfig = [
   ...coreWebVitals,
@@ -68,6 +73,18 @@ const eslintConfig = [
       "jsx-a11y/no-static-element-interactions": "warn",
       "jsx-a11y/no-noninteractive-element-interactions": "warn",
       "storybook/no-renderer-packages": "warn",
+    },
+  },
+
+  // local: contract terms the type checker cannot hold. A selector returning a
+  // freshly built value type-checks exactly like a stable one, so nothing but a
+  // rule separates the two programs.
+  {
+    plugins: {
+      local: { rules: { "no-unstable-store-selector": noUnstableStoreSelector } },
+    },
+    rules: {
+      "local/no-unstable-store-selector": "error",
     },
   },
 

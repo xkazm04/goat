@@ -20,6 +20,7 @@
 import { DragEndEvent } from '@dnd-kit/core';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { useShallow } from 'zustand/react/shallow';
 
 import { logActivity } from '@/lib/activity/activity-logger';
 import {
@@ -1280,10 +1281,10 @@ export function useIsGridComplete(): boolean {
  * Hook to get an array of filled positions
  */
 export function useFilledPositions(): number[] {
-  return useGridStore((state) =>
+  return useGridStore(useShallow((state) =>
     state.gridItems
       .map((item, index) => (item.context.matched ? index : -1))
-      .filter((index) => index !== -1)
+      .filter((index) => index !== -1))
   );
 }
 
@@ -1291,10 +1292,10 @@ export function useFilledPositions(): number[] {
  * Hook to get an array of empty positions
  */
 export function useEmptyPositions(): number[] {
-  return useGridStore((state) =>
+  return useGridStore(useShallow((state) =>
     state.gridItems
       .map((item, index) => (!item.context.matched ? index : -1))
-      .filter((index) => index !== -1)
+      .filter((index) => index !== -1))
   );
 }
 
@@ -1303,8 +1304,8 @@ export function useEmptyPositions(): number[] {
  * More efficient than multiple individual selectors when you need several positions
  */
 export function useGridItemsAtPositions(positions: number[]): (GridItemType | null)[] {
-  return useGridStore((state) =>
-    positions.map((pos) => state.gridItems[pos] ?? null)
+  return useGridStore(useShallow((state) =>
+    positions.map((pos) => state.gridItems[pos] ?? null))
   );
 }
 
@@ -1312,11 +1313,11 @@ export function useGridItemsAtPositions(positions: number[]): (GridItemType | nu
  * Selector for grid actions only (no state, no re-renders on state change)
  */
 export function useGridActions() {
-  return useGridStore((state) => ({
+  return useGridStore(useShallow((state) => ({
     assignItemToGrid: state.assignItemToGrid,
     removeItemFromGrid: state.removeItemFromGrid,
     moveGridItem: state.moveGridItem,
     clearGrid: state.clearGrid,
     loadTutorialData: state.loadTutorialData,
-  }));
+  })));
 }

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { useShallow } from 'zustand/react/shallow';
 
 import { GRID_LIMITS } from '@/lib/grid/constants';
 import { sessionLogger } from '@/lib/logger';
@@ -565,10 +566,10 @@ export const useSessionStore = create<SessionStoreState>()(
 // Enhanced Selector hooks with new types
 // Note: backlogGroups is a computed getter, so we use the cached version
 export const useBacklogGroups = () => useSessionStore((state) => getCachedBacklogGroups(state.normalizedData));
-export const useActiveSession = () => useSessionStore((state) => ({
+export const useActiveSession = () => useSessionStore(useShallow((state) => ({
   activeSessionId: state.activeSessionId,
   hasSession: !!state.activeSessionId
-}));
+})));
 export const useSessionSelection = () => useSelectionCursor((state) => ({
   selectedBacklogItem: state.itemId
 }));

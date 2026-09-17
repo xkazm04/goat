@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { useShallow } from 'zustand/react/shallow';
 
 import { BacklogItemType } from '@/types/match';
 
@@ -255,7 +256,7 @@ export const useComparisonStore = create<ComparisonStoreState>()(
 );
 
 // Selector hooks
-export const useComparisonPanelState = () => useComparisonStore(state => ({
+export const useComparisonPanelState = () => useComparisonStore(useShallow(state => ({
   isOpen: state.isOpen,
   selectedIds: state.selectedForComparison,
   selectedItems: state.getSelectedItems(),
@@ -263,9 +264,9 @@ export const useComparisonPanelState = () => useComparisonStore(state => ({
   canCompare: state.canCompare(),
   history: state.comparisonHistory,
   activeComparisonId: state.activeComparisonId
-}));
+})));
 
-export const useComparisonPanelActions = () => useComparisonStore(state => ({
+export const useComparisonPanelActions = () => useComparisonStore(useShallow(state => ({
   openPanel: state.open,
   closePanel: state.close,
   toggleSelection: state.toggleItem,
@@ -277,4 +278,4 @@ export const useComparisonPanelActions = () => useComparisonStore(state => ({
   clearHistory: state.clearHistory,
   reorder: state.reorderItems,
   isSelected: (itemId: string) => state.selectedForComparison.includes(itemId)
-}));
+})));

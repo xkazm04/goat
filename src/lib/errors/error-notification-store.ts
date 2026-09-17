@@ -12,6 +12,7 @@
  */
 
 import { create } from 'zustand';
+import { useShallow } from 'zustand/react/shallow';
 
 import { GoatError, fromUnknown, isGoatError } from './GoatError';
 
@@ -240,29 +241,29 @@ export const useErrorNotificationStore = create<ErrorNotificationState>((set, ge
  * Hook for components that display notifications
  */
 export const useErrorNotifications = () =>
-  useErrorNotificationStore((state) => ({
+  useErrorNotificationStore(useShallow((state) => ({
     notifications: state.notifications,
     dismiss: state.dismiss,
     clearAll: state.clearAll,
-  }));
+  })));
 
 /**
  * Hook for components that emit notifications
  */
 export const useErrorNotificationEmitter = () =>
-  useErrorNotificationStore((state) => ({
+  useErrorNotificationStore(useShallow((state) => ({
     emitError: state.emitError,
     emitGoatError: state.emitGoatError,
-  }));
+  })));
 
 /**
  * Hook for error analytics
  */
 export const useErrorHistory = () =>
-  useErrorNotificationStore((state) => ({
+  useErrorNotificationStore(useShallow((state) => ({
     errorHistory: state.errorHistory,
     clearErrorHistory: state.clearErrorHistory,
-  }));
+  })));
 
 // ============================================================================
 // Utility Functions

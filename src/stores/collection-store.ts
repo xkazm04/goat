@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { useShallow } from 'zustand/react/shallow';
 
 import { createLogger } from '@/lib/logger';
 
@@ -406,14 +407,14 @@ export const useCollectionTree = () =>
   useCollectionStore((state) => state.getCollectionTree());
 
 export const useCollectionUIState = () =>
-  useCollectionStore((state) => ({
+  useCollectionStore(useShallow((state) => ({
     selectedCollectionId: state.selectedCollectionId,
     isLoading: state.isLoading,
     isSyncing: state.isSyncing,
-  }));
+  })));
 
 export const useCollectionActions = () =>
-  useCollectionStore((state) => ({
+  useCollectionStore(useShallow((state) => ({
     setCollections: state.setCollections,
     addCollection: state.addCollection,
     updateCollection: state.updateCollection,
@@ -425,4 +426,4 @@ export const useCollectionActions = () =>
     moveListBetweenCollections: state.moveListBetweenCollections,
     reorderCollections: state.reorderCollections,
     moveCollection: state.moveCollection,
-  }));
+  })));

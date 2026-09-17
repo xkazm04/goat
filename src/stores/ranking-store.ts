@@ -24,6 +24,7 @@
 
 import { create } from 'zustand';
 import { persist, subscribeWithSelector } from 'zustand/middleware';
+import { useShallow } from 'zustand/react/shallow';
 
 import {
   createEmptyBracket,
@@ -1443,24 +1444,24 @@ export const useRankedItemAtPosition = (position: number) =>
  * Get all filled ranking items
  */
 export const useFilledRankingItems = () =>
-  useRankingStore((state) => state.ranking.filter((r) => r.item !== null));
+  useRankingStore(useShallow((state) => state.ranking.filter((r) => r.item !== null)));
 
 /**
  * Get ranking statistics
  */
 export const useRankingStats = () =>
-  useRankingStore((state) => ({
+  useRankingStore(useShallow((state) => ({
     filledCount: state.filledCount,
     completionPercentage: state.completionPercentage,
     isComplete: state.isComplete,
     total: state.maxRankingSize,
-  }));
+  })));
 
 /**
  * Get bracket progress
  */
 export const useBracketProgress = () =>
-  useRankingStore((state) => {
+  useRankingStore(useShallow((state) => {
     if (!state.bracketState) return null;
     const totalMatchups = state.bracketState.rounds.reduce(
       (sum, round) => sum + round.matchups.length,
@@ -1477,7 +1478,7 @@ export const useBracketProgress = () =>
       isComplete: state.bracketState.isComplete,
       champion: state.bracketState.champion,
     };
-  });
+  }));
 
 /**
  * Get tier with items
@@ -1615,7 +1616,7 @@ export function useTierDefinitions() {
  * Hook to get collapsed tier IDs
  */
 export function useCollapsedTierIds() {
-  return useRankingStore((state) =>
-    state.tierState.tiers.filter(t => t.collapsed).map(t => t.id)
+  return useRankingStore(useShallow((state) =>
+    state.tierState.tiers.filter(t => t.collapsed).map(t => t.id))
   );
 }
