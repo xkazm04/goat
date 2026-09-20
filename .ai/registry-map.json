@@ -1594,7 +1594,11 @@
           "revision": 3,
           "changedAt": "2026-09-03",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/lib/search/SearchEngine.ts:515 computes hasMore from a set that src/lib/search/SearchEngine.ts:191 has already capped at limit per domain, so hasMore can never be true; totalResults at src/lib/search/SearchEngine.ts:508 and the facet counts at src/lib/search/SearchEngine.ts:489 are likewise taken over the truncated page, so the surface never discloses truncation and publishes counts smaller than the corpus.",
+          "evaluatedAt": "2026-09-20",
+          "evaluatedAgainst": "sha256:b02a2eca8c0c6377",
+          "evaluatedRevision": 4
         },
         {
           "subject": "mcp-tools",
@@ -3369,7 +3373,11 @@
           "revision": 15,
           "changedAt": "2026-09-05",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "No persisted store passes version or migrate to the zustand persist middleware (src/stores/session-store.ts:533, src/stores/grid-store.ts:1139 among eleven), and shape changes are patched by sniffing for a missing field at src/stores/grid-store.ts:1152, so a payload written by an older release cannot be distinguished from a corrupt one and the failure only appears on upgraded installations.",
+          "evaluatedAt": "2026-09-20",
+          "evaluatedAgainst": "sha256:084c2956d1ea0133",
+          "evaluatedRevision": 15
         },
         {
           "subject": "prompt-assembly",
@@ -3402,6 +3410,14 @@
           "changedAt": "2026-09-04",
           "confidence": "probable",
           "state": "unknown"
+        },
+        {
+          "subject": "sync-replication",
+          "bundle": "software-engineering",
+          "source": "conform",
+          "confidence": "strong",
+          "state": "unknown",
+          "evidence": "added by /conform: the matcher scored this at zero because the repo says offline/sync/conflict where the subject says replication/replica/topology. src/lib/offline/OfflinePersistence.ts:75 keeps a durable outbound operation queue replayed against /api/sync (:8-9, enqueueSessionUpdate :231) and src/lib/storage/storage-registry.ts:40 compares a serverVersion through a conflict resolver, so sessions are two-way replicated records, not a cache - the golden path's own 'when not to build sync' test passes on all three clauses."
         }
       ],
       "governance": "governed"
@@ -3439,7 +3455,11 @@
           "revision": 14,
           "changedAt": "2026-09-08",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/lib/cache/unified-cache.ts:74 declares key, lifetime and eviction per family but states no admission rule, and src/lib/cache/server-cache.ts:18 is an uncapped Map fed combinatorial keys by src/app/api/top/groups/bulk-items/route.ts:58, so it grows with every distinct group subset and only expiry reaps it; the dedup key at src/lib/api/goat-api.ts:246 is built inline by JSON.stringify, a second key authority beside src/lib/query-keys/collection.ts:19 with no canonical field order.",
+          "evaluatedAt": "2026-09-20",
+          "evaluatedAgainst": "sha256:4d99e2f5de14142b",
+          "evaluatedRevision": 14
         },
         {
           "subject": "rate-limiting",
@@ -3455,7 +3475,11 @@
           "revision": 8,
           "changedAt": "2026-09-03",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/lib/api/rate-limiter.ts:69 keys the limiter on the leftmost x-forwarded-for value with no deployment witness, so a caller who varies the header mints a fresh bucket per request while the limiter reports zero refusals, and the same line falls back to one shared 'anonymous' bucket for everyone unattributable; src/lib/api/rate-limiter.ts:32 takes the limit and window as caller arguments so nothing can answer what a key's limit is, and src/lib/api/rate-limiter.ts:47 counts refused attempts.",
+          "evaluatedAt": "2026-09-20",
+          "evaluatedAgainst": "sha256:a81b069ef7e72fbd",
+          "evaluatedRevision": 8
         },
         {
           "subject": "mcp-tools",
@@ -3643,7 +3667,11 @@
           "revision": 8,
           "changedAt": "2026-09-15",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/lib/animations/motion-presets.ts:112 and src/lib/animations/micro-interactions.ts:58 re-derive the reduced-motion answer from the media query alone, bypassing the composite resolver at src/hooks/use-motion-preference.ts:279, so a user on the in-app 'minimal' tier still gets full springs; src/app/globals.css:1343 also collapses durations to exact 0s rather than an epsilon, and src/lib/animations/micro-interactions.ts:495 animates width.",
+          "evaluatedAt": "2026-09-20",
+          "evaluatedAgainst": "sha256:d623a3bcfdcbd1c0",
+          "evaluatedRevision": 9
         },
         {
           "subject": "design-tokens",
