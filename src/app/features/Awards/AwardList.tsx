@@ -435,7 +435,7 @@ export function AwardList({ parentListId, title = "Annual Awards", description }
                 {/* Collection Panel - truly fixed outside everything */}
                 <SimpleCollectionPanel
                     groups={backlogGroupsToItemCategories(groups)}
-                    onItemClick={(item) => setSelectedItem(item)}
+                    onItemClick={setSelectedItem}
                     selectedItemId={selectedItem?.id}
                 />
 

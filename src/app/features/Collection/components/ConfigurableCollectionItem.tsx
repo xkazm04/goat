@@ -110,8 +110,13 @@ export interface ConfigurableCollectionItemProps {
   isSpotlight?: boolean;
   /** Whether this item is selected via click-to-assign */
   isClickSelected?: boolean;
-  /** Click handler for click-to-assign */
-  onClick?: () => void;
+  /**
+   * Click handler for click-to-assign. It takes the item, so a list can hand every
+   * card ONE stable callback: an inline `() => onClick(item)` per card is a new
+   * function on every parent render, fails the memo comparator below for every
+   * card, and re-renders them all.
+   */
+  onClick?: (item: CollectionItemType) => void;
   /** Feature configuration */
   config?: CollectionItemConfig;
   /**

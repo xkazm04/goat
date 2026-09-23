@@ -478,8 +478,11 @@ function SimpleMatchGridInner() {
   const mobileSelectedItem = useGridStore(state => state.mobileSelectedItem);
   const setMobileSelectedItem = useGridStore(state => state.setMobileSelectedItem);
 
+  // Reads the selection at click time instead of closing over it: a handler that changes
+  // identity on every selection re-renders every mounted collection card, not just the two
+  // whose selection changed.
   const handleCollectionItemClick = useCallback((item: CollectionItem) => {
-    if (mobileSelectedItem?.id === item.id) {
+    if (useGridStore.getState().mobileSelectedItem?.id === item.id) {
       // Deselect if clicking the same item
       setMobileSelectedItem(null);
     } else {
@@ -489,7 +492,7 @@ function SimpleMatchGridInner() {
         image_url: item.image_url ?? undefined,
       });
     }
-  }, [mobileSelectedItem, setMobileSelectedItem]);
+  }, [setMobileSelectedItem]);
 
   return (
     <>

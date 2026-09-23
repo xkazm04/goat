@@ -153,7 +153,7 @@ export function VirtualizedCollectionGrid({
                           <ConfigurableCollectionItem
                             item={flatItem.item} groupId={flatItem.groupId} index={flatItem.globalIndex}
                             searchQuery={searchQuery} isClickSelected={isClickSelected}
-                            onClick={onItemClick ? () => handleItemClick(flatItem.item) : undefined}
+                            onClick={onItemClick ? handleItemClick : undefined}
                             config={MATCH_VIEW_CONFIG}
                             hoistedState={hoistedState}
                           />
