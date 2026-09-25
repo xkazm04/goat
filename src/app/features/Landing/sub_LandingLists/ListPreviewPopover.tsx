@@ -106,7 +106,8 @@ interface PreviewContentProps {
     category: string;
     subcategory?: string;
     size: number;
-    itemCount: number;
+    /** Undefined while only the card's summary is known. */
+    itemCount?: number;
     averageRanking?: number;
     timePeriod?: string;
     createdAt: string;
@@ -115,7 +116,9 @@ interface PreviewContentProps {
 
 function PreviewContent({ data }: PreviewContentProps) {
   const colors = getCategoryColor(data.category);
-  const completionPercent = Math.round((data.itemCount / data.size) * 100);
+  // Unknown while only the card's summary is known: never rendered as 0.
+  const completionPercent =
+    data.itemCount === undefined ? undefined : Math.round((data.itemCount / data.size) * 100);
   const createdDate = new Date(data.createdAt).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
@@ -167,7 +170,7 @@ function PreviewContent({ data }: PreviewContentProps) {
           <Hash className="w-3.5 h-3.5 text-brand-hover" />
           <div>
             <div className="text-xs font-medium text-white">
-              {data.itemCount}/{data.size}
+              {data.itemCount ?? "—"}/{data.size}
             </div>
             <div className="text-2xs text-slate-500">items</div>
           </div>
@@ -181,24 +184,26 @@ function PreviewContent({ data }: PreviewContentProps) {
             Completion
           </span>
           <span className="text-2xs font-medium text-slate-400">
-            {completionPercent}%
+            {completionPercent === undefined ? "—" : `${completionPercent}%`}
           </span>
         </div>
         <div
           className="h-1.5 rounded-full overflow-hidden"
           style={{ background: "rgba(255, 255, 255, 0.08)" }}
         >
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${completionPercent}%` }}
-            transition={{ duration: DURATION.slow, ease: EASE.out }}
-            className="h-full rounded-full"
-            style={{
-              background: `linear-gradient(90deg, ${colors.primary}, ${colors.secondary})`,
-              boxShadow: `0 0 10px ${colors.primary}50`,
-            }}
-            data-testid="list-preview-progress-bar"
-          />
+          {completionPercent !== undefined && (
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${completionPercent}%` }}
+              transition={{ duration: DURATION.slow, ease: EASE.out }}
+              className="h-full rounded-full"
+              style={{
+                background: `linear-gradient(90deg, ${colors.primary}, ${colors.secondary})`,
+                boxShadow: `0 0 10px ${colors.primary}50`,
+              }}
+              data-testid="list-preview-progress-bar"
+            />
+          )}
         </div>
       </div>
 

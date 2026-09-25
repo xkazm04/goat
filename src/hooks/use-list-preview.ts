@@ -1,19 +1,41 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { useState, useCallback } from 'react';
 
 import { topListsKeys } from '@/lib/query-keys/top-lists';
 import { listOptions } from '@/lib/query-options/top-lists';
-import { ListWithItems } from '@/types/top-lists';
+import { ListWithItems, TopList } from '@/types/top-lists';
 
 interface ListPreviewData {
   title: string;
   category: string;
   subcategory?: string;
   size: number;
-  itemCount: number;
+  /** Undefined while only a summary is known: unknown, not zero. */
+  itemCount?: number;
   averageRanking?: number;
   timePeriod?: string;
   createdAt: string;
+}
+
+/**
+ * The freshest summary of this list that any listing in the family already
+ * holds. Found by the list's id, not by the key of the listing the card came
+ * from: the same list is cached under several listing keys (landing section,
+ * command palette), and a lookup that names one of them misses silently the
+ * day that listing's parameters change. Only listing entries (arrays) are
+ * read; a detail entry or the featured bundle is not a summary of this list.
+ */
+function findListSummary(queryClient: QueryClient, listId: string): TopList | undefined {
+  const listings = queryClient
+    .getQueryCache()
+    .findAll({ queryKey: topListsKeys.lists() })
+    .filter((q) => Array.isArray(q.state.data))
+    .sort((a, b) => b.state.dataUpdatedAt - a.state.dataUpdatedAt);
+  for (const q of listings) {
+    const hit = (q.state.data as TopList[]).find((l) => l?.id === listId);
+    if (hit) return hit;
+  }
+  return undefined;
 }
 
 interface UseListPreviewOptions {
@@ -70,23 +92,29 @@ export function useListPreview(
     // Keep shouldFetch true to preserve cache access
   }, [hoverTimeout]);
 
+  // Until the detail lands, the card's own summary can paint what it carries.
+  // It carries no items, so everything derived from items stays unknown.
+  const summary = data ? undefined : findListSummary(queryClient, listId);
+  const known = data ?? summary;
+
   // Transform API response to preview data
-  const previewData: ListPreviewData | null = data
+  const previewData: ListPreviewData | null = known
     ? {
-        title: data.title,
-        category: data.category,
-        subcategory: data.subcategory,
-        size: data.size,
-        itemCount: data.items?.length || 0,
-        averageRanking: calculateAverageRanking(data.items),
-        timePeriod: data.time_period,
-        createdAt: data.created_at,
+        title: known.title,
+        category: known.category,
+        subcategory: known.subcategory,
+        size: known.size,
+        itemCount: data ? data.items?.length || 0 : undefined,
+        averageRanking: data ? calculateAverageRanking(data.items) : undefined,
+        timePeriod: known.time_period,
+        createdAt: known.created_at,
       }
     : null;
 
   return {
     previewData,
-    isLoading: shouldFetch && isLoading,
+    isLoading: shouldFetch && isLoading && !summary,
+    isPartial: !data && !!summary,
     error,
     startHover,
     endHover,
