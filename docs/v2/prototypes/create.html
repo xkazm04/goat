@@ -500,6 +500,7 @@
     .row.top1 .r-title { font-size: 1.7rem; }
     .r-why { display: none; }
     .crown { width: 30px; top: 0; left: calc(8px + var(--num-w) - 42px); }
+    .halo { opacity: .4; }
     .wave { display: none; }
   }
   @media (prefers-reduced-motion: reduce) {
@@ -806,7 +807,9 @@
         const f = 1 - Math.exp(-dt * 5);
         p.x += (c.x + Math.cos(p.th) * c.rx * k - p.x) * f;
         p.y += (c.y + Math.sin(p.th) * c.ry * k - p.y) * f;
-        return p.a * Math.min(1, p.age / p.fin) * (.5 + .5 * Math.sin(p.th));
+        const quiet = p.idle ? p.idle() - 7 : 0;
+        if (quiet > 1.4) { if (p.onQuiet) p.onQuiet(); return -1; }
+        return p.a * Math.min(1, p.age / p.fin) * (.5 + .5 * Math.sin(p.th)) * (quiet > 0 ? 1 - quiet / 1.4 : 1);
       } else {
         const k = Math.exp(-dt * p.drag);
         p.vx *= k; p.vy = p.vy * k + p.g * dt;
@@ -1434,7 +1437,7 @@
   const Altar = (() => {
     const s1 = $("#step1"), form = $("#askForm"), halo = $("#halo"), rA = $("#ringA"), rB = $("#ringB");
     const C = { x: 0, y: 0, rx: 0, ry: 0 }, B = { x: 0, y: 0 };
-    let spin = 1, spinT = 1, rate = 1, idle = 0, inView = true, busy = false, charge = 0, key = "";
+    let spin = 1, spinT = 1, rate = 1, inView = true, busy = false, charge = 0, key = "", fedAt = 0;
     // the rings turn on the compositor; the loop only nudges their playback rate
     const spins = FXON ? [
       rA.animate([{ transform: "rotate(0deg)" }, { transform: "rotate(360deg)" }], { duration: 160000, iterations: Infinity }),
@@ -1477,37 +1480,33 @@
       else { rA.classList.add("fade"); rB.classList.add("fade"); setTimeout(swap, 420); }
     }
 
-    function mote(charged) {
-      const W = innerWidth, H = innerHeight;
-      let x, y, n = 0;
-      if (charged) {
-        const a = Math.random() * TAU, d = 170 + Math.random() * 260;
-        x = C.x + Math.cos(a) * d * 1.5; y = C.y + Math.sin(a) * d * .7;
-      } else {
-        do { x = Math.random() * W; y = 70 + Math.random() * (H - 70); } while (Math.hypot((x - C.x) / 1.7, y - C.y) < 190 && ++n < 6);
-      }
+    function mote() {
+      const a = Math.random() * TAU, d = 170 + Math.random() * 260;
+      const x = C.x + Math.cos(a) * d * 1.5, y = C.y + Math.sin(a) * d * .7;
       const th = Math.random() * TAU;
       const h = Math.random() < .55 ? HUE.b : Math.random() < .5 ? HUE.a : 43;
       const tgt = () => ({ x: C.x + Math.cos(th) * C.rx, y: C.y + Math.sin(th) * C.ry });
-      FX.add(charged
-        ? { x, y, h, l: 70, r: 1.8 + Math.random() * 1.6, a: .95, fin: .15, tag: "altar", mode: "seek", tgt,
-            v0: 60, acc: 700, vmax: 560, turn: 3.2, swirl: (Math.random() - .5) * 1.5, tmax: 3,
-            onArrive: (p) => {
-              if (charge >= 90) return false;
-              charge++;
-              if (charge === 24) form.classList.add("charged");
-              Object.assign(p, { mode: "orbit", tag: "altar", th: Math.atan2((p.y - C.y) / C.ry, (p.x - C.x) / C.rx),
-                om: (Math.random() < .5 ? -1 : 1) * (.16 + Math.random() * .3), k: 1.04 + Math.random() * .34, center, age: 1 });
-              return true;
-            } }
-        : { x, y, h, l: 66, r: 1.2 + Math.random() * 1.3, a: .55, fin: .8, tag: "altar", mode: "seek", tgt,
-            v0: 12, acc: 36, vmax: 90, turn: 1.4, swirl: (Math.random() - .5) * 1.2, tmax: 14, nearFade: 90, tw: 3 });
+      FX.add({ x, y, h, l: 70, r: 1.8 + Math.random() * 1.6, a: .95, fin: .15, tag: "altar", mode: "seek", tgt,
+        v0: 60, acc: 700, vmax: 560, turn: 3.2, swirl: (Math.random() - .5) * 1.5, tmax: 3,
+        onArrive: (p) => {
+          if (charge >= 90) return false;
+          charge++;
+          if (charge === 24) form.classList.add("charged");
+          // join the halo; it fades if the prompt is left alone for a while
+          Object.assign(p, { mode: "orbit", tag: "altar", th: Math.atan2((p.y - C.y) / C.ry, (p.x - C.x) / C.rx),
+            om: (Math.random() < .5 ? -1 : 1) * (.16 + Math.random() * .3), k: 1.04 + Math.random() * .34, center, age: 1,
+            idle: () => (performance.now() - fedAt) / 1000,
+            onQuiet: () => { charge = Math.max(0, charge - 1); if (charge < 24) form.classList.remove("charged"); } });
+          return true;
+        } });
     }
     function feed(n) {
       if (!FXON || busy || S.step !== 1) return;
       measure();
       spinT = Math.min(16, spinT + 2.4 + n * .1);
-      for (let i = 0; i < n; i++) mote(true);
+      fedAt = performance.now();
+      FX.each((p) => { if (p.mode === "orbit") p.age = Math.min(p.age, 1); });
+      for (let i = 0; i < n; i++) mote();
     }
 
     function summon(done) {
@@ -1563,15 +1562,14 @@
       form.classList.remove("summoning");
       requestAnimationFrame(measure);
     }
+    // only awake while the rings are spun up; at cruising speed they turn on the compositor alone
     FX.emit({
-      live: () => FXON && S.step === 1 && inView,
+      live: () => FXON && S.step === 1 && inView && (busy || Math.abs(spin - 1) > .02 || spinT > 1.02),
       tick(t, dt) {
         spinT = 1 + (spinT - 1) * Math.exp(-dt * 1.1);
         spin += (spinT - spin) * (1 - Math.exp(-dt * 4));
-        if (Math.abs(spin - rate) > .04 * rate) { rate = spin; spins.forEach((a) => a.updatePlaybackRate(rate)); }
-        if (busy) return;
-        idle += dt * 2.6;
-        while (idle >= 1) { idle--; mote(false); }
+        if (spinT < 1.02 && Math.abs(spin - 1) < .02) spin = 1;
+        if (Math.abs(spin - rate) > .04 * rate || (spin === 1 && rate !== 1)) { rate = spin; spins.forEach((a) => a.updatePlaybackRate(rate)); }
       },
     });
     return { setRings, feed, summon, reset, measure, busy: () => busy };
