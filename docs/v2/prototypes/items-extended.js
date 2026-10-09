@@ -1,0 +1,42 @@
+/* GOAT v2: 34 more well-known RPGs, in exactly the shape of GOAT.items.
+   Loaded after shared.js. Together with GOAT.items it makes a pool of 50,
+   enough to fill a Top 50. Covers are generated from h + motif. */
+(function () {
+  if (!window.GOAT) return;
+  window.GOAT.moreItems = [
+    { id: "ff6",    title: "Final Fantasy VI",               year: 1994, by: "Square",              h: [280, 40],  motif: "slash", traits: ["classic", "turn-based", "melancholic"], note: "" },
+    { id: "ffx",    title: "Final Fantasy X",                year: 2001, by: "Square",              h: [190, 210], motif: "moon",  traits: ["cinematic", "turn-based", "melancholic"], note: "" },
+    { id: "xc",     title: "Xenoblade Chronicles",           year: 2010, by: "Monolith Soft",       h: [210, 140], motif: "grid",  traits: ["open-world", "mythic", "companions"],   note: "" },
+    { id: "ut",     title: "Undertale",                      year: 2015, by: "Toby Fox",            h: [0, 50],    motif: "shard", traits: ["handmade", "strange", "warm"],          note: "" },
+    { id: "poe",    title: "Pillars of Eternity",            year: 2015, by: "Obsidian",            h: [30, 200],  motif: "rings", traits: ["tactical", "literary", "classic"],      note: "" },
+    { id: "dao",    title: "Dragon Age: Origins",            year: 2009, by: "BioWare",             h: [355, 25],  motif: "slash", traits: ["dark", "companions", "tactical"],       note: "" },
+    { id: "kotor",  title: "Knights of the Old Republic",    year: 2003, by: "BioWare",             h: [215, 0],   motif: "sun",   traits: ["narrative", "companions", "classic"],   note: "" },
+    { id: "mw",     title: "Morrowind",                      year: 2002, by: "Bethesda",            h: [35, 160],  motif: "shard", traits: ["open-world", "strange", "freedom"],     note: "" },
+    { id: "fo2",    title: "Fallout 2",                      year: 1998, by: "Black Isle",          h: [45, 90],   motif: "grid",  traits: ["reactive", "satire", "classic"],        note: "" },
+    { id: "vtmb",   title: "Vampire: The Masquerade – Bloodlines", year: 2004, by: "Troika Games", h: [340, 260], motif: "moon",  traits: ["gothic", "reactive", "dark"],           note: "" },
+    { id: "d2",     title: "Diablo II",                      year: 2000, by: "Blizzard North",      h: [5, 30],    motif: "sun",   traits: ["dark", "challenge", "co-op"],           note: "" },
+    { id: "nier",   title: "NieR: Automata",                 year: 2017, by: "PlatinumGames",       h: [40, 210],  motif: "slash", traits: ["melancholic", "strange", "style"],      note: "" },
+    { id: "s2",     title: "Suikoden II",                    year: 1998, by: "Konami",              h: [120, 30],  motif: "rings", traits: ["classic", "turn-based", "warm"],        note: "" },
+    { id: "eb",     title: "EarthBound",                     year: 1994, by: "Ape / HAL Laboratory", h: [300, 60], motif: "grid",  traits: ["strange", "warm", "satire"],            note: "" },
+    { id: "pkmn",   title: "Pokémon Red/Blue",               year: 1996, by: "Game Freak",          h: [0, 210],   motif: "sun",   traits: ["classic", "social", "warm"],            note: "" },
+    { id: "p4g",    title: "Persona 4 Golden",               year: 2012, by: "Atlus",               h: [52, 30],   motif: "grid",  traits: ["social", "style", "turn-based"],        note: "" },
+    { id: "ds3",    title: "Dark Souls III",                 year: 2016, by: "FromSoftware",        h: [18, 0],    motif: "sun",   traits: ["challenge", "dark", "mythic"],          note: "" },
+    { id: "sek",    title: "Sekiro: Shadows Die Twice",      year: 2019, by: "FromSoftware",        h: [0, 30],    motif: "slash", traits: ["challenge", "style", "mythic"],         note: "" },
+    { id: "des",    title: "Demon's Souls",                  year: 2009, by: "FromSoftware",        h: [230, 40],  motif: "moon",  traits: ["challenge", "dark", "gothic"],          note: "" },
+    { id: "ddda",   title: "Dragon's Dogma",                 year: 2012, by: "Capcom",              h: [25, 220],  motif: "shard", traits: ["open-world", "challenge", "companions"], note: "" },
+    { id: "xg",     title: "Xenogears",                      year: 1998, by: "Square",              h: [200, 300], motif: "rings", traits: ["strange", "literary", "mythic"],        note: "" },
+    { id: "me1",    title: "Mass Effect",                    year: 2007, by: "BioWare",             h: [215, 190], motif: "rings", traits: ["narrative", "cinematic", "companions"], note: "" },
+    { id: "cp77",   title: "Cyberpunk 2077",                 year: 2020, by: "CD Projekt Red",      h: [55, 320],  motif: "grid",  traits: ["open-world", "style", "reactive"],      note: "" },
+    { id: "fe3h",   title: "Fire Emblem: Three Houses",      year: 2019, by: "Intelligent Systems", h: [10, 220],  motif: "shard", traits: ["tactical", "social", "companions"],     note: "" },
+    { id: "oct",    title: "Octopath Traveler",              year: 2018, by: "Square Enix",         h: [40, 260],  motif: "sun",   traits: ["turn-based", "classic", "handmade"],    note: "" },
+    { id: "tos",    title: "Tales of Symphonia",             year: 2003, by: "Namco Tales Studio",  h: [140, 20],  motif: "rings", traits: ["companions", "warm", "classic"],        note: "" },
+    { id: "kh2",    title: "Kingdom Hearts II",              year: 2005, by: "Square Enix",         h: [220, 45],  motif: "moon",  traits: ["style", "warm", "cinematic"],           note: "" },
+    { id: "mhw",    title: "Monster Hunter: World",          year: 2018, by: "Capcom",              h: [100, 30],  motif: "shard", traits: ["challenge", "co-op", "open-world"],     note: "" },
+    { id: "ff14",   title: "Final Fantasy XIV",              year: 2013, by: "Square Enix",         h: [210, 260], motif: "rings", traits: ["social", "mythic", "narrative"],        note: "" },
+    { id: "pent",   title: "Pentiment",                      year: 2022, by: "Obsidian",            h: [38, 15],   motif: "slash", traits: ["literary", "handmade", "narrative"],    note: "" },
+    { id: "smt5",   title: "Shin Megami Tensei V",           year: 2021, by: "Atlus",               h: [180, 330], motif: "shard", traits: ["challenge", "turn-based", "mythic"],    note: "" },
+    { id: "lo",     title: "Lost Odyssey",                   year: 2007, by: "Mistwalker",          h: [215, 35],  motif: "moon",  traits: ["melancholic", "literary", "turn-based"], note: "" },
+    { id: "som",    title: "Secret of Mana",                 year: 1993, by: "Square",              h: [95, 170],  motif: "sun",   traits: ["classic", "co-op", "warm"],             note: "" },
+    { id: "kotor2", title: "KOTOR II: The Sith Lords",       year: 2004, by: "Obsidian",            h: [260, 0],   motif: "slash", traits: ["literary", "dark", "companions"],       note: "" },
+  ];
+})();

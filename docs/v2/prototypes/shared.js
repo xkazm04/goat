@@ -66,6 +66,7 @@
     { href: "shelf.html",  label: "Collector's shelf", n: "C" },
     { href: "stage.html",  label: "Stage",            n: "D" },
     { href: "dna.html",    label: "Taste DNA",        n: "E" },
+    { href: "modes.html",  label: "One list, four modes", n: "F" },
   ];
 
   /** Render the shared top nav into the first element matching selector. */
