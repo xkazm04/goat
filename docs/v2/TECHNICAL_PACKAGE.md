@@ -1,6 +1,6 @@
 # GOAT v2: technical package
 
-Status: **draft for review** (2026-10-09). Product decisions live in
+Status: **draft for review** (2026-10-09; round 8 decisions applied). Product decisions live in
 [`DIRECTION.md`](./DIRECTION.md); this document turns them into an
 architecture, a data model, an AI layer, a port/delete plan and milestones.
 Facts about v1 come from a read-only inventory of this tree on the same date.
@@ -141,9 +141,16 @@ type ArtDirection = {
 - An OG-safe variant renders through `next/og` (Satori). It may use only
   linear and radial gradients plus SVG motifs: Satori has no
   `conic-gradient`, `mask` or blend modes.
-- Real artwork (TMDB, IGDB, Spotify, Wikipedia) is fetched for metadata and
-  stored as `items.image_url` when found. Whether it is ever *shown* is an
-  open decision (§9).
+- **Real art first** (decided in round 8). When enrichment finds artwork
+  (TMDB, IGDB, Spotify, Wikipedia, OpenLibrary), `<Cover/>` shows it, with
+  the item's ArtDirection hues still driving glows and backdrops. The
+  generative cover is the fallback, and is also used in the OG card when
+  the image can't be fetched.
+- **Image handling.** Images are copied into Supabase Storage at enrichment
+  time rather than hotlinked, so pages and OG renders don't depend on
+  third-party uptime.
+- **Attribution.** Sources that require it (TMDB, for example) get a
+  credit on the public page.
 
 ---
 
@@ -156,8 +163,15 @@ The v1 schema cannot be rebuilt from this repo:
 - `types/database.ts` is hand-written, with Clerk-era columns.
 
 **So v2 starts a fresh migration baseline under `supabase/migrations/`, with
-generated types (`supabase gen types`).** v1 tables are left alone until the
-swap.
+generated types (`supabase gen types --schema goat_v2`).**
+
+- **Where it lives.** Per round 8, v2 shares the existing Supabase project
+  but lives in its own Postgres schema, `goat_v2`, which must be added to the
+  API's exposed schemas. The supabase-js clients use
+  `{ db: { schema: "goat_v2" } }`.
+- **v1 stays untouched.** v1 tables in `public` are left alone until the
+  swap.
+- **At the swap,** either keep the schema or move the tables to `public`.
 
 ```sql
 -- identity: Supabase Auth only. Guests use anonymous sign-in; signing up later
@@ -379,7 +393,7 @@ Either fix it properly in v2 (`instrumentation.ts` +
 | # | Item | Severity | Action |
 |---|---|---|---|
 | 1 | Commit `4d4c14c` ("Games seed") contains a Supabase pooler URL **with its password** (project `pvfwxilvzjzzjhdcpucu`). `db/README.md` already says it must be rotated. | **High** | **You:** confirm the database password was rotated in the Supabase dashboard. Rewriting git history is optional once the secret is dead. |
-| 2 | The v1 schema can't be rebuilt from the repo | High | Fresh v2 baseline (§3). Decide below whether that's a new Supabase project. |
+| 2 | The v1 schema can't be rebuilt from the repo | High | Fresh v2 baseline in the `goat_v2` schema (§3) |
 | 3 | `X-Frame-Options: DENY` everywhere blocks embeds | Medium | A route-scoped CSP in v2 |
 | 4 | v1 RLS policies are `USING (true)` because guests had no session | Medium | Anonymous auth gives every guest a real `auth.uid()` |
 | 5 | The service-role key is used in 7 files, including edge OG | Medium | Server-only module; OG uses anon + RLS |
@@ -389,16 +403,16 @@ Either fix it properly in v2 (`instrumentation.ts` +
 
 ### Open decisions
 
-1. **Supabase project for v2: new or shared?** I recommend **new**: a clean
-   baseline, no inherited `users` table or leaked credentials, and v1 keeps
-   running untouched until the swap. The cost is a one-off import if any v1
-   lists should survive.
-2. **Should real artwork ever be shown?** The decision was generative covers.
-   The open question is whether a "real art" toggle uses `image_url` when
-   enrichment finds one.
-3. **A cheaper model for bulk tagging** (§4), once volume is known.
-4. **v1 data:** import the seeded game lists into v2, or start empty and let
-   the AI pool flow fill the catalog?
+Decided in round 8:
+- Same project, `goat_v2` schema.
+- Real art first.
+- Import the v1 seed lists. This adds `scripts/v2/import-v1-seeds.ts` to M1:
+  it reads v1 `lists`, `items` and `list_items` (plus the awards event's
+  `parent_list_id` children) and writes `goat_v2` rows with ArtDirection
+  generated in one Claude batch.
+
+Still open:
+1. **A cheaper model for bulk tagging** (§4), once volume is known.
 
 ---
 

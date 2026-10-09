@@ -139,6 +139,15 @@ continuous:
 | Quality gates | **Lean core:** typecheck, lint, vitest and a Playwright smoke test in CI. Retire the ratchet, findings ledger, structural backlog, doc-coupling and governance docs. |
 | Cutover | **A parallel `/v2` route group, then swap.** Build v2 beside v1 in the same app; delete v1 when v2 reaches parity on what matters. |
 
+## Round 8: package decisions
+
+| Question | Decision |
+|---|---|
+| Supabase project | **Same project, new tables.** v2 lives in its own Postgres schema (`goat_v2`, exposed through the Supabase API settings), so `lists`/`items` don't clash with v1. |
+| Real artwork | **Real art first.** Show posters, box art or album covers when enrichment finds them; generative covers are the fallback. ArtDirection is still generated for every item, for fallback covers and colour glows. |
+| v1 content | **Import the seed lists.** A one-off script copies the seeded game lists and the awards event into v2 as starter content. |
+| Next step | **Refine the prototypes first**, before any production code |
+
 ## Open threads (next rounds)
 
 - Award lists carry *categories* (several small rankings), not one order.
