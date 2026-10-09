@@ -289,7 +289,7 @@
   /* ---------- the envelope ceremony ---------- */
   .cer { position: fixed; inset: 0; z-index: 120; overflow: hidden; cursor: pointer; outline: none; isolation: isolate; }
   .cer[hidden] { display: none; }
-  .cer-dim { position: absolute; inset: 0; background: radial-gradient(70% 80% at 50% 38%, rgba(9, 10, 18, .965), rgba(3, 4, 7, .99)); backdrop-filter: blur(8px) saturate(.7); -webkit-backdrop-filter: blur(8px) saturate(.7); }
+  .cer-dim { position: absolute; inset: 0; background: radial-gradient(70% 80% at 50% 38%, #0b0c15, #030407); }
   .cer-beam { position: absolute; left: 50%; top: -6vh; width: min(1000px, 170vw); height: 100vh; translate: -50% 0; pointer-events: none; opacity: 0; filter: blur(14px); mix-blend-mode: screen; }
   .cer-beam i { position: absolute; inset: 0; clip-path: polygon(45% 0, 55% 0, 82% 100%, 18% 100%);
     background: linear-gradient(to bottom, rgba(255, 240, 205, .03), rgba(255, 236, 196, .16) 70%, rgba(255, 236, 196, .04)); }
@@ -375,6 +375,11 @@
     .medal, .cat.grand .medal { width: 50px; height: 50px; right: -14px; bottom: -14px; }
     .hero-eyebrow { flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
     .hero.empty { min-height: 230px; }
+    /* phones: the notes line takes no room until the hero is being edited */
+    .hero .note-label { display: none; }
+    .hero .note:empty { display: none; }
+    .hero:focus-within .note:empty { display: block; opacity: .8; }
+    .hero .note { margin-top: 6px; }
     .toc a { grid-template-columns: 1.8em minmax(0, 1fr) 30px; grid-template-areas: "no name th" "no win th"; gap: 2px 10px; }
     .toc-no { grid-area: no; } .toc-name { grid-area: name; font-size: 1.15rem; } .toc li.grand .toc-name { font-size: 1.3rem; }
     .toc-win { grid-area: win; text-align: left; font-size: .82rem; } .toc-thumb { grid-area: th; } .toc-lead { display: none; }
