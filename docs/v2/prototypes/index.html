@@ -27,8 +27,8 @@
     background: radial-gradient(ellipse 34% 62% at 50% 0%, rgba(255, 228, 170, .16), rgba(255, 228, 170, .05) 45%, transparent 72%);
     will-change: transform;
   }
-  .beam.b1 { left: 46%; }
-  .beam.b2 { left: 70%; }
+  .beam.b1 { left: 46%; transform: rotate(14deg); }
+  .beam.b2 { left: 70%; transform: rotate(-12deg); }
   .scrim {
     position: absolute; inset: 0;
     background:
@@ -49,8 +49,9 @@
     background: rgba(233, 196, 106, .08); border: 1px solid rgba(233, 196, 106, .3);
     font: 600 .72rem/1 var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--gold-hi);
   }
-  .now i { width: 7px; height: 7px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 0 0 var(--gold-glow); animation: pulse 2.4s ease-out infinite; }
-  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(233, 196, 106, .6); } 70%, 100% { box-shadow: 0 0 0 9px rgba(233, 196, 106, 0); } }
+  .now i { position: relative; width: 7px; height: 7px; border-radius: 50%; background: var(--gold); }
+  .now i::after { content: ""; position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid var(--gold); animation: pulse 2.4s ease-out infinite; }
+  @keyframes pulse { 0% { transform: scale(1); opacity: .9; } 70%, 100% { transform: scale(3.2); opacity: 0; } }
 
   /* gold-foil wordmark: shadow, foil and a pointer-swept sheen, stacked */
   .wordmark {
@@ -169,7 +170,7 @@
     background: var(--ink-0); border: 1px solid var(--gold); color: var(--gold-hi);
     font: 800 1.05rem/1 var(--font-display); box-shadow: 0 0 0 6px var(--ink-0), 0 0 24px -4px var(--gold-glow);
   }
-  .step .verb { font: 600 .72rem/1 var(--font-mono); letter-spacing: .16em; text-transform: uppercase; color: var(--fg-muted); background: var(--ink-0); padding-right: 8px; }
+  .step .verb { font: 600 .72rem/1 var(--font-mono); letter-spacing: .16em; text-transform: uppercase; color: var(--fg-muted); background: var(--ink-0); padding: 0 10px 0 6px; margin-left: -6px; }
 
   .pcard {
     --rx: 0deg; --ry: 0deg; --lift: 0px; --gx: 50%; --gy: 0%; --ga: 0;
@@ -204,20 +205,20 @@
   .play .pv * { animation-play-state: running; }
 
   /* H: streaming candidate pool */
-  .pc-prompt { position: absolute; left: 6cqw; right: 6cqw; top: 6cqw; height: 11cqw; display: flex; align-items: center; gap: 2.4cqw; padding: 0 3.4cqw; border-radius: 99px; background: rgba(178, 190, 255, .08); border: 1px solid var(--glass-edge-hi); font: 500 3.6cqw/1 var(--font-mono); white-space: nowrap; }
+  .pc-prompt { position: absolute; left: 6cqw; right: 6cqw; top: 5cqw; height: 11cqw; display: flex; align-items: center; gap: 2.4cqw; padding: 0 3.4cqw; border-radius: 99px; background: rgba(178, 190, 255, .08); border: 1px solid var(--glass-edge-hi); font: 500 3.6cqw/1 var(--font-mono); white-space: nowrap; }
   .pc-k { color: var(--gold); font-weight: 600; letter-spacing: .1em; text-transform: uppercase; font-size: 2.8cqw; }
   .pc-typed { overflow: hidden; width: 23ch; display: inline-block; color: var(--fg); }
   .pc-caret { width: 1.6px; height: 4.6cqw; background: var(--gold); animation: blink 1s steps(1) infinite; animation-play-state: paused; }
   @keyframes blink { 50% { opacity: 0; } }
-  .pc-pool { position: absolute; left: 6cqw; right: 6cqw; top: 22cqw; display: grid; grid-template-columns: 1fr 1fr; gap: 2.4cqw; }
-  .pc-cand { display: grid; grid-template-columns: 8cqw minmax(0, 1fr) 4.6cqw; align-items: center; gap: 2.2cqw; padding: 1.6cqw; border-radius: 2.2cqw; background: rgba(178, 190, 255, .06); border: 1px solid var(--glass-edge); }
+  .pc-pool { position: absolute; left: 6cqw; right: 6cqw; top: 19.5cqw; display: grid; grid-template-columns: 1fr 1fr; gap: 2cqw; }
+  .pc-cand { display: grid; grid-template-columns: 6.4cqw minmax(0, 1fr) 4.6cqw; align-items: center; gap: 2.2cqw; padding: 1.3cqw 1.6cqw; border-radius: 2.2cqw; background: rgba(178, 190, 255, .06); border: 1px solid var(--glass-edge); }
   .pc-cand .cover { border-radius: 1cqw; }
   .pc-t { font: 600 3.1cqw/1.15 var(--font-body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .pc-mark { width: 4.6cqw; height: 4.6cqw; border-radius: 50%; border: 1px solid var(--glass-edge-hi); }
   .pc-cand.keep .pc-mark { background: var(--gold) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M4 8.5l2.6 2.5L12 5.5' fill='none' stroke='%231a1406' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/></svg>") center / 80% no-repeat; border-color: transparent; }
   .pc-cand.drop { opacity: .4; }
   .pc-cand.drop .pc-t { text-decoration: line-through; }
-  .pc-status { position: absolute; left: 6cqw; bottom: 5cqw; display: flex; align-items: center; gap: 2cqw; font: 500 2.8cqw/1 var(--font-mono); color: var(--fg-faint); letter-spacing: .06em; text-transform: uppercase; }
+  .pc-status { position: absolute; left: 6cqw; bottom: 3.6cqw; display: flex; align-items: center; gap: 2cqw; font: 500 2.8cqw/1 var(--font-mono); color: var(--fg-faint); letter-spacing: .06em; text-transform: uppercase; }
   .pc-status i { width: 2cqw; height: 2cqw; border-radius: 50%; background: hsl(190 85% 60%); box-shadow: 0 0 8px hsl(190 85% 60%); }
   .play .pc-typed { animation: type 5.2s steps(23) infinite; }
   .play .pc-caret { animation-play-state: running; }
@@ -292,7 +293,7 @@
     transform: rotateY(-16deg) rotateX(6deg) rotateZ(-2deg); transform-style: preserve-3d;
     box-shadow: 0 6cqw 12cqw -4cqw rgba(0, 0, 0, .9), 0 0 8cqw -2cqw var(--gold-glow);
   }
-  .mini-in { position: relative; height: 100%; border-radius: 1.6cqw; overflow: hidden; background: radial-gradient(90% 60% at 50% 45%, hsl(30 60% 30% / .6), transparent 70%), linear-gradient(170deg, #14152a, #07080e); display: grid; grid-template-rows: auto auto 1fr auto; gap: 1cqw; padding: 2.4cqw; }
+  .mini-in { position: relative; height: 100%; border-radius: 1.6cqw; overflow: hidden; background: radial-gradient(90% 60% at 50% 45%, hsl(30 60% 30% / .6), transparent 70%), linear-gradient(170deg, #14152a, #07080e); display: grid; grid-template-rows: auto auto 1fr auto; gap: 1.6cqw; padding: 2.6cqw; }
   .mini-in small { font: 600 2.2cqw/1 var(--font-mono); letter-spacing: .14em; color: var(--gold); text-transform: uppercase; }
   .mini-in b { font: 900 4.4cqw/.86 var(--font-display); text-transform: uppercase; color: #fff7e2; }
   .mini-in svg { width: 100%; height: 100%; }
@@ -364,7 +365,7 @@
   .credits > div { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr); gap: 14px; align-items: baseline; }
   .credits dt { text-align: right; font: 500 .66rem/1.4 var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--fg-faint); }
   .credits dd { margin: 0; font-size: .86rem; font-weight: 600; line-height: 1.35; }
-  .act.now h3 small::after { content: " \00B7  now showing"; color: var(--gold-hi); }
+  .act.current h3 small::after { content: " \00B7  now showing"; color: var(--gold-hi); }
   .coming { margin-top: clamp(32px, 5vw, 56px); padding-top: 28px; border-top: 1px solid rgba(233, 196, 106, .25); display: grid; justify-items: center; gap: 14px; text-align: center; }
   .coming h3 { font: 600 .7rem/1 var(--font-mono); letter-spacing: .3em; text-transform: uppercase; color: var(--gold); }
   .coming ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 10px; }
@@ -620,7 +621,7 @@
     ["Round 8", "Package", [["Database", "Same project, its own schema"], ["Covers", "Real art first, generated as fallback"], ["Starter content", "The v1 seed lists, imported"]]],
     ["Round 9", "Refinement", [["Study F", "A choreographed mode switch"], ["Study G", "The awards night"], ["Study H", "Create with AI, end to end"]], true],
   ];
-  $("#acts").innerHTML = ACTS.map(([r, t, rows, now]) => `<section class="act${now ? " now" : ""}"><h3><small>${r}</small><span>${t}</span></h3><dl class="credits">${rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl></section>`).join("");
+  $("#acts").innerHTML = ACTS.map(([r, t, rows, now]) => `<section class="act${now ? " current" : ""}"><h3><small>${r}</small><span>${t}</span></h3><dl class="credits">${rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl></section>`).join("");
 
   /* -------------------------------------------------------- hero: mosaic
      Rank-scaled tiles in local px of a 440 x 629 box, stored as percent. */
@@ -760,40 +761,56 @@
   new ResizeObserver(() => { const w = innerWidth; if (Math.abs(w - lastW) < 2) return; lastW = w; clearTimeout(bakeT); bakeT = setTimeout(bakeAll, lastW ? 120 : 0); }).observe($("#hero"));
   document.fonts && document.fonts.ready.then(bakeAll);
 
-  /* ---------------------------------------------------- the single loop */
+  /* ---------------------------------------------------- the single loop
+     Pointer parallax, the wordmark sheen and the poster tilts all run from
+     here. The loop sleeps as soon as everything has settled; the ambient
+     beats (a promotion, a sheen sweep) are timers that wake it. */
   const hero = $("#hero"), bill = $("#bill"), wm = $("#wordmark"), beam1 = $("#beam1"), beam2 = $("#beam2");
-  const P = { tx: 0, ty: 0, x: 0, y: 0, in: false, wx: null, sx: .2 };
-  let heroOn = true, running = false, last = 0, nextPromo = 0;
+  const P = { tx: 0, ty: 0, x: 0, y: 0, in: false, wx: null, sx: -.35, sweep: -1, applied: "" };
+  let heroOn = true, running = false, last = 0;
   const active = new Set();   // tilt cards that still need frames
+  const ease = (e) => (e < .5 ? 2 * e * e : 1 - (-2 * e + 2) ** 2 / 2);
 
   hero.addEventListener("pointermove", (e) => {
     const r = hero.getBoundingClientRect();
     P.tx = clamp((e.clientX - r.left) / r.width) * 2 - 1; P.ty = clamp((e.clientY - r.top) / r.height) * 2 - 1;
     const w = wm.getBoundingClientRect(); P.wx = (e.clientX - w.left) / w.width; P.in = true;
+    wake();
   });
-  hero.addEventListener("pointerleave", () => { P.tx = 0; P.ty = 0; P.in = false; });
+  hero.addEventListener("pointerleave", () => { P.tx = 0; P.ty = 0; P.in = false; wake(); });
 
-  function frame(now) {
-    const dt = Math.min(.05, (now - last) / 1000 || .016); last = now;
-    const t = now / 1000;
-    const k = 1 - Math.exp(-dt * 3.2);
-    if (heroOn) {
-      P.x += (P.tx - P.x) * k; P.y += (P.ty - P.y) * k;
-      const dX = Math.sin(t * .11) * 10, dY = Math.cos(t * .09) * 8;
-      back.style.transform = `translate3d(${(-P.x * 10 + dX * .6).toFixed(2)}px, ${(-P.y * 8 + dY * .6).toFixed(2)}px, 0)`;
-      mid.style.transform = `translate3d(${(-P.x * 26 + dX).toFixed(2)}px, ${(-P.y * 18 + dY).toFixed(2)}px, 0)`;
-      beam1.style.transform = `rotate(${(14 + Math.sin(t * .23) * 9 + P.x * 4).toFixed(2)}deg)`;
-      beam2.style.transform = `rotate(${(-12 + Math.sin(t * .19 + 2) * 8 + P.x * 4).toFixed(2)}deg)`;
+  function heroFrame(now, k) {
+    P.x += (P.tx - P.x) * k; P.y += (P.ty - P.y) * k;
+    const moving = Math.abs(P.tx - P.x) + Math.abs(P.ty - P.y) > .002;
+    const key = P.x.toFixed(3) + P.y.toFixed(3);
+    if (key !== P.applied) {
+      P.applied = key;
+      back.style.transform = `translate3d(${(-P.x * 12).toFixed(2)}px, ${(-P.y * 9).toFixed(2)}px, 0)`;
+      mid.style.transform = `translate3d(${(-P.x * 30).toFixed(2)}px, ${(-P.y * 20).toFixed(2)}px, 0)`;
+      beam1.style.transform = `rotate(${(14 + P.x * 6).toFixed(2)}deg)`;
+      beam2.style.transform = `rotate(${(-12 + P.x * 6).toFixed(2)}deg)`;
       bill.style.setProperty("--ry", (-13 + P.x * 8).toFixed(2) + "deg");
       bill.style.setProperty("--rx", (6 - P.y * 6).toFixed(2) + "deg");
       bill.style.setProperty("--gx", (50 + P.x * 45).toFixed(1) + "%");
       bill.style.setProperty("--gy", (30 + P.y * 40).toFixed(1) + "%");
-      // the sheen follows the pointer across the wordmark, or sweeps on its own
-      const target = P.in && P.wx != null ? clamp(P.wx, -.3, 1.3) : ((t * .16) % 2.2) - .4;
-      P.sx += (target - P.sx) * (P.in ? k * 2 : 1);
-      wm.style.setProperty("--sx", P.sx.toFixed(3));
-      if (now > nextPromo) { if (nextPromo) promote(); nextPromo = now + 6200; }
     }
+    // the sheen follows the pointer across the wordmark, or plays a timed sweep
+    let target = -.35, sweeping = false;
+    if (P.in && P.wx != null) target = clamp(P.wx, -.35, 1.35);
+    else if (P.sweep >= 0) {
+      const e = (now - P.sweep) / 1500;
+      if (e < 1) { target = -.35 + ease(e) * 1.7; sweeping = true; } else P.sweep = -1;
+    }
+    if (sweeping) P.sx = target; else P.sx += (target - P.sx) * Math.min(1, k * 2);
+    const sv = P.sx.toFixed(3);
+    if (sv !== P.sv) { P.sv = sv; wm.style.setProperty("--sx", sv); }
+    return moving || sweeping || Math.abs(target - P.sx) > .003;
+  }
+
+  function frame(now) {
+    const dt = Math.min(.05, (now - last) / 1000 || .016); last = now;
+    let busy = false;
+    if (heroOn) busy = heroFrame(now, 1 - Math.exp(-dt * 4)) || busy;
     for (const c of active) {
       const s = c._t;
       const kk = 1 - Math.exp(-dt * 10);
@@ -801,23 +818,33 @@
       c.style.setProperty("--rx", s.rx.toFixed(2) + "deg"); c.style.setProperty("--ry", s.ry.toFixed(2) + "deg");
       c.style.setProperty("--lift", s.l.toFixed(2) + "px"); c.style.setProperty("--ga", s.ga.toFixed(3));
       c.style.setProperty("--gx", s.gx.toFixed(1) + "%"); c.style.setProperty("--gy", s.gy.toFixed(1) + "%");
-      if (!s.hover && Math.abs(s.rx) + Math.abs(s.ry) + Math.abs(s.l) + s.ga < .02) {
-        ["--rx", "--ry", "--lift", "--ga"].forEach((p) => c.style.removeProperty(p)); active.delete(c);
-      }
-      if (s.hover && c._modes && now > c._modes.next) {
-        c._modes.i = (c._modes.i + 1) % MODES.length; c._modes.next = now + 1500;
-        setModeLayout(c._modes.el, MODES[c._modes.i]);
+      const still = Math.abs(s.trx - s.rx) + Math.abs(s.try - s.ry) + Math.abs(s.tl - s.l) + Math.abs(s.tga - s.ga) < .02;
+      if (!s.hover && still) { ["--rx", "--ry", "--lift", "--ga"].forEach((p) => c.style.removeProperty(p)); active.delete(c); }
+      else if (still && !c._modes) active.delete(c);   // hovered but at rest: pointermove re-adds it
+      if (s.hover && c._modes) {
+        busy = true;
+        if (now > c._modes.next) { c._modes.i = (c._modes.i + 1) % MODES.length; c._modes.next = now + 1500; setModeLayout(c._modes.el, MODES[c._modes.i]); }
       }
     }
-    if ((heroOn || active.size) && !document.hidden) requestAnimationFrame(frame);
+    if ((busy || active.size) && !document.hidden) requestAnimationFrame(frame);
     else running = false;
   }
   function wake() {
     if (RM || running || document.hidden) return;
     running = true; last = performance.now(); requestAnimationFrame(frame);
   }
-  new IntersectionObserver(([e]) => { heroOn = e.isIntersecting; if (heroOn) wake(); }).observe(hero);
-  document.addEventListener("visibilitychange", wake);
+  // ambient beats while the hero is on screen: a promotion, then a sheen sweep
+  let beatT = 0, beat = 0;
+  function beats(delay = 3600) {
+    clearTimeout(beatT);
+    if (RM || !heroOn || document.hidden) return;
+    beatT = setTimeout(() => {
+      if (beat++ % 2 === 0) promote(); else { P.sweep = performance.now(); wake(); }
+      beats();
+    }, delay);
+  }
+  new IntersectionObserver(([e]) => { heroOn = e.isIntersecting; if (heroOn) { wake(); beats(); } }).observe(hero);
+  document.addEventListener("visibilitychange", () => { wake(); beats(); });
 
   // tilt + glare on the study posters; previews play while hovered or focused
   $$(".tilt").forEach((c) => {
@@ -834,7 +861,7 @@
     const leave = () => {
       c.classList.remove("play"); Object.assign(c._t, { hover: false, trx: 0, try: 0, tl: 0, tga: 0 });
       if (c._modes) setModeLayout(pvm, "mosaic");
-      wake();
+      active.add(c); wake();
     };
     c.addEventListener("pointerenter", enter);
     c.addEventListener("pointerleave", leave);
@@ -844,10 +871,14 @@
       const r = c.getBoundingClientRect(), u = clamp((e.clientX - r.left) / r.width), v = clamp((e.clientY - r.top) / r.height);
       const amp = small ? .5 : 1;
       c._t.trx = (.5 - v) * 9 * amp; c._t.try = (u - .5) * 11 * amp; c._t.gx = u * 100; c._t.gy = v * 100;
+      active.add(c); wake();
     });
   });
 
-  if (!RM) { intro(); wake(); }
+  if (!RM) {
+    intro(); wake();
+    setTimeout(() => { P.sweep = performance.now(); wake(); }, 1500);
+  }
   else { const k = $(".k-track"); if (k) k.style.transform = "translateY(-66.6667%)"; }
 })();
 </script>

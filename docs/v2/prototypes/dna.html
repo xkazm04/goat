@@ -8,10 +8,12 @@
 <link rel="stylesheet" href="shared.css">
 <script src="shared.js"></script>
 <style>
-  /* Study E: Taste DNA. One fingerprint, four drawings of it.
-     Colour comes from the ranked items' own hues; gold is reserved for rank
-     and for the persona itself. Everything below is driven by one model. */
-  body { background: var(--ink-0); }
+  /* Study E: Taste DNA. The E4 persona card is the profile centrepiece:
+     a holographic collectible recomputed live from the ranking, with a
+     security-printed back and a pack-opening reissue. E1 to E3 stay below
+     as explored alternatives, driven by the same model. Colour comes from
+     the ranked items' own hues; gold is reserved for rank and the persona. */
+  body { background: var(--ink-0); overflow-x: clip; }
   .ambient {
     position: fixed; inset: 0; z-index: -1; pointer-events: none;
     background:
@@ -19,29 +21,24 @@
       radial-gradient(45% 40% at 100% 22%, hsl(var(--amb2, 200) 70% 42% / .11), transparent 70%),
       radial-gradient(70% 55% at 50% 112%, hsl(var(--amb3, 280) 60% 38% / .12), transparent 70%);
   }
-  main { max-width: 1560px; margin: 0 auto; padding: 40px 24px 96px; display: grid; gap: 28px; }
-  @media (max-width: 600px) { main { padding: 28px 16px 72px; gap: 20px; } }
+  main { max-width: 1560px; margin: 0 auto; padding: 28px 24px 96px; display: grid; gap: 44px; }
+  @media (max-width: 600px) { main { padding: 22px 16px 72px; gap: 32px; } }
 
-  /* intro */
-  .intro { display: grid; gap: 10px; }
-  .intro h1 { font: 900 clamp(2.4rem, 5vw, 4rem)/.9 var(--font-display); text-transform: uppercase; letter-spacing: .01em; }
-  .intro p { margin: 0; color: var(--fg-muted); font-size: var(--step-1); max-width: 62ch; }
+  /* intro: one compact line, the card is the headline */
+  .intro { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 8px 32px; }
+  .intro > div { display: grid; gap: 8px; }
+  .intro h1 { font: 900 clamp(2rem, 3.4vw, 2.9rem)/.9 var(--font-display); text-transform: uppercase; letter-spacing: .01em; }
+  .intro p { margin: 0; color: var(--fg-muted); font-size: var(--step-0); max-width: 58ch; }
 
-  /* persona header */
-  .persona {
-    position: relative; overflow: hidden; border-radius: var(--r-lg);
-    padding: clamp(20px, 3.2vw, 44px);
-    display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 28px 56px; align-items: end;
-  }
-  .persona::before {
-    content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
-    background:
-      radial-gradient(70% 90% at 0% 0%, hsl(var(--amb1, 30) 70% 45% / .22), transparent 65%),
-      radial-gradient(50% 80% at 100% 100%, hsl(var(--amb2, 200) 70% 45% / .16), transparent 70%);
-  }
+  /* showcase: card, persona, ranker */
+  .showcase { display: grid; grid-template-columns: minmax(340px, 460px) minmax(0, 1fr) minmax(280px, 300px); gap: 28px 40px; align-items: start; }
+  @media (max-width: 1280px) { .showcase { grid-template-columns: minmax(320px, 440px) minmax(0, 1fr); } .showcase .ranker { grid-column: 1 / -1; } }
+  @media (max-width: 860px) { .showcase { grid-template-columns: minmax(0, 1fr); } }
+
+  .persona { position: relative; display: grid; gap: 26px; min-width: 0; padding-top: 18px; }
   .persona .who { display: grid; gap: 16px; min-width: 0; }
   .p-name {
-    font: 900 clamp(2.7rem, 7.4vw, 7.6rem)/.8 var(--font-display); text-transform: uppercase; letter-spacing: .005em;
+    font: 900 clamp(2.6rem, 4.6vw, 5rem)/.8 var(--font-display); text-transform: uppercase; letter-spacing: .005em;
     margin: 4px 0 2px;
   }
   .p-name .the { display: block; font-size: .42em; letter-spacing: .12em; color: var(--fg-muted); margin-bottom: .18em; }
@@ -50,12 +47,12 @@
     -webkit-background-clip: text; background-clip: text; color: transparent;
     filter: drop-shadow(0 6px 28px rgba(233, 196, 106, .18));
   }
-  .tagline { margin: 0; font-size: clamp(1.05rem, 1.5vw, 1.3rem); line-height: 1.45; max-width: 52ch; color: var(--fg); }
+  .tagline { margin: 0; font-size: clamp(1.05rem, 1.4vw, 1.25rem); line-height: 1.45; max-width: 52ch; color: var(--fg); }
   .evidence { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 8px; max-width: 70ch; }
   .evidence li { position: relative; padding-left: 22px; color: var(--fg-muted); font-size: var(--step-0); }
   .evidence li::before { content: ""; position: absolute; left: 2px; top: .62em; width: 9px; height: 9px; transform: rotate(45deg); border: 1.5px solid var(--gold); border-radius: 2px; }
   .evidence li b { color: var(--fg); font-weight: 600; }
-  .readings { display: grid; gap: 22px; min-width: 0; padding-bottom: 4px; }
+  .readings { display: grid; gap: 22px; min-width: 0; padding: 20px; border-radius: var(--r-lg); }
   .fit { display: flex; gap: 14px; align-items: baseline; flex-wrap: wrap; }
   .fit .num { font: 800 2.6rem/.85 var(--font-display); color: var(--gold); font-variant-numeric: tabular-nums; }
   .fit .lbl { display: grid; gap: 2px; }
@@ -79,12 +76,8 @@
   }
   .m-scale { display: flex; justify-content: space-between; color: var(--fg-faint); font-size: .72rem; }
 
-  /* workspace: ranking + the four variants */
-  .work { display: grid; grid-template-columns: minmax(280px, 300px) minmax(0, 1fr); gap: 20px; align-items: start; }
-  @media (max-width: 1180px) { .work { grid-template-columns: minmax(0, 1fr); } }
-
-  .ranker { position: sticky; top: calc(var(--nav-h) + 16px); padding: 16px 14px 14px; border-radius: var(--r-lg); display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; min-width: 0; max-height: calc(100vh - var(--nav-h) - 32px); overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; }
-  @media (max-width: 1180px) { .ranker { position: static; max-height: none; } }
+  /* the ranking that drives the card */
+  .ranker { padding: 16px 14px 14px; border-radius: var(--r-lg); display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; min-width: 0; }
   .ranker h2 { font: 800 1.5rem/1 var(--font-display); text-transform: uppercase; letter-spacing: .03em; }
   .ranker .sub { color: var(--fg-muted); font-size: .76rem; margin: 2px 0 0; }
   .ranker .hint { margin: 0; font-size: .76rem; line-height: 1.4; color: var(--fg-faint); min-height: 2.8em; }
@@ -143,7 +136,8 @@
   .bench-head small { color: var(--fg-faint); font-size: .72rem; }
 
   /* the four variants */
-  .variants { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+  .variants { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+  @media (max-width: 1240px) { .variants { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   @media (max-width: 760px) { .variants { grid-template-columns: minmax(0, 1fr); } }
   .variant { padding: 18px; border-radius: var(--r-lg); display: grid; gap: 14px; align-content: start; min-width: 0; }
   .v-head { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 14px; align-items: start; }
@@ -178,7 +172,8 @@
 
   /* E2 */
   .stage.e2 { display: flex; flex-direction: column; gap: 12px; padding: 16px; background: radial-gradient(120% 70% at 50% 0%, #0b0d19, #05060b 70%); }
-  .stage.e2 .bar-wrap { position: relative; flex: 1 1 auto; min-height: 170px; }
+  .stage.e2 { aspect-ratio: auto; min-height: 100%; }
+  .stage.e2 .bar-wrap { position: relative; flex: 1 1 auto; min-height: 190px; }
   .stage.e2 .bar-wrap canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
   .code { font-family: var(--font-mono); font-size: .68rem; letter-spacing: .08em; color: var(--fg-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .code b { color: var(--fg-muted); font-weight: 600; }
@@ -204,19 +199,40 @@
   .swatches span { display: flex; align-items: center; gap: 8px; font-size: .72rem; color: var(--fg-muted); font-family: var(--font-mono); text-transform: uppercase; letter-spacing: .06em; }
   .swatches i { width: 10px; height: 10px; border-radius: 50%; box-shadow: 0 0 10px currentColor; }
 
-  /* E4 card */
-  .stage.e4 { display: grid; place-items: center; perspective: 1100px; background: radial-gradient(70% 60% at 50% 42%, hsl(var(--c1, 30) 55% 22% / .55), #05060b 72%); }
-  .tcard {
-    --mx: .5; --my: .3; --rx: 0deg; --ry: 0deg;
-    position: relative; height: 93%; aspect-ratio: 5 / 7; border-radius: 18px; padding: 7px;
-    background: linear-gradient(135deg, #6f511a 0%, #e9c46a 16%, #fff0c4 28%, #b4872c 42%, #f5d98f 58%, #8f6b22 74%, #e9c46a 88%, #fff0c4 100%);
-    transform: rotateX(var(--rx)) rotateY(var(--ry)); transition: transform .7s var(--ease-out);
-    box-shadow: 0 30px 70px -24px rgba(0, 0, 0, .95), 0 0 50px -16px var(--gold-glow);
+  /* ---------------------------------------------------------------- E4 card
+     Layers on the front face, bottom to top: gold frame, card content, a
+     rainbow foil that follows the light, a star-lattice pattern foil, angle-
+     responsive glitter (canvas), glare, a flash wipe and the edge light. */
+  .card-col { position: relative; display: grid; gap: 12px; justify-items: center; min-width: 0; overflow: clip; overflow-clip-margin: 40px; }
+  @media (max-width: 600px) { .card-col { overflow-clip-margin: 14px; } }
+  .stage.e4 {
+    position: relative; width: 100%; aspect-ratio: auto; overflow: visible; border-radius: 0; box-shadow: none;
+    padding: 22px 24px 34px; display: grid; place-items: center;
+    background: radial-gradient(58% 52% at 50% 46%, hsl(var(--c1, 30) 60% 30% / .5), transparent 72%);
   }
-  .tcard.live { transition: transform .12s linear; }
+  .tc-slot { position: relative; width: min(100%, 410px); aspect-ratio: 5 / 7; perspective: 1500px; }
+  .floor { position: absolute; left: 10%; right: 10%; bottom: -6%; height: 8%; border-radius: 50%; background: radial-gradient(closest-side, rgba(0, 0, 0, .8), transparent); will-change: transform; pointer-events: none; }
+  .tc-wrap { position: absolute; inset: 0; z-index: 2; transform-style: preserve-3d; }
+  .tcard {
+    position: absolute; inset: 0; transform-style: preserve-3d; cursor: pointer; border-radius: 20px; will-change: transform;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .tcard:focus-visible { outline: none; }
+  .tcard:focus-visible .face { outline: 2px solid var(--gold-hi); outline-offset: 5px; }
+  .face {
+    position: absolute; inset: 0; border-radius: 20px; padding: 8px; overflow: hidden; isolation: isolate;
+    backface-visibility: hidden; -webkit-backface-visibility: hidden;
+    box-shadow: 0 36px 80px -28px rgba(0, 0, 0, .95), 0 0 60px -18px var(--gold-glow);
+  }
+  .front {
+    background:
+      repeating-linear-gradient(90deg, rgba(255, 255, 255, .06) 0 1px, transparent 1px 3px),
+      linear-gradient(135deg, #6f511a 0%, #e9c46a 16%, #fff0c4 28%, #b4872c 42%, #f5d98f 58%, #8f6b22 74%, #e9c46a 88%, #fff0c4 100%);
+  }
+  .back { transform: rotateY(180deg); background: repeating-linear-gradient(90deg, rgba(255, 255, 255, .06) 0 1px, transparent 1px 3px), linear-gradient(135deg, #5d4515 0%, #d9b45a 18%, #f7e6b4 30%, #a37a28 46%, #e9cf88 62%, #7f5f1e 80%, #d9b45a 100%); }
   .tcard-in {
-    position: relative; height: 100%; border-radius: 12px; overflow: hidden; container-type: inline-size;
-    display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto auto; gap: 7px; padding: 11px 12px 10px;
+    position: relative; height: 100%; will-change: transform; border-radius: 13px; overflow: hidden; container-type: inline-size;
+    display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto auto; gap: 7px; padding: 12px 13px 11px;
     background:
       radial-gradient(90% 55% at 50% 42%, hsl(var(--c1, 30) 60% 30% / .55), transparent 70%),
       radial-gradient(80% 50% at 100% 100%, hsl(var(--c2, 200) 60% 30% / .45), transparent 70%),
@@ -238,16 +254,124 @@
   .tc-stats i::after { content: ""; position: absolute; inset: 0; width: calc(var(--v, .5) * 100%); background: linear-gradient(90deg, #a67a26, var(--gold-hi)); border-radius: inherit; }
   .tc-foot { display: flex; justify-content: space-between; gap: 8px; font: 500 max(.5rem, 2.7cqi)/1.1 var(--font-body); color: var(--fg-faint); border-top: 1px solid rgba(233, 196, 106, .25); padding-top: 6px; }
   .tc-foot b { color: var(--gold); font-weight: 600; white-space: nowrap; }
-  .holo, .glare { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; }
-  .holo {
-    mix-blend-mode: color-dodge; opacity: .42;
-    background:
-      repeating-linear-gradient(112deg, transparent 0%, hsl(320 95% 66% / .55) 5%, hsl(200 95% 64% / .55) 10%, hsl(140 90% 60% / .5) 15%, hsl(50 95% 62% / .55) 20%, transparent 26%),
-      repeating-radial-gradient(circle at 30% 20%, rgba(255, 255, 255, .06) 0 1px, transparent 1px 4px);
-    background-size: 260% 260%, 100% 100%;
-    background-position: calc(var(--mx) * 100%) calc(var(--my) * 100%), 0 0;
+
+  /* every moving part below is a transform on a pre-rastered layer, so
+     tilting the card never repaints it: the compositor does the work */
+  .fl, .rim, .wipe, .glit, .shine { position: absolute; inset: 0; pointer-events: none; }
+  .fl { overflow: hidden; border-radius: inherit; }
+  .fl > i, .rim > i { position: absolute; display: block; will-change: transform; }
+  .fl-rain { mix-blend-mode: color-dodge; opacity: .22; }
+  .fl-rain > i {
+    inset: -60%;
+    background: repeating-linear-gradient(112deg,
+      transparent 0%, hsl(350 100% 70% / .55) 1.4%, hsl(45 100% 64% / .6) 2.8%, hsl(140 100% 62% / .5) 4.2%,
+      hsl(200 100% 68% / .6) 5.6%, hsl(275 100% 72% / .5) 7%, transparent 8.6%, transparent 12%);
+    -webkit-mask-image: radial-gradient(closest-side, #000 0%, rgba(0, 0, 0, .4) 26%, rgba(0, 0, 0, .03) 62%);
+    mask-image: radial-gradient(closest-side, #000 0%, rgba(0, 0, 0, .4) 26%, rgba(0, 0, 0, .03) 62%);
   }
-  .glare { mix-blend-mode: overlay; background: radial-gradient(circle at calc(var(--mx) * 100%) calc(var(--my) * 100%), rgba(255, 255, 255, .5), transparent 46%); }
+  .fl-pat {
+    mix-blend-mode: color-dodge; opacity: .35;
+    -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24'><path d='M12 4.5 13.2 10.8 19.5 12 13.2 13.2 12 19.5 10.8 13.2 4.5 12 10.8 10.8Z' fill='white' fill-opacity='.85'/><circle cx='0' cy='0' r='1.3' fill='white' fill-opacity='.6'/><circle cx='24' cy='0' r='1.3' fill='white' fill-opacity='.6'/><circle cx='0' cy='24' r='1.3' fill='white' fill-opacity='.6'/><circle cx='24' cy='24' r='1.3' fill='white' fill-opacity='.6'/></svg>");
+    -webkit-mask-size: 18px 18px;
+    mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24'><path d='M12 4.5 13.2 10.8 19.5 12 13.2 13.2 12 19.5 10.8 13.2 4.5 12 10.8 10.8Z' fill='white' fill-opacity='.85'/><circle cx='0' cy='0' r='1.3' fill='white' fill-opacity='.6'/><circle cx='24' cy='0' r='1.3' fill='white' fill-opacity='.6'/><circle cx='0' cy='24' r='1.3' fill='white' fill-opacity='.6'/><circle cx='24' cy='24' r='1.3' fill='white' fill-opacity='.6'/></svg>");
+    mask-size: 18px 18px;
+  }
+  .fl-pat > i {
+    inset: -60%;
+    background: repeating-linear-gradient(38deg,
+      hsl(195 100% 68%) 0%, hsl(275 100% 72%) 2%, hsl(335 100% 70%) 4%, hsl(42 100% 64%) 6%, hsl(120 100% 62%) 8%, hsl(195 100% 68%) 10%);
+    -webkit-mask-image: radial-gradient(closest-side, #000 0%, rgba(0, 0, 0, .4) 40%, rgba(0, 0, 0, .06) 100%);
+    mask-image: radial-gradient(closest-side, #000 0%, rgba(0, 0, 0, .4) 40%, rgba(0, 0, 0, .06) 100%);
+  }
+  .fl-glare { mix-blend-mode: overlay; }
+  .fl-glare > i { left: -50%; top: -50%; width: 200%; height: 200%; background: radial-gradient(closest-side, rgba(255, 255, 255, .85) 0%, rgba(255, 255, 255, .2) 30%, rgba(0, 0, 0, .25) 75%, rgba(0, 0, 0, .35) 100%); }
+  .glit { width: 100%; height: 100%; display: block; mix-blend-mode: screen; }
+  .shine { inset: -10% -60%; mix-blend-mode: soft-light; background: linear-gradient(104deg, transparent 40%, rgba(255, 255, 255, .7) 49%, rgba(255, 255, 255, .25) 53%, transparent 60%); transform: translateX(-75%); animation: shine 8s cubic-bezier(.45, 0, .25, 1) 3.5s infinite; }
+  @keyframes shine { 0% { transform: translateX(-75%); } 18%, 100% { transform: translateX(75%); } }
+  .wipe { inset: -10% -60%; opacity: 0; mix-blend-mode: overlay; background: linear-gradient(104deg, transparent 38%, rgba(255, 255, 255, .95) 48%, rgba(255, 240, 200, .6) 52%, transparent 62%); }
+  .rim {
+    border-radius: inherit; padding: 1.6px; overflow: hidden; mix-blend-mode: screen;
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+  }
+  .rim > i { inset: -40%; background: conic-gradient(from -70deg, transparent 0deg, rgba(255, 249, 228, 0) 20deg, rgba(255, 249, 228, .95) 70deg, rgba(255, 249, 228, 0) 120deg, transparent 360deg); }
+
+  /* the back: security print */
+  .bk { position: relative; height: 100%; border-radius: 13px; overflow: hidden; container-type: inline-size; background: #0a0c17; box-shadow: 0 0 0 1px rgba(0, 0, 0, .6), 0 0 0 2px rgba(255, 240, 196, .25) inset; }
+  .bk canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .bk-in { position: relative; height: 100%; display: grid; grid-template-rows: auto auto auto auto auto minmax(0, 1fr) auto; gap: 3.6cqi; padding: 6cqi 6cqi 5cqi; }
+  .bk-top { display: flex; justify-content: space-between; gap: 8px; font: 600 max(.5rem, 2.9cqi)/1 var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--fg-muted); }
+  .bk-top .no { color: var(--gold-hi); }
+  .bk-name { font: 900 8cqi/.86 var(--font-display); text-transform: uppercase; color: #fff7e2; }
+  .bk-name small { display: block; font: 600 max(.5rem, 2.7cqi)/1 var(--font-mono); letter-spacing: .2em; color: var(--gold); margin-bottom: 1.6cqi; }
+  .bk h4 { margin: 0 0 2cqi; display: flex; align-items: center; gap: 2cqi; font: 600 max(.5rem, 2.6cqi)/1 var(--font-mono); letter-spacing: .22em; text-transform: uppercase; color: var(--gold); }
+  .bk h4::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(233, 196, 106, .5), transparent); }
+  .bk-bars { display: grid; gap: 1.7cqi; }
+  .bk-bar { --v: 0; --h: 40; display: grid; grid-template-columns: 24cqi minmax(0, 1fr) 7cqi; gap: 2.4cqi; align-items: center; font: 600 max(.5rem, 2.8cqi)/1 var(--font-mono); text-transform: uppercase; letter-spacing: .05em; color: var(--fg-muted); }
+  .bk-bar span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bk-bar i { position: relative; height: 1.9cqi; border-radius: 99px; background: rgba(255, 255, 255, .08); overflow: hidden; }
+  .bk-bar i::after { content: ""; position: absolute; inset: 0; width: calc(var(--v) * 100%); border-radius: inherit; background: linear-gradient(90deg, hsl(var(--h) 65% 38%), hsl(var(--h) 90% 68%)); }
+  .bk-bar b { text-align: right; color: var(--fg); font-weight: 600; }
+  .bk-axes { display: grid; gap: 2.4cqi; }
+  .bk-ax { --v: .5; display: grid; grid-template-columns: 17cqi minmax(0, 1fr) 17cqi 9cqi; gap: 2cqi; align-items: center; font: 600 max(.48rem, 2.5cqi)/1 var(--font-mono); text-transform: uppercase; letter-spacing: .06em; color: var(--fg-faint); }
+  .bk-ax span:nth-child(3) { text-align: right; }
+  .bk-ax i { position: relative; height: 1px; background: rgba(233, 196, 106, .45); }
+  .bk-ax i::after { content: ""; position: absolute; top: 50%; left: calc(var(--v) * 100%); width: 2.4cqi; height: 2.4cqi; margin: -1.2cqi 0 0 -1.2cqi; transform: rotate(45deg); background: var(--gold-hi); box-shadow: 0 0 8px var(--gold-glow); }
+  .bk-ax b { color: var(--fg); text-align: right; font-weight: 600; }
+  .bk-src p { margin: 0 0 1.6cqi; font: 600 max(.56rem, 3.1cqi)/1.3 var(--font-body); color: var(--fg); }
+  .bk-src p small { display: block; color: var(--fg-faint); font-weight: 500; font-size: .86em; }
+  .bk-picks { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 1.2cqi 3cqi; font: 500 max(.5rem, 2.6cqi)/1.2 var(--font-mono); color: var(--fg-muted); }
+  .bk-picks li { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bk-picks b { color: var(--gold); font-weight: 600; margin-right: .5em; }
+  .bk-code { align-self: end; font: 500 max(.46rem, 2.4cqi)/1.5 var(--font-mono); letter-spacing: .12em; color: var(--fg-faint); overflow-wrap: anywhere; }
+  .bk-code b { color: var(--gold); font-weight: 600; }
+  .bk-foot { display: flex; align-items: end; justify-content: space-between; gap: 3cqi; padding-top: 2.6cqi; border-top: 1px solid rgba(233, 196, 106, .3); }
+  .bk-foot div { display: grid; gap: 1cqi; }
+  .bk-foot small { font: 600 max(.46rem, 2.3cqi)/1 var(--font-mono); letter-spacing: .2em; text-transform: uppercase; color: var(--fg-faint); }
+  .bk-foot b { font: 700 max(.6rem, 3.4cqi)/1 var(--font-body); color: var(--fg); }
+  .seal {
+    width: 15cqi; height: 15cqi; border-radius: 50%; flex: none; display: grid; place-items: center;
+    font: 900 3.6cqi/1 var(--font-display); letter-spacing: .08em; color: rgba(20, 16, 6, .85);
+    background: conic-gradient(from 30deg, #ffd6e8, #c9f0ff, #d8ffd2, #fff2b8, #ffd6e8);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, .6) inset, 0 0 0 3px rgba(233, 196, 106, .4), 0 0 14px rgba(255, 255, 255, .25);
+  }
+
+  /* the foil pack */
+  .pack { position: absolute; inset: -3% -5%; z-index: 3; pointer-events: none; }
+  .pack[hidden] { display: none; }
+  .pack-part {
+    position: absolute; inset: 0; border-radius: 10px;
+    background:
+      repeating-linear-gradient(90deg, rgba(255, 255, 255, .22) 0 1px, rgba(0, 0, 0, .18) 1px 3px) top / 100% 5% no-repeat,
+      repeating-linear-gradient(90deg, rgba(255, 255, 255, .22) 0 1px, rgba(0, 0, 0, .18) 1px 3px) bottom / 100% 5% no-repeat,
+      linear-gradient(97deg, transparent 22%, rgba(255, 255, 255, .5) 33%, transparent 41%, transparent 58%, rgba(255, 255, 255, .22) 66%, transparent 74%),
+      repeating-linear-gradient(8deg, rgba(255, 255, 255, .05) 0 9px, rgba(0, 0, 0, .07) 9px 17px),
+      linear-gradient(162deg, #1a1630 0%, #3b2d64 22%, #8a6a2c 46%, #f0cf7a 54%, #4a3778 72%, #120f22 100%);
+    box-shadow: 0 30px 60px -22px rgba(0, 0, 0, .95), inset 0 0 0 1px rgba(255, 255, 255, .12);
+  }
+  .pack-label { position: absolute; left: 10%; right: 10%; top: 34%; display: grid; justify-items: center; gap: 4cqi; text-align: center; container-type: inline-size; }
+  .pl-mark {
+    font: 900 26cqi/.8 var(--font-display); letter-spacing: .02em;
+    background: linear-gradient(176deg, #fff4d2, #f3d27f 30%, #b8862c 52%, #fbe6a8 74%, #a87a26); -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 3px 0 rgba(30, 20, 5, .8));
+  }
+  .pl-sub { font: 600 4.6cqi/1.3 var(--font-mono); letter-spacing: .24em; text-transform: uppercase; color: rgba(255, 244, 214, .85); }
+  .pl-badge { font: 700 4.2cqi/1 var(--font-body); letter-spacing: .06em; padding: 2.4cqi 4.4cqi; border-radius: 99px; color: #1a1406; background: linear-gradient(90deg, #ffd6e8, #c9f0ff, #fff2b8); }
+  .pack-flash { position: absolute; left: -20%; right: -20%; top: calc(var(--ty, 14%) - 9%); height: 18%; opacity: 0; background: radial-gradient(50% 50% at 50% 50%, rgba(255, 252, 235, 1), rgba(255, 222, 150, .45) 40%, transparent 72%); mix-blend-mode: screen; }
+  .fx { position: absolute; inset: -40px; width: calc(100% + 80px); height: calc(100% + 80px); pointer-events: none; z-index: 6; }
+
+  .card-tools { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+  .card-tools .btn { padding: .7em 1.2em; font-size: .82rem; }
+  .card-tools .btn:disabled { opacity: .5; cursor: progress; }
+  .card-hint { margin: 0; font-size: .76rem; color: var(--fg-faint); text-align: center; }
+
+  /* explored alternatives */
+  .alts { display: grid; gap: 20px; }
+  .alts-head { display: grid; gap: 8px; max-width: 760px; }
+  .alts-head h2 { font: 800 clamp(1.8rem, 3vw, 2.4rem)/1 var(--font-display); text-transform: uppercase; letter-spacing: .02em; }
+  .alts-head p { margin: 0; color: var(--fg-muted); font-size: var(--step--1); }
+  .alts .variant { background: rgba(178, 190, 255, .03); }
+  .alts .v-letter { font-size: 2.1rem; color: var(--fg-muted); }
+  .alts .v-name { font-size: 1.3rem; }
 
   /* recommendations */
   .recs { display: grid; gap: 16px; }
@@ -271,15 +395,12 @@
   .chip { font: 600 .66rem/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; padding: 4px 7px; border-radius: 99px; border: 1px solid var(--glass-edge); color: var(--fg-muted); }
   .chip.on { color: var(--fg); border-color: color-mix(in srgb, var(--cc) 70%, transparent); background: color-mix(in srgb, var(--cc) 18%, transparent); }
 
-  @media (max-width: 980px) {
-    .persona { grid-template-columns: minmax(0, 1fr); }
-  }
+  @media (prefers-reduced-motion: reduce) { .shine { display: none; } }
   @media (max-width: 600px) {
     .stage.e2 { aspect-ratio: auto; }
     .stage.e2 .bar-wrap { flex: none; height: 190px; }
     .e2-axes { grid-template-columns: minmax(0, 1fr); gap: 12px; }
-    .stage.e4 { aspect-ratio: auto; padding: 22px 0; }
-    .tcard { height: auto; width: min(86%, 320px); }
+    .stage.e4 { padding: 16px 6px 30px; }
     .orb-read .o-stat b { font-size: 1.3rem; }
     .rec { grid-template-columns: 72px minmax(0, 1fr); }
     .rec .cover { width: 72px; }
@@ -294,38 +415,125 @@
 
 <main>
   <header class="intro">
-    <span class="eyebrow">Study E</span>
-    <h1>Taste DNA</h1>
-    <p>Four ways to draw the same fingerprint. Change the ranking and watch them all respond.</p>
+    <div>
+      <span class="eyebrow">Study E4 · Taste DNA · the profile centrepiece</span>
+      <h1>Your persona card</h1>
+    </div>
+    <p>GOAT reads your Top 10 and issues one holographic card. Change the ranking and the card is redrawn; flip it for the fine print.</p>
   </header>
 
-  <section class="persona glass" aria-labelledby="p-name">
-    <div class="who">
-      <span class="eyebrow">Your taste persona · written by GOAT AI from your Top 10</span>
-      <h2 class="p-name" id="p-name"><span class="the">The</span>Melancholic <span class="gold">Auteurist</span></h2>
-      <p class="tagline">You rank worlds that argue back. Writing over spectacle, consequence over comfort, and a soft spot for beautiful despair.</p>
-      <ul class="evidence" id="evidence" aria-live="polite"></ul>
+  <section class="showcase" aria-label="Your persona card and the ranking behind it">
+    <div class="card-col">
+      <div class="stage e4" id="card-stage">
+        <div class="tc-slot" id="tc-slot">
+          <div class="floor" id="floor" aria-hidden="true"></div>
+          <div class="tc-wrap" id="tc-wrap">
+            <div class="tcard" id="tcard" role="button" tabindex="0" aria-label="Persona card, showing the front. Press to flip.">
+              <div class="face front" id="tc-front">
+            <div class="tcard-in">
+              <div class="tc-top"><span>Taste DNA</span><span>No. 0427 · RPG</span></div>
+              <div class="tc-name"><small>Persona</small>The Melancholic Auteurist</div>
+              <div class="tc-art">
+                <svg id="radar" viewBox="-158 -124 316 248" role="img" aria-label="Radar chart of the top six traits">
+                  <defs>
+                    <linearGradient id="rfill" x1="0" y1="0" x2="1" y2="1">
+                      <stop id="rs1" offset="0" stop-color="hsl(30 80% 60%)" stop-opacity=".75"/>
+                      <stop id="rs2" offset="1" stop-color="hsl(200 80% 60%)" stop-opacity=".55"/>
+                    </linearGradient>
+                    <radialGradient id="rglow"><stop offset="0" stop-color="#e9c46a" stop-opacity=".18"/><stop offset="1" stop-color="#e9c46a" stop-opacity="0"/></radialGradient>
+                  </defs>
+                  <circle r="96" fill="url(#rglow)"/>
+                  <g id="r-grid"></g>
+                  <polygon id="r-poly" fill="url(#rfill)" stroke="#ffe3a1" stroke-width="1.6" stroke-linejoin="round"/>
+                  <g id="r-dots"></g>
+                  <g id="r-labs"></g>
+                </svg>
+              </div>
+              <div class="tc-stats">
+                <div><span>Era</span><i id="cs-era"></i><b id="cs-era-v">2015</b></div>
+                <div><span>Obscurity</span><i id="cs-obs"></i><b id="cs-obs-v">27%</b></div>
+                <div><span>Fit</span><i id="cs-fit"></i><b id="cs-fit-v">100%</b></div>
+              </div>
+              <div class="tc-foot"><span id="tc-foot">The Greatest RPGs Ever Made · 10 ranked</span><b>Holo · 1 of 1</b></div>
+            </div>
+                <div class="fl fl-rain" id="fl-rain" aria-hidden="true"><i></i></div>
+                <div class="fl fl-pat" id="fl-pat" aria-hidden="true"><i></i></div>
+                <canvas class="glit" id="glit" aria-hidden="true"></canvas>
+                <div class="fl fl-glare" id="fl-glare" aria-hidden="true"><i></i></div>
+                <div class="shine" aria-hidden="true"></div>
+                <div class="wipe" id="wipe" aria-hidden="true"></div>
+                <div class="rim" aria-hidden="true"><i></i></div>
+              </div>
+              <div class="face back" id="tc-back" aria-hidden="true">
+                <div class="bk">
+                  <canvas id="guil" aria-hidden="true"></canvas>
+                  <div class="bk-in">
+                    <div class="bk-top"><span>Taste DNA · Certificate</span><span class="no">No. 0427</span></div>
+                    <div class="bk-name"><small>Persona of record</small>The Melancholic Auteurist</div>
+                    <div><h4>Top traits</h4><div class="bk-bars" id="bk-bars"></div></div>
+                    <div><h4>Axes</h4>
+                      <div class="bk-axes">
+                        <div class="bk-ax" id="bk-era"><span>Classic</span><i></i><span>Modern</span><b>2015</b></div>
+                        <div class="bk-ax" id="bk-obs"><span>Mainstream</span><i></i><span>Obscure</span><b>27%</b></div>
+                      </div>
+                    </div>
+                    <div class="bk-src"><h4>Sources</h4><p id="bk-src">The Greatest RPGs Ever Made<small>10 ranked · 6 on the bench · persona by GOAT AI</small></p><ol class="bk-picks" id="bk-picks"></ol></div>
+                    <div class="bk-code" id="bk-code"></div>
+                    <div class="bk-foot">
+                      <div><small>Issued</small><b id="bk-date">9 Oct 2026</b></div>
+                      <div><small>Holder</small><b>@you</b></div>
+                      <div><small>Series</small><b>RPG · 01</b></div>
+                      <span class="seal" aria-hidden="true">GOAT</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="rim" aria-hidden="true"><i></i></div>
+              </div>
+            </div>
+          </div>
+          <div class="pack" id="pack" hidden aria-hidden="true">
+            <div class="pack-part" id="pack-body">
+              <div class="pack-label"><span class="pl-mark">G.O.A.T.</span><span class="pl-sub">Taste DNA · Series 1</span><span class="pl-badge">1 holographic persona card</span></div>
+            </div>
+            <div class="pack-part" id="pack-top"></div>
+            <div class="pack-flash" id="pack-flash"></div>
+          </div>
+        </div>
+        <canvas class="fx" id="fx" aria-hidden="true"></canvas>
+      </div>
+      <div class="card-tools">
+        <button class="btn" type="button" id="flip" aria-pressed="false">Flip card</button>
+        <button class="btn gold" type="button" id="pack-btn">Open a fresh pack</button>
+      </div>
+      <p class="card-hint" id="card-hint" aria-live="polite">Click the card to flip it. Move the pointer across it to catch the foil.</p>
     </div>
-    <div class="readings">
-      <div class="fit">
-        <span class="num" id="fit-num">100%</span>
-        <span class="lbl"><span class="eyebrow">Persona fit</span><small id="fit-note">Matches your ranking.</small></span>
-      </div>
-      <div class="meter" data-axis="modern" role="meter" aria-label="Classic to modern" aria-valuemin="0" aria-valuemax="100">
-        <div class="m-top"><span>Classic</span><span class="m-val">2015</span><span>Modern</span></div>
-        <div class="m-track"><span class="m-fill"></span><span class="m-dot"></span></div>
-        <div class="m-scale mono"><span>1990</span><span>2008</span><span>2025</span></div>
-      </div>
-      <div class="meter" data-axis="obscure" role="meter" aria-label="Mainstream to obscure" aria-valuemin="0" aria-valuemax="100">
-        <div class="m-top"><span>Mainstream</span><span class="m-val">27%</span><span>Obscure</span></div>
-        <div class="m-track"><span class="m-fill"></span><span class="m-dot"></span></div>
-        <div class="m-scale mono"><span>0</span><span>50</span><span>100</span></div>
-      </div>
-      <div class="stats mono" id="stats"></div>
-    </div>
-  </section>
 
-  <section class="work">
+    <div class="persona">
+      <div class="who">
+        <span class="eyebrow">Your taste persona · written by GOAT AI from your Top 10</span>
+        <h2 class="p-name" id="p-name"><span class="the">The</span>Melancholic <span class="gold">Auteurist</span></h2>
+        <p class="tagline">You rank worlds that argue back. Writing over spectacle, consequence over comfort, and a soft spot for beautiful despair.</p>
+        <ul class="evidence" id="evidence" aria-live="polite"></ul>
+      </div>
+      <div class="readings glass">
+        <div class="fit">
+          <span class="num" id="fit-num">100%</span>
+          <span class="lbl"><span class="eyebrow">Persona fit</span><small id="fit-note">Matches your ranking.</small></span>
+        </div>
+        <div class="meter" data-axis="modern" role="meter" aria-label="Classic to modern" aria-valuemin="0" aria-valuemax="100">
+          <div class="m-top"><span>Classic</span><span class="m-val">2015</span><span>Modern</span></div>
+          <div class="m-track"><span class="m-fill"></span><span class="m-dot"></span></div>
+          <div class="m-scale mono"><span>1990</span><span>2008</span><span>2025</span></div>
+        </div>
+        <div class="meter" data-axis="obscure" role="meter" aria-label="Mainstream to obscure" aria-valuemin="0" aria-valuemax="100">
+          <div class="m-top"><span>Mainstream</span><span class="m-val">27%</span><span>Obscure</span></div>
+          <div class="m-track"><span class="m-fill"></span><span class="m-dot"></span></div>
+          <div class="m-scale mono"><span>0</span><span>50</span><span>100</span></div>
+        </div>
+        <div class="stats mono" id="stats"></div>
+      </div>
+    </div>
+
     <aside class="ranker glass" id="ranker" aria-labelledby="rk-h">
       <div class="rk-head">
         <div>
@@ -342,7 +550,14 @@
       <div class="bench-head"><span class="eyebrow">Bench</span><small>Not ranked, not counted</small></div>
       <ul class="rows bench" id="bench" aria-label="Bench games"></ul>
     </aside>
+  </section>
 
+  <section class="alts" id="alternatives" aria-labelledby="alts-h">
+    <div class="alts-head">
+      <span class="eyebrow">Explored alternatives · retired in round 5</span>
+      <h2 id="alts-h">Same fingerprint, three other drawings</h2>
+      <p>E1 to E3 lost to the card, but they still read your live ranking. Change the Top 10 above and watch them move with it.</p>
+    </div>
     <div class="variants">
       <article class="variant glass" id="e1" aria-labelledby="e1-n">
         <header class="v-head">
@@ -397,46 +612,6 @@
           <div class="orb-read">
             <div class="o-stat"><b id="o-lobes">5</b><small>lobes · traits at 40% or more</small></div>
             <div class="o-stat r"><b id="o-turb">27%</b><small>turbulence · from obscurity</small></div>
-          </div>
-        </div>
-      </article>
-
-      <article class="variant glass" id="e4" aria-labelledby="e4-n">
-        <header class="v-head">
-          <span class="v-letter">E4</span>
-          <h3 class="v-name" id="e4-n">Radar persona card</h3>
-          <p class="v-best"><b>Best for</b> the collectible moment: a card people want to post. Move the pointer over it.</p>
-        </header>
-        <div class="stage e4" id="card-stage">
-          <div class="tcard" id="tcard">
-            <div class="tcard-in">
-              <div class="tc-top"><span>Taste DNA</span><span>No. 0427 · RPG</span></div>
-              <div class="tc-name"><small>Persona</small>The Melancholic Auteurist</div>
-              <div class="tc-art">
-                <svg id="radar" viewBox="-158 -124 316 248" role="img" aria-label="Radar chart of the top six traits">
-                  <defs>
-                    <linearGradient id="rfill" x1="0" y1="0" x2="1" y2="1">
-                      <stop id="rs1" offset="0" stop-color="hsl(30 80% 60%)" stop-opacity=".75"/>
-                      <stop id="rs2" offset="1" stop-color="hsl(200 80% 60%)" stop-opacity=".55"/>
-                    </linearGradient>
-                    <radialGradient id="rglow"><stop offset="0" stop-color="#e9c46a" stop-opacity=".18"/><stop offset="1" stop-color="#e9c46a" stop-opacity="0"/></radialGradient>
-                  </defs>
-                  <circle r="96" fill="url(#rglow)"/>
-                  <g id="r-grid"></g>
-                  <polygon id="r-poly" fill="url(#rfill)" stroke="#ffe3a1" stroke-width="1.6" stroke-linejoin="round"/>
-                  <g id="r-dots"></g>
-                  <g id="r-labs"></g>
-                </svg>
-              </div>
-              <div class="tc-stats">
-                <div><span>Era</span><i id="cs-era"></i><b id="cs-era-v">2015</b></div>
-                <div><span>Obscurity</span><i id="cs-obs"></i><b id="cs-obs-v">27%</b></div>
-                <div><span>Fit</span><i id="cs-fit"></i><b id="cs-fit-v">100%</b></div>
-              </div>
-              <div class="tc-foot"><span id="tc-foot">The Greatest RPGs Ever Made · 10 ranked</span><b>Holo · 1 of 1</b></div>
-            </div>
-            <div class="holo"></div>
-            <div class="glare"></div>
           </div>
         </div>
       </article>
@@ -569,6 +744,9 @@
     D.lobes += (T.lobes - D.lobes) * k;
     D.fit += (T.fit - D.fit) * k;
     D.radar = slots.map((t, i) => { const v = D.radar[i] ?? 0; return v + ((t ? T.w[t] : 0) - v) * k; });
+    let gap = Math.abs(T.year - D.year) / 30 + Math.abs(T.fit - D.fit) + Math.abs(T.lobes - D.lobes) / 9;
+    TRAITS.forEach((t) => { gap += Math.abs(T.w[t] - D.w[t]) + Math.abs(T.bw[t] - D.bw[t]) + Math.abs(((T.hue[t] - D.hue[t] + 540) % 360) - 180) / 360; });
+    return gap;
   }
 
   const col = (t, l, a = 1, sBoost = 0) => `hsl(${D.hue[t].toFixed(1)} ${clamp(D.sat[t] + sBoost, 0, 100).toFixed(0)}% ${l}% / ${a})`;
@@ -584,7 +762,7 @@
       o.w = Math.max(1, r.width); o.h = Math.max(1, r.height);
       el.width = Math.round(o.w * o.dpr); el.height = Math.round(o.h * o.dpr);
       onResize && onResize(o);
-      if (RM) requestStatic();
+      if (RM) requestStatic(); else { prime(); wake(); }
     }).observe(el);
     canvases.push(o);
     return o;
@@ -929,11 +1107,11 @@
   })();
   function drawRadar() {
     const pts = D.radar.map((v, i) => [Math.cos(ang(i)) * RAD * clamp(v, .03, 1), Math.sin(ang(i)) * RAD * clamp(v, .03, 1)]);
-    $("#r-poly").setAttribute("points", pts.map((p) => p.map((n) => n.toFixed(2)).join(",")).join(" "));
-    $$("#r-dots circle").forEach((c, i) => { c.setAttribute("cx", pts[i][0].toFixed(2)); c.setAttribute("cy", pts[i][1].toFixed(2)); });
-    $$("#r-labs .lab").forEach((g, i) => { g.lastChild.textContent = slots[i] ? String(Math.round(D.radar[i] * 100)) : ""; });
+    setAttr($("#r-poly"), "points", pts.map((p) => p.map((n) => n.toFixed(1)).join(",")).join(" "));
+    $$("#r-dots circle").forEach((c, i) => { setAttr(c, "cx", pts[i][0].toFixed(1)); setAttr(c, "cy", pts[i][1].toFixed(1)); });
+    $$("#r-labs .lab").forEach((g, i) => { setText(g.lastChild, slots[i] ? String(Math.round(D.radar[i] * 100)) : ""); });
     const [a, b] = [...topN(2), ...TRAITS];
-    $("#rs1").setAttribute("stop-color", col(a, 62)); $("#rs2").setAttribute("stop-color", col(b, 58));
+    setAttr($("#rs1"), "stop-color", col(a, 62)); setAttr($("#rs2"), "stop-color", col(b, 58));
   }
   function radarLabels() {
     $$("#r-labs .lab").forEach((g, i) => {
@@ -944,41 +1122,305 @@
       }
     });
   }
-  // card pointer: tilt + holo sheen
-  const card = $("#tcard"), cardStage = $("#card-stage");
-  let cardHover = false;
+  /* ---------------------------------------- E4 card: foil, flip and pack */
+  const card = $("#tcard"), cardStage = $("#card-stage"), slot = $("#tc-slot"), wrap = $("#tc-wrap"), floor = $("#floor");
+  const frontEl = $("#tc-front"), backEl = $("#tc-back"), flipBtn = $("#flip"), packBtn = $("#pack-btn");
+  // rx/ry: tilt; px/py: pointer on the card; mx/my: where the light sits; flip: spring-driven Y turn
+  const C = { rx: 0, ry: 0, px: .5, py: .4, mx: .5, my: .4, hov: false, flip: 0, fv: 0, ft: 0, burst: 0, lock: false };
+  const fmtDate = (d) => d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  $("#bk-date").textContent = fmtDate(new Date());
+
+  // glitter: facets with a random orientation catch the light when it lines up with them
+  const GL = (() => { const r = rng(.7771); return Array.from({ length: 190 }, () => ({ x: r(), y: r(), a: r() * TAU, s: .45 + r() ** 2 * 1.7, h: r() * 360, tw: r() * TAU })); })();
+  const glit = { c: $("#glit"), ctx: $("#glit").getContext("2d"), w: 0, h: 0, dpr: 1 };
+  function sizeLocal(o) { // layout size, unaffected by the 3D transform
+    o.dpr = Math.min(2, window.devicePixelRatio || 1);
+    o.w = Math.max(1, o.c.clientWidth); o.h = Math.max(1, o.c.clientHeight);
+    o.c.width = Math.round(o.w * o.dpr); o.c.height = Math.round(o.h * o.dpr);
+  }
+  new ResizeObserver(() => { sizeLocal(glit); C.drawn = false; if (RM) requestStatic(); else wake(); }).observe(glit.c);
+  function drawGlitter(t) {
+    const { ctx, w, h, dpr } = glit; if (w < 2) return;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, w, h);
+    if (Math.cos(rad(C.flip)) < 0) return; // facing away
+    const la = Math.atan2(C.my - .5, C.mx - .5), hyp = Math.min(1, Math.hypot(C.mx - .5, C.my - .5) * 2.2);
+    const turn = (C.ry - C.rx) * .09;
+    ctx.globalCompositeOperation = "lighter";
+    for (const g of GL) {
+      let b = Math.max(0, Math.cos(g.a - la * 2 - turn)) ** 16;
+      const d2 = (g.x - C.mx) ** 2 + (g.y - C.my) ** 2;
+      b *= (.22 + .78 * Math.exp(-d2 / .05)) * (.55 + hyp * .7);
+      if (C.burst > .01) b = Math.max(b, C.burst * (.35 + .65 * Math.max(0, Math.sin(g.tw + t * 9))));
+      if (b < .045) continue;
+      b = Math.min(1, b);
+      const x = g.x * w, y = g.y * h, s = g.s * (1 + b * 1.4);
+      const hue = (g.h + la * 57 + C.ry * 5) % 360;
+      ctx.fillStyle = `hsla(${hue.toFixed(0)},100%,${(68 + 28 * b).toFixed(0)}%,${b.toFixed(3)})`;
+      ctx.beginPath(); ctx.arc(x, y, s * .75, 0, TAU); ctx.fill();
+      if (b > .4) {
+        const L = s * 5 * b;
+        ctx.strokeStyle = `hsla(${hue.toFixed(0)},100%,92%,${(b * .75).toFixed(3)})`; ctx.lineWidth = .7;
+        ctx.beginPath(); ctx.moveTo(x - L, y); ctx.lineTo(x + L, y); ctx.moveTo(x, y - L); ctx.lineTo(x, y + L); ctx.stroke();
+      }
+    }
+    ctx.globalCompositeOperation = "source-over";
+  }
+
+  // the back: a guilloche security print, redrawn when the leading hues change
+  const guil = { c: $("#guil"), ctx: $("#guil").getContext("2d"), w: 0, h: 0, dpr: 1 };
+  let guilKey = "";
+  new ResizeObserver(() => { sizeLocal(guil); guilKey = ""; drawGuilloche(); }).observe(guil.c);
+  const gcd = (a, b) => (b ? gcd(b, a % b) : a);
+  function drawGuilloche() {
+    const { ctx, w, h, dpr } = guil; if (w < 2) return;
+    const [a, b] = [...T.top, ...TRAITS];
+    const h1 = Math.round(T.hue[a] ?? 30), h2 = Math.round(T.hue[b] ?? 200);
+    const key = `${w}x${h}:${h1}:${h2}`; if (key === guilKey) return; guilKey = key;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const bg = ctx.createLinearGradient(0, 0, w * .4, h);
+    bg.addColorStop(0, `hsl(${h1} 30% 11%)`); bg.addColorStop(.55, "#0a0c17"); bg.addColorStop(1, `hsl(${h2} 30% 9%)`);
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h);
+    ctx.lineWidth = .55;
+    // fine wave field across the whole back
+    for (let k = 0; k < 64; k++) {
+      const y0 = (k / 63) * h;
+      ctx.strokeStyle = `hsla(${k % 2 ? h1 : h2}, 55%, 62%, .075)`;
+      ctx.beginPath();
+      for (let x = 0; x <= w; x += 3) { const y = y0 + Math.sin(x * .034 + k * .55) * 5 + Math.sin(x * .012 - k * .23) * 8; x ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+      ctx.stroke();
+    }
+    // rosettes (hypotrochoids) behind the traits block
+    const cx = w * .5, cy = h * .47, S = Math.min(w, h) * .44;
+    const rose = (R, r, d, rot, col, lw) => {
+      const turns = r / gcd(R, r), steps = 900 * turns / 2, k = (R - r) / r, sc = S / (R - r + d);
+      ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.beginPath();
+      for (let i = 0; i <= steps; i++) {
+        const t = (i / steps) * TAU * turns;
+        const x = (R - r) * Math.cos(t) + d * Math.cos(k * t), y = (R - r) * Math.sin(t) - d * Math.sin(k * t);
+        const X = cx + (x * Math.cos(rot) - y * Math.sin(rot)) * sc, Y = cy + (x * Math.sin(rot) + y * Math.cos(rot)) * sc;
+        i ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y);
+      }
+      ctx.stroke();
+    };
+    rose(105, 40, 62, 0, "rgba(233,196,106,.22)", .6);
+    rose(105, 40, 44, .12, `hsla(${h1},75%,64%,.2)`, .55);
+    rose(96, 36, 70, .35, `hsla(${h2},75%,64%,.14)`, .5);
+    rose(105, 40, 22, .24, "rgba(255,227,161,.16)", .5);
+    // guilloche bands top and bottom, two interwoven families
+    const band = (yc, amp) => {
+      for (let k = 0; k < 14; k++) {
+        ctx.strokeStyle = k % 2 ? "rgba(233,196,106,.26)" : `hsla(${h1},70%,66%,.2)`;
+        ctx.beginPath();
+        for (let x = 0; x <= w; x += 2) { const ph = (k / 14) * TAU; const y = yc + amp * Math.sin(x * .05 + ph) * Math.cos(x * .013 - ph * .5); x ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+        ctx.stroke();
+      }
+    };
+    band(h * .085, h * .035); band(h * .915, h * .035);
+    // microprint along the inner frame
+    ctx.font = `500 5px "JetBrains Mono", ui-monospace, monospace`; ctx.fillStyle = "rgba(233,196,106,.42)"; ctx.textBaseline = "middle";
+    const micro = "GOAT TASTE DNA · NO 0427 · THE MELANCHOLIC AUTEURIST · ".repeat(8);
+    ctx.save(); ctx.beginPath(); ctx.rect(5, 0, w - 10, h); ctx.clip(); ctx.fillText(micro, 5, 4.5); ctx.fillText(micro, 5, h - 4.5); ctx.restore();
+    ctx.save(); ctx.translate(4.5, h - 6); ctx.rotate(-Math.PI / 2); ctx.beginPath(); ctx.rect(0, -4, h - 12, 8); ctx.clip(); ctx.fillText(micro, 0, 0); ctx.restore();
+    ctx.save(); ctx.translate(w - 4.5, 6); ctx.rotate(Math.PI / 2); ctx.beginPath(); ctx.rect(0, -4, h - 12, 8); ctx.clip(); ctx.fillText(micro, 0, 0); ctx.restore();
+  }
+
+  // particles for the holo flash (one canvas over the stage)
+  const fx = { c: $("#fx"), ctx: $("#fx").getContext("2d"), w: 0, h: 0, dpr: 1, parts: [], ring: 0 };
+  new ResizeObserver(() => sizeLocal(fx)).observe(fx.c);
+  function burst() {
+    const sr = fx.c.getBoundingClientRect(), cr = slot.getBoundingClientRect();
+    const cx = cr.left - sr.left + cr.width / 2, cy = cr.top - sr.top + cr.height * .45;
+    const R = Math.random;
+    for (let i = 0; i < 120; i++) {
+      const a = R() * TAU, v = 260 + R() ** .7 * 760;
+      fx.parts.push({ x: cx + Math.cos(a) * cr.width * .2, y: cy + Math.sin(a) * cr.height * .2, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 180, life: 1, decay: .55 + R() * .6,
+        s: 2 + R() * 4, rot: R() * TAU, spin: (R() - .5) * 18, hue: R() < .55 ? 40 + R() * 14 : R() * 360, gold: R() < .55 });
+    }
+    fx.ring = 1; fx.cx = cx; fx.cy = cy; fx.r0 = cr.width * .45;
+  }
+  function drawFx(dt) {
+    const { ctx, w, h, dpr } = fx;
+    if (!fx.parts.length && fx.ring <= 0) { if (fx.dirty) { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, fx.c.width, fx.c.height); fx.dirty = false; } return; }
+    fx.dirty = true;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, w, h);
+    ctx.globalCompositeOperation = "lighter";
+    if (fx.ring > 0) {
+      const e = 1 - fx.ring, r = fx.r0 * (.6 + e * 1.6);
+      const g = ctx.createRadialGradient(fx.cx, fx.cy, r * .7, fx.cx, fx.cy, r);
+      g.addColorStop(0, "rgba(255,230,170,0)"); g.addColorStop(.85, `rgba(255,236,190,${(.5 * fx.ring).toFixed(3)})`); g.addColorStop(1, "rgba(255,236,190,0)");
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(fx.cx, fx.cy, r, 0, TAU); ctx.fill();
+      fx.ring = Math.max(0, fx.ring - dt * 1.4);
+    }
+    fx.parts = fx.parts.filter((p) => {
+      p.vy += 620 * dt; p.vx *= Math.pow(.18, dt); p.vy *= Math.pow(.4, dt);
+      p.x += p.vx * dt; p.y += p.vy * dt; p.rot += p.spin * dt; p.life -= p.decay * dt;
+      if (p.life <= 0) return false;
+      const flick = Math.abs(Math.cos(p.rot));
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot * .5); ctx.scale(1, .25 + flick * .75);
+      ctx.fillStyle = p.gold ? `hsla(${p.hue},95%,${60 + flick * 30}%,${p.life.toFixed(3)})` : `hsla(${p.hue},100%,75%,${(p.life * .9).toFixed(3)})`;
+      ctx.fillRect(-p.s / 2, -p.s / 2, p.s, p.s * .6);
+      ctx.restore();
+      return true;
+    });
+    ctx.globalCompositeOperation = "source-over";
+  }
+
+  // per frame: tilt (pointer or idle sway), flip spring, light, glitter
+  function cardFrame(now, dt) {
+    const t = now / 1000;
+    let trx, tryy;
+    if (C.lock) { trx = 0; tryy = 0; }
+    else if (C.hov) { trx = (.5 - C.py) * 22; tryy = (C.px - .5) * 30; }
+    else { trx = -3; tryy = 7; }   // rest pose; the CSS shine keeps it alive for free
+    const k = 1 - Math.exp(-dt * (C.hov ? 9 : 2.6));
+    C.rx += (trx - C.rx) * k; C.ry += (tryy - C.ry) * k;
+    const acc = (C.ft - C.flip) * 150 - C.fv * 17;
+    C.fv += acc * dt; C.flip += C.fv * dt;
+    if (Math.abs(C.ft - C.flip) < .05 && Math.abs(C.fv) < .05) { C.flip = C.ft; C.fv = 0; }
+    // the light: under the pointer while hovering, otherwise implied by the tilt
+    const lmx = C.hov ? C.px : .5 + C.ry / 26, lmy = C.hov ? C.py : .42 - C.rx / 20;
+    C.mx += (clamp(lmx, -.1, 1.1) - C.mx) * k; C.my += (clamp(lmy, -.1, 1.1) - C.my) * k;
+    C.burst *= Math.exp(-dt * 2.6); if (C.burst < .01) C.burst = 0;
+    const moving = Math.abs(trx - C.rx) + Math.abs(tryy - C.ry) > .03 || C.flip !== C.ft || C.burst > 0 || C.lock ||
+      Math.abs(clamp(lmx, -.1, 1.1) - C.mx) + Math.abs(clamp(lmy, -.1, 1.1) - C.my) > .002;
+    if (moving || !C.drawn) { applyCard(); drawGlitter(t); C.drawn = !moving; }
+    return moving;
+  }
+  function applyCard() {
+    setStyle(card, "transform", `rotateX(${C.rx.toFixed(2)}deg) rotateY(${(C.ry + C.flip).toFixed(2)}deg)`);
+    setStyle(floor, "transform", `translateX(${(-C.ry * 1.4).toFixed(1)}px) scaleX(${(1 - Math.abs(C.ry) / 110).toFixed(3)})`);
+    const hyp = Math.min(1, Math.hypot(C.mx - .5, C.my - .5) * 2.2);
+    const W = frontEl.clientWidth, H = frontEl.clientHeight, dx = C.mx - .5, dy = C.my - .5;
+    // rainbow hotspot rides under the light; the pattern foil drifts the other way
+    setStyle(L.rain, "transform", `translate(${(dx * W * .9).toFixed(1)}px, ${(dy * H * .9).toFixed(1)}px) rotate(${(dx * 26).toFixed(2)}deg)`);
+    setStyle(L.pat, "transform", `translate(${(-dx * W * .7).toFixed(1)}px, ${(-dy * H * .7).toFixed(1)}px) rotate(${(-dx * 18).toFixed(2)}deg)`);
+    setStyle(L.glare, "transform", `translate(${(dx * W).toFixed(1)}px, ${(dy * H).toFixed(1)}px)`);
+    setStyle(L.rim, "transform", `rotate(${(Math.atan2(dx, -dy) * 180 / Math.PI).toFixed(1)}deg)`);
+    setStyle(L.rainBox, "opacity", Math.min(1, .16 + hyp * .34 + C.burst * .7).toFixed(3));
+    setStyle(L.patBox, "opacity", Math.min(1, .28 + hyp * .42 + C.burst * .6).toFixed(3));
+  }
+  const L = { rainBox: $("#fl-rain"), rain: $("#fl-rain > i"), patBox: $("#fl-pat"), pat: $("#fl-pat > i"), glare: $("#fl-glare > i"), rim: $("#tc-front .rim > i") };
+
   cardStage.addEventListener("pointermove", (e) => {
-    if (RM) return;
-    const r = card.getBoundingClientRect();
-    const mx = clamp((e.clientX - r.left) / r.width), my = clamp((e.clientY - r.top) / r.height);
-    cardHover = true; card.classList.add("live");
-    card.style.setProperty("--mx", mx.toFixed(3)); card.style.setProperty("--my", my.toFixed(3));
-    card.style.setProperty("--ry", ((mx - .5) * 16).toFixed(2) + "deg"); card.style.setProperty("--rx", ((.5 - my) * 12).toFixed(2) + "deg");
+    if (RM || C.lock || e.pointerType === "touch") return;
+    const r = slot.getBoundingClientRect();
+    C.px = clamp((e.clientX - r.left) / r.width, -.1, 1.1); C.py = clamp((e.clientY - r.top) / r.height, -.1, 1.1);
+    C.hov = true; C.drawn = false; wake();
   });
-  cardStage.addEventListener("pointerleave", () => { cardHover = false; card.classList.remove("live"); card.style.setProperty("--rx", "0deg"); card.style.setProperty("--ry", "0deg"); });
+  cardStage.addEventListener("pointerleave", () => { C.hov = false; C.drawn = false; wake(); });
+
+  const isBack = () => Math.round(C.ft / 180) % 2 !== 0;
+  function flipA11y() {
+    const b = isBack();
+    flipBtn.setAttribute("aria-pressed", String(b)); flipBtn.textContent = b ? "Show the front" : "Flip card";
+    frontEl.setAttribute("aria-hidden", String(b)); backEl.setAttribute("aria-hidden", String(!b));
+    card.setAttribute("aria-label", `Persona card, showing the ${b ? "back" : "front"}. Press to flip.`);
+  }
+  function flip() {
+    if (packing) return;
+    C.ft += 180;
+    if (RM) { C.flip = C.ft; C.fv = 0; requestStatic(); } else { C.fv += 90; wake(); }
+    flipA11y();
+  }
+  card.addEventListener("click", flip);
+  card.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } });
+  flipBtn.addEventListener("click", flip);
+
+  // pack opening: the card is reissued from a foil wrapper
+  let packing = false;
+  function holoFlash() {
+    C.burst = 1; burst();
+    $("#wipe").animate([{ opacity: 1, transform: "translateX(-70%)" }, { opacity: 1, transform: "translateX(70%)" }], { duration: 900, easing: "cubic-bezier(.4,0,.2,1)" });
+    wake();
+  }
+  function openPack() {
+    if (packing) return;
+    $("#bk-date").textContent = fmtDate(new Date());
+    if (RM) { C.ft = C.flip = 0; flipA11y(); requestStatic(); G.toast("Card reissued: No. 0427"); return; }
+    packing = true; packBtn.disabled = true; flipBtn.disabled = true;
+    C.lock = true; C.hov = false; C.ft = C.flip = Math.round(C.flip / 360) * 360; C.fv = 0; flipA11y();
+    const pack = $("#pack"), top = $("#pack-top"), body = $("#pack-body"), flash = $("#pack-flash");
+    const ty = 15, jag = [];
+    for (let i = 0; i <= 20; i++) jag.push(`${i * 5}% ${(ty + (i % 2 ? 1.5 : -1.3) + (Math.random() - .5) * 1.4).toFixed(2)}%`);
+    top.style.clipPath = `polygon(0 0, 100% 0, ${jag.slice().reverse().join(", ")})`;
+    body.style.clipPath = `polygon(${jag.join(", ")}, 100% 100%, 0 100%)`;
+    flash.style.setProperty("--ty", ty + "%");
+    pack.hidden = false;
+    const anims = [];
+    const A = (el, k, o) => { const a = el.animate(k, { fill: "both", ...o }); anims.push(a); return a; };
+    A(pack, [
+      { transform: "translateY(70px) scale(.88) rotate(-6deg)", opacity: 0 },
+      { transform: "none", opacity: 1, offset: .5 },
+      { transform: "rotate(-2.2deg)", offset: .64 }, { transform: "rotate(1.8deg)", offset: .78 }, { transform: "rotate(-.8deg)", offset: .9 },
+      { transform: "none", opacity: 1 }], { duration: 960, easing: "ease-out" });
+    A(top, [{ transform: "none", opacity: 1 }, { transform: "translate(6%, -5%) rotate(5deg)", opacity: 1, offset: .22 },
+      { transform: "translate(46%, -120%) rotate(28deg)", opacity: 0 }], { duration: 700, delay: 960, easing: "cubic-bezier(.3,.1,.5,1)" });
+    A(flash, [{ opacity: 0 }, { opacity: 1, offset: .25 }, { opacity: 0 }], { duration: 760, delay: 940 });
+    wrap.style.visibility = "hidden";
+    setTimeout(() => { wrap.style.visibility = ""; }, 980);
+    A(wrap, [
+      { transform: "translateY(8%) scale(.9) rotateY(0deg)", easing: "cubic-bezier(.2,.8,.3,1)" },
+      { transform: "translateY(-40%) scale(.9) rotateY(0deg)", offset: .3, easing: "cubic-bezier(.3,.05,.15,1)" },
+      { transform: "translateY(0%) scale(1) rotateY(720deg)" }], { duration: 1900, delay: 1040 });
+    A(body, [{ transform: "none", opacity: 1 }, { transform: "translateY(4%)", opacity: 1, offset: .25 }, { transform: "translateY(95%) rotate(8deg)", opacity: 0 }], { duration: 760, delay: 1600, easing: "cubic-bezier(.5,0,.75,0)" });
+    setTimeout(holoFlash, 1040 + 1900 - 260);
+    wake();
+    Promise.all(anims.map((a) => a.finished)).then(() => {
+      anims.forEach((a) => a.cancel());
+      pack.hidden = true; packing = false; packBtn.disabled = false; flipBtn.disabled = false; C.lock = false;
+      $("#card-hint").textContent = `Card No. 0427 issued ${fmtDate(new Date())}. Click it to read the back.`;
+    });
+  }
+  packBtn.addEventListener("click", openPack);
+
+  /* ------------------------------------------- the back's live content */
+  function renderBack() {
+    const traits = T.top.slice(0, 6);
+    $("#bk-bars").innerHTML = traits.map((t) => `<div class="bk-bar" data-t="${t}"><span>${t}</span><i></i><b></b></div>`).join("");
+    $("#bk-picks").innerHTML = T.active.slice(0, 6).map((a) => `<li><b>#${a.rank}</b>${a.item.title}</li>`).join("");
+    const benched = pool.length - T.active.length;
+    $("#bk-src").innerHTML = `${G.list.title}<small>${T.active.length} ranked · ${benched} on the bench · persona by GOAT AI</small>`;
+    drawGuilloche();
+  }
+  function drawBack() {
+    $$("#bk-bars .bk-bar").forEach((el) => {
+      const t = el.dataset.t;
+      setVar(el, "--v", D.w[t].toFixed(3)); setVar(el, "--h", D.hue[t].toFixed(0));
+      setText(el.lastChild, String(Math.round(D.w[t] * 100)));
+    });
+    const era = $("#bk-era"), obs = $("#bk-obs");
+    setVar(era, "--v", D.modern.toFixed(3)); setText(era.lastChild, String(Math.round(D.year)));
+    setVar(obs, "--v", D.obscure.toFixed(3)); setText(obs.lastChild, `${Math.round(D.obscure * 100)}%`);
+  }
 
   /* ---------------------------------------------------- per-frame DOM */
   const meters = $$(".meter");
   const domCache = new Map();
   const setText = (el, v) => { if (domCache.get(el) !== v) { domCache.set(el, v); el.textContent = v; } };
+  const propCache = new WeakMap();
+  function setVar(el, k, v) { let m = propCache.get(el); if (!m) propCache.set(el, (m = {})); if (m[k] !== v) { m[k] = v; el.style.setProperty(k, v); } }
+  const setStyle = setVar;
+  const attrCache = new WeakMap();
+  function setAttr(el, k, v) { let m = attrCache.get(el); if (!m) attrCache.set(el, (m = {})); if (m[k] !== v) { m[k] = v; el.setAttribute(k, v); } }
   function drawDom() {
     meters.forEach((m) => {
       const ax = m.dataset.axis, v = ax === "modern" ? D.modern : D.obscure;
-      m.style.setProperty("--v", v.toFixed(4));
-      m.setAttribute("aria-valuenow", Math.round(v * 100));
+      setVar(m, "--v", v.toFixed(3));
+      setAttr(m, "aria-valuenow", String(Math.round(v * 100)));
       setText($(".m-val", m), ax === "modern" ? String(Math.round(D.year)) : `${Math.round(D.obscure * 100)}%`);
     });
     setText($("#fit-num"), `${Math.round(D.fit * 100)}%`);
     setText($("#o-lobes"), String(Math.round(D.lobes)));
     setText($("#o-turb"), `${Math.round(D.obscure * 100)}%`);
-    setText($("#cs-era-v"), String(Math.round(D.year))); $("#cs-era").style.setProperty("--v", D.modern.toFixed(3));
-    setText($("#cs-obs-v"), `${Math.round(D.obscure * 100)}%`); $("#cs-obs").style.setProperty("--v", D.obscure.toFixed(3));
-    setText($("#cs-fit-v"), `${Math.round(D.fit * 100)}%`); $("#cs-fit").style.setProperty("--v", D.fit.toFixed(3));
+    setText($("#cs-era-v"), String(Math.round(D.year))); setVar($("#cs-era"), "--v", D.modern.toFixed(3));
+    setText($("#cs-obs-v"), `${Math.round(D.obscure * 100)}%`); setVar($("#cs-obs"), "--v", D.obscure.toFixed(3));
+    setText($("#cs-fit-v"), `${Math.round(D.fit * 100)}%`); setVar($("#cs-fit"), "--v", D.fit.toFixed(3));
     const [a, b, c] = [...topN(3), ...TRAITS];
-    const root = document.documentElement.style;
-    root.setProperty("--amb1", D.hue[a].toFixed(0)); root.setProperty("--amb2", D.hue[b].toFixed(0)); root.setProperty("--amb3", D.hue[c].toFixed(0));
-    cardStage.style.setProperty("--c1", D.hue[a].toFixed(0)); card.style.setProperty("--c1", D.hue[a].toFixed(0)); card.style.setProperty("--c2", D.hue[b].toFixed(0));
-    $$("#swatches i").forEach((el, i) => { const t = [a, b, c][i]; el.style.background = col(t, 62); el.style.color = col(t, 62); });
+    const root = document.documentElement, ha = D.hue[a].toFixed(0), hb = D.hue[b].toFixed(0), hc = D.hue[c].toFixed(0);
+    setVar(root, "--amb1", ha); setVar(root, "--amb2", hb); setVar(root, "--amb3", hc);
+    setVar(cardStage, "--c1", ha); setVar(card, "--c1", ha); setVar(card, "--c2", hb);
+    $$("#swatches i").forEach((el, i) => { const t = [a, b, c][i], v = col(t, 62); setStyle(el, "background", v); setStyle(el, "color", v); });
+    drawBack();
   }
 
   /* --------------------------------------------- on model change (DOM) */
@@ -1078,6 +1520,7 @@
     const parts = T.top.map((t) => `${abbr(t)}${String(Math.round(T.w[t] * 100)).padStart(2, "0")}`);
     const minor = T.order.length - T.top.length;
     $("#code").innerHTML = `<b>GOAT·DNA</b> ${parts.join(" ")}${minor > 0 ? ` · +${minor} minor` : ""}`;
+    $("#bk-code").innerHTML = `<b>GOAT·DNA</b> ${parts.join(" ")}`;
     const desc = `Top traits: ${T.top.slice(0, 5).map((t) => `${t} ${Math.round(T.w[t] * 100)}`).join(", ")}`;
     $("#sky").setAttribute("aria-label", "Constellation. " + desc);
     $("#bars").setAttribute("aria-label", "Spectrum barcode. " + desc);
@@ -1099,9 +1542,10 @@
         n.vx = n.vy = 0;
       }
     });
-    renderList(focus); renderStrip(); renderEvidence(); renderRecs(); renderCode(); radarLabels();
+    renderList(focus); renderStrip(); renderEvidence(); renderRecs(); renderCode(); radarLabels(); renderBack();
     if (hoverTrait) { const h = hoverTrait; hoverTrait = null; setHover(h, nodes[h].x * sky.w, nodes[h].y * sky.h); }
     if (RM) { lerpAll(1); for (let i = 0; i < 400; i++) simStep(); requestStatic(); }
+    wake();
     window.dispatchEvent(new CustomEvent("dna:change"));
   }
 
@@ -1140,30 +1584,63 @@
     pool = [...top, ...pool.slice(10)]; armed = null; onModel(); G.toast("Shuffled the order");
   });
 
-  /* ------------------------------------------------------------ loop */
-  function drawAll(time) { drawSky(time); drawBars(); drawMini(); drawOrb(time); drawRadar(); drawDom(); }
+  /* ------------------------------------------------------------ loop
+     One rAF loop. Each drawing only runs while it is on screen, and the
+     loop stops entirely when nothing visible needs a frame. */
+  function drawAll(time) {
+    drawSky(time); drawBars(); drawMini(); drawOrb(time); drawRadar(); drawDom();
+    C.mx = .5; C.my = .36; applyCard(); drawGlitter(time);
+  }
   let staticQueued = false;
   function requestStatic() { if (staticQueued) return; staticQueued = true; requestAnimationFrame(() => { staticQueued = false; drawAll(0); }); }
+
+  const VIS = { show: true, sky: false, e2: false, orb: false };
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => (VIS[e.target.dataset.vis] = e.isIntersecting));
+    wake();
+  }, { rootMargin: "80px" });
+  [[".showcase", "show"], ["#sky-stage", "sky"], ["#e2", "e2"], ["#orb-stage", "orb"]].forEach(([sel, k]) => { const el = $(sel); el.dataset.vis = k; io.observe(el); });
+  // one static frame for every canvas, so offscreen ones are never blank
+  let primeQueued = false;
+  function prime() {
+    if (primeQueued) return; primeQueued = true;
+    requestAnimationFrame(() => { primeQueued = false; const t = performance.now() / 1000; drawSky(t); drawBars(); drawMini(); drawOrb(t); });
+  }
+  let running = false, last = 0, settled = 0;
+  function frame(now) {
+    const dt = Math.min(.05, (now - last) / 1000 || .016); last = now;
+    const t = now / 1000;
+    // the model eases toward its target; once there, the static drawings stop
+    const changing = lerpAll(1 - Math.exp(-dt * 4.2)) > 1e-3;
+    settled = changing ? 0 : settled + 1;
+    const fresh = settled < 3;
+    if (VIS.sky) { simStep(); drawSky(t); }           // twinkles: always alive
+    if (VIS.orb) drawOrb(t);                           // breathes: always alive
+    if (VIS.e2 && fresh) { drawBars(); drawMini(); }
+    let cardMoving = false;
+    if (VIS.show) { cardMoving = cardFrame(now, dt); if (fresh) drawRadar(); }
+    if (fresh) drawDom();
+    drawFx(dt);
+    const busy = VIS.sky || VIS.orb || fresh || cardMoving || fx.parts.length || fx.ring > 0 || fx.dirty;
+    if (busy && !document.hidden) requestAnimationFrame(frame); else running = false;
+  }
+  function wake() {
+    settled = 0;
+    if (RM || running || document.hidden) return;
+    running = true; last = performance.now(); requestAnimationFrame(frame);
+  }
+  document.addEventListener("visibilitychange", wake);
 
   onModel();
   if (RM) {
     lerpAll(1); requestStatic();
     document.fonts && document.fonts.ready.then(requestStatic);
   } else {
-    let last = performance.now();
-    const frame = (now) => {
-      const dt = Math.min(.05, (now - last) / 1000); last = now;
-      lerpAll(1 - Math.exp(-dt * 4.2));
-      simStep();
-      if (!cardHover) { // idle sheen drifts slowly across the card
-        const t = now / 1000;
-        card.style.setProperty("--mx", (.5 + Math.sin(t * .35) * .35).toFixed(3));
-        card.style.setProperty("--my", (.35 + Math.cos(t * .27) * .25).toFixed(3));
-      }
-      drawAll(now / 1000);
-      requestAnimationFrame(frame);
-    };
-    requestAnimationFrame(frame);
+    wake(); prime();
+    document.fonts && document.fonts.ready.then(prime);
+    // the card's first issue plays once, if the card is on screen
+    const r = slot.getBoundingClientRect();
+    if (r.top < innerHeight && r.bottom > 0) setTimeout(openPack, 350);
   }
 
   // test + console hooks
@@ -1171,6 +1648,7 @@
     get target() { return T; }, get shown() { return D; },
     toggle(id) { const s = pool.find((p) => p.id === id); if (s) { s.on = !s.on; onModel(); } },
     swap(a, b) { swap(pool.findIndex((p) => p.id === a), pool.findIndex((p) => p.id === b)); },
+    flip, openPack, get card() { return { ...C, back: isBack(), packing }; },
   };
 })();
 </script>
