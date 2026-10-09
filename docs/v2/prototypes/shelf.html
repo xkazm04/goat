@@ -1,0 +1,1113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Collector's Shelf</title>
+<link rel="stylesheet" href="shared.css">
+<script src="shared.js"></script>
+<style>
+  @property --amb  { syntax: "<color>"; inherits: true; initial-value: rgba(233, 196, 106, .14); }
+  @property --amb2 { syntax: "<color>"; inherits: true; initial-value: rgba(233, 196, 106, .08); }
+
+  :root {
+    --cw: 150px; --ch: 200px; --cd: 40px;
+    --shelf-y: 312px;
+    /* replaced at load by a real damped-spring curve via linear() where supported */
+    --spring: var(--ease-spring);
+    --spring-soft: var(--ease-spring);
+    --d-spring: 640ms;
+    --d-soft: 820ms;
+  }
+
+  /* ---------- intro strip ---------- */
+  .intro {
+    max-width: 1600px; margin: 0 auto;
+    display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between;
+    gap: 12px 28px; padding: 16px 16px 14px;
+  }
+  .intro .copy { min-width: 0; flex: 1 1 520px; }
+  .intro h1 {
+    font: 800 var(--step-3)/.9 var(--font-display); text-transform: uppercase; letter-spacing: .01em;
+    margin-top: 6px;
+  }
+  .intro .lede { margin: 6px 0 0; color: var(--fg-muted); max-width: 68ch; }
+  .intro .try { margin: 6px 0 0; color: var(--fg-faint); font-size: var(--step--1); max-width: 110ch; }
+  .intro .try b { color: var(--fg-muted); font-weight: 600; }
+  kbd {
+    font: 600 .72rem/1 var(--font-mono); color: var(--fg-muted);
+    padding: 2px 5px; border-radius: 5px; border: 1px solid var(--glass-edge); background: var(--glass);
+  }
+  .controls { display: flex; gap: 8px; flex-wrap: wrap; }
+  .btn[aria-pressed="true"] { background: var(--gold); color: #1a1406; border-color: transparent; }
+  .btn .sw {
+    width: 22px; height: 12px; border-radius: 99px; border: 1px solid currentColor; position: relative; opacity: .8;
+  }
+  .btn .sw::after {
+    content: ""; position: absolute; top: 1px; left: 1px; width: 8px; height: 8px; border-radius: 50%;
+    background: currentColor; transition: transform .35s var(--ease-spring);
+  }
+  .btn[aria-pressed="true"] .sw::after { transform: translateX(10px); }
+
+  /* ---------- the room ---------- */
+  .room-wrap {
+    position: relative; margin: 0 16px 20px; max-width: 1600px;
+    border-radius: var(--r-lg); border: 1px solid var(--glass-edge);
+    overflow: hidden; background: var(--ink-0);
+    box-shadow: 0 40px 80px -40px rgba(0, 0, 0, .9);
+  }
+  @media (min-width: 1632px) { .room-wrap { margin-inline: auto; } }
+  .room-wrap.scrolls { overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; }
+  .stage {
+    position: relative; transform-origin: 0 0;
+    user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+  }
+  .stage.instant *, .stage.instant { transition: none !important; }
+
+  .wall {
+    position: absolute; inset: 0;
+    background:
+      repeating-linear-gradient(90deg, rgba(255, 255, 255, .014) 0 1px, transparent 1px 96px),
+      radial-gradient(70% 60% at 50% 18%, color-mix(in oklab, var(--ink-1), white 3%), transparent 75%),
+      linear-gradient(180deg, var(--ink-1), var(--ink-0) 78%);
+  }
+  .amb {
+    position: absolute; inset: 0; pointer-events: none;
+    background:
+      radial-gradient(22% 38% at var(--s1x, 30%) 28%, var(--amb2), transparent 70%),
+      radial-gradient(42% 46% at var(--acx, 50%) 34%, var(--amb), transparent 72%),
+      linear-gradient(0deg, transparent calc(100% - var(--shelf-y)), color-mix(in srgb, var(--gold) 9%, transparent) calc(100% - var(--shelf-y) + 1px), transparent calc(100% - var(--shelf-y) + 150px));
+    transition: --amb 1.2s ease, --amb2 1.2s ease;
+  }
+  /* back-of-shelf wash: light rising from the shelf surface */
+  .backwash {
+    position: absolute; left: 3%; right: 3%; top: calc(var(--shelf-y) - 170px); height: 170px; pointer-events: none;
+    background: linear-gradient(0deg, color-mix(in srgb, var(--gold) 10%, transparent), transparent);
+    -webkit-mask: radial-gradient(60% 100% at 50% 100%, #000, transparent);
+            mask: radial-gradient(60% 100% at 50% 100%, #000, transparent);
+  }
+  .wall-head { position: absolute; left: 40px; top: 26px; pointer-events: none; }
+  .wall-head h2 {
+    font: 800 30px/.95 var(--font-display); text-transform: uppercase; letter-spacing: .02em;
+    color: var(--fg); opacity: .9; margin-top: 8px;
+  }
+  .wall-count {
+    position: absolute; right: 40px; top: 30px; color: var(--fg-muted); letter-spacing: .06em;
+    pointer-events: none;
+  }
+  .wall-count b { color: var(--gold); font-weight: 600; }
+
+  /* spotlight on #1 */
+  .spot { position: absolute; left: 0; top: 0; width: 0; height: 0; pointer-events: none; z-index: 2;
+    transition: transform var(--d-spring) var(--spring); }
+  .spot .lamp {
+    position: absolute; left: -16px; top: 0; width: 32px; height: 12px; border-radius: 0 0 8px 8px;
+    background: linear-gradient(180deg, var(--ink-1), color-mix(in oklab, var(--ink-1), white 14%));
+    box-shadow: 0 3px 0 -1px var(--gold-hi), 0 6px 18px 2px var(--gold-glow);
+  }
+  .spot .halo {
+    position: absolute; left: -150px; top: 70px; width: 300px; height: 260px; border-radius: 50%;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--gold-hi) 13%, transparent), transparent);
+  }
+  .beam {
+    position: absolute; left: 0; top: 0; width: 0; height: 0; pointer-events: none; z-index: 60;
+    transition: transform var(--d-spring) var(--spring);
+  }
+  .beam .cone {
+    position: absolute; left: -125px; top: 8px; width: 250px; height: calc(var(--shelf-y) + 4px);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--gold-hi) 26%, transparent), color-mix(in srgb, var(--gold-hi) 9%, transparent) 70%, color-mix(in srgb, var(--gold-hi) 14%, transparent));
+    clip-path: polygon(45% 0, 55% 0, 100% 100%, 0 100%);
+    filter: blur(7px); mix-blend-mode: screen; opacity: .8;
+  }
+  .beam .pool {
+    position: absolute; left: -110px; top: calc(var(--shelf-y) - 16px); width: 220px; height: 22px; border-radius: 50%;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--gold-hi) 55%, transparent), transparent);
+    mix-blend-mode: screen;
+  }
+
+  /* empty-slot ghosts + the open-gap light */
+  .ghost {
+    position: absolute; left: 0; top: 0; border: 1px dashed var(--glass-edge); border-radius: 4px;
+    background: linear-gradient(0deg, rgba(178, 190, 255, .035), transparent);
+    opacity: .7; pointer-events: none;
+    transition: transform var(--d-spring) var(--spring), width var(--d-spring) var(--spring), height var(--d-spring) var(--spring), opacity .25s;
+  }
+  .ghost.off { opacity: 0; }
+  .slot-glow {
+    position: absolute; left: 0; top: 0; height: 250px; pointer-events: none; opacity: 0; z-index: 3;
+    border-radius: 40% 40% 0 0 / 30% 30% 0 0;
+    background: linear-gradient(0deg, color-mix(in srgb, var(--gold) 34%, transparent), color-mix(in srgb, var(--gold) 6%, transparent) 70%, transparent);
+    transition: transform 380ms var(--spring), width 380ms var(--spring), opacity .2s;
+  }
+  .slot-glow.on { opacity: 1; }
+
+  /* the display shelf */
+  .board { position: absolute; left: 20px; right: 20px; top: calc(var(--shelf-y) - 14px); height: 44px; z-index: 4; }
+  .board.thump { animation: thump 300ms var(--ease-out); }
+  @keyframes thump { 30% { transform: translateY(1.5px); } }
+  .b-top {
+    position: absolute; inset: 0 0 auto; height: 16px;
+    background: linear-gradient(180deg, color-mix(in oklab, var(--ink-1), white 4%), color-mix(in oklab, var(--ink-1), white 12%));
+    clip-path: polygon(1% 0, 99% 0, 100% 100%, 0 100%);
+  }
+  .b-front {
+    position: absolute; left: 0; right: 0; top: 16px; height: 28px; border-radius: 0 0 3px 3px;
+    background: linear-gradient(180deg, color-mix(in oklab, var(--ink-1), white 11%), color-mix(in oklab, var(--ink-0), white 4%));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14), 0 22px 30px -14px rgba(0, 0, 0, .85);
+  }
+  .b-led {
+    position: absolute; left: 1.5%; right: 1.5%; top: 45px; height: 2px; border-radius: 2px;
+    background: var(--gold-hi); box-shadow: 0 0 8px var(--gold), 0 0 26px 3px var(--gold-glow);
+    transition: box-shadow .3s, opacity .3s; opacity: .85;
+  }
+  .b-spill {
+    position: absolute; left: -3%; right: -3%; top: 46px; height: 150px; pointer-events: none;
+    background: radial-gradient(52% 100% at 50% 0%, color-mix(in srgb, var(--gold) 22%, transparent), transparent 75%);
+  }
+  .stage.over-shelf .b-led { opacity: 1; box-shadow: 0 0 10px var(--gold-hi), 0 0 36px 6px var(--gold-glow); }
+  .plaque {
+    position: absolute; left: 0; top: 6px; width: 34px; height: 16px; border-radius: 2px;
+    background: linear-gradient(180deg, var(--gold-hi), var(--gold) 52%, color-mix(in oklab, var(--gold) 60%, black));
+    box-shadow: 0 1px 0 rgba(0, 0, 0, .6), inset 0 1px 0 rgba(255, 255, 255, .5), inset 0 -1px 0 rgba(0, 0, 0, .25);
+    font: 600 10px/16px var(--font-mono); letter-spacing: .12em; text-indent: .12em; text-align: center;
+    color: color-mix(in oklab, var(--gold) 20%, black); text-shadow: 0 1px 0 rgba(255, 244, 214, .5);
+    opacity: .34; filter: saturate(.5);
+    transition: transform var(--d-spring) var(--spring), opacity .3s, filter .3s, box-shadow .3s;
+  }
+  .plaque.first { width: 42px; font-size: 11px; }
+  .plaque.filled { opacity: 1; filter: none; }
+  .plaque.target { opacity: 1; filter: none; box-shadow: 0 1px 0 rgba(0, 0, 0, .6), inset 0 1px 0 rgba(255, 255, 255, .5), 0 0 16px 4px var(--gold-glow); }
+  .plaque.sel { box-shadow: 0 0 0 2px var(--ink-0), 0 0 0 3.5px var(--gold); }
+  .plaque.flash { animation: flash 700ms var(--ease-out); }
+  @keyframes flash { 15% { box-shadow: 0 0 22px 8px var(--gold-glow), inset 0 1px 0 rgba(255,255,255,.6); filter: brightness(1.25); } }
+
+  .bookend {
+    position: absolute; left: 0; top: calc(var(--shelf-y) - 78px); width: 10px; height: 78px; z-index: 5;
+    border-radius: 2px 2px 0 0; pointer-events: none;
+    background: linear-gradient(90deg, color-mix(in oklab, var(--ink-1), white 18%), color-mix(in oklab, var(--ink-1), white 4%));
+    box-shadow: inset 1px 0 0 rgba(255, 255, 255, .16), 0 8px 18px rgba(0, 0, 0, .6);
+    transition: transform var(--d-spring) var(--spring);
+  }
+  .bookend::after {
+    content: ""; position: absolute; bottom: 0; height: 3px; width: 34px; border-radius: 2px;
+    background: color-mix(in oklab, var(--ink-1), white 12%);
+  }
+  .bookend.l::after { left: 0; }
+  .bookend.r::after { right: 0; }
+
+  /* the pile */
+  .floor {
+    position: absolute; left: 0; right: 0; top: 470px; bottom: 0;
+    background:
+      radial-gradient(50% 70% at 50% 0%, color-mix(in srgb, var(--gold) 5%, transparent), transparent),
+      linear-gradient(180deg, color-mix(in oklab, var(--ink-1), white 3%), var(--ink-0) 90%);
+    border-top: 1px solid rgba(255, 255, 255, .045);
+  }
+  .pile-head { position: absolute; left: 40px; top: 418px; display: flex; gap: 12px; align-items: baseline; pointer-events: none; }
+  .pile-head .mono { color: var(--fg-faint); }
+  .pile-drop {
+    position: absolute; left: 24px; top: 446px; height: 282px; border-radius: var(--r-md);
+    border: 1px dashed var(--glass-edge-hi); opacity: 0; pointer-events: none; transition: opacity .2s;
+    display: flex; align-items: flex-end; justify-content: center; padding-bottom: 8px;
+    color: var(--fg-muted); font-size: var(--step--1); font-weight: 600;
+  }
+  .stage.over-pile .pile-drop { opacity: 1; }
+  .hush {
+    position: absolute; inset: 0; z-index: 8; pointer-events: none; opacity: 0;
+    background: radial-gradient(120% 90% at 50% 40%, transparent 40%, rgba(0, 0, 0, .5));
+    transition: opacity .35s;
+  }
+  .stage.holding .hush { opacity: 1; }
+  .stage.holding, .stage.holding * { cursor: grabbing !important; }
+
+  /* ---------- a game case: .case (layout) > .lift (pose) > .wob (settle) > .box (3D) ---------- */
+  .cases { position: absolute; inset: 0; }
+  .case {
+    position: absolute; left: 0; top: 0; width: var(--cw); height: var(--ch);
+    transform-origin: 0 0; outline: none; pointer-events: none;
+    perspective: 1100px; perspective-origin: calc(50% + var(--pox, 0px)) -25%;
+    transition: transform var(--d-spring) var(--spring), perspective-origin var(--d-spring) var(--ease-out), opacity .3s;
+  }
+  .case.held { transition: opacity .3s; perspective-origin: 50% 40%; }
+  .case.teeter { opacity: .72; }
+  .lift, .wob, .box { position: absolute; inset: 0; transform-style: preserve-3d; }
+  .lift { transition: transform var(--d-spring) var(--spring); transform-origin: 50% 50%; }
+  .case.on-shelf .lift { transform-origin: 50% 100%; }
+  .case.held .lift, .case.no-trans, .case.no-trans .lift { transition: none; }
+  .box { transition: transform var(--d-soft) var(--spring); }
+  .wob { transform-origin: 50% 100%; }
+  .wob.settle { animation: settle 620ms var(--ease-out); }
+  @keyframes settle {
+    16% { transform: rotateZ(calc(var(--amp, 1) * -2.4deg)) translateY(calc(var(--amp, 1) * -2px)); }
+    38% { transform: rotateZ(calc(var(--amp, 1) * 1.6deg)); }
+    60% { transform: rotateZ(calc(var(--amp, 1) * -.8deg)); }
+    80% { transform: rotateZ(calc(var(--amp, 1) * .3deg)); }
+  }
+
+  .face { position: absolute; backface-visibility: hidden; -webkit-backface-visibility: hidden; pointer-events: auto; touch-action: none; cursor: grab; }
+  .case.on-shelf .face, .case.held .face, .case.no-trans .face { pointer-events: none; }
+  .f-front { inset: 0; transform: translateZ(calc(var(--cd) / 2)); border-radius: 3px 5px 5px 3px; }
+  .f-front .cover { width: 100%; height: 100%; border-radius: 3px 5px 5px 3px; }
+  .f-front::before { /* clamshell hinge */
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 7px; z-index: 3; border-radius: 3px 0 0 3px;
+    background: linear-gradient(90deg, rgba(0, 0, 0, .55), rgba(255, 255, 255, .08) 60%, transparent);
+  }
+  .f-front::after { /* plastic sleeve sheen */
+    content: ""; position: absolute; inset: 0; z-index: 3; border-radius: inherit; pointer-events: none;
+    background: linear-gradient(118deg, rgba(255, 255, 255, .16), transparent 32%, transparent 68%, rgba(255, 255, 255, .06));
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .1);
+  }
+  .f-back {
+    inset: 0; transform: rotateY(180deg) translateZ(calc(var(--cd) / 2)); border-radius: 5px 3px 3px 5px;
+    background: linear-gradient(160deg, hsl(var(--h1) 30% 14%), hsl(var(--h2) 30% 7%));
+  }
+  .f-spine, .f-edge { width: var(--cd); height: var(--ch); left: calc((var(--cw) - var(--cd)) / 2); top: 0; }
+  .f-spine {
+    transform: rotateY(-90deg) translateZ(calc(var(--cw) / 2));
+    display: flex; flex-direction: column; align-items: center; overflow: hidden; border-radius: 3px;
+    background: linear-gradient(90deg, hsl(var(--h1) 40% 8%), hsl(var(--h1) 42% 17%) 46%, hsl(var(--h1) 40% 9%));
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .07);
+  }
+  .sp-top {
+    flex: none; width: 100%; height: 30px; display: grid; place-items: center;
+    background: linear-gradient(180deg, hsl(var(--h2) 78% 62%), hsl(var(--h2) 70% 50%));
+    color: hsl(var(--h1) 55% 9%); font: 700 10px/1 var(--font-mono); letter-spacing: .04em;
+  }
+  .sp-title {
+    flex: 1 1 auto; min-height: 0; writing-mode: vertical-rl; padding: 10px 0 6px;
+    font: 800 var(--sp-fs, 18px)/1 var(--font-display); text-transform: uppercase; letter-spacing: .05em;
+    color: hsl(var(--h2) 88% 80%); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    text-shadow: 0 1px 6px rgba(0, 0, 0, .5);
+  }
+  .sp-foot { flex: none; width: 14px; height: 2px; margin: 4px 0 12px; background: var(--gold); opacity: .85; border-radius: 2px; }
+  .f-edge {
+    transform: rotateY(90deg) translateZ(calc(var(--cw) / 2)); border-radius: 2px;
+    background: repeating-linear-gradient(90deg, hsl(var(--h1) 20% 10%) 0 3px, hsl(var(--h1) 20% 16%) 3px 4px);
+  }
+  .f-top, .f-bot { width: var(--cw); height: var(--cd); left: 0; top: calc((var(--ch) - var(--cd)) / 2); border-radius: 2px; }
+  .f-top {
+    transform: rotateX(90deg) translateZ(calc(var(--ch) / 2));
+    background: linear-gradient(0deg, hsl(var(--h1) 30% 22%), hsl(var(--h1) 30% 11%));
+  }
+  .f-bot { transform: rotateX(-90deg) translateZ(calc(var(--ch) / 2)); background: hsl(var(--h1) 25% 8%); }
+
+  /* focus: ring the face you can see, light the plaque */
+  .case:focus-visible .f-front, .case:focus-visible .f-spine { outline: 2px solid var(--gold); outline-offset: 3px; }
+
+  /* shadows */
+  .cshadow {
+    position: absolute; left: 50%; bottom: -5px; width: 66px; height: 14px; margin-left: -33px;
+    border-radius: 50%; background: radial-gradient(closest-side, rgba(0, 0, 0, .8), transparent);
+    transition: opacity .3s, width .4s var(--ease-out), margin .4s var(--ease-out);
+  }
+  .stage[data-mode="face"] .case.on-shelf .cshadow { width: 170px; margin-left: -85px; }
+  .case.in-pile .cshadow {
+    left: 6px; top: 14px; bottom: auto; width: 100%; height: 100%; margin: 0; border-radius: 10px;
+    background: rgba(0, 0, 0, .55); filter: blur(12px); transform: rotate(var(--pr, 0deg));
+  }
+  .case.held .cshadow, .case.teeter .cshadow, .case.no-trans .cshadow { opacity: 0; }
+  .hand-shadow {
+    position: absolute; left: 0; top: 0; width: var(--cw); height: var(--ch); z-index: 999;
+    transform-origin: 0 0; border-radius: 12px; pointer-events: none;
+    background: rgba(0, 0, 0, .62); filter: blur(var(--sb, 20px)); opacity: 0; transition: opacity .25s;
+  }
+  .hand-shadow.show { opacity: 1; }
+  .hand-glow {
+    position: absolute; left: 0; top: 0; width: 520px; height: 520px; margin: -260px 0 0 -260px; z-index: 6;
+    border-radius: 50%; pointer-events: none; opacity: 0; transition: opacity .3s;
+    background: radial-gradient(closest-side, var(--hg, transparent), transparent);
+  }
+  .hand-glow.show { opacity: 1; }
+
+  .shelf-hit { position: absolute; left: 0; top: 0; z-index: 400; touch-action: none; }
+
+  /* inspect card + holding HUD */
+  .card {
+    position: absolute; left: 0; top: 0; width: 272px; z-index: 1100; padding: 14px 16px 15px;
+    background: rgba(12, 14, 23, .74); pointer-events: none; opacity: 0;
+    box-shadow: var(--shadow-float);
+    transition: opacity .2s, transform 460ms var(--spring);
+  }
+  .card.show { opacity: 1; }
+  .card.snap { transition: opacity .2s; }
+  .card .row { display: flex; align-items: center; gap: 10px; }
+  .card .rk { font-size: 34px; color: var(--gold); }
+  .card .rk.un { font: 600 var(--step--1)/1 var(--font-body); letter-spacing: .14em; text-transform: uppercase; color: var(--fg-muted); }
+  .card .sw { width: 10px; height: 10px; border-radius: 50%; margin-left: auto; }
+  .card h3 { font: 800 25px/.95 var(--font-display); text-transform: uppercase; margin-top: 8px; }
+  .card .meta { margin-top: 6px; color: var(--fg-muted); }
+  .card p { margin: 9px 0 0; font-size: var(--step--1); line-height: 1.45; }
+  .card p.empty { color: var(--fg-faint); font-style: italic; }
+  .hud {
+    position: absolute; left: 0; top: 0; z-index: 1100; pointer-events: none; opacity: 0;
+    display: flex; align-items: center; gap: 9px; white-space: nowrap; border-radius: 999px;
+    padding: 6px 13px 6px 9px; font-size: var(--step--1); font-weight: 600;
+    background: rgba(12, 14, 23, .78); transition: opacity .2s;
+  }
+  .hud.show { opacity: 1; }
+  .hud .rank-num { font-size: 22px; color: var(--gold); }
+  .hud .warn { color: var(--fg-muted); font-weight: 500; }
+
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  @media (max-width: 640px) {
+    .intro h1 { font-size: var(--step-2); }
+    .intro .lede { font-size: var(--step--1); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .wob.settle, .board.thump, .plaque.flash { animation: none; }
+  }
+</style>
+</head>
+<body class="grain">
+<nav id="study-nav"></nav>
+<script>GOAT.nav("shelf.html");</script>
+
+<main>
+  <section class="intro">
+    <div class="copy">
+      <span class="eyebrow">Study C</span>
+      <h1>Collector's shelf</h1>
+      <p class="lede">Your ranking is the display shelf of your own collection. Pick a case up from the pile and slot it in where it belongs; the shelf order is the list.</p>
+      <p class="try"><b>Try:</b> drag a case from the pile onto the shelf · hover a spine to pull it out · drag a shelved case to a new slot, or back down · keyboard: Tab to a case, then <kbd>1</kbd>–<kbd>9</kbd>/<kbd>0</kbd> to shelve, <kbd>Alt</kbd>+<kbd>←</kbd><kbd>→</kbd> to move, <kbd>Del</kbd> to return</p>
+    </div>
+    <div class="controls">
+      <button class="btn" id="faceBtn" type="button" aria-pressed="false"><span class="sw" aria-hidden="true"></span>Turn covers out</button>
+      <button class="btn" id="resetBtn" type="button">Reset</button>
+    </div>
+  </section>
+
+  <div class="room-wrap" id="roomWrap">
+    <div class="stage instant" id="stage" data-mode="spine">
+      <div class="wall"></div>
+      <div class="amb" id="amb"></div>
+      <div class="backwash"></div>
+      <div class="wall-head"><span class="eyebrow">Your collection · Top 10</span><h2 id="listTitle"></h2></div>
+      <div class="wall-count mono" id="count"></div>
+      <div class="spot" id="spot"><div class="halo"></div><div class="lamp"></div></div>
+      <div id="ghosts"></div>
+      <div class="slot-glow" id="slotGlow"></div>
+      <div class="board" id="board">
+        <div class="b-top"></div>
+        <div class="b-front" id="plaques"></div>
+        <div class="b-spill"></div>
+        <div class="b-led"></div>
+      </div>
+      <div class="bookend l" id="bookL"></div>
+      <div class="bookend r" id="bookR"></div>
+      <div class="floor"></div>
+      <div class="pile-head"><span class="eyebrow">The pile</span><span class="mono" id="pileCount"></span></div>
+      <div class="pile-drop" id="pileDrop">Release to put it back in the pile</div>
+      <div class="hush"></div>
+      <div class="hand-glow" id="handGlow"></div>
+      <div class="cases" id="cases" role="group" aria-label="Your collection: shelf in rank order, then the pile"></div>
+      <div class="beam" id="beam"><div class="cone"></div><div class="pool"></div></div>
+      <div class="shelf-hit" id="shelfHit" aria-hidden="true"></div>
+      <aside class="card glass" id="card" aria-hidden="true"></aside>
+      <div class="hud glass" id="hud" aria-hidden="true"></div>
+    </div>
+  </div>
+  <p class="sr-only" id="kbdHelp">Press 1 to 9, or 0 for 10, to place this case at that rank. Alt plus left or right arrow moves it along the shelf. Delete returns it to the pile. Arrow keys move between cases.</p>
+  <div class="sr-only" aria-live="polite" id="live"></div>
+</main>
+
+<script>
+(() => {
+  const G = window.GOAT;
+  const $ = (s) => document.querySelector(s);
+  const RM = G.reducedMotion();
+
+  /* ---------- geometry (stage logical px) ---------- */
+  const W = 150, H = 200, D = 40;
+  const SHELF_Y = 312;           // where shelved cases stand
+  const STAGE_H = 740;
+  const ZONE_SPLIT = SHELF_Y + 80; // pointer above this → the shelf takes the drop
+  const PILE_S = 0.86, HOLD_S = 1.14;
+  const MAX = 10, CARD_W = 272;
+  const INITIAL = ["er", "bg3", "de", "w3", "me2"];
+
+  const stage = $("#stage"), wrap = $("#roomWrap"), casesEl = $("#cases");
+  const card = $("#card"), hud = $("#hud"), live = $("#live");
+  const shelfHit = $("#shelfHit"), handShadow = document.createElement("div"), handGlow = $("#handGlow");
+  handShadow.className = "hand-shadow"; casesEl.appendChild(handShadow);
+  $("#listTitle").textContent = G.list.title;
+
+  /* ---------- spring easing: sample a damped spring into CSS linear() ---------- */
+  function springCurve(zeta, T, n = 60) {
+    const w = 6.4 / (zeta * T), wd = w * Math.sqrt(1 - zeta * zeta), pts = [];
+    for (let i = 0; i <= n; i++) {
+      const t = (i / n) * T;
+      const v = 1 - Math.exp(-zeta * w * t) * (Math.cos(wd * t) + (zeta * w / wd) * Math.sin(wd * t));
+      pts.push(i === n ? 1 : +v.toFixed(4));
+    }
+    return `linear(${pts.join(", ")})`;
+  }
+  if (window.CSS && CSS.supports("transition-timing-function", "linear(0, 0.5, 1)")) {
+    document.documentElement.style.setProperty("--spring", springCurve(0.58, 0.64));
+    document.documentElement.style.setProperty("--spring-soft", springCurve(0.42, 0.82));
+  }
+
+  /* ---------- state ---------- */
+  const state = { shelf: [], pile: new Map(), mode: "spine" };
+  let zTop = 40;
+  let L = 1240, S = 1, pileVisW = 1240, geom = null;
+  let drag = null, pending = null, preview = null, raf = 0;
+  let hoverId = null, kbdId = null, tapId = null, inspectId = null, rovingId = null;
+  const els = new Map(), posed = new Map();
+
+  const hash = (str) => { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
+  const rnd = (id, salt) => (hash(id + salt) % 10000) / 10000;
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const pad = (n) => String(n).padStart(2, "0");
+  const PX0 = 40, pileW = () => pileVisW - 80;
+
+  /* ---------- build the cases ---------- */
+  for (const it of G.items) {
+    const root = document.createElement("div");
+    root.className = "case";
+    root.dataset.id = it.id;
+    root.tabIndex = -1;
+    root.setAttribute("role", "button");
+    root.setAttribute("aria-describedby", "kbdHelp");
+    root.style.setProperty("--h1", it.h[0]);
+    root.style.setProperty("--h2", it.h[1]);
+    const fs = clamp(150 / (it.title.length * 0.5), 11, 19);
+    root.innerHTML =
+      `<div class="cshadow"></div><div class="lift"><div class="wob"><div class="box">` +
+      `<div class="face f-back"></div><div class="face f-edge"></div><div class="face f-top"></div><div class="face f-bot"></div>` +
+      `<div class="face f-spine"><span class="sp-top">'${String(it.year).slice(2)}</span>` +
+      `<span class="sp-title" style="--sp-fs:${fs.toFixed(1)}px"></span><span class="sp-foot"></span></div>` +
+      `<div class="face f-front"></div></div></div></div>`;
+    root.querySelector(".sp-title").textContent = it.title;
+    root.querySelector(".f-front").appendChild(G.cover(it));
+    casesEl.insertBefore(root, handShadow);
+    els.set(it.id, { root, lift: root.querySelector(".lift"), wob: root.querySelector(".wob"), box: root.querySelector(".box") });
+  }
+
+  // fixtures: plaques + ghosts
+  const plaques = [], ghosts = [];
+  for (let i = 0; i < MAX; i++) {
+    const p = document.createElement("div");
+    p.className = "plaque" + (i === 0 ? " first" : "");
+    p.textContent = pad(i + 1);
+    $("#plaques").appendChild(p); plaques.push(p);
+    const g = document.createElement("div");
+    g.className = "ghost"; $("#ghosts").appendChild(g); ghosts.push(g);
+  }
+
+  /* ---------- measuring ---------- */
+  function measure() {
+    const cw = wrap.clientWidth;
+    S = Math.min(1, Math.max(0.6, cw / 1240));
+    L = Math.max(860, cw / S);
+    pileVisW = Math.min(L, cw / S);
+    stage.style.width = L + "px";
+    stage.style.height = STAGE_H + "px";
+    stage.style.transform = S === 1 ? "none" : `scale(${S})`;
+    wrap.style.height = STAGE_H * S + "px";
+    wrap.classList.toggle("scrolls", L * S > cw + 1);
+    $("#pileDrop").style.width = pileVisW - 48 + "px";
+  }
+
+  function slotGeom() {
+    const spine = state.mode === "spine";
+    let w1, w, gap1, fs = 1;
+    if (spine) { w1 = 140; w = 64; gap1 = 10; }
+    else {
+      const b1 = W + 44, b = W + 16, gp = 12, tot = b1 + gp + b * 9;
+      fs = Math.min(1, (L - 110) / tot);
+      w1 = b1 * fs; w = b * fs; gap1 = gp * fs;
+    }
+    const total = w1 + gap1 + w * 9;
+    const runL = (L - total) / 2;
+    const slots = [{ cx: runL + w1 / 2, w: w1 }];
+    let x = runL + w1 + gap1;
+    for (let i = 1; i <= MAX; i++) { slots.push({ cx: x + w / 2, w }); x += w; } // index 10 = off the end
+    return { spine, fs, slots, runL, runR: runL + total };
+  }
+
+  /* ---------- poses ---------- */
+  const liftT = (l) => `translateY(${(l.ty || 0).toFixed(1)}px) translateZ(${(l.tz || 0).toFixed(1)}px) rotateZ(${(l.rz || 0).toFixed(2)}deg) rotateX(${(l.rx || 0).toFixed(2)}deg) rotateY(${(l.ry || 0).toFixed(2)}deg)`;
+
+  function shelfPose(id, di) {
+    const g = geom, sl = g.slots[di], sc = g.spine ? 1 : g.fs;
+    const pose = {
+      where: "shelf", x: sl.cx - (W * sc) / 2, y: SHELF_Y - H * sc, s: sc, z: 20,
+      lift: { ty: 0, tz: 0, rz: 0, rx: 0, ry: 0 },
+      box: g.spine ? (di === 0 ? 52 : 90) : 0,
+      pox: (L / 2 - sl.cx) * 0.4, teeter: di >= MAX,
+    };
+    if (pose.teeter) { pose.lift.rz = 15; pose.lift.ty = 8; pose.z = 25; }
+    if (inspectId === id && !pose.teeter) {
+      pose.lift.tz = g.spine ? 150 : 120; pose.lift.ty = g.spine ? -34 : -26;
+      pose.box = g.spine ? 20 : 8; pose.z = 300; pose.pox = 0;
+    }
+    return pose;
+  }
+  function pilePose(id) {
+    const p = state.pile.get(id), s = PILE_S;
+    const cx = PX0 + p.u * pileW();
+    const pose = {
+      where: "pile", x: cx - (W * s) / 2, y: p.y - (H * s) / 2, s, z: p.z,
+      lift: { ty: 0, tz: 0, rz: p.r, rx: 24, ry: p.ry }, box: 0, pox: (L / 2 - cx) * 0.12,
+    };
+    if (inspectId === id) { pose.lift = { ty: -18, tz: 50, rz: p.r * 0.35, rx: 10, ry: p.ry * 0.3 }; pose.z = 290; }
+    return pose;
+  }
+  function apply(id, pose) {
+    const e = els.get(id);
+    e.root.style.transform = `translate(${pose.x.toFixed(1)}px, ${pose.y.toFixed(1)}px) scale(${pose.s.toFixed(4)})`;
+    e.lift.style.transform = liftT(pose.lift);
+    e.box.style.transform = `rotateY(${pose.box}deg)`;
+    e.root.style.zIndex = pose.z;
+    e.root.style.setProperty("--pox", pose.pox.toFixed(1) + "px");
+    e.root.style.setProperty("--pr", (pose.lift.rz || 0) + "deg");
+    e.root.classList.toggle("on-shelf", pose.where === "shelf");
+    e.root.classList.toggle("in-pile", pose.where === "pile");
+    e.root.classList.toggle("teeter", !!pose.teeter);
+    posed.set(id, pose);
+  }
+
+  /* ---------- layout: everything derives from state + preview ---------- */
+  function layout() {
+    geom = slotGeom();
+    const held = drag && drag.id;
+    const base = state.shelf.filter((id) => id !== held);
+    const k = preview;
+    base.forEach((id, i) => {
+      const di = k != null && i >= k ? i + 1 : i;
+      const pose = shelfPose(id, di);
+      if (k != null) { // neighbours lean apart around the open gap
+        if (i === k - 1) pose.lift.rz -= 4.5;
+        if (i === k - 2) pose.lift.rz -= 1.6;
+        if (i === k) pose.lift.rz += 4.5;
+        if (i === k + 1) pose.lift.rz += 1.6;
+      }
+      apply(id, pose);
+    });
+    for (const id of state.pile.keys()) if (id !== held) apply(id, pilePose(id));
+    fixtures(base.length, k);
+    labels();
+    updateCard();
+  }
+
+  function fixtures(count, k) {
+    const g = geom, vis = Math.min(MAX, count + (k != null ? 1 : 0));
+    const focusRank = rovingId && document.activeElement === els.get(rovingId)?.root ? state.shelf.indexOf(rovingId) : -1;
+    for (let i = 0; i < MAX; i++) {
+      const sl = g.slots[i], p = plaques[i];
+      p.style.transform = `translateX(${(sl.cx - 20 - (i === 0 ? 21 : 17)).toFixed(1)}px)`;
+      p.classList.toggle("filled", i < vis && i !== k);
+      p.classList.toggle("target", i === k);
+      p.classList.toggle("sel", i === focusRank);
+      const gh = ghosts[i];
+      const gw = g.spine ? (i === 0 ? 118 : D) : W * g.fs, ghh = g.spine ? H : H * g.fs;
+      gh.style.width = gw + "px"; gh.style.height = ghh + "px";
+      gh.style.transform = `translate(${(sl.cx - gw / 2).toFixed(1)}px, ${SHELF_Y - ghh}px)`;
+      gh.classList.toggle("off", i < vis);
+    }
+    const sg = $("#slotGlow");
+    if (k != null) {
+      const sl = g.slots[k];
+      sg.style.width = sl.w + 16 + "px";
+      sg.style.transform = `translate(${(sl.cx - sl.w / 2 - 8).toFixed(1)}px, ${SHELF_Y - 250}px)`;
+    }
+    sg.classList.toggle("on", k != null);
+    $("#spot").style.transform = `translateX(${g.slots[0].cx.toFixed(1)}px)`;
+    $("#beam").style.transform = `translateX(${g.slots[0].cx.toFixed(1)}px)`;
+    $("#bookL").style.transform = `translateX(${(g.runL - 16).toFixed(1)}px)`;
+    $("#bookR").style.transform = `translateX(${(g.runR + 6).toFixed(1)}px)`;
+    const top = SHELF_Y - (g.spine ? H : H * g.fs) - 34;
+    Object.assign(shelfHit.style, { left: g.runL + "px", top: top + "px", width: g.runR - g.runL + "px", height: SHELF_Y + 40 - top + "px" });
+    const amb = $("#amb");
+    amb.style.setProperty("--acx", ((g.runL + g.runR) / 2).toFixed(0) + "px");
+    amb.style.setProperty("--s1x", g.slots[0].cx.toFixed(0) + "px");
+    const first = G.byId(state.shelf[0]);
+    amb.style.setProperty("--amb", first ? G.glow(first, 0.17) : "rgba(233,196,106,.10)");
+    amb.style.setProperty("--amb2", first ? `hsl(${first.h[0]} 80% 55% / .16)` : "rgba(233,196,106,.06)");
+  }
+
+  function labels() {
+    const n = state.shelf.length;
+    $("#count").innerHTML = `<b>${n}</b> / ${MAX} on the shelf`;
+    $("#pileCount").textContent = `${state.pile.size} unranked`;
+    for (const it of G.items) {
+      const r = state.shelf.indexOf(it.id);
+      els.get(it.id).root.setAttribute("aria-label", `${it.title}, ${it.year}. ` + (r >= 0 ? `On the shelf at number ${r + 1}.` : "In the pile."));
+    }
+  }
+
+  /* ---------- the inspect card ---------- */
+  let cardFor = null;
+  function updateCard() {
+    const id = inspectId;
+    if (!id || !posed.has(id)) { card.classList.remove("show"); cardFor = null; return; }
+    const it = G.byId(id), r = state.shelf.indexOf(id), p = posed.get(id);
+    if (cardFor !== id + ":" + r) {
+      card.innerHTML =
+        `<div class="row">${r >= 0 ? `<span class="rank-num rk">#${pad(r + 1)}</span>` : `<span class="rk un">In the pile</span>`}` +
+        `<span class="sw" style="background:${G.glow(it, 0.95)};box-shadow:0 0 12px ${G.glow(it, 0.8)}"></span></div>` +
+        `<h3></h3><div class="meta mono"></div><p></p>`;
+      card.querySelector("h3").textContent = it.title;
+      card.querySelector(".meta").textContent = `${it.year} · ${it.by}`;
+      const note = card.querySelector("p");
+      note.textContent = it.note || (r >= 0 ? "No curator note yet." : "Unranked. Drag it onto the shelf, or press 1–9 / 0.");
+      if (!it.note) note.className = "empty";
+    }
+    const cx = p.x + (W * p.s) / 2;
+    const half = p.where === "shelf" ? (geom.spine ? 96 : W * p.s * 0.62) : W * p.s * 0.55;
+    let x = cx + half + 10;
+    const limit = (p.where === "pile" ? pileVisW : L) - 12;
+    if (x + CARD_W > limit) x = cx - half - 10 - CARD_W;
+    x = clamp(x, 12, L - CARD_W - 12);
+    const y = p.where === "shelf" ? SHELF_Y - H * p.s - 52 : p.y - 6;
+    const wasHidden = !card.classList.contains("show");
+    if (wasHidden) { card.classList.add("snap"); }
+    card.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
+    if (wasHidden) { void card.offsetWidth; card.classList.remove("snap"); }
+    card.classList.add("show");
+    cardFor = id + ":" + r;
+  }
+
+  function refreshInspect() {
+    const id = drag ? null : hoverId || kbdId || tapId;
+    if (id !== inspectId) { inspectId = id; layout(); }
+  }
+
+  /* ---------- pointer → stage coordinates + hit tests ---------- */
+  function toLocal(e) {
+    const r = stage.getBoundingClientRect();
+    return { x: (e.clientX - r.left) / S, y: (e.clientY - r.top) / S };
+  }
+  function slotAt(x) {
+    const g = geom;
+    if (x < g.runL) return 0;
+    for (let i = 0; i < MAX; i++) { const sl = g.slots[i]; if (x < sl.cx + sl.w / 2) return i; }
+    return MAX - 1;
+  }
+  function inShelfHit(p) {
+    const r = shelfHit.style;
+    const l = parseFloat(r.left), t = parseFloat(r.top);
+    return p.x >= l && p.x <= l + parseFloat(r.width) && p.y >= t && p.y <= t + parseFloat(r.height);
+  }
+  function pileAt(p) {
+    let best = null, bz = -1;
+    for (const [id, pp] of state.pile) {
+      if (drag && drag.id === id) continue;
+      const cx = PX0 + pp.u * pileW();
+      if (Math.abs(p.x - cx) < (W * PILE_S) / 2 && Math.abs(p.y - pp.y) < (H * PILE_S) / 2 * 0.92 && pp.z > bz) { best = id; bz = pp.z; }
+    }
+    return best;
+  }
+  function hitCase(p, target) {
+    if (inShelfHit(p)) { const i = slotAt(p.x); return i < state.shelf.length ? state.shelf[i] : null; }
+    const c = target && target.closest && target.closest(".case.in-pile");
+    return (c && c.dataset.id) || pileAt(p);
+  }
+
+  /* ---------- picking up, holding, dropping ---------- */
+  stage.addEventListener("pointerdown", (e) => {
+    if (drag || e.button > 0) return;
+    const p = toLocal(e);
+    const id = hitCase(p, e.target);
+    if (!id) { if (tapId) { tapId = null; refreshInspect(); } return; }
+    e.preventDefault();
+    pending = { id, cx: e.clientX, cy: e.clientY, type: e.pointerType };
+    try { stage.setPointerCapture(e.pointerId); } catch (_) {}
+  });
+
+  stage.addEventListener("pointermove", (e) => {
+    const p = toLocal(e);
+    if (pending && !drag) {
+      if (Math.hypot(e.clientX - pending.cx, e.clientY - pending.cy) < 5) return;
+      startDrag(pending.id, p, e.timeStamp);
+    }
+    if (drag) { moveDrag(p, e.timeStamp); return; }
+    if (e.pointerType === "mouse") {
+      const id = hitCase(p, e.target);
+      shelfHit.style.cursor = id ? "grab" : "";
+      if (id !== hoverId) { hoverId = id; refreshInspect(); }
+    }
+  });
+  stage.addEventListener("pointerleave", (e) => {
+    if (!drag && e.pointerType === "mouse" && hoverId) { hoverId = null; refreshInspect(); }
+  });
+  const finish = (e) => {
+    if (drag) { endDrag(e.type === "pointercancel"); return; }
+    if (pending) {
+      const id = pending.id;
+      if (pending.type !== "mouse") { tapId = tapId === id ? null : id; refreshInspect(); }
+      pending = null;
+      const r = els.get(id).root; setRoving(id); r.focus({ preventScroll: true });
+    }
+  };
+  stage.addEventListener("pointerup", finish);
+  stage.addEventListener("pointercancel", finish);
+  stage.addEventListener("lostpointercapture", () => { if (drag) endDrag(false); });
+
+  function startDrag(id, p, t) {
+    pending = null;
+    const e = els.get(id), cur = posed.get(id);
+    e.root.getAnimations().forEach((a) => a.cancel());
+    e.lift.getAnimations().forEach((a) => a.cancel());
+    e.root.classList.remove("no-trans");
+    const fromShelf = state.shelf.includes(id);
+    const gx = clamp((p.x - cur.x) / cur.s, 8, W - 8), gy = clamp((p.y - cur.y) / cur.s, 8, H - 8);
+    const pp = state.pile.get(id);
+    drag = {
+      id, fromShelf, origin: fromShelf ? state.shelf.indexOf(id) : { ...pp },
+      gx, gy, x: p.x, y: p.y, t, vx: 0, vy: 0, s: cur.s, lt: 0, so: 20,
+      a: fromShelf ? { rz: cur.lift.rz, rx: 0, ry: 0 } : { rz: pp.r, rx: 24, ry: pp.ry },
+      av: { rz: 0, rx: 0, ry: 0 },
+    };
+    if (fromShelf) { state.shelf.splice(drag.origin, 1); preview = drag.origin; }
+    else { state.pile.delete(id); preview = null; }
+    hoverId = null; tapId = null; kbdId = null; inspectId = null;
+    e.root.classList.add("held");
+    e.root.classList.remove("on-shelf", "in-pile", "teeter");
+    e.root.style.zIndex = 1000;
+    e.box.style.transform = "rotateY(0deg)";    // turns to face you
+    const it = G.byId(id);
+    handGlow.style.setProperty("--hg", G.glow(it, 0.22));
+    handShadow.classList.add("show"); handGlow.classList.add("show");
+    stage.classList.add("holding");
+    hud.classList.add("show");
+    computePreview();
+    layout();
+    updateHud();
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(tick);
+  }
+
+  function moveDrag(p, t) {
+    const d = drag, dt = Math.max(4, t - d.t);
+    d.vx = d.vx * 0.55 + ((p.x - d.x) / dt) * 0.45;
+    d.vy = d.vy * 0.55 + ((p.y - d.y) / dt) * 0.45;
+    d.x = p.x; d.y = p.y; d.t = t;
+    const before = preview;
+    computePreview();
+    if (preview !== before) { layout(); updateHud(); }
+  }
+
+  function computePreview() {
+    const d = drag;
+    const overShelf = d.y < ZONE_SPLIT;
+    stage.classList.toggle("over-shelf", overShelf);
+    stage.classList.toggle("over-pile", !overShelf);
+    if (!overShelf) { preview = null; return; }
+    const caseCx = d.x - d.gx * d.s + (W * d.s) / 2;
+    preview = Math.min(slotAt(caseCx), state.shelf.length, MAX - 1);
+  }
+
+  function updateHud() {
+    if (!drag) return;
+    if (preview == null) { hud.innerHTML = `<span>Back to the pile</span>`; return; }
+    const bump = state.shelf.length >= MAX ? G.byId(state.shelf[MAX - 1]) : null;
+    hud.innerHTML = `<span class="rank-num">#${pad(preview + 1)}</span><span>Place here</span>` +
+      (bump ? `<span class="warn">· bumps ${bump.title}</span>` : "");
+    hud.querySelector(".warn") && (hud.querySelector(".warn").textContent = `· bumps ${bump.title}`);
+  }
+
+  function tick(now) {
+    const d = drag; if (!d) return;
+    const f = d.lt ? clamp((now - d.lt) / 16.67, 0.25, 3) : 1; d.lt = now;
+    // velocity bleeds off when the pointer rests, so the case swings back to hang straight
+    d.vx *= Math.pow(0.86, f); d.vy *= Math.pow(0.86, f);
+    const tgt = RM ? { rz: 0, rx: 0, ry: 0 } : {
+      rz: clamp(d.vx * 13, -26, 26),
+      ry: clamp(d.vx * 10, -24, 24),
+      rx: clamp(-d.vy * 9, -20, 20),
+    };
+    for (const k of ["rz", "rx", "ry"]) {
+      if (RM) { d.a[k] = 0; continue; }
+      d.av[k] += (tgt[k] - d.a[k]) * 0.11 * f;
+      d.av[k] *= Math.pow(0.8, f);
+      d.a[k] += d.av[k] * f;
+    }
+    d.s += (HOLD_S - d.s) * (1 - Math.pow(0.78, f));
+    const x = d.x - d.gx * d.s, y = d.y - d.gy * d.s;
+    const e = els.get(d.id);
+    e.root.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) scale(${d.s.toFixed(4)})`;
+    e.lift.style.transform = liftT({ rz: d.a.rz, rx: d.a.rx, ry: d.a.ry });
+    // shadow: tight against the wall over the shelf, long and soft over the floor
+    const near = preview != null;
+    d.so += ((near ? 16 : 36) - d.so) * 0.18 * f;
+    handShadow.style.setProperty("--sb", (near ? 12 : 22) + "px");
+    const cx = x + (W * d.s) / 2 + d.so * 0.7, cy = y + (H * d.s) / 2 + d.so * 1.3;
+    handShadow.style.transform = `translate(${cx.toFixed(1)}px, ${cy.toFixed(1)}px) rotate(${d.a.rz.toFixed(2)}deg) scale(${(d.s * 0.96).toFixed(3)}) translate(-${W / 2}px, -${H / 2}px)`;
+    handGlow.style.transform = `translate(${(x + (W * d.s) / 2).toFixed(1)}px, ${(y + (H * d.s) / 2).toFixed(1)}px)`;
+    const hw = hud.offsetWidth || 120;
+    hud.style.transform = `translate(${clamp(d.x - hw / 2, 8, L - hw - 8).toFixed(1)}px, ${Math.min(y + H * d.s + 14, STAGE_H - 40).toFixed(1)}px)`;
+    raf = requestAnimationFrame(tick);
+  }
+
+  function endDrag(cancel) {
+    cancelAnimationFrame(raf);
+    const d = drag, id = d.id, e = els.get(id);
+    let landed;
+    if (cancel) {
+      if (d.fromShelf) state.shelf.splice(Math.min(d.origin, state.shelf.length), 0, id);
+      else state.pile.set(id, d.origin);
+      landed = d.fromShelf ? "shelf" : "pile";
+    } else if (preview != null) {
+      state.shelf.splice(preview, 0, id);
+      landed = "shelf";
+    } else {
+      const cx = d.x - d.gx * d.s + (W * d.s) / 2, cy = d.y - d.gy * d.s + (H * d.s) / 2;
+      const u = clamp((cx - PX0) / pileW(), 0.04, 0.96);
+      state.pile.set(id, { u, y: clamp(cy, 540, 640), r: (Math.random() - 0.5) * 18, ry: (Math.random() - 0.5) * 20, z: nextZ() });
+      landed = "pile";
+    }
+    const bumped = state.shelf.length > MAX ? state.shelf.pop() : null;
+    drag = null; preview = null;
+    e.root.classList.remove("held");
+    stage.classList.remove("holding", "over-shelf", "over-pile");
+    handShadow.classList.remove("show"); handGlow.classList.remove("show"); hud.classList.remove("show");
+    commit({ id, landed, bumped: bumped ? [bumped] : [], quiet: cancel });
+    if (e.root.matches(":hover")) {}
+  }
+
+  function nextZ() {
+    if (++zTop > 60) { // keep pile z compact
+      [...state.pile.entries()].sort((a, b) => a[1].z - b[1].z).forEach(([, p], i) => (p.z = 20 + i));
+      zTop = 20 + state.pile.size;
+    }
+    return zTop;
+  }
+
+  function freeSpot() {
+    let best = null, bs = -1;
+    for (let u = 0.06; u <= 0.94; u += 0.04) {
+      for (let y = 548; y <= 632; y += 21) {
+        const cx = PX0 + u * pileW();
+        let m = 1e9;
+        for (const p of state.pile.values()) m = Math.min(m, Math.hypot(cx - (PX0 + p.u * pileW()), (y - p.y) * 1.4));
+        const sc = m + Math.random() * 12;
+        if (sc > bs) { bs = sc; best = { u, y }; }
+      }
+    }
+    return { ...best, r: (Math.random() - 0.5) * 22, ry: (Math.random() - 0.5) * 22, z: nextZ() };
+  }
+
+  /* commit: apply new state; anything leaving the shelf for the pile goes in an arc */
+  function commit({ id, landed, bumped = [], returned = null, quiet = false }) {
+    const arcs = [...bumped, ...(returned ? [returned] : [])].map((bid) => {
+      const r = els.get(bid).root, m = getComputedStyle(r).transform;
+      const prev = posed.get(bid);
+      let from = { x: prev.x, y: prev.y, s: prev.s };
+      const mm = m && m.match(/matrix\(([^)]+)\)/);
+      if (mm) { const v = mm[1].split(",").map(parseFloat); from = { x: v[4], y: v[5], s: Math.hypot(v[0], v[1]) }; }
+      if (!state.pile.has(bid)) state.pile.set(bid, freeSpot());
+      r.classList.add("no-trans");
+      return { id: bid, from, fromLift: { ...prev.lift } };
+    });
+    layout();
+    arcs.forEach(tumble);
+    if (landed === "shelf" && !quiet) setTimeout(() => thunk(id), RM ? 0 : 200);
+    if (landed === "pile" && !quiet) setTimeout(() => settle(id, 0.6), RM ? 0 : 160);
+    if (!quiet) {
+      const it = G.byId(id), r = state.shelf.indexOf(id);
+      let msg = r >= 0 ? `${it.title} placed at #${r + 1}.` : `${it.title} is back in the pile.`;
+      if (bumped.length) {
+        const b = G.byId(bumped[0]);
+        msg += ` ${b.title} was bumped off the shelf.`;
+        G.toast(`${b.title} fell off the end of the shelf`);
+      }
+      announce(msg);
+    }
+  }
+
+  function tumble(a) {
+    const e = els.get(a.id), to = posed.get(a.id);
+    const from = a.from, N = 18, dur = RM ? 1 : 900;
+    const yc = Math.min(from.y, to.y) - 150;
+    const frames = [];
+    for (let i = 0; i <= N; i++) {
+      const t = i / N;
+      const x = from.x + (to.x - from.x) * t;
+      const y = (1 - t) * (1 - t) * from.y + 2 * t * (1 - t) * yc + t * t * to.y;
+      const s = from.s + (to.s - from.s) * t;
+      frames.push({ transform: `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) scale(${s.toFixed(4)})` });
+    }
+    e.root.style.zIndex = 900;
+    const spin = to.x >= from.x ? 360 : -360;
+    const anim = e.root.animate(frames, { duration: dur, easing: "cubic-bezier(.3, .05, .55, 1)" });
+    e.lift.animate(
+      [{ transform: liftT(a.fromLift) }, { transform: liftT({ ...to.lift, rz: to.lift.rz + spin }) }],
+      { duration: dur, easing: "cubic-bezier(.25, .1, .4, 1)" }
+    );
+    anim.onfinish = () => {
+      e.root.classList.remove("no-trans");
+      const p = posed.get(a.id);
+      if (p) e.root.style.zIndex = p.z;
+      settle(a.id, 0.8);
+    };
+  }
+
+  function settle(id, amp) {
+    if (RM) return;
+    const w = els.get(id).wob;
+    w.style.setProperty("--amp", amp);
+    w.classList.remove("settle"); void w.offsetWidth; w.classList.add("settle");
+  }
+  function thunk(id) {
+    const idx = state.shelf.indexOf(id);
+    if (idx < 0) return;
+    settle(id, 1);
+    state.shelf.forEach((o, i) => {
+      const dist = Math.abs(i - idx);
+      if (o !== id && dist <= 4) setTimeout(() => settle(o, 0.55 / dist), RM ? 0 : dist * 45);
+    });
+    if (RM) return;
+    const b = $("#board"); b.classList.remove("thump"); void b.offsetWidth; b.classList.add("thump");
+    const p = plaques[idx]; p.classList.remove("flash"); void p.offsetWidth; p.classList.add("flash");
+  }
+
+  function announce(msg) { live.textContent = ""; requestAnimationFrame(() => (live.textContent = msg)); }
+
+  /* ---------- keyboard ---------- */
+  function navOrder() {
+    const pile = [...state.pile.keys()].sort((a, b) => state.pile.get(a).u - state.pile.get(b).u);
+    return [...state.shelf, ...pile];
+  }
+  function setRoving(id) {
+    rovingId = id;
+    for (const [k, e] of els) e.root.tabIndex = k === id ? 0 : -1;
+  }
+  function focusCase(id) { setRoving(id); els.get(id).root.focus({ preventScroll: true }); scrollIntoStage(id); }
+  function scrollIntoStage(id) {
+    if (!wrap.classList.contains("scrolls")) return;
+    const p = posed.get(id); if (!p) return;
+    const cx = (p.x + (W * p.s) / 2) * S;
+    if (cx < wrap.scrollLeft + 40 || cx > wrap.scrollLeft + wrap.clientWidth - 40) wrap.scrollTo({ left: cx - wrap.clientWidth / 2, behavior: RM ? "auto" : "smooth" });
+  }
+
+  function placeOnShelf(id, rank) {
+    if (state.pile.has(id)) state.pile.delete(id);
+    else state.shelf.splice(state.shelf.indexOf(id), 1);
+    const k = Math.min(rank, state.shelf.length);
+    state.shelf.splice(k, 0, id);
+    const bumped = state.shelf.length > MAX ? [state.shelf.pop()] : [];
+    commit({ id, landed: "shelf", bumped });
+  }
+  function returnToPile(id) {
+    state.shelf.splice(state.shelf.indexOf(id), 1);
+    commit({ id, landed: "arc", returned: id, quiet: true });
+    announce(`${G.byId(id).title} is back in the pile.`);
+  }
+
+  casesEl.addEventListener("focusin", (e) => {
+    const c = e.target.closest(".case"); if (!c) return;
+    setRoving(c.dataset.id);
+    kbdId = c.matches(":focus-visible") ? c.dataset.id : null;
+    refreshInspect(); fixtures(state.shelf.length, preview);
+  });
+  casesEl.addEventListener("focusout", () => {
+    requestAnimationFrame(() => {
+      if (!casesEl.contains(document.activeElement)) { kbdId = null; refreshInspect(); fixtures(state.shelf.length, preview); }
+    });
+  });
+  casesEl.addEventListener("keydown", (e) => {
+    const c = e.target.closest(".case"); if (!c || drag) return;
+    const id = c.dataset.id, onShelf = state.shelf.includes(id), order = navOrder(), i = order.indexOf(id);
+    const k = e.key;
+    if (/^[0-9]$/.test(k) && !e.altKey && !e.ctrlKey && !e.metaKey) {
+      e.preventDefault();
+      placeOnShelf(id, k === "0" ? 9 : +k - 1);
+    } else if (e.altKey && (k === "ArrowLeft" || k === "ArrowRight")) {
+      e.preventDefault();
+      if (!onShelf) { G.toast("Shelve it first: press 1–9 or 0"); return; }
+      const r = state.shelf.indexOf(id), nr = clamp(r + (k === "ArrowLeft" ? -1 : 1), 0, state.shelf.length - 1);
+      if (nr !== r) placeOnShelf(id, nr);
+    } else if (k === "ArrowLeft" || k === "ArrowRight") {
+      e.preventDefault();
+      const n = order[clamp(i + (k === "ArrowLeft" ? -1 : 1), 0, order.length - 1)];
+      focusCase(n);
+    } else if (k === "ArrowUp" || k === "ArrowDown") {
+      e.preventDefault();
+      const p = posed.get(id), cx = p.x + (W * p.s) / 2;
+      const group = k === "ArrowUp" ? state.shelf : [...state.pile.keys()];
+      if (!group.length) return;
+      let best = group[0], bd = 1e9;
+      for (const g of group) { const q = posed.get(g); const dd = Math.abs(q.x + (W * q.s) / 2 - cx); if (dd < bd) { bd = dd; best = g; } }
+      focusCase(best);
+    } else if (k === "Home" || k === "End") {
+      e.preventDefault(); focusCase(order[k === "Home" ? 0 : order.length - 1]);
+    } else if ((k === "Delete" || k === "Backspace") && onShelf) {
+      e.preventDefault(); returnToPile(id);
+    } else if (k === "Enter" || k === " ") {
+      e.preventDefault();
+      if (onShelf) { G.toast(`#${state.shelf.indexOf(id) + 1}. Alt+←/→ to move, Delete to return`); return; }
+      if (state.shelf.length >= MAX) { G.toast("Shelf is full. Press 1–9 or 0 to choose a rank"); return; }
+      placeOnShelf(id, state.shelf.length);
+    }
+  });
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && drag) { e.preventDefault(); endDrag(true); }
+    else if (e.key === "Escape" && tapId) { tapId = null; refreshInspect(); }
+  });
+
+  /* ---------- controls ---------- */
+  const faceBtn = $("#faceBtn");
+  faceBtn.addEventListener("click", () => {
+    state.mode = state.mode === "spine" ? "face" : "spine";
+    faceBtn.setAttribute("aria-pressed", String(state.mode === "face"));
+    stage.dataset.mode = state.mode;
+    const n = state.shelf.length;
+    state.shelf.forEach((id, i) => {
+      const e = els.get(id);
+      // wave from #1 outward when turning out, and back from #10 when turning in
+      const order = state.mode === "face" ? i : n - 1 - i;
+      const dl = RM ? 0 : order * 55;
+      e.root.style.transitionDelay = dl + "ms";
+      e.box.style.transitionDelay = dl + 60 + "ms";
+    });
+    layout();
+    setTimeout(() => state.shelf.forEach((id) => { const e = els.get(id); e.root.style.transitionDelay = ""; e.box.style.transitionDelay = ""; }), 1500);
+    announce(state.mode === "face" ? "Covers turned out." : "Spines out.");
+  });
+
+  function reset(first) {
+    state.shelf = INITIAL.slice();
+    state.pile.clear();
+    const rest = G.items.map((i) => i.id).filter((id) => !INITIAL.includes(id));
+    // a loose heap: two staggered rows, jittered, overlapping, back row underneath
+    const nb = Math.ceil(rest.length / 2), pw = pileW(), heapW = Math.min(pw, 1000), x0 = (pw - heapW) / 2;
+    const step = heapW / nb;
+    rest.forEach((id, i) => {
+      const back = i % 2 === 0, j = Math.floor(i / 2);
+      const x = x0 + step * (j + (back ? 0.5 : 1)) + (rnd(id, "x") - 0.5) * 34;
+      state.pile.set(id, {
+        u: clamp(x / pw, 0.04, 0.96),
+        y: (back ? 556 : 626) + (rnd(id, "y") - 0.5) * 18,
+        r: (rnd(id, "r") - 0.5) * 20, ry: (rnd(id, "q") - 0.5) * 22,
+        z: back ? 20 + j : 30 + j,
+      });
+    });
+    zTop = 40;
+    if (!first && state.mode !== "spine") { state.mode = "spine"; stage.dataset.mode = "spine"; faceBtn.setAttribute("aria-pressed", "false"); }
+    for (const e of els.values()) { e.root.getAnimations().forEach((a) => a.cancel()); e.lift.getAnimations().forEach((a) => a.cancel()); e.root.classList.remove("no-trans"); }
+    hoverId = kbdId = tapId = inspectId = null;
+    layout();
+    setRoving(state.shelf[0]);
+  }
+  $("#resetBtn").addEventListener("click", () => { reset(false); G.toast("Shelf reset"); });
+
+  let rz;
+  window.addEventListener("resize", () => {
+    clearTimeout(rz);
+    rz = setTimeout(() => { stage.classList.add("instant"); measure(); layout(); void stage.offsetWidth; stage.classList.remove("instant"); }, 60);
+  });
+
+  // first frame: a working shelf, no animation
+  measure();
+  reset(true);
+  void stage.offsetWidth;
+  requestAnimationFrame(() => stage.classList.remove("instant"));
+
+  // test hook (read-only)
+  window.__shelf = { get ranking() { return state.shelf.slice(); }, get pile() { return [...state.pile.keys()]; } };
+})();
+</script>
+</body>
+</html>
