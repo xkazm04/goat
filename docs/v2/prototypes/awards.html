@@ -1,0 +1,1247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Awards Night</title>
+<link rel="stylesheet" href="shared.css">
+<script src="shared.js"></script>
+<script src="items-extended.js"></script>
+<style>
+  /* Winner hues drive each hero's glow; registered so a new winner's colour fades in. */
+  @property --w1 { syntax: "<number>"; inherits: true; initial-value: 42; }
+  @property --w2 { syntax: "<number>"; inherits: true; initial-value: 20; }
+  :root {
+    --rule: rgba(200, 210, 255, .08);
+    --gutter: clamp(16px, 4vw, 44px);
+    --spring: var(--ease-spring);
+    --foil: linear-gradient(176deg, #fff3cf 0%, var(--gold-hi) 22%, var(--gold) 58%, #9d7a2c 100%);
+  }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body { overflow-x: clip; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .defs { position: absolute; width: 0; height: 0; }
+
+  /* ---------- intro strip ---------- */
+  .intro {
+    width: min(1240px, calc(100% - 32px)); margin: 16px auto 0; position: relative; z-index: 3;
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 28px;
+    padding: 14px 18px 14px 20px;
+  }
+  .intro-text { flex: 1 1 560px; min-width: 0; }
+  .intro .eyebrow { color: var(--gold); margin: 0 0 6px; }
+  .intro-copy { margin: 0; color: var(--fg-muted); font-size: var(--step--1); }
+  .intro-copy strong { color: var(--fg); font-weight: 600; }
+  .try { margin: 6px 0 0; font-size: .75rem; color: var(--fg-faint); line-height: 1.7; }
+  .try b { color: var(--fg-muted); font-weight: 600; margin-right: .3em; }
+  .try kbd { font: 600 .7rem/1 var(--font-mono); color: var(--fg-muted); padding: 2px 5px; border-radius: 4px; border: 1px solid var(--glass-edge); background: var(--glass); }
+  .btn svg { width: 14px; height: 14px; flex: none; }
+  .btn.gold { box-shadow: 0 10px 30px -12px var(--gold-glow); }
+  .btn:disabled { opacity: .38; cursor: not-allowed; }
+  .btn:disabled:hover { background: var(--glass-strong); border-color: var(--glass-edge); }
+
+  /* ---------- programme cover ---------- */
+  .programme { position: relative; z-index: 2; overflow-x: clip; }
+  .cover-page {
+    position: relative; isolation: isolate; text-align: center;
+    max-width: 1180px; margin: 0 auto; padding: clamp(36px, 6vw, 72px) var(--gutter) 40px;
+  }
+  .cover-page::before {
+    content: ""; position: absolute; z-index: -1; left: 50%; top: -40px; width: min(1100px, 140%); height: 760px; translate: -50% 0; pointer-events: none;
+    background:
+      radial-gradient(38% 34% at 50% 26%, rgba(233, 196, 106, .16), transparent 70%),
+      radial-gradient(50% 50% at 30% 60%, hsl(265 70% 50% / .10), transparent 70%),
+      radial-gradient(50% 50% at 72% 50%, hsl(200 70% 50% / .08), transparent 70%);
+  }
+  .seal { width: clamp(132px, 16vw, 188px); height: auto; display: block; margin: 0 auto 22px; filter: drop-shadow(0 18px 50px rgba(233, 196, 106, .28)); overflow: visible; }
+  .seal .ring-text { font: 700 10.5px/1 var(--font-body); letter-spacing: .2em; fill: var(--gold); }
+  .seal .spin { transform-origin: 100px 100px; animation: spin 80s linear infinite; }
+  .seal .mid { font: 900 30px/1 var(--font-display); fill: url(#foil); letter-spacing: .02em; }
+  .seal .mid-s { font: 700 8px/1 var(--font-body); letter-spacing: .3em; fill: rgba(255, 227, 161, .8); }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .cover-kicker { margin: 0 0 14px; color: var(--gold); }
+  .cover-kicker span { color: var(--fg-faint); margin: 0 .6em; }
+  .cover-title {
+    font: 900 clamp(3.2rem, 11.5vw, 10.5rem)/.8 var(--font-display); text-transform: uppercase; letter-spacing: -.01em;
+    background: linear-gradient(180deg, #fff 18%, #f3e2b4 58%, var(--gold) 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    padding: .06em .06em 0; overflow-wrap: anywhere;
+  }
+  .cover-title .the { display: block; font-size: .28em; letter-spacing: .5em; margin: 0 0 .3em .5em; color: var(--gold); -webkit-text-fill-color: var(--gold); }
+  .cover-by { margin: 18px 0 0; display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 6px 16px; color: var(--fg-muted); font-size: var(--step--1); }
+  .cover-by b { color: var(--fg); font-weight: 600; }
+  .cover-by .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--fg-faint); }
+  .double-rule { width: min(560px, 100%); height: 5px; margin: 34px auto 0; border-block: 1px solid rgba(233, 196, 106, .35); }
+
+  /* table of contents */
+  .toc { width: min(760px, 100%); margin: 30px auto 0; padding: 22px clamp(16px, 3vw, 30px) 16px; text-align: left; }
+  .toc-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin: 0 0 8px; }
+  .toc-head .eyebrow { margin: 0; color: var(--gold); }
+  .toc-count { font: 400 .72rem/1 var(--font-mono); color: var(--fg-faint); }
+  .toc ol { list-style: none; margin: 0; padding: 0; }
+  .toc li + li { border-top: 1px solid var(--rule); }
+  .toc a {
+    display: grid; grid-template-columns: 2.2em auto minmax(1.5em, 1fr) auto 30px; align-items: center; gap: 12px;
+    padding: 11px 8px; margin: 0 -8px; border-radius: var(--r-sm); text-decoration: none; color: var(--fg);
+    transition: background .2s;
+  }
+  .toc a:hover { background: var(--glass); }
+  .toc-no { font: 600 .75rem/1 var(--font-mono); color: var(--gold); }
+  .toc-name { font: 800 1.35rem/1 var(--font-display); text-transform: uppercase; letter-spacing: .02em; }
+  .toc-lead { height: 1px; align-self: center; margin-top: 6px; background-image: radial-gradient(circle, rgba(200, 210, 255, .3) 1px, transparent 1.4px); background-size: 7px 3px; background-repeat: repeat-x; }
+  .toc-win { font-weight: 600; font-size: .92rem; text-align: right; }
+  .toc-win.undecided { color: var(--fg-faint); font-style: italic; font-weight: 400; }
+  .toc-thumb { width: 30px; }
+  .toc-thumb .cover { border-radius: 4px; }
+  .toc-thumb .empty { aspect-ratio: 3/4; border: 1px dashed rgba(233, 196, 106, .3); border-radius: 4px; }
+  .toc li.grand .toc-name { color: var(--gold-hi); font-size: 1.6rem; }
+  .toc li.grand .toc-win:not(.undecided) { color: var(--gold-hi); }
+  .toc li.grand a { padding-block: 15px; }
+
+  /* ---------- category sections ---------- */
+  .cat { position: relative; max-width: 1180px; margin: 0 auto; padding: clamp(56px, 8vw, 104px) var(--gutter) 0; scroll-margin-top: calc(var(--nav-h) + 8px); }
+  .cat-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px 28px; border-top: 1px solid var(--rule); padding-top: 22px; }
+  .cat-title { min-width: 0; flex: 1 1 420px; }
+  .cat-no { margin: 0 0 8px; font: 600 .75rem/1 var(--font-mono); letter-spacing: .1em; color: var(--gold); }
+  .cat-no span { color: var(--fg-faint); }
+  .cat-name { font: 900 clamp(2.4rem, 5.6vw, 4.6rem)/.86 var(--font-display); text-transform: uppercase; letter-spacing: -.005em; }
+  .cat-blurb { margin: 10px 0 0; color: var(--fg-muted); }
+  .cat-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+  .modes-row { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 4px; font-size: .75rem; color: var(--fg-faint); }
+  .modes-row button { border: 0; background: none; padding: 2px 4px; cursor: pointer; color: var(--fg-muted); font-weight: 600; font-size: .75rem; border-radius: 4px; text-decoration: underline; text-decoration-color: rgba(200, 210, 255, .25); text-underline-offset: 3px; }
+  .modes-row button:hover { color: var(--gold-hi); text-decoration-color: var(--gold); }
+  .modes-row i { font-style: normal; color: var(--fg-faint); }
+
+  /* winner hero */
+  .hero {
+    --w1: 42; --w2: 20;
+    transition: --w1 1.2s var(--ease-out), --w2 1.2s var(--ease-out), border-color .25s, box-shadow .3s;
+    position: relative; isolation: isolate; margin-top: 26px;
+    display: grid; grid-template-columns: 236px minmax(0, 1fr); grid-template-areas: "art head" "art body";
+    align-content: center; gap: 6px 44px; padding: 34px 40px; min-height: 380px;
+    border-radius: var(--r-lg); border: 1px solid var(--glass-edge);
+    background: linear-gradient(100deg, rgba(178, 190, 255, .05), rgba(178, 190, 255, .02));
+  }
+  .hero-glow { position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none; overflow: hidden; }
+  .hero-glow::before {
+    content: ""; position: absolute; inset: -30% -10%;
+    background:
+      radial-gradient(34% 54% at 18% 48%, hsl(var(--w2) 85% 55% / .42), transparent 72%),
+      radial-gradient(30% 50% at 34% 70%, hsl(var(--w1) 80% 48% / .32), transparent 72%),
+      radial-gradient(40% 60% at 90% 0%, rgba(233, 196, 106, .08), transparent 70%);
+  }
+  .hero-art { grid-area: art; position: relative; align-self: center; }
+  .hero-art .cover { box-shadow: 0 0 0 1px rgba(255, 255, 255, .12) inset, 0 34px 60px -24px rgba(0, 0, 0, .9), 0 0 80px -20px hsl(var(--w2) 85% 55% / .7); }
+  .medal { position: absolute; right: -26px; bottom: -22px; width: 74px; height: 74px; filter: drop-shadow(0 8px 18px rgba(0, 0, 0, .7)); }
+  .medal svg { width: 100%; height: 100%; overflow: visible; }
+  .hero-head { grid-area: head; align-self: end; min-width: 0; }
+  .hero-body { grid-area: body; align-self: start; min-width: 0; }
+  .hero-eyebrow { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; }
+  .win-tag { font: 800 .8rem/1 var(--font-display); letter-spacing: .14em; text-transform: uppercase; color: #1a1406; background: var(--foil); padding: .42em .7em .36em; border-radius: 999px; }
+  .hero-eyebrow .eyebrow { font-size: .7rem; }
+  .hero-title { font: 900 clamp(2.4rem, 5vw, 4.6rem)/.88 var(--font-display); text-transform: uppercase; letter-spacing: .005em; overflow-wrap: anywhere; }
+  .hero-meta { margin: 10px 0 0; font: 400 .78rem/1.4 var(--font-mono); letter-spacing: .04em; color: var(--fg-muted); }
+  .cite, .note {
+    -webkit-user-select: text; user-select: text; cursor: text; border-radius: 6px; padding: 2px 6px; margin-left: -6px;
+    caret-color: var(--gold); outline-offset: 2px; transition: background .2s, opacity .2s;
+  }
+  .cite { margin-top: 18px; font: italic 400 1.28rem/1.45 var(--font-body); color: #e3e6f4; max-width: 50ch; }
+  .cite::before { content: "\201C"; color: var(--gold); font-style: normal; font-family: var(--font-display); font-weight: 900; margin-right: .1em; }
+  .cite::after { content: "\201D"; color: var(--gold); font-style: normal; font-family: var(--font-display); font-weight: 900; margin-left: .1em; }
+  .cite:empty::before { content: attr(data-placeholder); color: var(--fg-faint); font-family: var(--font-body); font-weight: 400; font-style: italic; }
+  .cite:empty::after { content: none; }
+  .cite:hover, .note:hover { background: var(--glass); }
+  .cite:focus, .note:focus { outline: 2px solid var(--gold); background: rgba(0, 0, 0, .3); }
+  .note { font: italic 400 .84rem/1.45 var(--font-body); color: #c6cbe0; min-height: 1.45em; }
+  .note:empty::before { content: attr(data-placeholder); color: var(--fg-faint); }
+  .hero .note { margin-top: 12px; max-width: 58ch; opacity: 0; }
+  .hero .note:not(:empty) { opacity: .8; }
+  .hero:hover .note, .hero:focus-within .note { opacity: 1; }
+  .note-label { font: 600 .62rem/1 var(--font-body); letter-spacing: .14em; text-transform: uppercase; color: var(--fg-faint); margin: 14px 0 -6px; opacity: 0; transition: opacity .2s; }
+  .hero:hover .note-label, .hero:focus-within .note-label { opacity: 1; }
+
+  /* empty hero frame */
+  .hero.empty { border: 1.5px dashed rgba(233, 196, 106, .32); background: linear-gradient(100deg, rgba(233, 196, 106, .035), transparent 70%); grid-template-columns: 1fr; grid-template-areas: "art"; place-items: center; min-height: 300px; }
+  .hero-empty { grid-area: art; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; padding: 10px; }
+  .hero-empty svg { width: 92px; height: 92px; margin-bottom: 10px; opacity: .7; transition: opacity .3s, transform .5s var(--ease-spring); }
+  .he-main { margin: 0; font: 800 clamp(1.5rem, 3vw, 2.2rem)/1 var(--font-display); text-transform: uppercase; letter-spacing: .04em; color: var(--fg-muted); }
+  .he-sub { margin: 0; font-size: var(--step--1); color: var(--fg-faint); }
+
+  /* hero as drop target */
+  .hero-drop {
+    position: absolute; inset: 0; z-index: 5; border-radius: inherit; pointer-events: none; opacity: 0;
+    display: grid; place-items: end center; padding-bottom: 18px;
+    border: 2px solid var(--gold);
+    background: radial-gradient(60% 80% at 50% 50%, rgba(233, 196, 106, .14), rgba(233, 196, 106, .03));
+    box-shadow: 0 0 0 6px rgba(233, 196, 106, .08), 0 0 80px -10px var(--gold-glow), inset 0 0 60px -24px var(--gold-glow);
+    transition: opacity .2s;
+  }
+  .hero-drop span { font: 800 1.1rem/1 var(--font-display); letter-spacing: .1em; text-transform: uppercase; color: #1a1406; background: var(--gold); padding: .45em .9em .4em; border-radius: 999px; }
+  .hero.target .hero-drop { opacity: 1; }
+  .hero.target.empty .hero-drop { place-items: center; background: radial-gradient(60% 80% at 50% 50%, rgba(233, 196, 106, .16), rgba(233, 196, 106, .04)); }
+  .hero.target.empty .hero-empty { opacity: 0; }
+  body.holding .hero.armed:not(.target) { border-color: rgba(233, 196, 106, .45); }
+  body.holding .hero.armed.empty:not(.target) .hero-empty svg { opacity: 1; transform: scale(1.06); }
+
+  /* runners-up row */
+  .row-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 28px 0 12px; }
+  .row-head .eyebrow { margin: 0; }
+  .row-hint { font-size: .72rem; color: var(--fg-faint); }
+  .row { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; position: relative; }
+  .cat.undecided .row { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .nom {
+    --h1: 220; --h2: 280;
+    position: relative; display: grid; grid-template-columns: 64px minmax(0, 1fr); grid-template-areas: "art body" "note note";
+    gap: 12px 14px; padding: 12px; border-radius: var(--r-md); cursor: grab; touch-action: pan-y;
+    background: var(--glass); border: 1px solid var(--glass-edge);
+    -webkit-user-select: none; user-select: none;
+    transition: border-color .2s, background .25s, transform .35s var(--ease-out), box-shadow .35s var(--ease-out), opacity .2s;
+  }
+  .nom::before { content: ""; position: absolute; inset: 0; border-radius: inherit; z-index: -1; opacity: .55; pointer-events: none;
+    background: radial-gradient(80% 90% at 0% 0%, hsl(var(--h1) 70% 40% / .22), transparent 70%); }
+  .nom { isolation: isolate; }
+  .nom:hover { border-color: var(--glass-edge-hi); transform: translateY(-2px); box-shadow: 0 22px 40px -26px hsl(var(--h2) 85% 50% / .7); }
+  .nom:focus { outline: none; }
+  .nom:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+  .nom-art { grid-area: art; position: relative; }
+  .nom-art .cover { box-shadow: 0 0 0 1px rgba(255, 255, 255, .1) inset, 0 12px 22px -12px rgba(0, 0, 0, .9); }
+  .nom-rank {
+    position: absolute; left: -8px; bottom: -10px; z-index: 3;
+    font: 800 2.5rem/.8 var(--font-display); font-variant-numeric: tabular-nums;
+    background: var(--foil); -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 3px 8px rgba(0, 0, 0, .8));
+  }
+  .cat.undecided .nom-rank { display: none; }
+  .nom-body { grid-area: body; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+  .nom-title { margin: 0; font: 800 1.15rem/.95 var(--font-display); text-transform: uppercase; letter-spacing: .01em; overflow-wrap: break-word; hyphens: auto; }
+  .cat.undecided .nom { grid-template-columns: 50px minmax(0, 1fr); gap: 10px 11px; padding: 11px; }
+  .cat.undecided .nom-title { font-size: 1rem; }
+  .cat.undecided .nom-meta { font-size: .62rem; }
+  .nom-meta { margin: 0; font: 400 .66rem/1.35 var(--font-mono); letter-spacing: .03em; color: var(--fg-muted); }
+  .crown-btn {
+    margin-top: auto; align-self: flex-start; display: inline-flex; align-items: center; gap: .4em; cursor: pointer;
+    padding: .38em .72em .36em; border-radius: 999px; font-size: .72rem; font-weight: 700; letter-spacing: .04em;
+    color: var(--gold-hi); background: rgba(233, 196, 106, .06); border: 1px solid rgba(233, 196, 106, .36);
+    transition: background .2s, color .2s, border-color .2s, transform .2s var(--ease-out);
+  }
+  .crown-btn svg { width: 13px; height: 13px; }
+  .crown-btn:hover { background: var(--gold); color: #1a1406; border-color: transparent; }
+  .crown-btn:active { transform: scale(.95); }
+  .nom .note { grid-area: note; opacity: 0; margin-right: -6px; font-size: .8rem; }
+  .nom .note:not(:empty) { opacity: .7; }
+  .nom:hover .note, .nom:focus-within .note { opacity: 1; }
+  @media (hover: none) { .nom .note, .hero .note, .note-label { opacity: .8; } }
+  .nom.lifted { opacity: .35; border-style: dashed; transform: none; box-shadow: none; }
+  .nom.lifted .cover { visibility: hidden; }
+  .nom.lifted .nom-art { outline: 1.5px dashed var(--glass-edge-hi); outline-offset: -1px; border-radius: var(--r-sm); }
+  .hide-cover .cover { visibility: hidden; }
+  body.holding, body.holding * { cursor: grabbing !important; }
+  body.holding .nom:hover { transform: none; box-shadow: none; }
+
+  /* insertion line */
+  .ins {
+    position: fixed; left: 0; top: 0; z-index: 60; pointer-events: none; opacity: 0; border-radius: 3px;
+    background: linear-gradient(var(--gold-hi), var(--gold) 60%, rgba(233, 196, 106, .3));
+    box-shadow: 0 0 16px var(--gold-glow), 0 0 2px var(--gold-hi);
+    transition: opacity .15s, transform .22s var(--ease-out), width .2s, height .2s;
+  }
+  .ins.show { opacity: 1; }
+  .ins::before, .ins::after { content: ""; position: absolute; width: 9px; height: 9px; border-radius: 50%; background: var(--gold-hi); box-shadow: 0 0 10px var(--gold); }
+  .ins.v::before { left: 50%; top: -4px; translate: -50% 0; } .ins.v::after { left: 50%; bottom: -4px; translate: -50% 0; }
+  .ins.h::before { top: 50%; left: -4px; translate: 0 -50%; } .ins.h::after { top: 50%; right: -4px; translate: 0 -50%; }
+
+  /* the grand prize */
+  .cat.grand { padding-top: clamp(80px, 11vw, 150px); }
+  .grand-lead { text-align: center; margin: 0 0 28px; }
+  .grand-lead .eyebrow { color: var(--gold); }
+  .grand-lead .gl-rule { display: block; width: 1px; height: 54px; margin: 14px auto 0; background: linear-gradient(transparent, var(--gold)); }
+  .cat.grand .cat-head { border-top-color: rgba(233, 196, 106, .3); }
+  .cat.grand .cat-name { font-size: clamp(3rem, 8vw, 7rem); background: linear-gradient(180deg, #fff 10%, #f3e2b4 55%, var(--gold) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .cat.grand .hero { grid-template-columns: 300px minmax(0, 1fr); padding: 48px 56px; min-height: 480px; border-color: rgba(233, 196, 106, .32);
+    box-shadow: 0 0 0 1px rgba(233, 196, 106, .08) inset, 0 40px 120px -50px rgba(233, 196, 106, .35); }
+  .cat.grand .hero.empty { min-height: 380px; }
+  .cat.grand .hero-title { font-size: clamp(2.8rem, 6.4vw, 6rem); background: linear-gradient(180deg, #fff 20%, var(--gold-hi) 70%, var(--gold)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .cat.grand .medal { width: 96px; height: 96px; right: -34px; bottom: -28px; }
+  .rays { position: absolute; z-index: -1; left: 50%; top: 50%; width: 260%; aspect-ratio: 1; translate: -50% -50%; pointer-events: none; border-radius: 50%;
+    background: repeating-conic-gradient(from 0deg, rgba(255, 227, 161, .16) 0 4deg, transparent 4deg 16deg);
+    -webkit-mask: radial-gradient(closest-side, #000 12%, transparent 72%); mask: radial-gradient(closest-side, #000 12%, transparent 72%);
+    animation: spin 90s linear infinite; }
+
+  .finis { text-align: center; padding: 90px var(--gutter) 110px; color: var(--fg-faint); font-size: var(--step--1); }
+  .finis .eyebrow { color: var(--gold); display: block; margin-bottom: 10px; }
+  .finis p { margin: 6px auto 0; max-width: 56ch; }
+
+  /* ---------- drag ghost + flying covers ---------- */
+  .ghost { position: fixed; left: 0; top: 0; z-index: 80; pointer-events: none; will-change: transform; }
+  .g-tilt { transform-origin: 50% 40%; }
+  .g-lift { position: relative; border-radius: var(--r-sm); transform: scale(1.06); box-shadow: 0 50px 80px -26px rgba(0, 0, 0, .95), 0 0 70px -12px var(--g-glow); }
+  .g-badge {
+    position: absolute; left: 50%; top: -14px; translate: -50% 0; z-index: 4; white-space: nowrap;
+    font: 800 .95rem/1 var(--font-display); letter-spacing: .06em; text-transform: uppercase;
+    padding: .4em .72em .34em; border-radius: 999px; background: var(--gold); color: #1a1406; box-shadow: 0 8px 22px -8px var(--gold-glow);
+  }
+  .g-badge.muted { background: rgba(20, 22, 34, .92); color: var(--fg); border: 1px solid var(--glass-edge-hi); }
+  .fly { position: fixed; left: 0; top: 0; z-index: 75; pointer-events: none; transform-origin: 0 0; will-change: transform; }
+  .fly .cover { box-shadow: 0 0 0 1px rgba(255, 255, 255, .14) inset, 0 30px 60px -20px rgba(0, 0, 0, .9); }
+  #pageDust { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 76; pointer-events: none; }
+
+  /* ---------- the envelope ceremony ---------- */
+  .cer { position: fixed; inset: 0; z-index: 120; overflow: hidden; cursor: pointer; outline: none; isolation: isolate; }
+  .cer[hidden] { display: none; }
+  .cer-dim { position: absolute; inset: 0; background: radial-gradient(70% 80% at 50% 38%, rgba(9, 10, 18, .965), rgba(3, 4, 7, .99)); backdrop-filter: blur(8px) saturate(.7); -webkit-backdrop-filter: blur(8px) saturate(.7); }
+  .cer-beam { position: absolute; left: 50%; top: -6vh; width: min(1000px, 170vw); height: 100vh; translate: -50% 0; pointer-events: none; opacity: 0; filter: blur(14px); mix-blend-mode: screen; }
+  .cer-beam i { position: absolute; inset: 0; clip-path: polygon(45% 0, 55% 0, 82% 100%, 18% 100%);
+    background: linear-gradient(to bottom, rgba(255, 240, 205, .03), rgba(255, 236, 196, .16) 70%, rgba(255, 236, 196, .04)); }
+  .cer-pool { position: absolute; left: 50%; top: 82vh; width: min(760px, 120vw); height: 140px; translate: -50% -50%; border-radius: 50%; opacity: 0; pointer-events: none;
+    background: radial-gradient(closest-side, rgba(255, 230, 180, .22), transparent); mix-blend-mode: screen; }
+  #cerDust { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
+  .cer-flash { position: absolute; inset: 0; z-index: 6; opacity: 0; pointer-events: none; mix-blend-mode: screen;
+    background: radial-gradient(40% 46% at 50% 42%, rgba(255, 227, 161, .7), transparent 70%); }
+  .cer-top { position: absolute; left: 0; right: 0; top: max(20px, env(safe-area-inset-top)); z-index: 7; margin: 0; display: flex; justify-content: center; align-items: center; gap: 14px; padding: 0 16px; flex-wrap: wrap; }
+  .cer-top .eyebrow { color: var(--gold); }
+  .cer-prog { font: 400 .72rem/1 var(--font-mono); color: var(--fg-faint); }
+  .cer-hint { position: absolute; left: 50%; bottom: max(22px, env(safe-area-inset-bottom)); translate: -50% 0; z-index: 7; margin: 0; white-space: nowrap;
+    font: 600 .7rem/1 var(--font-mono); letter-spacing: .06em; color: var(--fg-muted);
+    padding: .6em .9em; border-radius: 999px; background: rgba(8, 9, 15, .8); border: 1px solid var(--glass-edge); }
+  .cer-stage { position: absolute; inset: 0; z-index: 4; display: grid; place-items: center; padding: 56px 16px 64px; }
+  .cer-stage > * { grid-area: 1 / 1; }
+
+  .cer-open { text-align: center; opacity: 0; }
+  .cer-open .seal { width: clamp(110px, 18vh, 160px); margin-bottom: 18px; }
+  .cer-open h2 { font: 900 clamp(2.8rem, 10vw, 7rem)/.84 var(--font-display); text-transform: uppercase;
+    background: linear-gradient(180deg, #fff 20%, var(--gold) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .cer-open p { margin: 14px 0 0; color: var(--fg-muted); font-style: italic; font-size: 1.1rem; }
+
+  .env { --ew: min(340px, 82vw); position: relative; width: var(--ew); height: calc(var(--ew) * .64); perspective: 900px; opacity: 0; }
+  .env-back { position: absolute; inset: 0; border-radius: 6px; background:
+      repeating-linear-gradient(135deg, rgba(233, 196, 106, .14) 0 2px, transparent 2px 9px),
+      linear-gradient(180deg, #3a2f17, #1d1810);
+    box-shadow: 0 40px 80px -30px rgba(0, 0, 0, .95); }
+  .env-card {
+    position: absolute; left: 5%; right: 5%; top: 6%; height: 90%; border-radius: 4px; z-index: 2;
+    background: linear-gradient(180deg, #fbf6e8, #eee2c4); color: #1a1406;
+    display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 16px 14px 0; text-align: center;
+    box-shadow: 0 0 0 1px rgba(157, 122, 44, .5) inset, 0 0 0 5px #fbf6e8 inset, 0 0 0 6px rgba(157, 122, 44, .45) inset;
+  }
+  .ec-a, .ec-b { font: italic 500 .9rem/1.1 var(--font-body); color: #5b4a22; }
+  .ec-cat { font: 900 calc(var(--ew) * .105)/.92 var(--font-display); text-transform: uppercase; letter-spacing: .02em; color: #1a1406; text-wrap: balance; }
+  .env-front { position: absolute; inset: 0; z-index: 3; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 -6px 10px rgba(0, 0, 0, .35)); }
+  .env-flap { position: absolute; left: 0; right: 0; top: 0; height: 58%; z-index: 4; transform-origin: 50% 0; transform-style: preserve-3d; }
+  .env-flap svg { width: 100%; height: 100%; display: block; overflow: visible; filter: drop-shadow(0 6px 8px rgba(0, 0, 0, .4)); }
+  .env-seal { position: absolute; left: 50%; top: 58%; z-index: 5; width: 54px; height: 54px; translate: -50% -50%; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #ffe9b0, var(--gold) 45%, #8a6a24 100%);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, .55), inset 0 0 0 3px rgba(255, 240, 200, .35), inset 0 -4px 8px rgba(80, 55, 10, .5);
+    display: grid; place-items: center; }
+  .env-seal svg { width: 40px; height: 40px; }
+
+  .win { --cw: clamp(150px, 27vh, 232px); position: relative; isolation: isolate; display: flex; flex-direction: column; align-items: center; text-align: center; width: min(720px, 100%); opacity: 0; }
+  .win.final { --cw: clamp(170px, 33vh, 290px); }
+  .win-art { position: relative; width: var(--cw); }
+  .win-art .cover { box-shadow: 0 0 0 1px rgba(255, 255, 255, .16) inset, 0 50px 90px -30px rgba(0, 0, 0, .95), 0 0 110px -10px var(--win-glow, var(--gold-glow)); }
+  .win-halo { position: absolute; left: 50%; top: calc(var(--cw) * .66); width: calc(var(--cw) * 3.2); aspect-ratio: 1; translate: -50% -50%; z-index: -1; border-radius: 50%;
+    background: radial-gradient(closest-side, var(--win-glow, var(--gold-glow)), transparent 72%); opacity: .8; }
+  .win-rays { position: absolute; left: 50%; top: calc(var(--cw) * .66); width: calc(var(--cw) * 4.4); aspect-ratio: 1; translate: -50% -50%; z-index: -1; border-radius: 50%; display: none;
+    background: repeating-conic-gradient(from 0deg, rgba(255, 227, 161, .34) 0 3deg, transparent 3deg 14deg);
+    -webkit-mask: radial-gradient(closest-side, #000 14%, transparent 76%); mask: radial-gradient(closest-side, #000 14%, transparent 76%); }
+  .win.final .win-rays { display: block; }
+  .win-medal { position: absolute; right: calc(var(--cw) * -.16); bottom: calc(var(--cw) * -.12); width: calc(var(--cw) * .38); aspect-ratio: 1; filter: drop-shadow(0 8px 18px rgba(0, 0, 0, .7)); }
+  .win-medal svg { width: 100%; height: 100%; overflow: visible; }
+  .win-cat { margin: 26px 0 8px; font: 700 .78rem/1 var(--font-body); letter-spacing: .24em; text-transform: uppercase; color: var(--gold-hi); }
+  .win-title { font: 900 clamp(2rem, 6vw, 3.8rem)/.86 var(--font-display); text-transform: uppercase; letter-spacing: .01em; overflow-wrap: anywhere; text-shadow: 0 4px 30px rgba(0, 0, 0, .8); }
+  .win.final .win-title { font-size: clamp(2.4rem, 8vw, 5rem); background: linear-gradient(180deg, #fff 25%, var(--gold-hi) 70%, var(--gold)); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: none; filter: drop-shadow(0 4px 24px rgba(0, 0, 0, .7)); }
+  .win-meta { margin: 10px 0 0; font: 400 .74rem/1.3 var(--font-mono); letter-spacing: .05em; color: var(--fg-muted); }
+  .win-cite { margin: 12px 0 0; max-width: 46ch; font: italic 400 1.05rem/1.45 var(--font-body); color: #dfe2f0; }
+  .win-cite:empty { display: none; }
+
+  /* ---------- narrow screens ---------- */
+  @media (max-width: 1040px) {
+    .cat.undecided .row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  }
+  @media (max-width: 900px) {
+    .row, .cat.undecided .row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .hero { grid-template-columns: 180px minmax(0, 1fr); padding: 28px; gap: 6px 30px; min-height: 0; }
+    .cat.grand .hero { grid-template-columns: 210px minmax(0, 1fr); padding: 32px; min-height: 0; }
+    .cat-actions { align-items: flex-start; }
+  }
+  @media (max-width: 600px) {
+    .row, .cat.undecided .row { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+    .hero, .cat.grand .hero { grid-template-columns: 104px minmax(0, 1fr); grid-template-areas: "art head" "body body"; padding: 18px; gap: 16px 18px; }
+    .hero-head { align-self: center; }
+    .cat.grand .hero { grid-template-columns: 120px minmax(0, 1fr); }
+    .hero-title { font-size: 1.9rem; }
+    .cat.grand .hero-title { font-size: 2.3rem; }
+    .cite { font-size: 1.05rem; margin-top: 0; }
+    .medal, .cat.grand .medal { width: 50px; height: 50px; right: -14px; bottom: -14px; }
+    .hero-eyebrow { flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+    .hero.empty { min-height: 230px; }
+    .toc a { grid-template-columns: 1.8em minmax(0, 1fr) 30px; grid-template-areas: "no name th" "no win th"; gap: 2px 10px; }
+    .toc-no { grid-area: no; } .toc-name { grid-area: name; font-size: 1.15rem; } .toc li.grand .toc-name { font-size: 1.3rem; }
+    .toc-win { grid-area: win; text-align: left; font-size: .82rem; } .toc-thumb { grid-area: th; } .toc-lead { display: none; }
+    .row-hint { display: none; }
+    .cer-hint { font-size: .64rem; }
+  }
+</style>
+</head>
+<body class="grain">
+<nav id="study-nav"></nav>
+<script>GOAT.nav("awards.html");</script>
+
+<svg class="defs" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="foil" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0" stop-color="#fff3cf"/><stop offset=".3" stop-color="#ffe3a1"/><stop offset=".65" stop-color="#e9c46a"/><stop offset="1" stop-color="#9d7a2c"/>
+    </linearGradient>
+    <radialGradient id="sealBg" cx=".4" cy=".35" r=".75">
+      <stop offset="0" stop-color="#1d1a12"/><stop offset="1" stop-color="#0a0a0e"/>
+    </radialGradient>
+    <linearGradient id="envFront" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a2333"/><stop offset="1" stop-color="#121119"/></linearGradient>
+    <linearGradient id="envFlap" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2e2838"/><stop offset="1" stop-color="#1b1823"/></linearGradient>
+  </defs>
+</svg>
+
+<header class="intro glass">
+  <div class="intro-text">
+    <p class="eyebrow">Study G · Awards</p>
+    <p class="intro-copy"><strong>Your own awards night, laid out as a ceremony programme.</strong> Six categories, five nominees each from your library, and you pick every winner and write the citation.</p>
+    <p class="try"><b>Try:</b> drag a nominee onto the winner's spot · drag runners-up to reorder · focus a nominee and press <kbd>Enter</kbd> to crown, <kbd>Alt</kbd><kbd>←</kbd><kbd>→</kbd> to move · Open the envelope · Present the night</p>
+  </div>
+  <button type="button" class="btn gold" id="presentBtn">
+    <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 1.2v9.6L10.6 6z" fill="currentColor"/></svg>
+    <span>Present the night</span>
+  </button>
+</header>
+
+<main class="programme" id="programme">
+  <section class="cover-page" aria-labelledby="cover-title">
+    <div id="sealHost"></div>
+    <p class="cover-kicker eyebrow">Ceremony programme<span>/</span>Edition 2026</p>
+    <h1 class="cover-title" id="cover-title"><span class="the">The</span>RPG Awards</h1>
+    <p class="cover-by"><span>Curated by <b>you</b></span><span class="dot" aria-hidden="true"></span><span id="coverStats"></span></p>
+    <div class="double-rule" aria-hidden="true"></div>
+    <nav class="toc glass" aria-label="Programme contents">
+      <div class="toc-head"><p class="eyebrow">Tonight's programme</p><span class="toc-count" id="tocCount"></span></div>
+      <ol id="toc"></ol>
+    </nav>
+  </section>
+  <div id="cats"></div>
+  <footer class="finis">
+    <span class="eyebrow">End of programme</span>
+    <p>These are your awards. The nominees come from your library, and every result here is yours to change.</p>
+  </footer>
+</main>
+
+<div class="ins" id="ins" aria-hidden="true"></div>
+<canvas id="pageDust" aria-hidden="true"></canvas>
+
+<div class="cer" id="cer" hidden role="dialog" aria-modal="true" aria-label="Envelope reveal" tabindex="-1">
+  <div class="cer-dim"></div>
+  <div class="cer-beam" aria-hidden="true"><i></i></div>
+  <div class="cer-pool" aria-hidden="true"></div>
+  <canvas id="cerDust" aria-hidden="true"></canvas>
+  <p class="cer-top"><span class="eyebrow">The RPG Awards · Edition 2026</span><span class="cer-prog" id="cerProg"></span></p>
+  <div class="cer-stage">
+    <div class="cer-open" id="cerOpen" aria-hidden="true">
+      <div id="sealHost2"></div>
+      <h2>The RPG Awards</h2>
+      <p>Your night begins</p>
+    </div>
+    <div class="env" id="env" aria-hidden="true">
+      <div class="env-back"></div>
+      <div class="env-card"><span class="ec-a">And the award for</span><b class="ec-cat" id="ecCat">Best World</b><span class="ec-b">goes to…</span></div>
+      <svg class="env-front" viewBox="0 0 300 192" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 0 L150 112 L300 0 L300 192 L0 192 Z" fill="url(#envFront)"/>
+        <path d="M0 0 L150 112 L300 0" fill="none" stroke="url(#foil)" stroke-width="1.4" vector-effect="non-scaling-stroke"/>
+        <path d="M0 192 L118 96 M300 192 L182 96" fill="none" stroke="rgba(233,196,106,.25)" stroke-width="1" vector-effect="non-scaling-stroke"/>
+        <rect x=".5" y=".5" width="299" height="191" rx="5" fill="none" stroke="url(#foil)" stroke-width="1.4" vector-effect="non-scaling-stroke"/>
+      </svg>
+      <div class="env-flap" id="envFlap">
+        <svg viewBox="0 0 300 112" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M0 0 L300 0 L150 112 Z" fill="url(#envFlap)" stroke="url(#foil)" stroke-width="1.4" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+        </svg>
+      </div>
+      <div class="env-seal" id="envSeal"></div>
+    </div>
+    <div class="win" id="win">
+      <div class="win-rays" id="winRays" aria-hidden="true"></div>
+      <div class="win-halo" aria-hidden="true"></div>
+      <div class="win-art" id="winArt"></div>
+      <p class="win-cat" id="winCat"></p>
+      <h2 class="win-title" id="winTitle"></h2>
+      <p class="win-meta" id="winMeta"></p>
+      <p class="win-cite" id="winCite"></p>
+    </div>
+  </div>
+  <div class="cer-flash" id="cerFlash" aria-hidden="true"></div>
+  <p class="cer-hint" id="cerHint">Click or press Esc to skip</p>
+</div>
+
+<p id="nom-hint" class="sr-only">Enter crowns this nominee. Alt plus Left or Right arrow moves it. Left and Right arrows move between nominees.</p>
+<div id="live" class="sr-only" aria-live="polite"></div>
+
+<script>
+(() => {
+  const reduced = GOAT.reducedMotion();
+  const $ = (s, r = document) => r.querySelector(s);
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const POOL = [...GOAT.items, ...(GOAT.moreItems || [])];
+  const byId = (id) => POOL.find((i) => i.id === id);
+  const T = (id) => byId(id).title;
+  const live = $("#live");
+  const say = (msg, toast = true) => { live.textContent = ""; requestAnimationFrame(() => (live.textContent = msg)); if (toast) GOAT.toast(msg); };
+
+  /* real spring easing via CSS linear(), as in study A */
+  function springLinear(zeta, n = 64) {
+    const w = 6.6 / zeta, wd = w * Math.sqrt(1 - zeta * zeta), pts = [];
+    for (let k = 0; k <= n; k++) {
+      const t = k / n;
+      pts.push((1 - Math.exp(-zeta * w * t) * (Math.cos(wd * t) + (zeta * w / wd) * Math.sin(wd * t))).toFixed(4));
+    }
+    pts[n] = "1";
+    return `linear(${pts.join(",")})`;
+  }
+  const hasLinear = CSS.supports("transition-timing-function", "linear(0, 1)");
+  const SPRING = hasLinear ? springLinear(0.62) : "cubic-bezier(.34,1.56,.64,1)";
+  const SOFT = hasLinear ? springLinear(0.8) : "cubic-bezier(.16,1,.3,1)";
+  const OUT = "cubic-bezier(.16,1,.3,1)";
+
+  /* ---------- the programme ---------- */
+  const CATS = [
+    { id: "story", name: "Best Story", blurb: "Writing that stayed with you after the credits.",
+      nominees: ["de", "pst", "me2", "w3", "kotor2"], winner: "de",
+      cite: "A detective story where the case is you, and every skill in your head has an opinion." },
+    { id: "world", name: "Best World", blurb: "A place you still think about going back to.",
+      nominees: ["er", "mw", "w3", "xc", "fnv"], winner: "er",
+      cite: "Wonder per minute, unmatched. Every horizon is a promise kept." },
+    { id: "combat", name: "Best Combat", blurb: "The fights you would happily lose again.",
+      nominees: ["sek", "bb", "dos2", "ds3", "mhw"], winner: null },
+    { id: "sound", name: "Best Soundtrack", blurb: "Music you hum without meaning to.",
+      nominees: ["nier", "ff6", "ut", "p5r", "kh2"], winner: null },
+    { id: "under", name: "Most Underrated", blurb: "The one you keep pressing on friends.",
+      nominees: ["hk", "lo", "s2", "vtmb", "pent"], winner: "hk",
+      cite: "A handmade kingdom that rewards every detour with something sad and beautiful." },
+    { id: "ages", name: "Game of the Ages", blurb: "The grand prize. One game above all the others.", grand: true,
+      nominees: ["ct", "er", "bg3", "w3", "ff7"], winner: "ct",
+      cite: "No filler, thirteen endings, perfect pacing." },
+  ];
+  const NOTES = {
+    "story:pst": "Asks what can change the nature of a man, and means it.",
+    "story:me2": "The suicide mission is still the best final act in games.",
+    "world:mw": "No quest markers, giant mushrooms, and you get lost on purpose.",
+    "combat:sek": "Every parry rings like a struck bell.",
+    "sound:nier": "The music shifts with the action, so every fight sounds different.",
+    "under:lo": "Its short stories hit harder than most whole games.",
+    "ages:bg3": "The game that says yes to every stupid idea you have.",
+  };
+  const cats = CATS.map((c) => ({ ...c, runners: c.nominees.filter((id) => id !== c.winner) }));
+  const catOf = (cid) => cats.find((c) => c.id === cid);
+  const K = (cid, id) => `${cid}:${id}`;
+  const cites = new Map(), notes = new Map(Object.entries(NOTES));
+  cats.forEach((c) => c.cite && cites.set(K(c.id, c.winner), c.cite));
+
+  /* ---------- SVG: laurel wreath, medal, seal ---------- */
+  function laurelPaths({ r = 36, leaves = 8, from = 108, to = 246, fill = "url(#foil)", stroke = "none", sw = 0 } = {}) {
+    const P = (th) => [50 + r * Math.cos(th * Math.PI / 180), 50 + r * Math.sin(th * Math.PI / 180)];
+    let out = "";
+    for (const side of [1, -1]) {
+      const mx = (x) => (side === 1 ? x : 100 - x), ma = (a) => (side === 1 ? a : 180 - a);
+      const [x0, y0] = P(from), [x1, y1] = P(to);
+      out += `<path d="M${mx(x0).toFixed(2)} ${y0.toFixed(2)} A${r} ${r} 0 0 ${side === 1 ? 1 : 0} ${mx(x1).toFixed(2)} ${y1.toFixed(2)}" fill="none" stroke="${stroke === "none" ? fill : stroke}" stroke-width="1.3" stroke-linecap="round"/>`;
+      for (let k = 0; k < leaves; k++) {
+        const t = k / (leaves - 1), th = from + t * (to - from), s = 1 - t * 0.38;
+        const [px, py] = P(th);
+        for (const lean of [42, 138]) {
+          const a = th + lean; // outer leaf leans between growth tangent (th+90) and outward normal (th); inner mirrors it
+          const rx = 7 * s, ry = 2.7 * s;
+          const cx = px + rx * Math.cos(a * Math.PI / 180), cy = py + rx * Math.sin(a * Math.PI / 180);
+          out += `<ellipse cx="${mx(cx).toFixed(2)}" cy="${cy.toFixed(2)}" rx="${rx.toFixed(2)}" ry="${ry.toFixed(2)}" transform="rotate(${ma(a).toFixed(1)} ${mx(cx).toFixed(2)} ${cy.toFixed(2)})" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`;
+        }
+      }
+    }
+    return out;
+  }
+  const medalSVG = (label = "1") =>
+    `<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="47" fill="url(#sealBg)" stroke="url(#foil)" stroke-width="2"/>` +
+    `<g transform="translate(5 5) scale(.9)">${laurelPaths({ r: 37, leaves: 7 })}</g>` +
+    `<text x="50" y="50" text-anchor="middle" dominant-baseline="central" style="font:900 40px var(--font-display)" fill="url(#foil)">${label}</text></svg>`;
+  const outlineLaurel = () =>
+    `<svg viewBox="0 0 100 100" aria-hidden="true">${laurelPaths({ fill: "none", stroke: "rgba(233,196,106,.75)", sw: .8 })}` +
+    `<circle cx="50" cy="50" r="17" fill="none" stroke="rgba(233,196,106,.45)" stroke-dasharray="3 3"/></svg>`;
+  const sealSVG = () =>
+    `<svg class="seal" viewBox="0 0 200 200" role="img" aria-label="Gold seal: The RPG Awards, edition 2026">` +
+    `<defs><path id="ringPath" d="M100 100 m-79 0 a79 79 0 1 1 158 0 a79 79 0 1 1 -158 0"/></defs>` +
+    `<circle cx="100" cy="100" r="97" fill="url(#sealBg)" stroke="url(#foil)" stroke-width="2.5"/>` +
+    `<circle cx="100" cy="100" r="91" fill="none" stroke="rgba(233,196,106,.55)" stroke-width="1.6" stroke-dasharray="1.2 4.2" stroke-linecap="round"/>` +
+    `<g class="spin"><text class="ring-text"><textPath href="#ringPath" textLength="490" lengthAdjust="spacing">THE RPG AWARDS · EDITION 2026 · CURATED BY YOU ·</textPath></text></g>` +
+    `<circle cx="100" cy="100" r="66" fill="none" stroke="url(#foil)" stroke-width="1.2"/>` +
+    `<g transform="translate(36 36) scale(1.28)">${laurelPaths({ r: 38, leaves: 8 })}</g>` +
+    `<text class="mid-s" x="100" y="80" text-anchor="middle">EDITION</text>` +
+    `<text class="mid" x="100" y="113" text-anchor="middle">2026</text>` +
+    `<text class="mid-s" x="100" y="131" text-anchor="middle">G.O.A.T.</text></svg>`;
+  const ICON = {
+    crown: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 12.5h12l1-8-4 3L8 2.5 5 7.5l-4-3z" fill="currentColor"/></svg>',
+    env: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><rect x="1.5" y="3.5" width="13" height="9" rx="1.2"/><path d="M1.8 4l6.2 4.6L14.2 4"/></svg>',
+  };
+  $("#sealHost").innerHTML = sealSVG();
+  $("#sealHost2").innerHTML = sealSVG().replace('id="ringPath"', 'id="ringPath2"').replace('href="#ringPath"', 'href="#ringPath2"');
+  $("#envSeal").innerHTML = `<svg viewBox="0 0 100 100" aria-hidden="true">${laurelPaths({ fill: "rgba(70,48,8,.75)" })}</svg>`;
+
+  /* ---------- stats on the cover ---------- */
+  const unique = new Set(cats.flatMap((c) => c.nominees));
+  $("#coverStats").textContent = `${cats.length} categories · ${cats.length * 5} nominations · ${unique.size} games from your library of ${POOL.length}`;
+
+  /* ---------- table of contents ---------- */
+  const tocEl = $("#toc"), tocRows = new Map();
+  cats.forEach((c, i) => {
+    const li = document.createElement("li");
+    if (c.grand) li.className = "grand";
+    li.innerHTML = `<a href="#cat-${c.id}"><span class="toc-no">${String(i + 1).padStart(2, "0")}</span><span class="toc-name"></span>` +
+      `<span class="toc-lead" aria-hidden="true"></span><span class="toc-win"></span><span class="toc-thumb" aria-hidden="true"></span></a>`;
+    $(".toc-name", li).textContent = c.name;
+    tocEl.appendChild(li);
+    tocRows.set(c.id, li);
+  });
+  function renderToc(changed) {
+    let decided = 0;
+    cats.forEach((c) => {
+      const li = tocRows.get(c.id), win = $(".toc-win", li), th = $(".toc-thumb", li);
+      if (c.winner) decided++;
+      const was = li.dataset.w || "";
+      if (was === (c.winner || "-")) return;
+      li.dataset.w = c.winner || "-";
+      win.textContent = c.winner ? T(c.winner) : "Undecided";
+      win.classList.toggle("undecided", !c.winner);
+      th.innerHTML = "";
+      th.appendChild(c.winner ? GOAT.cover(byId(c.winner), { meta: false, title: false }) : Object.assign(document.createElement("div"), { className: "empty" }));
+      $("a", li).setAttribute("aria-label", `${c.name}: ${c.winner ? "won by " + T(c.winner) : "undecided"}`);
+      if (changed === c.id && !reduced) {
+        $("a", li).animate([{ background: "rgba(233,196,106,.22)" }, { background: "transparent" }], { duration: 1400, easing: "ease-out" });
+        th.animate([{ transform: "scale(1.5) rotate(-6deg)", opacity: 0 }, { transform: "none", opacity: 1 }], { duration: 600, easing: SPRING });
+      }
+    });
+    $("#tocCount").textContent = `${decided} of ${cats.length} decided`;
+  }
+
+  /* ---------- category sections ---------- */
+  const catsEl = $("#cats"), secs = new Map(), noms = new Map();
+
+  function nomEl(cid, id) {
+    const key = K(cid, id);
+    if (noms.has(key)) return noms.get(key);
+    const it = byId(id);
+    const li = document.createElement("li");
+    li.className = "nom";
+    li.tabIndex = 0;
+    li.dataset.cat = cid; li.dataset.id = id;
+    li.style.setProperty("--h1", it.h[0]); li.style.setProperty("--h2", it.h[1]);
+    li.setAttribute("aria-describedby", "nom-hint");
+    li.innerHTML =
+      `<div class="nom-art"><span class="nom-rank" aria-hidden="true"></span></div>` +
+      `<div class="nom-body"><h4 class="nom-title"></h4><p class="nom-meta"></p>` +
+      `<button type="button" class="crown-btn">${ICON.crown}<span>Crown</span></button></div>` +
+      `<p class="note" contenteditable="true" spellcheck="true" data-placeholder="Nominee notes"></p>`;
+    $(".nom-art", li).prepend(GOAT.cover(it, { meta: false, title: false }));
+    $(".nom-title", li).textContent = it.title;
+    $(".nom-meta", li).textContent = `${it.year} · ${it.by}`;
+    $(".crown-btn", li).setAttribute("aria-label", `Crown ${it.title} as ${catOf(cid).name}`);
+    const note = $(".note", li);
+    note.dataset.key = key;
+    note.setAttribute("aria-label", `Nominee notes for ${it.title}`);
+    noms.set(key, li);
+    return li;
+  }
+
+  function buildCat(c, i) {
+    const sec = document.createElement("section");
+    sec.className = "cat" + (c.grand ? " grand" : "");
+    sec.id = `cat-${c.id}`;
+    sec.setAttribute("aria-labelledby", `name-${c.id}`);
+    sec.innerHTML =
+      (c.grand ? `<div class="grand-lead"><span class="eyebrow">And finally, the grand prize</span><span class="gl-rule" aria-hidden="true"></span></div>` : "") +
+      `<header class="cat-head"><div class="cat-title"><p class="cat-no">No. ${String(i + 1).padStart(2, "0")} <span>/ ${String(cats.length).padStart(2, "0")}</span></p>` +
+      `<h2 class="cat-name" id="name-${c.id}"></h2><p class="cat-blurb"></p></div>` +
+      `<div class="cat-actions"><button type="button" class="btn env-btn">${ICON.env}<span>Open the envelope</span></button>` +
+      `<div class="modes-row"><span>Open category in</span><button type="button" data-mode="Mosaic">Mosaic</button><i aria-hidden="true">·</i>` +
+      `<button type="button" data-mode="Canvas">Canvas</button><i aria-hidden="true">·</i><button type="button" data-mode="Stage">Stage</button></div></div></header>` +
+      `<div class="hero"></div>` +
+      `<div class="row-head"><p class="eyebrow row-label"></p><span class="row-hint"></span></div>` +
+      `<ol class="row" aria-label="${c.name} nominees"></ol>`;
+    $(".cat-name", sec).textContent = c.name;
+    $(".cat-blurb", sec).textContent = c.blurb;
+    catsEl.appendChild(sec);
+    secs.set(c.id, { el: sec, hero: $(".hero", sec), row: $(".row", sec), envBtn: $(".env-btn", sec) });
+    $(".env-btn", sec).addEventListener("click", () => openEnvelope(c.id));
+    sec.querySelectorAll("[data-mode]").forEach((b) => b.addEventListener("click", () => GOAT.toast("In v2 each category opens in any mode; see study F")));
+  }
+
+  function renderHero(c) {
+    const { hero } = secs.get(c.id);
+    hero.dataset.w = c.winner || "";
+    if (!c.winner) {
+      hero.className = "hero empty";
+      hero.innerHTML = `<div class="hero-empty">${outlineLaurel()}<p class="he-main">Drag a nominee here to crown it</p>` +
+        `<p class="he-sub">Or focus a nominee and press Enter</p></div><div class="hero-drop" aria-hidden="true"><span>Release to crown</span></div>`;
+      return;
+    }
+    const it = byId(c.winner);
+    hero.className = "hero";
+    hero.style.setProperty("--w1", it.h[0]);
+    hero.style.setProperty("--w2", it.h[1]);
+    hero.innerHTML =
+      `<div class="hero-glow" aria-hidden="true"></div>` +
+      `<div class="hero-art">${c.grand ? '<div class="rays" aria-hidden="true"></div>' : ""}<div class="medal">${medalSVG("1")}</div></div>` +
+      `<div class="hero-head"><p class="hero-eyebrow"><span class="win-tag">Winner</span><span class="eyebrow"></span></p>` +
+      `<h3 class="hero-title"></h3><p class="hero-meta"></p></div>` +
+      `<div class="hero-body"><p class="cite" contenteditable="true" spellcheck="true" data-placeholder="Why it won"></p>` +
+      `<p class="note-label" aria-hidden="true">Nominee notes</p><p class="note" contenteditable="true" spellcheck="true" data-placeholder="Add a note about this nominee"></p></div>` +
+      `<div class="hero-drop" aria-hidden="true"><span>Release to crown</span></div>`;
+    $(".hero-art", hero).insertBefore(GOAT.cover(it, { meta: false, title: false }), $(".medal", hero));
+    $(".hero-eyebrow .eyebrow", hero).textContent = c.name;
+    $(".hero-title", hero).textContent = it.title;
+    $(".hero-meta", hero).textContent = `${it.year} · ${it.by}`;
+    const cite = $(".cite", hero), note = $(".note", hero);
+    cite.textContent = cites.get(K(c.id, c.winner)) || "";
+    cite.dataset.key = K(c.id, c.winner);
+    cite.setAttribute("aria-label", `Citation: why ${it.title} won ${c.name}`);
+    note.textContent = notes.get(K(c.id, c.winner)) || "";
+    note.dataset.key = K(c.id, c.winner);
+    note.setAttribute("aria-label", `Nominee notes for ${it.title}`);
+  }
+
+  function syncChildren(parent, want) {
+    want.forEach((el, i) => { if (parent.children[i] !== el) parent.insertBefore(el, parent.children[i] || null); });
+    while (parent.children.length > want.length) parent.lastElementChild.remove();
+  }
+
+  function renderCat(c, heroToo = true) {
+    const s = secs.get(c.id);
+    s.el.classList.toggle("undecided", !c.winner);
+    if (heroToo) renderHero(c);
+    syncChildren(s.row, c.runners.map((id) => nomEl(c.id, id)));
+    [...s.row.children].forEach((li, k) => {
+      const it = byId(li.dataset.id);
+      $(".nom-rank", li).textContent = c.winner ? k + 2 : "";
+      li.setAttribute("aria-label", c.winner ? `Runner-up, place ${k + 2}: ${it.title}, ${it.year}, ${it.by}` : `Nominee: ${it.title}, ${it.year}, ${it.by}`);
+      const note = $(".note", li);
+      if (document.activeElement !== note) note.textContent = notes.get(note.dataset.key) || "";
+      li.classList.remove("lifted", "hide-cover");
+    });
+    $(".row-label", s.el).textContent = c.winner ? "Runners-up · 2nd to 5th" : "Nominees · no winner yet";
+    $(".row-hint", s.el).textContent = c.winner ? "Drag to reorder, or onto the winner's spot to crown" : "Drag one up to crown it";
+    s.envBtn.disabled = !c.winner;
+    s.envBtn.title = c.winner ? "" : "Crown a winner first";
+  }
+
+  cats.forEach(buildCat);
+  cats.forEach((c) => renderCat(c));
+  renderToc();
+
+  /* ---------- particle dust (canvas) ---------- */
+  function makeDust(cv, fixed = true) {
+    const ctx = cv.getContext("2d");
+    let parts = [], raf = 0, dpr = 1;
+    function size() {
+      dpr = Math.min(2, window.devicePixelRatio || 1);
+      cv.width = Math.round(innerWidth * dpr); cv.height = Math.round(innerHeight * dpr);
+    }
+    function burst(x, y, w, { n = 40, hue = "gold", spread = 1.4, rise = 120 } = {}) {
+      if (reduced) return;
+      if (cv.width !== Math.round(innerWidth * dpr) || !cv.width) size();
+      for (let i = 0; i < n; i++) {
+        const gold = hue === "gold" || Math.random() < .7;
+        parts.push({
+          x: x - w * (spread - 1) / 2 + Math.random() * w * spread, y: y - Math.random() * rise,
+          vx: (Math.random() - .5) * .6, vy: -0.6 + Math.random() * 1.1,
+          life: 1, decay: .006 + Math.random() * .01, r: .6 + Math.random() * 2.1, ph: Math.random() * 6.283,
+          c: gold ? "rgba(255,227,161," : `hsla(${hue},90%,82%,`,
+        });
+      }
+      if (!raf) raf = requestAnimationFrame(tick);
+    }
+    function tick(t) {
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, cv.width, cv.height);
+      ctx.globalCompositeOperation = "lighter";
+      parts = parts.filter((p) => p.life > 0);
+      for (const p of parts) {
+        p.vy = Math.min(p.vy + .012, 1.3);
+        p.x += p.vx + Math.sin(t / 650 + p.ph) * .25; p.y += p.vy; p.life -= p.decay;
+        const a = Math.max(0, p.life) * (.55 + .45 * Math.sin(t / 80 + p.ph * 3));
+        ctx.fillStyle = p.c + (a * .18).toFixed(3) + ")"; ctx.beginPath(); ctx.arc(p.x, p.y, p.r * 3.6, 0, 6.283); ctx.fill();
+        ctx.fillStyle = p.c + a.toFixed(3) + ")"; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.283); ctx.fill();
+      }
+      raf = parts.length ? requestAnimationFrame(tick) : 0;
+      if (!raf) ctx.clearRect(0, 0, cv.width, cv.height);
+    }
+    function clear() { parts = []; }
+    size();
+    return { size, burst, clear };
+  }
+  const pageDust = makeDust($("#pageDust"));
+  const cerDust = makeDust($("#cerDust"));
+  addEventListener("resize", () => { pageDust.size(); if (cer.on) cerDust.size(); });
+
+  /* ---------- motion helpers ---------- */
+  function flyCover(item, from, toEl, { duration = 720, delay = 0, easing = SPRING } = {}) {
+    if (reduced || !from || !toEl) return;
+    const to = toEl.getBoundingClientRect();
+    if (!to.width) return;
+    const wrap = document.createElement("div");
+    wrap.className = "fly";
+    wrap.style.width = from.width + "px";
+    wrap.appendChild(GOAT.cover(item, { meta: false, title: false }));
+    document.body.appendChild(wrap);
+    toEl.style.visibility = "hidden";
+    const a = wrap.animate([
+      { transform: `translate(${from.left}px, ${from.top}px)` },
+      { transform: `translate(${to.left}px, ${to.top}px) scale(${to.width / from.width})` },
+    ], { duration, delay, easing, fill: "both" });
+    a.onfinish = a.oncancel = () => { toEl.style.visibility = ""; wrap.remove(); };
+  }
+  function rectsOf(row) { const m = new Map(); for (const el of row.children) m.set(el, el.getBoundingClientRect()); return m; }
+  function flipRow(row, first, skip = new Set()) {
+    if (reduced) return;
+    for (const el of row.children) {
+      if (skip.has(el)) continue;
+      const f = first.get(el), l = el.getBoundingClientRect();
+      if (!f) { el.animate([{ opacity: 0, transform: "translateY(12px) scale(.96)" }, { opacity: 1, transform: "none" }], { duration: 420, easing: OUT }); continue; }
+      const dx = f.left - l.left, dy = f.top - l.top, s = l.width ? f.width / l.width : 1;
+      if (Math.abs(dx) < .5 && Math.abs(dy) < .5 && Math.abs(s - 1) < .004) continue;
+      el.animate([{ transformOrigin: "0 0", transform: `translate(${dx}px, ${dy}px) scale(${s})` }, { transformOrigin: "0 0", transform: "none" }], { duration: 620, easing: SPRING });
+    }
+  }
+  function goldBurstAt(el, n = 46) {
+    if (reduced || !el) return;
+    const r = el.getBoundingClientRect();
+    pageDust.burst(r.left, r.top + r.height * .35, r.width, { n, hue: "gold", spread: 1.8, rise: r.height * .5 });
+  }
+  function pulseHero(cid) {
+    const hero = secs.get(cid).hero, cover = $(".hero-art .cover", hero);
+    if (reduced || !cover) return;
+    cover.animate([{ boxShadow: "0 0 0 2px var(--gold), 0 0 70px 8px var(--gold-glow)" }, { boxShadow: "0 0 0 0 transparent, 0 0 0 0 transparent" }], { duration: 1300, easing: "ease-out" });
+  }
+
+  /* ---------- state operations (shared by drag, buttons and keys) ---------- */
+  function crown(cid, id, fromRect) {
+    const c = catOf(cid);
+    if (c.winner === id || !c.runners.includes(id)) return;
+    const s = secs.get(cid);
+    const old = c.winner;
+    const oldHeroCover = old ? $(".hero-art .cover", s.hero) : null;
+    const oldHeroRect = oldHeroCover ? oldHeroCover.getBoundingClientRect() : null;
+    const src = fromRect || $(".cover", nomEl(cid, id)).getBoundingClientRect();
+    const first = rectsOf(s.row);
+    const wasFocused = document.activeElement && document.activeElement.closest && document.activeElement.closest(".nom") === nomEl(cid, id);
+
+    c.runners.splice(c.runners.indexOf(id), 1);
+    if (old) c.runners.unshift(old);
+    c.winner = id;
+    renderCat(c, true);
+    renderToc(cid);
+
+    const oldCard = old ? nomEl(cid, old) : null;
+    flipRow(s.row, first, new Set(oldCard ? [oldCard] : []));
+    if (!reduced) {
+      const heroCover = $(".hero-art .cover", s.hero);
+      flyCover(byId(id), src, heroCover, { duration: 760 });
+      [".hero-head", ".hero-body"].forEach((sel, k) =>
+        $(sel, s.hero).animate([{ opacity: 0, transform: "translateY(14px)" }, { opacity: 1, transform: "none" }], { duration: 560, delay: 220 + k * 80, easing: OUT, fill: "backwards" }));
+      $(".medal", s.hero).animate([{ opacity: 0, transform: "scale(.2) rotate(-90deg)" }, { opacity: 1, transform: "none" }], { duration: 700, delay: 480, easing: SPRING, fill: "backwards" });
+      if (oldCard && oldHeroRect) {
+        flyCover(byId(old), oldHeroRect, $(".cover", oldCard), { duration: 760 });
+        [$(".nom-body", oldCard), $(".note", oldCard)].forEach((el) => el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 400, delay: 380, fill: "backwards" }));
+        oldCard.animate([{ background: "rgba(178,190,255,0)", borderColor: "rgba(200,210,255,0)" }, { background: "rgba(178,190,255,.055)", borderColor: "rgba(200,210,255,.13)" }], { duration: 500, delay: 300, fill: "backwards" });
+      }
+      setTimeout(() => goldBurstAt($(".hero-art", s.hero), c.grand ? 90 : 50), 520);
+    }
+    if (wasFocused) {
+      const next = oldCard || s.row.children[0];
+      if (next) next.focus({ preventScroll: true });
+    }
+    say(old ? `${T(id)} takes ${c.name}. ${T(old)} moves to runner-up #2.` : `${T(id)} takes ${c.name}.`);
+  }
+
+  function moveTo(cid, id, idx) {
+    const c = catOf(cid), from = c.runners.indexOf(id);
+    idx = clamp(idx, 0, c.runners.length - 1);
+    if (from === idx || from < 0) return false;
+    const row = secs.get(cid).row, first = rectsOf(row);
+    c.runners.splice(from, 1);
+    c.runners.splice(idx, 0, id);
+    renderCat(c, false);
+    flipRow(row, first);
+    say(c.winner ? `${T(id)} moved to place ${idx + 2} in ${c.name}.` : `${T(id)} moved to position ${idx + 1} of the nominees.`, false);
+    return true;
+  }
+
+  /* ---------- drag and drop (Pointer Events) ---------- */
+  const ins = $("#ins");
+  let press = null, drag = null, lastDragEnd = -Infinity;
+
+  document.addEventListener("pointerdown", (e) => {
+    if (drag || cer.on || (e.pointerType === "mouse" && e.button !== 0)) return;
+    if (e.target.closest("button, [contenteditable='true'], a")) return;
+    const nom = e.target.closest(".nom");
+    if (!nom) return;
+    press = { el: nom, cid: nom.dataset.cat, id: nom.dataset.id, x: e.clientX, y: e.clientY, pid: e.pointerId, type: e.pointerType, last: e };
+    if (e.pointerType === "touch") press.timer = setTimeout(() => { if (press) startDrag(press.last); }, 260);
+  });
+  document.addEventListener("pointermove", (e) => {
+    if (press && !drag && e.pointerId === press.pid) {
+      press.last = e;
+      const d = Math.hypot(e.clientX - press.x, e.clientY - press.y);
+      if (press.type === "touch") { if (d > 10) { clearTimeout(press.timer); press = null; } }
+      else if (d > 5) startDrag(e);
+    }
+    if (drag && e.pointerId === drag.pid) { drag.px = e.clientX; drag.py = e.clientY; }
+  });
+  document.addEventListener("pointerup", (e) => {
+    if (press) { clearTimeout(press.timer); press = null; }
+    if (drag && e.pointerId === drag.pid) { drag.px = e.clientX; drag.py = e.clientY; drop(); }
+  });
+  document.addEventListener("pointercancel", (e) => {
+    if (press) { clearTimeout(press.timer); press = null; }
+    if (drag && e.pointerId === drag.pid) cancelDrag();
+  });
+  document.addEventListener("touchmove", (e) => { if (drag) e.preventDefault(); }, { passive: false });
+  document.addEventListener("click", (e) => { if (performance.now() - lastDragEnd < 300) { e.stopPropagation(); e.preventDefault(); } }, true);
+
+  function startDrag(e) {
+    const p = press; press = null; clearTimeout(p.timer);
+    document.getSelection().removeAllRanges();
+    const c = catOf(p.cid), s = secs.get(p.cid), item = byId(p.id);
+    const sx = scrollX, sy = scrollY;
+    const toDoc = (r) => ({ left: r.left + sx, top: r.top + sy, right: r.right + sx, bottom: r.bottom + sy, width: r.width, height: r.height });
+    const kids = [...s.row.children];
+    const R = kids.map((el) => toDoc(el.getBoundingClientRect()));
+    const srcIdx = kids.indexOf(p.el);
+    const single = R.length > 1 && R.every((r) => Math.abs(r.left - R[0].left) < 2);
+    const gap = R.length > 1 ? (single ? R[1].top - R[0].bottom : (R[1].top === R[0].top ? R[1].left - R[0].right : 14)) : 14;
+    const srcCover = $(".cover", p.el).getBoundingClientRect();
+
+    const gw = innerWidth < 600 ? 92 : 118;
+    const ghost = document.createElement("div");
+    ghost.className = "ghost";
+    ghost.style.width = gw + "px";
+    ghost.style.setProperty("--g-glow", GOAT.glow(item, .6));
+    ghost.innerHTML = `<div class="g-tilt"><div class="g-lift"><span class="g-badge"></span></div></div>`;
+    const tilt = ghost.firstChild, lift = tilt.firstChild;
+    lift.prepend(GOAT.cover(item, { meta: false }));
+    document.body.appendChild(ghost);
+    const ox = clamp((e.clientX - srcCover.left) * gw / srcCover.width, 12, gw - 12);
+    const oy = clamp((e.clientY - srcCover.top) * gw / srcCover.width, 12, gw * 4 / 3 - 12);
+    if (!reduced) lift.animate([{ transform: `translate(${srcCover.left - (e.clientX - ox)}px, ${srcCover.top - (e.clientY - oy)}px) scale(${srcCover.width / gw})` }, { transform: "scale(1.06)" }], { duration: 380, easing: SPRING });
+
+    drag = { cid: p.cid, id: p.id, item, el: p.el, pid: p.pid, c, s, R, kids, srcIdx, single, gap,
+      hero: toDoc(s.hero.getBoundingClientRect()), rowR: toDoc(s.row.getBoundingClientRect()),
+      ghost, tilt, lift, badge: $(".g-badge", ghost), gw, ox, oy, px: e.clientX, py: e.clientY, lpx: e.clientX, vx: 0, rot: 0, key: "", target: null };
+    try { p.el.setPointerCapture(p.pid); } catch (_) {}
+    p.el.classList.add("lifted");
+    s.hero.classList.add("armed");
+    document.body.classList.add("holding");
+    drag.raf = requestAnimationFrame(tick);
+  }
+
+  function tick() {
+    const d = drag;
+    if (!d) return;
+    d.vx += ((d.px - d.lpx) - d.vx) * .25; d.lpx = d.px;
+    if (!reduced) d.rot += (clamp(d.vx * .6, -10, 10) - d.rot) * .2;
+    d.ghost.style.transform = `translate3d(${d.px - d.ox}px, ${d.py - d.oy}px, 0)`;
+    d.tilt.style.transform = `rotate(${d.rot.toFixed(2)}deg)`;
+    // edge auto-scroll
+    const Z = 80, top = 56 + Z, bot = innerHeight - Z;
+    let v = 0;
+    if (d.py < top) v = -Math.pow(Math.min(1, (top - d.py) / Z), 2) * 22;
+    else if (d.py > bot) v = Math.pow(Math.min(1, (d.py - bot) / Z), 2) * 22;
+    if (v) scrollBy(0, v);
+    applyTarget(hitTest());
+    d.raf = requestAnimationFrame(tick);
+  }
+
+  function hitTest() {
+    const d = drag, x = d.px + scrollX, y = d.py + scrollY, h = d.hero, pad = 14;
+    if (x >= h.left - pad && x <= h.right + pad && y >= h.top - pad && y <= h.bottom + pad) return { kind: "crown" };
+    const rr = d.rowR;
+    if (x >= rr.left - 40 && x <= rr.right + 40 && y >= rr.top - 50 && y <= rr.bottom + 50) {
+      // insertion index among the other cards (source excluded)
+      const others = d.R.filter((_, k) => k !== d.srcIdx);
+      let i = others.length;
+      for (let k = 0; k < others.length; k++) {
+        const r = others[k];
+        const before = d.single ? y < r.top + r.height / 2 : (y < r.top - d.gap / 2 || (y <= r.bottom + d.gap / 2 && x < r.left + r.width / 2));
+        if (before) { i = k; break; }
+      }
+      return { kind: "row", i };
+    }
+    return { kind: "none" };
+  }
+
+  function applyTarget(t) {
+    const d = drag, key = t.kind + (t.i ?? "");
+    if (key === d.key) return;
+    d.key = key; d.target = t;
+    d.s.hero.classList.toggle("target", t.kind === "crown");
+    const b = d.badge;
+    b.classList.toggle("muted", t.kind !== "crown");
+    if (t.kind === "crown") b.textContent = d.c.winner ? "Crown" : "Crown winner";
+    else if (t.kind === "row") b.textContent = t.i === d.srcIdx ? "Stay" : d.c.winner ? `Place ${t.i + 2}` : "Move";
+    else b.textContent = "Cancel";
+    if (t.kind !== "row") { ins.classList.remove("show"); return; }
+    // insertion line between cards, measured from cached geometry (document coords -> viewport)
+    const others = d.R.filter((_, k) => k !== d.srcIdx);
+    const sx = scrollX, sy = scrollY;
+    let x, y, w, hgt;
+    if (d.single) {
+      const ref = others[t.i] || others[others.length - 1], after = !others[t.i];
+      y = (after ? ref.bottom + d.gap / 2 : ref.top - d.gap / 2) - 1.5; x = ref.left; w = ref.width; hgt = 3;
+      ins.className = "ins h show";
+    } else {
+      const ref = others[t.i] || others[others.length - 1], after = !others[t.i];
+      x = (after ? ref.right + d.gap / 2 : ref.left - d.gap / 2) - 1.5; y = ref.top; w = 3; hgt = ref.height;
+      ins.className = "ins v show";
+    }
+    d.ins = { x, y };
+    ins.style.width = w + "px"; ins.style.height = hgt + "px";
+    ins.style.transform = `translate(${x - sx}px, ${y - sy}px)`;
+  }
+  // keep the line glued to the page while auto-scrolling
+  addEventListener("scroll", () => { if (drag && drag.ins && ins.classList.contains("show")) ins.style.transform = `translate(${drag.ins.x - scrollX}px, ${drag.ins.y - scrollY}px)`; }, { passive: true });
+
+  function endHolding(d) {
+    cancelAnimationFrame(d.raf);
+    try { d.el.releasePointerCapture(d.pid); } catch (_) {}
+    document.body.classList.remove("holding");
+    d.s.hero.classList.remove("target", "armed");
+    ins.classList.remove("show");
+    lastDragEnd = performance.now();
+    drag = null;
+  }
+
+  function drop() {
+    const d = drag, t = hitTest();
+    if (t.kind === "none") return cancelDrag();
+    endHolding(d);
+    const gr = $(".cover", d.ghost).getBoundingClientRect();
+    d.ghost.remove();
+    d.el.classList.remove("lifted");
+    if (t.kind === "crown") { crown(d.cid, d.id, gr); return; }
+    const others = d.c.runners.filter((x) => x !== d.id);
+    const idx = t.i;
+    const first = rectsOf(d.s.row);
+    if (idx !== d.srcIdx) {
+      d.c.runners = [...others.slice(0, idx), d.id, ...others.slice(idx)];
+      renderCat(d.c, false);
+      say(d.c.winner ? `${T(d.id)} moved to place ${idx + 2}.` : `${T(d.id)} moved among the nominees.`, false);
+    }
+    flipRow(d.s.row, first, new Set([d.el]));
+    flyCover(d.item, gr, $(".cover", d.el), { duration: 520 });
+    if (!reduced) d.el.animate([{ opacity: .4 }, { opacity: 1 }], { duration: 300 });
+  }
+
+  function cancelDrag() {
+    const d = drag;
+    if (!d) return;
+    endHolding(d);
+    const gr = $(".cover", d.ghost).getBoundingClientRect();
+    d.ghost.remove();
+    d.el.classList.remove("lifted");
+    flyCover(d.item, gr, $(".cover", d.el), { duration: 480, easing: OUT });
+  }
+
+  /* ---------- buttons ---------- */
+  catsEl.addEventListener("click", (e) => {
+    const b = e.target.closest(".crown-btn");
+    if (!b) return;
+    const li = b.closest(".nom");
+    crown(li.dataset.cat, li.dataset.id);
+  });
+
+  /* ---------- keyboard ---------- */
+  document.addEventListener("keydown", (e) => {
+    if (cer.on) return cerKey(e);
+    if (drag && e.key === "Escape") { e.preventDefault(); cancelDrag(); return; }
+    const t = e.target;
+    if (t.isContentEditable) {
+      if (e.key === "Enter" || e.key === "Escape") { e.preventDefault(); t.blur(); }
+      return;
+    }
+    if (drag || !t.classList || !t.classList.contains("nom")) return;
+    const cid = t.dataset.cat, id = t.dataset.id, c = catOf(cid), i = c.runners.indexOf(id);
+    const back = e.key === "ArrowLeft" || e.key === "ArrowUp", fwd = e.key === "ArrowRight" || e.key === "ArrowDown";
+    if (e.key === "Enter") { e.preventDefault(); crown(cid, id); }
+    else if (e.altKey && (back || fwd)) {
+      e.preventDefault();
+      moveTo(cid, id, i + (back ? -1 : 1));
+      t.focus({ preventScroll: true });
+    } else if (back || fwd) {
+      const n = t[back ? "previousElementSibling" : "nextElementSibling"];
+      if (n) { e.preventDefault(); n.focus(); }
+    }
+  });
+
+  /* ---------- in-place editing ---------- */
+  document.addEventListener("input", (e) => {
+    const el = e.target;
+    if (!el.dataset || !el.dataset.key) return;
+    if (!el.textContent.trim()) el.innerHTML = "";
+    (el.classList.contains("cite") ? cites : notes).set(el.dataset.key, el.textContent.trim());
+  });
+  document.addEventListener("paste", (e) => {
+    if (!e.target.closest || !e.target.closest('[contenteditable="true"]')) return;
+    e.preventDefault();
+    const text = (e.clipboardData || window.clipboardData).getData("text/plain").replace(/\s+/g, " ");
+    document.execCommand("insertText", false, text);
+  });
+
+  /* ---------- the envelope ceremony ---------- */
+  const cer = { on: false, el: $("#cer"), anims: [], timers: [], wakers: [], step: false, abort: false, night: false, returnFocus: null };
+  const env = $("#env"), envFlap = $("#envFlap"), envSeal = $("#envSeal"), envCard = $(".env-card", env), envFront = $(".env-front", env);
+  const win = $("#win"), beam = $(".cer-beam", cer.el), pool = $(".cer-pool", cer.el), flash = $("#cerFlash"), cerOpen = $("#cerOpen");
+  const cerHint = $("#cerHint"), cerProg = $("#cerProg");
+
+  const A = (el, kf, o) => { const a = el.animate(kf, { fill: "both", easing: OUT, ...o }); cer.anims.push(a); return a; };
+  const later = (fn, ms) => cer.timers.push(setTimeout(fn, ms));
+  function wait(ms) {
+    return new Promise((res) => {
+      if (cer.step || cer.abort) return res();
+      cer.timers.push(setTimeout(res, ms));
+      cer.wakers.push(res);
+    });
+  }
+  function wakeAll() { cer.timers.forEach(clearTimeout); cer.timers = []; cer.wakers.forEach((f) => f()); cer.wakers = []; }
+  function clearStage() {
+    cer.anims.forEach((a) => a.cancel()); cer.anims = [];
+    cer.timers.forEach(clearTimeout); cer.timers = [];
+    cerDust.clear();
+    [env, win, cerOpen, beam, pool, flash, envFlap, envSeal, envCard, $("#winRays")].forEach((el) => { el.style.opacity = ""; el.style.transform = ""; });
+    envFlap.style.zIndex = "";
+  }
+
+  function openCer(night) {
+    cer.on = true; cer.night = night; cer.step = false; cer.abort = false;
+    cer.returnFocus = document.activeElement;
+    cer.el.hidden = false;
+    cerDust.size();
+    cerHint.textContent = night ? "Click for the next award · Esc ends the night" : "Click or press Esc to skip";
+    cerProg.textContent = "";
+    cer.el.focus({ preventScroll: true });
+    if (!reduced) $(".cer-dim", cer.el).animate([{ opacity: 0 }, { opacity: 1 }], { duration: 260, easing: "ease-out" });
+  }
+  function closeCer(fade) {
+    const done = () => {
+      clearStage();
+      cer.el.hidden = true; cer.on = false;
+      const f = cer.returnFocus;
+      if (f && f.isConnected && f.focus) f.focus({ preventScroll: true });
+    };
+    if (fade && !reduced) {
+      const a = cer.el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 220, easing: "ease-in" });
+      a.onfinish = done;
+    } else done();
+  }
+  function cerKey(e) {
+    if (e.key === "Escape") { e.preventDefault(); cer.abort = true; wakeAll(); }
+    else if (e.key === " " || e.key === "Enter" || e.key === "ArrowRight") { e.preventDefault(); cer.night ? (cer.step = true) : (cer.abort = true); wakeAll(); }
+    else if (e.key === "Tab") e.preventDefault();
+  }
+  cer.el.addEventListener("click", () => { if (!cer.on) return; cer.night ? (cer.step = true) : (cer.abort = true); wakeAll(); });
+
+  function fillWinner(c, final) {
+    const it = byId(c.winner);
+    const art = $("#winArt");
+    art.innerHTML = "";
+    art.appendChild(GOAT.cover(it, { meta: false, title: false }));
+    const m = document.createElement("div");
+    m.className = "win-medal"; m.innerHTML = medalSVG("1");
+    art.appendChild(m);
+    win.classList.toggle("final", !!final);
+    win.style.setProperty("--win-glow", GOAT.glow(it, .55));
+    $("#winCat").textContent = c.name;
+    $("#winTitle").textContent = it.title;
+    $("#winMeta").textContent = `${it.year} · ${it.by}`;
+    $("#winCite").textContent = cites.get(K(c.id, c.winner)) || "";
+    $("#ecCat").textContent = c.name;
+    return it;
+  }
+
+  /* one award: envelope rises, opens, the line holds a beat, the winner rises. 2.95s in all. */
+  async function revealOne(c, { final = false, fadeOut = true } = {}) {
+    clearStage();
+    cer.step = false;
+    const it = fillWinner(c, final);
+    say(`And the award for ${c.name} goes to ${it.title}.`, false);
+    if (reduced) {
+      env.style.opacity = 0; win.style.opacity = 1; beam.style.opacity = .9; pool.style.opacity = 1;
+      await wait(cer.night ? 1800 : 2400);
+      return;
+    }
+    // 0 – 0.95s: envelope rises and opens
+    A(beam, [{ opacity: 0 }, { opacity: .35 }], { duration: 500 });
+    A(env, [{ opacity: 0, transform: "translateY(120px) rotate(-3deg) scale(.92)" }, { opacity: 1, transform: "none" }], { duration: 560, easing: SPRING });
+    A(envSeal, [{ opacity: 1, transform: "none" }, { opacity: 0, transform: "scale(1.4)" }], { duration: 200, delay: 520 });
+    A(envFlap, [{ transform: "perspective(700px) rotateX(0deg)" }, { transform: "perspective(700px) rotateX(180deg)" }], { duration: 420, delay: 600, easing: "cubic-bezier(.5,0,.3,1)" });
+    later(() => { envFlap.style.zIndex = 1; }, 800);
+    // 0.9 – 1.3s: the card slides up: "And the award for … goes to…"
+    A(envCard, [{ transform: "none" }, { transform: "translateY(-64%)" }], { duration: 440, delay: 900, easing: SOFT });
+    // hold a beat, then 1.75s: envelope sinks away
+    A(env, [{ opacity: 1, transform: "none" }, { opacity: 0, transform: "translateY(70px) scale(.94)" }], { duration: 300, delay: 1750, easing: "ease-in", fill: "forwards" });
+    // 1.85s: spotlight snaps on, the winner rises
+    A(beam, [{ opacity: .35 }, { opacity: 1 }], { duration: 300, delay: 1850, fill: "forwards" });
+    A(pool, [{ opacity: 0 }, { opacity: 1 }], { duration: 400, delay: 1850 });
+    A(win, [{ opacity: 0, transform: "translateY(110px) scale(.9)", filter: "brightness(2.4)" }, { opacity: 1, transform: "none", filter: "brightness(1)" }], { duration: 640, delay: 1850, easing: SPRING });
+    A($(".win-medal", win), [{ opacity: 0, transform: "scale(.2) rotate(-120deg)" }, { opacity: 1, transform: "none" }], { duration: 560, delay: 2150, easing: SPRING });
+    if (final) {
+      A($("#winRays"), [{ opacity: 0, transform: "rotate(0deg) scale(.4)" }, { opacity: 1, transform: "rotate(12deg) scale(1.05)", offset: .4 }, { opacity: .75, transform: "rotate(30deg) scale(1)" }], { duration: 1100, delay: 1850 });
+      A(flash, [{ opacity: 0 }, { opacity: 1, offset: .15 }, { opacity: 0 }], { duration: 900, delay: 1880, easing: "ease-out", fill: "none" });
+    }
+    later(() => {
+      const r = $("#winArt").getBoundingClientRect();
+      cerDust.burst(r.left, r.top + r.height * .2, r.width, { n: final ? 190 : 70, hue: it.h[1], spread: final ? 3.4 : 2, rise: final ? 260 : 140 });
+    }, 2050);
+    if (fadeOut) A(win, [{ opacity: 1 }, { opacity: 0, transform: "translateY(-12px)" }], { duration: 240, delay: 2710, easing: "ease-in", fill: "forwards" });
+    await wait(2950);
+  }
+
+  async function openEnvelope(cid) {
+    const c = catOf(cid);
+    if (cer.on || drag || !c.winner) return;
+    openCer(false);
+    await revealOne(c, { final: !!c.grand, fadeOut: false });
+    closeCer(!cer.abort);
+    pulseHero(cid);
+  }
+
+  async function presentNight() {
+    if (cer.on || drag) return;
+    const decided = cats.filter((c) => c.winner);
+    if (!decided.length) { GOAT.toast("Crown at least one winner first."); return; }
+    openCer(true);
+    // opening title card
+    if (!reduced) {
+      A(cerOpen, [{ opacity: 0, transform: "scale(.94)" }, { opacity: 1, transform: "none", offset: .35 }, { opacity: 1, offset: .8 }, { opacity: 0, transform: "scale(1.02)" }], { duration: 1500 });
+      A(beam, [{ opacity: 0 }, { opacity: .5 }, { opacity: 0 }], { duration: 1500 });
+    } else cerOpen.style.opacity = 1;
+    say("Presenting the night. Click for the next award, Escape ends the night.", false);
+    await wait(reduced ? 1200 : 1500);
+    for (let k = 0; k < decided.length && !cer.abort; k++) {
+      const c = decided[k], last = k === decided.length - 1;
+      cerProg.textContent = `Award ${k + 1} of ${decided.length}`;
+      await revealOne(c, { final: last && !!c.grand, fadeOut: !last });
+    }
+    const aborted = cer.abort;
+    closeCer(!aborted);
+    const left = cats.length - decided.length;
+    const lastC = decided[decided.length - 1];
+    secs.get(lastC.id).el.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+    setTimeout(() => pulseHero(lastC.id), 450);
+    GOAT.toast(aborted ? "Night ended early." : left ? `That's the night. ${left} ${left === 1 ? "category is" : "categories are"} still undecided.` : "That's the night. Every award has a winner.");
+  }
+  $("#presentBtn").addEventListener("click", presentNight);
+
+  // test/debug hook: lets the verification script crown and inspect without reaching into closures
+  window.__awards = { cats, crown, moveTo, openEnvelope, presentNight, get ceremonyOpen() { return cer.on; } };
+})();
+</script>
+</body>
+</html>
