@@ -15,6 +15,7 @@
     transition: --a1 1.4s var(--ease-out), --a2 1.4s var(--ease-out);
     --rule: rgba(200, 210, 255, .08);
     --wrap: min(1400px, calc(100% - 32px));
+    --noise: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='1.4 0 0 0 -.2  1.4 0 0 0 -.2  1.4 0 0 0 -.2  0 0 0 0 1'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
   }
   [hidden] { display: none !important; }
   body { overflow-x: clip; }
@@ -153,19 +154,9 @@
   .status .count { color: var(--fg-muted); white-space: nowrap; }
   .status .prog { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: rgba(255, 255, 255, .04); }
   .status .prog i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, hsl(var(--a1) 80% 60%), hsl(var(--a2) 85% 65%)); box-shadow: 0 0 12px hsl(var(--a2) 85% 60% / .8); transition: width .4s var(--ease-out); }
-  .ind { position: relative; width: 18px; height: 18px; flex: none; align-self: center; }
-  .ind::before { content: ""; position: absolute; inset: 0; border-radius: 50%; }
-  .ind i { position: absolute; bottom: 2px; width: 3px; border-radius: 2px; background: var(--gold); opacity: 0; }
-  .ind i:nth-child(1) { left: 2px; } .ind i:nth-child(2) { left: 7.5px; } .ind i:nth-child(3) { left: 13px; }
-  [data-phase="search"] .ind::before { border: 2px solid rgba(233, 196, 106, .2); border-top-color: var(--gold); animation: spin .8s linear infinite; }
-  [data-phase="found"] .ind i { opacity: 1; height: 12px; transform-origin: bottom; animation: bars .7s ease-in-out infinite alternate; }
-  [data-phase="found"] .ind i:nth-child(2) { animation-delay: -.25s; } [data-phase="found"] .ind i:nth-child(3) { animation-delay: -.5s; }
-  [data-phase="art"] .ind::before { inset: 3px; background: conic-gradient(from 0deg, hsl(var(--a1) 85% 60%), hsl(var(--a2) 85% 65%), hsl(var(--a1) 85% 60%)); animation: spin 2.4s linear infinite, pulse 1.2s ease-in-out infinite alternate; box-shadow: 0 0 14px hsl(var(--a2) 85% 60% / .8); }
-  [data-phase="done"] .ind::before { background: rgba(233, 196, 106, .16); border: 1px solid rgba(233, 196, 106, .55); }
-  [data-phase="done"] .ind::after { content: ""; position: absolute; left: 6.5px; top: 4px; width: 4px; height: 8px; border: solid var(--gold-hi); border-width: 0 2px 2px 0; transform: rotate(45deg); }
-  @keyframes spin { to { rotate: 360deg; } }
-  @keyframes bars { from { transform: scaleY(.25); } to { transform: scaleY(1); } }
-  @keyframes pulse { from { scale: .8; } to { scale: 1.05; } }
+  /* the AI's presence: one living orb, drawn by the shared rAF loop */
+  .orb { display: block; flex: none; align-self: center; width: 40px; height: 40px; margin: -8px -4px -8px -8px; pointer-events: none; }
+  .status { padding-left: 14px; }
 
   .pool-layout { display: grid; grid-template-columns: minmax(0, 1fr) 312px; gap: 24px; align-items: start; margin-top: 18px; }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(176px, 1fr)); gap: 16px; align-content: start; min-width: 0; }
@@ -190,9 +181,44 @@
     animation: shimmer 1.3s linear infinite;
   }
   .c-art .cover { aspect-ratio: 5 / 4; border-radius: var(--r-sm); z-index: 1;
-    transition: opacity .9s var(--ease-out), filter 1.6s var(--ease-out), transform 1.6s var(--ease-out); }
-  .cand[data-stage="skel"] .c-art .cover { opacity: 0; filter: grayscale(1) brightness(.35) blur(12px); transform: scale(1.12); }
-  .cand[data-stage="dev"] .c-art .cover { filter: grayscale(.2) brightness(.85) blur(1px); transform: scale(1.03); }
+    transition: opacity .7s var(--ease-out), filter 2.1s cubic-bezier(.35, .05, .25, 1), transform 2.1s var(--ease-out); }
+  /* a print in the developer tray: murky, sepia, low contrast, then the hues bloom in */
+  .cand[data-stage="skel"] .c-art .cover { opacity: 0; filter: brightness(.35) sepia(.8) saturate(.2) contrast(.6); transform: scale(1.08); }
+  .cand[data-stage="dev"] .c-art .cover { filter: brightness(.6) sepia(.65) saturate(.3) contrast(.62); transform: scale(1.04); }
+  .c-art .dv { position: absolute; inset: 0; z-index: 2; pointer-events: none; opacity: 0; }
+  .c-art .bloom { mix-blend-mode: screen;
+    background: radial-gradient(42% 48% at 28% 64%, hsl(var(--h1) 95% 62% / .95), transparent 70%), radial-gradient(40% 44% at 74% 32%, hsl(var(--h2) 100% 70% / .9), transparent 70%); }
+  .c-art .leak { mix-blend-mode: screen; inset: -10% -40%;
+    background: linear-gradient(var(--lk, 104deg), transparent 34%, hsl(14 100% 56% / .7) 45%, hsl(38 100% 70% / .55) 52%, transparent 64%); }
+  .c-art .grn { inset: -20px; mix-blend-mode: overlay; background: var(--noise) 0 0 / 140px 140px; }
+  .cand:is([data-stage="dev"], [data-stage="text"], [data-stage="why"]) .bloom { animation: bloom 1.9s var(--ease-out) both; }
+  .cand:is([data-stage="dev"], [data-stage="text"], [data-stage="why"]) .leak { animation: leak 1.5s cubic-bezier(.3, .1, .3, 1) .12s both; }
+  .cand:is([data-stage="dev"], [data-stage="text"], [data-stage="why"]) .grn { animation: grainOut 1.8s ease-out both, grainJit .5s steps(5) 4; }
+  @keyframes bloom { 0% { opacity: 0; transform: scale(.3); } 26% { opacity: .95; } 100% { opacity: 0; transform: scale(1.55); } }
+  @keyframes leak { 0% { opacity: 0; transform: translateX(-38%); } 30% { opacity: .95; } 100% { opacity: 0; transform: translateX(34%); } }
+  @keyframes grainOut { 0% { opacity: .95; } 100% { opacity: 0; } }
+  @keyframes grainJit { 20% { transform: translate(-7px, 4px); } 40% { transform: translate(5px, -6px); } 60% { transform: translate(-3px, -8px); } 80% { transform: translate(8px, 3px); } }
+
+  /* keep: a gold edge sweeps round the card while a chime ripples the cover */
+  .c-edge { position: absolute; inset: -1px; z-index: 5; border-radius: inherit; padding: 1.5px; overflow: hidden; pointer-events: none; opacity: 0;
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+  .c-edge::before { content: ""; position: absolute; left: 50%; top: 50%; width: 260%; aspect-ratio: 1; translate: -50% -50%;
+    background: conic-gradient(from 0deg, transparent 0 58%, rgba(255, 227, 161, .25) 70%, #fff6dc 84%, var(--gold) 88%, transparent 94%); }
+  .cand.chime .c-edge { animation: edgeFade 1.05s ease-out both; }
+  .cand.chime .c-edge::before { animation: edgeSpin 1.05s cubic-bezier(.3, .1, .2, 1) both; }
+  @keyframes edgeFade { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
+  @keyframes edgeSpin { from { transform: rotate(-90deg); } to { transform: rotate(300deg); } }
+  .chime-r { position: absolute; z-index: 3; left: 50%; top: 50%; width: 40px; height: 40px; margin: -20px; border-radius: 50%; pointer-events: none; opacity: 0;
+    border: 1.5px solid rgba(255, 227, 161, .9); box-shadow: 0 0 18px rgba(233, 196, 106, .45), inset 0 0 12px rgba(233, 196, 106, .3); }
+  .cand.chime .chime-r { animation: chime 1.1s var(--ease-out) both; }
+  .cand.chime .chime-r + .chime-r { animation-delay: .17s; }
+  @keyframes chime { 0% { opacity: .95; transform: scale(.25); } 100% { opacity: 0; transform: scale(6.5); } }
+
+  /* sonar contact: cards glint as the gap spotter's ping passes over them */
+  .cand::after { content: ""; position: absolute; inset: -1px; border-radius: inherit; pointer-events: none; opacity: 0;
+    border: 1px solid hsl(176 90% 70% / .85); box-shadow: 0 0 26px -4px hsl(176 90% 60% / .55), inset 0 0 22px -8px hsl(176 90% 60% / .6); }
+  .cand.pinged::after { animation: pinged 1.1s ease-out; }
+  @keyframes pinged { 0% { opacity: 0; } 12% { opacity: 1; } 100% { opacity: 0; } }
   .cand[data-stage="done"] .c-art::before, .cand[data-stage="why"] .c-art::before { animation: none; opacity: 0; }
   .c-art .sweep { position: absolute; inset: 0; z-index: 3; pointer-events: none; opacity: 0;
     background: linear-gradient(105deg, transparent 35%, hsl(var(--h2) 100% 85% / .45) 50%, transparent 65%) 0 0 / 300% 100%; }
@@ -353,11 +379,9 @@
 
   .critic { position: sticky; top: calc(var(--nav-h) + 16px); margin-top: 30px; height: clamp(460px, calc(100svh - 290px), 760px); display: flex; flex-direction: column; overflow: hidden; box-shadow: var(--shadow-float); }
   .cr-head { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--glass-edge); }
-  .avatar { width: 38px; height: 38px; border-radius: 50%; flex: none; position: relative;
-    background: conic-gradient(from 210deg, var(--gold), hsl(var(--a2) 85% 60%), var(--gold)); padding: 2px; }
-  .avatar::after { content: "C"; position: absolute; inset: 2px; border-radius: 50%; display: grid; place-items: center; background: var(--ink-1); font: 900 1.2rem/1 var(--font-display); color: var(--gold-hi); }
-  .critic.speaking .avatar { animation: spin 3s linear infinite; }
-  .critic.speaking .avatar::after { animation: spin 3s linear infinite reverse; }
+  .avatar-orb { display: block; flex: none; width: 48px; height: 48px; margin: -6px -2px -6px -6px; pointer-events: none; }
+  .cr-head > div { min-width: 0; }
+  .wave { display: block; flex: none; width: 66px; height: 26px; margin-left: auto; pointer-events: none; opacity: .9; }
   .cr-head h2 { font: 800 1.35rem/1 var(--font-display); text-transform: uppercase; letter-spacing: .02em; }
   .cr-head p { margin: 3px 0 0; font-size: .72rem; color: var(--fg-faint); }
   .log { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; scroll-behavior: smooth; overscroll-behavior: contain; }
@@ -367,7 +391,8 @@
   .msg.me { align-self: flex-end; background: rgba(233, 196, 106, .13); border: 1px solid rgba(233, 196, 106, .3); border-bottom-right-radius: 4px; color: #f6ecd2; }
   .msg.sys { align-self: center; max-width: 100%; padding: 4px 10px; font: 500 .68rem/1.4 var(--font-mono); color: var(--fg-faint); background: none; border: 0; text-align: center; }
   .msg .ref { font-weight: 700; color: hsl(var(--rh) 85% 78%); cursor: default; border-bottom: 1px solid hsl(var(--rh) 85% 70% / .35); }
-  .msg.streaming::after { content: ""; display: inline-block; width: 7px; height: 1em; margin-left: 2px; vertical-align: -.15em; background: var(--gold); animation: blink .8s steps(2) infinite; }
+  .msg.streaming::after { content: ""; display: inline-block; width: 2px; height: 1.05em; margin-left: 3px; vertical-align: -.17em; border-radius: 1px;
+    background: var(--gold-hi); box-shadow: 0 0 6px var(--gold), 0 0 14px var(--gold-glow); animation: blink .9s steps(2) infinite; }
   @keyframes blink { 50% { opacity: 0; } }
   .typing { display: inline-flex; gap: 4px; padding: 4px 2px; }
   .typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--fg-muted); animation: dot 1s ease-in-out infinite; }
@@ -378,6 +403,75 @@
   .reply { display: flex; gap: 8px; padding: 10px 16px 16px; }
   .reply input { flex: 1; min-width: 0; padding: .65em 1em; border-radius: 999px; border: 1px solid var(--glass-edge); background: rgba(0, 0, 0, .3); color: var(--fg); font: inherit; font-size: var(--step--1); }
   .reply input:focus-visible { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(233, 196, 106, .15); }
+
+  /* ---------- the living layer ---------- */
+  .fx { position: fixed; left: 0; top: 0; width: 100%; height: 100%; z-index: 40; pointer-events: none; }
+
+  /* the altar: two rings of titles and search glyphs orbit the prompt */
+  .altar { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+  .halo { position: absolute; left: 50%; top: var(--halo-y, 56%); width: min(1240px, 150vw); aspect-ratio: 1;
+    transform: translate(-50%, -50%) perspective(1700px) rotateX(70deg);
+    -webkit-mask-image: linear-gradient(180deg, rgba(0, 0, 0, .14) 8%, rgba(0, 0, 0, .55) 40%, #000 66%);
+    mask-image: linear-gradient(180deg, rgba(0, 0, 0, .14) 8%, rgba(0, 0, 0, .55) 40%, #000 66%); }
+  .ring { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .ring text { transition: opacity .45s var(--ease-out); }
+  .ring.fade text { opacity: 0; }
+  .ring-a text { font: 800 25px/1 var(--font-display); letter-spacing: 2px; fill: hsl(var(--a2) 70% 78% / .5); }
+  .ring-b text { font: 500 12px/1 var(--font-mono); letter-spacing: 1px; fill: rgba(233, 196, 106, .5); }
+  .ring .orbit { fill: none; stroke: rgba(233, 196, 106, .2); stroke-width: 1.2; }
+  .ring .orbit.dash { stroke: hsl(var(--a2) 70% 75% / .22); stroke-dasharray: 2 9; }
+  .field { position: relative; }
+  .field.charged { border-color: rgba(255, 227, 161, .5); }
+  .field.summoning { animation: fieldFlash .6s var(--ease-out) both; }
+  @keyframes fieldFlash {
+    0% { box-shadow: 0 0 0 0 rgba(255, 227, 161, .0), 0 30px 80px -30px hsl(var(--a2) 80% 45% / .6); }
+    55% { box-shadow: 0 0 0 10px rgba(255, 227, 161, .25), 0 0 120px 20px rgba(233, 196, 106, .55); border-color: #fff3cf; }
+    100% { box-shadow: 0 0 0 28px rgba(255, 227, 161, 0), 0 30px 80px -30px hsl(var(--a2) 80% 45% / .6); } }
+  .s-title.ignite { background: linear-gradient(100deg, var(--fg) 38%, #fff6dc 46%, var(--gold-hi) 50%, var(--fg) 60%) 0 0 / 320% 100%;
+    -webkit-background-clip: text; background-clip: text; color: transparent; animation: ignite 1.6s var(--ease-out) both; }
+  @keyframes ignite { from { background-position: 100% 0; } to { background-position: 0 0; } }
+
+  /* gap spotter: suggestions wait dark until the sonar contact reaches them */
+  .g-item { position: relative; }
+  .g-item.await { opacity: .3; filter: grayscale(1); }
+  .g-item.await .cover { opacity: .4; }
+  .g-item.lit-in { animation: gArrive 1s var(--ease-out); }
+  .g-item, .g-item .cover { transition: opacity .55s, filter .7s, transform .4s var(--ease-out); }
+  @keyframes gArrive { 0% { box-shadow: 0 0 0 0 hsl(176 90% 65% / .75), inset 0 0 30px hsl(176 90% 60% / .3); } 100% { box-shadow: 0 0 0 16px hsl(176 90% 65% / 0), inset 0 0 30px hsl(176 90% 60% / 0); } }
+
+  /* draft: rows wait for their cover to land, numerals stamp in */
+  .r-num { transform-origin: 100% 60%; }
+  .row.pre > :not(.bleed):not(.lit) { opacity: 0; }
+  .row.pre { border-top-color: transparent; }
+  .crown { display: none; position: absolute; z-index: 2; top: 6px; left: calc(14px + var(--num-w) - 76px); width: 46px; color: var(--gold-hi); pointer-events: none;
+    transform: rotate(-14deg); filter: drop-shadow(0 0 10px rgba(233, 196, 106, .55)) drop-shadow(0 4px 6px rgba(0, 0, 0, .6)); }
+  .crown svg { display: block; width: 100%; height: auto; }
+  .row.top1 .crown { display: block; }
+  .row.pre .crown { opacity: 0; }
+  .lit { position: absolute; inset: 0; z-index: -1; border-radius: inherit; overflow: hidden; pointer-events: none; opacity: 0;
+    background: hsl(var(--h2) 75% 50% / .13); box-shadow: inset 0 0 0 1px hsl(var(--h2) 85% 72% / .4); }
+  .lit::before { content: ""; position: absolute; inset: 0; transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, hsl(var(--h2) 90% 70% / .3) 45%, hsl(var(--h2) 100% 88% / .35) 50%, transparent 60%); }
+  .row.lit-on .lit { animation: litFade 1.5s ease-out; }
+  .row.lit-on .lit::before { animation: litSweep .95s cubic-bezier(.3, .1, .3, 1); }
+  @keyframes litFade { 0% { opacity: 0; } 12% { opacity: 1; } 100% { opacity: 0; } }
+  @keyframes litSweep { to { transform: translateX(100%); } }
+
+  /* the critic's suggested replies are dealt like cards */
+  .replies { padding-bottom: 2px; transition: opacity .3s; }
+  .replies.wait { opacity: .5; }
+  .replies .chip { border-radius: 10px; padding: .55em .9em; transform-origin: 50% 140%;
+    background: linear-gradient(180deg, rgba(178, 190, 255, .13), rgba(178, 190, 255, .04));
+    box-shadow: 0 10px 20px -12px rgba(0, 0, 0, .9), inset 0 1px 0 rgba(255, 255, 255, .08); }
+  .replies .chip:hover { transform: translateY(-3px) rotate(-1.5deg); border-color: rgba(233, 196, 106, .45); }
+
+  /* handoff */
+  .warp { position: fixed; inset: 0; z-index: 95; pointer-events: none; }
+  .warp-veil { position: absolute; inset: 0; opacity: 0;
+    background: radial-gradient(circle at var(--wx, 50%) var(--wy, 50%), #fff8e4 0, rgba(255, 227, 161, .85) 7%, rgba(233, 196, 106, .3) 22%, var(--ink-0) 58%); }
+  .warp-card { position: absolute; left: 0; top: 0; width: 200px; border-radius: 12px; opacity: 0;
+    box-shadow: 0 0 0 1.5px var(--gold-hi), 0 0 50px 8px var(--gold-glow), 0 0 140px 30px rgba(233, 196, 106, .25), 0 40px 80px -20px #000; }
+  .warp-card .cover { border-radius: 12px; }
 
   /* ---------- responsive ---------- */
   @media (max-width: 1180px) {
@@ -409,6 +503,8 @@
     .r-title { font-size: 1.3rem; }
     .row.top1 .r-title { font-size: 1.7rem; }
     .r-why { display: none; }
+    .crown { width: 30px; top: 0; left: calc(8px + var(--num-w) - 42px); }
+    .wave { display: none; }
   }
   @media (prefers-reduced-motion: reduce) {
     :root { transition: none; }
@@ -442,6 +538,15 @@
 
   <!-- STEP 1 -->
   <section class="step s1" id="step1" data-step="1" tabindex="-1" aria-labelledby="askTitle">
+    <div class="altar" aria-hidden="true">
+      <div class="halo" id="halo">
+        <svg class="ring ring-a" id="ringA" viewBox="0 0 1000 1000"><path id="ringPathA" d="M60,500a440,440 0 1,1 880,0a440,440 0 1,1 -880,0" fill="none"/>
+          <circle class="orbit" cx="500" cy="500" r="478"/><circle class="orbit dash" cx="500" cy="500" r="408"/>
+          <text><textPath href="#ringPathA" id="ringAText" lengthAdjust="spacing"></textPath></text></svg>
+        <svg class="ring ring-b" id="ringB" viewBox="0 0 1000 1000"><path id="ringPathB" d="M134,500a366,366 0 1,1 732,0a366,366 0 1,1 -732,0" fill="none"/>
+          <text><textPath href="#ringPathB" id="ringBText" lengthAdjust="spacing"></textPath></text></svg>
+      </div>
+    </div>
     <div class="wings" aria-hidden="true"><div class="wing l"></div><div class="wing r"></div></div>
     <div class="ask-wrap">
       <p class="eyebrow">Start a list</p>
@@ -480,7 +585,7 @@
       </div>
     </div>
     <div class="status glass" id="status" data-phase="search" role="status">
-      <span class="ind" aria-hidden="true"><i></i><i></i><i></i></span>
+      <canvas class="orb" id="orbStatus" aria-hidden="true"></canvas>
       <div class="ph"><span class="ph-text" id="phText">Searching the web&hellip;</span><span class="q mono" id="phQuery"></span></div>
       <span class="count mono" id="phCount"></span>
       <div class="prog" aria-hidden="true"><i id="phProg"></i></div>
@@ -533,8 +638,9 @@
       </div>
       <aside class="critic glass" id="critic" aria-labelledby="criticTitle">
         <div class="cr-head">
-          <span class="avatar" aria-hidden="true"></span>
+          <canvas class="avatar-orb" id="orbCritic" aria-hidden="true"></canvas>
           <div><h2 id="criticTitle">The critic</h2><p>Argues with placements. Scripted in this prototype.</p></div>
+          <canvas class="wave" id="wave" aria-hidden="true"></canvas>
         </div>
         <div class="log" id="log"></div>
         <div class="replies" id="replies" aria-label="Suggested replies"></div>
@@ -561,6 +667,495 @@
   const rand = (a, b) => a + Math.random() * (b - a);
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const EASE = "cubic-bezier(.16, 1, .3, 1)";
+
+  /* ==================================================================
+     The living layer. ONE rAF loop drives the particle canvas, the
+     altar rings, the AI orbs and the critic's waveform. It sleeps when
+     nothing is alive, stops when the tab is hidden, skips canvases that
+     are offscreen, and never starts under reduced motion.
+     ================================================================== */
+  const FXON = !RM;
+  const TAU = Math.PI * 2;
+  const HUE = { a: 42, b: 20, pal: [20, 42, 200, 300] };
+  const hsla = (h, s, l, a) => `hsla(${h},${s}%,${l}%,${a})`;
+  const lerpHue = (f, t, k) => (f + (((t - f + 540) % 360) - 180) * Math.min(1, k) + 360) % 360;
+  const ezOut = (x) => 1 - Math.pow(1 - x, 3);
+  const noFail = (a) => { a.finished.catch(() => {}); return a; };
+
+  const Loop = (() => {
+    const subs = new Set();
+    let raf = 0, last = 0;
+    const L = { frame: 0, add(s) { subs.add(s); wake(); }, wake };
+    function frame(now) {
+      raf = 0;
+      const dt = Math.min(.05, Math.max(.001, (now - last) / 1000));
+      last = now;
+      L.frame++;
+      let any = false;
+      subs.forEach((s) => { if (s.live()) { any = true; s.tick(now / 1000, dt); } });
+      if (any && !document.hidden) raf = requestAnimationFrame(frame);
+    }
+    function wake() { if (!FXON || raf || document.hidden) return; last = performance.now(); raf = requestAnimationFrame(frame); }
+    document.addEventListener("visibilitychange", () => { if (document.hidden) { cancelAnimationFrame(raf); raf = 0; } else wake(); });
+    return L;
+  })();
+
+  // an element's centre, read at most once per frame (particles home on live targets)
+  function anchor(el, fx = .5, fy = .5) {
+    let f = -1;
+    const pt = { x: 0, y: 0 };
+    return (force) => {
+      if (force === true || f !== Loop.frame) {
+        f = Loop.frame;
+        const node = typeof el === "function" ? el() : el;
+        const r = node && node.getBoundingClientRect();
+        if (r && r.width) { pt.x = r.left + r.width * fx; pt.y = r.top + r.height * fy; }
+      }
+      return pt;
+    };
+  }
+
+  // glow sprites, cached per hue; drawn additively
+  const SPR = new Map();
+  function sprite(h, s = 90, l = 66) {
+    h = Math.round((((h % 360) + 360) % 360) / 10) * 10;
+    const k = h + "," + s + "," + l;
+    let c = SPR.get(k);
+    if (!c) {
+      c = document.createElement("canvas");
+      c.width = c.height = 48;
+      const g = c.getContext("2d"), gr = g.createRadialGradient(24, 24, 0, 24, 24, 24);
+      gr.addColorStop(0, hsla(h, s, Math.min(97, l + 28), 1));
+      gr.addColorStop(.18, hsla(h, s, l, .85));
+      gr.addColorStop(.48, hsla(h, s, l - 10, .2));
+      gr.addColorStop(1, hsla(h, s, l, 0));
+      g.fillStyle = gr; g.fillRect(0, 0, 48, 48);
+      SPR.set(k, c);
+    }
+    return c;
+  }
+  let STREAK = null;
+  function streak() {
+    if (STREAK) return STREAK;
+    const c = document.createElement("canvas");
+    c.width = 256; c.height = 24;
+    const g = c.getContext("2d");
+    let gr = g.createLinearGradient(0, 0, 256, 0);
+    gr.addColorStop(0, "rgba(255,236,190,0)"); gr.addColorStop(.5, "rgba(255,248,226,1)"); gr.addColorStop(1, "rgba(255,236,190,0)");
+    g.fillStyle = gr; g.fillRect(0, 0, 256, 24);
+    g.globalCompositeOperation = "destination-in";
+    gr = g.createLinearGradient(0, 0, 0, 24);
+    gr.addColorStop(0, "rgba(0,0,0,0)"); gr.addColorStop(.5, "rgba(0,0,0,1)"); gr.addColorStop(1, "rgba(0,0,0,0)");
+    g.fillStyle = gr; g.fillRect(0, 0, 256, 24);
+    return (STREAK = c);
+  }
+
+  /* ---- the particle canvas: one fixed, DPR-capped, click-through layer ---- */
+  const FX = (() => {
+    const cv = document.createElement("canvas");
+    cv.className = "fx";
+    cv.setAttribute("aria-hidden", "true");
+    const ctx = cv.getContext("2d");
+    let D = 1, W = 0, H = 0, drew = false;
+    const P = [], E = [], emitters = [];
+    function resize() {
+      D = Math.min(window.devicePixelRatio || 1, 1.5);
+      W = innerWidth; H = innerHeight;
+      cv.width = Math.round(W * D); cv.height = Math.round(H * D);
+      drew = true;
+    }
+    if (FXON) { document.body.appendChild(cv); resize(); addEventListener("resize", resize); }
+
+    function add(o) {
+      if (!FXON || P.length >= 1400) return null;
+      const p = Object.assign({ x: 0, y: 0, vx: 0, vy: 0, age: 0, age2: 0, life: 1.2, delay: 0, r: 2.4, h: 43, s: 90, l: 66, a: 1, fin: .12,
+        mode: "drift", drag: 1.2, g: 0, wob: 0, tw: 0, seed: Math.random() * 100 }, o);
+      p.spr = sprite(p.h, p.s, p.l);
+      P.push(p);
+      Loop.wake();
+      return p;
+    }
+    function seek(p, o) {
+      return Object.assign(p, { mode: "seek", age2: 0, tgt: null, v0: 120, acc: 900, vmax: 900, turn: 6, swirl: 0, tmax: 3, nearFade: 0, onArrive: null }, o);
+    }
+    function stepP(p, t, dt) {
+      if (p.delay > 0) { p.delay -= dt; return 0; }
+      p.age += dt;
+      if (p.next && p.age >= p.next.at) { const n = p.next; p.next = null; n.fn(p); }
+      let fade = 1;
+      if (p.mode === "seek") {
+        let tx = p.tx, ty = p.ty;
+        if (p.tgt) { const g = p.tgt(p); tx = g.x + (p.ox || 0); ty = g.y + (p.oy || 0); }
+        const dx = tx - p.x, dy = ty - p.y, d = Math.hypot(dx, dy) || 1;
+        const sp = Math.min(p.vmax, p.v0 + p.acc * p.age2);
+        const sw = p.swirl * Math.min(1, d / 160), ux = dx / d, uy = dy / d;
+        const f = 1 - Math.exp(-dt * p.turn);
+        p.vx += ((ux - uy * sw) * sp - p.vx) * f;
+        p.vy += ((uy + ux * sw) * sp - p.vy) * f;
+        p.age2 += dt;
+        if (d < Math.max(5, sp * dt * 1.2) || p.age2 > p.tmax) {
+          if (!(p.onArrive && p.onArrive(p))) return -1;
+        }
+        if (p.nearFade) fade = Math.min(1, d / p.nearFade);
+      } else if (p.mode === "orbit") {
+        const c = p.center();
+        p.th += p.om * dt;
+        const k = p.k + .05 * Math.sin(t * 1.3 + p.seed);
+        const f = 1 - Math.exp(-dt * 5);
+        p.x += (c.x + Math.cos(p.th) * c.rx * k - p.x) * f;
+        p.y += (c.y + Math.sin(p.th) * c.ry * k - p.y) * f;
+        return p.a * Math.min(1, p.age / p.fin) * (.5 + .5 * Math.sin(p.th));
+      } else {
+        const k = Math.exp(-dt * p.drag);
+        p.vx *= k; p.vy = p.vy * k + p.g * dt;
+        if (p.wob) { p.vx += Math.sin(t * 2.3 + p.seed) * p.wob * dt; p.vy += Math.cos(t * 1.9 + p.seed * 1.3) * p.wob * dt; }
+        if (p.age >= p.life) return -1;
+        fade = 1 - p.age / p.life;
+      }
+      p.x += p.vx * dt; p.y += p.vy * dt;
+      if (p.x < -320 || p.x > W + 320 || p.y < -320 || p.y > H + 320) return -1;
+      return p.a * Math.min(1, p.age / p.fin) * fade;
+    }
+    Loop.add({
+      live: () => drew || P.length > 0 || E.length > 0 || emitters.some((e) => e.live()),
+      tick(t, dt) {
+        for (const e of emitters) if (e.live()) e.tick(t, dt);
+        if (drew) { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, cv.width, cv.height); drew = false; }
+        if (!P.length && !E.length) return;
+        drew = true;
+        ctx.setTransform(D, 0, 0, D, 0, 0);
+        ctx.globalCompositeOperation = "lighter";
+        for (let i = P.length - 1; i >= 0; i--) {
+          const p = P[i], a = stepP(p, t, dt);
+          if (a < 0) { P[i] = P[P.length - 1]; P.pop(); continue; }
+          if (a < .005) continue;
+          const r = p.r * 2 * (p.tw ? 1 + .3 * Math.sin(t * p.tw + p.seed) : 1);
+          ctx.globalAlpha = Math.min(1, a);
+          ctx.drawImage(p.spr, p.x - r, p.y - r, r * 2, r * 2);
+        }
+        ctx.globalAlpha = 1;
+        for (let i = E.length - 1; i >= 0; i--) {
+          ctx.save();
+          const alive = E[i](ctx, t, dt);
+          ctx.restore();
+          if (!alive) E.splice(i, 1);
+        }
+        ctx.globalCompositeOperation = "source-over";
+      },
+    });
+    const fx = (fn) => { if (FXON) { E.push(fn); Loop.wake(); } };
+
+    function flash(x, y, o = {}) {
+      const { r = 120, h = 43, s = 90, l = 70, dur = .7, a = 1 } = o;
+      const spr = sprite(h, s, l);
+      let age = 0;
+      fx((c, t, dt) => {
+        age += dt;
+        const p = age / dur;
+        if (p >= 1) return false;
+        const rr = r * (.55 + .6 * ezOut(p));
+        c.globalAlpha = a * (1 - p) * (1 - p);
+        c.drawImage(spr, x - rr, y - rr, rr * 2, rr * 2);
+        return true;
+      });
+    }
+    function ring(x, y, o = {}) {
+      const { r0 = 6, r1 = 200, dur = .8, h = 43, s = 90, l = 72, w = 2, a = .9, delay = 0 } = o;
+      let age = -delay;
+      fx((c, t, dt) => {
+        age += dt;
+        if (age < 0) return true;
+        const p = age / dur;
+        if (p >= 1) return false;
+        c.globalAlpha = a * (1 - p);
+        c.strokeStyle = hsla(h, s, l, 1);
+        c.lineWidth = w * (1 - p * .7);
+        c.beginPath(); c.arc(x, y, r0 + (r1 - r0) * ezOut(p), 0, TAU); c.stroke();
+        return true;
+      });
+    }
+    function burst(x, y, o = {}) {
+      const { n = 20, sp = 300, hues = [43], life = .9, r = 2.4, drag = 2.6, g = 40, l = 66 } = o;
+      for (let i = 0; i < n; i++) {
+        const a = Math.random() * TAU, v = sp * (.35 + Math.random() * .65);
+        add({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: life * (.6 + Math.random() * .6), r: r * (.6 + Math.random() * .8),
+          h: hues[i % hues.length], l, drag, g, fin: .02, tw: 14 });
+      }
+    }
+    // the crown flare: a slow-turning starburst with an anamorphic streak
+    function rays(x, y, o = {}) {
+      const { n = 8, len = 260, dur = 1.5, w = 6, spin = .22 } = o;
+      const S = streak(), base = Math.random() * TAU, lens = Array.from({ length: n }, () => .45 + Math.random() * .55);
+      let age = 0;
+      fx((c, t, dt) => {
+        age += dt;
+        const p = age / dur;
+        if (p >= 1) return false;
+        const env = p < .1 ? p / .1 : Math.pow(1 - (p - .1) / .9, 1.6);
+        c.translate(x, y);
+        for (let i = 0; i < n; i++) {
+          c.save();
+          c.rotate(base + (i * Math.PI) / n + age * spin);
+          const L = len * lens[i] * (.6 + .4 * ezOut(Math.min(1, p * 3)));
+          c.globalAlpha = env * .75;
+          c.drawImage(S, -L / 2, -w / 2, L, w);
+          c.restore();
+        }
+        c.globalAlpha = env * .85;
+        c.drawImage(S, -len * 1.5, -2.5, len * 3, 5);
+        return true;
+      });
+    }
+    // a bright head on a curved path, shedding sparks; toFn may move
+    function comet(from, toFn, o = {}) {
+      const { dur = .9, h = 43, lift = 120, onArrive } = o;
+      const head = sprite(h, 90, 70), core = sprite(45, 100, 84);
+      let age = 0;
+      fx((c, t, dt) => {
+        age += dt;
+        const p = Math.min(1, age / dur), e = p < .5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+        const to = toFn(), mx = (from.x + to.x) / 2, my = Math.min(from.y, to.y) - lift;
+        const x = (1 - e) * (1 - e) * from.x + 2 * (1 - e) * e * mx + e * e * to.x;
+        const y = (1 - e) * (1 - e) * from.y + 2 * (1 - e) * e * my + e * e * to.y;
+        for (let i = 0; i < 2; i++) add({ x: x + (Math.random() - .5) * 6, y: y + (Math.random() - .5) * 6, vx: (Math.random() - .5) * 40, vy: (Math.random() - .5) * 40, life: .45, r: 2, h: i ? h : 43, drag: 3, fin: .01 });
+        c.globalAlpha = 1;
+        c.drawImage(head, x - 26, y - 26, 52, 52);
+        c.drawImage(core, x - 9, y - 9, 18, 18);
+        if (p >= 1) { if (onArrive) onArrive(to); return false; }
+        return true;
+      });
+    }
+    // jets of light from the orb into a freshly summoned card
+    function jet(o, r, hues) {
+      let first = true;
+      for (let i = 0; i < 9; i++) {
+        const a = Math.random() * TAU, v = 80 + Math.random() * 160;
+        add({ x: o.x, y: o.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, r: 1.5 + Math.random() * 1.5, h: hues[i % 2], l: 68, fin: .03, delay: i * .02,
+          mode: "seek", tx: r.left + r.width * (.2 + Math.random() * .6), ty: r.top + r.height * (.25 + Math.random() * .5),
+          v0: 160, acc: 2600, vmax: 1600, turn: 5 + Math.random() * 3, swirl: (Math.random() - .5) * 1.3, tmax: 1,
+          onArrive: () => { if (first) { first = false; flash(r.left + r.width / 2, r.top + r.height / 2, { r: Math.max(r.width, r.height) * .65, h: hues[1], l: 66, dur: .6, a: .65 }); } } });
+      }
+    }
+    // a card comes apart left to right; the dust drifts into the tray
+    function dissolve(rect, artBottom, hues, targetFn, onFirst) {
+      const n = Math.round(Math.min(110, Math.max(44, (rect.width * rect.height) / 650)));
+      let first = true;
+      for (let i = 0; i < n; i++) {
+        const x = rect.left + Math.random() * rect.width, y = rect.top + Math.random() * rect.height;
+        const art = y < artBottom, u = (x - rect.left) / rect.width;
+        add({ x, y, delay: u * .3 + Math.random() * .05, vx: 30 + Math.random() * 70, vy: -20 - Math.random() * 70, drag: 2.2, wob: 60, life: 9,
+          r: art ? 1.6 + Math.random() * 1.6 : 1.1 + Math.random(), h: art ? hues[i % 2] : 228, s: art ? 85 : 25, l: art ? 64 : 82, a: art ? .95 : .5, fin: .04,
+          next: { at: .18 + Math.random() * .25, fn: (p) => seek(p, { tgt: targetFn, ox: (Math.random() - .5) * 34, oy: (Math.random() - .5) * 8,
+            v0: 40, acc: 1100 + Math.random() * 500, vmax: 1100, turn: 3.2 + Math.random() * 2, swirl: (Math.random() - .5) * 1.5, tmax: 2.2, nearFade: 36,
+            onArrive: () => { if (first) { first = false; if (onFirst) onFirst(); } } }) } });
+      }
+    }
+    // sonar: a cyan wavefront rolling out from the orb
+    function sonar(o, maxR, V) {
+      let age = 0;
+      const dur = maxR / V;
+      fx((c, t, dt) => {
+        age += dt;
+        if (age > dur + .4) return false;
+        for (let k = 0; k < 2; k++) {
+          const r = (age - k * .24) * V;
+          if (r <= 0 || r > maxR) continue;
+          const fade = 1 - r / maxR, inner = Math.max(0, r - 80);
+          const g = c.createRadialGradient(o.x, o.y, inner, o.x, o.y, r);
+          g.addColorStop(0, "hsla(176,90%,60%,0)");
+          g.addColorStop(.8, hsla(176, 90, 62, (k ? .05 : .1) * fade));
+          g.addColorStop(1, hsla(176, 95, 76, (k ? .2 : .45) * fade));
+          c.fillStyle = g;
+          c.beginPath(); c.arc(o.x, o.y, r, 0, TAU); c.arc(o.x, o.y, inner, 0, TAU, true); c.fill();
+        }
+        return true;
+      });
+    }
+    // a sonar contact: a dashed reticle over a hole in the grid, labelled
+    function contact(x, y, label, o = {}) {
+      const { delay = 0, hold = 1.3, onLaunch } = o;
+      const txt = ("Missing? " + label).toUpperCase();
+      const core = sprite(176, 90, 70);
+      let age = -delay, launched = false;
+      fx((c, t, dt) => {
+        age += dt;
+        if (age < 0) return true;
+        const appear = Math.min(1, age / .28), out = age > hold ? Math.max(0, 1 - (age - hold) / .3) : 1;
+        if (age > hold && !launched) { launched = true; if (onLaunch) onLaunch(); }
+        if (out <= 0) return false;
+        const a = appear * out, R = 15 + (1 - ezOut(appear)) * 26;
+        c.strokeStyle = "hsla(176,92%,72%,1)";
+        c.lineWidth = 1.4;
+        c.globalAlpha = a;
+        c.setLineDash([4, 5]); c.lineDashOffset = -age * 24;
+        c.beginPath(); c.arc(x, y, R, 0, TAU); c.stroke();
+        c.setLineDash([]);
+        const pp = (age * 1.3) % 1;
+        c.globalAlpha = a * (1 - pp) * .8;
+        c.beginPath(); c.arc(x, y, R + pp * 30, 0, TAU); c.stroke();
+        c.globalAlpha = a;
+        c.beginPath();
+        for (let k = 0; k < 4; k++) {
+          const an = (k * Math.PI) / 2;
+          c.moveTo(x + Math.cos(an) * (R + 3), y + Math.sin(an) * (R + 3));
+          c.lineTo(x + Math.cos(an) * (R + 9), y + Math.sin(an) * (R + 9));
+        }
+        c.stroke();
+        c.drawImage(core, x - 13, y - 13, 26, 26);
+        c.globalCompositeOperation = "source-over";
+        c.font = "600 10px 'JetBrains Mono', ui-monospace, monospace";
+        const tw = c.measureText(txt).width;
+        const lx = Math.min(Math.max(10, x - tw / 2), W - tw - 10), ly = y - R - 18;
+        c.globalAlpha = a * .9;
+        c.fillStyle = "rgba(6,9,15,.88)";
+        c.beginPath();
+        if (c.roundRect) c.roundRect(lx - 8, ly - 11, tw + 16, 19, 9.5); else c.rect(lx - 8, ly - 11, tw + 16, 19);
+        c.fill();
+        c.strokeStyle = "hsla(176,90%,70%,.55)"; c.lineWidth = 1; c.stroke();
+        c.globalAlpha = a;
+        c.fillStyle = "hsla(176,90%,84%,1)";
+        c.fillText(txt, lx, ly + 2.5);
+        return true;
+      });
+    }
+    function each(fn) { P.forEach(fn); }
+    return { add, seek, flash, ring, burst, rays, comet, jet, dissolve, sonar, contact, each, emit: (e) => { emitters.push(e); Loop.wake(); } };
+  })();
+
+  /* ---- the AI orb: pulses while searching, sweeps like radar while
+     finding, paints while art-directing, and talks as the critic ---- */
+  function Orb(cv, size, mode = "rest") {
+    const ctx = cv.getContext("2d"), D = Math.min(window.devicePixelRatio || 1, 2), R = size / 2;
+    cv.width = cv.height = Math.round(size * D);
+    const o = { mode, amp: 0, wk: mode === "asleep" ? .25 : 1, ha: HUE.a, hb: HUE.b, vis: false, blips: [], center: anchor(cv) };
+    o.pump = (v) => { o.amp = Math.min(1.5, o.amp + v); Loop.wake(); };
+    o.set = (m) => { if (o.mode === m) return; o.mode = m; if (!FXON) draw(1.3, 0); Loop.wake(); };
+    function draw(t, dt) {
+      const m = o.mode;
+      o.amp *= Math.exp(-dt * 3.2);
+      o.ha = lerpHue(o.ha, HUE.a, dt * 1.5); o.hb = lerpHue(o.hb, HUE.b, dt * 1.5);
+      o.wk += ((m === "asleep" ? .22 : 1) - o.wk) * (1 - Math.exp(-dt * 3));
+      if (!FXON) o.wk = m === "asleep" ? .4 : 1;
+      const w = o.wk, c = R, amp = Math.min(1, o.amp);
+      ctx.setTransform(D, 0, 0, D, 0, 0);
+      ctx.clearRect(0, 0, size, size);
+      ctx.globalCompositeOperation = "lighter";
+      const br = .5 + .5 * Math.sin(t * (m === "rest" || m === "asleep" ? 1.5 : 3.4));
+      const rc = R * (.28 + .035 * br + .1 * amp) * (.75 + .25 * w);
+      let g = ctx.createRadialGradient(c, c, rc * .4, c, c, R);
+      g.addColorStop(0, hsla(o.hb, 85, 60, (.22 + .25 * amp) * w));
+      g.addColorStop(1, hsla(o.hb, 85, 60, 0));
+      ctx.fillStyle = g; ctx.fillRect(0, 0, size, size);
+      ctx.lineCap = "round";
+      if (m === "search") {
+        for (let j = 0; j < 3; j++) {
+          const p = (t * .85 + j / 3) % 1;
+          ctx.strokeStyle = hsla(43, 90, 72, (1 - p) * .75 * w);
+          ctx.lineWidth = 1.2;
+          ctx.beginPath(); ctx.arc(c, c, rc + (R * .96 - rc) * p, 0, TAU); ctx.stroke();
+        }
+      } else if (m === "radar") {
+        const a = t * 3.6, rr = R * .94;
+        ctx.strokeStyle = hsla(o.hb, 70, 70, .22 * w); ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(c, c, rr * .62, 0, TAU); ctx.stroke();
+        ctx.beginPath(); ctx.arc(c, c, rr, 0, TAU); ctx.stroke();
+        for (let j = 0; j < 9; j++) {
+          ctx.fillStyle = hsla(o.hb, 85, 64, (1 - j / 9) * .3 * w);
+          ctx.beginPath(); ctx.moveTo(c, c); ctx.arc(c, c, rr, a - (j + 1) * .1, a - j * .1); ctx.closePath(); ctx.fill();
+        }
+        ctx.strokeStyle = hsla(43, 95, 78, .9 * w); ctx.lineWidth = 1.3;
+        ctx.beginPath(); ctx.moveTo(c, c); ctx.lineTo(c + Math.cos(a) * rr, c + Math.sin(a) * rr); ctx.stroke();
+        if (Math.random() < dt * 6) o.blips.push({ a: a - .05, r: rr * (.3 + Math.random() * .62), life: 1 });
+        o.blips = o.blips.filter((b) => (b.life -= dt * .9) > 0);
+        o.blips.forEach((b) => { ctx.fillStyle = hsla(43, 95, 80, b.life * w); ctx.beginPath(); ctx.arc(c + Math.cos(b.a) * b.r, c + Math.sin(b.a) * b.r, 1.4, 0, TAU); ctx.fill(); });
+      } else if (m === "paint") {
+        for (let k = 0; k < 4; k++) {
+          const hue = HUE.pal[k] != null ? HUE.pal[k] : o.hb, dir = k % 2 ? -1 : 1;
+          const a0 = t * (1.7 + k * .45) * dir + k * 1.57, len = 1.1 + .7 * Math.sin(t * 1.4 + k);
+          ctx.strokeStyle = hsla(hue, 88, 64, .78 * w);
+          ctx.lineWidth = (size / 40) * (2.8 - k * .4);
+          ctx.beginPath(); ctx.arc(c, c, R * (.5 + k * .11), a0, a0 + len); ctx.stroke();
+          const ex = c + Math.cos(a0 + len) * R * (.5 + k * .11), ey = c + Math.sin(a0 + len) * R * (.5 + k * .11);
+          ctx.drawImage(sprite(hue, 90, 70), ex - 5, ey - 5, 10, 10);
+        }
+      } else if (m === "talk") {
+        const N = 36;
+        ctx.strokeStyle = hsla(43, 95, 74, .9 * w);
+        ctx.lineWidth = 1.3;
+        ctx.beginPath();
+        for (let i = 0; i < N; i++) {
+          const an = (i / N) * TAU - Math.PI / 2 + t * .4;
+          const nz = .5 + .5 * Math.sin(i * 1.9 + t * 11) * Math.sin(i * .7 - t * 6.3);
+          const r0 = rc + 2, len = R * (.05 + .38 * amp * nz);
+          ctx.moveTo(c + Math.cos(an) * r0, c + Math.sin(an) * r0);
+          ctx.lineTo(c + Math.cos(an) * (r0 + len), c + Math.sin(an) * (r0 + len));
+        }
+        ctx.stroke();
+      } else if (m === "think") {
+        for (let j = 0; j < 3; j++) {
+          const an = t * 4.2 + (j * TAU) / 3;
+          ctx.drawImage(sprite(43, 95, 72), c + Math.cos(an) * R * .64 - 4, c + Math.sin(an) * R * .64 - 4, 8, 8);
+        }
+      } else {
+        ctx.strokeStyle = hsla(43, 80, 70, .16 * w); ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(c, c, R * .8, 0, TAU); ctx.stroke();
+        const an = t * .9;
+        ctx.drawImage(sprite(43, 95, 74), c + Math.cos(an) * R * .8 - 3.5, c + Math.sin(an) * R * .8 - 3.5, 7, 7);
+      }
+      for (let k = 0; k < 3; k++) {
+        const an = t * (1.1 + k * .6) + k * 2.09, px = c + Math.cos(an) * rc * .45, py = c + Math.sin(an) * rc * .45;
+        g = ctx.createRadialGradient(px, py, 0, px, py, rc * .8);
+        g.addColorStop(0, hsla([o.ha, o.hb, 43][k], 90, 62, .55 * w));
+        g.addColorStop(1, hsla([o.ha, o.hb, 43][k], 90, 62, 0));
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(px, py, rc * .8, 0, TAU); ctx.fill();
+      }
+      g = ctx.createRadialGradient(c, c, 0, c, c, rc);
+      g.addColorStop(0, `rgba(255,255,255,${.95 * w})`);
+      g.addColorStop(.35, hsla(45, 100, 80, .8 * w));
+      g.addColorStop(1, hsla(43, 90, 60, 0));
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(c, c, rc, 0, TAU); ctx.fill();
+      ctx.globalCompositeOperation = "source-over";
+    }
+    o.tick = draw;
+    o.live = () => o.vis;
+    if (FXON) {
+      Loop.add(o);
+      new IntersectionObserver(([e]) => { o.vis = e.isIntersecting; if (o.vis) Loop.wake(); }).observe(cv);
+    } else draw(1.3, 0);
+    return o;
+  }
+  // the critic's voice: an audio-style waveform that scrolls while it talks
+  function Wave(cv, w, h, orb) {
+    const ctx = cv.getContext("2d"), D = Math.min(window.devicePixelRatio || 1, 2);
+    cv.width = Math.round(w * D); cv.height = Math.round(h * D);
+    const n = Math.floor(w / 3), hist = new Float32Array(n).fill(.05);
+    let acc = 0, vis = false;
+    function draw() {
+      ctx.setTransform(D, 0, 0, D, 0, 0);
+      ctx.clearRect(0, 0, w, h);
+      for (let i = 0; i < n; i++) {
+        const v = hist[i], bh = Math.max(1.5, v * (h - 2));
+        ctx.fillStyle = hsla(43, 90, 70, .16 + .84 * (i / n) * Math.min(1, v * 3 + .15));
+        ctx.fillRect(i * 3, (h - bh) / 2, 2, bh);
+      }
+    }
+    const o = {
+      live: () => vis,
+      tick(t, dt) {
+        acc += dt;
+        while (acc > .035) {
+          acc -= .035;
+          hist.copyWithin(0, 1);
+          hist[n - 1] = orb.mode === "talk" ? Math.min(1, .12 + orb.amp * .85) * (.3 + .7 * Math.random())
+            : orb.mode === "think" ? .1 + .07 * Math.sin(t * 9) : .05;
+        }
+        draw();
+      },
+    };
+    if (FXON) { Loop.add(o); new IntersectionObserver(([e]) => { vis = e.isIntersecting; if (vis) Loop.wake(); }).observe(cv); }
+    else draw();
+    return o;
+  }
 
   /* ------------------------------------------------------------------
      Scripted data. Same shape as GOAT.items, plus w (the AI's draft

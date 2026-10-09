@@ -22,10 +22,13 @@
     --num-light: #e2e5f1;
     /* one cover language: one radius, a three-step shadow scale, one ring */
     --cover-r: var(--r-sm);
-    --ring: 0 0 0 1px rgba(255, 255, 255, .09) inset;
-    --sh-s: 0 10px 22px -10px rgba(0, 0, 0, .9);
-    --sh-m: 0 22px 44px -20px rgba(0, 0, 0, .92);
-    --sh-l: 0 40px 90px -32px rgba(0, 0, 0, .95);
+    /* the ring is a bevel: a lit top lip and a shaded bottom lip, so covers read as card stock */
+    --ring: inset 0 1px 0 rgba(255, 255, 255, .17), inset 0 -1px 0 rgba(0, 0, 0, .5), 0 0 0 1px rgba(255, 255, 255, .08) inset;
+    /* every shadow carries a hairline "edge" just under the card: the sleeve's thickness */
+    --edge: 0 2px 0 -1px rgba(170, 180, 225, .16);
+    --sh-s: var(--edge), 0 10px 22px -10px rgba(0, 0, 0, .9);
+    --sh-m: var(--edge), 0 22px 44px -20px rgba(0, 0, 0, .92);
+    --sh-l: var(--edge), 0 40px 90px -32px rgba(0, 0, 0, .95);
   }
   html, body { overflow-x: clip; }
   body { min-height: 100dvh; }
@@ -107,10 +110,20 @@
   .stage [data-drag] { touch-action: pan-y; }
   .pc { touch-action: pan-x; }
 
-  /* one hover behaviour for every cover that can be picked up */
-  .stage [data-drag] .cover, .pc .cover { transition: transform .25s var(--ease-out), filter .25s; }
+  /* one hover behaviour for every cover that can be picked up: it lifts, and under a mouse it tilts
+     toward the pointer with a specular glare (the vars are driven by the FX loop, see "FX" below) */
+  .stage [data-drag] .cover, .pc .cover {
+    transform: perspective(900px) translateY(var(--lift, 0px)) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+    transition: transform .45s var(--ease-out), filter .25s;
+  }
   .stage [data-drag]:hover .cover, .stage [data-drag]:focus-visible .cover,
-  .pc:hover .cover, .pc:focus-visible .cover { transform: translateY(-3px); }
+  .pc:hover .cover, .pc:focus-visible .cover { --lift: -3px; }
+  .cover.tilt { transition: transform .14s linear, filter .25s; }
+  .cover .glare { position: absolute; inset: 0; z-index: 3; pointer-events: none; border-radius: inherit; opacity: 0; transition: opacity .4s; mix-blend-mode: screen;
+    background: radial-gradient(75% 60% at var(--gx, 50%) var(--gy, 0%), rgba(255, 248, 230, .26), rgba(255, 248, 230, .06) 42%, transparent 70%),
+      linear-gradient(var(--ga, 115deg), transparent 34%, rgba(255, 255, 255, .06) 47%, transparent 60%); }
+  .cover.tilt .glare { opacity: 1; }
+  .cover.tilt .c-title { transform: translate3d(var(--tx, 0px), var(--ty, 0px), 0); transition: transform .14s linear; }
   .stage .lifted .cover { transform: none; }
 
   /* ================= MOSAIC: the poster wall ================= */
@@ -134,9 +147,14 @@
   .m-top .tile { align-self: end; }
   .m-mast { grid-area: mast; min-width: 0; padding-top: 2px; }
   .m-kicker { color: var(--gold); }
+  /* the title is gold foil stamped into the stock: a metallic band that slides with the pointer (--fx),
+     debossed with a dark upper lip and a lit lower lip */
   .m-title {
-    font: 900 clamp(1.9rem, 3.5vw, 3.3rem)/.88 var(--font-display); text-transform: uppercase; letter-spacing: -.005em;
-    margin: 10px 0 10px; background: linear-gradient(180deg, #fff 35%, #c3c8de); -webkit-background-clip: text; background-clip: text; color: transparent;
+    font: 900 clamp(1.9rem, 3.5vw, 3.3rem)/.88 var(--font-display); text-transform: uppercase; letter-spacing: -.005em; margin: 10px 0 10px;
+    --tbg: linear-gradient(100deg, #8d6a2c 0%, #f6e3ac 12%, #c4943b 25%, #fff5d6 38%, #b4862f 52%, #f1d48a 66%, #8a6427 80%, #f3dda0 92%, #a57a30 100%) calc(var(--fx) * 100%) 0 / 260% 100%;
+    background: var(--tbg); -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 -1px 0 rgba(0, 0, 0, .75)) drop-shadow(0 1px 0 rgba(255, 233, 180, .22)) drop-shadow(0 12px 24px rgba(0, 0, 0, .5));
+    transition: --fx .9s var(--ease-out);
   }
   .m-by { margin: 0 0 16px; font: 500 11.5px/1.4 var(--font-mono); color: var(--fg-muted); letter-spacing: .05em; }
   .band { margin-top: clamp(22px, 2.6vw, 34px); }
@@ -276,7 +294,7 @@
   .sp-kick { color: var(--gold); }
   .sp-kick i { font-style: normal; color: var(--fg-faint); margin: 0 .55em; }
   .sp-head { font: 900 clamp(2.5rem, 6.2vw, 5.4rem)/.88 var(--font-display); text-transform: uppercase; letter-spacing: -.005em; margin: 14px auto 16px; max-width: 14ch; overflow-wrap: anywhere;
-    background: linear-gradient(180deg, #fff 30%, #c9cde0); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    --tbg: linear-gradient(180deg, #fff 30%, #c9cde0); background: var(--tbg); -webkit-background-clip: text; background-clip: text; color: transparent; }
   .sp-by { margin: 0; display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 8px 16px; font-size: var(--step--1); color: var(--fg-muted); }
   .sp-by b { color: var(--fg); font-weight: 600; }
   .sp-by .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--fg-faint); }
@@ -619,12 +637,136 @@
     .open-n span { display: none; }
   }
 
+  /* ================= FX: light, matter, consequence =================
+     Everything here is decoration: pointer-events none, aria-hidden, and off (or frozen) under reduced motion.
+     Anything that moves on its own is either a compositor-only CSS animation or a job in the one rAF loop. */
+  @property --a1 { syntax: "<number>"; inherits: true; initial-value: 42; }
+  @property --a2 { syntax: "<number>"; inherits: true; initial-value: 20; }
+  @property --fx { syntax: "<number>"; inherits: true; initial-value: .3; }
+
+  /* the room's light: two slow-breathing pools tinted by the #1's cover, and a soft lamp on the pointer */
+  #ambient { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; transition: --a1 2s var(--ease-out), --a2 2s var(--ease-out); }
+  #ambient .aura { position: absolute; width: 96vmax; height: 96vmax; border-radius: 50%; will-change: transform, opacity; }
+  #ambient .aura.a { left: -40vmax; top: -56vmax; background: radial-gradient(closest-side, hsl(var(--a1) 80% 46% / .2), hsl(var(--a1) 80% 40% / .06) 55%, transparent); animation: breathe 13s ease-in-out infinite alternate; }
+  #ambient .aura.b { right: -44vmax; bottom: -60vmax; background: radial-gradient(closest-side, hsl(var(--a2) 80% 52% / .14), transparent); animation: breathe 17s ease-in-out -7s infinite alternate-reverse; }
+  @keyframes breathe { from { transform: scale(.9); opacity: .65; } to { transform: translate(3vmax, 2vmax) scale(1.08); opacity: 1; } }
+  #ambient .lamp { position: absolute; left: -380px; top: -380px; width: 760px; height: 760px; border-radius: 50%; opacity: 0; transition: opacity .9s; will-change: transform;
+    background: radial-gradient(closest-side, hsl(var(--a2) 60% 78% / .07), hsl(var(--a1) 60% 60% / .025) 50%, transparent); }
+  #ambient .lamp.on { opacity: 1; }
+
+  /* one full-viewport canvas for bursts (sparks, flares, ripples); it only draws while something is alive */
+  #fxc { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 126; pointer-events: none; }
+  .fx-crown { position: fixed; z-index: 127; pointer-events: none; filter: drop-shadow(0 0 10px rgba(255, 214, 120, .75)) drop-shadow(0 6px 10px rgba(0, 0, 0, .6)); }
+  .fx-crown i { position: absolute; inset: 0; background: linear-gradient(180deg, #fffbe8, var(--gold-hi) 30%, var(--gold) 62%, #9c6f1c);
+    clip-path: polygon(0 100%, 0 28%, 21% 60%, 50% 0, 79% 60%, 100% 28%, 100% 100%); }
+  .fx-crown b { position: absolute; left: 50%; top: -2px; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: #fff; box-shadow: 0 0 8px 2px #fff6d5; }
+
+  /* rank numerals roll like an odometer when they change. The final digit stays in flow (invisible) so
+     nothing reflows; the wheel is an absolutely placed column under a soft-edged mask. */
+  .rolling { background-image: none !important; }
+  .rolling .odo-d { position: relative; display: inline-block; padding: .3em 0; margin: -.3em 0; color: transparent; vertical-align: baseline;
+    -webkit-mask: linear-gradient(transparent, #000 .16em, #000 calc(100% - .16em), transparent); mask: linear-gradient(transparent, #000 .16em, #000 calc(100% - .16em), transparent); }
+  .rolling .odo-d.static { color: var(--rc); -webkit-mask: none; mask: none; }
+  .odo-s { position: absolute; left: 0; right: 0; top: .3em; text-align: center; will-change: transform; }
+  .odo-s b { display: block; font-weight: inherit; color: var(--rc); }
+  .roll-gold .odo-d.static, .roll-gold .odo-s b { background: var(--gold-grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+  /* a title catching the light when a new #1 is crowned */
+  .shimmer { background: linear-gradient(100deg, var(--fg) 0 38%, var(--gold-hi) 46%, #fff 50%, var(--gold-hi) 54%, var(--fg) 62%) 100% 0 / 300% 100% !important;
+    -webkit-background-clip: text !important; background-clip: text !important; -webkit-text-fill-color: transparent; animation: shimmer 1.5s var(--ease-out) both; }
+  @keyframes shimmer { to { background-position: 0 0; } }
+
+  /* kinetic headline: words rise out of their own baseline, once per mode per visit */
+  .kin .kw { display: inline-block; vertical-align: baseline; padding: .12em .04em .1em; margin: -.12em -.04em -.1em; clip-path: inset(-.4em -.3em 0 -.3em); }
+  .kin .kwi { display: inline-block; }
+  .kin.bgt { background: none !important; filter: none; }
+  .kin.bgt .kwi { background: var(--tbg); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+  /* ---- Mosaic: a poster pulled on heavy stock ---- */
+  .poster::after { /* paper: long fibres plus a fine tooth, laid over the ground but under the art */
+    content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; border-radius: inherit; mix-blend-mode: soft-light; opacity: .9;
+    background-image:
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='420' height='420'><filter id='f'><feTurbulence type='fractalNoise' baseFrequency='.012 .32' numOctaves='3' seed='7'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 .96  0 0 0 0 .88  0 0 0 1.4 -.62'/></filter><rect width='100%' height='100%' filter='url(%23f)'/></svg>"),
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='t'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' seed='3'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 .97  0 0 0 0 .9  0 0 0 .9 -.35'/></filter><rect width='100%' height='100%' filter='url(%23t)'/></svg>");
+  }
+  .m-tex { /* halftone bloom in the inks of the #1, the way a screen-printed poster shows its dots in the light areas */
+    position: absolute; inset: 0; z-index: -1; pointer-events: none;
+    background: radial-gradient(circle, hsl(var(--p2, 20) 90% 72% / .26) 0 .9px, transparent 1.5px) 0 0 / 7px 7px,
+      radial-gradient(circle, hsl(var(--p1, 42) 90% 70% / .18) 0 .8px, transparent 1.4px) 3.5px 3.5px / 7px 7px;
+    -webkit-mask: radial-gradient(48% 30% at 4% 0%, #000, transparent 80%), radial-gradient(40% 20% at 100% 100%, rgba(0, 0, 0, .7), transparent 80%);
+    mask: radial-gradient(48% 30% at 4% 0%, #000, transparent 80%), radial-gradient(40% 20% at 100% 100%, rgba(0, 0, 0, .7), transparent 80%);
+  }
+  .m-lamp { position: absolute; left: -320px; top: -320px; width: 640px; height: 640px; z-index: -1; pointer-events: none; border-radius: 50%; opacity: 0; transition: opacity .6s; will-change: transform;
+    background: radial-gradient(closest-side, rgba(255, 238, 205, .075), rgba(255, 238, 205, .02) 55%, transparent); }
+  .m-lamp.on { opacity: 1; }
+  .m-reg { position: absolute; width: 18px; height: 18px; pointer-events: none; color: rgba(233, 196, 106, .42); }
+  .m-reg.tl { left: 17px; top: 17px; } .m-reg.tr { right: 17px; top: 17px; } .m-reg.bl { left: 17px; bottom: 17px; } .m-reg.br { right: 17px; bottom: 17px; }
+  .m-plate { position: absolute; right: 13px; top: 70px; bottom: 70px; writing-mode: vertical-rl; text-align: center; pointer-events: none;
+    font: 500 8.5px/1 var(--font-mono); letter-spacing: .34em; text-transform: uppercase; color: rgba(233, 196, 106, .3); white-space: nowrap; overflow: hidden; }
+  .m-swatch { display: inline-flex; gap: 2px; align-items: center; }
+  .m-swatch i { width: 9px; height: 9px; border-radius: 1px; box-shadow: inset 0 0 0 .5px rgba(255, 255, 255, .2); }
+  .m-swatch i:first-child { width: 14px; }
+
+  /* ---- Canvas: a survey map of greatness. Contours crowd as the ground climbs toward GOAT. ---- */
+  .topo { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; opacity: 0; transition: opacity .9s; }
+  .topo.on { opacity: 1; }
+  .topo.hi { -webkit-mask: radial-gradient(230px circle at var(--mx, -999px) var(--my, -999px), #000, rgba(0, 0, 0, .35) 45%, transparent);
+    mask: radial-gradient(230px circle at var(--mx, -999px) var(--my, -999px), #000, rgba(0, 0, 0, .35) 45%, transparent); }
+
+  /* ---- Spread: a dark-stock magazine page ---- */
+  .spread::after { /* the sheet: warm tooth that fades at the top and bottom of the page */
+    content: ""; position: absolute; z-index: -1; inset: 0 -28px; pointer-events: none; border-radius: 6px;
+    background:
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='.7' numOctaves='3' seed='11'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 .95  0 0 0 0 .86  0 0 0 1.1 -.5'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>"),
+      linear-gradient(rgba(255, 244, 226, .022), rgba(255, 244, 226, .012));
+    -webkit-mask: linear-gradient(transparent, #000 160px, #000 calc(100% - 140px), transparent); mask: linear-gradient(transparent, #000 160px, #000 calc(100% - 140px), transparent);
+    opacity: .8;
+  }
+  .sp-issue { display: flex; justify-content: space-between; align-items: center; gap: 6px 18px; flex-wrap: wrap; max-width: 760px; margin: 0 auto 26px; padding: 8px 2px 7px;
+    border-top: 3px double rgba(233, 196, 106, .42); border-bottom: 1px solid rgba(233, 196, 106, .2);
+    font: 600 10px/1 var(--font-mono); letter-spacing: .24em; text-transform: uppercase; color: var(--fg-faint); }
+  .sp-issue b { font: 900 13px/1 var(--font-display); letter-spacing: .14em; color: var(--gold); }
+  .sp-list::before, .sp-list::after { content: ""; position: absolute; top: 34px; bottom: 0; width: 1px; pointer-events: none;
+    background: linear-gradient(transparent, rgba(200, 210, 255, .1) 120px, rgba(200, 210, 255, .1) calc(100% - 120px), transparent); }
+  .sp-list::before { left: -18px; } .sp-list::after { right: -18px; }
+  .sp-band .sec { font: 600 10.5px/1 var(--font-mono); letter-spacing: .14em; color: var(--gold); opacity: .75; margin-right: -4px; }
+  .feat .sp-note:not(:empty):not(:focus)::first-letter { /* drop caps on the feature write-ups */
+    float: left; font: normal 900 3.5em/.74 var(--font-display); margin: .1em .1em 0 -.02em; padding: .02em 0 0;
+    background: var(--gold-grad); -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .sp-folio { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 34px 10px 0; padding-top: 12px; border-top: 1px solid var(--rule);
+    font: 500 10px/1 var(--font-mono); letter-spacing: .2em; text-transform: uppercase; color: var(--fg-faint); }
+  .sp-folio .pg { font: 800 13px/1 var(--font-display); letter-spacing: .3em; color: var(--fg-muted); }
+  .sp-folio span:last-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+
+  /* ---- Stage: haze in the beams, warm footlights ---- */
+  .haze { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; opacity: 0; transition: opacity 1.4s; }
+  .haze.on { opacity: 1; }
+  .lit::after { content: ""; position: absolute; left: 3%; right: 3%; bottom: -12px; height: 52%; z-index: -2; pointer-events: none;
+    background: radial-gradient(50% 75% at 50% 100%, rgba(255, 206, 140, .13), transparent 72%); animation: footlight 7s ease-in-out infinite; }
+  .ensemble::before { animation: footlight 5.3s ease-in-out -2s infinite; }
+  @keyframes footlight { 0%, 100% { opacity: .82; } 17% { opacity: 1; } 21% { opacity: .88; } 46% { opacity: .97; } 71% { opacity: .8; } 76% { opacity: .93; } }
+
+  .ghost .cover { transform: rotate(var(--gr, -3deg)); }
+  .ccard.dragging .cover { transform: rotate(var(--gr, 0deg)) scale(1.06); }
+
+  @media (max-width: 760px) {
+    .m-reg, .m-plate, .sp-list::before, .sp-list::after { display: none; }
+    .sp-issue { justify-content: center; letter-spacing: .16em; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #ambient .aura, .lit::after, .ensemble::before { animation: none; }
+    #ambient .lamp, .m-lamp, .topo.hi, .cover .glare { display: none; }
+    .stage [data-drag] .cover, .pc .cover { transform: none; }
+  }
+
   /* While a mode switch is in flight, the new layout's chrome waits; it fades in once the covers land. */
   .stage.hold :is(.m-mast .band-h, .band > .band-h, .num, .cap, .open-row, .tip, .lbl, .cv-axis, .cbadge, .ctitle, .ccut,
     .sp-n, .sp-body, .row .sp-note, .sp-band, .sp-open, .rn, .plaque small, .crown, .ens .n, .ens-h) { opacity: 0 !important; transition: none !important; }
 </style>
 </head>
 <body class="grain">
+<div id="ambient" aria-hidden="true"><div class="aura a"></div><div class="aura b"></div><div class="lamp"></div></div>
 <nav id="study-nav"></nav>
 
 <main>
@@ -802,10 +944,11 @@
   function pushUndo(s) { undoStack.push(s); if (undoStack.length > 150) undoStack.shift(); renderBar(); }
   function undo() {
     if (!undoStack.length) { G.toast("Nothing to undo"); return; }
-    const before = capture();
+    const before = capture(), o0 = S.order.slice();
     Object.assign(S, JSON.parse(undoStack.pop()));
     renderAll();
     play(before, { dur: 480 });
+    rankFX(o0, 480);
     announce("Undone");
     G.toast("Undone");
   }
@@ -813,12 +956,14 @@
   /** Mutate state through fn, record undo, re-render, and FLIP everything that moved. */
   function commit(fn, o = {}) {
     const before = o.before || capture();
-    const s0 = snap();
+    const s0 = snap(), o0 = S.order.slice();
     const msg = fn();
     const changed = snap() !== s0;
     if (changed) pushUndo(s0);
     renderAll();
-    play(before, Object.assign({ dur: 500 }, o.play));
+    const po = Object.assign({ dur: 500 }, o.play);
+    play(before, po);
+    if (changed) rankFX(o0, po.dur + (po.stagger ? Math.min(po.stagger * 8, po.maxStagger || 160) : 0), { mover: o.mover });
     if (changed && msg) announce(msg);
     return changed;
   }
@@ -874,6 +1019,7 @@
   }
   /** Boxes of every cover by id. Covers still mid-flight report where they are on screen right now. */
   function capture(roots = ["#faceoff", "#stage", "#pool"]) {
+    untilt(true); // a tilted cover would report a skewed box
     const m = new Map();
     FLY.forEach((f, id) => { if (!f.absorbed) m.set(id, infoOf(f.c, f.c.getBoundingClientRect())); });
     settleFlights();
@@ -1055,6 +1201,12 @@
     const bs = bands();
     const poster = mk("section", "poster");
     setHue(poster);
+    // print furniture: halftone bloom, a lamp on the stock, registration marks, the plate line
+    const REG = `<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width=".9"><circle cx="9" cy="9" r="5"/><path d="M9 0v18M0 9h18"/></svg>`;
+    poster.append(mk("div", "m-tex"), mk("div", "m-lamp"));
+    ["tl", "tr", "bl", "br"].forEach((k) => poster.append(mk("span", "m-reg " + k, REG)));
+    poster.append(mk("span", "m-plate", `G.O.A.T. Press · plate 01 · Top ${S.size} · ${S.order.length} pulled · 350 gsm`));
+    poster.querySelectorAll(".m-tex, .m-lamp, .m-reg, .m-plate").forEach((e) => e.setAttribute("aria-hidden", "true"));
     const top = mk("div", "m-top");
     const b0 = bs[0];
     const mast = mk("header", "m-mast",
@@ -1089,8 +1241,10 @@
       addWall(sec, b, b.start, kinds[Math.min(b.i, 3)]);
       poster.append(sec);
     });
+    // the colour bar a printer checks the inks against: here it is the list's own palette, in rank order
+    const sw = S.order.slice(0, 12).map((id) => `<i style="background:hsl(${item(id).h[1]} 70% 56%)"></i>`).join("");
     poster.append(mk("footer", "m-foot",
-      `<span class="brand">G.O.A.T.</span><span>${esc(LIST.title)} · Top ${S.size}</span><span>Ranked by you · 2026</span>`));
+      `<span class="brand">G.O.A.T.</span><span class="m-swatch" aria-hidden="true">${sw}</span><span>${esc(LIST.title)} · Top ${S.size}</span><span>Ranked by you · 2026</span>`));
     host.append(poster);
   }
   function hitMosaic(x, y, d) {
@@ -1155,6 +1309,8 @@
     host.append(wrap);
     CV = { board, cards: new Map() };
     CV.geo = canvasGeo();
+    board.append(mk("canvas", "topo"), mk("canvas", "topo hi"));
+    $$("canvas", board).forEach((c) => c.setAttribute("aria-hidden", "true"));
     board.append(mk("div", "cv-axis", "Higher is greater<br>Sideways is free"));
     CV.guide = mk("div", "cguide", `<span class="rpill"></span>`);
     board.append(CV.guide);
@@ -1222,7 +1378,13 @@
       c.dataset.rank = r;
       c.style.zIndex = 200 - r;
       c.classList.toggle("top", r <= 3);
-      c.querySelector(".cbadge").textContent = r;
+      const bd = c.querySelector(".cbadge");
+      if (bd.dataset.v !== String(r)) {
+        // a neighbour's badge ticks over as the dragged card passes it
+        if (bd.dataset.v && D && D.canvas && D.started) roll(bd, +bd.dataset.v, r, 0, 300);
+        else bd.textContent = r;
+        bd.dataset.v = r;
+      }
       c.setAttribute("aria-label", `#${r} ${item(id).title}. Canvas: Alt+Up or Down changes rank, Alt+Left or Right moves it sideways.`);
       const cx = xPx(S.x[id] ?? .5, w, geo);
       c.classList.toggle("flipx", cx > geo.W * .76);
@@ -1366,7 +1528,9 @@
     const tw = S.size === 10 ? 14 : S.size === 25 ? 8 : 4;
     let ticks = "";
     for (let i = 0; i < S.size; i++) ticks += `<i${i < S.order.length ? ' class="on"' : ""}></i>`;
-    wrap.append(mk("header", "sp-mast",
+    const now = new Date();
+    const issue = `<div class="sp-issue" aria-hidden="true"><b>The G.O.A.T. Review</b><span>Vol. II · No. ${S.size}</span><span>${now.toLocaleString("en", { month: "long" })} ${now.getFullYear()}</span></div>`;
+    wrap.append(mk("header", "sp-mast", issue +
       `<span class="eyebrow sp-kick">Top ${S.size}<i>·</i>${esc(LIST.topic)}</span><h2 class="sp-head">${esc(LIST.title)}</h2>` +
       `<p class="sp-by"><span>Ranked by <b>you</b></span><span class="dot"></span><span>${S.order.length} of ${S.size}</span>` +
       `<span class="ticks" style="--tw:${tw}px" aria-hidden="true">${ticks}</span><span class="dot"></span><span>Click any note to write</span></p>`));
@@ -1374,12 +1538,13 @@
     list.setAttribute("aria-label", "Ranking");
     bands().forEach((b, bi) => {
       if (b.start > S.order.length) return;
-      list.append(mk("li", "sp-band" + (bi === 0 ? " goat" : ""), `<h3>${tierName(b)}</h3><span class="rng">${b.start}–${b.end}</span>`));
+      list.append(mk("li", "sp-band" + (bi === 0 ? " goat" : ""), `<span class="sec" aria-hidden="true">${["I", "II", "III", "IV", "V", "VI"][bi] || bi + 1}.</span><h3>${tierName(b)}</h3><span class="rng">${b.start}–${b.end}</span>`));
       for (let r = b.start; r <= Math.min(b.end, S.order.length); r++) list.append(spreadEntry(r));
     });
     if (S.order.length < S.size) list.append(mk("li", "sp-open", `Open slot #${S.order.length + 1}${S.size - S.order.length > 1 ? ` (+${S.size - S.order.length - 1} more)` : ""}. Drag a cover from the pool to fill it.`));
     list.append(mk("div", "sp-line"));
     wrap.append(list);
+    wrap.append(mk("footer", "sp-folio", `<span>G.O.A.T.</span><span class="pg" aria-hidden="true">— ${String(S.order.length).padStart(2, "0")} —</span><span>${esc(LIST.title)}</span>`));
     host.append(wrap);
   }
   function spreadEntry(r) {
@@ -1431,7 +1596,8 @@
   function renderStageMode(host) {
     const pre = S.stagePreset, p = PRESETS[pre];
     const th = mk("section", "theatre p-" + pre);
-    th.append(mk("div", "curt l"), mk("div", "curt r"));
+    const hz = mk("canvas", "haze"); hz.setAttribute("aria-hidden", "true");
+    th.append(hz, mk("div", "curt l"), mk("div", "curt r"));
     const bar = mk("div", "st-bar");
     const chips = mk("div", "chips");
     chips.setAttribute("role", "group");
@@ -1515,6 +1681,7 @@
     host.innerHTML = "";
     CV = null;
     VIEWS[mode].render(host);
+    envMount();
   }
   function renderPool() {
     const list = $("#pool");
@@ -1672,6 +1839,7 @@
     // the reveal rides the animation timeline, so it stays in step with the flights under load
     TR.revealAnim = host.animate([{ offset: 0 }, { offset: 1 }], { duration: 330 });
     TR.revealAnim.onfinish = reveal;
+    if (!SEEN.has(m)) { SEEN.add(m); kinetic(modeTitle(), 150); }
   }
 
   /* ================= pointer drag (shared by every mode; mouse, pen and touch) ================= */
@@ -1741,6 +1909,9 @@
     clearTimeout(D.hold);
     document.body.classList.add("is-dragging");
     D.raf = requestAnimationFrame(autoScroll);
+    untilt(true);
+    D.vx = 0; D.lx = D.x; D.tilt = 0;
+    fxRun(dragTiltJob);
     if (D.canvas) return canvasStart();
     const cov = D.src.querySelector(".cover") || D.src;
     const r = cov.getBoundingClientRect();
@@ -1768,6 +1939,7 @@
   }
   function ghostMove() {
     D.ghost.style.transform = `translate3d(${D.x - D.ox}px, ${D.y - D.oy}px, 0)`;
+    D.vx = D.vx * .5 + (D.x - D.lx) * .5; D.lx = D.x;
     let t = null;
     if (inside(drawerEl.getBoundingClientRect(), D.x, D.y)) t = D.inPool ? null : { kind: "pool" };
     else t = VIEWS[mode].hit(D.x, D.y, D);
@@ -1798,7 +1970,7 @@
     if (t && t.kind === "duel") { duel(id, t.r, gi); return; }
     const before = capture(); before.set(id, gi);
     if (!t || t.noop) { renderAll(); play(before, { dur: 420 }); return; }
-    commit(() => applyTarget(id, t), { before });
+    commit(() => applyTarget(id, t), { before, mover: id });
   }
   function applyTarget(id, t) {
     const it = item(id);
@@ -1826,6 +1998,7 @@
     D.card.classList.toggle("to-pool", overPool);
     const cx = clamp(D.x - D.gx - br.left, 0, geo.W), cy = clamp(D.y - D.gy - br.top, 0, geo.H - 1);
     const w = D.card.offsetWidth, h = w * 4 / 3;
+    D.vx = D.vx * .5 + (D.x - D.lx) * .5; D.lx = D.x;
     D.card.style.transform = `translate(${Math.round(cx - w / 2)}px, ${Math.round(cy - h / 2)}px)`;
     if (overPool) { CV.guide.classList.remove("on"); return; }
     S.x[D.id] = +xFrac(cx, w, geo).toFixed(3);
@@ -1836,7 +2009,9 @@
   }
   function canvasEnd(cancel) {
     const id = D.id, card = D.card;
+    const o0 = JSON.parse(D.s0).order;
     card.classList.remove("dragging", "to-pool");
+    card.querySelector(".cover").style.removeProperty("--gr");
     drawerEl.classList.remove("hot");
     if (CV) CV.guide.classList.remove("on");
     if (cancel) { Object.assign(S, JSON.parse(D.s0)); layoutCanvas(); renderBar(); return; }
@@ -1846,11 +2021,13 @@
       S.order = S.order.filter((x) => x !== id);
       pushUndo(D.s0);
       renderAll(); play(before, { dur: 480 });
+      rankFX(o0, 480);
       announce(`${item(id).title} returned to the pool`);
       return;
     }
     if (snap() !== D.s0) {
       pushUndo(D.s0);
+      rankFX(o0, 380, { noRoll: true, mover: id });
       const wasR = JSON.parse(D.s0).order.indexOf(id) + 1, r = S.order.indexOf(id) + 1;
       announce(wasR !== r ? `${item(id).title} moved to #${r}` : `${item(id).title} moved sideways`);
     }
@@ -1964,7 +2141,7 @@
     closeFo();
     if (!res) { renderAll(); play(b2, { dur: 460 }); G.toast("Face-off called off"); return; }
     const win = res === "left" ? chId : holder, lose = win === chId ? holder : chId;
-    commit(() => { bumpToast(placePair(win, lose, r)); return `${item(win).title} takes #${r}`; }, { before: b2 });
+    commit(() => { bumpToast(placePair(win, lose, r)); return `${item(win).title} takes #${r}`; }, { before: b2, mover: win });
     G.toast(win === chId ? `${item(win).title} takes #${r}` : `${item(win).title} holds #${r}`);
   }
 
@@ -2049,7 +2226,7 @@
         const ids = poolIds(), i = ids.indexOf(id);
         const next = ids[i + 1] || ids[i - 1];
         pendingFocus = next ? { id: next, zone: "pool" } : null;
-        commit(() => { bumpToast(placeAt(id, S.order.length)); return `${item(id).title} ranked #${S.order.indexOf(id) + 1}`; });
+        commit(() => { bumpToast(placeAt(id, S.order.length)); return `${item(id).title} ranked #${S.order.indexOf(id) + 1}`; }, { mover: id });
         G.toast(`${item(id).title} ranked #${S.order.indexOf(id) + 1}`);
       } else if (arrows.includes(k)) {
         e.preventDefault();
@@ -2071,7 +2248,7 @@
       }
       const to = idx + (k === "ArrowUp" || k === "ArrowLeft" ? -1 : 1);
       if (to < 0 || to >= S.order.length) return;
-      commit(() => { placeAt(id, to); return `${item(id).title} moved to #${to + 1}`; });
+      commit(() => { placeAt(id, to); return `${item(id).title} moved to #${to + 1}`; }, { mover: id });
       return;
     }
     if (k === "Delete" || k === "Backspace") {
