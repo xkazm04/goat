@@ -74,17 +74,42 @@ To open them locally, run `python3 -m http.server --directory docs/v2/prototypes
 | How a list begins | **Prompt → candidate pool.** Type a topic; AI proposes about 30 candidates with art and metadata; prune, then rank. |
 | AI while curating | **Critic / debate** (revive the v1 debate engine), **gap spotter** ("you might be missing..."), **art director** (generated covers and list hero art) |
 | AI provider | **Claude for everything**, with web search for grounding. The Gemini client gets retired. |
-| Fingerprint visual | **Undecided.** Prototype all four first: study E, `dna.html`. |
+| Fingerprint visual | Prototyped four ways in study E, `dna.html`; picked in round 5. |
 
 | Study | File | Idea |
 |---|---|---|
 | E: Taste DNA | `dna.html` | One fingerprint computed live from the ranking and drawn four ways: E1 constellation, E2 spectrum barcode, E3 generative orb, E4 radar plus a persona trading card. |
 
+## Round 5: verdicts on the studies — modes evolve, not replace
+
+v1 had five view modes (`ViewSwitcher.tsx`: podium, goat, rushmore, bracket,
+tierlist) plus a separate Awards page. v2 keeps the idea of several rating
+experiences, but each old mode evolves into one of the new metaphors.
+
+| v1 mode | v2 successor | How it carries over |
+|---|---|---|
+| Tier list (S/A/B/C, all items) | **Canvas** (study B) | The height bands *are* the tiers (GOAT / Essential / Great / Fine). The sideways axis is free for clustering, and the exact order comes from height inside each band. |
+| Awards (categories with nominees) | **Editorial spread** (study A) | Each award category is a section of the ceremony programme: the winner as the hero entry, the nominees under it, and write-ups inline. |
+| Bracket (tournament) | **Stage tournament** (study D) | A bracket runs as a series of staged face-offs under twin spotlights. The finals land on the podium, and the reveal plays the result. |
+| Podium (3), G.O.A.T. (3), Mt. Rushmore (4) | **Stage presets** (study D) | Layout presets on the same stage and face-off engine: Podium, Rushmore (four carved heads), and a single GOAT throne. |
+| — | ~~Collector's shelf~~ (study C) | **Dropped.** Three modes (Canvas, Spread, Stage) are enough. |
+
+So v2 ships **three modes**: Canvas, Spread and Stage.
+
+| Question | Decision |
+|---|---|
+| Taste DNA visual | **E4: radar plus persona trading card.** E1–E3 are retired. |
+| Where E4 lives | **Profile centrepiece.** The big holographic card at the top of the profile, updated as you rank. |
+
 ## Open threads (next rounds)
 
-- Pick or blend the interaction metaphor after trying the studies.
-- Pick the fingerprint visual. Decide how traits are extracted (AI-tagged
-  per item at enrichment time?) and where recommendations show up.
+- **Default long Top-N (10–50).** With the shelf dropped, which mode owns
+  the plain "rank my top 25" list: Spread's Column layout, or Canvas?
+- **Mode switching.** Is one list viewable in several modes (v1 behaviour),
+  or is the mode chosen when the list is created? How does data map
+  between them (tiers ↔ positions ↔ bracket seeds)?
+- Trait extraction for Taste DNA (AI-tagged per item at enrichment time?)
+  and where recommendations show up.
 - The publish surface: the public list page, card templates and the embed
   widget.
 - Technical package: the v2 data model, what to port and delete, store
