@@ -67,6 +67,8 @@
     { href: "stage.html",  label: "Stage",            n: "D" },
     { href: "dna.html",    label: "Taste DNA",        n: "E" },
     { href: "modes.html",  label: "One list, four modes", n: "F" },
+    { href: "awards.html", label: "Awards",           n: "G" },
+    { href: "create.html", label: "Create with AI",   n: "H" },
   ];
 
   /** Render the shared top nav into the first element matching selector. */

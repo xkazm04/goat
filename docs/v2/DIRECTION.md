@@ -148,6 +148,24 @@ continuous:
 | v1 content | **Import the seed lists.** A one-off script copies the seeded game lists and the awards event into v2 as starter content. |
 | Next step | **Refine the prototypes first**, before any production code |
 
+## Round 9: prototype refinement
+
+**Feedback on Study F:** "The transition is often not seamless between the
+modes; each needs polish of UI and animations to fit well."
+
+This round covers three tracks:
+- **F polish:** a seamless, choreographed mode switch (chrome out, objects
+  travel, chrome in). The pool drawer reserves its own space. Canvas tier
+  cut lines become draggable and renamable. Mosaic's empty slots condense.
+  Rushmore and Throne each get their own staging, and touch drag works.
+- **G Awards** (`awards.html`): the ceremony programme. Categories with
+  nominees, a winner hero with a citation, crowning by drag, an envelope
+  reveal, and "Present the night".
+- **H Create with AI** (`create.html`): prompt → streaming candidate pool,
+  pruned while it streams → gap-spotter suggestions → AI first draft →
+  critic chat → handoff into Study F (`localStorage goat.v2.handoff`,
+  `modes.html#handoff`). The AI is scripted in the prototype.
+
 ## Open threads (next rounds)
 
 - Award lists carry *categories* (several small rankings), not one order.
