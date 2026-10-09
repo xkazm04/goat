@@ -28,6 +28,9 @@
     width: min(1240px, calc(100% - 32px)); margin: 16px auto 0; position: relative; z-index: 3;
     display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 28px;
     padding: 14px 18px 14px 20px;
+    /* nothing but static ground sits behind the intro, so its backdrop blur bought nothing and
+       cost a full re-blur on every frame the spotlight's motes moved beneath its blur radius */
+    backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(178, 190, 255, .05);
   }
   .intro-text { flex: 1 1 560px; min-width: 0; }
   .intro .eyebrow { color: var(--gold); margin: 0 0 6px; }
@@ -55,11 +58,15 @@
       radial-gradient(50% 50% at 72% 50%, hsl(200 70% 50% / .08), transparent 70%);
   }
   @property --lang { syntax: "<angle>"; inherits: true; initial-value: 30deg; }
-  .seal { position: relative; width: clamp(132px, 16vw, 188px); aspect-ratio: 1; display: block; margin: 0 auto 22px; filter: drop-shadow(0 18px 50px rgba(233, 196, 106, .28)); }
+  .seal { position: relative; width: clamp(132px, 16vw, 188px); aspect-ratio: 1; display: block; margin: 0 auto 22px; }
+  /* the static coin carries the shadow and the sheen; the spinning ring sits outside it, so the
+     filtered group is rasterised once instead of every frame */
+  .seal-coin { position: absolute; inset: 0; isolation: isolate; filter: drop-shadow(0 18px 50px rgba(233, 196, 106, .28)); }
   .seal svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
   .seal .ring-text { font: 700 10.5px/1 var(--font-body); letter-spacing: .2em; fill: var(--gold); }
   /* the ring text spins as its own composited layer, so the idle page never repaints the seal */
-  .seal .seal-ring { animation: spin 80s linear infinite; will-change: transform; }
+  /* slow spins are stepped (~12 updates/s, under a pixel each): between steps nothing is damaged, so idle frames cost nothing */
+  .seal .seal-ring { animation: spin 80s steps(960) infinite; will-change: transform; }
   /* foil catching the light: an anisotropic conic sheen, turned by the pointer (--lang) */
   .seal-sheen { position: absolute; inset: 1.5%; border-radius: 50%; pointer-events: none; mix-blend-mode: overlay;
     background: conic-gradient(from var(--lang), transparent 0deg, rgba(255, 248, 225, .9) 26deg, transparent 64deg, transparent 176deg, rgba(255, 248, 225, .7) 206deg, transparent 244deg); }
@@ -323,13 +330,14 @@
   .rays { position: absolute; z-index: -1; left: 50%; top: 50%; width: 230%; aspect-ratio: 1; translate: -50% -50%; pointer-events: none; border-radius: 50%; opacity: .55;
     background: repeating-conic-gradient(from 0deg, rgba(255, 227, 161, .16) 0 4deg, transparent 4deg 16deg);
     -webkit-mask: radial-gradient(closest-side, #000 12%, transparent 72%); mask: radial-gradient(closest-side, #000 12%, transparent 72%);
-    animation: spin 90s linear infinite; will-change: transform; }
-  .cat.grand .rays { width: 270%; opacity: 1; }
+    rotate: 4deg; }
+  /* only the grand prize's rays turn; the others hold still behind their turning halo */
+  .cat.grand .rays { width: 270%; opacity: 1; animation: spin 90s steps(1080) infinite; will-change: transform; }
   /* a laurel halo turning slowly behind every winner */
-  .halo { position: absolute; z-index: -1; left: 50%; top: 50%; width: 152%; aspect-ratio: 1; translate: -50% -50%; pointer-events: none; opacity: .5;
-    animation: spin 160s linear infinite reverse; will-change: transform; }
+  .halo { position: absolute; z-index: -1; left: 50%; top: 50%; width: 134%; aspect-ratio: 1; translate: -50% -50%; pointer-events: none; opacity: .62;
+    animation: spin 160s steps(1920) infinite reverse; will-change: transform; }
   .halo svg { width: 100%; height: 100%; overflow: visible; }
-  .cat.grand .halo { opacity: .7; }
+  .cat.grand .halo { width: 128%; opacity: .8; }
   .hero.off .rays, .hero.off .halo { animation-play-state: paused; }
 
   .finis { text-align: center; padding: 90px var(--gutter) 110px; color: var(--fg-faint); font-size: var(--step--1); }
@@ -461,18 +469,14 @@
   /* ---------- spotlight over the cover, with dust motes ---------- */
   .spot { position: absolute; z-index: -1; left: 50%; top: calc(-1 * clamp(36px, 6vw, 72px)); width: min(1000px, 160%); height: 720px; translate: -50% 0; pointer-events: none; }
   .spot-beam { position: absolute; inset: 0; clip-path: polygon(43% 0, 57% 0, 84% 100%, 16% 100%); filter: blur(16px);
-    background: linear-gradient(180deg, rgba(255, 238, 200, .13), rgba(255, 232, 186, .06) 55%, transparent 92%);
-    animation: breathe 7s ease-in-out infinite alternate; }
-  @keyframes breathe { from { opacity: .75; } to { opacity: 1; } }
+    background: linear-gradient(180deg, rgba(255, 238, 200, .13), rgba(255, 232, 186, .06) 55%, transparent 92%); }
   #motes { position: absolute; inset: 0; width: 100%; height: 100%; }
 
   /* ---------- orchestra pit: warm stand-lights along the foot of the viewport ---------- */
   .pit { position: fixed; left: 0; right: 0; bottom: 0; height: 120px; z-index: 40; pointer-events: none;
     background:
       radial-gradient(circle at 50% 100%, rgba(255, 214, 150, .5) 0 1.2px, rgba(255, 180, 90, .14) 3px, transparent 10px) 0 calc(100% + 4px) / 74px 26px repeat-x,
-      radial-gradient(56% 100% at 50% 100%, rgba(255, 168, 72, .13), rgba(255, 140, 60, .04) 55%, transparent 80%);
-    animation: pit 5.2s ease-in-out infinite alternate; }
-  @keyframes pit { 0% { opacity: .8; } 45% { opacity: 1; } 60% { opacity: .88; } 100% { opacity: .96; } }
+      radial-gradient(56% 100% at 50% 100%, rgba(255, 168, 72, .13), rgba(255, 140, 60, .04) 55%, transparent 80%); }
 
   /* ---------- ribbon bookmark: tracks the category in view ---------- */
   .ribbon { position: fixed; top: var(--nav-h); right: 26px; z-index: 45; width: 38px; pointer-events: none; display: none;
@@ -748,7 +752,7 @@
   cats.forEach((c) => c.cite && cites.set(K(c.id, c.winner), c.cite));
 
   /* ---------- SVG: laurel wreath, medal, seal ---------- */
-  function laurelPaths({ r = 36, leaves = 8, from = 108, to = 246, fill = "url(#foil)", stroke = "none", sw = 0 } = {}) {
+  function laurelPaths({ r = 36, leaves = 8, from = 108, to = 246, fill = "url(#foil)", stroke = "none", sw = 0, leaf = 1 } = {}) {
     const P = (th) => [50 + r * Math.cos(th * Math.PI / 180), 50 + r * Math.sin(th * Math.PI / 180)];
     let out = "";
     for (const side of [1, -1]) {
@@ -760,7 +764,7 @@
         const [px, py] = P(th);
         for (const lean of [42, 138]) {
           const a = th + lean; // outer leaf leans between growth tangent (th+90) and outward normal (th); inner mirrors it
-          const rx = 7 * s, ry = 2.7 * s;
+          const rx = 7 * s * leaf, ry = 2.7 * s * leaf;
           const cx = px + rx * Math.cos(a * Math.PI / 180), cy = py + rx * Math.sin(a * Math.PI / 180);
           out += `<ellipse cx="${mx(cx).toFixed(2)}" cy="${cy.toFixed(2)}" rx="${rx.toFixed(2)}" ry="${ry.toFixed(2)}" transform="rotate(${ma(a).toFixed(1)} ${mx(cx).toFixed(2)} ${cy.toFixed(2)})" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`;
         }
@@ -777,7 +781,7 @@
     `<circle cx="50" cy="50" r="17" fill="none" stroke="rgba(233,196,106,.45)" stroke-dasharray="3 3"/></svg>`;
   // the seal is three layers: the struck coin, its ring text (spun on the compositor) and a foil sheen
   const sealSVG = (sfx = "") =>
-    `<div class="seal" role="img" aria-label="Gold seal: The RPG Awards, edition 2026">` +
+    `<div class="seal" role="img" aria-label="Gold seal: The RPG Awards, edition 2026"><div class="seal-coin">` +
     `<svg class="seal-base" viewBox="0 0 200 200" aria-hidden="true">` +
     `<circle cx="100" cy="100" r="97" fill="url(#sealBg)" stroke="url(#foil)" stroke-width="2.5"/>` +
     `<circle cx="100" cy="100" r="91" fill="none" stroke="rgba(233,196,106,.55)" stroke-width="1.6" stroke-dasharray="1.2 4.2" stroke-linecap="round"/>` +
@@ -786,12 +790,13 @@
     `<text class="mid-s" x="100" y="80" text-anchor="middle">EDITION</text>` +
     `<text class="mid" x="100" y="113" text-anchor="middle">2026</text>` +
     `<text class="mid-s" x="100" y="131" text-anchor="middle">G.O.A.T.</text></svg>` +
+    `<span class="seal-sheen" aria-hidden="true"></span></div>` +
     `<svg class="seal-ring" viewBox="0 0 200 200" aria-hidden="true"><defs><path id="ringPath${sfx}" d="M100 100 m-79 0 a79 79 0 1 1 158 0 a79 79 0 1 1 -158 0"/></defs>` +
     `<text class="ring-text"><textPath href="#ringPath${sfx}" textLength="490" lengthAdjust="spacing">THE RPG AWARDS · EDITION 2026 · CURATED BY YOU ·</textPath></text></svg>` +
-    `<span class="seal-sheen" aria-hidden="true"></span><span class="seal-shock" aria-hidden="true"></span></div>`;
+    `<span class="seal-shock" aria-hidden="true"></span></div>`;
   const haloSVG = () =>
     `<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="48.6" fill="none" stroke="url(#foil)" stroke-width=".35" stroke-dasharray=".5 1.6" stroke-linecap="round"/>` +
-    `${laurelPaths({ r: 44, leaves: 13, from: 98, to: 262 })}</svg>`;
+    `${laurelPaths({ r: 44, leaves: 17, from: 96, to: 264, leaf: .62 })}</svg>`;
   const ICON = {
     crown: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 12.5h12l1-8-4 3L8 2.5 5 7.5l-4-3z" fill="currentColor"/></svg>',
     env: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><rect x="1.5" y="3.5" width="13" height="9" rx="1.2"/><path d="M1.8 4l6.2 4.6L14.2 4"/></svg>',
@@ -965,7 +970,7 @@
     };
     const kick = () => { if (!raf && jobs.size && !document.hidden) raf = requestAnimationFrame(loop); };
     document.addEventListener("visibilitychange", () => { if (document.hidden) { cancelAnimationFrame(raf); raf = 0; } else kick(); });
-    return { add(fn) { jobs.add(fn); kick(); }, has: (fn) => jobs.has(fn) };
+    return { add(fn) { jobs.add(fn); kick(); }, has: (fn) => jobs.has(fn), list: () => [...jobs].map((j) => j.name) };
   })();
   const TAU = Math.PI * 2, rnd = (a, b) => a + Math.random() * (b - a), pick = (arr) => arr[(Math.random() * arr.length) | 0];
 
@@ -1114,13 +1119,16 @@
       p.vx = rnd(-.08, .08); p.vy = rnd(.04, .2); p.r = rnd(.5, 1.7); p.ph = rnd(0, TAU); p.tw = rnd(.6, 1.6);
       return p;
     }
+    let odd = false;
     function frame(t) {
       if (!visible) { on = false; return false; }
+      // motes drift a fraction of a pixel per frame: drawing every other frame looks identical and halves the cost
+      if ((odd = !odd)) return;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, W, H);
       ctx.globalCompositeOperation = "lighter";
       for (const p of ps) {
-        p.x += p.vx + Math.sin(t / 2400 + p.ph) * .12; p.y += p.vy;
+        p.x += (p.vx + Math.sin(t / 2400 + p.ph) * .12) * 2; p.y += p.vy * 2;
         if (p.y > H * .96) seed(p, false);
         const edge = 1 - Math.min(1, Math.abs(p.x - W / 2) / half(p.y));
         const fadeY = Math.min(1, p.y / (H * .1)) * Math.min(1, (H - p.y) / (H * .3));
@@ -1552,12 +1560,12 @@
   /* ---------- opening: the curtain parts, the seal is struck ---------- */
   function strikeSeal(seal = sealEl, delay = 0, dust = pageDust) {
     if (reduced) return;
-    const shock = $(".seal-shock", seal), ds = "drop-shadow(0 18px 50px rgba(233, 196, 106, .28))";
+    const shock = $(".seal-shock", seal);
     seal.animate([
-      { opacity: 0, transform: "perspective(700px) translateY(-46px) scale(1.7) rotateX(38deg) rotateY(-70deg)", filter: `${ds} blur(5px) brightness(2.2)` },
-      { opacity: 1, transform: "perspective(700px) scale(.93)", filter: `${ds} blur(0) brightness(1.9)`, offset: .55 },
-      { transform: "perspective(700px) scale(1.035)", filter: `${ds} brightness(1.25)`, offset: .76 },
-      { transform: "none", filter: `${ds} brightness(1)` },
+      { opacity: 0, transform: "perspective(700px) translateY(-46px) scale(1.7) rotateX(38deg) rotateY(-70deg)", filter: "blur(5px) brightness(2.2)" },
+      { opacity: 1, transform: "perspective(700px) scale(.93)", filter: "blur(0px) brightness(1.9)", offset: .55 },
+      { transform: "perspective(700px) scale(1.035)", filter: "blur(0px) brightness(1.25)", offset: .76 },
+      { transform: "none", filter: "blur(0px) brightness(1)" },
     ], { duration: 720, delay, easing: "cubic-bezier(.55,0,.6,1)", fill: "backwards" });
     shock.animate([{ opacity: .95, transform: "scale(.92)" }, { opacity: 0, transform: "scale(1.85)" }], { duration: 720, delay: delay + 400, easing: OUT });
     seal.animate([{ "--lang": "-40deg" }, { "--lang": "320deg" }], { duration: 1100, delay: delay + 380, easing: "cubic-bezier(.3,.6,.3,1)" });
@@ -1840,7 +1848,7 @@
   $("#presentBtn").addEventListener("click", presentNight);
 
   // test/debug hook: lets the verification script crown and inspect without reaching into closures
-  window.__awards = { cats, crown, moveTo, openEnvelope, presentNight, get ceremonyOpen() { return cer.on; } };
+  window.__awards = { cats, crown, moveTo, openEnvelope, presentNight, get ceremonyOpen() { return cer.on; }, get fxJobs() { return FX.list(); } };
 })();
 </script>
 </body>

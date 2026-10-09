@@ -12,7 +12,6 @@
   @property --a2 { syntax: "<number>"; inherits: true; initial-value: 20; }
   :root {
     --a1: 42; --a2: 20;
-    transition: --a1 1.4s var(--ease-out), --a2 1.4s var(--ease-out);
     --rule: rgba(200, 210, 255, .08);
     --wrap: min(1400px, calc(100% - 32px));
     --noise: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='1.4 0 0 0 -.2  1.4 0 0 0 -.2  1.4 0 0 0 -.2  0 0 0 0 1'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
@@ -22,7 +21,8 @@
   .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   kbd { font: 600 .68rem/1 var(--font-mono); color: var(--fg-muted); padding: 2px 5px; border-radius: 4px; border: 1px solid var(--glass-edge); background: var(--glass); }
 
-  .ambient { position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  /* the hue glides here only: transitioning it on :root restyled every element each frame */
+  .ambient { position: fixed; inset: 0; z-index: 0; pointer-events: none; transition: --a1 1.4s var(--ease-out), --a2 1.4s var(--ease-out);
     background:
       radial-gradient(46% 42% at 26% 18%, hsl(var(--a2) 85% 55% / .20), transparent 70%),
       radial-gradient(38% 40% at 78% 12%, hsl(var(--a1) 80% 50% / .15), transparent 70%),
@@ -155,7 +155,7 @@
   .status .prog { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: rgba(255, 255, 255, .04); }
   .status .prog i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, hsl(var(--a1) 80% 60%), hsl(var(--a2) 85% 65%)); box-shadow: 0 0 12px hsl(var(--a2) 85% 60% / .8); transition: width .4s var(--ease-out); }
   /* the AI's presence: one living orb, drawn by the shared rAF loop */
-  .orb { display: block; flex: none; align-self: center; width: 40px; height: 40px; margin: -8px -4px -8px -8px; pointer-events: none; }
+  .orb { display: block; flex: none; align-self: center; width: 46px; height: 46px; margin: -12px -6px -12px -10px; pointer-events: none; }
   .status { padding-left: 14px; }
 
   .pool-layout { display: grid; grid-template-columns: minmax(0, 1fr) 312px; gap: 24px; align-items: start; margin-top: 18px; }
@@ -196,7 +196,7 @@
   .cand:is([data-stage="dev"], [data-stage="text"], [data-stage="why"]) .grn { animation: grainOut 1.8s ease-out both, grainJit .5s steps(5) 4; }
   @keyframes bloom { 0% { opacity: 0; transform: scale(.3); } 26% { opacity: .95; } 100% { opacity: 0; transform: scale(1.55); } }
   @keyframes leak { 0% { opacity: 0; transform: translateX(-38%); } 30% { opacity: .95; } 100% { opacity: 0; transform: translateX(34%); } }
-  @keyframes grainOut { 0% { opacity: .95; } 100% { opacity: 0; } }
+  @keyframes grainOut { 0% { opacity: .55; } 100% { opacity: 0; } }
   @keyframes grainJit { 20% { transform: translate(-7px, 4px); } 40% { transform: translate(5px, -6px); } 60% { transform: translate(-3px, -8px); } 80% { transform: translate(8px, 3px); } }
 
   /* keep: a gold edge sweeps round the card while a chime ripples the cover */
@@ -220,10 +220,6 @@
   .cand.pinged::after { animation: pinged 1.1s ease-out; }
   @keyframes pinged { 0% { opacity: 0; } 12% { opacity: 1; } 100% { opacity: 0; } }
   .cand[data-stage="done"] .c-art::before, .cand[data-stage="why"] .c-art::before { animation: none; opacity: 0; }
-  .c-art .sweep { position: absolute; inset: 0; z-index: 3; pointer-events: none; opacity: 0;
-    background: linear-gradient(105deg, transparent 35%, hsl(var(--h2) 100% 85% / .45) 50%, transparent 65%) 0 0 / 300% 100%; }
-  .cand[data-stage="dev"] .c-art .sweep { animation: sweep 1.1s var(--ease-out) forwards; }
-  @keyframes sweep { from { opacity: 1; background-position: 100% 0; } to { opacity: 0; background-position: -20% 0; } }
   @keyframes shimmer { from { background-position: 100% 0; } to { background-position: -150% 0; } }
   .badge { position: absolute; z-index: 4; top: 7px; right: 7px; display: inline-flex; align-items: center; gap: .3em;
     padding: .28em .6em .28em .45em; border-radius: 999px; font: 700 .64rem/1 var(--font-body); letter-spacing: .08em; text-transform: uppercase;
@@ -409,11 +405,11 @@
 
   /* the altar: two rings of titles and search glyphs orbit the prompt */
   .altar { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
-  .halo { position: absolute; left: 50%; top: var(--halo-y, 56%); width: min(1240px, 150vw); aspect-ratio: 1;
-    transform: translate(-50%, -50%) perspective(1700px) rotateX(70deg);
-    -webkit-mask-image: linear-gradient(180deg, rgba(0, 0, 0, .14) 8%, rgba(0, 0, 0, .55) 40%, #000 66%);
-    mask-image: linear-gradient(180deg, rgba(0, 0, 0, .14) 8%, rgba(0, 0, 0, .55) 40%, #000 66%); }
-  .ring { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .halo { position: absolute; left: 50%; top: var(--halo-y, 56%); width: min(1180px, 150vw); aspect-ratio: 1; opacity: .8;
+    transform: translate(-50%, -50%) scaleY(.44);
+    -webkit-mask-image: linear-gradient(180deg, rgba(0, 0, 0, .1) 6%, rgba(0, 0, 0, .6) 40%, #000 56%, rgba(0, 0, 0, .45) 100%);
+    mask-image: linear-gradient(180deg, rgba(0, 0, 0, .1) 6%, rgba(0, 0, 0, .6) 40%, #000 56%, rgba(0, 0, 0, .45) 100%); }
+  .ring { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; will-change: transform; }
   .ring text { transition: opacity .45s var(--ease-out); }
   .ring.fade text { opacity: 0; }
   .ring-a text { font: 800 25px/1 var(--font-display); letter-spacing: 2px; fill: hsl(var(--a2) 70% 78% / .5); }
@@ -447,7 +443,7 @@
     transform: rotate(-14deg); filter: drop-shadow(0 0 10px rgba(233, 196, 106, .55)) drop-shadow(0 4px 6px rgba(0, 0, 0, .6)); }
   .crown svg { display: block; width: 100%; height: auto; }
   .row.top1 .crown { display: block; }
-  .row.pre .crown { opacity: 0; }
+  .row.pre .crown, .row.crown-wait .crown { opacity: 0; }
   .lit { position: absolute; inset: 0; z-index: -1; border-radius: inherit; overflow: hidden; pointer-events: none; opacity: 0;
     background: hsl(var(--h2) 75% 50% / .13); box-shadow: inset 0 0 0 1px hsl(var(--h2) 85% 72% / .4); }
   .lit::before { content: ""; position: absolute; inset: 0; transform: translateX(-100%);
@@ -507,7 +503,7 @@
     .wave { display: none; }
   }
   @media (prefers-reduced-motion: reduce) {
-    :root { transition: none; }
+    .ambient { transition: none; }
   }
 </style>
 </head>
@@ -541,9 +537,9 @@
     <div class="altar" aria-hidden="true">
       <div class="halo" id="halo">
         <svg class="ring ring-a" id="ringA" viewBox="0 0 1000 1000"><path id="ringPathA" d="M60,500a440,440 0 1,1 880,0a440,440 0 1,1 -880,0" fill="none"/>
-          <circle class="orbit" cx="500" cy="500" r="478"/><circle class="orbit dash" cx="500" cy="500" r="408"/>
+          <circle class="orbit" cx="500" cy="500" r="478"/><circle class="orbit dash" cx="500" cy="500" r="424"/>
           <text><textPath href="#ringPathA" id="ringAText" lengthAdjust="spacing"></textPath></text></svg>
-        <svg class="ring ring-b" id="ringB" viewBox="0 0 1000 1000"><path id="ringPathB" d="M134,500a366,366 0 1,1 732,0a366,366 0 1,1 -732,0" fill="none"/>
+        <svg class="ring ring-b" id="ringB" viewBox="0 0 1000 1000"><path id="ringPathB" d="M104,500a396,396 0 1,1 792,0a396,396 0 1,1 -792,0" fill="none"/>
           <text><textPath href="#ringPathB" id="ringBText" lengthAdjust="spacing"></textPath></text></svg>
       </div>
     </div>
@@ -684,29 +680,35 @@
 
   const Loop = (() => {
     const subs = new Set();
-    let raf = 0, last = 0;
-    const L = { frame: 0, add(s) { subs.add(s); wake(); }, wake };
+    let raf = 0, last = 0, inFrame = false;
+    const L = { add(s) { subs.add(s); wake(); }, wake };
     function frame(now) {
-      raf = 0;
       const dt = Math.min(.05, Math.max(.001, (now - last) / 1000));
       last = now;
-      L.frame++;
       let any = false;
+      inFrame = true;
       subs.forEach((s) => { if (s.live()) { any = true; s.tick(now / 1000, dt); } });
-      if (any && !document.hidden) raf = requestAnimationFrame(frame);
+      inFrame = false;
+      // exactly one pending frame, ever: wakes during a tick ride on this reschedule
+      raf = any && !document.hidden ? requestAnimationFrame(frame) : 0;
     }
-    function wake() { if (!FXON || raf || document.hidden) return; last = performance.now(); raf = requestAnimationFrame(frame); }
+    function wake() { if (!FXON || raf || inFrame || document.hidden) return; last = performance.now(); raf = requestAnimationFrame(frame); }
     document.addEventListener("visibilitychange", () => { if (document.hidden) { cancelAnimationFrame(raf); raf = 0; } else wake(); });
     return L;
   })();
 
-  // an element's centre, read at most once per frame (particles home on live targets)
+  // an element's centre for particles to home on: re-read on scroll, else every ~100ms
+  // (reading layout every frame while cards stream would force a layout per frame)
+  let VIEWV = 0;
+  addEventListener("scroll", () => VIEWV++, { passive: true });
+  addEventListener("resize", () => VIEWV++);
   function anchor(el, fx = .5, fy = .5) {
-    let f = -1;
+    let at = -1e9, v = -1;
     const pt = { x: 0, y: 0 };
     return (force) => {
-      if (force === true || f !== Loop.frame) {
-        f = Loop.frame;
+      const now = performance.now();
+      if (force === true || v !== VIEWV || now - at > 110) {
+        at = now; v = VIEWV;
         const node = typeof el === "function" ? el() : el;
         const r = node && node.getBoundingClientRect();
         if (r && r.width) { pt.x = r.left + r.width * fx; pt.y = r.top + r.height * fy; }
@@ -1420,17 +1422,174 @@
   const canDraft = () => S.ds && counts().k >= need();
   const keptIds = () => S.pool.filter((id) => S.status[id] === "keep");
 
+  /* ---------------- the AI's presence ---------------- */
+  const Orbs = { status: Orb($("#orbStatus"), 46, "search"), critic: Orb($("#orbCritic"), 48, "rest") };
+  Wave($("#wave"), 66, 26, Orbs.critic);
+  const PHASE_MODE = { search: "search", found: "radar", art: "paint", done: "rest" };
+
+  /* ---------------- the altar ----------------
+     Two rings orbit the prompt: the matched pool's titles, and the
+     searches the AI is about to run. Motes drift in while you type and
+     gather into a halo; on submit they converge, flash, and burst. */
+  const Altar = (() => {
+    const s1 = $("#step1"), form = $("#askForm"), halo = $("#halo"), rA = $("#ringA"), rB = $("#ringB");
+    const C = { x: 0, y: 0, rx: 0, ry: 0 }, B = { x: 0, y: 0 };
+    let spin = 1, spinT = 1, rate = 1, idle = 0, inView = true, busy = false, charge = 0, key = "";
+    // the rings turn on the compositor; the loop only nudges their playback rate
+    const spins = FXON ? [
+      rA.animate([{ transform: "rotate(0deg)" }, { transform: "rotate(360deg)" }], { duration: 160000, iterations: Infinity }),
+      rB.animate([{ transform: "rotate(0deg)" }, { transform: "rotate(-360deg)" }], { duration: 110000, iterations: Infinity }),
+    ] : [];
+    const haloT = (s) => `translate(-50%, -50%) scaleY(.44) scale(${s})`;
+    function measure() {
+      if (S.step !== 1) return;
+      const f = form.getBoundingClientRect(), s = s1.getBoundingClientRect(), b = $("#summon").getBoundingClientRect();
+      C.x = f.left + f.width / 2; C.y = f.top + f.height / 2; C.rx = f.width / 2 + 18; C.ry = f.height / 2 + 18;
+      B.x = b.left + b.width / 2; B.y = b.top + b.height / 2;
+      halo.style.setProperty("--halo-y", Math.round(C.y - s.top) + "px");
+    }
+    addEventListener("scroll", measure, { passive: true });
+    addEventListener("resize", measure);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
+    if (FXON) new IntersectionObserver(([e]) => { inView = e.isIntersecting; if (inView) Loop.wake(); }).observe(s1);
+    const center = () => C;
+
+    function setRings(ds) {
+      if (key === ds.key) return;
+      const first = !key;
+      key = ds.key;
+      const swap = () => {
+        let a = "";
+        for (const t of [...ds.items].sort((x, y) => y.w - x.w).map((i) => i.title.toUpperCase())) {
+          if ((a + t).length > 150) break;
+          a += t + "   ✦   ";
+        }
+        const qs = ds.queries.concat([`${ds.found} found`, `${ds.items.length} shortlisted`]).map((q) => q.toUpperCase()).join("  ·  ") + "  ·  ";
+        let b = qs;
+        while (b.length + qs.length < 290) b += qs;
+        $("#ringAText").textContent = a;
+        $("#ringAText").setAttribute("textLength", (TAU * 440).toFixed(1));
+        $("#ringBText").textContent = b;
+        $("#ringBText").setAttribute("textLength", (TAU * 396).toFixed(1));
+        rA.classList.remove("fade"); rB.classList.remove("fade");
+      };
+      if (first || RM) swap();
+      else { rA.classList.add("fade"); rB.classList.add("fade"); setTimeout(swap, 420); }
+    }
+
+    function mote(charged) {
+      const W = innerWidth, H = innerHeight;
+      let x, y, n = 0;
+      if (charged) {
+        const a = Math.random() * TAU, d = 170 + Math.random() * 260;
+        x = C.x + Math.cos(a) * d * 1.5; y = C.y + Math.sin(a) * d * .7;
+      } else {
+        do { x = Math.random() * W; y = 70 + Math.random() * (H - 70); } while (Math.hypot((x - C.x) / 1.7, y - C.y) < 190 && ++n < 6);
+      }
+      const th = Math.random() * TAU;
+      const h = Math.random() < .55 ? HUE.b : Math.random() < .5 ? HUE.a : 43;
+      const tgt = () => ({ x: C.x + Math.cos(th) * C.rx, y: C.y + Math.sin(th) * C.ry });
+      FX.add(charged
+        ? { x, y, h, l: 70, r: 1.8 + Math.random() * 1.6, a: .95, fin: .15, tag: "altar", mode: "seek", tgt,
+            v0: 60, acc: 700, vmax: 560, turn: 3.2, swirl: (Math.random() - .5) * 1.5, tmax: 3,
+            onArrive: (p) => {
+              if (charge >= 90) return false;
+              charge++;
+              if (charge === 24) form.classList.add("charged");
+              Object.assign(p, { mode: "orbit", tag: "altar", th: Math.atan2((p.y - C.y) / C.ry, (p.x - C.x) / C.rx),
+                om: (Math.random() < .5 ? -1 : 1) * (.16 + Math.random() * .3), k: 1.04 + Math.random() * .34, center, age: 1 });
+              return true;
+            } }
+        : { x, y, h, l: 66, r: 1.2 + Math.random() * 1.3, a: .55, fin: .8, tag: "altar", mode: "seek", tgt,
+            v0: 12, acc: 36, vmax: 90, turn: 1.4, swirl: (Math.random() - .5) * 1.2, tmax: 14, nearFade: 90, tw: 3 });
+    }
+    function feed(n) {
+      if (!FXON || busy || S.step !== 1) return;
+      measure();
+      spinT = Math.min(16, spinT + 2.4 + n * .1);
+      for (let i = 0; i < n; i++) mote(true);
+    }
+
+    function summon(done) {
+      if (!FXON || S.step !== 1) { done(); return; }
+      if (busy) return;
+      busy = true;
+      measure();
+      spinT = 60;
+      const fast = () => ({ tgt: () => B, v0: 260, acc: 3000, vmax: 2200, turn: 9, swirl: (Math.random() - .5) * 1.4, tmax: .55, onArrive: null });
+      FX.each((p) => { if (p.tag === "altar") FX.seek(p, fast()); });
+      for (let i = 0; i < 34; i++) {
+        const a = Math.random() * TAU, d = 380 + Math.random() * 380;
+        FX.add({ x: B.x + Math.cos(a) * d, y: B.y + Math.sin(a) * d * .6, h: i % 3 ? HUE.b : 43, l: 70, r: 1.4 + Math.random() * 1.5, fin: .05, delay: Math.random() * .12, ...FX.seek({}, fast()) });
+      }
+      form.classList.remove("summoning"); void form.offsetWidth; form.classList.add("summoning");
+      noFail(halo.animate([{ opacity: 1, transform: haloT(1) }, { opacity: 0, transform: haloT(.5) }], { duration: 640, easing: "cubic-bezier(.5,0,.75,0)", fill: "forwards" }));
+      setTimeout(() => {
+        const x = B.x, y = B.y;
+        FX.flash(x, y, { r: 280, l: 74, dur: .85 });
+        FX.ring(x, y, { r0: 12, r1: Math.max(innerWidth, innerHeight) * .75, dur: 1, w: 3 });
+        FX.ring(x, y, { r0: 12, r1: 360, dur: .7, h: HUE.b, w: 2, delay: .08 });
+        const seeds = [];
+        for (let i = 0; i < 48; i++) {
+          const a = Math.random() * TAU, v = 450 + Math.random() * 750;
+          const p = FX.add({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v * .8, drag: 3.6, wob: 40, life: 4, r: 1.5 + Math.random() * 1.8,
+            h: HUE.pal[i % 4], l: 68, fin: .01, tw: 6 });
+          if (p) seeds.push(p);
+        }
+        charge = 0;
+        form.classList.remove("charged");
+        done();
+        requestAnimationFrame(() => scatter(seeds));
+      }, 440);
+    }
+    // the burst lands over the (still empty) pool, hovers, then the orb inhales it
+    function scatter(seeds) {
+      const g = $("#grid").getBoundingClientRect(), top = Math.max(g.top, 130);
+      const orb = Orbs.status.center;
+      seeds.forEach((p) => FX.seek(p, {
+        tx: g.left + Math.random() * g.width, ty: top + 10 + Math.random() * Math.min(460, innerHeight - top - 40),
+        v0: 300, acc: 500, vmax: 800, turn: 2.6, swirl: (Math.random() - .5) * 1.2, tmax: 1.2,
+        onArrive: (q) => {
+          Object.assign(q, { mode: "drift", vx: (Math.random() - .5) * 30, vy: (Math.random() - .5) * 30, drag: 2, wob: 30, age: 1, life: 99,
+            next: { at: 1.2 + Math.random() * .9, fn: (z) => FX.seek(z, { tgt: orb, v0: 20, acc: 900, vmax: 950, turn: 3.6, swirl: (Math.random() - .5) * 1.8, tmax: 2.6,
+              onArrive: () => { Orbs.status.pump(.1); } }) } });
+          return true;
+        },
+      }));
+    }
+    function reset() {
+      busy = false;
+      halo.getAnimations().forEach((a) => a.cancel());
+      form.classList.remove("summoning");
+      requestAnimationFrame(measure);
+    }
+    FX.emit({
+      live: () => FXON && S.step === 1 && inView,
+      tick(t, dt) {
+        spinT = 1 + (spinT - 1) * Math.exp(-dt * 1.1);
+        spin += (spinT - spin) * (1 - Math.exp(-dt * 4));
+        if (Math.abs(spin - rate) > .04 * rate) { rate = spin; spins.forEach((a) => a.updatePlaybackRate(rate)); }
+        if (busy) return;
+        idle += dt * 2.6;
+        while (idle >= 1) { idle--; mote(false); }
+      },
+    });
+    return { setRings, feed, summon, reset, measure, busy: () => busy };
+  })();
+
   /* ---------------- ambient ---------------- */
   function ambient(it) {
     if (!it) return;
     const r = document.documentElement.style;
     r.setProperty("--a1", it.h[0]);
     r.setProperty("--a2", it.h[1]);
+    HUE.a = it.h[0]; HUE.b = it.h[1];
+    if (HUE.pal[0] !== it.h[1]) { HUE.pal.unshift(it.h[1]); HUE.pal.length = 4; }
   }
   const live = (msg) => { const l = $("#live"); l.textContent = ""; setTimeout(() => (l.textContent = msg), 30); };
 
   /* ---------------- FLIP ---------------- */
-  function flip(els, mutate, dur = 460) {
+  function flip(els, mutate, dur = 460, delay = 0) {
     if (RM) { mutate(); return; }
     const first = new Map(els.map((el) => [el, el.getBoundingClientRect()]));
     mutate();
@@ -1439,7 +1598,7 @@
       const n = el.getBoundingClientRect();
       const dx = r.left - n.left, dy = r.top - n.top;
       if (Math.abs(dx) < .5 && Math.abs(dy) < .5) return;
-      el.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: "none" }], { duration: dur, easing: EASE });
+      el.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: "none" }], { duration: dur, delay, easing: EASE, fill: "backwards" });
     });
   }
 
@@ -1459,15 +1618,19 @@
     if (n === 2 && !S.ds) return;
     if (n === 3 && !canDraft()) { GOAT.toast(`Keep at least ${need()} to draft`); return; }
     const prev = S.step;
+    // the first draft is choreographed: remember where the kept covers sit
+    const choreo = n === 3 && prev === 2 && FXON && !S.order.length ? captureGrid() : null;
     S.step = n;
+    $$(".row.pre, .row.crown-wait").forEach((r) => r.classList.remove("pre", "crown-wait"));
     $$(".step").forEach((s) => { s.hidden = +s.dataset.step !== n; s.classList.remove("enter"); });
     const sec = $("#step" + n);
     void sec.offsetWidth;
-    if (!RM) sec.classList.add("enter");
-    if (n === 1) { $("#prompt").focus({ preventScroll: true }); previewMatch(); }
+    if (!RM && !choreo) sec.classList.add("enter");
+    if (n === 1) { Altar.reset(); $("#prompt").focus({ preventScroll: true }); previewMatch(); }
     if (n === 2) { renderTally(); if (opts.focusGrid !== false) sec.focus({ preventScroll: true }); }
-    if (n === 3) enterDraft();
-    if (prev !== n && opts.scroll !== false) window.scrollTo({ top: 0, behavior: RM ? "auto" : "smooth" });
+    if (choreo) window.scrollTo(0, 0);
+    if (n === 3) enterDraft(choreo);
+    if (prev !== n && opts.scroll !== false && !choreo) window.scrollTo({ top: 0, behavior: RM ? "auto" : "smooth" });
     if (n === 3) sec.focus({ preventScroll: true });
     updateStepbar();
   }
@@ -1503,6 +1666,7 @@
     if (!v) {
       hint.innerHTML = `Three scripted pools in this prototype: 90s sci-fi films, albums of the 1970s and pizza toppings.`;
       renderWings(S.ds || DATASETS[0]);
+      Altar.setRings(S.ds || DATASETS[0]);
       ambient(S.ds ? S.ds.items[0] : DATASETS[0].items[2]);
       return;
     }
@@ -1512,13 +1676,19 @@
     else if (m.related) hint.innerHTML = `<span class="sw"></span>Closest scripted pool: <b>${esc(m.ds.label)}</b>`;
     else hint.innerHTML = `<span class="sw"></span>No scripted pool for that yet. Closest: <b>${esc(m.ds.label)}</b>`;
     renderWings(m.ds);
+    Altar.setRings(m.ds);
     ambient([...m.ds.items].sort((a, b) => b.w - a.w)[0]);
   }
-  promptIn.addEventListener("input", previewMatch);
+  promptIn.addEventListener("input", (e) => {
+    previewMatch();
+    if (e.inputType && e.inputType.startsWith("delete")) return;
+    Altar.feed(3);
+  });
   $$(".chip[data-ex]").forEach((c) => c.addEventListener("click", () => {
     promptIn.value = c.dataset.ex;
     previewMatch();
     promptIn.focus();
+    Altar.feed(16);
   }));
   const sizeBtns = $$("#sizeSeg button");
   function setSize(n, focus) {
@@ -1544,7 +1714,7 @@
     e.preventDefault();
     const v = promptIn.value.trim();
     if (!v) { GOAT.toast("Type a topic, or pick an example"); promptIn.focus(); return; }
-    summon(v);
+    Altar.summon(() => summon(v));
   });
 
   function summon(v) {
@@ -1559,6 +1729,9 @@
     }
     resetPool(m.ds);
     renderPoolHead();
+    const pt = $("#poolTitle");
+    pt.classList.remove("ignite");
+    if (!RM) { void pt.offsetWidth; pt.classList.add("ignite"); }
     go(2);
     stream();
   }
@@ -1597,6 +1770,8 @@
   function setPhase(phase, text, query) {
     S.phase = phase;
     $("#status").dataset.phase = phase;
+    Orbs.status.set(PHASE_MODE[phase] || "rest");
+    Orbs.status.pump(.5);
     $("#phText").textContent = text;
     $("#phQuery").textContent = query || "";
     renderCount();
@@ -1651,6 +1826,7 @@
     check: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m3 8.5 3.2 3L13 4.5"/></svg>',
     x: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8"/></svg>',
     undo: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 3 2 6l3 3"/><path d="M2 6h7a4 4 0 0 1 0 8H6"/></svg>',
+    crown: '<svg viewBox="0 0 48 34" aria-hidden="true"><path d="M4 28 1.5 9l12 9L24 2l10.5 16 12-9L44 28Z" fill="#f2cf7c" stroke="#8a6420" stroke-width="1" stroke-linejoin="round"/><path d="M5.5 25 4 13l9.8 7.4L24 6l10.2 14.4L44 13l-1.5 12Z" fill="#ffeec4" opacity=".55"/><rect x="4" y="28.5" width="40" height="4.5" rx="1.5" fill="#d9ad52"/><circle cx="24" cy="2.8" r="2.3" fill="#fff6dc"/><circle cx="1.8" cy="9" r="1.8" fill="#fff6dc"/><circle cx="46.2" cy="9" r="1.8" fill="#fff6dc"/></svg>',
     grip: '<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><circle cx="6" cy="3.5" r="1.2"/><circle cx="10" cy="3.5" r="1.2"/><circle cx="6" cy="8" r="1.2"/><circle cx="10" cy="8" r="1.2"/><circle cx="6" cy="12.5" r="1.2"/><circle cx="10" cy="12.5" r="1.2"/></svg>',
   };
   const metaLine = (it) => (it.year != null ? it.year + " · " : "") + it.by;
@@ -1665,7 +1841,7 @@
     el.style.setProperty("--h1", it.h[0]);
     el.style.setProperty("--h2", it.h[1]);
     el.innerHTML = `
-      <div class="c-art"><span class="sweep"></span><span class="badge">${ICON.check}Kept</span>${opts.added ? '<span class="sugg-tag">Suggested</span>' : ""}</div>
+      <div class="c-art"><span class="dv bloom"></span><span class="dv leak"></span><span class="dv grn"></span><span class="chime-r"></span><span class="chime-r"></span><span class="badge">${ICON.check}Kept</span>${opts.added ? '<span class="sugg-tag">Suggested</span>' : ""}</div>
       <div class="c-body">
         <div class="sk" aria-hidden="true"><i></i><i></i><i></i></div>
         <h3 class="c-name">${esc(it.title)}</h3>
@@ -1676,7 +1852,9 @@
       <div class="c-acts">
         <button type="button" class="act drop" data-act="drop" tabindex="-1" aria-label="Drop ${esc(it.title)}">${ICON.x}Drop <kbd>D</kbd></button>
         <button type="button" class="act keep" data-act="keep" tabindex="-1" aria-pressed="false" aria-label="Keep ${esc(it.title)}">${ICON.check}Keep <kbd>K</kbd></button>
-      </div>`;
+      </div>
+      <span class="c-edge" aria-hidden="true"></span>`;
+    el.style.setProperty("--lk", (Math.random() < .5 ? 96 : 264) + Math.round(rand(-14, 14)) + "deg");
     const cov = GOAT.cover(it, { title: false, meta: it.year != null });
     $(".c-art", el).prepend(cov);
     labelCard(el);
@@ -1700,6 +1878,12 @@
     S.pool.push(it.id);
     labelCard(el);
     if (opts.instant) return el;
+    if (FXON) requestAnimationFrame(() => {
+      const r = $(".c-art", el).getBoundingClientRect();
+      if (S.step !== 2 || !r.width || r.bottom < 0 || r.top > innerHeight) return;
+      FX.jet(Orbs.status.center(true), r, it.h);
+      Orbs.status.pump(.25);
+    });
     const gen = S.gen;
     const later = (ms, fn) => setTimeout(() => gen === S.gen && fn(), ms);
     later(240, () => { setStage(el, "dev"); if (S.step === 2 && !grid.contains(document.activeElement)) ambient(it); });
@@ -1709,7 +1893,7 @@
     return el;
   }
   const cardEl = (id) => grid.querySelector(`.cand[data-id="${CSS.escape(id)}"]`);
-  const visibleCards = () => $$(".cand", grid).filter((c) => !c.hidden);
+  const visibleCards = () => $$(".cand", grid).filter((c) => !c.hidden && S.status[c.dataset.id] !== "drop");
 
   function keep(id, opts = {}) {
     const el = cardEl(id);
@@ -1717,29 +1901,59 @@
     S.status[id] = opts.toggle && S.status[id] === "keep" ? undefined : "keep";
     if (!S.status[id]) delete S.status[id];
     labelCard(el);
-    if (S.status[id] === "keep" && !RM) $(".badge", el).animate([{ transform: "scale(1.5)" }, { transform: "scale(1)" }], { duration: 380, easing: "cubic-bezier(.34,1.56,.64,1)" });
+    if (S.status[id] === "keep" && !RM) {
+      $(".badge", el).animate([{ transform: "scale(1.5)" }, { transform: "scale(1)" }], { duration: 380, easing: "cubic-bezier(.34,1.56,.64,1)" });
+      el.classList.remove("chime"); void el.offsetWidth; el.classList.add("chime");
+      clearTimeout(el._chime);
+      el._chime = setTimeout(() => el.classList.remove("chime"), 1400);
+      const b = $(".badge", el).getBoundingClientRect();
+      FX.burst(b.left + b.width / 2, b.top + b.height / 2, { n: 12, sp: 150, hues: [43, 48, 38], life: .75, r: 1.8, g: 70, l: 72 });
+    }
     renderTally();
     if (opts.advance) focusNext(el, 1);
   }
   function drop(id) {
     const el = cardEl(id);
-    if (!el || el.dataset.stage === "skel" || el.dataset.stage === "dev") return;
+    if (!el || el.dataset.stage === "skel" || el.dataset.stage === "dev" || S.status[id] === "drop") return;
     const hadFocus = el.contains(document.activeElement);
     const next = neighbour(el, 1) || neighbour(el, -1);
     S.status[id] = "drop";
     S.dropped.push(id);
     renderTally(); renderTray();
-    const finish = () => {
-      flip(visibleCards().filter((c) => c !== el), () => { el.hidden = true; });
-      if (hadFocus && next) next.focus({ preventScroll: false });
-    };
-    if (RM) { finish(); return; }
-    el.style.pointerEvents = "none";
-    const a = el.animate([
-      { opacity: 1, transform: "none", filter: "blur(0)" },
-      { opacity: 0, transform: "scale(.8) translateY(14px)", filter: "blur(6px)" },
-    ], { duration: 240, easing: "cubic-bezier(.5,0,.75,0)", fill: "forwards" });
-    a.finished.then(() => { finish(); a.cancel(); el.style.pointerEvents = ""; });
+    const r = el.getBoundingClientRect(), artBottom = $(".c-art", el).getBoundingClientRect().bottom;
+    // state and DOM settle at once; the dissolve plays on a ghost while the pool closes ranks
+    flip(visibleCards().filter((c) => c !== el), () => { el.hidden = true; }, 460, 170);
+    if (hadFocus && next) next.focus({ preventScroll: false });
+    if (RM || r.bottom < 0 || r.top > innerHeight) return;
+    const ghost = el.cloneNode(true);
+    ghost.removeAttribute("tabindex"); ghost.removeAttribute("role"); ghost.removeAttribute("aria-label");
+    ghost.setAttribute("aria-hidden", "true");
+    ghost.dataset.stage = "done";
+    ghost.classList.remove("chime");
+    Object.assign(ghost.style, { position: "fixed", left: r.left + "px", top: r.top + "px", width: r.width + "px", height: r.height + "px", margin: "0", zIndex: "39", pointerEvents: "none" });
+    document.body.appendChild(ghost);
+    // the card comes apart left to right; its dust drifts into the tray and becomes the chip
+    if (FXON) {
+      const chip = () => $(`#trayList [data-restore="${CSS.escape(id)}"]`);
+      const c0 = chip();
+      if (c0) c0.style.opacity = "0";
+      const reveal = () => {
+        const c = chip();
+        if (!c || c.style.opacity !== "0") return;
+        c.style.opacity = "";
+        c.animate([{ transform: "scale(.5)", opacity: 0 }, { transform: "scale(1.12)", opacity: 1, offset: .6 }, { transform: "none", opacity: 1 }], { duration: 420, easing: EASE });
+        const b = c.getBoundingClientRect();
+        FX.flash(b.left + Math.min(b.width / 2, 40), b.top + b.height / 2, { r: 46, h: item(id).h[1], l: 70, dur: .5, a: .8 });
+      };
+      FX.dissolve(r, artBottom, item(id).h, anchor(() => chip() || $("#tray"), .2, .5), reveal);
+      setTimeout(reveal, 1700);
+    }
+    const gone = () => ghost.remove();
+    ghost.animate([
+      { clipPath: "inset(-2px -2px -2px -2px round 14px)", opacity: 1, transform: "none" },
+      { clipPath: "inset(-2px -2px -2px 100% round 14px)", opacity: .5, transform: "translateX(8px)" },
+    ], { duration: 380, easing: "cubic-bezier(.4,0,.6,1)", fill: "forwards" }).finished.then(gone, gone);
+    setTimeout(gone, 1500);
   }
   function restore(id) {
     const el = cardEl(id);
@@ -1862,6 +2076,78 @@
     void g.offsetWidth;
     if (!RM) g.classList.add("enter");
     live("Gap spotter: three suggestions you might be missing.");
+    if (FXON && S.step === 2 && !document.hidden) {
+      const items = $$(".g-item", $("#gapList"));
+      items.forEach((li) => li.classList.add("await"));
+      setTimeout(() => items.forEach((li) => li.classList.remove("await")), 5200);
+      requestAnimationFrame(() => sonarPing(items));
+    }
+  }
+  // the gap spotter announces itself: a sonar ping rolls out from the orb,
+  // cards glint as it passes, and contacts lock onto the holes in the grid
+  // before streaking to their suggestion in the rail
+  function sonarPing(items) {
+    const W = innerWidth, H = innerHeight, V = 950;
+    let o = Orbs.status.center(true);
+    if (!(o.y > 0 && o.y < H)) { const g = grid.getBoundingClientRect(); o = { x: g.left + 20, y: Math.max(90, g.top) }; }
+    o = { x: o.x, y: o.y };
+    const maxR = Math.hypot(Math.max(o.x, W - o.x), Math.max(o.y, H - o.y));
+    Orbs.status.pump(1.2);
+    FX.ring(o.x, o.y, { r0: 4, r1: 46, dur: .5, h: 176, w: 2 });
+    FX.sonar(o, maxR, V);
+    visibleCards().forEach((c) => {
+      const r = c.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > H) return;
+      const d = Math.hypot(r.left + r.width / 2 - o.x, r.top + r.height / 2 - o.y);
+      setTimeout(() => { c.classList.add("pinged"); setTimeout(() => c.classList.remove("pinged"), 1150); }, (d / V) * 1000);
+    });
+    const holes = gutterPoints();
+    items.forEach((li, k) => {
+      const it = item(li.dataset.id), h = holes[k];
+      const d = Math.hypot(h.x - o.x, h.y - o.y);
+      FX.contact(h.x, h.y, it.title, {
+        delay: d / V + .05, hold: 1.35 + k * .22,
+        onLaunch: () => FX.comet({ x: h.x, y: h.y }, anchor($(".cover", li)), { dur: .8, h: 176, lift: 70, onArrive: (to) => {
+          li.classList.remove("await"); li.classList.add("lit-in");
+          setTimeout(() => li.classList.remove("lit-in"), 1100);
+          FX.ring(to.x, to.y, { r0: 6, r1: 64, dur: .6, h: 176, w: 2 });
+          FX.flash(to.x, to.y, { r: 70, h: it.h[1], dur: .55 });
+        } }),
+      });
+    });
+  }
+  // gutter crossings between visible cards: literal holes in the grid
+  function gutterPoints() {
+    const H = innerHeight, top = $("#status").getBoundingClientRect().bottom + 40;
+    const rows = [];
+    visibleCards().map((c) => c.getBoundingClientRect()).filter((r) => r.bottom > top && r.top < H).forEach((r) => {
+      let row = rows.find((x) => Math.abs(x.top - r.top) < 8);
+      if (!row) rows.push((row = { top: r.top, items: [] }));
+      row.items.push(r);
+    });
+    rows.sort((a, b) => a.top - b.top);
+    rows.forEach((row) => row.items.sort((a, b) => a.left - b.left));
+    const pts = [];
+    for (let i = 0; i < rows.length - 1; i++) {
+      const A = rows[i].items, Bn = rows[i + 1].items;
+      for (let j = 0; j < Math.min(A.length, Bn.length) - 1; j++) {
+        const y = (A[j].bottom + Bn[j].top) / 2;
+        if (y > top && y < H - 50) pts.push({ x: (A[j].right + A[j + 1].left) / 2, y });
+      }
+    }
+    if (pts.length < 3) rows.forEach((row) => {
+      for (let j = 0; j < row.items.length - 1; j++) {
+        const y = row.items[j].top + row.items[j].height * .4;
+        if (y > top && y < H - 50) pts.push({ x: (row.items[j].right + row.items[j + 1].left) / 2, y });
+      }
+    });
+    pts.sort(() => Math.random() - .5);
+    const out = [];
+    pts.forEach((p) => { if (out.length < 3 && out.every((q) => Math.hypot(q.x - p.x, q.y - p.y) > 200)) out.push(p); });
+    pts.forEach((p) => { if (out.length < 3 && !out.includes(p)) out.push(p); });
+    const g = grid.getBoundingClientRect();
+    while (out.length < 3) out.push({ x: g.left + g.width * (.25 + .25 * out.length), y: Math.min(H - 80, Math.max(top + 40, H * .55)) });
+    return out;
   }
   $("#gapList").addEventListener("click", (e) => {
     const li = e.target.closest(".g-item");
@@ -1905,6 +2191,7 @@
     fly.style.width = dst.width + "px";
     fly.style.height = dst.height + "px";
     document.body.appendChild(fly);
+    setTimeout(() => { if (fly.isConnected) { fly.remove(); card.style.visibility = ""; } }, 1000);
     const sx = srcRect.width / dst.width, sy = srcRect.height / dst.height;
     const midX = (srcRect.left + dst.left) / 2, midY = Math.min(srcRect.top, dst.top) - 80;
     fly.animate([
@@ -1912,6 +2199,7 @@
       { transform: `translate(${midX}px, ${midY}px) scale(${(sx + 1) / 2 + .15}) rotate(-6deg)`, opacity: 1, offset: .45 },
       { transform: `translate(${dst.left}px, ${dst.top}px) scale(1) rotate(0deg)`, opacity: 1 },
     ], { duration: 820, easing: "cubic-bezier(.45,.05,.2,1)" }).finished.then(() => {
+      if (!fly.isConnected) return;
       fly.remove();
       card.style.visibility = "";
       card.animate([{ boxShadow: "0 0 0 3px var(--gold-hi), 0 0 60px 0 var(--gold-glow)" }, { boxShadow: "0 0 0 1px rgba(233,196,106,.45) inset, 0 0 34px -10px var(--gold-glow)" }], { duration: 900, easing: "ease-out" });
@@ -1929,7 +2217,18 @@
   framesEl.className = "frames";
 
   function aiOrder(ids) { return [...ids].sort((a, b) => item(b).w - item(a).w); }
-  function enterDraft() {
+  function captureGrid() {
+    const rects = new Map(), H = innerHeight;
+    keptIds().forEach((id) => {
+      const c = cardEl(id);
+      if (!c || c.hidden) return;
+      const r = $(".cover", c).getBoundingClientRect();
+      if (r.width && r.bottom > 0 && r.top < H) rects.set(id, r);
+    });
+    const o = Orbs.status.center(true);
+    return { rects, orb: o.y > 0 && o.y < H ? { x: o.x, y: o.y } : null };
+  }
+  function enterDraft(choreo) {
     const kept = keptIds();
     const sig = S.ds.key + ":" + [...kept].sort().join(",");
     let added = [], removed = [];
@@ -1952,7 +2251,11 @@
     $("#draftTitle").textContent = S.title;
     $("#draftEyebrow").textContent = `First draft · Top ${S.size}`;
     renderRows(false);
-    if (!S.chatStarted) { S.chatStarted = true; openCritic(); }
+    if (!S.chatStarted) {
+      S.chatStarted = true;
+      if (choreo) playDraft(choreo).then(() => openCritic(700));
+      else { Orbs.critic.set("rest"); openCritic(); }
+    }
     else if (added.length || removed.length) {
       sysMsg(`Pool changed: ${added.length} in, ${removed.length} out`);
       const it = added.length ? item(added[0]) : null;
@@ -1974,7 +2277,7 @@
     li.dataset.id = id;
     li.style.setProperty("--h1", it.h[0]);
     li.style.setProperty("--h2", it.h[1]);
-    li.innerHTML = `<span class="bleed" aria-hidden="true"></span><span class="r-num" aria-hidden="true"></span><div class="r-art"></div>
+    li.innerHTML = `<span class="bleed" aria-hidden="true"></span><span class="lit" aria-hidden="true"></span><span class="crown" aria-hidden="true">${ICON.crown}</span><span class="r-num" aria-hidden="true"></span><div class="r-art"></div>
       <div class="r-body"><h3 class="r-title">${esc(it.title)}</h3><p class="r-meta">${esc(metaLine(it))} · ${it.traits.map(esc).join(" · ")}</p><p class="r-why">${esc(it.why)}</p></div>
       <span class="grip" aria-hidden="true">${ICON.grip}</span>`;
     $(".r-art", li).appendChild(GOAT.cover(it, { title: false, meta: false }));
@@ -2017,6 +2320,92 @@
     cutEl.innerHTML = `<b>Top ${N} ends here</b><span>${bench} on the bench travel${bench === 1 ? "s" : ""} to the editor as your pool</span>`;
     const open = N - S.order.length;
     framesEl.innerHTML = `<b>${open} open frame${open === 1 ? "" : "s"}</b>Fill ${open === 1 ? "it" : "them"} in the editor; the scripted pool ran short of a Top ${N}.`;
+  }
+
+  /* the first draft, choreographed: the orb crosses into the critic's
+     avatar, kept covers fly from the pool into rank order, numerals stamp
+     in one by one, and #1 is crowned */
+  function playDraft(ch) {
+    const H = innerHeight, vis = [];
+    S.order.forEach((id, i) => {
+      if (i >= S.size + 2) return;
+      const row = rowEl(id);
+      if (row.getBoundingClientRect().top < H - 30) vis.push({ id, i, row });
+    });
+    vis.forEach((v) => v.row.classList.add("pre"));
+    rowEl(S.order[0]).classList.add("crown-wait");
+    const av = anchor($("#orbCritic")), ap = av(true);
+    if (ch.orb && ap.y > 0 && ap.y < H) {
+      Orbs.critic.set("asleep");
+      FX.comet(ch.orb, av, { dur: 1.05, h: HUE.b, lift: 110, onArrive: (to) => {
+        Orbs.critic.set("rest"); Orbs.critic.pump(1.3);
+        FX.flash(to.x, to.y, { r: 90, dur: .6 });
+        FX.ring(to.x, to.y, { r0: 10, r1: 80, dur: .6, w: 1.6 });
+      } });
+    } else Orbs.critic.set("rest");
+    const STEP = 115, FLY = 640;
+    vis.forEach((v, k) => setTimeout(() => flyRow(v, ch.rects.get(v.id), FLY), 160 + k * STEP));
+    const total = 160 + Math.max(0, vis.length - 1) * STEP + FLY + 420;
+    return new Promise((res) => setTimeout(() => { crownFlare(); res(); }, total));
+  }
+  function flyRow(v, src, FLY) {
+    const { row, id, i } = v;
+    if (S.step !== 3 || !row.isConnected) { row.classList.remove("pre"); return; }
+    const it = item(id), dst = $(".r-art .cover", row).getBoundingClientRect();
+    const land = () => {
+      row.classList.remove("pre");
+      if (S.step !== 3) return;
+      const num = $(".r-num", row);
+      $(".r-body", row).animate([{ opacity: 0, transform: "translateX(-16px)" }, { opacity: 1, transform: "none" }], { duration: 460, easing: EASE });
+      if (i >= S.size) { num.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 400 }); return; }
+      num.animate([
+        { transform: "scale(2.3) rotate(-8deg)", opacity: 0, filter: "blur(10px)" },
+        { transform: "scale(.93)", opacity: 1, filter: "blur(0px)", offset: .55 },
+        { transform: "scale(1.04)", offset: .78 },
+        { transform: "none", opacity: 1 },
+      ], { duration: 480, easing: "cubic-bezier(.2,.7,.3,1)" });
+      setTimeout(() => {
+        if (S.step !== 3) return;
+        const nr = num.getBoundingClientRect(), x = nr.right - nr.height * (i === 0 ? .22 : .3), y = nr.top + nr.height * .55;
+        FX.burst(x, y, { n: i === 0 ? 26 : 13, sp: i === 0 ? 260 : 160, hues: [43, 40, 48], life: .7, r: 1.7, g: 120, l: 70 });
+        FX.ring(x, y, { r0: 8, r1: i === 0 ? 130 : 70, dur: .5, w: 1.5, a: .55 });
+        row.animate([{ transform: "none" }, { transform: "translateY(3px)" }, { transform: "none" }], { duration: 240, easing: "ease-out" });
+      }, 250);
+    };
+    if (!dst.width) { land(); return; }
+    const fly = GOAT.cover(it, { title: false, meta: false });
+    fly.removeAttribute("role"); fly.removeAttribute("aria-label");
+    fly.classList.add("flyer");
+    fly.style.width = dst.width + "px";
+    fly.style.height = dst.height + "px";
+    document.body.appendChild(fly);
+    const from = src ? { x: src.left, y: src.top, sx: src.width / dst.width, sy: src.height / dst.height }
+      : { x: dst.left - 40, y: innerHeight + 20, sx: .8, sy: .8 };
+    const midX = (from.x + dst.left) / 2 + 30, midY = Math.min(from.y, dst.top) - 70;
+    noFail(fly.animate([
+      { transform: `translate(${from.x}px, ${from.y}px) scale(${from.sx}, ${from.sy})`, opacity: src ? 1 : 0 },
+      { transform: `translate(${midX}px, ${midY}px) scale(${(from.sx + 1) / 2 + .12}) rotate(${rand(-9, -4).toFixed(1)}deg)`, opacity: 1, offset: .5 },
+      { transform: `translate(${dst.left}px, ${dst.top}px) scale(1)`, opacity: 1 },
+    ], { duration: FLY, easing: "cubic-bezier(.45,.05,.2,1)" })).finished.then(() => { fly.remove(); land(); }, () => { fly.remove(); land(); });
+  }
+  function crownFlare() {
+    $$(".row.crown-wait").forEach((r) => r.classList.remove("crown-wait"));
+    const row = S.order.length && rowEl(S.order[0]);
+    if (!row || !row.isConnected || S.step !== 3) return;
+    const cr = $(".crown", row);
+    cr.animate([
+      { transform: "translateY(-46px) rotate(-44deg) scale(.3)", opacity: 0 },
+      { transform: "translateY(3px) rotate(-10deg) scale(1.14)", opacity: 1, offset: .62 },
+      { transform: "rotate(-14deg)", opacity: 1 },
+    ], { duration: 720, easing: "cubic-bezier(.2,.8,.3,1.15)" });
+    setTimeout(() => {
+      if (S.step !== 3) return;
+      const r = cr.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height * .55;
+      FX.flash(x, y, { r: 210, dur: 1.2, l: 72 });
+      FX.rays(x, y, { n: 8, len: 320, dur: 1.7, w: 6 });
+      FX.burst(x, y, { n: 30, sp: 230, hues: [43, 48, 38], life: 1.1, r: 1.8, g: 50, l: 74 });
+      $(".bleed", row).animate([{ opacity: 1, filter: "brightness(1)" }, { opacity: 1, filter: "brightness(1.9)", offset: .25 }, { opacity: 1, filter: "brightness(1)" }], { duration: 1400, easing: "ease-out" });
+    }, 430);
   }
 
   // move one item; source tells the critic whether to react
@@ -2186,19 +2575,50 @@
     logEl.appendChild(msg);
     if (stick) toBottom();
     box.classList.add("speaking");
+    Orbs.critic.set("think");
     await wait(think);
     msg.innerHTML = "";
     msg.classList.add("streaming");
+    Orbs.critic.set("talk");
     const toks = tokenize(parts);
     for (const tok of toks) {
       const s = nearBottom();
       appendToken(msg, tok);
       if (s) toBottom();
+      Orbs.critic.pump(tok.item ? .8 : .2 + Math.random() * .25);
+      if (tok.item) lightRow(tok.item.id);
       if (!RM) await wait(tok.item ? 70 : rand(18, 46) + (/[.?!:]\s$/.test(tok.t) ? 160 : 0));
     }
     msg.classList.remove("streaming");
     box.classList.remove("speaking");
+    Orbs.critic.set("rest");
+    $("#replies").classList.remove("wait");
+    if (fanNext) { fanNext = false; fanReplies(); }
     live("Critic: " + msg.textContent);
+  }
+  // when the critic names a title, that row in the draft lights up
+  function lightRow(id) {
+    if (RM) return;
+    const row = rowCache.get(id);
+    if (!row || !row.isConnected || S.step !== 3) return;
+    const l = $(".lit", row);
+    l.animate([{ opacity: 0 }, { opacity: 1, offset: .12 }, { opacity: 0 }], { duration: 1500, easing: "ease-out" });
+    l.animate([{ transform: "translateX(-100%)" }, { transform: "translateX(100%)" }], { duration: 950, easing: "cubic-bezier(.3,.1,.3,1)", pseudoElement: "::before" });
+  }
+  // suggested replies are dealt from a stack, like cards
+  let fanNext = true;
+  function fanReplies() {
+    if (RM || S.step !== 3) return;
+    const box = $("#replies"), chips = $$(".chip", box);
+    const br = box.getBoundingClientRect(), cx = br.left + br.width / 2, n = chips.length;
+    chips.forEach((c, i) => {
+      const r = c.getBoundingClientRect(), dx = cx - (r.left + r.width / 2), rot = (i - (n - 1) / 2) * 10;
+      c.animate([
+        { transform: `translate(${dx}px, 26px) rotate(${rot * 1.4}deg) scale(.8)`, opacity: 0 },
+        { transform: `translate(${dx * .12}px, -6px) rotate(${rot * .35}deg) scale(1.03)`, opacity: 1, offset: .65 },
+        { transform: "none", opacity: 1 },
+      ], { duration: 660, delay: 60 + i * 75, easing: "cubic-bezier(.2,.8,.25,1)", fill: "backwards" });
+    });
   }
   function userMsg(text) {
     const m = document.createElement("div");
@@ -2231,7 +2651,9 @@
   renderReplies();
   $("#replies").addEventListener("click", (e) => {
     const b = e.target.closest("[data-reply]");
-    if (b) reply(b.dataset.reply);
+    if (!b) return;
+    if (!RM) b.animate([{ transform: "none" }, { transform: "translateY(-16px) rotate(-4deg) scale(1.06)", offset: .4 }, { transform: "none" }], { duration: 420, easing: EASE });
+    reply(b.dataset.reply);
   });
   $("#replyForm").addEventListener("submit", (e) => {
     e.preventDefault();
@@ -2241,13 +2663,14 @@
     reply(v);
   });
 
-  function openCritic() {
+  function openCritic(think = 1100) {
+    fanNext = true;
     const a = top(0), b = top(1);
     if (!a) return;
     if (!b) { critic(M`A list of one: ${a}. Hard to argue with, which is the problem.`); return; }
     S.dispute = { a: a.id, b: b.id };
     const special = S.ds.openers[a.id + ">" + b.id];
-    critic(special ? special(a, b) : M`${a} at #1 over ${b}? My notes on ${b} say: “${b.why}” That is a high bar for ${a} to clear. Defend it.`, RM ? 0 : 1100);
+    critic(special ? special(a, b) : M`${a} at #1 over ${b}? My notes on ${b} say: “${b.why}” That is a high bar for ${a} to clear. Defend it.`, RM ? 0 : think);
   }
 
   function intentOf(text) {
@@ -2268,6 +2691,8 @@
   }
   function reply(text) {
     userMsg(text);
+    fanNext = true;
+    $("#replies").classList.add("wait");
     const intent = intentOf(text);
     const n = (S.intentCount[intent] = (S.intentCount[intent] || 0) + 1);
     const [o0, o1, o2, o3] = [top(0), top(1), top(2), top(3)];
@@ -2383,7 +2808,9 @@
   }
 
   /* ---------------- handoff ---------------- */
+  let handing = false, warpAnims = [];
   $("#handoff").addEventListener("click", () => {
+    if (handing) return;
     const N = S.size;
     const shape = (it) => ({ id: it.id, title: it.title, year: it.year, by: it.by, h: it.h.slice(), motif: it.motif, traits: it.traits.slice(), note: "" });
     const payload = {
@@ -2397,7 +2824,53 @@
     try { localStorage.setItem("goat.v2.handoff", JSON.stringify(payload)); }
     catch (_) { ok = false; }
     GOAT.toast(ok ? `Handing ${payload.order.length} ranked and ${payload.pool.length} in the pool to the editor…` : "Storage is blocked, so the editor will open without this list");
-    setTimeout(() => { location.href = "modes.html#handoff"; }, RM ? 150 : 650);
+    const nav = () => { location.href = "modes.html#handoff"; };
+    if (RM) { setTimeout(nav, 150); return; }
+    handing = true;
+    warpOut();
+    setTimeout(nav, 1420);
+  });
+  /* the handoff: the column collapses into one glowing card, which rushes
+     through the screen into the editor */
+  function warpOut() {
+    const W = innerWidth, H = innerHeight;
+    const main = $(".draft-main").getBoundingClientRect();
+    const P = { x: Math.min(Math.max(main.left + Math.min(main.width, 880) / 2, 110), W - 110), y: H * .5 };
+    const top1 = item(S.order[0]);
+    const wrap = document.createElement("div");
+    wrap.className = "warp"; wrap.setAttribute("aria-hidden", "true");
+    wrap.style.setProperty("--wx", P.x + "px"); wrap.style.setProperty("--wy", P.y + "px");
+    const veil = document.createElement("div"), card = document.createElement("div");
+    veil.className = "warp-veil"; card.className = "warp-card";
+    card.appendChild(GOAT.cover(top1, { meta: top1.year != null }));
+    wrap.append(veil, card);
+    document.body.appendChild(wrap);
+    const cw = 200, chh = (cw * 4) / 3, at = (sc) => `translate(${P.x - cw / 2}px, ${P.y - chh / 2}px) scale(${sc})`;
+    const A = (el, kf, o) => { const a = el.animate(kf, o); a.finished.catch(() => {}); warpAnims.push(a); return a; };
+    S.order.map(rowEl).forEach((r) => {
+      const b = r.getBoundingClientRect();
+      if (b.bottom < 0 || b.top > H) { A(r, [{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: "forwards" }); return; }
+      const dx = P.x - (b.left + b.width / 2), dy = P.y - (b.top + b.height / 2), d = Math.hypot(dx, dy);
+      A(r, [{ transform: "none", opacity: 1 }, { transform: `translate(${dx}px, ${dy}px) scale(.18)`, opacity: 0 }],
+        { duration: 480, delay: Math.max(0, 200 - d * .2), easing: "cubic-bezier(.55,0,.8,.35)", fill: "forwards" });
+      for (let k = 0; k < 6; k++) FX.add({ x: b.left + Math.random() * b.width, y: b.top + Math.random() * b.height, h: k % 2 ? 43 : item(r.dataset.id).h[1], l: 70, r: 1.6 + Math.random() * 1.4, fin: .05,
+        delay: Math.random() * .2, mode: "seek", tx: P.x, ty: P.y, v0: 80, acc: 2200, vmax: 1700, turn: 6, swirl: (Math.random() - .5) * 1.6, tmax: .9 });
+    });
+    [$("#critic"), $(".s3 .s-head"), $(".cut"), $(".frames")].forEach((el, i) => {
+      if (el && el.isConnected) A(el, [{ opacity: 1, transform: "none" }, { opacity: 0, transform: i ? "translateY(-12px)" : "translateY(18px) scale(.97)" }], { duration: 420, easing: "ease-in", fill: "forwards" });
+    });
+    A(card, [{ transform: at(.25), opacity: 0 }, { transform: at(1.06), opacity: 1, offset: .7 }, { transform: at(1), opacity: 1 }], { duration: 420, delay: 430, easing: EASE, fill: "both" });
+    setTimeout(() => { FX.flash(P.x, P.y, { r: 260, dur: .8 }); FX.ring(P.x, P.y, { r0: 30, r1: 340, dur: .7, w: 2 }); FX.rays(P.x, P.y, { n: 6, len: 360, dur: .9, w: 5 }); }, 560);
+    A(card, [{ transform: at(1), opacity: 1, filter: "blur(0px)" }, { transform: at(6), opacity: 0, filter: "blur(6px)" }], { duration: 480, delay: 930, easing: "cubic-bezier(.6,0,.9,.4)", fill: "forwards" });
+    A(veil, [{ opacity: 0 }, { opacity: 1 }], { duration: 420, delay: 980, easing: "ease-in", fill: "forwards" });
+  }
+  // coming back from the editor through the back/forward cache: undo the warp
+  addEventListener("pageshow", (e) => {
+    if (!e.persisted) return;
+    handing = false;
+    warpAnims.forEach((a) => a.cancel());
+    warpAnims = [];
+    $$(".warp").forEach((w) => w.remove());
   });
 
   /* ---------------- boot ---------------- */
