@@ -26,7 +26,6 @@
     --sh-s: 0 10px 22px -10px rgba(0, 0, 0, .9);
     --sh-m: 0 22px 44px -20px rgba(0, 0, 0, .92);
     --sh-l: 0 40px 90px -32px rgba(0, 0, 0, .95);
-    --stick: calc(var(--nav-h) + 90px);
   }
   html, body { overflow-x: clip; }
   body { min-height: 100dvh; }
@@ -544,7 +543,7 @@
   .pool-empty { margin: 0; padding: 22px 0; color: var(--fg-faint); font-size: var(--step--1); }
 
   @media (min-width: 1100px) {
-    :root { --rail-w: 252px; --drawer-h: 0px; --stick: calc(var(--nav-h) + 72px); }
+    :root { --rail-w: 252px; --drawer-h: 0px; }
     body.drawer-closed { --rail-w: 64px; }
     main { width: min(1600px, calc(100% - var(--rail-w))); margin: 0 0 0 max(0px, calc((100% - var(--rail-w) - 1600px) / 2)); padding-bottom: 56px; }
     .toast { bottom: calc(24px + env(safe-area-inset-bottom, 0px)); left: calc(50% - var(--rail-w) / 2); }
@@ -571,7 +570,6 @@
     .bar { grid-template-columns: minmax(0, 1fr) auto; }
     .bar-title { grid-column: 1 / -1; }
     .modes { justify-self: start; }
-    :root { --stick: calc(var(--nav-h) + 118px); }
   }
 
   /* ---------- responsive ---------- */
@@ -1587,7 +1585,11 @@
     const host = $("#stage");
     if (!host.classList.contains("hold")) return;
     const vh = innerHeight;
-    const els = $$(CHROME, host).filter((e) => { const r = e.getBoundingClientRect(); return r.bottom > 0 && r.top < vh && r.width > 0; });
+    const els = $$(CHROME, host).filter((e) => {
+      if (e.parentElement && e.parentElement.closest(CHROME)) return false; // a parent already fades it
+      const r = e.getBoundingClientRect();
+      return r.bottom > 0 && r.top < vh && r.width > 0;
+    });
     host.classList.remove("hold");
     els.forEach((e) => {
       const op = +getComputedStyle(e).opacity;
@@ -1647,7 +1649,7 @@
     if (na && anchorY != null) {
       const r = na.getBoundingClientRect();
       const want = clamp(anchorY, st + 12, Math.max(st + 12, innerHeight - bottomInset() - r.height - 12));
-      scrollBy(0, Math.max(r.top - want, wrapTop - st - 12 < 0 ? r.top - want : 0));
+      scrollBy(0, r.top - want);
     } else if (wrapTop < st + 12) {
       scrollBy(0, wrapTop - st - 12);
     }
@@ -1655,7 +1657,7 @@
     document.body.appendChild(leave);
     TR.leaves.push(leave);
     host.classList.add("hold");
-    TR.hostAnim = host.animate([{ opacity: Math.min(curOp, 0) }, { opacity: 1 }], { duration: 320, delay: 90, easing: "cubic-bezier(.2,.7,.3,1)", fill: "backwards" });
+    TR.hostAnim = host.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 320, delay: 90, easing: "cubic-bezier(.2,.7,.3,1)", fill: "backwards" });
     const fade = leave.animate([{ opacity: curOp }, { opacity: 0 }], { duration: 140, easing: "cubic-bezier(.4,0,1,1)", fill: "forwards" });
     fade.onfinish = () => { leave.remove(); TR.leaves = TR.leaves.filter((l) => l !== leave); };
     const ab = $("#stage [data-absorb]");
