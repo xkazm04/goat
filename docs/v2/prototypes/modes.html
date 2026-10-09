@@ -2823,7 +2823,7 @@
       if (!FLY.size && !TR.holding && FX.jobs.size === 1) {
         E.seen++; if (dt > 24) E.slow++;
         if (E.seen >= 60) {
-          if (E.slow > 12) { if (E.gap >= 96) { E.draw(t, E.acc); return false; } E.gap *= 2; }
+          if (E.slow > 4) { if (E.gap >= 96) { E.draw(t, E.acc); return false; } E.gap *= 2; }
           E.seen = E.slow = 0;
         }
       }
