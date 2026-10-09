@@ -1,0 +1,116 @@
+<title>GOAT v2 Studies</title>
+<link rel="stylesheet" href="shared.css">
+<script src="shared.js"></script>
+<style>
+  /* Overview hub: a quiet screening-room lobby. The four studies are the
+     only "posters" on the wall; everything else is plain, readable text. */
+  body { background: var(--ink-0); color: var(--fg); }
+  main { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 48px 80px; display: grid; gap: 56px; }
+  .hero { display: grid; gap: 18px; max-width: 760px; }
+  .hero h1 { font: 900 clamp(2.6rem, 7vw, 5.2rem)/.9 var(--font-display); text-transform: uppercase; letter-spacing: .01em; }
+  .hero h1 em { font-style: normal; color: var(--gold); }
+  .hero p { color: var(--fg-muted); font-size: var(--step-1); max-width: 62ch; margin: 0; }
+
+  .studies { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 18px; }
+  .study {
+    position: relative; display: grid; grid-template-rows: auto 1fr; overflow: hidden;
+    text-decoration: none; color: inherit; border-radius: var(--r-lg);
+    background: var(--glass); border: 1px solid var(--glass-edge);
+    transition: transform .4s var(--ease-out), border-color .3s, box-shadow .4s;
+  }
+  .study:hover { transform: translateY(-4px); border-color: var(--glass-edge-hi); box-shadow: var(--shadow-float); }
+  .study .poster { position: relative; height: 150px; display: flex; align-items: flex-end; gap: 8px; padding: 16px; overflow: hidden; }
+  .study .poster::before { content: ""; position: absolute; inset: 0; background: radial-gradient(80% 120% at 50% 0%, var(--tint), transparent 70%); opacity: .55; }
+  .study .poster .cover { width: 56px; flex: none; position: relative; box-shadow: 0 10px 24px -8px rgba(0,0,0,.8); }
+  .study .poster .letter { position: absolute; right: 14px; top: 6px; font: 900 5rem/1 var(--font-display); color: rgba(255,255,255,.08); }
+  .study .body { padding: 16px 18px 20px; display: grid; gap: 8px; align-content: start; }
+  .study h2 { font: 800 1.7rem/1 var(--font-display); text-transform: uppercase; letter-spacing: .02em; }
+  .study p { margin: 0; color: var(--fg-muted); font-size: var(--step--1); }
+  .study .judge { color: var(--fg); font-size: var(--step--1); }
+  .study .judge b { color: var(--gold); font-weight: 600; }
+  .study .go { margin-top: 6px; font-weight: 600; font-size: var(--step--1); color: var(--gold); }
+
+  .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
+  .panel { padding: 22px; display: grid; gap: 12px; align-content: start; }
+  .panel h3 { font: 800 1.35rem/1 var(--font-display); text-transform: uppercase; letter-spacing: .03em; }
+  dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 8px 16px; font-size: var(--step--1); }
+  dt { color: var(--fg-muted); }
+  dd { margin: 0; min-width: 0; }
+  ul.plain { margin: 0; padding-left: 1.1em; display: grid; gap: 6px; font-size: var(--step--1); color: var(--fg); }
+  ul.plain li::marker { color: var(--gold); }
+  .muted { color: var(--fg-muted); }
+</style>
+
+<nav id="study-nav"></nav>
+<main>
+  <header class="hero">
+    <span class="eyebrow">GOAT v2 · Interaction studies · Round 1</span>
+    <h1>Four ways to <em>rank</em> the same ten games, four ways to show your taste</h1>
+    <p>Each study ranks the same list, The Greatest RPGs Ever Made, in the same cinematic dark-glass look. Only the interaction metaphor changes. Spend a minute in each and notice which one you want to keep touching.</p>
+  </header>
+
+  <section class="studies" id="studies" aria-label="Studies"></section>
+
+  <section class="cols">
+    <div class="glass panel">
+      <span class="eyebrow">Decided so far</span>
+      <h3>v2 direction</h3>
+      <dl>
+        <dt>Goal</dt><dd>Showcase craft and a personal playground</dd>
+        <dt>Scope</dt><dd>Same Top-N concept, rebuilt</dd>
+        <dt>Platform</dt><dd>Desktop web</dd>
+        <dt>Builders</dt><dd>Solo plus AI agents</dd>
+        <dt>Product</dt><dd>Curator's canvas: the ranking is a crafted, publishable artifact</dd>
+        <dt>Look</dt><dd>Cinematic dark glass</dd>
+        <dt>Content</dt><dd>Any topic, generated and enriched by AI</dd>
+        <dt>Codebase</dt><dd>Slim rebuild in this repo; port the proven libraries</dd>
+      </dl>
+    </div>
+    <div class="glass panel">
+      <span class="eyebrow">Signature features</span>
+      <h3>What sits around the ranking</h3>
+      <ul class="plain">
+        <li><b>Taste DNA</b>: an AI taste persona, an attribute fingerprint, and recommendations drawn from it</li>
+        <li><b>Social cards and embeds</b>: dynamic share images and an embeddable widget</li>
+        <li><b>The ranking interaction itself</b>, chosen from these studies</li>
+      </ul>
+      <p class="muted" style="margin:0;font-size:var(--step--1)">Covers are generated placeholders standing in for AI or API artwork.</p>
+    </div>
+  </section>
+</main>
+
+<script>
+  document.body.classList.add("grain");
+  GOAT.nav("index.html");
+  const STUDY_INFO = {
+    "spread.html": { tint: "hsl(42 85% 55%)",  covers: ["w3", "er", "bg3"],
+      blurb: "You edit the finished page directly. Typography-led, with inline write-ups. What you see is what you publish.",
+      judge: "Does writing about your picks feel natural here?" },
+    "canvas.html": { tint: "hsl(200 85% 55%)", covers: ["de", "pst", "me2"],
+      blurb: "Height is greatness. Place items on an open board, and the Top 10 is read off how high each one sits.",
+      judge: "Does thinking in space beat thinking in slots?" },
+    "shelf.html":  { tint: "hsl(28 85% 55%)",  covers: ["ds", "bb", "er"],
+      blurb: "Items are physical cases. Pick them up, feel their weight, and slot them onto your display shelf.",
+      judge: "Is the tactility worth the extra visual weight?" },
+    "stage.html":  { tint: "hsl(340 80% 55%)", covers: ["p5r", "ff7", "ct"],
+      blurb: "Ranking is an awards show. A podium and spotlights, and a face-off when a challenger takes an occupied spot.",
+      judge: "Does the drama make you rank more or slow you down?" },
+    "dna.html":    { tint: "hsl(270 80% 60%)", covers: ["de", "w3", "hk"],
+      blurb: "Four ways to draw your taste fingerprint, all computed from the same ranking: constellation, spectrum barcode, generative orb, radar card.",
+      judge: "Which one would you want on your profile and share cards?" },
+  };
+  const host = document.getElementById("studies");
+  GOAT.STUDIES.filter((s) => s.n).forEach((s) => {
+    const info = STUDY_INFO[s.href];
+    const a = document.createElement("a");
+    a.className = "study";
+    a.href = s.href;
+    a.style.setProperty("--tint", info.tint);
+    a.innerHTML = `<div class="poster"><span class="letter">${s.n}</span></div>
+      <div class="body"><span class="eyebrow">Study ${s.n}</span><h2>${s.label}</h2>
+      <p>${info.blurb}</p><p class="judge"><b>Judge it by:</b> ${info.judge}</p><span class="go">Open study →</span></div>`;
+    const poster = a.querySelector(".poster");
+    info.covers.forEach((id) => poster.appendChild(GOAT.cover(GOAT.byId(id), { meta: false })));
+    host.appendChild(a);
+  });
+</script>
