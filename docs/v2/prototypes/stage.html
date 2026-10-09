@@ -1,0 +1,1372 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ranking Stage</title>
+<link rel="stylesheet" href="shared.css">
+<script src="shared.js"></script>
+<style>
+  :root {
+    --velvet-0: #06070d;
+    --velvet-1: #10131f;
+    --velvet-2: #1a1e31;
+    --chalk: rgba(236, 238, 247, .30);
+    --warm: rgb(255 242 214);
+  }
+  html, body { overflow-x: clip; }
+  body { display: flex; flex-direction: column; min-height: 100dvh; }
+  main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+  /* ---------- intro strip ---------- */
+  .intro { padding: 12px 16px 10px; }
+  .intro-top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 24px; }
+  .title-row { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 14px; margin-top: 6px; }
+  .intro h1 { font: 800 var(--step-3)/.9 var(--font-display); text-transform: uppercase; letter-spacing: .01em; }
+  .tagline { font: 500 var(--step-1)/1.2 var(--font-body); color: var(--gold); }
+  .intro p { margin: 8px 0 0; color: var(--fg-muted); }
+  .intro p.try { margin-top: 3px; font-size: var(--step--1); color: var(--fg-faint); }
+  .try b { color: var(--fg-muted); font-weight: 600; }
+  .controls { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+  .tally { font-family: var(--font-mono); font-size: var(--step--1); color: var(--fg-muted); margin-right: 6px; white-space: nowrap; }
+  .tally b { color: var(--gold); font-weight: 600; }
+  .btn svg { width: 12px; height: 12px; flex: none; }
+  #rehearse { min-width: 11.5em; justify-content: center; }
+
+  /* ---------- the theatre ---------- */
+  .theatre {
+    position: relative; margin: 0 16px; flex: 1 1 auto; min-height: 470px;
+    border-radius: 22px 22px 10px 10px; overflow: hidden; isolation: isolate;
+    background: #05060a; border: 1px solid var(--glass-edge);
+    box-shadow: 0 30px 80px -30px #000;
+  }
+  .theatre.narrow { flex: none; }
+  .cyc {
+    position: absolute; inset: 0; z-index: 0;
+    background:
+      radial-gradient(55% 45% at 50% 100%, rgba(233, 196, 106, .10), transparent 70%),
+      radial-gradient(70% 55% at 50% 30%, rgba(130, 140, 220, .07), transparent 70%),
+      repeating-linear-gradient(90deg, rgba(200, 210, 255, .02) 0 1px, transparent 1px 90px),
+      linear-gradient(#0a0b14, #05060a 75%);
+    transition: filter .5s var(--ease-out);
+  }
+  .haze {
+    position: absolute; inset: -10%; z-index: 1; pointer-events: none; opacity: .6;
+    background:
+      radial-gradient(30% 22% at 30% 40%, rgba(200, 210, 255, .05), transparent 70%),
+      radial-gradient(35% 25% at 72% 30%, rgba(233, 196, 106, .045), transparent 70%);
+    animation: drift 26s ease-in-out infinite alternate;
+  }
+  @keyframes drift { to { transform: translate3d(4%, -2%, 0); } }
+  .floor {
+    position: absolute; left: 0; right: 0; top: var(--floor, 85%); bottom: 0; z-index: 1;
+    background:
+      radial-gradient(60% 140% at 50% 0, rgba(233, 196, 106, .10), transparent 70%),
+      repeating-linear-gradient(90deg, rgba(255, 255, 255, .025) 0 1px, transparent 1px 70px),
+      linear-gradient(#10121c, #07080d);
+    border-top: 1px solid rgba(233, 196, 106, .22);
+  }
+  .footlights {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 16px; z-index: 7; pointer-events: none;
+    background: radial-gradient(circle at 50% 100%, rgba(255, 227, 161, .85) 0 1.5px, rgba(255, 227, 161, .16) 2.5px, transparent 9px) 0 100% / 44px 16px repeat-x;
+  }
+  .footlights::before { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 70px; background: linear-gradient(transparent, rgba(255, 227, 161, .05)); }
+
+  .curtain {
+    position: absolute; top: 0; bottom: 0; width: var(--curt, 72px); z-index: 7; pointer-events: none;
+    background:
+      linear-gradient(90deg, transparent 30%, rgba(0, 0, 0, .55)),
+      repeating-linear-gradient(90deg, var(--velvet-0) 0, var(--velvet-2) 10px, var(--velvet-1) 17px, var(--velvet-0) 26px);
+    clip-path: polygon(0 0, 100% 0, 100% 48%, 62% 63%, 92% 100%, 0 100%);
+  }
+  .curtain::after { /* gold tie-back */
+    content: ""; position: absolute; left: 0; width: 66%; top: 62%; height: 5px; border-radius: 3px;
+    background: linear-gradient(90deg, #5d4a1d, var(--gold), #5d4a1d); opacity: .55;
+  }
+  .curtain.left { left: 0; }
+  .curtain.right { right: 0; transform: scaleX(-1); }
+  .valance {
+    position: absolute; left: 0; right: 0; top: 0; height: 42px; z-index: 8; pointer-events: none;
+    display: grid; place-items: center;
+    background:
+      linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, .35)),
+      repeating-linear-gradient(90deg, var(--velvet-0) 0, var(--velvet-2) 14px, var(--velvet-0) 28px);
+    border-bottom: 1px solid rgba(233, 196, 106, .45);
+    box-shadow: 0 14px 30px -8px rgba(0, 0, 0, .85);
+  }
+  .valance::after {
+    content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 12px;
+    background: radial-gradient(50% 100% at 50% 0, var(--velvet-1) 0 94%, transparent 100%) 0 0 / 34px 12px repeat-x;
+  }
+  .marquee {
+    position: relative; font: 600 11px/1 var(--font-body); letter-spacing: .3em; text-transform: uppercase;
+    color: rgba(233, 196, 106, .85); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 72%;
+    transition: opacity .25s;
+  }
+
+  /* spotlight cones: blur on the wrapper, hard clip on the beam */
+  .cone, .fo-cone {
+    position: absolute; pointer-events: none; filter: blur(9px); mix-blend-mode: screen;
+    opacity: 0; transition: opacity .45s var(--ease-out); --cc: var(--warm);
+  }
+  .cone { z-index: 2; }
+  .cone i, .fo-cone i {
+    position: absolute; inset: 0; clip-path: var(--clip);
+    background: linear-gradient(to bottom,
+      color-mix(in srgb, var(--cc) 3%, transparent),
+      color-mix(in srgb, var(--cc) 30%, transparent) 86%,
+      color-mix(in srgb, var(--cc) 8%, transparent));
+  }
+  .cone.on { opacity: .55; }
+  .cone.r1.on { opacity: .95; }
+  .cone.hot { opacity: 1 !important; --cc: rgb(255 246 226) !important; }
+  .snap { animation: snap .9s var(--ease-out); }
+  @keyframes snap { 0% { opacity: 0; } 10% { opacity: 1; filter: blur(3px) brightness(1.7); } }
+  .pool {
+    position: absolute; z-index: 4; pointer-events: none; border-radius: 50%; opacity: 0; mix-blend-mode: screen;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--cc, var(--warm)) 45%, transparent), transparent);
+    transition: opacity .45s;
+  }
+  .pool.on { opacity: .75; }
+  .pool.hot { opacity: 1; }
+
+  .riser {
+    position: absolute; z-index: 3; display: flex; align-items: center; justify-content: center; overflow: hidden;
+    background: linear-gradient(180deg, #1b1e2c 0, #10121c 18%, #0a0b12 100%);
+    box-shadow: inset 0 1px 0 rgba(220, 228, 255, .16), inset 1px 0 0 rgba(200, 210, 255, .05), inset -1px 0 0 rgba(0, 0, 0, .6);
+  }
+  .riser::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 5px; background: linear-gradient(rgba(220, 228, 255, .12), transparent); }
+  .riser.podium { background: linear-gradient(180deg, #24232a 0, #15151c 20%, #0b0b11); box-shadow: inset 0 2px 0 rgba(233, 196, 106, .5), inset 1px 0 0 rgba(233, 196, 106, .08), inset -1px 0 0 rgba(0, 0, 0, .6); }
+  .riser .num {
+    font: 800 var(--nf, 40px)/.8 var(--font-display); font-variant-numeric: tabular-nums;
+    color: rgba(236, 238, 247, .12); transform: translateY(7%);
+    transition: color .35s, text-shadow .35s;
+  }
+  .riser.occ .num { color: rgba(236, 238, 247, .3); }
+  .riser.podium .num { color: rgba(233, 196, 106, .3); }
+  .riser.podium.occ .num { color: rgba(233, 196, 106, .62); }
+  .riser.r1.occ .num { color: var(--gold); text-shadow: 0 0 30px var(--gold-glow); }
+  .riser.hot .num { color: var(--gold-hi) !important; text-shadow: 0 0 24px var(--gold-glow); }
+  .riser.pulse .num { animation: numpulse .9s var(--ease-out); }
+  @keyframes numpulse { 15% { color: var(--gold-hi); text-shadow: 0 0 34px var(--gold); } }
+  .ledge { position: absolute; z-index: 3; display: none; height: 8px; background: linear-gradient(#1b1e2c, #0a0b12); box-shadow: inset 0 1px 0 rgba(220, 228, 255, .16); border-radius: 2px; }
+  .narrow .ledge { display: block; }
+
+  /* chalk spike marks for an open spot */
+  .mark {
+    position: absolute; z-index: 4; pointer-events: none; border-radius: 10px; opacity: 0;
+    display: grid; place-items: center;
+    --c: var(--chalk); --l: 14px;
+    background:
+      linear-gradient(var(--c), var(--c)) 0 0 / var(--l) 1.5px, linear-gradient(var(--c), var(--c)) 0 0 / 1.5px var(--l),
+      linear-gradient(var(--c), var(--c)) 100% 0 / var(--l) 1.5px, linear-gradient(var(--c), var(--c)) 100% 0 / 1.5px var(--l),
+      linear-gradient(var(--c), var(--c)) 0 100% / var(--l) 1.5px, linear-gradient(var(--c), var(--c)) 0 100% / 1.5px var(--l),
+      linear-gradient(var(--c), var(--c)) 100% 100% / var(--l) 1.5px, linear-gradient(var(--c), var(--c)) 100% 100% / 1.5px var(--l);
+    background-repeat: no-repeat;
+    outline: 1px dashed rgba(236, 238, 247, .09); outline-offset: -6px;
+    transition: opacity .3s, background-color .3s, outline-color .3s, transform .4s var(--ease-spring);
+  }
+  .mark span { font: 600 10px/1.2 var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--fg-faint); text-align: center; padding: 0 4px; }
+  .mark.open { opacity: 1; }
+  .mark.hot { --c: var(--gold-hi); background-color: rgba(233, 196, 106, .08); outline-color: rgba(233, 196, 106, .45); transform: scale(1.04); }
+  .mark.hot span { color: var(--gold-hi); }
+
+  /* ---------- cards on stage ---------- */
+  .scard, .bcard {
+    display: block; padding: 0; margin: 0; border: 0; background: none; border-radius: var(--r-sm);
+    cursor: grab; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+  }
+  .scard {
+    position: absolute; left: 0; top: 0; z-index: 5; width: var(--bw, 160px);
+    transform-origin: 0 0; touch-action: none; transition: opacity .3s, filter .35s;
+  }
+  .scard::before { /* item-coloured bounce light behind the card */
+    content: ""; position: absolute; inset: 10% 6% -6%; z-index: -1; border-radius: inherit;
+    background: var(--glow); filter: blur(24px); opacity: .42;
+  }
+  .scard::after { /* top rim from the spot */
+    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    background: linear-gradient(172deg, rgba(255, 248, 230, .22), transparent 36%); mix-blend-mode: screen;
+  }
+  .scard .cover { box-shadow: 0 24px 40px -14px rgba(0, 0, 0, .9), 0 0 0 1px rgba(255, 255, 255, .09) inset; }
+  .scard.r1 .cover { box-shadow: 0 24px 50px -14px rgba(0, 0, 0, .9), 0 0 0 2px rgba(233, 196, 106, .75), 0 0 46px -6px var(--gold-glow); }
+  .scard:focus-visible { outline: calc(2px / var(--s, 1)) solid var(--gold); outline-offset: calc(4px / var(--s, 1)); }
+  .scard.lifted { opacity: .14; filter: grayscale(1); }
+  .scard.hide { opacity: 0; transition: none; }
+  .scard.hot .cover { animation: brace .4s ease-in-out infinite alternate; }
+  @keyframes brace { to { transform: translateY(-2.5%) rotate(-1.4deg); } }
+  .theatre.dragging .cyc { filter: brightness(.55); }
+  .theatre.dragging .cone.on:not(.hot) { opacity: .2; }
+  .theatre.dragging .scard:not(.hot):not(.lifted) { filter: brightness(.6) saturate(.8); }
+
+  /* ---------- reveal ---------- */
+  .theatre.revealing { cursor: pointer; }
+  .theatre.revealing .cyc { filter: brightness(.35); }
+  .theatre.revealing .scard { opacity: 0; transition: opacity .35s; }
+  .theatre.revealing .scard.rv { opacity: 1; }
+  .theatre.revealing .cone, .theatre.revealing .pool { opacity: 0; }
+  .theatre.revealing .cone.rv { opacity: .6; }
+  .theatre.revealing .cone.rv.r1 { opacity: 1; }
+  .theatre.revealing .pool.rv { opacity: .8; }
+  .theatre.revealing .mark { opacity: 0; }
+  .theatre.revealing .riser .num { color: rgba(236, 238, 247, .06); text-shadow: none; }
+  .theatre.revealing .riser.rv .num { color: rgba(236, 238, 247, .5); }
+  .theatre.revealing .riser.podium.rv .num { color: var(--gold); }
+  .caption {
+    position: absolute; left: 0; top: 0; z-index: 9; pointer-events: none; opacity: 0;
+    display: flex; flex-direction: column; align-items: center; text-align: center; gap: 2px;
+    width: max-content; max-width: min(340px, 80%); text-shadow: 0 2px 18px rgba(0, 0, 0, .9);
+  }
+  .narrow .caption { background: rgba(5, 6, 10, .78); padding: 8px 12px; border-radius: 12px; }
+  .cap-n { font: 800 44px/.85 var(--font-display); color: var(--gold); letter-spacing: .01em; }
+  .cap-e { font: 600 11px/1 var(--font-body); letter-spacing: .26em; text-transform: uppercase; color: var(--gold-hi); }
+  .cap-t { font: 800 var(--step-2)/1 var(--font-display); text-transform: uppercase; letter-spacing: .02em; }
+  .cap-t.big { font-size: var(--step-3); color: var(--gold-hi); }
+  .cap-m { font: 400 11px/1.3 var(--font-mono); color: var(--fg-muted); letter-spacing: .04em; }
+  .bignum {
+    position: absolute; left: 0; top: 0; z-index: 4; pointer-events: none; opacity: 0;
+    font: 900 100px/.8 var(--font-display); color: rgba(233, 196, 106, .06);
+    -webkit-text-stroke: 1.5px rgba(233, 196, 106, .45);
+  }
+  .flare {
+    position: absolute; z-index: 4; pointer-events: none; border-radius: 50%; opacity: 0; mix-blend-mode: screen;
+    background: radial-gradient(closest-side, rgba(255, 227, 161, .7), rgba(233, 196, 106, .25) 35%, transparent 70%);
+  }
+  .flare::before {
+    content: ""; position: absolute; inset: -25%; border-radius: 50%;
+    background: repeating-conic-gradient(from 0deg, rgba(255, 227, 161, .3) 0 3deg, transparent 3deg 15deg);
+    -webkit-mask: radial-gradient(closest-side, #000 18%, transparent 78%); mask: radial-gradient(closest-side, #000 18%, transparent 78%);
+  }
+  .flash {
+    position: absolute; inset: 0; z-index: 9; pointer-events: none; opacity: 0; mix-blend-mode: screen;
+    background: radial-gradient(38% 50% at var(--fx, 50%) var(--fy, 40%), rgba(255, 227, 161, .6), transparent 70%);
+  }
+  .skiphint {
+    position: absolute; right: calc(var(--curt, 60px) + 12px); top: 56px; z-index: 9; opacity: 0; pointer-events: none;
+    font: 600 11px/1 var(--font-mono); letter-spacing: .08em; color: var(--fg-muted);
+    padding: .5em .8em; border-radius: 999px; background: rgba(8, 9, 15, .8); border: 1px solid var(--glass-edge);
+    transition: opacity .3s;
+  }
+  .theatre.revealing .skiphint { opacity: 1; }
+  #dust { position: absolute; left: 0; top: 0; z-index: 6; pointer-events: none; }
+
+  /* ---------- face-off ---------- */
+  .faceoff { position: absolute; inset: 0; z-index: 10; }
+  .faceoff[hidden] { display: none; }
+  .fo-dim {
+    position: absolute; inset: 0; opacity: 0; transition: opacity .35s var(--ease-out);
+    background: radial-gradient(70% 70% at 50% 45%, rgba(4, 5, 9, .86), rgba(3, 4, 7, .97));
+    backdrop-filter: blur(5px) saturate(.7); -webkit-backdrop-filter: blur(5px) saturate(.7);
+  }
+  .faceoff.in .fo-dim { opacity: 1; }
+  .fo-cone { z-index: 1; filter: blur(10px); }
+  .faceoff.in .fo-cone { opacity: .9; }
+  .fo-body {
+    position: relative; z-index: 2; height: 100%; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 14px; padding: 18px 16px; transition: opacity .25s;
+  }
+  .faceoff.closing .fo-body { opacity: 0; }
+  .fo-head { text-align: center; opacity: 0; transform: translateY(-8px); transition: opacity .35s .1s, transform .5s var(--ease-out) .1s; }
+  .faceoff.in .fo-head { opacity: 1; transform: none; }
+  .fo-head h2 { font: 800 var(--step-2)/1 var(--font-display); text-transform: uppercase; letter-spacing: .02em; margin-top: 6px; }
+  .fo-head h2 b { color: var(--gold); }
+  .fo-row { display: flex; align-items: center; justify-content: center; gap: clamp(12px, 3.2vw, 48px); }
+  .fo-card {
+    appearance: none; border: 0; padding: 6px; margin: 0; background: none; cursor: pointer; border-radius: 16px;
+    width: calc(var(--fo-w, 200px) + 12px); display: flex; flex-direction: column; align-items: center; gap: 8px;
+    transition: opacity .35s, transform .5s var(--ease-spring), filter .35s;
+  }
+  .fo-card:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .fo-role { white-space: nowrap; font: 600 11px/1 var(--font-body); letter-spacing: .16em; text-transform: uppercase; color: var(--fg-muted); }
+  .fo-card[data-side="right"] .fo-role { color: var(--gold); }
+  .fo-art { display: block; width: var(--fo-w, 200px); }
+  .fo-art .cover { transform-origin: 0 0; box-shadow: 0 30px 60px -20px #000, 0 0 0 1px rgba(255, 255, 255, .1) inset, 0 0 60px -12px var(--glow); transition: box-shadow .3s; }
+  .fo-card:hover .fo-art .cover, .fo-card:focus-visible .fo-art .cover { box-shadow: 0 30px 60px -20px #000, 0 0 0 2px rgba(255, 227, 161, .7), 0 0 60px -6px var(--glow); }
+  .fo-card:hover { transform: translateY(-4px); }
+  .fo-meta { display: flex; flex-direction: column; align-items: center; gap: 3px; text-align: center; max-width: 100%; opacity: 0; transition: opacity .4s .3s; }
+  .faceoff.in .fo-meta { opacity: 1; }
+  .fo-meta strong { font: 800 20px/1 var(--font-display); text-transform: uppercase; letter-spacing: .02em; }
+  .fo-meta .mono { color: var(--fg-muted); font-size: 11px; }
+  .fo-note { color: var(--fg-muted); font-size: var(--step--1); line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .fo-note.traits { font-family: var(--font-mono); font-size: 11px; color: var(--fg-faint); }
+  .fo-key kbd {
+    display: inline-grid; place-items: center; min-width: 26px; height: 22px; padding: 0 6px; border-radius: 6px;
+    font: 600 12px/1 var(--font-mono); color: var(--fg-muted); background: var(--glass-strong); border: 1px solid var(--glass-edge); box-shadow: 0 2px 0 rgba(0, 0, 0, .5);
+  }
+  .fo-vs {
+    font: 900 clamp(40px, 5.6vw, 80px)/1 var(--font-display); color: var(--gold); letter-spacing: .02em;
+    text-shadow: 0 0 40px var(--gold-glow); transform: scale(0); opacity: 0;
+  }
+  .faceoff.in .fo-vs { animation: vspop .7s var(--ease-spring) .2s forwards; }
+  @keyframes vspop { from { transform: scale(2.2); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .fo-card.won { transform: translateY(-8px) scale(1.05); }
+  .fo-card.won .fo-art .cover { box-shadow: 0 30px 60px -20px #000, 0 0 0 2px var(--gold-hi), 0 0 80px 6px var(--gold-glow); }
+  .fo-card.won .fo-role { color: var(--gold-hi); }
+  .fo-card.lost { opacity: .28; filter: grayscale(.85); transform: translateY(16px) scale(.93); }
+  .fo-foot { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px 14px; color: var(--fg-muted); font-size: var(--step--1); text-align: center; opacity: 0; transition: opacity .4s .35s; }
+  .faceoff.in .fo-foot { opacity: 1; }
+  .fo-foot .btn { padding: .4em .9em; }
+
+  /* ---------- backstage ---------- */
+  .backstage {
+    position: relative; margin: 12px 16px 16px; border-radius: 16px;
+    background: linear-gradient(180deg, #0b0c14, #07080c); border: 1px solid var(--glass-edge);
+    transition: border-color .3s, box-shadow .3s;
+  }
+  .backstage::before { /* a single dim work light */
+    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    background: radial-gradient(40% 130% at 10% 0, rgba(233, 196, 106, .07), transparent 70%);
+  }
+  .backstage.hot { border-color: rgba(233, 196, 106, .65); box-shadow: 0 0 0 1px rgba(233, 196, 106, .3), inset 0 0 60px rgba(233, 196, 106, .10); }
+  .bs-head { position: relative; display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 14px; padding: 12px 16px 0; }
+  .bs-head .eyebrow b { color: var(--fg); font-weight: 600; }
+  .bs-hint { margin-left: auto; color: var(--fg-faint); font-size: var(--step--1); }
+  .backstage.hot .bs-hint { color: var(--gold-hi); }
+  .wings {
+    position: relative; display: flex; gap: 12px; overflow-x: auto; overflow-y: hidden;
+    padding: 12px 16px 16px; min-height: 120px;
+    scrollbar-width: thin; scrollbar-color: rgba(200, 210, 255, .18) transparent;
+  }
+  .bcard {
+    position: relative; flex: none; width: var(--bcw, 104px); touch-action: pan-x; transform-origin: 0 0;
+    filter: brightness(.5) saturate(.7); transition: transform .35s var(--ease-out), filter .35s, opacity .3s;
+  }
+  .bcard .cover { box-shadow: 0 14px 30px -12px #000; }
+  .bcard:hover, .bcard:focus-visible { filter: none; transform: translateY(-5px); }
+  .bcard.lifted { opacity: .16; filter: grayscale(1) brightness(.6); transform: none; }
+  .bcard.fresh::after {
+    content: ""; position: absolute; inset: -3px; border-radius: 11px; border: 1.5px solid var(--gold);
+    pointer-events: none; animation: fresh 1.8s ease-out forwards;
+  }
+  @keyframes fresh { 0%, 40% { opacity: 1; } 100% { opacity: 0; } }
+  .wings-empty { align-self: center; color: var(--fg-faint); font-size: var(--step--1); padding: 24px 0; }
+
+  /* ---------- held card + follow spot ---------- */
+  .held { position: fixed; left: 0; top: 0; z-index: 300; pointer-events: none; will-change: transform; }
+  .held .tilt { transform-origin: var(--ox) var(--oy); will-change: transform; }
+  .held .hc { width: var(--hw); transform-origin: var(--ox) var(--oy); transition: transform .4s var(--ease-spring); }
+  .held .cover { box-shadow: 0 46px 70px -22px rgba(0, 0, 0, .95), 0 0 0 1.5px rgba(255, 227, 161, .65), 0 0 56px -6px var(--glow); }
+  .held .tag {
+    position: absolute; left: calc(var(--hw) / 2); top: calc(var(--hw) * 4 / 3 + 16px);
+    transform: translate(-50%, -4px); opacity: 0; white-space: nowrap;
+    padding: .45em .85em; border-radius: 999px; font: 600 12px/1 var(--font-body); letter-spacing: .02em;
+    background: rgba(8, 9, 15, .92); border: 1px solid var(--glass-edge-hi); color: var(--fg);
+    transition: opacity .16s, transform .25s var(--ease-out);
+  }
+  .held .tag.show { opacity: 1; transform: translate(-50%, 0); }
+  .held .tag.quiet { color: var(--fg-muted); }
+  .held .tag.duel { border-color: var(--gold); color: var(--gold-hi); }
+  .followspot {
+    position: fixed; left: 0; top: 0; width: 480px; height: 480px; margin: -240px 0 0 -240px; border-radius: 50%;
+    pointer-events: none; z-index: 290; opacity: 0; mix-blend-mode: screen; transition: opacity .35s;
+    background: radial-gradient(closest-side, rgba(255, 242, 214, .17), rgba(255, 242, 214, .07) 45%, transparent);
+  }
+  .followspot.on { opacity: 1; }
+  .fbeam {
+    position: fixed; left: 0; top: 0; width: 300px; height: 1000px; z-index: 289; pointer-events: none;
+    transform-origin: 50% 0; opacity: 0; mix-blend-mode: screen; transition: opacity .3s;
+    clip-path: polygon(48.5% 0, 51.5% 0, 100% 100%, 0 100%);
+    background: linear-gradient(to bottom, rgba(255, 242, 214, .015), rgba(255, 242, 214, .11));
+    -webkit-mask: linear-gradient(90deg, transparent, #000 35%, #000 65%, transparent); mask: linear-gradient(90deg, transparent, #000 35%, #000 65%, transparent);
+  }
+  .fbeam.on { opacity: 1; }
+  .flight { position: fixed; inset: 0; z-index: 280; pointer-events: none; }
+  .flyer { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+  .flyer .cover { box-shadow: 0 30px 50px -18px rgba(0, 0, 0, .9); }
+  body.holding, body.holding * { cursor: grabbing !important; }
+
+  @media (max-width: 760px) {
+    .backstage {
+      position: sticky; bottom: 0; z-index: 40; margin: 12px 0 0; border-radius: 16px 16px 0 0;
+      border-bottom: 0; padding-bottom: env(safe-area-inset-bottom, 0px);
+      background: rgba(9, 10, 16, .94); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 -18px 40px -10px rgba(0, 0, 0, .8);
+    }
+    .bs-head { padding-top: 10px; }
+    .wings { padding: 10px 16px 12px; }
+    .intro p { font-size: var(--step--1); }
+    .intro h1 { font-size: var(--step-2); }
+    .bs-hint { margin-left: 0; width: 100%; }
+    .wings { --bcw: 84px; gap: 10px; }
+    .cap-n { font-size: 34px; }
+    .cap-t { font-size: var(--step-1); }
+    .cap-t.big { font-size: var(--step-2); }
+    .fo-meta strong { font-size: 16px; }
+    .fo-note { -webkit-line-clamp: 2; font-size: 12px; }
+    .fo-head h2 { font-size: var(--step-1); }
+    .fo-body { gap: 10px; padding: 12px 10px; }
+    .fo-key { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .haze { animation: none; }
+    .fbeam { display: none; }
+  }
+</style>
+</head>
+<body class="grain">
+<nav id="study-nav"></nav>
+<script>GOAT.nav("stage.html");</script>
+
+<main>
+  <section class="intro" aria-labelledby="study-title">
+    <div class="intro-top">
+      <div>
+        <span class="eyebrow">Study D</span>
+        <div class="title-row">
+          <h1 id="study-title">Stage</h1>
+          <span class="tagline">Every placement is a performance.</span>
+        </div>
+      </div>
+      <div class="controls">
+        <span class="tally" id="tally" aria-live="polite"></span>
+        <button type="button" class="btn" id="reset">Reset stage</button>
+        <button type="button" class="btn gold" id="rehearse">
+          <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 1.2v9.6L10.6 6z" fill="currentColor"/></svg>
+          <span>Rehearse the reveal</span>
+        </button>
+      </div>
+    </div>
+    <p>Your list is an awards show. Bring a game out from backstage to claim a spot; drop it on a spot someone already holds and the two face off under twin spotlights, with the loser stepping down one rank.</p>
+      <p class="try"><b>Try:</b> drag a backstage card onto an open spot · drop it on a taken spot for a face-off · drag a stage card back down to the wings · or focus any card and press <b>1–9</b> or <b>0</b> (Delete sends it backstage).</p>
+  </section>
+
+  <section class="theatre" id="stage" aria-label="Stage: spots 1 to 10">
+    <div class="cyc" aria-hidden="true"></div>
+    <div class="haze" aria-hidden="true"></div>
+    <div class="floor" aria-hidden="true"></div>
+    <div id="rig" aria-hidden="true"></div>
+    <div id="cast"></div>
+    <div class="bignum" id="bignum" aria-hidden="true"></div>
+    <div class="flare" id="flare" aria-hidden="true"></div>
+    <canvas id="dust" aria-hidden="true"></canvas>
+    <div class="curtain left" aria-hidden="true"></div>
+    <div class="curtain right" aria-hidden="true"></div>
+    <div class="footlights" aria-hidden="true"></div>
+    <div class="valance" aria-hidden="true"><span class="marquee" id="marquee"></span></div>
+    <div class="caption" id="caption" aria-hidden="true"></div>
+    <div class="flash" id="flash" aria-hidden="true"></div>
+    <div class="skiphint" aria-hidden="true">Esc or click to skip</div>
+
+    <div class="faceoff" id="faceoff" hidden role="dialog" aria-modal="true" aria-labelledby="fo-title" aria-describedby="fo-help">
+      <div class="fo-dim"></div>
+      <div class="fo-cone" id="fo-cone-l"><i></i></div>
+      <div class="fo-cone" id="fo-cone-r"><i></i></div>
+      <div class="fo-body">
+        <div class="fo-head"><span class="eyebrow">Face-off</span><h2 id="fo-title"></h2></div>
+        <div class="fo-row">
+          <button type="button" class="fo-card" id="fo-l" data-side="left"></button>
+          <div class="fo-vs" aria-hidden="true">VS</div>
+          <button type="button" class="fo-card" id="fo-r" data-side="right"></button>
+        </div>
+        <div class="fo-foot"><span id="fo-help"></span><button type="button" class="btn" id="fo-cancel">Call it off</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="backstage" id="backstage" aria-labelledby="bs-title">
+    <div class="bs-head">
+      <span class="eyebrow" id="bs-title">Backstage · <b id="bs-count"></b> waiting</span>
+      <span class="bs-hint" id="bs-hint">Drag a card up onto a spot, or focus it and press 1–9 or 0</span>
+    </div>
+    <div class="wings" id="wings" role="list" aria-label="Waiting backstage"></div>
+  </section>
+</main>
+
+<div class="flight" id="flight" aria-hidden="true"></div>
+<div class="fbeam" id="fbeam" aria-hidden="true"></div>
+<div class="followspot" id="followspot" aria-hidden="true"></div>
+<p class="sr-only" id="kb-help">Press 1 to 9, or 0 for spot 10, to send this card to that spot. On stage, Delete sends it backstage.</p>
+<div class="sr-only" id="live" aria-live="polite"></div>
+
+<script>
+(() => {
+  "use strict";
+  const G = window.GOAT;
+  const RM = () => G.reducedMotion();
+  const $ = (s, r = document) => r.querySelector(s);
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const N = 10;
+  const ORDER_WIDE = [10, 8, 6, 4, 2, 1, 3, 5, 7, 9];   // a stepped pyramid, #1 in the middle
+  const ORDER_BACK = [10, 8, 6, 4, 5, 7, 9];            // phone: ensemble row behind the podium
+  const SCALE = { 1: 1, 2: .88, 3: .84, 4: .74, 5: .71, 6: .67, 7: .64, 8: .61, 9: .58, 10: .55 };
+  const RISE  = { 1: 1, 2: .8, 3: .68, 4: .55, 5: .5, 6: .45, 7: .41, 8: .37, 9: .34, 10: .31 };
+  const INITIAL = { 1: "er", 2: "bg3", 3: "w3", 4: "de", 5: "me2", 7: "ct" };
+
+  /* ---- real damped springs, baked into CSS linear() easing ---- */
+  const LINEAR_OK = CSS.supports("animation-timing-function", "linear(0, 1)");
+  function spring(k, c) {
+    if (!LINEAR_OK) return { easing: "cubic-bezier(.34,1.56,.64,1)", duration: 620 };
+    const dt = 1 / 240; let x = 0, v = 0, t = 0; const xs = [0];
+    while (t < 2.5) {
+      for (let i = 0; i < 4; i++) { const a = -k * (x - 1) - c * v; v += a * dt; x += v * dt; t += dt; }
+      xs.push(x);
+      if (t > .2 && Math.abs(x - 1) < .002 && Math.abs(v) < .02) break;
+    }
+    xs[xs.length - 1] = 1;
+    return { easing: `linear(${xs.map((n) => +n.toFixed(4)).join(",")})`, duration: Math.round(t * 1000) };
+  }
+  const SPR = { move: spring(260, 26), snap: spring(300, 19), soft: spring(180, 25) };
+
+  /* ---- state ---- */
+  let stage, back;
+  function resetState() {
+    stage = Array(N + 1).fill(null);
+    for (const [r, id] of Object.entries(INITIAL)) stage[+r] = id;
+    back = G.items.map((i) => i.id).filter((id) => !stage.includes(id));
+  }
+  resetState();
+  const rankOf = (id) => stage.indexOf(id);
+
+  /* ---- elements ---- */
+  const theatre = $("#stage"), rig = $("#rig"), cast = $("#cast"), wings = $("#wings"), backstage = $("#backstage");
+  const marquee = $("#marquee"), caption = $("#caption"), bignum = $("#bignum"), flare = $("#flare"), flash = $("#flash");
+  const fs = $("#followspot"), fbeam = $("#fbeam"), flight = $("#flight"), live = $("#live");
+  const foEl = $("#faceoff"), foL = $("#fo-l"), foR = $("#fo-r");
+  const LIST_TITLE = G.list.title;
+  marquee.textContent = LIST_TITLE;
+
+  const mk = (tag, cls) => { const e = document.createElement(tag); if (cls) e.className = cls; return e; };
+  const S = {};
+  const ledge = mk("div", "ledge"); rig.appendChild(ledge);
+  for (let r = 1; r <= N; r++) {
+    const cone = mk("div", `cone r${r}`); cone.appendChild(mk("i"));
+    const riser = mk("div", `riser r${r}${r <= 3 ? " podium" : ""}`);
+    riser.innerHTML = `<span class="num">${r}</span>`;
+    const pool = mk("div", `pool r${r}`);
+    const mark = mk("div", "mark"); mark.innerHTML = "<span>Open</span>";
+    rig.append(cone, riser, pool, mark);
+    S[r] = { cone, riser, pool, mark };
+  }
+  const cardEls = new Map(), backEls = new Map();
+
+  /* ---- geometry ---- */
+  let geo = null;
+  function computeGeo(W, H) {
+    const slots = {};
+    if (W >= 760) {
+      const curt = clamp(W * .05, 40, 84), pad = curt + clamp(W * .012, 6, 18), g = clamp(W * .009, 8, 15);
+      const sum = ORDER_WIDE.reduce((a, r) => a + SCALE[r], 0);
+      const floorY = H - clamp(H * .085, 30, 58), riserMax = clamp(H * .24, 72, 150), top = 128;
+      const u = Math.min((W - 2 * pad - 9 * g) / sum, (floorY - riserMax - top) * .75, 250);
+      let x = (W - (sum * u + 9 * g)) / 2;
+      for (const r of ORDER_WIDE) {
+        const w = SCALE[r] * u, h = w * 4 / 3, rh = riserMax * RISE[r], base = floorY - rh;
+        slots[r] = { x, y: base - h, w, h, base, ground: floorY };
+        x += w + g;
+      }
+      return { narrow: false, W, H, curt, g, floorY, slots, bw: slots[1].w };
+    }
+    const curt = 8, pad = 12, g = 6;
+    const sumF = SCALE[1] + SCALE[2] + SCALE[3], sumB = ORDER_BACK.reduce((a, r) => a + SCALE[r], 0);
+    const uF = Math.min((W - 2 * pad - 2 * g) / sumF, 190);
+    const uB = Math.min((W - 2 * pad - 6 * g) / sumB, uF * .7);
+    const riserB = clamp(uB * .45, 18, 34), riserF = clamp(uF * .5, 40, 90), top = 62;
+    const backGround = top + SCALE[4] * uB * 4 / 3 + riserB;
+    let x = (W - (sumB * uB + 6 * g)) / 2;
+    const ledgeBox = { x: x - g / 2, w: sumB * uB + 7 * g, y: backGround };
+    for (const r of ORDER_BACK) {
+      const w = SCALE[r] * uB, h = w * 4 / 3, rh = riserB * RISE[r] / RISE[4], base = backGround - rh;
+      slots[r] = { x, y: base - h, w, h, base, ground: backGround };
+      x += w + g;
+    }
+    const floorY = backGround + 18 + uF * 4 / 3 + riserF;
+    x = (W - (sumF * uF + 2 * g)) / 2;
+    for (const r of [2, 1, 3]) {
+      const w = SCALE[r] * uF, h = w * 4 / 3, rh = riserF * RISE[r], base = floorY - rh;
+      slots[r] = { x, y: base - h, w, h, base, ground: floorY };
+      x += w + g;
+    }
+    let H2 = floorY + 34, floor = floorY;
+    if (H2 < 470) { // centre the cast vertically in the minimum stage height
+      const dy = (470 - H2) / 2;
+      for (const r in slots) { const s = slots[r]; s.y += dy; s.base += dy; s.ground += dy; }
+      ledgeBox.y += dy; floor += dy; H2 = 470;
+    }
+    return { narrow: true, W, H: H2, curt, g, floorY: floor, slots, bw: slots[1].w, ledge: ledgeBox };
+  }
+
+  function coneGeo(cone, cx, baseY, w, apexX, apexY) {
+    const half = w * .85, tip = 5, m = 26;
+    const left = Math.min(apexX - tip, cx - half) - m, right = Math.max(apexX + tip, cx + half) + m;
+    Object.assign(cone.style, { left: left + "px", top: apexY + "px", width: right - left + "px", height: Math.max(10, baseY + 8 - apexY) + "px" });
+    cone.style.setProperty("--clip", `polygon(${apexX - tip - left}px 0, ${apexX + tip - left}px 0, ${cx + half - left}px 100%, ${cx - half - left}px 100%)`);
+  }
+
+  const slotT = (r) => { const s = geo.slots[r]; return { x: s.x, y: s.y, k: s.w / geo.bw }; };
+  const tf = (t) => `translate(${t.x.toFixed(2)}px, ${t.y.toFixed(2)}px) scale(${t.k.toFixed(4)})`;
+  function rectToT(rect) {
+    const sr = theatre.getBoundingClientRect();
+    return { x: rect.left - sr.left - theatre.clientLeft, y: rect.top - sr.top - theatre.clientTop, k: rect.width / geo.bw };
+  }
+  const within = (a, b, tol = 12) => a.left >= b.left - tol && a.right <= b.right + tol && a.top >= b.top - tol && a.bottom <= b.bottom + tol;
+
+  function layout() {
+    const W = theatre.clientWidth;
+    let g;
+    if (W < 760) { g = computeGeo(W, 0); theatre.style.height = g.H + 2 + "px"; }
+    else { theatre.style.height = ""; g = computeGeo(W, theatre.clientHeight); }
+    geo = g;
+    theatre.classList.toggle("narrow", g.narrow);
+    theatre.style.setProperty("--bw", g.bw + "px");
+    theatre.style.setProperty("--floor", g.floorY + "px");
+    theatre.style.setProperty("--curt", g.curt + "px");
+    for (let r = 1; r <= N; r++) {
+      const s = g.slots[r], e = S[r], cx = s.x + s.w / 2;
+      Object.assign(e.riser.style, { left: s.x - g.g / 2 + "px", top: s.base + "px", width: s.w + g.g + "px", height: s.ground - s.base + "px" });
+      e.riser.style.setProperty("--nf", Math.min((s.ground - s.base) * .86, s.w * .78) + "px");
+      Object.assign(e.mark.style, { left: s.x + "px", top: s.y + "px", width: s.w + "px", height: s.h + "px" });
+      Object.assign(e.pool.style, { left: cx - s.w * .85 + "px", top: s.base - 10 + "px", width: s.w * 1.7 + "px", height: "20px" });
+      coneGeo(e.cone, cx, s.base, s.w, g.W / 2 + (cx - g.W / 2) * .45, 30);
+    }
+    if (g.ledge) Object.assign(ledge.style, { left: g.ledge.x + "px", top: g.ledge.y + "px", width: g.ledge.w + "px" });
+    for (const [id, el] of cardEls) {
+      el.getAnimations().forEach((a) => a.cancel());
+      el.style.visibility = "";
+      setRank(el, rankOf(id), slotT(rankOf(id)));
+    }
+    sizeDust();
+    if (fo) layoutFo();
+  }
+
+  /* ---- cards ---- */
+  function createCard(id) {
+    const it = G.byId(id);
+    const b = mk("button", "scard");
+    b.type = "button"; b.dataset.id = id;
+    b.setAttribute("aria-describedby", "kb-help");
+    b.style.setProperty("--glow", G.glow(it, .6));
+    b.appendChild(G.cover(it));
+    b.addEventListener("pointerdown", onDown);
+    b.addEventListener("keydown", onCardKey);
+    b.addEventListener("click", onCardClick);
+    cast.appendChild(b);
+    cardEls.set(id, b);
+    return b;
+  }
+  function createBCard(id) {
+    const it = G.byId(id);
+    const b = mk("button", "bcard");
+    b.type = "button"; b.dataset.id = id;
+    b.setAttribute("role", "listitem");
+    b.setAttribute("aria-label", `${it.title}, ${it.year}, backstage`);
+    b.setAttribute("aria-describedby", "kb-help");
+    b.style.setProperty("--glow", G.glow(it, .6));
+    b.appendChild(G.cover(it));
+    b.addEventListener("pointerdown", onDown);
+    b.addEventListener("keydown", onCardKey);
+    b.addEventListener("click", onCardClick);
+    backEls.set(id, b);
+    return b;
+  }
+  function setRank(el, r, to) {
+    const it = G.byId(el.dataset.id);
+    el._rank = r; el._t = to;
+    el.style.transform = tf(to);
+    el.style.setProperty("--s", to.k);
+    el.classList.toggle("r1", r === 1);
+    el.setAttribute("aria-label", `Number ${r}: ${it.title}`);
+  }
+  // read the on-screen transform of a card mid-animation, then stop the animation
+  function liveT(el) {
+    const anims = el.getAnimations();
+    if (!anims.length) return null;
+    const m = getComputedStyle(el).transform;
+    anims.forEach((a) => a.cancel());
+    return m && m !== "none" ? m : null;
+  }
+
+  // FLIP a stage card from where it was to where it is now. src = {rect} | {t}
+  function animateCard(el, src, to, kind = "move", delay = 0) {
+    if (RM()) return delay;
+    if (src.rect && !within(src.rect, theatre.getBoundingClientRect())) return fly(el, src.rect, kind, delay);
+    const from = src.rect ? tf(rectToT(src.rect)) : src.t;
+    const T = tf(to);
+    let frames, dur, landAt;
+    if (kind === "enter") {
+      // glide in, dip just below the spot, then spring up onto it
+      const pre = 240, dip = tf({ x: to.x + geo.bw * to.k * .02, y: to.y + geo.bw * to.k * .2, k: to.k * .96 });
+      dur = pre + SPR.snap.duration;
+      frames = [
+        { transform: from, offset: 0, easing: "cubic-bezier(.3,.7,.4,1)" },
+        { transform: dip, offset: pre / dur, easing: SPR.snap.easing },
+        { transform: T, offset: 1 },
+      ];
+      landAt = delay + pre + SPR.snap.duration * .1;
+    } else {
+      dur = SPR.move.duration;
+      frames = [{ transform: from }, { transform: T }];
+      landAt = delay + dur * .4;
+    }
+    el.style.zIndex = 6;
+    const a = el.animate(frames, { duration: dur, easing: kind === "enter" ? "linear" : SPR.move.easing, delay, fill: "backwards" });
+    a.onfinish = a.oncancel = () => { el.style.zIndex = ""; };
+    return landAt;
+  }
+  // a crossing move between the stage and the wings: a clone flies above both clip boxes
+  function fly(el, rect, kind, delay = 0) {
+    if (RM()) return delay;
+    const it = G.byId(el.dataset.id);
+    const target = el.getBoundingClientRect();
+    if (!target.width) return delay;
+    const clone = mk("div", "flyer");
+    clone.style.width = rect.width + "px";
+    clone.appendChild(G.cover(it));
+    flight.appendChild(clone);
+    const k = target.width / rect.width;
+    const A = `translate(${rect.left}px, ${rect.top}px) scale(1)`;
+    const B = `translate(${target.left}px, ${target.top}px) scale(${k})`;
+    const mid = `translate(${(rect.left + target.left) / 2}px, ${Math.min(rect.top, target.top) - 40}px) scale(${(1 + k) / 2 * 1.04})`;
+    el.style.visibility = "hidden";
+    const dur = SPR.soft.duration + 120;
+    const a = clone.animate(
+      [{ transform: A, easing: "cubic-bezier(.3,.6,.4,1)" }, { transform: mid, offset: .4, easing: "cubic-bezier(.3,0,.3,1)" }, { transform: B }],
+      { duration: dur, delay, fill: "both" });
+    const done = () => { el.style.visibility = ""; clone.remove(); };
+    a.onfinish = done; a.oncancel = done;
+    return delay + dur * .92;
+  }
+
+  function snapshot() {
+    const m = new Map();
+    for (const [id, el] of cardEls) if (el.isConnected) m.set(id, { where: "stage", rect: el.getBoundingClientRect() });
+    for (const [id, el] of backEls) if (el.isConnected) m.set(id, { where: "back", rect: el.getBoundingClientRect() });
+    return m;
+  }
+
+  /* Render state → DOM, animating every change from wherever it was. */
+  function commit(snap, o = {}) {
+    const over = o.over || new Map(), delays = o.delays || new Map();
+    const lives = new Map();
+    for (const [id, el] of cardEls) { const m = liveT(el); if (m) lives.set(id, m); }
+    // stage, in rank order so Tab follows the ranking
+    const jobs = [];
+    for (let r = 1; r <= N; r++) {
+      const id = stage[r]; if (!id) continue;
+      let el = cardEls.get(id); const created = !el;
+      if (created) el = createCard(id);
+      cast.appendChild(el);
+      el.classList.remove("lifted", "hide", "hot");
+      const to = slotT(r);
+      const rect = over.get(id) || (created && snap.get(id) ? snap.get(id).rect : null);
+      let src = null;
+      if (rect) src = { rect };
+      else if (lives.has(id)) src = { t: lives.get(id) };
+      else if (!created && el._rank !== r) src = { t: tf(el._t) };
+      setRank(el, r, to);
+      if (src) jobs.push([el, src, to, id === o.enter ? "enter" : "move", delays.get(id) || 0, r]);
+    }
+    for (const [id, el] of cardEls) if (rankOf(id) < 1) { el.remove(); cardEls.delete(id); }
+    syncBack(snap, over, o.fresh);
+    updateSlots(o.enter ? rankOf(o.enter) : 0);
+    for (const [el, src, to, kind, delay, r] of jobs) {
+      const landAt = animateCard(el, src, to, kind, delay);
+      if (kind === "enter") setTimeout(() => land(r, o.big), landAt);
+    }
+    if (o.enter && RM()) land(rankOf(o.enter));
+    updateTally();
+  }
+
+  function syncBack(snap, over, fresh) {
+    for (const id of back) { let el = backEls.get(id); if (!el) el = createBCard(id); wings.appendChild(el); el.classList.remove("lifted"); }
+    for (const [id, el] of backEls) if (!back.includes(id)) { el.remove(); backEls.delete(id); }
+    let empty = $(".wings-empty", wings);
+    if (!back.length && !empty) { empty = mk("p", "wings-empty"); empty.textContent = "Everyone is on stage. Drag a card down here to send it back."; wings.appendChild(empty); }
+    if (back.length && empty) empty.remove();
+    $("#bs-count").textContent = back.length;
+    if (fresh && backEls.get(fresh)) {
+      const f = backEls.get(fresh); f.classList.remove("fresh"); void f.offsetWidth; f.classList.add("fresh");
+      setTimeout(() => f.classList.remove("fresh"), 1900);
+    }
+    if (RM()) return;
+    const box = wings.getBoundingClientRect();
+    for (const id of back) {
+      const el = backEls.get(id), prev = snap.get(id);
+      const rect = over.get(id) || (prev && prev.rect);
+      if (!rect) { el.animate([{ opacity: 0, transform: "translateY(12px)" }, { opacity: 1, transform: "none" }], { duration: 300, easing: "ease-out" }); continue; }
+      const crossing = over.has(id) || (prev && prev.where === "stage");
+      if (crossing && !within(rect, box, 4)) { fly(el, rect, "move"); continue; }
+      const a = el.getBoundingClientRect();
+      const dx = rect.left - a.left, dy = rect.top - a.top, k = rect.width / a.width;
+      if (Math.abs(dx) < .5 && Math.abs(dy) < .5 && Math.abs(k - 1) < .01) continue;
+      el.animate([{ transform: `translate(${dx}px, ${dy}px) scale(${k})` }, { transform: "none" }], { duration: SPR.move.duration, easing: SPR.move.easing });
+    }
+  }
+
+  function coneColour(r, id) { return r === 1 ? "var(--gold-hi)" : `hsl(${G.byId(id).h[1]} 85% 82%)`; }
+  function updateSlots(defer = 0) {
+    for (let r = 1; r <= N; r++) {
+      const id = stage[r], occ = !!id, e = S[r], lit = occ && r !== defer;
+      e.riser.classList.toggle("occ", occ);
+      e.mark.classList.toggle("open", !occ);
+      e.cone.classList.toggle("on", lit);
+      e.pool.classList.toggle("on", lit);
+      if (occ) { const c = coneColour(r, id); e.cone.style.setProperty("--cc", c); e.pool.style.setProperty("--cc", c); }
+    }
+  }
+  function restart(el, cls) { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); setTimeout(() => el.classList.remove(cls), 1000); }
+  function land(r, big) {
+    const id = stage[r]; if (!id) return;
+    const e = S[r], s = geo.slots[r];
+    e.cone.classList.add("on"); e.pool.classList.add("on");
+    restart(e.cone, "snap"); restart(e.riser, "pulse");
+    burst(s.x, s.y, s.w, r === 1 ? "gold" : G.byId(id).h[1], big ? 90 : 38);
+  }
+  function updateTally() {
+    const n = stage.filter(Boolean).length;
+    $("#tally").innerHTML = `<b>${n}</b> of ${N} on stage`;
+  }
+  const announce = (msg) => { live.textContent = ""; requestAnimationFrame(() => { live.textContent = msg; }); };
+  const title = (id) => G.byId(id).title;
+
+  /* ---- dust ---- */
+  const cv = $("#dust"), ctx = cv.getContext("2d");
+  let parts = [], dustRaf = 0, dpr = 1;
+  function sizeDust() {
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    const W = theatre.clientWidth, H = theatre.clientHeight;
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    cv.style.width = W + "px"; cv.style.height = H + "px";
+  }
+  function burst(x, y, w, hue, n, spread = 1) {
+    if (RM()) return;
+    for (let i = 0; i < n; i++) {
+      parts.push({
+        x: x - w * (spread - 1) / 2 + Math.random() * w * spread, y: y - 10 - Math.random() * 110,
+        vx: (Math.random() - .5) * .3, vy: .2 + Math.random() * .7,
+        life: 1, decay: .005 + Math.random() * .008, r: .6 + Math.random() * (hue === "gold" ? 2.2 : 1.6),
+        ph: Math.random() * 6.283, c: hue === "gold" ? "rgba(255,227,161," : `hsla(${hue},90%,84%,`,
+      });
+    }
+    if (!dustRaf) dustRaf = requestAnimationFrame(tick);
+  }
+  function tick(t) {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    ctx.globalCompositeOperation = "lighter";
+    parts = parts.filter((p) => p.life > 0);
+    for (const p of parts) {
+      p.vy = Math.min(p.vy + .006, 1.4);
+      p.x += p.vx + Math.sin(t / 700 + p.ph) * .22; p.y += p.vy; p.life -= p.decay;
+      const a = Math.max(0, p.life) * (.55 + .45 * Math.sin(t / 90 + p.ph * 3));
+      ctx.fillStyle = p.c + (a * .16).toFixed(3) + ")"; ctx.beginPath(); ctx.arc(p.x, p.y, p.r * 3.4, 0, 6.283); ctx.fill();
+      ctx.fillStyle = p.c + a.toFixed(3) + ")"; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.283); ctx.fill();
+    }
+    dustRaf = parts.length ? requestAnimationFrame(tick) : 0;
+    if (!dustRaf) ctx.clearRect(0, 0, cv.width, cv.height);
+  }
+
+  /* ---- pointer drag ---- */
+  let drag = null, held = null, rafId = 0, suppressClick = 0;
+  const busy = () => !!((drag && drag.started) || fo || rv);
+  function onDown(e) {
+    if (e.button !== 0 || busy() || drag) return;
+    const el = e.currentTarget, id = el.dataset.id, r = rankOf(id);
+    drag = { id, el, origin: r > 0 ? { type: "stage", rank: r } : { type: "back" }, pid: e.pointerId,
+      sx: e.clientX, sy: e.clientY, px: e.clientX, py: e.clientY, lastX: e.clientX, started: false, tilt: 0, key: null, target: null };
+    addEventListener("pointermove", onMove, { passive: false });
+    addEventListener("pointerup", onUp);
+    addEventListener("pointercancel", onPCancel);
+  }
+  function unlisten() {
+    removeEventListener("pointermove", onMove);
+    removeEventListener("pointerup", onUp);
+    removeEventListener("pointercancel", onPCancel);
+  }
+  function onMove(e) {
+    if (!drag || e.pointerId !== drag.pid) return;
+    drag.px = e.clientX; drag.py = e.clientY;
+    if (!drag.started) {
+      if (Math.hypot(drag.px - drag.sx, drag.py - drag.sy) < 6) return;
+      startDrag();
+    }
+    e.preventDefault();
+  }
+  function onUp(e) {
+    if (!drag || e.pointerId !== drag.pid) return;
+    if (drag.started) finishDrag(false); else { unlisten(); drag = null; }
+  }
+  function onPCancel(e) {
+    if (!drag || e.pointerId !== drag.pid) return;
+    if (drag.started) finishDrag(true); else { unlisten(); drag = null; }
+  }
+
+  function startDrag() {
+    const d = drag, it = G.byId(d.id);
+    const rect = d.el.querySelector(".cover").getBoundingClientRect();
+    d.started = true;
+    d.hw = geo.narrow ? 96 : 138; d.hh = d.hw * 4 / 3;
+    d.fx = clamp((d.sx - rect.left) / rect.width, 0, 1);
+    d.fy = clamp((d.sy - rect.top) / rect.height, 0, 1);
+    held = mk("div", "held");
+    held.innerHTML = '<div class="tilt"><div class="hc"></div></div><div class="tag"></div>';
+    const hc = $(".hc", held);
+    hc.appendChild(G.cover(it));
+    held.style.setProperty("--hw", d.hw + "px");
+    held.style.setProperty("--glow", G.glow(it, .75));
+    held.style.setProperty("--ox", d.fx * 100 + "%");
+    held.style.setProperty("--oy", d.fy * 100 + "%");
+    hc.style.transition = "none";
+    hc.style.transform = `scale(${rect.width / d.hw})`;
+    document.body.appendChild(held);
+    d.tag = $(".tag", held);
+    positionHeld();
+    void hc.offsetWidth;
+    hc.style.transition = "";
+    hc.style.transform = "scale(1.06)";
+    d.el.classList.add("lifted");
+    document.body.classList.add("holding");
+    theatre.classList.add("dragging");
+    fs.classList.add("on");
+    marquee.textContent = d.origin.type === "stage" ? `Moving ${it.title}` : `${it.title} is on deck`;
+    rafId = requestAnimationFrame(frame);
+  }
+  function positionHeld() {
+    const d = drag;
+    held.style.transform = `translate3d(${(d.px - d.fx * d.hw).toFixed(1)}px, ${(d.py - d.fy * d.hh).toFixed(1)}px, 0)`;
+  }
+  function frame() {
+    const d = drag; if (!d || !d.started) return;
+    positionHeld();
+    const vx = d.px - d.lastX; d.lastX = d.px;
+    d.tilt += (clamp(vx * .9, -14, 14) - d.tilt) * .18;
+    held.firstChild.style.transform = RM() ? "" : `rotate(${d.tilt.toFixed(2)}deg)`;
+    const cx = d.px - d.fx * d.hw + d.hw / 2, cy = d.py - d.fy * d.hh + d.hh / 2;
+    fs.style.transform = `translate3d(${cx.toFixed(1)}px, ${cy.toFixed(1)}px, 0)`;
+    aimBeam(cx, cy);
+    setTarget(hitTest(d.px, d.py));
+    rafId = requestAnimationFrame(frame);
+  }
+  function aimBeam(cx, cy) {
+    const tr = theatre.getBoundingClientRect();
+    const on = cy > tr.top + 40 && cy < tr.bottom && cx > tr.left && cx < tr.right;
+    fbeam.classList.toggle("on", on);
+    if (!on) return;
+    const ax = tr.left + tr.width / 2, ay = tr.top + 26;
+    const dx = cx - ax, dy = cy - ay, len = Math.max(1, Math.hypot(dx, dy));
+    const ang = Math.atan2(-dx, dy) * 180 / Math.PI;
+    fbeam.style.transform = `translate3d(${ax - 150}px, ${ay}px, 0) rotate(${ang.toFixed(2)}deg) scaleY(${(len / 1000).toFixed(4)})`;
+  }
+  function hitTest(px, py) {
+    const tr = theatre.getBoundingClientRect();
+    const x = px - tr.left - theatre.clientLeft, y = py - tr.top - theatre.clientTop;
+    if (x >= 0 && y >= 0 && x <= tr.width && y <= tr.height) {
+      let best = 0, bd = Infinity;
+      for (let r = 1; r <= N; r++) {
+        const s = geo.slots[r];
+        const l = s.x - geo.g / 2, rr = s.x + s.w + geo.g / 2, t = s.y - 26, b = s.ground;
+        if (x >= l && x <= rr && y >= t && y <= b) return { type: "slot", rank: r };
+        const dx = x < l ? l - x : x > rr ? x - rr : 0, dy = y < t ? t - y : y > b ? y - b : 0;
+        const dd = Math.hypot(dx, dy);
+        if (dd < bd) { bd = dd; best = r; }
+      }
+      return bd < 40 ? { type: "slot", rank: best } : null;
+    }
+    const br = backstage.getBoundingClientRect();
+    if (px >= br.left && px <= br.right && py >= br.top - 12 && py <= br.bottom + 12) return { type: "back" };
+    return null;
+  }
+  function clearHot() {
+    theatre.querySelectorAll(".hot").forEach((n) => n.classList.remove("hot"));
+    backstage.classList.remove("hot");
+    for (let r = 1; r <= N; r++) S[r].mark.firstChild.textContent = "Open";
+    $("#bs-hint").textContent = "Drag a card up onto a spot, or focus it and press 1–9 or 0";
+  }
+  function setTarget(t) {
+    const d = drag;
+    const key = t ? (t.type === "slot" ? "s" + t.rank : "b") : "-";
+    if (key === d.key) return;
+    d.key = key; d.target = t;
+    clearHot();
+    const tag = d.tag; tag.className = "tag show";
+    const home = d.origin.type === "stage" ? `Back to #${d.origin.rank}` : "Back to the wings";
+    if (!t || (t.type === "back" && d.origin.type === "back")) { tag.textContent = home; tag.classList.add("quiet"); return; }
+    if (t.type === "back") {
+      backstage.classList.add("hot");
+      $("#bs-hint").textContent = "Release to send it backstage";
+      tag.textContent = "Send backstage";
+      return;
+    }
+    const r = t.rank, e = S[r], occ = stage[r];
+    if (d.origin.type === "stage" && d.origin.rank === r) { tag.textContent = `Stay at #${r}`; tag.classList.add("quiet"); return; }
+    e.riser.classList.add("hot"); e.cone.classList.add("hot"); e.pool.classList.add("hot");
+    if (occ) {
+      cardEls.get(occ).classList.add("hot");
+      tag.textContent = `Face-off for #${r}`; tag.classList.add("duel");
+    } else {
+      e.mark.classList.add("hot"); e.mark.firstChild.textContent = `Take #${r}`;
+      tag.textContent = `Take #${r}`;
+    }
+  }
+  function finishDrag(cancelled) {
+    cancelAnimationFrame(rafId); unlisten();
+    const d = drag; drag = null;
+    const t = cancelled ? null : d.target;
+    held.firstChild.style.transform = "";
+    const hrect = $(".hc", held).getBoundingClientRect();
+    held.remove(); held = null;
+    clearHot();
+    document.body.classList.remove("holding");
+    theatre.classList.remove("dragging");
+    fs.classList.remove("on"); fbeam.classList.remove("on");
+    marquee.textContent = LIST_TITLE;
+    suppressClick = performance.now() + 80;
+    route(d.id, d.origin, t, hrect);
+  }
+
+  /* ---- actions ---- */
+  function route(id, origin, t, rect, kb) {
+    if (t && t.type === "slot") {
+      const r = t.rank;
+      if (origin.type === "stage" && origin.rank === r) return goHome(id, origin, rect);
+      if (stage[r]) return startFaceoff(r, id, origin, rect, kb);
+      return claim(id, origin, r, rect, kb);
+    }
+    if (t && t.type === "back" && origin.type === "stage") return sendBack(id, rect, kb);
+    return goHome(id, origin, rect);
+  }
+  function vacate(id, origin) {
+    if (origin.type === "stage") stage[origin.rank] = null;
+    else back = back.filter((x) => x !== id);
+  }
+  function nextBackFocus(id) {
+    const i = back.indexOf(id);
+    return i < 0 ? null : back[i + 1] || back[i - 1] || null;
+  }
+  function claim(id, origin, r, rect, kb) {
+    const nextF = kb && origin.type === "back" ? nextBackFocus(id) : null;
+    const snap = snapshot();
+    vacate(id, origin);
+    stage[r] = id;
+    commit(snap, { over: new Map([[id, rect]]), enter: id });
+    announce(`${title(id)} takes number ${r}.`);
+    if (kb) focusAfter(nextF ? backEls.get(nextF) : cardEls.get(id));
+  }
+  function sendBack(id, rect, kb) {
+    wings.scrollLeft = 0;
+    const snap = snapshot();
+    const r = rankOf(id);
+    stage[r] = null;
+    back.unshift(id);
+    commit(snap, { over: new Map([[id, rect]]), fresh: id });
+    announce(`${title(id)} goes backstage. Spot ${r} is open.`);
+    if (kb) focusAfter(backEls.get(id));
+  }
+  function goHome(id, origin, rect) {
+    if (origin.type === "stage") {
+      const el = cardEls.get(id);
+      el.classList.remove("lifted", "hide");
+      animateCard(el, { rect }, el._t, "move");
+    } else {
+      const el = backEls.get(id);
+      el.classList.remove("lifted");
+      const box = wings.getBoundingClientRect();
+      if (RM()) return;
+      if (!within(rect, box, 4)) { fly(el, rect, "move"); return; }
+      const a = el.getBoundingClientRect();
+      el.animate([{ transform: `translate(${rect.left - a.left}px, ${rect.top - a.top}px) scale(${rect.width / a.width})` }, { transform: "none" }], { duration: SPR.move.duration, easing: SPR.move.easing });
+    }
+  }
+  function focusAfter(el) { if (el) setTimeout(() => el.focus({ preventScroll: true }), 30); }
+
+  /* ---- face-off ---- */
+  let fo = null;
+  function fillFo(btn, id, role, side) {
+    const it = G.byId(id);
+    btn.innerHTML = "";
+    btn.style.setProperty("--glow", G.glow(it, .55));
+    const roleEl = mk("span", "fo-role"); roleEl.textContent = role;
+    const art = mk("span", "fo-art"); art.appendChild(G.cover(it));
+    const meta = mk("span", "fo-meta");
+    const st = mk("strong"); st.textContent = it.title;
+    const by = mk("span", "mono"); by.textContent = `${it.year} · ${it.by}`;
+    const note = mk("span", "fo-note" + (it.note ? "" : " traits"));
+    note.textContent = it.note ? `“${it.note}”` : it.traits.join(" · ");
+    meta.append(st, by, note);
+    const key = mk("span", "fo-key"); key.innerHTML = `<kbd>${side === "left" ? "←" : "→"}</kbd>`;
+    btn.append(roleEl, art, meta, key);
+    btn.className = "fo-card";
+    btn.setAttribute("aria-label", `${it.title} wins. ${role}.`);
+  }
+  function startFaceoff(r, chId, origin, chRect, kb) {
+    const incId = stage[r], incEl = cardEls.get(incId);
+    const incRect = incEl.getBoundingClientRect();
+    const nextF = kb && origin.type === "back" ? nextBackFocus(chId) : null;
+    fo = { r, chId, incId, origin, done: false, kb, nextF };
+    $("#fo-title").innerHTML = `Who takes <b>#${r}</b>?`;
+    fillFo(foL, incId, `Holds #${r}`, "left");
+    fillFo(foR, chId, origin.type === "stage" ? `Challenger · was #${origin.rank}` : "Challenger · backstage", "right");
+    const below = r < N ? `The other steps down to #${r + 1}${stage[r + 1] && r + 1 !== origin.rank ? " and the rest follow" : ""}.` : "The other goes backstage.";
+    $("#fo-help").textContent = `Pick the winner: click, or press ← / →. ${below}`;
+    incEl.classList.add("hide");
+    if (origin.type === "stage") cardEls.get(chId).classList.add("hide");
+    theatre.classList.add("dueling");
+    foEl.hidden = false;
+    foEl.classList.remove("in", "closing");
+    layoutFo();
+    const lc = $(".cover", foL), rc = $(".cover", foR);
+    if (!RM()) { flipIn(lc, incRect); flipIn(rc, chRect); }
+    requestAnimationFrame(() => {
+      foEl.classList.add("in");
+      restart($("#fo-cone-l"), "snap"); restart($("#fo-cone-r"), "snap");
+    });
+    marquee.textContent = `Face-off for #${r}`;
+    foL.focus({ preventScroll: true });
+    announce(`Face-off for number ${r}: ${title(incId)} against ${title(chId)}. Left arrow keeps ${title(incId)}, right arrow picks ${title(chId)}.`);
+  }
+  function layoutFo() {
+    const W = theatre.clientWidth, H = theatre.clientHeight;
+    const w = geo.narrow ? Math.min((W - 80) / 2, (H - 270) * .75, 150) : Math.min(W * .16, (H - 260) * .75, 230);
+    foEl.style.setProperty("--fo-w", Math.max(80, w) + "px");
+    const sr = theatre.getBoundingClientRect();
+    for (const [btn, cone] of [[foL, $("#fo-cone-l")], [foR, $("#fo-cone-r")]]) {
+      const a = $(".fo-art", btn).getBoundingClientRect();
+      const cx = a.left - sr.left + a.width / 2, base = a.bottom - sr.top;
+      cone.style.setProperty("--cc", btn === foL ? "rgb(255 246 226)" : "var(--gold-hi)");
+      coneGeo(cone, cx, base, a.width * 1.05, W / 2 + (cx - W / 2) * 1.5, 0);
+    }
+  }
+  function flipIn(cover, rect) {
+    const a = cover.getBoundingClientRect();
+    cover.animate([{ transform: `translate(${rect.left - a.left}px, ${rect.top - a.top}px) scale(${rect.width / a.width})` }, { transform: "none" }],
+      { duration: SPR.soft.duration, easing: SPR.soft.easing });
+  }
+  function pick(side) {
+    if (!fo || fo.done) return;
+    fo.done = true;
+    const w = side === "left" ? foL : foR, l = side === "left" ? foR : foL;
+    w.classList.add("won"); l.classList.add("lost");
+    $(".fo-role", w).textContent = `Takes #${fo.r}`;
+    setTimeout(() => resolveFo(side), RM() ? 80 : 560);
+  }
+  function resolveFo(side) {
+    const { r, chId, incId, origin, kb, nextF } = fo;
+    const winId = side === "left" ? incId : chId, loseId = side === "left" ? chId : incId;
+    const wBtn = side === "left" ? foL : foR, lBtn = side === "left" ? foR : foL;
+    const wRect = $(".cover", wBtn).getBoundingClientRect(), lRect = $(".cover", lBtn).getBoundingClientRect();
+    // work out the cascade first so the wings can be scrolled before we measure
+    const ns = stage.slice();
+    if (origin.type === "stage") ns[origin.rank] = null;
+    ns[r] = winId;
+    let carry = loseId, i = r + 1;
+    const moved = [];
+    while (carry && i <= N) { const nx = ns[i]; ns[i] = carry; if (carry !== loseId) moved.push([carry, i]); carry = nx; i++; }
+    const fell = carry;
+    if (fell) wings.scrollLeft = 0;
+    const snap = snapshot();
+    stage = ns;
+    if (origin.type === "back") back = back.filter((x) => x !== chId);
+    if (fell) back.unshift(fell);
+    const over = new Map([[winId, wRect], [loseId, lRect]]);
+    const delays = new Map();
+    for (const [id, nr] of moved) delays.set(id, 90 + (nr - r) * 60);
+    foEl.querySelectorAll(".fo-art .cover").forEach((c) => { c.style.visibility = "hidden"; });
+    foEl.classList.add("closing"); foEl.classList.remove("in");
+    commit(snap, { over, enter: winId, delays, fresh: fell, big: r === 1 });
+    closeFo();
+    const loseRank = rankOf(loseId);
+    const msg = `${title(winId)} takes #${r}. ` + (loseRank > 0 ? `${title(loseId)} steps down to #${loseRank}.` : `${title(loseId)} goes backstage.`)
+      + (fell && fell !== loseId ? ` ${title(fell)} drops off the stage.` : "");
+    G.toast(msg); announce(msg);
+    if (kb) focusAfter(nextF ? backEls.get(nextF) : cardEls.get(chId) || backEls.get(chId));
+  }
+  function closeFo() {
+    fo = null;
+    theatre.classList.remove("dueling");
+    marquee.textContent = LIST_TITLE;
+    setTimeout(() => {
+      if (fo) return;
+      foEl.hidden = true; foEl.classList.remove("closing", "in");
+      foEl.querySelectorAll(".fo-art .cover").forEach((c) => { c.style.visibility = ""; });
+    }, RM() ? 0 : 380);
+  }
+  function cancelFo() {
+    if (!fo || fo.done) return;
+    const { r, chId, incId, origin, kb } = fo;
+    const lRect = $(".cover", foL).getBoundingClientRect(), rRect = $(".cover", foR).getBoundingClientRect();
+    foEl.querySelectorAll(".fo-art .cover").forEach((c) => { c.style.visibility = "hidden"; });
+    foEl.classList.add("closing"); foEl.classList.remove("in");
+    const inc = cardEls.get(incId);
+    inc.classList.remove("hide", "hot");
+    animateCard(inc, { rect: lRect }, inc._t, "move");
+    goHome(chId, origin, rRect);
+    closeFo();
+    G.toast(`Face-off called off. ${title(incId)} keeps #${r}.`);
+    if (kb) focusAfter(origin.type === "stage" ? cardEls.get(chId) : backEls.get(chId));
+  }
+  foL.addEventListener("click", () => pick("left"));
+  foR.addEventListener("click", () => pick("right"));
+  $("#fo-cancel").addEventListener("click", cancelFo);
+
+  /* ---- keyboard ---- */
+  function onCardKey(e) {
+    if (busy() || e.altKey || e.ctrlKey || e.metaKey) return;
+    const el = e.currentTarget, id = el.dataset.id, r0 = rankOf(id);
+    const origin = r0 > 0 ? { type: "stage", rank: r0 } : { type: "back" };
+    const rect = el.querySelector(".cover").getBoundingClientRect();
+    if (/^[0-9]$/.test(e.key)) {
+      e.preventDefault();
+      const r = e.key === "0" ? 10 : +e.key;
+      if (r === r0) { G.toast(`${title(id)} is already at #${r}.`); return; }
+      route(id, origin, { type: "slot", rank: r }, rect, true);
+    } else if ((e.key === "Delete" || e.key === "Backspace") && origin.type === "stage") {
+      e.preventDefault();
+      route(id, origin, { type: "back" }, rect, true);
+    }
+  }
+  let hinted = false;
+  function onCardClick(e) {
+    if (performance.now() < suppressClick || busy() || hinted) return;
+    if (e.detail === 0) return; // keyboard-activated click
+    hinted = true;
+    G.toast(rankOf(e.currentTarget.dataset.id) > 0 ? "Drag it to another spot, or down to the wings." : "Drag it up onto a spot, or press 1–9 or 0.");
+  }
+  document.addEventListener("keydown", (e) => {
+    if (rv && (e.key === "Escape" || e.key === " " || e.key === "Enter")) { e.preventDefault(); skipReveal(); return; }
+    if (drag && drag.started && e.key === "Escape") { e.preventDefault(); finishDrag(true); return; }
+    if (fo && !fo.done) {
+      if (e.key === "ArrowLeft") { e.preventDefault(); pick("left"); }
+      else if (e.key === "ArrowRight") { e.preventDefault(); pick("right"); }
+      else if (e.key === "Escape") { e.preventDefault(); cancelFo(); }
+      else if (e.key === "Tab") { // keep focus inside the face-off
+        const f = [foL, foR, $("#fo-cancel")], i = f.indexOf(document.activeElement);
+        e.preventDefault();
+        f[(i + (e.shiftKey ? f.length - 1 : 1)) % f.length].focus();
+      }
+    }
+  });
+
+  /* ---- reveal rehearsal ---- */
+  let rv = null;
+  const revealBtn = $("#rehearse");
+  function wait(ms) {
+    return new Promise((res) => {
+      if (!rv || rv.skip) return res();
+      rv.timers.push(setTimeout(res, RM() ? Math.min(ms, 300) : ms));
+      rv.wakers.push(res);
+    });
+  }
+  function skipReveal() {
+    if (!rv || rv.skip) return;
+    rv.skip = true;
+    rv.timers.forEach(clearTimeout);
+    rv.wakers.forEach((f) => f());
+  }
+  async function rehearse() {
+    if (rv) return skipReveal();
+    if (busy()) return;
+    const ranks = [];
+    for (let r = N; r >= 1; r--) if (stage[r]) ranks.push(r);
+    if (!ranks.length) { G.toast("Put someone on stage first."); return; }
+    rv = { skip: false, timers: [], wakers: [] };
+    revealBtn.querySelector("span").textContent = "Skip the reveal";
+    theatre.classList.add("revealing");
+    marquee.textContent = "Tonight: " + LIST_TITLE;
+    announce("Rehearsing the reveal, from the bottom up. Press Escape to skip.");
+    await wait(700);
+    for (const r of ranks) {
+      if (rv.skip) break;
+      if (r === 1 && ranks.length > 1) {
+        hideCaption();
+        marquee.textContent = "And the greatest of all time is";
+        await wait(950);
+        if (rv.skip) break;
+      }
+      revealOne(r);
+      await wait(r === 1 ? 2700 : 820);
+    }
+    endReveal();
+  }
+  function revealOne(r) {
+    const id = stage[r], it = G.byId(id), el = cardEls.get(id), s = geo.slots[r], e = S[r];
+    el.classList.add("rv"); e.cone.classList.add("rv"); e.riser.classList.add("rv"); e.pool.classList.add("rv");
+    restart(e.cone, "snap");
+    const big = r === 1;
+    if (!RM()) {
+      el.animate([
+        { transform: tf({ ...el._t, y: el._t.y + s.h * .14 }), opacity: 0, filter: "brightness(2.4)" },
+        { transform: tf(el._t), opacity: 1, filter: "brightness(1)" },
+      ], { duration: SPR.snap.duration + (big ? 300 : 0), easing: SPR.snap.easing });
+    }
+    // big outlined numeral behind the card
+    bignum.textContent = r;
+    bignum.style.fontSize = s.h * 1.18 + "px";
+    const nb = { w: bignum.offsetWidth, h: bignum.offsetHeight };
+    bignum.style.transform = `translate(${s.x + s.w / 2 - nb.w / 2}px, ${s.y + s.h / 2 - nb.h / 2}px)`;
+    bignum.getAnimations().forEach((a) => a.cancel());
+    if (!RM()) bignum.animate([{ opacity: 0, scale: 1.5 }, { opacity: 1, scale: 1, offset: .25 }, { opacity: .7, scale: .97 }], { duration: big ? 2600 : 820, fill: "forwards", easing: "cubic-bezier(.2,.8,.3,1)" });
+    else bignum.style.opacity = .7;
+    // caption above the card
+    caption.innerHTML = big
+      ? `<span class="cap-e">The greatest of all time</span><span class="cap-t big"></span>`
+      : `<span class="cap-n">No. ${r}</span><span class="cap-t"></span><span class="cap-m"></span>`;
+    $(".cap-t", caption).textContent = it.title;
+    if (!big) $(".cap-m", caption).textContent = `${it.by} · ${it.year}`;
+    const cw = caption.offsetWidth, ch = caption.offsetHeight, W = geo.W;
+    const cx = clamp(s.x + s.w / 2, cw / 2 + geo.curt + 8, W - cw / 2 - geo.curt - 8);
+    const cy = Math.max(s.y - ch - 10, 50);
+    caption.style.left = cx - cw / 2 + "px"; caption.style.top = cy + "px";
+    caption.getAnimations().forEach((a) => a.cancel());
+    caption.animate([{ opacity: 0, transform: "translateY(10px)" }, { opacity: 1, transform: "none" }], { duration: RM() ? 1 : 380, fill: "forwards", easing: "cubic-bezier(.16,1,.3,1)", delay: RM() ? 0 : 120 });
+    marquee.textContent = big ? `No. 1 · ${it.title}` : `No. ${r} · ${it.title}`;
+    if (big) {
+      const fx = s.x + s.w / 2, fy = s.y + s.h / 2, size = s.w * 5;
+      Object.assign(flare.style, { left: fx - size / 2 + "px", top: fy - size / 2 + "px", width: size + "px", height: size + "px" });
+      flash.style.setProperty("--fx", fx + "px"); flash.style.setProperty("--fy", fy + "px");
+      if (!RM()) {
+        flare.animate([{ opacity: 0, transform: "scale(.3) rotate(0deg)" }, { opacity: 1, transform: "scale(1.05) rotate(14deg)", offset: .3 }, { opacity: .55, transform: "scale(1) rotate(40deg)" }], { duration: 2700, fill: "forwards", easing: "cubic-bezier(.2,.8,.3,1)" });
+        flash.animate([{ opacity: 0 }, { opacity: 1, offset: .12 }, { opacity: 0 }], { duration: 1100, easing: "ease-out" });
+        burst(s.x, s.y, s.w, "gold", 150, 2.6);
+      } else flare.style.opacity = .5;
+    } else burst(s.x, s.y, s.w, it.h[1], 22);
+  }
+  function hideCaption() {
+    caption.getAnimations().forEach((a) => a.cancel());
+    caption.style.opacity = 0;
+    bignum.getAnimations().forEach((a) => a.cancel());
+    bignum.style.opacity = 0;
+  }
+  function endReveal() {
+    const skipped = rv.skip;
+    rv = null;
+    theatre.classList.remove("revealing");
+    theatre.querySelectorAll(".rv").forEach((n) => n.classList.remove("rv"));
+    hideCaption();
+    flare.getAnimations().forEach((a) => a.cancel()); flare.style.opacity = "";
+    marquee.textContent = LIST_TITLE;
+    revealBtn.querySelector("span").textContent = "Rehearse the reveal";
+    G.toast(skipped ? "Reveal skipped. Back to rehearsal." : "That's the reveal. A shared list would open like this.");
+  }
+  revealBtn.addEventListener("click", rehearse);
+  theatre.addEventListener("click", (e) => { if (rv && !e.target.closest(".faceoff")) skipReveal(); });
+
+  $("#reset").addEventListener("click", () => {
+    if (busy()) return;
+    wings.scrollLeft = 0;
+    const snap = snapshot();
+    resetState();
+    commit(snap, {});
+    G.toast("Stage reset to the opening line-up.");
+  });
+
+  /* ---- boot ---- */
+  let resizeRaf = 0;
+  addEventListener("resize", () => { cancelAnimationFrame(resizeRaf); resizeRaf = requestAnimationFrame(layout); });
+  layout();
+  commit(new Map(), {});
+  // house lights: the spots come up one by one, from the back of the line to #1
+  if (!RM()) {
+    const lit = [];
+    for (let r = N; r >= 1; r--) if (stage[r]) lit.push(r);
+    lit.forEach((r, i) => {
+      const e = S[r];
+      e.cone.classList.remove("on"); e.pool.classList.remove("on");
+      setTimeout(() => { e.cone.classList.add("on"); e.pool.classList.add("on"); restart(e.cone, "snap"); }, 250 + i * 110);
+    });
+  }
+  // fonts can change nothing in the geometry, but re-measure once they land anyway
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => layout());
+})();
+</script>
+</body>
+</html>

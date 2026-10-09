@@ -803,11 +803,13 @@
     aura.style.transform = `translate3d(${d.px - 380}px, ${d.py - 380}px, 0)`;
 
     // edge auto-scroll
-    const topEdge = 56 + 70, botEdge = d.shelfTop - 70;
+    const Z = 96, topEdge = 56 + Z, botEdge = d.shelfTop - Z;
     let v = 0;
-    if (d.py < topEdge) v = -Math.pow((topEdge - d.py) / 70, 2) * 18;
-    else if (d.py > botEdge && d.py < d.shelfTop) v = Math.pow((d.py - botEdge) / 70, 2) * 18;
-    if (v) window.scrollBy(0, clamp(v, -26, 26));
+    if (d.py < topEdge) v = -Math.pow(Math.min(1, (topEdge - d.py) / Z), 2) * 32;
+    else if (d.py > botEdge && d.py < d.shelfTop) v = Math.pow(Math.min(1, (d.py - botEdge) / Z), 2) * 32;
+    // ramp in so merely passing through an edge band doesn't jolt the page
+    if (v) { d.zoneT = d.zoneT || now; window.scrollBy(0, v * clamp((now - d.zoneT - 120) / 300, 0, 1)); }
+    else d.zoneT = 0;
 
     const t = hitTest();
     applyPreview(t);
