@@ -123,8 +123,8 @@
   .pc:hover .cover, .pc:focus-visible .cover { --lift: -3px; }
   .cover.tilt { transition: transform .14s linear, filter .25s; }
   .cover .glare { position: absolute; inset: 0; z-index: 3; pointer-events: none; border-radius: inherit; opacity: 0; transition: opacity .4s; mix-blend-mode: screen;
-    background: radial-gradient(75% 60% at var(--gx, 50%) var(--gy, 0%), rgba(255, 248, 230, .26), rgba(255, 248, 230, .06) 42%, transparent 70%),
-      linear-gradient(var(--ga, 115deg), transparent 34%, rgba(255, 255, 255, .06) 47%, transparent 60%); }
+    background: radial-gradient(70% 55% at var(--gx, 50%) var(--gy, 0%), rgba(255, 248, 230, .42), rgba(255, 248, 230, .1) 40%, transparent 68%),
+      linear-gradient(var(--ga, 115deg), transparent 36%, rgba(255, 255, 255, .1) 47%, transparent 58%); }
   .cover.tilt .glare { opacity: 1; }
   .cover.tilt .c-title { transform: translate3d(var(--tx, 0px), var(--ty, 0px), 0); transition: transform .14s linear; }
   .stage .lifted .cover { transform: none; }
@@ -2380,7 +2380,7 @@
     if (cov) {
       const r = cov.getBoundingClientRect(), st = cov.style;
       const u = clamp((x - r.left) / r.width, 0, 1), v = clamp((y - r.top) / r.height, 0, 1);
-      const m = clamp(800 / r.width, 3.5, 11), p = Math.min(5, r.width * .025);
+      const m = clamp(1500 / r.width, 5, 12), p = Math.min(5, r.width * .025);
       st.setProperty("--ry", ((u - .5) * 2 * m).toFixed(2) + "deg");
       st.setProperty("--rx", ((.5 - v) * 1.6 * m).toFixed(2) + "deg");
       st.setProperty("--gx", (u * 100).toFixed(1) + "%");

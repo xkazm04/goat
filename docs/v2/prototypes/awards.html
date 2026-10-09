@@ -577,6 +577,7 @@
     .cr-cat { text-align: center; }
     .pit { height: 80px; opacity: .7; }
     .nom-stamp { right: 12px; }
+    .halo, .cat.grand .halo { width: 118%; opacity: .45; }
   }
 </style>
 </head>
@@ -1073,7 +1074,7 @@
           p.vy = Math.min(p.vy + p.g * dt, p.vmax);
           p.x += (p.vx + Math.sin(t / 650 + p.ph) * .25) * dt; p.y += p.vy * dt;
           const a = p.life * (.55 + .45 * Math.sin(t / 80 + p.ph * 3));
-          ctx.fillStyle = p.c + (a * .18).toFixed(3) + ")"; ctx.beginPath(); ctx.arc(p.x, p.y, p.r * 3.6, 0, TAU); ctx.fill();
+          ctx.fillStyle = p.c + (a * .09).toFixed(3) + ")"; ctx.beginPath(); ctx.arc(p.x, p.y, p.r * 2.6, 0, TAU); ctx.fill();
           ctx.fillStyle = p.c + a.toFixed(3) + ")"; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, TAU); ctx.fill();
         } else {
           // a strobe: hard white core, warm bloom, anamorphic streaks; attack is instant, decay ~250ms
@@ -1083,7 +1084,7 @@
           ctx.fillStyle = g; ctx.fillRect(p.x - R, p.y - R, R * 2, R * 2);
           ctx.fillStyle = `rgba(255,250,240,${a * .7})`;
           ctx.save(); ctx.translate(p.x, p.y);
-          ctx.scale(1, .022); ctx.beginPath(); ctx.arc(0, 0, R * 2.4, 0, TAU); ctx.fill();
+          ctx.scale(1, .022); ctx.beginPath(); ctx.arc(0, 0, R * 1.8, 0, TAU); ctx.fill();
           ctx.scale(.03, .95 / .022); ctx.beginPath(); ctx.arc(0, 0, R * 1.2, 0, TAU); ctx.fill();
           ctx.restore();
         }
@@ -1714,8 +1715,8 @@
   function fireCannons(hue) {
     const W = innerWidth, H = innerHeight;
     [[-10, H + 10, -62], [W + 10, H + 10, -118]].forEach(([x, y, a], i) => {
-      cerDust.cannon(x, y, a, 100, { hue, delay: i * 70 });
-      cerDust.cannon(x, y, a + (i ? 9 : -9), 64, { hue, delay: 420 + i * 70, speed: [13, 21], tape: .22 });
+      cerDust.cannon(x, y, a + (i ? -6 : 6), 100, { hue, delay: i * 70, speed: [19, 29] });
+      cerDust.cannon(x, y, a + (i ? 6 : -6), 64, { hue, delay: 420 + i * 70, speed: [15, 24], tape: .22 });
     });
     cerDust.cannon(W / 2, H + 10, -90, 50, { delay: 900, speed: [17, 24], spread: 20, tape: .35 });
   }
