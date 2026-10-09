@@ -1,0 +1,1408 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Infinite Canvas</title>
+<link rel="stylesheet" href="shared.css">
+<script src="shared.js"></script>
+<style>
+  :root {
+    --ruler: 36px;
+    --cw: 112px;
+    --ch: 150px;
+  }
+  .toast { bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  /* ---------- page frame ---------- */
+  .page {
+    display: flex; flex-direction: column; gap: 12px;
+    padding: 12px 16px 16px;
+    height: calc(100dvh - var(--nav-h)); min-height: 620px;
+  }
+  .intro {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+    gap: 8px 36px; padding: 12px 20px; border-radius: var(--r-lg); flex: none;
+  }
+  .intro-lead { min-width: 0; flex: 1 1 520px; }
+  .intro-title { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 14px; }
+  .intro h1 { font: 800 var(--step-2)/1 var(--font-display); text-transform: uppercase; letter-spacing: .03em; }
+  .intro .tag { font: 600 var(--step--1)/1 var(--font-mono); color: var(--gold); letter-spacing: .04em; }
+  .intro p { margin: 4px 0 0; color: var(--fg-muted); font-size: var(--step--1); max-width: 92ch; }
+  .intro .try { flex: 0 1 440px; margin: 0; color: var(--fg-muted); font-size: var(--step--1); line-height: 1.6; }
+  .intro .try .eyebrow { color: var(--gold); margin-right: .35em; }
+  kbd {
+    font: 600 .72rem/1 var(--font-mono); padding: .2em .45em; border-radius: 5px;
+    border: 1px solid var(--glass-edge-hi); background: var(--glass-strong); color: var(--fg);
+  }
+
+  .work { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 308px; gap: 12px; }
+
+  /* ---------- viewport (the board window) ---------- */
+  .viewport {
+    position: relative; overflow: hidden; min-height: 0; isolation: isolate;
+    border-radius: var(--r-lg); border: 1px solid var(--glass-edge);
+    background:
+      radial-gradient(140% 90% at 50% 0%, rgba(40, 44, 70, .35), transparent 60%),
+      var(--ink-1);
+    touch-action: none; user-select: none; -webkit-user-select: none;
+    cursor: grab; contain: layout paint;
+  }
+  .viewport.panning { cursor: grabbing; }
+  .viewport.placing, .viewport.placing .card, .viewport.placing .label { cursor: crosshair; }
+  .viewport::after { /* vignette, above content, below tools */
+    content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 6;
+    box-shadow: inset 0 0 120px rgba(0, 0, 0, .55);
+    border-radius: inherit;
+  }
+  .dots {
+    position: absolute; left: 0; top: 0; pointer-events: none; z-index: 0;
+    width: calc(100% + 240px); height: calc(100% + 240px);
+    background-image: radial-gradient(circle, rgba(200, 210, 255, .13) 1px, transparent 1.6px);
+    will-change: transform;
+  }
+  .atmos { /* gold light pooling at the top of the axis */
+    position: absolute; left: 0; right: 0; top: 0; height: 100px; z-index: 1; pointer-events: none;
+    transform-origin: 0 0;
+    background:
+      linear-gradient(180deg, transparent, rgba(233, 196, 106, .06) 12%, rgba(233, 196, 106, .15) 24%, rgba(233, 196, 106, .07) 50%, rgba(233, 196, 106, .02) 78%, transparent);
+  }
+  .guides { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+  .gline {
+    position: absolute; left: var(--ruler); right: 0; top: 0; height: 1px;
+    background: linear-gradient(90deg, rgba(200, 210, 255, .16), rgba(200, 210, 255, .06) 55%, rgba(200, 210, 255, .02));
+  }
+  .gline.top { background: linear-gradient(90deg, rgba(233, 196, 106, .45), rgba(233, 196, 106, .12) 55%, rgba(233, 196, 106, .03)); }
+  .bandname {
+    position: absolute; left: calc(var(--ruler) + 12px); top: 0;
+    font: 600 11px/1 var(--font-body); letter-spacing: .16em; text-transform: uppercase;
+    color: var(--fg-faint); white-space: nowrap; transition: opacity .2s;
+  }
+  .guides.quiet .bandname { opacity: .22; }
+  .bandname.goat {
+    font: 900 26px/1 var(--font-display); letter-spacing: .08em; color: var(--gold);
+    text-shadow: 0 0 22px var(--gold-glow);
+  }
+  .bandname small { display: block; margin-top: 4px; font: 500 10px/1 var(--font-mono); letter-spacing: .06em; color: var(--fg-faint); text-transform: none; text-shadow: none; }
+
+  .cutline {
+    position: absolute; left: var(--ruler); right: 0; top: 0; height: 0; z-index: 3; pointer-events: none;
+    border-top: 1px dashed rgba(233, 196, 106, .5);
+  }
+  .cuttags { position: absolute; right: 0; top: 0; width: 0; height: 0; z-index: 5; pointer-events: none; }
+  .cuttags span {
+    position: absolute; right: 14px; font: 600 10px/1 var(--font-mono); letter-spacing: .1em; text-transform: uppercase;
+    padding: 4px 7px; border-radius: 999px; white-space: nowrap;
+  }
+  .cuttags .up { bottom: 6px; color: #1a1406; background: rgba(233, 196, 106, .85); }
+  .cuttags .down { top: 6px; color: var(--fg-muted); background: rgba(12, 14, 23, .8); border: 1px solid var(--glass-edge); }
+
+  /* ---------- world (transformed) ---------- */
+  .board { position: absolute; left: 0; top: 0; width: 0; height: 0; transform-origin: 0 0; z-index: 4; --inv: 1; }
+
+  .card { position: absolute; left: 0; top: 0; width: var(--cw); height: var(--ch); cursor: grab; outline: none; touch-action: none; }
+  .card-body {
+    position: relative; width: 100%; height: 100%; border-radius: 10px;
+    transform-origin: 50% 55%;
+    transition: transform .55s var(--ease-spring), opacity .25s;
+  }
+  .card-body::before { /* resting shadow + #1 halo */
+    content: ""; position: absolute; inset: 0; border-radius: inherit;
+    box-shadow: 0 12px 26px -10px rgba(0, 0, 0, .8);
+  }
+  .card-body::after { /* lifted shadow, faded in so it costs no per-frame paint */
+    content: ""; position: absolute; inset: 0; border-radius: inherit; z-index: 0;
+    box-shadow: 0 40px 56px -16px rgba(0, 0, 0, .9), 0 0 54px -2px var(--glow);
+    opacity: 0; transition: opacity .3s var(--ease-out);
+  }
+  .card .cover { position: relative; z-index: 1; width: 100%; height: 100%; aspect-ratio: auto; border-radius: 10px; transition: filter .45s var(--ease-out); }
+  .card .land {
+    position: absolute; inset: -2px; border-radius: 12px; z-index: 3; pointer-events: none;
+    border: calc(2px * var(--inv)) solid var(--glow); opacity: 0;
+  }
+  .badge {
+    position: absolute; top: -10px; right: -10px; z-index: 4;
+    min-width: 34px; height: 28px; padding: 0 8px; border-radius: 999px;
+    font: 800 19px/28px var(--font-display); text-align: center; font-variant-numeric: tabular-nums;
+    background: var(--gold); color: #1a1406;
+    box-shadow: 0 6px 14px -4px rgba(0, 0, 0, .7);
+  }
+  .badge::before { content: "#"; font-size: .7em; opacity: .7; margin-right: 1px; }
+  .card.bench .badge { background: rgba(16, 18, 30, .94); color: var(--fg-muted); box-shadow: 0 0 0 1px var(--glass-edge-hi), 0 6px 14px -4px rgba(0, 0, 0, .7); }
+  .card.bench .cover { filter: saturate(.35) brightness(.6); }
+  .card.bench:hover .cover, .card.bench.held .cover, .card.bench.spot .cover { filter: saturate(.8) brightness(.85); }
+  .card.is-top .card-body::before {
+    box-shadow: 0 0 0 calc(2px * var(--inv)) var(--gold), 0 0 44px 6px var(--gold-glow), 0 12px 26px -10px rgba(0, 0, 0, .8);
+  }
+  .card:hover .card-body { transform: translateY(-4px) scale(1.035); }
+  .card:hover .card-body::after { opacity: .45; }
+  .card:focus-visible .cover { outline: calc(2.5px * var(--inv)) solid var(--gold); outline-offset: calc(5px * var(--inv)); }
+
+  .card.held { cursor: grabbing; z-index: 2000 !important; }
+  .card.held .card-body { transition: opacity .25s; will-change: transform; }
+  .card.held .card-body::after { opacity: 1; }
+  .board.holding .card:not(.held):not(.carried) .card-body { opacity: .72; }
+
+  .card.carried .card-body { transform: translateY(-3px) scale(1.04); }
+  .card.carried .card-body::after { opacity: .7; }
+  .card.hint .cover { outline: calc(1.5px * var(--inv)) dashed rgba(255, 227, 161, .7); outline-offset: calc(4px * var(--inv)); }
+
+  .board.spotlight .card:not(.spot) .card-body { opacity: .28; }
+  .card.spot { z-index: 1500 !important; }
+  .card.spot .card-body { transform: translateY(-6px) scale(1.08); }
+  .card.spot .card-body::after { opacity: 1; }
+
+  .label {
+    position: absolute; left: 0; top: 0; z-index: 1200;
+    display: flex; align-items: center; gap: 9px; white-space: nowrap;
+    padding: 7px 16px 7px 11px; border-radius: 999px;
+    font: 600 19px/1.2 var(--font-body); color: var(--fg);
+    background: rgba(14, 16, 27, .78); border: 1px solid var(--glass-edge-hi);
+    box-shadow: 0 10px 24px -12px rgba(0, 0, 0, .9);
+    cursor: grab; outline: none;
+    transition: box-shadow .25s, border-color .25s, background .25s;
+  }
+  .label .grip {
+    width: 9px; height: 15px; flex: none; opacity: .8;
+    background: radial-gradient(circle, var(--fg-muted) 1.2px, transparent 1.7px) 0 0 / 4.5px 5px;
+  }
+  .label .ltext { outline: none; min-width: 2ch; }
+  .label .ltext:empty::before { content: attr(data-ph); color: var(--fg-faint); }
+  .label:hover, .label.held { border-color: rgba(233, 196, 106, .6); }
+  .label.held { cursor: grabbing; background: rgba(30, 27, 18, .9); box-shadow: 0 20px 40px -14px rgba(0, 0, 0, .9), 0 0 0 1px rgba(233, 196, 106, .3); }
+  .label.editing { cursor: text; border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-glow); }
+  .label:focus-visible { outline: calc(2.5px * var(--inv)) solid var(--gold); outline-offset: calc(3px * var(--inv)); }
+
+  .ring {
+    position: absolute; left: 0; top: 0; border-radius: 50%; pointer-events: none; z-index: 0;
+    border: calc(1.5px * var(--inv)) dashed rgba(233, 196, 106, .4);
+    background: radial-gradient(circle, rgba(233, 196, 106, .07), rgba(233, 196, 106, .02) 60%, transparent 71%);
+    opacity: 0; transition: opacity .25s var(--ease-out);
+  }
+  .ring.show { opacity: .55; }
+  .ring.active { opacity: 1; }
+
+  /* ---------- screen overlays above the world ---------- */
+  .plumb {
+    position: absolute; left: 0; top: 0; height: 0; z-index: 5; pointer-events: none;
+    border-top: 1.5px dashed rgba(255, 227, 161, .85);
+    opacity: 0; transition: opacity .2s;
+    filter: drop-shadow(0 0 4px var(--gold-glow));
+  }
+  .plumb.show { opacity: 1; }
+  .plumb::after { /* plumb bob where the line meets the card */
+    content: ""; position: absolute; right: -4px; top: -5px; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--gold-hi); box-shadow: 0 0 10px var(--gold);
+  }
+  .ruler {
+    position: absolute; left: 0; top: 0; bottom: 0; width: var(--ruler); z-index: 7;
+    background: rgba(6, 7, 12, .62); border-right: 1px solid var(--glass-edge);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  }
+  .ruler-fill {
+    position: absolute; left: 0; right: 0; top: 0; height: 100px; transform-origin: 0 0;
+    background: linear-gradient(180deg,
+      rgba(255, 227, 161, .95) 0%, rgba(233, 196, 106, .7) 8%, rgba(233, 196, 106, .36) 20%,
+      rgba(233, 196, 106, .16) 42%, rgba(160, 170, 220, .1) 70%, rgba(160, 170, 220, .04) 100%);
+    -webkit-mask: linear-gradient(90deg, #000 30%, rgba(0, 0, 0, .25));
+    mask: linear-gradient(90deg, #000 30%, rgba(0, 0, 0, .25));
+  }
+  .tick {
+    position: absolute; right: 0; top: 0; width: 9px; height: 2px; margin-top: -1px; border-radius: 2px 0 0 2px;
+    background: hsl(var(--hue) 85% 68% / .55);
+    transition: width .25s var(--ease-out), background .25s;
+  }
+  .tick.top10 { width: 15px; background: hsl(var(--hue) 90% 70% / .95); }
+  .tick.lit { width: 26px; background: var(--gold-hi); box-shadow: 0 0 8px var(--gold); }
+  .rbadge { position: absolute; left: 4px; top: 0; z-index: 8; pointer-events: none; opacity: 0; transition: opacity .18s; }
+  .rbadge.show { opacity: 1; }
+  .rb-pill {
+    display: flex; align-items: center; gap: 7px; height: 30px; margin-top: -15px; padding: 0 10px 0 8px;
+    border-radius: 999px; background: var(--gold); color: #1a1406;
+    box-shadow: 0 8px 24px -6px rgba(0, 0, 0, .8), 0 0 24px var(--gold-glow);
+    white-space: nowrap;
+  }
+  .rbadge.bench .rb-pill { background: #1b1e2c; color: var(--fg); box-shadow: 0 0 0 1px var(--glass-edge-hi), 0 8px 24px -6px rgba(0, 0, 0, .8); }
+  .rbadge b { font: 800 22px/1 var(--font-display); font-variant-numeric: tabular-nums; }
+  .rbadge b::before { content: "#"; font-size: .7em; opacity: .65; }
+  .rbadge span { font: 600 10px/1 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; opacity: .75; }
+
+  .toolbar {
+    position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 9;
+    display: flex; align-items: center; gap: 4px; padding: 5px;
+    border-radius: 999px; background: rgba(14, 16, 27, .72);
+    box-shadow: var(--shadow-float); white-space: nowrap; cursor: default;
+  }
+  .tb {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    min-width: 34px; height: 34px; padding: 0 12px; border-radius: 999px; cursor: pointer;
+    background: transparent; border: 1px solid transparent; color: var(--fg);
+    font-weight: 600; font-size: var(--step--1);
+    transition: background .2s, border-color .2s, transform .2s var(--ease-out), color .2s;
+  }
+  .tb:hover { background: var(--glass-strong); border-color: var(--glass-edge); }
+  .tb:active { transform: scale(.94); }
+  .tb.icon { padding: 0; width: 34px; font-size: 18px; }
+  .tb.zoomval { min-width: 56px; padding: 0 6px; font: 600 12px/1 var(--font-mono); color: var(--fg-muted); }
+  .tb[aria-pressed="true"] { background: var(--gold); color: #1a1406; }
+  .tb.gold { background: rgba(233, 196, 106, .14); border-color: rgba(233, 196, 106, .4); color: var(--gold-hi); }
+  .tb.gold:hover { background: rgba(233, 196, 106, .24); }
+  .tb svg { width: 15px; height: 15px; flex: none; }
+  .tb-sep { width: 1px; height: 20px; background: var(--glass-edge); margin: 0 4px; }
+
+  /* ---------- the rail ---------- */
+  .rail { display: flex; flex-direction: column; min-height: 0; padding: 16px 8px 8px; border-radius: var(--r-lg); }
+  .rail-head { padding: 0 10px 12px; border-bottom: 1px solid var(--glass-edge); margin-bottom: 6px; }
+  .rail-head h2 { font: 800 var(--step-3)/.9 var(--font-display); text-transform: uppercase; letter-spacing: .02em; margin-top: 6px; }
+  .rail-head p { margin: 6px 0 0; font-size: 12px; color: var(--fg-faint); }
+  .rank-list { list-style: none; margin: 0; padding: 2px 2px 6px; overflow-y: auto; flex: 1; min-height: 0; scrollbar-width: thin; scrollbar-color: var(--glass-edge) transparent; }
+  .r-item { position: relative; }
+  .row {
+    display: grid; grid-template-columns: 30px 27px minmax(0, 1fr) auto; align-items: center; gap: 10px;
+    width: 100%; padding: 4px 8px; border-radius: 10px; text-align: left; cursor: pointer;
+    background: transparent; border: 1px solid transparent;
+    transition: background .2s, border-color .2s, opacity .3s;
+  }
+  .row:hover, .r-item.linked .row { background: var(--glass); border-color: var(--glass-edge); }
+  .r-item.active .row { background: rgba(233, 196, 106, .1); border-color: rgba(233, 196, 106, .55); }
+  .r-num { font-size: 26px; text-align: right; color: var(--fg); }
+  .r-item.podium .r-num { color: var(--gold); }
+  .r-thumb .cover { width: 27px; height: 36px; border-radius: 5px; aspect-ratio: auto; }
+  .r-text { min-width: 0; display: flex; flex-direction: column; }
+  .r-title { font-weight: 600; font-size: 14px; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .r-sub { font-size: 11.5px; line-height: 1.3; color: var(--fg-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .r-band { font: 600 9.5px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--fg-faint); }
+  .r-band.goat { color: var(--gold); }
+  .r-item.benched .row { opacity: .48; }
+  .r-item.benched .row:hover, .r-item.benched.linked .row, .r-item.benched.active .row { opacity: .9; }
+  .r-item.benched .r-num { font-size: 20px; color: var(--fg-muted); }
+  .bench-div {
+    display: flex; align-items: center; gap: 10px; margin: 10px 10px 6px;
+    font: 600 11px/1 var(--font-body); letter-spacing: .16em; text-transform: uppercase; color: var(--fg-faint);
+  }
+  .bench-div::after { content: ""; flex: 1; border-top: 1px dashed var(--glass-edge-hi); }
+  .bench-div .mono { font-size: 10px; letter-spacing: 0; }
+
+  /* ---------- small screens: rail stacks, canvas gets a fixed height ---------- */
+  @media (max-width: 860px) {
+    .page { height: auto; min-height: 0; }
+    .work { grid-template-columns: minmax(0, 1fr); }
+    .viewport { height: min(520px, 68vh); min-height: 420px; }
+    .rail { max-height: none; }
+    .rank-list { overflow: visible; }
+    .intro { padding: 12px 16px; }
+    .intro .try { flex-basis: 100%; }
+  }
+  @media (max-width: 480px) {
+    .page { padding: 10px 12px 16px; }
+    .tb { padding: 0 9px; }
+    .tb.icon { width: 32px; min-width: 32px; }
+    .tb.zoomval { min-width: 46px; }
+    .tb-sep { margin: 0 1px; }
+    .tb .lbl-long { display: none; }
+    .bandname.goat { font-size: 20px; }
+    .cuttags span { right: 8px; }
+  }
+</style>
+</head>
+<body class="grain">
+<nav id="study-nav"></nav>
+<script>GOAT.nav("canvas.html");</script>
+
+<main class="page">
+  <header class="intro glass">
+    <div class="intro-lead">
+      <div class="intro-title">
+        <span class="eyebrow">Study B</span>
+        <h1>Infinite canvas</h1>
+        <span class="tag">Height is greatness</span>
+      </div>
+      <p>Lay every game out on an open board. The higher a card sits, the better it is. Your Top 10 is read straight off the board.</p>
+    </div>
+    <p class="try"><span class="eyebrow">Try:</span>drag a card higher · drag empty space to pan · scroll or pinch to zoom · drag a label to carry its cluster · <kbd>Tab</kbd> to a card, then <kbd>&larr;</kbd><kbd>&uarr;</kbd><kbd>&rarr;</kbd><kbd>&darr;</kbd></p>
+  </header>
+
+  <section class="work">
+    <div class="viewport" id="vp" aria-label="Ranking board. Higher on the board means higher in the ranking.">
+      <div class="dots" id="dots"></div>
+      <div class="atmos" id="atmos"></div>
+      <div class="guides" id="guides" aria-hidden="true"></div>
+      <div class="cutline" id="cut" aria-hidden="true"></div>
+      <div class="board" id="board"></div>
+      <div class="cuttags" id="cuttags" aria-hidden="true"><span class="up">Top 10</span><span class="down">Bench</span></div>
+      <div class="plumb" id="plumb" aria-hidden="true"></div>
+      <div class="ruler" id="ruler" aria-hidden="true"><div class="ruler-fill" id="rfill"></div></div>
+      <div class="rbadge" id="rbadge" aria-hidden="true"><div class="rb-pill" id="rbpill"><b>1</b><span>GOAT</span></div></div>
+      <div class="toolbar glass" role="toolbar" aria-label="Board tools">
+        <button class="tb icon" id="zoom-out" type="button" aria-label="Zoom out">&minus;</button>
+        <button class="tb zoomval" id="zoom-reset" type="button" aria-label="Zoom to 100%">100%</button>
+        <button class="tb icon" id="zoom-in" type="button" aria-label="Zoom in">+</button>
+        <span class="tb-sep" aria-hidden="true"></span>
+        <button class="tb" id="fit" type="button" title="Fit (F)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg>Fit
+        </button>
+        <button class="tb" id="add-label" type="button" aria-pressed="false">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>Label
+        </button>
+        <button class="tb gold" id="tidy" type="button">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M2 3h4v3h4v3h4v4"/></svg><span id="tidy-text">Tidy</span>
+        </button>
+      </div>
+    </div>
+
+    <aside class="rail glass" aria-labelledby="rail-h">
+      <div class="rail-head">
+        <span class="eyebrow">Derived live from height</span>
+        <h2 id="rail-h">Your Top 10</h2>
+        <p>Highest card is #1. Hover a row to find it, click to fly there.</p>
+      </div>
+      <ol class="rank-list" id="rank-list"></ol>
+    </aside>
+  </section>
+  <p id="kbd-help" hidden>Arrow keys move the card. Hold Shift to move further. Up means better.</p>
+  <p id="live" class="sr-only" aria-live="polite"></p>
+</main>
+
+<script>
+(() => {
+  "use strict";
+  const G = window.GOAT;
+  const RM = G.reducedMotion();
+
+  /* ---------------- world model ---------------- */
+  const CW = 112, CH = 150;              // card size in world units
+  const CAPTURE_R = 310;                 // how far a label reaches when you drag it
+  const RULER = 36;
+  const AXIS = { top: 0, bottom: 1100 };
+  const BANDS = [
+    { name: "GOAT",      y0: 0,   y1: 220 },
+    { name: "Essential", y0: 220, y1: 520 },
+    { name: "Great",     y0: 520, y1: 820 },
+    { name: "Fine",      y0: 820, y1: 1100 },
+  ];
+  const bandOf = (y) => (y < 220 ? BANDS[0] : y < 520 ? BANDS[1] : y < 820 ? BANDS[2] : BANDS[3]);
+  const MIN_S = 0.18, MAX_S = 2.4;
+
+  // A believable mid-session board: clusters on the x axis, judgement on the y axis.
+  const START = {
+    er: [270, 110], bg3: [690, 120], de: [930, 135], bb: [410, 170], fnv: [1180, 225],
+    w3: [790, 280], ds: [290, 285], pst: [1060, 320], ct: [1460, 330], me2: [870, 440],
+    ff7: [1590, 470], dq11: [1440, 490], p5r: [1250, 600], dos2: [1080, 690], hk: [620, 760], sky: [330, 930],
+  };
+  const SEED_LABELS = [
+    { text: "FromSoft trilogy", x: 350, y: 0 },
+    { text: "Words over swords", x: 1040, y: 30 },
+    { text: "Childhood", x: 1520, y: 210 },
+  ];
+
+  const $ = (s) => document.querySelector(s);
+  const vp = $("#vp"), board = $("#board"), dots = $("#dots"), atmos = $("#atmos"), guides = $("#guides");
+  const cutEl = $("#cut"), cutTags = $("#cuttags"), plumb = $("#plumb"), ruler = $("#ruler"), rfill = $("#rfill"), rbadge = $("#rbadge"), rbpill = $("#rbpill");
+  const list = $("#rank-list"), live = $("#live"), zoomVal = $("#zoom-reset");
+  const btnLabel = $("#add-label"), btnTidy = $("#tidy"), tidyText = $("#tidy-text");
+  const toolbar = vp.querySelector(".toolbar");
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const easeOutQuint = (p) => 1 - Math.pow(1 - p, 5);
+  const easeSpring = (p) => { const c1 = 1.15, c3 = c1 + 1; return 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2); };
+  const SPRING = "cubic-bezier(.34, 1.56, .64, 1)";
+
+  let cam = { x: 0, y: 0, s: 1 };
+  let vpW = 0, vpH = 0, vpRect = null;
+  let userCam = false;
+
+  /* ---------------- guides + ruler furniture ---------------- */
+  const glines = [AXIS.top, 220, 520, 820, AXIS.bottom].map((y, i) => {
+    const d = document.createElement("div");
+    d.className = "gline" + (i === 0 ? " top" : "");
+    guides.appendChild(d);
+    return { y, el: d };
+  });
+  const bandNames = BANDS.map((b, i) => {
+    const d = document.createElement("div");
+    d.className = "bandname" + (i === 0 ? " goat" : "");
+    d.innerHTML = i === 0 ? `GOAT<small>the very top</small>` : b.name;
+    guides.appendChild(d);
+    return { y: b.y0, el: d };
+  });
+
+  /* ---------------- cards ---------------- */
+  const cards = new Map();
+  let zTop = 20;
+  G.items.forEach((item, i) => {
+    const el = document.createElement("div");
+    el.className = "card";
+    el.tabIndex = 0;
+    el.dataset.id = item.id;
+    el.setAttribute("role", "button");
+    el.setAttribute("aria-roledescription", "movable card");
+    el.setAttribute("aria-describedby", "kbd-help");
+    el.style.setProperty("--glow", G.glow(item, 0.55));
+    const body = document.createElement("div");
+    body.className = "card-body";
+    const cov = G.cover(item);
+    cov.setAttribute("aria-hidden", "true");
+    const badge = document.createElement("span");
+    badge.className = "badge";
+    badge.setAttribute("aria-hidden", "true");
+    const land = document.createElement("span");
+    land.className = "land";
+    body.append(cov, badge, land);
+    el.appendChild(body);
+    board.appendChild(el);
+
+    const tick = document.createElement("div");
+    tick.className = "tick";
+    tick.style.setProperty("--hue", item.h[1]);
+    ruler.appendChild(tick);
+
+    const [x, y] = START[item.id];
+    const c = { item, el, body, badge, land, tick, x, y, rank: 0, band: null, tween: null, li: null, bandTag: null, num: null };
+    el.style.zIndex = 10 + i;
+    cards.set(item.id, c);
+    applyCard(c);
+  });
+
+  function applyCard(c) {
+    c.el.style.transform = `translate3d(${c.x - CW / 2}px, ${c.y - CH / 2}px, 0)`;
+  }
+  const raise = (c) => { c.el.style.zIndex = ++zTop; };
+
+  /* ---------------- rail rows ---------------- */
+  const benchDiv = document.createElement("li");
+  benchDiv.className = "bench-div";
+  benchDiv.setAttribute("aria-hidden", "true");
+  benchDiv.innerHTML = `Bench <span class="mono" id="bench-n"></span>`;
+  cards.forEach((c) => {
+    const li = document.createElement("li");
+    li.className = "r-item";
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "row";
+    const num = document.createElement("span");
+    num.className = "r-num rank-num";
+    const thumb = document.createElement("span");
+    thumb.className = "r-thumb";
+    const tc = G.cover(c.item, { meta: false, title: false });
+    tc.setAttribute("aria-hidden", "true");
+    tc.removeAttribute("role");
+    thumb.appendChild(tc);
+    const text = document.createElement("span");
+    text.className = "r-text";
+    text.innerHTML = `<span class="r-title"></span><span class="r-sub"></span>`;
+    text.firstChild.textContent = c.item.title;
+    text.lastChild.textContent = `${c.item.by} · ${c.item.year}`;
+    const bandTag = document.createElement("span");
+    bandTag.className = "r-band";
+    btn.append(num, thumb, text, bandTag);
+    li.appendChild(btn);
+    c.li = li; c.num = num; c.bandTag = bandTag; c.btn = btn;
+
+    btn.addEventListener("pointerenter", () => spotlight(c));
+    btn.addEventListener("pointerleave", () => spotlight(null));
+    btn.addEventListener("focus", () => spotlight(c));
+    btn.addEventListener("blur", () => spotlight(null));
+    btn.addEventListener("click", () => {
+      spotlight(null);
+      c.el.focus({ preventScroll: true });
+      flyTo(c);
+    });
+  });
+
+  let spotted = null;
+  function spotlight(c) {
+    if (spotted) spotted.el.classList.remove("spot");
+    spotted = c && !drag ? c : null;
+    board.classList.toggle("spotlight", !!spotted);
+    if (spotted) spotted.el.classList.add("spot");
+    schedule();
+  }
+
+  /* ---------------- ranking: derived from height ---------------- */
+  let order = [];
+  let orderKey = "";
+  const ry = (c) => (c.tween ? c.tween.ty : c.y);
+  const rx = (c) => (c.tween ? c.tween.tx : c.x);
+
+  function computeOrder() {
+    return [...cards.values()].sort((a, b) => ry(a) - ry(b) || rx(a) - rx(b)).map((c) => c.item.id);
+  }
+
+  function refreshRanks(animate = true) {
+    const next = computeOrder();
+    const key = next.join(",");
+    cards.forEach((c) => {
+      const b = bandOf(ry(c));
+      if (b !== c.band) {
+        c.band = b;
+        c.bandTag.textContent = b.name;
+        c.bandTag.classList.toggle("goat", b.name === "GOAT");
+      }
+    });
+    if (key === orderKey) return false;
+    const hadOrder = order.length > 0;
+    order = next;
+    orderKey = key;
+    next.forEach((id, i) => {
+      const c = cards.get(id);
+      const r = i + 1;
+      if (c.rank !== r) {
+        c.rank = r;
+        c.badge.textContent = r;
+        c.num.textContent = r;
+        if (hadOrder && animate && !RM) {
+          c.badge.animate([{ transform: "scale(1.45)" }, { transform: "scale(1)" }], { duration: 420, easing: SPRING });
+        }
+      }
+      c.el.classList.toggle("bench", r > 10);
+      c.el.classList.toggle("is-top", r === 1);
+      c.tick.classList.toggle("top10", r <= 10);
+      c.li.classList.toggle("benched", r > 10);
+      c.li.classList.toggle("podium", r <= 3);
+      c.el.setAttribute("aria-label", `${c.item.title}, ranked ${r} of ${cards.size}${r > 10 ? ", on the bench" : ""}`);
+      c.btn.setAttribute("aria-label", `${r}. ${c.item.title}${r > 10 ? " (bench)" : ""}. Show on board`);
+    });
+    renderRail(hadOrder && animate);
+    return true;
+  }
+
+  // FLIP: measure, reorder the DOM, measure again, play the difference.
+  function renderRail(animate) {
+    const els = order.map((id) => cards.get(id).li);
+    els.splice(10, 0, benchDiv);
+    const flip = animate && !RM && list.isConnected;
+    const first = new Map();
+    if (flip) els.forEach((el) => { if (el.isConnected) first.set(el, el.getBoundingClientRect().top); });
+    const focused = list.contains(document.activeElement) ? document.activeElement : null;
+    els.forEach((el) => el.getAnimations().forEach((a) => a.cancel()));
+    let ref = list.firstChild;
+    els.forEach((el) => {
+      if (el !== ref) list.insertBefore(el, ref);
+      else ref = ref.nextSibling;
+    });
+    if (focused && document.activeElement !== focused) focused.focus({ preventScroll: true });
+    document.getElementById("bench-n").textContent = order.length - 10;
+    if (!flip) return;
+    els.forEach((el) => {
+      if (!first.has(el)) return;
+      const dy = first.get(el) - el.getBoundingClientRect().top;
+      if (Math.abs(dy) < 0.5) return;
+      el.animate([{ transform: `translateY(${dy}px)` }, { transform: "translateY(0)" }],
+        { duration: 460, easing: "cubic-bezier(.2, 1.15, .35, 1)" });
+    });
+  }
+
+  const top10 = () => new Set(order.slice(0, 10));
+  const announce = (msg) => { live.textContent = ""; requestAnimationFrame(() => { live.textContent = msg; }); };
+
+  /* ---------------- labels (clusters) ---------------- */
+  const ring = document.createElement("div");
+  ring.className = "ring";
+  ring.style.width = ring.style.height = CAPTURE_R * 2 + "px";
+  board.prepend(ring);
+  const labels = [];
+  let labelSeq = 0;
+
+  function makeLabel(text, x, y) {
+    const l = { id: "l" + ++labelSeq, text, x, y, tween: null, editing: false };
+    const el = document.createElement("div");
+    el.className = "label";
+    el.tabIndex = 0;
+    el.dataset.id = l.id;
+    el.setAttribute("role", "button");
+    el.setAttribute("aria-roledescription", "cluster label");
+    const grip = document.createElement("span");
+    grip.className = "grip";
+    grip.setAttribute("aria-hidden", "true");
+    const t = document.createElement("span");
+    t.className = "ltext";
+    t.dataset.ph = "Name this cluster";
+    t.textContent = text;
+    el.append(grip, t);
+    l.el = el; l.textEl = t;
+    board.appendChild(el);
+    labels.push(l);
+    syncLabelAria(l);
+    applyLabel(l);
+
+    el.addEventListener("pointerenter", () => { if (!drag && !l.editing) showReach(l, "show"); });
+    el.addEventListener("pointerleave", () => { if (!drag || drag.l !== l) showReach(null); });
+    el.addEventListener("dblclick", () => editLabel(l));
+    el.addEventListener("keydown", (e) => onLabelKey(e, l));
+    return l;
+  }
+  function syncLabelAria(l) {
+    l.el.setAttribute("aria-label", `Label: ${l.text || "untitled"}. Arrow keys move it with nearby cards. Enter renames, Delete removes.`);
+  }
+  function applyLabel(l) {
+    l.el.style.transform = `translate3d(${l.x}px, ${l.y}px, 0) translate(-50%, -50%)`;
+    if (reachOf === l) ring.style.transform = `translate3d(${l.x - CAPTURE_R}px, ${l.y - CAPTURE_R}px, 0)`;
+  }
+  function capturedBy(l) {
+    const out = [];
+    cards.forEach((c) => { if (Math.hypot(c.x - l.x, c.y - l.y) <= CAPTURE_R) out.push(c); });
+    return out;
+  }
+  let reachOf = null, hinted = [];
+  function showReach(l, mode) {
+    hinted.forEach((c) => c.el.classList.remove("hint"));
+    hinted = [];
+    reachOf = l;
+    ring.classList.remove("show", "active");
+    if (!l) return;
+    ring.style.transform = `translate3d(${l.x - CAPTURE_R}px, ${l.y - CAPTURE_R}px, 0)`;
+    ring.classList.add(mode);
+    if (mode === "show") { hinted = capturedBy(l); hinted.forEach((c) => c.el.classList.add("hint")); }
+  }
+  function removeLabel(l, say = true) {
+    const i = labels.indexOf(l);
+    if (i >= 0) labels.splice(i, 1);
+    if (reachOf === l) showReach(null);
+    l.el.remove();
+    if (say) G.toast(`Label "${l.text}" removed`);
+  }
+  function editLabel(l, isNew = false) {
+    if (l.editing) return;
+    l.editing = true;
+    showReach(null);
+    const t = l.textEl;
+    const before = l.text;
+    l.el.classList.add("editing");
+    try { t.contentEditable = "plaintext-only"; } catch (_) { t.contentEditable = "true"; }
+    if (t.contentEditable !== "plaintext-only") t.contentEditable = "true";
+    t.focus({ preventScroll: true });
+    const sel = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(t);
+    sel.removeAllRanges();
+    sel.addRange(range);
+    const onKey = (e) => {
+      e.stopPropagation();
+      if (e.key === "Enter") { e.preventDefault(); t.blur(); }
+      else if (e.key === "Escape") { e.preventDefault(); t.textContent = isNew ? "" : before; t.blur(); }
+    };
+    const onBlur = () => {
+      t.removeEventListener("keydown", onKey);
+      t.removeEventListener("blur", onBlur);
+      t.contentEditable = "false";
+      l.el.classList.remove("editing");
+      l.editing = false;
+      const val = t.textContent.replace(/\s+/g, " ").trim().slice(0, 40);
+      if (!val) {
+        if (isNew) { removeLabel(l, false); return; }
+        t.textContent = before;
+        return;
+      }
+      t.textContent = val;
+      l.text = val;
+      syncLabelAria(l);
+      if (isNew) {
+        const n = capturedBy(l).length;
+        G.toast(n ? `"${val}" now carries ${n} card${n > 1 ? "s" : ""} when dragged` : `"${val}" placed. Move cards near it to group them`);
+        l.el.focus({ preventScroll: true });
+      }
+    };
+    t.addEventListener("keydown", onKey);
+    t.addEventListener("blur", onBlur);
+  }
+  function onLabelKey(e, l) {
+    if (l.editing) return;
+    if (e.key === "Enter" || e.key === "F2") { e.preventDefault(); editLabel(l); return; }
+    if (e.key === "Delete" || e.key === "Backspace") { e.preventDefault(); removeLabel(l); return; }
+    const d = arrowDelta(e);
+    if (!d) return;
+    e.preventDefault();
+    const carried = capturedBy(l);
+    l.x += d[0]; l.y += d[1];
+    applyLabel(l);
+    carried.forEach((c) => { c.x += d[0]; c.y += d[1]; applyCard(c); });
+    invalidateTidy();
+    if (refreshRanks()) announceCluster(l, carried);
+    schedule();
+  }
+  function announceCluster(l, carried) {
+    if (!carried.length) return;
+    announce(`${l.text}: ` + carried.slice().sort((a, b) => a.rank - b.rank).map((c) => `${c.item.title} #${c.rank}`).join(", "));
+  }
+  SEED_LABELS.forEach((s) => makeLabel(s.text, s.x, s.y));
+
+  /* ---------------- camera ---------------- */
+  const local = (e) => [e.clientX - vpRect.left, e.clientY - vpRect.top];
+  const toWorld = (sx, sy) => [(sx - cam.x) / cam.s, (sy - cam.y) / cam.s];
+  const sy = (wy) => wy * cam.s + cam.y;
+  const sx = (wx) => wx * cam.s + cam.x;
+
+  let camTween = null, inertia = null, wcTimer = 0;
+  function camMoved() {
+    board.style.willChange = "transform";
+    clearTimeout(wcTimer);
+    // drop the layer hint when idle so text re-rasterises crisp at the new zoom
+    wcTimer = setTimeout(() => { board.style.willChange = "auto"; }, 220);
+  }
+  function stopCamMotion() { camTween = null; inertia = null; }
+
+  function zoomAt(px, py, factor) {
+    const s = clamp(cam.s * factor, MIN_S, MAX_S);
+    const [wx, wy] = toWorld(px, py);
+    cam = { s, x: px - wx * s, y: py - wy * s };
+    userCam = true;
+    camMoved();
+    schedule();
+  }
+  function zoomBy(factor) {
+    stopCamMotion();
+    const to = { ...cam };
+    const s = clamp(cam.s * factor, MIN_S, MAX_S);
+    const [cx, cy] = usableCenter();
+    const [wx, wy] = toWorld(cx, cy);
+    to.s = s; to.x = cx - wx * s; to.y = cy - wy * s;
+    userCam = true;
+    animateCam(to, 380);
+  }
+  function animateCam(to, dur = 720) {
+    if (RM) { cam = { ...to }; camMoved(); schedule(); return; }
+    camTween = { from: { ...cam }, to, t0: performance.now(), dur };
+    schedule();
+  }
+  function stepCam(now) {
+    let busy = false;
+    if (camTween) {
+      const { from, to, t0, dur } = camTween;
+      const p = clamp((now - t0) / dur, 0, 1);
+      const e = easeOutQuint(p);
+      const cx = vpW / 2, cy = vpH / 2;
+      const fwx = (cx - from.x) / from.s, fwy = (cy - from.y) / from.s;
+      const twx = (cx - to.x) / to.s, twy = (cy - to.y) / to.s;
+      const s = Math.exp(lerp(Math.log(from.s), Math.log(to.s), e));
+      const wx = lerp(fwx, twx, e), wy = lerp(fwy, twy, e);
+      cam = p >= 1 ? { ...to } : { s, x: cx - wx * s, y: cy - wy * s };
+      if (p >= 1) camTween = null; else busy = true;
+      camMoved();
+    }
+    if (inertia) {
+      const dt = Math.min(32, now - inertia.t);
+      inertia.t = now;
+      cam.x += inertia.vx * dt; cam.y += inertia.vy * dt;
+      const k = Math.pow(0.93, dt / 16.7);
+      inertia.vx *= k; inertia.vy *= k;
+      if (Math.hypot(inertia.vx, inertia.vy) < 0.015) inertia = null; else busy = true;
+      camMoved();
+    }
+    return busy;
+  }
+  function usableBox() {
+    const tb = toolbar.offsetHeight + 22;
+    return { l: RULER + 26, t: 26, r: vpW - 26, b: vpH - tb };
+  }
+  function usableCenter() { const u = usableBox(); return [(u.l + u.r) / 2, (u.t + u.b) / 2]; }
+
+  function contentBounds() {
+    let x0 = Infinity, y0 = AXIS.top - 40, x1 = -Infinity, y1 = -Infinity;
+    cards.forEach((c) => {
+      const x = rx(c), y = ry(c);
+      x0 = Math.min(x0, x - CW / 2); x1 = Math.max(x1, x + CW / 2);
+      y0 = Math.min(y0, y - CH / 2 - 14); y1 = Math.max(y1, y + CH / 2);
+    });
+    labels.forEach((l) => {
+      const x = l.tween ? l.tween.tx : l.x, y = l.tween ? l.tween.ty : l.y;
+      const hw = l.el.offsetWidth / 2 || 90;
+      x0 = Math.min(x0, x - hw); x1 = Math.max(x1, x + hw);
+      y0 = Math.min(y0, y - 24); y1 = Math.max(y1, y + 24);
+    });
+    return { x0, y0, x1, y1 };
+  }
+  function fitCam() {
+    const b = contentBounds();
+    const narrow = vpW < 640;
+    const u = { l: RULER + (narrow ? 16 : 104), t: 20, r: vpW - 20, b: vpH - (narrow ? 64 : 24) };
+    if (narrow && !userCam && !tidySnap) {
+      // phones: open legible on the left of the board instead of a postage stamp; Fit shows it all
+      const s = clamp((u.b - u.t) / (b.y1 - b.y0), 0.3, 0.6);
+      return { s, x: u.l - b.x0 * s, y: u.t - b.y0 * s };
+    }
+    const aw = Math.max(80, u.r - u.l), ah = Math.max(80, u.b - u.t);
+    const s = clamp(Math.min(aw / (b.x1 - b.x0), ah / (b.y1 - b.y0)), MIN_S, 1.1);
+    return {
+      s,
+      x: u.l + (aw - (b.x1 - b.x0) * s) / 2 - b.x0 * s,
+      y: u.t + (ah - (b.y1 - b.y0) * s) / 2 - b.y0 * s,
+    };
+  }
+  function fit(animated = true) {
+    stopCamMotion();
+    userCam = true;
+    const to = fitCam();
+    if (animated) animateCam(to, 760); else { cam = to; schedule(); }
+  }
+  function cardOnScreen(c, pad = 20) {
+    const u = usableBox();
+    const l = sx(c.x - CW / 2), r = sx(c.x + CW / 2), t = sy(c.y - CH / 2), b = sy(c.y + CH / 2);
+    return l >= u.l - pad && r <= u.r + pad && t >= u.t - pad && b <= u.b + pad;
+  }
+  function flyTo(c, { keepScale = false } = {}) {
+    stopCamMotion();
+    const s = keepScale ? cam.s : clamp(Math.max(cam.s, 0.85), MIN_S, 1.3);
+    const [cx, cy] = usableCenter();
+    animateCam({ s, x: cx - c.x * s, y: cy - c.y * s }, 760);
+    userCam = true;
+    setTimeout(() => ping(c), RM ? 0 : 520);
+  }
+  function ping(c) {
+    if (RM) return;
+    c.land.animate(
+      [{ opacity: 0.9, transform: "scale(1)" }, { opacity: 0, transform: "scale(1.22)" }],
+      { duration: 650, easing: "cubic-bezier(.16,1,.3,1)" }
+    );
+  }
+
+  /* ---------------- tweens for cards + labels (tidy, cancel) ---------------- */
+  const tweening = new Set();
+  function tweenTo(obj, tx, ty, delay = 0, dur = 760) {
+    if (RM) { obj.x = tx; obj.y = ty; (obj.item ? applyCard : applyLabel)(obj); return; }
+    obj.tween = { fx: obj.x, fy: obj.y, tx, ty, t0: performance.now() + delay, dur };
+    tweening.add(obj);
+    schedule();
+  }
+  function stepTweens(now) {
+    if (!tweening.size) return false;
+    tweening.forEach((o) => {
+      const t = o.tween;
+      const p = clamp((now - t.t0) / t.dur, 0, 1);
+      if (p <= 0) return;
+      const e = easeSpring(p);
+      o.x = lerp(t.fx, t.tx, e); o.y = lerp(t.fy, t.ty, e);
+      (o.item ? applyCard : applyLabel)(o);
+      if (p >= 1) { o.x = t.tx; o.y = t.ty; o.tween = null; tweening.delete(o); }
+    });
+    if (!tweening.size) refreshRanks();
+    return tweening.size > 0;
+  }
+  function settle(o) {
+    if (!o.tween) return;
+    o.tween = null;
+    tweening.delete(o);
+  }
+
+  /* ---------------- tidy: staircase that keeps the order ---------------- */
+  let tidySnap = null;
+  function invalidateTidy() {
+    if (!tidySnap) return;
+    tidySnap = null;
+    tidyText.textContent = "Tidy";
+  }
+  function tidy() {
+    if (drag) return;
+    if (tidySnap) {
+      const snap = tidySnap;
+      tidySnap = null;
+      tidyText.textContent = "Tidy";
+      cards.forEach((c) => { const p = snap.cards.get(c); tweenTo(c, p[0], p[1], Math.random() * 120, 820); });
+      labels.forEach((l) => { const p = snap.labels.get(l); if (p) tweenTo(l, p[0], p[1], 60, 820); });
+      refreshRanks();
+      setTimeout(() => fit(), RM ? 0 : 60);
+      G.toast("Back to your layout");
+      return;
+    }
+    const snap = { cards: new Map(), labels: new Map() };
+    cards.forEach((c) => snap.cards.set(c, [c.x, c.y]));
+    labels.forEach((l) => snap.labels.set(l, [l.x, l.y]));
+    // labels follow the highest card they currently hold
+    const labelAnchor = labels.map((l) => {
+      const held = capturedBy(l);
+      if (!held.length) return null;
+      return held.reduce((a, b) => (a.rank < b.rank ? a : b));
+    });
+
+    const first = cards.get(order[0]), last = cards.get(order[order.length - 1]);
+    const yTop = Math.min(first.y, 110);
+    const step = clamp((last.y - yTop) / (order.length - 1), 46, 64);
+    const X0 = 260, SX = 122;
+    const target = new Map();
+    order.forEach((id, i) => target.set(id, [X0 + i * SX, yTop + i * step]));
+    order.forEach((id, i) => {
+      const c = cards.get(id);
+      const [tx, ty] = target.get(id);
+      tweenTo(c, tx, ty, i * 28, 820);
+    });
+    labels.forEach((l, i) => {
+      const a = labelAnchor[i];
+      if (!a) return;
+      const [tx, ty] = target.get(a.item.id);
+      const hw = l.el.offsetWidth / 2;
+      tweenTo(l, tx + CW / 2 + 12 + hw, ty - 62, (a.rank - 1) * 28 + 80, 820);
+    });
+    tidySnap = snap;
+    tidyText.textContent = "Undo tidy";
+    refreshRanks();
+    setTimeout(() => fit(), RM ? 0 : 60);
+    G.toast("Tidied into a staircase. Same order, one clean list");
+    announce("Cards tidied into a staircase. Ranking unchanged.");
+  }
+
+  /* ---------------- pointer: cards, labels, pan, pinch ---------------- */
+  let drag = null;
+  const DRAG_SLOP = 3;
+
+  function measure() {
+    vpRect = vp.getBoundingClientRect();
+    vpW = vp.clientWidth; vpH = vp.clientHeight;
+  }
+
+  vp.addEventListener("pointerdown", (e) => {
+    if (e.target.closest(".toolbar")) return;
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    measure();
+    const p = local(e);
+    const cardEl = e.target.closest(".card");
+    const labelEl = e.target.closest(".label");
+
+    // a second finger on empty board turns a pan into a pinch
+    if (drag && drag.kind === "pan" && e.pointerType === "touch" && !cardEl && !labelEl) {
+      const first = drag.pts.values().next().value;
+      drag = { kind: "pinch", pts: new Map([[drag.id, first], [e.pointerId, p]]) };
+      const [a, b] = [...drag.pts.values()];
+      drag.d0 = Math.hypot(a[0] - b[0], a[1] - b[1]) || 1;
+      drag.s0 = cam.s;
+      drag.w0 = toWorld((a[0] + b[0]) / 2, (a[1] + b[1]) / 2);
+      vp.setPointerCapture(e.pointerId);
+      return;
+    }
+    if (drag) return;
+    stopCamMotion();
+
+    if (placing && !(labelEl && labelById(labelEl.dataset.id).editing)) {
+      e.preventDefault();
+      drag = { kind: "place", id: e.pointerId, p0: p };
+      vp.setPointerCapture(e.pointerId);
+      return;
+    }
+    if (labelEl) {
+      const l = labelById(labelEl.dataset.id);
+      if (!l || l.editing) return;
+      e.preventDefault();
+      const [wx, wy] = toWorld(...p);
+      drag = { kind: "label", id: e.pointerId, l, p0: p, ox: wx - l.x, oy: wy - l.y, started: false, lp: p };
+      vp.setPointerCapture(e.pointerId);
+      return;
+    }
+    if (cardEl) {
+      const c = cards.get(cardEl.dataset.id);
+      e.preventDefault();
+      settle(c);
+      const [wx, wy] = toWorld(...p);
+      drag = {
+        kind: "card", id: e.pointerId, c, p0: p, lp: p, lt: e.timeStamp,
+        ox: wx - c.x, oy: wy - c.y, sx0: c.x, sy0: c.y, started: false,
+        vx: 0, tilt: 0, rank0: c.rank, top0: top10(), first0: order[0],
+      };
+      vp.setPointerCapture(e.pointerId);
+      return;
+    }
+    e.preventDefault();
+    if (document.activeElement && vp.contains(document.activeElement)) document.activeElement.blur();
+    drag = { kind: "pan", id: e.pointerId, p0: p, lp: p, lt: e.timeStamp, c0: { x: cam.x, y: cam.y }, vx: 0, vy: 0, moved: false, pts: new Map([[e.pointerId, p]]) };
+    vp.setPointerCapture(e.pointerId);
+  });
+
+  vp.addEventListener("pointermove", (e) => {
+    if (!drag) return;
+    if (drag.kind === "pinch") {
+      if (!drag.pts.has(e.pointerId)) return;
+      drag.pts.set(e.pointerId, local(e));
+      const [a, b] = [...drag.pts.values()];
+      const d = Math.hypot(a[0] - b[0], a[1] - b[1]);
+      const s = clamp(drag.s0 * (d / drag.d0), MIN_S, MAX_S);
+      const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
+      cam = { s, x: mx - drag.w0[0] * s, y: my - drag.w0[1] * s };
+      userCam = true; camMoved(); schedule();
+      return;
+    }
+    if (e.pointerId !== drag.id) return;
+    const p = local(e);
+    const dist = Math.hypot(p[0] - drag.p0[0], p[1] - drag.p0[1]);
+
+    if (drag.kind === "pan") {
+      const dt = Math.max(1, e.timeStamp - drag.lt);
+      drag.vx = drag.vx * 0.6 + ((p[0] - drag.lp[0]) / dt) * 0.4;
+      drag.vy = drag.vy * 0.6 + ((p[1] - drag.lp[1]) / dt) * 0.4;
+      drag.lp = p; drag.lt = e.timeStamp;
+      if (!drag.moved && dist > DRAG_SLOP) { drag.moved = true; vp.classList.add("panning"); }
+      if (drag.moved) {
+        cam.x = drag.c0.x + (p[0] - drag.p0[0]);
+        cam.y = drag.c0.y + (p[1] - drag.p0[1]);
+        userCam = true; camMoved(); schedule();
+      }
+      return;
+    }
+    if (drag.kind === "card") {
+      const dt = Math.max(1, e.timeStamp - drag.lt);
+      const inst = (p[0] - drag.lp[0]) / dt;
+      drag.vx = drag.vx * 0.55 + inst * 0.45;
+      drag.lp = p; drag.lt = e.timeStamp;
+      if (!drag.started && dist > DRAG_SLOP) beginHold();
+      if (drag.started) moveHeld();
+      return;
+    }
+    if (drag.kind === "label") {
+      drag.lp = p;
+      if (!drag.started && dist > DRAG_SLOP) beginLabelHold();
+      if (drag.started) moveLabel();
+    }
+  });
+
+  function endPointer(e) {
+    if (!drag) return;
+    if (drag.kind === "pinch") {
+      if (drag.pts.has(e.pointerId)) drag = null;
+      return;
+    }
+    if (e.pointerId !== drag.id) return;
+    const d = drag;
+    drag = null;
+    vp.classList.remove("panning");
+    if (d.kind === "pan") {
+      if (d.moved && !RM && e.type === "pointerup" && performance.now() - d.lt < 80) {
+        const v = Math.hypot(d.vx, d.vy);
+        if (v > 0.08) inertia = { vx: d.vx, vy: d.vy, t: performance.now() };
+      }
+      schedule();
+      return;
+    }
+    if (d.kind === "place") {
+      const p = local(e);
+      if (Math.hypot(p[0] - d.p0[0], p[1] - d.p0[1]) < 6) placeLabelAt(p);
+      return;
+    }
+    if (d.kind === "card") {
+      if (!d.started) { d.c.el.focus({ preventScroll: true }); schedule(); return; }
+      dropHeld(d, e.type === "pointercancel");
+      return;
+    }
+    if (d.kind === "label") {
+      if (!d.started) { d.l.el.focus({ preventScroll: true }); return; }
+      dropLabel(d);
+    }
+  }
+  vp.addEventListener("pointerup", endPointer);
+  vp.addEventListener("pointercancel", endPointer);
+
+  /* holding a card */
+  function beginHold() {
+    const { c } = drag;
+    drag.started = true;
+    spotlight(null);
+    raise(c);
+    c.el.classList.add("held");
+    board.classList.add("holding");
+    c.li.classList.add("active");
+    c.tick.classList.add("lit");
+    c.body.style.transform = "scale(1.1)";
+    schedule();
+  }
+  function moveHeld() {
+    const { c } = drag;
+    const [wx, wy] = toWorld(...drag.lp);
+    c.x = wx - drag.ox; c.y = wy - drag.oy;
+    applyCard(c);
+    if (refreshRanks()) bumpBadge();
+    schedule();
+  }
+  function bumpBadge() {
+    if (RM) return;
+    rbpill.animate([{ transform: "scale(1.2)" }, { transform: "scale(1)" }], { duration: 360, easing: SPRING });
+  }
+  function dropHeld(d, cancelled) {
+    const { c } = d;
+    c.el.classList.remove("held");
+    board.classList.remove("holding");
+    c.li.classList.remove("active");
+    c.tick.classList.remove("lit");
+    c.body.style.transform = ""; // spring back to rest via the CSS transition
+    if (cancelled) { tweenTo(c, d.sx0, d.sy0, 0, 520); refreshRanks(); schedule(); return; }
+    ping(c);
+    invalidateTidy();
+    refreshRanks();
+    reportMove(c, d.rank0, d.top0, d.first0);
+    schedule();
+  }
+  function reportMove(c, rank0, top0, first0) {
+    const r = c.rank;
+    const now = top10();
+    const t = c.item.title;
+    if (order[0] !== first0 && order[0] === c.item.id) {
+      G.toast(`New GOAT: ${t}`);
+    } else if (!top0.has(c.item.id) && now.has(c.item.id)) {
+      const out = [...top0].find((id) => !now.has(id));
+      G.toast(`${t} is in at #${r}${out ? `. ${G.byId(out).title} drops to the bench` : ""}`);
+    } else if (top0.has(c.item.id) && !now.has(c.item.id)) {
+      const inn = [...now].find((id) => !top0.has(id));
+      G.toast(`${t} drops to the bench${inn ? `. ${G.byId(inn).title} is in` : ""}`);
+    }
+    if (r !== rank0) announce(`${t} moved from #${rank0} to #${r}`);
+  }
+
+  /* holding a label (carries its cluster) */
+  function beginLabelHold() {
+    const { l } = drag;
+    drag.started = true;
+    drag.carried = capturedBy(l).map((c) => { settle(c); return { c, dx: c.x - l.x, dy: c.y - l.y }; });
+    drag.top0 = top10();
+    showReach(l, "active");
+    l.el.classList.add("held");
+    board.classList.add("holding");
+    drag.carried.forEach(({ c }) => { c.el.classList.add("carried"); raise(c); });
+    l.el.style.zIndex = ++zTop + 1000;
+  }
+  function moveLabel() {
+    const { l } = drag;
+    const [wx, wy] = toWorld(...drag.lp);
+    l.x = wx - drag.ox; l.y = wy - drag.oy;
+    applyLabel(l);
+    drag.carried.forEach(({ c, dx, dy }) => { c.x = l.x + dx; c.y = l.y + dy; applyCard(c); });
+    refreshRanks();
+    schedule();
+  }
+  function dropLabel(d) {
+    const { l } = d;
+    l.el.classList.remove("held");
+    l.el.style.zIndex = "";
+    board.classList.remove("holding");
+    d.carried.forEach(({ c }) => { c.el.classList.remove("carried"); ping(c); });
+    showReach(null);
+    invalidateTidy();
+    refreshRanks();
+    announceCluster(l, d.carried.map((x) => x.c));
+    schedule();
+  }
+
+  /* wheel: zoom around the cursor; horizontal or shift scroll pans */
+  vp.addEventListener("wheel", (e) => {
+    if (e.target.closest(".toolbar")) return;
+    e.preventDefault();
+    measure();
+    stopCamMotion();
+    const [px, py] = local(e);
+    const unit = e.deltaMode === 1 ? 33 : e.deltaMode === 2 ? vpH : 1;
+    const dx = e.deltaX * unit, dy = e.deltaY * unit;
+    if (e.ctrlKey || e.metaKey) zoomAt(px, py, Math.exp(-dy * 0.01));
+    else if (e.shiftKey) { cam.x -= dy || dx; userCam = true; camMoved(); schedule(); }
+    else if (Math.abs(dx) > Math.abs(dy)) { cam.x -= dx; userCam = true; camMoved(); schedule(); }
+    else zoomAt(px, py, Math.exp(-dy * 0.0016));
+    if (drag && drag.kind === "card" && drag.started) moveHeld();
+    if (drag && drag.kind === "label" && drag.started) moveLabel();
+  }, { passive: false });
+
+  /* ---------------- keyboard ---------------- */
+  function arrowDelta(e) {
+    const step = e.shiftKey ? 60 : 12;
+    switch (e.key) {
+      case "ArrowUp": return [0, -step];
+      case "ArrowDown": return [0, step];
+      case "ArrowLeft": return [-step, 0];
+      case "ArrowRight": return [step, 0];
+    }
+    return null;
+  }
+  cards.forEach((c) => {
+    c.el.addEventListener("keydown", (e) => {
+      const d = arrowDelta(e);
+      if (!d) return;
+      e.preventDefault();
+      settle(c);
+      const rank0 = c.rank, top0 = top10(), first0 = order[0];
+      c.x += d[0]; c.y += d[1];
+      applyCard(c);
+      raise(c);
+      invalidateTidy();
+      if (refreshRanks()) { bumpBadge(); reportMove(c, rank0, top0, first0); }
+      if (!cardOnScreen(c, -10)) flyTo(c, { keepScale: true });
+      schedule();
+    });
+    c.el.addEventListener("focus", () => {
+      c.li.classList.add("linked");
+      measure();
+      if (!drag && !cardOnScreen(c)) flyTo(c, { keepScale: cam.s >= 0.5 });
+      schedule();
+    });
+    c.el.addEventListener("blur", () => { c.li.classList.remove("linked"); schedule(); });
+    c.el.addEventListener("pointerenter", () => { if (!drag) c.li.classList.add("linked"); });
+    c.el.addEventListener("pointerleave", () => { if (document.activeElement !== c.el) c.li.classList.remove("linked"); });
+  });
+
+  document.addEventListener("keydown", (e) => {
+    const t = e.target;
+    if (t.isContentEditable || /INPUT|TEXTAREA|SELECT/.test(t.tagName)) return;
+    if (e.key === "Escape") {
+      if (drag && drag.kind === "card" && drag.started) { const d = drag; drag = null; dropHeld(d, true); return; }
+      if (placing) setPlacing(false);
+      return;
+    }
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === "+" || e.key === "=") { e.preventDefault(); zoomBy(1.25); }
+    else if (e.key === "-" || e.key === "_") { e.preventDefault(); zoomBy(0.8); }
+    else if (e.key === "f" || e.key === "F") { e.preventDefault(); fit(); }
+  });
+
+  /* ---------------- toolbar ---------------- */
+  $("#zoom-in").addEventListener("click", () => zoomBy(1.25));
+  $("#zoom-out").addEventListener("click", () => zoomBy(0.8));
+  zoomVal.addEventListener("click", () => {
+    stopCamMotion();
+    const [cx, cy] = usableCenter();
+    const [wx, wy] = toWorld(cx, cy);
+    animateCam({ s: 1, x: cx - wx, y: cy - wy }, 420);
+  });
+  $("#fit").addEventListener("click", () => fit());
+  btnTidy.addEventListener("click", tidy);
+
+  let placing = false;
+  function setPlacing(on) {
+    placing = on;
+    btnLabel.setAttribute("aria-pressed", String(on));
+    vp.classList.toggle("placing", on);
+  }
+  btnLabel.addEventListener("click", (e) => {
+    if (placing) { setPlacing(false); return; }
+    measure();
+    if (e.detail === 0) {
+      // keyboard activation: drop it in the middle of the view and start typing
+      placeLabelAt(usableCenter());
+      return;
+    }
+    setPlacing(true);
+    G.toast("Click anywhere on the board to drop a label");
+  });
+  function placeLabelAt(p) {
+    setPlacing(false);
+    const [wx, wy] = toWorld(...p);
+    const l = makeLabel("", wx, wy);
+    if (!RM) l.el.animate([{ opacity: 0, transform: `translate3d(${wx}px, ${wy}px, 0) translate(-50%, -50%) scale(.6)` }, { opacity: 1, transform: l.el.style.transform }], { duration: 380, easing: SPRING });
+    editLabel(l, true);
+  }
+  const labelById = (id) => labels.find((l) => l.id === id);
+
+  /* ---------------- render loop (on demand) ---------------- */
+  let raf = 0;
+  let cutY = null;
+  function schedule() { if (!raf) raf = requestAnimationFrame(frame); }
+
+  function stepDrag() {
+    if (!drag || drag.kind !== "card" || !drag.started) return false;
+    const { c } = drag;
+    // tilt follows horizontal velocity, then relaxes
+    const target = RM ? 0 : clamp(drag.vx * 16, -10, 10);
+    drag.tilt += (target - drag.tilt) * 0.2;
+    drag.vx *= 0.86;
+    c.body.style.transform = `scale(1.1) rotate(${drag.tilt.toFixed(2)}deg)`;
+    // edge auto-pan
+    const [px, py] = drag.lp, m = 44, u = { l: RULER + 8, t: 0, r: vpW, b: vpH };
+    let ax = 0, ay = 0;
+    if (px < u.l + m) ax = (u.l + m - px) / m; else if (px > u.r - m) ax = -(px - (u.r - m)) / m;
+    if (py < u.t + m) ay = (u.t + m - py) / m; else if (py > u.b - m) ay = -(py - (u.b - m)) / m;
+    if (ax || ay) {
+      cam.x += clamp(ax, -1, 1) * 11; cam.y += clamp(ay, -1, 1) * 11;
+      userCam = true; camMoved(); moveHeld();
+    }
+    return true;
+  }
+
+  function frame(now) {
+    raf = 0;
+    let again = false;
+    if (stepCam(now)) again = true;
+    if (stepTweens(now)) again = true;
+    if (stepDrag()) again = true;
+    if (render()) again = true;
+    if (again) schedule();
+  }
+
+  let lastGrid = 0;
+  function render() {
+    let busy = false;
+    const s = cam.s;
+    board.style.transform = `translate3d(${cam.x}px, ${cam.y}px, 0) scale(${s})`;
+    board.style.setProperty("--inv", (1 / s).toFixed(4));
+
+    // infinite dot grid: spacing doubles as you zoom out so density stays calm
+    let g = 28 * s;
+    while (g < 14) g *= 2;
+    while (g > 56) g /= 2;
+    if (Math.abs(g - lastGrid) > 0.01) { dots.style.backgroundSize = `${g}px ${g}px`; lastGrid = g; }
+    const ox = ((cam.x % g) + g) % g - g * Math.ceil(120 / g);
+    const oy = ((cam.y % g) + g) % g - g * Math.ceil(120 / g);
+    dots.style.transform = `translate3d(${ox}px, ${oy}px, 0)`;
+
+    // gold atmosphere pools over the top two bands
+    const aTop = sy(AXIS.top - 160), aH = (520 + 160) * s;
+    atmos.style.transform = `translate3d(0, ${aTop}px, 0) scaleY(${aH / 100})`;
+    rfill.style.transform = `translate3d(0, ${sy(AXIS.top)}px, 0) scaleY(${((AXIS.bottom - AXIS.top) * s) / 100})`;
+    glines.forEach((gl) => { gl.el.style.transform = `translate3d(0, ${sy(gl.y)}px, 0)`; });
+    bandNames.forEach((bn, i) => { bn.el.style.transform = `translate3d(0, ${sy(bn.y) + (i === 0 ? 12 : 10)}px, 0)`; });
+
+    cards.forEach((c) => { c.tick.style.transform = `translate3d(0, ${sy(c.y)}px, 0)`; });
+
+    // the Top 10 line sits between #10 and #11, eased so it glides
+    if (order.length > 10) {
+      const target = (ry(cards.get(order[9])) + ry(cards.get(order[10]))) / 2;
+      if (cutY === null || RM) cutY = target;
+      else { cutY += (target - cutY) * 0.22; if (Math.abs(target - cutY) > 0.3) busy = true; else cutY = target; }
+      cutEl.style.transform = cutTags.style.transform = `translate3d(0, ${sy(cutY)}px, 0)`;
+    }
+
+    // plumb line + axis badge for the card in hand (or the keyboard-focused one)
+    let pc = null;
+    if (drag && drag.kind === "card" && drag.started) pc = drag.c;
+    else {
+      const a = document.activeElement;
+      if (a && a.classList && a.classList.contains("card") && a.matches(":focus-visible")) pc = cards.get(a.dataset.id);
+    }
+    if (pc) {
+      const y = sy(pc.y);
+      const bw = rbpill.offsetWidth;
+      const x0 = 4 + bw + 4;
+      const x1 = sx(pc.x - (CW / 2) * (pc.el.classList.contains("held") ? 1.1 : 1));
+      plumb.style.transform = `translate3d(${x0}px, ${y}px, 0)`;
+      plumb.style.width = Math.max(0, x1 - x0) + "px";
+      plumb.classList.toggle("show", x1 - x0 > 8);
+      rbadge.style.transform = `translate3d(0, ${y}px, 0)`;
+      const b = rbpill.firstChild, lab = rbpill.lastChild;
+      if (b.textContent !== String(pc.rank)) b.textContent = pc.rank;
+      const bn = bandOf(pc.y).name;
+      if (lab.textContent !== bn) lab.textContent = bn;
+      rbadge.classList.toggle("bench", pc.rank > 10);
+      rbadge.classList.add("show");
+      guides.classList.add("quiet");
+    } else {
+      guides.classList.remove("quiet");
+      plumb.classList.remove("show");
+      rbadge.classList.remove("show");
+    }
+
+    const zt = Math.round(s * 100) + "%";
+    if (zoomVal.textContent !== zt) zoomVal.textContent = zt;
+    return busy;
+  }
+
+  /* ---------------- boot ---------------- */
+  measure();
+  refreshRanks(false);
+  cam = fitCam();
+  render();
+  schedule();
+  new ResizeObserver(() => {
+    const [ocx, ocy] = vpW ? toWorld(vpW / 2, vpH / 2) : [0, 0];
+    measure();
+    if (!userCam) cam = fitCam();
+    else { cam.x = vpW / 2 - ocx * cam.s; cam.y = vpH / 2 - ocy * cam.s; }
+    schedule();
+  }).observe(vp);
+  window.addEventListener("scroll", () => { vpRect = vp.getBoundingClientRect(); }, { passive: true });
+
+  // test hook for the verification script (read-only view of the derived ranking)
+  window.__canvas = { order: () => order.slice(), card: (id) => { const c = cards.get(id); return { x: c.x, y: c.y, rank: c.rank }; }, cam: () => ({ ...cam }) };
+})();
+</script>
+</body>
+</html>
