@@ -263,7 +263,7 @@
   .grip svg { width: 10px; height: 12px; }
   .ccut:hover .grip, .ccut:focus-visible .grip, .ccut.on .grip { color: #1a1406; background: var(--gold); border-color: transparent; }
   .ccut:focus-visible .grip { box-shadow: 0 0 0 2px var(--ink-0), 0 0 0 4px var(--gold); }
-  .cuttag { position: absolute; left: 18px; font: 700 10.5px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; padding: 4px 8px; border-radius: 999px; white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity .15s; }
+  .cuttag { position: absolute; left: calc(50% + 74px); font: 700 10.5px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; padding: 4px 8px; border-radius: 999px; white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity .15s; }
   .cuttag.up { bottom: 8px; color: #1a1406; background: rgba(233, 196, 106, .9); }
   .cuttag.dn { top: 8px; color: var(--fg); background: rgba(12, 14, 23, .9); border: 1px solid var(--glass-edge-hi); }
   .ccut.on .cuttag { opacity: 1; }
@@ -612,6 +612,7 @@
     .bk-p { font-size: 10px; padding: 3px 5px; }
     .pc { width: 50px; }
     .grip { left: auto; right: 10px; transform: none; }
+    .cuttag { left: auto; right: 10px; }
     .cband .lbl { max-width: 70px; font-size: 1rem; } .cband.goat .lbl { font-size: 1.15rem; }
     .fo-note { font-size: 12px; }
     .fo-key { display: none; }
@@ -1875,7 +1876,7 @@
     art.append(coverFor(id, { meta: false, title: true }));
     const note = it.note || S.notes[id];
     btn.append(mk("span", "fo-role", esc(role)), art,
-      mk("span", "fo-meta", `<strong>${esc(it.title)}</strong><span class="mono">${metaLine(it)}</span>` +
+      mk("span", "fo-meta", `<span class="mono">${metaLine(it)}</span>` +
         (note ? `<span class="fo-note">“${esc(note)}”</span>` : it.traits.length ? `<span class="fo-note traits">${it.traits.map(esc).join(" · ")}</span>` : "")),
       mk("span", "fo-key", `<kbd>${side === "left" ? "←" : "→"}</kbd>`));
     btn.setAttribute("aria-label", `Pick ${it.title} (${role}). Or press the ${side} arrow.`);
