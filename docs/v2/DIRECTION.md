@@ -130,6 +130,15 @@ continuous:
 | **Spread** | an editorial column, Magazine layout, or award categories | Awards |
 | **Stage** | the Podium / Rushmore / Throne presets plus a face-off tournament | Podium, G.O.A.T., Rushmore, Bracket |
 
+## Round 7: technical forks
+
+| Question | Decision |
+|---|---|
+| Art director (Claude can't generate images) | **Claude-directed generative art.** Claude picks palette, motif, composition and type per item; a parametric canvas/SVG renderer draws it, in the prototypes' house style. One provider, no cost per image. |
+| Stack | **Keep Next 16 + Supabase** (Postgres, Auth, Storage) on Vercel. The rebuild is of the app layer, not the platform. |
+| Quality gates | **Lean core:** typecheck, lint, vitest and a Playwright smoke test in CI. Retire the ratchet, findings ledger, structural backlog, doc-coupling and governance docs. |
+| Cutover | **A parallel `/v2` route group, then swap.** Build v2 beside v1 in the same app; delete v1 when v2 reaches parity on what matters. |
+
 ## Open threads (next rounds)
 
 - Award lists carry *categories* (several small rankings), not one order.
