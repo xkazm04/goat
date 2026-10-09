@@ -20,6 +20,8 @@
     --spring-soft: var(--ease-out);
   }
   body { overflow-x: clip; }
+  .toast { bottom: calc(var(--shelf-h) + 30px + env(safe-area-inset-bottom, 0px)); }
+  body.preview .toast { bottom: 24px; }
   .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
   .page { position: relative; z-index: 2; overflow-x: clip; }
@@ -30,12 +32,13 @@
     display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 28px;
     padding: 14px 18px 14px 20px; position: relative; z-index: 3;
   }
-  .intro-text { flex: 1 1 520px; min-width: 0; }
+  .intro-text { flex: 1 1 560px; min-width: 0; }
   .intro .eyebrow { color: var(--gold); margin: 0 0 6px; }
-  .intro-copy { margin: 0; color: var(--fg-muted); font-size: var(--step--1); max-width: 72ch; }
+  .intro-copy { margin: 0; color: var(--fg-muted); font-size: var(--step--1); }
   .intro-copy strong { color: var(--fg); font-weight: 600; }
   .try { margin: 6px 0 0; font-size: .75rem; color: var(--fg-faint); line-height: 1.6; }
   .try b { color: var(--fg-muted); font-weight: 600; margin-right: .3em; }
+  .try kbd + kbd { margin-left: 2px; }
   .try kbd { font: 600 .7rem/1 var(--font-mono); color: var(--fg-muted); padding: 2px 5px; border-radius: 4px; border: 1px solid var(--glass-edge); background: var(--glass); }
   .tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .seg { display: inline-flex; padding: 3px; border-radius: 999px; background: rgba(0,0,0,.25); border: 1px solid var(--glass-edge); }
@@ -63,9 +66,10 @@
       radial-gradient(36% 46% at 66% 22%, hsl(var(--a1) 80% 50% / .22), transparent 70%),
       radial-gradient(60% 40% at 50% 0%, rgba(233, 196, 106, .06), transparent 70%);
   }
-  .masthead { padding: clamp(28px, 4vw, 44px) 0 clamp(22px, 3vw, 34px); text-align: center; }
+  .masthead { padding: clamp(24px, 3vw, 34px) 0 clamp(20px, 2.4vw, 28px); text-align: center; }
   .kicker { margin: 0 0 14px; color: var(--gold); }
   .kicker span { color: var(--fg-faint); margin: 0 .5em; }
+  .kicker i { font-style: normal; }
   .headline {
     font: 900 clamp(2.5rem, 6.2vw, 5.4rem)/.88 var(--font-display);
     text-transform: uppercase; letter-spacing: -.005em; overflow-wrap: anywhere;
@@ -178,7 +182,7 @@
   .ranks[data-layout="col"] .entry:hover .entry-inner { background: var(--glass); transform: translateY(-2px); box-shadow: 0 22px 44px -28px hsl(var(--h2) 85% 50% / .55); }
   .ranks[data-layout="col"] .entry:hover .art .cover { box-shadow: 0 0 0 1px rgba(255,255,255,.12) inset, 0 26px 40px -18px hsl(var(--h2) 80% 40% / .7); }
   .ranks[data-layout="col"] > .entry:first-child { --num-w: 196px; --cov-w: 156px; border-top: 0; }
-  .ranks[data-layout="col"] > .entry:first-child .entry-inner { padding-block: 26px; }
+  .ranks[data-layout="col"] > .entry:first-child .entry-inner { padding-block: 18px; }
   .ranks[data-layout="col"] > .entry:first-child .bleed { display: block; opacity: .9; }
   .ranks[data-layout="col"] > .entry:first-child .num { font-size: 11rem; filter: drop-shadow(0 10px 40px rgba(233,196,106,.28)); }
   .ranks[data-layout="col"] > .entry:first-child .title { font-size: clamp(2.2rem, 4.6vw, 4.25rem); }
@@ -376,6 +380,7 @@
     .shelf-list { padding: 12px 8px 12px 0; gap: 10px; }
     .shelf-item { width: 76px; }
     .tools { width: 100%; justify-content: space-between; }
+    .k-pre { display: none; }
   }
 </style>
 </head>
@@ -408,7 +413,7 @@
   <article class="spread" aria-labelledby="headline">
     <div class="ambient" aria-hidden="true"></div>
     <header class="masthead">
-      <p class="kicker eyebrow">The GOAT list<span>/</span>Video games · Role-playing</p>
+      <p class="kicker eyebrow"><i class="k-pre">The GOAT list<span>/</span></i>Video games · Role-playing</p>
       <h1 id="headline" class="headline editable" contenteditable="true" spellcheck="false" aria-label="List title, editable">The Greatest RPGs Ever Made</h1>
       <div class="byline">
         <span>Curated by <b>you</b></span>
