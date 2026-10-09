@@ -88,7 +88,7 @@
   }
   .wall-head { position: absolute; left: 40px; top: 22px; pointer-events: none; }
   .wall-head h2 {
-    font: 800 30px/.95 var(--font-display); text-transform: uppercase; letter-spacing: .02em;
+    font: 800 26px/.95 var(--font-display); text-transform: uppercase; letter-spacing: .02em;
     color: var(--fg); opacity: .9; margin-top: 8px;
   }
   .wall-count {
@@ -213,8 +213,8 @@
   }
   .stage.over-pile .pile-drop { opacity: 1; }
   .hush {
-    position: absolute; inset: 0; z-index: 8; pointer-events: none; opacity: 0;
-    background: radial-gradient(120% 90% at 50% 40%, transparent 40%, rgba(0, 0, 0, .5));
+    position: absolute; inset: 0; z-index: 990; pointer-events: none; opacity: 0;
+    background: radial-gradient(90% 80% at var(--hx, 50%) var(--hy, 40%), rgba(0, 0, 0, .08) 20%, rgba(0, 0, 0, .42));
     transition: opacity .35s;
   }
   .stage.holding .hush { opacity: 1; }
@@ -309,11 +309,12 @@
   .hand-shadow {
     position: absolute; left: 0; top: 0; width: var(--cw); height: var(--ch); z-index: 999;
     transform-origin: 0 0; border-radius: 12px; pointer-events: none;
-    background: rgba(0, 0, 0, .78); filter: blur(var(--sb, 18px)); opacity: 0; transition: opacity .25s;
+    background: rgba(0, 0, 0, .9); filter: blur(var(--sb, 18px)); opacity: 0; transition: opacity .25s;
   }
   .hand-shadow.show { opacity: 1; }
   .hand-glow {
-    position: absolute; left: 0; top: 0; width: 520px; height: 520px; margin: -260px 0 0 -260px; z-index: 6;
+    position: absolute; left: 0; top: 0; width: 520px; height: 520px; margin: -260px 0 0 -260px; z-index: 991;
+    mix-blend-mode: screen;
     border-radius: 50%; pointer-events: none; opacity: 0; transition: opacity .3s;
     background: radial-gradient(closest-side, var(--hg, transparent), transparent);
   }
@@ -428,7 +429,7 @@
 
   const stage = $("#stage"), wrap = $("#roomWrap"), casesEl = $("#cases");
   const card = $("#card"), hud = $("#hud"), live = $("#live");
-  const shelfHit = $("#shelfHit"), handShadow = document.createElement("div"), handGlow = $("#handGlow");
+  const hush = $(".hush"), shelfHit = $("#shelfHit"), handShadow = document.createElement("div"), handGlow = $("#handGlow");
   handShadow.className = "hand-shadow"; casesEl.appendChild(handShadow);
   $("#listTitle").textContent = G.list.title;
 
@@ -519,7 +520,7 @@
       w1 = b1 * fs; w = b * fs; gap1 = gp * fs;
     }
     const total = w1 + gap1 + w * 9;
-    const runL = (L - total) / 2;
+    const runL = (L - total) / 2 + (spine ? clamp((L - total) / 2 - 70, 0, 70) : 0);
     const slots = [{ cx: runL + w1 / 2, w: w1 }];
     let x = runL + w1 + gap1;
     for (let i = 1; i <= MAX; i++) { slots.push({ cx: x + w / 2, w }); x += w; } // index 10 = off the end
@@ -771,7 +772,7 @@
     e.root.style.zIndex = 1000;
     e.box.style.transform = "rotateY(0deg)";    // turns to face you
     const it = G.byId(id);
-    handGlow.style.setProperty("--hg", G.glow(it, 0.22));
+    handGlow.style.setProperty("--hg", G.glow(it, 0.2));
     handShadow.classList.add("show"); handGlow.classList.add("show");
     stage.classList.add("holding");
     hud.classList.add("show");
@@ -836,11 +837,13 @@
     e.lift.style.transform = liftT({ rz: d.a.rz, rx: d.a.rx, ry: d.a.ry });
     // shadow: tight against the wall over the shelf, long and soft over the floor
     const near = preview != null;
-    d.so += ((near ? 24 : 40) - d.so) * 0.18 * f;
+    d.so += ((near ? 26 : 46) - d.so) * 0.18 * f;
     handShadow.style.setProperty("--sb", (near ? 10 : 18) + "px");
     const cx = x + (W * d.s) / 2 + d.so * 0.7, cy = y + (H * d.s) / 2 + d.so * 1.3;
     handShadow.style.transform = `translate(${cx.toFixed(1)}px, ${cy.toFixed(1)}px) rotate(${d.a.rz.toFixed(2)}deg) scale(${(d.s * 0.96).toFixed(3)}) translate(-${W / 2}px, -${H / 2}px)`;
     handGlow.style.transform = `translate(${(x + (W * d.s) / 2).toFixed(1)}px, ${(y + (H * d.s) / 2).toFixed(1)}px)`;
+    hush.style.setProperty("--hx", ((d.x / L) * 100).toFixed(1) + "%");
+    hush.style.setProperty("--hy", ((d.y / STAGE_H) * 100).toFixed(1) + "%");
     const hw = d.hw || 120;
     hud.style.transform = `translate(${clamp(d.x - hw / 2, 8, L - hw - 8).toFixed(1)}px, ${Math.min(y + H * d.s + 14, STAGE_H - 40).toFixed(1)}px)`;
     raf = requestAnimationFrame(tick);
