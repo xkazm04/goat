@@ -677,16 +677,17 @@
       const n = nodes[t], x = n.x * w, y = n.y * h, r = (1.4 + 6 * D.w[t]) * (S / 500);
       const lw = t.length * (fs * .66 + 1.5) + 10, lh = fs * 2 + 6;
       const out = x > w / 2 ? -1 : 1;
-      const cands = [[out, 0], [-out, 0], [out, -1], [out, 1], [-out, -1], [-out, 1]];
+      const cands = [[out, 0], [-out, 0], [out, -1], [out, 1], [-out, -1], [-out, 1], [out, -1.8], [out, 1.8], [-out, -1.8], [-out, 1.8]];
       const box = ([sx, vy]) => {
         const lx = x + sx * (r + 9), ly = y - 2 + vy * (lh * .62);
         const x0 = sx > 0 ? lx : lx - lw;
         return { lx, ly, sx, b: [x0, ly - fs, x0 + lw, ly - fs + lh] };
       };
-      const hit = (b) => b[0] < 4 || b[2] > w - 4 || b[1] < 64 || b[3] > h - 4 || placed.some((p) => b[0] < p[2] && b[2] > p[0] && b[1] < p[3] && b[3] > p[1]);
+      const cost = (b) => (b[0] < 4 || b[2] > w - 4 || b[1] < 64 || b[3] > h - 4 ? 1e6 : 0) +
+        placed.reduce((s, p) => s + Math.max(0, Math.min(b[2], p[2]) - Math.max(b[0], p[0])) * Math.max(0, Math.min(b[3], p[3]) - Math.max(b[1], p[1])), 0);
       const prev = n.lab != null ? cands[n.lab] : null;
-      let pick = prev && !hit(box(prev).b) ? n.lab : cands.findIndex((c) => !hit(box(c).b));
-      if (pick < 0) pick = 0;
+      let pick = prev && cost(box(prev).b) === 0 ? n.lab : -1;
+      if (pick < 0) { let best = Infinity; cands.forEach((c, i) => { const v = cost(box(c).b) + i * .01; if (v < best) { best = v; pick = i; } }); }
       n.lab = pick; const bx = box(cands[pick]); placed.push(bx.b); place[t] = bx;
     });
     // stars
