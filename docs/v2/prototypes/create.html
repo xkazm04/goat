@@ -145,7 +145,8 @@
   .s-sub { margin: 8px 0 0; color: var(--fg-muted); font-size: var(--step--1); max-width: 70ch; }
   .s-sub .quiet { color: var(--fg-faint); }
 
-  .status { display: flex; align-items: center; gap: 14px; padding: 12px 18px; position: relative; overflow: hidden; }
+  .status { display: flex; align-items: center; gap: 14px; padding: 12px 18px; position: sticky; top: calc(var(--nav-h) + 8px); z-index: 10; overflow: hidden;
+    background: rgba(14, 16, 27, .82); box-shadow: 0 18px 40px -24px rgba(0, 0, 0, .9); }
   .status .ph { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
   .status .ph-text { font-weight: 600; }
   .status .q { color: var(--fg-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; transition: opacity .25s; }
@@ -243,7 +244,7 @@
   .act.keep[aria-pressed="true"] kbd { color: rgba(26, 20, 6, .7); border-color: rgba(26, 20, 6, .25); background: transparent; }
 
   /* rail */
-  .rail { position: sticky; top: calc(var(--nav-h) + 16px); display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  .rail { position: sticky; top: calc(var(--nav-h) + 84px); display: flex; flex-direction: column; gap: 14px; min-width: 0; }
   .tally-card { padding: 18px; }
   .tally-card .eyebrow { margin: 0 0 10px; font-size: .7rem; }
   .tally { margin: 0; font-size: var(--step-0); color: var(--fg-muted); font-variant-numeric: tabular-nums; }
@@ -292,6 +293,7 @@
 
   /* ---------- step 3: draft + critic ---------- */
   .draft-layout { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 28px; align-items: start; }
+  .draft-main { min-width: 0; }
   .s-head .head-acts { display: flex; gap: 8px; flex-wrap: wrap; }
   .btn svg { width: 14px; height: 14px; }
   .rows { position: relative; list-style: none; margin: 0; padding: 0; }
@@ -349,7 +351,7 @@
   .frames { margin-top: 10px; padding: 18px 22px; border-radius: var(--r-md); border: 1.5px dashed rgba(233, 196, 106, .22); color: var(--fg-faint); font-size: var(--step--1); }
   .frames b { color: var(--fg-muted); font: 700 1.2rem/1 var(--font-display); text-transform: uppercase; letter-spacing: .06em; margin-right: .5em; }
 
-  .critic { position: sticky; top: calc(var(--nav-h) + 16px); height: min(760px, calc(100svh - var(--nav-h) - 32px)); display: flex; flex-direction: column; overflow: hidden; box-shadow: var(--shadow-float); }
+  .critic { position: sticky; top: calc(var(--nav-h) + 16px); margin-top: 30px; height: clamp(460px, calc(100svh - 290px), 760px); display: flex; flex-direction: column; overflow: hidden; box-shadow: var(--shadow-float); }
   .cr-head { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--glass-edge); }
   .avatar { width: 38px; height: 38px; border-radius: 50%; flex: none; position: relative;
     background: conic-gradient(from 210deg, var(--gold), hsl(var(--a2) 85% 60%), var(--gold)); padding: 2px; }
@@ -386,7 +388,7 @@
   @media (max-width: 920px) {
     .pool-layout, .draft-layout { grid-template-columns: minmax(0, 1fr); }
     .rail { position: static; order: -1; }
-    .critic { position: relative; top: 0; height: 520px; }
+    .critic { position: relative; top: 0; margin-top: 8px; height: 520px; }
   }
   @media (max-width: 640px) {
     .stepbar .scripted { margin-left: 0; width: 100%; }
@@ -513,6 +515,8 @@
 
   <!-- STEP 3 -->
   <section class="step s3" id="step3" data-step="3" tabindex="-1" aria-labelledby="draftTitle" hidden>
+    <div class="draft-layout">
+      <div class="draft-main">
     <div class="s-head">
       <div>
         <p class="eyebrow" id="draftEyebrow">First draft</p>
@@ -525,8 +529,6 @@
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></button>
       </div>
     </div>
-    <div class="draft-layout">
-      <div>
         <ol class="rows" id="rows" aria-label="Draft ranking"></ol>
       </div>
       <aside class="critic glass" id="critic" aria-labelledby="criticTitle">
@@ -777,9 +779,21 @@
       .replace(/^(what('?s| is| are)\s+)?(the\s+)?((greatest|best|goat|top(\s+\d+)?)\s+)+/i, "")
       .replace(/\s+(ever|of all time)$/i, "").trim();
     if (!p) return m.ds.canon;
+    p = p.replace(/\bsci[\s-]?fi\b/gi, "sci-fi");
+    // quietly correct words the fuzzy matcher had to stretch for ("pizzza")
+    const fix = (lw) => {
+      if (m.ds.kw[lw] != null) return lw;
+      let best = null, bs = 0;
+      for (const k in m.ds.kw) {
+        if (Math.abs(k.length - lw.length) > 1) continue;
+        const d = dice(lw, k);
+        if (d >= .75 && d > bs) { bs = d; best = k; }
+      }
+      return best || lw;
+    };
     const cap = (w) => w.split("-").map((s) => /^\d/.test(s) ? s : s.charAt(0).toUpperCase() + s.slice(1)).join("-");
     const words = p.split(/\s+/).map((w, i) => {
-      const lw = w.toLowerCase();
+      const lw = fix(w.toLowerCase());
       if (i > 0 && SMALL.has(lw)) return lw;
       if (/^[A-Z0-9]{2,}$/.test(w) && w.length <= 4) return w;
       return cap(lw);
@@ -879,7 +893,7 @@
       setTimeout(() => {
         wing.innerHTML = "";
         sets[wi].forEach((it) => {
-          const c = GOAT.cover(it, { meta: it.year != null });
+          const c = GOAT.cover(it, { meta: it.year != null, title: it.title.split(/\s+/).every((w) => w.length <= 8) });
           c.removeAttribute("role"); c.removeAttribute("aria-label");
           c.classList.add("swap");
           wing.appendChild(c);
@@ -1368,7 +1382,7 @@
     li.innerHTML = `<span class="bleed" aria-hidden="true"></span><span class="r-num" aria-hidden="true"></span><div class="r-art"></div>
       <div class="r-body"><h3 class="r-title">${esc(it.title)}</h3><p class="r-meta">${esc(metaLine(it))} · ${it.traits.map(esc).join(" · ")}</p><p class="r-why">${esc(it.why)}</p></div>
       <span class="grip" aria-hidden="true">${ICON.grip}</span>`;
-    $(".r-art", li).appendChild(GOAT.cover(it, { meta: it.year != null }));
+    $(".r-art", li).appendChild(GOAT.cover(it, { title: false, meta: false }));
     li.addEventListener("pointerdown", onRowDown);
     li.addEventListener("keydown", onRowKey);
     li.addEventListener("focus", () => ambient(it));
@@ -1663,12 +1677,12 @@
     const n = (S.intentCount[intent] = (S.intentCount[intent] || 0) + 1);
     const [o0, o1, o2, o3] = [top(0), top(1), top(2), top(3)];
     if (!o0 || !o1) { critic(M`Give me at least two to compare and I'll get going.`); return; }
-    const third = o2 ? M`, and ${o2} at #3` : [];
     let parts;
     if (intent === "aged") {
       const podium = [o0, o1, o2].filter(Boolean);
       if (o0.year == null) {
-        parts = M`Toppings don't age; they go in and out of fashion. ${o0} has never once been out of fashion, ${o1} comes close`.concat(third, M`. Fine. Aged-better holds. I'll allow it.`);
+        parts = M`Toppings don't age; they go in and out of fashion. ${o0} has never once been out of fashion, and ${o1} comes close.`
+          .concat(o2 ? M` ${o2} at #3 is the one riding a trend, so keep an eye on it.` : [], M` Fine, I'll allow it.`);
       } else {
         const oldest = podium.reduce((a, b) => (b.year < a.year ? b : a));
         parts = oldest === o0
@@ -1677,10 +1691,14 @@
         if (oldest !== o0) S.dispute = { a: o0.id, b: oldest.id };
       }
     } else if (intent === "bias") {
-      const tr = sharedTrait([o0, o1, o2].filter(Boolean));
+      const pod = [o0, o1, o2].filter(Boolean);
+      const tr = sharedTrait(pod);
+      const sh = tr ? pod.filter((it) => it.traits.includes(tr)) : [];
+      const names = sh.length === 3 ? M`${sh[0]}, ${sh[1]} and ${sh[2]}` : M`${sh[0]} and ${sh[1]}`;
+      const an = tr && /^[aeiou]/i.test(tr) ? "an" : "a";
       parts = tr
-        ? M`Fair. It's your name on this list, not mine. ${o0} stays at #1 on conviction. For the record, ${o0}, ${o1}${o2 ? M` and ${o2}` : ""} share a ${tr} streak. That isn't bias, it's a point of view, and the best lists have one.`.flat()
-        : M`Fair. It's your name on this list. ${o0}, ${o1}${o2 ? M` and ${o2}` : ""} have almost nothing in common, which tells me your #1 is about feeling, not a system. Respect. I'll stop arguing about the top spot.`.flat();
+        ? M`Fair. It's your name on this list, not mine. ${o0} stays at #1 on conviction. For the record, ${names} share ${an} ${tr} streak near the top. That isn't bias, it's a point of view, and the best lists have one.`
+        : M`Fair. It's your name on this list. ${o0}, ${o1}${o2 ? M` and ${o2}` : ""} have almost nothing in common, which tells me your #1 is about feeling, not a system. Respect. I'll stop arguing about the top spot.`;
     } else if (intent === "swap") {
       const d = S.dispute;
       const ia = d ? S.order.indexOf(d.a) : -1, ib = d ? S.order.indexOf(d.b) : -1;
