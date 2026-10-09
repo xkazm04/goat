@@ -101,16 +101,43 @@ So v2 ships **three modes**: Canvas, Spread and Stage.
 | Taste DNA visual | **E4: radar plus persona trading card.** E1–E3 are retired. |
 | Where E4 lives | **Profile centrepiece.** The big holographic card at the top of the profile, updated as you rank. |
 
+## Round 6: the fourth mode and the one-list model
+
+| Question | Decision |
+|---|---|
+| Owner of the long Top-N (10–50) | **A new mode, evolved from v1's Top-50 grid.** |
+| Mode switching | **One list, all modes.** There is one ordered list underneath. Each mode is a projection of it, and switching mid-ranking keeps your work. |
+| Next rounds | 1) a unified mode prototype, 2) the technical package design |
+
+**Proposal: Mosaic** (the successor to the v1 grid; the name is a working title).
+v1's grid is a pyramid of shrinking slots: a top-3/4 showcase, then "Elite
+Tier" 4–10 (7 columns), "Core Roster" 11–20, "Rising Stars" 21–35 and
+"Reserves" 36–50 (`GridRenderer.tsx`). Mosaic keeps that shape and makes it
+continuous:
+
+- Tile size decays with rank.
+- Promoting an item grows it.
+- The band boundaries are the same tier cut-lines Canvas uses.
+- The whole Top 25 or Top 50 reads as one poster, which doubles as the
+  share image.
+
+### The four v2 modes, as projections of one list
+
+| Mode | Shows the list as | Inherits v1 |
+|---|---|---|
+| **Mosaic** | a rank-scaled poster wall | Top-50 grid |
+| **Canvas** | heights and tier bands on a free board | Tier list |
+| **Spread** | an editorial column, Magazine layout, or award categories | Awards |
+| **Stage** | the Podium / Rushmore / Throne presets plus a face-off tournament | Podium, G.O.A.T., Rushmore, Bracket |
+
 ## Open threads (next rounds)
 
-- **Default long Top-N (10–50).** With the shelf dropped, which mode owns
-  the plain "rank my top 25" list: Spread's Column layout, or Canvas?
-- **Mode switching.** Is one list viewable in several modes (v1 behaviour),
-  or is the mode chosen when the list is created? How does data map
-  between them (tiers ↔ positions ↔ bracket seeds)?
+- Award lists carry *categories* (several small rankings), not one order.
+  Is an awards list a set of sub-lists, each viewable in any mode?
 - Trait extraction for Taste DNA (AI-tagged per item at enrichment time?)
   and where recommendations show up.
-- The publish surface: the public list page, card templates and the embed
+- The publish surface: the public list page, social cards and the embed
   widget.
-- Technical package: the v2 data model, what to port and delete, store
-  consolidation, and how much of the quality-gate machinery to keep.
+- Technical package (next): the v2 data model, what to port and delete,
+  store consolidation, Claude integration, how much quality-gate machinery
+  to keep, and milestones.
