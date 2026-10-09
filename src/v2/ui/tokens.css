@@ -1,0 +1,236 @@
+/*
+ * GOAT v2 design tokens, carried over from the interaction studies
+ * (docs/v2/prototypes/shared.css). A dark screening room: glass panels over a
+ * blue-black ground, colour taken from each item's art, award gold as the only
+ * fixed accent.
+ *
+ * Everything is scoped under .goat-v2 so these rules never reach a v1 page,
+ * even after a client-side navigation has loaded this stylesheet.
+ */
+
+.goat-v2 {
+  color-scheme: dark;
+
+  --ink-0: #06070c;
+  --ink-1: #0c0e17;
+  --glass: rgba(178, 190, 255, 0.055);
+  --glass-strong: rgba(178, 190, 255, 0.1);
+  --glass-edge: rgba(200, 210, 255, 0.13);
+  --glass-edge-hi: rgba(225, 232, 255, 0.28);
+
+  --fg: #eceef7;
+  --fg-muted: #9198b0;
+  --fg-faint: #5d6380;
+
+  --gold: #e9c46a;
+  --gold-hi: #ffe3a1;
+  --gold-glow: rgba(233, 196, 106, 0.35);
+  --danger: #ff7a7a;
+
+  /* font variables come from next/font in src/app/v2/layout.tsx */
+  --display: var(--font-v2-display), "Arial Narrow", sans-serif;
+  --body: var(--font-v2-body), ui-sans-serif, system-ui, sans-serif;
+  --mono: var(--font-v2-mono), ui-monospace, monospace;
+
+  --step--1: 0.8125rem;
+  --step-0: 0.9375rem;
+  --step-1: 1.125rem;
+  --step-2: 1.5rem;
+  --step-4: 3.5rem;
+
+  --r-md: 14px;
+  --r-lg: 22px;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  min-height: 100vh;
+  background:
+    radial-gradient(60% 50% at 50% 0%, rgba(233, 196, 106, 0.08), transparent 70%),
+    var(--ink-0);
+  color: var(--fg);
+  font: 400 var(--step-0) / 1.55 var(--body);
+  -webkit-font-smoothing: antialiased;
+}
+
+.goat-v2 :focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.goat-v2 .v2-wrap {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding-inline: 16px;
+  padding-block: 40px 80px;
+  display: grid;
+  gap: 48px;
+}
+
+.goat-v2 .v2-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.goat-v2 .v2-wordmark {
+  font: 900 1.5rem / 1 var(--display);
+  letter-spacing: 0.04em;
+  color: var(--gold);
+}
+
+.goat-v2 .v2-wordmark small {
+  color: var(--fg-muted);
+  font-weight: 600;
+  font-size: 0.65em;
+  margin-left: 0.4em;
+  letter-spacing: 0.12em;
+}
+
+.goat-v2 .v2-eyebrow {
+  font: 600 var(--step--1) / 1 var(--body);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.goat-v2 .v2-hero {
+  display: grid;
+  gap: 18px;
+  max-width: 760px;
+}
+
+.goat-v2 .v2-hero h1 {
+  margin: 0;
+  font: 900 clamp(2.8rem, 8vw, 5.6rem) / 0.9 var(--display);
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+.goat-v2 .v2-hero h1 em {
+  font-style: normal;
+  color: var(--gold);
+}
+
+.goat-v2 .v2-hero p {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: var(--step-1);
+  max-width: 60ch;
+}
+
+.goat-v2 .v2-glass {
+  background: var(--glass);
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--r-md);
+  backdrop-filter: blur(18px) saturate(140%);
+}
+
+.goat-v2 .v2-prompt {
+  display: flex;
+  gap: 12px;
+  padding: 10px 10px 10px 20px;
+  align-items: center;
+  border-radius: 999px;
+}
+
+.goat-v2 .v2-prompt input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  color: var(--fg);
+  font: 500 var(--step-1) / 1.2 var(--body);
+}
+
+.goat-v2 .v2-prompt input::placeholder {
+  color: var(--fg-faint);
+}
+
+.goat-v2 .v2-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.6em 1.1em;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: var(--gold);
+  color: #1a1406;
+  font: 600 var(--step--1) / 1 var(--body);
+  cursor: pointer;
+}
+
+.goat-v2 .v2-btn:disabled {
+  background: var(--glass-strong);
+  border-color: var(--glass-edge);
+  color: var(--fg-muted);
+  cursor: not-allowed;
+}
+
+.goat-v2 .v2-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font: 500 var(--step--1) / 1 var(--mono);
+  color: var(--fg-muted);
+}
+
+.goat-v2 .v2-chip i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--fg-faint);
+}
+
+.goat-v2 .v2-chip[data-status="guest"] i,
+.goat-v2 .v2-chip[data-status="member"] i {
+  background: var(--gold);
+  box-shadow: 0 0 10px var(--gold-glow);
+}
+
+.goat-v2 .v2-chip[data-status="error"] i {
+  background: var(--danger);
+}
+
+.goat-v2 .v2-roadmap {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.goat-v2 .v2-roadmap li {
+  padding: 16px 18px;
+  display: grid;
+  gap: 6px;
+  align-content: start;
+}
+
+.goat-v2 .v2-roadmap b {
+  font: 800 1.2rem / 1 var(--display);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.goat-v2 .v2-roadmap span {
+  color: var(--fg-muted);
+  font-size: var(--step--1);
+}
+
+.goat-v2 .v2-roadmap li[data-state="done"] {
+  border-color: rgba(233, 196, 106, 0.45);
+}
+
+.goat-v2 .v2-roadmap li[data-state="done"] b {
+  color: var(--gold);
+}
+
+.goat-v2 .v2-num {
+  font: 600 var(--step--1) / 1 var(--mono);
+  color: var(--fg-faint);
+}

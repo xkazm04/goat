@@ -72,7 +72,12 @@ function sqlFiles(): string[] {
 
 function createdTables(): string[] {
   const created = new Set<string>();
-  const re = /\b(create|drop)\s+table\s+(?:if\s+(?:not\s+)?exists\s+)?(?:public\.)?"?([a-z_]+)"?/gi;
+  // database.ts mirrors the public schema only. A name qualified with another
+  // schema (goat_v2.lists, typed under src/v2) is not its population, so the
+  // trailing lookahead refuses a partial match such as `goat_v` out of
+  // `goat_v2.profiles` (negative control 2026-10-09: without it the run
+  // reported a phantom untyped table "goat_v").
+  const re = /\b(create|drop)\s+table\s+(?:if\s+(?:not\s+)?exists\s+)?(?:public\.)?"?([a-z_]+)"?(?![\w.])/gi;
   for (const f of sqlFiles()) {
     const sql = readFileSync(f, 'utf8').replace(/--[^\n]*/g, '');
     for (const m of sql.matchAll(re)) {

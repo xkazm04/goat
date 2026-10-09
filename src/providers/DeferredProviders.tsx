@@ -1,6 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { usePathname } from 'next/navigation';
 import { Component, type ReactNode } from 'react';
 
 import { useDeferredMount } from '@/providers/deferred-mount';
@@ -69,11 +70,16 @@ class DeferredRuntimeBoundary extends Component<{ children: ReactNode }, { faile
  */
 export function DeferredProviders({ children }: { children: ReactNode }) {
   const ready = useDeferredMount();
+  // /v2 is the parallel rebuild with its own shell: v1's command palette and
+  // prefetching stay out of it. Temporary seam, deleted with v1 at the swap
+  // (docs/v2/TECHNICAL_PACKAGE.md §10, M7).
+  const pathname = usePathname();
+  const isV2 = pathname === '/v2' || pathname?.startsWith('/v2/');
 
   return (
     <>
       {children}
-      {ready && (
+      {ready && !isV2 && (
         <DeferredRuntimeBoundary>
           <PrefetchProvider>
             <CommandPaletteProvider>{null}</CommandPaletteProvider>

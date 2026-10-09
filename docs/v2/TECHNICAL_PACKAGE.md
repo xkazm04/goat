@@ -399,7 +399,7 @@ Either fix it properly in v2 (`instrumentation.ts` +
 | 5 | The service-role key is used in 7 files, including edge OG | Medium | Server-only module; OG uses anon + RLS |
 | 6 | AI cost runaway | Medium | `ai_usage` quotas, caching, batches for bulk work |
 | 7 | Satori can't render every cover effect | Low | An OG-safe cover variant (§2.2) |
-| 8 | Repo junk: `CUsersmkdoldollagoattemp_items.json` (190 KB), `database/goals.db` | Low | Delete in M0 |
+| 8 | Repo junk: `database/goals.db` | Low | Deleted in M0. (`CUsersmkdoldollagoattemp_items.json` turned out to be an untracked local file, not repo content.) |
 
 ### Open decisions
 
@@ -423,7 +423,7 @@ one developer plus agents.
 
 | # | Milestone | Scope | Exit criteria |
 |---|---|---|---|
-| **M0** | Ground | `src/v2` + `/v2` route group, isolation lint rule, design tokens from `shared.css`, the v2 Supabase baseline + generated types, anonymous auth, lean CI workflow, repo junk removed | `/v2` renders the glass shell for an anonymous user. CI is three green jobs. |
+| **M0** ✅ | Ground | `src/v2` + `/v2` route, isolation lint rule (both directions, proved by `src/v2/isolation.test.ts`), design tokens + fonts, `goat_v2` baseline migration with RLS (guarded by `supabase/migrations/goat_v2_baseline.test.ts`), anonymous guest sessions, v1 chrome seam, repo junk removed | **Done 2026-10-09.** `/v2` renders the glass shell and its session state. Every existing CI gate is green. Lean CI: the existing `gates.yml` already runs typecheck, lint and vitest over `src/v2`. The heavier jobs (ratchet, findings, structure, doc coupling) stay until v1 is deleted at M7, because they guard v1 code. |
 | **M1** | List core | `ListDoc`, commands, reducer, undo, IndexedDB log, Supabase sync; **Spread** and **Mosaic**; `<Cover/>` | Rank a fixture list of 25 in Spread and Mosaic, reload, undo. Reducer and projection tests pass. |
 | **M2** | All four modes | **Canvas** (tier bands), **Stage** (presets, face-off, tournament on the ported bracket engine), the `layoutId` mode morph, keyboard paths | The Study F behaviours work in React. The Playwright smoke ranks in every mode. |
 | **M3** | AI creation | Claude client, `/api/v2/pool` (web search + `propose_candidate` streaming), ported enrichment, `/v2/new` prune UI, quotas, fixture provider for CI | Prompt "GOAT 90s sci-fi films" yields about 30 candidates with art and traits in under about 30s, streaming, and ranking can start. |

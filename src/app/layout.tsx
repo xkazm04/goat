@@ -2,12 +2,12 @@ import './globals.css';
 import { Inter, Space_Grotesk } from 'next/font/google';
 
 import { AuthHeader, Toaster } from '@/components/auth';
-import { PageTransition } from '@/components/page-transition';
 import { ThemeProvider } from '@/components/theme/theme-provider';
 import { DeferredProviders } from '@/providers/DeferredProviders';
 import { QueryProvider } from '@/providers/query-provider';
 
 import { DevCssVarCheck } from './dev-css-var-check';
+import { V1Chrome } from './v1-chrome';
 
 import type { Metadata } from 'next';
 
@@ -110,15 +110,8 @@ export default function RootLayout({
                   >
                     Skip to main content
                   </a>
-                  <div className="min-h-screen bg-linear-to-b from-gray-900 to-gray-800/95 text-gray-100 w-full flex flex-col">
-                    {/* Auth header -- sign in button or user menu */}
-                    <div className="fixed top-4 right-4 z-toast">
-                      <AuthHeader />
-                    </div>
-                    <main id="main-content" tabIndex={-1}>
-                      <PageTransition>{children}</PageTransition>
-                    </main>
-                  </div>
+                  {/* v1 chrome everywhere except /v2, which has its own shell */}
+                  <V1Chrome header={<AuthHeader />}>{children}</V1Chrome>
                   <Toaster />
                   {/* Design-token contract check: a client component, so it
                       actually runs in a browser (this file is a server

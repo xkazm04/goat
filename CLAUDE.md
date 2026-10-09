@@ -6,6 +6,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **G.O.A.T. (Greatest Of All Time)** - A Next.js application for creating and ranking custom lists using an interactive drag-and-drop match system. Users can create ranked lists (Top 10, Top 50, etc.) by matching items from a backlog through an intuitive grid-based interface.
 
+### v2 is being rebuilt beside v1
+
+v2 is a slim rebuild served at `/v2` until it replaces v1 (milestone M7):
+- **Product decisions:** `docs/v2/DIRECTION.md`.
+- **Architecture and milestones:** `docs/v2/TECHNICAL_PACKAGE.md`.
+- **Interactive studies the UI follows:** `docs/v2/prototypes/`.
+- **Where the code lives:** domain code in `src/v2/` (rules in `src/v2/README.md`), routes in `src/app/v2/`. The schema is `goat_v2`, from `supabase/migrations/20261009000000_goat_v2_baseline.sql`.
+- **Isolation is a lint error in both directions.** v2 imports only `@/v2/*`, and v1 never imports `@/v2/*`. To reuse a v1 module, port it into `src/v2`.
+- **Temporary seams that go with v1 at the swap:** `src/app/v1-chrome.tsx` and the `/v2` check in `src/providers/DeferredProviders.tsx` keep v1's chrome off `/v2`.
+
+The rest of this file describes v1.
+
 ## Common Commands
 
 ### Development

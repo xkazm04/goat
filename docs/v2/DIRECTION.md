@@ -166,6 +166,15 @@ This round covers three tracks:
   critic chat → handoff into Study F (`localStorage goat.v2.handoff`,
   `modes.html#handoff`). The AI is scripted in the prototype.
 
+## Round 10: last polish round, then build
+
+- **Polish:** a high-creativity, high-risk pass with free scope on the
+  surviving studies. F modes, G awards and H create each get a signature
+  environment and moments of celebration. The hub becomes a showcase, and the
+  E4 persona card gets real holographic foil, a 3D flip and a pack-opening
+  reveal. Studies A–D and E1–E3 are kept as an archive.
+- **M0 foundation is built** on this branch (see the technical package §10).
+
 ## Open threads (next rounds)
 
 - Award lists carry *categories* (several small rankings), not one order.

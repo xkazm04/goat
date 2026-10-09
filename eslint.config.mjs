@@ -273,6 +273,50 @@ const eslintConfig = [
       "valid-typeof": "error",
     },
   },
+
+  // ===========================================================================
+  // v1 <-> v2 isolation — BLOCKING (docs/v2/TECHNICAL_PACKAGE.md §2).
+  //
+  // v2 is built beside v1 and v1 is deleted whole at the swap. That only works
+  // if neither side reaches into the other: v2 code may import only `@/v2/*`
+  // (a v1 module is ported by moving or copying it into src/v2, never by
+  // importing it across), and v1 code may never import `@/v2/*`. Both
+  // populations were 0 when this was added; src/v2/isolation.test.ts proves
+  // each direction can fail.
+  // ===========================================================================
+  {
+    files: ["src/v2/**/*.{ts,tsx}", "src/app/v2/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              regex: "^@/(?!v2(/|$))",
+              message: "v2 imports only from @/v2. Port the v1 module into src/v2 instead of importing it.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: ["src/v2/**", "src/app/v2/**"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              regex: "^@/v2(/|$)",
+              message: "v1 must not import v2. v2 replaces v1 at the swap; v1 code is deleted, not wired in.",
+            },
+          ],
+        },
+      ],
+    },
+  },
 ];
 
 export default eslintConfig;
