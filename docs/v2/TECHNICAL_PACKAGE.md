@@ -418,13 +418,37 @@ Still open:
 
 ## 10. Milestones
 
+### What M1 changed from the plan above
+
+- **Local persistence saves snapshots, not a command log.** IndexedDB stores
+  the whole undo history (up to 100 states) plus the items. A document is a
+  few kilobytes, so this is simpler than replaying commands, and a reload
+  keeps undo.
+- **ArtDirection is `{ hues, motif }` for now.** Composition, type and mood
+  arrive with Claude's art director in M3. Until then `fallbackArt(title)`
+  derives a stable cover, and real artwork is shown first when `image_url`
+  is set.
+- **The pool has no stored order in Supabase.** Pool rows carry a null
+  position and load alphabetically.
+- **Your own list opens from this browser's copy when one exists.** It is
+  always at least as fresh as the server's, because every edit lands locally
+  first. Edits made on another device can be overwritten
+  (last write wins), which is acceptable while there is no collaboration.
+- **Dragging uses `@dnd-kit/core`** (draggable covers, droppable ranks and
+  pool) **plus framer-motion `layoutId`**, so covers travel between ranks and
+  between modes. Spread and Mosaic share one `Card` component.
+- **Seed import:** `npm run seed:v2` (a dry run) and `npm run seed:v2 --
+  --apply`. Ids are kept, so a re-run updates in place. Lists are published
+  as public starters owned by a seed curator account the script creates.
+
+
 Each milestone ends with a demoable `/v2` and green CI. Rough sizes assume
 one developer plus agents.
 
 | # | Milestone | Scope | Exit criteria |
 |---|---|---|---|
 | **M0** ✅ | Ground | `src/v2` + `/v2` route, isolation lint rule (both directions, proved by `src/v2/isolation.test.ts`), design tokens + fonts, `goat_v2` baseline migration with RLS (guarded by `supabase/migrations/goat_v2_baseline.test.ts`), anonymous guest sessions, v1 chrome seam, repo junk removed | **Done 2026-10-09.** `/v2` renders the glass shell and its session state. Every existing CI gate is green. Lean CI: the existing `gates.yml` already runs typecheck, lint and vitest over `src/v2`. The heavier jobs (ratchet, findings, structure, doc coupling) stay until v1 is deleted at M7, because they guard v1 code. |
-| **M1** | List core | `ListDoc`, commands, reducer, undo, IndexedDB log, Supabase sync; **Spread** and **Mosaic**; `<Cover/>` | Rank a fixture list of 25 in Spread and Mosaic, reload, undo. Reducer and projection tests pass. |
+| **M1** ✅ | List core | `ListDoc`, commands, reducer, undo, local persistence, Supabase sync; **Spread** and **Mosaic**; `<Cover/>`; v1 seed import | **Done 2026-10-11.** `/v2/l/demo` ranks the 50-RPG demo in Mosaic and Spread with drag, keyboard and undo, and survives a reload with undo intact. Verified in Chromium (11 checks) plus 37 unit tests. Supabase sync and `npm run seed:v2` are written and unit-tested but **not yet run against a real database**. |
 | **M2** | All four modes | **Canvas** (tier bands), **Stage** (presets, face-off, tournament on the ported bracket engine), the `layoutId` mode morph, keyboard paths | The Study F behaviours work in React. The Playwright smoke ranks in every mode. |
 | **M3** | AI creation | Claude client, `/api/v2/pool` (web search + `propose_candidate` streaming), ported enrichment, `/v2/new` prune UI, quotas, fixture provider for CI | Prompt "GOAT 90s sci-fi films" yields about 30 candidates with art and traits in under about 30s, streaming, and ranking can start. |
 | **M4** | Co-curator | Critic chat (cached and streaming), gap spotter, Batches tagging for custom items | Critic responds to live list changes without cache misses. Gaps land in the pool. |

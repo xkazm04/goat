@@ -23,8 +23,20 @@ The interactive studies the UI follows are in `docs/v2/prototypes/`.
 |---|---|---|
 | `db/` | Public env parsing (`env.ts`), the browser Supabase client bound to the `goat_v2` schema (`browser.ts`) | M0 |
 | `auth/` | Guest sessions via anonymous sign-in (`session.ts`) and the `useSession` hook | M0 |
-| `ui/` | Design tokens (`tokens.css`) and shell components | M0 |
-| `list/`, `modes/`, `covers/`, `dna/`, `ai/`, `enrichment/` | Arrive in M1–M5 | — |
+| `ui/` | Design tokens (`tokens.css`), editor styles (`editor.css`), shell and home components | M0, M1 |
+| `list/` | The list document: `types.ts`, the pure `reducer.ts` (every edit is a `Command`), `history.ts` (undo/redo), `projections.ts` (Spread rows, Mosaic bands), `store.ts` (one zustand store per open list), `storage.ts` (IndexedDB autosave), `sync.ts` (goat_v2 rows and push/load/fork), `fixtures.ts` (the demo list) | M1 |
+| `covers/` | `art.ts` (ArtDirection and `fallbackArt`) and `Cover.tsx` (real art first, generative fallback) | M1 |
+| `editor/` | The editor: `EditorRoute.tsx` (demo, your list, someone else's), `Editor.tsx` (toolbar, drag, keys, modes), `Mosaic.tsx`, `Spread.tsx`, `Pool.tsx`, `Card.tsx` | M1 |
+| `seeds/` | `fromV1.ts`, the pure v1 to goat_v2 transform behind `npm run seed:v2` | M1 |
+| `dna/`, `ai/`, `enrichment/` | Arrive in M3–M5 | — |
+
+## Routes
+
+- `/v2`: home, with the demo, your lists and starter lists.
+- `/v2/l/demo`: the bundled demo list, saved in this browser only. It works
+  with no database configured.
+- `/v2/l/<id>`: a goat_v2 list. Your own lists are editable and synced.
+  Anyone else's published list is read-only with "Make it mine".
 
 ## Database setup (once per Supabase project)
 
@@ -35,4 +47,8 @@ After applying it:
 2. Enable **Authentication > Providers > Anonymous sign-ins**.
 
 Without step 2 the shell shows "Session unavailable". Without Supabase
-settings at all, it shows an offline preview.
+settings at all, it shows an offline preview, and only the demo list opens.
+
+To import v1's seeded lists as starters, run `npm run seed:v2` (a dry run
+that prints the plan), then `npm run seed:v2 -- --apply`. It needs
+`SUPABASE_SERVICE_ROLE_KEY`.

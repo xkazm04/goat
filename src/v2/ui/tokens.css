@@ -234,3 +234,51 @@
   font: 600 var(--step--1) / 1 var(--mono);
   color: var(--fg-faint);
 }
+
+/* ---------- home: list cards ---------- */
+.goat-v2 .hl {
+  display: grid;
+  gap: 14px;
+}
+
+.goat-v2 .hl-grid {
+  list-style: none;
+  margin: 0 0 18px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.goat-v2 .hl-card {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  color: var(--fg);
+  text-decoration: none;
+  transition: transform 0.3s var(--ease-out), border-color 0.2s;
+}
+
+.goat-v2 .hl-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--glass-edge-hi);
+}
+
+.goat-v2 .hl-card b {
+  font: 800 1.35rem / 1 var(--display);
+  text-transform: uppercase;
+}
+
+.goat-v2 .hl-covers {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.goat-v2 .hl-covers:has(> :only-child) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.goat-v2 .hl-covers:has(> :only-child) .v2-cover {
+  aspect-ratio: 16 / 9;
+}
