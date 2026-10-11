@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { artOrFallback } from '@/v2/covers/art';
 
 import { isConsistent } from './reducer';
-import { DEFAULT_TIERS, LIST_SIZES, type ListDoc, type ListItem, type ListSize } from './types';
+import { DEFAULT_TIERS, LIST_SIZES, STAGE_PRESETS, type ListDoc, type ListItem, type ListSize } from './types';
 
 import type { EditorStore } from './store';
 import type { getBrowserClient } from '@/v2/db/browser';
@@ -24,6 +24,7 @@ const listRowSchema = z.object({
   topic: z.string(),
   size: z.number().refine((n): n is ListSize => (LIST_SIZES as readonly number[]).includes(n)),
   tiers: z.array(tierSchema).catch(DEFAULT_TIERS),
+  stage_preset: z.enum(STAGE_PRESETS).catch('podium'),
   visibility: z.enum(['private', 'unlisted', 'public']),
   published_at: z.string().nullable(),
 });
@@ -41,6 +42,7 @@ const itemRowSchema = z.object({
 const entryRowSchema = z.object({
   item_id: z.string(),
   position: z.number().int().nullable(),
+  canvas_x: z.number().nullable().catch(null),
   note: z.string().nullable(),
   items: itemRowSchema,
 });
@@ -72,7 +74,11 @@ export function fromRows(list: ListRow, entries: EntryRow[]): LoadedList {
   const ranked = entries.filter((e) => e.position !== null).sort((a, b) => a.position! - b.position!);
   const pool = entries.filter((e) => e.position === null).sort((a, b) => a.items.title.localeCompare(b.items.title));
   const notes: Record<string, string> = {};
-  for (const e of entries) if (e.note) notes[e.item_id] = e.note;
+  const canvasX: Record<string, number> = {};
+  for (const e of entries) {
+    if (e.note) notes[e.item_id] = e.note;
+    if (e.canvas_x !== null) canvasX[e.item_id] = e.canvas_x;
+  }
 
   return {
     doc: {
@@ -84,6 +90,8 @@ export function fromRows(list: ListRow, entries: EntryRow[]): LoadedList {
       pool: [...ranked.slice(list.size), ...pool].map((e) => e.item_id),
       tiers: list.tiers,
       notes,
+      canvasX,
+      stagePreset: list.stage_preset,
     },
     items: entries.map((e) => toItem(e.items)),
     ownerId: list.owner_id,
@@ -94,22 +102,33 @@ export function fromRows(list: ListRow, entries: EntryRow[]): LoadedList {
 /** A document to rows. Pool entries carry a null position. */
 export function toRows(doc: ListDoc, ownerId: string) {
   return {
-    list: { id: doc.id, owner_id: ownerId, title: doc.title, topic: doc.topic, size: doc.size, tiers: doc.tiers },
-    entries: [
-      ...doc.order.map((id, i) => ({ list_id: doc.id, item_id: id, position: i, note: doc.notes[id] ?? null })),
-      ...doc.pool.map((id) => ({ list_id: doc.id, item_id: id, position: null, note: doc.notes[id] ?? null })),
-    ],
+    list: {
+      id: doc.id,
+      owner_id: ownerId,
+      title: doc.title,
+      topic: doc.topic,
+      size: doc.size,
+      tiers: doc.tiers,
+      stage_preset: doc.stagePreset,
+    },
+    entries: [...doc.order, ...doc.pool].map((id) => ({
+      list_id: doc.id,
+      item_id: id,
+      position: doc.order.includes(id) ? doc.order.indexOf(id) : null,
+      canvas_x: doc.canvasX[id] ?? null,
+      note: doc.notes[id] ?? null,
+    })),
   };
 }
 
 export async function loadList(client: Client, listId: string): Promise<LoadedList | null> {
-  const listRes = await client.from('lists').select('id, owner_id, title, topic, size, tiers, visibility, published_at').eq('id', listId).maybeSingle();
+  const listRes = await client.from('lists').select('id, owner_id, title, topic, size, tiers, stage_preset, visibility, published_at').eq('id', listId).maybeSingle();
   if (listRes.error) throw new Error(listRes.error.message);
   if (!listRes.data) return null;
 
   const entriesRes = await client
     .from('list_entries')
-    .select('item_id, position, note, items(id, title, year, creator, image_url, art, traits)')
+    .select('item_id, position, canvas_x, note, items(id, title, year, creator, image_url, art, traits)')
     .eq('list_id', listId);
   if (entriesRes.error) throw new Error(entriesRes.error.message);
 

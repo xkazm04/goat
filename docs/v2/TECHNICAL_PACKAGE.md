@@ -418,6 +418,26 @@ Still open:
 
 ## 10. Milestones
 
+### What M2 changed from the plan above
+
+- **The tournament is a new 80-line engine** (`src/v2/list/tournament.ts`),
+  not a port of v1's 1,311-line bracket generator. A top-8 single
+  elimination is all Stage needs. Seeding is 1v8, 4v5, 2v7, 3v6. The result
+  ranks the champion, the runner-up, then each round's losers by seed.
+- **Face-offs reuse `place`.** If the challenger wins it takes the spot; if
+  the incumbent holds, the challenger lands right below. A tournament result
+  is one `reorder` command, so it is a single undo step.
+- **Canvas drops are one `place` command carrying `x`.** Height picks the
+  rank (`rankIndexAt` over the tier bands), and sideways position is kept per
+  item. While a tier line is dragged, the band layout is frozen at the start,
+  so the line follows the pointer rather than the reflowing bands.
+- **New document fields:** `canvasX` and `stagePreset`, stored in
+  `list_entries.canvas_x` and `lists.stage_preset`. Saves from M1 are
+  upgraded on load (`normalizeDoc`).
+- **CI:** `v2-smoke` runs `npx playwright test -c playwright.v2.config.ts`
+  with no database, because the demo list lives in the browser. Locally,
+  set `PW_CHROMIUM_PATH` to use a browser that is already installed.
+
 ### What M1 changed from the plan above
 
 - **Local persistence saves snapshots, not a command log.** IndexedDB stores
@@ -449,7 +469,7 @@ one developer plus agents.
 |---|---|---|---|
 | **M0** ✅ | Ground | `src/v2` + `/v2` route, isolation lint rule (both directions, proved by `src/v2/isolation.test.ts`), design tokens + fonts, `goat_v2` baseline migration with RLS (guarded by `supabase/migrations/goat_v2_baseline.test.ts`), anonymous guest sessions, v1 chrome seam, repo junk removed | **Done 2026-10-09.** `/v2` renders the glass shell and its session state. Every existing CI gate is green. Lean CI: the existing `gates.yml` already runs typecheck, lint and vitest over `src/v2`. The heavier jobs (ratchet, findings, structure, doc coupling) stay until v1 is deleted at M7, because they guard v1 code. |
 | **M1** ✅ | List core | `ListDoc`, commands, reducer, undo, local persistence, Supabase sync; **Spread** and **Mosaic**; `<Cover/>`; v1 seed import | **Done 2026-10-11.** `/v2/l/demo` ranks the 50-RPG demo in Mosaic and Spread with drag, keyboard and undo, and survives a reload with undo intact. Verified in Chromium (11 checks) plus 37 unit tests. Supabase sync and `npm run seed:v2` are written and unit-tested but **not yet run against a real database**. |
-| **M2** | All four modes | **Canvas** (tier bands), **Stage** (presets, face-off, tournament on the ported bracket engine), the `layoutId` mode morph, keyboard paths | The Study F behaviours work in React. The Playwright smoke ranks in every mode. |
+| **M2** ✅ | All four modes | **Canvas** (tier bands, draggable and renamable tier lines), **Stage** (Podium / Rushmore / Throne, face-off, tournament), the mode morph, keyboard paths | **Done 2026-10-11.** The Playwright smoke (`e2e-v2/smoke.spec.ts`, now the `v2-smoke` CI job) ranks in every mode, runs a face-off and a full 8-seed tournament, then reloads and undoes. |
 | **M3** | AI creation | Claude client, `/api/v2/pool` (web search + `propose_candidate` streaming), ported enrichment, `/v2/new` prune UI, quotas, fixture provider for CI | Prompt "GOAT 90s sci-fi films" yields about 30 candidates with art and traits in under about 30s, streaming, and ranking can start. |
 | **M4** | Co-curator | Critic chat (cached and streaming), gap spotter, Batches tagging for custom items | Critic responds to live list changes without cache misses. Gaps land in the pool. |
 | **M5** | Taste DNA | DNA math, `taste_profiles`, persona task, **E4 `<PersonaCard/>`** on `/v2/me`, recommendations | Publishing two lists produces a persona card and five recommendations with reasons. |

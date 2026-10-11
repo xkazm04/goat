@@ -18,3 +18,8 @@ export function useEditor<T>(selector: (state: EditorState) => T): T {
 
 /** Whether the open list can be edited by this visitor. */
 export const ReadOnlyContext = createContext(false);
+
+export type Mode = 'mosaic' | 'canvas' | 'spread' | 'stage';
+
+/** The mode on screen, for behaviour that only makes sense in one (Canvas's sideways nudge). */
+export const ModeContext = createContext<Mode>('mosaic');

@@ -1,4 +1,4 @@
-import { isConsistent } from './reducer';
+import { isConsistent, normalizeDoc } from './reducer';
 
 import type { History } from './history';
 import type { EditorStore } from './store';
@@ -27,8 +27,10 @@ export function readSaved(value: unknown): Saved | null {
   const h = v.history;
   if (v.version !== 1 || !h || !Array.isArray(v.items)) return null;
   if (!Array.isArray(h.past) || !Array.isArray(h.future) || !h.present) return null;
-  const docs = [...h.past, h.present, ...h.future];
-  return docs.every((d) => d && Array.isArray(d.order) && Array.isArray(d.pool) && isConsistent(d)) ? (v as Saved) : null;
+  if (![...h.past, h.present, ...h.future].every((d) => d && Array.isArray(d.order) && Array.isArray(d.pool))) return null;
+  const history = { past: h.past.map(normalizeDoc), present: normalizeDoc(h.present), future: h.future.map(normalizeDoc) };
+  const docs = [...history.past, history.present, ...history.future];
+  return docs.every(isConsistent) ? { ...(v as Saved), history } : null;
 }
 
 export function memoryStorage(): ListStorage {

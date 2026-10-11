@@ -36,7 +36,13 @@ export interface ListDoc {
   pool: ItemId[];
   tiers: Tier[];
   notes: Record<ItemId, string>;
+  /** Canvas only: where an item sits sideways, 0 (left) to 1 (right). Height comes from rank. */
+  canvasX: Record<ItemId, number>;
+  stagePreset: StagePreset;
 }
+
+export const STAGE_PRESETS = ['podium', 'rushmore', 'throne'] as const;
+export type StagePreset = (typeof STAGE_PRESETS)[number];
 
 export const DEFAULT_TIERS: Tier[] = [
   { name: 'GOAT', until: 3 },
@@ -47,10 +53,20 @@ export const DEFAULT_TIERS: Tier[] = [
 
 /** Every edit is one of these. Modes never change a ListDoc any other way. */
 export type Command =
-  /** Put an item at rank index `at` (0-based), from the pool or from elsewhere in the order. */
-  | { type: 'place'; id: ItemId; at: number }
+  /**
+   * Put an item at rank index `at` (0-based), from the pool or from elsewhere
+   * in the order. Canvas also passes `x`, so a drop is one undo step.
+   */
+  | { type: 'place'; id: ItemId; at: number; x?: number }
+  /** Re-order the top of the ranking: `ids` must be a permutation of the current top `ids.length`. */
+  | { type: 'reorder'; ids: ItemId[] }
   /** Send a ranked item back to the front of the pool. */
   | { type: 'unrank'; id: ItemId }
   | { type: 'setNote'; id: ItemId; text: string }
   | { type: 'setTitle'; title: string }
-  | { type: 'resize'; size: ListSize };
+  | { type: 'resize'; size: ListSize }
+  /** Move the cut after tier `index` so that tier ends at rank `until`. The last tier's end is fixed. */
+  | { type: 'setTierCut'; index: number; until: number }
+  | { type: 'renameTier'; index: number; name: string }
+  | { type: 'setX'; id: ItemId; x: number }
+  | { type: 'setPreset'; preset: StagePreset };

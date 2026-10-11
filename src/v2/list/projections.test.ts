@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { demoDoc } from './fixtures';
-import { projectMosaic, projectSpread, scaleOf, tierOf } from './projections';
+import { canvasBands, defaultX, projectCanvas, projectMosaic, projectSpread, rankIndexAt, scaleOf, tierOf } from './projections';
 
 describe('tierOf', () => {
   it('maps ranks to the default tiers', () => {
@@ -44,5 +44,34 @@ describe('projectMosaic', () => {
 
   it('scales by rank', () => {
     expect([1, 2, 4, 11, 30].map(scaleOf)).toEqual(['hero', 'large', 'medium', 'small', 'tiny']);
+  });
+});
+
+describe('canvas', () => {
+  it('stacks one band per tier, filling the board top to bottom', () => {
+    const bands = canvasBands(demoDoc());
+    expect(bands.map((b) => [b.tier, b.from, b.to])).toEqual([
+      ['GOAT', 1, 3],
+      ['Essential', 4, 10],
+      ['Great', 11, 25],
+    ]);
+    expect(bands[0].top).toBe(0);
+    const last = bands[bands.length - 1];
+    expect(last.top + last.height).toBeCloseTo(1);
+  });
+
+  it('places higher ranks higher, and rankIndexAt inverts it', () => {
+    const d = demoDoc();
+    const { bands, pins } = projectCanvas(d);
+    for (let i = 1; i < pins.length; i++) expect(pins[i].y).toBeGreaterThan(pins[i - 1].y);
+    for (const p of pins) expect(rankIndexAt(bands, p.y)).toBe(p.rank - 1);
+    expect(rankIndexAt(bands, -1)).toBe(0);
+    expect(rankIndexAt(bands, 2)).toBe(24);
+  });
+
+  it('uses the stored x when an item was placed by hand', () => {
+    const d = { ...demoDoc(), canvasX: { er: 0.05 } };
+    expect(projectCanvas(d).pins[0].x).toBe(0.05);
+    expect(projectCanvas(demoDoc()).pins[0].x).toBe(defaultX(1));
   });
 });

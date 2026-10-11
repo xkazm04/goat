@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import { demoDoc } from './fixtures';
-import { apply, isConsistent } from './reducer';
+import { apply, isConsistent, normalizeDoc } from './reducer';
 import { DEFAULT_TIERS, type Command, type ListDoc } from './types';
 
 function doc(order: string[], pool: string[], size: ListDoc['size'] = 10): ListDoc {
-  return { id: 't', title: 'Test', topic: 'x', size, order, pool, tiers: DEFAULT_TIERS, notes: {} };
+  return { id: 't', title: 'Test', topic: 'x', size, order, pool, tiers: DEFAULT_TIERS, notes: {}, canvasX: {}, stagePreset: 'podium' };
 }
 
 describe('place', () => {
@@ -78,6 +78,65 @@ describe('resize', () => {
   });
 });
 
+describe('place with x (Canvas)', () => {
+  it('moves and positions in one step, and is a no-op when nothing changes', () => {
+    const d = doc(['a', 'b'], ['c']);
+    const next = apply(d, { type: 'place', id: 'c', at: 0, x: 0.333333 });
+    expect(next.order).toEqual(['c', 'a', 'b']);
+    expect(next.canvasX).toEqual({ c: 0.333 });
+    expect(apply(next, { type: 'place', id: 'c', at: 0, x: 0.333 })).toBe(next);
+    expect(apply(next, { type: 'place', id: 'c', at: 0, x: 0.9 }).canvasX.c).toBe(0.9);
+  });
+
+  it('clamps x into the board', () => {
+    expect(apply(doc(['a'], []), { type: 'setX', id: 'a', x: 4 }).canvasX.a).toBe(1);
+    expect(apply(doc(['a'], []), { type: 'setX', id: 'a', x: -1 }).canvasX.a).toBe(0);
+  });
+});
+
+describe('reorder (tournament result)', () => {
+  it('rewrites the top of the ranking and leaves the rest', () => {
+    const d = doc(['a', 'b', 'c', 'd', 'e'], []);
+    expect(apply(d, { type: 'reorder', ids: ['c', 'a', 'd', 'b'] }).order).toEqual(['c', 'a', 'd', 'b', 'e']);
+  });
+
+  it('refuses ids that are not exactly the current top', () => {
+    const d = doc(['a', 'b', 'c'], ['z']);
+    expect(apply(d, { type: 'reorder', ids: ['z', 'a'] })).toBe(d);
+    expect(apply(d, { type: 'reorder', ids: ['a', 'a'] })).toBe(d);
+    expect(apply(d, { type: 'reorder', ids: ['a', 'b'] })).toBe(d);
+  });
+});
+
+describe('tiers', () => {
+  it('moves a cut between its neighbours and never past them', () => {
+    const d = doc([], []);
+    expect(apply(d, { type: 'setTierCut', index: 0, until: 5 }).tiers[0].until).toBe(5);
+    expect(apply(d, { type: 'setTierCut', index: 0, until: 40 }).tiers[0].until).toBe(9);
+    expect(apply(d, { type: 'setTierCut', index: 1, until: 1 }).tiers[1].until).toBe(4);
+    expect(apply(d, { type: 'setTierCut', index: 3, until: 30 })).toBe(d);
+  });
+
+  it('renames a tier, ignoring blanks', () => {
+    const d = doc([], []);
+    expect(apply(d, { type: 'renameTier', index: 0, name: '  Holy   trinity ' }).tiers[0].name).toBe('Holy trinity');
+    expect(apply(d, { type: 'renameTier', index: 0, name: '  ' })).toBe(d);
+  });
+
+  it('switches the stage preset', () => {
+    expect(apply(doc([], []), { type: 'setPreset', preset: 'throne' }).stagePreset).toBe('throne');
+  });
+});
+
+describe('normalizeDoc', () => {
+  it('fills the fields an M1 save does not have', () => {
+    const old = { id: 'x', title: 'T', topic: 't', size: 10, order: [], pool: [], tiers: DEFAULT_TIERS, notes: {} };
+    const n = normalizeDoc(old as unknown as ListDoc);
+    expect(n.canvasX).toEqual({});
+    expect(n.stagePreset).toBe('podium');
+  });
+});
+
 describe('invariants', () => {
   it('holds for every item under a long random command sequence', () => {
     let d = demoDoc();
@@ -90,13 +149,17 @@ describe('invariants', () => {
     const sizes = [10, 25, 50] as const;
     for (let step = 0; step < 2000; step++) {
       const id = ids[rand(ids.length)];
-      const roll = rand(4);
+      const roll = rand(6);
       const cmd: Command =
         roll === 0
           ? { type: 'unrank', id }
           : roll === 1
             ? { type: 'resize', size: sizes[rand(3)] }
-            : { type: 'place', id, at: rand(60) - 5 };
+            : roll === 2
+              ? { type: 'setTierCut', index: rand(4), until: rand(60) }
+              : roll === 3
+                ? { type: 'reorder', ids: [...d.order.slice(0, 4)].reverse() }
+                : { type: 'place', id, at: rand(60) - 5, x: rand(100) / 100 };
       d = apply(d, cmd);
       expect(isConsistent(d)).toBe(true);
     }

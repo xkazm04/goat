@@ -67,3 +67,69 @@ export function projectMosaic(doc: ListDoc): MosaicBand[] {
   }
   return bands;
 }
+
+/**
+ * Canvas: height is greatness. The board is split into tier bands, top to
+ * bottom; an item's height comes from its rank, its sideways position is free.
+ * All coordinates are fractions of the board (0..1).
+ */
+export interface CanvasBand {
+  index: number;
+  tier: string;
+  from: number;
+  to: number;
+  top: number;
+  height: number;
+}
+
+export interface CanvasPin {
+  id: ItemId;
+  rank: number;
+  x: number;
+  y: number;
+}
+
+export function canvasBands(doc: ListDoc): CanvasBand[] {
+  const spans: { index: number; tier: string; from: number; to: number }[] = [];
+  let from = 1;
+  doc.tiers.forEach((t, index) => {
+    const to = Math.min(t.until, doc.size);
+    if (from <= to) spans.push({ index, tier: t.name, from, to });
+    from = t.until + 1;
+  });
+  // A small tier still gets room: band height grows with the square root of its span.
+  const weights = spans.map((s) => Math.sqrt(s.to - s.from + 1));
+  const total = weights.reduce((a, b) => a + b, 0);
+  let top = 0;
+  return spans.map((s, i) => {
+    const height = weights[i] / total;
+    const band = { ...s, top, height };
+    top += height;
+    return band;
+  });
+}
+
+/** Spread items that were never placed by hand across the board without stacking them. */
+export function defaultX(rank: number): number {
+  return 0.1 + ((rank * 0.6180339887) % 1) * 0.8;
+}
+
+export function projectCanvas(doc: ListDoc): { bands: CanvasBand[]; pins: CanvasPin[] } {
+  const bands = canvasBands(doc);
+  const pins = doc.order.map((id, i) => {
+    const rank = i + 1;
+    const band = bands.find((b) => rank >= b.from && rank <= b.to) ?? bands[bands.length - 1];
+    const span = band.to - band.from + 1;
+    return { id, rank, x: doc.canvasX[id] ?? defaultX(rank), y: band.top + band.height * ((rank - band.from + 0.5) / span) };
+  });
+  return { bands, pins };
+}
+
+/** The rank index (0-based) a drop at height `y` asks for, against a given band layout. */
+export function rankIndexAt(bands: CanvasBand[], y: number): number {
+  const clamped = Math.min(Math.max(y, 0), 0.999999);
+  const band = bands.find((b) => clamped >= b.top && clamped < b.top + b.height) ?? bands[bands.length - 1];
+  const span = band.to - band.from + 1;
+  const offset = Math.floor(((clamped - band.top) / band.height) * span);
+  return band.from - 1 + Math.min(Math.max(offset, 0), span - 1);
+}

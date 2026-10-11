@@ -24,9 +24,9 @@ The interactive studies the UI follows are in `docs/v2/prototypes/`.
 | `db/` | Public env parsing (`env.ts`), the browser Supabase client bound to the `goat_v2` schema (`browser.ts`) | M0 |
 | `auth/` | Guest sessions via anonymous sign-in (`session.ts`) and the `useSession` hook | M0 |
 | `ui/` | Design tokens (`tokens.css`), editor styles (`editor.css`), shell and home components | M0, M1 |
-| `list/` | The list document: `types.ts`, the pure `reducer.ts` (every edit is a `Command`), `history.ts` (undo/redo), `projections.ts` (Spread rows, Mosaic bands), `store.ts` (one zustand store per open list), `storage.ts` (IndexedDB autosave), `sync.ts` (goat_v2 rows and push/load/fork), `fixtures.ts` (the demo list) | M1 |
+| `list/` | The list document: `types.ts`, the pure `reducer.ts` (every edit is a `Command`), `history.ts` (undo/redo), `projections.ts` (Spread rows, Mosaic bands, Canvas bands and pins), `tournament.ts` (Stage's bracket), `store.ts` (one zustand store per open list), `storage.ts` (IndexedDB autosave), `sync.ts` (goat_v2 rows and push/load/fork), `fixtures.ts` (the demo list) | M1 |
 | `covers/` | `art.ts` (ArtDirection and `fallbackArt`) and `Cover.tsx` (real art first, generative fallback) | M1 |
-| `editor/` | The editor: `EditorRoute.tsx` (demo, your list, someone else's), `Editor.tsx` (toolbar, drag, keys, modes), `Mosaic.tsx`, `Spread.tsx`, `Pool.tsx`, `Card.tsx` | M1 |
+| `editor/` | The editor: `EditorRoute.tsx` (demo, your list, someone else's), `Editor.tsx` (toolbar, drag, keys, modes, face-offs), one file per mode (`Mosaic.tsx`, `Canvas.tsx`, `Spread.tsx`, `Stage.tsx`, the last also holding `FaceOff` and `Tournament`), `Pool.tsx`, `Card.tsx` | M1, M2 |
 | `seeds/` | `fromV1.ts`, the pure v1 to goat_v2 transform behind `npm run seed:v2` | M1 |
 | `dna/`, `ai/`, `enrichment/` | Arrive in M3–M5 | — |
 
@@ -37,6 +37,13 @@ The interactive studies the UI follows are in `docs/v2/prototypes/`.
   with no database configured.
 - `/v2/l/<id>`: a goat_v2 list. Your own lists are editable and synced.
   Anyone else's published list is read-only with "Make it mine".
+
+## Smoke test
+
+`npx playwright test -c playwright.v2.config.ts` ranks the demo list in all
+four modes (`e2e-v2/smoke.spec.ts`). It starts its own dev server and needs
+no database; CI runs it as the `v2-smoke` job. Set `PW_CHROMIUM_PATH` to
+use a browser that is already installed.
 
 ## Database setup (once per Supabase project)
 

@@ -14,7 +14,7 @@ v2 is a slim rebuild served at `/v2` until it replaces v1 (milestone M7):
 - **Interactive studies the UI follows:** `docs/v2/prototypes/`.
 - **Where the code lives:** domain code in `src/v2/` (rules in `src/v2/README.md`), routes in `src/app/v2/`. The schema is `goat_v2`, from `supabase/migrations/20261009000000_goat_v2_baseline.sql`.
 - **Isolation is a lint error in both directions.** v2 imports only `@/v2/*`, and v1 never imports `@/v2/*`. To reuse a v1 module, port it into `src/v2`.
-- **Try it:** `/v2/l/demo` opens the editor with no database. `npm run seed:v2` (a dry run; add `-- --apply` to write) imports v1's seed lists into `goat_v2`.
+- **Try it:** `/v2/l/demo` opens the editor (Mosaic, Canvas, Spread, Stage) with no database. `npx playwright test -c playwright.v2.config.ts` is its smoke test (CI job `v2-smoke`). `npm run seed:v2` (a dry run; add `-- --apply` to write) imports v1's seed lists into `goat_v2`.
 - **Temporary seams that go with v1 at the swap:** `src/app/v1-chrome.tsx` and the `/v2` check in `src/providers/DeferredProviders.tsx` keep v1's chrome off `/v2`.
 
 The rest of this file describes v1.

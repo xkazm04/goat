@@ -5,8 +5,9 @@ import { motion } from 'framer-motion';
 import { useContext, type KeyboardEvent, type ReactNode } from 'react';
 
 import { Cover } from '@/v2/covers/Cover';
+import { defaultX } from '@/v2/list/projections';
 
-import { ReadOnlyContext, useEditor } from './context';
+import { ModeContext, ReadOnlyContext, useEditor } from './context';
 
 /**
  * Drag ids: a card is `item:<id>`; a rank slot is `rank:<index>` (0-based,
@@ -20,6 +21,8 @@ const itemDragId = (id: string) => `item:${id}`;
  */
 export function Card({ id, title = true, label }: { id: string; title?: boolean; label: string }) {
   const readOnly = useContext(ReadOnlyContext);
+  const mode = useContext(ModeContext);
+  const canvasX = useEditor((s) => s.history.present.canvasX[id]);
   const item = useEditor((s) => s.items[id]);
   const order = useEditor((s) => s.history.present.order);
   const dispatch = useEditor((s) => s.dispatch);
@@ -36,6 +39,10 @@ export function Card({ id, title = true, label }: { id: string; title?: boolean;
     } else if ((e.key === 'Delete' || e.key === 'Backspace') && rank >= 0) {
       e.preventDefault();
       dispatch({ type: 'unrank', id });
+    } else if (e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight') && mode === 'canvas' && rank >= 0) {
+      e.preventDefault();
+      const from = canvasX ?? defaultX(rank + 1);
+      dispatch({ type: 'setX', id, x: from + (e.key === 'ArrowLeft' ? -0.04 : 0.04) });
     } else if (e.key === 'Enter' && rank < 0) {
       e.preventDefault();
       dispatch({ type: 'place', id, at: order.length });

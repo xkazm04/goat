@@ -6,8 +6,8 @@ import '@/v2/ui/editor.css';
 const MILESTONES = [
   { id: 'M0', name: 'Ground', detail: 'Shell, schema, guest sessions, isolation rule', state: 'done' },
   { id: 'M1', name: 'List core', detail: 'One list document, Spread and Mosaic, undo', state: 'done' },
-  { id: 'M2', name: 'Four modes', detail: 'Canvas and Stage, the mode-switch morph', state: 'next' },
-  { id: 'M3', name: 'Create with AI', detail: 'Prompt to a streaming candidate pool on Claude', state: 'later' },
+  { id: 'M2', name: 'Four modes', detail: 'Canvas and Stage, the mode-switch morph', state: 'done' },
+  { id: 'M3', name: 'Create with AI', detail: 'Prompt to a streaming candidate pool on Claude', state: 'next' },
   { id: 'M4', name: 'Co-curator', detail: 'Critic chat and gap spotter', state: 'later' },
   { id: 'M5', name: 'Taste DNA', detail: 'Persona card and recommendations', state: 'later' },
   { id: 'M6', name: 'Publish', detail: 'Public page, social card, embed', state: 'later' },

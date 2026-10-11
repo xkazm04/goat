@@ -95,5 +95,7 @@ export function demoDoc(): ListDoc {
     pool: DEMO_ITEMS.map((i) => i.id).filter((id) => !RANKED.includes(id)),
     tiers: DEFAULT_TIERS.map((t) => ({ ...t })),
     notes: { ...NOTES },
+    canvasX: {},
+    stagePreset: 'podium',
   };
 }
