@@ -3,6 +3,7 @@
 import { useDroppable } from '@dnd-kit/core';
 import { useContext, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
 
+import { ModeArt } from '@/v2/brand/ModeArt';
 import { canvasBands, projectCanvas, rankIndexAt, type CanvasBand } from '@/v2/list/projections';
 
 import { Card } from './Card';
@@ -26,6 +27,7 @@ export function Canvas() {
   // side are never clipped; all coordinates (and drops) are relative to it.
   return (
     <div className="cv" data-drop={isOver}>
+      <ModeArt mode="canvas" />
       <span className="cv-legend" aria-hidden="true">
         Higher is greater · sideways is free
       </span>

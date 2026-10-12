@@ -169,3 +169,106 @@
     opacity: 0.25;
   }
 }
+
+/* Mode art: a layer behind each editor mode's content (src/v2/brand/ModeArt.tsx). */
+.goat-v2 .mo,
+.goat-v2 .cv,
+.goat-v2 .st,
+.goat-v2 .sp-wrap {
+  position: relative;
+  isolation: isolate;
+}
+
+.goat-v2 .mo {
+  overflow: hidden;
+}
+
+.goat-v2 .ma {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.goat-v2 .ma svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* The page has no panel, so its plate lives in the right margin and only shows on wide screens. */
+.goat-v2 .ma-spread {
+  inset: 0 0 0 auto;
+  width: min(420px, 34vw);
+  overflow: visible;
+  opacity: 0.35;
+}
+
+@media (min-width: 1500px) {
+  .goat-v2 .ma-spread {
+    opacity: 0.8;
+  }
+}
+
+@media (max-width: 1100px) {
+  .goat-v2 .ma-spread {
+    display: none;
+  }
+}
+
+/* Stage: the beams shimmer, confetti falls slowly. */
+.goat-v2 .gb-beam {
+  animation: gb-beam 11s ease-in-out infinite;
+}
+
+@keyframes gb-beam {
+  0%,
+  100% {
+    opacity: 0.65;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.goat-v2 .gb-fall {
+  opacity: 0;
+  animation: gb-fall 12s linear infinite;
+}
+
+@keyframes gb-fall {
+  0% {
+    opacity: 0;
+    transform: translateY(0);
+  }
+  12% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(420px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .goat-v2 .gb-beam {
+    animation: none;
+  }
+
+  .goat-v2 .gb-fall {
+    animation: none;
+    opacity: 0.15;
+  }
+}
+
+/* The mosaic's bust keeps a fixed size in the top-right, however tall the wall grows. */
+.goat-v2 .ma-mosaic svg {
+  inset: 0 0 auto auto;
+  width: min(860px, 78%);
+  height: auto;
+  aspect-ratio: 3 / 2;
+}

@@ -3,6 +3,7 @@
 import { useDroppable } from '@dnd-kit/core';
 import { useContext, useEffect, useState } from 'react';
 
+import { ModeArt } from '@/v2/brand/ModeArt';
 import { Cover } from '@/v2/covers/Cover';
 import { currentMatch, finalOrder, pick, startBracket, type Bracket } from '@/v2/list/tournament';
 import { STAGE_PRESETS, type ItemId, type StagePreset } from '@/v2/list/types';
@@ -55,6 +56,7 @@ export function Stage({ onTournament }: { onTournament: () => void }) {
 
   return (
     <div className="st" data-preset={doc.stagePreset}>
+      <ModeArt mode="stage" preset={doc.stagePreset} />
       <div className="st-tools">
         <div className="ed-seg" role="group" aria-label="Stage preset">
           {STAGE_PRESETS.map((p) => (

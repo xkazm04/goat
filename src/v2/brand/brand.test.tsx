@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { GoatFigure } from './Goat';
 import { BODY, EAR, HORN_FAR, HORN_NEAR } from './goat-paths';
 import { GoatBust } from './GoatBust';
+import { ModeArt } from './ModeArt';
 import { scatter } from './Sparkles';
 import { SUMMIT_STILL_SVG } from './summit-still';
 import { SummitScene } from './SummitScene';
@@ -51,5 +52,23 @@ describe('brand art', () => {
     const box = { x: 0, y: 0, w: 100, h: 100 };
     expect(scatter(5, box, 3)).toEqual(scatter(5, box, 3));
     expect(scatter(5, box, 3)).not.toEqual(scatter(5, box, 4));
+  });
+
+  it('gives every editor mode its own decorative layer, hidden from assistive tech', () => {
+    const marks = (['mosaic', 'canvas', 'spread', 'stage'] as const).map((mode) => renderToStaticMarkup(<ModeArt mode={mode} />));
+    for (const html of marks) {
+      expect(html).toContain('aria-hidden="true"');
+      expect(html).toContain('class="ma ma-');
+    }
+    // Four compositions, not one drawing four times.
+    expect(new Set(marks).size).toBe(4);
+    expect(marks[2]).toContain('PLATE I');
+  });
+
+  it('varies the stage art by preset', () => {
+    const html = (['podium', 'rushmore', 'throne'] as const).map((preset) => renderToStaticMarkup(<ModeArt mode="stage" preset={preset} />));
+    expect(new Set(html).size).toBe(3);
+    // The goat never stands behind the covers: flipped and set to the side on the podium.
+    expect(html[0]).toContain('scale(-0.82 0.82)');
   });
 });

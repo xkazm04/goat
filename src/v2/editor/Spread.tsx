@@ -2,6 +2,7 @@
 
 import { useContext } from 'react';
 
+import { ModeArt } from '@/v2/brand/ModeArt';
 import { projectSpread } from '@/v2/list/projections';
 
 import { Card, EmptySlot, RankSlot } from './Card';
@@ -16,7 +17,9 @@ export function Spread() {
   const rows = projectSpread(doc);
 
   return (
-    <div className="sp">
+    <div className="sp-wrap">
+      <ModeArt mode="spread" />
+      <div className="sp">
       {rows.map((row) => {
         const item = row.id ? items[row.id] : null;
         return (
@@ -66,6 +69,7 @@ export function Spread() {
           </div>
         );
       })}
+      </div>
     </div>
   );
 }

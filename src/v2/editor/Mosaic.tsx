@@ -1,5 +1,6 @@
 'use client';
 
+import { ModeArt } from '@/v2/brand/ModeArt';
 import { projectMosaic } from '@/v2/list/projections';
 
 import { Card, EmptySlot, RankSlot } from './Card';
@@ -14,6 +15,7 @@ export function Mosaic() {
 
   return (
     <div className="mo" style={hero ? { ['--hero-h' as string]: hero.art.hues[1] } : undefined}>
+      <ModeArt mode="mosaic" />
       {bands.map((band) => {
         // The top band holds #1 (hero) and #2–3 (large); other bands share one tile size.
         const scale = band.tiles[0]?.scale === 'hero' ? 'hero' : (band.tiles[0]?.scale ?? 'small');
