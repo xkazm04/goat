@@ -12,6 +12,8 @@ export interface EditorState {
   history: History;
   items: Record<ItemId, ListItem>;
   dispatch: (cmd: Command) => void;
+  /** Make new items known and put them at the front of the pool, as one undo step. */
+  addItems: (items: ListItem[]) => void;
   undo: () => void;
   redo: () => void;
 }
@@ -24,6 +26,11 @@ export function createEditorStore(init: { history?: History; doc?: ListDoc; item
     history,
     items: Object.fromEntries(init.items.map((i) => [i.id, i])),
     dispatch: (cmd) => set((s) => ({ history: commit(s.history, cmd) })),
+    addItems: (added) =>
+      set((s) => ({
+        items: { ...Object.fromEntries(added.map((i) => [i.id, i])), ...s.items },
+        history: commit(s.history, { type: 'addToPool', ids: added.map((i) => i.id) }),
+      })),
     undo: () => set((s) => ({ history: undo(s.history) })),
     redo: () => set((s) => ({ history: redo(s.history) })),
   }));

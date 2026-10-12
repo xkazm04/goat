@@ -61,3 +61,24 @@ export async function recordUsage(input: {
   });
   if (error) throw new Error(`usage write failed: ${error.message}`);
 }
+
+export interface ItemInput {
+  id: string;
+  title: string;
+  year: number | null;
+  creator: string | null;
+  art: unknown;
+  traits: string[];
+}
+
+/**
+ * Items are public rows that clients can read but not write (RLS), so the
+ * route writes the ones it proposes. Existing ids are left as they are.
+ */
+export async function upsertItems(userId: string, topic: string, items: ItemInput[]): Promise<void> {
+  const admin = adminClient();
+  if (!admin || items.length === 0) return;
+  const rows = items.map((i) => ({ ...i, topic: topic.trim().slice(0, 120), created_by: userId }));
+  const { error } = await admin.from('items').upsert(rows, { onConflict: 'id', ignoreDuplicates: true });
+  if (error) throw new Error(`item write failed: ${error.message}`);
+}

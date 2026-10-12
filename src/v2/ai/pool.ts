@@ -2,11 +2,11 @@ import Anthropic from '@anthropic-ai/sdk';
 
 import { MOTIFS } from '@/v2/covers/art';
 
-import { candidateId, candidateJsonSchema, candidateSchema, type Candidate } from './candidate';
+import { candidateJsonSchema, candidateKey, candidateSchema, type Candidate } from './candidate';
 
 
 /** One v2 model for every task; depth is tuned per task with effort (TECHNICAL_PACKAGE §4). */
-const MODEL = 'claude-opus-5-5';
+export const MODEL = 'claude-opus-5-5';
 
 type StreamParams = Parameters<Anthropic['beta']['messages']['stream']>[0];
 
@@ -126,7 +126,7 @@ export function claudeProvider(client: Anthropic = new Anthropic()): PoolProvide
             results.push({ type: 'tool_result', tool_use_id: block.id, is_error: true, content: 'Invalid candidate; skipped.' });
             continue;
           }
-          const id = candidateId(parsed.data);
+          const id = candidateKey(parsed.data);
           if (seen.has(id)) {
             results.push({ type: 'tool_result', tool_use_id: block.id, is_error: true, content: 'Already proposed; skipped.' });
             continue;

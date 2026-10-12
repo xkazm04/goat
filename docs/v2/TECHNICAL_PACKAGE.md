@@ -418,6 +418,36 @@ Still open:
 
 ## 10. Milestones
 
+### What M4 changed from the plan above
+
+- **Items now get uuid ids and rows (a fix to M3).** M3 named candidates with
+  slugs and never wrote `goat_v2.items`, so an AI-made list could not sync.
+  The server now assigns `itemUuid(topic, title, year)` (uuid v5, so the same
+  item for the same topic is one row) and upserts the rows through the
+  service role, because clients can read `items` but not write them.
+- **Critic.** `POST /api/v2/critic` streams NDJSON `delta` events. The browser
+  sends the list as it was at the first question, frozen, plus the chat; an
+  edit between questions goes as a `change` turn that the server places as a
+  `role: "system"` message after the next user turn (a system message must
+  follow a user message). `buildCriticMessages` has a test that earlier
+  messages stay byte-identical as the chat grows, which is what keeps the
+  cache prefix valid. The cache read count comes back on `done` and is logged
+  to `ai_usage`.
+- **Gap spotter.** `POST /api/v2/gaps` makes one structured-output call
+  (`output_config.format`, no web search in this slice) and drops anything
+  already listed. The result is added with one `addToPool` command, so it is
+  one undo step. It runs on demand from the pool; the automatic "after 10
+  placements" trigger is not built.
+- **Batch tagging.** `src/v2/ai/tagging.ts` and `/api/v2/tag` start and read a
+  Message Batches job (`POST`, then `GET ?batch=`). Nothing in the editor
+  calls it yet, because v2 has no way to add a custom item.
+- **Quotas.** `critic` 60, `gaps` 20 and `tag` 10 per user per rolling 24
+  hours, alongside `pool` 10.
+- **Unverified.** As in M3, none of the Claude paths have run against the
+  API. In particular: mid-conversation `system` messages through
+  `beta.messages.stream`, `output_config.format` with adaptive thinking, and
+  batch requests carrying `output_config`.
+
 ### What M3 changed from the plan above
 
 - **Route and files.** `src/app/api/v2/pool/route.ts` is the only route.
@@ -500,7 +530,7 @@ one developer plus agents.
 | **M1** ✅ | List core | `ListDoc`, commands, reducer, undo, local persistence, Supabase sync; **Spread** and **Mosaic**; `<Cover/>`; v1 seed import | **Done 2026-10-11.** `/v2/l/demo` ranks the 50-RPG demo in Mosaic and Spread with drag, keyboard and undo, and survives a reload with undo intact. Verified in Chromium (11 checks) plus 37 unit tests. Supabase sync and `npm run seed:v2` are written and unit-tested but **not yet run against a real database**. |
 | **M2** ✅ | All four modes | **Canvas** (tier bands, draggable and renamable tier lines), **Stage** (Podium / Rushmore / Throne, face-off, tournament), the mode morph, keyboard paths | **Done 2026-10-11.** The Playwright smoke (`e2e-v2/smoke.spec.ts`, now the `v2-smoke` CI job) ranks in every mode, runs a face-off and a full 8-seed tournament, then reloads and undoes. |
 | **M3** ✅ | AI creation | Claude client, `/api/v2/pool` (web search + `propose_candidate` streaming), ported enrichment, `/v2/new` prune UI, quotas, fixture provider for CI | **Built 2026-10-12, live Claude path not yet exercised.** `/v2/new` streams a pool, lets you drop candidates and opens the list in the editor; unit tests and the `v2-smoke` job run it on the fixture provider. Enrichment, hero art and the live model call are open, see "What M3 changed". |
-| **M4** | Co-curator | Critic chat (cached and streaming), gap spotter, Batches tagging for custom items | Critic responds to live list changes without cache misses. Gaps land in the pool. |
+| **M4** ✅ | Co-curator | Critic chat (cached and streaming), gap spotter, Batches tagging for custom items | **Built 2026-10-12, live Claude paths not yet exercised.** "Challenge me" streams a critic that is sent the list once and later edits as diffs; "Find gaps" adds up to five suggestions to the front of the pool. Batch tagging exists server-side only. See "What M4 changed". |
 | **M5** | Taste DNA | DNA math, `taste_profiles`, persona task, **E4 `<PersonaCard/>`** on `/v2/me`, recommendations | Publishing two lists produces a persona card and five recommendations with reasons. |
 | **M6** | Publish | `/p/[slug]`, fork, OG card, embed with scoped CSP, oEmbed | A shared link unfurls with the card, and the embed works in a third-party page. |
 | **M7** | Swap | Move `/v2` to `/`, delete v1 directories, deps and governance tooling (§7–8), new CLAUDE.md | The tree is under about 30k LOC. Every v2 gate is green, and no v1 path remains. |

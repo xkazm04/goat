@@ -100,6 +100,13 @@ export function apply(doc: ListDoc, cmd: Command): ListDoc {
       return { ...doc, title };
     }
 
+    case 'addToPool': {
+      const known = new Set([...doc.order, ...doc.pool]);
+      const fresh = [...new Set(cmd.ids)].filter((id) => !known.has(id));
+      if (fresh.length === 0) return doc;
+      return { ...doc, pool: [...fresh, ...doc.pool] };
+    }
+
     case 'resize': {
       if (cmd.size === doc.size) return doc;
       return { ...doc, size: cmd.size, ...fit(doc.order, doc.pool, cmd.size) };

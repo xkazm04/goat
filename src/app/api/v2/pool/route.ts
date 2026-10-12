@@ -2,8 +2,9 @@ import Anthropic from '@anthropic-ai/sdk';
 import { z } from 'zod';
 
 import { encodeEvent, type PoolEvent } from '@/v2/ai/events';
+import { itemUuid } from '@/v2/ai/ids';
 import { claudeProvider, fixtureProvider, type PoolProvider } from '@/v2/ai/pool';
-import { accountingConfigured, callerFromToken, overQuota, recordUsage } from '@/v2/ai/server';
+import { accountingConfigured, callerFromToken, overQuota, recordUsage, upsertItems, type ItemInput } from '@/v2/ai/server';
 
 export const runtime = 'nodejs';
 export const maxDuration = 120;
@@ -51,13 +52,16 @@ export async function POST(request: Request): Promise<Response> {
   const provider = pickProvider();
 
   // The fixture provider spends nothing, so it needs no account. The real one does.
+  // A signed-in caller is resolved for either, so the items can be saved.
   let userId: string | null = null;
-  if (provider.source === 'claude' && accountingConfigured()) {
+  if (accountingConfigured()) {
     const caller = await callerFromToken(bearer(request));
-    if (!caller) return single({ type: 'error', code: 'auth', message: 'Sign in (a guest session is enough) to create a list.' }, 401);
-    userId = caller.userId;
-    if (await overQuota(userId, 'pool')) {
-      return single({ type: 'error', code: 'quota', message: 'You have used today\'s list creations. Try again tomorrow.' }, 429);
+    userId = caller?.userId ?? null;
+    if (provider.source === 'claude') {
+      if (!userId) return single({ type: 'error', code: 'auth', message: 'Sign in (a guest session is enough) to create a list.' }, 401);
+      if (await overQuota(userId, 'pool')) {
+        return single({ type: 'error', code: 'quota', message: "You have used today's list creations. Try again tomorrow." }, 429);
+      }
     }
   }
 
@@ -67,19 +71,24 @@ export async function POST(request: Request): Promise<Response> {
     async start(controller) {
       const send = (event: PoolEvent) => controller.enqueue(encoder.encode(encodeEvent(event)));
       let delivered = 0;
+      const saved: ItemInput[] = [];
       let usage = { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0 };
       try {
         for await (const step of provider.run({ topic, count, signal: request.signal })) {
           if (step.type === 'candidate') {
             delivered += 1;
-            send({ type: 'candidate', candidate: step.candidate });
+            const c = step.candidate;
+            const id = itemUuid(topic, c.title, c.year);
+            saved.push({ id, title: c.title, year: c.year, creator: c.creator, art: c.art, traits: c.traits });
+            send({ type: 'candidate', id, candidate: c });
           } else if (step.type === 'usage') {
             usage = step;
           } else {
             send({ type: 'error', code: 'refused', message: 'That topic was declined. Try a different one.' });
           }
         }
-        if (userId) await recordUsage({ userId, task: 'pool', ...usage });
+        if (userId) await upsertItems(userId, topic, saved);
+        if (userId && provider.source === 'claude') await recordUsage({ userId, task: 'pool', ...usage });
         send({ type: 'done', count: delivered, source: provider.source });
       } catch (error) {
         const message =

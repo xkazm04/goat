@@ -23,6 +23,7 @@ import { LIST_SIZES, type ItemId } from '@/v2/list/types';
 
 import { Canvas } from './Canvas';
 import { ModeContext, ReadOnlyContext, useEditor, type Mode } from './context';
+import { Critic } from './Critic';
 import { Mosaic } from './Mosaic';
 import { Pool } from './Pool';
 import { Spread } from './Spread';
@@ -80,6 +81,7 @@ export function Editor({
   const [mode, setMode] = useState<Mode>('mosaic');
   const [active, setActive] = useState<string | null>(null);
   const [duel, setDuel] = useState<Duel | null>(null);
+  const [criticOpen, setCriticOpen] = useState(false);
   const [tournament, setTournament] = useState(false);
   const overlayOpen = duel !== null || tournament;
 
@@ -190,6 +192,9 @@ export function Editor({
                     </span>
                     {!readOnly ? (
                       <>
+                        <button type="button" className="ed-ghost" aria-pressed={criticOpen} onClick={() => setCriticOpen((o) => !o)}>
+                          Challenge me
+                        </button>
                         <button type="button" className="ed-ghost" onClick={undo} disabled={!canUndo}>
                           Undo
                         </button>
@@ -236,6 +241,7 @@ export function Editor({
                   {mode === 'stage' ? <Stage onTournament={() => setTournament(true)} /> : null}
                 </div>
                 {!readOnly ? <Pool /> : null}
+                {!readOnly && criticOpen ? <Critic onClose={() => setCriticOpen(false)} /> : null}
               </div>
             </LayoutGroup>
             <DragOverlay dropAnimation={null}>

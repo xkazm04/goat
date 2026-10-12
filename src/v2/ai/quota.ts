@@ -1,6 +1,10 @@
 /** Per-user daily limits by task, counted from goat_v2.ai_usage (§4 guardrails). */
 export const DAILY_LIMITS = {
   pool: 10,
+  /** Critic replies, one per user message. */
+  critic: 60,
+  gaps: 20,
+  tag: 10,
 } as const;
 
 export type AiTask = keyof typeof DAILY_LIMITS;

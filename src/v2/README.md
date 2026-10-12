@@ -28,13 +28,14 @@ The interactive studies the UI follows are in `docs/v2/prototypes/`.
 | `covers/` | `art.ts` (ArtDirection and `fallbackArt`) and `Cover.tsx` (real art first, generative fallback) | M1 |
 | `editor/` | The editor: `EditorRoute.tsx` (demo, your list, someone else's), `Editor.tsx` (toolbar, drag, keys, modes, face-offs), one file per mode (`Mosaic.tsx`, `Canvas.tsx`, `Spread.tsx`, `Stage.tsx`, the last also holding `FaceOff` and `Tournament`), `Pool.tsx`, `Card.tsx` | M1, M2 |
 | `seeds/` | `fromV1.ts`, the pure v1 to goat_v2 transform behind `npm run seed:v2` | M1 |
-| `ai/` | The pool: `candidate.ts`, `events.ts` (NDJSON), `pool.ts` (Claude and fixture providers), `quota.ts`, `server.ts` (service-role, server only), `client.ts` | M3 |
+| `ai/` | The pool (`candidate.ts`, `events.ts`, `pool.ts`, `ids.ts`); the critic and gap spotter (`snapshot.ts`, `critic.ts`, `gaps.ts`, `converse.ts`); batch tagging (`tagging.ts`); the routes' shared parts (`request.ts`, `route-kit.ts`, `quota.ts`, `server.ts`, service-role and server only); the browser side (`client.ts`) | M3, M4 |
 | `dna/`, `enrichment/` | Arrive in M3–M5 | — |
 
 ## Routes
 
 - `/v2`: home, with the demo, your lists and starter lists.
 - `/v2/new`: type a topic, watch the pool stream in, drop what you do not want, start ranking. `POST /api/v2/pool` serves it.
+- In the editor, **Challenge me** opens the critic (`POST /api/v2/critic`) and the pool's **Find gaps** calls `POST /api/v2/gaps`. `/api/v2/tag` is the batch tagging API, not yet used by the UI.
 - `/v2/l/demo`: the bundled demo list, saved in this browser only. It works
   with no database configured.
 - `/v2/l/<id>`: a goat_v2 list. Your own lists are editable and synced.

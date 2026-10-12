@@ -1101,3 +1101,59 @@
   color: var(--fg-faint);
   text-decoration: line-through;
 }
+
+/* M4: the critic panel and the pool's gap spotter */
+.goat-v2 .critic {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(380px, calc(100vw - 32px));
+  max-height: min(70vh, 560px);
+  padding: 14px;
+}
+
+.goat-v2 .critic header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.goat-v2 .critic-log {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  min-height: 120px;
+}
+
+.goat-v2 .critic-log p {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.goat-v2 .critic-log p[data-role='user'] {
+  align-self: flex-end;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.goat-v2 .critic-log p[data-role='critic'] {
+  align-self: flex-start;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.goat-v2 .critic form {
+  display: flex;
+  gap: 8px;
+}
+
+.goat-v2 .critic form input {
+  flex: 1;
+  min-width: 0;
+}

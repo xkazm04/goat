@@ -166,3 +166,17 @@ describe('invariants', () => {
     expect([...d.order, ...d.pool].sort()).toEqual([...ids].sort());
   });
 });
+
+describe('addToPool', () => {
+  it('puts new items at the front of the pool, once, and ignores ones already listed', () => {
+    const next = apply(doc(['a'], ['b']), { type: 'addToPool', ids: ['n1', 'a', 'b', 'n2', 'n1'] });
+    expect(next.pool).toEqual(['n1', 'n2', 'b']);
+    expect(next.order).toEqual(['a']);
+    expect(isConsistent(next)).toBe(true);
+  });
+
+  it('is a no-op, by identity, when nothing is new', () => {
+    const d = doc(['a'], ['b']);
+    expect(apply(d, { type: 'addToPool', ids: ['a', 'b'] })).toBe(d);
+  });
+});

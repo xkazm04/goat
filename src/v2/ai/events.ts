@@ -2,7 +2,7 @@ import { candidateSchema, type Candidate } from './candidate';
 
 /** What `/api/v2/pool` streams, one JSON object per line. */
 export type PoolEvent =
-  | { type: 'candidate'; candidate: Candidate }
+  | { type: 'candidate'; id: string; candidate: Candidate }
   | { type: 'done'; count: number; source: 'claude' | 'fixture' }
   | { type: 'error'; code: 'quota' | 'auth' | 'refused' | 'failed' | 'bad_request'; message: string };
 
@@ -24,7 +24,8 @@ export function parseEventLine(line: string): PoolEvent | null {
   const e = raw as { type?: unknown };
   if (e.type === 'candidate') {
     const parsed = candidateSchema.safeParse((raw as { candidate?: unknown }).candidate);
-    return parsed.success ? { type: 'candidate', candidate: parsed.data } : null;
+    const id = (raw as { id?: unknown }).id;
+    return parsed.success && typeof id === 'string' ? { type: 'candidate', id, candidate: parsed.data } : null;
   }
   if (e.type === 'done' || e.type === 'error') return raw as PoolEvent;
   return null;

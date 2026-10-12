@@ -1,8 +1,12 @@
 import { getBrowserClient } from '@/v2/db/browser';
 
+import { parseCriticLine, type ChatTurn, type CriticEvent } from './critic';
 import { createLineSplitter, parseEventLine, type PoolEvent } from './events';
 
-import type { ListSize } from '@/v2/list/types';
+import type { ListSnapshot } from './snapshot';
+import type { ListItem , ListSize } from '@/v2/list/types';
+
+
 
 async function accessToken(): Promise<string | null> {
   const client = getBrowserClient();
@@ -36,4 +40,54 @@ export async function* streamPool(input: { topic: string; size: ListSize; signal
     }
     if (done) return;
   }
+}
+
+/** Stream the critic's reply to the last user turn. */
+export async function* streamCritic(input: {
+  snapshot: ListSnapshot;
+  turns: ChatTurn[];
+  signal?: AbortSignal;
+}): AsyncGenerator<CriticEvent> {
+  const token = await accessToken();
+  const response = await fetch('/api/v2/critic', {
+    method: 'POST',
+    signal: input.signal,
+    headers: { 'content-type': 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}) },
+    body: JSON.stringify({ snapshot: input.snapshot, turns: input.turns }),
+  });
+  if (!response.body) {
+    yield { type: 'error', code: 'failed', message: 'The server sent no data.' };
+    return;
+  }
+  const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
+  const lines = createLineSplitter();
+  for (;;) {
+    const { done, value } = await reader.read();
+    for (const line of done ? lines.flush() : lines.push(value)) {
+      const event = parseCriticLine(line);
+      if (event) yield event;
+    }
+    if (done) return;
+  }
+}
+
+export interface GapSuggestion {
+  item: ListItem;
+  why: string;
+}
+
+/** Ask for up to five suggestions that are missing from the list. */
+export async function findGaps(snapshot: ListSnapshot, signal?: AbortSignal): Promise<GapSuggestion[]> {
+  const token = await accessToken();
+  const response = await fetch('/api/v2/gaps', {
+    method: 'POST',
+    signal,
+    headers: { 'content-type': 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}) },
+    body: JSON.stringify({ snapshot }),
+  });
+  const body = (await response.json().catch(() => null)) as
+    | { items?: GapSuggestion[]; error?: { message?: string } }
+    | null;
+  if (!response.ok || !body?.items) throw new Error(body?.error?.message ?? 'Could not look for gaps.');
+  return body.items;
 }

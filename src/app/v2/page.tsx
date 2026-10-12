@@ -8,8 +8,8 @@ const MILESTONES = [
   { id: 'M1', name: 'List core', detail: 'One list document, Spread and Mosaic, undo', state: 'done' },
   { id: 'M2', name: 'Four modes', detail: 'Canvas and Stage, the mode-switch morph', state: 'done' },
   { id: 'M3', name: 'Create with AI', detail: 'Prompt to a streaming candidate pool on Claude', state: 'done' },
-  { id: 'M4', name: 'Co-curator', detail: 'Critic chat and gap spotter', state: 'next' },
-  { id: 'M5', name: 'Taste DNA', detail: 'Persona card and recommendations', state: 'later' },
+  { id: 'M4', name: 'Co-curator', detail: 'Critic chat and gap spotter', state: 'done' },
+  { id: 'M5', name: 'Taste DNA', detail: 'Persona card and recommendations', state: 'next' },
   { id: 'M6', name: 'Publish', detail: 'Public page, social card, embed', state: 'later' },
   { id: 'M7', name: 'Swap', detail: 'v2 moves to /, v1 is deleted', state: 'later' },
 ] as const;

@@ -117,3 +117,38 @@ test('builds a pool from a topic and opens it in the editor', async ({ page }) =
   await expect(page.locator('.mo')).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test('the critic answers and sees later edits, and Find gaps adds to the pool', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  const bodies: { turns: { kind: string; text: string }[] }[] = [];
+  page.on('request', (r) => {
+    if (r.url().endsWith('/api/v2/critic')) bodies.push(r.postDataJSON());
+  });
+
+  await page.goto('/v2/l/demo');
+  await expect(page.locator('.mo')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Challenge me' }).click();
+  const box = page.getByLabel('Message the critic');
+  await box.fill('Defend my number one.');
+  await page.getByRole('button', { name: 'Send' }).click();
+  await expect(page.locator('.critic-log [data-role="critic"]').first()).toContainText('Fixture critic, round 1');
+
+  // An edit between questions reaches the critic as a change turn, not a new snapshot.
+  await page.keyboard.press('Escape');
+  await drag(page, page.getByLabel('Skyrim, unranked'), rankLabel(page, 2));
+  await box.fill('And now?');
+  await page.getByRole('button', { name: 'Send' }).click();
+  await expect(page.locator('.critic-log [data-role="critic"]').nth(1)).toContainText('I saw your edits');
+  expect(bodies).toHaveLength(2);
+  expect(bodies[1].turns.map((t) => t.kind)).toEqual(['user', 'assistant', 'change', 'user']);
+  expect(JSON.stringify(bodies[1])).toContain('Skyrim was ranked at #2');
+
+  // Gaps join the front of the pool.
+  const before = await page.locator('.pool h2 b').innerText();
+  await page.getByRole('button', { name: 'Find gaps' }).click();
+  await expect(page.getByText('Added 3 to the front of the pool.')).toBeVisible();
+  expect(Number(await page.locator('.pool h2 b').innerText())).toBe(Number(before) + 3);
+  expect(errors).toEqual([]);
+});

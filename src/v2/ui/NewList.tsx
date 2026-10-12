@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
 
-import { docFromCandidates, type Candidate } from '@/v2/ai/candidate';
+import { docFromCandidates, type ProposedItem } from '@/v2/ai/candidate';
 import { streamPool } from '@/v2/ai/client';
 import { Cover } from '@/v2/covers/Cover';
 import { indexedDbStorage } from '@/v2/list/storage';
@@ -19,7 +19,7 @@ export function NewList({ initialTopic = '' }: { initialTopic?: string }) {
   const [topic, setTopic] = useState(initialTopic);
   const [size, setSize] = useState<ListSize>(25);
   const [phase, setPhase] = useState<Phase>('idle');
-  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [candidates, setCandidates] = useState<ProposedItem[]>([]);
   const [dropped, setDropped] = useState<Set<number>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const abort = useRef<AbortController | null>(null);
@@ -36,7 +36,7 @@ export function NewList({ initialTopic = '' }: { initialTopic?: string }) {
     setError(null);
     try {
       for await (const e of streamPool({ topic, size, signal: controller.signal })) {
-        if (e.type === 'candidate') setCandidates((all) => [...all, e.candidate]);
+        if (e.type === 'candidate') setCandidates((all) => [...all, { id: e.id, candidate: e.candidate }]);
         else if (e.type === 'error') {
           setError(e.message);
           setPhase('error');
@@ -94,7 +94,7 @@ export function NewList({ initialTopic = '' }: { initialTopic?: string }) {
             {phase === 'streaming' ? `${candidates.length} so far…` : `${keptCount} of ${candidates.length} kept`}
           </p>
           <ul className="v2-roadmap">
-            {candidates.map((c, i) => (
+            {candidates.map(({ candidate: c }, i) => (
               <li key={`${c.title}-${i}`} className="v2-glass" data-dropped={dropped.has(i) || undefined}>
                 <Cover
                   item={{

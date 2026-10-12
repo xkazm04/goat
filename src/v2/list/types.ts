@@ -69,4 +69,6 @@ export type Command =
   | { type: 'setTierCut'; index: number; until: number }
   | { type: 'renameTier'; index: number; name: string }
   | { type: 'setX'; id: ItemId; x: number }
-  | { type: 'setPreset'; preset: StagePreset };
+  | { type: 'setPreset'; preset: StagePreset }
+  /** New items (a gap spotter's suggestions) join the front of the pool. Ids already in the list are ignored. */
+  | { type: 'addToPool'; ids: ItemId[] };

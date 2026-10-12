@@ -52,8 +52,14 @@ export const candidateJsonSchema = {
   },
 } as const;
 
-/** Stable id from the title, so the same candidate keeps its id across a regenerate. */
-export function candidateId(c: Pick<Candidate, 'title' | 'year'>): string {
+/** A candidate with the item id the server assigned it (a uuid, so it can be a goat_v2.items row). */
+export interface ProposedItem {
+  id: string;
+  candidate: Candidate;
+}
+
+/** A readable key for spotting the same candidate twice within one request. Not an item id. */
+export function candidateKey(c: Pick<Candidate, 'title' | 'year'>): string {
   const slug = c.title
     .toLowerCase()
     .normalize('NFKD')
@@ -63,9 +69,9 @@ export function candidateId(c: Pick<Candidate, 'title' | 'year'>): string {
   return `c-${slug || 'item'}${c.year === null ? '' : `-${c.year}`}`;
 }
 
-function toListItem(c: Candidate): ListItem {
+export function toListItem(id: string, c: Candidate): ListItem {
   const art: ArtDirection = { hues: [c.art.hues[0], c.art.hues[1]], motif: c.art.motif };
-  return { id: candidateId(c), title: c.title, year: c.year, creator: c.creator, imageUrl: null, art, traits: c.traits };
+  return { id, title: c.title, year: c.year, creator: c.creator, imageUrl: null, art, traits: c.traits };
 }
 
 /** A new list whose whole pool is the candidates and whose ranking is empty. */
@@ -73,15 +79,14 @@ export function docFromCandidates(input: {
   id: string;
   topic: string;
   size: ListSize;
-  candidates: Candidate[];
+  candidates: ProposedItem[];
 }): { doc: ListDoc; items: ListItem[]; why: Record<string, string> } {
   const items: ListItem[] = [];
   const why: Record<string, string> = {};
-  for (const c of input.candidates) {
-    const item = toListItem(c);
-    if (items.some((i) => i.id === item.id)) continue;
-    items.push(item);
-    why[item.id] = c.why;
+  for (const { id, candidate } of input.candidates) {
+    if (items.some((i) => i.id === id)) continue;
+    items.push(toListItem(id, candidate));
+    why[id] = candidate.why;
   }
   const doc: ListDoc = {
     id: input.id,

@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import { isConsistent } from '@/v2/list/reducer';
 
-import { candidateId, candidateSchema, docFromCandidates, type Candidate } from './candidate';
+import { candidateKey, candidateSchema, docFromCandidates, type Candidate } from './candidate';
 import { createLineSplitter, encodeEvent, parseEventLine } from './events';
+import { itemUuid } from './ids';
 import { fixtureProvider, POOL_SYSTEM } from './pool';
 import { DAILY_LIMITS, isOverQuota, quotaWindowStart } from './quota';
 
@@ -26,8 +27,8 @@ describe('candidate', () => {
   });
 
   it('derives a stable id from title and year', () => {
-    expect(candidateId(sample)).toBe('c-blade-runner-1982');
-    expect(candidateId({ title: 'Café Müller!', year: null })).toBe('c-cafe-muller');
+    expect(candidateKey(sample)).toBe('c-blade-runner-1982');
+    expect(candidateKey({ title: 'Café Müller!', year: null })).toBe('c-cafe-muller');
   });
 
   it('builds a consistent doc with every candidate in the pool and none ranked', () => {
@@ -35,21 +36,25 @@ describe('candidate', () => {
       id: 'x',
       topic: ' sci-fi films ',
       size: 10,
-      candidates: [sample, sample, { ...sample, title: 'Alien', year: 1979 }],
+      candidates: [
+        { id: 'id-1', candidate: sample },
+        { id: 'id-1', candidate: sample },
+        { id: 'id-2', candidate: { ...sample, title: 'Alien', year: 1979 } },
+      ],
     });
-    expect(items.map((i) => i.id)).toEqual(['c-blade-runner-1982', 'c-alien-1979']);
+    expect(items.map((i) => i.id)).toEqual(['id-1', 'id-2']);
     expect(doc.pool).toEqual(items.map((i) => i.id));
     expect(doc.order).toEqual([]);
     expect(doc.title).toBe('The Greatest sci-fi films');
-    expect(why['c-alien-1979']).toBe(sample.why);
+    expect(why['id-2']).toBe(sample.why);
     expect(isConsistent(doc)).toBe(true);
   });
 });
 
 describe('ndjson events', () => {
   it('round-trips events and drops blank, malformed and schema-failing lines', () => {
-    const line = encodeEvent({ type: 'candidate', candidate: sample });
-    expect(parseEventLine(line)).toEqual({ type: 'candidate', candidate: sample });
+    const line = encodeEvent({ type: 'candidate', id: 'u-1', candidate: sample });
+    expect(parseEventLine(line)).toEqual({ type: 'candidate', id: 'u-1', candidate: sample });
     expect(parseEventLine('')).toBeNull();
     expect(parseEventLine('{nope')).toBeNull();
     expect(parseEventLine(JSON.stringify({ type: 'candidate', candidate: { title: 'x' } }))).toBeNull();
@@ -69,6 +74,15 @@ describe('ndjson events', () => {
   });
 });
 
+describe('item ids', () => {
+  it('is a stable v5 uuid per topic, title and year', () => {
+    const a = itemUuid('Sci-fi', 'Blade Runner', 1982);
+    expect(a).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+    expect(itemUuid(' sci-fi ', 'blade runner', 1982)).toBe(a);
+    expect(itemUuid('Sci-fi', 'Blade Runner', 2049)).not.toBe(a);
+  });
+});
+
 describe('providers and quota', () => {
   it('the fixture provider yields the requested count of valid, distinct candidates', async () => {
     const out: Candidate[] = [];
@@ -77,7 +91,7 @@ describe('providers and quota', () => {
     }
     expect(out).toHaveLength(12);
     expect(out.every((c) => candidateSchema.safeParse(c).success)).toBe(true);
-    expect(new Set(out.map((c) => candidateId(c))).size).toBe(12);
+    expect(new Set(out.map((c) => candidateKey(c))).size).toBe(12);
   });
 
   it('keeps the system prompt free of per-request values so it caches', () => {
