@@ -32,6 +32,7 @@ interactive studies the UI follows are in `docs/v2/prototypes/`.
 | `seeds/` | `fromV1.ts`, the pure v1 to goat_v2 transform behind `npm run seed:v2` | M1 |
 | `ai/` | The pool (`candidate.ts`, `events.ts`, `pool.ts`, `ids.ts`); the critic and gap spotter (`snapshot.ts`, `critic.ts`, `gaps.ts`, `converse.ts`); batch tagging (`tagging.ts`); the routes' shared parts (`request.ts`, `route-kit.ts`, `quota.ts`, `server.ts`, service-role and server only); the browser side (`client.ts`); `providers.ts` picks the engine (fixture, Claude API, or the local Claude Code CLI in `cli.ts` and `cli-providers.ts`) | M3, M4 |
 | `dna/` | Taste DNA: `dna.ts` (pure math), `source.ts` (the lists it reads), `cache.ts`, `PersonaCard.tsx`, `MeRoute.tsx`. The persona and recommendation prompts are `ai/taste.ts` | M5 |
+| `brand/` | The goat identity. `goat-paths.ts` is the one silhouette, `Goat.tsx` has `GoatFigure` (an SVG group, for scenes) and `GoatMark` (standalone), `Sparkles.tsx` has `Sparkles`, `Motes` and `scatter`, `SummitScene.tsx` is the landing scene (goat on the number-one step, quiet halo, small glints, rising dust) and `Backdrop.tsx` places it behind the page. Other pages should compose these parts, not copy the scene | brand |
 | `publish/` | `slug.ts`, `publish.ts` (publish and unpublish), `server.ts` (anon public reads), `oembed.ts`, `SharePanel.tsx`, `PublishedView.tsx`, `EmbedList.tsx`, `OgCard.tsx` | M6 |
 | `enrichment/` | Arrives later | — |
 

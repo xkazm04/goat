@@ -223,3 +223,9 @@
   position: relative;
   z-index: 1;
 }
+
+@media (max-width: 760px) {
+  .goat-v2 .home-content {
+    padding-bottom: 340px;
+  }
+}

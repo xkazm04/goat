@@ -1,21 +1,16 @@
 import Link from 'next/link';
 
-import { GoatBackdrop, GoatSwitcher, parseVariant } from '@/v2/brand/Backdrop';
+import { GoatBackdrop } from '@/v2/brand/Backdrop';
 import { HomeLists } from '@/v2/ui/HomeLists';
 import { SessionChip } from '@/v2/ui/SessionChip';
 
 import '@/v2/ui/dna.css';
 import '@/v2/ui/editor.css';
 
-export default async function Home({ searchParams }: { searchParams: Promise<{ goat?: string }> }) {
-  const { goat } = await searchParams;
-  // Prototype: ?goat=a|b|c picks a concept, ?goat=none shows the plain page. Default is the first concept.
-  const variant = goat === 'none' ? null : (parseVariant(goat) ?? 'a');
-
+export default function Home() {
   return (
     <div className="home">
-      <GoatBackdrop variant={variant} />
-      <GoatSwitcher current={variant} />
+      <GoatBackdrop />
       <div className="v2-wrap home-content">
       <header className="v2-bar">
         <span className="v2-wordmark">G.O.A.T.</span>
