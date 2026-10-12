@@ -16,6 +16,16 @@ export function useEditor<T>(selector: (state: EditorState) => T): T {
   return useStore(store, selector);
 }
 
+/**
+ * The open list's store, for event handlers: `getState()` reads the latest state without subscribing, so a
+ * component that only needs a value on click does not re-render on every edit.
+ */
+export function useEditorStore(): EditorStore {
+  const store = useContext(EditorContext);
+  if (!store) throw new Error('useEditorStore must be used inside EditorProvider');
+  return store;
+}
+
 /** Whether the open list can be edited by this visitor. */
 export const ReadOnlyContext = createContext(false);
 

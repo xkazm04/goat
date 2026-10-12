@@ -3,6 +3,7 @@
 import {
   DndContext,
   DragOverlay,
+  MeasuringStrategy,
   PointerSensor,
   TouchSensor,
   pointerWithin,
@@ -15,7 +16,7 @@ import {
 } from '@dnd-kit/core';
 import { LayoutGroup, MotionConfig } from 'framer-motion';
 import Link from 'next/link';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 
 import { GoatBust } from '@/v2/brand/GoatBust';
 import { Cover } from '@/v2/covers/Cover';
@@ -57,6 +58,8 @@ function isTyping(target: EventTarget | null): boolean {
   return target instanceof HTMLElement && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName));
 }
 
+const DND_MEASURING = { droppable: { strategy: MeasuringStrategy.BeforeDragging } } as const;
+
 /**
  * The list editor: one document, four modes (Mosaic, Canvas, Spread, Stage).
  * Every mode renders covers through the same Card, so switching mode moves
@@ -89,6 +92,22 @@ export function Editor({
   const [criticOpen, setCriticOpen] = useState(false);
   const [tournament, setTournament] = useState(false);
   const overlayOpen = duel !== null || tournament;
+  const startTournament = useCallback(() => setTournament(true), []);
+
+  // The staggered arrival (plates.css) plays inside a short boot window: on load and after every mode change.
+  // It is a DOM attribute, not state, so opening and closing the window costs no render, and it is set before
+  // paint so the new view never flashes in at full opacity first.
+  const root = useRef<HTMLDivElement>(null);
+  const booted = useRef(false);
+  useLayoutEffect(() => {
+    const el = root.current;
+    if (!el) return;
+    // 'page' also plays the toolbar and title; a later mode change plays only the new view's content and art.
+    el.setAttribute('data-boot', booted.current ? 'view' : 'page');
+    booted.current = true;
+    const done = window.setTimeout(() => el.removeAttribute('data-boot'), 2200);
+    return () => window.clearTimeout(done);
+  }, [mode]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -158,12 +177,15 @@ export function Editor({
           <DndContext
             sensors={sensors}
             collisionDetection={collision}
+            // Measure every drop target once, as the drag starts, not again on every move: the layout does not
+            // change while a cover is in the air, and re-measuring 60 droppables per frame was a top cost.
+            measuring={DND_MEASURING}
             onDragStart={onDragStart}
             onDragEnd={onDragEnd}
             onDragCancel={() => setActive(null)}
           >
             <LayoutGroup>
-              <div className="ed">
+              <div className="ed" ref={root} data-dragging={active ? '' : undefined}>
                 <div className="ed-main">
                   <div className="ed-bar" role="toolbar" aria-label="List tools">
                     <Link href="/" className="ed-back" aria-label="G.O.A.T. home">
@@ -213,12 +235,15 @@ export function Editor({
                   </div>
 
                   <header className="ed-head">
-                    <span className="v2-eyebrow">{doc.topic}</span>
+                    <span className="v2-eyebrow" style={{ '--k': 0 } as CSSProperties}>
+                      {doc.topic}
+                    </span>
                     {/* Keyed by the title so undo/redo resets the field. A textarea so long titles wrap. */}
                     <textarea
                       key={doc.title}
                       id="list-title"
                       className="ed-title"
+                      style={{ '--k': 1 } as CSSProperties}
                       rows={1}
                       ref={autosize}
                       onInput={(e) => autosize(e.currentTarget)}
@@ -233,7 +258,7 @@ export function Editor({
                         }
                       }}
                     />
-                    <div className="ed-meta">
+                    <div className="ed-meta" style={{ '--k': 2 } as CSSProperties}>
                       <span>
                         <b>{ranked}</b> of {doc.size} ranked
                       </span>
@@ -245,7 +270,7 @@ export function Editor({
                   {mode === 'mosaic' ? <Mosaic /> : null}
                   {mode === 'canvas' ? <Canvas /> : null}
                   {mode === 'spread' ? <Spread /> : null}
-                  {mode === 'stage' ? <Stage onTournament={() => setTournament(true)} /> : null}
+                  {mode === 'stage' ? <Stage onTournament={startTournament} /> : null}
                 </div>
                 {!readOnly ? <Pool /> : null}
                 {!readOnly && criticOpen ? <Critic onClose={() => setCriticOpen(false)} /> : null}

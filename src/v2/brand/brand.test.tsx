@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -11,6 +11,7 @@ import { ModeArt } from './ModeArt';
 import { scatter } from './Sparkles';
 import { SUMMIT_STILL_SVG } from './summit-still';
 import { SummitScene } from './SummitScene';
+import { SunRays } from './SunRays';
 import { Vignette } from './Vignette';
 
 describe('brand art', () => {
@@ -55,20 +56,47 @@ describe('brand art', () => {
   });
 
   it('gives every editor mode its own decorative layer, hidden from assistive tech', () => {
-    const marks = (['mosaic', 'canvas', 'spread', 'stage'] as const).map((mode) => renderToStaticMarkup(<ModeArt mode={mode} />));
+    const marks = (['mosaic', 'canvas', 'stage'] as const).map((mode) => renderToStaticMarkup(<ModeArt mode={mode} />));
     for (const html of marks) {
       expect(html).toContain('aria-hidden="true"');
       expect(html).toContain('class="ma ma-');
     }
-    // Four compositions, not one drawing four times.
-    expect(new Set(marks).size).toBe(4);
-    expect(marks[2]).toContain('PLATE I');
+    expect(new Set(marks).size).toBe(3);
+    // The Spread's art is its plate (SpreadPlate), not a background layer.
+    expect(renderToStaticMarkup(<ModeArt mode="spread" />)).toBe('');
   });
 
-  it('varies the stage art by preset', () => {
-    const html = (['podium', 'rushmore', 'throne'] as const).map((preset) => renderToStaticMarkup(<ModeArt mode="stage" preset={preset} />));
-    expect(new Set(html).size).toBe(3);
-    // The goat never stands behind the covers: flipped and set to the side on the podium.
-    expect(html[0]).toContain('scale(-0.82 0.82)');
+  it('varies the stage art by preset: goat on the podium, mountain for Rushmore, horns for the Throne', () => {
+    const html = Object.fromEntries(
+      (['podium', 'rushmore', 'throne'] as const).map((preset) => [preset, renderToStaticMarkup(<ModeArt mode="stage" preset={preset} />)]),
+    );
+    expect(html.podium).toContain('stage-goat.webp');
+    expect(html.rushmore).toContain('stage-rushmore.webp');
+    expect(html.throne.match(/<img[^>]*stage-horn\.webp/g)).toHaveLength(2);
+    expect(html.podium).not.toContain('stage-rushmore');
+    expect(html.rushmore).not.toContain('stage-goat');
+  });
+
+  it('only references art files that exist, and keeps every view under its byte budget', () => {
+    const dir = path.resolve(__dirname, '../../../public/art');
+    const referenced = new Set<string>();
+    for (const [mode, preset] of [['mosaic'], ['canvas'], ['stage', 'podium'], ['stage', 'rushmore'], ['stage', 'throne']] as const) {
+      const html = renderToStaticMarkup(<ModeArt mode={mode} preset={preset} />);
+      for (const m of html.matchAll(/\/art\/([a-z0-9-]+\.webp)/g)) referenced.add(m[1]);
+    }
+    referenced.add('spread-plate.webp');
+    referenced.add('grain.webp');
+    let total = 0;
+    for (const f of referenced) {
+      expect(existsSync(path.join(dir, f)), f).toBe(true);
+      total += statSync(path.join(dir, f)).size;
+    }
+    // All baked art together: well under the 3.5 MB the covers alone used to cost.
+    expect(total).toBeLessThan(900 * 1024);
+  });
+
+  it('draws the sun rays from a fixed pattern, so server and client agree', () => {
+    expect(renderToStaticMarkup(<SunRays size={100} />)).toBe(renderToStaticMarkup(<SunRays size={100} />));
+    expect(renderToStaticMarkup(<SunRays size={100} />).match(/<line /g)).toHaveLength(72);
   });
 });

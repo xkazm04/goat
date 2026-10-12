@@ -1,7 +1,7 @@
 'use client';
 
 import { useDroppable } from '@dnd-kit/core';
-import { useRef, useState } from 'react';
+import { memo, useRef, useState } from 'react';
 
 import { findGaps } from '@/v2/ai/client';
 import { snapshotOf } from '@/v2/ai/snapshot';
@@ -10,7 +10,7 @@ import { Card } from './Card';
 import { useEditor } from './context';
 
 /** Unranked candidates. Dropping a ranked cover here sends it back. */
-export function Pool() {
+function PoolView() {
   const doc = useEditor((s) => s.history.present);
   const pool = doc.pool;
   const items = useEditor((s) => s.items);
@@ -61,3 +61,5 @@ export function Pool() {
     </aside>
   );
 }
+
+export const Pool = memo(PoolView);

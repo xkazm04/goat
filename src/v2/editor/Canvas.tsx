@@ -1,12 +1,12 @@
 'use client';
 
 import { useDroppable } from '@dnd-kit/core';
-import { useContext, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
+import { memo, useContext, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from 'react';
 
 import { ModeArt } from '@/v2/brand/ModeArt';
 import { canvasBands, projectCanvas, rankIndexAt, type CanvasBand } from '@/v2/list/projections';
 
-import { Card } from './Card';
+import { Card, REVEAL_FIRST } from './Card';
 import { ReadOnlyContext, useEditor } from './context';
 
 const pct = (n: number) => `${(n * 100).toFixed(3)}%`;
@@ -16,7 +16,7 @@ const pct = (n: number) => `${(n * 100).toFixed(3)}%`;
  * sits sideways is yours. The tier lines between bands can be dragged.
  * Drops are resolved in Editor's onDragEnd (the board is the `canvas` target).
  */
-export function Canvas() {
+function CanvasView() {
   const doc = useEditor((s) => s.history.present);
   const items = useEditor((s) => s.items);
   const { bands, pins } = projectCanvas(doc);
@@ -47,7 +47,11 @@ export function Canvas() {
       ))}
       {pins.map((pin) =>
         items[pin.id] ? (
-          <div key={pin.id} className="cv-pin" style={{ left: pct(pin.x), top: pct(pin.y) }}>
+          <div
+            key={pin.id}
+            className={pin.rank <= REVEAL_FIRST ? 'cv-pin rv' : 'cv-pin'}
+            style={{ left: pct(pin.x), top: pct(pin.y), '--rv': pin.rank - 1 } as CSSProperties}
+          >
             <span className="cv-rank" data-top={pin.rank <= 3} aria-hidden="true">
               {pin.rank}
             </span>
@@ -175,3 +179,6 @@ function Cut({ band, boardRef }: { band: CanvasBand; boardRef: React.RefObject<H
     </div>
   );
 }
+
+/** Memoised: see Mosaic. */
+export const Canvas = memo(CanvasView);

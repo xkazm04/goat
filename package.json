@@ -13,7 +13,9 @@
     "test:e2e": "playwright test",
     "seed:v2": "node --env-file-if-exists=.env node_modules/tsx/dist/cli.mjs scripts/v2/import-v1-seeds.ts",
     "copy:check": "node .claude/skills/native-copy/scripts/copy-check.mjs",
-    "brand:assets": "tsx scripts/build-brand-assets.ts"
+    "brand:assets": "tsx scripts/build-brand-assets.ts",
+    "brand:bake": "python tools/bake-art.py",
+    "perf": "python tools/perf.py http://localhost:3300"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.133.0",

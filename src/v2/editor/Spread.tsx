@@ -1,15 +1,15 @@
 'use client';
 
-import { useContext } from 'react';
+import { memo, useContext } from 'react';
 
-import { ModeArt } from '@/v2/brand/ModeArt';
+import { SpreadPlate } from '@/v2/brand/SpreadPlate';
 import { projectSpread } from '@/v2/list/projections';
 
 import { Card, EmptySlot, RankSlot } from './Card';
 import { ReadOnlyContext, useEditor } from './context';
 
 /** Spread: the editorial column. You edit the page readers will see. */
-export function Spread() {
+function SpreadView() {
   const doc = useEditor((s) => s.history.present);
   const items = useEditor((s) => s.items);
   const dispatch = useEditor((s) => s.dispatch);
@@ -18,7 +18,6 @@ export function Spread() {
 
   return (
     <div className="sp-wrap">
-      <ModeArt mode="spread" />
       <div className="sp">
       {rows.map((row) => {
         const item = row.id ? items[row.id] : null;
@@ -70,6 +69,10 @@ export function Spread() {
         );
       })}
       </div>
+      <SpreadPlate />
     </div>
   );
 }
+
+/** Memoised: see Mosaic. */
+export const Spread = memo(SpreadView);

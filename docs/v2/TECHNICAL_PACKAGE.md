@@ -418,6 +418,51 @@ Still open:
 
 ## 10. Milestones
 
+### Brand: the engraved mode art (after M7)
+
+- **Chosen by the owner** from a blind two-round design contest (`goat-spread-art` and its package round
+  `goat-spread-art-r2`): Sonnet 5.5's "Plate I: Capra maxima" package, extended across all four views. The
+  design file is kept as the source of record in `design/winner/` with its notes.
+- **Ported as baked art, not as code.** The design draws every layer with a canvas engraver (distance fields over
+  a ~860 by 960 grid, several times per view). That is deterministic and cost 100 to 250 ms of main-thread time
+  per view, so `tools/bake-art.py` runs the design in headless Chromium and writes each drawn layer to
+  `public/art` as WebP (887 KB in all; at most about 250 KB per view). Skies, glows and the sun's rays are CSS
+  and SVG instead of bitmaps (the baked skies were ~390 KB each for what a gradient does in zero bytes).
+- **What each view got.** Mosaic: a sun behind the hero tile that follows the cover under the pointer, an
+  engraved goat on a ledge. Canvas: one engraved range with the goat on the summit. Spread: the engraved plate in
+  the margin with a printed caption that follows the tier being read. Stage: engraved drapes, lamps, the goat in
+  the wing on the Podium, an engraved mountain behind Rushmore, the goat's horns behind the Throne.
+- **Not ported from the design:** the item sheet (a cover opening into its own page), the hover reading slips,
+  and the tournament restyle; the app keeps its own interactions and store. The landing page still uses the
+  earlier summit scene.
+- **Staggered arrival.** The editor sets a short boot window (`data-boot`, a DOM attribute, no state): the
+  toolbar and title on load, then the first ten items in reading order and the art layers in order (sky, stars,
+  sun, ground, goat, glints). Nothing replays when a cover is placed or dragged. The page title only slides,
+  never fades from zero: fading it delayed LCP from about 0.8 s to 3 s (measured), because it is the largest
+  text. Everything uses `translate`/`opacity`, behind `prefers-reduced-motion: no-preference`.
+- **Performance work, measured** (`npm run perf`, production build, Chromium at 4x CPU throttle, median of 5,
+  against the commit before the port):
+
+  | | before | after |
+  |---|---:|---:|
+  | editor transfer | 3,548 KB | 1,082 KB |
+  | editor LCP | 752 ms | 688 ms |
+  | editor long tasks | 594 ms | 536 ms |
+  | 40-step drag, main-thread time | 1.40 s | 1.34 s |
+  | mode switch, main-thread time | 0.28 to 0.37 s | 0.39 to 0.48 s |
+
+  The covers were the bulk of the bytes (49 images, 3.5 MB of full-size originals), so they are now 480 px WebP
+  thumbnails (826 KB) and the originals live in `design/covers-src`. The mode switch costs about 0.11 s more
+  under throttle (roughly 25 to 30 ms on a normal laptop) for the richer art and the arrival; that is the one
+  number that got worse.
+- **Code changes behind the numbers.** `Card`, `Cover`, the four views and `Pool` are memoised; `Card` selects
+  its own rank (a primitive) instead of the whole order, so a reorder re-renders only the covers that moved;
+  handlers read the store lazily with `getState()`; drop targets are measured once per drag
+  (`MeasuringStrategy.BeforeDragging`); the glints are HTML elements animating `transform` and `opacity` on the
+  compositor (animated SVG children repainted the whole layer every frame and cost about a fifth of a drag); and
+  all art animation pauses while a cover is in the air.
+- **Unmeasured:** real devices (the throttle is an approximation), Safari and Firefox, and a GPU-less machine.
+
 ### What M7 changed from the plan above
 
 - **Routes.** `/v2` became `/`: `/`, `/l/[id]`, `/new`, `/me`. The AI routes

@@ -1,7 +1,7 @@
 'use client';
 
 import { useDroppable } from '@dnd-kit/core';
-import { useContext, useEffect, useState } from 'react';
+import { memo, useContext, useEffect, useState, type CSSProperties } from 'react';
 
 import { ModeArt } from '@/v2/brand/ModeArt';
 import { Cover } from '@/v2/covers/Cover';
@@ -26,7 +26,7 @@ function Spot({ index, preset }: { index: number; preset: StagePreset }) {
   const item = useEditor((s) => (id ? s.items[id] : undefined));
   const { setNodeRef, isOver } = useDroppable({ id: `spot:${index}` });
   return (
-    <div ref={setNodeRef} className="st-spot" data-rank={index + 1} data-preset={preset} data-drop={isOver}>
+    <div ref={setNodeRef} className="st-spot rv" style={{ '--rv': index } as CSSProperties} data-rank={index + 1} data-preset={preset} data-drop={isOver}>
       <div className="st-beam" aria-hidden="true" />
       <div className="st-cover">
         {item ? (
@@ -45,7 +45,7 @@ function Spot({ index, preset }: { index: number; preset: StagePreset }) {
 }
 
 /** Stage: the list as an awards show. Podium, Rushmore or Throne, the rest in the wings. */
-export function Stage({ onTournament }: { onTournament: () => void }) {
+function StageView({ onTournament }: { onTournament: () => void }) {
   const doc = useEditor((s) => s.history.present);
   const items = useEditor((s) => s.items);
   const dispatch = useEditor((s) => s.dispatch);
@@ -80,7 +80,6 @@ export function Stage({ onTournament }: { onTournament: () => void }) {
       </div>
 
       <div className="st-floor">
-        {doc.stagePreset === 'rushmore' ? <div className="st-mountain" aria-hidden="true" /> : null}
         <div className="st-spots">
           {preset.layout.map((i) => (
             <Spot key={i} index={i} preset={doc.stagePreset} />
@@ -110,6 +109,9 @@ export function Stage({ onTournament }: { onTournament: () => void }) {
     </div>
   );
 }
+
+/** Memoised: see Mosaic. `onTournament` must be a stable callback. */
+export const Stage = memo(StageView);
 
 /** Two covers under twin spotlights. Click one, or press ← / →. Esc calls it off. */
 export function FaceOff({

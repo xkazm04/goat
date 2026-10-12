@@ -24,6 +24,8 @@ npm test             # vitest over src/, scripts/ and supabase/; zero files exec
 npm run test:e2e     # Playwright smoke: starts its own dev server, no database, fixture AI provider
 npm run seed:v2      # dry run of importing v1's seed lists into goat_v2 (add `-- --apply` to write)
 npm run copy:check   # the English copy gate (needs the linked native-copy skill)
+npm run brand:bake   # re-bake public/art from design/winner (needs Playwright for Python)
+npm run perf         # load and interaction costs against a production server on :3300, 4x CPU throttle
 ```
 
 CI (`.github/workflows/gates.yml`) runs typecheck and lint, unit tests, and the smoke suite as three jobs.
@@ -31,7 +33,7 @@ CI (`.github/workflows/gates.yml`) runs typecheck and lint, unit tests, and the 
 ## Architecture
 
 - **Routes:** `src/app/` is thin. `/` home, `/l/[id]` the editor (`/l/demo` needs no database), `/new` pool builder, `/me` taste profile, `/p/[slug]` published list with its social card, `/embed/[slug]` iframe view, and `/api/*` for the AI and oEmbed routes.
-- **Domain code:** `src/v2/` (the name is historical). `list/` is the document, reducer, undo and sync; `editor/` the four modes; `ai/` the Claude layer; `dna/` taste math and `/me`; `publish/` sharing; `brand/` the goat art and its generated assets (`npm run brand:assets`); `covers/`, `db/`, `auth/`, `ui/`.
+- **Domain code:** `src/v2/` (the name is historical). `list/` is the document, reducer, undo and sync; `editor/` the four modes; `ai/` the Claude layer; `dna/` taste math and `/me`; `publish/` sharing; `brand/` the goat art, its generated assets (`npm run brand:assets`) and the baked engraved mode art (`npm run brand:bake`, from `design/winner`); `covers/`, `db/`, `auth/`, `ui/`.
 - **One list document:** every edit is a `Command` through the pure reducer in `src/v2/list/reducer.ts`, and the four modes are projections of it. Add behaviour as a command, not as mode-local state.
 - **Database:** Supabase, schema `goat_v2` (`supabase/migrations/20261009000000_goat_v2_baseline.sql`). Guests get anonymous sessions, so every visitor has a real `auth.uid()`. Row-level security decides visibility; `items` rows are written only by server routes with the service role.
 - **AI engine switch:** `V2_AI_PROVIDER` is `fixture` (canned, no model), `cli` (the local Claude Code CLI, haiku at low effort, development only) or `claude` (the API). Unset, the API is used when `ANTHROPIC_API_KEY` is set and fixtures otherwise. CI always uses fixtures.
