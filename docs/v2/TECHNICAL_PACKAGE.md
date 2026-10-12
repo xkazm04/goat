@@ -433,8 +433,8 @@ Still open:
   the margin with a printed caption that follows the tier being read. Stage: engraved drapes, lamps, the goat in
   the wing on the Podium, an engraved mountain behind Rushmore, the goat's horns behind the Throne.
 - **Not ported from the design:** the item sheet (a cover opening into its own page), the hover reading slips,
-  and the tournament restyle; the app keeps its own interactions and store. The landing page still uses the
-  earlier summit scene.
+  and the tournament restyle; the app keeps its own interactions and store. The landing page's summit scene now
+  carries the same engraved goat (a path on the page, a data URI in the generated social-card still).
 - **Staggered arrival.** The editor sets a short boot window (`data-boot`, a DOM attribute, no state): the
   toolbar and title on load, then the first ten items in reading order and the art layers in order (sky, stars,
   sun, ground, goat, glints). Nothing replays when a cover is placed or dragged. The page title only slides,
@@ -461,6 +461,8 @@ Still open:
   (`MeasuringStrategy.BeforeDragging`); the glints are HTML elements animating `transform` and `opacity` on the
   compositor (animated SVG children repainted the whole layer every frame and cost about a fifth of a drag); and
   all art animation pauses while a cover is in the air.
+- **Phone fixes.** The narrow-panel rules were losing to `.ma img { display: block }` on specificity, so the Mosaic
+  goat showed as a sliver beside tile 2; and the Canvas legend now yields to the summit goat on narrow panels.
 - **Unmeasured:** real devices (the throttle is an approximation), Safari and Firefox, and a GPU-less machine.
 
 ### What M7 changed from the plan above

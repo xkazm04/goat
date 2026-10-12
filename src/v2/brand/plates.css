@@ -437,13 +437,19 @@
 
 /* ---- narrow panels: the art steps back so content keeps the room ---- */
 @container (max-width: 700px) {
-  .goat-v2 .ma-goat-front {
+  /* `img.` raises specificity above `.ma img { display: block }`, which would otherwise win and keep it visible */
+  .goat-v2 .ma img.ma-goat-front {
     display: none;
   }
 
-  .goat-v2 .ma-goat-stage {
+  .goat-v2 .ma img.ma-goat-stage {
     height: 30cqw;
     opacity: 0.6;
+  }
+
+  /* Canvas: the summit goat would sit under the "Higher is greater" legend, so the legend yields */
+  .goat-v2 .cv-legend {
+    display: none;
   }
 }
 

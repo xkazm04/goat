@@ -1,4 +1,3 @@
-import { GoatFigure } from './Goat';
 import { Motes, scatter, Sparkles, type MoteSpec, type SparkleSpec } from './Sparkles';
 
 /**
@@ -12,6 +11,8 @@ import { Motes, scatter, Sparkles, type MoteSpec, type SparkleSpec } from './Spa
  */
 
 const GOAT_AT = { x: 654, y: 310 };
+/** The baked engraved goat (public/art/goat-summit.webp, 374 by 454) in the figure's local space, hooves on y = 250. */
+const GOAT_IMG = { x: 12, y: -72, w: 296, h: 360 };
 const HALO = { x: 820, y: 360 };
 
 const SKY = scatter(34, { x: 30, y: 20, w: 1140, h: 380 }, 3).map((p) => ({ x: p.x, y: p.y, r: 0.6 + p.t * 1.0, o: 0.25 + p.u * 0.35 }));
@@ -49,7 +50,16 @@ const MOTES: MoteSpec[] = scatter(24, { x: 560, y: 330, w: 560, h: 380 }, 7).map
  * `still` is for rasterising (the social card): numerals become paths, since a
  * data-URI SVG has no page fonts, and no element depends on page CSS.
  */
-export function SummitScene({ className, still = false }: { className?: string; still?: boolean }) {
+export function SummitScene({
+  className,
+  still = false,
+  goatHref = '/art/goat-summit.webp',
+}: {
+  className?: string;
+  still?: boolean;
+  /** The engraved goat: a path for the page, a data URI for the still (a standalone SVG cannot load files). */
+  goatHref?: string;
+}) {
   return (
     <svg
       className={className}
@@ -157,7 +167,7 @@ export function SummitScene({ className, still = false }: { className?: string; 
 
       {/* The goat, hooves on the step */}
       <g transform={`translate(${GOAT_AT.x} ${GOAT_AT.y})`}>
-        <GoatFigure idPrefix="summit-goat" />
+        <image href={goatHref} x={GOAT_IMG.x} y={GOAT_IMG.y} width={GOAT_IMG.w} height={GOAT_IMG.h} />
       </g>
 
       {still ? null : <Motes items={MOTES} />}

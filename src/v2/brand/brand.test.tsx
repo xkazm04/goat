@@ -16,7 +16,8 @@ import { Vignette } from './Vignette';
 
 describe('brand art', () => {
   it('keeps the generated still scene in step with SummitScene (run `npm run brand:assets` if this fails)', () => {
-    expect(renderToStaticMarkup(<SummitScene still />)).toBe(SUMMIT_STILL_SVG);
+    const goat = readFileSync(path.resolve(__dirname, '../../../public/art/goat-summit.webp')).toString('base64');
+    expect(renderToStaticMarkup(<SummitScene still goatHref={`data:image/webp;base64,${goat}`} />)).toBe(SUMMIT_STILL_SVG);
   });
 
   it('keeps the favicon in step with the goat paths', () => {
