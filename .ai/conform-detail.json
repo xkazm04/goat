@@ -1,4 +1,15 @@
 {
   "schema": "conform-detail/1",
-  "pairs": {}
+  "pairs": {
+    "574e79a8-5847-4763-a52c-ac884ac33d97/prompt-assembly": {
+      "context": "landing-home",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-12",
+      "evaluatedTs": "2026-10-12T20:35:54.089Z",
+      "worker": "e4d7465b-796a-4f80-a863-fe2382f167ef",
+      "techniques": []
+    }
+  }
 }

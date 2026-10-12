@@ -5539,7 +5539,11 @@
           "revision": 41,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/app/page.tsx:11 The Home component is a purely presentational React landing page that routes user topic input via standard HTML form submission without assembling any prompt or communicating with a language model.",
+          "evaluatedAt": "2026-10-12",
+          "evaluatedAgainst": "sha256-b2:7436fd55a7cb2500",
+          "evaluatedRevision": 43
         },
         {
           "subject": "templates-scaffolding",
