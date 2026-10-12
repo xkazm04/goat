@@ -282,3 +282,18 @@
 .goat-v2 .hl-covers:has(> :only-child) .v2-cover {
   aspect-ratio: 16 / 9;
 }
+
+.goat-v2 .v2-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.goat-v2 .v2-lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 import { GoatBackdrop } from '@/v2/brand/Backdrop';
+import { Wordmark } from '@/v2/brand/Wordmark';
 import { HomeLists } from '@/v2/ui/HomeLists';
 import { SessionChip } from '@/v2/ui/SessionChip';
 
@@ -13,7 +14,7 @@ export default function Home() {
       <GoatBackdrop />
       <div className="v2-wrap home-content">
       <header className="v2-bar">
-        <span className="v2-wordmark">G.O.A.T.</span>
+        <Wordmark />
         <nav aria-label="Account" className="v2-nav">
           <Link href="/me">Your taste</Link>
           <SessionChip />

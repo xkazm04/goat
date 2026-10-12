@@ -1,3 +1,5 @@
+import { Vignette } from '@/v2/brand/Vignette';
+
 import { radarPoints, type Dna } from './dna';
 
 export interface PersonaCardProps {
@@ -21,9 +23,10 @@ export function PersonaCard({ persona, dna, cardNo }: PersonaCardProps) {
   return (
     <article className="pc" aria-label={`Persona card ${cardNo}: ${persona.name}`}>
       <span className="pc-sheen" aria-hidden="true" />
+      <Vignette className="pc-vignette" label={String(cardNo).padStart(3, '0')} />
       <header>
         <span className="v2-eyebrow">Taste card</span>
-        <span className="pc-no">No. {String(cardNo).padStart(3, '0')}</span>
+        <span className="v2-sr">No. {String(cardNo).padStart(3, '0')}</span>
       </header>
       <h2>{persona.name}</h2>
       <p className="pc-tag">{persona.tagline}</p>

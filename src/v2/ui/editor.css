@@ -1194,3 +1194,9 @@
   flex-wrap: wrap;
   gap: 8px;
 }
+
+.goat-v2 .ed-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}

@@ -5,6 +5,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { fetchPersona, fetchRecommendations, type RecommendationView } from '@/v2/ai/client';
 import { useSession } from '@/v2/auth/useSession';
+import { Vignette } from '@/v2/brand/Vignette';
+import { Wordmark } from '@/v2/brand/Wordmark';
 import { Cover } from '@/v2/covers/Cover';
 import { getBrowserClient } from '@/v2/db/browser';
 import { indexedDbStorage } from '@/v2/list/storage';
@@ -93,18 +95,21 @@ export function MeRoute() {
   return (
     <div className="v2-wrap">
       <header className="v2-bar">
-        <Link href="/" className="v2-wordmark">
-          G.O.A.T.<small>v2</small>
+        <Link href="/" aria-label="G.O.A.T. home">
+          <Wordmark />
         </Link>
       </header>
 
       <h1 className="me-title">Your taste</h1>
 
       {dna.listCount === 0 ? (
-        <p>
-          Rank at least three items in a list and your taste card appears here.{' '}
-          <Link href="/new">Start a list</Link> or <Link href="/l/demo">open the demo</Link>.
-        </p>
+        <div className="me-start">
+          <Vignette className="me-vignette" label="1" />
+          <p>
+            Rank at least three items in a list and your taste card appears here.{' '}
+            <Link href="/new">Start a list</Link> or <Link href="/l/demo">open the demo</Link>.
+          </p>
+        </div>
       ) : (
         <>
           <p className="me-sub">
@@ -117,6 +122,7 @@ export function MeRoute() {
                 <PersonaCard persona={persona.persona} dna={dna} cardNo={persona.cardNo} />
               ) : (
                 <div className="me-empty v2-glass">
+                  <Vignette className="me-vignette" label="?" />
                   <p>Your card is not written yet.</p>
                 </div>
               )}

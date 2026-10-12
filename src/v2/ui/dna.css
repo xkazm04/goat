@@ -229,3 +229,30 @@
     padding-bottom: 340px;
   }
 }
+
+/* Brand pieces used on the profile and the card */
+
+.goat-v2 .pc .pc-vignette {
+  display: block;
+  width: min(100%, 230px);
+  margin: -6px auto 4px;
+}
+
+.goat-v2 .me-start {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+  max-width: 520px;
+}
+
+.goat-v2 .me-vignette {
+  display: block;
+  width: min(100%, 260px);
+  height: auto;
+}
+
+.goat-v2 .me-empty {
+  gap: 6px;
+}
+
+

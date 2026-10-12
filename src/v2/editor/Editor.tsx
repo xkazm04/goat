@@ -17,6 +17,7 @@ import { LayoutGroup, MotionConfig } from 'framer-motion';
 import Link from 'next/link';
 import { useEffect, useState, type ReactNode } from 'react';
 
+import { GoatBust } from '@/v2/brand/GoatBust';
 import { Cover } from '@/v2/covers/Cover';
 import { canvasBands, rankIndexAt } from '@/v2/list/projections';
 import { LIST_SIZES, type ItemId } from '@/v2/list/types';
@@ -165,7 +166,8 @@ export function Editor({
               <div className="ed">
                 <div className="ed-main">
                   <div className="ed-bar" role="toolbar" aria-label="List tools">
-                    <Link href="/" className="ed-back">
+                    <Link href="/" className="ed-back" aria-label="G.O.A.T. home">
+                      <GoatBust size={22} />
                       G.O.A.T.
                     </Link>
                     <div className="ed-seg" role="group" aria-label="Mode">

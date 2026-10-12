@@ -45,9 +45,21 @@ const MOTES: MoteSpec[] = scatter(24, { x: 560, y: 330, w: 560, h: 380 }, 7).map
   period: 10 + p.t * 8,
 }));
 
-export function SummitScene({ className }: { className?: string }) {
+/**
+ * `still` is for rasterising (the social card): numerals become paths, since a
+ * data-URI SVG has no page fonts, and no element depends on page CSS.
+ */
+export function SummitScene({ className, still = false }: { className?: string; still?: boolean }) {
   return (
-    <svg className={className} viewBox="0 0 1200 800" fill="none" preserveAspectRatio="xMaxYMax slice" aria-hidden="true" focusable="false">
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 1200 800"
+      fill="none"
+      preserveAspectRatio="xMaxYMax slice"
+      aria-hidden="true"
+      focusable="false"
+    >
       <defs>
         <radialGradient id="gs-halo" cx="0.5" cy="0.5" r="0.5">
           <stop offset="0" stopColor="#ffe3a1" stopOpacity="0.2" />
@@ -127,24 +139,28 @@ export function SummitScene({ className }: { className?: string }) {
       <path d="M680 560H960" stroke="url(#gs-step-top)" strokeWidth="3" />
       <path d="M680 560H960" pathLength={1} stroke="url(#gs-sheen)" strokeWidth="3.5" strokeLinecap="round" className="gb-sheen" />
 
-      <g fontFamily="var(--display)" fontWeight="900" textAnchor="middle">
-        <text x="820" y="700" fontSize="116" fill="url(#gs-gold-text)" fillOpacity="0.92">
-          1
-        </text>
-        <text x="575" y="745" fontSize="70" fill="#9198b0" fillOpacity="0.55">
-          2
-        </text>
-        <text x="1055" y="770" fontSize="58" fill="#9198b0" fillOpacity="0.5">
-          3
-        </text>
-      </g>
+      {still ? (
+        <path d="M796 640L824 612H846V738H820V646L796 654Z" fill="url(#gs-gold-text)" fillOpacity="0.92" />
+      ) : (
+        <g fontFamily="var(--display)" fontWeight="900" textAnchor="middle">
+          <text x="820" y="700" fontSize="116" fill="url(#gs-gold-text)" fillOpacity="0.92">
+            1
+          </text>
+          <text x="575" y="745" fontSize="70" fill="#9198b0" fillOpacity="0.55">
+            2
+          </text>
+          <text x="1055" y="770" fontSize="58" fill="#9198b0" fillOpacity="0.5">
+            3
+          </text>
+        </g>
+      )}
 
       {/* The goat, hooves on the step */}
       <g transform={`translate(${GOAT_AT.x} ${GOAT_AT.y})`}>
         <GoatFigure idPrefix="summit-goat" />
       </g>
 
-      <Motes items={MOTES} />
+      {still ? null : <Motes items={MOTES} />}
       <Sparkles items={SPARKLES} />
     </svg>
   );

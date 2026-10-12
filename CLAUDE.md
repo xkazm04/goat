@@ -31,7 +31,7 @@ CI (`.github/workflows/gates.yml`) runs typecheck and lint, unit tests, and the 
 ## Architecture
 
 - **Routes:** `src/app/` is thin. `/` home, `/l/[id]` the editor (`/l/demo` needs no database), `/new` pool builder, `/me` taste profile, `/p/[slug]` published list with its social card, `/embed/[slug]` iframe view, and `/api/*` for the AI and oEmbed routes.
-- **Domain code:** `src/v2/` (the name is historical). `list/` is the document, reducer, undo and sync; `editor/` the four modes; `ai/` the Claude layer; `dna/` taste math and `/me`; `publish/` sharing; `covers/`, `db/`, `auth/`, `ui/`.
+- **Domain code:** `src/v2/` (the name is historical). `list/` is the document, reducer, undo and sync; `editor/` the four modes; `ai/` the Claude layer; `dna/` taste math and `/me`; `publish/` sharing; `brand/` the goat art and its generated assets (`npm run brand:assets`); `covers/`, `db/`, `auth/`, `ui/`.
 - **One list document:** every edit is a `Command` through the pure reducer in `src/v2/list/reducer.ts`, and the four modes are projections of it. Add behaviour as a command, not as mode-local state.
 - **Database:** Supabase, schema `goat_v2` (`supabase/migrations/20261009000000_goat_v2_baseline.sql`). Guests get anonymous sessions, so every visitor has a real `auth.uid()`. Row-level security decides visibility; `items` rows are written only by server routes with the service role.
 - **AI engine switch:** `V2_AI_PROVIDER` is `fixture` (canned, no model), `cli` (the local Claude Code CLI, haiku at low effort, development only) or `claude` (the API). Unset, the API is used when `ANTHROPIC_API_KEY` is set and fixtures otherwise. CI always uses fixtures.
