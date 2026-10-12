@@ -1832,7 +1832,11 @@
           "revision": 30,
           "changedAt": "2026-09-25",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 Context and repository searches found no MCP implementation connected to this layout, whose inspected shell renders children with fonts and CSS, so the tool-protocol precondition does not hold.",
+          "evaluatedAt": "2026-10-12",
+          "evaluatedAgainst": "sha256-b2:afba7a2b8c938ae1",
+          "evaluatedRevision": 31
         },
         {
           "subject": "test-harness",
@@ -5575,7 +5579,11 @@
           "revision": 30,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/app/page.tsx:33 Context and repository searches found no MCP implementation connected to this page, whose topic form navigates to /new and whose imported components display lists and session status, so the tool-protocol precondition does not hold.",
+          "evaluatedAt": "2026-10-12",
+          "evaluatedAgainst": "sha256-b2:afba7a2b8c938ae1",
+          "evaluatedRevision": 31
         },
         {
           "subject": "agent-memory",
@@ -8293,7 +8301,11 @@
           "revision": 30,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:17 Context and repository searches found no MCP registration or dispatch connected to this endpoint, which builds ordinary oEmbed responses for published lists, so the tool-protocol precondition does not hold.",
+          "evaluatedAt": "2026-10-12",
+          "evaluatedAgainst": "sha256-b2:afba7a2b8c938ae1",
+          "evaluatedRevision": 31
         },
         {
           "subject": "agent-instruction-files",

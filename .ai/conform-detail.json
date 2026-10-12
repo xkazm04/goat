@@ -10,6 +10,354 @@
       "evaluatedTs": "2026-10-12T20:35:54.089Z",
       "worker": "e4d7465b-796a-4f80-a863-fe2382f167ef",
       "techniques": []
+    },
+    "5183f934-7df8-4fbe-bdef-3d239fea4e26/mcp-tools": {
+      "context": "app-shell",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-12",
+      "evaluatedTs": "2026-10-12T21:42:53.723Z",
+      "worker": "9b137e9a-19e1-47cb-a92d-51a1d9188ce9",
+      "techniques": [
+        {
+          "technique": "ambient-selection-is-not-an-argument",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 No tool server resolves an interactive application's selection."
+        },
+        {
+          "technique": "authentication-and-scoping",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 No tool consumers, capability tokens, listing or invocation."
+        },
+        {
+          "technique": "caller-differentiated-capability",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 No engine exposed through human and agent tool surfaces."
+        },
+        {
+          "technique": "catalog-projection-modes",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 No published tool catalog or host tool budget."
+        },
+        {
+          "technique": "client-integration",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 No tool client installation, connection or consent flow."
+        },
+        {
+          "technique": "command-audit-by-position",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 No configured server command is audited or executed."
+        },
+        {
+          "technique": "egress-argument-gating",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 No outbound tool calls over third-party argument schemas."
+        },
+        {
+          "technique": "enumeration-without-a-scope",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 No enumeration operation over per-caller tool resources."
+        },
+        {
+          "technique": "first-party-agent-is-a-principal",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 No first-party agent or shared protocol handlers."
+        },
+        {
+          "technique": "fluent-syntax-bounded-grammar",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 No tool accepts command or query notation."
+        },
+        {
+          "technique": "one-server-many-registrations",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 No tool server registrations are composed here."
+        },
+        {
+          "technique": "orchestration-to-tool-migration",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 No model pipeline or adaptive stages exposed as tools."
+        },
+        {
+          "technique": "sanctioned-session-state",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 No stateful tool service or replica-affinity routing."
+        },
+        {
+          "technique": "sealed-continuation-state",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 No resumable operation hands intermediate state to callers."
+        },
+        {
+          "technique": "server-composition",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 No protocol shell, tool registry or dispatch door."
+        },
+        {
+          "technique": "suspendable-request-classes",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 No protocol request classes or human elicitation."
+        },
+        {
+          "technique": "tool-identity-vs-tool-name",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 No tool identities or persisted tool references."
+        },
+        {
+          "technique": "tool-schema-design",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 No model-addressable tool definitions or argument schemas."
+        },
+        {
+          "technique": "transport-selection",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 Rendering the application shell introduces no tool transport."
+        },
+        {
+          "technique": "untrusted-result-handling",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 No tool results enter a model's context."
+        },
+        {
+          "technique": "write-freshness-gate",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 No model-facing artifact read or write tools."
+        }
+      ]
+    },
+    "a5fbc2be-5b70-4417-89a3-cffbb72ea426/mcp-tools": {
+      "context": "platform-infrastructure",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-12",
+      "evaluatedTs": "2026-10-12T21:42:53.723Z",
+      "worker": "9b137e9a-19e1-47cb-a92d-51a1d9188ce9",
+      "techniques": [
+        {
+          "technique": "ambient-selection-is-not-an-argument",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:13 The target comes from a URL, not an application's ambient selection."
+        },
+        {
+          "technique": "authentication-and-scoping",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:14 Public published-list retrieval, not authenticated tool invocation."
+        },
+        {
+          "technique": "caller-differentiated-capability",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:17 No shared human CLI and agent tool engine."
+        },
+        {
+          "technique": "catalog-projection-modes",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:17 An oEmbed document is not a tool catalog."
+        },
+        {
+          "technique": "client-integration",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:24 No tool client installation, federation or consent flow."
+        },
+        {
+          "technique": "command-audit-by-position",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:17 No configured server command is spawned."
+        },
+        {
+          "technique": "egress-argument-gating",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:17 No third-party tool call or access-granting argument schema."
+        },
+        {
+          "technique": "enumeration-without-a-scope",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:14 Retrieves one named published list; no resource enumeration."
+        },
+        {
+          "technique": "first-party-agent-is-a-principal",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:17 No first-party agent reuses protocol handlers."
+        },
+        {
+          "technique": "fluent-syntax-bounded-grammar",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:13 Parses an oEmbed URL, not fluent tool command notation."
+        },
+        {
+          "technique": "one-server-many-registrations",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:17 No tool server registration records or aliases."
+        },
+        {
+          "technique": "orchestration-to-tool-migration",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:17 Deterministic oEmbed construction has no model orchestration."
+        },
+        {
+          "technique": "sanctioned-session-state",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:13 No tool-session state or owner-affinity routing."
+        },
+        {
+          "technique": "sealed-continuation-state",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:24 Returns completed oEmbed content, not a resumable continuation."
+        },
+        {
+          "technique": "server-composition",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:17 No tool registry, protocol listing or dispatch door."
+        },
+        {
+          "technique": "suspendable-request-classes",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:24 No protocol metadata surface or human suspension mechanism."
+        },
+        {
+          "technique": "tool-identity-vs-tool-name",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:17 No published tool identity or name-keyed tool history."
+        },
+        {
+          "technique": "tool-schema-design",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:11 An oEmbed format parameter is not a model tool schema."
+        },
+        {
+          "technique": "transport-selection",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:24 Ordinary HTTP oEmbed output, not an MCP transport."
+        },
+        {
+          "technique": "untrusted-result-handling",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:24 No tool result is inserted into model context."
+        },
+        {
+          "technique": "write-freshness-gate",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:14 Published-list retrieval exposes no model artifact write."
+        }
+      ]
+    },
+    "574e79a8-5847-4763-a52c-ac884ac33d97/mcp-tools": {
+      "context": "landing-home",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-12",
+      "evaluatedTs": "2026-10-12T21:42:53.723Z",
+      "worker": "9b137e9a-19e1-47cb-a92d-51a1d9188ce9",
+      "techniques": [
+        {
+          "technique": "ambient-selection-is-not-an-argument",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:33 A topic form does not resolve ambient application selections."
+        },
+        {
+          "technique": "authentication-and-scoping",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/ui/SessionChip.tsx:20 Displays browser session status; no tool-consumer credentials."
+        },
+        {
+          "technique": "caller-differentiated-capability",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:33 No engine shared between CLI and agent tool surfaces."
+        },
+        {
+          "technique": "catalog-projection-modes",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:46 Displays ranking lists, not a published tool catalog."
+        },
+        {
+          "technique": "client-integration",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:33 No tool client installation, connection or consent flow."
+        },
+        {
+          "technique": "command-audit-by-position",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:33 Form submission does not execute a configured server command."
+        },
+        {
+          "technique": "egress-argument-gating",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:33 No third-party outbound tool argument schema."
+        },
+        {
+          "technique": "enumeration-without-a-scope",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/ui/HomeLists.tsx:67 The personal-list query has an explicit owner scope."
+        },
+        {
+          "technique": "first-party-agent-is-a-principal",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:33 No first-party agent calls shared protocol handlers here."
+        },
+        {
+          "technique": "fluent-syntax-bounded-grammar",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:36 Topic text is not command notation accepted by a tool."
+        },
+        {
+          "technique": "one-server-many-registrations",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:33 No tool server registrations or registration-derived names."
+        },
+        {
+          "technique": "orchestration-to-tool-migration",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:33 This page collects a topic; it implements no model pipeline."
+        },
+        {
+          "technique": "sanctioned-session-state",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:33 No tool-state affinity or replica ownership."
+        },
+        {
+          "technique": "sealed-continuation-state",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:36 Carries topic input, not sealed intermediate operation state."
+        },
+        {
+          "technique": "server-composition",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:33 No protocol shell, tool registry or tool dispatcher."
+        },
+        {
+          "technique": "suspendable-request-classes",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:33 An ordinary form is not protocol elicitation or suspension."
+        },
+        {
+          "technique": "tool-identity-vs-tool-name",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:46 Ranking-list identities are not persisted tool identities."
+        },
+        {
+          "technique": "tool-schema-design",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:36 A form field is not a model-addressable tool argument schema."
+        },
+        {
+          "technique": "transport-selection",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:33 Browser navigation establishes no MCP transport."
+        },
+        {
+          "technique": "untrusted-result-handling",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:46 List records are rendered to people, not inserted as model tool results."
+        },
+        {
+          "technique": "write-freshness-gate",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:33 No model-facing artifact editing tools."
+        }
+      ]
     }
   }
 }
