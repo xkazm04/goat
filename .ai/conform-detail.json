@@ -373,6 +373,28 @@
         "at": "2026-10-12T22:50:29.395075+00:00",
         "reason": "reviewer (sonnet): The anchor is an oEmbed GET handler that doesn't show whether quality gates, waivers or hooks exist. The claim that copy-contract sources don't name it and the pipeline is recorded in notes was not confirmed in the code I opened, so the anchor is incidental."
       }
+    },
+    "5183f934-7df8-4fbe-bdef-3d239fea4e26/test-harness": {
+      "context": "app-shell",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-12",
+      "evaluatedTs": "2026-10-12T23:41:29.152Z",
+      "worker": "c16eb870-8cb3-4fb1-b4d7-1cfac14d953b",
+      "techniques": [],
+      "registryProposal": "Remove the pairing between test-harness and app-shell in registry-map.json, as the match was triggered by keyword overlap on UI shell terms rather than any test harness machinery."
+    },
+    "a5fbc2be-5b70-4417-89a3-cffbb72ea426/test-harness": {
+      "context": "platform-infrastructure",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-12",
+      "evaluatedTs": "2026-10-12T23:41:29.152Z",
+      "worker": "c16eb870-8cb3-4fb1-b4d7-1cfac14d953b",
+      "techniques": [],
+      "registryProposal": "Remove the pairing between test-harness and platform-infrastructure in registry-map.json, as the match was triggered by keyword overlap on platform and route terms rather than any test harness machinery."
     }
   }
 }

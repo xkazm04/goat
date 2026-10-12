@@ -1852,7 +1852,11 @@
           "revision": 24,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 Context and repository searches found no test harness, runner configuration, or fixture infrastructure connected to this root layout, which renders the application UI shell within V2Shell, so the test-harness precondition does not hold.",
+          "evaluatedAt": "2026-10-12",
+          "evaluatedAgainst": "sha256-b2:5521806124d93882",
+          "evaluatedRevision": 26
         },
         {
           "subject": "app-shell",
@@ -8353,7 +8357,11 @@
           "revision": 24,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:24 Context and repository searches found no test harness, runner, or fixture machinery connected to this endpoint, which handles oEmbed HTTP GET requests and returns formatted JSON, so the test-harness precondition does not hold.",
+          "evaluatedAt": "2026-10-12",
+          "evaluatedAgainst": "sha256-b2:5521806124d93882",
+          "evaluatedRevision": 26
         },
         {
           "subject": "quality-gates",
