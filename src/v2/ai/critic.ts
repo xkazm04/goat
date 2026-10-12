@@ -69,7 +69,7 @@ export function buildCriticMessages(snapshot: ListSnapshot, turns: ChatTurn[]): 
 /** What `/api/v2/critic` streams, one JSON object per line. */
 export type CriticEvent =
   | { type: 'delta'; text: string }
-  | { type: 'done'; source: 'claude' | 'fixture'; cacheReadTokens: number }
+  | { type: 'done'; source: 'claude' | 'cli' | 'fixture'; cacheReadTokens: number }
   | { type: 'error'; code: 'quota' | 'auth' | 'refused' | 'failed' | 'bad_request'; message: string };
 
 export function encodeCriticEvent(event: CriticEvent): string {

@@ -1,18 +1,12 @@
-import { claudeCritic, fixtureCritic, type CriticProvider, type Usage } from '@/v2/ai/converse';
+import { type Usage } from '@/v2/ai/converse';
 import { encodeCriticEvent, type CriticEvent } from '@/v2/ai/critic';
+import { pickCritic } from '@/v2/ai/providers';
 import { criticBodySchema } from '@/v2/ai/request';
 import { gate, ndjsonLine, ndjsonStream } from '@/v2/ai/route-kit';
 import { recordUsage } from '@/v2/ai/server';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
-
-function pickProvider(): CriticProvider {
-  const wanted = process.env.V2_AI_PROVIDER;
-  if (wanted === 'fixture') return fixtureCritic();
-  if (wanted === 'claude' || process.env.ANTHROPIC_API_KEY) return claudeCritic();
-  return fixtureCritic();
-}
 
 export async function POST(request: Request): Promise<Response> {
   const parsed = criticBodySchema.safeParse(await request.json().catch(() => null));
@@ -25,7 +19,7 @@ export async function POST(request: Request): Promise<Response> {
     return ndjsonLine(encodeCriticEvent({ type: 'error', code: 'bad_request', message: 'Ask a question first.' }), 400);
   }
 
-  const provider = pickProvider();
+  const provider = pickCritic();
   const allowed = await gate(request, 'critic', provider.source === 'claude');
   if (!allowed.ok) return ndjsonLine(encodeCriticEvent({ type: 'error', code: allowed.code, message: allowed.message }), allowed.status);
 

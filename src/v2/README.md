@@ -28,7 +28,7 @@ The interactive studies the UI follows are in `docs/v2/prototypes/`.
 | `covers/` | `art.ts` (ArtDirection and `fallbackArt`) and `Cover.tsx` (real art first, generative fallback) | M1 |
 | `editor/` | The editor: `EditorRoute.tsx` (demo, your list, someone else's), `Editor.tsx` (toolbar, drag, keys, modes, face-offs), one file per mode (`Mosaic.tsx`, `Canvas.tsx`, `Spread.tsx`, `Stage.tsx`, the last also holding `FaceOff` and `Tournament`), `Pool.tsx`, `Card.tsx` | M1, M2 |
 | `seeds/` | `fromV1.ts`, the pure v1 to goat_v2 transform behind `npm run seed:v2` | M1 |
-| `ai/` | The pool (`candidate.ts`, `events.ts`, `pool.ts`, `ids.ts`); the critic and gap spotter (`snapshot.ts`, `critic.ts`, `gaps.ts`, `converse.ts`); batch tagging (`tagging.ts`); the routes' shared parts (`request.ts`, `route-kit.ts`, `quota.ts`, `server.ts`, service-role and server only); the browser side (`client.ts`) | M3, M4 |
+| `ai/` | The pool (`candidate.ts`, `events.ts`, `pool.ts`, `ids.ts`); the critic and gap spotter (`snapshot.ts`, `critic.ts`, `gaps.ts`, `converse.ts`); batch tagging (`tagging.ts`); the routes' shared parts (`request.ts`, `route-kit.ts`, `quota.ts`, `server.ts`, service-role and server only); the browser side (`client.ts`); `providers.ts` picks the engine (fixture, Claude API, or the local Claude Code CLI in `cli.ts` and `cli-providers.ts`) | M3, M4 |
 | `dna/`, `enrichment/` | Arrive in M3–M5 | — |
 
 ## Routes

@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 import { encodeEvent, type PoolEvent } from '@/v2/ai/events';
 import { itemUuid } from '@/v2/ai/ids';
-import { claudeProvider, fixtureProvider, type PoolProvider } from '@/v2/ai/pool';
+import { pickPool } from '@/v2/ai/providers';
 import { accountingConfigured, callerFromToken, overQuota, recordUsage, upsertItems, type ItemInput } from '@/v2/ai/server';
 
 export const runtime = 'nodejs';
@@ -16,13 +16,6 @@ const bodySchema = z.object({
 
 /** Ask for more than the list holds, so the user can drop weak ones. */
 const POOL_FACTOR = 1.2;
-
-function pickProvider(): PoolProvider {
-  const wanted = process.env.V2_AI_PROVIDER;
-  if (wanted === 'fixture') return fixtureProvider();
-  if (wanted === 'claude' || process.env.ANTHROPIC_API_KEY) return claudeProvider();
-  return fixtureProvider();
-}
 
 function bearer(request: Request): string | null {
   const header = request.headers.get('authorization');
@@ -49,7 +42,7 @@ export async function POST(request: Request): Promise<Response> {
     return single({ type: 'error', code: 'bad_request', message: 'Send a topic of 2 to 120 characters.' }, 400);
   }
   const { topic, size } = parsed.data;
-  const provider = pickProvider();
+  const provider = pickPool();
 
   // The fixture provider spends nothing, so it needs no account. The real one does.
   // A signed-in caller is resolved for either, so the items can be saved.

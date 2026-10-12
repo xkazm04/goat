@@ -443,7 +443,15 @@ Still open:
   calls it yet, because v2 has no way to add a custom item.
 - **Quotas.** `critic` 60, `gaps` 20 and `tag` 10 per user per rolling 24
   hours, alongside `pool` 10.
-- **Unverified.** As in M3, none of the Claude paths have run against the
+- **Local engine without a key.** `V2_AI_PROVIDER=cli` runs the Claude Code
+  CLI (`claude -p`, haiku, low effort, no tools, no settings, system prompt
+  replaced, scratch working directory) behind the same pool, critic and gap
+  providers. It is development only (refused when `NODE_ENV=production`) and
+  is not metered. A short live run returned 6 pool candidates in 16s, a
+  critic reply and 5 gap suggestions; the pool is parsed from one JSON
+  object per line, the chat is flattened to a transcript, and nothing here
+  exercises the API request shapes below.
+- **Unverified.** As in M3, none of the Claude API paths have run against the
   API. In particular: mid-conversation `system` messages through
   `beta.messages.stream`, `output_config.format` with adaptive thinking, and
   batch requests carrying `output_config`.

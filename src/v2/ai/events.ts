@@ -3,7 +3,7 @@ import { candidateSchema, type Candidate } from './candidate';
 /** What `/api/v2/pool` streams, one JSON object per line. */
 export type PoolEvent =
   | { type: 'candidate'; id: string; candidate: Candidate }
-  | { type: 'done'; count: number; source: 'claude' | 'fixture' }
+  | { type: 'done'; count: number; source: 'claude' | 'cli' | 'fixture' }
   | { type: 'error'; code: 'quota' | 'auth' | 'refused' | 'failed' | 'bad_request'; message: string };
 
 export function encodeEvent(event: PoolEvent): string {

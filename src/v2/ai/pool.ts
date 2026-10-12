@@ -16,7 +16,7 @@ type PoolStep =
   | { type: 'refused'; category: string | null };
 
 export interface PoolProvider {
-  readonly source: 'claude' | 'fixture';
+  readonly source: 'claude' | 'cli' | 'fixture';
   run(input: { topic: string; count: number; signal?: AbortSignal }): AsyncGenerator<PoolStep>;
 }
 

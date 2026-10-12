@@ -22,12 +22,12 @@ type CriticStep =
   | ({ type: 'usage' } & Usage);
 
 export interface CriticProvider {
-  readonly source: 'claude' | 'fixture';
+  readonly source: 'claude' | 'cli' | 'fixture';
   reply(input: { snapshot: ListSnapshot; turns: ChatTurn[]; signal?: AbortSignal }): AsyncGenerator<CriticStep>;
 }
 
 export interface GapProvider {
-  readonly source: 'claude' | 'fixture';
+  readonly source: 'claude' | 'cli' | 'fixture';
   find(input: { snapshot: ListSnapshot; signal?: AbortSignal }): Promise<{ candidates: Candidate[]; usage: Usage; refused: boolean }>;
 }
 
