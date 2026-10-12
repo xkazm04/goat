@@ -1157,3 +1157,40 @@
   flex: 1;
   min-width: 0;
 }
+
+/* M6: the Share popover */
+.goat-v2 .share {
+  position: relative;
+}
+
+.goat-v2 .share-pop {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 50;
+  display: grid;
+  gap: 10px;
+  width: min(360px, calc(100vw - 32px));
+  padding: 14px;
+}
+
+.goat-v2 .share-pop p {
+  margin: 0;
+}
+
+.goat-v2 .share-pop label {
+  display: grid;
+  gap: 4px;
+  font-size: 0.8rem;
+  opacity: 0.9;
+}
+
+.goat-v2 .share-pop textarea {
+  font: 0.75rem / 1.4 var(--font-v2-mono, monospace);
+}
+
+.goat-v2 .share-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

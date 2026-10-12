@@ -13,8 +13,8 @@ const MILESTONES = [
   { id: 'M3', name: 'Create with AI', detail: 'Prompt to a streaming candidate pool on Claude', state: 'done' },
   { id: 'M4', name: 'Co-curator', detail: 'Critic chat and gap spotter', state: 'done' },
   { id: 'M5', name: 'Taste DNA', detail: 'Persona card and recommendations', state: 'done' },
-  { id: 'M6', name: 'Publish', detail: 'Public page, social card, embed', state: 'next' },
-  { id: 'M7', name: 'Swap', detail: 'v2 moves to /, v1 is deleted', state: 'later' },
+  { id: 'M6', name: 'Publish', detail: 'Public page, social card, embed', state: 'done' },
+  { id: 'M7', name: 'Swap', detail: 'v2 moves to /, v1 is deleted', state: 'next' },
 ] as const;
 
 export default function V2Home() {

@@ -104,9 +104,18 @@ const nextConfig = {
 
     return [
       {
-        // Apply security headers to all routes
-        source: '/(.*)',
+        // Apply security headers to all routes except the embed, which exists to be framed.
+        source: '/((?!embed/).*)',
         headers: securityHeaders,
+      },
+      {
+        // /embed/<slug> may be framed by any site; nothing else may be framed (v2 TECHNICAL_PACKAGE §6).
+        // frame-ancestors replaces X-Frame-Options here, so DENY is not sent.
+        source: '/embed/:path*',
+        headers: [
+          ...securityHeaders.filter((h) => h.key !== 'X-Frame-Options'),
+          { key: 'Content-Security-Policy', value: 'frame-ancestors *' },
+        ],
       },
       {
         // Service Worker header for PWA

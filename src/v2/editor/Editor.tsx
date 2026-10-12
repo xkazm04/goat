@@ -20,6 +20,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Cover } from '@/v2/covers/Cover';
 import { canvasBands, rankIndexAt } from '@/v2/list/projections';
 import { LIST_SIZES, type ItemId } from '@/v2/list/types';
+import { SharePanel, type ShareState } from '@/v2/publish/SharePanel';
 
 import { Canvas } from './Canvas';
 import { ModeContext, ReadOnlyContext, useEditor, type Mode } from './context';
@@ -64,12 +65,15 @@ export function Editor({
   readOnly = false,
   status,
   banner,
+  share,
 }: {
   readOnly?: boolean;
   /** Where the list is saved, shown in the toolbar. */
   status: { text: string; error?: boolean };
   /** Optional strip under the title, e.g. "Make it mine" on someone else's list. */
   banner?: ReactNode;
+  /** Publishing for your own saved list; omitted when it cannot be published (demo, offline, someone else's). */
+  share?: ShareState;
 }) {
   const doc = useEditor((s) => s.history.present);
   const items = useEditor((s) => s.items);
@@ -192,6 +196,7 @@ export function Editor({
                     </span>
                     {!readOnly ? (
                       <>
+                        {share ? <SharePanel share={share} /> : null}
                         <button type="button" className="ed-ghost" aria-pressed={criticOpen} onClick={() => setCriticOpen((o) => !o)}>
                           Challenge me
                         </button>

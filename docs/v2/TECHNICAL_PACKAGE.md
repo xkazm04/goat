@@ -418,6 +418,44 @@ Still open:
 
 ## 10. Milestones
 
+### What M6 changed from the plan above
+
+- **Publishing.** The editor's **Share** button (shown for your own list when
+  signed in) pushes the list, then claims a slug from the title
+  (`the-greatest-rpgs-ever-made`, with a random tail if taken) and sets
+  `visibility` to `unlisted` or `public`. A list keeps its slug when it is
+  republished or switched, so links survive; Unpublish returns it to private.
+  The panel also gives the link and an iframe snippet for each embed mode.
+- **`/p/<slug>`.** Server-rendered with the anon key (row-level security
+  decides what a stranger sees), then the read-only editor with the mode
+  switcher. "Make it mine" forks it for a signed-in visitor. Metadata carries
+  the title, the top three, a `summary_large_image` card and an oEmbed
+  discovery link. Unlisted pages are `noindex`.
+- **Social card.** `opengraph-image.tsx` on the Node runtime with the anon
+  key, using an OG-safe cover (a two-hue gradient with the rank and title)
+  rather than the generative cover, which Satori cannot draw. A render of the
+  demo list is a 1200 by 630 PNG.
+- **Embed.** `/embed/<slug>` is a static, server-rendered compact Mosaic or
+  Spread (`?mode=spread`), not the editor's components, which need drag and
+  drop and a store. `next.config.js` now sends `X-Frame-Options: DENY` on
+  everything except `/embed/*`, which gets `Content-Security-Policy:
+  frame-ancestors *`.
+- **oEmbed.** `GET /api/v2/oembed?url=` answers only for published lists on
+  this site, with a `rich` response whose html is an escaped iframe, sizes
+  clamped by `maxwidth` and `maxheight`.
+- **Shell.** `/p` and `/embed` use the v2 shell (`V2Shell`) and skip v1's
+  chrome through the same two seams as `/v2`; the isolation lint rule covers
+  `src/app/p` and `src/app/embed`. These routes move with `/v2` at the swap.
+- **Not built:** the owner's persona chip on `/p/<slug>`, because
+  `taste_profiles` is readable only by its owner and a public read needs a
+  policy or a server route that this slice does not add. The Taste DNA
+  "published lists only" filter is also not applied, so every list with three
+  ranked items still counts.
+- **Unverified.** Nothing here has run against a real Supabase project: the
+  publish, `/p/<slug>`, embed and oEmbed paths are covered by a fake client,
+  static rendering tests and the 404 and framing checks. `e2e-v2/framing.spec.ts`
+  is its own file because it must turn off Chrome's local-network checks.
+
 ### What M5 changed from the plan above
 
 - **Where it lives.** `src/v2/dna/`: `dna.ts` (pure math, tested), `source.ts`
@@ -572,7 +610,7 @@ one developer plus agents.
 | **M3** ✅ | AI creation | Claude client, `/api/v2/pool` (web search + `propose_candidate` streaming), ported enrichment, `/v2/new` prune UI, quotas, fixture provider for CI | **Built 2026-10-12, live Claude path not yet exercised.** `/v2/new` streams a pool, lets you drop candidates and opens the list in the editor; unit tests and the `v2-smoke` job run it on the fixture provider. Enrichment, hero art and the live model call are open, see "What M3 changed". |
 | **M4** ✅ | Co-curator | Critic chat (cached and streaming), gap spotter, Batches tagging for custom items | **Built 2026-10-12, live Claude paths not yet exercised.** "Challenge me" streams a critic that is sent the list once and later edits as diffs; "Find gaps" adds up to five suggestions to the front of the pool. Batch tagging exists server-side only. See "What M4 changed". |
 | **M5** ✅ | Taste DNA | DNA math, `taste_profiles`, persona task, **E4 `<PersonaCard/>`** on `/v2/me`, recommendations | **Built 2026-10-12, live Claude API path not yet exercised.** `/v2/me` reads the lists in this browser (and yours on the server), computes the fingerprint, writes a persona card and five recommendations with our own match %. Verified on the fixture provider in `v2-smoke` and on the CLI engine. Two differences from the plan: the lists need not be published, and the mainstream-to-obscure axis is not built. See "What M5 changed". |
-| **M6** | Publish | `/p/[slug]`, fork, OG card, embed with scoped CSP, oEmbed | A shared link unfurls with the card, and the embed works in a third-party page. |
+| **M6** ✅ | Publish | `/p/[slug]`, fork, OG card, embed with scoped CSP, oEmbed | **Built 2026-10-12; not yet run against a real database.** Share panel in the editor, `/p/<slug>` (SSR, mode switcher, "Make it mine"), a rendered social card, `/embed/<slug>` and `/api/v2/oembed`. The framing rule is proved in a browser; the publish round trip is unit-tested with a fake client. See "What M6 changed". |
 | **M7** | Swap | Move `/v2` to `/`, delete v1 directories, deps and governance tooling (§7–8), new CLAUDE.md | The tree is under about 30k LOC. Every v2 gate is green, and no v1 path remains. |
 
 Order matters: M1–M2 prove the core with fixture data before any AI spend,

@@ -6,9 +6,11 @@ import { isConsistent } from './reducer';
 import { DEFAULT_TIERS, LIST_SIZES, STAGE_PRESETS, type ListDoc, type ListItem, type ListSize } from './types';
 
 import type { EditorStore } from './store';
-import type { getBrowserClient } from '@/v2/db/browser';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
-type Client = NonNullable<ReturnType<typeof getBrowserClient>>;
+/** The browser client or a server anon client: both are bound to the goat_v2 schema. */
+ 
+export type Client = SupabaseClient<any, any, any>;
 
 /**
  * goat_v2 rows <-> the editor's ListDoc. The client has no generated types
@@ -26,6 +28,7 @@ const listRowSchema = z.object({
   tiers: z.array(tierSchema).catch(DEFAULT_TIERS),
   stage_preset: z.enum(STAGE_PRESETS).catch('podium'),
   visibility: z.enum(['private', 'unlisted', 'public']),
+  slug: z.string().nullable().catch(null),
   published_at: z.string().nullable(),
 });
 
@@ -55,6 +58,8 @@ export interface LoadedList {
   items: ListItem[];
   ownerId: string;
   published: boolean;
+  slug: string | null;
+  visibility: 'private' | 'unlisted' | 'public';
 }
 
 function toItem(row: z.infer<typeof itemRowSchema>): ListItem {
@@ -96,6 +101,8 @@ export function fromRows(list: ListRow, entries: EntryRow[]): LoadedList {
     items: entries.map((e) => toItem(e.items)),
     ownerId: list.owner_id,
     published: list.visibility !== 'private' && list.published_at !== null,
+    slug: list.slug,
+    visibility: list.visibility,
   };
 }
 
@@ -122,9 +129,23 @@ export function toRows(doc: ListDoc, ownerId: string) {
 }
 
 export async function loadList(client: Client, listId: string): Promise<LoadedList | null> {
-  const listRes = await client.from('lists').select('id, owner_id, title, topic, size, tiers, stage_preset, visibility, published_at').eq('id', listId).maybeSingle();
+  return loadListBy(client, 'id', listId);
+}
+
+/** A published list by its public slug. Row-level security hides it unless it is published. */
+export async function loadListBySlug(client: Client, slug: string): Promise<LoadedList | null> {
+  return loadListBy(client, 'slug', slug);
+}
+
+async function loadListBy(client: Client, column: 'id' | 'slug', value: string): Promise<LoadedList | null> {
+  const listRes = await client
+    .from('lists')
+    .select('id, owner_id, title, topic, size, tiers, stage_preset, visibility, slug, published_at')
+    .eq(column, value)
+    .maybeSingle();
   if (listRes.error) throw new Error(listRes.error.message);
   if (!listRes.data) return null;
+  const listId = (listRes.data as { id: string }).id;
 
   const entriesRes = await client
     .from('list_entries')
@@ -140,7 +161,7 @@ export async function loadList(client: Client, listId: string): Promise<LoadedLi
  * Write a document. The position constraint is deferred, so one upsert can
  * reorder freely. Items never leave a document, so no rows are deleted.
  */
-async function pushList(client: Client, doc: ListDoc, ownerId: string): Promise<void> {
+export async function pushList(client: Client, doc: ListDoc, ownerId: string): Promise<void> {
   const { list, entries } = toRows(doc, ownerId);
   const a = await client.from('lists').upsert(list);
   if (a.error) throw new Error(a.error.message);

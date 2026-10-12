@@ -10,15 +10,28 @@ import { DEMO_ITEMS, demoDoc } from '@/v2/list/fixtures';
 import { autosave, indexedDbStorage } from '@/v2/list/storage';
 import { createEditorStore, type EditorStore } from '@/v2/list/store';
 import { forkList, loadList, syncToSupabase, type SyncStatus } from '@/v2/list/sync';
+import { publishList, unpublishList, type Published } from '@/v2/publish/publish';
+
 
 import { EditorProvider } from './context';
 import { Editor } from './Editor';
+
+import type { ShareState } from '@/v2/publish/SharePanel';
 
 type Opened =
   | { phase: 'loading' }
   | { phase: 'missing' }
   | { phase: 'error'; message: string }
-  | { phase: 'ready'; store: EditorStore; readOnly: boolean; fork?: () => Promise<void> };
+  | {
+      phase: 'ready';
+      store: EditorStore;
+      readOnly: boolean;
+      fork?: () => Promise<void>;
+      /** Where the list is published now, for the Share panel. */
+      published?: { slug: string | null; visibility: ShareState['visibility'] };
+      publish?: (v: Published) => Promise<{ slug: string }>;
+      unpublish?: () => Promise<void>;
+    };
 
 const SYNC_TEXT: Record<SyncStatus, string> = {
   idle: 'Saved',
@@ -26,6 +39,22 @@ const SYNC_TEXT: Record<SyncStatus, string> = {
   saved: 'Saved to your account',
   error: 'Not synced, saved on this device',
 };
+
+type Client = NonNullable<ReturnType<typeof getBrowserClient>>;
+
+/** What the Share panel needs for a list this person owns. */
+function sharing(
+  client: Client,
+  store: EditorStore,
+  userId: string,
+  published: { slug: string | null; visibility: ShareState['visibility'] },
+) {
+  return {
+    published,
+    publish: (visibility: Published) => publishList(client, store.getState().history.present, userId, visibility),
+    unpublish: () => unpublishList(client, store.getState().history.present.id),
+  };
+}
 
 function message(error: unknown): string {
   return error instanceof Error ? error.message : 'Could not open the list';
@@ -106,7 +135,12 @@ function RemoteRoute({ listId }: { listId: string }) {
             store.setState((s) => ({ history: { ...s.history, present: { ...s.history.present } } }));
           }
         }
-        return { phase: 'ready', store, readOnly: false };
+        return {
+          phase: 'ready',
+          store,
+          readOnly: false,
+          ...(userId ? sharing(client, store, userId, { slug: null, visibility: 'private' }) : {}),
+        };
       }
       if (!remote) return { phase: 'missing' };
 
@@ -120,7 +154,12 @@ function RemoteRoute({ listId }: { listId: string }) {
           stops.push(autosave(store, storage));
           stops.push(syncToSupabase(store, client, userId, setSync));
         }
-        return { phase: 'ready', store, readOnly: false };
+        return {
+          phase: 'ready',
+          store,
+          readOnly: false,
+          ...sharing(client, store, userId, { slug: remote.slug, visibility: remote.visibility }),
+        };
       }
 
       const store = createEditorStore({ doc: remote.doc, items: remote.items });
@@ -189,7 +228,62 @@ function View({ opened, status }: { opened: Opened; status: { text: string; erro
 
   return (
     <EditorProvider value={opened.store}>
-      <Editor readOnly={opened.readOnly} status={status} banner={banner} />
+      <WithShare opened={opened} status={status} banner={banner} />
     </EditorProvider>
   );
+}
+
+/** Keeps the Share panel's state (what is published, whether it is busy) for an opened list. */
+function WithShare({
+  opened,
+  status,
+  banner,
+}: {
+  opened: Extract<Opened, { phase: 'ready' }>;
+  status: { text: string; error?: boolean };
+  banner: React.ReactNode;
+}) {
+  const [published, setPublished] = useState(opened.published ?? { slug: null, visibility: 'private' as const });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { publish, unpublish } = opened;
+
+  const share: ShareState | undefined =
+    !opened.readOnly && publish && unpublish
+      ? {
+          ...published,
+          busy,
+          error,
+          onPublish: (visibility) => {
+            setBusy(true);
+            setError(null);
+            publish(visibility).then(
+              ({ slug }) => {
+                setPublished({ slug, visibility });
+                setBusy(false);
+              },
+              (cause: unknown) => {
+                setError(message(cause));
+                setBusy(false);
+              },
+            );
+          },
+          onUnpublish: () => {
+            setBusy(true);
+            setError(null);
+            unpublish().then(
+              () => {
+                setPublished((p) => ({ ...p, visibility: 'private' }));
+                setBusy(false);
+              },
+              (cause: unknown) => {
+                setError(message(cause));
+                setBusy(false);
+              },
+            );
+          },
+        }
+      : undefined;
+
+  return <Editor readOnly={opened.readOnly} status={status} banner={banner} share={share} />;
 }

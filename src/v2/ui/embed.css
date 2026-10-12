@@ -1,0 +1,90 @@
+/* The iframe embed: compact, theme-neutral and self-contained. */
+.goat-v2 .em {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  min-height: 100vh;
+  padding: 14px;
+  background: #0b0d1a;
+  color: #fff;
+  font: 14px / 1.35 var(--font-v2-body, system-ui, sans-serif);
+}
+
+.goat-v2 .em header {
+  display: grid;
+  gap: 2px;
+}
+
+.goat-v2 .em-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #f3c969;
+}
+
+.goat-v2 .em h1 {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.15;
+}
+
+.goat-v2 .em ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.goat-v2 .em-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+}
+
+.goat-v2 .em-grid li {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 112px;
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.goat-v2 .em-rank {
+  font-weight: 800;
+  font-size: 18px;
+}
+
+.goat-v2 .em-name {
+  font-weight: 700;
+}
+
+.goat-v2 .em-year {
+  opacity: 0.7;
+  font-size: 12px;
+}
+
+.goat-v2 .em-rows {
+  display: grid;
+  gap: 4px;
+}
+
+.goat-v2 .em-rows li {
+  display: grid;
+  grid-template-columns: 1.6em 14px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.goat-v2 .em-chip {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+}
+
+.goat-v2 .em footer a {
+  color: #35e0c2;
+}

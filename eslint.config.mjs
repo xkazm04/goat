@@ -302,7 +302,13 @@ const eslintConfig = [
   // each direction can fail.
   // ===========================================================================
   {
-    files: ["src/v2/**/*.{ts,tsx}", "src/app/v2/**/*.{ts,tsx}", "src/app/api/v2/**/*.{ts,tsx}"],
+    files: [
+      "src/v2/**/*.{ts,tsx}",
+      "src/app/v2/**/*.{ts,tsx}",
+      "src/app/api/v2/**/*.{ts,tsx}",
+      "src/app/p/**/*.{ts,tsx}",
+      "src/app/embed/**/*.{ts,tsx}",
+    ],
     rules: {
       "no-restricted-imports": [
         "error",
@@ -319,7 +325,7 @@ const eslintConfig = [
   },
   {
     files: ["src/**/*.{ts,tsx}"],
-    ignores: ["src/v2/**", "src/app/v2/**", "src/app/api/v2/**"],
+    ignores: ["src/v2/**", "src/app/v2/**", "src/app/api/v2/**", "src/app/p/**", "src/app/embed/**"],
     rules: {
       "no-restricted-imports": [
         "error",

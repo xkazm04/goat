@@ -12,7 +12,11 @@ import { PageTransition } from '@/components/page-transition';
  */
 export function V1Chrome({ header, children }: { header: React.ReactNode; children: React.ReactNode }) {
   const pathname = usePathname();
-  const isV2 = pathname === '/v2' || pathname?.startsWith('/v2/');
+  const isV2 =
+    pathname === '/v2' ||
+    pathname?.startsWith('/v2/') ||
+    pathname?.startsWith('/p/') ||
+    pathname?.startsWith('/embed/');
 
   if (isV2) {
     return (

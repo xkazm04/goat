@@ -20,7 +20,7 @@ describe('toRows / fromRows', () => {
     expect(entries.filter((e) => e.position !== null)).toHaveLength(doc.order.length);
 
     const back = fromRows(
-      { ...list, visibility: 'private', published_at: null },
+      { ...list, slug: null, visibility: 'private', published_at: null },
       entries.map((e) => ({ item_id: e.item_id, position: e.position, canvas_x: e.canvas_x, note: e.note, items: itemRow(e.item_id) })),
     );
     expect(back.doc.order).toEqual(doc.order);
@@ -33,7 +33,7 @@ describe('toRows / fromRows', () => {
   });
 
   it('orders ranked entries by position even when rows arrive shuffled', () => {
-    const list = { ...toRows(demoDoc(), 'o').list, visibility: 'public' as const, published_at: '2026-10-01' };
+    const list = { ...toRows(demoDoc(), 'o').list, visibility: 'public' as const, slug: null, published_at: '2026-10-01' };
     const entries = [
       { item_id: 'w3', position: 1, canvas_x: 0.25, note: null, items: itemRow('w3') },
       { item_id: 'er', position: 0, canvas_x: null, note: null, items: itemRow('er') },
@@ -47,7 +47,7 @@ describe('toRows / fromRows', () => {
   });
 
   it('falls back to a generated cover when stored art is missing', () => {
-    const list = { ...toRows(demoDoc(), 'o').list, visibility: 'private' as const, published_at: null };
+    const list = { ...toRows(demoDoc(), 'o').list, visibility: 'private' as const, slug: null, published_at: null };
     const row = { ...itemRow('er'), art: null };
     const back = fromRows(list, [{ item_id: 'er', position: 0, canvas_x: null, note: null, items: row }]);
     expect(back.items[0].art).toEqual(fallbackArt('Elden Ring'));
