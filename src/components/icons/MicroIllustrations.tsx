@@ -2,7 +2,8 @@
  * Micro-Illustrations - Custom SVG icons for filter chips and special UI elements
  *
  * Stroke-based linework (1.5-2px) to blend with Lucide icon system,
- * with filled cyan accent elements for brand personality.
+ * with filled cyan accent elements for brand personality. Decorative by
+ * default (aria-hidden); pass an aria-label to expose one as an `img`.
  */
 
 import { type SVGProps } from "react";
@@ -25,6 +26,9 @@ export function UnrankedIcon({ size = defaults.size, className, ...props }: Icon
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
+      role={props['aria-label'] || props['aria-labelledby'] ? 'img' : undefined}
+      aria-hidden={props['aria-label'] || props['aria-labelledby'] ? undefined : true}
+      focusable="false"
       {...props}
     >
       {/* Clipboard body */}
@@ -51,6 +55,9 @@ export function InGridIcon({ size = defaults.size, className, ...props }: IconPr
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
+      role={props['aria-label'] || props['aria-labelledby'] ? 'img' : undefined}
+      aria-hidden={props['aria-label'] || props['aria-labelledby'] ? undefined : true}
+      focusable="false"
       {...props}
     >
       {/* Grid cells */}
@@ -79,6 +86,9 @@ export function TopRatedIcon({ size = defaults.size, className, ...props }: Icon
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
+      role={props['aria-label'] || props['aria-labelledby'] ? 'img' : undefined}
+      aria-hidden={props['aria-label'] || props['aria-labelledby'] ? undefined : true}
+      focusable="false"
       {...props}
     >
       {/* Crown shape */}
@@ -112,6 +122,9 @@ export function RecentIcon({ size = defaults.size, className, ...props }: IconPr
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
+      role={props['aria-label'] || props['aria-labelledby'] ? 'img' : undefined}
+      aria-hidden={props['aria-label'] || props['aria-labelledby'] ? undefined : true}
+      focusable="false"
       {...props}
     >
       {/* Clock circle */}
@@ -143,6 +156,9 @@ export function HiddenGemIcon({ size = defaults.size, className, ...props }: Ico
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
+      role={props['aria-label'] || props['aria-labelledby'] ? 'img' : undefined}
+      aria-hidden={props['aria-label'] || props['aria-labelledby'] ? undefined : true}
+      focusable="false"
       {...props}
     >
       {/* Crystal top facets */}

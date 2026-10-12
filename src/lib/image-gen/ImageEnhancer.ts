@@ -55,7 +55,7 @@ export class ImageEnhancer {
     pixelData?: Uint8ClampedArray
   ): ImageQualityMetrics {
     // Resolution-based quality estimate
-    const totalPixels = width * height;
+    const _totalPixels = width * height;
     const resolutionScore = this.calculateResolutionScore(width, height);
 
     // If we have pixel data, analyze it

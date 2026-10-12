@@ -97,7 +97,7 @@ export function useServiceWorker(): UseServiceWorkerReturn {
 
     // Listen for messages from service worker
     navigator.serviceWorker.addEventListener('message', (event) => {
-      const { type, timestamp } = event.data;
+      const { type, timestamp: _timestamp } = event.data;
 
       if (type === 'SYNC_REQUESTED') {
         // Sync requested by service worker

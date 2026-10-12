@@ -258,7 +258,7 @@ export class SwipeActionHandler {
   processGesture(
     gesture: GestureData,
     contextType: "backlog" | "grid",
-    context: ActionContext
+    _context: ActionContext
   ): SwipeActionBinding | null {
     // Check if gesture is a valid swipe or flick
     const isSwipe = gesture.type.startsWith("swipe-");

@@ -17,7 +17,11 @@ const STORAGE_KEY = "goat-motion-preference";
 let reducedMotionQuery: MediaQueryList | null = null;
 
 function getReducedMotionQuery(): MediaQueryList | null {
-  if (typeof window === "undefined") return null;
+  // `window` existing does not imply `matchMedia` exists: jsdom ships none, and
+  // neither do some embedded webviews. This function already returns null for
+  // "no query available" and every caller handles it, so the absent-API case
+  // takes the same door rather than throwing during render.
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return null;
   if (!reducedMotionQuery) {
     reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
   }

@@ -1,31 +1,24 @@
 /**
- * Ranked Inventory Types
+ * Inventory tier types
  *
- * This module unifies the Collection Panel and Match Grid as two views
- * of the same conceptual entity: a ranked inventory.
+ * The consensus-derived tier a backlog item is shown with (TierIndicator), and
+ * the legacy sort vocabulary the consensus store still speaks.
  *
- * - Backlog (Collection Panel) = positions [N+1, infinity) - unranked pool
- * - Grid (Match Grid) = positions [1, N] - ranked positions
- *
- * When an item is dragged from Collection to Grid, it's not "moving between
- * systems" - it's being assigned a rank. This paradigm enables:
- * - Natural sorting by consensus/average ranking
- * - Unified item discovery where popular items bubble to the top
- * - Seamless transition between unranked and ranked states
+ * Corrected 2026-09-05: this module used to open with a "ranked inventory"
+ * paradigm — Collection Panel and Match Grid as two views of one entity, with
+ * `RankedInventoryItem`, `RankedInventoryState`, `InventoryPosition`,
+ * `groupItemsByTier`, `sortInventoryItems` and re-exported sort presets. None
+ * of those had a single importer (knip + grep, 0 consumers each); the paradigm
+ * was never implemented, and `sortInventoryItems` reached `@/lib/sorting`
+ * through a bare `require()`. What remains below is exactly what the two live
+ * consumers import: `getTierFromRank` / `getTierConfig` (TierIndicator) and
+ * `InventorySortBy` / `InventorySortOrder` / `InventorySortConfig`
+ * (consensus-store).
  */
 
 import { resolveTierFromRank } from '@/lib/tokens/badge-tokens';
 
-import type { ItemConsensusWithClusters } from './consensus';
-import type { CollectionItem } from '@/app/features/Collection/types';
 import type { SortCriteria, SortDirection } from '@/lib/sorting';
-
-/**
- * Inventory position state - where an item exists in the ranked system
- */
-export type InventoryPosition =
-  | { type: 'unranked'; poolIndex?: number }  // In Collection/backlog
-  | { type: 'ranked'; rank: number };          // In Grid at position 1-N
 
 /**
  * Sort options for unranked items in the Collection Panel
@@ -40,23 +33,12 @@ export type InventorySortBy = SortCriteria;
 export type InventorySortOrder = SortDirection;
 
 /**
- * Ranked inventory item - extends CollectionItem with ranking metadata
+ * Sort configuration for the inventory
+ * @deprecated Use SortConfig from '@/lib/sorting' instead
  */
-export interface RankedInventoryItem extends CollectionItem {
-  /** Current position in the inventory (ranked or unranked) */
-  inventoryPosition: InventoryPosition;
-
-  /** Community consensus data for this item */
-  consensus?: ItemConsensusWithClusters;
-
-  /** Effective sort score based on current sort mode */
-  sortScore?: number;
-
-  /** Whether this item is highlighted based on filters */
-  isHighlighted?: boolean;
-
-  /** Tier classification based on consensus rank */
-  tier?: InventoryTier;
+export interface InventorySortConfig {
+  sortBy: InventorySortBy;
+  sortOrder: InventorySortOrder;
 }
 
 /**
@@ -134,84 +116,4 @@ export function getTierConfig(tier: InventoryTier): TierConfig {
         icon: 'circle',
       };
   }
-}
-
-/**
- * Sort configuration for the inventory
- * @deprecated Use SortConfig from '@/lib/sorting' instead
- */
-export interface InventorySortConfig {
-  sortBy: InventorySortBy;
-  sortOrder: InventorySortOrder;
-}
-
-/**
- * Default sort configurations
- * @deprecated Use SORT_PRESETS from '@/lib/sorting' instead
- */
-export { SORT_PRESETS } from '@/lib/sorting';
-
-/**
- * Inventory state representing the full ranked system
- */
-export interface RankedInventoryState {
-  /** Items currently in ranked positions (the grid) */
-  rankedItems: RankedInventoryItem[];
-
-  /** Items in the unranked pool (the collection/backlog) */
-  unrankedItems: RankedInventoryItem[];
-
-  /** Current sort configuration for unranked items */
-  sortConfig: InventorySortConfig;
-
-  /** Category filter */
-  category: string | null;
-
-  /** Maximum rank positions (grid size, e.g., 10 for Top 10) */
-  maxRank: number;
-
-  /** Total items in the inventory */
-  totalItems: number;
-}
-
-/**
- * Compute sort score for an item based on sort configuration
- * @deprecated Use computeSortValue from '@/lib/sorting' instead
- */
-export { computeSortValue as computeSortScore } from '@/lib/sorting';
-
-/**
- * Sort items by the given configuration
- * @deprecated Use sortItems from '@/lib/sorting' instead
- */
-export function sortInventoryItems(
-  items: RankedInventoryItem[],
-  config: InventorySortConfig
-): RankedInventoryItem[] {
-  // Use the unified sorter with legacy format conversion
-  const { fromLegacySortBy, sortItems } = require('@/lib/sorting');
-  const sortConfig = fromLegacySortBy(config.sortBy, config.sortOrder);
-  return sortItems(items, sortConfig);
-}
-
-/**
- * Group items by tier for visual sectioning
- */
-export function groupItemsByTier(
-  items: RankedInventoryItem[]
-): Record<InventoryTier, RankedInventoryItem[]> {
-  const groups: Record<InventoryTier, RankedInventoryItem[]> = {
-    elite: [],
-    top: [],
-    solid: [],
-    common: [],
-    unranked: [],
-  };
-
-  for (const item of items) {
-    const tier = item.tier ?? getTierFromRank(item.consensus?.averageRank);
-    groups[tier].push(item);
-  }
-
-  return groups;
 }

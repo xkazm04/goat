@@ -100,7 +100,15 @@ const GridSlot = memo(function GridSlot({
     }
 
     return (
-        <div onClick={handleClickSlot} style={slotStyle} data-testid={`grid-slot-${position}`}>
+        <div
+            tabIndex={0}
+            role="button"
+            onClick={handleClickSlot}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClickSlot(); } }}
+            style={slotStyle}
+            className="rounded-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-hover/60 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
+            data-testid={`grid-slot-${position}`}
+        >
             <SimpleDropZone
                 position={position}
                 isOccupied={isOccupied}
@@ -167,12 +175,13 @@ export function GridSection({
                 {...(pinchEnabled ? pinchHandlers : {})}
             >
                 <div
-                    className="grid"
+                    className="grid grid-cols-[repeat(var(--grid-cols-mobile),minmax(0,1fr))] sm:grid-cols-[repeat(var(--grid-cols),minmax(0,1fr))] gap-1 sm:gap-[var(--grid-gap)]"
                     style={{
-                        gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
-                        gap: `${gap * 4}px`,
+                        '--grid-cols-mobile': mobileColumns,
+                        '--grid-cols': columns,
+                        '--grid-gap': `${gap * 4}px`,
                         ...gridStyle,
-                    }}
+                    } as React.CSSProperties}
                 >
                     {positions.map((position) => (
                         <GridSlot
@@ -183,15 +192,6 @@ export function GridSection({
                     ))}
                 </div>
             </div>
-            {/* Mobile-responsive override via CSS media query */}
-            <style jsx>{`
-                @media (max-width: 767px) {
-                    .grid {
-                        grid-template-columns: repeat(${mobileColumns}, minmax(0, 1fr)) !important;
-                        gap: 4px !important;
-                    }
-                }
-            `}</style>
         </section>
     );
 }

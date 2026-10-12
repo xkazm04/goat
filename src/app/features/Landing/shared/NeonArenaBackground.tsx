@@ -2,7 +2,7 @@
 
 import { memo } from "react";
 
-import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import { useMotionCapabilities } from "@/hooks/use-motion-preference";
 
 import { gradients } from "./gradients";
 
@@ -164,7 +164,7 @@ export const FEATURED_ORBS: FloatingOrbConfig[] = [
  * CSS-animated floating orb - uses GPU-accelerated CSS animations
  * instead of JS-driven Framer Motion for better performance
  */
-const FloatingOrb = memo(function FloatingOrb({ config, prefersReducedMotion }: { config: FloatingOrbConfig; prefersReducedMotion: boolean }) {
+const FloatingOrb = memo(function FloatingOrb({ config, disableAmbient }: { config: FloatingOrbConfig; disableAmbient: boolean }) {
   const {
     position,
     size,
@@ -203,7 +203,7 @@ const FloatingOrb = memo(function FloatingOrb({ config, prefersReducedMotion }: 
 
   return (
     <div
-      className={prefersReducedMotion ? "" : "animate-ambient-float"}
+      className={disableAmbient ? "" : "animate-ambient-float"}
       style={{
         ...cssVars,
         position: "absolute",
@@ -235,7 +235,7 @@ export const NeonArenaBackground = memo(function NeonArenaBackground({
   className = "",
   "data-testid": testId,
 }: NeonArenaBackgroundProps) {
-  const prefersReducedMotion = useReducedMotion();
+  const { allowAmbient } = useMotionCapabilities();
   const baseClass = asSection ? "absolute inset-0 -z-10" : "absolute inset-0";
   const pointerClass = "pointer-events-none";
 
@@ -269,7 +269,7 @@ export const NeonArenaBackground = memo(function NeonArenaBackground({
       {/* Aurora/mesh gradient overlay for depth - now uses CSS animation */}
       {showMesh && (
         <div
-          className={`${baseClass} ${pointerClass} ${prefersReducedMotion ? "" : "animate-ambient-mesh"}`}
+          className={`${baseClass} ${pointerClass} ${!allowAmbient ? "" : "animate-ambient-mesh"}`}
           style={{ background: gradients.mesh }}
           data-framer-motion-reducible="true"
         />
@@ -297,7 +297,7 @@ export const NeonArenaBackground = memo(function NeonArenaBackground({
 
       {/* CSS-animated floating orbs - GPU accelerated */}
       {orbs.map((orbConfig, index) => (
-        <FloatingOrb key={index} config={orbConfig} prefersReducedMotion={prefersReducedMotion} />
+        <FloatingOrb key={index} config={orbConfig} disableAmbient={!allowAmbient} />
       ))}
     </div>
   );

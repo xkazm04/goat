@@ -1,13 +1,18 @@
 import { NextRequest } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 
+import { DEFAULT_LIST_COLOR } from '@/lib/config/category-config';
 import {
   withErrorHandler,
   fromSupabaseError,
   assertRequired,
+  assertIntRange,
+  unauthorized,
   successResponse,
   createdResponse,
 } from '@/lib/errors';
+import { GRID_LIMITS } from '@/lib/grid/constants';
+import { getBlueprintUrl, getServerBaseUrl } from '@/lib/sharing/share-urls';
 import { createClient, escapeIlikeWildcards } from '@/lib/supabase/server';
 import {
   BlueprintRow,
@@ -20,11 +25,18 @@ import {
 export const dynamic = 'force-dynamic';
 
 // Default color for blueprints
-const DEFAULT_COLOR = {
-  primary: '#f59e0b',
-  secondary: '#d97706',
-  accent: '#fbbf24',
-};
+const DEFAULT_COLOR = DEFAULT_LIST_COLOR;
+
+const DEFAULT_LIMIT = 50;
+const MAX_LIMIT = 100;
+const MAX_OFFSET = 100_000;
+
+/** Integer query parameter with a floor, a ceiling and a fallback for garbage. */
+function clampInt(raw: string | null, fallback: number, min: number, max: number): number {
+  const n = raw === null ? NaN : parseInt(raw, 10);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, n));
+}
 
 // GET /api/blueprints - Get blueprints with optional filters
 export const GET = withErrorHandler(async (request: NextRequest) => {
@@ -39,8 +51,10 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
   const isCommunity = searchParams.get('is_community');
   const search = searchParams.get('search');
   const slug = searchParams.get('slug');
-  const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 50;
-  const offset = searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : 0;
+  // Bounded before PostgREST sees them: `?limit=abc` used to reach
+  // `.range(0, NaN)` and `?limit=100000` asked for that many rows.
+  const limit = clampInt(searchParams.get('limit'), DEFAULT_LIMIT, 1, MAX_LIMIT);
+  const offset = clampInt(searchParams.get('offset'), 0, 0, MAX_OFFSET);
   const sort = searchParams.get('sort') || 'recent';
 
   // Build query
@@ -105,6 +119,13 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
 // POST /api/blueprints - Create a new blueprint
 export const POST = withErrorHandler(async (request: NextRequest) => {
   const supabase = await createClient();
+
+  // Authenticate user
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    unauthorized('You must be signed in to create a blueprint');
+  }
+
   const body: CreateBlueprintRequest = await request.json();
 
   // Validate required fields
@@ -112,6 +133,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
   assertRequired(title, 'title');
   assertRequired(category, 'category');
   assertRequired(size, 'size');
+  assertIntRange(size, 'size', GRID_LIMITS.MIN_SIZE, GRID_LIMITS.MAX_SIZE);
 
   // Generate ID and slug
   const id = uuidv4();
@@ -130,6 +152,8 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     color_primary: body.color?.primary || DEFAULT_COLOR.primary,
     color_secondary: body.color?.secondary || DEFAULT_COLOR.secondary,
     color_accent: body.color?.accent || DEFAULT_COLOR.accent,
+    author: user.user_metadata?.username || user.email?.split('@')[0] || 'Anonymous',
+    author_id: user.id,
     is_system: false,
     is_featured: false,
     usage_count: 0,
@@ -150,9 +174,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
 
   const blueprint = blueprintFromRow(data as unknown as BlueprintRow);
 
-  /** Base URL for share links — falls back to production domain when env var is unset */
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://goat.app';
-  const shareUrl = `${baseUrl}/blueprint/${blueprint.slug}`;
+  const shareUrl = getBlueprintUrl(blueprint.slug ?? blueprint.id, getServerBaseUrl());
 
   return createdResponse({ blueprint, shareUrl });
 });

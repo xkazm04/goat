@@ -34,8 +34,18 @@ export function useListProgress(listId: string, listSize: number): ListProgress 
       };
     }
 
-    // Count matched items in the grid
-    const filledCount = session.gridItems.filter((item) => item.context.matched).length;
+    // Count matched items in the grid.
+    //
+    // Read defensively, matching the sibling implementation of this same rule
+    // in `ContinueRankingBar.tsx` (`session.gridItems ?? []`,
+    // `item?.context?.matched`) and the session store's own persisted reads
+    // (`session-store.ts` partialize, and `session.backlogGroups || []`).
+    // The static type promises both fields, but the VALUE is rehydrated from
+    // localStorage by a `persist` config carrying no `version` and no
+    // `migrate` — so a session any past release wrote arrives here as-is, and
+    // an unguarded read throws during the render of a landing-page card.
+    const gridItems = session.gridItems ?? [];
+    const filledCount = gridItems.filter((item) => item?.context?.matched).length;
     const total = session.listSize || listSize;
     const percentage = total > 0 ? Math.round((filledCount / total) * 100) : 0;
 

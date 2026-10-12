@@ -89,7 +89,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
       };
       rankingItem.extended.trend = {
         direction: consensus.medianRank < 10 ? 'up' : consensus.medianRank > 30 ? 'down' : 'stable',
-        change: Math.floor(Math.random() * 5) - 2,
+        // Seeded like every other consensus figure here; Math.random made the
+        // same item report a different 7d change on every request.
+        change: (hashCode(item.id) % 5) - 2,
         period: '7d',
       };
     }

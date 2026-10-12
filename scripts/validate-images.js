@@ -17,25 +17,17 @@
 
 const fs = require('fs');
 
-const API_BASE = process.env.API_BASE || 'http://localhost:3001';
+const nextConfig = require('../next.config.js');
+const { fetchAllItems } = require('./api-items');
+
+// `next dev` serves 3000; the old default (3001) pointed at a port nothing listens on.
+const API_BASE = process.env.API_BASE || 'http://localhost:3000';
 const CONCURRENT_REQUESTS = 10;
 const HTTP_TIMEOUT = 5000;
 
-// Whitelisted domains from next.config.js
-const WHITELISTED_DOMAINS = [
-  // Primary sources
-  'upload.wikimedia.org',
-  'm.media-amazon.com',
-  'static.wikia.nocookie.net',
-  // Secondary sources
-  'cdn.britannica.com',
-  'media.d3.nhle.com',
-  'files.eliteprospects.com',
-  // WordPress-hosted
-  'i0.wp.com',
-  'i1.wp.com',
-  'i2.wp.com',
-];
+// Whitelisted domains are READ from next.config.js `images.remotePatterns`,
+// never copied: the copy this replaced had 9 of the config's 13 hosts.
+const WHITELISTED_DOMAINS = nextConfig.images.remotePatterns.map((p) => p.hostname);
 
 // Parse args
 const args = process.argv.slice(2);
@@ -145,10 +137,10 @@ async function main() {
 
   // Fetch all items
   console.log('📥 Fetching items...');
-  const response = await fetch(`${API_BASE}/api/top/items?limit=5000`);
-  const data = await response.json();
-  const items = data.items || [];
-  console.log(`   Found ${items.length} items (total: ${data.total})\n`);
+  // The route clamps limit to 200; walk every page (scripts/api-items.js) so
+  // the report below is about the population, not its first fifth.
+  const { items, total, pages } = await fetchAllItems(API_BASE);
+  console.log(`   Found ${items.length} items (total: ${total}, ${pages} page(s))\n`);
 
   // Validate in batches
   console.log('🔄 Validating images...');
@@ -255,4 +247,9 @@ async function main() {
   console.log('\n✅ Validation complete!');
 }
 
-main().catch(console.error);
+main().catch((err) => {
+  // A failed run must exit non-zero: the terminal reads the exit code, not the
+  // stack trace. `.catch(console.error)` printed the error and exited 0.
+  console.error(err);
+  process.exit(1);
+});

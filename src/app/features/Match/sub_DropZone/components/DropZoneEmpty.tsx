@@ -11,28 +11,50 @@ export interface DropZoneEmptyProps {
   isTop3: boolean;
   /** Whether an item is being dragged over this zone */
   isOver: boolean;
+  /** Whether a drag is globally active (any item being dragged) */
+  isDragActive: boolean;
   /** Accent color for styling */
   accentColor: string;
 }
 
 /**
  * DropZoneEmpty
- * Renders the empty state of a drop zone.
+ * Renders the empty state of a drop zone with persistent affordance hints.
  */
 export const DropZoneEmpty = memo(function DropZoneEmpty({
-  position,
-  isTop3,
+  position: _position,
+  isTop3: _isTop3,
   isOver,
-  accentColor,
+  isDragActive,
+  accentColor: _accentColor,
 }: DropZoneEmptyProps) {
   return (
     <div
       className={`absolute inset-0 flex flex-col items-center justify-center p-4 text-center ${CSS_TIMING.fadeIn}`}
     >
-      {isOver && (
-        <div className="text-brand-hover font-bold text-xs tracking-widest uppercase">
+      {/* Persistent dashed border affordance — elevates during active drag */}
+      <div
+        className={`absolute inset-2 rounded-lg border-2 border-dashed pointer-events-none transition-all duration-300 ${
+          isOver
+            ? 'border-white/30'
+            : isDragActive
+              ? 'border-white/15 animate-[empty-slot-pulse_2s_ease-in-out_infinite]'
+              : 'border-white/8'
+        }`}
+      />
+
+      {isOver ? (
+        <div className="text-brand-hover font-bold text-xs tracking-widest uppercase z-[1]">
           Drop Here
         </div>
+      ) : (
+        <span
+          className={`text-[10px] select-none transition-opacity duration-300 z-[1] ${
+            isDragActive ? 'text-white/30' : 'text-white/20 group-hover:text-white/40'
+          }`}
+        >
+          Drag item here
+        </span>
       )}
     </div>
   );

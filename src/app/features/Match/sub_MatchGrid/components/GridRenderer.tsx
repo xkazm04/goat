@@ -8,6 +8,7 @@
 
 import React, { memo, lazy, Suspense } from "react";
 
+import { isViewCompatible, getDisplaySlots } from "@/lib/grid/view-registry";
 import { GridItemType } from "@/types/match";
 
 import { GridSection } from "./GridSection";
@@ -86,6 +87,11 @@ export const ViewSelector = memo(
     onRemove: (position: number) => void;
     onFillViaBracket?: (position: number) => void;
   }) {
+    // Validate view compatibility before rendering to prevent silent data loss
+    if (!isViewCompatible(viewMode, gridItems.length)) {
+      return null;
+    }
+
     let content: React.ReactNode = null;
     switch (viewMode) {
       case "podium":
@@ -147,7 +153,7 @@ const StandardGridSections = memo(function StandardGridSections({
   viewMode: ViewMode;
   onRemove: (position: number) => void;
 }) {
-  const startOffset = viewMode === "rushmore" ? 4 : 3;
+  const startOffset = getDisplaySlots(viewMode);
 
   return (
     <div className="space-y-4 sm:space-y-8 lg:space-y-12">
@@ -209,7 +215,7 @@ const TierGridSections = memo(
     gridItems,
     listSize,
     onRemove,
-    showHeaders,
+    showHeaders: _showHeaders,
   }: {
     gridItems: GridItemType[];
     listSize: number;

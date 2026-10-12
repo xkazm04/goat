@@ -17,6 +17,7 @@ import {
   Music,
   AlertCircle,
 } from 'lucide-react';
+import Image from 'next/image';
 import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -37,7 +38,7 @@ export function AudioPlayer() {
   const [mounted, setMounted] = useState(false);
 
   const { isVisible } = useAudioPlayer();
-  const { isPlaying, isPaused, currentItem, currentTime, duration, isLoading, error } =
+  const { isPlaying, currentItem, currentTime, duration, isLoading, error } =
     useAudioPlayback();
   const { pause, resume, stop } = useAudioControls();
   const { volume, isMuted, setVolume, toggleMute } = useAudioVolume();
@@ -137,10 +138,12 @@ export function AudioPlayer() {
           {/* Thumbnail */}
           <div className="relative w-12 h-12 rounded-card overflow-hidden shrink-0 bg-gray-800">
             {thumbnailUrl ? (
-              <img
+              <Image
                 src={thumbnailUrl}
                 alt={currentItem.title}
-                className="w-full h-full object-cover"
+                fill
+                className="object-cover"
+                unoptimized
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">

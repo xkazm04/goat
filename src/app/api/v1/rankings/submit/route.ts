@@ -115,10 +115,20 @@ export async function POST(request: NextRequest) {
         created_at: new Date().toISOString(),
       });
 
-    // If the table doesn't exist yet, still return success but note it
-    if (insertError && insertError.code !== '42P01') {
+    // A failed insert is a failed submission. Acknowledging it with 201 and a
+    // submissionId that was never stored told the widget "Thanks for voting"
+    // over a row that does not exist, and left the aggregate endpoint unable to
+    // ever show that vote. The one tolerated case is the table not existing yet
+    // (42P01) — the aggregate route tolerates the same code — and even that
+    // must leave a trace, or the first deploy without the migration is silent.
+    if (insertError && insertError.code === '42P01') {
+      console.warn(
+        '[rankings/submit] ranking_submissions table missing (42P01); submission acknowledged but not persisted',
+        { submissionId, category }
+      );
+    } else if (insertError) {
       console.error('Error storing ranking submission:', insertError);
-      // Non-critical — still acknowledge the submission
+      return apiError('Failed to store submission', 500, 'DATABASE_ERROR');
     }
 
     const headers = createApiHeaders(rateLimit, keyValidation.tier);

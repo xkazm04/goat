@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Eye, Share2, Users, Activity, Award, AlertTriangle } from "lucide-react";
+import Image from "next/image";
 
 import { cn } from "@/lib/utils";
 
@@ -111,10 +112,13 @@ export function ListAnalyticsCard({
                 className="flex items-center gap-1.5 rounded-full bg-slate-700/40 px-2 py-0.5"
               >
                 {item.image_url && (
-                  <img
+                  <Image
                     src={item.image_url}
                     alt=""
+                    width={16}
+                    height={16}
                     className="w-4 h-4 rounded-full object-cover"
+                    unoptimized
                   />
                 )}
                 <span className="text-xs text-slate-300 truncate max-w-[100px]">

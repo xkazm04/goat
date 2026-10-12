@@ -115,7 +115,7 @@ export function useTierKeyboardNavigation(options: UseTierKeyboardNavigationOpti
   /**
    * Check if modifier keys match
    */
-  const checkModifiers = useCallback(
+  const _checkModifiers = useCallback(
     (e: KeyboardEvent, modifiers?: ("ctrl" | "shift" | "alt" | "meta")[]) => {
       const hasCtrl = modifiers?.includes("ctrl") ?? false;
       const hasShift = modifiers?.includes("shift") ?? false;

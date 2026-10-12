@@ -66,7 +66,7 @@ const scaleVariants: Record<string, Variants> = {
 export const NavigationAnimator = memo(function NavigationAnimator({
   children,
   direction,
-  isAnimating,
+  isAnimating: _isAnimating,
 }: NavigationAnimatorProps) {
   const variants = scaleVariants[direction] || scaleVariants.none;
 

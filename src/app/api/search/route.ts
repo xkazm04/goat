@@ -94,10 +94,9 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
 
   // Parse other options
   const category = searchParams.get('category');
-  const limit = Math.min(
-    parseInt(searchParams.get('limit') || String(DEFAULT_LIMIT)),
-    MAX_LIMIT
-  );
+  // `Math.min(NaN, MAX)` is NaN: a non-numeric limit used to reach `.limit(NaN)`.
+  const rawLimit = parseInt(searchParams.get('limit') ?? '', 10);
+  const limit = Number.isFinite(rawLimit) ? Math.min(MAX_LIMIT, Math.max(1, rawLimit)) : DEFAULT_LIMIT;
   const includeSuggestions = searchParams.get('includeSuggestions') !== 'false';
   const userId = searchParams.get('userId');
 
@@ -399,9 +398,9 @@ async function searchBlueprints(
  * Search users (basic implementation - expand as needed)
  */
 async function searchUsers(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  query: string,
-  options: { category?: string | null; limit: number; userId?: string | null }
+  _supabase: Awaited<ReturnType<typeof createClient>>,
+  _query: string,
+  _options: { category?: string | null; limit: number; userId?: string | null }
 ): Promise<ApiSearchResult[]> {
   // Users search is a placeholder - implement based on your user table structure
   // For now, return empty results

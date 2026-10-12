@@ -109,7 +109,7 @@ class PredictionEngineClass {
   recordEvent(event: Omit<UserBehaviorEvent, 'timestamp'>): void {
     if (!this.enabled) return;
 
-    const fullEvent: UserBehaviorEvent = {
+    const _fullEvent: UserBehaviorEvent = {
       ...event,
       timestamp: Date.now(),
     };

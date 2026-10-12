@@ -90,7 +90,7 @@ function calculatePreviewPosition(
 
   let top = y;
   let left = x;
-  let transform = "";
+  const _transform = "";
 
   switch (anchor) {
     case "top":

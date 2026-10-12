@@ -4,6 +4,14 @@ import { useCallback, useEffect, useRef } from 'react';
 
 import { useSupabaseAuth } from '@/hooks/supabase-auth';
 import { useTempUser } from '@/hooks/use-temp-user';
+import { emitErrorNotification } from '@/lib/errors/error-notification-store';
+
+/** Shape of `/api/auth/merge-guest`'s 200 body — partial failure lives INSIDE it. */
+interface MergeGuestResponse {
+  merged?: boolean;
+  skipped?: boolean;
+  results?: Record<string, { updated: boolean; error?: string }>;
+}
 
 /**
  * Unified auth hook -- the single source of truth for user identity.
@@ -22,6 +30,7 @@ export function useAuthUser() {
     user,
     session,
     isLoading: authLoading,
+    error: authError,
     signInWithOAuth,
     signOut: supabaseSignOut,
   } = useSupabaseAuth();
@@ -51,14 +60,39 @@ export function useAuthUser() {
       hasMergedRef.current = true;
 
       const mergeGuestData = async () => {
+        // The route reports per-table outcome in its 200 body and only uses a
+        // non-2xx status for "could not start". Reading the status alone
+        // treated "moved 0 of 3 tables" as success and then upgraded the local
+        // identity over orphaned guest rows without a word. Losing the merge
+        // must never mean losing the failure.
         try {
-          await fetch('/api/auth/merge-guest', {
+          const res = await fetch('/api/auth/merge-guest', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ guest_id: tempUserId }),
           });
+          const body = (await res.json().catch(() => null)) as MergeGuestResponse | null;
+          const failedTables = Object.entries(body?.results ?? {})
+            .filter(([, outcome]) => outcome?.updated === false)
+            .map(([table]) => table);
+
+          if (!res.ok || failedTables.length > 0) {
+            const reason = !res.ok
+              ? `HTTP ${res.status}`
+              : `not moved: ${failedTables.join(', ')}`;
+            console.error('Guest data merge incomplete:', {
+              status: res.status,
+              failedTables,
+              guestId: tempUserId,
+              userId: user.id,
+            });
+            emitErrorNotification(new Error(`Guest data merge incomplete (${reason})`), {
+              source: 'guest-merge',
+            });
+          }
         } catch (err) {
           console.error('Failed to merge guest data:', err);
+          emitErrorNotification(err, { source: 'guest-merge' });
         }
 
         // Upgrade localStorage identity regardless of merge result
@@ -93,6 +127,13 @@ export function useAuthUser() {
     isGuest,
     /** True while auth state is being determined */
     isLoading: authLoading || !guestLoaded,
+    /**
+     * Non-null when the auth backend itself failed (client could not be built,
+     * getSession rejected). Distinct from `isGuest`: a guest CHOSE not to sign
+     * in; here the sign-in machinery is unavailable, and a surface that shows
+     * "sign in" as if it would work is misdirecting. (state-coverage)
+     */
+    authError,
     /** Trigger Google OAuth sign-in flow */
     signInWithGoogle,
     /** Sign out -- returns user to guest mode */

@@ -80,10 +80,7 @@ export async function POST(request: NextRequest) {
     const unmatchedTitles = normalizedTitles.filter(t => !dbItemMap.has(t));
 
     if (unmatchedTitles.length > 0) {
-      console.log(`[match-items] ${unmatchedTitles.length}/${normalizedTitles.length} titles unmatched after exact match, starting fuzzy queries`);
-      const fuzzyStart = performance.now();
-      let fuzzySucceeded = 0;
-      let fuzzyRejected = 0;
+      // Fuzzy matching for unmatched titles
 
       // Try to find items that might have slightly different names
       for (const title of unmatchedTitles) {
@@ -100,17 +97,11 @@ export async function POST(request: NextRequest) {
           const matchName = match.name.toLowerCase().trim();
           if (matchName.includes(title) || title.includes(matchName)) {
             dbItemMap.set(title, match);
-            fuzzySucceeded++;
-            console.log(`[match-items] fuzzy accepted: "${title}" → "${match.name}"`);
-          } else {
-            fuzzyRejected++;
-            console.log(`[match-items] fuzzy rejected: "${title}" !~ "${match.name}"`);
           }
         }
       }
 
-      const fuzzyMs = (performance.now() - fuzzyStart).toFixed(1);
-      console.log(`[match-items] fuzzy complete: ${unmatchedTitles.length} queries in ${fuzzyMs}ms (${fuzzySucceeded} accepted, ${fuzzyRejected} rejected, ${unmatchedTitles.length - fuzzySucceeded - fuzzyRejected} no results)`);
+      // Fuzzy matching complete
     }
 
     // Build response with match status for each item

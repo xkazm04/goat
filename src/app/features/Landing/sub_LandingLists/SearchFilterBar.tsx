@@ -307,10 +307,37 @@ function FilterChip<T extends string | number>({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  // Dismissal was wired to `mousedown` outside the chip ONLY, so a keyboard
+  // user who opened a dropdown had no way out of it but to pick an option.
+  // Escape closes it and hands focus back to the control that opened it —
+  // otherwise focus is left inside a subtree that has just unmounted.
+  //
+  // Registered on the document, beside the existing outside-click effect,
+  // rather than as a handler on the wrapper: a keydown listener on a static
+  // element is what `jsx-a11y/no-static-element-interactions` exists to stop,
+  // and a document listener also catches Escape pressed anywhere in the
+  // dropdown's subtree.
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      setIsOpen(false);
+      buttonRef.current?.focus();
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isOpen]);
+
   return (
     <div ref={chipRef} className="relative">
       <motion.button
+        ref={buttonRef}
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-control text-xs font-medium transition-colors
           focus-ring
           ${
@@ -340,10 +367,14 @@ function FilterChip<T extends string | number>({
               border: "1px solid rgba(255,255,255,0.1)",
             }}
             data-testid={`${testId}-dropdown`}
+            role="listbox"
           >
             {options.map((option) => (
               <button
                 key={String(option.value)}
+                type="button"
+                role="option"
+                aria-selected={value === option.value}
                 onClick={() => {
                   onChange(option.value);
                   setIsOpen(false);

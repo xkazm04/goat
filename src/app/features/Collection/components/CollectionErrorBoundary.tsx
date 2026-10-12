@@ -1,5 +1,6 @@
 "use client";
 
+import * as Sentry from "@sentry/nextjs";
 import { RefreshCw } from "lucide-react";
 import React, { Component, ReactNode } from "react";
 
@@ -60,10 +61,19 @@ export class CollectionErrorBoundary extends Component<Props, State> {
   }
 
   /**
-   * Log error to monitoring service
-   * In production, this would send to services like Sentry, LogRocket, etc.
+   * Report the error. The fallback copy tells the user the error "has been
+   * logged and reported"; until 2026-09-05 nothing left the browser — the
+   * boundary console.error'd and appended to localStorage, so the failures
+   * most worth knowing about (a render crash in the panel every match session
+   * mounts) were the ones that left no trace anywhere an operator looks.
+   * Sentry is the same sink error.tsx and global-error.tsx already use.
    */
   private logErrorToService(error: Error, errorInfo: React.ErrorInfo) {
+    Sentry.captureException(error, {
+      contexts: { react: { componentStack: errorInfo.componentStack } },
+      tags: { boundary: "CollectionErrorBoundary" },
+    });
+
     // Console log for development
     console.error("CollectionPanel Error Boundary caught an error:", {
       error,
@@ -72,13 +82,7 @@ export class CollectionErrorBoundary extends Component<Props, State> {
       timestamp: new Date().toISOString(),
     });
 
-    // TODO: In production, send to monitoring service
-    // Example integrations:
-    // - Sentry.captureException(error, { contexts: { react: { componentStack: errorInfo.componentStack } } });
-    // - LogRocket.captureException(error, { extra: errorInfo });
-    // - Custom API: fetch('/api/log-error', { method: 'POST', body: JSON.stringify({ error, errorInfo }) });
-
-    // For now, store in localStorage for debugging
+    // Keep a short local ring buffer for debugging without the Sentry UI
     try {
       const errorLog = {
         timestamp: new Date().toISOString(),

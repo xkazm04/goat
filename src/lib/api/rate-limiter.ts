@@ -47,12 +47,27 @@ export function rateLimit(
   entry.count++;
 
   if (entry.count > maxRequests) {
-    const retryAfterSec = Math.ceil((entry.resetAt - now) / 1000);
+    // The refusal states the contract: which limit, over what window, and when
+    // the next request will succeed. A bare "slow down" turns one request into
+    // a guessing game of retries the limiter must also process
+    // (registry: rate-limiting/refusal-contract).
+    const retryAfterSec = Math.max(1, Math.ceil((entry.resetAt - now) / 1000));
     return NextResponse.json(
-      { error: 'Too many requests. Please try again later.' },
+      {
+        error: 'Too many requests. Please try again later.',
+        code: 'RATE_LIMITED',
+        limit: maxRequests,
+        windowSeconds: Math.ceil(windowMs / 1000),
+        retryAfterSeconds: retryAfterSec,
+      },
       {
         status: 429,
-        headers: { 'Retry-After': String(retryAfterSec) },
+        headers: {
+          'Retry-After': String(retryAfterSec),
+          'X-RateLimit-Limit': String(maxRequests),
+          'X-RateLimit-Remaining': '0',
+          'X-RateLimit-Reset': String(retryAfterSec),
+        },
       }
     );
   }
@@ -60,12 +75,40 @@ export function rateLimit(
   return null;
 }
 
+const IP_V4_RE = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
+const IP_V6_RE = /^[0-9a-fA-F:]+$/;
+
+function isValidIp(value: string): boolean {
+  return IP_V4_RE.test(value) || IP_V6_RE.test(value);
+}
+
+/** Drop every window (tests). */
+export function resetRateLimiter(): void {
+  store.clear();
+  lastCleanup = Date.now();
+}
+
 /**
  * Extract a rate-limit key from a request.
- * Uses X-Forwarded-For, falling back to a generic key.
+ *
+ * Trusts platform-verified headers first (x-real-ip set by Vercel's edge
+ * network, which cannot be spoofed by clients), then falls back to
+ * x-forwarded-for. All values are validated to look like an IP address
+ * so arbitrary strings cannot be injected as keys.
  */
 export function getRateLimitKey(request: Request, prefix: string): string {
+  // x-real-ip is set by Vercel and cannot be spoofed by the client
+  const realIp = request.headers.get('x-real-ip')?.trim();
+  if (realIp && isValidIp(realIp)) {
+    return `${prefix}:${realIp}`;
+  }
+
+  // Fallback: first entry in x-forwarded-for (set by reverse proxy)
   const forwarded = request.headers.get('x-forwarded-for');
-  const ip = forwarded?.split(',')[0]?.trim() || 'anonymous';
-  return `${prefix}:${ip}`;
+  const firstForwarded = forwarded?.split(',')[0]?.trim();
+  if (firstForwarded && isValidIp(firstForwarded)) {
+    return `${prefix}:${firstForwarded}`;
+  }
+
+  return `${prefix}:anonymous`;
 }

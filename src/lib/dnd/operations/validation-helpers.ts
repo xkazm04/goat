@@ -94,37 +94,6 @@ export function requireSourceGridPosition(source: DragSource): ValidationResult 
 }
 
 /**
- * Require that a backlog item exists and is not already used.
- */
-export function requireAvailableBacklogItem(
-  itemId: string,
-  stores: OperationStoreContext
-): ValidationResult | null {
-  const { backlog } = stores;
-
-  const item = backlog.getItemById(itemId);
-  if (!item) {
-    return {
-      isValid: false,
-      errorCode: 'SOURCE_NOT_FOUND',
-      errorMessage: 'Item not found in backlog',
-      debugInfo: { itemId },
-    };
-  }
-
-  if (backlog.isItemUsed(itemId)) {
-    return {
-      isValid: false,
-      errorCode: 'SOURCE_ALREADY_USED',
-      errorMessage: 'Item is already placed',
-      debugInfo: { itemId },
-    };
-  }
-
-  return null;
-}
-
-/**
  * Run a sequence of validation checks, returning the first failure or null if all pass.
  */
 export function validateAll(

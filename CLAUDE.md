@@ -6,6 +6,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **G.O.A.T. (Greatest of All Time)** - A Next.js application for creating and ranking custom lists using an interactive drag-and-drop match system. Users can create ranked lists (Top 10, Top 50, etc.) by matching items from a backlog through an intuitive grid-based interface.
 
+### v2 is being rebuilt beside v1
+
+v2 is a slim rebuild served at `/v2` until it replaces v1 (milestone M7):
+- **Product decisions:** `docs/v2/DIRECTION.md`.
+- **Architecture and milestones:** `docs/v2/TECHNICAL_PACKAGE.md`.
+- **Interactive studies the UI follows:** `docs/v2/prototypes/`.
+- **Where the code lives:** domain code in `src/v2/` (rules in `src/v2/README.md`), routes in `src/app/v2/`. The schema is `goat_v2`, from `supabase/migrations/20261009000000_goat_v2_baseline.sql`.
+- **Isolation is a lint error in both directions.** v2 imports only `@/v2/*`, and v1 never imports `@/v2/*`. To reuse a v1 module, port it into `src/v2`.
+- **Try it:** `/v2/l/demo` opens the editor (Mosaic, Canvas, Spread, Stage) with no database. `npx playwright test -c playwright.v2.config.ts` is its smoke test (CI job `v2-smoke`). `npm run seed:v2` (a dry run; add `-- --apply` to write) imports v1's seed lists into `goat_v2`.
+- **Temporary seams that go with v1 at the swap:** `src/app/v1-chrome.tsx` and the `/v2` check in `src/providers/DeferredProviders.tsx` keep v1's chrome off `/v2`.
+
+The rest of this file describes v1.
+
 ## Common Commands
 
 ### Development
@@ -23,10 +36,94 @@ npm start
 npm run lint
 ```
 
+### Quality gates
+
+Every command below runs in CI (`.github/workflows/gates.yml`) and every one of
+them can go red — each was proved able to fail before being trusted. Run them
+before proposing a change; a change that reddens one of them is not finished.
+
+```bash
+npm test                        # vitest over src/, scripts/, supabase/ and db/
+                                # (supabase/migrations/chain.test.ts reads the
+                                # migration chain in order; db/ holds the seed
+                                # scripts' tests, both added 2026-09-05).
+                                # passWithNoTests:false — a run that executed
+                                # zero files is RED, not green.
+npm run lint                    # eslint. 48 correctness rules are `error` (four
+                                # graduated during the 2026-09-05/06 sweep when
+                                # their ratchet buckets hit 0); everything with a
+                                # legacy population is `warn` and held by the
+                                # ratchet instead (23 buckets).
+npm run lint:ratchet            # symmetric per-rule ratchet over
+                                # .ai/ratchet-baseline.json. A RISE fails. An
+                                # unexplained DROP also fails — re-baseline with
+                                # `npm run lint:ratchet:update` and say in the
+                                # commit message which of fixed / deleted /
+                                # counter-broke it was. Exit 2 = could not run,
+                                # which is neither pass nor fail.
+npm run typecheck               # 0 errors since 74573c2; BLOCKING in CI since
+                                # 2026-09-05 (the typecheck:errors bucket was
+                                # deleted per its promotion trigger).
+npm run docs:store-graph -- --check   # the store graph is GENERATED from
+                                # src/stores/registry.ts. Regenerate in the same
+                                # change that touches the manifest.
+npm run docs:coupling           # source→doc coupling map (.ai/doc-coupling.json):
+                                # fails on a stale glob or a missing reference doc.
+npm run docs:coupling -- --changed --base main
+                                # same-change enforcement: reads the git diff and
+                                # names the document this change owes. Settle it,
+                                # or dismiss it on the record with a commit
+                                # trailer:  Docs-dismissed: <why>
+npm run scan:dead               # knip. Unused EXPORTS — the orphan class eslint
+                                # structurally cannot see.
+npm run findings:check          # the findings ledger (.ai/findings.json), DERIVED
+                                # from docs/harness/ui-bug-combined-2026-06-16/.
+                                # Fails if the ledger drifts from the reports, if
+                                # a finding's state is outside the vocabulary, if
+                                # a suppression carries no reason, or if a
+                                # regression probe on a `fixed` finding fires.
+npm run findings                # what the ledger can answer that a snapshot
+                                # cannot: state, severity, anchor liveness, age.
+npm run findings:ingest         # re-derive after editing a report file.
+npm run structure:check         # the structural improvement loop
+                                # (.ai/structural-backlog.json). Fails if a spec
+                                # is no longer grounded in the tree it quotes, if
+                                # a spec marked `executed` does not meet its own
+                                # stop condition, or if a decline carries no
+                                # reason. Read this BEFORE proposing a structural
+                                # change — one of its five specs is a recorded
+                                # DECLINE, and re-proposing it needs new evidence.
+npm run structure               # the loop's memory, readable.
+```
+
+### The browser suite
+
+`npm run test:e2e` **cannot run against an empty database** — every journey
+starts by clicking a list, so an unseeded run would execute nothing and report
+green. `e2e/global-setup.ts` refuses such a run; the fixtures are a separate,
+deliberate command:
+
+```bash
+npm run seed:e2e                 # deterministic fixtures (2 lists, 18 items)
+npm run seed:e2e -- --check      # verify without writing — safe anywhere
+npm run seed:e2e -- --teardown   # remove exactly what it wrote
+```
+
+Every row it writes carries a fixed UUID in the `e2e00000-…` namespace and
+nothing outside that namespace is touched, so it is safe against the shared
+development database. It refuses a non-local target unless
+`E2E_SEED_ALLOW_REMOTE=1`. In CI the suite is **manual dispatch only** — its
+input is not the tree — and it refuses loudly rather than skipping when
+unconfigured. See `.ai/manifest.yaml` `capabilityNotes.e2e-fixtures`.
+
+There are deliberately **no git hooks**. CI covers the push rung; the unguarded
+commit rung is a dated gap in `.ai/manifest.yaml`, not an oversight.
+
 ## Architecture Overview
 
 ### Tech Stack
-- **Framework**: Next.js 15 (App Router)
+- **Framework**: Next.js 16 (App Router) — `next@^16.1.3`. Note `next lint` was
+  removed in 16; lint via `npm run lint`, which invokes `eslint` directly.
 - **Authentication**: Clerk (with planned migration to Supabase Auth - see .env.example)
 - **Database**: Supabase (PostgreSQL)
 - **State Management**: Zustand with persistence
@@ -42,19 +139,32 @@ The app follows a **feature-based architecture** where major features are organi
 - **Landing**: Home page with list browsing and showcase
 - **Match**: Core ranking interface with drag-and-drop grid system
 - **Collection**: Item collection management panels
-- **matching**: (Legacy/alternate match implementation)
+
+> **Corrected 2026-08-24**: this list previously ended with
+> *"**matching**: (Legacy/alternate match implementation)"*. There is no
+> `src/app/features/matching/` directory and there has not been one in this
+> tree; the identifier survived only here and in
+> `docs/features/PARTICLE_THEME_SYSTEM.md`, which names six files under it that
+> also do not exist. The live feature directories are: `Achievement`,
+> `Analytics`, `Awards`, `Collection`, `Collections`, `CommandPalette`,
+> `Landing`, `Match`, `Studio`, `Templates`.
 
 ### State Management Architecture
 
-**Critical**: The app uses **multiple coordinated Zustand stores** that must stay in sync:
+**Critical**: The app uses **multiple coordinated Zustand stores** that must stay in sync.
 
-1. **`match-store.ts`**: UI state, keyboard navigation, match session orchestration
-2. **`grid-store.ts`**: Grid state (50 positions max), drag-and-drop handlers
-3. **`session-store.ts`**: Session persistence, backlog management
-4. **`comparison-store.ts`**: Item comparison modal state
-5. **`use-list-store.ts`**: Current list metadata
-6. **`item-store.ts`**: Item data management
-7. **`backlog-store.ts`**: Backlog group state
+The authority on how many stores there are and how they depend on each other is
+`src/stores/registry.ts` (`STORE_DEPENDENCIES`, 24 declared stores). It validates
+itself at module load — a cycle or an edge to an undeclared store throws in dev.
+`docs/STORE_DEPENDENCY_GRAPH.md` is generated from it (`npm run docs:store-graph`);
+do not hand-edit the generated block, and do not restate the store list here.
+
+The four that carry the match flow, deepest last:
+
+1. **`backlog-store.ts`**: Backlog group state
+2. **`session-store.ts`**: Session persistence, backlog management
+3. **`grid-store.ts`**: Grid state (50 positions max), drag-and-drop handlers
+4. **`match-store.ts`**: UI state, keyboard navigation, match session orchestration
 
 **Store Communication Pattern**: Stores cross-reference each other using `useXStore.getState()` pattern. For example, `match-store` orchestrates actions across `grid-store`, `session-store`, and `comparison-store`.
 
@@ -156,7 +266,11 @@ See `.env.example` for complete setup. Key variables:
 
 - **Strict mode** enabled
 - **Path alias**: `@/*` → `./src/*`
-- **ESLint**: Disabled during builds (`ignoreDuringBuilds: true`)
+- **ESLint**: NOT disabled during builds — `next.config.js` sets neither
+  `eslint.ignoreDuringBuilds` nor `typescript.ignoreBuildErrors`. The
+  `correctness` block in `eslint.config.mjs` (48 rules incl.
+  `react-hooks/rules-of-hooks`) is `error`, so `npm run lint` fails on the
+  first violation; rules with a legacy population stay `warn` under the ratchet.
 
 ## Key Implementation Notes
 

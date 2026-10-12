@@ -17,23 +17,22 @@ import {
   Loader2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 
 
-import { GoatMascot } from "@/components/visual/GoatMascot";
-import { TopList } from "@/types/top-lists";
-import { createListIntent } from "@/types/list-intent";
-import { listCreationService } from "@/services/list-creation-service";
 import { ELEVATION } from "@/components/visual/depth";
+import { GoatMascot } from "@/components/visual/GoatMascot";
 import { useQuickSearch, useSearchHistory } from "@/hooks/use-search";
 import { useTempUser } from "@/hooks/use-temp-user";
 import { toast } from "@/hooks/use-toast";
 import { useTopLists, useUserLists } from "@/hooks/use-top-lists";
 import { DURATION } from "@/lib/animations/motion-presets";
 import { CATEGORY_CONFIG } from "@/lib/config/category-config";
-import { trackError } from "@/lib/errors/error-analytics";
 import { fuzzyMatch } from "@/lib/search/fuzzy";
+import { listCreationService } from "@/services/list-creation-service";
 import { useListStore } from "@/stores/use-list-store";
+import { createListIntent } from "@/types/list-intent";
+import { TopList } from "@/types/top-lists";
 
 import {
   CATEGORY_COLORS,
@@ -44,13 +43,10 @@ import {
   DOMAIN_FILTERS,
 } from "./constants";
 import { parseListQuery, generateListTitle, getExampleQueries } from "./lib/parseListQuery";
+import { pushRecentList, readRecentLists, type RecentListEntry } from "./lib/recentLists";
 import { useCommandPaletteStore } from "./useCommandPalette";
 
 import type { SearchResult, SearchDomain } from "@/lib/search";
-
-// Recent list storage key
-const RECENT_LISTS_KEY = "command-palette-recent-lists";
-const MAX_RECENT_LISTS = 5;
 
 /**
  * Filter and sort lists based on search query
@@ -123,14 +119,6 @@ interface CommandPaletteProps {
   onClose: () => void;
 }
 
-interface RecentListEntry {
-  id: string;
-  title: string;
-  category: string;
-  subcategory?: string;
-  accessedAt: number;
-}
-
 export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -175,17 +163,25 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   });
 
   // Fetch user lists for client-side search fallback
-  const { data: userLists = [], isLoading: isLoadingUserLists } = useUserLists(
+  const { data: userLists = [], isLoading: isLoadingUserLists, error: userListsError } = useUserLists(
     tempUserId,
     { limit: 50 },
     { enabled: isOpen && isLoaded && !!tempUserId && !filterDomain }
   );
 
   // Fetch featured lists for broader search
-  const { data: featuredLists = [], isLoading: isLoadingFeatured } = useTopLists(
+  const { data: featuredLists = [], isLoading: isLoadingFeatured, error: featuredListsError } = useTopLists(
     { limit: 50 },
     { enabled: isOpen && !filterDomain }
   );
+
+  // A failed data path is a different state from an empty one. Both sources the
+  // client-side fallback reads can fail, and so can every universal-search
+  // domain; any of those must be SAID, or a network outage paints "No lists
+  // found" and tells the user to stop looking.
+  const listsUnavailable = Boolean(userListsError || featuredListsError);
+  const failedDomainLabels = failedDomains.map((d) => DOMAIN_LABELS[d.domain] || d.domain).join(', ');
+  const searchUnavailable = failedDomains.length > 0 || listsUnavailable;
 
   // Combine all lists for client-side search
   const allLists = useMemo(() => {
@@ -249,7 +245,10 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   const totalItems = useMemo(() => {
     if (query.trim()) {
       if (isCreateCommand) {
-        return createSuggestions.length + 1;
+        // Only the suggestion rows are rendered in create mode; the "+1 create
+        // row" the other branches count does not exist here, and counting it let
+        // ArrowDown highlight a row nobody could see.
+        return Math.max(createSuggestions.length, 1);
       }
       if (useApiSearch) {
         return apiResults.length + 1; // +1 for create new option
@@ -259,26 +258,14 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     return recentLists.length + history.length + getExampleQueries().length + Object.keys(CATEGORY_CONFIG).length;
   }, [query, isCreateCommand, createSuggestions.length, useApiSearch, apiResults.length, filteredLists.length, recentLists.length, history.length]);
 
-  // Load recent lists from localStorage
+  // Load recent lists from localStorage (shape-checked; a bad value reads as empty)
   useEffect(() => {
-    const storedLists = localStorage.getItem(RECENT_LISTS_KEY);
-    if (storedLists) {
-      try {
-        setRecentLists(JSON.parse(storedLists).slice(0, MAX_RECENT_LISTS));
-      } catch (error) {
-        trackError({
-          code: 'CLIENT_STORAGE_ERROR',
-          category: 'client',
-          severity: 'warning',
-          traceId: `command-palette-parse-${Date.now()}`,
-          source: 'CommandPalette',
-          context: { operation: 'parseRecentLists', message: error instanceof Error ? error.message : String(error) },
-        });
-      }
-    }
+    const stored = readRecentLists();
+    if (stored.length > 0) setRecentLists(stored);
   }, []);
 
-  // Save recent list
+  // Save recent list. The write is total: a refused write is reported, and the
+  // caller (which also navigates) never sees an exception.
   const saveRecentList = useCallback((list: TopList) => {
     const entry: RecentListEntry = {
       id: list.id,
@@ -287,9 +274,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       subcategory: list.subcategory,
       accessedAt: Date.now(),
     };
-    const updated = [entry, ...recentLists.filter((r) => r.id !== list.id)].slice(0, MAX_RECENT_LISTS);
-    setRecentLists(updated);
-    localStorage.setItem(RECENT_LISTS_KEY, JSON.stringify(updated));
+    setRecentLists(pushRecentList(recentLists, entry).entries);
   }, [recentLists]);
 
   // Read initialQuery from store for programmatic opening
@@ -437,7 +422,11 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
 
         if (query.trim()) {
           if (isCreateCommand) {
-            handleCreateList();
+            // Enter creates the HIGHLIGHTED suggestion — the same list a click
+            // on that row creates. With no suggestion under the cursor it falls
+            // back to the raw query, exactly as handleCreateList does for a click
+            // on the footer button.
+            handleCreateList(createSuggestions[selectedIndex]);
           } else if (useApiSearch && apiResults.length > 0 && selectedIndex < apiResults.length) {
             handleNavigateToResult(apiResults[selectedIndex]);
           } else if (!useApiSearch && filteredLists.length > 0 && selectedIndex < filteredLists.length) {
@@ -502,11 +491,25 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     ]
   );
 
+  // The option the keyboard cursor is on, by element id, for aria-activedescendant.
+  // Ids mirror the rows' data-testids so the DOM has one name per row.
+  const activeDescendantId = (() => {
+    if (query.trim()) {
+      if (isCreateCommand) return `command-palette-create-suggestion-${selectedIndex}`;
+      if (useApiSearch) return selectedIndex < apiResults.length ? `command-palette-result-${selectedIndex}` : 'command-palette-create-new';
+      return selectedIndex < filteredLists.length ? `command-palette-list-${selectedIndex}` : 'command-palette-create-new';
+    }
+    if (selectedIndex < recentLists.length) return `command-palette-recent-list-${selectedIndex}`;
+    const historyIdx = selectedIndex - recentLists.length;
+    if (historyIdx < Math.min(history.length, 5)) return `command-palette-recent-query-${historyIdx}`;
+    return `command-palette-example-${selectedIndex - recentLists.length - history.length}`;
+  })();
+
   // Get current category color
   const categoryColor = CATEGORY_COLORS[parsedQuery.category] || CATEGORY_COLORS.Sports;
 
   // Check if loading
-  const isLoading = isSearchLoading || isLoadingUserLists || isLoadingFeatured;
+  const _isLoading = isSearchLoading || isLoadingUserLists || isLoadingFeatured;
 
   // Render an API search result item
   const renderSearchResult = (result: SearchResult, index: number, isSelected: boolean) => {
@@ -515,6 +518,9 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     return (
       <button
         key={`${result.domain}-${result.id}`}
+        id={`command-palette-result-${index}`}
+        role="option"
+        aria-selected={isSelected}
         onClick={() => handleNavigateToResult(result)}
         className={`w-full px-3 py-2.5 rounded-card text-left flex items-center gap-3 transition-colors group ${
           isSelected ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/5"
@@ -562,6 +568,9 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     return (
       <button
         key={list.id}
+        id={`command-palette-list-${index}`}
+        role="option"
+        aria-selected={isSelected}
         onClick={() => handleNavigateToList(list)}
         className={`w-full px-3 py-2.5 rounded-card text-left flex items-center gap-3 transition-colors group ${
           isSelected
@@ -621,6 +630,9 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
             transition={{ duration: DURATION.quick, ease: "easeOut" }}
             className="w-full max-w-2xl mx-4"
             onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Command palette"
             data-testid="command-palette-container"
           >
             <div
@@ -649,6 +661,12 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                     onKeyDown={handleKeyDown}
                     placeholder="Search everything, or type 'new action movies'..."
                     className="flex-1 ml-4 bg-transparent text-white text-lg placeholder:text-white/30 focus:outline-hidden"
+                    role="combobox"
+                    aria-label="Search lists, items and collections, or type new to create a list"
+                    aria-expanded="true"
+                    aria-controls="command-palette-results"
+                    aria-autocomplete="list"
+                    aria-activedescendant={activeDescendantId}
                     data-testid="command-palette-input"
                     disabled={isCreating}
                   />
@@ -659,6 +677,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                     <button
                       onClick={() => setQuery("")}
                       className="p-1 rounded-full hover:bg-white/10 transition-colors"
+                      aria-label="Clear search"
                       data-testid="command-palette-clear-btn"
                     >
                       <X className="w-4 h-4 text-white/40" />
@@ -694,23 +713,30 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                       const isActive = categoryFilter === cat;
                       const catColor = CATEGORY_COLORS[cat] || CATEGORY_COLORS.Sports;
                       return (
-                        <button
+                        <motion.button
                           key={cat}
                           onClick={() => setCategoryFilter(isActive ? undefined : cat)}
-                          className={`px-2.5 py-1 rounded-badge text-xs font-medium transition-all flex items-center gap-1.5 shrink-0 ${
+                          whileTap={{ scale: 1.02 }}
+                          animate={{
+                            background: isActive ? `${catColor.primary}40` : "rgba(255,255,255,0.05)",
+                            boxShadow: isActive
+                              ? `0 0 0 2px rgba(0,0,0,0), 0 0 0 4px ${catColor.accent}66`
+                              : "0 0 0 2px rgba(0,0,0,0), 0 0 0 4px rgba(0,0,0,0)",
+                          }}
+                          transition={{ duration: 0.2 }}
+                          className={`px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-black/80 ${
                             isActive
                               ? "text-white"
                               : "text-white/50 hover:text-white/80"
                           }`}
                           style={{
-                            background: isActive ? `${catColor.primary}40` : "rgba(255,255,255,0.05)",
-                            borderColor: isActive ? catColor.primary : "transparent",
-                          }}
+                            "--tw-ring-color": `${catColor.accent}66`,
+                          } as React.CSSProperties}
                           data-testid={`command-palette-filter-${cat.toLowerCase()}`}
                         >
                           {CATEGORY_ICONS[cat]}
                           <span>{cat}</span>
-                        </button>
+                        </motion.button>
                       );
                     })}
                     <div className="w-px h-4 bg-white/10 shrink-0 mx-1" />
@@ -776,8 +802,8 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                 )}
               </div>
 
-              {/* Main content area */}
-              <div className="max-h-[50vh] overflow-y-auto">
+              {/* Main content area — the listbox the combobox controls */}
+              <div id="command-palette-results" role="listbox" aria-label="Results" className="max-h-[50vh] overflow-y-auto">
                 {query.trim() ? (
                   <div className="p-2">
                     {isCreateCommand ? (
@@ -792,6 +818,9 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                             {createSuggestions.map((suggestion, i) => (
                               <button
                                 key={`suggestion-${i}`}
+                                id={`command-palette-create-suggestion-${i}`}
+                                role="option"
+                                aria-selected={selectedIndex === i}
                                 onClick={() => handleCreateList(suggestion)}
                                 className={`w-full px-3 py-2.5 rounded-card text-left flex items-center gap-3 transition-colors ${
                                   selectedIndex === i
@@ -811,8 +840,8 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                       // API search results (grouped by domain)
                       <>
                         {failedDomains.length > 0 && (
-                          <div className="mx-3 mb-2 px-3 py-2 rounded-card bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300/80">
-                            {failedDomains.map(d => DOMAIN_LABELS[d.domain] || d.domain).join(', ')} results unavailable
+                          <div className="mx-3 mb-2 px-3 py-2 rounded-card bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300/80" role="status">
+                            {failedDomainLabels} results unavailable
                           </div>
                         )}
                         {apiResults.length > 0 ? (
@@ -821,7 +850,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                               renderSearchResult(result, i, selectedIndex === i)
                             )}
                           </>
-                        ) : !isSearchLoading ? (
+                        ) : !isSearchLoading && failedDomains.length === 0 ? (
                           <div className="px-3 py-6 text-center flex flex-col items-center text-white/40">
                             <GoatMascot variant="searching" size={80} />
                             <p className="text-sm text-amber-200/70 mt-1">No results for &ldquo;{searchQuery}&rdquo;</p>
@@ -839,6 +868,9 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                                   ? "bg-white/10 text-white"
                                   : "text-white/70 hover:bg-white/5"
                               }`}
+                              id="command-palette-create-new"
+                              role="option"
+                              aria-selected={selectedIndex === apiResults.length}
                               data-testid="command-palette-create-new"
                             >
                               <div
@@ -848,7 +880,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                                 <Plus className="w-4 h-4" style={{ color: categoryColor.primary }} />
                               </div>
                               <div className="flex-1">
-                                <div className="text-sm font-medium">Create "{generatedTitle}"</div>
+                                <div className="text-sm font-medium">Create &quot;{generatedTitle}&quot;</div>
                                 <div className="text-xs text-white/40">New list from your query</div>
                               </div>
                               <Zap className="w-4 h-4 text-white/30" />
@@ -859,6 +891,12 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                     ) : (
                       // Client-side list search results
                       <>
+                        {searchUnavailable && (
+                          <div className="mx-3 mb-2 px-3 py-2 rounded-card bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300/80" role="status">
+                            {failedDomains.length > 0 && <div>{failedDomainLabels} results unavailable</div>}
+                            {listsUnavailable && <div>Your lists are unavailable right now</div>}
+                          </div>
+                        )}
                         {filteredLists.length > 0 ? (
                           <>
                             <div className="px-3 py-2 text-xs text-white/40 uppercase tracking-wider flex items-center gap-2">
@@ -869,11 +907,17 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                               renderListItem(list, i, selectedIndex === i)
                             )}
                           </>
+                        ) : searchUnavailable ? (
+                          <div className="px-3 py-6 text-center text-white/40">
+                            <Search className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                            <p className="text-sm">Search is unavailable right now</p>
+                            <p className="text-xs mt-1">Check your connection and try again, or type &quot;new {searchQuery}&quot; to create a list</p>
+                          </div>
                         ) : (
                           <div className="px-3 py-6 text-center text-white/40">
                             <Search className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                            <p className="text-sm">No lists found for "{searchQuery}"</p>
-                            <p className="text-xs mt-1">Try typing "new {searchQuery}" to create one</p>
+                            <p className="text-sm">No lists found for &quot;{searchQuery}&quot;</p>
+                            <p className="text-xs mt-1">Try typing &quot;new {searchQuery}&quot; to create one</p>
                           </div>
                         )}
 
@@ -886,6 +930,9 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                                 ? "bg-white/10 text-white"
                                 : "text-white/70 hover:bg-white/5"
                             }`}
+                            id="command-palette-create-new"
+                            role="option"
+                            aria-selected={selectedIndex === filteredLists.length}
                             data-testid="command-palette-create-new"
                           >
                             <div
@@ -895,7 +942,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                               <Plus className="w-4 h-4" style={{ color: categoryColor.primary }} />
                             </div>
                             <div className="flex-1">
-                              <div className="text-sm font-medium">Create "{generatedTitle}"</div>
+                              <div className="text-sm font-medium">Create &quot;{generatedTitle}&quot;</div>
                               <div className="text-xs text-white/40">New list from your query</div>
                             </div>
                             <Zap className="w-4 h-4 text-white/30" />
@@ -919,6 +966,9 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                           return (
                             <button
                               key={`recent-list-${entry.id}`}
+                              id={`command-palette-recent-list-${i}`}
+                              role="option"
+                              aria-selected={selectedIndex === i}
                               onClick={() => handleNavigateToRecentList(entry)}
                               className={`w-full px-3 py-2.5 rounded-card text-left flex items-center gap-3 transition-colors group ${
                                 selectedIndex === i
@@ -969,6 +1019,9 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                           return (
                             <button
                               key={`history-${i}`}
+                              id={`command-palette-recent-query-${i}`}
+                              role="option"
+                              aria-selected={selectedIndex === idx}
                               onClick={() => setQuery(entry.query)}
                               className={`w-full px-3 py-2.5 rounded-card text-left flex items-center gap-3 transition-colors ${
                                 selectedIndex === idx
@@ -1007,6 +1060,9 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                       return (
                         <button
                           key={`example-${i}`}
+                          id={`command-palette-example-${i}`}
+                          role="option"
+                          aria-selected={selectedIndex === idx}
                           onClick={() => setQuery(`new ${example}`)}
                           className={`w-full px-3 py-2.5 rounded-card text-left flex items-center gap-3 transition-colors ${
                             selectedIndex === idx

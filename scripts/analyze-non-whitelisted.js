@@ -3,7 +3,8 @@
  * Analyze non-whitelisted domains and items
  */
 
-const API_BASE = process.env.API_BASE || 'http://localhost:3001';
+// `next dev` serves 3000; the old default (3001) pointed at a port nothing listens on.
+const API_BASE = process.env.API_BASE || 'http://localhost:3000';
 
 async function main() {
   const response = await fetch(`${API_BASE}/api/items/validate?issue=non_whitelisted&limit=200`);
@@ -51,4 +52,9 @@ async function main() {
   console.log(JSON.stringify(jsonData, null, 2));
 }
 
-main().catch(console.error);
+main().catch((err) => {
+  // A failed run must exit non-zero: the terminal reads the exit code, not the
+  // stack trace. `.catch(console.error)` printed the error and exited 0.
+  console.error(err);
+  process.exit(1);
+});

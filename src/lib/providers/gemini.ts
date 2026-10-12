@@ -38,24 +38,13 @@ export async function getItemRecommendation(
       model: GEMINI_MODEL_FLASH,
       contents: prompt,
     });
-    const durationMs = Math.round(performance.now() - callStart);
+    const _durationMs = Math.round(performance.now() - callStart);
     const text = response.text ?? '';
 
     const result = parseRecommendationResponse(text, request);
 
-    console.log('[Gemini] recommendation_complete', JSON.stringify({
-      operation: 'gemini_recommendation',
-      item: request.name,
-      category: request.category,
-      duration_ms: durationMs,
-      confidence: result.confidence ?? null,
-      has_image: !!result.image_url,
-    }));
-
     return result;
   } catch (error) {
-    const durationMs = Math.round(performance.now() - callStart);
-    console.error(`[Gemini] recommendation_error (${durationMs}ms):`, error);
     throw new Error(`Failed to get recommendation: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -99,7 +88,7 @@ JSON:`;
  */
 function parseRecommendationResponse(
   text: string,
-  request: ItemRecommendationRequest
+  _request: ItemRecommendationRequest
 ): ItemRecommendationResponse {
   try {
     // Try to extract JSON from the response
@@ -167,11 +156,8 @@ function parseRecommendationResponse(
     }
 
     return result;
-  } catch (error) {
-    console.error('Error parsing recommendation response:', error);
-    console.error('Response text:', text);
-    
-    // Return empty result if parsing fails
+  } catch {
+    // Parsing failed — return empty result
     return {};
   }
 }

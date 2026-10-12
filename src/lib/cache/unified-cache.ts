@@ -222,17 +222,61 @@ export const INVALIDATION_RULES = {
 // =============================================================================
 
 /**
+ * Error categories that are permanent for an identical request. Retrying these
+ * cannot change the answer, so the ladder stops immediately.
+ *
+ * Deliberately NOT listed, and each for its own reason:
+ * - `rate_limit`  — retryable, and the backoff is the correct response.
+ * - `server`      — 5xx is the canonical transient class.
+ * - `network`     — the request never reached anyone; see below.
+ * - `client`      — maps to status 400 but covers CLIENT_UNKNOWN_ERROR, which
+ *                   is not evidence of permanence.
+ */
+const PERMANENT_ERROR_CATEGORIES: ReadonlySet<string> = new Set([
+  'validation',
+  'authentication',
+  'authorization',
+  'not_found',
+  'conflict',
+]);
+
+/**
  * Smart retry function that skips non-retriable client errors (4xx).
  * Use as the `retry` option in React Query queries.
+ *
+ * Classification is read from the TYPED fields every `GoatError` carries
+ * (`category`, `code`) rather than from the message text. The message holds a
+ * user-facing description — "Sign in to save your rankings…" — while the
+ * status lives in a separate field, so the previous substring scan for
+ * '401'/'403'/'404' could never match: it refused 0 of the 17 error codes that
+ * must never be retried, and every auth failure, permission denial, not-found
+ * and validation error was retried to the cap on a ladder reaching 30s.
+ *
+ * Duck-typed rather than importing `GoatError`, to keep this module free of a
+ * dependency on the error layer (which pulls in React hooks and stores).
  */
 export function createSmartRetry(maxRetries: number) {
   return (failureCount: number, error: Error): boolean => {
-    if (error instanceof Error) {
-      const message = error.message.toLowerCase();
-      if (message.includes('401') || message.includes('403') || message.includes('404')) {
+    const classified = error as Error & { code?: string; category?: string };
+
+    // Offline is a SUSPENSION, not a failure — the request was never made, so
+    // it is not evidence that anything is permanently broken. React Query's
+    // `networkMode` pauses the ladder while offline and resumes on reconnect;
+    // the budget should not be spent declaring this one permanent.
+    if (classified.code !== 'NETWORK_OFFLINE') {
+      if (classified.category && PERMANENT_ERROR_CATEGORIES.has(classified.category)) {
         return false;
       }
+
+      // Fallback for untyped errors thrown outside the GoatError hierarchy.
+      if (error instanceof Error) {
+        const message = error.message.toLowerCase();
+        if (message.includes('401') || message.includes('403') || message.includes('404')) {
+          return false;
+        }
+      }
     }
+
     return failureCount < maxRetries;
   };
 }

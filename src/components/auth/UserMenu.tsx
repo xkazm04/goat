@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { LogOut, ChevronDown, BarChart3 } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useCallback, useRef, useEffect } from 'react';
 
@@ -68,11 +69,14 @@ export function UserMenu() {
         data-testid="auth-user-menu-btn"
       >
         {avatarUrl ? (
-          <img
+          <Image
             src={avatarUrl}
             alt=""
+            width={32}
+            height={32}
             className="w-8 h-8 rounded-full border border-slate-600/50"
             referrerPolicy="no-referrer"
+            unoptimized
           />
         ) : (
           <div className="w-8 h-8 rounded-full bg-brand-muted flex items-center justify-center text-sm font-bold text-white border border-slate-600/50">

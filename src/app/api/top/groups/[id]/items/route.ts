@@ -20,7 +20,7 @@ export async function GET(
     const offset = searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : 0;
 
     // First verify the group exists
-    const { data: group, error: groupError } = await supabase
+    const { data: _group, error: groupError } = await supabase
       .from('item_groups')
       .select('id')
       .eq('id', id)

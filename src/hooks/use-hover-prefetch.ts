@@ -115,7 +115,7 @@ export function useCategoryPrefetch(
         id: `groups-${category}`,
         queryKey: collectionKeys.groupsList({ category, subcategory }),
         queryFn: () => goatApi.groups.getByCategory(category, { subcategory }),
-        staleTime: CACHE_TTL_MS.LONG,
+        staleTime: CACHE_TTL_MS.STANDARD,
         priority: 'high',
         source: 'hover',
         metadata: { dataType: 'groups', category, subcategory },

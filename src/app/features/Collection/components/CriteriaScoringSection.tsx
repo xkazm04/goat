@@ -60,7 +60,7 @@ export function CriteriaScoringSection({
 
   // Criteria store state
   const {
-    activeProfileId,
+    activeProfileId: _activeProfileId,
     getActiveProfile,
     setItemScore,
     getItemScores,
@@ -332,7 +332,7 @@ interface LiveScorePreviewProps {
 
 function LiveScorePreview({
   score,
-  category,
+  category: _category,
   accentColor,
   animated = true,
 }: LiveScorePreviewProps) {

@@ -273,7 +273,7 @@ export function getDropZoneColorCSS(color: DropZoneColor, intensity: number): {
   glowColor: string;
 } {
   const alpha = Math.round(intensity * 0.3 * 255).toString(16).padStart(2, '0');
-  const glowAlpha = Math.round(intensity * 0.5 * 255).toString(16).padStart(2, '0');
+  const _glowAlpha = Math.round(intensity * 0.5 * 255).toString(16).padStart(2, '0');
 
   switch (color) {
     case 'green':

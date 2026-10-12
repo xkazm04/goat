@@ -73,7 +73,7 @@ export const CompactCollectionHeader = memo(function CompactCollectionHeader({
       {/* Right: Active category indicator + Minimize */}
       <div className="flex items-center gap-2 shrink-0">
         {activeCategory !== 'all' && (
-          <span className="text-xs px-2 py-0.5 rounded-badge bg-brand/15 text-brand-hover/80 border border-brand/20">
+          <span className="badge-md bg-brand/15 text-brand-hover/80 border border-brand/20">
             {activeCategory}
           </span>
         )}

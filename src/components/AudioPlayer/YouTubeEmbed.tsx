@@ -182,7 +182,7 @@ export function YouTubeEmbed() {
             onError: handleError,
           },
         });
-      } catch (error) {
+      } catch {
         setError('Failed to load YouTube player');
         setLoading(false);
       }

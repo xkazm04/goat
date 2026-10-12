@@ -151,6 +151,23 @@ export type SelectionReason =
   | 'default'; // Fallback selection
 
 /**
+ * Showcase slot types
+ */
+export type ShowcaseSlot = 'hero' | 'featured' | 'secondary' | 'discovery';
+
+/**
+ * Allowed SelectionReasons per showcase slot.
+ * - Hero slots should never show exploration items (high-prominence = proven content only)
+ * - Discovery slots should never show popular items (discovery = underrepresented categories)
+ */
+export type AllowedSelectionReason<S extends ShowcaseSlot> =
+  S extends 'hero'
+    ? Exclude<SelectionReason, 'exploration'>
+    : S extends 'discovery'
+      ? Exclude<SelectionReason, 'popular'>
+      : SelectionReason;
+
+/**
  * Boost factor applied to scoring
  */
 export interface BoostFactor {

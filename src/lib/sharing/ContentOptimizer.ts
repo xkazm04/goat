@@ -4,6 +4,7 @@
  */
 
 import { getPlatformAdapter } from './platforms';
+import { getBaseUrl, getShareUrl } from './share-urls';
 
 import type {
   SharePlatform,
@@ -31,7 +32,7 @@ export class ContentOptimizer {
   private baseUrl: string;
 
   constructor(baseUrl: string = '') {
-    this.baseUrl = baseUrl || (typeof window !== 'undefined' ? window.location.origin : '');
+    this.baseUrl = baseUrl || getBaseUrl();
   }
 
   /**
@@ -202,7 +203,7 @@ export class ContentOptimizer {
       type: 'ranking',
       title: listTitle,
       description,
-      url: `${this.baseUrl}/share/${shareCode}`,
+      url: getShareUrl(shareCode, this.baseUrl),
       imageUrl,
       hashtags: hashtags || ['GOAT', 'Ranking', listTitle.replace(/\s+/g, '')],
       via: 'goat_app',

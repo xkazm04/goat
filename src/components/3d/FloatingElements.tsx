@@ -18,10 +18,10 @@ import { cn } from '@/lib/utils';
 // Types
 // =============================================================================
 
-export type FloatingPattern = 'random' | 'grid' | 'orbital' | 'wave' | 'spiral';
-export type FloatingShape = 'circle' | 'square' | 'triangle' | 'star' | 'custom';
+type FloatingPattern = 'random' | 'grid' | 'orbital' | 'wave' | 'spiral';
+type FloatingShape = 'circle' | 'square' | 'triangle' | 'star' | 'custom';
 
-export interface FloatingElement {
+interface FloatingElement {
   /** Unique identifier */
   id: string;
   /** X position (0-100 percent) */
@@ -44,7 +44,7 @@ export interface FloatingElement {
   customElement?: ReactNode;
 }
 
-export interface FloatingElementsProps {
+interface FloatingElementsProps {
   /** Number of elements to generate (default: 20) */
   count?: number;
   /** Distribution pattern (default: 'random') */
@@ -358,4 +358,3 @@ export const FloatingPresets = {
   },
 };
 
-export default FloatingElements;

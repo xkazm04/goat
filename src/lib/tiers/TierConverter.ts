@@ -184,7 +184,7 @@ export class TierConverter {
 
         case 'random-within': {
           // Random positions within tier (avoiding collisions)
-          const usedPositions = new Set<number>();
+          const _usedPositions = new Set<number>();
           const availablePositions: number[] = [];
 
           for (let p = tierStart; p < tierEnd; p++) {

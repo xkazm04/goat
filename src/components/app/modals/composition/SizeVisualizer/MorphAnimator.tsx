@@ -57,7 +57,7 @@ export const MorphAnimator = memo(function MorphAnimator({
   toSize,
   color,
   onComplete,
-  duration = 600,
+  duration: _duration = 600,
 }: MorphAnimatorProps) {
   const [morphState, setMorphState] = useState<MorphState>({
     fromSize: fromSize as ListSize,
@@ -74,7 +74,7 @@ export const MorphAnimator = memo(function MorphAnimator({
   });
 
   // Interpolated values
-  const interpolatedSize = useTransform(
+  const _interpolatedSize = useTransform(
     springProgress,
     [0, 1],
     [fromSize, toSize]

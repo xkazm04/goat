@@ -18,6 +18,11 @@ const ShowcaseDecor = ({ shouldAnimate = true }: ShowcaseDecorProps) => {
 
     return (
         <>
+            {/* Decorative watermark at opacity 0.05. It carries no information, so
+                it is hidden from assistive technology: empty alt (a named image
+                would be announced on every landing visit) and aria-hidden on the
+                layer, matching the noise-texture overlay beside it in
+                FloatingShowcase. */}
             <motion.div
                 className="absolute inset-0 w-full h-full"
                 initial={skipAnimation ? { opacity: 0.05, x: "-20%" } : { opacity: 0, x: "-40%" }}
@@ -25,23 +30,30 @@ const ShowcaseDecor = ({ shouldAnimate = true }: ShowcaseDecorProps) => {
                 transition={skipAnimation ? { duration: 0 } : { duration: 5 }}
                 data-testid="showcase-decor-image"
                 data-framer-motion-reducible="true"
+                aria-hidden="true"
             >
                 <Image
                     src="/goat.png"
-                    alt="GOAT Background"
+                    alt=""
                     fill
                     className="object-cover opacity-5"
                     style={{
                         objectPosition: "left center",
                         transform: "translateX(-20%)"
                     }}
-                    priority
+                    // Deliberately NOT `priority`: that emits a <link rel="preload">
+                    // for public/goat.png (1,063,718 bytes, served unoptimized) at
+                    // the top of the landing response, ahead of the text and lists
+                    // the visitor came for. The watermark paints at opacity 0.05
+                    // behind a 5-second fade, so the browser's default scheduling
+                    // costs nothing visible.
                 />
             </motion.div>
 
             {/* Background gradient overlay to ensure readability */}
             <div
                 className="absolute inset-0"
+                aria-hidden="true"
                 style={{
                     background: `
                         linear-gradient(135deg,

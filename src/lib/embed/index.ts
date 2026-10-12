@@ -13,7 +13,6 @@ export type {
   EmbedFormat,
   EmbedCode,
   OEmbedResponse,
-  WidgetAnalyticsEvent,
   WidgetData,
   WidgetItem,
   WidgetMessage,
@@ -22,8 +21,14 @@ export type {
 
 export {
   WIDGET_DIMENSIONS,
+  WIDGET_SIZES,
+  WIDGET_THEMES,
+  WIDGET_DISPLAY_STYLES,
+  WIDGET_ITEM_COUNT,
+  WIDGET_DEFAULT_BORDER_RADIUS,
   THEME_PRESETS,
   DEFAULT_WIDGET_CONFIG,
+  normalizeWidgetConfig,
 } from './types';
 
 // Theme Customizer
@@ -45,11 +50,3 @@ export {
   parseEmbedUrl,
 } from './EmbedCodeGenerator';
 
-// Widget Analytics
-export {
-  WidgetAnalytics,
-  createWidgetAnalytics,
-  trackServerImpression,
-  getAnalyticsSummary,
-  type WidgetAnalyticsSummary,
-} from './WidgetAnalytics';

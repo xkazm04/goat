@@ -18,15 +18,32 @@ import {
 } from './types';
 
 /**
- * Generate a unique challenge code
+ * Generate a random challenge code (not guaranteed unique on its own)
  */
-function generateChallengeCode(): string {
+function generateRandomCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let code = '';
   for (let i = 0; i < 6; i++) {
     code += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return code;
+}
+
+const MAX_CODE_GENERATION_ATTEMPTS = 10;
+
+/**
+ * Generate a unique challenge code by retrying on collision
+ */
+function generateUniqueChallengeCode(existingCodes: Set<string>): string {
+  for (let attempt = 0; attempt < MAX_CODE_GENERATION_ATTEMPTS; attempt++) {
+    const code = generateRandomCode();
+    if (!existingCodes.has(code)) {
+      return code;
+    }
+  }
+  throw new Error(
+    'Failed to generate a unique challenge code after maximum attempts'
+  );
 }
 
 /**
@@ -94,9 +111,14 @@ export class ChallengeManager {
     const now = new Date().toISOString();
     const challengeId = generateId();
 
+    // Collect existing codes to avoid collisions
+    const existingCodes = new Set(
+      Array.from(this.challenges.values()).map(c => c.code)
+    );
+
     const challenge: Challenge = {
       id: challengeId,
-      code: generateChallengeCode(),
+      code: generateUniqueChallengeCode(existingCodes),
       title: input.title,
       description: input.description,
       type: config.type,

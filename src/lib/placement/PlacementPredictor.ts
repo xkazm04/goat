@@ -478,7 +478,7 @@ export class PlacementPredictor {
     position: number,
     gridItems: GridItemType[]
   ): number {
-    const neighbors = this.getNeighbors(position, gridItems.length);
+    const _neighbors = this.getNeighbors(position, gridItems.length);
     // Note: GridItemType doesn't have category, would need to track this
     // This is a simplified implementation
     return 0;

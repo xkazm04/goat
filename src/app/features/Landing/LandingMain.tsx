@@ -16,7 +16,6 @@ import { getCategoryColor } from "@/lib/helpers/getColors";
 import { FloatingShowcase } from "./FloatingShowcase";
 import { NeonArenaTheme } from "./shared";
 import { ContinueRankingBar } from "./sub_LandingLists/ContinueRankingBar";
-import { SavedListsSection } from "./sub_LandingLists/SavedListsSection";
 import { SectionHeader } from "./sub_LandingLists/SectionHeader";
 
 
@@ -31,7 +30,7 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
 };
 
 export function LandingMain() {
-  const { handlePlayList } = usePlayList();
+  const { handlePlayList: _handlePlayList } = usePlayList();
 
   // Fetch featured lists data (same query as FloatingShowcase, TanStack deduplicates)
   const { data: featuredData } = useFeaturedLists({

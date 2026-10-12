@@ -36,7 +36,7 @@ const TIER_STYLES = {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const code = searchParams.get('code');
+    const _code = searchParams.get('code');
     const title = searchParams.get('title') || 'Achievement Unlocked!';
     const description = searchParams.get('description') || 'Complete this achievement';
     const tier = (searchParams.get('tier') || 'gold') as keyof typeof TIER_STYLES;

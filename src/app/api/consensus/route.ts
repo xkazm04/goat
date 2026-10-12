@@ -1,4 +1,6 @@
+import { SupabaseClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
+
 
 import { createClient } from '@/lib/supabase/server';
 
@@ -71,7 +73,8 @@ async function getRealConsensusData(
   category: string,
   itemIds: string[] | undefined
 ): Promise<Record<string, ItemConsensusWithClusters> | null> {
-  let query = supabase
+  // item_consensus_cache is not yet in the generated DB types — use untyped query
+  let query = (supabase as unknown as SupabaseClient)
     .from('item_consensus_cache')
     .select('*')
     .eq('category', category);
@@ -103,13 +106,12 @@ async function getRealConsensusData(
       itemId: row.item_id,
       medianRank: median,
       averageRank: avg,
-      averagePosition: avg,
       volatility: vol * 10,
       totalRankings: row.total_rankings || 0,
       confidence: Number(row.confidence) || 0,
       distribution,
       modeRank: median,
-      percentiles: (row.percentiles as { p25?: number; p50?: number; p75?: number }) || {
+      percentiles: (row.percentiles as { p25: number; p50: number; p75: number } | null) || {
         p25: Math.max(1, Math.round(avg - stdDev)),
         p50: Math.round(avg),
         p75: Math.min(50, Math.round(avg + stdDev)),

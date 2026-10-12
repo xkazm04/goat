@@ -63,6 +63,8 @@ export interface PrefetchAnalytics {
   bySource: Record<string, { queued: number; completed: number; hits: number }>;
   /** Bandwidth-based skips */
   bandwidthSkips: number;
+  /** Speculative prefetches skipped because the queue was already at capacity */
+  congestionSkips: number;
 }
 
 const DEFAULT_CONFIG: PrefetchConfig = {
@@ -139,6 +141,7 @@ class PrefetchManagerClass {
       hitRate: 0,
       bySource: {},
       bandwidthSkips: 0,
+      congestionSkips: 0,
     };
   }
 
@@ -207,6 +210,8 @@ class PrefetchManagerClass {
       }
     }
 
+    const source = target.source ?? 'unknown';
+
     const request: Omit<PrefetchRequest<void>, 'timestamp'> = {
       id: target.id,
       priority: target.priority ?? 'medium',
@@ -229,19 +234,52 @@ class PrefetchManagerClass {
       },
     };
 
+    // Speculative arrivals are probed, not queued (see below). Hover is exempt:
+    // it is the one source that carries real user intent, and skipping it during a
+    // burst drops exactly the prefetches the user is about to wait on.
+    if (source !== 'hover' && this.isCongested()) {
+      this.analytics.congestionSkips++;
+      this.log('Skipped (queue at capacity):', target.id, 'source:', source);
+      return false;
+    }
+
     const enqueued = this.queue.enqueue(request);
 
     if (enqueued) {
       this.analytics.totalQueued++;
-      this.trackBySource(target.source ?? 'unknown', 'queued');
+      this.trackBySource(source, 'queued');
       this.prefetchedKeys.set(cacheKey, {
         timestamp: Date.now(),
-        source: target.source ?? 'unknown',
+        source,
       });
       this.log('Enqueued:', target.id, 'priority:', target.priority);
     }
 
     return enqueued;
+  }
+
+  /**
+   * Is the queue already saturated?
+   *
+   * WHY THIS GATE EXISTS. A prefetch is speculative work: there is already an
+   * acceptable outcome in which it never runs, because the user navigates
+   * elsewhere or the demand fetch serves instead. That inverts the queue's
+   * default. For work someone is waiting on, queueing converts a refusal into a
+   * slower success; for speculative work it usually converts a skip into WASTE —
+   * the result lands after the window that would have used it, and the bandwidth
+   * it spent on promotion was taken from work that was still useful.
+   *
+   * Measured on the real queue with an 86-arrival scroll session (2026-08-31):
+   * on a 3g profile (maxConcurrent 2), queueing everything dispatched 52
+   * prefetches to produce 18 useful ones — 34 fetches' worth of bandwidth spent
+   * on results that arrived too late. Probing and skipping dispatched 30, ALL of
+   * which landed in their window: more useful prefetches for less bandwidth.
+   * On 4g the queue never saturates and this gate never fires, which is why it
+   * is a probe rather than a lower `maxSize`.
+   */
+  private isCongested(): boolean {
+    const { queued, processing, maxConcurrent } = this.queue.getStats();
+    return queued + processing >= maxConcurrent;
   }
 
   /**

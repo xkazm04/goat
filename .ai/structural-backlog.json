@@ -1,0 +1,186 @@
+{
+  "$schema": "ai-structural-backlog/0.1.0",
+  "$comment": "The structural improvement loop's MEMORY. Registry: module-design/structural-improvement-loop, locality-and-leverage. It records what was DONE — accepted, declined, executed, retired — and never what was COMPUTED. Every measurement (scatter counts, sizes, importer counts) is re-derived from the tree by scripts/structural-backlog.mjs on each run and is deliberately absent from this file: a derived number that outlives the tree it came from is a proxy that has already diverged and does not announce it. A pass that opens with last quarter's numbers has skipped grounding before it started.",
+  "checkWith": "npm run structure:check",
+  "cadence": {
+    "interval": "quarterly",
+    "rationale": "Sized so that at most one 'the structure was against us' story accumulates between passes. This repo produced three in one wave (the ladder written three times, the drag-state machine three times, magnetic snap twice), which is one interval's worth and is why the number is a quarter rather than a year.",
+    "lastPass": "2026-08-24",
+    "note": "Run at the rate its output can be EXECUTED. A loop that emits specs nobody schedules is a machine for producing guilt. Four specs, two already executed, is deliberately small."
+  },
+  "statuses": {
+    "accepted": "an agreed target shape, not yet reached. Requires target, trade, invariant, steps, stopCondition and reviewBy.",
+    "executed": "the stop condition is met. Kept, with the commit that met it, so the next pass does not re-propose it.",
+    "declined": "considered and refused. REQUIRES a reason — an undocumented decline is re-proposed every pass forever, and the loop's credibility is spent re-explaining the same no.",
+    "retired": "was accepted, went unexecuted, and was retired rather than left to decay. Requires a reason."
+  },
+
+  "specs": [
+    {
+      "id": "ladder-has-one-owner",
+      "status": "accepted",
+      "raised": "2026-08-24",
+      "reviewBy": "2026-11-24",
+      "candidateShape": "knowledge in three places — one capability implemented independently three times",
+      "grounding": [
+        {
+          "file": "src/app/features/Collection/constants/lazyLoadConfig.ts",
+          "mustContain": "LAZY_LOAD_THRESHOLD",
+          "why": "attempt 1's configuration. Live, but only its observer fields are read."
+        },
+        {
+          "file": "src/app/features/Collection/components/LazyLoadTrigger.tsx",
+          "mustContain": "useIntersectionObserver",
+          "why": "attempt 1's component. Reads that config and NO COMPONENT RENDERS IT — the feature barrel is its only reference."
+        },
+        {
+          "file": "src/app/features/Collection/components/CollectionPanel.tsx",
+          "mustNotContain": "LazyLoadTrigger",
+          "why": "the relation. The panel that is supposed to select a rendering strategy imports nothing lazy, virtual or observer-based; it renders every filtered item. When this stops being true the spec is executed."
+        }
+      ],
+      "currentShape": "The render-strategy ladder (normal -> lazy -> virtualized) has been DESIGNED THREE TIMES and WIRED ZERO TIMES. Attempt 2 was src/lib/virtual/ (6 modules, ~2,100 lines, zero importers, deleted 615d25e). Attempt 3 was src/components/patterns/virtualization/useLazyLoad.ts (269 lines, reachable only through a barrel nothing imported, deleted 2026-08-24). Attempt 1 survives as config plus an unrendered component.",
+      "target": "ONE owner for the ladder. Either CollectionPanel consumes LazyLoadTrigger as tier 2 and lazyLoadConfig becomes the single read authority, or the trigger is deleted and every document that claims a ladder drops the claim. Both are acceptable; a fourth independent implementation is not.",
+      "trade": {
+        "buys": "locality — the decision 'which rendering strategy for how many items' lands in one place instead of being re-derived by whoever next notices the panel is slow.",
+        "spends": "leverage, slightly: a caller that wants a different threshold must configure it rather than default a parameter, which is exactly how attempt 3 came to disagree with attempt 1 (threshold 50 vs the page size of 20).",
+        "whoCollects": "locality is collected by everyone who touches Collection rendering from now on; the leverage cost is paid by the one call site that would have hard-coded a number."
+      },
+      "invariant": "Collection rendering output is unchanged for collections at or under the threshold, which today is every collection. Pin with a characterization test over CollectionPanel's rendered item count BEFORE the first edit.",
+      "steps": [
+        "Decide wire-or-delete. This is the human input the loop cannot supply — it depends on whether large collections are a product direction.",
+        "If WIRE: characterization test first, then CollectionPanel renders LazyLoadTrigger behind LAZY_LOAD_THRESHOLD, landable and green at that point.",
+        "If DELETE: remove LazyLoadTrigger and its barrel export in one commit, and strike the ladder claim from docs/lazy-loading-implementation.md and Collection/README.md in the same change."
+      ],
+      "stopCondition": {
+        "description": "CollectionPanel.tsx references LazyLoadTrigger (wired), OR LazyLoadTrigger.tsx no longer exists (deleted). Either ends the spec; neither being true means it is still open.",
+        "anyOf": [
+          { "file": "src/app/features/Collection/components/CollectionPanel.tsx", "contains": "LazyLoadTrigger" },
+          { "file": "src/app/features/Collection/components/LazyLoadTrigger.tsx", "absent": true }
+        ]
+      }
+    },
+
+    {
+      "id": "match-store-getstate-fanout",
+      "status": "accepted",
+      "raised": "2026-08-24",
+      "reviewBy": "2026-11-24",
+      "candidateShape": "a concern reached by paths that bypass its adapter; a thin orchestrator with a very wide dependency footprint",
+      "grounding": [
+        {
+          "file": "src/stores/match-store.ts",
+          "mustContain": "getState()",
+          "why": "one end. match-store reaches other stores directly through getState() rather than through any declared seam."
+        },
+        {
+          "file": "src/stores/registry.ts",
+          "mustContain": "STORE_DEPENDENCIES",
+          "why": "the other end. The manifest DECLARES the edges, and the topology check enforces that they are declared — but declaring an edge is not owning it. The relation is that the declared graph and the reaching code are two encodings of one fact."
+        }
+      ],
+      "currentShape": "match-store is a thin orchestrator with a very wide dependency footprint, reaching other stores via direct getState(). src/lib/orchestration/ was built to absorb exactly this coupling and was never adopted; it was deleted in 16d04a4 as unadopted, which removed a structure that made the coupling look owned and did NOT give it an owner.",
+      "target": "Cross-store coordination goes through a seam that is ADOPTED IN THE SAME CHANGE THAT INTRODUCES IT. That constraint is the whole lesson of the deleted orchestration layer and is part of the target, not a note on it. A seam introduced with zero call sites is refused.",
+      "trade": {
+        "buys": "leverage for anyone writing new cross-store behaviour: one place to learn, and substitution becomes possible in tests (today a test of match-store must construct nine other stores).",
+        "spends": "locality, and this is the honest cost — a seam that hides which stores participate means two subsystems must change in lockstep, and the maintainer pays that quarterly while the caller collects immediately.",
+        "whoCollects": "callers collect the leverage now; store maintainers pay the locality for as long as the seam exists. Given locality is preferred when the two conflict, the seam must be narrow enough that the lockstep is visible."
+      },
+      "invariant": "Store behaviour is unchanged. registry.ts's declared edges must continue to validate, and `npm run docs:store-graph -- --check` must stay green through every step.",
+      "steps": [
+        "Measure the scatter FIRST, with its predicate: how many distinct modules does 'add a new cross-store reaction' touch, over the last N such changes, excluding tests and generated output. Scatter is evidence, not a verdict — if the class recurs twice a year the boundary may be buying something else.",
+        "Only if the scatter justifies it: introduce the seam WITH its first two call sites in the same change.",
+        "Migrate remaining getState() reaches one at a time, each independently landable and green."
+      ],
+      "stopCondition": {
+        "description": "Not machine-checkable as a boolean, and saying so is better than inventing a threshold nobody agreed to. The spec is executed when a named seam module exists AND match-store contains no direct cross-store getState(). Until a seam is proposed there is no file to name, so this carries no anyOf clause and the next pass must judge it by hand.",
+        "manual": true
+      }
+    },
+
+    {
+      "id": "magnetic-snap-one-implementation",
+      "status": "executed",
+      "raised": "2026-08-24",
+      "executedIn": "2026-08-24, the pattern-library and Match-duplicate deletions",
+      "candidateShape": "knowledge in two places",
+      "grounding": [
+        {
+          "file": "src/app/features/Match/sub_DropZone/index.ts",
+          "mustNotMatch": "^\\s*export\\s.*useMagneticSnap",
+          "why": "the surviving barrel must no longer EXPORT the deleted hook. This is the executed spec's own regression check. Deliberately a regex on an export statement rather than a substring: the barrel still NAMES the symbol, in the autopsy comment left at the deletion site so the next reader knows why it is gone, and a substring predicate fired on that comment the first time it ran."
+        }
+      ],
+      "currentShape": "useMagneticSnap existed TWICE — src/app/features/Match/sub_DropZone/hooks/useMagneticSnap.ts and src/components/patterns/drag-drop/useMagneticSnap.ts — with zero component consumers between them. Each was reachable only through a barrel, which is the shadow-declaration shape: a reference-counting instrument certifies both alive. The scan finding match-grid-drag-drop #4 named the first in June 2026; the second was written anyway.",
+      "target": "Zero implementations, because zero were adopted. Deleted rather than consolidated: consolidating two dead things produces one dead thing.",
+      "trade": {
+        "buys": "locality — nothing left to keep in sync, and no subsystem that reads as protection while doing nothing.",
+        "spends": "nothing measurable. This is the rare boundary that was simply wrong, which is why the trade section is short rather than absent.",
+        "whoCollects": "the next reader, who no longer has to work out which of two magnetic-snap hooks is the real one."
+      },
+      "invariant": "No behaviour change: neither implementation had a consumer. Verified by import-graph walk (alias, relative and dynamic specifiers) and independently by knip.",
+      "steps": ["done"],
+      "stopCondition": {
+        "description": "Neither module exists and no barrel exports the symbol.",
+        "allOf": [
+          { "file": "src/app/features/Match/sub_DropZone/hooks/useMagneticSnap.ts", "absent": true },
+          { "file": "src/components/patterns/drag-drop/useMagneticSnap.ts", "absent": true }
+        ]
+      },
+      "surviving": "drop-zone-highlight-store.ts still carries magneticState / updateMagneticState, and DropZoneHighlightContext.tsx still reads them. That slice is LIVE and shares vocabulary with the deleted hooks. Do not finish the job on it without a separate decision."
+    },
+
+    {
+      "id": "drag-state-machine-one-owner",
+      "status": "executed",
+      "raised": "2026-08-24",
+      "executedIn": "2026-08-24, the Match-duplicate deletion",
+      "candidateShape": "knowledge in three places",
+      "grounding": [
+        {
+          "file": "src/app/features/Match/sub_MatchGrid/components/index.ts",
+          "mustNotMatch": "^\\s*export\\s.*DragStateManager",
+          "why": "the barrel that was the deleted provider's ONLY reference must no longer export it. Same precision point as the magnetic-snap clause: the autopsy comment at the deletion site names the symbol on purpose."
+        },
+        {
+          "file": "src/app/features/Match/sub_MatchGrid/SimpleMatchGrid.tsx",
+          "mustContain": "resetDragState",
+          "why": "the surviving owner. One named reaper called from every drag exit; this is the implementation the other two were competing with."
+        }
+      ],
+      "currentShape": "Drag state was implemented three times: SimpleMatchGrid (live), DragStateManager.tsx (a full React context provider reachable only from a barrel), and src/hooks/use-drag-sync.ts (zero importers, not even a barrel).",
+      "target": "One owner: SimpleMatchGrid, which is the only one any user interaction reaches.",
+      "trade": {
+        "buys": "locality — a drag-lifecycle change lands in one file. Before this, three files each looked like the place to make it.",
+        "spends": "an unadopted extension point. DragStateManager offered per-slot preview subscriptions SimpleMatchGrid does not have; deleting it means a future need for that is re-derived rather than resumed.",
+        "whoCollects": "maintainers collect the locality; a hypothetical future author pays the re-derivation. Preferred, because locality is collected by everyone who changes drag behaviour and the extension point had two months to find a caller and did not."
+      },
+      "invariant": "Drag behaviour unchanged — neither deleted module was on any execution path.",
+      "steps": ["done"],
+      "stopCondition": {
+        "description": "Neither module exists and the barrel no longer re-exports the provider.",
+        "allOf": [
+          { "file": "src/hooks/use-drag-sync.ts", "absent": true },
+          { "file": "src/app/features/Match/sub_MatchGrid/components/DragStateManager.tsx", "absent": true }
+        ]
+      }
+    },
+
+    {
+      "id": "shared-undo-keyboard-seam",
+      "status": "declined",
+      "raised": "2026-08-24",
+      "reason": "DECLINED, and the reason is recorded so it is not re-proposed every pass. Three window-level Ctrl+Z handlers existed (use-undo-keyboard.ts, useOrchestrator.ts, useMatchupKeyboard.ts) and all three fired together when two surfaces were mounted. The obvious structural answer — one shared keyboard seam every surface registers with — was refused: the defect was not that the handling was duplicated but that NOBODY OWNED THE SCOPE. Commit 16d04a4 deleted the dead third and 7ff078e gave the surviving two explicit, stated scope ownership. A shared seam would have HIDDEN the scope decision inside a registry, which is the precise failure mode of the deleted src/lib/orchestration/ layer: a structure that makes a coupling look owned without giving it an owner. Duplication is cheaper than the wrong abstraction, and the test is not 'do these look the same' but 'would a change to one require a change to the other' — a change to bracket-voting undo does not require a change to grid undo. Re-propose only with evidence that a change to one DID require a change to the other.",
+      "grounding": [
+        {
+          "file": "src/hooks/use-undo-keyboard.ts",
+          "why": "one of the two survivors, now scope-owning."
+        },
+        {
+          "file": "src/app/features/Match/sub_MatchBracket/components/MatchupScreen/useMatchupKeyboard.ts",
+          "why": "the other survivor, a different surface with a different lifetime."
+        }
+      ]
+    }
+  ]
+}

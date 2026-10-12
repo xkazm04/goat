@@ -176,9 +176,6 @@ const ROUTE_REGISTRY: RouteEntry[] = [
   // --- /api/activities ---
   buildRouteEntry('/api/activities', () => import('@/app/api/activities/route')),
 
-  // --- /api/recommendation ---
-  buildRouteEntry('/api/recommendation', () => import('@/app/api/recommendation/route')),
-
   // --- /api/personalization ---
   buildRouteEntry('/api/personalization/profile', () => import('@/app/api/personalization/profile/route')),
   buildRouteEntry('/api/personalization/recommend', () => import('@/app/api/personalization/recommend/route')),

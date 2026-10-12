@@ -29,17 +29,6 @@ export interface ContentItem {
 }
 
 /**
- * Scoring weights for different factors
- */
-interface ScoringWeights {
-  interest: number;
-  context: number;
-  popularity: number;
-  freshness: number;
-  trending: number;
-}
-
-/**
  * Personalization Engine class
  * Handles content selection and scoring based on user profile
  */

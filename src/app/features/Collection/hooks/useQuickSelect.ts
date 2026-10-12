@@ -2,10 +2,67 @@
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
 
+import { recordGridChange } from '@/lib/undo/record-grid-change';
 import { useBacklogStore } from '@/stores/backlog-store';
 import { useGridStore } from '@/stores/grid-store';
 
 import { CollectionItem } from '../types';
+
+import type { BacklogItem } from '@/types/backlog-groups';
+
+/**
+ * Resolve the BacklogItem a quick-select placement writes into the grid.
+ *
+ * One rule, several input devices: a collection item placed by touch
+ * (`useSwipeToRank`) is looked up in the backlog store and the REAL record -
+ * its category, description, years, creation time - goes into the grid. Until
+ * 2026-09-05 the keyboard path synthesised a stand-in instead, so the same item
+ * landed in the grid as `category: 'unknown'`, `description: ''`, no
+ * `item_year`, and a `created_at` stamped with the moment of the keypress; the
+ * persisted grid then carried a different record depending on which hand the
+ * user placed it with. Keyboard now resolves the same way touch does.
+ *
+ * The stand-in survives only as the fallback for an item the backlog store
+ * does not hold (the panel's items come from that store, so this is the
+ * exceptional path), and it is exported so the parity can be pinned in a test
+ * rather than trusted.
+ */
+export function resolvePlacementItem(
+  item: CollectionItem,
+  lookup: (itemId: string) => BacklogItem | null | undefined,
+): BacklogItem {
+  const real = lookup(item.id);
+  if (real) return real;
+  return {
+    id: item.id,
+    name: item.title,
+    title: item.title,
+    description: item.description || '',
+    image_url: item.image_url || undefined,
+    tags: item.tags || [],
+    category: item.category || 'unknown',
+    subcategory: item.subcategory,
+    created_at: new Date().toISOString(),
+  };
+}
+
+/**
+ * The instruction quick-select shows when it opens, when a selection is
+ * cleared, and when a key outside the item range is pressed.
+ *
+ * It names the keys that will actually do something. Until 2026-09-05 every
+ * one of those messages read "Press 1-9" regardless of how many items were on
+ * screen - with three items it named six keys that answered "No item at
+ * position N", and with a search that matched nothing it told the user to
+ * press keys that could select nothing at all (registry: copy that prescribes
+ * a remedy that cannot help).
+ */
+export function selectItemPrompt(visibleCount: number, maxQuickSelectItems: number): string {
+  const n = Math.min(visibleCount, maxQuickSelectItems);
+  if (n <= 0) return 'No items to select. Clear the search or filters first';
+  if (n === 1) return 'Press 1 to select the only item';
+  return `Press 1-${n} to select an item`;
+}
 
 /**
  * Quick-select mode states
@@ -106,10 +163,10 @@ export function useQuickSelect({
       setSelectedIndex(null);
       if (mode === 'position-assignment') {
         setMode('item-selection');
-        setStatusMessage('Item no longer available. Select another item (1-9)');
+        setStatusMessage(`Item no longer available. ${selectItemPrompt(visibleItems.length, maxQuickSelectItems)}`);
       }
     }
-  }, [visibleItems, selectedItemId, mode]);
+  }, [visibleItems, selectedItemId, mode, maxQuickSelectItems]);
 
   // Reset status message after delay
   useEffect(() => {
@@ -122,21 +179,21 @@ export function useQuickSelect({
   const toggleQuickSelect = useCallback(() => {
     if (mode === 'off') {
       setMode('item-selection');
-      setStatusMessage('Quick-select: Press 1-9 to select an item');
+      setStatusMessage(`Quick-select: ${selectItemPrompt(quickSelectItems.length, maxQuickSelectItems)}`);
     } else {
       setMode('off');
       setSelectedItemId(null);
       setSelectedIndex(null);
       setStatusMessage('');
     }
-  }, [mode]);
+  }, [mode, quickSelectItems.length, maxQuickSelectItems]);
 
   const activateQuickSelect = useCallback(() => {
     if (mode === 'off') {
       setMode('item-selection');
-      setStatusMessage('Quick-select: Press 1-9 to select an item');
+      setStatusMessage(`Quick-select: ${selectItemPrompt(quickSelectItems.length, maxQuickSelectItems)}`);
     }
-  }, [mode]);
+  }, [mode, quickSelectItems.length, maxQuickSelectItems]);
 
   const deactivateQuickSelect = useCallback(() => {
     setMode('off');
@@ -150,9 +207,9 @@ export function useQuickSelect({
     setSelectedIndex(null);
     if (mode === 'position-assignment') {
       setMode('item-selection');
-      setStatusMessage('Selection cleared. Press 1-9 to select an item');
+      setStatusMessage(`Selection cleared. ${selectItemPrompt(quickSelectItems.length, maxQuickSelectItems)}`);
     }
-  }, [mode]);
+  }, [mode, quickSelectItems.length, maxQuickSelectItems]);
 
   const assignToPosition = useCallback((item: CollectionItem, position: number) => {
     // Convert 1-based position to 0-based index
@@ -163,24 +220,24 @@ export function useQuickSelect({
       return false;
     }
 
-    // Create backlog item format for grid store with all required BacklogItem fields
-    const backlogItem = {
-      id: item.id,
-      name: item.title,
-      title: item.title,
-      description: item.description || '',
-      image_url: item.image_url || undefined,
-      tags: item.tags || [],
-      category: item.category || 'unknown',
-      subcategory: item.subcategory,
-      created_at: new Date().toISOString(),
-    };
+    // Same record the touch path places (see resolvePlacementItem).
+    const backlogItem = resolvePlacementItem(item, useBacklogStore.getState().getItemById);
 
-    // Assign to grid
-    assignItemToGrid(backlogItem, gridPosition);
-
-    // Mark as used in backlog store
-    markItemAsUsed(item.id, true);
+    // UNDOABLE since 2026-08-25. Keyboard placement (`q` then digits) used to
+    // bypass the stack entirely, so a whole ranking built by keyboard had no
+    // undo at all while the same ranking built by mouse had one.
+    //
+    // The tag carries the ITEM identity, so placing two different items in quick
+    // succession stays two steps. Re-placing the SAME item after other edits is
+    // also two steps, because a merge is only legal into the current top of the
+    // stack — reusing a tag later must not resurrect a closed step.
+    recordGridChange(
+      { description: `Place "${item.title}" at position ${position}`, tag: `quick-place:${item.id}` },
+      () => {
+        assignItemToGrid(backlogItem, gridPosition);
+        markItemAsUsed(item.id, true);
+      },
+    );
 
     // Call callback
     onItemAssigned?.(item, position);
@@ -214,7 +271,7 @@ export function useQuickSelect({
       // In item-selection mode, 1-9 selects an item
       if (num === 0) {
         // 0 is not valid for item selection (only 1-9)
-        setStatusMessage('Press 1-9 to select an item');
+        setStatusMessage(selectItemPrompt(quickSelectItems.length, maxQuickSelectItems));
         return true;
       }
 
@@ -237,7 +294,7 @@ export function useQuickSelect({
       const selectedItem = visibleItems.find(item => item.id === selectedItemId);
       if (!selectedItem) {
         setMode('item-selection');
-        setStatusMessage('Selection lost. Press 1-9 to select an item');
+        setStatusMessage(`Selection lost. ${selectItemPrompt(quickSelectItems.length, maxQuickSelectItems)}`);
         return true;
       }
 
@@ -245,7 +302,7 @@ export function useQuickSelect({
     }
 
     return false;
-  }, [enabled, mode, quickSelectItems, visibleItems, selectedItemId, deactivateQuickSelect, assignToPosition]);
+  }, [enabled, mode, quickSelectItems, visibleItems, selectedItemId, deactivateQuickSelect, assignToPosition, maxQuickSelectItems]);
 
   // Handle Enter key for next available position
   useEffect(() => {

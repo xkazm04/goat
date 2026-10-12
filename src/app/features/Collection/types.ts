@@ -67,14 +67,6 @@ export interface ItemCategory {
   count?: number; // Computed count of available items
 }
 
-export interface CollectionFilter {
-  searchTerm: string;
-  selectedGroupIds: Set<string>;
-  selectedCategory?: string;
-  sortBy?: 'name' | 'date' | 'popularity' | 'ranking';
-  sortOrder?: 'asc' | 'desc';
-}
-
 export interface ItemPanelStats {
   totalItems: number;
   selectedItems: number;
@@ -89,22 +81,4 @@ export interface ItemPanelStats {
   placedCount?: number; // Number of items placed in the grid
   remainingToRank?: number; // Number of items still available to rank
   completionPercentage?: number; // Grid completion percentage (0-100)
-}
-
-export interface CollectionPaginationState {
-  page: number;
-  pageSize: number;
-  total: number;
-  totalPages: number;
-  hasMore: boolean;
-}
-
-export interface CollectionMutationHelpers {
-  addItem: (item: Partial<CollectionItem>) => Promise<CollectionItem>;
-  updateItem: (id: string, updates: Partial<CollectionItem>) => Promise<CollectionItem>;
-  deleteItem: (id: string) => Promise<void>;
-}
-
-export interface CollectionOrderChangeCallback {
-  (items: CollectionItem[]): void;
 }

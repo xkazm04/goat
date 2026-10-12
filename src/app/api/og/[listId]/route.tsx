@@ -34,8 +34,11 @@ import type {
 export const runtime = 'edge';
 
 // Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
+if (!supabaseUrl || !supabaseServiceKey) {
+  throw new Error('Missing env var: NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
+}
 
 /**
  * Fetch shared ranking data from database

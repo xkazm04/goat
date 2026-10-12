@@ -8,6 +8,7 @@ import { StarRating } from '@/components/ui/star-rating';
 import { useRateTemplate, useUserRating } from '@/hooks/use-blueprints';
 import { DURATION } from '@/lib/animations/motion-presets';
 import { getCategoryColor } from '@/lib/helpers/getColors';
+import { getTemplateViewUrl } from '@/lib/sharing/share-urls';
 import { Blueprint } from '@/types/blueprint';
 
 interface CommunityTemplateCardProps {
@@ -25,7 +26,7 @@ export function CommunityTemplateCard({ template, onUseTemplate }: CommunityTemp
 
   const handleCopyLink = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    const url = `${window.location.origin}/templates?view=${template.slug || template.id}`;
+    const url = getTemplateViewUrl(template.slug || template.id);
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);

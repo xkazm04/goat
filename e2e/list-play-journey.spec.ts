@@ -1,5 +1,7 @@
 import { test, expect } from "@playwright/test";
 
+import { openFirstFeaturedList } from "./helpers/test-utils";
+
 /**
  * E2E Test: List Play Journey
  *
@@ -10,6 +12,16 @@ import { test, expect } from "@playwright/test";
  * 4. Confirms the match grid loads correctly
  *
  * This ensures the list->match handoff integration works correctly.
+ *
+ * Rewritten 2026-09-05. Four of these six tests derived the list id from the
+ * featured card's `data-testid`, whose suffix is the card INDEX, and then
+ * waited for `/goat?list=0` — a URL the app never produces. A fifth read a
+ * title out of `featured-list-title-<id>`, which no component renders. Both are
+ * the same mistake: inventing an identifier instead of reading what the surface
+ * actually exposes. The id now comes from the URL the app navigated to, and the
+ * title from the card's own accessible name (`aria-label="Play <title>"`,
+ * FeaturedListsSection.tsx), which is readable BEFORE the click and is a
+ * user-visible fact rather than a private attribute.
  */
 test.describe("List Play Journey", () => {
   test.beforeEach(async ({ page }) => {
@@ -36,52 +48,27 @@ test.describe("List Play Journey", () => {
   test("clicking play on featured list navigates to goat with correct list ID", async ({
     page,
   }) => {
-    // Wait for featured lists to load (check for skeleton to disappear or items to appear)
     const featuredSection = page.getByTestId("featured-lists-section");
     await expect(featuredSection).toBeVisible({ timeout: 10000 });
 
-    // Wait for at least one featured list item to be visible
-    // Use a flexible selector that matches any featured list item
-    const firstListItem = page.locator('[data-testid^="featured-list-item-"]').first();
+    const listId = await openFirstFeaturedList(page);
 
-    // Wait for the list item to appear (may need to wait for API response)
-    await expect(firstListItem).toBeVisible({ timeout: 15000 });
-
-    // Extract the list ID from the test ID
-    const testId = await firstListItem.getAttribute("data-testid");
-    const listId = testId?.replace("featured-list-item-", "");
-    expect(listId).toBeTruthy();
-
-    // Click on the featured list item (the entire item is clickable and triggers play)
-    await firstListItem.click();
-
-    // Verify navigation to goat page with correct list ID
-    await page.waitForURL(`**/goat?list=${listId}`, { timeout: 10000 });
-
-    // Verify URL contains the correct list parameter
+    // The id in the URL must be the list's own id, not a card index. A bare
+    // integer here is the exact regression this test was blind to.
+    expect(
+      listId,
+      `the goat URL carried "${listId}", which is a card index, not a list id`,
+    ).not.toMatch(/^\d+$/);
     expect(page.url()).toContain(`/goat?list=${listId}`);
   });
 
   test("goat page loads and displays match grid after navigation", async ({
     page,
   }) => {
-    // Wait for featured lists to load
     const featuredSection = page.getByTestId("featured-lists-section");
     await expect(featuredSection).toBeVisible({ timeout: 10000 });
 
-    // Get the first featured list item
-    const firstListItem = page.locator('[data-testid^="featured-list-item-"]').first();
-    await expect(firstListItem).toBeVisible({ timeout: 15000 });
-
-    // Extract list ID before clicking
-    const testId = await firstListItem.getAttribute("data-testid");
-    const listId = testId?.replace("featured-list-item-", "");
-
-    // Click to navigate
-    await firstListItem.click();
-
-    // Wait for navigation
-    await page.waitForURL(`**/goat?list=${listId}`, { timeout: 10000 });
+    await openFirstFeaturedList(page);
 
     // Wait for loading to complete (spinner should disappear)
     // The page shows a loading spinner during data fetch
@@ -94,62 +81,49 @@ test.describe("List Play Journey", () => {
     // Verify we're not on "No list selected" state
     const noListMessage = page.locator("text=No list selected");
     await expect(noListMessage).not.toBeVisible({ timeout: 5000 });
+
+    // The point of the journey: the grid the user came for actually renders.
+    await expect(page.getByTestId("match-grid-container")).toBeVisible({
+      timeout: 20000,
+    });
   });
 
   test("user lists section displays play button that navigates correctly", async ({
     page,
   }) => {
-    // Look for user lists section
-    const userListsSection = page.getByTestId("user-lists-section");
+    // The user-lists section only renders for a signed-in account with lists,
+    // which this suite does not have. `user-list-play-btn-<id>` DOES carry the
+    // list id (UserListCard.tsx), so when the section is present the assertion
+    // is exact; when it is absent the test states that it skipped rather than
+    // reporting a pass it did not earn.
+    const userListPlayBtn = page.locator('[data-testid^="user-list-play-btn-"]').first();
+    const hasUserLists = await userListPlayBtn
+      .isVisible({ timeout: 5000 })
+      .catch(() => false);
+    test.skip(!hasUserLists, "no user lists rendered — this suite has no signed-in account");
 
-    // If user has lists, test the play button
-    const isUserSectionVisible = await userListsSection.isVisible().catch(() => false);
+    const btnTestId = await userListPlayBtn.getAttribute("data-testid");
+    const listId = btnTestId?.replace("user-list-play-btn-", "");
+    expect(listId).toBeTruthy();
 
-    if (isUserSectionVisible) {
-      // Check for user list items
-      const userListPlayBtn = page.locator('[data-testid^="user-list-play-btn-"]').first();
-      const hasUserLists = await userListPlayBtn.isVisible().catch(() => false);
-
-      if (hasUserLists) {
-        // Extract list ID from button test ID
-        const btnTestId = await userListPlayBtn.getAttribute("data-testid");
-        const listId = btnTestId?.replace("user-list-play-btn-", "");
-
-        // Click the play button
-        await userListPlayBtn.click();
-
-        // Verify navigation
-        await page.waitForURL(`**/goat?list=${listId}`, { timeout: 10000 });
-        expect(page.url()).toContain(`/goat?list=${listId}`);
-      }
-    }
-
-    // If no user lists, this test passes (no assertion needed)
-    // The critical path is tested in the featured lists tests above
+    await userListPlayBtn.click();
+    await page.waitForURL(`**/goat?list=${listId}`, { timeout: 10000 });
+    expect(page.url()).toContain(`/goat?list=${listId}`);
   });
 
   test("list store receives correct list data on play", async ({ page }) => {
-    // Wait for featured lists
     const featuredSection = page.getByTestId("featured-lists-section");
     await expect(featuredSection).toBeVisible({ timeout: 10000 });
 
-    // Get a featured list item
-    const firstListItem = page.locator('[data-testid^="featured-list-item-"]').first();
-    await expect(firstListItem).toBeVisible({ timeout: 15000 });
+    // The card's accessible name is `Play <title>` — the only place the title
+    // is legible to the harness before the click.
+    const card = page.locator('[data-testid^="featured-list-item-"]').first();
+    await expect(card).toBeVisible({ timeout: 15000 });
+    const ariaLabel = (await card.getAttribute("aria-label")) ?? "";
+    const listTitle = ariaLabel.replace(/^Play\s+/, "");
+    expect(listTitle, `card had no readable title (aria-label was "${ariaLabel}")`).not.toBe("");
 
-    // Get the list title before clicking
-    const testId = await firstListItem.getAttribute("data-testid");
-    const listId = testId?.replace("featured-list-item-", "");
-
-    // Get the list title text (from the item's title element)
-    const titleElement = page.locator(`[data-testid="featured-list-title-${listId}"]`);
-    const listTitle = await titleElement.textContent();
-
-    // Click to play
-    await firstListItem.click();
-
-    // Wait for navigation
-    await page.waitForURL(`**/goat?list=${listId}`, { timeout: 10000 });
+    const listId = await openFirstFeaturedList(page);
 
     // Verify list-store was populated by checking localStorage
     // The list-store uses zustand persist which saves to localStorage
@@ -160,37 +134,27 @@ test.describe("List Play Journey", () => {
 
     // Verify current list is set in the store
     expect(listStoreData).not.toBeNull();
-    if (listStoreData?.state?.currentList) {
-      expect(listStoreData.state.currentList.id).toBe(listId);
-      // Title should match what we saw on the landing page
-      if (listTitle) {
-        expect(listStoreData.state.currentList.title).toBe(listTitle);
-      }
-    }
+    expect(
+      listStoreData?.state?.currentList,
+      "list-store persisted no currentList after a play click",
+    ).toBeTruthy();
+    expect(listStoreData.state.currentList.id).toBe(listId);
+    expect(listStoreData.state.currentList.title).toBe(listTitle);
   });
 
   test("navigation preserves list ID through page load", async ({ page }) => {
     // Navigate directly to goat with a list parameter
     // This tests that the page can load list data from URL param alone
-    await page.goto("/");
-
-    // Get a valid list ID from the featured section
     const featuredSection = page.getByTestId("featured-lists-section");
     await expect(featuredSection).toBeVisible({ timeout: 10000 });
 
-    const firstListItem = page.locator('[data-testid^="featured-list-item-"]').first();
-    await expect(firstListItem).toBeVisible({ timeout: 15000 });
+    const listId = await openFirstFeaturedList(page);
 
-    const testId = await firstListItem.getAttribute("data-testid");
-    const listId = testId?.replace("featured-list-item-", "");
-
-    // Navigate directly to goat page
+    // Come back and enter by URL alone — no click, no store priming.
+    await page.goto("/");
     await page.goto(`/goat?list=${listId}`);
-
-    // Wait for page to load
     await page.waitForLoadState("networkidle");
 
-    // Verify the list ID is preserved in the URL
     expect(page.url()).toContain(`list=${listId}`);
 
     // Page should not show "No list selected" error

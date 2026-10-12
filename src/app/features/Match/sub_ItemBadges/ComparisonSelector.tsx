@@ -8,6 +8,7 @@ import {
   Check,
   ChevronRight,
 } from "lucide-react";
+import Image from "next/image";
 import { memo, useEffect, useState } from "react";
 
 import { useComparison } from "@/hooks/use-comparison";
@@ -33,11 +34,11 @@ export const ComparisonSelector = memo(function ComparisonSelector({
     canAddMore,
     clearSelection,
     selectionStatusText,
-    MIN_ITEMS,
+    MIN_ITEMS: _MIN_ITEMS,
     MAX_ITEMS,
   } = useComparison();
 
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [_isExpanded, setIsExpanded] = useState(false);
 
   // Auto-expand when items are selected
   useEffect(() => {
@@ -191,10 +192,13 @@ const ComparisonItemChip = memo(function ComparisonItemChip({
         title={item.title}
       >
         {item.image_url ? (
-          <img
+          <Image
             src={item.image_url}
             alt={item.title}
+            width={48}
+            height={48}
             className="w-full h-full object-cover"
+            unoptimized
           />
         ) : (
           <div className="w-full h-full bg-linear-to-br from-indigo-500/20 to-purple-500/20

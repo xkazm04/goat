@@ -147,6 +147,7 @@ export const SocialButton = memo(
           target.style.borderColor = `rgba(${hexToRgb(color)}, 0.25)`;
           target.style.boxShadow = 'none';
         }}
+        aria-label={`Share on ${name}`}
         data-testid={testId || `social-btn-${platform}`}
       >
         <svg
@@ -212,6 +213,7 @@ export const CopyButton = memo(function CopyButton({
         background: copied ? 'rgba(74, 222, 128, 0.15)' : 'rgba(255, 255, 255, 0.05)',
         border: copied ? '1px solid rgba(74, 222, 128, 0.3)' : '1px solid rgba(255, 255, 255, 0.1)',
       }}
+      aria-label={copied ? "Link copied" : "Copy link"}
       data-testid={testId || 'copy-btn'}
     >
       <AnimatePresence mode="wait">

@@ -65,17 +65,6 @@ const ROUND_NAMES: Record<number, string> = {
 };
 
 /**
- * Get the nearest power of 2 >= n
- */
-function nextPowerOf2(n: number): number {
-  let power = 1;
-  while (power < n) {
-    power *= 2;
-  }
-  return power;
-}
-
-/**
  * Generate unique matchup ID
  */
 function generateMatchupId(roundIndex: number, matchIndex: number): string {
@@ -101,17 +90,6 @@ function createByeParticipant(seed: number): BracketParticipant {
   };
 }
 
-/**
- * Create a participant from a backlog item
- */
-function createParticipant(item: BacklogItemType, seed: number): BracketParticipant {
-  return {
-    id: item.id,
-    item,
-    seed,
-    isBye: false,
-  };
-}
 
 /**
  * Generate standard bracket seeding order
@@ -236,7 +214,12 @@ export function seedBracket(
       winner = p1;
       isComplete = true;
     } else if (p1.isBye && p2.isBye) {
-      // Both byes - this shouldn't happen with proper seeding
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(
+          `[seedBracket] Double-bye matchup detected (seeds ${seed1} vs ${seed2}). ` +
+          `This indicates a bug in the seeding algorithm.`
+        );
+      }
       winner = p1;
       isComplete = true;
     }
@@ -394,6 +377,11 @@ export function recordMatchupResult(
   if (target) {
     const r = target.roundIndex;
     const roundMatchups = updated.rounds[r].matchups;
+
+    if (winnerId !== target.participant1?.id && winnerId !== target.participant2?.id) {
+      return bracket;
+    }
+
     const winner = target.participant1?.id === winnerId
       ? target.participant1
       : target.participant2;
@@ -777,6 +765,16 @@ export interface CompletedVote {
   loser:  { id: string; title?: string; image_url?: string | null };
 }
 
+/** A round boundary marker on the progress bar. */
+export interface RoundMilestone {
+  /** Cumulative percentage where this round ends (0–100). */
+  percentage: number;
+  /** Display name of the round that just completed at this mark. */
+  name: string;
+  /** Whether all matchups up to and including this round are complete. */
+  completed: boolean;
+}
+
 /** All commonly-needed bracket-derived data, computed in a single pass. */
 export interface BracketDerivedData {
   stats: {
@@ -785,6 +783,8 @@ export interface BracketDerivedData {
     remainingMatchups: number;
     progressPercentage: number;
     currentRoundName: string;
+    /** Round boundary markers for the progress bar. */
+    roundMilestones: RoundMilestone[];
   };
   playableMatchups: BracketMatchup[];
   completedVotes: CompletedVote[];
@@ -803,13 +803,21 @@ export function deriveBracketData(bracket: BracketState): BracketDerivedData {
 
   const currentRoundIndex = bracket.currentRoundIndex;
 
+  // Per-round real-matchup counts for milestone calculation
+  const roundMatchupCounts: { name: string; total: number; completed: number }[] = [];
+
   for (const round of bracket.rounds) {
+    let roundTotal = 0;
+    let roundCompleted = 0;
+
     for (const matchup of round.matchups) {
       // Stats: count non-pure-bye matchups
-      if (!matchup.participant1?.isBye || !matchup.participant2?.isBye) {
+      if (!matchup.participant1?.isBye && !matchup.participant2?.isBye) {
         totalMatchups++;
+        roundTotal++;
         if (matchup.isComplete) {
           completedMatchups++;
+          roundCompleted++;
         }
       }
 
@@ -844,6 +852,23 @@ export function deriveBracketData(bracket: BracketState): BracketDerivedData {
         });
       }
     }
+
+    roundMatchupCounts.push({ name: round.name, total: roundTotal, completed: roundCompleted });
+  }
+
+  // Build round milestones — cumulative percentage boundaries
+  const milestones: RoundMilestone[] = [];
+  if (totalMatchups > 0) {
+    let cumulative = 0;
+    for (const rc of roundMatchupCounts) {
+      if (rc.total === 0) continue; // skip bye-only rounds
+      cumulative += rc.total;
+      milestones.push({
+        percentage: (cumulative / totalMatchups) * 100,
+        name: rc.name,
+        completed: rc.completed === rc.total,
+      });
+    }
   }
 
   const currentRound = bracket.rounds[currentRoundIndex];
@@ -855,6 +880,7 @@ export function deriveBracketData(bracket: BracketState): BracketDerivedData {
       remainingMatchups: totalMatchups - completedMatchups,
       progressPercentage: totalMatchups > 0 ? (completedMatchups / totalMatchups) * 100 : 0,
       currentRoundName: currentRound?.name || 'Complete',
+      roundMilestones: milestones,
     },
     playableMatchups: playable,
     completedVotes: votes,

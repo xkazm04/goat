@@ -1,8 +1,9 @@
 import { backlogLogger } from '@/lib/logger';
+import { MAX_PENDING_CHANGES } from '@/lib/offline/OfflinePersistence';
 import { BacklogItem } from '@/types/backlog-groups';
 
 import { syncCacheFromGroups } from './cache-utils';
-import { replaceGroupInIndex } from './item-index';
+import { replaceGroupInIndex, warnIndexFallback } from './item-index';
 import { BacklogState, PendingChange } from './types';
 import { useSelectionCursor } from '../selection-cursor';
 
@@ -28,6 +29,15 @@ export const createItemActions = (
         return;
       }
 
+      // Capacity is a precondition of the WHOLE write, checked before anything
+      // is mutated. Checking it after the local push (as this did until
+      // 2026-09-05) left the item in the group and out of the queue — a local
+      // tree the server would never learn about, with no record that it diverged.
+      if (state.isOfflineMode && state.pendingChanges.length >= MAX_PENDING_CHANGES) {
+        backlogLogger.warn(`Offline queue full (${MAX_PENDING_CHANGES}). Rejecting add for item ${item.id}`);
+        return;
+      }
+
       if (!group.items) group.items = [];
       const prevCount = group.items.length;
       group.items.push(item);
@@ -42,7 +52,7 @@ export const createItemActions = (
       // Sync cache from state.groups (single reference copy, not re-iteration)
       syncCacheFromGroups(state, groupId);
 
-      // Add to pending changes if offline
+      // Add to pending changes if offline (capacity was checked above)
       if (state.isOfflineMode) {
         const pendingChange: PendingChange = {
           type: 'add',
@@ -76,6 +86,13 @@ export const createItemActions = (
         return;
       }
 
+      // Same precondition as addItemToGroup: refuse before mutating, or the
+      // local tree and the offline queue disagree by one item.
+      if (state.isOfflineMode && state.pendingChanges.length >= MAX_PENDING_CHANGES) {
+        backlogLogger.warn(`Offline queue full (${MAX_PENDING_CHANGES}). Rejecting remove for item ${itemId}`);
+        return;
+      }
+
       const originalCount = group.items.length;
       group.items.splice(itemIndex, 1);
       group.item_count = group.items.length;
@@ -95,15 +112,8 @@ export const createItemActions = (
       if (useSelectionCursor.getState().itemId === itemId) {
         useSelectionCursor.getState().clear();
       }
-      // Clear deprecated local shadows
-      if (state.selectedItemId === itemId) {
-        state.selectedItemId = null;
-      }
-      if (state.activeItemId === itemId) {
-        state.activeItemId = null;
-      }
 
-      // Add to pending changes if offline
+      // Add to pending changes if offline (capacity was checked above)
       if (state.isOfflineMode) {
         const pendingChange: PendingChange = {
           type: 'remove',
@@ -163,17 +173,6 @@ export const createItemActions = (
     } else {
       useSelectionCursor.getState().clear();
     }
-    // Keep deprecated local shadow in sync for storage compat
-    set(state => {
-      state.selectedItemId = itemId;
-    });
-  },
-
-  // Set active item (deprecated — hover/preview state should be component-local)
-  setActiveItem: (itemId: string | null) => {
-    set(state => {
-      state.activeItemId = itemId;
-    });
   },
 
   // Toggle group selection
@@ -243,6 +242,7 @@ export const createItemActions = (
       }
     }
     // Fallback: linear scan
+    warnIndexFallback(itemId, 'isItemUsed');
     for (const group of state.groups) {
       if (group.items) {
         const item = group.items.find(i => i.id === itemId);
@@ -251,25 +251,6 @@ export const createItemActions = (
     }
     return false;
   },
-
-  // Clear cache
-  clearCache: (category?: string) => {
-    set(state => {
-      if (category) {
-        // Clear specific category caches
-        Object.keys(state.cache).forEach(key => {
-          if (key.startsWith(category)) {
-            delete state.cache[key];
-          }
-        });
-        backlogLogger.debug(`Cleared cache for category: ${category}`);
-      } else {
-        // Clear all caches
-        state.cache = {};
-        backlogLogger.debug(`Cleared all cache`);
-      }
-    });
-  }
 });
 
 export type ItemActions = ReturnType<typeof createItemActions>;

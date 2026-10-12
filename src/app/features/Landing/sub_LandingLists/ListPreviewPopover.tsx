@@ -113,9 +113,27 @@ interface PreviewContentProps {
   };
 }
 
+/**
+ * How complete a list is, as a whole percent.
+ *
+ * The same quantity is computed by `RankingProgressIndicator` in this context,
+ * and that one guards `total === 0`. This site did not, and it also had no
+ * upper clamp — `itemCount` is `items.length` (use-list-preview.ts:80) while
+ * `size` is the list's DECLARED size, so the two are independent and a list
+ * holding more items than it declares reports over 100%. Unguarded, the two
+ * failures render as the literal text `NaN%` and as a percentage above 100 next
+ * to a bar that has already been full since 100.
+ *
+ * Exported so the arithmetic is testable without opening a hover card.
+ */
+export function completionPercent(itemCount: number, size: number): number {
+  if (!Number.isFinite(itemCount) || !Number.isFinite(size) || size <= 0) return 0;
+  return Math.min(100, Math.max(0, Math.round((itemCount / size) * 100)));
+}
+
 function PreviewContent({ data }: PreviewContentProps) {
   const colors = getCategoryColor(data.category);
-  const completionPercent = Math.round((data.itemCount / data.size) * 100);
+  const completion = completionPercent(data.itemCount, data.size);
   const createdDate = new Date(data.createdAt).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
@@ -181,7 +199,7 @@ function PreviewContent({ data }: PreviewContentProps) {
             Completion
           </span>
           <span className="text-2xs font-medium text-slate-400">
-            {completionPercent}%
+            {completion}%
           </span>
         </div>
         <div
@@ -190,7 +208,7 @@ function PreviewContent({ data }: PreviewContentProps) {
         >
           <motion.div
             initial={{ width: 0 }}
-            animate={{ width: `${completionPercent}%` }}
+            animate={{ width: `${completion}%` }}
             transition={{ duration: DURATION.slow, ease: EASE.out }}
             className="h-full rounded-full"
             style={{

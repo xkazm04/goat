@@ -7,11 +7,12 @@ import { useCallback } from "react";
 
 import { ListGrid } from "@/components/ui/list-grid";
 import { GoatCrown, GoatSparkles } from "@/components/visual/GoatIcons";
+import { useMotionCapabilities } from "@/hooks/use-motion-preference";
 import { usePlayList } from "@/hooks/use-play-list";
-import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { useTempUser } from "@/hooks/use-temp-user";
 import { toast } from "@/hooks/use-toast";
 import { useUserLists, useDeleteList } from "@/hooks/use-top-lists";
+import { asyncStateFromQuery } from "@/lib/async-state/from-query";
 
 import { SectionHeader } from "./SectionHeader";
 import { UserListCard } from "./UserListCard";
@@ -29,18 +30,19 @@ export function UserListsSection({ className }: UserListsSectionProps) {
   const { tempUserId, isLoaded } = useTempUser();
   const { handlePlayList } = usePlayList();
   const deleteListMutation = useDeleteList();
-  const prefersReducedMotion = useReducedMotion();
+  const { allowInteraction, allowAmbient, allowTransitions } = useMotionCapabilities();
 
   const handleCreateNew = useCallback(() => {
     router.push("/studio");
   }, [router]);
 
-  const {
-    data: userLists = [],
-    isLoading,
-    error,
-    refetch,
-  } = useUserLists(tempUserId || "", { limit: 10 });
+  // The query result is passed WHOLE to asyncStateFromQuery rather than
+  // destructured into flags. The old `data: userLists = []` default was the
+  // quiet defect: it made `data` defined on the very first render, so the
+  // region could never distinguish "asking" from "answered with nothing".
+  const userListsQuery = useUserLists(tempUserId || "", { limit: 10 });
+  const listsState = asyncStateFromQuery(userListsQuery);
+  const refetch = userListsQuery.refetch;
 
   const handleDeleteList = useCallback(async (listId: string) => {
     try {
@@ -88,21 +90,20 @@ export function UserListsSection({ className }: UserListsSectionProps) {
             viewport={{ once: true }}
           >
             <ListGrid
-              items={userLists}
+              state={listsState}
               renderItem={(list) => (
                 <UserListCard list={list} onDelete={handleDeleteList} onPlay={handlePlayList} />
               )}
-              isLoading={isLoading}
-              error={error ? new Error("Failed to load your lists") : null}
               onRetry={refetch}
+              staleNotice="Showing your last loaded lists — the refresh failed." 
               emptyState={
                 <motion.div
                   className="py-16 text-center"
-                  initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
+                  initial={!allowTransitions ? {} : { opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                 >
                   <div
-                    className={`mx-auto w-20 h-20 rounded-container flex items-center justify-center mb-6 ${prefersReducedMotion ? "" : "animate-ambient-card-float"}`}
+                    className={`mx-auto w-20 h-20 rounded-container flex items-center justify-center mb-6 ${!allowAmbient ? "" : "animate-ambient-card-float"}`}
                     style={{
                       background: `linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(245, 158, 11, 0.1))`,
                       "--card-float-duration": "3s",
@@ -125,15 +126,15 @@ export function UserListsSection({ className }: UserListsSectionProps) {
                       color: "#fbbf24",
                       boxShadow: "0 4px 20px rgba(251, 191, 36, 0.15)",
                     }}
-                    whileHover={prefersReducedMotion ? {} : {
+                    whileHover={!allowInteraction ? {} : {
                       scale: 1.03,
                       boxShadow: "0 8px 30px rgba(251, 191, 36, 0.25)",
                     }}
-                    whileTap={prefersReducedMotion ? {} : { scale: 0.97 }}
+                    whileTap={!allowInteraction ? {} : { scale: 0.97 }}
                     data-testid="create-first-list-btn"
                   >
                     {/* Shimmer sweep overlay */}
-                    {!prefersReducedMotion && (
+                    {allowAmbient && (
                       <motion.div
                         className="absolute inset-0 pointer-events-none"
                         style={{

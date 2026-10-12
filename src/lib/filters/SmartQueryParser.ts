@@ -25,7 +25,6 @@ import type {
 } from './types';
 
 // Pre-compiled regex patterns used in hot parsing paths
-const RE_FIELD_COLON = /\w+:/;
 const RE_OR_COMBINATOR = /\bor\b/i;
 const RE_SPLIT_AND_OR = /\b(and|or)\b/i;
 const RE_FIELD_VALUE = /^(\w+)\s*[:=]\s*(.+)$/;
@@ -37,15 +36,6 @@ const RE_BOOLEAN_FALSE = /^(false|no)$/i;
 const RE_NUMBER = /^-?\d+(\.\d+)?$/;
 const RE_ISO_DATE = /^\d{4}-\d{2}-\d{2}/;
 const RE_QUOTES = /^["']|["']$/g;
-
-/**
- * Parsed query token
- */
-interface QueryToken {
-  type: 'term' | 'operator' | 'value' | 'field' | 'combinator' | 'negation';
-  value: string;
-  position: number;
-}
 
 /**
  * Pattern match result
@@ -222,13 +212,6 @@ const OPERATOR_PATTERNS: Array<{
 /**
  * Value patterns for specific fields
  */
-const VALUE_PATTERNS: Record<string, RegExp> = {
-  year: /\b(19|20)\d{2}\b/,
-  rating: /\b[1-5](\.\d+)?\b/,
-  boolean: /\b(true|false|yes|no)\b/i,
-  number: /\b-?\d+(\.\d+)?\b/,
-};
-
 /**
  * Query templates for common patterns
  */

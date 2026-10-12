@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useState, useMemo } from 'react';
+import { Suspense, useState, useMemo } from 'react';
 
 import { CommunityTemplateCard } from '@/app/features/Templates/CommunityTemplateCard';
 import { useCommunityTemplates } from '@/hooks/use-blueprints';
@@ -30,19 +30,23 @@ const SORT_OPTIONS = [
 
 type SortOption = typeof SORT_OPTIONS[number]['id'];
 
-const CATEGORIES = [
-  'All',
-  'Sports',
-  'Music',
-  'Games',
-  'Movies',
-  'Stories',
-  'Food',
-  'Travel',
-  'Other',
-] as const;
+import { CATEGORIES as CONFIG_CATEGORIES } from '@/lib/config/category-config';
+
+const CATEGORIES = ['All', ...CONFIG_CATEGORIES] as const;
 
 export default function TemplatesPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-amber-500/60" />
+      </div>
+    }>
+      <TemplatesPageContent />
+    </Suspense>
+  );
+}
+
+function TemplatesPageContent() {
   const searchParams = useSearchParams();
   const { openWithBlueprint } = useComposition();
 

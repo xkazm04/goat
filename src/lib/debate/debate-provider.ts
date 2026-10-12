@@ -120,9 +120,8 @@ function parseDebateResponse(text: string): DebateChallengeResponse {
     }
 
     return result;
-  } catch (error) {
-    console.error('Error parsing debate response:', error);
-    console.error('Response text:', text);
+  } catch {
+    // Failed to parse AI response
     return {
       argument: 'Hmm, I have thoughts on this placement but let me gather my arguments...',
       challengeStrength: 50,
@@ -151,7 +150,7 @@ export async function generateDebateChallenge(
     const text = response.text ?? '';
     return parseDebateResponse(text);
   } catch (error) {
-    console.error('Error generating debate challenge:', error);
+    // Error generating debate challenge
     return {
       argument: 'I wanted to challenge this placement, but I\'m having trouble formulating my argument right now.',
       challengeStrength: 0,

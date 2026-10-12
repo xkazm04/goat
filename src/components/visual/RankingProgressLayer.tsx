@@ -2,8 +2,8 @@
 
 import { CSSProperties, ReactNode, useMemo, useEffect, useState } from "react";
 
-import { useRankingProgress, type ProgressTier } from "@/hooks/use-ranking-progress";
 import { useMotionPreference } from "@/hooks/use-motion-preference";
+import { useRankingProgress, type ProgressTier } from "@/hooks/use-ranking-progress";
 import { cn } from "@/lib/utils";
 
 interface RankingProgressLayerProps {

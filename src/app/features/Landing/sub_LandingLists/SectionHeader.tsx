@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { LucideIcon } from "lucide-react";
 
 import { ELEVATION, INSET, withInset } from "@/components/visual/depth";
-import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import { useMotionCapabilities } from "@/hooks/use-motion-preference";
 
 import { springConfig } from "../shared/animations";
 
@@ -39,7 +39,7 @@ export function SectionHeader({
   rightContent,
   testIdPrefix,
 }: SectionHeaderProps) {
-  const prefersReducedMotion = useReducedMotion();
+  const { allowInteraction } = useMotionCapabilities();
 
   return (
     <motion.div
@@ -57,42 +57,26 @@ export function SectionHeader({
             background: `linear-gradient(135deg, ${gradientColors.start}, ${gradientColors.end})`,
             boxShadow: withInset(ELEVATION.high, INSET.glassHighlightStrong),
           }}
-          whileHover={prefersReducedMotion ? {} : { scale: 1.05, rotate: 5 }}
+          whileHover={!allowInteraction ? {} : { scale: 1.05, rotate: 5 }}
           data-testid={testIdPrefix ? `${testIdPrefix}-icon` : undefined}
         >
           <Icon className={`w-6 h-6 ${iconColorClass}`} />
         </motion.div>
         <div>
-          <h2
-            className="text-3xl font-bold tracking-tight flex font-heading"
+          <motion.h2
+            className="text-3xl font-bold tracking-tight font-heading text-gradient-gold"
+            initial={{ opacity: 0, y: 5 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{
+              type: "spring",
+              stiffness: 100,
+              damping: 12,
+            }}
+            viewport={{ once: true }}
             data-testid={testIdPrefix ? `${testIdPrefix}-section-title` : undefined}
           >
-            {title.split("").map((char, i) => (
-              <motion.span
-                key={i}
-                initial={{ opacity: 0, y: 5 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{
-                  type: "spring",
-                  stiffness: 100,
-                  damping: 12,
-                  delay: i * 0.03,
-                }}
-                viewport={{ once: true }}
-                style={{
-                  background:
-                    "linear-gradient(180deg, #fcd34d 0%, #f59e0b 50%, #d97706 100%)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  backgroundClip: "text",
-                  filter:
-                    "drop-shadow(0 2px 0 rgba(146, 64, 14, 0.3)) drop-shadow(0 4px 12px rgba(251, 191, 36, 0.3))",
-                }}
-              >
-                {char === " " ? "\u00A0" : char}
-              </motion.span>
-            ))}
-          </h2>
+            {title}
+          </motion.h2>
           <p className="text-sm text-slate-400 mt-1">{subtitle}</p>
         </div>
       </div>

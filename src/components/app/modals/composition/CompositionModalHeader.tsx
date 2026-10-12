@@ -117,7 +117,7 @@ export function CompositionModalHeader({
             <div className="flex items-center gap-2 max-w-md">
               <MessageCircle className="w-4 h-4 text-slate-500" />
               <p className="text-sm text-slate-400 italic truncate">
-                "{comment}"
+                &quot;{comment}&quot;
               </p>
             </div>
           </div>

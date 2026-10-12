@@ -8,13 +8,12 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { CloudOff, RefreshCw, Loader2, X, AlertTriangle } from 'lucide-react';
-
-import { DURATION, EASE } from '@/lib/animations/motion-presets';
 import React, { useState, useEffect, useCallback } from 'react';
 
+import { DURATION, EASE } from '@/lib/animations/motion-presets';
 import { cn } from '@/lib/utils';
 
-import { getOfflinePersistence } from './OfflinePersistence';
+import { getOfflinePersistence, MAX_PENDING_CHANGES, PENDING_CHANGES_WARNING_THRESHOLD } from './OfflinePersistence';
 import { SyncState } from './types';
 
 export interface UnsavedChangesBannerProps {
@@ -115,6 +114,8 @@ export const UnsavedChangesBanner: React.FC<UnsavedChangesBannerProps> = ({
   if (onlyWhenOffline && !isOffline) return null;
 
   const isError = syncState.status === 'error';
+  const isAtCapacity = pendingCount >= MAX_PENDING_CHANGES;
+  const isNearCapacity = pendingCount >= PENDING_CHANGES_WARNING_THRESHOLD;
 
   return (
     <AnimatePresence>
@@ -125,18 +126,24 @@ export const UnsavedChangesBanner: React.FC<UnsavedChangesBannerProps> = ({
         transition={{ duration: DURATION.normal, ease: EASE.out }}
         className={cn(
           'fixed top-0 left-0 right-0 z-toast',
-          isError
+          isAtCapacity
             ? 'bg-red-600/95'
-            : isOffline
-              ? 'bg-amber-600/95'
-              : 'bg-amber-500/90',
+            : isError
+              ? 'bg-red-600/95'
+              : isNearCapacity
+                ? 'bg-orange-600/95'
+                : isOffline
+                  ? 'bg-amber-600/95'
+                  : 'bg-amber-500/90',
           'backdrop-blur-sm',
           className
         )}
       >
         <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 min-w-0">
-            {isOffline ? (
+            {isAtCapacity || isNearCapacity ? (
+              <AlertTriangle className="w-4 h-4 text-white flex-shrink-0" />
+            ) : isOffline ? (
               <CloudOff className="w-4 h-4 text-white flex-shrink-0" />
             ) : isError ? (
               <AlertTriangle className="w-4 h-4 text-white flex-shrink-0" />
@@ -144,9 +151,18 @@ export const UnsavedChangesBanner: React.FC<UnsavedChangesBannerProps> = ({
               <RefreshCw className="w-4 h-4 text-white flex-shrink-0" />
             )}
             <span className="text-white text-sm font-medium truncate">
-              {pendingCount} unsaved change{pendingCount !== 1 ? 's' : ''}
-              {isOffline && ' — you\'re offline'}
-              {isError && ` — ${syncState.error || 'sync failed'}`}
+              {isAtCapacity
+                ? `Queue full (${MAX_PENDING_CHANGES}/${MAX_PENDING_CHANGES}) — go online and sync to continue`
+                : isNearCapacity
+                  ? `${pendingCount}/${MAX_PENDING_CHANGES} changes queued — sync soon to avoid losing work`
+                  : (
+                    <>
+                      {pendingCount} unsaved change{pendingCount !== 1 ? 's' : ''}
+                      {isOffline && ' — you\'re offline'}
+                      {isError && ` — ${syncState.error || 'sync failed'}`}
+                    </>
+                  )
+              }
             </span>
             <span className="text-white/70 text-xs flex-shrink-0 hidden sm:inline">
               Last sync: {formatLastSync(syncState.lastSyncedAt)}

@@ -17,6 +17,8 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 
+import { safeCollectionColor } from "@/app/features/Collections/lib/collection-color";
+
 import type { ListCollection, CollectionStats } from "@/types/collection";
 import type { TopList } from "@/types/top-lists";
 
@@ -128,6 +130,9 @@ export default function CollectionSharePage() {
   }
 
   const lists = collection.lists || [];
+  // The stored colour is unvalidated user input on a PUBLIC page; it is painted
+  // only through the guard (see lib/collection-color.ts).
+  const accent = safeCollectionColor(collection.color);
   const stats = collection.stats || {
     listCount: collection.listIds.length,
     totalItems: 0,
@@ -185,8 +190,8 @@ export default function CollectionSharePage() {
           animate={{ opacity: 1, y: 0 }}
           className="relative overflow-hidden rounded-2xl mb-8"
           style={{
-            background: `linear-gradient(135deg, ${collection.color || "#06b6d4"}20 0%, rgba(15, 23, 42, 0.8) 100%)`,
-            border: `1px solid ${collection.color || "#06b6d4"}30`,
+            background: `linear-gradient(135deg, ${accent}20 0%, rgba(15, 23, 42, 0.8) 100%)`,
+            border: `1px solid ${accent}30`,
           }}
         >
           {collection.coverImage && (
@@ -206,8 +211,8 @@ export default function CollectionSharePage() {
               <div
                 className="w-20 h-20 rounded-2xl flex items-center justify-center shrink-0"
                 style={{
-                  background: `linear-gradient(135deg, ${collection.color || "#06b6d4"} 0%, ${collection.color || "#06b6d4"}80 100%)`,
-                  boxShadow: `0 8px 32px ${collection.color || "#06b6d4"}40`,
+                  background: `linear-gradient(135deg, ${accent} 0%, ${accent}80 100%)`,
+                  boxShadow: `0 8px 32px ${accent}40`,
                 }}
               >
                 <Folder className="w-10 h-10 text-white" />
@@ -319,7 +324,7 @@ export default function CollectionSharePage() {
                   transition={{ delay: index * 0.05 }}
                 >
                   <Link
-                    href={`/match/${list.id}`}
+                    href={`/goat?list=${list.id}`}
                     className="block group"
                   >
                     <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700/50 transition-all hover:bg-slate-800/80 hover:border-slate-600/50 hover:shadow-xl hover:-translate-y-1">
@@ -361,7 +366,7 @@ export default function CollectionSharePage() {
                   transition={{ delay: index * 0.03 }}
                 >
                   <Link
-                    href={`/match/${list.id}`}
+                    href={`/goat?list=${list.id}`}
                     className="flex items-center gap-4 p-4 bg-slate-800/30 hover:bg-slate-800/60 rounded-xl border border-slate-700/30 hover:border-slate-600/50 transition-all group"
                   >
                     <div className="w-10 h-10 rounded-lg bg-slate-700/50 flex items-center justify-center text-slate-400 group-hover:text-brand-hover transition-colors">

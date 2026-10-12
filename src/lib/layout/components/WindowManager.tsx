@@ -58,7 +58,7 @@ export function WindowManager({ renderPanel }: WindowManagerProps) {
   const detachedWindows = useLayoutStore((s) => s.detachedWindows);
   const restoreWindow = useLayoutStore((s) => s.restoreWindow);
   const focusWindow = useLayoutStore((s) => s.focusWindow);
-  const attachWindow = useLayoutStore((s) => s.attachWindow);
+  const _attachWindow = useLayoutStore((s) => s.attachWindow);
   const arrangeWindows = useLayoutStore((s) => s.arrangeWindows);
   const closeAllWindows = useLayoutStore((s) => s.closeAllWindows);
 

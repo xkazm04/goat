@@ -84,49 +84,13 @@ const LOCKED_GAP = 12;
 // Generate unique ID
 const generateId = () => `popup-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-// Calculate smart position to avoid overlap
-const calculateSmartPosition = (
-  basePosition: { x: number; y: number },
-  existingPopups: PopupInstance[],
-  popupWidth = 420,
-  popupHeight = 500
-): { x: number; y: number } => {
-  const { innerWidth, innerHeight } = typeof window !== 'undefined'
-    ? window
-    : { innerWidth: 1200, innerHeight: 800 };
-
-  let { x, y } = basePosition;
-
-  // Ensure popup stays within viewport
-  x = Math.max(20, Math.min(x, innerWidth - popupWidth - 20));
-  y = Math.max(20, Math.min(y, innerHeight - popupHeight - 20));
-
-  // Offset if overlapping with existing popups
-  const offset = 30;
-  let attempts = 0;
-  while (attempts < 10) {
-    const overlaps = existingPopups.some(popup =>
-      Math.abs(popup.position.x - x) < 50 && Math.abs(popup.position.y - y) < 50
-    );
-    if (!overlaps) break;
-    x += offset;
-    y += offset;
-    // Wrap around if going off screen
-    if (x > innerWidth - popupWidth - 20) x = 40 + (attempts * 20);
-    if (y > innerHeight - popupHeight - 20) y = 40 + (attempts * 20);
-    attempts++;
-  }
-
-  return { x, y };
-};
-
 export const useItemPopupStore = create<ItemPopupState>((set, get) => ({
   // ── Floating popups ────────────────────────────────────────────────────
   popups: [],
   topZIndex: BASE_Z_INDEX,
   maxPopups: MAX_POPUPS,
 
-  openPopup: (itemId: string, position: { x: number; y: number }) => {
+  openPopup: (itemId: string, _position: { x: number; y: number }) => {
     const state = get();
 
     // Mutual exclusion: close inspector when a popup opens

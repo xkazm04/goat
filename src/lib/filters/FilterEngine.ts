@@ -540,7 +540,10 @@ export class FilterEngine<T extends Record<string, unknown>> {
         return this.matchesRegex(normalizedField, normalizedFilter);
 
       default:
-        return true;
+        if (process.env.NODE_ENV === 'development') {
+          console.warn(`[FilterEngine] applyOperator: unrecognized operator "${operator}" — defaulting to no match`);
+        }
+        return false;
     }
   }
 
@@ -624,10 +627,28 @@ export class FilterEngine<T extends Record<string, unknown>> {
     if (typeof fieldValue === 'number' && typeof filterValue === 'number') {
       return fieldValue - filterValue;
     }
-    if (fieldValue instanceof Date && filterValue instanceof Date) {
-      return fieldValue.getTime() - filterValue.getTime();
+
+    // Parse Date instances or ISO date strings to timestamps for reliable comparison
+    const fieldTime = this.toTimestamp(fieldValue);
+    const filterTime = this.toTimestamp(filterValue);
+    if (fieldTime !== null && filterTime !== null) {
+      return fieldTime - filterTime;
     }
+
     return String(fieldValue).localeCompare(String(filterValue));
+  }
+
+  /** Convert a Date or ISO date string to a millisecond timestamp, or null. */
+  private toTimestamp(value: unknown): number | null {
+    if (value instanceof Date) return value.getTime();
+    if (typeof value === 'string') {
+      // Quick check for ISO-8601 date strings (YYYY-MM-DD...)
+      if (/^\d{4}-\d{2}-\d{2}/.test(value)) {
+        const ms = Date.parse(value);
+        if (!Number.isNaN(ms)) return ms;
+      }
+    }
+    return null;
   }
 
   /**
@@ -679,9 +700,7 @@ export class FilterEngine<T extends Record<string, unknown>> {
           // Guard against catastrophic backtracking (ReDoS)
           if (!isSafeRegex(filterValue)) {
             this.unsafeRegexCache.add(cacheKey);
-            console.warn('[FilterEngine] matchesRegex: pattern rejected (potential ReDoS)', {
-              pattern: filterValue,
-            });
+            // Pattern rejected — potential ReDoS
             return false;
           }
 
@@ -698,12 +717,8 @@ export class FilterEngine<T extends Record<string, unknown>> {
           this.regexCache.set(cacheKey, regex);
         }
         return regex.test(fieldValue);
-      } catch (error) {
-        console.warn('[FilterEngine] matchesRegex: invalid regex pattern', {
-          pattern: filterValue,
-          input: fieldValue,
-          error: error instanceof Error ? error.message : String(error),
-        });
+      } catch {
+        // Invalid regex pattern — returning no match
         return false;
       }
     }
@@ -960,12 +975,8 @@ export class FilterEngine<T extends Record<string, unknown>> {
   serializeConfig(config: FilterConfig): string {
     try {
       return btoa(JSON.stringify(config));
-    } catch (error) {
-      console.warn('[FilterEngine] serializeConfig: failed to serialize filter config', {
-        conditionCount: config.conditions?.length ?? 0,
-        groupCount: config.groups?.length ?? 0,
-        error: error instanceof Error ? error.message : String(error),
-      });
+    } catch {
+      // Failed to serialize filter config
       return '';
     }
   }
@@ -976,12 +987,8 @@ export class FilterEngine<T extends Record<string, unknown>> {
   deserializeConfig(encoded: string): FilterConfig | null {
     try {
       return JSON.parse(atob(encoded)) as FilterConfig;
-    } catch (error) {
-      console.warn('[FilterEngine] deserializeConfig: failed to deserialize filter config', {
-        inputLength: encoded.length,
-        inputPreview: encoded.slice(0, 50),
-        error: error instanceof Error ? error.message : String(error),
-      });
+    } catch {
+      // Failed to deserialize filter config
       return null;
     }
   }
@@ -1000,7 +1007,7 @@ export class FilterEngine<T extends Record<string, unknown>> {
       groups: [],
       conditions: [
         {
-          id: `${field}-${Date.now()}`,
+          id: `${field}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           field,
           operator,
           value,

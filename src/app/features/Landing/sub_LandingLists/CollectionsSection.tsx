@@ -9,7 +9,9 @@ import { CollectionCard } from "@/app/features/Collections";
 import { ListGrid } from "@/components/ui/list-grid";
 import { ELEVATION, INSET, withInset } from "@/components/visual/depth";
 import { useUserCollections } from "@/hooks/use-collections";
-import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import { useMotionCapabilities } from "@/hooks/use-motion-preference";
+import { mapAsyncData } from "@/lib/async-state";
+import { asyncStateFromQuery } from "@/lib/async-state/from-query";
 import { useCurrentUser } from "@/stores/use-list-store";
 
 import { SectionHeader } from "./SectionHeader";
@@ -26,7 +28,7 @@ interface CollectionsSectionProps {
 export function CollectionsSection({ className }: CollectionsSectionProps) {
   const router = useRouter();
   const user = useCurrentUser();
-  const prefersReducedMotion = useReducedMotion();
+  const { allowInteraction, allowAmbient, allowTransitions } = useMotionCapabilities();
 
   const handleManageCollections = useCallback(() => {
     router.push("/my-collections");
@@ -44,17 +46,22 @@ export function CollectionsSection({ className }: CollectionsSectionProps) {
   );
 
   // useUserCollections gets userId internally via useCurrentUser
-  const {
-    data: collections = [],
-    isLoading,
-    error,
-    refetch,
-  } = useUserCollections();
+  // Whole query result -> one derived state. The former `data: collections = []`
+  // default made `data` defined on the first render, which collapsed "asking"
+  // and "answered with nothing" into the same rendering.
+  const collectionsQuery = useUserCollections();
+  const refetch = collectionsQuery.refetch;
+  // The total is used only for the "view all N" affordance below, which is
+  // rendered from held content and must therefore read the same held content.
+  const totalCollections = collectionsQuery.data?.length ?? 0;
 
-  // Get top 6 collections for display
-  const displayCollections = useMemo(() => {
-    return collections.slice(0, 6);
-  }, [collections]);
+  // The slice is a VIEW of the same request, so it maps over the derived state
+  // rather than being computed beside it — otherwise the truncation and the
+  // state could disagree about whether there is anything to show.
+  const collectionsState = useMemo(
+    () => mapAsyncData(asyncStateFromQuery(collectionsQuery), (c) => c.slice(0, 6)),
+    [collectionsQuery],
+  );
 
   // Don't render if no user
   if (!user?.id) return null;
@@ -86,12 +93,12 @@ export function CollectionsSection({ className }: CollectionsSectionProps) {
                 background: `linear-gradient(135deg, rgba(168, 85, 247, 0.9), rgba(139, 92, 246, 0.9))`,
                 boxShadow: withInset(ELEVATION.high, INSET.glassHighlightStrong),
               }}
-              whileHover={prefersReducedMotion ? {} : { scale: 1.03, y: -2 }}
-              whileTap={prefersReducedMotion ? {} : { scale: 0.98 }}
+              whileHover={!allowInteraction ? {} : { scale: 1.03, y: -2 }}
+              whileTap={!allowInteraction ? {} : { scale: 0.98 }}
               data-testid="manage-collections-btn"
             >
               {/* Shimmer effect */}
-              {!prefersReducedMotion && (
+              {allowAmbient && (
                 <div
                   className="absolute inset-0 opacity-0 group-hover:opacity-100 animate-ambient-shimmer"
                   style={{
@@ -117,7 +124,7 @@ export function CollectionsSection({ className }: CollectionsSectionProps) {
           viewport={{ once: true }}
         >
           <ListGrid
-            items={displayCollections}
+            state={collectionsState}
             renderItem={(collection) => (
               <CollectionCard
                 collection={collection}
@@ -125,17 +132,16 @@ export function CollectionsSection({ className }: CollectionsSectionProps) {
                 onSelect={handleViewCollection}
               />
             )}
-            isLoading={isLoading}
-            error={error ? new Error("Failed to load collections") : null}
             onRetry={refetch}
+            staleNotice="Showing your last loaded collections — the refresh failed." 
             emptyState={
               <motion.div
                 className="py-16 text-center"
-                initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
+                initial={!allowTransitions ? {} : { opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
               >
                 <div
-                  className={`mx-auto w-20 h-20 rounded-2xl flex items-center justify-center mb-6 ${prefersReducedMotion ? "" : "animate-ambient-card-float"}`}
+                  className={`mx-auto w-20 h-20 rounded-2xl flex items-center justify-center mb-6 ${!allowAmbient ? "" : "animate-ambient-card-float"}`}
                   style={{
                     background: `linear-gradient(135deg, rgba(168, 85, 247, 0.1), rgba(139, 92, 246, 0.1))`,
                     "--card-float-duration": "3s",
@@ -159,8 +165,8 @@ export function CollectionsSection({ className }: CollectionsSectionProps) {
                     background: `linear-gradient(135deg, rgba(168, 85, 247, 0.9), rgba(139, 92, 246, 0.9))`,
                     boxShadow: ELEVATION.high,
                   }}
-                  whileHover={prefersReducedMotion ? {} : { scale: 1.05 }}
-                  whileTap={prefersReducedMotion ? {} : { scale: 0.98 }}
+                  whileHover={!allowInteraction ? {} : { scale: 1.05 }}
+                  whileTap={!allowInteraction ? {} : { scale: 0.98 }}
                   data-testid="create-first-collection-btn"
                 >
                   <span className="flex items-center gap-2">
@@ -177,7 +183,7 @@ export function CollectionsSection({ className }: CollectionsSectionProps) {
         </motion.div>
 
         {/* Show "View All" link if there are more collections */}
-        {collections.length > 6 && (
+        {totalCollections > 6 && (
           <motion.div
             className="mt-8 text-center"
             initial={{ opacity: 0 }}
@@ -189,7 +195,7 @@ export function CollectionsSection({ className }: CollectionsSectionProps) {
               className="inline-flex items-center gap-2 text-sm text-purple-400 hover:text-purple-300 transition-colors"
               data-testid="view-all-collections-btn"
             >
-              <span>View all {collections.length} collections</span>
+              <span>View all {totalCollections} collections</span>
               <ChevronRight className="w-4 h-4" />
             </button>
           </motion.div>

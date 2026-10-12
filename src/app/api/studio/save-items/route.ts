@@ -50,23 +50,19 @@ export async function POST(request: NextRequest) {
       })
       .select('id');
 
-    const savedCount = {
-      success: data?.length ?? 0,
-      skipped: items.length - (data?.length ?? 0),
-      errors: upsertError ? 1 : 0,
-    };
-
+    // One statement, one outcome. A failed upsert saved nothing and skipped
+    // nothing — before 2026-09-05 it was reported as HTTP 200 with
+    // `skipped: N, errors: 1`, and the caller's publish step proceeded on it.
     if (upsertError) {
-      console.warn('[Save Items] Batch upsert error:', upsertError.message);
-      // Still return partial success if some items were saved
+      console.error('[Save Items] upsert failed:', upsertError);
+      throw new Error('Saving items failed');
     }
 
-    console.log(`[Save Items] Results: ${savedCount.success} saved, ${savedCount.skipped} skipped, ${savedCount.errors} errors`);
-
+    const saved = data?.length ?? 0;
     return NextResponse.json({
-      saved: savedCount.success,
-      skipped: savedCount.skipped,
-      errors: savedCount.errors,
+      saved,
+      skipped: items.length - saved,
+      errors: 0,
       total: items.length,
     });
   } catch (error) {

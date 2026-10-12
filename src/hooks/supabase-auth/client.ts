@@ -8,11 +8,10 @@ import { createClient } from '@/lib/supabase/client';
  *
  * Uses the shared singleton from `src/lib/supabase/client.ts` to avoid
  * creating duplicate clients with separate auth listeners and sessions.
- *
- * The `autoRefresh` parameter is accepted for API compatibility but
- * has no effect -- the shared client is configured once at creation.
+ * Token refresh is configured once, at client creation, and is not a
+ * per-hook choice — which is why there is no option for it here.
  */
-export function useSupabaseClient(_autoRefresh?: boolean) {
+export function useSupabaseClient() {
   const getClient = useCallback(async (): Promise<SupabaseClient> => {
     return createClient();
   }, []);

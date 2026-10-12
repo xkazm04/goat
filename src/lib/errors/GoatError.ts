@@ -341,7 +341,12 @@ export class NetworkError extends GoatError {
   }
 
   static fromFetchError(error: Error): NetworkError {
-    if (!navigator.onLine) {
+    // `navigator.onLine` is only evidence in a BROWSER. Node 22 ships a
+    // `navigator` global with no `onLine` property, so the bare `!navigator.onLine`
+    // this replaced was `true` in every server route — every upstream failure was
+    // classified NETWORK_OFFLINE and the user was told "you are offline" about a
+    // machine that was not theirs. Absent evidence is not evidence of offline.
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
       return new NetworkError('NETWORK_OFFLINE', 'You are offline', { cause: error });
     }
     if (error.name === 'AbortError') {

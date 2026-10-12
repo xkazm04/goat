@@ -11,7 +11,7 @@ import {
   ChevronRight,
   Check,
 } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 
 import { useModalAccessibility } from '@/hooks/use-modal-accessibility';
 import { ConflictRecord, ConflictResolutionStrategy } from '@/lib/offline/types';
@@ -99,6 +99,7 @@ export function ConflictResolutionModal({
 }: ConflictResolutionModalProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isResolving, setIsResolving] = useState(false);
+  const [resolvedIds, setResolvedIds] = useState<Set<string>>(new Set());
   const [selectedStrategy, setSelectedStrategy] =
     useState<ConflictResolutionStrategy>('server_wins');
 
@@ -113,12 +114,13 @@ export function ConflictResolutionModal({
     [currentConflict]
   );
 
-  const handleResolve = async () => {
+  const handleResolve = useCallback(async () => {
     if (!currentConflict) return;
 
     setIsResolving(true);
     try {
       await onResolve(currentConflict.id, selectedStrategy);
+      setResolvedIds((prev) => new Set(prev).add(currentConflict.id));
 
       // Move to next conflict or close
       if (currentIndex < conflicts.length - 1) {
@@ -129,7 +131,7 @@ export function ConflictResolutionModal({
     } finally {
       setIsResolving(false);
     }
-  };
+  }, [currentConflict, currentIndex, conflicts.length, onClose, onResolve, selectedStrategy]);
 
   const strategyOptions: Array<{
     id: ConflictResolutionStrategy;
@@ -205,6 +207,34 @@ export function ConflictResolutionModal({
                   <X className="w-5 h-5" />
                 </button>
               </div>
+
+              {/* Progress Bar */}
+              {conflicts.length > 1 && (
+                <div className="px-6 pt-4 space-y-2">
+                  <div className="flex gap-1">
+                    {conflicts.map((conflict, i) => {
+                      const isResolved = resolvedIds.has(conflict.id);
+                      const isCurrent = i === currentIndex;
+                      return (
+                        <motion.div
+                          key={conflict.id}
+                          layoutId={`progress-segment-${conflict.id}`}
+                          className={`h-1 flex-1 rounded-full ${
+                            isResolved
+                              ? 'bg-emerald-500'
+                              : isCurrent
+                                ? 'bg-amber-500 animate-pulse'
+                                : 'bg-gray-700'
+                          }`}
+                        />
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Conflict {currentIndex + 1} of {conflicts.length}
+                  </p>
+                </div>
+              )}
 
               {/* Content */}
               {currentConflict && (

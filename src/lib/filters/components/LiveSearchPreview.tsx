@@ -8,12 +8,12 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, Search, Hash } from 'lucide-react';
-
-import { DURATION } from '@/lib/animations/motion-presets';
 import React from 'react';
 
+import { DURATION } from '@/lib/animations/motion-presets';
 import { cn } from '@/lib/utils';
 
+import { ICON_SIZES } from '../constants';
 import { useLiveSearchCounts, type LiveSearchCounts } from '../hooks/useLiveSearchCounts';
 
 import type { FilterableItem } from '../CollectionFilterIntegration';
@@ -82,13 +82,13 @@ function InlinePreview({
       >
         {counts.isCalculating ? (
           <span className="flex items-center gap-1 text-zinc-500">
-            <Loader2 size={10} className="animate-spin" />
+            <Loader2 size={ICON_SIZES.xs} className="animate-spin" />
             <span>Counting...</span>
           </span>
         ) : (
           <>
             <span className="flex items-center gap-1">
-              <Search size={10} className="text-zinc-500" />
+              <Search size={ICON_SIZES.xs} className="text-zinc-500" />
               <span className="text-brand-hover font-medium">
                 {counts.totalMatches}
               </span>
@@ -103,7 +103,7 @@ function InlinePreview({
                   key={field}
                   className="flex items-center gap-1 text-zinc-500"
                 >
-                  <Hash size={8} />
+                  <Hash size={ICON_SIZES['2xs']} />
                   {facets.slice(0, 2).map((f) => (
                     <span key={f.value} className="text-zinc-400">
                       {f.value}
@@ -145,7 +145,7 @@ function BadgePreview({
         transition={{ duration: DURATION.instant }}
         className={cn(
           'inline-flex items-center justify-center',
-          'px-1.5 py-0.5 rounded-badge text-2xs font-medium',
+          'badge-sm',
           counts.totalMatches === 0
             ? 'bg-red-500/20 text-red-400'
             : 'bg-brand/20 text-brand-hover',
@@ -153,7 +153,7 @@ function BadgePreview({
         )}
       >
         {counts.isCalculating ? (
-          <Loader2 size={10} className="animate-spin" />
+          <Loader2 size={ICON_SIZES.xs} className="animate-spin" />
         ) : (
           counts.totalMatches
         )}
@@ -187,9 +187,9 @@ function DetailedPreview({
       {/* Match count */}
       <div className="flex items-center gap-2 text-sm">
         {counts.isCalculating ? (
-          <Loader2 size={14} className="animate-spin text-brand-hover" />
+          <Loader2 size={ICON_SIZES.md} className="animate-spin text-brand-hover" />
         ) : (
-          <Search size={14} className="text-brand-hover" />
+          <Search size={ICON_SIZES.md} className="text-brand-hover" />
         )}
         <span>
           <span

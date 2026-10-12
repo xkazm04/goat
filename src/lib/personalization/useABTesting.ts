@@ -66,7 +66,9 @@ export const EXPERIMENTS: Record<string, ABTest> = {
 };
 
 /**
- * Assign user to a variant deterministically
+ * Assign user to a variant deterministically.
+ * Uses MurmurHash3 for uniform distribution and normalizes weights
+ * so misconfigured totals (e.g. 99 or 101) don't bias assignment.
  */
 function assignVariant(userId: string, experiment: ABTest): ABTestVariant | null {
   if (!experiment.isActive) return null;
@@ -74,37 +76,82 @@ function assignVariant(userId: string, experiment: ABTest): ABTestVariant | null
   // Check if experiment has ended
   if (experiment.endDate && Date.now() > experiment.endDate) return null;
 
-  // Check traffic allocation
-  const userHash = hashString(userId + experiment.id);
-  const trafficBucket = userHash % 100;
+  // Check traffic allocation — use float division for uniform [0, 100) bucket
+  const trafficHash = murmurhash3(userId + experiment.id);
+  const trafficBucket = (trafficHash / 0x100000000) * 100;
   if (trafficBucket >= experiment.trafficPercentage) return null;
 
-  // Assign to variant based on weights
-  const variantBucket = hashString(userId + experiment.id + '-variant') % 100;
-  let cumulativeWeight = 0;
+  // Assign to variant based on normalized weights
+  const variantHash = murmurhash3(userId + experiment.id + '-variant');
+  const variantBucket = variantHash / 0x100000000; // [0, 1)
+
+  const totalWeight = experiment.variants.reduce((sum, v) => sum + v.weight, 0);
+  let cumulative = 0;
 
   for (const variant of experiment.variants) {
-    cumulativeWeight += variant.weight;
-    if (variantBucket < cumulativeWeight) {
+    cumulative += variant.weight / totalWeight;
+    if (variantBucket < cumulative) {
       return variant;
     }
   }
 
-  // Fallback to first variant
-  return experiment.variants[0];
+  // Fallback to last variant (handles floating-point edge case)
+  return experiment.variants[experiment.variants.length - 1];
 }
 
 /**
- * Simple string hash function
+ * MurmurHash3 (32-bit) for uniform bucket distribution.
+ * Produces well-distributed hashes suitable for A/B test assignment.
  */
-function hashString(str: string): number {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32-bit integer
+function murmurhash3(str: string, seed: number = 0): number {
+  let h1 = seed >>> 0;
+  const len = str.length;
+  let i = 0;
+
+  while (i + 4 <= len) {
+    let k1 =
+      (str.charCodeAt(i) & 0xff) |
+      ((str.charCodeAt(i + 1) & 0xff) << 8) |
+      ((str.charCodeAt(i + 2) & 0xff) << 16) |
+      ((str.charCodeAt(i + 3) & 0xff) << 24);
+
+    k1 = Math.imul(k1, 0xcc9e2d51);
+    k1 = (k1 << 15) | (k1 >>> 17);
+    k1 = Math.imul(k1, 0x1b873593);
+
+    h1 ^= k1;
+    h1 = (h1 << 13) | (h1 >>> 19);
+    h1 = Math.imul(h1, 5) + 0xe6546b64;
+
+    i += 4;
   }
-  return Math.abs(hash);
+
+  // Process remaining bytes
+  let k1 = 0;
+  switch (len & 3) {
+    case 3:
+      k1 ^= (str.charCodeAt(i + 2) & 0xff) << 16;
+    // falls through
+    case 2:
+      k1 ^= (str.charCodeAt(i + 1) & 0xff) << 8;
+    // falls through
+    case 1:
+      k1 ^= str.charCodeAt(i) & 0xff;
+      k1 = Math.imul(k1, 0xcc9e2d51);
+      k1 = (k1 << 15) | (k1 >>> 17);
+      k1 = Math.imul(k1, 0x1b873593);
+      h1 ^= k1;
+  }
+
+  // Finalization mix
+  h1 ^= len;
+  h1 ^= h1 >>> 16;
+  h1 = Math.imul(h1, 0x85ebca6b);
+  h1 ^= h1 >>> 13;
+  h1 = Math.imul(h1, 0xc2b2ae35);
+  h1 ^= h1 >>> 16;
+
+  return h1 >>> 0; // Ensure unsigned 32-bit
 }
 
 /**
@@ -206,9 +253,6 @@ export function useTrackExperimentImpression(
   useEffect(() => {
     if (!variantId) return;
 
-    // Log impression (could send to analytics)
-    console.log(`[A/B Test] Impression: ${experimentId} - ${variantId}`);
-
     // Could integrate with analytics here
     // analytics.track('experiment_impression', { experimentId, variantId });
   }, [experimentId, variantId]);
@@ -219,10 +263,7 @@ export function useTrackExperimentImpression(
  */
 export function useTrackExperimentConversion() {
   return useCallback(
-    (experimentId: string, variantId: string, action: string, metadata?: Record<string, unknown>) => {
-      // Log conversion (could send to analytics)
-      console.log(`[A/B Test] Conversion: ${experimentId} - ${variantId} - ${action}`, metadata);
-
+    (_experimentId: string, _variantId: string, _action: string, _metadata?: Record<string, unknown>) => {
       // Could integrate with analytics here
       // analytics.track('experiment_conversion', { experimentId, variantId, action, ...metadata });
     },

@@ -3,6 +3,7 @@
 import { LogIn } from 'lucide-react';
 import { useState, useCallback } from 'react';
 
+import { SyncStatusDot } from '@/components/SyncStatusDot';
 import { useAuthUser } from '@/hooks/use-auth-user';
 
 import { AuthModal } from './AuthModal';
@@ -31,7 +32,8 @@ export function AuthHeader() {
   if (isLoading) return null;
 
   return (
-    <div data-testid="auth-header">
+    <div data-testid="auth-header" className="flex items-center gap-2">
+      <SyncStatusDot />
       {isAuthenticated ? (
         <UserMenu />
       ) : isGuest ? (

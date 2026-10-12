@@ -15,6 +15,7 @@
 import { useRouter } from 'next/navigation';
 import { useState, useCallback, useRef } from 'react';
 
+import { DEFAULT_LIST_COLOR } from '@/lib/config/category-config';
 import {
   validateListIntentComplete,
   ListIntentValidationResult,
@@ -383,11 +384,7 @@ export function useCommandPaletteCreate(options: UseListCreationOptions = {}) {
         timePeriod: parsedQuery.timePeriod,
         selectedDecade: parsedQuery.decade,
         selectedYear: parsedQuery.year,
-        color: colors || {
-          primary: '#f59e0b',
-          secondary: '#d97706',
-          accent: '#fbbf24',
-        },
+        color: colors || { ...DEFAULT_LIST_COLOR },
         isPredefined: true,
         source: 'create',
       });

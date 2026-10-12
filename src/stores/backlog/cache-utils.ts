@@ -48,7 +48,11 @@ export function syncCacheFromGroups(state: BacklogState, groupId: string): void 
   const entry = state.cache[cacheKey];
   if (!entry) return;
 
-  // Point cache.groups directly at state.groups (Immer handles immutability)
-  entry.groups = state.groups;
+  // Filter to only groups matching this cache key's category/subcategory
+  // to avoid storing unrelated cross-category groups in the cache entry.
+  const subcategory = group.subcategory || '';
+  entry.groups = state.groups.filter(
+    g => g.category === group.category && (g.subcategory || '') === subcategory
+  );
   entry.lastUpdated = Date.now();
 }

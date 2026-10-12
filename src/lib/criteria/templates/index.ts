@@ -197,6 +197,24 @@ export const TV_SHOWS_TEMPLATE: CriteriaProfile = {
 };
 
 /**
+ * All criteria profile IDs that exist in the system.
+ * Used as the single source of truth for compile-time enforcement.
+ */
+export const CRITERIA_PROFILE_IDS = [
+  'template-universal',
+  'template-sports',
+  'template-movies',
+  'template-music',
+  'template-food',
+  'template-games',
+  'template-books',
+  'template-tv-shows',
+] as const;
+
+/** Valid criteria profile ID — derived from the actual template definitions */
+export type CriteriaProfileId = (typeof CRITERIA_PROFILE_IDS)[number];
+
+/**
  * All templates collection
  */
 export const ALL_TEMPLATES: CriteriaProfile[] = [

@@ -1,31 +1,32 @@
 /**
- * Transfer Protocol - Types and Utilities for Drag-and-Drop
+ * Transfer Protocol - the shared vocabulary of a drop, and the grid slot id.
  *
- * Provides type definitions and utility functions for drag-and-drop operations.
- * See grid-store.ts for the authoritative drag-and-drop implementation.
+ * `TransferableItem` is what every payload carries (an alias of BaseItem);
+ * `TransferResult` / `TransferAction` name what a drop did; the `grid-{n}`
+ * helpers are the ONE spelling of a grid slot address. Drop resolution itself
+ * lives in DragOperationRouter (src/lib/dnd/operations) — the router is the
+ * single door, and grid-store delegates to it.
  *
- * Exports:
- * - TransferableItem, TransferResult, etc. - Type definitions
- * - extractGridPosition(), createGridReceiverId(), isGridReceiverId() - ID utilities
- * - toTransferableItem() - Conversion utility
+ * Corrected 2026-09-05: the header said "See grid-store.ts for the
+ * authoritative drag-and-drop implementation"; grid-store's own header says
+ * the opposite and has since 2026-08-24. This module also declared a
+ * `TransferSource` / `DropReceiver` / `TransferHoverPreview` / `TransferContext`
+ * protocol that no module implemented or consumed (knip + grep: 0) — an
+ * interface set that read as the architecture while the router did the work.
+ * Removed, so the file describes the system that exists.
  */
-
-// ============================================================================
-// Core Interfaces
-// ============================================================================
 
 import type { BaseItem } from '@/types/placed-item';
 
+// ============================================================================
+// Core Types
+// ============================================================================
+
 /**
- * TransferableItem is now an alias for BaseItem.
- *
- * BaseItem is the unified core item data type defined in types/placed-item.ts.
- * This alias is kept for backward compatibility across the DnD system.
+ * TransferableItem is an alias for BaseItem, the unified core item data type
+ * defined in types/placed-item.ts. Kept as the DnD system's name for it.
  */
 export type TransferableItem = BaseItem;
-
-// Re-export BaseItem so consumers can migrate gradually
-export type { BaseItem } from '@/types/placed-item';
 
 /**
  * Identifies the type of transfer source
@@ -35,50 +36,6 @@ export type TransferSourceType =
   | 'collection'   // Items from collection panel
   | 'grid'         // Items already in the grid
   | 'external';    // External sources (future: import, clipboard)
-
-/**
- * Identifies the type of drop receiver
- */
-export type DropReceiverType =
-  | 'grid-position'    // A specific position in the ranking grid
-  | 'collection-list'  // A collection list (for reordering)
-  | 'trash'            // Remove/delete zone
-  | 'compare'          // Comparison panel
-  | 'external';        // External targets (future: export)
-
-/**
- * Interface for sources that provide transferable items
- */
-export interface TransferSource<T extends TransferableItem = TransferableItem> {
-  /** Type of this source */
-  type: TransferSourceType;
-  /** Unique identifier for this source instance */
-  sourceId: string;
-  /** Get an item by ID from this source */
-  getItem: (itemId: string) => T | null;
-  /** Called when an item starts being dragged from this source */
-  onItemDragStart?: (item: T) => void;
-  /** Called when a drag from this source is cancelled */
-  onDragCancel?: (item: T) => void;
-  /** Called when an item is successfully transferred out of this source */
-  onItemTransferred?: (item: T, receiver: DropReceiverType, receiverId: string) => void;
-}
-
-/**
- * Interface for targets that can receive transferred items
- */
-export interface DropReceiver<T extends TransferableItem = TransferableItem> {
-  /** Type of this receiver */
-  type: DropReceiverType;
-  /** Unique identifier for this receiver instance (e.g., 'grid-5' for position 5) */
-  receiverId: string;
-  /** Check if this receiver can accept the given item */
-  canReceive: (item: T, source: TransferSource<T>) => boolean;
-  /** Handle receiving an item - returns true if successful */
-  receive: (item: T, source: TransferSource<T>) => TransferResult;
-  /** Optional: Get preview data while hovering */
-  getHoverPreview?: (item: T) => TransferHoverPreview | null;
-}
 
 /**
  * Result of a transfer operation
@@ -119,45 +76,12 @@ export type TransferAction =
   | 'copy'      // Item copied (source remains)
   | 'reject';   // Transfer was rejected
 
-/**
- * Preview information shown while hovering over a receiver
- */
-export interface TransferHoverPreview {
-  /** Whether the drop would be accepted */
-  canDrop: boolean;
-  /** Action that would occur */
-  action: TransferAction;
-  /** Item that would be displaced (for swaps) */
-  displacedItem?: TransferableItem;
-  /** Preview position */
-  previewPosition?: number;
-}
-
-/**
- * Context maintained during a transfer operation
- */
-export interface TransferContext<T extends TransferableItem = TransferableItem> {
-  /** The item being transferred */
-  item: T;
-  /** Source of the transfer */
-  source: TransferSource<T>;
-  /** Current receiver (if hovering over one) */
-  currentReceiver?: DropReceiver<T>;
-  /** Start time of the drag */
-  startTime: number;
-  /** Current drag distance */
-  distance?: number;
-  /** Delta from start position */
-  delta?: { x: number; y: number };
-}
-
-
 // ============================================================================
-// Utility Functions
+// Grid slot ids
 // ============================================================================
 
 /** Canonical grid slot ID prefix. All grid IDs use "grid-{position}" format. */
-export const GRID_ID_PREFIX = 'grid-';
+const GRID_ID_PREFIX = 'grid-';
 
 /**
  * Extract position from a grid receiver ID (e.g., 'grid-5' -> 5)
@@ -222,4 +146,3 @@ export function toTransferableItem(item: unknown): TransferableItem | null {
     metadata: obj.metadata as Record<string, unknown> | undefined,
   };
 }
-

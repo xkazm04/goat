@@ -1,5 +1,8 @@
 'use client';
 
+import { useId } from 'react';
+
+import { useMotionCapabilities } from '@/hooks/use-motion-preference';
 import { cn } from '@/lib/utils';
 
 interface IllustrationProps {
@@ -13,6 +16,8 @@ interface IllustrationProps {
  * Cyan-to-purple gradient palette on dark background
  */
 export function EmptyTrophyCase({ className, width = 200, height = 160 }: IllustrationProps) {
+  const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '');
+  const { allowAmbient: ambient } = useMotionCapabilities();
   return (
     <svg
       viewBox="0 0 200 160"
@@ -20,32 +25,34 @@ export function EmptyTrophyCase({ className, width = 200, height = 160 }: Illust
       width={width}
       height={height}
       className={cn('opacity-80', className)}
+      aria-hidden="true"
+      focusable="false"
     >
       {/* Glow background */}
       <defs>
-        <radialGradient id="trophy-glow" cx="50%" cy="50%" r="50%">
+        <radialGradient id={`${uid}-trophy-glow`} cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.08" />
           <stop offset="100%" stopColor="#22d3ee" stopOpacity="0" />
         </radialGradient>
-        <linearGradient id="shelf-gradient" x1="0" y1="0" x2="1" y2="0">
+        <linearGradient id={`${uid}-shelf-gradient`} x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.3" />
           <stop offset="50%" stopColor="#a855f7" stopOpacity="0.2" />
           <stop offset="100%" stopColor="#22d3ee" stopOpacity="0.3" />
         </linearGradient>
-        <linearGradient id="case-gradient" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id={`${uid}-case-gradient`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#1e293b" />
           <stop offset="100%" stopColor="#0f172a" />
         </linearGradient>
       </defs>
 
-      <circle cx="100" cy="80" r="70" fill="url(#trophy-glow)" />
+      <circle cx="100" cy="80" r="70" fill={`url(#${uid}-trophy-glow)`} />
 
       {/* Trophy case frame */}
-      <rect x="40" y="20" width="120" height="120" rx="6" fill="url(#case-gradient)" stroke="#22d3ee" strokeOpacity="0.15" strokeWidth="1" />
+      <rect x="40" y="20" width="120" height="120" rx="6" fill={`url(#${uid}-case-gradient)`} stroke="#22d3ee" strokeOpacity="0.15" strokeWidth="1" />
 
       {/* Shelves */}
-      <line x1="50" y1="60" x2="150" y2="60" stroke="url(#shelf-gradient)" strokeWidth="2" />
-      <line x1="50" y1="100" x2="150" y2="100" stroke="url(#shelf-gradient)" strokeWidth="2" />
+      <line x1="50" y1="60" x2="150" y2="60" stroke={`url(#${uid}-shelf-gradient)`} strokeWidth="2" />
+      <line x1="50" y1="100" x2="150" y2="100" stroke={`url(#${uid}-shelf-gradient)`} strokeWidth="2" />
 
       {/* Shelf depth lines */}
       <line x1="50" y1="60" x2="50" y2="63" stroke="#22d3ee" strokeOpacity="0.15" strokeWidth="1" />
@@ -63,13 +70,13 @@ export function EmptyTrophyCase({ className, width = 200, height = 160 }: Illust
 
       {/* Sparkle particles */}
       <circle cx="70" cy="45" r="1.5" fill="#22d3ee" opacity="0.4">
-        <animate attributeName="opacity" values="0.4;0.1;0.4" dur="3s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.4;0.1;0.4" dur="3s" repeatCount="indefinite" />}
       </circle>
       <circle cx="130" cy="50" r="1" fill="#a855f7" opacity="0.3">
-        <animate attributeName="opacity" values="0.3;0.1;0.3" dur="2.5s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.3;0.1;0.3" dur="2.5s" repeatCount="indefinite" />}
       </circle>
       <circle cx="80" cy="115" r="1" fill="#22d3ee" opacity="0.25">
-        <animate attributeName="opacity" values="0.25;0.05;0.25" dur="4s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.25;0.05;0.25" dur="4s" repeatCount="indefinite" />}
       </circle>
     </svg>
   );
@@ -79,6 +86,8 @@ export function EmptyTrophyCase({ className, width = 200, height = 160 }: Illust
  * Magnifying glass with sparkle trails - for "no search results" states
  */
 export function NoSearchResults({ className, width = 200, height = 160 }: IllustrationProps) {
+  const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '');
+  const { allowAmbient: ambient } = useMotionCapabilities();
   return (
     <svg
       viewBox="0 0 200 160"
@@ -86,22 +95,24 @@ export function NoSearchResults({ className, width = 200, height = 160 }: Illust
       width={width}
       height={height}
       className={cn('opacity-80', className)}
+      aria-hidden="true"
+      focusable="false"
     >
       <defs>
-        <radialGradient id="search-glow" cx="50%" cy="45%" r="45%">
+        <radialGradient id={`${uid}-search-glow`} cx="50%" cy="45%" r="45%">
           <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.1" />
           <stop offset="100%" stopColor="#22d3ee" stopOpacity="0" />
         </radialGradient>
-        <linearGradient id="lens-gradient" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id={`${uid}-lens-gradient`} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.25" />
           <stop offset="100%" stopColor="#a855f7" stopOpacity="0.15" />
         </linearGradient>
       </defs>
 
-      <circle cx="95" cy="72" r="65" fill="url(#search-glow)" />
+      <circle cx="95" cy="72" r="65" fill={`url(#${uid}-search-glow)`} />
 
       {/* Magnifying glass lens */}
-      <circle cx="88" cy="65" r="28" stroke="url(#lens-gradient)" strokeWidth="3" fill="none" />
+      <circle cx="88" cy="65" r="28" stroke={`url(#${uid}-lens-gradient)`} strokeWidth="3" fill="none" />
       <circle cx="88" cy="65" r="24" stroke="#22d3ee" strokeOpacity="0.08" strokeWidth="1" fill="none" />
 
       {/* Glass reflection */}
@@ -116,22 +127,22 @@ export function NoSearchResults({ className, width = 200, height = 160 }: Illust
 
       {/* Sparkle trail particles */}
       <circle cx="55" cy="42" r="2" fill="#22d3ee" opacity="0.35">
-        <animate attributeName="opacity" values="0.35;0.1;0.35" dur="2s" repeatCount="indefinite" />
-        <animate attributeName="r" values="2;1.5;2" dur="2s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.35;0.1;0.35" dur="2s" repeatCount="indefinite" />}
+        {ambient && <animate attributeName="r" values="2;1.5;2" dur="2s" repeatCount="indefinite" />}
       </circle>
       <circle cx="65" cy="35" r="1.5" fill="#a855f7" opacity="0.3">
-        <animate attributeName="opacity" values="0.3;0.05;0.3" dur="2.8s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.3;0.05;0.3" dur="2.8s" repeatCount="indefinite" />}
       </circle>
       <circle cx="48" cy="55" r="1" fill="#22d3ee" opacity="0.2">
-        <animate attributeName="opacity" values="0.2;0.05;0.2" dur="3.5s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.2;0.05;0.2" dur="3.5s" repeatCount="indefinite" />}
       </circle>
 
       {/* Star sparkles */}
       <path d="M140 40l2 4 2-4-4 2 4 2z" fill="#22d3ee" fillOpacity="0.25">
-        <animate attributeName="fill-opacity" values="0.25;0.08;0.25" dur="2.5s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="fill-opacity" values="0.25;0.08;0.25" dur="2.5s" repeatCount="indefinite" />}
       </path>
       <path d="M45 95l1.5 3 1.5-3-3 1.5 3 1.5z" fill="#a855f7" fillOpacity="0.2">
-        <animate attributeName="fill-opacity" values="0.2;0.05;0.2" dur="3s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="fill-opacity" values="0.2;0.05;0.2" dur="3s" repeatCount="indefinite" />}
       </path>
     </svg>
   );
@@ -141,6 +152,8 @@ export function NoSearchResults({ className, width = 200, height = 160 }: Illust
  * Crown resting on question mark - for "no metadata" states
  */
 export function NoMetadata({ className, width = 80, height = 64 }: IllustrationProps) {
+  const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '');
+  const { allowAmbient: ambient } = useMotionCapabilities();
   return (
     <svg
       viewBox="0 0 80 64"
@@ -148,9 +161,11 @@ export function NoMetadata({ className, width = 80, height = 64 }: IllustrationP
       width={width}
       height={height}
       className={cn('opacity-80', className)}
+      aria-hidden="true"
+      focusable="false"
     >
       <defs>
-        <linearGradient id="crown-gradient" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id={`${uid}-crown-gradient`} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.5" />
           <stop offset="100%" stopColor="#a855f7" stopOpacity="0.3" />
         </linearGradient>
@@ -160,7 +175,7 @@ export function NoMetadata({ className, width = 80, height = 64 }: IllustrationP
       <text x="40" y="50" textAnchor="middle" fill="#22d3ee" fillOpacity="0.15" fontSize="36" fontFamily="Space Grotesk, sans-serif" fontWeight="700">?</text>
 
       {/* Crown on top */}
-      <path d="M25 22l5-10 5 7 5-7 5 7 5-7 5 10z" stroke="url(#crown-gradient)" strokeWidth="1.5" fill="none" strokeLinejoin="round" />
+      <path d="M25 22l5-10 5 7 5-7 5 7 5-7 5 10z" stroke={`url(#${uid}-crown-gradient)`} strokeWidth="1.5" fill="none" strokeLinejoin="round" />
       <line x1="25" y1="22" x2="55" y2="22" stroke="#22d3ee" strokeOpacity="0.3" strokeWidth="1.5" />
 
       {/* Crown jewels */}
@@ -170,10 +185,10 @@ export function NoMetadata({ className, width = 80, height = 64 }: IllustrationP
 
       {/* Sparkles */}
       <circle cx="18" cy="15" r="1" fill="#22d3ee" opacity="0.3">
-        <animate attributeName="opacity" values="0.3;0.05;0.3" dur="2s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.3;0.05;0.3" dur="2s" repeatCount="indefinite" />}
       </circle>
       <circle cx="62" cy="18" r="0.8" fill="#a855f7" opacity="0.25">
-        <animate attributeName="opacity" values="0.25;0.05;0.25" dur="3s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.25;0.05;0.25" dur="3s" repeatCount="indefinite" />}
       </circle>
     </svg>
   );
@@ -182,7 +197,9 @@ export function NoMetadata({ className, width = 80, height = 64 }: IllustrationP
 /**
  * Film reel with dotted film strip - for movies/tv empty states
  */
-export function EmptyFilmReel({ className, width = 140, height = 112 }: IllustrationProps) {
+function EmptyFilmReel({ className, width = 140, height = 112 }: IllustrationProps) {
+  const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '');
+  const { allowAmbient: ambient } = useMotionCapabilities();
   return (
     <svg
       viewBox="0 0 200 160"
@@ -190,22 +207,24 @@ export function EmptyFilmReel({ className, width = 140, height = 112 }: Illustra
       width={width}
       height={height}
       className={cn('opacity-80', className)}
+      aria-hidden="true"
+      focusable="false"
     >
       <defs>
-        <radialGradient id="film-glow" cx="50%" cy="50%" r="50%">
+        <radialGradient id={`${uid}-film-glow`} cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor="#a855f7" stopOpacity="0.08" />
           <stop offset="100%" stopColor="#a855f7" stopOpacity="0" />
         </radialGradient>
-        <linearGradient id="reel-gradient" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id={`${uid}-reel-gradient`} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.35" />
           <stop offset="100%" stopColor="#a855f7" stopOpacity="0.25" />
         </linearGradient>
       </defs>
 
-      <circle cx="100" cy="80" r="65" fill="url(#film-glow)" />
+      <circle cx="100" cy="80" r="65" fill={`url(#${uid}-film-glow)`} />
 
       {/* Film reel outer ring */}
-      <circle cx="100" cy="76" r="36" stroke="url(#reel-gradient)" strokeWidth="2.5" fill="none" />
+      <circle cx="100" cy="76" r="36" stroke={`url(#${uid}-reel-gradient)`} strokeWidth="2.5" fill="none" />
       <circle cx="100" cy="76" r="30" stroke="#22d3ee" strokeOpacity="0.1" strokeWidth="1" fill="none" />
 
       {/* Center hub */}
@@ -235,13 +254,13 @@ export function EmptyFilmReel({ className, width = 140, height = 112 }: Illustra
 
       {/* Sparkles */}
       <circle cx="60" cy="50" r="1.5" fill="#22d3ee" opacity="0.35">
-        <animate attributeName="opacity" values="0.35;0.1;0.35" dur="2.5s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.35;0.1;0.35" dur="2.5s" repeatCount="indefinite" />}
       </circle>
       <circle cx="145" cy="55" r="1" fill="#a855f7" opacity="0.3">
-        <animate attributeName="opacity" values="0.3;0.08;0.3" dur="3s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.3;0.08;0.3" dur="3s" repeatCount="indefinite" />}
       </circle>
       <circle cx="70" cy="110" r="1" fill="#22d3ee" opacity="0.2">
-        <animate attributeName="opacity" values="0.2;0.05;0.2" dur="3.5s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.2;0.05;0.2" dur="3.5s" repeatCount="indefinite" />}
       </circle>
     </svg>
   );
@@ -250,7 +269,9 @@ export function EmptyFilmReel({ className, width = 140, height = 112 }: Illustra
 /**
  * Vinyl record with tonearm - for music empty states
  */
-export function EmptyVinylRecord({ className, width = 140, height = 112 }: IllustrationProps) {
+function EmptyVinylRecord({ className, width = 140, height = 112 }: IllustrationProps) {
+  const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '');
+  const { allowAmbient: ambient } = useMotionCapabilities();
   return (
     <svg
       viewBox="0 0 200 160"
@@ -258,22 +279,24 @@ export function EmptyVinylRecord({ className, width = 140, height = 112 }: Illus
       width={width}
       height={height}
       className={cn('opacity-80', className)}
+      aria-hidden="true"
+      focusable="false"
     >
       <defs>
-        <radialGradient id="vinyl-glow" cx="50%" cy="50%" r="50%">
+        <radialGradient id={`${uid}-vinyl-glow`} cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.08" />
           <stop offset="100%" stopColor="#22d3ee" stopOpacity="0" />
         </radialGradient>
-        <linearGradient id="vinyl-gradient" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id={`${uid}-vinyl-gradient`} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.3" />
           <stop offset="100%" stopColor="#a855f7" stopOpacity="0.2" />
         </linearGradient>
       </defs>
 
-      <circle cx="95" cy="80" r="65" fill="url(#vinyl-glow)" />
+      <circle cx="95" cy="80" r="65" fill={`url(#${uid}-vinyl-glow)`} />
 
       {/* Record outer */}
-      <circle cx="92" cy="80" r="38" stroke="url(#vinyl-gradient)" strokeWidth="2" fill="none" />
+      <circle cx="92" cy="80" r="38" stroke={`url(#${uid}-vinyl-gradient)`} strokeWidth="2" fill="none" />
 
       {/* Grooves */}
       <circle cx="92" cy="80" r="32" stroke="#22d3ee" strokeOpacity="0.06" strokeWidth="0.5" fill="none" />
@@ -292,18 +315,18 @@ export function EmptyVinylRecord({ className, width = 140, height = 112 }: Illus
 
       {/* Needle tip glow */}
       <circle cx="115" cy="72" r="2" fill="#22d3ee" opacity="0.4">
-        <animate attributeName="opacity" values="0.4;0.15;0.4" dur="2s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.4;0.15;0.4" dur="2s" repeatCount="indefinite" />}
       </circle>
 
       {/* Sparkles */}
       <circle cx="50" cy="50" r="1.5" fill="#a855f7" opacity="0.3">
-        <animate attributeName="opacity" values="0.3;0.08;0.3" dur="2.8s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.3;0.08;0.3" dur="2.8s" repeatCount="indefinite" />}
       </circle>
       <circle cx="150" cy="100" r="1" fill="#22d3ee" opacity="0.25">
-        <animate attributeName="opacity" values="0.25;0.05;0.25" dur="3.2s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.25;0.05;0.25" dur="3.2s" repeatCount="indefinite" />}
       </circle>
       <circle cx="60" cy="115" r="1" fill="#a855f7" opacity="0.2">
-        <animate attributeName="opacity" values="0.2;0.05;0.2" dur="4s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.2;0.05;0.2" dur="4s" repeatCount="indefinite" />}
       </circle>
     </svg>
   );
@@ -312,7 +335,9 @@ export function EmptyVinylRecord({ className, width = 140, height = 112 }: Illus
 /**
  * Game controller outline - for games empty states
  */
-export function EmptyGameController({ className, width = 140, height = 112 }: IllustrationProps) {
+function EmptyGameController({ className, width = 140, height = 112 }: IllustrationProps) {
+  const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '');
+  const { allowAmbient: ambient } = useMotionCapabilities();
   return (
     <svg
       viewBox="0 0 200 160"
@@ -320,24 +345,26 @@ export function EmptyGameController({ className, width = 140, height = 112 }: Il
       width={width}
       height={height}
       className={cn('opacity-80', className)}
+      aria-hidden="true"
+      focusable="false"
     >
       <defs>
-        <radialGradient id="game-glow" cx="50%" cy="50%" r="50%">
+        <radialGradient id={`${uid}-game-glow`} cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.08" />
           <stop offset="100%" stopColor="#a855f7" stopOpacity="0" />
         </radialGradient>
-        <linearGradient id="controller-gradient" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id={`${uid}-controller-gradient`} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.3" />
           <stop offset="100%" stopColor="#a855f7" stopOpacity="0.2" />
         </linearGradient>
       </defs>
 
-      <circle cx="100" cy="80" r="65" fill="url(#game-glow)" />
+      <circle cx="100" cy="80" r="65" fill={`url(#${uid}-game-glow)`} />
 
       {/* Controller body */}
       <path
         d="M60 70 C60 58, 75 52, 100 52 C125 52, 140 58, 140 70 L145 95 C146 102, 140 108, 133 108 L125 108 C120 108, 116 104, 115 100 L112 90 C110 86, 108 84, 100 84 C92 84, 90 86, 88 90 L85 100 C84 104, 80 108, 75 108 L67 108 C60 108, 54 102, 55 95 Z"
-        stroke="url(#controller-gradient)"
+        stroke={`url(#${uid}-controller-gradient)`}
         strokeWidth="2"
         fill="none"
         strokeLinejoin="round"
@@ -358,13 +385,13 @@ export function EmptyGameController({ className, width = 140, height = 112 }: Il
 
       {/* Sparkles */}
       <circle cx="55" cy="48" r="1.5" fill="#22d3ee" opacity="0.35">
-        <animate attributeName="opacity" values="0.35;0.1;0.35" dur="2.5s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.35;0.1;0.35" dur="2.5s" repeatCount="indefinite" />}
       </circle>
       <circle cx="148" cy="52" r="1" fill="#a855f7" opacity="0.3">
-        <animate attributeName="opacity" values="0.3;0.08;0.3" dur="3s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.3;0.08;0.3" dur="3s" repeatCount="indefinite" />}
       </circle>
       <circle cx="100" cy="125" r="1" fill="#22d3ee" opacity="0.2">
-        <animate attributeName="opacity" values="0.2;0.05;0.2" dur="3.5s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.2;0.05;0.2" dur="3.5s" repeatCount="indefinite" />}
       </circle>
     </svg>
   );
@@ -400,6 +427,8 @@ export function CategoryEmptyState({
  * Larger 120x120 illustration with cyan/purple accent glows
  */
 export function ToppledTrophy({ className, width = 120, height = 120 }: IllustrationProps) {
+  const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '');
+  const { allowAmbient: ambient } = useMotionCapabilities();
   return (
     <svg
       viewBox="0 0 120 120"
@@ -407,25 +436,27 @@ export function ToppledTrophy({ className, width = 120, height = 120 }: Illustra
       width={width}
       height={height}
       className={cn('opacity-80', className)}
+      aria-hidden="true"
+      focusable="false"
     >
       <defs>
-        <radialGradient id="error-glow" cx="50%" cy="50%" r="50%">
+        <radialGradient id={`${uid}-error-glow`} cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.1" />
           <stop offset="70%" stopColor="#a855f7" stopOpacity="0.04" />
           <stop offset="100%" stopColor="#22d3ee" stopOpacity="0" />
         </radialGradient>
-        <linearGradient id="trophy-body" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id={`${uid}-trophy-body`} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.35" />
           <stop offset="100%" stopColor="#a855f7" stopOpacity="0.25" />
         </linearGradient>
       </defs>
 
-      <circle cx="60" cy="60" r="55" fill="url(#error-glow)" />
+      <circle cx="60" cy="60" r="55" fill={`url(#${uid}-error-glow)`} />
 
       {/* Toppled trophy - rotated ~30deg */}
       <g transform="translate(60, 65) rotate(25)">
         {/* Cup body */}
-        <path d="M-12 -20h24l-4 22H-8z" stroke="url(#trophy-body)" strokeWidth="2" fill="none" strokeLinejoin="round" />
+        <path d="M-12 -20h24l-4 22H-8z" stroke={`url(#${uid}-trophy-body)`} strokeWidth="2" fill="none" strokeLinejoin="round" />
         {/* Left handle */}
         <path d="M-12 -18h-4a5 5 0 0 0 0 10h4" stroke="#22d3ee" strokeOpacity="0.25" strokeWidth="1.5" fill="none" />
         {/* Right handle */}
@@ -443,13 +474,13 @@ export function ToppledTrophy({ className, width = 120, height = 120 }: Illustra
 
       {/* Scattered stars */}
       <circle cx="30" cy="35" r="2" fill="#22d3ee" opacity="0.3">
-        <animate attributeName="opacity" values="0.3;0.1;0.3" dur="2s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.3;0.1;0.3" dur="2s" repeatCount="indefinite" />}
       </circle>
       <circle cx="90" cy="40" r="1.5" fill="#a855f7" opacity="0.25">
-        <animate attributeName="opacity" values="0.25;0.08;0.25" dur="2.5s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.25;0.08;0.25" dur="2.5s" repeatCount="indefinite" />}
       </circle>
       <circle cx="35" cy="90" r="1" fill="#22d3ee" opacity="0.2">
-        <animate attributeName="opacity" values="0.2;0.05;0.2" dur="3s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.2;0.05;0.2" dur="3s" repeatCount="indefinite" />}
       </circle>
     </svg>
   );
@@ -462,7 +493,7 @@ export function ToppledTrophy({ className, width = 120, height = 120 }: Illustra
 
 function SlotFilmReel() {
   return (
-    <svg viewBox="0 0 48 48" width={48} height={48} fill="none" className="opacity-60">
+    <svg viewBox="0 0 48 48" width={48} height={48} fill="none" className="opacity-60" aria-hidden="true" focusable="false">
       <circle cx="24" cy="24" r="14" stroke="#22d3ee" strokeWidth="1.5" strokeOpacity="0.3" />
       <circle cx="24" cy="24" r="10" stroke="#22d3ee" strokeWidth="0.5" strokeOpacity="0.15" />
       <circle cx="24" cy="24" r="4" stroke="#22d3ee" strokeWidth="1" strokeOpacity="0.25" />
@@ -477,7 +508,7 @@ function SlotFilmReel() {
 
 function SlotVinylRecord() {
   return (
-    <svg viewBox="0 0 48 48" width={48} height={48} fill="none" className="opacity-60">
+    <svg viewBox="0 0 48 48" width={48} height={48} fill="none" className="opacity-60" aria-hidden="true" focusable="false">
       <circle cx="24" cy="24" r="15" stroke="#22d3ee" strokeWidth="1.5" strokeOpacity="0.3" />
       <circle cx="24" cy="24" r="12" stroke="#22d3ee" strokeWidth="0.5" strokeOpacity="0.1" />
       <circle cx="24" cy="24" r="9" stroke="#22d3ee" strokeWidth="0.5" strokeOpacity="0.08" />
@@ -491,7 +522,7 @@ function SlotVinylRecord() {
 
 function SlotTrophy() {
   return (
-    <svg viewBox="0 0 48 48" width={48} height={48} fill="none" className="opacity-60">
+    <svg viewBox="0 0 48 48" width={48} height={48} fill="none" className="opacity-60" aria-hidden="true" focusable="false">
       <path d="M17 14h14l-2.5 14h-9z" stroke="#22d3ee" strokeWidth="1.5" strokeOpacity="0.3" strokeLinejoin="round" />
       <path d="M17 16h-3a3 3 0 0 0 0 6h3" stroke="#22d3ee" strokeWidth="1" strokeOpacity="0.2" />
       <path d="M31 16h3a3 3 0 0 1 0 6h-3" stroke="#22d3ee" strokeWidth="1" strokeOpacity="0.2" />
@@ -503,7 +534,7 @@ function SlotTrophy() {
 
 function SlotGameController() {
   return (
-    <svg viewBox="0 0 48 48" width={48} height={48} fill="none" className="opacity-60">
+    <svg viewBox="0 0 48 48" width={48} height={48} fill="none" className="opacity-60" aria-hidden="true" focusable="false">
       <path
         d="M14 22c0-5 6-8 10-8s10 3 10 8l2 8c0 3-2 5-4 5h-3c-1 0-2-1-3-3l-1-2c-1-1-1-1-2 0l-1 2c-1 2-2 3-3 3h-3c-2 0-4-2-4-5z"
         stroke="#22d3ee" strokeWidth="1.5" strokeOpacity="0.3" strokeLinejoin="round"
@@ -517,59 +548,11 @@ function SlotGameController() {
 }
 
 /**
- * Goat peering through a magnifying glass - for "no filter results" states
- */
-export function GoatSearching({ className, width = 120, height = 96 }: IllustrationProps) {
-  return (
-    <svg
-      viewBox="0 0 120 96"
-      fill="none"
-      width={width}
-      height={height}
-      className={cn('opacity-80', className)}
-    >
-      <defs>
-        <radialGradient id="goat-search-glow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.1" />
-          <stop offset="100%" stopColor="#a855f7" stopOpacity="0" />
-        </radialGradient>
-        <linearGradient id="goat-search-lens" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.3" />
-          <stop offset="100%" stopColor="#a855f7" stopOpacity="0.2" />
-        </linearGradient>
-      </defs>
-      <circle cx="60" cy="48" r="45" fill="url(#goat-search-glow)" />
-      {/* Magnifying glass */}
-      <circle cx="52" cy="42" r="18" stroke="url(#goat-search-lens)" strokeWidth="2.5" fill="none" />
-      <line x1="65" y1="55" x2="82" y2="72" stroke="#22d3ee" strokeOpacity="0.3" strokeWidth="3.5" strokeLinecap="round" />
-      {/* Goat head peering from behind */}
-      <ellipse cx="50" cy="40" rx="10" ry="12" stroke="#22d3ee" strokeOpacity="0.2" strokeWidth="1.5" fill="none" />
-      {/* Horns */}
-      <path d="M42 32c-3-6-1-12 2-14" stroke="#a855f7" strokeOpacity="0.3" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-      <path d="M58 32c3-6 1-12-2-14" stroke="#a855f7" strokeOpacity="0.3" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-      {/* Eyes */}
-      <circle cx="46" cy="38" r="1.5" fill="#22d3ee" opacity="0.4" />
-      <circle cx="54" cy="38" r="1.5" fill="#22d3ee" opacity="0.4" />
-      {/* Nose */}
-      <ellipse cx="50" cy="44" rx="3" ry="2" stroke="#22d3ee" strokeOpacity="0.2" strokeWidth="1" fill="none" />
-      {/* Ears */}
-      <path d="M39 34c-4-2-6 0-5 3" stroke="#22d3ee" strokeOpacity="0.15" strokeWidth="1" strokeLinecap="round" fill="none" />
-      <path d="M61 34c4-2 6 0 5 3" stroke="#22d3ee" strokeOpacity="0.15" strokeWidth="1" strokeLinecap="round" fill="none" />
-      {/* Sparkles */}
-      <circle cx="25" cy="25" r="1.5" fill="#22d3ee" opacity="0.3">
-        <animate attributeName="opacity" values="0.3;0.08;0.3" dur="2.5s" repeatCount="indefinite" />
-      </circle>
-      <circle cx="90" cy="30" r="1" fill="#a855f7" opacity="0.25">
-        <animate attributeName="opacity" values="0.25;0.05;0.25" dur="3s" repeatCount="indefinite" />
-      </circle>
-    </svg>
-  );
-}
-
-/**
  * Goat holding a bookmark/ribbon - for "no saved presets" states
  */
 export function GoatBookmark({ className, width = 120, height = 96 }: IllustrationProps) {
+  const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '');
+  const { allowAmbient: ambient } = useMotionCapabilities();
   return (
     <svg
       viewBox="0 0 120 96"
@@ -577,18 +560,20 @@ export function GoatBookmark({ className, width = 120, height = 96 }: Illustrati
       width={width}
       height={height}
       className={cn('opacity-80', className)}
+      aria-hidden="true"
+      focusable="false"
     >
       <defs>
-        <radialGradient id="goat-bm-glow" cx="50%" cy="50%" r="50%">
+        <radialGradient id={`${uid}-goat-bm-glow`} cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor="#a855f7" stopOpacity="0.08" />
           <stop offset="100%" stopColor="#22d3ee" stopOpacity="0" />
         </radialGradient>
-        <linearGradient id="goat-bm-ribbon" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id={`${uid}-goat-bm-ribbon`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.4" />
           <stop offset="100%" stopColor="#a855f7" stopOpacity="0.25" />
         </linearGradient>
       </defs>
-      <circle cx="60" cy="48" r="45" fill="url(#goat-bm-glow)" />
+      <circle cx="60" cy="48" r="45" fill={`url(#${uid}-goat-bm-glow)`} />
       {/* Goat body silhouette */}
       <ellipse cx="55" cy="50" rx="14" ry="16" stroke="#22d3ee" strokeOpacity="0.2" strokeWidth="1.5" fill="none" />
       {/* Horns */}
@@ -603,75 +588,17 @@ export function GoatBookmark({ className, width = 120, height = 96 }: Illustrati
       <path d="M43 40c-4-2-7 0-5 3" stroke="#22d3ee" strokeOpacity="0.15" strokeWidth="1" strokeLinecap="round" fill="none" />
       <path d="M67 40c4-2 7 0 5 3" stroke="#22d3ee" strokeOpacity="0.15" strokeWidth="1" strokeLinecap="round" fill="none" />
       {/* Bookmark ribbon held by goat */}
-      <path d="M72 30v38l-6-5-6 5V30z" stroke="url(#goat-bm-ribbon)" strokeWidth="1.5" fill="none" strokeLinejoin="round" />
+      <path d="M72 30v38l-6-5-6 5V30z" stroke={`url(#${uid}-goat-bm-ribbon)`} strokeWidth="1.5" fill="none" strokeLinejoin="round" />
       {/* Star on bookmark */}
       <path d="M66 42l1.5 3 1.5-3-3 1.5 3 1.5z" fill="#22d3ee" fillOpacity="0.3" />
       {/* Hoof holding bookmark */}
       <path d="M65 55c3-2 6-4 7-8" stroke="#22d3ee" strokeOpacity="0.15" strokeWidth="1" strokeLinecap="round" fill="none" />
       {/* Sparkles */}
       <circle cx="30" cy="25" r="1.5" fill="#22d3ee" opacity="0.3">
-        <animate attributeName="opacity" values="0.3;0.08;0.3" dur="2.8s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.3;0.08;0.3" dur="2.8s" repeatCount="indefinite" />}
       </circle>
       <circle cx="95" cy="60" r="1" fill="#a855f7" opacity="0.25">
-        <animate attributeName="opacity" values="0.25;0.05;0.25" dur="3.2s" repeatCount="indefinite" />
-      </circle>
-    </svg>
-  );
-}
-
-/**
- * Goat with building blocks - for "empty filter group" states
- */
-export function GoatBlocks({ className, width = 120, height = 96 }: IllustrationProps) {
-  return (
-    <svg
-      viewBox="0 0 120 96"
-      fill="none"
-      width={width}
-      height={height}
-      className={cn('opacity-80', className)}
-    >
-      <defs>
-        <radialGradient id="goat-blocks-glow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.08" />
-          <stop offset="100%" stopColor="#a855f7" stopOpacity="0" />
-        </radialGradient>
-        <linearGradient id="goat-block-fill" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.15" />
-          <stop offset="100%" stopColor="#a855f7" stopOpacity="0.1" />
-        </linearGradient>
-      </defs>
-      <circle cx="60" cy="48" r="45" fill="url(#goat-blocks-glow)" />
-      {/* Goat head */}
-      <ellipse cx="40" cy="42" rx="10" ry="12" stroke="#22d3ee" strokeOpacity="0.2" strokeWidth="1.5" fill="none" />
-      {/* Horns */}
-      <path d="M32 34c-3-6-1-12 2-14" stroke="#a855f7" strokeOpacity="0.3" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-      <path d="M48 34c3-6 1-12-2-14" stroke="#a855f7" strokeOpacity="0.3" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-      {/* Eyes */}
-      <circle cx="36" cy="40" r="1.5" fill="#22d3ee" opacity="0.4" />
-      <circle cx="44" cy="40" r="1.5" fill="#22d3ee" opacity="0.4" />
-      {/* Nose */}
-      <ellipse cx="40" cy="47" rx="3" ry="2" stroke="#22d3ee" strokeOpacity="0.2" strokeWidth="1" fill="none" />
-      {/* Ears */}
-      <path d="M29 36c-4-2-6 0-5 3" stroke="#22d3ee" strokeOpacity="0.15" strokeWidth="1" strokeLinecap="round" fill="none" />
-      <path d="M51 36c4-2 6 0 5 3" stroke="#22d3ee" strokeOpacity="0.15" strokeWidth="1" strokeLinecap="round" fill="none" />
-      {/* Building blocks stacked */}
-      <rect x="62" y="55" width="16" height="14" rx="2" stroke="#22d3ee" strokeOpacity="0.25" strokeWidth="1.5" fill="url(#goat-block-fill)" />
-      <rect x="66" y="41" width="16" height="14" rx="2" stroke="#a855f7" strokeOpacity="0.25" strokeWidth="1.5" fill="url(#goat-block-fill)" />
-      <rect x="70" y="27" width="16" height="14" rx="2" stroke="#22d3ee" strokeOpacity="0.25" strokeWidth="1.5" fill="url(#goat-block-fill)" />
-      {/* Plus signs on blocks */}
-      <line x1="70" y1="60" x2="70" y2="66" stroke="#22d3ee" strokeOpacity="0.2" strokeWidth="1" />
-      <line x1="67" y1="63" x2="73" y2="63" stroke="#22d3ee" strokeOpacity="0.2" strokeWidth="1" />
-      <line x1="74" y1="46" x2="74" y2="52" stroke="#a855f7" strokeOpacity="0.2" strokeWidth="1" />
-      <line x1="71" y1="49" x2="77" y2="49" stroke="#a855f7" strokeOpacity="0.2" strokeWidth="1" />
-      {/* Hoof reaching toward blocks */}
-      <path d="M48 52c5 2 10 4 14 6" stroke="#22d3ee" strokeOpacity="0.15" strokeWidth="1" strokeLinecap="round" fill="none" />
-      {/* Sparkles */}
-      <circle cx="20" cy="25" r="1.5" fill="#22d3ee" opacity="0.3">
-        <animate attributeName="opacity" values="0.3;0.08;0.3" dur="2.5s" repeatCount="indefinite" />
-      </circle>
-      <circle cx="95" cy="35" r="1" fill="#a855f7" opacity="0.25">
-        <animate attributeName="opacity" values="0.25;0.05;0.25" dur="3s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.25;0.05;0.25" dur="3.2s" repeatCount="indefinite" />}
       </circle>
     </svg>
   );
@@ -681,6 +608,8 @@ export function GoatBlocks({ className, width = 120, height = 96 }: Illustration
  * Goat looking confused at an empty funnel - for "no filters matching" states
  */
 export function GoatFilterEmpty({ className, width = 120, height = 96 }: IllustrationProps) {
+  const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '');
+  const { allowAmbient: ambient } = useMotionCapabilities();
   return (
     <svg
       viewBox="0 0 120 96"
@@ -688,20 +617,22 @@ export function GoatFilterEmpty({ className, width = 120, height = 96 }: Illustr
       width={width}
       height={height}
       className={cn('opacity-80', className)}
+      aria-hidden="true"
+      focusable="false"
     >
       <defs>
-        <radialGradient id="goat-filter-glow" cx="50%" cy="50%" r="50%">
+        <radialGradient id={`${uid}-goat-filter-glow`} cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.1" />
           <stop offset="100%" stopColor="#a855f7" stopOpacity="0" />
         </radialGradient>
-        <linearGradient id="goat-funnel-grad" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id={`${uid}-goat-funnel-grad`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.3" />
           <stop offset="100%" stopColor="#a855f7" stopOpacity="0.15" />
         </linearGradient>
       </defs>
-      <circle cx="60" cy="48" r="45" fill="url(#goat-filter-glow)" />
+      <circle cx="60" cy="48" r="45" fill={`url(#${uid}-goat-filter-glow)`} />
       {/* Funnel shape */}
-      <path d="M68 28l20 0-12 22v14" stroke="url(#goat-funnel-grad)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      <path d="M68 28l20 0-12 22v14" stroke={`url(#${uid}-goat-funnel-grad)`} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
       <path d="M88 28l-8 0" stroke="#22d3ee" strokeOpacity="0.15" strokeWidth="1.5" />
       <line x1="76" y1="64" x2="76" y2="70" stroke="#a855f7" strokeOpacity="0.15" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="2 3" />
       {/* Goat head */}
@@ -723,10 +654,10 @@ export function GoatFilterEmpty({ className, width = 120, height = 96 }: Illustr
       <text x="54" y="24" fill="#a855f7" fillOpacity="0.3" fontSize="12" fontWeight="bold">?</text>
       {/* Sparkles */}
       <circle cx="20" cy="22" r="1.5" fill="#22d3ee" opacity="0.3">
-        <animate attributeName="opacity" values="0.3;0.08;0.3" dur="2.5s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.3;0.08;0.3" dur="2.5s" repeatCount="indefinite" />}
       </circle>
       <circle cx="98" cy="55" r="1" fill="#a855f7" opacity="0.25">
-        <animate attributeName="opacity" values="0.25;0.05;0.25" dur="3.2s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.25;0.05;0.25" dur="3.2s" repeatCount="indefinite" />}
       </circle>
     </svg>
   );
@@ -736,6 +667,8 @@ export function GoatFilterEmpty({ className, width = 120, height = 96 }: Illustr
  * Goat shrugging next to a zero - for "zero results" states
  */
 export function GoatZeroResults({ className, width = 120, height = 96 }: IllustrationProps) {
+  const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '');
+  const { allowAmbient: ambient } = useMotionCapabilities();
   return (
     <svg
       viewBox="0 0 120 96"
@@ -743,20 +676,22 @@ export function GoatZeroResults({ className, width = 120, height = 96 }: Illustr
       width={width}
       height={height}
       className={cn('opacity-80', className)}
+      aria-hidden="true"
+      focusable="false"
     >
       <defs>
-        <radialGradient id="goat-zero-glow" cx="50%" cy="50%" r="50%">
+        <radialGradient id={`${uid}-goat-zero-glow`} cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor="#a855f7" stopOpacity="0.08" />
           <stop offset="100%" stopColor="#22d3ee" stopOpacity="0" />
         </radialGradient>
-        <linearGradient id="goat-zero-num" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id={`${uid}-goat-zero-num`} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.25" />
           <stop offset="100%" stopColor="#a855f7" stopOpacity="0.15" />
         </linearGradient>
       </defs>
-      <circle cx="60" cy="48" r="45" fill="url(#goat-zero-glow)" />
+      <circle cx="60" cy="48" r="45" fill={`url(#${uid}-goat-zero-glow)`} />
       {/* Large zero counter */}
-      <ellipse cx="78" cy="46" rx="14" ry="18" stroke="url(#goat-zero-num)" strokeWidth="3" fill="none" />
+      <ellipse cx="78" cy="46" rx="14" ry="18" stroke={`url(#${uid}-goat-zero-num)`} strokeWidth="3" fill="none" />
       <line x1="70" y1="34" x2="86" y2="58" stroke="#a855f7" strokeOpacity="0.12" strokeWidth="1.5" strokeLinecap="round" />
       {/* Goat head */}
       <ellipse cx="38" cy="44" rx="10" ry="12" stroke="#22d3ee" strokeOpacity="0.2" strokeWidth="1.5" fill="none" />
@@ -779,10 +714,10 @@ export function GoatZeroResults({ className, width = 120, height = 96 }: Illustr
       <path d="M55 43c1-1.5 2.5-1.5 3.5 0s2.5 1.5 3.5 0" stroke="#a855f7" strokeOpacity="0.2" strokeWidth="0.8" strokeLinecap="round" fill="none" />
       {/* Sparkles */}
       <circle cx="22" cy="20" r="1.5" fill="#22d3ee" opacity="0.3">
-        <animate attributeName="opacity" values="0.3;0.08;0.3" dur="2.8s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.3;0.08;0.3" dur="2.8s" repeatCount="indefinite" />}
       </circle>
       <circle cx="100" cy="65" r="1" fill="#a855f7" opacity="0.25">
-        <animate attributeName="opacity" values="0.25;0.05;0.25" dur="3.5s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.25;0.05;0.25" dur="3.5s" repeatCount="indefinite" />}
       </circle>
     </svg>
   );
@@ -793,6 +728,8 @@ export function GoatZeroResults({ className, width = 120, height = 96 }: Illustr
  * Brand palette: slate-800 body, #22d3ee accents, rose-400 highlights
  */
 export function GoatBrokenFrame({ className, width = 120, height = 96 }: IllustrationProps) {
+  const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '');
+  const { allowAmbient: ambient } = useMotionCapabilities();
   return (
     <svg
       viewBox="0 0 120 96"
@@ -800,27 +737,29 @@ export function GoatBrokenFrame({ className, width = 120, height = 96 }: Illustr
       width={width}
       height={height}
       className={cn('opacity-80', className)}
+      aria-hidden="true"
+      focusable="false"
     >
       <defs>
-        <radialGradient id="goat-frame-glow" cx="50%" cy="50%" r="50%">
+        <radialGradient id={`${uid}-goat-frame-glow`} cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor="#fb7185" stopOpacity="0.08" />
           <stop offset="100%" stopColor="#22d3ee" stopOpacity="0" />
         </radialGradient>
-        <linearGradient id="goat-frame-border" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id={`${uid}-goat-frame-border`} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.3" />
           <stop offset="100%" stopColor="#fb7185" stopOpacity="0.2" />
         </linearGradient>
       </defs>
-      <circle cx="60" cy="48" r="45" fill="url(#goat-frame-glow)" />
+      <circle cx="60" cy="48" r="45" fill={`url(#${uid}-goat-frame-glow)`} />
       {/* Broken picture frame - top left shard */}
-      <path d="M52 22h30v10" stroke="url(#goat-frame-border)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      <path d="M52 22h30v10" stroke={`url(#${uid}-goat-frame-border)`} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
       {/* Frame right side */}
-      <path d="M82 32v30" stroke="url(#goat-frame-border)" strokeWidth="2" strokeLinecap="round" fill="none" />
+      <path d="M82 32v30" stroke={`url(#${uid}-goat-frame-border)`} strokeWidth="2" strokeLinecap="round" fill="none" />
       {/* Frame bottom - broken, offset */}
       <path d="M82 62h-12" stroke="#22d3ee" strokeOpacity="0.2" strokeWidth="2" strokeLinecap="round" fill="none" />
       <path d="M66 66l-14 0" stroke="#fb7185" strokeOpacity="0.2" strokeWidth="2" strokeLinecap="round" fill="none" />
       {/* Frame left - cracked */}
-      <path d="M52 22v16" stroke="url(#goat-frame-border)" strokeWidth="2" strokeLinecap="round" fill="none" />
+      <path d="M52 22v16" stroke={`url(#${uid}-goat-frame-border)`} strokeWidth="2" strokeLinecap="round" fill="none" />
       <path d="M52 38l-2 4 2 4" stroke="#fb7185" strokeOpacity="0.25" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
       {/* Crack lines on frame */}
       <path d="M64 22l3 6-2 4" stroke="#fb7185" strokeOpacity="0.15" strokeWidth="1" strokeLinecap="round" fill="none" />
@@ -847,13 +786,13 @@ export function GoatBrokenFrame({ className, width = 120, height = 96 }: Illustr
       <text x="30" y="26" fill="#fb7185" fillOpacity="0.3" fontSize="10" fontWeight="bold">?</text>
       {/* Sparkles */}
       <circle cx="20" cy="20" r="1.5" fill="#fb7185" opacity="0.3">
-        <animate attributeName="opacity" values="0.3;0.08;0.3" dur="2.5s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.3;0.08;0.3" dur="2.5s" repeatCount="indefinite" />}
       </circle>
       <circle cx="95" cy="50" r="1" fill="#22d3ee" opacity="0.25">
-        <animate attributeName="opacity" values="0.25;0.05;0.25" dur="3s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.25;0.05;0.25" dur="3s" repeatCount="indefinite" />}
       </circle>
       <circle cx="88" cy="76" r="1" fill="#a855f7" opacity="0.2">
-        <animate attributeName="opacity" values="0.2;0.05;0.2" dur="3.5s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.2;0.05;0.2" dur="3.5s" repeatCount="indefinite" />}
       </circle>
     </svg>
   );
@@ -864,6 +803,8 @@ export function GoatBrokenFrame({ className, width = 120, height = 96 }: Illustr
  * Brand palette: slate-800 body, #22d3ee accents, rose-400 highlights
  */
 export function GoatDisconnected({ className, width = 120, height = 96 }: IllustrationProps) {
+  const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '');
+  const { allowAmbient: ambient } = useMotionCapabilities();
   return (
     <svg
       viewBox="0 0 120 96"
@@ -871,24 +812,26 @@ export function GoatDisconnected({ className, width = 120, height = 96 }: Illust
       width={width}
       height={height}
       className={cn('opacity-80', className)}
+      aria-hidden="true"
+      focusable="false"
     >
       <defs>
-        <radialGradient id="goat-disc-glow" cx="50%" cy="50%" r="50%">
+        <radialGradient id={`${uid}-goat-disc-glow`} cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor="#fb7185" stopOpacity="0.08" />
           <stop offset="100%" stopColor="#22d3ee" stopOpacity="0" />
         </radialGradient>
-        <linearGradient id="goat-cable-left" x1="0" y1="0" x2="1" y2="0">
+        <linearGradient id={`${uid}-goat-cable-left`} x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.35" />
           <stop offset="100%" stopColor="#22d3ee" stopOpacity="0.15" />
         </linearGradient>
-        <linearGradient id="goat-cable-right" x1="0" y1="0" x2="1" y2="0">
+        <linearGradient id={`${uid}-goat-cable-right`} x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stopColor="#fb7185" stopOpacity="0.15" />
           <stop offset="100%" stopColor="#fb7185" stopOpacity="0.35" />
         </linearGradient>
       </defs>
-      <circle cx="60" cy="48" r="45" fill="url(#goat-disc-glow)" />
+      <circle cx="60" cy="48" r="45" fill={`url(#${uid}-goat-disc-glow)`} />
       {/* Left cable segment (held by goat) */}
-      <path d="M48 52c4 2 8 6 10 6" stroke="url(#goat-cable-left)" strokeWidth="3" strokeLinecap="round" fill="none" />
+      <path d="M48 52c4 2 8 6 10 6" stroke={`url(#${uid}-goat-cable-left)`} strokeWidth="3" strokeLinecap="round" fill="none" />
       {/* Cable plug end - left */}
       <rect x="56" y="54" width="6" height="8" rx="1.5" stroke="#22d3ee" strokeOpacity="0.3" strokeWidth="1.5" fill="none" />
       <line x1="59" y1="56" x2="59" y2="58" stroke="#22d3ee" strokeOpacity="0.2" strokeWidth="1" />
@@ -896,13 +839,13 @@ export function GoatDisconnected({ className, width = 120, height = 96 }: Illust
       <line x1="63" y1="57" x2="66" y2="55" stroke="#fb7185" strokeOpacity="0.4" strokeWidth="1" strokeLinecap="round" />
       <line x1="63" y1="59" x2="66" y2="60" stroke="#fb7185" strokeOpacity="0.3" strokeWidth="0.8" strokeLinecap="round" />
       <circle cx="64" cy="58" r="1" fill="#fb7185" opacity="0.3">
-        <animate attributeName="opacity" values="0.3;0.1;0.3" dur="1.5s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.3;0.1;0.3" dur="1.5s" repeatCount="indefinite" />}
       </circle>
       {/* Cable plug end - right */}
       <rect x="67" y="54" width="6" height="8" rx="1.5" stroke="#fb7185" strokeOpacity="0.3" strokeWidth="1.5" fill="none" />
       <line x1="70" y1="56" x2="70" y2="58" stroke="#fb7185" strokeOpacity="0.2" strokeWidth="1" />
       {/* Right cable segment (dangling) */}
-      <path d="M73 58c4 0 8 4 12 10 4 6 10 8 14 6" stroke="url(#goat-cable-right)" strokeWidth="3" strokeLinecap="round" fill="none" />
+      <path d="M73 58c4 0 8 4 12 10 4 6 10 8 14 6" stroke={`url(#${uid}-goat-cable-right)`} strokeWidth="3" strokeLinecap="round" fill="none" />
       {/* Goat head */}
       <ellipse cx="38" cy="42" rx="10" ry="12" stroke="#22d3ee" strokeOpacity="0.2" strokeWidth="1.5" fill="none" />
       {/* Horns */}
@@ -925,13 +868,13 @@ export function GoatDisconnected({ className, width = 120, height = 96 }: Illust
       <path d="M46 50c2 1 3 2 4 3" stroke="#22d3ee" strokeOpacity="0.15" strokeWidth="1" strokeLinecap="round" fill="none" />
       {/* Sparkles */}
       <circle cx="18" cy="22" r="1.5" fill="#22d3ee" opacity="0.3">
-        <animate attributeName="opacity" values="0.3;0.08;0.3" dur="2.5s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.3;0.08;0.3" dur="2.5s" repeatCount="indefinite" />}
       </circle>
       <circle cx="100" cy="40" r="1" fill="#a855f7" opacity="0.25">
-        <animate attributeName="opacity" values="0.25;0.05;0.25" dur="3.2s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.25;0.05;0.25" dur="3.2s" repeatCount="indefinite" />}
       </circle>
       <circle cx="25" cy="75" r="1" fill="#fb7185" opacity="0.2">
-        <animate attributeName="opacity" values="0.2;0.05;0.2" dur="3.8s" repeatCount="indefinite" />
+        {ambient && <animate attributeName="opacity" values="0.2;0.05;0.2" dur="3.8s" repeatCount="indefinite" />}
       </circle>
     </svg>
   );

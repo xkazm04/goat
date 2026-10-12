@@ -6,7 +6,9 @@ import { useSyncExternalStore } from "react";
 let mediaQuery: MediaQueryList | null = null;
 
 function getMediaQuery(): MediaQueryList | null {
-  if (typeof window === "undefined") return null;
+  // Same guard as use-motion-preference: an absent `matchMedia` is a null query,
+  // not a thrown render.
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return null;
   if (!mediaQuery) {
     mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
   }

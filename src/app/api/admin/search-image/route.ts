@@ -21,16 +21,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('🔍 Searching for image:', { itemName, category, subcategory });
-
     // Use Gemini to search for the item information including image
     const recommendation = await geminiProvider.getItemRecommendation({
       name: itemName,
       category: category || 'general',
       subcategory
     });
-
-    console.log('✅ Gemini recommendation:', recommendation);
 
     // Return the found image URL and other metadata
     return NextResponse.json({

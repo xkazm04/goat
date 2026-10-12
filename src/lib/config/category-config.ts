@@ -14,6 +14,16 @@
 import { Volleyball, Trophy, Users, LucideIcon } from "lucide-react";
 
 /**
+ * Default color scheme for lists across the application.
+ * Amber/gold brand palette — used as fallback whenever a list has no explicit color.
+ */
+export const DEFAULT_LIST_COLOR = {
+  primary: '#f59e0b',
+  secondary: '#d97706',
+  accent: '#fbbf24',
+} as const;
+
+/**
  * Subcategory definition with display information
  */
 export interface SubcategoryDefinition {

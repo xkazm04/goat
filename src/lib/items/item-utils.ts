@@ -74,6 +74,24 @@ export function safeStringArray(value: unknown): string[] {
 }
 
 // ============================================================================
+// Constants
+// ============================================================================
+
+/**
+ * Maximum length for display titles before truncation with ellipsis.
+ * Prevents layout-breaking long titles in grid cards, tier rows, etc.
+ */
+export const MAX_DISPLAY_TITLE_LENGTH = 60;
+
+/**
+ * Truncate a string to maxLen characters, appending ellipsis if trimmed.
+ */
+export function truncateTitle(title: string, maxLen = MAX_DISPLAY_TITLE_LENGTH): string {
+  if (title.length <= maxLen) return title;
+  return title.slice(0, maxLen).trimEnd() + '\u2026';
+}
+
+// ============================================================================
 // Display Helpers
 // ============================================================================
 
@@ -101,7 +119,8 @@ export function normalizeForDisplay<
 export function getDisplayTitle(item: unknown): string {
   if (!item || typeof item !== 'object') return 'Untitled';
 
-  return extractTitle(item as { name?: string; title?: string }) || 'Untitled';
+  const raw = extractTitle(item as { name?: string; title?: string }) || 'Untitled';
+  return truncateTitle(raw);
 }
 
 /**

@@ -64,12 +64,6 @@ export async function POST(request: NextRequest) {
     // 4. Trigger real-time updates via WebSocket
 
     // For now, just acknowledge the submission
-    console.log('Ranking submitted:', {
-      listId: body.listId,
-      userId: body.userId,
-      itemCount: body.rankings.length,
-    });
-
     return NextResponse.json({
       success: true,
       message: 'Ranking submitted successfully',

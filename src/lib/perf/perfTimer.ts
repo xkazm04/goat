@@ -26,10 +26,12 @@ export function timeSync<T>(
 
   const entry: PerfEntry = { label, elapsedMs: Math.round(elapsedMs * 100) / 100, meta };
 
-  if (elapsedMs > SLOW_THRESHOLD_MS) {
-    console.warn(`⏱️ SLOW: ${label} took ${entry.elapsedMs}ms (threshold: ${SLOW_THRESHOLD_MS}ms)`, meta);
-  } else if (process.env.NODE_ENV === 'development') {
-    console.debug(`⏱️ ${label}: ${entry.elapsedMs}ms`, meta);
+  if (process.env.NODE_ENV === 'development') {
+    if (elapsedMs > SLOW_THRESHOLD_MS) {
+      console.warn(`⏱️ SLOW: ${label} took ${entry.elapsedMs}ms (threshold: ${SLOW_THRESHOLD_MS}ms)`, meta);
+    } else {
+      console.debug(`⏱️ ${label}: ${entry.elapsedMs}ms`, meta);
+    }
   }
 
   return result;

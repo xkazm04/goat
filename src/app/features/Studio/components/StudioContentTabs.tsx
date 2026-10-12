@@ -52,6 +52,7 @@ export function StudioContentTabs() {
             onClick={() => setActiveTab(tab.id)}
             className={cn(
               'relative flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900',
               activeTab === tab.id
                 ? 'text-amber-300'
                 : 'text-gray-500 hover:text-gray-300'

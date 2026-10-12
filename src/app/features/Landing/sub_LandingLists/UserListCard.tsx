@@ -230,7 +230,7 @@ export const UserListCard = memo(function UserListCard({
                 <h4 className="text-lg font-semibold text-white">Delete List?</h4>
               </div>
               <p className="text-slate-400 mb-6 text-sm leading-relaxed">
-                <span className="text-white font-medium">"{list.title}"</span> will be
+                <span className="text-white font-medium">&quot;{list.title}&quot;</span> will be
                 permanently deleted. This action cannot be undone.
               </p>
 

@@ -245,7 +245,7 @@ export function AchievementShareModal({
                     >
                       {/* Preview */}
                       <div>
-                        <div className="flex items-center gap-2 mb-3">
+                        <div className="flex items-center gap-2 mb-2">
                           <Eye className="w-4 h-4 text-gray-400" />
                           <span className="text-sm font-medium text-gray-400">Preview</span>
                         </div>
@@ -261,9 +261,9 @@ export function AchievementShareModal({
 
                       {/* Style selector */}
                       <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-2">
+                        <span className="block text-sm font-medium text-gray-400 mb-2">
                           Card Style
-                        </label>
+                        </span>
                         <div className="grid grid-cols-5 gap-2">
                           {STYLE_OPTIONS.map((option) => (
                             <button
@@ -291,7 +291,7 @@ export function AchievementShareModal({
                         ].map(({ key, label }) => (
                           <label
                             key={key}
-                            className="flex items-center gap-3 p-3 rounded-card bg-white/5 cursor-pointer hover:bg-white/10 transition-colors"
+                            className="flex items-center gap-3 p-4 rounded-card bg-white/5 cursor-pointer hover:bg-white/10 transition-colors"
                           >
                             <input
                               type="checkbox"
@@ -308,7 +308,7 @@ export function AchievementShareModal({
 
                       {/* Error message */}
                       {error && (
-                        <div className="p-3 rounded-card bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                        <div className="p-4 rounded-card bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
                           {error}
                         </div>
                       )}
@@ -317,9 +317,8 @@ export function AchievementShareModal({
                       <button
                         onClick={generateShareLink}
                         disabled={isGenerating}
-                        className="w-full flex items-center justify-center gap-3 px-4 py-4 rounded-card font-semibold text-white transition-all hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100"
+                        className="w-full flex items-center justify-center gap-3 px-4 py-4 rounded-card font-semibold text-white transition-all hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100 bg-gradient-brand"
                         style={{
-                          background: 'linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%)',
                           boxShadow: '0 4px 20px rgba(6, 182, 212, 0.3)',
                         }}
                         data-testid="achievement-generate-link"
@@ -352,7 +351,7 @@ export function AchievementShareModal({
                       {/* Share URL display */}
                       {shareUrl && (
                         <div
-                          className="flex items-center gap-2 p-3 rounded-card"
+                          className="flex items-center gap-2 p-4 rounded-card"
                           style={{
                             background: 'rgba(6, 182, 212, 0.1)',
                             border: '1px solid rgba(6, 182, 212, 0.2)',
@@ -383,13 +382,13 @@ export function AchievementShareModal({
 
                       {/* Social platform buttons */}
                       <div>
-                        <p className="text-sm text-gray-400 mb-3">Share to</p>
+                        <p className="text-sm text-gray-400 mb-2">Share to</p>
                         <div className="grid grid-cols-5 gap-3">
                           {ACHIEVEMENT_SHARE_PLATFORMS.map((platform) => (
                             <button
                               key={platform.id}
                               onClick={() => handleSocialShare(platform.id)}
-                              className="flex flex-col items-center gap-2 p-3 rounded-card transition-all hover:scale-105"
+                              className="flex flex-col items-center gap-2 p-4 rounded-card transition-all hover:scale-105"
                               style={{
                                 background: `${platform.color}15`,
                                 border: `1px solid ${platform.color}40`,
@@ -411,7 +410,7 @@ export function AchievementShareModal({
                       </div>
 
                       {/* Additional actions */}
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-2 gap-4">
                         {/* Download image */}
                         <button
                           onClick={handleDownload}
@@ -451,7 +450,7 @@ export function AchievementShareModal({
                       <div>
                         <p className="text-sm text-gray-400 mb-2">Embed Code</p>
                         <div
-                          className="p-3 rounded-card font-mono text-xs text-gray-400 overflow-x-auto"
+                          className="p-4 rounded-card font-mono text-xs text-gray-400 overflow-x-auto"
                           style={{ background: 'rgba(0, 0, 0, 0.3)' }}
                         >
                           {`<iframe src="${shareUrl}/embed" width="400" height="300" frameborder="0"></iframe>`}

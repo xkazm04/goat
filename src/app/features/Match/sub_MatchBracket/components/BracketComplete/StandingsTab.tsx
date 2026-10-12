@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import { useMemo } from 'react';
 
 import { getRankStyle } from './rankStyles';
@@ -14,6 +15,15 @@ interface StandingsTabProps {
 export function StandingsTab({ ranking, bracket }: StandingsTabProps) {
   const ties = useMemo(() => computeRankingTies(bracket), [bracket]);
 
+  // Pre-compute whether each index is the first in its tie group
+  const isFirstInTieGroup = useMemo(() => {
+    return ties.map((info, i) => {
+      if (!info.isTied) return false;
+      if (i === 0) return true;
+      return ties[i - 1].displayRank !== info.displayRank;
+    });
+  }, [ties]);
+
   return (
     <div className="space-y-1 max-h-[320px] overflow-y-auto pr-1 custom-scrollbar">
       {ranking.map((participant, index) => {
@@ -22,6 +32,7 @@ export function StandingsTab({ ranking, bracket }: StandingsTabProps) {
         const isTied = tieInfo?.isTied ?? false;
         const style = getRankStyle(displayRank);
         const title = participant.item?.title || participant.item?.name || 'Unknown';
+        const isFirstTied = isFirstInTieGroup[index];
 
         return (
           <motion.div
@@ -29,7 +40,7 @@ export function StandingsTab({ ranking, bracket }: StandingsTabProps) {
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.03 }}
-            className={`flex items-center gap-2.5 px-3 py-2 rounded-card border ${style.bg} ${style.border}`}
+            className={`flex items-center gap-2.5 px-3 py-2 rounded-card border ${style.bg} ${style.border} ${isTied ? 'border-l-2 border-l-amber-500/40 bg-amber-500/[0.04]' : ''}`}
           >
             {/* Rank badge */}
             <div
@@ -41,10 +52,13 @@ export function StandingsTab({ ranking, bracket }: StandingsTabProps) {
 
             {/* Item image */}
             {participant.item?.image_url ? (
-              <img
+              <Image
                 src={participant.item.image_url}
                 alt={title}
+                width={32}
+                height={32}
                 className="w-8 h-8 rounded object-cover shrink-0"
+                unoptimized
               />
             ) : (
               <div className="w-8 h-8 rounded bg-slate-700 shrink-0" />
@@ -55,6 +69,11 @@ export function StandingsTab({ ranking, bracket }: StandingsTabProps) {
               <p className={`text-sm font-medium truncate ${displayRank <= 3 ? style.text : 'text-slate-200'}`}>
                 {title}
               </p>
+              {isFirstTied && (
+                <p className="text-2xs text-amber-500/60 mt-0.5">
+                  Tied &mdash; bracket did not compare these directly
+                </p>
+              )}
             </div>
 
             {/* Seed indicator */}

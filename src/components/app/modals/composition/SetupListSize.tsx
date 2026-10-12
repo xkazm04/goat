@@ -64,9 +64,9 @@ const SetupListSize = memo(function SetupListSize({
     <div className="mb-8">
       {/* Header with toggle */}
       <div className="flex items-center justify-between mb-4">
-        <label className="block text-sm font-medium text-slate-300">
+        <span className="block text-sm font-medium text-slate-300">
           List Size
-        </label>
+        </span>
         <motion.button
           className="flex items-center gap-1.5 px-2 py-1 rounded-control cursor-pointer"
           style={{

@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { TrendingUp, Award, BarChart3 } from "lucide-react";
 
 import { useItemStat } from "@/hooks/use-item-stats";
-import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import { useMotionCapabilities } from "@/hooks/use-motion-preference";
 import { DURATION } from "@/lib/animations/motion-presets";
 import { cn } from "@/lib/utils";
 
@@ -35,7 +35,7 @@ export function AverageRankingBadge({
   variant = "compact",
   className,
 }: AverageRankingBadgeProps) {
-  const reducedMotion = useReducedMotion();
+  const { allowTransitions } = useMotionCapabilities();
 
   const { data: itemStat, isLoading, isError } = useItemStat(itemId, {
     staleTime: 5 * 60 * 1000, // 5 minutes cache
@@ -67,7 +67,7 @@ export function AverageRankingBadge({
   if (variant === "compact") {
     return (
       <motion.div
-        initial={reducedMotion ? false : { opacity: 0, scale: 0.8 }}
+        initial={!allowTransitions ? false : { opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: DURATION.normal, delay: 0.1 }}
         className={cn(
@@ -96,7 +96,7 @@ export function AverageRankingBadge({
   // Full variant - show more details
   return (
     <motion.div
-      initial={reducedMotion ? false : { opacity: 0, scale: 0.8, y: -10 }}
+      initial={!allowTransitions ? false : { opacity: 0, scale: 0.8, y: -10 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ duration: DURATION.normal, delay: 0.1 }}
       className={cn(

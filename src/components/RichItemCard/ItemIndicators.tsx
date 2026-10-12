@@ -366,7 +366,7 @@ export const ItemIndicators = memo(function ItemIndicators({
       data-testid="item-indicators"
     >
       <AnimatePresence mode="popLayout">
-        {activeIndicators.map((indicator, index) => (
+        {activeIndicators.map((indicator, _index) => (
           <Indicator
             key={indicator.type}
             config={indicator}

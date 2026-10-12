@@ -64,8 +64,8 @@ export function ConsensusOverlay({ itemId, className }: ConsensusOverlayProps) {
     volatilityBgColor,
     badges,
     formattedMedianRank,
-    formattedVolatility,
-    formattedConfidence,
+    formattedVolatility: _formattedVolatility,
+    formattedConfidence: _formattedConfidence,
     shouldShowOverlay,
   } = useItemConsensusUI({ itemId });
 

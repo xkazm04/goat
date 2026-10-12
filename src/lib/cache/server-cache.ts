@@ -18,6 +18,16 @@ interface CacheEntry<T> {
 const store = new Map<string, CacheEntry<unknown>>();
 
 /**
+ * One in-flight fetch per key. Without this, N concurrent misses on a cold or
+ * just-expired key ran N fetchers against Supabase (a stampede on exactly the
+ * keys this cache exists to protect — every request for a category's groups
+ * arriving in the same tick after a restart or a TTL expiry). Joiners share the
+ * first flight's promise, including its failure; the slot is cleared when the
+ * flight settles so the next miss retries rather than re-joining a dead promise.
+ */
+const inFlight = new Map<string, Promise<unknown>>();
+
+/**
  * Fetch a value from cache or execute the fetcher and cache the result.
  *
  * @param key   Unique cache key (e.g. "groups:movies" or "featured-lists")
@@ -44,11 +54,29 @@ export async function cachedFetch<T>(
     return existing.data;
   }
 
-  const data = await fetcher();
+  const pending = inFlight.get(key) as Promise<T> | undefined;
+  if (pending) {
+    return pending;
+  }
 
-  store.set(key, { data, expiresAt: now + ttlMs });
+  const flight = fetcher()
+    .then((data) => {
+      store.set(key, { data, expiresAt: Date.now() + ttlMs });
+      return data;
+    })
+    .finally(() => {
+      inFlight.delete(key);
+    });
 
-  return data;
+  inFlight.set(key, flight);
+  return flight;
+}
+
+/**
+ * Number of keys with a fetch currently in flight (observability / tests).
+ */
+export function getInFlightCount(): number {
+  return inFlight.size;
 }
 
 /**
@@ -77,6 +105,7 @@ export function invalidateCacheByPrefix(prefix: string): void {
  */
 export function clearServerCache(): void {
   store.clear();
+  inFlight.clear();
 }
 
 // Periodic cleanup of expired entries to prevent memory leaks.

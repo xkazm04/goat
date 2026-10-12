@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   CATEGORIES,
@@ -10,9 +10,20 @@ import {
   categoryHasSubcategories,
 } from "@/lib/config/category-config";
 
+
 import SetupCategory from "./SetupCategory";
 import SetupListSize from "./SetupListSize";
 import SetupTimePeriod from "./SetupTimePeriod";
+import { ValidatedField } from "./ValidatedField";
+
+import type { FieldValidationState } from "@/hooks/use-field-validation";
+import type { ListIntent } from "@/types/list-intent";
+
+interface FieldValidation {
+  getFieldState: (field: keyof ListIntent) => FieldValidationState;
+  getBorderClass: (field: keyof ListIntent) => string;
+  touchField: (field: keyof ListIntent) => void;
+}
 
 interface CompositionModalLeftContentProps {
   selectedCategory: string;
@@ -34,6 +45,10 @@ interface CompositionModalLeftContentProps {
     secondary: string;
     accent: string;
   };
+  /** Field validation state — when omitted, no validation indicators shown */
+  validation?: FieldValidation;
+  /** Whether to auto-focus the title input on mount */
+  autoFocusTitle?: boolean;
 }
 
 // Use centralized category configuration
@@ -60,17 +75,33 @@ export function CompositionModalLeftContent({
   setHierarchy,
   customName,
   setCustomName,
-  color
+  color,
+  validation,
+  autoFocusTitle,
 }: CompositionModalLeftContentProps) {
   const [activeHierarchy, setActiveHierarchy] = useState(hierarchy);
+  const titleInputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-focus title input when requested
+  useEffect(() => {
+    if (autoFocusTitle && titleInputRef.current) {
+      // Small delay to let the modal animation finish
+      const timer = setTimeout(() => {
+        titleInputRef.current?.focus();
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [autoFocusTitle]);
 
   const handleHierarchyChange = (newHierarchy: string) => {
     setActiveHierarchy(newHierarchy);
     setHierarchy(newHierarchy);
+    validation?.touchField("size");
   };
 
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category);
+    validation?.touchField("category");
     // Reset subcategory when changing main category using centralized config
     if (categoryHasSubcategories(category) && setSelectedSubcategory) {
       const defaultSub = getDefaultSubcategory(category);
@@ -79,6 +110,41 @@ export function CompositionModalLeftContent({
       }
     }
   };
+
+  const handleCustomNameChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setCustomName(e.target.value);
+    },
+    [setCustomName]
+  );
+
+  const handleCustomNameBlur = useCallback(() => {
+    validation?.touchField("title");
+  }, [validation]);
+
+  const handleTimePeriodChange = useCallback(
+    (period: "all-time" | "decade" | "year") => {
+      setTimePeriod(period);
+      validation?.touchField("timePeriod");
+    },
+    [setTimePeriod, validation]
+  );
+
+  const handleDecadeChange = useCallback(
+    (decade: number) => {
+      setSelectedDecade(decade);
+      validation?.touchField("selectedDecade");
+    },
+    [setSelectedDecade, validation]
+  );
+
+  const handleYearChange = useCallback(
+    (year: number) => {
+      setSelectedYear(year);
+      validation?.touchField("selectedYear");
+    },
+    [setSelectedYear, validation]
+  );
 
   // Get subcategories dynamically from config
   const currentSubcategories = getSubcategories(selectedCategory);
@@ -143,40 +209,51 @@ export function CompositionModalLeftContent({
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.2 }}
       >
-        <label className="block text-sm font-medium text-slate-300 mb-3">
-          Custom List Name
-        </label>
-        <div className="relative">
-          <input
-            type="text"
-            value={customName}
-            onChange={(e) => setCustomName(e.target.value)}
-            placeholder="Enter your custom ranking name..."
-            className="w-full px-4 py-3 rounded-xl text-slate-200 transition-all duration-200 focus:outline-hidden placeholder-slate-500 backdrop-blur-xs"
-            style={{
-              background: `
-                linear-gradient(135deg, 
-                  rgba(30, 41, 59, 0.8) 0%,
-                  rgba(51, 65, 85, 0.9) 100%
-                )
-              `,
-              border: `2px solid ${color.primary}30`,
-              boxShadow: `
-                0 4px 20px rgba(0, 0, 0, 0.2),
-                inset 0 1px 0 rgba(255, 255, 255, 0.1),
-                inset 0 -1px 0 rgba(0, 0, 0, 0.2)
-              `
-            }}
-          />
-          {/* Glow effect on focus */}
-          <div 
-            className="absolute inset-0 rounded-xl opacity-0 transition-opacity duration-200 pointer-events-none peer-focus:opacity-100"
-            style={{
-              background: `linear-gradient(135deg, ${color.primary}20, ${color.secondary}20)`,
-              filter: 'blur(8px)'
-            }}
-          />
-        </div>
+        <ValidatedField
+          fieldState={validation?.getFieldState("title") ?? { status: "untouched", errors: [] }}
+          borderClass={validation?.getBorderClass("title") ?? "border-l-2 border-l-slate-600"}
+        >
+          <label htmlFor="custom-list-name" className="block text-sm font-medium text-slate-300 mb-3">
+            Custom List Name
+          </label>
+          <div className="relative">
+            <input
+              id="custom-list-name"
+              ref={titleInputRef}
+              type="text"
+              value={customName}
+              onChange={handleCustomNameChange}
+              onBlur={handleCustomNameBlur}
+              placeholder="Enter your custom ranking name..."
+              className="w-full px-4 py-3 rounded-xl text-slate-200 transition-all duration-200 focus:outline-hidden placeholder-slate-500 backdrop-blur-xs"
+              maxLength={100}
+              aria-label="Custom list name"
+              aria-invalid={validation?.getFieldState("title").status === "invalid" || undefined}
+              style={{
+                background: `
+                  linear-gradient(135deg,
+                    rgba(30, 41, 59, 0.8) 0%,
+                    rgba(51, 65, 85, 0.9) 100%
+                  )
+                `,
+                border: `2px solid ${color.primary}30`,
+                boxShadow: `
+                  0 4px 20px rgba(0, 0, 0, 0.2),
+                  inset 0 1px 0 rgba(255, 255, 255, 0.1),
+                  inset 0 -1px 0 rgba(0, 0, 0, 0.2)
+                `
+              }}
+            />
+            {/* Glow effect on focus */}
+            <div
+              className="absolute inset-0 rounded-xl opacity-0 transition-opacity duration-200 pointer-events-none peer-focus:opacity-100"
+              style={{
+                background: `linear-gradient(135deg, ${color.primary}20, ${color.secondary}20)`,
+                filter: 'blur(8px)'
+              }}
+            />
+          </div>
+        </ValidatedField>
       </motion.div>
 
       {/* Category Selection with enhanced styling */}
@@ -185,15 +262,20 @@ export function CompositionModalLeftContent({
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.3 }}
       >
-        <SetupCategory
-          categories={categories}
-          handleCategoryChange={handleCategoryChange}
-          selectedCategory={selectedCategory}
-          subcategories={currentSubcategories}
-          selectedSubcategory={selectedSubcategory}
-          setSelectedSubcategory={setSelectedSubcategory}
-          color={color}
-        />
+        <ValidatedField
+          fieldState={validation?.getFieldState("category") ?? { status: "untouched", errors: [] }}
+          borderClass={validation?.getBorderClass("category") ?? "border-l-2 border-l-slate-600"}
+        >
+          <SetupCategory
+            categories={categories}
+            handleCategoryChange={handleCategoryChange}
+            selectedCategory={selectedCategory}
+            subcategories={currentSubcategories}
+            selectedSubcategory={selectedSubcategory}
+            setSelectedSubcategory={setSelectedSubcategory}
+            color={color}
+          />
+        </ValidatedField>
       </motion.div>
 
       {/* Time Period with enhanced styling */}
@@ -202,15 +284,20 @@ export function CompositionModalLeftContent({
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.4 }}
       >
-        <SetupTimePeriod
-          timePeriod={timePeriod}
-          setTimePeriod={setTimePeriod}
-          selectedDecade={selectedDecade}
-          setSelectedDecade={setSelectedDecade}
-          selectedYear={selectedYear}
-          setSelectedYear={setSelectedYear}
-          color={color}
-        />
+        <ValidatedField
+          fieldState={validation?.getFieldState("timePeriod") ?? { status: "untouched", errors: [] }}
+          borderClass={validation?.getBorderClass("timePeriod") ?? "border-l-2 border-l-slate-600"}
+        >
+          <SetupTimePeriod
+            timePeriod={timePeriod}
+            setTimePeriod={handleTimePeriodChange}
+            selectedDecade={selectedDecade}
+            setSelectedDecade={handleDecadeChange}
+            selectedYear={selectedYear}
+            setSelectedYear={handleYearChange}
+            color={color}
+          />
+        </ValidatedField>
       </motion.div>
 
       {/* List Size with enhanced styling and visualizer */}
@@ -219,14 +306,19 @@ export function CompositionModalLeftContent({
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.5 }}
       >
-        <SetupListSize
-          hierarchyOptions={hierarchyOptions}
-          handleHierarchyChange={handleHierarchyChange}
-          activeHierarchy={activeHierarchy}
-          color={color}
-          category={selectedCategory}
-          subcategory={selectedSubcategory}
-        />
+        <ValidatedField
+          fieldState={validation?.getFieldState("size") ?? { status: "untouched", errors: [] }}
+          borderClass={validation?.getBorderClass("size") ?? "border-l-2 border-l-slate-600"}
+        >
+          <SetupListSize
+            hierarchyOptions={hierarchyOptions}
+            handleHierarchyChange={handleHierarchyChange}
+            activeHierarchy={activeHierarchy}
+            color={color}
+            category={selectedCategory}
+            subcategory={selectedSubcategory}
+          />
+        </ValidatedField>
       </motion.div>
 
       {/* Bottom gradient fade */}

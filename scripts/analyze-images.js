@@ -4,14 +4,18 @@
  * Usage: node scripts/analyze-images.js
  */
 
-const API_BASE = process.env.API_BASE || 'http://localhost:3001';
+// `next dev` serves 3000; the old default (3001) pointed at a port nothing listens on.
+const { fetchAllItems } = require('./api-items');
+
+const API_BASE = process.env.API_BASE || 'http://localhost:3000';
 
 async function main() {
   console.log('Fetching items from', API_BASE);
 
-  const response = await fetch(`${API_BASE}/api/top/items?limit=2000`);
-  const data = await response.json();
-  const items = data.items || [];
+  // The route clamps limit to 200; walk every page (scripts/api-items.js).
+  const { items, total, pages } = await fetchAllItems(API_BASE);
+  const data = { total };
+  console.log(`Fetched ${items.length} items in ${pages} page(s)`);
 
   const domains = {};
   let noImage = 0, hasImage = 0;
@@ -51,4 +55,9 @@ async function main() {
   });
 }
 
-main().catch(console.error);
+main().catch((err) => {
+  // A failed run must exit non-zero: the terminal reads the exit code, not the
+  // stack trace. `.catch(console.error)` printed the error and exited 0.
+  console.error(err);
+  process.exit(1);
+});

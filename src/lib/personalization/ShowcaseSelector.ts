@@ -11,6 +11,8 @@ import {
   PersonalizationConfig,
   SelectionReason,
   InterestCategory,
+  ShowcaseSlot,
+  AllowedSelectionReason,
 } from './types';
 
 /**
@@ -26,17 +28,54 @@ export type SelectionStrategy =
 /**
  * Showcase item position in layout
  */
-export interface ShowcasePosition {
-  slot: 'hero' | 'featured' | 'secondary' | 'discovery';
+export interface ShowcasePosition<S extends ShowcaseSlot = ShowcaseSlot> {
+  slot: S;
   index: number;
   prominence: number; // 0-100
 }
 
 /**
- * Selected showcase item with position
+ * Selected showcase item with slot-narrowed selectionReason.
+ * The conditional type ensures hero slots never carry 'exploration'
+ * and discovery slots never carry 'popular'.
  */
-export interface SelectedShowcaseItem<T> extends PersonalizedShowcaseItem<T> {
-  position: ShowcasePosition;
+export interface SelectedShowcaseItem<T, S extends ShowcaseSlot = ShowcaseSlot> extends Omit<PersonalizedShowcaseItem<T>, 'selectionReason'> {
+  position: ShowcasePosition<S>;
+  selectionReason: AllowedSelectionReason<S>;
+}
+
+/**
+ * Fallback reasons per slot when the original reason is disallowed.
+ */
+const SLOT_FALLBACK_REASONS: Record<ShowcaseSlot, SelectionReason> = {
+  hero: 'interest_match',
+  featured: 'default',
+  secondary: 'default',
+  discovery: 'exploration',
+};
+
+/**
+ * Selection reasons disallowed per slot.
+ */
+const SLOT_DISALLOWED_REASONS: Record<ShowcaseSlot, ReadonlySet<SelectionReason>> = {
+  hero: new Set<SelectionReason>(['exploration']),
+  featured: new Set<SelectionReason>(),
+  secondary: new Set<SelectionReason>(),
+  discovery: new Set<SelectionReason>(['popular']),
+};
+
+/**
+ * Coerce a SelectionReason to a slot-allowed reason at runtime.
+ * Returns the original reason if allowed, otherwise the slot's fallback.
+ */
+function coerceReasonForSlot<S extends ShowcaseSlot>(
+  slot: S,
+  reason: SelectionReason
+): AllowedSelectionReason<S> {
+  if (SLOT_DISALLOWED_REASONS[slot].has(reason)) {
+    return SLOT_FALLBACK_REASONS[slot] as AllowedSelectionReason<S>;
+  }
+  return reason as AllowedSelectionReason<S>;
 }
 
 /**
@@ -123,7 +162,7 @@ export class ShowcaseSelector<T extends ContentItem = ContentItem> {
    * Select items for the showcase
    */
   selectForShowcase(items: T[]): SelectedShowcaseItem<T>[] {
-    const totalSlots =
+    const _totalSlots =
       this.layout.heroSlots +
       this.layout.featuredSlots +
       this.layout.secondarySlots +
@@ -135,14 +174,16 @@ export class ShowcaseSelector<T extends ContentItem = ContentItem> {
     // Sort by relevance
     scored.sort((a, b) => b.relevanceScore - a.relevanceScore);
 
-    // Assign positions
+    // Assign positions with slot-aware reason coercion
     const selected: SelectedShowcaseItem<T>[] = [];
     let itemIndex = 0;
 
     // Hero slots (highest prominence)
     for (let i = 0; i < this.layout.heroSlots && itemIndex < scored.length; i++) {
+      const item = scored[itemIndex];
       selected.push({
-        ...scored[itemIndex],
+        ...item,
+        selectionReason: coerceReasonForSlot('hero', item.selectionReason),
         position: { slot: 'hero', index: i, prominence: 100 },
       });
       itemIndex++;
@@ -150,8 +191,10 @@ export class ShowcaseSelector<T extends ContentItem = ContentItem> {
 
     // Featured slots (high prominence)
     for (let i = 0; i < this.layout.featuredSlots && itemIndex < scored.length; i++) {
+      const item = scored[itemIndex];
       selected.push({
-        ...scored[itemIndex],
+        ...item,
+        selectionReason: coerceReasonForSlot('featured', item.selectionReason),
         position: { slot: 'featured', index: i, prominence: 80 },
       });
       itemIndex++;
@@ -159,8 +202,10 @@ export class ShowcaseSelector<T extends ContentItem = ContentItem> {
 
     // Secondary slots (medium prominence)
     for (let i = 0; i < this.layout.secondarySlots && itemIndex < scored.length; i++) {
+      const item = scored[itemIndex];
       selected.push({
-        ...scored[itemIndex],
+        ...item,
+        selectionReason: coerceReasonForSlot('secondary', item.selectionReason),
         position: { slot: 'secondary', index: i, prominence: 50 },
       });
       itemIndex++;
@@ -169,8 +214,10 @@ export class ShowcaseSelector<T extends ContentItem = ContentItem> {
     // Discovery slots (exploration/diversity)
     const discoveryItems = this.selectDiscoveryItems(scored, itemIndex);
     for (let i = 0; i < this.layout.discoverySlots && i < discoveryItems.length; i++) {
+      const item = discoveryItems[i];
       selected.push({
-        ...discoveryItems[i],
+        ...item,
+        selectionReason: coerceReasonForSlot('discovery', item.selectionReason),
         position: { slot: 'discovery', index: i, prominence: 30 },
       });
     }
@@ -327,21 +374,21 @@ export class ShowcaseSelector<T extends ContentItem = ContentItem> {
   }
 
   /**
-   * Get items for a specific slot type
+   * Get items for a specific slot type, with narrowed SelectionReason.
    */
-  getSlotItems(
+  getSlotItems<S extends ShowcaseSlot>(
     selected: SelectedShowcaseItem<T>[],
-    slot: ShowcasePosition['slot']
-  ): SelectedShowcaseItem<T>[] {
+    slot: S
+  ): SelectedShowcaseItem<T, S>[] {
     return selected
-      .filter((item) => item.position.slot === slot)
+      .filter((item): item is SelectedShowcaseItem<T, S> => item.position.slot === slot)
       .sort((a, b) => a.position.index - b.position.index);
   }
 
   /**
-   * Get hero item
+   * Get hero item (selectionReason is narrowed to exclude 'exploration')
    */
-  getHeroItem(selected: SelectedShowcaseItem<T>[]): SelectedShowcaseItem<T> | null {
+  getHeroItem(selected: SelectedShowcaseItem<T>[]): SelectedShowcaseItem<T, 'hero'> | null {
     const heroes = this.getSlotItems(selected, 'hero');
     return heroes[0] || null;
   }
@@ -349,14 +396,14 @@ export class ShowcaseSelector<T extends ContentItem = ContentItem> {
   /**
    * Get featured items
    */
-  getFeaturedItems(selected: SelectedShowcaseItem<T>[]): SelectedShowcaseItem<T>[] {
+  getFeaturedItems(selected: SelectedShowcaseItem<T>[]): SelectedShowcaseItem<T, 'featured'>[] {
     return this.getSlotItems(selected, 'featured');
   }
 
   /**
-   * Get discovery items
+   * Get discovery items (selectionReason is narrowed to exclude 'popular')
    */
-  getDiscoveryItems(selected: SelectedShowcaseItem<T>[]): SelectedShowcaseItem<T>[] {
+  getDiscoveryItems(selected: SelectedShowcaseItem<T>[]): SelectedShowcaseItem<T, 'discovery'>[] {
     return this.getSlotItems(selected, 'discovery');
   }
 

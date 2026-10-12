@@ -9,8 +9,9 @@
  */
 
 import { motion, AnimatePresence, useSpring, useTransform } from 'framer-motion';
-import { memo, useState, useEffect, useRef } from 'react';
+import { memo, useEffect } from 'react';
 
+import { useMotionPreference } from '@/hooks/use-motion-preference';
 import { DURATION } from '@/lib/animations/motion-presets';
 import { mapCategoryToTheme, type ThemeKey } from '@/lib/criteria/theme-mapping';
 import { cn } from '@/lib/utils';
@@ -19,6 +20,18 @@ import { cn } from '@/lib/utils';
 const ANIMATION_DURATION = 0.2;
 const SPRING_CONFIG = { stiffness: 300, damping: 30 };
 const THRESHOLD_ANIMATION_DURATION = 0.4;
+
+/**
+ * Reduced motion is read through the 3-tier preference hook, which is
+ * SSR-safe (useSyncExternalStore with a server snapshot). The previous
+ * `window.matchMedia` read DURING RENDER produced different `initial` props on
+ * the server and on a reduced-motion client — a hydration mismatch, the same
+ * class the findings ledger records for AnimatedCounter / SuccessCelebration.
+ * Behaviour is unchanged: anything but the full tier suppresses motion here.
+ */
+function useReducedMotion(): boolean {
+  return useMotionPreference().tier !== 'full';
+}
 
 // Score quality thresholds
 const THRESHOLDS = {
@@ -60,7 +73,10 @@ function getScoreQuality(score: number): keyof typeof QUALITY_LABELS {
 export interface ScorePreviewOverlayProps {
   /** Current weighted score (0-100) */
   score: number;
-  /** Previous score for threshold crossing detection */
+  /**
+   * @deprecated No longer read. The threshold pulse is keyed on the quality
+   * band of `score`, so a crossing is detected from consecutive renders.
+   */
   previousScore?: number;
   /** Category for theme detection */
   category?: string;
@@ -91,7 +107,6 @@ export interface ScorePreviewOverlayProps {
  */
 export const ScorePreviewOverlay = memo(function ScorePreviewOverlay({
   score,
-  previousScore,
   category,
   isActive = true,
   size = 'md',
@@ -104,28 +119,9 @@ export const ScorePreviewOverlay = memo(function ScorePreviewOverlay({
   const quality = getScoreQuality(score);
   const qualityInfo = QUALITY_LABELS[quality];
 
-  // Track threshold crossing
-  const [thresholdPulse, setThresholdPulse] = useState(false);
-  const prevScoreRef = useRef(previousScore ?? score);
-
   // Spring animation for smooth score updates
   const springScore = useSpring(score, SPRING_CONFIG);
   const displayScore = useTransform(springScore, (v) => Math.round(v));
-
-  // Check for threshold crossing
-  useEffect(() => {
-    if (!animateThresholdCrossing) return;
-
-    const prevQuality = getScoreQuality(prevScoreRef.current);
-    const currentQuality = getScoreQuality(score);
-
-    if (prevQuality !== currentQuality) {
-      setThresholdPulse(true);
-      setTimeout(() => setThresholdPulse(false), THRESHOLD_ANIMATION_DURATION * 1000);
-    }
-
-    prevScoreRef.current = score;
-  }, [score, animateThresholdCrossing]);
 
   // Update spring when score changes
   useEffect(() => {
@@ -139,10 +135,7 @@ export const ScorePreviewOverlay = memo(function ScorePreviewOverlay({
     lg: { width: 160, height: 64, fontSize: 'text-base', barHeight: 'h-3' },
   }[size];
 
-  // Check for reduced motion preference
-  const prefersReducedMotion =
-    typeof window !== 'undefined' &&
-    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  const prefersReducedMotion = useReducedMotion();
 
   return (
     <AnimatePresence>
@@ -164,19 +157,25 @@ export const ScorePreviewOverlay = memo(function ScorePreviewOverlay({
           exit={{ opacity: 0, scale: 0.9, y: 10 }}
           transition={{ duration: ANIMATION_DURATION }}
         >
-          {/* Threshold crossing pulse effect */}
-          <AnimatePresence>
-            {thresholdPulse && !prefersReducedMotion && (
+          {/* Threshold crossing pulse. Keyed on the quality band: a crossing
+              mounts a fresh element that plays 0.5 -> 0 once; `initial={false}`
+              keeps the first mount silent. No state, no timer, nothing to clear
+              on unmount — the previous shape set state from an effect and left
+              a 400 ms setTimeout running past unmount. */}
+          {animateThresholdCrossing && !prefersReducedMotion && (
+            <AnimatePresence initial={false}>
               <motion.div
-                className="absolute inset-0 rounded-card"
+                key={quality}
+                className="absolute inset-0 rounded-card pointer-events-none"
                 style={{ backgroundColor: qualityInfo.color }}
                 initial={{ opacity: 0.5 }}
                 animate={{ opacity: 0 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: THRESHOLD_ANIMATION_DURATION }}
+                data-testid="score-threshold-pulse"
               />
-            )}
-          </AnimatePresence>
+            </AnimatePresence>
+          )}
 
           <div className="relative p-2 flex flex-col gap-1">
             {/* Score display */}
@@ -256,12 +255,7 @@ export const MiniThemedPreview = memo(function MiniThemedPreview({
   className,
 }: MiniThemedPreviewProps) {
   const theme = mapCategoryToTheme(category);
-
-  // Reduced motion check
-  const prefersReducedMotion =
-    typeof window !== 'undefined' &&
-    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-
+  const prefersReducedMotion = useReducedMotion();
   const shouldAnimate = animated && !prefersReducedMotion;
 
   // Theme-specific mini previews

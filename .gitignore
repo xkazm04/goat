@@ -64,4 +64,15 @@ DEV_ARTIFACTS_REPORT.md
 /.claude/rules/ai-registry-access.md
 /.claude/rules/ai-registry-software-engineering.md
 /.claude/rules/ai-registry-localization.md
+/.claude/skills/architect
+/.claude/skills/conform
+/.claude/skills/consult
+/.claude/skills/explorer
+/.claude/skills/research
+/.claude/skills/ship-loop
+/.claude/skills/motionize
+/.claude/skills/npm-updates
+/.claude/skills/tiger
+/.claude/skills/uat
+/.claude/rules/ai-registry-media-generation.md
 # END ai-registry linked skills

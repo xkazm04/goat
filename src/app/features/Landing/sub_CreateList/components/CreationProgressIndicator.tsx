@@ -61,7 +61,7 @@ export function CreationProgressIndicator({
             {STEPS.map((step, index) => {
               const isCompleted = index < currentStepIndex;
               const isCurrent = index === currentStepIndex;
-              const isPending = index > currentStepIndex;
+              const _isPending = index > currentStepIndex;
 
               return (
                 <motion.div

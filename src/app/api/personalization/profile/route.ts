@@ -12,6 +12,16 @@ const profileCache = new Map<string, {
 }>();
 
 /**
+ * Upper bound on one stored profile, in serialized bytes. The store is process
+ * memory keyed by a caller-chosen userId, so without a bound one unauthenticated
+ * POST loop is a memory-exhaustion path. 64 KiB is ~30x the largest profile the
+ * client engine produces (interests + history + preferences). Not exported:
+ * Next rejects non-handler exports from a route module at build time; the 413
+ * body carries the value, and route.test.ts pins it there.
+ */
+const MAX_PROFILE_BYTES = 64 * 1024;
+
+/**
  * GET /api/personalization/profile
  * Get user profile data (server-side fallback for new users)
  */
@@ -68,10 +78,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!profile) {
+    if (!profile || typeof profile !== 'object') {
       return NextResponse.json(
         { error: 'profile is required' },
         { status: 400 }
+      );
+    }
+
+    const bytes = Buffer.byteLength(JSON.stringify(profile), 'utf8');
+    if (bytes > MAX_PROFILE_BYTES) {
+      return NextResponse.json(
+        { error: `profile exceeds ${MAX_PROFILE_BYTES} bytes`, bytes, max: MAX_PROFILE_BYTES },
+        { status: 413 }
       );
     }
 

@@ -1,23 +1,26 @@
-// Import dev CSS variable contract check (development only)
-if (process.env.NODE_ENV === 'development') {
-  import('./dev-css-var-check').then(mod => mod.checkCssVariableContract());
-}
 import './globals.css';
 import { Inter, Space_Grotesk } from 'next/font/google';
 
 import { AuthHeader, Toaster } from '@/components/auth';
-import { PageTransition } from '@/components/page-transition';
 import { ThemeProvider } from '@/components/theme/theme-provider';
 import { DeferredProviders } from '@/providers/DeferredProviders';
 import { QueryProvider } from '@/providers/query-provider';
 
+import { DevCssVarCheck } from './dev-css-var-check';
+import { V1Chrome } from './v1-chrome';
+
 import type { Metadata } from 'next';
 
 const inter = Inter({ subsets: ['latin'] });
+// Exposed as --font-space-grotesk (not --font-grotesk: that name is the
+// Tailwind theme key that `font-grotesk` compiles to, and it reads THIS
+// variable — see the @theme inline block in globals.css). Weights cover every
+// `font-grotesk` call site: medium/unweighted (400/500) as well as
+// semibold/bold/black, so no heading is snapped to a heavier face.
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
-  weight: ['600', '700'],
-  variable: '--font-grotesk',
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-space-grotesk',
 });
 
 const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://goat.app';
@@ -39,22 +42,27 @@ export const metadata: Metadata = {
     siteName: 'G.O.A.T.',
     title: 'G.O.A.T. - Greatest of All Time',
     description: 'Create, rank, and share your definitive lists. Discover the Greatest of All Time in movies, music, games, and more.',
+    // Every asset path here must exist under public/ — src/app/layout-assets.test.ts
+    // checks that, and that the declared size is the PNG's real size. The
+    // previous og-default.png / favicon set was never committed, so crawlers
+    // and browsers 404'd on all four. goat.png is the artwork the repo has.
     images: [
       {
-        url: `${baseUrl}/og-default.png`,
-        width: 1200,
-        height: 630,
+        url: `${baseUrl}/goat.png`,
+        width: 896,
+        height: 896,
         alt: 'G.O.A.T. - Greatest of All Time Rankings',
       },
     ],
   },
   twitter: {
-    card: 'summary_large_image',
+    // A square card image; `summary_large_image` expects a ~2:1 crop.
+    card: 'summary',
     title: 'G.O.A.T. - Greatest of All Time',
     description: 'Create, rank, and share your definitive lists.',
     site: '@goat_rankings',
     creator: '@goat_rankings',
-    images: [`${baseUrl}/og-default.png`],
+    images: [`${baseUrl}/goat.png`],
   },
   robots: {
     index: true,
@@ -68,9 +76,8 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: '/favicon.ico',
-    shortcut: '/favicon-16x16.png',
-    apple: '/apple-touch-icon.png',
+    icon: '/goat.png',
+    apple: '/goat.png',
   },
 };
 
@@ -103,16 +110,13 @@ export default function RootLayout({
                   >
                     Skip to main content
                   </a>
-                  <div className="min-h-screen bg-linear-to-b from-gray-900 to-gray-800/95 text-gray-100 w-full flex flex-col">
-                    {/* Auth header -- sign in button or user menu */}
-                    <div className="fixed top-4 right-4 z-toast">
-                      <AuthHeader />
-                    </div>
-                    <main id="main-content" className="gradient-to-b" tabIndex={-1}>
-                      <PageTransition>{children}</PageTransition>
-                    </main>
-                  </div>
+                  {/* v1 chrome everywhere except /v2, which has its own shell */}
+                  <V1Chrome header={<AuthHeader />}>{children}</V1Chrome>
                   <Toaster />
+                  {/* Design-token contract check: a client component, so it
+                      actually runs in a browser (this file is a server
+                      component and never does). Renders nothing; dev only. */}
+                  {process.env.NODE_ENV === 'development' ? <DevCssVarCheck /> : null}
               </DeferredProviders>
             </QueryProvider>
           </ThemeProvider>

@@ -76,9 +76,9 @@ export const FormatSwitcher = memo(function FormatSwitcher({
 
   return (
     <div className="w-full">
-      <label className="block text-sm font-medium text-slate-300 mb-3">
+      <span className="block text-sm font-medium text-slate-300 mb-3">
         Ranking Format
-      </label>
+      </span>
 
       <div className="grid grid-cols-3 gap-2">
         {formats.map(([format, config]) => {

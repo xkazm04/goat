@@ -66,6 +66,13 @@ export function fuzzyMatch(pattern: string, text: string): FuzzyMatchResult {
   const wordMatchedIndexSet = new Set<number>();
   const claimedWordStarts = new Set<number>();
 
+  const wordEntries: Array<{ word: string; start: number }> = [];
+  const wordRegex = /\S+/g;
+  let wordExec: RegExpExecArray | null;
+  while ((wordExec = wordRegex.exec(tLower)) !== null) {
+    wordEntries.push({ word: wordExec[0], start: wordExec.index });
+  }
+
   for (const pw of patternWords) {
     for (const { text, start } of wordTokens) {
       if (text.startsWith(pw) && !claimedWordStarts.has(start)) {
@@ -210,7 +217,7 @@ export function recencyBoost(
   if (isNaN(date.getTime())) return 0;
 
   const now = Date.now();
-  const age = now - date.getTime();
+  const age = Math.max(0, now - date.getTime());
   const ageDays = age / (1000 * 60 * 60 * 24);
 
   // Exponential decay

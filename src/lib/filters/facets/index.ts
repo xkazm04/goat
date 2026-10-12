@@ -1,6 +1,11 @@
 /**
  * Faceted Navigation Module — re-exports from @/lib/faceted-search
  * @deprecated Import directly from '@/lib/faceted-search' instead.
+ *
+ * This directory once held a full second copy of the module (9 files, 3,486
+ * lines) that this shim never imported; the copies had already diverged
+ * (one got the hierarchical path-key fix, the other the design tokens). The
+ * copy was deleted 2026-09-05. Only this shim remains.
  */
 export {
   // Types

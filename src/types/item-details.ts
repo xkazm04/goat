@@ -4,6 +4,8 @@
  * Types for the rich item detail inspector feature.
  */
 
+import type { RankingActivityRow } from './database';
+
 /**
  * Item Detail Response
  * Contains all available metadata, related items, and community ranking data
@@ -93,7 +95,8 @@ export interface ExternalLinkData {
  */
 export interface ActivityEvent {
   id: string;
-  action: 'assign' | 'move' | 'swap' | 'remove' | 'rank_change';
+  /** The ranking_activities.action vocabulary — one declaration, in database.ts. */
+  action: RankingActivityRow['action'];
   position_before: number | null;
   position_after: number | null;
   list_title: string | null;

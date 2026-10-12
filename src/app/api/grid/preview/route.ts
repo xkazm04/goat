@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
     const body: GridPreviewRequest = await request.json();
 
     const {
-      itemId,
+      itemId: _itemId,
       currentPosition,
       velocity,
       gridConfig,

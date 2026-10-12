@@ -8,9 +8,9 @@ interface CompletionModalHeaderProps {
   listTitle: string;
 }
 
-export function CompletionModalHeader({ 
-  onClose, 
-  listTitle 
+export function CompletionModalHeader({
+  onClose,
+  listTitle: _listTitle
 }: CompletionModalHeaderProps) {
   return (
     <div 
@@ -128,7 +128,7 @@ export function CompletionModalHeader({
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.3 }}
           >
-            You've completed your ranking list!
+            You&apos;ve completed your ranking list!
           </motion.p>
         </div>
       </div>

@@ -64,9 +64,12 @@ export function CriteriaTemplateSection({
 
   return (
     <div className={cn('w-full', className)}>
-      {/* Section Header - Clickable to expand/collapse */}
-      <motion.button
-        onClick={handleToggleExpand}
+      {/* Section header. The row is a plain container, NOT a button: the clear
+          control below is a control of its own, and a `button` may not contain
+          an interactive descendant — the browser reparents such markup, so the
+          tree a click is resolved against stops matching the source. The two
+          controls are therefore siblings inside the row. */}
+      <motion.div
         className={cn(
           'w-full flex items-center justify-between p-4 rounded-card transition-all duration-200',
           'bg-slate-800/30 hover:bg-slate-800/50 border border-slate-700/50',
@@ -75,7 +78,13 @@ export function CriteriaTemplateSection({
         whileHover={{ scale: 1.005 }}
         whileTap={{ scale: 0.995 }}
       >
-        <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={handleToggleExpand}
+          aria-expanded={isExpanded}
+          className="flex flex-1 items-center gap-3 text-left rounded-control focus-ring"
+          data-testid="criteria-section-toggle"
+        >
           <div className="p-2 rounded-control bg-purple-500/10 transition-transform duration-200 group-hover:scale-105">
             <Sparkles className="w-4 h-4 text-purple-400" />
           </div>
@@ -98,29 +107,28 @@ export function CriteriaTemplateSection({
               </p>
             )}
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {selectedProfile && (
-            <motion.button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleSelectProfile(null);
-              }}
-              className="p-1 rounded-control hover:bg-slate-700/50 text-slate-400 hover:text-white transition-colors"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-            >
-              <X className="w-3.5 h-3.5" />
-            </motion.button>
-          )}
           <motion.div
+            className="ml-auto"
             animate={{ rotate: isExpanded ? 180 : 0 }}
             transition={{ duration: DURATION.fast }}
           >
             <ChevronDown className="w-5 h-5 text-slate-400" />
           </motion.div>
-        </div>
-      </motion.button>
+        </button>
+        {selectedProfile && (
+          <motion.button
+            type="button"
+            onClick={() => handleSelectProfile(null)}
+            aria-label="Clear rating criteria"
+            className="ml-2 p-1 rounded-control hover:bg-slate-700/50 text-slate-400 hover:text-white transition-colors focus-ring"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            data-testid="criteria-section-clear"
+          >
+            <X className="w-3.5 h-3.5" />
+          </motion.button>
+        )}
+      </motion.div>
 
       {/* Expandable Template Grid */}
       <AnimatePresence>

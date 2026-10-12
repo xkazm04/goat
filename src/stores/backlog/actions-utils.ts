@@ -2,6 +2,7 @@ import { backlogLogger } from '@/lib/logger';
 import { BacklogItem, BacklogGroup } from '@/types/backlog-groups';
 
 import { syncCacheFromGroups } from './cache-utils';
+import { warnIndexFallback } from './item-index';
 import { BacklogState } from './types';
 import { useSelectionCursor } from '../selection-cursor';
 
@@ -69,6 +70,7 @@ export const createUtilActions = (
       }
     }
     // Fallback: linear scan (index may be stale)
+    warnIndexFallback(itemId, 'getItemById');
     const item = findItemInGroups(state.groups, itemId);
     if (!item) {
       backlogLogger.warn(`Item ${itemId} not found in any group`);
@@ -107,6 +109,7 @@ export const createUtilActions = (
 
       // Fallback: linear scan if index miss
       if (!targetGroupId) {
+        warnIndexFallback(itemId, 'markItemAsUsed');
         for (const group of state.groups) {
           if (!group.items) continue;
           const item = group.items.find(i => i.id === itemId);
@@ -144,8 +147,6 @@ export const createUtilActions = (
       state._itemIndex = new Map();
       state._loadedGroupsCount = 0;
       state.selectedGroupId = null;
-      state.selectedItemId = null;
-      state.activeItemId = null;
       state.searchTerm = '';
       state.cache = {};
       state.error = null;

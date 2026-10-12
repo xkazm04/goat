@@ -3,6 +3,8 @@
  * Generates deep links for mobile apps
  */
 
+import { getBaseUrl } from './share-urls';
+
 import type { SharePlatform, ShareContent } from './types';
 
 /**
@@ -88,7 +90,7 @@ export class DeepLinkGenerator {
   private baseUrl: string;
 
   constructor(baseUrl?: string) {
-    this.baseUrl = baseUrl || (typeof window !== 'undefined' ? window.location.origin : '');
+    this.baseUrl = baseUrl || getBaseUrl();
   }
 
   /**

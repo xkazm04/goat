@@ -35,7 +35,16 @@ interface PhysicsDragOverlayProps {
  * - Gravity well attraction indicator
  * - Position resistance visual feedback
  */
-export function PhysicsDragOverlay({
+export function PhysicsDragOverlay(props: PhysicsDragOverlayProps) {
+  // The absent-item guard lives HERE, above the hooks, not inside the body that
+  // calls them. Ten hooks used to sit behind an early `return null`, so React's
+  // hook order changed the moment a drag started or ended — the exact defect
+  // react-hooks/rules-of-hooks names, and it was `warn` so nothing said so.
+  if (!props.activeItem) return null;
+  return <PhysicsDragOverlayContent {...props} />;
+}
+
+function PhysicsDragOverlayContent({
   activeItem,
   velocity,
   isSnapping = false,
@@ -44,10 +53,8 @@ export function PhysicsDragOverlay({
   gravityWellPosition,
   resistance = 0,
 }: PhysicsDragOverlayProps) {
-  if (!activeItem) return null;
-
   const speed = getSpeed(velocity);
-  const direction = getDirection(velocity);
+  const _direction = getDirection(velocity);
 
   // Calculate rotation based on velocity (subtle tilt effect)
   const rotation = useMemo(() => {
@@ -97,12 +104,12 @@ export function PhysicsDragOverlay({
     damping: 22,
   });
 
-  const springScale = useSpring(dynamicScale, {
+  const _springScale = useSpring(dynamicScale, {
     stiffness: 300,
     damping: 20,
   });
 
-  const springRotation = useSpring(rotation, {
+  const _springRotation = useSpring(rotation, {
     stiffness: 200,
     damping: 15,
   });
@@ -209,7 +216,7 @@ export function PhysicsDragOverlay({
         eager={true}
         blurAmount={15}
         fallbackComponent={
-          <span className="text-xs text-gray-400 text-center px-2">
+          <span className="text-xs text-gray-400 text-center px-2 truncate max-w-full">
             {activeItem.title}
           </span>
         }

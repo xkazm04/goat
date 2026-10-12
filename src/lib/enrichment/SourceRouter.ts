@@ -152,10 +152,14 @@ class SourceRouterClass {
       return CATEGORY_MAP[lowerCategory];
     }
 
-    // Try partial matching
-    for (const [key, value] of Object.entries(CATEGORY_MAP)) {
-      if (lowerCategory.includes(key) || key.includes(lowerCategory)) {
-        return value;
+    // Try partial matching. Guarded on a non-empty needle: every key contains
+    // the empty string, so a blank category used to match the first entry of
+    // the table and route to TMDB as a film.
+    if (lowerCategory.length > 0) {
+      for (const [key, value] of Object.entries(CATEGORY_MAP)) {
+        if (lowerCategory.includes(key) || key.includes(lowerCategory)) {
+          return value;
+        }
       }
     }
 

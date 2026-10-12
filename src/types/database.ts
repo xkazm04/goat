@@ -1,17 +1,23 @@
 /**
  * Database Types for Supabase
  *
- * This file contains TypeScript types that mirror the Supabase database schema.
- * These types provide compile-time safety for database operations.
+ * TypeScript types for the Supabase tables this app reads and writes. They are
+ * HAND-MAINTAINED: this file imports `ListCriteriaConfig` /
+ * `ListItemCriteriaScores` from `@/lib/criteria/types` and carries the
+ * migration notes on the RPC entries below, none of which `supabase gen types`
+ * would produce — so the regeneration command that used to sit in this header
+ * (`npx supabase gen types typescript ... > src/types/database.ts`) would have
+ * overwritten both. Do not run it over this file.
  *
- * REGENERATION:
- * To regenerate these types from the live schema, run:
- * ```bash
- * npx supabase gen types typescript --project-id <your-project-id> > src/types/database.ts
- * ```
- *
- * IMPORTANT: Keep these types in sync with the actual database schema.
- * If you modify the database schema, update these types accordingly.
+ * Corrected 2026-09-05, measured against the SQL in supabase/migrations and db/:
+ * 19 tables are created in-tree, 11 of them are typed here; 8 are not
+ * (challenges, challenge_entries, user_stats, item_consensus_cache,
+ * ranking_aggregates, ai_generated_images, user_preferences, blueprint_ratings);
+ * and 5 tables typed here have no in-tree DDL at all (users, user_profiles,
+ * top_items, top_groups, user_id_mapping). "Keep these types in sync" was a
+ * request with no instrument behind it; `database-schema-coverage.test.ts`
+ * now pins both lists, so a table added without a type — or typed without
+ * DDL — turns `npm test` red. Shrink the lists in that test as the gaps close.
  */
 
 import type { ListCriteriaConfig, ListItemCriteriaScores } from '@/lib/criteria/types';

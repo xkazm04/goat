@@ -18,6 +18,7 @@ import {
   FILTER_TIMING,
   FILTER_SCALE,
   PERFORMANCE_THRESHOLDS,
+  ICON_SIZES,
 } from '../constants';
 
 import type {
@@ -31,10 +32,10 @@ import type {
  * Lucide icon mapping for suggestion types
  */
 const SUGGESTION_TYPE_ICONS: Record<string, React.ReactNode> = {
-  narrow: <GoatTarget size={14} />,
-  expand: <GoatSearch size={14} />,
-  alternative: <GoatLightbulb size={14} />,
-  complement: <PlusCircle size={14} />,
+  narrow: <GoatTarget size={ICON_SIZES.md} />,
+  expand: <GoatSearch size={ICON_SIZES.md} />,
+  alternative: <GoatLightbulb size={ICON_SIZES.md} />,
+  complement: <PlusCircle size={ICON_SIZES.md} />,
 };
 
 /**
@@ -56,8 +57,8 @@ interface SmartFilterSuggestionsProps {
  */
 export function SmartFilterSuggestions({
   suggestions,
-  currentConfig,
-  statistics,
+  currentConfig: _currentConfig,
+  statistics: _statistics,
   onApplySuggestion,
   isLoading = false,
   maxSuggestions = PERFORMANCE_THRESHOLDS.maxSuggestions,
@@ -117,7 +118,7 @@ function InlineSuggestions({
   return (
     <div className={cn('flex items-center gap-2', className)}>
       <span className="flex items-center gap-1 text-xs text-muted-foreground">
-        <GoatLightbulb size={12} />
+        <GoatLightbulb size={ICON_SIZES.sm} />
         Try:
       </span>
       <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
@@ -185,7 +186,7 @@ function PanelSuggestions({
       )}
     >
       <div className="flex items-center gap-2 mb-3">
-        <GoatLightbulb size={18} className="text-amber-400" />
+        <GoatLightbulb size={ICON_SIZES.xl} className="text-warning" />
         <h4 className="text-sm font-medium font-grotesk">Smart Suggestions</h4>
       </div>
 
@@ -233,14 +234,14 @@ function PopoverSuggestions({
       <button
         className={cn(
           'flex items-center gap-1.5 px-2 py-1 text-xs rounded-control',
-          'bg-amber-500/10 text-amber-600 border border-amber-500/20',
-          'hover:bg-amber-500/20 transition-colors',
+          'bg-warning/10 text-warning border border-warning/20',
+          'hover:bg-warning/20 transition-colors',
           suggestions.length === 0 && 'filter-disabled'
         )}
         onClick={() => setIsOpen(!isOpen)}
         disabled={suggestions.length === 0}
       >
-        <GoatLightbulb size={12} />
+        <GoatLightbulb size={ICON_SIZES.sm} />
         <span>{suggestions.length} suggestions</span>
       </button>
 
@@ -339,7 +340,7 @@ function SuggestionCard({
         </div>
         {suggestion.reasoning && (
           <div className="text-xs text-muted-foreground mt-1 italic">
-            "{suggestion.reasoning}"
+            &quot;{suggestion.reasoning}&quot;
           </div>
         )}
       </div>
@@ -399,7 +400,7 @@ export function generateSmartSuggestions(
   currentConfig: FilterConfig,
   statistics: FilterStatistics | null,
   fields: FilterFieldDefinition[],
-  allItems: unknown[]
+  _allItems: unknown[]
 ): SmartFilterSuggestion[] {
   const suggestions: SmartFilterSuggestion[] = [];
 

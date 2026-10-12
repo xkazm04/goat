@@ -8,6 +8,7 @@
 
 import { motion } from 'framer-motion';
 import { Star } from 'lucide-react';
+import Image from 'next/image';
 import React, { memo } from 'react';
 
 import { DURATION, EASE } from '@/lib/animations/motion-presets';
@@ -182,10 +183,12 @@ export const CardFlipReveal = memo(function CardFlipReveal({
           {/* Blurred image background */}
           {item.image && (
             <div className="absolute inset-0 overflow-hidden">
-              <img
+              <Image
                 src={item.image}
                 alt=""
-                className="w-full h-full object-cover opacity-15 blur-md scale-110"
+                fill
+                className="object-cover opacity-15 blur-md scale-110"
+                unoptimized
               />
               <div className="absolute inset-0 bg-gradient-to-b from-gray-900/80 via-gray-900/90 to-gray-900" />
             </div>

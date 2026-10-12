@@ -54,7 +54,7 @@ export function CollectionHorizontalBar({
           data-testid="category-all-items-chip"
         >
           <span>ALL</span>
-          <span className={`text-xs px-1.5 py-0.5 rounded-badge ${
+          <span className={`badge-sm ${
             activeTab === 'all' ? 'bg-brand/30' : 'bg-white/10'
           }`}>
             {totalItemCount}

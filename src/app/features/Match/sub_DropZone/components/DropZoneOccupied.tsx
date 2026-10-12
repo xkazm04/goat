@@ -118,7 +118,7 @@ export const DropZoneOccupied = memo(function DropZoneOccupied({
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
           fallbackComponent={
             <div className="w-full h-full bg-linear-to-br from-slate-800 to-slate-900 flex items-center justify-center">
-              <span className="text-xs text-gray-500 text-center px-2">{title}</span>
+              <span className="text-xs text-gray-500 text-center px-2 truncate max-w-full">{title}</span>
             </div>
           }
         />

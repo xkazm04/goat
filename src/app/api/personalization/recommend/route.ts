@@ -20,6 +20,50 @@ interface ContentItem {
   createdAt?: number;
 }
 
+const MAX_RECOMMENDATIONS = 100;
+
+/**
+ * Parse a limit into [min, max], falling back when absent or not a number.
+ * `slice(0, NaN)` is an empty list and `slice(0, -1)` drops the LAST item, so
+ * `?limit=abc` returned zero recommendations and `?limit=-1` returned all but
+ * one, both as 200 responses that read as "nothing to recommend".
+ */
+function parseBoundedInt(raw: string | null, fallback: number, min: number, max: number): number {
+  const n = raw === null || raw === '' ? fallback : parseInt(raw, 10);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, n));
+}
+
+/**
+ * Simple deterministic hash from a string, returning a number in [0, 1).
+ * Ensures the same item always produces the same pseudo-random value.
+ */
+function deterministicHash(input: string): number {
+  let hash = 0;
+  for (let i = 0; i < input.length; i++) {
+    const char = input.charCodeAt(i);
+    hash = ((hash << 5) - hash + char) | 0;
+  }
+  // Normalize to [0, 1)
+  return Math.abs(hash % 10000) / 10000;
+}
+
+/**
+ * Derive stable popularity and trending values for an item.
+ * Uses item id + category to produce deterministic scores.
+ */
+function deriveItemMetrics(item: { id: number | string; category: string }): {
+  popularity: number;
+  trending: boolean;
+} {
+  const key = `${item.id}-${item.category}`;
+  const hash = deterministicHash(key);
+  return {
+    popularity: 70 + hash * 30, // 70–100 range, deterministic
+    trending: deterministicHash(key + '-trending') > 0.7,
+  };
+}
+
 /**
  * Get time of day
  */
@@ -103,7 +147,7 @@ function scoreForNewUser(
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const limit = parseInt(searchParams.get('limit') || '10', 10);
+    const limit = parseBoundedInt(searchParams.get('limit'), 10, 1, MAX_RECOMMENDATIONS);
     const timezone = searchParams.get('timezone') || 'UTC';
 
     // Get current time context
@@ -116,15 +160,18 @@ export async function GET(request: NextRequest) {
     const season = getSeason(month);
     const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
 
-    // Convert showcase data to content items
-    const items: ContentItem[] = showcaseData.map((item) => ({
-      id: item.id,
-      category: item.category,
-      subcategory: item.subcategory,
-      title: item.title,
-      popularity: 70 + Math.random() * 30, // Simulated popularity
-      trending: Math.random() > 0.7, // Randomly mark some as trending
-    }));
+    // Convert showcase data to content items with deterministic metrics
+    const items: ContentItem[] = showcaseData.map((item) => {
+      const metrics = deriveItemMetrics(item);
+      return {
+        id: item.id,
+        category: item.category,
+        subcategory: item.subcategory,
+        title: item.title,
+        popularity: metrics.popularity,
+        trending: metrics.trending,
+      };
+    });
 
     // Score and sort items
     const scored = items.map((item) => ({
@@ -167,19 +214,28 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { interests = [], limit = 10, excludeIds = [] } = body;
+    const { interests = [], excludeIds = [] } = body;
+    const limit = parseBoundedInt(
+      body.limit === undefined || body.limit === null ? null : String(body.limit),
+      10,
+      1,
+      MAX_RECOMMENDATIONS
+    );
 
-    // Convert showcase data to content items
+    // Convert showcase data to content items with deterministic metrics
     const items: ContentItem[] = showcaseData
       .filter((item) => !excludeIds.includes(item.id))
-      .map((item) => ({
-        id: item.id,
-        category: item.category,
-        subcategory: item.subcategory,
-        title: item.title,
-        popularity: 70 + Math.random() * 30,
-        trending: Math.random() > 0.7,
-      }));
+      .map((item) => {
+        const metrics = deriveItemMetrics(item);
+        return {
+          id: item.id,
+          category: item.category,
+          subcategory: item.subcategory,
+          title: item.title,
+          popularity: metrics.popularity,
+          trending: metrics.trending,
+        };
+      });
 
     // Score based on interests
     const scored = items.map((item) => {

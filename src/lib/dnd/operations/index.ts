@@ -34,11 +34,7 @@ export type {
 } from './types';
 
 // Router
-export {
-  DragOperationRouter,
-  getDragOperationRouter,
-  resetDragOperationRouter,
-} from './DragOperationRouter';
+export { DragOperationRouter } from './DragOperationRouter';
 
 // Algebraic Primitives
 export {
@@ -49,7 +45,6 @@ export {
   type GridState,
   validatePrimitive,
   validateSequence,
-  executePrimitive,
   executeSequence,
 } from './primitives';
 
@@ -84,29 +79,14 @@ export {
   requireTierTarget,
   requirePositionInBounds,
   requireSourceGridPosition,
-  requireAvailableBacklogItem,
   validateAll,
 } from './validation-helpers';
-
-// Result Handler
-export {
-  DragResultHandler,
-  getDragResultHandler,
-  resetDragResultHandler,
-  createConsoleNotificationCallback,
-  connectToNotificationStore,
-  type DragNotification,
-  type NotificationCallback,
-  type ValidationErrorEmitter,
-  type DragResultHandlerConfig,
-} from './DragResultHandler';
 
 // ============================================================================
 // Pre-configured Router Factory
 // ============================================================================
 
 import { DragOperationRouter } from './DragOperationRouter';
-import { DragResultHandler, type ValidationErrorEmitter } from './DragResultHandler';
 import {
   TierAssignOperation,
   TierMoveOperation,
@@ -146,34 +126,4 @@ export function createStandardRouter(config?: RouterConfig): DragOperationRouter
  */
 export function createGridOnlyRouter(config?: RouterConfig): DragOperationRouter {
   return new DragOperationRouter(config);
-}
-
-/**
- * Create a fully connected drag system with router and result handler
- */
-export function createDragSystem(
-  routerConfig?: RouterConfig,
-  errorEmitter?: ValidationErrorEmitter
-): {
-  router: DragOperationRouter;
-  resultHandler: DragResultHandler;
-} {
-  const router = createStandardRouter(routerConfig);
-  const resultHandler = new DragResultHandler({
-    showErrorNotifications: true,
-    onValidationError: errorEmitter,
-  });
-
-  // Connect result handler to router
-  router.setResultHandler((result, context) => {
-    resultHandler.handle(result, context);
-  });
-
-  router.setValidationErrorHandler((errorCode) => {
-    if (errorEmitter) {
-      errorEmitter(errorCode);
-    }
-  });
-
-  return { router, resultHandler };
 }

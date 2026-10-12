@@ -56,6 +56,27 @@ const GRID_PRIMITIVE_OPS = new Set<DragOperationType>(['assign', 'move', 'swap']
 // ============================================================================
 
 /**
+ * The durable identity of a grid-sourced drag payload.
+ *
+ * GridDragData.item is the PlacedItem, which carries TWO ids: `id` is the SLOT
+ * ADDRESS ("grid-7", rewritten whenever the occupant changes) and `item.id` is
+ * the item's identity. Only the second identifies anything. Until 2026-09-05
+ * this read `data.item.id`, so every grid-sourced drag reported an "item id"
+ * that was a function of position — the defect the primitives' expectItemId
+ * check exists around (registry drag-drop/payload-and-identity). A slot address
+ * is never returned as an identity; an unresolvable payload yields '' — empty
+ * is the honest answer, a position dressed as an id is not.
+ */
+function gridPayloadIdentity(data: Record<string, unknown> | undefined): string {
+  const placed = data?.item as { id?: unknown; item?: { id?: unknown } | null } | undefined;
+  const inner = placed?.item?.id;
+  if (typeof inner === 'string' && inner) return inner;
+  const outer = placed?.id;
+  if (typeof outer === 'string' && outer && !isGridReceiverId(outer)) return outer;
+  return '';
+}
+
+/**
  * Parse the source information from a drag event's active element
  */
 function parseSource(event: DragEndEvent): DragSource | null {
@@ -71,7 +92,7 @@ function parseSource(event: DragEndEvent): DragSource | null {
     const position = extractGridPosition(activeId);
     return {
       type: 'grid',
-      itemId: data?.item?.backlogItemId || data?.item?.id || activeId,
+      itemId: gridPayloadIdentity(data),
       item: data?.item,
       gridPosition: position ?? undefined,
     };
@@ -93,7 +114,7 @@ function parseSource(event: DragEndEvent): DragSource | null {
     const position = data?.position ?? data?.source?.gridPosition;
     return {
       type: 'grid',
-      itemId: data?.item?.backlogItemId || data?.item?.id || activeId,
+      itemId: gridPayloadIdentity(data),
       item: data?.item,
       gridPosition: typeof position === 'number' ? position : undefined,
     };
@@ -149,12 +170,20 @@ function parseTarget(event: DragEndEvent): DragTarget | null {
     };
   }
 
-  // Tier item detection (for reordering)
+  // Tier item detection (for reordering). A tier item is a `useSortable`, so
+  // what its droppable half carries is its DRAG payload (UnifiedDragData:
+  // `source.tierId` / `source.orderInTier`), not a drop payload. Until
+  // 2026-09-05 this branch read only the drop shape, found no tier, and every
+  // drop onto another card — the ordinary way to reorder — was refused as
+  // "Target must be a different tier". Both shapes are read; the live one is
+  // the fallback because the drop shape is the one a future surface might send.
   if (dataType === 'tier-item') {
+    const tierId: string | undefined = data?.tierId ?? data?.source?.tierId;
+    const position: number | undefined = data?.position ?? data?.source?.orderInTier;
     return {
       type: 'tier-item',
-      tierId: data?.tierId,
-      position: data?.position,
+      tierId,
+      position: typeof position === 'number' ? position : undefined,
     };
   }
 
@@ -387,6 +416,7 @@ export class DragOperationRouter {
       return {
         success: true,
         operationType: 'noop',
+        opId: context.opId,
         action: 'reject',
       };
     }
@@ -435,6 +465,7 @@ export class DragOperationRouter {
         return {
           success: false,
           operationType: context.operationType,
+          opId: context.opId,
           action: 'reject',
           errorCode: 'UNKNOWN_ERROR',
           errorMessage: `Unknown grid operation: ${context.operationType}`,
@@ -466,6 +497,7 @@ export class DragOperationRouter {
       return {
         success: false,
         operationType: context.operationType,
+        opId: context.opId,
         action: 'reject',
         errorCode: planResult.errorCode,
         errorMessage: planResult.errorMessage,
@@ -478,7 +510,10 @@ export class DragOperationRouter {
       executeStart = performance.now();
     }
 
-    const result = executePlan(planResult, stores);
+    // The opId is the handle that joins a toast to its log line; every result
+    // that leaves this router carries it, not only the failures that happened
+    // to set it themselves.
+    const result: DragOperationResult = { ...executePlan(planResult, stores), opId: context.opId };
 
     if (debug) {
       executeDuration = performance.now() - executeStart;
@@ -533,6 +568,7 @@ export class DragOperationRouter {
       return {
         success: false,
         operationType: context.operationType,
+        opId: context.opId,
         action: 'reject',
         errorCode: 'UNKNOWN_ERROR',
         errorMessage: `No handler for operation type: ${context.operationType}`,
@@ -571,6 +607,7 @@ export class DragOperationRouter {
       return {
         success: false,
         operationType: context.operationType,
+        opId: context.opId,
         action: 'reject',
         errorCode: validationResult.errorCode,
         errorMessage: validationResult.errorMessage,
@@ -583,7 +620,8 @@ export class DragOperationRouter {
       executeStart = performance.now();
     }
 
-    const result = operation.execute(context, stores);
+    const executed = operation.execute(context, stores);
+    const result: DragOperationResult = { ...executed, opId: executed.opId ?? context.opId };
 
     if (debug) {
       executeDuration = performance.now() - executeStart;
@@ -624,27 +662,4 @@ export class DragOperationRouter {
   canHandle(operationType: DragOperationType): boolean {
     return GRID_PRIMITIVE_OPS.has(operationType) || this.operations.has(operationType);
   }
-}
-
-// ============================================================================
-// Singleton Instance
-// ============================================================================
-
-let routerInstance: DragOperationRouter | null = null;
-
-/**
- * Get the global DragOperationRouter instance
- */
-export function getDragOperationRouter(config?: RouterConfig): DragOperationRouter {
-  if (!routerInstance) {
-    routerInstance = new DragOperationRouter(config);
-  }
-  return routerInstance;
-}
-
-/**
- * Reset the global router instance (useful for testing)
- */
-export function resetDragOperationRouter(): void {
-  routerInstance = null;
 }

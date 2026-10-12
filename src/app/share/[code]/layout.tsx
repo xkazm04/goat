@@ -1,6 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { Metadata } from "next";
 
+import { getServerBaseUrl, getShareUrl, getOGImageUrl } from "@/lib/sharing/share-urls";
+
 import type { OGCardLayout } from "@/lib/og/types";
 
 interface LayoutProps {
@@ -9,8 +11,11 @@ interface LayoutProps {
 }
 
 async function getSharedRanking(code: string) {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error('Missing env var: NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
+  }
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -58,15 +63,15 @@ export async function generateMetadata({ params }: LayoutProps): Promise<Metadat
     };
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://goat.app";
-  const shareUrl = `${baseUrl}/share/${code}`;
+  const baseUrl = getServerBaseUrl();
+  const shareUrl = getShareUrl(code, baseUrl);
 
   // Determine the best layout for this content
   const layout = suggestLayout(ranking.items || []);
 
   // Generate OG image URLs with the new dynamic OG route
-  const ogImageUrl = `${baseUrl}/api/og/${code}?layout=${layout}`;
-  const twitterImageUrl = `${baseUrl}/api/og/${code}?layout=${layout}&platform=twitter`;
+  const ogImageUrl = getOGImageUrl(code, { layout }, baseUrl);
+  const twitterImageUrl = getOGImageUrl(code, { layout, platform: 'twitter' }, baseUrl);
 
   const title = `${ranking.title} | G.O.A.T.`;
 

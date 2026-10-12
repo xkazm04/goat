@@ -13,7 +13,7 @@ import { GoatFilterEmpty } from '@/components/illustrations/EmptyStateIllustrati
 import { GoatSearch } from '@/components/visual/GoatIcons';
 import { cn } from '@/lib/utils';
 
-import { FILTER_ANIMATIONS, FILTER_TIMING, FILTER_SCALE, DEFAULT_QUICK_FILTERS } from '../constants';
+import { FILTER_ANIMATIONS, FILTER_TIMING, FILTER_SCALE, DEFAULT_QUICK_FILTERS, ICON_SIZES } from '../constants';
 
 import type { QuickFilter } from '../types';
 
@@ -46,7 +46,7 @@ export function QuickFilterBar({
   variant = 'default',
   filterCounts,
 }: QuickFilterBarProps) {
-  const hasActiveFilters = activeFilters.length > 0;
+  const _hasActiveFilters = activeFilters.length > 0;
 
   // Render based on variant
   switch (variant) {
@@ -170,6 +170,8 @@ function CompactQuickFilters({
             )}
             onClick={() => onToggle(filter.id)}
             title={`${filter.label}${count !== undefined ? ` (${count})` : ''}`}
+            aria-pressed={isActive}
+            aria-label={`${filter.label}${count !== undefined ? ` (${count})` : ''}`}
           >
             {isActive && (
               <motion.div
@@ -224,14 +226,15 @@ function PillQuickFilters({
             whileHover={{ scale: FILTER_SCALE.hover }}
             whileTap={{ scale: FILTER_SCALE.tap }}
             layout
+            aria-pressed={isActive}
           >
             {filter.icon && <span>{filter.icon}</span>}
             <span>{filter.label}</span>
             {count !== undefined && (
               <span
                 className={cn(
-                  'px-1.5 py-0.5 rounded-badge text-xs',
-                  isActive ? 'bg-primary-foreground/20' : 'bg-muted'
+                  'badge-sm',
+                  isActive ? 'bg-primary/20 text-primary-foreground' : 'bg-muted'
                 )}
               >
                 {count}
@@ -301,6 +304,7 @@ function QuickFilterChip({
       whileHover={{ scale: FILTER_SCALE.hover }}
       whileTap={{ scale: FILTER_SCALE.tap }}
       layout
+      aria-pressed={isActive}
     >
       {filter.icon && <span>{filter.icon}</span>}
       <span className="font-medium">{filter.label}</span>
@@ -350,18 +354,18 @@ export function QuickFilterGroup({
     <div className={cn('space-y-2', className)}>
       {/* Group Header */}
       <button
-        className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+        className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors touch-target"
         onClick={onToggleCollapse}
       >
         <motion.span
           animate={{ rotate: collapsed ? -90 : 0 }}
           transition={{ duration: FILTER_TIMING.standard }}
         >
-          <ChevronDown size={14} />
+          <ChevronDown size={ICON_SIZES.md} />
         </motion.span>
         <span>{title}</span>
         {activeInGroup > 0 && (
-          <span className="px-1.5 py-0.5 text-xs bg-primary text-primary-foreground rounded-badge">
+          <span className="badge-sm bg-primary text-primary-foreground">
             {activeInGroup}
           </span>
         )}
@@ -441,7 +445,7 @@ export function SearchableQuickFilters({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <GoatSearch size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <GoatSearch size={ICON_SIZES.md} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
       </div>
 
       {/* Filters */}

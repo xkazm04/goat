@@ -13,7 +13,6 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 
 import { PlaceholderImage } from "@/components/ui/placeholder-image";
-
 import { useDropZoneHighlightStore } from "@/stores/drop-zone-highlight-store";
 
 interface DraggableItem {

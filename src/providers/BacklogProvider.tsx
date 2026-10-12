@@ -144,22 +144,15 @@ export function BacklogProvider({ children }: { children: React.ReactNode }) {
     };
   }, [updateNetworkStatus, persistData, restorePersistedData]);
 
-  // NEW: Handle visibility change (user switches tabs)
+  // Persist when the user switches away. Returning to the tab deliberately
+  // does nothing here: backlog reads go through TanStack Query, whose
+  // staleTime/refetchOnMount already decide when a returned user sees fresh
+  // data. (An earlier branch logged "consider refreshing data" on return and
+  // took no action — a log line claiming an intention no code carried out.)
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
-        // User switched away - persist data
         persistData();
-      } else if (document.visibilityState === 'visible') {
-        // User came back - check if we need to refresh
-        const state = useBacklogStore.getState();
-        const now = Date.now();
-        
-        // If it's been more than 5 minutes, consider refreshing
-        if (now - state.lastSyncTimestamp > 5 * 60 * 1000) {
-          backlogLogger.debug('User returned after 5+ minutes, consider refreshing data');
-          // You could trigger a refresh here if needed
-        }
       }
     };
     

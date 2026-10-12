@@ -365,7 +365,7 @@ export function CollectionFilterIntegration({
               <Filter className="w-4 h-4" />
               <span>Filters</span>
               {activeFilterCount > 0 && (
-                <span className="px-1.5 py-0.5 text-xs bg-primary text-primary-foreground rounded-full">
+                <span className="badge-sm bg-primary text-primary-foreground">
                   {activeFilterCount}
                 </span>
               )}

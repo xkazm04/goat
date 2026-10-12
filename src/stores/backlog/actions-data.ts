@@ -51,6 +51,7 @@ function classifyError(error: unknown): { type: LoadingErrorType; message: strin
 
 // Maximum number of groups to load at once
 const MAX_CONCURRENT_LOADS = 30;
+const MAX_LOADING_ERRORS = 50;
 
 /** Count groups that have at least one item loaded. Used to initialize/recompute _loadedGroupsCount. */
 export function countLoadedGroups(groups: { items?: unknown[] | null }[]): number {
@@ -272,12 +273,25 @@ export const createDataActions = (
 
         // Initialize progress tracking with total groups known
         state._loadedGroupsCount = countLoadedGroups(groups as { items?: unknown[] | null }[]);
+        const hasGroups = groups.length > 0;
         state.loadingProgress = {
           totalGroups: groups.length,
           loadedGroups: state._loadedGroupsCount,
-          isLoading: true, // Will be loading items progressively
-          percentage: state._loadedGroupsCount > 0 ? Math.round((state._loadedGroupsCount / groups.length) * 100) : 0
+          // Items load progressively — but only when there is something to load.
+          // startFastProgressiveLoading is the ONLY place that clears this flag
+          // and the enrichment badges, and it is never called for an empty
+          // category, so an empty result must settle here or it spins forever.
+          isLoading: hasGroups,
+          percentage: hasGroups
+            ? (state._loadedGroupsCount > 0 ? Math.round((state._loadedGroupsCount / groups.length) * 100) : 0)
+            : 100
         };
+        if (!hasGroups) {
+          for (const source of state.enrichmentSources.sources) {
+            source.status = 'done';
+          }
+          state.enrichmentSources.active = false;
+        }
 
         // Update cache with current timestamp — shares group object references
         // with state.groups; both are updated together in progressive loading.
@@ -500,6 +514,9 @@ export const createDataActions = (
           message: classified.message,
           timestamp: Date.now(),
         });
+        if (state.loadingErrors.length > MAX_LOADING_ERRORS) {
+          state.loadingErrors = state.loadingErrors.slice(-MAX_LOADING_ERRORS);
+        }
       });
 
       // Fallback: try loading groups individually if bulk fails
@@ -726,6 +743,9 @@ export const createDataActions = (
           message: classified.message,
           timestamp: Date.now(),
         });
+        if (state.loadingErrors.length > MAX_LOADING_ERRORS) {
+          state.loadingErrors = state.loadingErrors.slice(-MAX_LOADING_ERRORS);
+        }
       });
     } finally {
       // Always remove from loading state to prevent stale loadingGroupIds leak

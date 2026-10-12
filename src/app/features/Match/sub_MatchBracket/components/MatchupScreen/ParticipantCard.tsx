@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Trophy } from 'lucide-react';
+import Image from 'next/image';
 
 import { BracketParticipant } from '../../lib/bracketGenerator';
 import { useBracketDimensions } from '../../lib/useBracketDimensions';
@@ -100,11 +101,13 @@ export function ParticipantCard({
           }}
         >
           {item.image_url ? (
-            <img
+            <Image
               src={item.image_url}
               alt={title}
-              className="w-full h-full object-cover"
-              loading="eager"
+              fill
+              className="object-cover"
+              priority
+              unoptimized
             />
           ) : (
             <div className="w-full h-full bg-linear-to-br from-slate-700 to-slate-800 flex items-center justify-center">

@@ -8,7 +8,6 @@ import {
 
 import { generateRequestId, REQUEST_ID_HEADER } from './request-id';
 
-import type { ErrorResponse } from '@/lib/errors';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
@@ -33,7 +32,7 @@ interface LatencyStats {
 }
 
 const LATENCY_WINDOW_SIZE = 100;
-const LATENCY_P95_THRESHOLD_MS = 3000;
+const _LATENCY_P95_THRESHOLD_MS = 3000;
 
 const latencyWindow: LatencyEntry[] = [];
 
@@ -43,16 +42,8 @@ function recordLatency(endpoint: string, method: string, durationMs: number): vo
     latencyWindow.shift();
   }
 
-  // Check p95 and warn if threshold exceeded
-  if (latencyWindow.length >= 20) {
-    const stats = getLatencyStats();
-    if (stats.p95 > LATENCY_P95_THRESHOLD_MS) {
-      console.warn(
-        `[API Latency] p95 latency is ${stats.p95.toFixed(0)}ms (threshold: ${LATENCY_P95_THRESHOLD_MS}ms). ` +
-        `Last request: ${method} ${endpoint} took ${durationMs.toFixed(0)}ms`
-      );
-    }
-  }
+  // Check p95 threshold exceeded (latency stats available via getLatencyStats())
+  // Intentionally silent in production — consumers can poll getLatencyStats() instead
 }
 
 function percentile(sorted: number[], p: number): number {
@@ -94,15 +85,6 @@ function trackApiError(error: GoatError, endpoint: string, method: string, reque
   });
 }
 
-/**
- * API Response type that includes error information
- */
-interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: ErrorResponse;
-}
-
 // =============================================================================
 // Response Format Contract
 // =============================================================================
@@ -127,8 +109,14 @@ export type ResponseFormat = 'raw' | 'envelope' | 'paginated';
  * Only fixed paths are registered — dynamic paths like `/lists/:id` are not
  * matched and won't trigger assertions. Longest-prefix match is NOT used;
  * keys must be exact `"METHOD /path"` strings.
+ *
+ * Every key must name a route that exists under `src/app/api/` (the default
+ * base is `/api`); `client.contracts.test.ts` derives that check from the
+ * route files so this list cannot drift again. Four keys were removed on
+ * 2026-09-05 because nothing served them: `GET /top/items/trending`,
+ * `POST /top/research`, `POST /top/research/validate`, `GET /users/me`.
  */
-const API_RESPONSE_CONTRACTS = new Map<string, ResponseFormat>([
+export const API_RESPONSE_CONTRACTS = new Map<string, ResponseFormat>([
   // ── Envelope: { success: true, data: T } (auto-unwrapped by ApiClient) ──
   ['GET /collections',    'envelope'],
   ['POST /collections',   'envelope'],
@@ -142,7 +130,6 @@ const API_RESPONSE_CONTRACTS = new Map<string, ResponseFormat>([
   // ── Raw: T returned directly ──
   ['GET /top/groups',           'raw'],
   ['POST /top/groups',          'raw'],
-  ['GET /top/items/trending',   'raw'],
   ['GET /items/stats',          'raw'],
   ['GET /lists',                'raw'],
   ['POST /lists',               'raw'],
@@ -150,9 +137,6 @@ const API_RESPONSE_CONTRACTS = new Map<string, ResponseFormat>([
   ['GET /sync',                 'raw'],
   ['POST /sync',                'raw'],
   ['POST /consensus/submit',    'raw'],
-  ['POST /top/research',        'raw'],
-  ['POST /top/research/validate', 'raw'],
-  ['GET /users/me',             'raw'],
   ['GET /blueprints',           'raw'],
   ['POST /blueprints',          'raw'],
 ]);
@@ -189,7 +173,9 @@ function assertResponseFormat(
   if (!expected) return; // unregistered endpoint — skip
 
   const actual = detectResponseFormat(data);
-  if (actual !== expected) {
+  if (actual !== expected && process.env.NODE_ENV === 'development') {
+    // Contract mismatch detected — only log in development
+     
     console.warn(
       `[API Contract] Response format mismatch for ${key}:\n` +
       `  Expected: ${expected}\n` +

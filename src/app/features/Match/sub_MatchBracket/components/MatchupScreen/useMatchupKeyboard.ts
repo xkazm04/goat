@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
 
+import { useShortcutScope } from '@/lib/keyboard';
+
 import { BracketMatchup } from '../../lib/bracketGenerator';
 
 interface UseMatchupKeyboardOptions {
@@ -19,6 +21,14 @@ interface UseMatchupKeyboardOptions {
 /**
  * Keyboard navigation hook for the matchup screen.
  * Handles arrow keys, number keys, enter, escape, and shortcuts.
+ *
+ * This is an OVERLAY, so while it is mounted it owns the keyboard: it claims a
+ * shortcut scope, and SimpleMatchGrid's window-level Ctrl+Z handler stands
+ * down. Before 2026-08-24 both were bound to window with no arbitration, and
+ * window listeners do not nest — one Ctrl+Z un-picked the matchup AND undid a
+ * grid operation, from a single press (registry module-design/
+ * locality-and-leverage: the shared thing is the question "am I the one who
+ * should act", not the handler).
  */
 export function useMatchupKeyboard({
   matchup,
@@ -33,8 +43,13 @@ export function useMatchupKeyboard({
   onUndo,
   onOpenCompare,
 }: UseMatchupKeyboardOptions) {
+  const scope = useShortcutScope('matchup');
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Read at event time, not render time: the answer changes when another
+      // overlay opens above this one.
+      if (!scope.isActive()) return;
       if (isConfirming || isCompareOpen) return;
 
       if (e.key === 'c' && !e.ctrlKey && !e.metaKey) {
@@ -93,5 +108,6 @@ export function useMatchupKeyboard({
     onSkip,
     onUndo,
     onOpenCompare,
+    scope,
   ]);
 }

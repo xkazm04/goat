@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Play, Clock } from "lucide-react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { memo, useMemo } from "react";
 
@@ -45,12 +46,16 @@ export const ContinueRankingBar = memo(function ContinueRankingBar() {
   const { handlePlayList } = usePlayList();
 
   // Get featured lists to resolve names/metadata
-  const { data: featuredData } = useFeaturedLists({
+  const featuredQuery = useFeaturedLists({
     popular_limit: 80,
     trending_limit: 80,
     latest_limit: 80,
     awards_limit: 80,
   });
+  const { data: featuredData, isLoading: isFeaturedLoading } = featuredQuery;
+  // Whether the title lookup could not be performed, as opposed to performed
+  // and finding nothing. The two must not be reported with one sentence.
+  const lookupFailed = !!featuredQuery.error;
 
   // Build a lookup map of all known lists
   const listLookup = useMemo(() => {
@@ -75,9 +80,10 @@ export const ContinueRankingBar = memo(function ContinueRankingBar() {
     const result: InProgressList[] = [];
 
     for (const [listId, session] of Object.entries(listSessions)) {
-      const filled = session.gridItems.filter((item) => item.context.matched).length;
+      const gridItems = session.gridItems ?? [];
       const total = session.listSize;
-      if (total <= 0) continue;
+      if (!total || total <= 0) continue;
+      const filled = gridItems.filter((item) => item?.context?.matched).length;
       const percentage = Math.round((filled / total) * 100);
 
       if (percentage >= 1 && percentage < 100) {
@@ -101,7 +107,31 @@ export const ContinueRankingBar = memo(function ContinueRankingBar() {
   const thumbnailIds = useMemo(() => inProgressLists.map((l) => l.listId), [inProgressLists]);
   const imageMap = useListThumbnails(thumbnailIds);
 
-  if (inProgressLists.length === 0) return null;
+  // Show skeleton while featured data loads if user has sessions (prevents CLS)
+  const hasSessions = Object.keys(listSessions).length > 0;
+  if (inProgressLists.length === 0) {
+    if (isFeaturedLoading && hasSessions) {
+      return (
+        <div className="w-full px-4 py-4" data-testid="continue-ranking-bar-skeleton">
+          <div className="max-w-6xl mx-auto">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-4 h-4 rounded bg-slate-800/30 animate-pulse" />
+              <div className="w-32 h-4 rounded bg-slate-800/30 animate-pulse" />
+            </div>
+            <div className="flex gap-3">
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  className="shrink-0 h-[52px] min-w-[240px] max-w-[300px] rounded-card bg-slate-800/30 animate-pulse"
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return null;
+  }
 
   return (
     <div className="w-full px-4 py-4" data-testid="continue-ranking-bar">
@@ -120,15 +150,29 @@ export const ContinueRankingBar = memo(function ContinueRankingBar() {
                 if (item.list) {
                   handlePlayList(item.list);
                 } else {
-                  // Orphaned session: list was deleted or is no longer accessible
-                  toast({
-                    title: "List Unavailable",
-                    description: "This list may have been deleted. Navigating to your session data.",
-                  });
+                  // The lookup did not resolve this list. That is NOT evidence
+                  // of deletion: `listLookup` is built from the featured
+                  // request's top-80 windows, so it is empty whenever that
+                  // request FAILED, and it omits any list outside those windows
+                  // even when the list is perfectly alive. Say only what is
+                  // known — the session itself is local and opens either way.
+                  toast(
+                    lookupFailed
+                      ? {
+                          title: "Couldn't load list details",
+                          description:
+                            "We couldn't reach the list catalogue, so we're opening your saved progress directly.",
+                        }
+                      : {
+                          title: "Opening saved progress",
+                          description:
+                            "We don't have this list's details here — opening your saved progress directly.",
+                        },
+                  );
                   router.push(`/goat?list=${item.listId}`);
                 }
               }}
-              className="shrink-0 snap-center flex items-center gap-3 px-3 py-2.5 rounded-card bg-gray-900/80 border border-gray-700/50 hover:border-brand/30 hover:bg-gray-900 transition-all group min-w-[240px] max-w-[300px]"
+              className="shrink-0 snap-center flex items-center gap-3 px-3 py-2.5 rounded-card bg-slate-900/80 border border-slate-700/50 hover:border-brand/30 hover:bg-slate-900 transition-all group min-w-[240px] max-w-[300px]"
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.05 }}
@@ -136,15 +180,17 @@ export const ContinueRankingBar = memo(function ContinueRankingBar() {
               whileTap={{ scale: 0.98 }}
             >
               {/* Thumbnail */}
-              <div className="w-10 h-10 shrink-0 rounded-control overflow-hidden bg-gray-800">
+              <div className="relative w-10 h-10 shrink-0 rounded-control overflow-hidden bg-slate-800">
                 {imageMap[item.listId]?.url ? (
-                  <img
+                  <Image
                     src={imageMap[item.listId].url!}
                     alt=""
-                    className="w-full h-full object-cover"
+                    fill
+                    className="object-cover"
+                    unoptimized
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-xs text-gray-600 font-bold">
+                  <div className="w-full h-full flex items-center justify-center text-xs text-slate-600 font-bold">
                     {(item.list?.title || "?").substring(0, 2).toUpperCase()}
                   </div>
                 )}
@@ -170,8 +216,8 @@ export const ContinueRankingBar = memo(function ContinueRankingBar() {
 
               {/* Time ago */}
               <div className="flex items-center gap-1 shrink-0">
-                <Clock className="w-3 h-3 text-gray-500" />
-                <span className="text-2xs text-gray-500">{timeAgo(item.updatedAt)}</span>
+                <Clock className="w-3 h-3 text-slate-500" />
+                <span className="text-2xs text-slate-500">{timeAgo(item.updatedAt)}</span>
               </div>
             </motion.button>
           ))}

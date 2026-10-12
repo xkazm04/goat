@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, ChevronUp, Loader2, Sparkles, Search, Check, X, LogIn } from 'lucide-react';
+import Image from 'next/image';
 import { useState, useRef } from 'react';
 
 import { useAuthUser } from '@/hooks/use-auth-user';
@@ -59,7 +60,7 @@ export function AddCustomItemForm({ category, subcategory, groupId }: AddCustomI
   const updateItemInGroup = useBacklogStore(state => state.updateItemInGroup);
 
   // Auth check
-  const { isAuthenticated, isGuest, signInWithGoogle } = useAuthUser();
+  const { isAuthenticated: _isAuthenticated, isGuest, signInWithGoogle } = useAuthUser();
 
   // List config check
   const currentList = useCurrentList();
@@ -342,10 +343,13 @@ export function AddCustomItemForm({ category, subcategory, groupId }: AddCustomI
                         hover:border-brand/20 transition-all group text-left"
                     >
                       {item.image_url ? (
-                        <img
+                        <Image
                           src={item.image_url}
                           alt=""
+                          width={28}
+                          height={28}
                           className="w-7 h-7 rounded object-cover shrink-0 bg-white/5"
+                          unoptimized
                         />
                       ) : (
                         <div className="w-7 h-7 rounded bg-white/5 shrink-0 flex items-center justify-center text-white/20 text-3xs">

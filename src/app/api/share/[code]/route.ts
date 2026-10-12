@@ -1,11 +1,16 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
-// Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+import { getServerBaseUrl, getShareUrl, getChallengeUrl } from '@/lib/sharing/share-urls';
 
 function getSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error('Missing Supabase configuration for share/[code] API');
+  }
+
   return createClient(supabaseUrl, supabaseServiceKey);
 }
 
@@ -44,13 +49,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     // views under traffic, systematically under-counting this social-proof stat.
     await supabase.rpc('increment_share_view_count', { share_id: data.id });
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://goat.app';
+    const baseUrl = getServerBaseUrl();
 
     return NextResponse.json({
       success: true,
       data: {
         ...data,
-        share_url: `${baseUrl}/share/${data.share_code}`,
+        share_url: getShareUrl(data.share_code, baseUrl),
       },
     });
   } catch (error) {
@@ -67,7 +72,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const { code } = await params;
     const body = await request.json();
-    const { user_id } = body;
+    const { user_id: _user_id } = body;
 
     if (!code) {
       return NextResponse.json(
@@ -115,7 +120,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           time_period: original.time_period,
           size: original.items?.length || 10,
         },
-        redirect_url: `${baseUrl}/?challenge=${code}`,
+        redirect_url: getChallengeUrl(code),
       },
     });
   } catch (error) {

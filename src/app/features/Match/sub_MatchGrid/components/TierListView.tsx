@@ -6,13 +6,13 @@ import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 
 import { useDebate } from '@/hooks/use-debate';
 import { useDebateStore } from '@/stores/debate-store';
+import { useDropZoneHighlightStore } from '@/stores/drop-zone-highlight-store';
 import { useRankingStore } from '@/stores/ranking-store';
 import { useCurrentListInfo } from '@/stores/use-list-store';
 import { BacklogItem } from '@/types/backlog-groups';
 import { GridItemType } from '@/types/match';
 
 import { DebatePanel } from './Debate/DebatePanel';
-import { useDropZoneHighlightStore } from '@/stores/drop-zone-highlight-store';
 import {
   KeyboardShortcutsPanel,
   KeyboardModeIndicator,
@@ -33,6 +33,8 @@ import {
 } from '../../lib/tierPresets';
 import { useTierItemGroups } from '../hooks/useTierItemGroups';
 import { useTierKeyboardNavigation } from '../hooks/useTierKeyboardNavigation';
+
+import type { TierDefinition as RankingTierDefinition } from '@/types/ranking';
 
 interface TierListViewProps {
   gridItems: GridItemType[];
@@ -67,12 +69,16 @@ export function TierListView({
   const tierState = useRankingStore(state => state.tierState);
   const syncTiersFromRanking = useRankingStore(state => state.syncTiersFromRanking);
   const syncRankingFromTiers = useRankingStore(state => state.syncRankingFromTiers);
-  const assignToTier = useRankingStore(state => state.assignToTier);
-  const removeFromTier = useRankingStore(state => state.removeFromTier);
-  const moveWithinTier = useRankingStore(state => state.moveWithinTier);
-  const moveBetweenTiers = useRankingStore(state => state.moveBetweenTiers);
+  const _assignToTier = useRankingStore(state => state.assignToTier);
+  const _removeFromTier = useRankingStore(state => state.removeFromTier);
+  const _moveWithinTier = useRankingStore(state => state.moveWithinTier);
+  const _moveBetweenTiers = useRankingStore(state => state.moveBetweenTiers);
   const addToUnranked = useRankingStore(state => state.addToUnranked);
-  const removeFromUnranked = useRankingStore(state => state.removeFromUnranked);
+  const _removeFromUnranked = useRankingStore(state => state.removeFromUnranked);
+  const storeSetTierConfig = useRankingStore(state => state.setTierConfig);
+  const storeUpdateTier = useRankingStore(state => state.updateTier);
+  const storeAddTier = useRankingStore(state => state.addTier);
+  const storeToggleTierCollapse = useRankingStore(state => state.toggleTierCollapse);
 
   // Get drag state from store (granular selector — only re-renders when isDragging changes)
   const isDragging = useDropZoneHighlightStore((s) => s.isDragging);
@@ -120,30 +126,57 @@ export function TierListView({
     syncTiersFromRanking();
   }, [gridItems, syncTiersFromRanking]);
 
-  // Handle preset change
+  // Handle preset change — sync preset tiers into the ranking store
   const handlePresetChange = useCallback((newPreset: TierListPreset) => {
     setPreset(newPreset);
-    // Note: Preset change is UI-only for now. The store tier config would need updating.
-    // For now we just update the local preset state for visual customization.
-  }, []);
+    storeSetTierConfig({
+      presetId: newPreset.id,
+      tiers: newPreset.tiers.map(t => ({
+        id: t.id,
+        label: t.label as RankingTierDefinition['label'],
+        displayName: t.customLabel || t.displayName,
+        description: t.description,
+        color: t.color,
+      })),
+      derivationMode: 'explicit',
+    });
+  }, [storeSetTierConfig]);
 
-  // Handle tier update (visual updates like custom labels/colors)
+  // Handle tier update — persist label/color changes to the ranking store
   const handleTierUpdate = useCallback((tierId: string, updates: Partial<TierListTier>) => {
-    // Visual updates are handled locally for now
-    // Store tier structure remains unchanged
-  }, []);
+    const storeUpdates: Record<string, unknown> = {};
+    if (updates.customLabel !== undefined) storeUpdates.displayName = updates.customLabel;
+    if (updates.customColor !== undefined) {
+      storeUpdates.color = {
+        primary: updates.customColor,
+        secondary: updates.customColor,
+        accent: updates.customColor,
+        gradient: `linear-gradient(135deg, ${updates.customColor} 0%, ${updates.customColor}cc 100%)`,
+        glow: `${updates.customColor}80`,
+        text: '#ffffff',
+        border: updates.customColor,
+      };
+    }
+    if (Object.keys(storeUpdates).length > 0) {
+      storeUpdateTier(tierId, storeUpdates);
+    }
+  }, [storeUpdateTier]);
 
-  // Handle tier toggle collapse
+  // Handle tier toggle collapse — persist to ranking store
   const handleToggleCollapse = useCallback((tierId: string) => {
-    // Toggle collapse is a UI state - could be added to store if needed
-    // For now, tiers from store already have collapsed property
-  }, []);
+    storeToggleTierCollapse(tierId);
+  }, [storeToggleTierCollapse]);
 
-  // Handle tier add
+  // Handle tier add — persist new tier to the ranking store
   const handleTierAdd = useCallback((tier: TierListTier) => {
-    // Adding custom tiers would need store modification
-    // This is a visual customization feature
-  }, []);
+    storeAddTier({
+      id: tier.id,
+      label: tier.label as RankingTierDefinition['label'],
+      displayName: tier.customLabel || tier.displayName,
+      description: tier.description,
+      color: tier.color,
+    });
+  }, [storeAddTier]);
 
   // Handle tier remove
   const handleTierRemove = useCallback((tierId: string) => {
@@ -204,7 +237,7 @@ export function TierListView({
   }, [tiers, itemsMap, listTitle, preset.exportDimensions]);
 
   // Apply ranking - sync tier order to the ranking store
-  const handleApplyRanking = useCallback(() => {
+  const _handleApplyRanking = useCallback(() => {
     // Build items map from backlog for the store sync
     const transferableMap = new Map(
       backlogItems.map(item => [
@@ -304,12 +337,12 @@ function TierListViewContent({
   tiers,
   tierItemsMap,
   unrankedItems,
-  itemsMap,
+  itemsMap: _itemsMap,
   preset,
   isDragging,
   isExporting,
   showKeyboardHelp,
-  listTitle,
+  listTitle: _listTitle,
   listSize,
   tierListRef,
   onPresetChange,
@@ -346,7 +379,7 @@ function TierListViewContent({
     resolveDebate,
     setActiveThread,
     setPanelOpen,
-    getControversy,
+    getControversy: _getControversy,
   } = useDebate({
     category: listInfo?.category || 'General',
     subcategory: listInfo?.subcategory,
@@ -528,24 +561,37 @@ function TierListViewContent({
       {/* Tier list */}
       <div
         ref={tierListRef}
-        className="space-y-2.5"
+        className="flex flex-col gap-2.5"
         role="list"
         aria-label="Tier rows"
       >
         <AnimatePresence mode="popLayout">
           {tiers.map((tier, index) => (
-            <TierRow
-              key={tier.id}
-              tier={tier}
-              items={getTierItems(tier)}
-              onToggleCollapse={onToggleCollapse}
-              onRemoveItem={onRemoveItem}
-              onEditTier={handleEditTier}
-              isDraggingOver={isDragging}
-              tierIndex={index}
-              debateInfoMap={debateInfoMap}
-              onDebateItem={debateEnabled ? handleDebateItem : undefined}
-            />
+            <div key={tier.id} className="contents">
+              {index > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, scaleX: 0.8 }}
+                  animate={{ opacity: 0.4, scaleX: 1 }}
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
+                  className="h-[2px] ml-16 sm:ml-20 mr-4 rounded-full"
+                  style={{
+                    background: `linear-gradient(to right, ${tiers[index - 1].color.primary} 15%, transparent 40%, transparent 60%, ${tier.color.primary} 85%)`,
+                  }}
+                  aria-hidden="true"
+                />
+              )}
+              <TierRow
+                tier={tier}
+                items={getTierItems(tier)}
+                onToggleCollapse={onToggleCollapse}
+                onRemoveItem={onRemoveItem}
+                onEditTier={handleEditTier}
+                isDraggingOver={isDragging}
+                tierIndex={index}
+                debateInfoMap={debateInfoMap}
+                onDebateItem={debateEnabled ? handleDebateItem : undefined}
+              />
+            </div>
           ))}
         </AnimatePresence>
       </div>

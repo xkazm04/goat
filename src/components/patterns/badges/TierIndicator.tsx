@@ -111,7 +111,7 @@ export function getTierConfig(
 // =============================================================================
 
 export const TierIndicator = React.memo(function TierIndicator({
-  itemId,
+  itemId: _itemId,
   tier: tierProp,
   averageRank,
   size = 'sm',

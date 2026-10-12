@@ -329,6 +329,14 @@ export {
   useUndoKeyboard,
 } from './use-undo-keyboard';
 
+/**
+ * Debounced Value Hook
+ * Generic hook that debounces any value by a specified delay
+ */
+export {
+  useDebouncedValue,
+} from './use-debounced-value';
+
 // ========================================
 // Migration Notes
 // ========================================

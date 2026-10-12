@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 
 import { AchievementEmbed } from '@/app/features/Achievement/components/AchievementEmbed';
+import { getAchievementUrl } from '@/lib/sharing/share-urls';
 
 // Embed page for iframes - lightweight version
 export default async function AchievementEmbedPage({
@@ -32,8 +33,7 @@ export default async function AchievementEmbedPage({
     unlockedAt: new Date().toISOString(),
   };
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-  const shareUrl = `${baseUrl}/achievement/${code}`;
+  const shareUrl = getAchievementUrl(code);
   const isCompact = compact === 'true';
 
   return (

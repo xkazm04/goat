@@ -14,7 +14,7 @@ import { CategoryCardProps } from "./types";
  */
 const PopularityBadge = memo(function PopularityBadge({
   popularity,
-  color,
+  color: _color,
 }: {
   popularity: number;
   color: string;
@@ -64,7 +64,7 @@ const GridCard = memo(function GridCard({
   isSelected,
   isHighlighted,
   onClick,
-  onNavigate,
+  onNavigate: _onNavigate,
   color,
   showPopularity,
   animationDelay = 0,
@@ -227,7 +227,7 @@ const ListCard = memo(function ListCard({
   isSelected,
   isHighlighted,
   onClick,
-  onNavigate,
+  onNavigate: _onNavigate,
   color,
   showPopularity,
   animationDelay = 0,

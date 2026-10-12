@@ -1,6 +1,7 @@
 /**
  * GoatMascot - Branded SVG illustration of a goat character
- * Used on the offline page and other branded moments.
+ * Used on the offline page (its one consumer; the variant-bearing mascot the
+ * rest of the app renders is `@/components/visual/GoatMascot`).
  * Flat geometric style with rounded shapes, dark palette with yellow/amber accents.
  */
 
@@ -11,6 +12,9 @@ interface GoatMascotProps extends SVGProps<SVGSVGElement> {
 }
 
 export function GoatMascot({ size = 200, className, ...props }: GoatMascotProps) {
+  // Decorative unless the caller names it: hidden from the accessibility tree by
+  // default, an `img` with that name when an aria-label / aria-labelledby is given.
+  const labelled = Boolean(props['aria-label'] || props['aria-labelledby']);
   return (
     <svg
       width={size}
@@ -18,6 +22,9 @@ export function GoatMascot({ size = 200, className, ...props }: GoatMascotProps)
       viewBox="0 0 200 200"
       fill="none"
       className={className}
+      role={labelled ? 'img' : undefined}
+      aria-hidden={labelled ? undefined : true}
+      focusable="false"
       {...props}
     >
       {/* Background landscape - mountains */}

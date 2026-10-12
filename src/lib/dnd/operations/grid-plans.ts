@@ -16,8 +16,6 @@
 import { dndLogger } from '@/lib/logger';
 import { getValidationAuthority, logValidationFailure } from '@/lib/validation';
 
-import { createGridItem } from '@/lib/grid';
-
 import { validateSequence, executeSequence } from './primitives';
 
 import type { GridPrimitive, GridState } from './primitives';
@@ -30,6 +28,7 @@ import type {
   OperationStoreContext,
 } from './types';
 import type { ValidationResult } from '@/lib/validation';
+import type { GridItemType } from '@/types/match';
 
 // ============================================================================
 // Plan Types
@@ -43,6 +42,8 @@ export interface BacklogEffect {
 export interface GridOperationPlan {
   primitives: GridPrimitive[];
   backlogEffects: BacklogEffect[];
+  /** Full GridItemType snapshot of displaced item, used for undo rollback */
+  displacedGridItem?: GridItemType;
   resultMeta: {
     operationType: DragOperationType;
     action: TransferableItem extends never ? never : string;
@@ -180,12 +181,17 @@ export function planAssign(
   const primitives: GridPrimitive[] = [];
   const backlogEffects: BacklogEffect[] = [];
   let displacedItem: TransferableItem | undefined;
+  let displacedGridItem: GridItemType | undefined;
 
   // If target is occupied, remove the existing item first
   const existing = grid.gridItems[position];
   if (existing && existing.context.matched && existing.item?.id) {
-    primitives.push({ kind: 'remove', position });
+    // The plan states WHICH ITEM it is displacing, not just which slot.
+    // Execution refuses if the occupant changed between plan and apply.
+    primitives.push({ kind: 'remove', position, expectItemId: existing.item.id });
     backlogEffects.push({ itemId: existing.item.id, markUsed: false });
+    // Capture full GridItemType for undo rollback restoration
+    displacedGridItem = structuredClone(existing);
     displacedItem = {
       id: existing.item.id,
       title: existing.item.title,
@@ -209,6 +215,7 @@ export function planAssign(
   return {
     primitives,
     backlogEffects,
+    displacedGridItem,
     resultMeta: {
       operationType: 'assign',
       action: 'assign',
@@ -266,13 +273,32 @@ export function planMove(
   }
 
   return {
-    primitives: [{ kind: 'swap', posA: fromPosition, posB: toPosition }],
+    primitives: [
+      {
+        kind: 'swap',
+        posA: fromPosition,
+        posB: toPosition,
+        // Identities as of PLAN time. Execution refuses if either slot's
+        // occupant changed in between — the drop was a statement about these
+        // items, and applying it to whoever occupies those indices now would be
+        // a different operation than the one the user watched.
+        expectItemA: grid.gridItems[fromPosition]?.item?.id ?? null,
+        expectItemB: grid.gridItems[toPosition]?.context.matched
+          ? (grid.gridItems[toPosition]?.item?.id ?? null)
+          : null,
+      },
+    ],
     backlogEffects: [],
     resultMeta: {
       operationType: 'move',
       action: 'move',
       item: {
-        id: sourceItem.item?.id || sourceItem.id,
+        // NEVER `|| sourceItem.id`: that field is the SLOT ADDRESS ("grid-7"),
+        // rewritten whenever the slot's occupant changes. Falling back to it
+        // hands downstream consumers an "item id" that is a function of
+        // position — the exact defect this pass exists to remove. A slot with
+        // no item has no item identity, and empty is the honest answer.
+        id: sourceItem.item?.id ?? '',
         title: sourceItem.item?.title ?? '',
         description: sourceItem.item?.description,
         image_url: sourceItem.item?.image_url,
@@ -328,13 +354,32 @@ export function planSwap(
   const targetItem = grid.gridItems[toPosition];
 
   return {
-    primitives: [{ kind: 'swap', posA: fromPosition, posB: toPosition }],
+    primitives: [
+      {
+        kind: 'swap',
+        posA: fromPosition,
+        posB: toPosition,
+        // Identities as of PLAN time. Execution refuses if either slot's
+        // occupant changed in between — the drop was a statement about these
+        // items, and applying it to whoever occupies those indices now would be
+        // a different operation than the one the user watched.
+        expectItemA: grid.gridItems[fromPosition]?.item?.id ?? null,
+        expectItemB: grid.gridItems[toPosition]?.context.matched
+          ? (grid.gridItems[toPosition]?.item?.id ?? null)
+          : null,
+      },
+    ],
     backlogEffects: [],
     resultMeta: {
       operationType: 'swap',
       action: 'swap',
       item: {
-        id: sourceItem.item?.id || sourceItem.id,
+        // NEVER `|| sourceItem.id`: that field is the SLOT ADDRESS ("grid-7"),
+        // rewritten whenever the slot's occupant changes. Falling back to it
+        // hands downstream consumers an "item id" that is a function of
+        // position — the exact defect this pass exists to remove. A slot with
+        // no item has no item identity, and empty is the honest answer.
+        id: sourceItem.item?.id ?? '',
         title: sourceItem.item?.title ?? '',
         description: sourceItem.item?.description,
         image_url: sourceItem.item?.image_url,
@@ -508,28 +553,25 @@ export function createUndoableOperation(
 
       switch (operationType) {
         case 'assign': {
-          // Reverse assign: free the slot, then undo every backlog effect the
-          // plan recorded, then restore whatever the assign displaced.
-          //
-          // The displaced item is not lost information: buildAssignPlan captured
-          // it into resultMeta.metadata.displacedItem at the instant it was still
-          // on the grid, so the inverse reads it from the plan rather than trying
-          // to reconstruct it. Order matters — assignItemToGrid no-ops on a slot
-          // that is still filled, so the removal has to come first.
-          const toPosition = result.metadata?.toPosition;
-          if (toPosition !== undefined) {
-            grid.removeItemFromGrid(toPosition);
+          // Reverse assign: remove placed item, mark unused
+          if (result.metadata?.toPosition !== undefined) {
+            grid.removeItemFromGrid(result.metadata.toPosition);
           }
-          for (const effect of plan.backlogEffects) {
-            backlog.markItemAsUsed(effect.itemId, !effect.markUsed);
+          if (plan.backlogEffects.length > 0) {
+            const assignEffect = plan.backlogEffects.find(e => e.markUsed);
+            if (assignEffect) backlog.markItemAsUsed(assignEffect.itemId, false);
           }
-          const displaced = plan.resultMeta.metadata?.displacedItem;
-          if (displaced && toPosition !== undefined) {
-            grid.assignItemToGrid(createGridItem(displaced, toPosition), toPosition);
+          // Restore displaced item if one was captured during planning
+          if (plan.displacedGridItem && result.metadata?.toPosition !== undefined) {
+            const displaced = plan.displacedGridItem;
+            grid.assignItemToGrid(displaced, result.metadata.toPosition);
+            if (displaced.item?.id) {
+              backlog.markItemAsUsed(displaced.item.id, true);
+            }
+            dndLogger.debug('Rolled back assign operation (displaced item restored)');
+          } else {
+            dndLogger.debug('Rolled back assign operation');
           }
-          dndLogger.debug('Rolled back assign operation', {
-            restoredDisplacedItem: Boolean(displaced),
-          });
           break;
         }
 

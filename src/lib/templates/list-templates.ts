@@ -6,6 +6,9 @@
  * starter items. Users can generate more items on top of these seeds.
  */
 
+import { CATEGORY_CONFIG, type CategoryName } from '@/lib/config/category-config';
+import { CRITERIA_PROFILE_IDS } from '@/lib/criteria/templates';
+
 import type { ListTemplate } from '@/types/studio';
 
 // ─────────────────────────────────────────────────────────────
@@ -242,7 +245,7 @@ export const ALL_LIST_TEMPLATES: ListTemplate[] = [
 ];
 
 /** Get templates filtered by category (or all if no category specified) */
-export function getTemplatesByCategory(category?: string): ListTemplate[] {
+export function getTemplatesByCategory(category?: CategoryName): ListTemplate[] {
   if (!category) return ALL_LIST_TEMPLATES;
   return ALL_LIST_TEMPLATES.filter((t) => t.category === category);
 }
@@ -253,6 +256,40 @@ export function getListTemplateById(id: string): ListTemplate | undefined {
 }
 
 /** Get all unique categories that have templates */
-export function getTemplateCategoryTags(): string[] {
+export function getTemplateCategoryTags(): CategoryName[] {
   return Array.from(new Set(ALL_LIST_TEMPLATES.map((t) => t.category)));
+}
+
+// ─────────────────────────────────────────────────────────────
+// Runtime Validation (dev only)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Validates that every template's category exists in CATEGORY_CONFIG
+ * and every criteriaProfileId resolves to a real criteria profile.
+ * Runs at module load in development to catch mismatches early.
+ */
+function validateTemplates(): void {
+  const validCategories = new Set(Object.keys(CATEGORY_CONFIG));
+  const validProfileIds = new Set<string>(CRITERIA_PROFILE_IDS);
+
+  for (const template of ALL_LIST_TEMPLATES) {
+    if (!validCategories.has(template.category)) {
+      console.error(
+        `[list-templates] Template "${template.id}" has category "${template.category}" ` +
+        `which is not a valid CATEGORY_CONFIG key. Valid keys: ${Array.from(validCategories).join(', ')}`
+      );
+    }
+
+    if (template.criteriaProfileId && !validProfileIds.has(template.criteriaProfileId)) {
+      console.error(
+        `[list-templates] Template "${template.id}" has criteriaProfileId "${template.criteriaProfileId}" ` +
+        `which does not match any criteria profile. Valid IDs: ${Array.from(validProfileIds).join(', ')}`
+      );
+    }
+  }
+}
+
+if (process.env.NODE_ENV === 'development') {
+  validateTemplates();
 }

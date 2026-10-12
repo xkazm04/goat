@@ -264,10 +264,10 @@ export function TierConfigEditor({
 }: TierConfigEditorProps) {
   const tierConfig = useRankingStore((state) => state.tierConfig);
   const setTierConfig = useRankingStore((state) => state.setTierConfig);
-  const addTier = useRankingStore((state) => state.addTier);
-  const removeTier = useRankingStore((state) => state.removeTier);
-  const updateTier = useRankingStore((state) => state.updateTier);
-  const reorderTiers = useRankingStore((state) => state.reorderTiers);
+  const _addTier = useRankingStore((state) => state.addTier);
+  const _removeTier = useRankingStore((state) => state.removeTier);
+  const _updateTier = useRankingStore((state) => state.updateTier);
+  const _reorderTiers = useRankingStore((state) => state.reorderTiers);
 
   const [editingTiers, setEditingTiers] = useState<EditableTier[]>([]);
   const [hasChanges, setHasChanges] = useState(false);
@@ -323,7 +323,7 @@ export function TierConfigEditor({
     setTierConfig({
       ...tierConfig,
       presetId: 'custom',
-      tiers: editingTiers.map(({ isNew, ...t }) => t),
+      tiers: editingTiers.map(({ isNew: _isNew, ...t }) => t),
     });
     setHasChanges(false);
     onClose();
@@ -441,7 +441,7 @@ export function TierConfigEditor({
                       className="p-3 bg-slate-800/50 hover:bg-slate-700/50 rounded-card border border-slate-700 text-left transition-colors group"
                     >
                       <div className="flex items-center gap-2 mb-2">
-                        {preset.tiers.slice(0, 4).map((t, i) => (
+                        {preset.tiers.slice(0, 4).map((t, _i) => (
                           <div
                             key={t.id}
                             className="w-5 h-5 rounded text-2xs font-bold flex items-center justify-center"

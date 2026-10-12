@@ -8,6 +8,7 @@ import { DURATION } from '@/lib/animations/motion-presets';
 import { cn } from '@/lib/utils';
 
 import { GoalCompletionBurst } from './GoalCompletionBurst';
+
 import type { GoalStatus } from './GoalStatusBadge';
 
 // =============================================================================

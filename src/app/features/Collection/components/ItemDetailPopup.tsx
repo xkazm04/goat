@@ -22,10 +22,12 @@ import {
 } from "recharts";
 
 import { GoatBrokenFrame } from "@/components/illustrations/EmptyStateIllustrations";
-import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import { useMotionCapabilities } from "@/hooks/use-motion-preference";
 import { SPRING , DURATION } from "@/lib/animations/motion-presets";
 import { cn } from "@/lib/utils";
 import { useItemPopupStore, PopupInstance } from "@/stores/item-popup-store";
+
+import { getVolatilityInfo, hasRankingEvidence } from "./RankingDistribution";
 
 import type { ItemDetailResponse } from "@/types/item-details";
 import type { BarShapeProps } from "recharts";
@@ -56,7 +58,7 @@ const getAccentColor = (medianPosition?: number) => {
  * - Quick-assign to grid
  */
 export function ItemDetailPopup({ popup, onQuickAssign }: ItemDetailPopupProps) {
-  const reducedMotion = useReducedMotion();
+  const { allowTransitions } = useMotionCapabilities();
   const [data, setData] = useState<ItemDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -120,8 +122,8 @@ export function ItemDetailPopup({ popup, onQuickAssign }: ItemDetailPopupProps) 
 
   return (
     <motion.div
-      initial={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.92, y: 20 }}
-      animate={reducedMotion ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
+      initial={!allowTransitions ? { opacity: 0 } : { opacity: 0, scale: 0.92, y: 20 }}
+      animate={!allowTransitions ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.92, y: 20 }}
       transition={SPRING.smooth}
       drag={!popup.locked}
@@ -275,11 +277,16 @@ export function ItemDetailPopup({ popup, onQuickAssign }: ItemDetailPopupProps) 
                 onQuickAssign={onQuickAssign ? handleQuickAssign : undefined}
               />
 
-              {/* Distribution chart */}
-              {data.rankingStats && (
+              {/* Distribution chart — only when someone has actually ranked the
+                  item; the API's zeroed stats object is not evidence. */}
+              {hasRankingEvidence(data.rankingStats) ? (
                 <div className="px-2 pb-2">
                   <CompactRankingChart stats={data.rankingStats} accent={accent} />
                 </div>
+              ) : (
+                <p className="px-2 pb-2 text-2xs text-slate-500 text-center" data-testid="popup-no-rankings">
+                  No community rankings yet
+                </p>
               )}
             </>
           )}
@@ -405,10 +412,10 @@ function CompactRankingChart({ stats, accent }: CompactRankingChartProps) {
           <span className="text-2xs font-medium text-slate-500 uppercase tracking-wide">Distribution</span>
         </div>
         <span
-          className="text-3xs font-medium px-1 py-px rounded"
+          className="badge-sm font-medium"
           style={{
             background: volatilityInfo.bgColor,
-            color: volatilityInfo.color,
+            color: volatilityInfo.hex,
           }}
         >
           {volatilityInfo.label}
@@ -516,7 +523,7 @@ function MiniTooltip({ active, payload, label, accent }: {
   if (!active || !payload?.[0]) return null;
   return (
     <div
-      className="px-1.5 py-0.5 rounded shadow-lg text-2xs"
+      className="badge-sm shadow-lg"
       style={{
         background: 'rgba(15,23,42,0.95)',
         border: `1px solid ${accent}40`,
@@ -526,17 +533,6 @@ function MiniTooltip({ active, payload, label, accent }: {
       <span className="font-bold" style={{ color: accent }}>{payload[0].value}</span>
     </div>
   );
-}
-
-// ============================================================================
-// Utilities
-// ============================================================================
-
-function getVolatilityInfo(volatility: number) {
-  if (volatility < 2) return { label: 'Stable', color: '#10B981', bgColor: 'rgba(16,185,129,0.15)' };
-  if (volatility < 4) return { label: 'Moderate', color: '#22d3ee', bgColor: 'rgba(34,211,238,0.15)' };
-  if (volatility < 6) return { label: 'Contested', color: '#F59E0B', bgColor: 'rgba(245,158,11,0.15)' };
-  return { label: 'Polarizing', color: '#EF4444', bgColor: 'rgba(239,68,68,0.15)' };
 }
 
 export default ItemDetailPopup;

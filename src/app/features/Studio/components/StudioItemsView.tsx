@@ -9,14 +9,15 @@
  * - Animated generation skeleton with gradient sweep
  */
 
-import { DndContext, closestCenter, DragEndEvent , useSensor, useSensors, PointerSensor } from '@dnd-kit/core';
-import { SortableContext, rectSortingStrategy } from '@dnd-kit/sortable';
+import { DndContext, closestCenter, DragEndEvent , useSensor, useSensors, KeyboardSensor, PointerSensor } from '@dnd-kit/core';
+import { SortableContext, rectSortingStrategy, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { AnimatePresence, motion } from 'framer-motion';
-import { GripVertical, Database, Crown } from 'lucide-react';
+import { GripVertical, Database, Crown, Globe, Film } from 'lucide-react';
 
 import { SURFACE_ELEVATION } from '@/components/visual/depth/depth-tokens';
 import { GoatMascot } from '@/components/visual/GoatMascot';
 import { DURATION } from '@/lib/animations/motion-presets';
+import { DRAG_ACTIVATION_DISTANCE_PX } from '@/lib/dnd';
 import { useStudioItems, useStudioGeneration, useStudioValidation, useStudioStore } from '@/stores/studio-store';
 import { getStudioItemId } from '@/types/studio';
 
@@ -41,8 +42,11 @@ export function StudioItemsView({ gridClassName = DEFAULT_GRID_CLASS }: StudioIt
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: { distance: 5 },
-    })
+      activationConstraint: { distance: DRAG_ACTIVATION_DISTANCE_PX },
+    }),
+    // Was pointer-only; generated items could not be reordered from a keyboard
+    // at all (drag-drop/keyboard-alternatives).
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
   const sortableIds = generatedItems.map((item) => getStudioItemId(item));
@@ -58,7 +62,9 @@ export function StudioItemsView({ gridClassName = DEFAULT_GRID_CLASS }: StudioIt
     }
   };
 
-  const matchedCount = generatedItems.filter(item => item.db_matched).length;
+  const matchedCount = generatedItems.filter(item => item.db_matched || item.enrichment_source === 'database').length;
+  const enrichedCount = generatedItems.filter(item => item.enrichment_source === 'enrichment_pipeline').length;
+  const wikiCount = generatedItems.filter(item => item.enrichment_source === 'wiki_fallback').length;
 
   // Empty state with mascot
   if (!isGenerating && generatedItems.length === 0) {
@@ -117,7 +123,19 @@ export function StudioItemsView({ gridClassName = DEFAULT_GRID_CLASS }: StudioIt
           {matchedCount > 0 && (
             <span className="flex items-center gap-1.5 text-green-400/80">
               <Database className="w-3.5 h-3.5" />
-              {matchedCount} from DB
+              {matchedCount} DB
+            </span>
+          )}
+          {enrichedCount > 0 && (
+            <span className="flex items-center gap-1.5 text-sky-400/80">
+              <Film className="w-3.5 h-3.5" />
+              {enrichedCount} enriched
+            </span>
+          )}
+          {wikiCount > 0 && (
+            <span className="flex items-center gap-1.5 text-blue-400/80">
+              <Globe className="w-3.5 h-3.5" />
+              {wikiCount} wiki
             </span>
           )}
           {generatedItems.length > 0 && (
@@ -172,6 +190,8 @@ export function StudioItemsView({ gridClassName = DEFAULT_GRID_CLASS }: StudioIt
           sensors={sensors}
           collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}
+          // No local drag state: the reorder is derived from the end event and
+          // dnd-kit owns the transforms, so cancel has nothing of ours to reap.
         >
           <SortableContext items={sortableIds} strategy={rectSortingStrategy}>
             <div className={gridClassName}>

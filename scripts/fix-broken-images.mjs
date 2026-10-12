@@ -7,19 +7,21 @@
  *
  * Checks performed:
  *   1. URL is non-null/non-empty
- *   2. Host is in the Next.js remotePatterns allow-list
+ *   2. Host is in the Next.js remotePatterns allow-list (read from next.config.js)
  *   3. HTTP HEAD returns 200 (with retry on 429)
  *   4. Content-Length > 0 (not an empty file)
  *
- * Usage:
- *   node scripts/fix-broken-images.mjs                        # dry-run (default)
- *   node scripts/fix-broken-images.mjs --apply                # actually update DB
- *   node scripts/fix-broken-images.mjs --category hockey      # filter by category
- *   node scripts/fix-broken-images.mjs --limit 100            # process first N items only
- *   node scripts/fix-broken-images.mjs --skip-search          # validate only, no Wikipedia search
+ * Usage (credentials via --env-file or exported NEXT_PUBLIC_SUPABASE_URL /
+ * SUPABASE_SERVICE_ROLE_KEY):
+ *   node --env-file=.env scripts/fix-broken-images.mjs                   # dry-run (default)
+ *   node --env-file=.env scripts/fix-broken-images.mjs --apply           # actually update DB
+ *   node --env-file=.env scripts/fix-broken-images.mjs --category hockey # filter by category
+ *   node --env-file=.env scripts/fix-broken-images.mjs --limit 100       # process first N items only
+ *   node --env-file=.env scripts/fix-broken-images.mjs --skip-search     # validate only, no Wikipedia search
  */
+import { createRequire } from 'module';
+
 import { createClient } from '@supabase/supabase-js';
-import { readFileSync } from 'fs';
 
 // ── Config ────────────────────────────────────────────────────────────
 const PAGE_SIZE = 1000;   // Supabase max rows per request
@@ -29,33 +31,28 @@ const RATE_LIMIT_MS = 500; // delay between Wikipedia API calls
 const HEAD_TIMEOUT_MS = 10000;
 const MAX_RETRIES = 3;    // retry on 429
 
-// Next.js allowed image hostnames (from next.config.js remotePatterns)
-const ALLOWED_HOSTS = new Set([
-  'upload.wikimedia.org',
-  'm.media-amazon.com',
-  'static.wikia.nocookie.net',
-  'cdn.britannica.com',
-  'media.d3.nhle.com',
-  'files.eliteprospects.com',
-  'i0.wp.com',
-  'i1.wp.com',
-  'i2.wp.com',
-  'cdn.cloudflare.steamstatic.com',
-]);
+// The allow-list is READ from next.config.js `images.remotePatterns`, never
+// copied: a copy that lagged the config (10 of 13 hosts on 2026-09-05) made
+// this script call every IGDB / TMDB / Spotify image `host-not-allowed` and,
+// with --apply, replace it with a Wikipedia thumbnail.
+const require = createRequire(import.meta.url);
+const ALLOWED_HOSTS = new Set(
+  require('../next.config.js').images.remotePatterns.map((p) => p.hostname),
+);
 
 const USER_AGENT = 'GOATApp/1.0 (https://goat.app; contact@goat.app) fix-broken-images';
 
 // ── Env ───────────────────────────────────────────────────────────────
-const env = readFileSync('.env', 'utf8');
-const getEnv = (key) => {
-  const m = env.match(new RegExp(`^${key}=(.+)$`, 'm'));
-  return m ? m[1].trim() : null;
-};
-
-const url = getEnv('NEXT_PUBLIC_SUPABASE_URL');
-const serviceKey = getEnv('SUPABASE_SERVICE_ROLE_KEY');
+// Credentials come from the environment, the way seed-e2e.ts takes them
+// (`node --env-file=.env scripts/fix-broken-images.mjs`, or exported). The
+// previous hand-rolled `.env` regex reader bound the script to the current
+// directory (ENOENT stack trace from anywhere else), could not read exported
+// or quoted values, and was the fourth copy of that reader in this directory.
+const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 if (!url || !serviceKey) {
-  console.error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env');
+  console.error('[fix-broken-images] COULD NOT RUN — NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY are not set.');
+  console.error('[fix-broken-images] Load them with `node --env-file=.env scripts/fix-broken-images.mjs` or export them.');
   process.exit(1);
 }
 const supabase = createClient(url, serviceKey);
@@ -455,4 +452,9 @@ async function run() {
   }
 }
 
-run().catch(console.error);
+run().catch((err) => {
+  // A failed run must exit non-zero: the terminal reads the exit code, not the
+  // stack trace. `.catch(console.error)` printed the error and exited 0.
+  console.error(err);
+  process.exit(1);
+});

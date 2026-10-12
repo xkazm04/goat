@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { memo, forwardRef } from "react";
 
+import { useMotionCapabilities } from "@/hooks/use-motion-preference";
 import { DURATION, EASE } from "@/lib/animations/motion-presets";
 
 import { MedalType } from "../../lib/medalStyling";
@@ -71,6 +72,8 @@ export const DropZoneCard = memo(
     },
     ref
   ) {
+    const { allowCelebrations, allowTransitions } = useMotionCapabilities();
+
     return (
       <motion.div
         ref={ref}
@@ -80,12 +83,12 @@ export const DropZoneCard = memo(
           ...((!isOccupied && medalType && medalHintColor) && {
             backgroundColor: medalHintColor,
           }),
-          ...(hasError && {
+          ...(hasError && allowTransitions && {
             animation: 'drag-error-shake 200ms ease-out, drag-error-border-flash 600ms ease-out',
           }),
         } as React.CSSProperties}
         initial={false}
-        animate={{
+        animate={allowCelebrations ? {
           scale: justDropped
             ? (isTop3
               ? [1, 1.2, 0.92, 1.08, 0.98, 1.02, 1]
@@ -94,8 +97,13 @@ export const DropZoneCard = memo(
           borderColor: hasError ? '#f87171' : isOver ? accentColor : isOccupied ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)',
           rotate: justDropped && isTop3 ? [0, -2, 2, -1, 1, 0] : 0,
           opacity: shouldDimFilledSlot ? 0.6 : 1,
+        } : {
+          scale: 1,
+          borderColor: hasError ? '#f87171' : isOver ? accentColor : isOccupied ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)',
+          rotate: 0,
+          opacity: justDropped ? [0.7, 1] : shouldDimFilledSlot ? 0.6 : 1,
         }}
-        transition={{
+        transition={allowCelebrations ? {
           scale: justDropped
             ? {
               duration: isTop3 ? DURATION.dramatic : DURATION.emphasis,
@@ -108,6 +116,8 @@ export const DropZoneCard = memo(
               ease: "easeOut",
             }
             : { duration: 0 },
+          opacity: { duration: DURATION.normal, ease: "easeOut" },
+        } : {
           opacity: { duration: DURATION.normal, ease: "easeOut" },
         }}
         className={`
@@ -197,7 +207,7 @@ export const ItemTitle = memo(function ItemTitle({
           transition={{ delay: DURATION.fast, duration: DURATION.normal, type: "spring", stiffness: 200 }}
         >
           <p
-            className="text-xs font-medium text-white/90 text-center leading-tight line-clamp-2"
+            className="text-xs font-medium text-white/90 text-center leading-tight line-clamp-2 max-w-[200px]"
             title={title}
           >
             {title}

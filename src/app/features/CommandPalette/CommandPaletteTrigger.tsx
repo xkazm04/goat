@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Command, Keyboard } from "lucide-react";
+import { useSyncExternalStore } from "react";
 
 import { ELEVATION } from "@/components/visual/depth";
 import { DURATION } from '@/lib/animations/motion-presets';
@@ -13,6 +14,26 @@ interface CommandPaletteTriggerProps {
   variant?: "floating" | "inline";
 }
 
+// The platform never changes during a session, so there is nothing to subscribe to.
+const subscribeToNothing = () => () => {};
+
+function isMacPlatform(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const uaPlatform = (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData?.platform;
+  return /mac/i.test(uaPlatform ?? navigator.platform ?? "");
+}
+
+/**
+ * Which modifier the shortcut hint names. The platform is a CLIENT fact: the
+ * server pass emits the neutral "Ctrl" (the server snapshot) and the client
+ * switches to "⌘" after hydration, so server HTML and first client render agree
+ * on Macs instead of producing a hydration mismatch and a repaint.
+ */
+function useShortcutModifier(): "⌘" | "Ctrl" {
+  const isMac = useSyncExternalStore(subscribeToNothing, isMacPlatform, () => false);
+  return isMac ? "⌘" : "Ctrl";
+}
+
 /**
  * A visual trigger button for the command palette
  * Can be used as a floating button or inline hint
@@ -22,9 +43,7 @@ export function CommandPaletteTrigger({
   variant = "floating",
 }: CommandPaletteTriggerProps) {
   const { openCommandPalette } = useCommandPalette();
-
-  const isMac = typeof navigator !== "undefined" && navigator.platform?.includes("Mac");
-  const shortcutKey = isMac ? "⌘" : "Ctrl";
+  const shortcutKey = useShortcutModifier();
 
   if (variant === "inline") {
     return (

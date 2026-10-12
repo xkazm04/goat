@@ -3,6 +3,7 @@
 import {
   DndContext,
   closestCenter,
+  KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
@@ -13,6 +14,7 @@ import {
   useSortable,
   arrayMove,
   rectSortingStrategy,
+  sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -29,12 +31,17 @@ import {
   Calendar,
   ExternalLink,
   GripVertical,
+  AlertTriangle,
+  RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
 import { memo, useMemo, useState, useCallback, useEffect } from "react";
 
 import { EmptyTrophyCase, NoSearchResults } from "@/components/illustrations/EmptyStateIllustrations";
-import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import { useMotionCapabilities } from "@/hooks/use-motion-preference";
+import { DRAG_ACTIVATION_DISTANCE_PX } from "@/lib/dnd";
+
+import { safeCollectionColor } from "../lib/collection-color";
 
 import type { ListCollection, CollectionStats } from "@/types/collection";
 import type { TopList } from "@/types/top-lists";
@@ -44,6 +51,9 @@ interface CollectionViewProps {
   lists: TopList[];
   stats?: CollectionStats;
   isLoading?: boolean;
+  /** The collections request failed; an empty list is then unknown, not empty. */
+  loadFailed?: boolean;
+  onRetry?: () => void;
   onAddList?: () => void;
   onRemoveList?: (listId: string) => void;
   onReorderLists?: (listIds: string[]) => void;
@@ -68,18 +78,18 @@ const ListCard = memo(function ListCard({
   showDragHandle?: boolean;
   drag?: DragProps;
 }) {
-  const reducedMotion = useReducedMotion();
+  const { allowTransitions } = useMotionCapabilities();
   return (
     <motion.div
       ref={drag?.setNodeRef}
       style={drag?.style}
       layout
-      initial={reducedMotion ? false : { opacity: 0, scale: 0.95 }}
+      initial={!allowTransitions ? false : { opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
       className="group relative bg-slate-800/50 rounded-xl border border-slate-700/50 overflow-hidden hover:border-slate-600/50 hover:bg-slate-800/70 transition-all"
     >
-      <Link href={`/match/${list.id}`} className="block p-5">
+      <Link href={`/goat?list=${list.id}`} className="block p-5">
         <div className="flex items-start gap-3">
           {showDragHandle && (
             <div
@@ -132,7 +142,7 @@ const ListCard = memo(function ListCard({
 
 const ListRow = memo(function ListRow({
   list,
-  onRemove,
+  onRemove: _onRemove,
   showDragHandle,
   drag,
 }: {
@@ -141,19 +151,19 @@ const ListRow = memo(function ListRow({
   showDragHandle?: boolean;
   drag?: DragProps;
 }) {
-  const reducedMotion = useReducedMotion();
+  const { allowTransitions } = useMotionCapabilities();
   return (
     <motion.div
       ref={drag?.setNodeRef}
       style={drag?.style}
       layout
-      initial={reducedMotion ? false : { opacity: 0, x: -10 }}
+      initial={!allowTransitions ? false : { opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -10 }}
       className="group"
     >
       <Link
-        href={`/match/${list.id}`}
+        href={`/goat?list=${list.id}`}
         className="flex items-center gap-4 p-4 bg-slate-800/30 hover:bg-slate-800/60 rounded-xl border border-slate-700/30 hover:border-slate-600/50 transition-all"
       >
         {showDragHandle && (
@@ -221,6 +231,8 @@ export const CollectionView = memo(function CollectionView({
   lists,
   stats,
   isLoading = false,
+  loadFailed = false,
+  onRetry,
   onAddList,
   onRemoveList,
   onReorderLists,
@@ -273,7 +285,13 @@ export const CollectionView = memo(function CollectionView({
   }, [filteredLists, orderedListIds]);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: DRAG_ACTIVATION_DISTANCE_PX },
+    }),
+    // Reordering lists was pointer-only. sortableKeyboardCoordinates is
+    // dnd-kit's own grab/move/drop mirror for a SortableContext, so this is the
+    // whole keyboard path for this surface (drag-drop/keyboard-alternatives).
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
   const canReorder = !!onReorderLists && !searchTerm.trim();
   const handleDragEnd = useCallback(
@@ -349,7 +367,7 @@ export const CollectionView = memo(function CollectionView({
     );
   }
 
-  const color = collection.color || "#06b6d4";
+  const color = safeCollectionColor(collection.color);
 
   return (
     <div className="flex-1 p-6">
@@ -445,6 +463,22 @@ export const CollectionView = memo(function CollectionView({
             transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
           />
         </div>
+      ) : loadFailed && filteredLists.length === 0 && !searchTerm ? (
+        <div className="text-center py-16 flex flex-col items-center" role="alert">
+          <AlertTriangle className="w-10 h-10 text-amber-500/70 mb-3" />
+          <p className="text-slate-400 mb-1">Couldn&apos;t load this collection&apos;s lists</p>
+          <p className="text-sm text-slate-600 mb-4">The request failed; nothing here has been removed.</p>
+          {onRetry && (
+            <button
+              type="button"
+              onClick={onRetry}
+              className="inline-flex items-center gap-1.5 text-brand-hover hover:text-brand-hover text-sm"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              Retry
+            </button>
+          )}
+        </div>
       ) : filteredLists.length === 0 ? (
         <div className="text-center py-16 flex flex-col items-center">
           {searchTerm ? (
@@ -479,6 +513,11 @@ export const CollectionView = memo(function CollectionView({
               sensors={sensors}
               collisionDetection={closestCenter}
               onDragEnd={handleDragEnd}
+              // This surface holds no drag state of its own — the reorder is
+              // computed entirely from the end event and dnd-kit owns the
+              // transforms — so cancel has nothing to reap beyond dnd-kit's own
+              // teardown. Stated rather than left to inference, because the
+              // other two DndContexts in this app DID need a reaper.
             >
               <SortableContext
                 items={displayedLists.map((l) => l.id)}

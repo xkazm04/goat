@@ -293,6 +293,8 @@ class PriorityQueueClass<T = unknown> {
     queued: number;
     processing: number;
     processed: number;
+    /** The live concurrency limit — BandwidthDetector lowers this on slow networks. */
+    maxConcurrent: number;
     byPriority: Record<PrefetchPriority, number>;
   } {
     const byPriority: Record<PrefetchPriority, number> = {
@@ -309,6 +311,7 @@ class PriorityQueueClass<T = unknown> {
       queued: this.queue.length,
       processing: this.processing.size,
       processed: this.processed.size,
+      maxConcurrent: this.maxConcurrent,
       byPriority,
     };
   }

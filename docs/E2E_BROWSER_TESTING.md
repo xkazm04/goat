@@ -4,6 +4,57 @@
 
 This document describes the methodology for end-to-end browser testing of G.O.A.T. using **Claude Code CLI** with the **Playwright MCP Server**. This approach combines exploratory testing (Claude navigates the real app) with formal Playwright test generation.
 
+## The suite's precondition — read this first
+
+The browser suite **cannot run against an empty database**. Every journey starts
+by clicking a list, so an unseeded run would execute nothing and report green.
+Two things exist to stop that:
+
+1. **`e2e/global-setup.ts` refuses the run.** One check before any worker, with
+   a greppable `E2E_PRECONDITION_FAILED` diagnostic. It does *not* seed — a
+   launcher that silently populated a database it found empty would hide the
+   exact condition it exists to report.
+2. **`npm run seed:e2e` writes deterministic fixtures**, added 2026-08-25. It is
+   a command somebody runs on purpose, never a side effect of the suite.
+
+```bash
+npm run seed:e2e                 # write the fixtures
+npm run seed:e2e -- --check      # verify without writing (safe anywhere)
+npm run seed:e2e -- --teardown   # remove exactly what it wrote
+```
+
+### What the fixtures contain
+
+| | |
+|---|---|
+| 1 user | `E2E Fixture User` |
+| 2 lists | *E2E Fixture — Greatest Games* (games, size 10) and *— Greatest Athletes* (sports, size 5) |
+| 18 items | 12 + 6, deterministic names and years |
+| 15 rankings | the first 10 / first 5 of each list |
+
+Two lists, because a suite that only ever sees one cannot tell "the first list"
+from "the list I chose". Each list is ranked to its size but has **more items
+than ranks**, so there are always unranked candidates to place — a fixture list
+that is already complete cannot exercise placing anything.
+
+### Why it is safe to point at a shared database
+
+Every row carries a **fixed UUID in the `e2e00000-…` namespace**, every write is
+an upsert on that id, and nothing outside the namespace is read, updated or
+deleted. `--teardown` removes exactly the same namespace. A non-local target is
+**refused** unless `E2E_SEED_ALLOW_REMOTE=1` records that the operator meant it.
+
+Verified end to end against a live database on 2026-08-25 — 11 users / 35 lists
+/ 1614 items / 421 rankings before, 12 / 37 / 1632 / 436 after, stable across
+three consecutive seeds, and back to 11 / 35 / 1614 / 421 after teardown.
+
+> **Found by that idempotence check, on the first re-run:** `list_items` carries
+> a `trigger_rerank_list_items` BEFORE INSERT/UPDATE trigger, and a batch upsert
+> makes it touch rows the same command already wrote — Postgres refuses with
+> *"tuple to be updated was already modified by an operation triggered by the
+> current command"*. The first run succeeded and the second failed. The seed now
+> deletes-then-inserts its own namespaced rankings.
+
 ## Setup
 
 ### 1. Install Playwright MCP Server
@@ -216,7 +267,15 @@ Prompt to Claude Code:
 ### Rules
 1. **Feature prefix**: Match the feature directory name (`landing-`, `studio-`, `match-`, `collection-`, `auth-`, `share-`)
 2. **Element type**: Use semantic names (`btn`, `input`, `section`, `card`, `modal`, `panel`)
-3. **Dynamic qualifier**: Append IDs for lists of items (`featured-list-item-{id}`)
+3. **Dynamic qualifier**: Append the ENTITY'S OWN ID for lists of items
+   (`collection-item-wrapper-{item.id}`, `user-list-play-btn-{list.id}`) — never
+   its array index, which changes when the list is re-sorted, filtered or
+   paged, and which a harness cannot turn back into an entity.
+   `featured-list-item-{index}` (`FeaturedListsSection.tsx:71`) is the standing
+   violation and used to be quoted here as the example of the rule; it is what
+   made four spec files wait for `/goat?list=0`. Until it is fixed, the list id
+   is read from the URL the app navigates to — see `openFirstFeaturedList` in
+   `e2e/helpers/test-utils.ts`.
 4. **State variants**: Use suffixes for states (`-skeleton`, `-error`, `-empty`)
 5. **No nested prefixes**: Keep flat (`match-grid-header` not `match-sub-match-grid-header`)
 
@@ -234,14 +293,78 @@ Prompt to Claude Code:
 
 ## Existing E2E Tests
 
+> ### Correction — 2026-08-24
+>
+> The table below used to list six spec files with a behavioural description
+> each. Three of them — `session-persistence`, `ranking-completion` and
+> `list-search` — contained **10 tests, all `test.skip()`, with zero
+> assertions between them**, and had since the day they were written. Reading
+> this table, anyone would have concluded that reload persistence, the
+> completion modal and search were covered. Nothing about them was.
+>
+> Those three files are **deleted**. A quarantine nobody reviews is worse than
+> an honest gap, and an honest gap is what the "Not covered" table below is.
+> Deleting them does not reduce coverage — there was none to reduce — it
+> reduces the claim to match it.
+
+> ### Correction — 2026-09-05
+>
+> Six statements below disagreed with the tree. The table listed **four** spec
+> files while `npx playwright test --list` walks **six**; three "Not covered"
+> rows named behaviours that two of the unlisted files do cover; and the
+> test-id convention above cites `featured-list-item-{id}` as its own example
+> of appending an entity id, while `FeaturedListsSection.tsx:71` appends the
+> card's **array index**. That last one is not a documentation slip: four spec
+> files read the attribute as an id and waited for `/goat?list=0`.
+>
+> The counts here are taken from `npx playwright test --list`, which is the
+> cheapest honest denominator, and `scripts/e2e-suite-contract.test.ts` keeps
+> the id claims true under `npm test`.
+
+The suite is **40 tests across 6 files** (`npx playwright test --list`,
+2026-09-05).
+
 | Test File | Coverage |
 |-----------|----------|
-| `e2e/list-play-journey.spec.ts` | Landing → featured list click → /goat navigation |
-| `e2e/drag-drop-ranking.spec.ts` | Drag items from backlog to grid slots |
-| `e2e/session-persistence.spec.ts` | Grid state survives page reload |
-| `e2e/ranking-completion.spec.ts` | Fill all slots → completion modal |
-| `e2e/list-search.spec.ts` | Search/filter on landing page |
-| `e2e/backlog-items-loading.spec.ts` | Backlog groups load on match page |
+| `e2e/list-play-journey.spec.ts` | Landing → featured list click → /goat navigation; list-store population |
+| `e2e/drag-drop-ranking.spec.ts` | Drag items from backlog to grid slots; drop-zone highlight; swap between occupied slots; remove back to collection; reload persistence |
+| `e2e/backlog-items-loading.spec.ts` | Backlog groups load on match page, against the seeded fixture list |
+| `e2e/exploratory-smoke.spec.ts` | Landing render, studio render, list navigation, match grid |
+| `e2e/goat-voting-completion.spec.ts` | Auto-fill → completion modal → its actions → share button → reload persistence |
+| `e2e/studio-list-creation.spec.ts` | Studio AI generation, metadata auto-fill, item removal, template gallery, publish readiness. **Hits the real Gemini + Supabase backend**; 30–90 s per generating test |
+
+### Not covered — known gaps, not silent ones
+
+These were previously *listed as covered*. They are real gaps, recorded here so
+the absence is visible rather than implied by a file that exists and does
+nothing.
+
+| Behaviour | Status |
+|---|---|
+| Grid state survives browser close/reopen | **no test** (a reload is covered; a fresh browser context is not) |
+| LRU eviction keeps at most 15 cached lists | **no test** |
+| Search/filter actually filters the landing list | **partial** — `exploratory-smoke.spec.ts › search filter bar accepts input and responds` asserts the input takes and keeps a value; nothing asserts the result set changes |
+| Keyboard drag (Space/arrows/Escape) on the grid | **no e2e test**; the arrow-stepping logic has 25 unit tests in `src/lib/dnd/keyboard-coordinates.test.ts` |
+| Sign-in prompt shown to a guest after completing a ranking | **no test** (was `goat-voting-completion.spec.ts › should show auth prompt for guest users after completion`, removed 2026-09-05: it drove the full 90 s journey and then asserted `expect(true).toBeTruthy()`, having declared both outcomes acceptable) |
+
+## Environment preconditions
+
+`e2e/global-setup.ts` runs once before any worker and refuses the run if the
+lists API answers with zero lists.
+
+This exists because the suite previously called `test.skip()` inside individual
+specs when fixture data was missing. Against an empty database the whole suite
+therefore ran, executed almost nothing, and **reported green** — a run that
+could not do its job spelled its outcome identically to one that did it
+perfectly. The precondition now belongs to the launcher, fails once, and names
+itself `E2E_PRECONDITION_FAILED` so it is greppable.
+
+To run deliberately against an empty database, set `E2E_ALLOW_EMPTY_DB=1`. The
+setup then warns, in the run output, that a green result does not mean the
+fixtures existed.
+
+The setup does **not** seed. A setup that silently populated a database it
+found empty would hide the condition it exists to report.
 
 ## CI Integration
 
@@ -249,9 +372,11 @@ Playwright config (`playwright.config.ts`) is already set up:
 - Tests in `e2e/` directory
 - Chromium browser
 - Base URL: `http://localhost:3000`
-- Auto-starts dev server
+- Auto-starts dev server (`npm run dev` — note this suite has never run against
+  a production bundle; see backlog #13 in `.ai/registry-conformance.md`)
 - Screenshots on failure
 - Traces on retry
+- `globalSetup` asserts fixtures exist before any test runs
 
 ```bash
 # Run all e2e tests

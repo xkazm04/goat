@@ -16,6 +16,7 @@ import {
   prefersReducedMotion,
   type SocialPlatform,
 } from "@/lib/animations/sharing";
+import { getShareUrl, buildSocialShareUrl, type SocialSharePlatform } from "@/lib/sharing/share-urls";
 import { SharedRanking } from "@/types/share";
 
 // Platform data for social share buttons
@@ -75,45 +76,25 @@ export default function SharePage() {
   const handleShare = (platform: string) => {
     if (!ranking) return;
 
-    const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
-    const shareUrl = `${baseUrl}/share/${ranking.share_code}`;
+    const shareUrl = getShareUrl(ranking.share_code);
     const text = `Check out my Top ${ranking.items.length} ${ranking.category} ranking: "${ranking.title}"`;
 
-    let url = "";
-
-    switch (platform) {
-      case "twitter":
-        url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}&hashtags=GOAT,Rankings`;
-        break;
-      case "facebook":
-        url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
-        break;
-      case "linkedin":
-        url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`;
-        break;
-      case "reddit":
-        url = `https://reddit.com/submit?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(text)}`;
-        break;
-      case "whatsapp":
-        url = `https://wa.me/?text=${encodeURIComponent(`${text}\n\n${shareUrl}`)}`;
-        break;
-      case "discord":
-        navigator.clipboard.writeText(shareUrl);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-        return;
-    }
+    const url = buildSocialShareUrl({ platform: platform as SocialSharePlatform, url: shareUrl, text, hashtags: "GOAT,Rankings" });
 
     if (url) {
       window.open(url, "_blank", "noopener,noreferrer,width=600,height=400");
+    } else {
+      // Platform like Discord that prefers clipboard copy
+      navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     }
   };
 
   const handleCopyLink = async () => {
     if (!ranking) return;
 
-    const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
-    const shareUrl = `${baseUrl}/share/${ranking.share_code}`;
+    const shareUrl = getShareUrl(ranking.share_code);
 
     try {
       await navigator.clipboard.writeText(shareUrl);
@@ -127,8 +108,7 @@ export default function SharePage() {
   const handleNativeShare = async () => {
     if (!ranking || !navigator.share) return;
 
-    const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
-    const shareUrl = `${baseUrl}/share/${ranking.share_code}`;
+    const shareUrl = getShareUrl(ranking.share_code);
 
     try {
       await navigator.share({
@@ -136,7 +116,7 @@ export default function SharePage() {
         text: `Check out my Top ${ranking.items.length} ${ranking.category} ranking!`,
         url: shareUrl,
       });
-    } catch (err) {
+    } catch {
       // User cancelled or share failed silently
     }
   };
@@ -190,6 +170,7 @@ export default function SharePage() {
         <motion.button
           onClick={() => router.push("/")}
           className="mt-4 px-6 py-3 bg-brand-muted hover:bg-brand rounded-xl font-medium transition-all duration-200 focus-ring"
+          aria-label="Go to home page"
           data-testid="share-go-home-btn"
           initial={reducedMotion ? false : { opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -215,13 +196,14 @@ export default function SharePage() {
         <motion.button
           onClick={() => router.push("/")}
           className="mb-6 flex items-center gap-2 text-gray-400 hover:text-white transition-all duration-200 min-h-[44px]"
+          aria-label="Back to home"
           data-testid="share-back-btn"
           initial={reducedMotion ? false : { opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: DURATION.instant }}
           whileHover={{ x: -4 }}
         >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
           Back to Home
@@ -388,6 +370,7 @@ export default function SharePage() {
                 <button
                   onClick={handleCopyLink}
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-sm text-gray-300 transition-all min-h-[44px]"
+                  aria-label={copied ? "Link copied" : "Copy share link"}
                   data-testid="share-copy-link-btn"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -399,6 +382,7 @@ export default function SharePage() {
                   <button
                     onClick={handleNativeShare}
                     className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-sm text-gray-300 transition-all min-h-[44px]"
+                    aria-label="Share via system share dialog"
                     data-testid="share-native-btn"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -426,7 +410,8 @@ export default function SharePage() {
                   background: "linear-gradient(135deg, #22c55e 0%, #06b6d4 100%)",
                   boxShadow: "0 8px 30px rgba(34, 197, 94, 0.3)",
                 }}
-                data-testid="share-fork-btn"
+                aria-label={isForking ? "Forking ranking" : "Fork and remix this ranking"}
+          data-testid="share-fork-btn"
                 whileHover={isForking ? {} : { scale: 1.02, boxShadow: "0 12px 40px rgba(34, 197, 94, 0.4)" }}
                 whileTap={isForking ? {} : { scale: 0.98 }}
               >
@@ -455,12 +440,12 @@ export default function SharePage() {
                 {!showPreview ? (
                   <motion.button
                     onClick={() => setShowPreview(true)}
-                    className="px-8 py-4 rounded-xl font-bold text-lg text-white transition-all duration-300 focus-ring min-h-[44px]"
+                    className="px-8 py-4 rounded-xl font-bold text-lg text-white transition-all duration-300 focus-ring min-h-[44px] bg-gradient-brand"
                     style={{
-                      background: "linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%)",
                       boxShadow: "0 8px 30px rgba(6, 182, 212, 0.35)",
                     }}
-                    data-testid="share-challenge-cta-btn"
+                    aria-label="Make your own ranking"
+          data-testid="share-challenge-cta-btn"
                     whileHover={{ scale: 1.05, boxShadow: "0 12px 40px rgba(6, 182, 212, 0.45)" }}
                     whileTap={{ scale: 0.98 }}
                   >
@@ -498,12 +483,12 @@ export default function SharePage() {
                     </div>
                     <motion.button
                       onClick={handleStartRanking}
-                      className="w-full px-6 py-3 rounded-xl font-bold text-white transition-all duration-300 focus-ring min-h-[44px]"
+                      className="w-full px-6 py-3 rounded-xl font-bold text-white transition-all duration-300 focus-ring min-h-[44px] bg-gradient-brand"
                       style={{
-                        background: "linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%)",
                         boxShadow: "0 4px 20px rgba(6, 182, 212, 0.3)",
                       }}
-                      data-testid="share-start-ranking-btn"
+                      aria-label="Start ranking"
+          data-testid="share-start-ranking-btn"
                       whileHover={{ scale: 1.02, boxShadow: "0 8px 30px rgba(6, 182, 212, 0.4)" }}
                       whileTap={{ scale: 0.98 }}
                     >

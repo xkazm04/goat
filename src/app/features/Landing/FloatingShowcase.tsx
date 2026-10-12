@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { Play, Plus } from "lucide-react";
+import Image from "next/image";
 import { memo, useMemo, useCallback, useState } from "react";
 
 import ShowcaseDecor from "@/components/app/decorations/ShowcaseDecor";
@@ -9,7 +10,6 @@ import { useInView } from "@/components/patterns/virtualization/useIntersectionO
 import { GoatMascot } from "@/components/visual/GoatMascot";
 import { useAnimationPause } from "@/hooks/use-animation-pause";
 import { useComposition } from "@/hooks/use-composition";
-import { gradients } from "./shared/gradients";
 import { useListThumbnails } from "@/hooks/use-list-thumbnails";
 import { usePlayList } from "@/hooks/use-play-list";
 import { useFeaturedLists } from "@/hooks/use-top-lists";
@@ -20,6 +20,7 @@ import { usePersonalizedWelcome } from "@/lib/personalization";
 import { TopList } from "@/types/top-lists";
 
 import { OnboardingHero } from "./OnboardingHero";
+import { gradients } from "./shared/gradients";
 import { ShowcaseHeader } from "./ShowcaseHeader";
 
 /**
@@ -61,6 +62,13 @@ const TableRow = memo(function TableRow({
 
     const sizeLabel = `Top ${list.size}`;
 
+    const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleClick();
+        }
+    }, [handleClick]);
+
     return (
         <motion.div
             className="flex items-center gap-2 px-2 py-1.5 cursor-pointer transition-colors rounded focus-ring"
@@ -69,6 +77,8 @@ const TableRow = memo(function TableRow({
             aria-label={`Play ${list.title}`}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
+            onFocus={() => setIsHovered(true)}
+            onBlur={() => setIsHovered(false)}
             onClick={handleClick}
             // The hero row is the most prominent ranking entry point; without a
             // keydown handler it was mouse-only (WCAG 2.1.1), unlike the sibling
@@ -92,11 +102,12 @@ const TableRow = memo(function TableRow({
                 style={{ background: '#0c0c12' }}
             >
                 {imageUrl && !isLoading ? (
-                    <img
+                    <Image
                         src={imageUrl}
                         alt=""
-                        className="w-full h-full object-cover"
-                        loading="lazy"
+                        fill
+                        className="object-cover"
+                        unoptimized
                     />
                 ) : isLoading ? (
                     <div className="w-full h-full bg-slate-800 animate-pulse" />
@@ -167,7 +178,7 @@ const CategoryTable = memo(function CategoryTable({
     return (
         <div
             ref={inViewRef}
-            className="flex-1 min-w-0 rounded-card overflow-hidden backdrop-blur-md"
+            className="w-full md:flex-1 min-w-0 rounded-card overflow-hidden backdrop-blur-md"
             style={{
                 background: gradients.cardSurface,
                 border: `1px solid ${colors.primary}20`,
@@ -182,7 +193,7 @@ const CategoryTable = memo(function CategoryTable({
                 }}
             >
                 <span
-                    className="text-2xs font-bold uppercase tracking-widest font-heading"
+                    className="text-xs md:text-2xs font-bold uppercase tracking-widest font-heading"
                     style={{ color: colors.primary }}
                 >
                     {category}
@@ -277,6 +288,7 @@ export const FloatingShowcase = memo(function FloatingShowcase() {
         }
 
         allLists.forEach(list => {
+            if (!list.category) return;
             const resolved = resolveDisplayCategory(list.category);
             if (resolved && resolved in groups) {
                 groups[resolved].push(list);
@@ -350,7 +362,7 @@ export const FloatingShowcase = memo(function FloatingShowcase() {
                             <CategoryTable
                                 key={category}
                                 category={category}
-                                lists={categoryLists[category]}
+                                lists={categoryLists[category] ?? []}
                                 onPlay={handlePlayList}
                                 onCustomize={handleCustomize}
                                 isLoading={isLoading}

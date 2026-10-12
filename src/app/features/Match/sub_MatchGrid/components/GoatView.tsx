@@ -63,8 +63,9 @@ function GoatStarburst({ className }: { className?: string }) {
 }
 
 export function GoatView({ gridItems, onRemove, getItemTitle, onFillViaBracket }: GoatViewProps) {
-    const isFirstPositionAssigned = gridItems[0]?.context.matched;
     const { ref, shouldAnimate } = useAnimationPause();
+
+    const isFirstPositionAssigned = gridItems[0]?.context.matched;
 
     return (
         <div ref={ref} className="mb-8 relative">

@@ -425,7 +425,7 @@ export function ComparisonModal(props: ComparisonModalProps) {
                 {suggestions
                   .filter(s => s.confidence > 0.5)
                   .sort((a, b) => a.suggestedPosition - b.suggestedPosition)
-                  .map((suggestion, index) => {
+                  .map((suggestion, _index) => {
                     const item = items.find(i => i.id === suggestion.itemId);
                     if (!item) return null;
                     return (

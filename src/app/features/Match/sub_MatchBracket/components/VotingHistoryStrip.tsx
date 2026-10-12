@@ -2,7 +2,8 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Check, Undo2 } from 'lucide-react';
-import { useMemo, useRef, useEffect } from 'react';
+import Image from 'next/image';
+import { useMemo, useRef, useEffect, Fragment } from 'react';
 
 import { BracketState, CompletedVote, isCompletedNonBye, getLoserFromMatchup } from '../lib/bracketGenerator';
 
@@ -14,6 +15,33 @@ interface VotingHistoryStripProps {
 }
 
 type VoteResult = CompletedVote;
+
+/** Map full round names to compact labels for the history strip */
+function getAbbreviatedRoundName(roundName: string): string {
+  if (roundName === 'Final') return 'F';
+  if (roundName === 'Semi-finals') return 'SF';
+  if (roundName === 'Quarter-finals') return 'QF';
+  const match = roundName.match(/Round of (\d+)/);
+  if (match) return `R${match[1]}`;
+  // Sweet 16 → S16
+  const sweetMatch = roundName.match(/Sweet (\d+)/);
+  if (sweetMatch) return `S${sweetMatch[1]}`;
+  return roundName;
+}
+
+/** Group consecutive votes by roundIndex, preserving order */
+function groupVotesByRound(votes: VoteResult[]): { roundIndex: number; votes: VoteResult[] }[] {
+  const groups: { roundIndex: number; votes: VoteResult[] }[] = [];
+  for (const vote of votes) {
+    const last = groups[groups.length - 1];
+    if (last && last.roundIndex === vote.roundIndex) {
+      last.votes.push(vote);
+    } else {
+      groups.push({ roundIndex: vote.roundIndex, votes: [vote] });
+    }
+  }
+  return groups;
+}
 
 /**
  * Compact vote display showing winner vs loser
@@ -39,10 +67,12 @@ function VoteCard({ vote, isNew, onRevote }: { vote: VoteResult; isNew: boolean;
       {/* Winner */}
       <div className="relative w-9 h-9 sm:w-10 sm:h-10">
         {vote.winner.image_url ? (
-          <img
+          <Image
             src={vote.winner.image_url}
             alt={`${winnerName} (winner)`}
-            className="w-full h-full object-cover"
+            fill
+            className="object-cover"
+            unoptimized
           />
         ) : (
           <div className="w-full h-full bg-slate-700 flex items-center justify-center text-2xs text-slate-400 font-bold" aria-label={winnerName}>
@@ -58,10 +88,12 @@ function VoteCard({ vote, isNew, onRevote }: { vote: VoteResult; isNew: boolean;
       {/* Loser - grayed with X */}
       <div className="relative w-9 h-9 sm:w-10 sm:h-10">
         {vote.loser.image_url ? (
-          <img
+          <Image
             src={vote.loser.image_url}
             alt={`${loserName} (eliminated)`}
-            className="w-full h-full object-cover grayscale opacity-40"
+            fill
+            className="object-cover grayscale opacity-40"
+            unoptimized
           />
         ) : (
           <div className="w-full h-full bg-slate-800 flex items-center justify-center text-2xs text-slate-700 font-bold" aria-label={loserName}>
@@ -123,6 +155,9 @@ export function VotingHistoryStrip({ bracket, completedVotes: preComputed, onRev
 
   const completedVotes = localVotes;
 
+  // Group votes by round for visual grouping
+  const roundGroups = useMemo(() => groupVotesByRound(completedVotes), [completedVotes]);
+
   // Auto-scroll to end when new vote is added
   useEffect(() => {
     if (completedVotes.length > prevCountRef.current && scrollRef.current) {
@@ -180,14 +215,46 @@ export function VotingHistoryStrip({ bracket, completedVotes: preComputed, onRev
           className="flex-1 overflow-x-auto scrollbar-none flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 snap-x snap-mandatory"
         >
           <AnimatePresence mode="popLayout">
-            {completedVotes.map((vote, index) => (
-              <VoteCard
-                key={vote.id}
-                vote={vote}
-                isNew={index === completedVotes.length - 1}
-                onRevote={onRevote}
-              />
-            ))}
+            {roundGroups.map((group, groupIndex) => {
+              const round = bracket.rounds[group.roundIndex];
+              const roundLabel = round
+                ? getAbbreviatedRoundName(round.name)
+                : `R${group.roundIndex + 1}`;
+
+              return (
+                <Fragment key={`round-${group.roundIndex}`}>
+                  {/* Round divider (between groups, not before first) */}
+                  {groupIndex > 0 && (
+                    <div className="shrink-0 flex flex-col items-center gap-0.5">
+                      <span className="shrink-0 text-3xs px-1 py-px rounded bg-slate-800 text-slate-500 select-none leading-none">
+                        {roundLabel}
+                      </span>
+                      <div
+                        className="w-px h-6 bg-slate-700/60"
+                        aria-hidden="true"
+                      />
+                    </div>
+                  )}
+
+                  {/* Round label chip (first group only) */}
+                  {groupIndex === 0 && (
+                    <span className="shrink-0 text-3xs px-1 py-px rounded bg-slate-800 text-slate-500 select-none leading-none">
+                      {roundLabel}
+                    </span>
+                  )}
+
+                  {/* Votes in this round */}
+                  {group.votes.map((vote) => (
+                    <VoteCard
+                      key={vote.id}
+                      vote={vote}
+                      isNew={vote.id === completedVotes[completedVotes.length - 1]?.id}
+                      onRevote={onRevote}
+                    />
+                  ))}
+                </Fragment>
+              );
+            })}
           </AnimatePresence>
         </div>
       </div>

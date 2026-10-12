@@ -85,6 +85,7 @@ export function MetadataPanel() {
       const dbCategory = categoryToDbValue(category);
 
       // Save new items to Supabase for future reuse
+      // Failure aborts publish to prevent lists referencing unpersisted items
       const newItems = generatedItems.filter(item => !item.db_matched);
       if (newItems.length > 0) {
         try {
@@ -97,8 +98,12 @@ export function MetadataPanel() {
               reference_url: item.wikipedia_url || undefined,
             })),
           });
-        } catch (err) {
-          console.warn('[Studio] Failed to save new items:', err);
+        } catch (saveErr) {
+          throw new Error(
+            `Failed to save ${newItems.length} item${newItems.length > 1 ? 's' : ''} to the database. ` +
+            'Items must be persisted before publishing so they can be reused in future lists. ' +
+            (saveErr instanceof Error ? saveErr.message : 'Please try again.')
+          );
         }
       }
 
@@ -142,7 +147,7 @@ export function MetadataPanel() {
           List Settings
         </span>
         <div className="p-3 bg-gray-900/40 border border-gray-800/50 rounded-control">
-          <label className="flex items-center justify-between cursor-pointer group">
+          <label htmlFor="allow-custom-items-switch" className="flex items-center justify-between cursor-pointer group">
             <div className="flex items-center gap-2">
               <UserPlus className="w-4 h-4 text-gray-400 group-hover:text-gray-300 transition-colors" />
               <div>
@@ -155,6 +160,7 @@ export function MetadataPanel() {
               </div>
             </div>
             <button
+              id="allow-custom-items-switch"
               type="button"
               role="switch"
               aria-checked={allowCustomItems}
@@ -245,6 +251,7 @@ export function MetadataPanel() {
             'w-full h-9 text-sm font-medium rounded-control transition-all duration-200',
             'flex items-center justify-center gap-2',
             'border',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900',
             hasAnyItems && !isPublishing
               ? 'text-gray-300 hover:text-white border-gray-600/50 hover:border-gray-500/70 hover:bg-gray-800/50'
               : 'text-gray-600 cursor-not-allowed border-gray-700/30'
@@ -273,6 +280,7 @@ export function MetadataPanel() {
           className={cn(
             'w-full h-10 text-sm font-medium rounded-control transition-all duration-200',
             'flex items-center justify-center gap-2',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900',
             canPublish && !isPublishing
               ? 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 hover:text-amber-300 border border-amber-500/30 hover:border-amber-500/50'
               : 'text-gray-500 cursor-not-allowed border border-gray-700/30'
@@ -349,6 +357,7 @@ export function MetadataPanel() {
             className={cn(
               'w-full h-9 text-sm font-medium rounded-control transition-all duration-200',
               'flex items-center justify-center gap-2 border',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900',
               templatePublished
                 ? 'text-green-400 border-green-500/30 bg-green-500/10'
                 : canPublish && !publishTemplateMutation.isPending

@@ -14,9 +14,9 @@ const decades = [1980, 1990, 2000, 2010, 2020];
 
 const SetupTimePeriod = ({timePeriod, setTimePeriod, selectedDecade, setSelectedDecade, selectedYear, setSelectedYear, color}: Props) => {
     return <div className="mb-8">
-        <label className="block text-sm font-medium text-slate-300 mb-4">
+        <span className="block text-sm font-medium text-slate-300 mb-4">
             Time Period
-        </label>
+        </span>
         <div className="space-y-4">
             {/* Time Period Toggle with enhanced styling */}
             <div className="flex gap-2 p-1 rounded-xl backdrop-blur-xs"

@@ -1,13 +1,19 @@
 import { NextRequest } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 
+import { DEFAULT_LIST_COLOR } from '@/lib/config/category-config';
 import {
   withErrorHandler,
   fromSupabaseError,
   assertRequired,
+  assertIntRange,
   badRequest,
+  forbidden,
+  unauthorized,
   createdResponse,
 } from '@/lib/errors';
+import { GRID_LIMITS } from '@/lib/grid/constants';
+import { getTemplateViewUrl, getServerBaseUrl } from '@/lib/sharing/share-urls';
 import { createClient } from '@/lib/supabase/server';
 import {
   BlueprintRow,
@@ -18,11 +24,7 @@ import {
 
 export const dynamic = 'force-dynamic';
 
-const DEFAULT_COLOR = {
-  primary: '#f59e0b',
-  secondary: '#d97706',
-  accent: '#fbbf24',
-};
+const DEFAULT_COLOR = DEFAULT_LIST_COLOR;
 
 // POST /api/blueprints/publish - Publish a list as a community template
 export const POST = withErrorHandler(async (request: NextRequest) => {
@@ -35,6 +37,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
   assertRequired(title, 'title');
   assertRequired(category, 'category');
   assertRequired(size, 'size');
+  assertIntRange(size, 'size', GRID_LIMITS.MIN_SIZE, GRID_LIMITS.MAX_SIZE);
 
   if (!items || items.length === 0) {
     badRequest('At least one item is required to publish as template');
@@ -57,9 +60,18 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     throw fromSupabaseError(listError);
   }
 
-  // Verify ownership if user is authenticated
-  if (user && listData.user_id && listData.user_id !== user.id) {
-    badRequest('You can only publish your own lists as templates');
+  // Verify ownership. A list with an owner needs that owner's session. Before
+  // 2026-09-05 this read `if (user && listData.user_id && ...)`, so a request
+  // with NO session skipped the check and could publish anyone's list under
+  // "Anonymous". A guest list (no user_id) keeps the guest flow: publishable
+  // without a session.
+  if (listData.user_id) {
+    if (!user) {
+      unauthorized('You must be signed in to publish this list as a template');
+    }
+    if (listData.user_id !== user.id) {
+      forbidden('You can only publish your own lists as templates');
+    }
   }
 
   // Check if this list was already published as a template
@@ -124,8 +136,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
 
   const blueprint = blueprintFromRow(data as unknown as BlueprintRow);
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://goat.app';
-  const shareUrl = `${baseUrl}/templates?view=${blueprint.slug}`;
+  const shareUrl = getTemplateViewUrl(blueprint.slug ?? blueprint.id, getServerBaseUrl());
 
   return createdResponse({ blueprint, shareUrl });
 });

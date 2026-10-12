@@ -78,7 +78,7 @@ export abstract class BasePlatformAdapter {
     const deepLink = this.buildDeepLink(content);
 
     return new Promise((resolve) => {
-      const startTime = Date.now();
+      const _startTime = Date.now();
       const timeout = 2500;
 
       // Create hidden iframe for deep link

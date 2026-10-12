@@ -6,6 +6,7 @@
  */
 
 import type { ErrorCategory, ErrorCode, ErrorDetails } from '@/lib/errors/types';
+import type { Blueprint } from '@/types/blueprint';
 
 // =============================================================================
 // Base Response Types
@@ -57,8 +58,6 @@ export function isErrorResponse(response: ApiResponse<unknown>): response is Api
 // =============================================================================
 // Blueprint API Response Types
 // =============================================================================
-
-import type { Blueprint } from '@/types/blueprint';
 
 /**
  * GET /api/blueprints response

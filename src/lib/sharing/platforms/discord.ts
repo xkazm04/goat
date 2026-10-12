@@ -84,7 +84,7 @@ export class DiscordAdapter extends BasePlatformAdapter {
     };
   }
 
-  buildShareUrl(content: OptimizedContent): string {
+  buildShareUrl(_content: OptimizedContent): string {
     // Discord doesn't have a direct share URL
     // We'll copy the message to clipboard and open Discord
     return this.config.webUrl;

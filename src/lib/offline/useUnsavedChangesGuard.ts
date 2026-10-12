@@ -32,27 +32,45 @@ export function useUnsavedChangesGuard(
   } = options;
 
   const isSyncingOnFocusRef = useRef(false);
+  const cachedPendingCountRef = useRef(0);
+
+  // Track pending count synchronously via queue change listener
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    try {
+      const persistence = getOfflinePersistence();
+
+      // Seed the cached count
+      persistence.getPendingCount().then(count => {
+        cachedPendingCountRef.current = count;
+      });
+
+      // Keep it updated on every queue change
+      const unsubscribe = persistence.onQueueChange((count) => {
+        cachedPendingCountRef.current = count;
+      });
+
+      return unsubscribe;
+    } catch {
+      // Not initialized yet — count stays 0
+    }
+  }, []);
 
   // beforeunload handler
   useEffect(() => {
     if (!enableBeforeUnload || typeof window === 'undefined') return;
 
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      // Single flush replaces the old 3-layer flush
+      // Always flush synchronously to persist data
       flushDerivedSessionSync();
       flushPendingSync();
 
-      // Check pending count synchronously via a simple check
-      // (we can't await here, but the flushes above are synchronous)
-      const persistence = getOfflinePersistence();
-      persistence.getPendingCount().then(count => {
-        // This won't actually prevent unload since it's async,
-        // but the flushes above already saved data synchronously
-      });
-
-      // Always set returnValue for safety — browser decides whether to show
-      e.preventDefault();
-      e.returnValue = '';
+      // Only show the leave-page warning when there are enough pending changes
+      if (cachedPendingCountRef.current >= minPendingForWarning) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);

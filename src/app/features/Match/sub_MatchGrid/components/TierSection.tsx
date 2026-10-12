@@ -7,6 +7,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ChevronUp, Sparkles } from "lucide-react";
+import Image from "next/image";
 import { memo, useRef, useMemo } from "react";
 
 import { DURATION } from "@/lib/animations/motion-presets";
@@ -196,7 +197,7 @@ const CollapsedPreview = memo(function CollapsedPreview({
         {filledItems.slice(0, 5).map(({ position, item }) => (
           <motion.div
             key={position}
-            className="w-8 h-8 rounded-control border-2 overflow-hidden"
+            className="relative w-8 h-8 rounded-control border-2 overflow-hidden"
             style={{
               borderColor: tier.style.accentColor,
               boxShadow: `0 0 8px ${tier.style.glowColor}`,
@@ -206,10 +207,12 @@ const CollapsedPreview = memo(function CollapsedPreview({
             transition={{ delay: position * 0.05 }}
           >
             {item?.item?.image_url ? (
-              <img
+              <Image
                 src={item.item.image_url}
                 alt=""
-                className="w-full h-full object-cover"
+                fill
+                className="object-cover"
+                unoptimized
               />
             ) : (
               <div

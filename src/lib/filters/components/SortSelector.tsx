@@ -13,7 +13,7 @@ import { DURATION } from '@/lib/animations/motion-presets';
 import { cn } from '@/lib/utils';
 
 import { useFilterIntegrationOptional } from '../CollectionFilterIntegration';
-import { DEFAULT_FILTER_FIELDS } from '../constants';
+import { DEFAULT_FILTER_FIELDS, ICON_SIZES } from '../constants';
 
 import type { SortConfig, SortDirection, FilterFieldDefinition } from '../types';
 
@@ -176,7 +176,7 @@ function DefaultSortSelector({
         )}
         onClick={() => setIsOpen(!isOpen)}
       >
-        <ArrowUpDown size={14} />
+        <ArrowUpDown size={ICON_SIZES.md} />
         <span>
           {sortConfig
             ? `${sortConfig.label || sortConfig.field}`
@@ -185,9 +185,9 @@ function DefaultSortSelector({
         {sortConfig && (
           <span className="text-xs opacity-70">
             {sortConfig.direction === 'asc' ? (
-              <ArrowUp size={12} />
+              <ArrowUp size={ICON_SIZES.sm} />
             ) : (
-              <ArrowDown size={12} />
+              <ArrowDown size={ICON_SIZES.sm} />
             )}
           </span>
         )}
@@ -199,7 +199,7 @@ function DefaultSortSelector({
               onClear();
             }}
           >
-            <X size={12} />
+            <X size={ICON_SIZES.sm} />
           </button>
         )}
       </button>
@@ -246,9 +246,9 @@ function DefaultSortSelector({
                           animate={{ scale: 1 }}
                         >
                           {sortConfig?.direction === 'asc' ? (
-                            <ArrowUp size={14} />
+                            <ArrowUp size={ICON_SIZES.md} />
                           ) : (
-                            <ArrowDown size={14} />
+                            <ArrowDown size={ICON_SIZES.md} />
                           )}
                         </motion.span>
                       )}
@@ -317,9 +317,9 @@ function CompactSortSelector({
           title={`Sort ${sortConfig.direction === 'asc' ? 'descending' : 'ascending'}`}
         >
           {sortConfig.direction === 'asc' ? (
-            <ArrowUp size={12} />
+            <ArrowUp size={ICON_SIZES.sm} />
           ) : (
-            <ArrowDown size={12} />
+            <ArrowDown size={ICON_SIZES.sm} />
           )}
         </button>
       )}
@@ -364,9 +364,9 @@ function InlineSortSelector({
               <span>{option.label}</span>
               {isActive && (
                 sortConfig?.direction === 'asc' ? (
-                  <ArrowUp size={10} />
+                  <ArrowUp size={ICON_SIZES.xs} />
                 ) : (
-                  <ArrowDown size={10} />
+                  <ArrowDown size={ICON_SIZES.xs} />
                 )
               )}
             </button>
@@ -378,7 +378,7 @@ function InlineSortSelector({
             onClick={onClear}
             title="Clear sort"
           >
-            <X size={12} />
+            <X size={ICON_SIZES.sm} />
           </button>
         )}
       </div>

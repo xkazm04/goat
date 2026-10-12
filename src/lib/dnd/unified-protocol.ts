@@ -1,20 +1,26 @@
 /**
- * Unified Drag/Drop Protocol
+ * Unified Drag/Drop Protocol — the tier-mode payloads.
  *
- * Provides a unified data protocol for all drag-and-drop operations across
- * all ranking modes (Podium, Goat, Rushmore, Bracket, Tier List).
+ * Extends type-guards.ts (backlog / grid / collection payloads) with the
+ * shapes the tier list sends: a tier item is a `useSortable` carrying
+ * `UnifiedDragData` (TierItem.tsx), a tier row is a `useDroppable` carrying
+ * `UnifiedDropData` of type 'tier-row' (TierRow.tsx), and the unranked pool is
+ * a droppable of type 'unranked-pool'. DragOperationRouter.parseSource /
+ * parseTarget read exactly these.
  *
- * This extends the existing type-guards.ts with tier-specific types and
- * unified factory functions that work across all modes.
+ * Corrected 2026-09-05: this module also carried a second drop-id grammar
+ * (`DROP_ID_PATTERNS`, `parseDropTargetId`, `isTierRowId`, ...) that spelled
+ * tier rows `tier-row-${id}` while the live surface registers them as
+ * `tier-${tier.id}` and the router matches `startsWith('tier-')`. It had zero
+ * consumers (knip + grep), so two grammars for one rule were reduced to the
+ * one the surface uses. Six factories, three guards, two describers and
+ * `determineTransferRoute` went with it, each at zero consumers.
  */
 
-import { createGridReceiverId, isGridReceiverId, extractGridPosition } from './transfer-protocol';
-import { backlogToTransferable, gridToTransferable, collectionToTransferable } from './type-guards';
+import { backlogToTransferable } from './type-guards';
 
 import type { TransferableItem } from './transfer-protocol';
-import type { CollectionItem } from '@/app/features/Collection/types';
 import type { BacklogItem } from '@/types/backlog-groups';
-import type { GridItemType } from '@/types/match';
 
 // ============================================================================
 // Unified Source Types
@@ -120,82 +126,18 @@ export function isUnifiedDropData(data: unknown): data is UnifiedDropData {
 }
 
 /**
- * Type guard specifically for tier drag data
- */
-export function isTierDragData(data: unknown): data is UnifiedDragData & { type: 'tier-item' } {
-  return isUnifiedDragData(data) && data.type === 'tier-item';
-}
-
-/**
  * Type guard specifically for tier row drop data
  */
 export function isTierRowDropData(data: unknown): data is UnifiedDropData & { type: 'tier-row' } {
   return isUnifiedDropData(data) && data.type === 'tier-row';
 }
 
-/**
- * Type guard for tier item drop data (for reordering)
- */
-export function isTierItemDropData(data: unknown): data is UnifiedDropData & { type: 'tier-item' } {
-  return isUnifiedDropData(data) && data.type === 'tier-item';
-}
-
-/**
- * Type guard for unranked pool drop
- */
-export function isUnrankedPoolDropData(data: unknown): data is UnifiedDropData & { type: 'unranked-pool' } {
-  return isUnifiedDropData(data) && data.type === 'unranked-pool';
-}
-
 // ============================================================================
-// Factory Functions - Drag Data
+// Factory Functions
 // ============================================================================
 
 /**
- * Create unified drag data for a collection/backlog item
- */
-export function createUnifiedCollectionDragData(
-  item: CollectionItem | BacklogItem,
-  collectionId: string
-): UnifiedDragData {
-  const transferable = 'category' in item && typeof item.category === 'string'
-    ? backlogToTransferable(item as BacklogItem)
-    : collectionToTransferable(item as CollectionItem);
-
-  return {
-    type: 'collection-item',
-    item: transferable,
-    source: {
-      from: 'backlog',
-      collectionId,
-    },
-  };
-}
-
-/**
- * Create unified drag data for a grid item
- */
-export function createUnifiedGridDragData(
-  item: GridItemType,
-  position: number
-): UnifiedDragData {
-  const transferable = gridToTransferable(item);
-  if (!transferable) {
-    throw new Error(`Cannot create drag data for unmatched grid item at position ${position}`);
-  }
-
-  return {
-    type: 'grid-item',
-    item: transferable,
-    source: {
-      from: 'grid',
-      gridPosition: position,
-    },
-  };
-}
-
-/**
- * Create unified drag data for a tier item
+ * Create unified drag data for a tier item (TierItem.tsx, via useSortable)
  */
 export function createUnifiedTierDragData(
   item: BacklogItem | TransferableItem,
@@ -218,46 +160,7 @@ export function createUnifiedTierDragData(
 }
 
 /**
- * Create unified drag data for an item in the unranked pool
- */
-export function createUnifiedUnrankedDragData(
-  item: BacklogItem | TransferableItem
-): UnifiedDragData {
-  const transferable: TransferableItem = 'category' in item && typeof item.category === 'string'
-    ? backlogToTransferable(item as BacklogItem)
-    : item as TransferableItem;
-
-  return {
-    type: 'tier-item',
-    item: transferable,
-    source: {
-      from: 'unranked-pool',
-    },
-  };
-}
-
-// ============================================================================
-// Factory Functions - Drop Data
-// ============================================================================
-
-/**
- * Create unified drop data for a grid slot
- */
-export function createUnifiedGridSlotDropData(
-  position: number,
-  isOccupied: boolean,
-  occupant?: GridItemType
-): UnifiedDropData {
-  return {
-    type: 'grid-slot',
-    position,
-    isOccupied,
-    occupant: occupant && occupant.context.matched ? gridToTransferable(occupant) || undefined : undefined,
-  };
-}
-
-/**
- * Create unified drop data for a tier row
+ * Create unified drop data for a tier row (TierRow.tsx, via useDroppable)
  */
 export function createUnifiedTierRowDropData(
   tierId: string,
@@ -269,228 +172,4 @@ export function createUnifiedTierRowDropData(
     tierIndex,
     isOccupied: false, // Tier rows accept multiple items
   };
-}
-
-/**
- * Create unified drop data for a tier item (for reordering)
- */
-export function createUnifiedTierItemDropData(
-  tierId: string,
-  orderInTier: number
-): UnifiedDropData {
-  return {
-    type: 'tier-item',
-    tierId,
-    position: orderInTier,
-  };
-}
-
-/**
- * Create unified drop data for the unranked pool
- */
-export function createUnifiedUnrankedPoolDropData(): UnifiedDropData {
-  return {
-    type: 'unranked-pool',
-  };
-}
-
-// ============================================================================
-// Drop Target ID Utilities
-// ============================================================================
-
-/**
- * Standard ID patterns for drop targets.
- * Grid slots use the canonical "grid-{n}" format (via createGridReceiverId).
- */
-export const DROP_ID_PATTERNS = {
-  gridSlot: (position: number) => createGridReceiverId(position),
-  tierRow: (tierId: string) => `tier-row-${tierId}`,
-  tierItem: (itemId: string) => `tier-item-${itemId}`,
-  unrankedPool: 'unranked-pool',
-} as const;
-
-/**
- * Parse a drop target ID to extract type and metadata.
- * Canonical grid format is "grid-{n}". Legacy "grid-slot-{n}" and "drop-{n}"
- * are still parsed for backwards compatibility but log dev warnings.
- */
-export function parseDropTargetId(id: string): {
-  type: UnifiedDropType | 'unknown';
-  position?: number;
-  tierId?: string;
-  itemId?: string;
-} {
-  // Canonical grid ID: "grid-{n}" (must check before legacy "grid-slot-")
-  if (isGridReceiverId(id)) {
-    const position = extractGridPosition(id);
-    return { type: 'grid-slot', position: position ?? undefined };
-  }
-
-  // Legacy: "grid-slot-{n}" — still parsed, but warn in dev
-  if (id.startsWith('grid-slot-')) {
-    if (process.env.NODE_ENV === 'development') {
-      console.warn(`[DnD] Legacy grid ID "${id}" detected. Use createGridReceiverId(position) for "grid-{n}" format.`);
-    }
-    const position = parseInt(id.slice(10), 10);
-    return { type: 'grid-slot', position: isNaN(position) ? undefined : position };
-  }
-
-  if (id.startsWith('tier-row-')) {
-    return { type: 'tier-row', tierId: id.slice(9) };
-  }
-
-  if (id.startsWith('tier-item-')) {
-    return { type: 'tier-item', itemId: id.slice(10) };
-  }
-
-  if (id === 'unranked-pool') {
-    return { type: 'unranked-pool' };
-  }
-
-  // Legacy: "drop-{n}" — still parsed, but warn in dev
-  if (id.startsWith('drop-')) {
-    if (process.env.NODE_ENV === 'development') {
-      console.warn(`[DnD] Legacy grid ID "${id}" detected. Use createGridReceiverId(position) for "grid-{n}" format.`);
-    }
-    const position = parseInt(id.slice(5), 10);
-    return { type: 'grid-slot', position: isNaN(position) ? undefined : position };
-  }
-
-  return { type: 'unknown' };
-}
-
-/**
- * Check if an ID matches any grid slot pattern (canonical or legacy).
- * Prefer isGridReceiverId() for checking canonical "grid-{n}" IDs only.
- */
-export function isGridSlotId(id: string): boolean {
-  return isGridReceiverId(id) || id.startsWith('grid-slot-') || id.startsWith('drop-');
-}
-
-/**
- * Check if an ID matches a tier row pattern
- */
-export function isTierRowId(id: string): boolean {
-  return id.startsWith('tier-row-');
-}
-
-/**
- * Check if an ID matches a tier item pattern
- */
-export function isTierItemId(id: string): boolean {
-  return id.startsWith('tier-item-');
-}
-
-// ============================================================================
-// Debug Helpers
-// ============================================================================
-
-/**
- * Get human-readable description of unified drag data
- */
-export function describeUnifiedDragData(data: unknown): string {
-  if (!isUnifiedDragData(data)) {
-    return `Invalid drag data: ${typeof data}`;
-  }
-
-  const { type, item, source } = data;
-  let desc = `${type}[${item.id}] "${item.title}"`;
-
-  if (source.from === 'grid' && source.gridPosition !== undefined) {
-    desc += ` from grid position ${source.gridPosition}`;
-  } else if (source.from === 'tier' && source.tierId) {
-    desc += ` from tier ${source.tierId}`;
-    if (source.orderInTier !== undefined) {
-      desc += ` at index ${source.orderInTier}`;
-    }
-  } else if (source.from === 'backlog' && source.collectionId) {
-    desc += ` from collection "${source.collectionId}"`;
-  } else if (source.from === 'unranked-pool') {
-    desc += ` from unranked pool`;
-  }
-
-  return desc;
-}
-
-/**
- * Get human-readable description of unified drop data
- */
-export function describeUnifiedDropData(data: unknown): string {
-  if (!isUnifiedDropData(data)) {
-    return `Invalid drop data: ${typeof data}`;
-  }
-
-  switch (data.type) {
-    case 'grid-slot':
-      return `GridSlot[${data.position}] ${data.isOccupied ? '(occupied)' : '(empty)'}`;
-    case 'tier-row':
-      return `TierRow[${data.tierId}]`;
-    case 'tier-item':
-      return `TierItem in ${data.tierId} at ${data.position}`;
-    case 'unranked-pool':
-      return 'UnrankedPool';
-    default:
-      return `Unknown drop type`;
-  }
-}
-
-// ============================================================================
-// Transfer Route Determination
-// ============================================================================
-
-/**
- * Possible transfer routes between sources and targets
- */
-export type TransferRoute =
-  | 'backlog-to-grid'
-  | 'backlog-to-tier'
-  | 'grid-to-grid'
-  | 'grid-to-tier'
-  | 'tier-to-grid'
-  | 'tier-to-tier-same'
-  | 'tier-to-tier-different'
-  | 'tier-to-unranked'
-  | 'unranked-to-tier'
-  | 'unranked-to-grid'
-  | 'unknown';
-
-/**
- * Determine the transfer route based on drag and drop data
- */
-export function determineTransferRoute(
-  dragData: UnifiedDragData,
-  dropData: UnifiedDropData
-): TransferRoute {
-  const { source } = dragData;
-  const { type: dropType } = dropData;
-
-  // From backlog/collection
-  if (source.from === 'backlog') {
-    if (dropType === 'grid-slot') return 'backlog-to-grid';
-    if (dropType === 'tier-row') return 'backlog-to-tier';
-  }
-
-  // From grid
-  if (source.from === 'grid') {
-    if (dropType === 'grid-slot') return 'grid-to-grid';
-    if (dropType === 'tier-row') return 'grid-to-tier';
-  }
-
-  // From tier
-  if (source.from === 'tier') {
-    if (dropType === 'grid-slot') return 'tier-to-grid';
-    if (dropType === 'unranked-pool') return 'tier-to-unranked';
-    if (dropType === 'tier-row' || dropType === 'tier-item') {
-      if (dropData.tierId === source.tierId) return 'tier-to-tier-same';
-      return 'tier-to-tier-different';
-    }
-  }
-
-  // From unranked pool
-  if (source.from === 'unranked-pool') {
-    if (dropType === 'grid-slot') return 'unranked-to-grid';
-    if (dropType === 'tier-row') return 'unranked-to-tier';
-  }
-
-  return 'unknown';
 }

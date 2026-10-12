@@ -185,6 +185,20 @@ export const DEFAULT_FILTER_OPTIONS = {
 } as const;
 
 /**
+ * Standardized icon size tokens for all filter components.
+ * Use these instead of hardcoded size={N} values.
+ */
+export const ICON_SIZES = {
+  '2xs': 8,
+  xs: 10,
+  sm: 12,
+  md: 14,
+  lg: 16,
+  xl: 18,
+  '2xl': 24,
+} as const;
+
+/**
  * Standardized animation timing tokens for all filter components.
  * Use these instead of hardcoded duration/delay values.
  */

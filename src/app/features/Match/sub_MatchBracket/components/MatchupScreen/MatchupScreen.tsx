@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Trophy, Info, ChevronRight, Undo2, Scale } from 'lucide-react';
-import { useState, useCallback, useMemo, useRef } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 
 import { DURATION } from '@/lib/animations/motion-presets';
 
@@ -53,6 +53,17 @@ export function MatchupScreen({
   const [isCompareOpen, setIsCompareOpen] = useState(false);
   const dims = useBracketDimensions();
 
+  // Ref to track confirm timeout for cleanup on unmount
+  const confirmTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (confirmTimeoutRef.current) {
+        clearTimeout(confirmTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // Build comparison items from matchup participants
   const comparisonItems = useMemo(() => {
     const items = [];
@@ -79,8 +90,9 @@ export function MatchupScreen({
       navigator.vibrate([30, 20, 50]);
     }
 
-    // Quick animation then submit
-    setTimeout(() => {
+    // Quick animation then submit (cleared on unmount to prevent stale callbacks)
+    confirmTimeoutRef.current = setTimeout(() => {
+      confirmTimeoutRef.current = null;
       onSelectWinner(selectedWinnerId);
     }, 300);
   }, [selectedWinnerId, onSelectWinner, isConfirming]);
@@ -125,8 +137,8 @@ export function MatchupScreen({
     // Must be a quick, primarily horizontal swipe with enough distance
     if (dt > 500 || Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx)) return;
 
-    // Swipe left = select left participant, swipe right = select right participant
-    const participant = dx < 0 ? matchup.participant1 : matchup.participant2;
+    // Tinder-style: swipe right = approve left card, swipe left = approve right card
+    const participant = dx > 0 ? matchup.participant1 : matchup.participant2;
     if (participant) {
       setSelectedWinnerId(participant.id);
       if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
@@ -296,7 +308,7 @@ export function MatchupScreen({
                 className="flex items-center justify-center gap-2 text-slate-400 text-sm py-2"
               >
                 <Info className="w-4 h-4" />
-                <span>{dims.isMobile ? 'Tap or swipe to select the winner' : 'Tap a card to select the winner'}</span>
+                <span>{dims.isMobile ? 'Tap a card or swipe right to pick left, left to pick right' : 'Tap a card to select the winner'}</span>
               </motion.div>
             )}
           </AnimatePresence>

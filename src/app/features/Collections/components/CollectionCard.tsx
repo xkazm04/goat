@@ -16,6 +16,8 @@ import { memo, useCallback } from "react";
 import { use3DTilt } from "@/hooks/use-3d-tilt";
 import { SPRING } from "@/lib/animations/motion-presets";
 
+import { safeCollectionColor } from "../lib/collection-color";
+
 import type { ListCollection, CollectionStats } from "@/types/collection";
 
 interface CollectionCardProps {
@@ -44,7 +46,7 @@ export const CollectionCard = memo(function CollectionCard({
   showActions = true,
   variant = "default",
 }: CollectionCardProps) {
-  const color = collection.color || DEFAULT_COLORS.primary;
+  const color = safeCollectionColor(collection.color, DEFAULT_COLORS.primary);
 
   const { ref, style: tiltStyle, handlers } = use3DTilt({
     maxRotation: 6,
@@ -56,6 +58,23 @@ export const CollectionCard = memo(function CollectionCard({
   const handleClick = useCallback(() => {
     onSelect?.(collection);
   }, [onSelect, collection]);
+
+  // The card is a div, not a button, because it hosts nested controls (the
+  // actions menu, the View link). A div only becomes reachable by keyboard
+  // when it says so: role, tab stop, and Enter/Space doing what a click does.
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.target !== e.currentTarget) return; // a nested control's own key
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        onSelect?.(collection);
+      }
+    },
+    [onSelect, collection]
+  );
+  const controlProps = onSelect
+    ? { role: "button" as const, tabIndex: 0, onKeyDown: handleKeyDown, "aria-pressed": isSelected }
+    : {};
 
   const handleEdit = useCallback(
     (e: React.MouseEvent) => {
@@ -85,8 +104,9 @@ export const CollectionCard = memo(function CollectionCard({
           isSelected
             ? "bg-slate-700/50 border-brand/50"
             : "bg-slate-800/30 hover:bg-slate-800/60 border-transparent"
-        } border`}
+        } border focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand`}
         onClick={handleClick}
+        {...controlProps}
         whileHover={{ x: 4 }}
         whileTap={{ scale: 0.98 }}
       >
@@ -111,7 +131,7 @@ export const CollectionCard = memo(function CollectionCard({
     return (
       <motion.div
         ref={ref}
-        className={`relative p-4 rounded-container cursor-pointer group ${
+        className={`relative p-4 rounded-container cursor-pointer group focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand ${
           isSelected
             ? "ring-2 ring-brand"
             : "ring-1 ring-slate-700/50 hover:ring-slate-600"
@@ -121,6 +141,7 @@ export const CollectionCard = memo(function CollectionCard({
           background: `linear-gradient(135deg, ${color}10 0%, rgba(15, 23, 42, 0.8) 100%)`,
         }}
         onClick={handleClick}
+        {...controlProps}
         whileTap={{ scale: 0.98 }}
         {...handlers}
       >
@@ -156,7 +177,7 @@ export const CollectionCard = memo(function CollectionCard({
   return (
     <motion.div
       ref={ref}
-      className={`relative overflow-hidden rounded-container cursor-pointer group ${
+      className={`relative overflow-hidden rounded-container cursor-pointer group focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand ${
         isSelected ? "ring-2 ring-brand" : ""
       }`}
       style={{
@@ -165,6 +186,7 @@ export const CollectionCard = memo(function CollectionCard({
         boxShadow: `0 12px 40px rgba(0, 0, 0, 0.4), 0 0 60px ${color}08`,
       }}
       onClick={handleClick}
+      {...controlProps}
       whileTap={{ scale: 0.98 }}
       {...handlers}
     >

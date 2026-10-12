@@ -41,8 +41,11 @@ export function escapeIlikeWildcards(value: string): string {
  */
 export async function createClient() {
   const cookieStore = await cookies()
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error('Missing env var: NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY')
+  }
 
   return createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
     cookies: {

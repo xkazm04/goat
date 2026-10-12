@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useShallow } from 'zustand/react/shallow';
 
+import { goatApi } from '@/lib/api';
+import { DEFAULT_LIST_COLOR } from '@/lib/config/category-config';
 import { listLogger } from '@/lib/logger';
 import { TopList } from '@/types/top-lists';
 
@@ -154,16 +156,42 @@ export const useListStore = create<ListStoreState>()(
       },
       
       loadListById: async (listId: string) => {
-        set({ isLoading: true });
+        set({ isLoading: true, creationError: null });
         try {
-          const { useTopList } = await import('@/hooks/use-top-lists');
-          
-          // This would typically be handled by React Query in the component
-          // For now, we'll set loading and let the component handle the actual loading
           listLogger.debug(`Loading list ${listId}...`);
+          const fetchedList = await goatApi.lists.get(listId);
+
+          const listConfig: ListConfiguration = {
+            ...fetchedList,
+            metadata: {
+              size: fetchedList.size,
+              selectedCategory: fetchedList.category,
+              selectedSubcategory: fetchedList.subcategory,
+              timePeriod: (fetchedList.time_period === 'decade' || fetchedList.time_period === 'year' ? fetchedList.time_period : 'all-time'),
+              color: { ...DEFAULT_LIST_COLOR },
+            },
+          };
+
+          // Add to available lists cache if not already present
+          const state = get();
+          if (!state.availableLists.some(l => l.id === fetchedList.id)) {
+            set({ availableLists: [fetchedList, ...state.availableLists] });
+          }
+
+          set({
+            currentList: listConfig,
+            isLoading: false,
+            shouldRedirectToMatch: true,
+          });
+
+          setTimeout(() => get()._updateMatchingContext(), 0);
+          listLogger.debug(`List ${listId} loaded successfully`);
         } catch (error) {
           listLogger.error('Failed to load list:', error);
-          set({ isLoading: false });
+          set({
+            isLoading: false,
+            creationError: `Failed to load list: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          });
         }
       },
       
@@ -187,11 +215,7 @@ export const useListStore = create<ListStoreState>()(
               selectedCategory: targetList.category,
               selectedSubcategory: targetList.subcategory,
               timePeriod: "all-time",
-              color: {
-                primary: "#3b82f6",
-                secondary: "#1e40af", 
-                accent: "#60a5fa"
-              }
+              color: { ...DEFAULT_LIST_COLOR }
             }
           };
           

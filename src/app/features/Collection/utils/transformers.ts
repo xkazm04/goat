@@ -9,7 +9,7 @@ import { BacklogGroup, BacklogItem } from '@/types/backlog-groups';
 /**
  * Convert BacklogItem to CollectionItem
  */
-export function backlogItemToCollectionItem(item: BacklogItem): CollectionItem {
+function backlogItemToCollectionItem(item: BacklogItem): CollectionItem {
   return {
     id: item.id,
     title: extractTitle(item),
@@ -33,7 +33,7 @@ export function backlogItemToCollectionItem(item: BacklogItem): CollectionItem {
 /**
  * Convert BacklogGroup to ItemCategory
  */
-export function backlogGroupToItemCategory(group: BacklogGroup): ItemCategory {
+function backlogGroupToItemCategory(group: BacklogGroup): ItemCategory {
   return {
     id: group.id,
     name: group.name,
@@ -50,14 +50,3 @@ export function backlogGroupToItemCategory(group: BacklogGroup): ItemCategory {
 export function backlogGroupsToItemCategories(groups: BacklogGroup[]): ItemCategory[] {
   return groups.map(backlogGroupToItemCategory);
 }
-
-
-
-
-
-
-
-
-
-
-

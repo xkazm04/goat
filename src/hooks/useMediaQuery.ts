@@ -19,8 +19,10 @@ export function useMediaQuery(query: string): boolean {
   const [matches, setMatches] = useState(false);
 
   useEffect(() => {
-    // Check if window is available (client-side)
-    if (typeof window === 'undefined') {
+    // Check if window AND the API are available (client-side; jsdom and some
+    // webviews have a window with no matchMedia). Staying at the `false` initial
+    // value is the correct degradation - it is what SSR renders too.
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
       return;
     }
 
