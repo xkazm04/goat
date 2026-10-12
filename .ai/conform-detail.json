@@ -358,6 +358,21 @@
           "evidence": "src/app/page.tsx:33 No model-facing artifact editing tools."
         }
       ]
+    },
+    "a5fbc2be-5b70-4417-89a3-cffbb72ea426/quality-gates": {
+      "context": "platform-infrastructure",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-12",
+      "evaluatedTs": "2026-10-12T22:49:56.050Z",
+      "techniques": [],
+      "withdrawn": {
+        "worker": "bf3496f0-6683-47e4-97f0-eed5d54d4a99",
+        "state": "not-applicable",
+        "at": "2026-10-12T22:50:29.395075+00:00",
+        "reason": "reviewer (sonnet): The anchor is an oEmbed GET handler that doesn't show whether quality gates, waivers or hooks exist. The claim that copy-contract sources don't name it and the pipeline is recorded in notes was not confirmed in the code I opened, so the anchor is incidental."
+      }
     }
   }
 }
