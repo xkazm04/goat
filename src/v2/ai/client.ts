@@ -4,6 +4,8 @@ import { parseCriticLine, type ChatTurn, type CriticEvent } from './critic';
 import { createLineSplitter, parseEventLine, type PoolEvent } from './events';
 
 import type { ListSnapshot } from './snapshot';
+import type { Persona } from './taste';
+import type { Dna } from '@/v2/dna/dna';
 import type { ListItem , ListSize } from '@/v2/list/types';
 
 
@@ -89,5 +91,37 @@ export async function findGaps(snapshot: ListSnapshot, signal?: AbortSignal): Pr
     | { items?: GapSuggestion[]; error?: { message?: string } }
     | null;
   if (!response.ok || !body?.items) throw new Error(body?.error?.message ?? 'Could not look for gaps.');
+  return body.items;
+}
+
+async function postJson<T>(path: string, body: unknown, signal?: AbortSignal): Promise<T> {
+  const token = await accessToken();
+  const response = await fetch(path, {
+    method: 'POST',
+    signal,
+    headers: { 'content-type': 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}) },
+    body: JSON.stringify(body),
+  });
+  const data = (await response.json().catch(() => null)) as (T & { error?: { message?: string } }) | null;
+  if (!response.ok || !data || data.error) throw new Error(data?.error?.message ?? 'The request failed.');
+  return data;
+}
+
+export function fetchPersona(input: { dna: Dna; previousCardNo: number; sourceLists: string[] }, signal?: AbortSignal) {
+  return postJson<{ persona: Persona; cardNo: number; source: string }>('/api/v2/persona', input, signal);
+}
+
+export interface RecommendationView {
+  item: ListItem;
+  topic: string;
+  reason: string;
+  match: number;
+}
+
+export async function fetchRecommendations(
+  input: { dna: Dna; topics: string[]; exclude: string[] },
+  signal?: AbortSignal,
+): Promise<RecommendationView[]> {
+  const body = await postJson<{ items: RecommendationView[] }>('/api/v2/recommend', input, signal);
   return body.items;
 }

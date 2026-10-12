@@ -18,6 +18,8 @@ export interface Saved {
 export interface ListStorage {
   load(listId: string): Promise<Saved | null>;
   save(listId: string, value: Saved): Promise<void>;
+  /** Every list saved here, for work that spans lists (taste DNA). Unreadable entries are skipped. */
+  all(): Promise<{ id: string; saved: Saved }[]>;
 }
 
 /** Reject anything that is not a consistent saved list: old shapes, hand edits, corruption. */
@@ -42,6 +44,12 @@ export function memoryStorage(): ListStorage {
     },
     async save(id, value) {
       data.set(id, JSON.stringify(value));
+    },
+    async all() {
+      return [...data].flatMap(([id, raw]) => {
+        const saved = readSaved(JSON.parse(raw));
+        return saved ? [{ id, saved }] : [];
+      });
     },
   };
 }
@@ -88,6 +96,28 @@ export function indexedDbStorage(): ListStorage {
         });
       } catch {
         // Unsaved locally; the in-memory state is still correct.
+      }
+    },
+    async all() {
+      try {
+        const conn = await getDb();
+        const rows = await new Promise<{ id: string; value: unknown }[]>((resolve, reject) => {
+          const out: { id: string; value: unknown }[] = [];
+          const req = conn.transaction(STORE, 'readonly').objectStore(STORE).openCursor();
+          req.onsuccess = () => {
+            const cursor = req.result;
+            if (!cursor) return resolve(out);
+            out.push({ id: String(cursor.key), value: cursor.value });
+            cursor.continue();
+          };
+          req.onerror = () => reject(req.error);
+        });
+        return rows.flatMap(({ id, value }) => {
+          const saved = readSaved(value);
+          return saved ? [{ id, saved }] : [];
+        });
+      } catch {
+        return [];
       }
     },
   };

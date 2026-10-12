@@ -1,6 +1,9 @@
+import Link from 'next/link';
+
 import { HomeLists } from '@/v2/ui/HomeLists';
 import { SessionChip } from '@/v2/ui/SessionChip';
 
+import '@/v2/ui/dna.css';
 import '@/v2/ui/editor.css';
 
 const MILESTONES = [
@@ -9,8 +12,8 @@ const MILESTONES = [
   { id: 'M2', name: 'Four modes', detail: 'Canvas and Stage, the mode-switch morph', state: 'done' },
   { id: 'M3', name: 'Create with AI', detail: 'Prompt to a streaming candidate pool on Claude', state: 'done' },
   { id: 'M4', name: 'Co-curator', detail: 'Critic chat and gap spotter', state: 'done' },
-  { id: 'M5', name: 'Taste DNA', detail: 'Persona card and recommendations', state: 'next' },
-  { id: 'M6', name: 'Publish', detail: 'Public page, social card, embed', state: 'later' },
+  { id: 'M5', name: 'Taste DNA', detail: 'Persona card and recommendations', state: 'done' },
+  { id: 'M6', name: 'Publish', detail: 'Public page, social card, embed', state: 'next' },
   { id: 'M7', name: 'Swap', detail: 'v2 moves to /, v1 is deleted', state: 'later' },
 ] as const;
 
@@ -21,7 +24,10 @@ export default function V2Home() {
         <span className="v2-wordmark">
           G.O.A.T.<small>v2</small>
         </span>
-        <SessionChip />
+        <nav aria-label="Account" className="v2-nav">
+          <Link href="/v2/me">Your taste</Link>
+          <SessionChip />
+        </nav>
       </header>
 
       <section className="v2-hero" aria-labelledby="v2-title">

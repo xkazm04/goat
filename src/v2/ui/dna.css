@@ -1,0 +1,213 @@
+/* M5: the taste profile and the persona card (study E4) */
+.goat-v2 .me-title {
+  margin: 8px 0 4px;
+  font-size: clamp(2rem, 5vw, 3.2rem);
+}
+
+.goat-v2 .me-sub {
+  margin: 0 0 24px;
+  opacity: 0.7;
+}
+
+.goat-v2 .me-grid {
+  display: grid;
+  gap: 32px;
+  grid-template-columns: minmax(0, 360px) minmax(0, 1fr);
+  align-items: start;
+  margin-bottom: 40px;
+}
+
+@media (max-width: 760px) {
+  .goat-v2 .me-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.goat-v2 .me-grid .v2-btn {
+  margin-top: 16px;
+}
+
+.goat-v2 .me-empty {
+  display: grid;
+  place-items: center;
+  min-height: 280px;
+  padding: 24px;
+  text-align: center;
+}
+
+.goat-v2 .me-traits {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.goat-v2 .me-traits li {
+  display: grid;
+  grid-template-columns: 9rem minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.goat-v2 .me-meter {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.goat-v2 .me-meter i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #7c5cff, #35e0c2);
+}
+
+.goat-v2 .me-recs {
+  display: grid;
+  gap: 12px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.goat-v2 .me-recs li {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 14px;
+  padding: 12px;
+}
+
+.goat-v2 .me-recs b {
+  margin-right: 8px;
+}
+
+.goat-v2 .me-recs p {
+  margin: 4px 0 0;
+  opacity: 0.8;
+}
+
+.goat-v2 .me-match {
+  font-size: 0.8rem;
+  color: #35e0c2;
+}
+
+/* The card: a glass slab with a slow holographic sheen. */
+.goat-v2 .pc {
+  position: relative;
+  overflow: hidden;
+  padding: 22px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: linear-gradient(160deg, rgba(124, 92, 255, 0.28), rgba(10, 12, 24, 0.9) 55%, rgba(53, 224, 194, 0.18));
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+}
+
+.goat-v2 .pc header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.goat-v2 .pc-no {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+}
+
+.goat-v2 .pc h2 {
+  margin: 10px 0 4px;
+  font-size: 1.8rem;
+  line-height: 1.1;
+}
+
+.goat-v2 .pc-tag {
+  margin: 0 0 8px;
+  opacity: 0.85;
+}
+
+.goat-v2 .pc svg {
+  display: block;
+  width: 100%;
+  max-width: 260px;
+  margin: 0 auto;
+}
+
+.goat-v2 .pc-rim,
+.goat-v2 .pc-spoke {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.18);
+  stroke-width: 0.6;
+}
+
+.goat-v2 .pc-shape {
+  fill: rgba(53, 224, 194, 0.32);
+  stroke: #35e0c2;
+  stroke-width: 1.2;
+}
+
+.goat-v2 .pc-label {
+  fill: rgba(255, 255, 255, 0.85);
+  font-size: 7px;
+}
+
+.goat-v2 .pc-evidence {
+  display: grid;
+  gap: 6px;
+  margin: 14px 0;
+  padding-left: 18px;
+  font-size: 0.9rem;
+}
+
+.goat-v2 .pc-era {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+.goat-v2 .pc-bar {
+  position: relative;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.goat-v2 .pc-bar i {
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.goat-v2 .pc-sheen {
+  position: absolute;
+  inset: -40%;
+  pointer-events: none;
+  background: conic-gradient(from 0deg, transparent, rgba(255, 255, 255, 0.14), transparent 30%, rgba(124, 92, 255, 0.2), transparent 60%);
+  mix-blend-mode: screen;
+  animation: pc-spin 14s linear infinite;
+}
+
+@keyframes pc-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .goat-v2 .pc-sheen {
+    animation: none;
+  }
+}
+
+.goat-v2 .v2-nav {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}

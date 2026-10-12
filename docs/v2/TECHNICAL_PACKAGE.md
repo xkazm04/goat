@@ -418,6 +418,38 @@ Still open:
 
 ## 10. Milestones
 
+### What M5 changed from the plan above
+
+- **Where it lives.** `src/v2/dna/`: `dna.ts` (pure math, tested), `source.ts`
+  (gathers lists), `cache.ts`, `PersonaCard.tsx`, `MeRoute.tsx`. The model
+  side is `src/v2/ai/taste.ts` behind `POST /api/v2/persona` and
+  `POST /api/v2/recommend`.
+- **Which lists count.** The plan says published lists. Publishing is M6, so
+  until then every list with at least three ranked items counts: the ones
+  saved in this browser (including the demo once you edit it) and your own
+  on the server. The card says how many lists it was built from.
+- **Math.** Rank weight `(size + 1 - rank) / size`, a recency factor that
+  halves each year with a floor of 0.3, per-trait sums normalised to the
+  strongest, top 8 kept. The classic-to-modern axis is the weighted mean year
+  mapped over 1950 to 2025.
+- **Not built:** the mainstream-to-obscure axis. It needs popularity from
+  enrichment sources, which are not ported yet, so the card shows the era
+  axis only.
+- **Match %.** Computed on the server as cosine similarity between the trait
+  weights and the item's traits, and the list is ordered by it; the model
+  only proposes items and reasons.
+- **Card numbers.** Signed in, `taste_profiles.card_no` counts up per
+  regeneration and the profile is stored. Without an account the browser's
+  last number plus one is used. The persona and the recommendations are cached
+  in this browser by taste fingerprint, and recommendations are reused for 24
+  hours.
+- **Over-long model text is clipped, not rejected.** The first live CLI run
+  returned a 150-character tagline against a 140 limit and the whole persona
+  failed to parse; the schema now clips at a word boundary.
+- **Quotas.** `persona` 5 and `recommend` 10 per user per rolling 24 hours.
+- **Unverified.** The Claude API calls use the same untested request shapes as
+  M4; the CLI engine proves the prompts and parsing, not those shapes.
+
 ### What M4 changed from the plan above
 
 - **Items now get uuid ids and rows (a fix to M3).** M3 named candidates with
@@ -539,7 +571,7 @@ one developer plus agents.
 | **M2** ✅ | All four modes | **Canvas** (tier bands, draggable and renamable tier lines), **Stage** (Podium / Rushmore / Throne, face-off, tournament), the mode morph, keyboard paths | **Done 2026-10-11.** The Playwright smoke (`e2e-v2/smoke.spec.ts`, now the `v2-smoke` CI job) ranks in every mode, runs a face-off and a full 8-seed tournament, then reloads and undoes. |
 | **M3** ✅ | AI creation | Claude client, `/api/v2/pool` (web search + `propose_candidate` streaming), ported enrichment, `/v2/new` prune UI, quotas, fixture provider for CI | **Built 2026-10-12, live Claude path not yet exercised.** `/v2/new` streams a pool, lets you drop candidates and opens the list in the editor; unit tests and the `v2-smoke` job run it on the fixture provider. Enrichment, hero art and the live model call are open, see "What M3 changed". |
 | **M4** ✅ | Co-curator | Critic chat (cached and streaming), gap spotter, Batches tagging for custom items | **Built 2026-10-12, live Claude paths not yet exercised.** "Challenge me" streams a critic that is sent the list once and later edits as diffs; "Find gaps" adds up to five suggestions to the front of the pool. Batch tagging exists server-side only. See "What M4 changed". |
-| **M5** | Taste DNA | DNA math, `taste_profiles`, persona task, **E4 `<PersonaCard/>`** on `/v2/me`, recommendations | Publishing two lists produces a persona card and five recommendations with reasons. |
+| **M5** ✅ | Taste DNA | DNA math, `taste_profiles`, persona task, **E4 `<PersonaCard/>`** on `/v2/me`, recommendations | **Built 2026-10-12, live Claude API path not yet exercised.** `/v2/me` reads the lists in this browser (and yours on the server), computes the fingerprint, writes a persona card and five recommendations with our own match %. Verified on the fixture provider in `v2-smoke` and on the CLI engine. Two differences from the plan: the lists need not be published, and the mainstream-to-obscure axis is not built. See "What M5 changed". |
 | **M6** | Publish | `/p/[slug]`, fork, OG card, embed with scoped CSP, oEmbed | A shared link unfurls with the card, and the embed works in a third-party page. |
 | **M7** | Swap | Move `/v2` to `/`, delete v1 directories, deps and governance tooling (§7–8), new CLAUDE.md | The tree is under about 30k LOC. Every v2 gate is green, and no v1 path remains. |
 

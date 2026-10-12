@@ -152,3 +152,36 @@ test('the critic answers and sees later edits, and Find gaps adds to the pool', 
   expect(Number(await page.locator('.pool h2 b').innerText())).toBe(Number(before) + 3);
   expect(errors).toEqual([]);
 });
+
+test('builds a taste card and recommendations from a ranked list', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+
+  // A fresh browser has no lists, so there is nothing to read yet.
+  await page.goto('/v2/me');
+  await expect(page.getByText('Rank at least three items')).toBeVisible();
+
+  // An edit saves the demo list in this browser; the profile reads it from there.
+  await page.goto('/v2/l/demo');
+  await expect(page.locator('.mo')).toBeVisible();
+  await drag(page, page.getByLabel('Skyrim, unranked'), rankLabel(page, 3));
+  await expect(rankLabel(page, 3)).toHaveAttribute('aria-label', '#3 Skyrim');
+  await page.waitForTimeout(800);
+
+  await page.goto('/v2/me');
+  await expect(page.getByText(/From 1 list and \d+ ranked items/)).toBeVisible();
+  await expect(page.locator('.me-traits li').first()).toBeVisible();
+
+  await page.getByRole('button', { name: 'Write my card' }).click();
+  const card = page.getByRole('article', { name: /Persona card 1:/ });
+  await expect(card).toBeVisible();
+  await expect(card.locator('.pc-evidence li')).toHaveCount(3);
+
+  await page.getByRole('button', { name: 'Write a new card' }).click();
+  await expect(page.getByRole('article', { name: /Persona card 2:/ })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Recommend things I would like' }).click();
+  await expect(page.locator('.me-recs li')).toHaveCount(5);
+  await expect(page.locator('.me-match').first()).toContainText('% match');
+  expect(errors).toEqual([]);
+});

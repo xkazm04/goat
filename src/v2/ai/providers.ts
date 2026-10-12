@@ -1,6 +1,7 @@
 import { cliCritic, cliGaps, cliPool } from './cli-providers';
 import { claudeCritic, claudeGaps, fixtureCritic, fixtureGaps, type CriticProvider, type GapProvider } from './converse';
 import { claudeProvider, fixtureProvider, type PoolProvider } from './pool';
+import { claudeTaste, cliTaste, fixtureTaste, type TasteProvider } from './taste';
 
 /**
  * One switch for every AI route:
@@ -31,4 +32,9 @@ export function pickCritic(): CriticProvider {
 export function pickGaps(): GapProvider {
   const e = engine();
   return e === 'cli' ? cliGaps() : e === 'claude' ? claudeGaps() : fixtureGaps();
+}
+
+export function pickTaste(): TasteProvider {
+  const e = engine();
+  return e === 'cli' ? cliTaste() : e === 'claude' ? claudeTaste() : fixtureTaste();
 }

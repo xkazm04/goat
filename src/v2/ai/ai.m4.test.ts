@@ -143,3 +143,15 @@ describe('tagging batches', () => {
     expect(out).toEqual({ b: ['epic'], d: ['fine'] });
   });
 });
+
+describe('persona schema', () => {
+  it('clips over-long text at a word and keeps the first three evidence lines', async () => {
+    const { personaSchema } = await import('./taste');
+    const long = `${'word '.repeat(60)}end`;
+    const parsed = personaSchema.parse({ name: 'N', tagline: long, evidence: ['a', 'b', 'c', 'd'] });
+    expect(parsed.tagline.length).toBeLessThanOrEqual(140);
+    expect(parsed.tagline.endsWith('…')).toBe(true);
+    expect(parsed.evidence).toEqual(['a', 'b', 'c']);
+    expect(personaSchema.safeParse({ name: 'N', tagline: 't', evidence: ['a', 'b'] }).success).toBe(false);
+  });
+});

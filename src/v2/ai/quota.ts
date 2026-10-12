@@ -5,6 +5,8 @@ export const DAILY_LIMITS = {
   critic: 60,
   gaps: 20,
   tag: 10,
+  persona: 5,
+  recommend: 10,
 } as const;
 
 export type AiTask = keyof typeof DAILY_LIMITS;
