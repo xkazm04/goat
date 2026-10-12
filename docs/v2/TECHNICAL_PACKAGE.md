@@ -418,6 +418,35 @@ Still open:
 
 ## 10. Milestones
 
+### What M3 changed from the plan above
+
+- **Route and files.** `src/app/api/v2/pool/route.ts` is the only route.
+  `src/v2/ai/` holds `candidate.ts` (zod schema, JSON Schema for the tool,
+  `docFromCandidates`), `events.ts` (NDJSON), `pool.ts` (system prompt,
+  `claudeProvider`, `fixtureProvider`), `quota.ts`, `server.ts` (service-role
+  access for `ai_usage`) and `client.ts` (the browser stream reader). The
+  isolation lint rule now covers `src/app/api/v2/**` in both directions.
+- **Provider choice.** `V2_AI_PROVIDER=fixture|claude` wins; otherwise the
+  route uses Claude when `ANTHROPIC_API_KEY` is set and the fixture provider
+  when it is not. The fixture provider needs no account and spends nothing,
+  which is what CI and a fresh checkout use.
+- **Quota.** 10 pool builds per user per rolling 24 hours, counted from
+  `ai_usage`. Only the Claude provider is metered, and it needs a bearer
+  token (a guest session is enough). When `SUPABASE_SERVICE_ROLE_KEY` is not
+  set, accounting is skipped rather than failing the request.
+- **New lists open from this browser first.** `/v2/new` saves the list to
+  IndexedDB under a fresh UUID and opens `/v2/l/<id>`; the editor loads that
+  copy when the server has none and syncs it as soon as a session exists.
+  A candidate's one-sentence reason becomes the item's note.
+- **Not in this slice:** enrichment (TMDB, IGDB, Spotify, Wikipedia,
+  OpenLibrary) and list `heroArt` are not ported yet, so items carry no
+  `imageUrl` and the generative cover shows. Prompt-cache hits are logged
+  (`cache_read_tokens`) but not asserted anywhere.
+- **Unverified.** `claudeProvider` typechecks against the SDK but has not
+  run against the API: the model id, `fallbacks: "default"` with beta
+  `server-side-fallback-2026-07-01`, and `eager_input_streaming` on a strict
+  tool come from the vendor docs, not from a live response.
+
 ### What M2 changed from the plan above
 
 - **The tournament is a new 80-line engine** (`src/v2/list/tournament.ts`),
@@ -470,7 +499,7 @@ one developer plus agents.
 | **M0** ✅ | Ground | `src/v2` + `/v2` route, isolation lint rule (both directions, proved by `src/v2/isolation.test.ts`), design tokens + fonts, `goat_v2` baseline migration with RLS (guarded by `supabase/migrations/goat_v2_baseline.test.ts`), anonymous guest sessions, v1 chrome seam, repo junk removed | **Done 2026-10-09.** `/v2` renders the glass shell and its session state. Every existing CI gate is green. Lean CI: the existing `gates.yml` already runs typecheck, lint and vitest over `src/v2`. The heavier jobs (ratchet, findings, structure, doc coupling) stay until v1 is deleted at M7, because they guard v1 code. |
 | **M1** ✅ | List core | `ListDoc`, commands, reducer, undo, local persistence, Supabase sync; **Spread** and **Mosaic**; `<Cover/>`; v1 seed import | **Done 2026-10-11.** `/v2/l/demo` ranks the 50-RPG demo in Mosaic and Spread with drag, keyboard and undo, and survives a reload with undo intact. Verified in Chromium (11 checks) plus 37 unit tests. Supabase sync and `npm run seed:v2` are written and unit-tested but **not yet run against a real database**. |
 | **M2** ✅ | All four modes | **Canvas** (tier bands, draggable and renamable tier lines), **Stage** (Podium / Rushmore / Throne, face-off, tournament), the mode morph, keyboard paths | **Done 2026-10-11.** The Playwright smoke (`e2e-v2/smoke.spec.ts`, now the `v2-smoke` CI job) ranks in every mode, runs a face-off and a full 8-seed tournament, then reloads and undoes. |
-| **M3** | AI creation | Claude client, `/api/v2/pool` (web search + `propose_candidate` streaming), ported enrichment, `/v2/new` prune UI, quotas, fixture provider for CI | Prompt "GOAT 90s sci-fi films" yields about 30 candidates with art and traits in under about 30s, streaming, and ranking can start. |
+| **M3** ✅ | AI creation | Claude client, `/api/v2/pool` (web search + `propose_candidate` streaming), ported enrichment, `/v2/new` prune UI, quotas, fixture provider for CI | **Built 2026-10-12, live Claude path not yet exercised.** `/v2/new` streams a pool, lets you drop candidates and opens the list in the editor; unit tests and the `v2-smoke` job run it on the fixture provider. Enrichment, hero art and the live model call are open, see "What M3 changed". |
 | **M4** | Co-curator | Critic chat (cached and streaming), gap spotter, Batches tagging for custom items | Critic responds to live list changes without cache misses. Gaps land in the pool. |
 | **M5** | Taste DNA | DNA math, `taste_profiles`, persona task, **E4 `<PersonaCard/>`** on `/v2/me`, recommendations | Publishing two lists produces a persona card and five recommendations with reasons. |
 | **M6** | Publish | `/p/[slug]`, fork, OG card, embed with scoped CSP, oEmbed | A shared link unfurls with the card, and the embed works in a third-party page. |

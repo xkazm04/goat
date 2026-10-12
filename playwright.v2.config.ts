@@ -43,6 +43,8 @@ export default defineConfig({
     env: {
       NEXT_PUBLIC_SUPABASE_URL: 'http://127.0.0.1:9',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: 'placeholder-anon-key-for-the-v2-smoke',
+      // /v2/new streams from the free fixture provider, never a model.
+      V2_AI_PROVIDER: 'fixture',
       NEXT_TELEMETRY_DISABLED: '1',
     },
   },

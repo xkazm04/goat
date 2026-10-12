@@ -57,12 +57,12 @@
 
 import { createRequire } from "node:module";
 
+import queryPlugin from "@tanstack/eslint-plugin-query";
 import coreWebVitals from "eslint-config-next/core-web-vitals";
-import storybookPlugin from "eslint-plugin-storybook";
-import unusedImports from "eslint-plugin-unused-imports";
 import importPlugin from "eslint-plugin-import";
 import jsxA11y from "eslint-plugin-jsx-a11y";
-import queryPlugin from "@tanstack/eslint-plugin-query";
+import storybookPlugin from "eslint-plugin-storybook";
+import unusedImports from "eslint-plugin-unused-imports";
 
 const require = createRequire(import.meta.url);
 const noUnstableStoreSelector = require("./eslint-rules/no-unstable-store-selector.cjs");
@@ -302,7 +302,7 @@ const eslintConfig = [
   // each direction can fail.
   // ===========================================================================
   {
-    files: ["src/v2/**/*.{ts,tsx}", "src/app/v2/**/*.{ts,tsx}"],
+    files: ["src/v2/**/*.{ts,tsx}", "src/app/v2/**/*.{ts,tsx}", "src/app/api/v2/**/*.{ts,tsx}"],
     rules: {
       "no-restricted-imports": [
         "error",
@@ -319,7 +319,7 @@ const eslintConfig = [
   },
   {
     files: ["src/**/*.{ts,tsx}"],
-    ignores: ["src/v2/**", "src/app/v2/**"],
+    ignores: ["src/v2/**", "src/app/v2/**", "src/app/api/v2/**"],
     rules: {
       "no-restricted-imports": [
         "error",

@@ -99,3 +99,21 @@ test('lays out without sideways scrolling on a phone', async ({ page }) => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(400);
   }
 });
+
+test('builds a pool from a topic and opens it in the editor', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+
+  await page.goto('/v2/new?topic=pizza%20toppings');
+  await page.getByRole('button', { name: 'Build the pool' }).click();
+  // 25 asked for, with a 20% margin: the fixture provider yields 30.
+  await expect(page.getByRole('status')).toContainText('30 of 30 kept');
+
+  await page.getByRole('button', { name: 'Drop' }).first().click();
+  await expect(page.getByRole('status')).toContainText('29 of 30 kept');
+
+  await page.getByRole('button', { name: 'Start ranking 29' }).click();
+  await expect(page).toHaveURL(/\/v2\/l\/[0-9a-f-]{36}$/);
+  await expect(page.locator('.mo')).toBeVisible();
+  expect(errors).toEqual([]);
+});

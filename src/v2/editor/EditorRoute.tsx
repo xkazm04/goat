@@ -82,8 +82,32 @@ function RemoteRoute({ listId }: { listId: string }) {
     const storage = indexedDbStorage();
 
     async function open(): Promise<Opened> {
-      if (!client) return { phase: 'error', message: 'Supabase is not configured, so only the demo list can open here.' };
-      const remote = await loadList(client, listId);
+      // A list made in /v2/new exists in this browser before it exists on the server.
+      const draft = await storage.load(listId);
+      if (!client) {
+        if (!draft) return { phase: 'error', message: 'Supabase is not configured, so only the demo list can open here.' };
+        const store = createEditorStore({ history: draft.history, items: draft.items });
+        if (!cancelled) stops.push(autosave(store, storage));
+        return { phase: 'ready', store, readOnly: false };
+      }
+      let remote: Awaited<ReturnType<typeof loadList>> = null;
+      try {
+        remote = await loadList(client, listId);
+      } catch (error) {
+        if (!draft) throw error; // offline with a local copy still opens
+      }
+      if (!remote && draft) {
+        const store = createEditorStore({ history: draft.history, items: draft.items });
+        if (!cancelled) {
+          stops.push(autosave(store, storage));
+          if (userId) {
+            stops.push(syncToSupabase(store, client, userId, setSync));
+            // Push once now: a draft with no edits yet would otherwise never reach the server.
+            store.setState((s) => ({ history: { ...s.history, present: { ...s.history.present } } }));
+          }
+        }
+        return { phase: 'ready', store, readOnly: false };
+      }
       if (!remote) return { phase: 'missing' };
 
       if (userId && remote.ownerId === userId) {
