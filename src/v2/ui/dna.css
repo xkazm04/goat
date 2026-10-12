@@ -211,3 +211,15 @@
   align-items: center;
   gap: 16px;
 }
+
+/* The landing page: the goat backdrop sits under the content. */
+.goat-v2 .home {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+.goat-v2 .home-content {
+  position: relative;
+  z-index: 1;
+}
