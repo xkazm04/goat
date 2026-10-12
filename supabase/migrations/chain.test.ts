@@ -186,8 +186,13 @@ describe('supabase/migrations — the chain read as a chain', () => {
     };
     const defined = new Set<string>();
     for (const st of allSqlStatements()) {
-      const m = /^CREATE (?:TABLE|(?:OR REPLACE )?VIEW) (?:IF NOT EXISTS )?([a-z_."]+)/i.exec(st.sql);
-      if (m) defined.add(ident(m[1]));
+      const m = /^CREATE (?:TABLE|(?:OR REPLACE )?VIEW) (?:IF NOT EXISTS )?([a-z0-9_."]+)/i.exec(st.sql);
+      if (!m) continue;
+      defined.add(ident(m[1]));
+      // v2 code queries goat_v2 tables through a client bound to that schema
+      // (src/v2/db/browser.ts), so `.from('list_entries')` names goat_v2.list_entries.
+      const v2 = /^goat_v2\.(.+)$/.exec(ident(m[1]));
+      if (v2) defined.add(v2[1]);
     }
     const queried = new Set<string>();
     // A walk over a live tree races anything that writes into it. Concretely:

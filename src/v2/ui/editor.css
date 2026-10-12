@@ -1,0 +1,1103 @@
+/*
+ * The list editor (Spread, Mosaic, pool), ported from the interaction studies
+ * docs/v2/prototypes/modes.html and shared.css. Scoped under .goat-v2.
+ */
+
+/* ---------- covers ---------- */
+.goat-v2 .v2-cover {
+  --h1: 220;
+  --h2: 280;
+  position: relative;
+  aspect-ratio: 3 / 4;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 10px;
+  isolation: isolate;
+  container-type: inline-size;
+  background:
+    radial-gradient(120% 80% at 80% 0%, hsl(var(--h2) 80% 60% / 0.85), transparent 60%),
+    radial-gradient(90% 70% at 0% 100%, hsl(var(--h1) 75% 45% / 0.9), transparent 65%),
+    linear-gradient(160deg, hsl(var(--h1) 45% 16%), hsl(var(--h2) 40% 9%));
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+}
+
+.goat-v2 .v2-cover::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.55;
+  mix-blend-mode: screen;
+}
+
+.goat-v2 .v2-cover[data-motif="sun"]::before {
+  background:
+    radial-gradient(circle at 50% 42%, hsl(var(--h2) 95% 75%) 0 18%, transparent 19%),
+    repeating-linear-gradient(0deg, transparent 0 9px, rgba(0, 0, 0, 0.45) 9px 12px);
+  mask: linear-gradient(transparent 20%, #000 30% 60%, transparent 70%);
+}
+.goat-v2 .v2-cover[data-motif="rings"]::before {
+  background: repeating-radial-gradient(circle at 70% 30%, hsl(var(--h2) 90% 70% / 0.7) 0 1px, transparent 2px 14px);
+}
+.goat-v2 .v2-cover[data-motif="grid"]::before {
+  background:
+    linear-gradient(hsl(var(--h2) 90% 75% / 0.35) 1px, transparent 1px) 0 0 / 100% 12%,
+    linear-gradient(90deg, hsl(var(--h2) 90% 75% / 0.35) 1px, transparent 1px) 0 0 / 14% 100%;
+  transform: perspective(200px) rotateX(55deg) translateY(30%);
+}
+.goat-v2 .v2-cover[data-motif="slash"]::before {
+  background: repeating-linear-gradient(115deg, transparent 0 18px, hsl(var(--h2) 90% 70% / 0.5) 18px 20px);
+}
+.goat-v2 .v2-cover[data-motif="moon"]::before {
+  background:
+    radial-gradient(circle at 62% 34%, transparent 0 15%, hsl(var(--h2) 95% 80%) 15.5% 22%, transparent 22.5%),
+    radial-gradient(circle at 30% 70%, hsl(var(--h1) 90% 60% / 0.5), transparent 40%);
+}
+.goat-v2 .v2-cover[data-motif="shard"]::before {
+  background: conic-gradient(
+    from 200deg at 40% 60%,
+    transparent 0 20deg,
+    hsl(var(--h2) 90% 70% / 0.6) 20deg 40deg,
+    transparent 40deg 140deg,
+    hsl(var(--h1) 90% 65% / 0.5) 140deg 160deg,
+    transparent 160deg
+  );
+}
+
+.goat-v2 .v2-cover img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+}
+
+.goat-v2 .v2-cover::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: linear-gradient(transparent 45%, rgba(0, 0, 0, 0.78));
+}
+
+.goat-v2 .v2-cover-title {
+  position: absolute;
+  left: 7%;
+  right: 7%;
+  bottom: 7%;
+  z-index: 3;
+  font: 800 clamp(0.6rem, 15cqi, 2.6rem) / 0.88 var(--display);
+  text-transform: uppercase;
+  color: #fff;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+  overflow-wrap: anywhere;
+}
+
+.goat-v2 .v2-cover-year {
+  position: absolute;
+  left: 7%;
+  top: 6%;
+  z-index: 3;
+  font: 600 clamp(0.45rem, 6.5cqi, 0.75rem) / 1 var(--mono);
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* ---------- editor frame ---------- */
+.goat-v2 .ed {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+}
+
+@media (min-width: 1100px) {
+  .goat-v2 .ed {
+    grid-template-columns: minmax(0, 1fr) 300px;
+  }
+}
+
+.goat-v2 .ed-main {
+  min-width: 0;
+  padding-inline: 16px;
+  padding-block: 16px 64px;
+  display: grid;
+  gap: 20px;
+  align-content: start;
+}
+
+@media (min-width: 900px) {
+  .goat-v2 .ed-main {
+    padding-inline: 32px;
+  }
+}
+
+.goat-v2 .ed-bar {
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--r-md);
+  background: rgba(6, 7, 12, 0.78);
+  border: 1px solid var(--glass-edge);
+  backdrop-filter: blur(14px);
+}
+
+.goat-v2 .ed-back {
+  color: var(--gold);
+  text-decoration: none;
+  font: 900 1.1rem / 1 var(--display);
+  letter-spacing: 0.04em;
+  padding-inline: 4px;
+}
+
+.goat-v2 .ed-seg {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--glass);
+  border: 1px solid var(--glass-edge);
+}
+
+.goat-v2 .ed-seg button {
+  border: 0;
+  background: transparent;
+  color: var(--fg-muted);
+  font: 600 var(--step--1) / 1 var(--body);
+  padding: 0.55em 0.9em;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.goat-v2 .ed-seg button[aria-pressed="true"] {
+  background: var(--gold);
+  color: #1a1406;
+}
+
+.goat-v2 .ed-seg kbd {
+  font: 500 0.7rem / 1 var(--mono);
+  opacity: 0.6;
+  margin-left: 0.4em;
+}
+
+.goat-v2 .ed-ghost {
+  border: 1px solid var(--glass-edge);
+  background: var(--glass);
+  color: var(--fg);
+  font: 600 var(--step--1) / 1 var(--body);
+  padding: 0.6em 0.9em;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.goat-v2 .ed-ghost:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.goat-v2 .ed-spacer {
+  flex: 1;
+}
+
+.goat-v2 .ed-status {
+  font: 500 var(--step--1) / 1 var(--mono);
+  color: var(--fg-muted);
+}
+
+.goat-v2 .ed-status[data-state="error"] {
+  color: var(--danger);
+}
+
+.goat-v2 .ed-head {
+  display: grid;
+  gap: 8px;
+  padding-top: 12px;
+}
+
+.goat-v2 .ed-title {
+  width: 100%;
+  resize: none;
+  overflow: hidden;
+  field-sizing: content;
+  background: transparent;
+  border: 0;
+  color: var(--fg);
+  font: 900 clamp(2rem, 6vw, 4.4rem) / 0.95 var(--display);
+  text-transform: uppercase;
+  padding: 0;
+}
+
+.goat-v2 .ed-title[readonly] {
+  cursor: default;
+}
+
+.goat-v2 .ed-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  color: var(--fg-muted);
+  font-size: var(--step--1);
+}
+
+.goat-v2 .ed-meta b {
+  color: var(--gold);
+  font-weight: 600;
+}
+
+.goat-v2 .ed-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+}
+
+/* ---------- draggable cover card ---------- */
+.goat-v2 .ed-card {
+  position: relative;
+  border-radius: 10px;
+  cursor: grab;
+  touch-action: none;
+  outline-offset: 3px;
+  transition: box-shadow 0.25s var(--ease-out), filter 0.25s;
+}
+
+.goat-v2 .ed-card:hover {
+  box-shadow: 0 16px 36px -14px rgba(0, 0, 0, 0.9);
+}
+
+.goat-v2 .ed-card[data-dragging="true"] {
+  opacity: 0.25;
+}
+
+.goat-v2 .ed-card[data-readonly="true"] {
+  cursor: default;
+}
+
+.goat-v2 .ed-overlay {
+  width: 120px;
+  cursor: grabbing;
+  transform: rotate(-3deg) scale(1.04);
+  box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.95), 0 0 0 2px var(--gold);
+  border-radius: 10px;
+}
+
+/* a slot that a held cover can land on */
+.goat-v2 [data-drop="true"] {
+  box-shadow: 0 0 0 2px var(--gold), 0 0 28px var(--gold-glow);
+}
+
+.goat-v2 .ed-empty {
+  display: grid;
+  place-items: center;
+  border: 1px dashed var(--glass-edge-hi);
+  border-radius: 10px;
+  color: var(--fg-faint);
+  font: 500 var(--step--1) / 1.2 var(--mono);
+  text-align: center;
+  padding: 8px;
+}
+
+/* ---------- Spread ---------- */
+.goat-v2 .sp {
+  display: grid;
+  gap: 4px;
+  max-width: 980px;
+}
+
+.goat-v2 .sp-tier {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-top: 22px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--glass-edge);
+  font: 800 1.2rem / 1 var(--display);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.goat-v2 .sp-tier span {
+  font: 500 var(--step--1) / 1 var(--mono);
+  color: var(--fg-faint);
+}
+
+.goat-v2 .sp-row {
+  display: grid;
+  grid-template-columns: 76px 110px minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
+  padding: 10px 8px;
+  border-radius: var(--r-md);
+}
+
+.goat-v2 .sp-row[data-compact="true"] {
+  grid-template-columns: 52px 44px minmax(0, 1fr);
+  padding-block: 4px;
+  gap: 14px;
+}
+
+.goat-v2 .sp-num {
+  font: 900 3.4rem / 0.85 var(--display);
+  font-variant-numeric: tabular-nums;
+  color: var(--fg);
+  text-align: right;
+}
+
+.goat-v2 .sp-row[data-rank="1"] .sp-num,
+.goat-v2 .sp-row[data-rank="2"] .sp-num,
+.goat-v2 .sp-row[data-rank="3"] .sp-num {
+  color: var(--gold);
+}
+
+.goat-v2 .sp-row[data-compact="true"] .sp-num {
+  font-size: 1.6rem;
+  color: var(--fg-muted);
+}
+
+.goat-v2 .sp-body {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.goat-v2 .sp-name {
+  margin: 0;
+  font: 800 1.9rem / 1 var(--display);
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.goat-v2 .sp-row[data-compact="true"] .sp-name {
+  font-size: 1.15rem;
+}
+
+.goat-v2 .sp-by {
+  font: 500 var(--step--1) / 1.2 var(--mono);
+  color: var(--fg-muted);
+}
+
+.goat-v2 .sp-note {
+  width: 100%;
+  min-height: 1.6em;
+  resize: none;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px dashed transparent;
+  color: var(--fg);
+  font: italic 400 var(--step-1) / 1.45 var(--body);
+  padding: 2px 0;
+  field-sizing: content;
+}
+
+.goat-v2 .sp-note::placeholder {
+  color: var(--fg-faint);
+}
+
+.goat-v2 .sp-note:hover,
+.goat-v2 .sp-note:focus {
+  border-bottom-color: var(--glass-edge-hi);
+  outline: none;
+}
+
+.goat-v2 .sp-row .ed-empty {
+  aspect-ratio: 3 / 4;
+}
+
+.goat-v2 .sp-row[data-compact="true"] .ed-empty {
+  font-size: 0.6rem;
+}
+
+/* ---------- Mosaic ---------- */
+.goat-v2 .mo {
+  display: grid;
+  gap: 28px;
+  padding: 24px;
+  border-radius: var(--r-lg);
+  background:
+    radial-gradient(70% 50% at 20% 0%, hsl(var(--hero-h, 42) 80% 50% / 0.16), transparent 70%),
+    var(--ink-1);
+  border: 1px solid var(--glass-edge);
+}
+
+.goat-v2 .mo-band {
+  display: grid;
+  gap: 12px;
+}
+
+.goat-v2 .mo-band h2 {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font: 800 1.3rem / 1 var(--display);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.goat-v2 .mo-band h2 span {
+  font: 500 var(--step--1) / 1 var(--mono);
+  color: var(--fg-faint);
+}
+
+.goat-v2 .mo-grid {
+  display: grid;
+  gap: 12px;
+  align-items: end;
+}
+
+.goat-v2 .mo-grid[data-scale="hero"] {
+  /* #1 spans two rows, #2 and #3 stack beside it: with 3:4 covers in a
+     2fr/1fr grid the two columns come out the same height. */
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  width: min(100%, 640px);
+  margin-inline: auto;
+}
+
+.goat-v2 .mo-grid[data-scale="hero"] .mo-tile[data-scale="hero"] {
+  grid-row: span 2;
+}
+.goat-v2 .mo-grid[data-scale="medium"] {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+.goat-v2 .mo-grid[data-scale="small"] {
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+}
+.goat-v2 .mo-grid[data-scale="tiny"] {
+  grid-template-columns: repeat(13, minmax(0, 1fr));
+}
+
+@media (max-width: 700px) {
+  .goat-v2 .mo-grid[data-scale="medium"] {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .goat-v2 .mo-grid[data-scale="small"],
+  .goat-v2 .mo-grid[data-scale="tiny"] {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+.goat-v2 .mo-tile {
+  position: relative;
+  min-width: 0;
+  border-radius: 10px;
+}
+
+.goat-v2 .mo-rank {
+  position: absolute;
+  z-index: 4;
+  top: 6px;
+  right: 8px;
+  font: 900 1rem / 1 var(--display);
+  color: var(--fg);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+  pointer-events: none;
+}
+
+.goat-v2 .mo-tile[data-scale="hero"] .mo-rank {
+  font-size: 4rem;
+  color: var(--gold);
+}
+
+.goat-v2 .mo-tile[data-scale="large"] .mo-rank {
+  font-size: 2.6rem;
+  color: var(--gold);
+}
+
+.goat-v2 .mo-tile[data-scale="medium"] .mo-rank {
+  font-size: 1.8rem;
+}
+
+.goat-v2 .mo-tile[data-scale="small"] .mo-rank,
+.goat-v2 .mo-tile[data-scale="tiny"] .mo-rank {
+  font: 600 0.65rem / 1 var(--mono);
+  padding: 3px 5px;
+  border-radius: 6px;
+  background: rgba(6, 7, 12, 0.7);
+}
+
+.goat-v2 .mo-tile .ed-empty {
+  aspect-ratio: 3 / 4;
+}
+
+.goat-v2 .mo-open {
+  padding: 12px 14px;
+  border: 1px dashed var(--glass-edge-hi);
+  border-radius: 10px;
+  color: var(--fg-muted);
+  font: 500 var(--step--1) / 1 var(--mono);
+}
+
+/* ---------- pool ---------- */
+.goat-v2 .pool {
+  border-top: 1px solid var(--glass-edge);
+  background: rgba(12, 14, 23, 0.85);
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+@media (min-width: 1100px) {
+  .goat-v2 .pool {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    border-top: 0;
+    border-left: 1px solid var(--glass-edge);
+  }
+}
+
+.goat-v2 .pool h2 {
+  margin: 0;
+  font: 800 1.2rem / 1 var(--display);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.goat-v2 .pool h2 b {
+  color: var(--gold);
+}
+
+.goat-v2 .pool p {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: var(--step--1);
+}
+
+.goat-v2 .pool-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+  gap: 10px;
+  padding: 4px;
+  border-radius: var(--r-md);
+  min-height: 120px;
+}
+
+.goat-v2 .pool-name {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.7rem;
+  color: var(--fg-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---------- Canvas ---------- */
+.goat-v2 .cv {
+  position: relative;
+  height: clamp(640px, 110vh, 1040px);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--glass-edge);
+  overflow: hidden;
+  background:
+    radial-gradient(80% 30% at 50% 0%, rgba(233, 196, 106, 0.14), transparent 70%),
+    radial-gradient(circle, rgba(200, 210, 255, 0.07) 1px, transparent 1.5px) 0 0 / 22px 22px,
+    var(--ink-1);
+}
+
+.goat-v2 .cv-field {
+  position: absolute;
+  inset: 64px 56px 56px 56px;
+}
+
+.goat-v2 .cv-band {
+  position: absolute;
+  left: -56px;
+  right: -56px;
+  border-top: 1px solid rgba(200, 210, 255, 0.06);
+  pointer-events: none;
+}
+
+.goat-v2 .cv-band:nth-of-type(even) {
+  background: rgba(178, 190, 255, 0.025);
+}
+
+.goat-v2 .cv-band[data-first="true"] {
+  border-top: 0;
+  margin-top: -64px;
+  padding-top: 64px;
+  box-sizing: content-box;
+  background: linear-gradient(rgba(233, 196, 106, 0.09), transparent);
+}
+
+.goat-v2 .cv-tier {
+  pointer-events: auto;
+  position: absolute;
+  top: 8px;
+  left: 14px;
+  z-index: 3;
+  display: grid;
+  gap: 2px;
+  justify-items: start;
+  background: none;
+  border: 0;
+  padding: 2px 4px;
+  color: var(--fg);
+  font: 900 1.4rem / 1 var(--display);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: text;
+}
+
+.goat-v2 .cv-band[data-first="true"] .cv-tier {
+  color: var(--gold);
+}
+
+.goat-v2 .cv-tier:disabled {
+  cursor: default;
+}
+
+.goat-v2 .cv-tier span {
+  font: 500 0.7rem / 1 var(--mono);
+  color: var(--fg-faint);
+  letter-spacing: 0.06em;
+}
+
+.goat-v2 .cv-tier-input {
+  pointer-events: auto;
+  position: absolute;
+  top: 10px;
+  left: 14px;
+  width: 200px;
+  background: var(--ink-0);
+  border: 1px solid var(--gold);
+  border-radius: 8px;
+  color: var(--fg);
+  font: 900 1.3rem / 1 var(--display);
+  text-transform: uppercase;
+  padding: 4px 8px;
+}
+
+.goat-v2 .cv-cut {
+  position: absolute;
+  left: -56px;
+  right: -56px;
+  height: 0;
+  border-top: 1px dashed rgba(233, 196, 106, 0.45);
+  z-index: 3;
+}
+
+.goat-v2 .cv-cut[data-active="true"] {
+  border-top: 2px solid var(--gold);
+  box-shadow: 0 0 16px var(--gold-glow);
+}
+
+.goat-v2 .cv-cut-handle {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translate(-50%, -50%);
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(233, 196, 106, 0.55);
+  background: rgba(6, 7, 12, 0.92);
+  color: var(--gold);
+  font: 600 0.7rem / 1 var(--mono);
+  cursor: ns-resize;
+  touch-action: none;
+}
+
+.goat-v2 .cv-cut-handle:disabled {
+  cursor: default;
+}
+
+.goat-v2 .cv-legend {
+  position: absolute;
+  right: 14px;
+  top: 12px;
+  font: 500 0.7rem / 1.3 var(--mono);
+  color: var(--fg-faint);
+  text-align: right;
+}
+
+.goat-v2 .cv-pin {
+  position: absolute;
+  width: clamp(52px, 6vw, 76px);
+  transform: translate(-50%, -50%);
+  z-index: 2;
+}
+
+.goat-v2 .cv-pin:focus-within,
+.goat-v2 .cv-pin:hover {
+  z-index: 4;
+}
+
+.goat-v2 .cv-rank {
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  z-index: 5;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(6, 7, 12, 0.9);
+  border: 1px solid var(--glass-edge-hi);
+  font: 700 0.75rem / 1 var(--mono);
+  color: var(--fg);
+  pointer-events: none;
+}
+
+.goat-v2 .cv-rank[data-top="true"] {
+  background: var(--gold);
+  color: #1a1406;
+  border-color: transparent;
+}
+
+.goat-v2 .cv-name {
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+  white-space: nowrap;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(6, 7, 12, 0.8);
+  font: 600 0.75rem / 1.2 var(--body);
+  pointer-events: none;
+}
+
+/* ---------- Stage ---------- */
+.goat-v2 .st {
+  position: relative;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--glass-edge);
+  overflow: hidden;
+  background:
+    linear-gradient(90deg, rgba(80, 10, 24, 0.55), transparent 7%, transparent 93%, rgba(80, 10, 24, 0.55)),
+    radial-gradient(60% 45% at 50% 100%, rgba(233, 196, 106, 0.1), transparent 70%),
+    #07070c;
+}
+
+.goat-v2 .st-tools {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+}
+
+.goat-v2 .st-hint {
+  flex: 1;
+  min-width: 0;
+  color: var(--fg-faint);
+  font-size: var(--step--1);
+}
+
+.goat-v2 .st-floor {
+  position: relative;
+  padding: 24px 16px 0;
+  min-height: 460px;
+  display: grid;
+  align-items: end;
+}
+
+.goat-v2 .st-spots {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: clamp(10px, 3vw, 36px);
+}
+
+.goat-v2 .st-spot {
+  position: relative;
+  width: clamp(92px, 16vw, 200px);
+  display: grid;
+  justify-items: center;
+}
+
+.goat-v2 .st-spot[data-rank="1"] {
+  width: clamp(110px, 20vw, 250px);
+}
+
+.goat-v2 .st-beam {
+  position: absolute;
+  bottom: 40%;
+  left: 50%;
+  width: 260%;
+  height: 520px;
+  transform: translateX(-50%);
+  background: conic-gradient(from 160deg at 50% 0%, transparent 0deg, rgba(255, 240, 200, 0.13) 20deg, transparent 40deg);
+  filter: blur(6px);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.goat-v2 .st-spot[data-rank="1"] .st-beam {
+  background: conic-gradient(from 160deg at 50% 0%, transparent 0deg, rgba(255, 220, 140, 0.24) 20deg, transparent 40deg);
+}
+
+.goat-v2 .st-cover {
+  width: 100%;
+  position: relative;
+  z-index: 2;
+  margin-bottom: -4px;
+}
+
+.goat-v2 .st-cover .ed-empty {
+  aspect-ratio: 3 / 4;
+}
+
+.goat-v2 .st-plinth small {
+  display: block;
+  max-width: 100%;
+  padding-inline: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 700 0.75rem / 1.1 var(--body);
+  color: var(--fg);
+  text-transform: none;
+}
+
+.goat-v2 .st-plinth {
+  width: 112%;
+  display: grid;
+  place-items: center;
+  font: 900 3rem / 1 var(--display);
+  color: var(--fg-muted);
+  background: linear-gradient(#1b1d29, #0e0f17);
+  border-top: 2px solid rgba(233, 196, 106, 0.5);
+  border-radius: 6px 6px 0 0;
+}
+
+.goat-v2 .st-spot[data-preset="podium"][data-rank="1"] .st-plinth {
+  height: 120px;
+  color: var(--gold);
+}
+.goat-v2 .st-spot[data-preset="podium"][data-rank="2"] .st-plinth {
+  height: 84px;
+}
+.goat-v2 .st-spot[data-preset="podium"][data-rank="3"] .st-plinth {
+  height: 60px;
+}
+
+/* Rushmore: four carved heads on a mountain. */
+.goat-v2 .st-mountain {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 78%;
+  background: linear-gradient(#5d5a55, #2c2a27);
+  clip-path: polygon(0 100%, 6% 55%, 18% 38%, 30% 22%, 44% 10%, 58% 14%, 70% 6%, 84% 28%, 94% 46%, 100% 100%);
+  opacity: 0.55;
+}
+
+.goat-v2 .st-spot[data-preset="rushmore"] .st-cover .ed-card {
+  border-radius: 46% 46% 40% 40% / 38% 38% 52% 52%;
+  overflow: hidden;
+  box-shadow: 0 0 0 4px #6d6861, 0 0 0 7px #3b3833, 0 18px 40px -12px rgba(0, 0, 0, 0.9);
+  filter: saturate(0.7) contrast(1.05);
+}
+
+.goat-v2 .st-spot[data-preset="rushmore"],
+.goat-v2 .st-spot[data-preset="rushmore"][data-rank="1"] {
+  width: clamp(80px, 17vw, 200px);
+}
+
+.goat-v2 .st-spot[data-preset="rushmore"] .st-plinth {
+  height: 68px;
+  align-content: center;
+  gap: 2px;
+  font-size: 1.8rem;
+  background: linear-gradient(#48443f, #2b2926);
+  border-top-color: #7a746b;
+}
+
+/* Throne: one pedestal, one spotlight. */
+.goat-v2 .st-spot[data-preset="throne"] {
+  width: clamp(150px, 26vw, 300px);
+}
+
+.goat-v2 .st-spot[data-preset="throne"] .st-plinth {
+  height: 140px;
+  color: var(--gold);
+  font-size: 4rem;
+  box-shadow: 0 -20px 60px rgba(233, 196, 106, 0.25);
+}
+
+.goat-v2 .st-wings {
+  position: relative;
+  z-index: 3;
+  display: grid;
+  gap: 10px;
+  padding: 16px 18px 18px;
+  border-top: 1px solid rgba(233, 196, 106, 0.3);
+  background: linear-gradient(#0e0f17, #08090e);
+}
+
+.goat-v2 .st-wings-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.goat-v2 .st-wing {
+  position: relative;
+  width: 64px;
+  border-radius: 10px;
+}
+
+.goat-v2 .st-wing .ed-empty {
+  aspect-ratio: 3 / 4;
+}
+
+.goat-v2 .st-wing-rank {
+  display: block;
+  text-align: center;
+  margin-top: 4px;
+  font: 600 0.7rem / 1 var(--mono);
+  color: var(--fg-muted);
+}
+
+.goat-v2 .st-more {
+  padding: 8px 12px;
+  border: 1px dashed var(--glass-edge-hi);
+  border-radius: 999px;
+  font: 500 var(--step--1) / 1 var(--mono);
+  color: var(--fg-muted);
+}
+
+/* ---------- face-off overlay ---------- */
+.goat-v2 .fo {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(3, 3, 6, 0.86);
+  backdrop-filter: blur(6px);
+}
+
+.goat-v2 .fo-panel {
+  width: min(860px, 100%);
+  max-height: 100%;
+  overflow-y: auto;
+  display: grid;
+  gap: 18px;
+  justify-items: center;
+  text-align: center;
+}
+
+.goat-v2 .fo-duel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(10px, 3vw, 32px);
+  width: 100%;
+}
+
+.goat-v2 .fo-vs {
+  font: 900 clamp(2rem, 6vw, 4rem) / 1 var(--display);
+  color: var(--gold);
+  text-shadow: 0 0 30px var(--gold-glow);
+}
+
+.goat-v2 .fo-side {
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  padding: 14px;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--glass-edge);
+  background: radial-gradient(70% 60% at 50% 0%, rgba(255, 240, 200, 0.12), transparent 70%), var(--glass);
+  color: var(--fg);
+  cursor: pointer;
+  transition: transform 0.25s var(--ease-out), border-color 0.2s;
+}
+
+.goat-v2 .fo-side:hover,
+.goat-v2 .fo-side:focus-visible {
+  transform: translateY(-4px);
+  border-color: var(--gold);
+}
+
+.goat-v2 .fo-cover {
+  width: min(220px, 100%);
+}
+
+.goat-v2 .fo-side b {
+  font: 800 1.4rem / 1 var(--display);
+  text-transform: uppercase;
+}
+
+.goat-v2 .fo-side span {
+  font-size: var(--step--1);
+  color: var(--fg-muted);
+}
+
+.goat-v2 .fo-side kbd {
+  font: 600 0.8rem / 1 var(--mono);
+  color: var(--gold);
+}
+
+.goat-v2 .fo-bracket {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 18px;
+  font-size: 0.72rem;
+}
+
+.goat-v2 .fo-bracket li {
+  display: grid;
+  gap: 6px;
+  align-content: center;
+}
+
+.goat-v2 .fo-bracket li > span:first-child {
+  font: 600 0.65rem / 1 var(--mono);
+  color: var(--fg-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.goat-v2 .fo-match {
+  display: grid;
+  gap: 2px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--glass-edge);
+  min-width: 120px;
+}
+
+.goat-v2 .fo-match[data-current="true"] {
+  border-color: var(--gold);
+}
+
+.goat-v2 .fo-match i {
+  font-style: normal;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+
+.goat-v2 .fo-match i[data-won="true"] {
+  color: var(--gold);
+}
+
+.goat-v2 .fo-match i[data-lost="true"] {
+  color: var(--fg-faint);
+  text-decoration: line-through;
+}

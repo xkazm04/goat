@@ -179,6 +179,35 @@ jobs:
       # supply-chain job.
       - run: npm run structure:check
 
+  v2-smoke:
+    name: v2 smoke (browser)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          # node 24 / npm 11 for the same lockfile reason as the jobs above.
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      # BLOCKS. Input: the tree plus the browser build pinned by
+      # @playwright/test in the lockfile. Unlike the v1 `e2e` job below this
+      # needs no database: it ranks the bundled demo list at /v2/l/demo in all
+      # four modes (playwright.v2.config.ts starts its own dev server with
+      # placeholder Supabase settings that nothing connects to). It was proved
+      # able to fail: a drag that grabbed a cover mid-animation went red
+      # before the spec waited for mode switches to settle.
+      - run: npx playwright test -c playwright.v2.config.ts
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v2-smoke-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
   docs-same-change:
     name: docs same-change
     runs-on: ubuntu-latest
