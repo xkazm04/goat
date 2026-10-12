@@ -93,7 +93,7 @@ export function MeRoute() {
   return (
     <div className="v2-wrap">
       <header className="v2-bar">
-        <Link href="/v2" className="v2-wordmark">
+        <Link href="/" className="v2-wordmark">
           G.O.A.T.<small>v2</small>
         </Link>
       </header>
@@ -103,7 +103,7 @@ export function MeRoute() {
       {dna.listCount === 0 ? (
         <p>
           Rank at least three items in a list and your taste card appears here.{' '}
-          <Link href="/v2/new">Start a list</Link> or <Link href="/v2/l/demo">open the demo</Link>.
+          <Link href="/new">Start a list</Link> or <Link href="/l/demo">open the demo</Link>.
         </p>
       ) : (
         <>

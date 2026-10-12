@@ -11,12 +11,11 @@ import { autosave, indexedDbStorage } from '@/v2/list/storage';
 import { createEditorStore, type EditorStore } from '@/v2/list/store';
 import { forkList, loadList, syncToSupabase, type SyncStatus } from '@/v2/list/sync';
 import { publishList, unpublishList, type Published } from '@/v2/publish/publish';
-
+import type { ShareState } from '@/v2/publish/SharePanel';
 
 import { EditorProvider } from './context';
 import { Editor } from './Editor';
 
-import type { ShareState } from '@/v2/publish/SharePanel';
 
 type Opened =
   | { phase: 'loading' }
@@ -166,7 +165,7 @@ function RemoteRoute({ listId }: { listId: string }) {
       const fork = userId
         ? async () => {
             const id = await forkList(client, store.getState().history.present, userId);
-            router.push(`/v2/l/${id}`);
+            router.push(`/l/${id}`);
           }
         : undefined;
       return { phase: 'ready', store, readOnly: true, fork };
@@ -207,7 +206,7 @@ function View({ opened, status }: { opened: Opened; status: { text: string; erro
     return (
       <div className="v2-wrap">
         <p role="alert">{opened.phase === 'missing' ? 'This list does not exist, or it is private.' : opened.message}</p>
-        <Link href="/v2" className="v2-btn">
+        <Link href="/" className="v2-btn">
           Back to G.O.A.T.
         </Link>
       </div>

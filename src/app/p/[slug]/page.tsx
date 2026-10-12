@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     alternates: {
       canonical: `/p/${slug}`,
       types: {
-        'application/json+oembed': `${origin}/api/v2/oembed?url=${encodeURIComponent(`${origin}/p/${slug}`)}`,
+        'application/json+oembed': `${origin}/api/oembed?url=${encodeURIComponent(`${origin}/p/${slug}`)}`,
       },
     },
   };

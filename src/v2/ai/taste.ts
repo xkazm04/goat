@@ -1,12 +1,13 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { z } from 'zod';
 
+import type { Dna } from '@/v2/dna/dna';
+
 import { candidateJsonSchema, candidateSchema, candidateKey } from './candidate';
 import { completeCli, extractJsonObject } from './cli';
 import { MODEL } from './pool';
 
 import type { Usage } from './converse';
-import type { Dna } from '@/v2/dna/dna';
 
 /** Cut over-long model text at a word boundary instead of rejecting the whole answer. */
 function clip(max: number) {

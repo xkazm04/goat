@@ -3,11 +3,11 @@
 import { useRef, useState } from 'react';
 
 import { streamCritic } from '@/v2/ai/client';
+import type { ChatTurn } from '@/v2/ai/critic';
 import { describeChange, snapshotOf, type ListSnapshot } from '@/v2/ai/snapshot';
 
 import { useEditor } from './context';
 
-import type { ChatTurn } from '@/v2/ai/critic';
 
 interface Line {
   role: 'user' | 'critic';

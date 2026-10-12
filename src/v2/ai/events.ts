@@ -1,6 +1,6 @@
 import { candidateSchema, type Candidate } from './candidate';
 
-/** What `/api/v2/pool` streams, one JSON object per line. */
+/** What `/api/pool` streams, one JSON object per line. */
 export type PoolEvent =
   | { type: 'candidate'; id: string; candidate: Candidate }
   | { type: 'done'; count: number; source: 'claude' | 'cli' | 'fixture' }

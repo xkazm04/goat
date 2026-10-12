@@ -1,9 +1,10 @@
-import { loadList } from '@/v2/list/sync';
 
-import type { DnaList } from './dna';
 import type { getBrowserClient } from '@/v2/db/browser';
 import type { ListStorage } from '@/v2/list/storage';
+import { loadList } from '@/v2/list/sync';
 import type { ListDoc, ListItem } from '@/v2/list/types';
+
+import type { DnaList } from './dna';
 
 type Client = NonNullable<ReturnType<typeof getBrowserClient>>;
 

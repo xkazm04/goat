@@ -2,13 +2,13 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
 import { DEMO_ITEMS, demoDoc } from '@/v2/list/fixtures';
+import type { Client } from '@/v2/list/sync';
 
 import { embedMode, EmbedList } from './EmbedList';
 import { buildOEmbed, embedCode, slugFromUrl } from './oembed';
 import { publishList, unpublishList } from './publish';
 import { isSlug, randomSuffix, slugAttempt, slugify } from './slug';
 
-import type { Client } from '@/v2/list/sync';
 
 describe('slugs', () => {
   it('turns a title into a readable slug that satisfies the database check', () => {

@@ -1,12 +1,12 @@
 import { getBrowserClient } from '@/v2/db/browser';
+import type { Dna } from '@/v2/dna/dna';
+import type { ListItem , ListSize } from '@/v2/list/types';
 
 import { parseCriticLine, type ChatTurn, type CriticEvent } from './critic';
 import { createLineSplitter, parseEventLine, type PoolEvent } from './events';
 
 import type { ListSnapshot } from './snapshot';
 import type { Persona } from './taste';
-import type { Dna } from '@/v2/dna/dna';
-import type { ListItem , ListSize } from '@/v2/list/types';
 
 
 
@@ -20,7 +20,7 @@ async function accessToken(): Promise<string | null> {
 /** Stream the candidate pool for a topic. Yields events as the server sends them. */
 export async function* streamPool(input: { topic: string; size: ListSize; signal?: AbortSignal }): AsyncGenerator<PoolEvent> {
   const token = await accessToken();
-  const response = await fetch('/api/v2/pool', {
+  const response = await fetch('/api/pool', {
     method: 'POST',
     signal: input.signal,
     headers: { 'content-type': 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}) },
@@ -51,7 +51,7 @@ export async function* streamCritic(input: {
   signal?: AbortSignal;
 }): AsyncGenerator<CriticEvent> {
   const token = await accessToken();
-  const response = await fetch('/api/v2/critic', {
+  const response = await fetch('/api/critic', {
     method: 'POST',
     signal: input.signal,
     headers: { 'content-type': 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}) },
@@ -81,7 +81,7 @@ export interface GapSuggestion {
 /** Ask for up to five suggestions that are missing from the list. */
 export async function findGaps(snapshot: ListSnapshot, signal?: AbortSignal): Promise<GapSuggestion[]> {
   const token = await accessToken();
-  const response = await fetch('/api/v2/gaps', {
+  const response = await fetch('/api/gaps', {
     method: 'POST',
     signal,
     headers: { 'content-type': 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}) },
@@ -108,7 +108,7 @@ async function postJson<T>(path: string, body: unknown, signal?: AbortSignal): P
 }
 
 export function fetchPersona(input: { dna: Dna; previousCardNo: number; sourceLists: string[] }, signal?: AbortSignal) {
-  return postJson<{ persona: Persona; cardNo: number; source: string }>('/api/v2/persona', input, signal);
+  return postJson<{ persona: Persona; cardNo: number; source: string }>('/api/persona', input, signal);
 }
 
 export interface RecommendationView {
@@ -122,6 +122,6 @@ export async function fetchRecommendations(
   input: { dna: Dna; topics: string[]; exclude: string[] },
   signal?: AbortSignal,
 ): Promise<RecommendationView[]> {
-  const body = await postJson<{ items: RecommendationView[] }>('/api/v2/recommend', input, signal);
+  const body = await postJson<{ items: RecommendationView[] }>('/api/recommend', input, signal);
   return body.items;
 }

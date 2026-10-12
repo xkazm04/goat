@@ -12,20 +12,53 @@
   ],
   "variant": "US",
   "sources": [
-    { "path": "src/app/features/Landing/**/*.tsx", "kind": "jsx" },
-    { "path": "src/app/layout.tsx", "kind": "jsx" },
-    { "path": "src/app/api/share/og-image/route.tsx", "kind": "jsx" },
-    { "path": "src/app/page.tsx", "kind": "jsx" }
+    {
+      "path": "src/app/layout.tsx",
+      "kind": "jsx"
+    },
+    {
+      "path": "src/app/page.tsx",
+      "kind": "jsx"
+    },
+    {
+      "path": "src/v2/ui/**/*.tsx",
+      "kind": "jsx"
+    },
+    {
+      "path": "src/v2/dna/**/*.tsx",
+      "kind": "jsx"
+    },
+    {
+      "path": "src/v2/publish/**/*.tsx",
+      "kind": "jsx"
+    },
+    {
+      "path": "src/v2/editor/**/*.tsx",
+      "kind": "jsx"
+    }
   ],
-  "exclude": ["**/*.test.tsx", "**/*.stories.tsx"],
-  "dash": { "emDash": "ban" },
+  "exclude": [
+    "**/*.test.tsx",
+    "**/*.stories.tsx"
+  ],
+  "dash": {
+    "emDash": "ban"
+  },
   "quotes": "straight",
   "ellipsis": "dots",
-  "case": { "style": "sentence" },
+  "case": {
+    "style": "sentence"
+  },
   "terms": {
-    "accept": ["G.O.A.T.", "GOAT", "Greatest of All Time"],
+    "accept": [
+      "G.O.A.T.",
+      "GOAT",
+      "Greatest of All Time"
+    ],
     "reject": []
   },
-  "rules": { "EN-CASE": "warn" },
+  "rules": {
+    "EN-CASE": "warn"
+  },
   "baseline": ".ai/copy-baseline.json"
 }

@@ -1,126 +1,26 @@
-import './globals.css';
-import { Inter, Space_Grotesk } from 'next/font/google';
+import { siteOrigin } from '@/v2/publish/server';
+import { V2Shell } from '@/v2/ui/shell';
 
-import { AuthHeader, Toaster } from '@/components/auth';
-import { ThemeProvider } from '@/components/theme/theme-provider';
-import { DeferredProviders } from '@/providers/DeferredProviders';
-import { QueryProvider } from '@/providers/query-provider';
-
-import { DevCssVarCheck } from './dev-css-var-check';
-import { V1Chrome } from './v1-chrome';
-
-import type { Metadata } from 'next';
-
-const inter = Inter({ subsets: ['latin'] });
-// Exposed as --font-space-grotesk (not --font-grotesk: that name is the
-// Tailwind theme key that `font-grotesk` compiles to, and it reads THIS
-// variable — see the @theme inline block in globals.css). Weights cover every
-// `font-grotesk` call site: medium/unweighted (400/500) as well as
-// semibold/bold/black, so no heading is snapped to a heavier face.
-const spaceGrotesk = Space_Grotesk({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-space-grotesk',
-});
-
-const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://goat.app';
+import type { Metadata, Viewport } from 'next';
 
 export const metadata: Metadata = {
-  title: {
-    default: 'G.O.A.T. - Greatest of All Time',
-    template: '%s | G.O.A.T.',
-  },
-  description: 'Create, rank, and share your definitive lists. Discover the Greatest of All Time in movies, music, games, and more.',
-  keywords: ['ranking', 'top lists', 'greatest of all time', 'GOAT', 'movies', 'music', 'games', 'lists'],
-  authors: [{ name: 'G.O.A.T.' }],
-  creator: 'G.O.A.T.',
-  metadataBase: new URL(baseUrl),
-  openGraph: {
-    type: 'website',
-    locale: 'en_US',
-    url: baseUrl,
-    siteName: 'G.O.A.T.',
-    title: 'G.O.A.T. - Greatest of All Time',
-    description: 'Create, rank, and share your definitive lists. Discover the Greatest of All Time in movies, music, games, and more.',
-    // Every asset path here must exist under public/ — src/app/layout-assets.test.ts
-    // checks that, and that the declared size is the PNG's real size. The
-    // previous og-default.png / favicon set was never committed, so crawlers
-    // and browsers 404'd on all four. goat.png is the artwork the repo has.
-    images: [
-      {
-        url: `${baseUrl}/goat.png`,
-        width: 896,
-        height: 896,
-        alt: 'G.O.A.T. - Greatest of All Time Rankings',
-      },
-    ],
-  },
-  twitter: {
-    // A square card image; `summary_large_image` expects a ~2:1 crop.
-    card: 'summary',
-    title: 'G.O.A.T. - Greatest of All Time',
-    description: 'Create, rank, and share your definitive lists.',
-    site: '@goat_rankings',
-    creator: '@goat_rankings',
-    images: [`${baseUrl}/goat.png`],
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
-    },
-  },
-  icons: {
-    icon: '/goat.png',
-    apple: '/goat.png',
-  },
+  metadataBase: new URL(siteOrigin()),
+  title: { default: 'G.O.A.T. · Greatest of All Time', template: '%s' },
+  description: 'Rank anything into a list worth publishing. Name a topic, let AI fill the pool, then rank it your way.',
+  openGraph: { type: 'website', siteName: 'G.O.A.T.' },
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export const viewport: Viewport = {
+  colorScheme: 'dark',
+  themeColor: '#06070c',
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-        <body className={`${inter.className} ${spaceGrotesk.variable}`}>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="dark"
-            enableSystem={false}
-            // 'light' is intentionally NOT registered: design-tokens.css defines
-            // tokens only as dark values under :root with no .light overrides, so
-            // a 'light' theme renders unreadable dark-on-light surfaces. No UI
-            // selects it and enableSystem is false, so dropping it is non-breaking
-            // and removes the broken state. Re-add once a real light palette
-            // exists (see docs/harness/followups-2026-06-16.md).
-            themes={['dark', 'experimental-dark']}
-          >
-            <QueryProvider>
-              <DeferredProviders>
-                  {/* Skip to main content link for keyboard users */}
-                  <a
-                    href="#main-content"
-                    className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-9999 focus:px-4 focus:py-2 focus:bg-brand-muted focus:text-white focus:rounded-lg focus-ring"
-                  >
-                    Skip to main content
-                  </a>
-                  {/* v1 chrome everywhere except /v2, which has its own shell */}
-                  <V1Chrome header={<AuthHeader />}>{children}</V1Chrome>
-                  <Toaster />
-                  {/* Design-token contract check: a client component, so it
-                      actually runs in a browser (this file is a server
-                      component and never does). Renders nothing; dev only. */}
-                  {process.env.NODE_ENV === 'development' ? <DevCssVarCheck /> : null}
-              </DeferredProviders>
-            </QueryProvider>
-          </ThemeProvider>
-        </body>
-      </html>
+    <html lang="en">
+      <body>
+        <V2Shell>{children}</V2Shell>
+      </body>
+    </html>
   );
 }

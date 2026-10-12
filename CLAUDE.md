@@ -4,343 +4,46 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**G.O.A.T. (Greatest of All Time)** - A Next.js application for creating and ranking custom lists using an interactive drag-and-drop match system. Users can create ranked lists (Top 10, Top 50, etc.) by matching items from a backlog through an intuitive grid-based interface.
+**G.O.A.T. (Greatest of All Time)** is a Next.js app for ranking anything. You name a topic, Claude fills a pool of candidates, and you rank them in four modes (Mosaic, Canvas, Spread, Stage) over one list document. Lists can be published to a public page, an embed and a social card, and your ranked lists feed a taste profile with a persona card and recommendations.
 
-### v2 is being rebuilt beside v1
-
-v2 is a slim rebuild served at `/v2` until it replaces v1 (milestone M7):
 - **Product decisions:** `docs/v2/DIRECTION.md`.
-- **Architecture and milestones:** `docs/v2/TECHNICAL_PACKAGE.md`.
+- **Architecture, milestones and what each one changed:** `docs/v2/TECHNICAL_PACKAGE.md`.
 - **Interactive studies the UI follows:** `docs/v2/prototypes/`.
-- **Where the code lives:** domain code in `src/v2/` (rules in `src/v2/README.md`), routes in `src/app/v2/`. The schema is `goat_v2`, from `supabase/migrations/20261009000000_goat_v2_baseline.sql`.
-- **Isolation is a lint error in both directions.** v2 imports only `@/v2/*`, and v1 never imports `@/v2/*`. To reuse a v1 module, port it into `src/v2`.
-- **Try it:** `/v2/l/demo` opens the editor (Mosaic, Canvas, Spread, Stage) with no database. `npx playwright test -c playwright.v2.config.ts` is its smoke test (CI job `v2-smoke`). `npm run seed:v2` (a dry run; add `-- --apply` to write) imports v1's seed lists into `goat_v2`.
-- **Temporary seams that go with v1 at the swap:** `src/app/v1-chrome.tsx` and the `/v2` check in `src/providers/DeferredProviders.tsx` keep v1's chrome off `/v2`.
+- **Domain code and its rules:** `src/v2/README.md`.
 
-The rest of this file describes v1.
+v1 was deleted at the M7 swap. Its history is in git (the parent of the swap commit is the last tree that still had it).
 
-## Common Commands
+## Commands
 
-### Development
 ```bash
-# Start development server
-npm run dev
-
-# Build for production
+npm run dev          # http://localhost:3000
 npm run build
-
-# Start production server
-npm start
-
-# Lint code
-npm run lint
+npm run typecheck    # tsc --noEmit, blocking in CI
+npm run lint         # eslint src e2e
+npm test             # vitest over src/, scripts/ and supabase/; zero files executed is a failure
+npm run test:e2e     # Playwright smoke: starts its own dev server, no database, fixture AI provider
+npm run seed:v2      # dry run of importing v1's seed lists into goat_v2 (add `-- --apply` to write)
+npm run copy:check   # the English copy gate (needs the linked native-copy skill)
 ```
 
-### Quality gates
+CI (`.github/workflows/gates.yml`) runs typecheck and lint, unit tests, and the smoke suite as three jobs.
 
-Every command below runs in CI (`.github/workflows/gates.yml`) and every one of
-them can go red — each was proved able to fail before being trusted. Run them
-before proposing a change; a change that reddens one of them is not finished.
+## Architecture
 
-```bash
-npm test                        # vitest over src/, scripts/, supabase/ and db/
-                                # (supabase/migrations/chain.test.ts reads the
-                                # migration chain in order; db/ holds the seed
-                                # scripts' tests, both added 2026-09-05).
-                                # passWithNoTests:false — a run that executed
-                                # zero files is RED, not green.
-npm run lint                    # eslint. 48 correctness rules are `error` (four
-                                # graduated during the 2026-09-05/06 sweep when
-                                # their ratchet buckets hit 0); everything with a
-                                # legacy population is `warn` and held by the
-                                # ratchet instead (23 buckets).
-npm run lint:ratchet            # symmetric per-rule ratchet over
-                                # .ai/ratchet-baseline.json. A RISE fails. An
-                                # unexplained DROP also fails — re-baseline with
-                                # `npm run lint:ratchet:update` and say in the
-                                # commit message which of fixed / deleted /
-                                # counter-broke it was. Exit 2 = could not run,
-                                # which is neither pass nor fail.
-npm run typecheck               # 0 errors since 74573c2; BLOCKING in CI since
-                                # 2026-09-05 (the typecheck:errors bucket was
-                                # deleted per its promotion trigger).
-npm run docs:store-graph -- --check   # the store graph is GENERATED from
-                                # src/stores/registry.ts. Regenerate in the same
-                                # change that touches the manifest.
-npm run docs:coupling           # source→doc coupling map (.ai/doc-coupling.json):
-                                # fails on a stale glob or a missing reference doc.
-npm run docs:coupling -- --changed --base main
-                                # same-change enforcement: reads the git diff and
-                                # names the document this change owes. Settle it,
-                                # or dismiss it on the record with a commit
-                                # trailer:  Docs-dismissed: <why>
-npm run scan:dead               # knip. Unused EXPORTS — the orphan class eslint
-                                # structurally cannot see.
-npm run findings:check          # the findings ledger (.ai/findings.json), DERIVED
-                                # from docs/harness/ui-bug-combined-2026-06-16/.
-                                # Fails if the ledger drifts from the reports, if
-                                # a finding's state is outside the vocabulary, if
-                                # a suppression carries no reason, or if a
-                                # regression probe on a `fixed` finding fires.
-npm run findings                # what the ledger can answer that a snapshot
-                                # cannot: state, severity, anchor liveness, age.
-npm run findings:ingest         # re-derive after editing a report file.
-npm run structure:check         # the structural improvement loop
-                                # (.ai/structural-backlog.json). Fails if a spec
-                                # is no longer grounded in the tree it quotes, if
-                                # a spec marked `executed` does not meet its own
-                                # stop condition, or if a decline carries no
-                                # reason. Read this BEFORE proposing a structural
-                                # change — one of its five specs is a recorded
-                                # DECLINE, and re-proposing it needs new evidence.
-npm run structure               # the loop's memory, readable.
-```
+- **Routes:** `src/app/` is thin. `/` home, `/l/[id]` the editor (`/l/demo` needs no database), `/new` pool builder, `/me` taste profile, `/p/[slug]` published list with its social card, `/embed/[slug]` iframe view, and `/api/*` for the AI and oEmbed routes.
+- **Domain code:** `src/v2/` (the name is historical). `list/` is the document, reducer, undo and sync; `editor/` the four modes; `ai/` the Claude layer; `dna/` taste math and `/me`; `publish/` sharing; `covers/`, `db/`, `auth/`, `ui/`.
+- **One list document:** every edit is a `Command` through the pure reducer in `src/v2/list/reducer.ts`, and the four modes are projections of it. Add behaviour as a command, not as mode-local state.
+- **Database:** Supabase, schema `goat_v2` (`supabase/migrations/20261009000000_goat_v2_baseline.sql`). Guests get anonymous sessions, so every visitor has a real `auth.uid()`. Row-level security decides visibility; `items` rows are written only by server routes with the service role.
+- **AI engine switch:** `V2_AI_PROVIDER` is `fixture` (canned, no model), `cli` (the local Claude Code CLI, haiku at low effort, development only) or `claude` (the API). Unset, the API is used when `ANTHROPIC_API_KEY` is set and fixtures otherwise. CI always uses fixtures.
+- **Headers:** `next.config.js` sends `X-Frame-Options: DENY` everywhere except `/embed/*`, which sends `frame-ancestors *`. Keep it that way.
 
-### The browser suite
+## Working rules
 
-`npm run test:e2e` **cannot run against an empty database** — every journey
-starts by clicking a list, so an unseeded run would execute nothing and report
-green. `e2e/global-setup.ts` refuses such a run; the fixtures are a separate,
-deliberate command:
-
-```bash
-npm run seed:e2e                 # deterministic fixtures (2 lists, 18 items)
-npm run seed:e2e -- --check      # verify without writing — safe anywhere
-npm run seed:e2e -- --teardown   # remove exactly what it wrote
-```
-
-Every row it writes carries a fixed UUID in the `e2e00000-…` namespace and
-nothing outside that namespace is touched, so it is safe against the shared
-development database. It refuses a non-local target unless
-`E2E_SEED_ALLOW_REMOTE=1`. In CI the suite is **manual dispatch only** — its
-input is not the tree — and it refuses loudly rather than skipping when
-unconfigured. See `.ai/manifest.yaml` `capabilityNotes.e2e-fixtures`.
-
-There are deliberately **no git hooks**. CI covers the push rung; the unguarded
-commit rung is a dated gap in `.ai/manifest.yaml`, not an oversight.
-
-## Architecture Overview
-
-### Tech Stack
-- **Framework**: Next.js 16 (App Router) — `next@^16.1.3`. Note `next lint` was
-  removed in 16; lint via `npm run lint`, which invokes `eslint` directly.
-- **Authentication**: Clerk (with planned migration to Supabase Auth - see .env.example)
-- **Database**: Supabase (PostgreSQL)
-- **State Management**: Zustand with persistence
-- **Data Fetching**: TanStack Query (React Query)
-- **Drag & Drop**: @dnd-kit (core, sortable, modifiers)
-- **UI Components**: Radix UI + Tailwind CSS
-- **Animation**: Framer Motion
-
-### Application Structure
-
-The app follows a **feature-based architecture** where major features are organized in `src/app/features/`:
-
-- **Landing**: Home page with list browsing and showcase
-- **Match**: Core ranking interface with drag-and-drop grid system
-- **Collection**: Item collection management panels
-
-> **Corrected 2026-08-24**: this list previously ended with
-> *"**matching**: (Legacy/alternate match implementation)"*. There is no
-> `src/app/features/matching/` directory and there has not been one in this
-> tree; the identifier survived only here and in
-> `docs/features/PARTICLE_THEME_SYSTEM.md`, which names six files under it that
-> also do not exist. The live feature directories are: `Achievement`,
-> `Analytics`, `Awards`, `Collection`, `Collections`, `CommandPalette`,
-> `Landing`, `Match`, `Studio`, `Templates`.
-
-### State Management Architecture
-
-**Critical**: The app uses **multiple coordinated Zustand stores** that must stay in sync.
-
-The authority on how many stores there are and how they depend on each other is
-`src/stores/registry.ts` (`STORE_DEPENDENCIES`, 24 declared stores). It validates
-itself at module load — a cycle or an edge to an undeclared store throws in dev.
-`docs/STORE_DEPENDENCY_GRAPH.md` is generated from it (`npm run docs:store-graph`);
-do not hand-edit the generated block, and do not restate the store list here.
-
-The four that carry the match flow, deepest last:
-
-1. **`backlog-store.ts`**: Backlog group state
-2. **`session-store.ts`**: Session persistence, backlog management
-3. **`grid-store.ts`**: Grid state (50 positions max), drag-and-drop handlers
-4. **`match-store.ts`**: UI state, keyboard navigation, match session orchestration
-
-**Store Communication Pattern**: Stores cross-reference each other using `useXStore.getState()` pattern. For example, `match-store` orchestrates actions across `grid-store`, `session-store`, and `comparison-store`.
-
-**Persistence**: Grid and session stores use Zustand's `persist` middleware to save state to localStorage/IndexedDB.
-
-### Drag & Drop System
-
-The app uses **@dnd-kit** for sophisticated drag-and-drop:
-
-- **Source**: Backlog items from collection panels (sidebar)
-- **Target**: Grid positions (1-50 depending on list size)
-- **Actions**: Assign (backlog → grid), Move (grid → grid), Swap (exchange positions), Remove
-- **State Flow**: DragEndEvent → `grid-store.handleDragEnd()` → updates grid → syncs to `session-store`
-
-**Key Files**:
-- `src/app/features/Match/MatchGrid/lib/dragHandlers.ts`: Drag event handlers
-- `src/stores/grid-store.ts`: Core drag logic and grid state
-
-### Match/Grid System
-
-The **Match** feature is the core of the application:
-
-1. User selects a list (e.g., "Top 10 Movies")
-2. `match-store.initializeMatchSession()` sets up:
-   - Grid with N positions (from list size)
-   - Loads backlog items for the category
-   - Restores previous session if exists
-3. User drags items from backlog → grid positions
-4. Grid syncs to session store on every change
-5. When complete, user can generate/share result image
-
-**Keyboard Shortcuts** (via `match-store.handleKeyboardShortcut()`):
-- `k`: Toggle keyboard mode
-- `1-9, 0`: Quick assign to positions 1-10
-- `Enter/Space`: Assign selected item
-- `c`: Toggle comparison modal
-- `s`: Save progress
-
-### API Structure
-
-API routes in `src/app/api/`:
-
-- **`/api/lists`**: CRUD for user lists
-- **`/api/top/groups`**: Backlog groups and items by category
-- **`/api/match/generate-result-image`**: Result image generation
-- **`/api/webhooks/clerk`**: Clerk auth webhooks
-
-**API Client**: `src/lib/api/client.ts` provides typed ApiClient with error handling.
-
-### Data Flow
-
-```
-User Action → Zustand Store → (optional) TanStack Query mutation → Supabase
-                            ↓
-                     localStorage/IndexedDB (persistence)
-                            ↓
-                     React Components (re-render)
-```
-
-**Query Keys**: Centralized in `src/lib/query-keys/` for cache management.
-
-### Component Organization
-
-- **`src/app/features/[Feature]/`**: Feature-specific components (co-located)
-- **`src/components/`**: Shared/reusable UI components
-- **`src/lib/`**: Utilities, API clients, hooks
-- **`src/stores/`**: Zustand stores
-- **`src/types/`**: TypeScript type definitions
-
-### Important Patterns
-
-**Path Aliases**: Use `@/` for imports (e.g., `import { useMatchStore } from '@/stores/match-store'`)
-
-**Hydration Safety**: Client components using localStorage/Zustand persistence should use `src/lib/hooks/useHydrationSafe.ts` to prevent hydration mismatches.
-
-**Provider Hierarchy** (from `src/app/layout.tsx`):
-```
-ClerkProvider
-  → ThemeProvider
-    → BacklogProvider
-      → QueryProvider
-        → App Content
-```
-
-**Drag Overlay**: Active drag items show custom overlay via `findActiveBacklogItem()` in `dragHandlers.ts`.
-
-### Environment Configuration
-
-See `.env.example` for complete setup. Key variables:
-
-- `NEXT_PUBLIC_SUPABASE_URL`: Supabase project URL
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Public Supabase key
-- `SUPABASE_SERVICE_ROLE_KEY`: Server-only Supabase key (never expose client-side)
-- Clerk keys (currently in use, planned migration to Supabase Auth)
-
-**Note**: The app is transitioning from Clerk → Supabase Auth and from legacy HTTP API → Supabase. Check `.env.example` migration notes.
-
-### TypeScript Configuration
-
-- **Strict mode** enabled
-- **Path alias**: `@/*` → `./src/*`
-- **ESLint**: NOT disabled during builds — `next.config.js` sets neither
-  `eslint.ignoreDuringBuilds` nor `typescript.ignoreBuildErrors`. The
-  `correctness` block in `eslint.config.mjs` (48 rules incl.
-  `react-hooks/rules-of-hooks`) is `error`, so `npm run lint` fails on the
-  first violation; rules with a legacy population stay `warn` under the ratchet.
-
-## Key Implementation Notes
-
-### When Working on Match/Grid Features
-
-1. **Always sync stores**: Changes to grid must call `sessionStore.updateSessionGridItems()`
-2. **Position indexing**: Grid positions are 0-based internally, 1-based in UI
-3. **Max grid size**: Currently 50 (defined in `grid-store.ts`)
-4. **Empty slots**: Grid always maintains full size array, empty slots have `matched: false`
-
-### When Adding New Features
-
-1. Consider if feature needs its own Zustand store or fits in existing stores
-2. Add TanStack Query keys to `src/lib/query-keys/` if adding new queries
-3. Follow feature-based organization: create `src/app/features/[NewFeature]/`
-4. Add types to `src/types/`
-
-### When Debugging Drag & Drop
-
-1. Check console logs prefixed with `🔄` (drag system logs)
-2. Verify `activeItem` state in `grid-store`
-3. Ensure backlog items have valid `id` field
-4. Check `DragEndEvent.active` and `DragEndEvent.over` properties
-
-### Image Optimization
-
-`next.config.js` has `images: { unoptimized: true }` - images are not optimized by Next.js Image component.
-
-### Styling
-
-- **Tailwind CSS** with custom theme
-- **Dark mode** default via `next-themes`
-- **Framer Motion** for page transitions and animations
-- **Radix UI** for accessible component primitives
+- **Path alias:** `@/*` maps to `src/*`.
+- **Env:** see `.env.example`. `SUPABASE_SERVICE_ROLE_KEY` is read only in `src/v2/ai/server.ts`; never import that module from client code.
+- **Docs move with code:** the milestone notes in `docs/v2/TECHNICAL_PACKAGE.md` and the layout table in `src/v2/README.md` are the maintained records. Update them when you change what a module owns.
+- **Known gaps** are listed under each milestone's "What M# changed" section in the technical package. Read them before assuming a feature is finished: the Claude API request shapes have not been run against the live API, and enrichment and hero art are not built.
 
 ## Git policy (harness-enforced)
 
 **Commit on the current branch; never push.** The owner pushes after reading the log. Do not push, force-push, or open a pull request unless this session's prompt asks for it. This line exists because the harness's own default for an unattended session is to push and open a draft PR when the file says nothing (measured 2026-09-08: without such a line the agent pushed; with it the agent stopped at the commit). The gate bypass is denied to agents at the permission layer (`.claude/settings.json` `permissions.deny`: `--no-verify`, force-push) - do not work around it; if a gate is red, fix the tree.
-
-<!-- personas:context-map:start -->
-## Project Context Map
-
-This project is organized into **62 contexts** across **22 groups**. The full machine-readable map lives in `context-map.json` at the project root — read it at task start to scope your edits to the relevant context's files.
-
-Taxonomy: each context has a `category` (ui · api · lib · data · test · config); each group has a `domain` (feature · infrastructure · shared · integration · data).
-
-### Groups
-
-- **Data Infrastructure** _(domain: infrastructure · 2 contexts)_
-- **Ranking & Lists** _(domain: feature · 0 contexts)_
-- **UI & Interactions** _(domain: shared · 0 contexts)_
-- **Match Interaction** _(domain: feature · 2 contexts)_
-- **Item Catalog** _(domain: feature · 1 contexts)_
-- **Scoring & Progress** _(domain: feature · 2 contexts)_
-- **UI Primitives** _(domain: shared · 3 contexts)_
-- **Visual & Media** _(domain: shared · 3 contexts)_
-- **App Shell** _(domain: infrastructure · 3 contexts)_
-- **Ranking System** _(domain: feature · 4 contexts)_
-- **Content Discovery** _(domain: feature · 3 contexts)_
-- **Social & Sharing** _(domain: feature · 2 contexts)_
-- **API & Data** _(domain: infrastructure · 3 contexts)_
-- **UI & Layout** _(domain: shared · 5 contexts)_
-- **Platform Infrastructure** _(domain: infrastructure · 5 contexts)_
-- **Landing & Discovery** _(domain: feature · 2 contexts)_
-- **Match & Ranking** _(domain: feature · 8 contexts)_
-- **Content Studio** _(domain: feature · 2 contexts)_
-- **Collections & Items** _(domain: feature · 5 contexts)_
-- **Social & Community** _(domain: feature · 2 contexts)_
-- **Analytics & Personalization** _(domain: feature · 1 contexts)_
-- **Platform API** _(domain: infrastructure · 1 contexts)_
-
-> Auto-generated by Personas on each context scan. Edits between the markers are overwritten on the next scan; edit `context-map.json` or rescan instead.
-<!-- personas:context-map:end -->

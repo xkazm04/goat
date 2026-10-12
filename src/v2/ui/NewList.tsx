@@ -59,7 +59,7 @@ export function NewList({ initialTopic = '' }: { initialTopic?: string }) {
     const { history } = createEditorStore({ doc: { ...doc, notes: why }, items }).getState();
     // The editor opens an unknown id from this browser's copy and syncs it from there.
     await indexedDbStorage().save(id, { version: 1, history, items, savedAt: new Date().toISOString() });
-    router.push(`/v2/l/${id}`);
+    router.push(`/l/${id}`);
   }
 
   const keptCount = candidates.length - dropped.size;

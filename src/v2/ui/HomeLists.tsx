@@ -9,7 +9,6 @@ import { fallbackArt } from '@/v2/covers/art';
 import { Cover } from '@/v2/covers/Cover';
 import { getBrowserClient } from '@/v2/db/browser';
 import { DEMO_ITEMS, demoDoc } from '@/v2/list/fixtures';
-
 import type { ListItem } from '@/v2/list/types';
 
 const rowSchema = z.object({ id: z.string(), title: z.string(), topic: z.string() });
@@ -86,9 +85,9 @@ export function HomeLists() {
         Your lists
       </h2>
       <ul className="hl-grid">
-        <ListCard href="/v2/l/demo" title={demo.title} topic="Demo · saved on this device" covers={demoCovers} />
+        <ListCard href="/l/demo" title={demo.title} topic="Demo · saved on this device" covers={demoCovers} />
         {mine.map((r) => (
-          <ListCard key={r.id} href={`/v2/l/${r.id}`} title={r.title} topic={r.topic} covers={[listCover(r)]} />
+          <ListCard key={r.id} href={`/l/${r.id}`} title={r.title} topic={r.topic} covers={[listCover(r)]} />
         ))}
       </ul>
       {starters.length > 0 ? (
@@ -96,7 +95,7 @@ export function HomeLists() {
           <h2 className="v2-eyebrow">Starter lists</h2>
           <ul className="hl-grid">
             {starters.map((r) => (
-              <ListCard key={r.id} href={`/v2/l/${r.id}`} title={r.title} topic={r.topic} covers={[listCover(r)]} />
+              <ListCard key={r.id} href={`/l/${r.id}`} title={r.title} topic={r.topic} covers={[listCover(r)]} />
             ))}
           </ul>
         </>

@@ -1,6 +1,7 @@
+import type { ArtDirection } from '@/v2/covers/art';
+
 import { DEFAULT_TIERS, type ItemId, type ListDoc, type ListItem } from './types';
 
-import type { ArtDirection } from '@/v2/covers/art';
 
 /**
  * The demo list behind /v2/l/demo: the 50 RPGs the v2 studies were designed

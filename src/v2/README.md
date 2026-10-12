@@ -1,21 +1,23 @@
 # src/v2: GOAT v2 domain code
 
-GOAT v2 is being rebuilt beside v1 and swapped in when it reaches parity.
-The product decisions are in [`docs/v2/DIRECTION.md`](../../docs/v2/DIRECTION.md);
-the architecture and milestones are in
-[`docs/v2/TECHNICAL_PACKAGE.md`](../../docs/v2/TECHNICAL_PACKAGE.md).
-The interactive studies the UI follows are in `docs/v2/prototypes/`.
+The domain code behind G.O.A.T. (the `v2` name is historical: v1 was deleted
+at the M7 swap and this became the app). The product decisions are in
+[`docs/v2/DIRECTION.md`](../../docs/v2/DIRECTION.md); the architecture and the
+milestone log are in
+[`docs/v2/TECHNICAL_PACKAGE.md`](../../docs/v2/TECHNICAL_PACKAGE.md). The
+interactive studies the UI follows are in `docs/v2/prototypes/`.
 
 ## Rules
 
-- **Isolation.** Code here and under `src/app/v2/` imports only `@/v2/*` and
-  packages. v1 never imports `@/v2/*`. Both directions are lint errors
-  (`eslint.config.mjs`, proved by `isolation.test.ts`). To reuse a v1
-  module, move or copy it in.
-- **Styles.** Every rule in `ui/tokens.css` is scoped under `.goat-v2`, which
-  `src/app/v2/layout.tsx` puts on the shell, so nothing leaks into v1 pages.
-- **Root layout seam.** `src/app/layout.tsx` still belongs to v1. It skips
-  v1's chrome under `/v2` through `src/app/v1-chrome.tsx`. Both go at the swap.
+- **Routes stay thin.** `src/app/` holds pages, layouts and route handlers
+  that call into this folder. Logic that a test should reach lives here.
+- **One document, many projections.** An edit is a `Command` applied by the
+  pure reducer in `list/reducer.ts`; the four modes only project the result.
+- **Styles.** `ui/base.css` is the page reset and every rule in
+  `ui/tokens.css` is scoped under `.goat-v2`, which `ui/shell.tsx` puts on the
+  root layout.
+- **Server-only code.** `ai/server.ts` holds the service-role key. Import it
+  from route handlers only.
 
 ## Layout
 
@@ -35,21 +37,22 @@ The interactive studies the UI follows are in `docs/v2/prototypes/`.
 
 ## Routes
 
-- `/v2`: home, with the demo, your lists and starter lists.
-- `/p/<slug>`: a published list, server-rendered, with its social card at `/p/<slug>/opengraph-image`. `/embed/<slug>` is the iframe view and `/api/v2/oembed` the oEmbed provider. Both route trees (`src/app/p`, `src/app/embed`) are v2 code and sit under the isolation rule.
-- `/v2/me`: your taste fingerprint, persona card and recommendations. `POST /api/v2/persona` and `POST /api/v2/recommend` serve it.
-- `/v2/new`: type a topic, watch the pool stream in, drop what you do not want, start ranking. `POST /api/v2/pool` serves it.
-- In the editor, **Challenge me** opens the critic (`POST /api/v2/critic`) and the pool's **Find gaps** calls `POST /api/v2/gaps`. `/api/v2/tag` is the batch tagging API, not yet used by the UI.
-- `/v2/l/demo`: the bundled demo list, saved in this browser only. It works
+- `/`: home, with the demo, your lists and starter lists.
+- `/p/<slug>`: a published list, server-rendered, with its social card at `/p/<slug>/opengraph-image`. `/embed/<slug>` is the iframe view and `/api/oembed` the oEmbed provider.
+- `/me`: your taste fingerprint, persona card and recommendations. `POST /api/persona` and `POST /api/recommend` serve it.
+- `/new`: type a topic, watch the pool stream in, drop what you do not want, start ranking. `POST /api/pool` serves it.
+- In the editor, **Challenge me** opens the critic (`POST /api/critic`) and the pool's **Find gaps** calls `POST /api/gaps`. `/api/tag` is the batch tagging API, not yet used by the UI.
+- `/l/demo`: the bundled demo list, saved in this browser only. It works
   with no database configured.
-- `/v2/l/<id>`: a goat_v2 list. Your own lists are editable and synced.
+- `/l/<id>`: a goat_v2 list. Your own lists are editable and synced.
   Anyone else's published list is read-only with "Make it mine".
 
 ## Smoke test
 
-`npx playwright test -c playwright.v2.config.ts` ranks the demo list in all
-four modes (`e2e-v2/smoke.spec.ts`). It starts its own dev server and needs
-no database; CI runs it as the `v2-smoke` job. Set `PW_CHROMIUM_PATH` to
+`npx playwright test` (`npm run test:e2e`) runs `e2e/smoke.spec.ts` and
+`e2e/framing.spec.ts`: ranking the demo list in every mode, the pool builder,
+the critic and gaps, the taste card, and the framing rule. It starts its own
+dev server and needs no database; CI runs it as the `smoke` job. Set `PW_CHROMIUM_PATH` to
 use a browser that is already installed.
 
 ## Database setup (once per Supabase project)
@@ -63,6 +66,6 @@ After applying it:
 Without step 2 the shell shows "Session unavailable". Without Supabase
 settings at all, it shows an offline preview, and only the demo list opens.
 
-To import v1's seeded lists as starters, run `npm run seed:v2` (a dry run
+To import the old v1 seed lists (still in the database) as starters, run `npm run seed:v2` (a dry run
 that prints the plan), then `npm run seed:v2 -- --apply`. It needs
 `SUPABASE_SERVICE_ROLE_KEY`.

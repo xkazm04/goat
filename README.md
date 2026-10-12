@@ -1,41 +1,38 @@
 # G.O.A.T.
 
-**G.O.A.T. (Greatest Of All Time)** is a Next.js application for creating and
-ranking custom Top-N lists (Top 10, Top 50, etc.) through an interactive
-drag-and-drop match system: items from a backlog are matched against each
-other on a grid-based interface to build a ranked list.
+**G.O.A.T. (Greatest of All Time)** helps you rank anything and publish the result.
+Name a topic, let Claude fill a pool of candidates, then rank them as a poster
+wall, a board, an editorial page or a stage. Publish the list to a link, an
+embed and a social card, and let your lists build a taste profile.
 
 ## Stack
 
-- Next.js 16, React 19
-- Supabase (`@supabase/ssr`, `@supabase/supabase-js`) for data and auth
-- `@dnd-kit` for the drag-and-drop match grid
-- Tailwind CSS v4
-- TanStack Query, Zustand-style stores (see `docs/STORE_DEPENDENCY_GRAPH.md`)
-- Sentry (`@sentry/nextjs`) for error monitoring
-- Storybook, Vitest, Playwright for components, unit and e2e tests
+- Next.js 16 (App Router), React 19
+- Supabase (`@supabase/ssr`, `@supabase/supabase-js`) for data and anonymous guest sessions
+- Anthropic SDK for the AI layer, with a local Claude Code CLI engine for tests
+- `@dnd-kit/core`, framer-motion and Zustand for the editor
+- Vitest and Playwright
 
 ## Develop
 
 ```bash
+cp .env.example .env     # optional: without it the demo list and fixture AI still work
 npm install
-npm run dev     # http://localhost:3000
-npm run build
-npm start
+npm run dev              # http://localhost:3000, try /l/demo
 ```
 
-## Quality gates
+## Checks
 
-Everything the CI workflow (`.github/workflows/gates.yml`) runs is also
-runnable locally — lint, typecheck, unit tests (`vitest`), e2e tests
-(`playwright`), and a set of repo-specific checks (dead-export scanning,
-doc-coupling, a findings ledger, a structural-backlog ledger). See
-`CLAUDE.md` for the full command list and what each gate actually catches.
+```bash
+npm run typecheck
+npm run lint
+npm test
+npm run test:e2e         # starts its own dev server; no database needed
+```
 
 ## Docs
 
-Deeper reference material lives under `docs/`:
-
-- `docs/STORE_DEPENDENCY_GRAPH.md` — the state-store dependency graph
-- `docs/E2E_BROWSER_TESTING.md` — end-to-end browser test setup
-- `docs/features/`, `docs/components/` — per-feature and per-component notes
+- `docs/v2/DIRECTION.md` for the product decisions.
+- `docs/v2/TECHNICAL_PACKAGE.md` for the architecture and the milestone log.
+- `src/v2/README.md` for the code layout and its rules.
+- `CLAUDE.md` for working in this repo with Claude Code.

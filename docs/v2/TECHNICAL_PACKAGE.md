@@ -418,6 +418,55 @@ Still open:
 
 ## 10. Milestones
 
+### What M7 changed from the plan above
+
+- **Routes.** `/v2` became `/`: `/`, `/l/[id]`, `/new`, `/me`. The AI routes
+  moved from `/api/v2/*` to `/api/*`. `/p/[slug]` and `/embed/[slug]` were
+  already at the root. `src/v2` keeps its name as the domain-code folder.
+- **Deleted.** All of v1's `src` (1,079 files: the Match, Collection, Landing
+  and Collections features, every v1 store, hook, lib and component, the v1
+  API routes, Clerk-era auth and providers, the offline/PWA files, the
+  middleware and the Sentry config), the v1 `e2e` suite and its Playwright
+  config, Storybook, Tailwind and PostCSS, `db/` (the seed SQL and scripts,
+  including the file that held a leaked pooler URL), `public/` (77 v1 assets),
+  every `scripts/` file except the seed importer, `docs/` except `v2` and
+  `i18n`, `context/`, `context-map.json`, `knip.json`, the custom eslint rule,
+  and a stray junk file in the repo root.
+- **Gates retired:** the lint ratchet and its baseline, the findings ledger,
+  the structural backlog, doc coupling, the store graph generator and the
+  v1/v2 isolation rule and its test. Their baselines under `.ai/` are gone.
+- **Kept:** typecheck, eslint (now `core-web-vitals`, jsx-a11y, unused-imports
+  and import order, with 0 findings), vitest (130 tests, plus the migration
+  chain test) and the Playwright smoke suite, now `e2e/` with
+  `playwright.config.ts`. CI is one workflow with three jobs.
+- **Dependencies.** 62 packages declared became 22 (10 runtime, 12 dev),
+  chosen from what the code imports. Not carried over from the plan's keep
+  list because nothing imports them: `@tanstack/react-query`, `lucide-react`,
+  `@zumer/snapdom`, `@dnd-kit/sortable`, clsx, tailwind-merge and cva. Add
+  them back when a feature needs them.
+- **No Tailwind.** v1's preflight was resetting the page under v2's styles, so
+  `src/v2/ui/base.css` carries the subset v2 relies on. Before and after
+  screenshots of the home page, the editor in Mosaic and Spread, the critic,
+  the pool builder and the profile differ only by a 2px placeholder shift and
+  by v1's floating button, which is gone.
+- **No middleware.** v1's session-refresh middleware is gone; the browser
+  client refreshes its own guest session and the public pages read with the
+  anon key and no cookies.
+- **Build.** `next build` compiles with exactly these routes: `/`, `/l/[id]`,
+  `/new`, `/me`, `/p/[slug]` (and its image), `/embed/[slug]` and the seven
+  `/api/*` routes.
+- **Left for you.**
+  - `.ai/registry-map.json`, `.ai/registry-leads.jsonl` and the consult ledger
+    still join the registry to v1 contexts. They need a rescan against the new
+    tree; `context-map.json` was deleted per this plan.
+  - `docs/i18n/copy-contract.json` now points at the v2 UI sources (131
+    strings, 0 errors, 9 ellipsis warnings), and its baseline still lists 8
+    entries the new tree no longer produces.
+  - The leaked pooler password in an old commit must still be rotated (risk
+    #1); deleting `db/` does not remove it from history.
+  - Supabase sync, the seed import and every Claude API request shape remain
+    unverified against real services.
+
 ### What M6 changed from the plan above
 
 - **Publishing.** The editor's **Share** button (shown for your own list when
@@ -611,7 +660,7 @@ one developer plus agents.
 | **M4** ✅ | Co-curator | Critic chat (cached and streaming), gap spotter, Batches tagging for custom items | **Built 2026-10-12, live Claude paths not yet exercised.** "Challenge me" streams a critic that is sent the list once and later edits as diffs; "Find gaps" adds up to five suggestions to the front of the pool. Batch tagging exists server-side only. See "What M4 changed". |
 | **M5** ✅ | Taste DNA | DNA math, `taste_profiles`, persona task, **E4 `<PersonaCard/>`** on `/v2/me`, recommendations | **Built 2026-10-12, live Claude API path not yet exercised.** `/v2/me` reads the lists in this browser (and yours on the server), computes the fingerprint, writes a persona card and five recommendations with our own match %. Verified on the fixture provider in `v2-smoke` and on the CLI engine. Two differences from the plan: the lists need not be published, and the mainstream-to-obscure axis is not built. See "What M5 changed". |
 | **M6** ✅ | Publish | `/p/[slug]`, fork, OG card, embed with scoped CSP, oEmbed | **Built 2026-10-12; not yet run against a real database.** Share panel in the editor, `/p/<slug>` (SSR, mode switcher, "Make it mine"), a rendered social card, `/embed/<slug>` and `/api/v2/oembed`. The framing rule is proved in a browser; the publish round trip is unit-tested with a fake client. See "What M6 changed". |
-| **M7** | Swap | Move `/v2` to `/`, delete v1 directories, deps and governance tooling (§7–8), new CLAUDE.md | The tree is under about 30k LOC. Every v2 gate is green, and no v1 path remains. |
+| **M7** ✅ | Swap | Move `/v2` to `/`, delete v1 directories, deps and governance tooling (§7–8), new CLAUDE.md | **Done 2026-10-12.** The app is at `/`, v1 and its tooling are deleted, the tree is about 9.8k lines of TypeScript and CSS across `src`, `e2e` and `scripts`, and the three CI jobs are green locally. See "What M7 changed". |
 
 Order matters: M1–M2 prove the core with fixture data before any AI spend,
 which matches the prototypes-first approach of the direction rounds.

@@ -1,8 +1,8 @@
 import { pushList, type Client } from '@/v2/list/sync';
+import type { ListDoc } from '@/v2/list/types';
 
 import { slugAttempt, slugify } from './slug';
 
-import type { ListDoc } from '@/v2/list/types';
 
 export type Published = 'unlisted' | 'public';
 

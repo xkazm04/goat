@@ -165,7 +165,7 @@ export function Editor({
               <div className="ed">
                 <div className="ed-main">
                   <div className="ed-bar" role="toolbar" aria-label="List tools">
-                    <Link href="/v2" className="ed-back">
+                    <Link href="/" className="ed-back">
                       G.O.A.T.
                     </Link>
                     <div className="ed-seg" role="group" aria-label="Mode">

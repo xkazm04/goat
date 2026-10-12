@@ -31,7 +31,7 @@ export function PublishedView({ loaded }: { loaded: LoadedList }) {
     setError(null);
     try {
       const id = await forkList(client, store.getState().history.present, userId);
-      router.push(`/v2/l/${id}`);
+      router.push(`/l/${id}`);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not copy this list.');
       setBusy(false);

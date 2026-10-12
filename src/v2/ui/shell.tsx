@@ -1,5 +1,6 @@
 import { Big_Shoulders, Figtree, JetBrains_Mono } from 'next/font/google';
 
+import '@/v2/ui/base.css';
 import '@/v2/ui/tokens.css';
 
 const display = Big_Shoulders({

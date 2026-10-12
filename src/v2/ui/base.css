@@ -1,0 +1,101 @@
+/*
+ * The page reset v2 needs now that v1's Tailwind preflight is gone. This is
+ * the subset of that reset the v2 styles were written against: border-box
+ * sizing, no default margins, inherited form fonts, no list bullets.
+ */
+
+html {
+  -webkit-text-size-adjust: 100%;
+  background: #06070c;
+}
+
+body {
+  margin: 0;
+  background: #06070c;
+  color: #eceef7;
+  -webkit-font-smoothing: antialiased;
+}
+
+.goat-v2,
+.goat-v2 *,
+.goat-v2 *::before,
+.goat-v2 *::after {
+  box-sizing: border-box;
+}
+
+.goat-v2 h1,
+.goat-v2 h2,
+.goat-v2 h3,
+.goat-v2 h4,
+.goat-v2 p,
+.goat-v2 figure,
+.goat-v2 blockquote,
+.goat-v2 dl,
+.goat-v2 dd {
+  margin: 0;
+}
+
+.goat-v2 h1,
+.goat-v2 h2,
+.goat-v2 h3,
+.goat-v2 h4 {
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.goat-v2 ol,
+.goat-v2 ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.goat-v2 a {
+  color: inherit;
+  text-decoration: inherit;
+}
+
+.goat-v2 img,
+.goat-v2 svg,
+.goat-v2 video {
+  display: block;
+  max-width: 100%;
+}
+
+.goat-v2 svg {
+  vertical-align: middle;
+}
+
+.goat-v2 button,
+.goat-v2 input,
+.goat-v2 select,
+.goat-v2 textarea {
+  font: inherit;
+  font-feature-settings: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  margin: 0;
+}
+
+.goat-v2 button {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.goat-v2 button:disabled {
+  cursor: default;
+}
+
+.goat-v2 textarea {
+  resize: vertical;
+}
+
+.goat-v2 table {
+  border-collapse: collapse;
+}
+
+.goat-v2 [hidden] {
+  display: none !important;
+}

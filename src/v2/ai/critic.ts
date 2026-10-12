@@ -66,7 +66,7 @@ export function buildCriticMessages(snapshot: ListSnapshot, turns: ChatTurn[]): 
   return out;
 }
 
-/** What `/api/v2/critic` streams, one JSON object per line. */
+/** What `/api/critic` streams, one JSON object per line. */
 export type CriticEvent =
   | { type: 'delta'; text: string }
   | { type: 'done'; source: 'claude' | 'cli' | 'fixture'; cacheReadTokens: number }
