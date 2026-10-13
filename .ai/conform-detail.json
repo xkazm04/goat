@@ -614,6 +614,16 @@
           "evidence": "src/v2/publish/oembed.ts:72 The response publishes a thumbnail URL, with no pairwise games, mirrored verdicts, or win-rate denominator."
         }
       ]
+    },
+    "574e79a8-5847-4763-a52c-ac884ac33d97/fleet-orchestration": {
+      "context": "landing-home",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T07:33:47.779Z",
+      "worker": "06081283-da98-4366-91c7-3c7cf571f4a2",
+      "techniques": []
     }
   }
 }
