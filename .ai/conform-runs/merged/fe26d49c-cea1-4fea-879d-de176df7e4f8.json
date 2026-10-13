@@ -1,0 +1,17 @@
+{
+ "schema": "conform-run/1",
+ "worker": "fe26d49c-cea1-4fea-879d-de176df7e4f8",
+ "subject": "repository-landing-document",
+ "evaluatedAt": "2026-10-13T11:26:04.107957+00:00",
+ "provider": "codex",
+ "model": "gpt-6.1-sol",
+ "pairs": [],
+ "declined": [
+  {
+   "subject": "repository-landing-document",
+   "context": "landing-home",
+   "reason": "The assigned file is an application home page: src/app/page.tsx:33 renders `<form className=\"v2-prompt v2-glass\" action=\"/new\" aria-label=\"Start a list\">`. The standard governs repository landing documents and explicitly excludes application-rendered claims; scoring its eight techniques against this artifact would cross that scope boundary."
+  }
+ ],
+ "consults": []
+}
