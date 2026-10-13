@@ -686,6 +686,72 @@
           "evidence": "src/app/page.tsx:20 SessionChip calls useSession independently of HomeLists; both initialize page-local session state instead of consuming one persistent session host."
         }
       ]
+    },
+    "574e79a8-5847-4763-a52c-ac884ac33d97/client-fetch-cache": {
+      "context": "landing-home",
+      "subject": "client-fetch-cache",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T08:59:38.368Z",
+      "worker": "3634330a-3f36-4b6a-b929-7d623286e00a",
+      "techniques": [
+        {
+          "technique": "admission-hypothesis",
+          "verdict": "deviation",
+          "evidence": "src/v2/ui/HomeLists.tsx:71 Every returned private-list result is retained without a declared admission hypothesis or reuse check."
+        },
+        {
+          "technique": "cache-key-discipline",
+          "verdict": "deviation",
+          "evidence": "src/v2/ui/HomeLists.tsx:42 Fetched rows occupy an unkeyed result slot; no centralized builder identifies the request and its answer-changing arguments."
+        },
+        {
+          "technique": "in-flight-dedup",
+          "verdict": "deviation",
+          "evidence": "src/v2/ui/HomeLists.tsx:77 Session resolution reruns the effect's identical public-list query; cleanup only suppresses writes, and no pending-request registry joins overlapping reads."
+        },
+        {
+          "technique": "parse-and-derive-caches",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/covers/art.ts:29 The landing cover derivation is a small title hash; this path has no expensive parse or content-identity derivation cache."
+        },
+        {
+          "technique": "plural-policy-claims",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/ui/HomeLists.tsx:67 Private-owner and public-starter reads are different questions, with no shared entry receiving competing reader policy claims."
+        },
+        {
+          "technique": "portable-read-definitions",
+          "verdict": "deviation",
+          "evidence": "src/v2/ui/HomeLists.tsx:53 The listing query is declared inside the component effect rather than an exported plain key/fetcher/default-policy definition reusable by loaders or prefetch."
+        },
+        {
+          "technique": "prefetch-and-defer",
+          "verdict": "deviation",
+          "evidence": "src/v2/ui/HomeLists.tsx:25 Cards provide route navigation without warming a shared data read; the linked route's detail fetch runs in its client mount effect."
+        },
+        {
+          "technique": "sibling-entry-warmth",
+          "verdict": "deviation",
+          "evidence": "src/v2/ui/HomeLists.tsx:90 Rows already carry the detail title and topic, but remain local to the listing; the linked detail initializes as loading without borrowing a typed summary."
+        },
+        {
+          "technique": "similarity-keyed-admission",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/ui/HomeLists.tsx:54 The reads use exact database predicates, with no resemblance lookup, similarity metric, or admission threshold."
+        },
+        {
+          "technique": "swr-design",
+          "verdict": "deviation",
+          "evidence": "src/v2/ui/HomeLists.tsx:49 Unrecognizable responses become empty arrays and are written into result state, conflating failed reads with authoritative emptiness; no freshness zones are declared."
+        },
+        {
+          "technique": "warm-remount-caches",
+          "verdict": "deviation",
+          "evidence": "src/v2/ui/HomeLists.tsx:43 Fetched starter rows die with the component; the browser-client singleton retains the transport client, not these results."
+        }
+      ]
     }
   }
 }

@@ -5687,7 +5687,11 @@
           "revision": 15,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/v2/ui/HomeLists.tsx:43 The landing page keeps fetched lists in component-local state, so remounts start empty instead of painting retained results and revalidating behind them.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:20824426732ffb6a",
+          "evaluatedRevision": 15
         },
         {
           "subject": "fleet-orchestration",
