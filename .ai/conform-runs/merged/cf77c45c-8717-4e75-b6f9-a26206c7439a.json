@@ -1,0 +1,17 @@
+{
+ "schema": "conform-run/1",
+ "worker": "cf77c45c-8717-4e75-b6f9-a26206c7439a",
+ "subject": "agent-cli-transport",
+ "evaluatedAt": "2026-10-13T13:47:06.579051+00:00",
+ "provider": "agy",
+ "model": "gemini-3.8-flash-high",
+ "pairs": [],
+ "declined": [
+  {
+   "subject": "agent-cli-transport",
+   "context": "platform-infrastructure",
+   "reason": "The context file src/app/api/oembed/route.ts only implements an oEmbed 1.0 JSON provider for published lists and does not spawn or manage any headless coding-agent CLI transport. The subject agent-cli-transport does not apply to this endpoint, and per seat rules forbidding not-applicable verdicts, the pair is declined."
+  }
+ ],
+ "consults": []
+}
