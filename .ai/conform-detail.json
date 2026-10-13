@@ -395,6 +395,26 @@
       "worker": "c16eb870-8cb3-4fb1-b4d7-1cfac14d953b",
       "techniques": [],
       "registryProposal": "Remove the pairing between test-harness and platform-infrastructure in registry-map.json, as the match was triggered by keyword overlap on platform and route terms rather than any test harness machinery."
+    },
+    "a5fbc2be-5b70-4417-89a3-cffbb72ea426/voice-io": {
+      "context": "platform-infrastructure",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T00:40:07.326Z",
+      "worker": "17610f79-52f9-4867-b394-852800e14d05",
+      "techniques": []
+    },
+    "5183f934-7df8-4fbe-bdef-3d239fea4e26/voice-io": {
+      "context": "app-shell",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T00:40:07.326Z",
+      "worker": "17610f79-52f9-4867-b394-852800e14d05",
+      "techniques": []
     }
   }
 }

@@ -1920,7 +1920,11 @@
           "revision": 19,
           "changedAt": "2026-09-30",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/v2/ui/shell.tsx:16 The layout delegates to a shell that applies visual classes and fonts, and searches of both modules and the repository found no microphone, narration, playback or voice-provider integration.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:fa1c8ca716f872dc",
+          "evaluatedRevision": 20
         },
         {
           "subject": "agent-runtime-assembly",
@@ -8409,7 +8413,11 @@
           "revision": 19,
           "changedAt": "2026-09-30",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:24 The route returns published-list oEmbed JSON, and searches of its files, its response builder and the repository found no speech capture or synthesis channel to which voice-io applies.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:fa1c8ca716f872dc",
+          "evaluatedRevision": 20
         }
       ],
       "governance": "governed"
