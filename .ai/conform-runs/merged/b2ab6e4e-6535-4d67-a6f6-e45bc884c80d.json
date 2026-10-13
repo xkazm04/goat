@@ -1,0 +1,30 @@
+{
+  "schema": "conform-run/1",
+  "worker": "b2ab6e4e-6535-4d67-a6f6-e45bc884c80d",
+  "subject": "docs-sync",
+  "evaluatedAt": "2026-10-13T12:54:04.019924+00:00",
+  "provider": "agy",
+  "model": "gemini-3.8-flash-high",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "docs-sync",
+      "context": "app-shell",
+      "reason": "withdrawn after review: reviewer (sonnet): The anchor, src/app/layout.tsx:22 (`<V2Shell>{children}</V2Shell>`), only shows the layout renders the shell. It does not show that docs-sync is absent. The repo has docs/ and README files, and docs/v2/TECHNICAL_PACKAGE.md:374 and chain.test.ts:199 name scripts/doc-coupling.mjs. DIRECTION.md:139 say"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-13T12:54:04.019924+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "docs-sync"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "app-shell",
+      "via": "curator-multi:agy",
+      "model": "gemini-3.8-flash-high"
+    }
+  ]
+}

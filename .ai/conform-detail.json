@@ -865,6 +865,22 @@
         "at": "2026-10-13T12:09:42.569611+00:00",
         "reason": "reviewer (sonnet): The anchor src/app/page.tsx:33 is only the <form className=\"v2-prompt\"> line, so it doesn't show that a render/mount pipeline is absent; the search terms (virtualizer, renderUnit, mountBinder, attachBinder, premount) were also too narrow to prove absence."
       }
+    },
+    "5183f934-7df8-4fbe-bdef-3d239fea4e26/docs-sync": {
+      "context": "app-shell",
+      "subject": "docs-sync",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T12:54:04.019Z",
+      "techniques": [],
+      "registryProposal": "Remove the pairing between docs-sync and app-shell in registry-map.json, as the match was triggered by lexical keyword overlap on command, app, and check rather than any documentation synchronization or doc-rot machinery.",
+      "withdrawn": {
+        "worker": "b2ab6e4e-6535-4d67-a6f6-e45bc884c80d",
+        "state": "not-applicable",
+        "at": "2026-10-13T12:54:26.211534+00:00",
+        "reason": "reviewer (sonnet): The anchor, src/app/layout.tsx:22 (`<V2Shell>{children}</V2Shell>`), only shows the layout renders the shell. It does not show that docs-sync is absent. The repo has docs/ and README files, and docs/v2/TECHNICAL_PACKAGE.md:374 and chain.test.ts:199 name scripts/doc-coupling.mjs. DIRECTION.md:139 say"
+      }
     }
   }
 }
