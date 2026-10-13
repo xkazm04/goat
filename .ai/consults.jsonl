@@ -98,3 +98,4 @@
 {"ts":"2026-10-12T23:29:47Z","bundle":"software-engineering","subjects":["adaptive-fidelity-tiers","engine-binding-surface"],"techniques":[],"deviations":0,"outcome":"missed","from":"consult-check"}
 {"ts":"2026-10-12T23:41:29.152522+00:00","bundle":"software-engineering","subjects":["test-harness"],"techniques":[],"deviations":0,"context":"app-shell","via":"curator-multi:agy","model":"gemini-3.8-flash-high"}
 {"ts":"2026-10-12T23:41:29.152522+00:00","bundle":"software-engineering","subjects":["test-harness"],"techniques":[],"deviations":0,"context":"platform-infrastructure","via":"curator-multi:agy","model":"gemini-3.8-flash-high"}
+{"ts":"2026-10-12T23:42:34Z","bundle":"software-engineering","subjects":["eval-harness","knowledge-registry"],"techniques":[],"deviations":0,"outcome":"missed","from":"consult-check"}
