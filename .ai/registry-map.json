@@ -1816,7 +1816,11 @@
           "revision": 3,
           "changedAt": "2026-09-04",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/app/layout.tsx:20 RootLayout renders the product as an HTML document around V2Shell, and a search of src/app for electron, tauri, accessibility, globalShortcut, and clickThrough found no hits, so this shell never leaves the document runtime.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:eb941b25ec740109",
+          "evaluatedRevision": 3
         },
         {
           "subject": "mcp-tools",

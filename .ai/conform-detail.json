@@ -768,6 +768,57 @@
         "at": "2026-10-13T09:33:34.816974+00:00",
         "reason": "reviewer (sonnet): The anchor at src/app/page.tsx:18 is only the account nav, and a missing language switcher doesn't show that a translation pipeline is absent. The page's text is hard-coded English, and the greps for next-intl, i18next, react-intl, lingui, locale and hreflang found nothing outside the .ai tooling fi"
       }
+    },
+    "5183f934-7df8-4fbe-bdef-3d239fea4e26/native-shell-integration": {
+      "context": "app-shell",
+      "subject": "native-shell-integration",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T10:49:39.480Z",
+      "worker": "8a127234-40be-4bbe-b5d3-5bd2272e2c57",
+      "techniques": [
+        {
+          "technique": "capability-presence-contract",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:20 No per-host capability to classify; the shell is a document root."
+        },
+        {
+          "technique": "layout-resolved-input-synthesis",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:20 No synthesized chord into a foreign application."
+        },
+        {
+          "technique": "native-owned-stream",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:20 No long-lived stream owned by a view or a native process."
+        },
+        {
+          "technique": "non-stealing-overlay",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:20 No always-on-top surface over another application."
+        },
+        {
+          "technique": "observer-perturbation",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:20 No structural query of a foreign application."
+        },
+        {
+          "technique": "permission-gate-vector",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:20 No host grant vector; src/app has no permission identifier."
+        },
+        {
+          "technique": "query-transparent-overlay",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:20 No overlay that a point query could return."
+        },
+        {
+          "technique": "unexported-capability-ladder",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:20 No reach for an unexported host entry point."
+        }
+      ]
     }
   }
 }
