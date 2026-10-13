@@ -1,0 +1,37 @@
+{
+  "schema": "conform-run/1",
+  "worker": "50156c5a-48d8-4eab-a9bb-fec9cf1187cc",
+  "subject": "render-mount-pipeline",
+  "evaluatedAt": "2026-10-13T12:07:10.826445+00:00",
+  "provider": "codex",
+  "model": "gpt-6.1-sol",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "render-mount-pipeline",
+      "context": "landing-home",
+      "reason": "withdrawn after review: reviewer (sonnet): The anchor src/app/page.tsx:33 is only the <form className=\"v2-prompt\"> line, so it doesn't show that a render/mount pipeline is absent; the search terms (virtualizer, renderUnit, mountBinder, attachBinder, premount) were also too narrow to prove absence."
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-13T12:07:10.826445+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "render-mount-pipeline"
+      ],
+      "techniques": [
+        "blueprint-then-mount",
+        "edge-sorted-incremental-mount",
+        "mount-binders-versus-attach-binders",
+        "mount-references-across-features",
+        "preempt-and-continue-shared-computation",
+        "recycle-by-content-type"
+      ],
+      "deviations": 0,
+      "context": "landing-home",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    }
+  ]
+}
