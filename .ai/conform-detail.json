@@ -752,6 +752,22 @@
           "evidence": "src/v2/ui/HomeLists.tsx:43 Fetched starter rows die with the component; the browser-client singleton retains the transport client, not these results."
         }
       ]
+    },
+    "574e79a8-5847-4763-a52c-ac884ac33d97/translation-pipeline-topology": {
+      "context": "landing-home",
+      "subject": "translation-pipeline-topology",
+      "bundle": "localization",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T09:33:15.849Z",
+      "techniques": [],
+      "registryProposal": "Remove the pairing between translation-pipeline-topology and landing-home in registry-map.json, as the match was triggered by keyword overlap on 'landing', 'main', and 'page' in technique documentation while goat is an English-only application with no translation pipeline or localization topology.",
+      "withdrawn": {
+        "worker": "575caf47-7537-445f-85bb-6c578639eff8",
+        "state": "not-applicable",
+        "at": "2026-10-13T09:33:34.816974+00:00",
+        "reason": "reviewer (sonnet): The anchor at src/app/page.tsx:18 is only the account nav, and a missing language switcher doesn't show that a translation pipeline is absent. The page's text is hard-coded English, and the greps for next-intl, i18next, react-intl, lingui, locale and hreflang found nothing outside the .ai tooling fi"
+      }
     }
   }
 }
