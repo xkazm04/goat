@@ -102,3 +102,4 @@
 {"ts":"2026-10-13T00:26:10Z","bundle":"software-engineering","subjects":["adaptive-fidelity-tiers","engine-binding-surface"],"techniques":[],"deviations":0,"outcome":"missed","from":"consult-check"}
 {"ts":"2026-10-13T00:40:07.326614+00:00","bundle":"software-engineering","subjects":["voice-io"],"techniques":[],"deviations":0,"context":"platform-infrastructure","via":"curator-multi:codex","model":"gpt-6.1-sol"}
 {"ts":"2026-10-13T00:40:07.326614+00:00","bundle":"software-engineering","subjects":["voice-io"],"techniques":[],"deviations":0,"context":"app-shell","via":"curator-multi:codex","model":"gpt-6.1-sol"}
+{"ts":"2026-10-13T00:40:51Z","bundle":"software-engineering","subjects":["eval-harness","knowledge-registry"],"techniques":[],"deviations":0,"outcome":"missed","from":"consult-check"}
