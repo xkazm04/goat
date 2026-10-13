@@ -109,3 +109,4 @@
 {"ts":"2026-10-13T02:38:46Z","bundle":"software-engineering","subjects":["adaptive-fidelity-tiers","engine-binding-surface"],"techniques":[],"deviations":0,"outcome":"missed","from":"consult-check"}
 {"ts":"2026-10-13T02:51:07.479648+00:00","bundle":"software-engineering","subjects":["agent-runtime-assembly"],"techniques":[],"deviations":0,"context":"platform-infrastructure","via":"curator-multi:agy","model":"gemini-3.8-flash-high"}
 {"ts":"2026-10-13T02:51:07.479648+00:00","bundle":"software-engineering","subjects":["agent-runtime-assembly"],"techniques":[],"deviations":0,"context":"app-shell","via":"curator-multi:agy","model":"gemini-3.8-flash-high"}
+{"ts":"2026-10-13T02:52:02Z","bundle":"software-engineering","subjects":["eval-harness","knowledge-registry"],"techniques":[],"deviations":0,"outcome":"missed","from":"consult-check"}
