@@ -1944,7 +1944,11 @@
           "revision": 26,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 Context file and repository searches for agent runtime assembly constructs found no agent execution pipeline, hook composition, code loading, checkpoint custody, or subagent management connected to this root layout, which exclusively wraps UI children in the V2Shell component for font and design token styling.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:9036e979656a8dc5",
+          "evaluatedRevision": 27
         },
         {
           "subject": "agent-browser-control",
@@ -8281,7 +8285,11 @@
           "revision": 26,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:24 Context file and repository searches for agent runtime assembly constructs found no model or tool hook chains, extension loading tiers, checkpoint custodians, external work projections, or subagent lifecycles in this endpoint, which exclusively formats and returns an oEmbed 1.0 JSON response for published lists.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:9036e979656a8dc5",
+          "evaluatedRevision": 27
         },
         {
           "subject": "agent-cli-transport",

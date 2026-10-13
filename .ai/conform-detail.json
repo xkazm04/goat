@@ -461,6 +461,28 @@
           "evidence": "src/app/layout.tsx:6 No user-authored filter expression, typing pass, or rule storage in this layout."
         }
       ]
+    },
+    "a5fbc2be-5b70-4417-89a3-cffbb72ea426/agent-runtime-assembly": {
+      "context": "platform-infrastructure",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T02:51:07.479Z",
+      "worker": "3736c3c5-a5e7-49e3-8ae6-f4f7050bbd53",
+      "techniques": [],
+      "registryProposal": "Remove the pairing between agent-runtime-assembly and platform-infrastructure in registry-map.json, as the match was triggered by keyword overlap on 'agent', 'route', and 'tasks' from legacy agent-bridge routes that are no longer present in v2."
+    },
+    "5183f934-7df8-4fbe-bdef-3d239fea4e26/agent-runtime-assembly": {
+      "context": "app-shell",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T02:51:07.479Z",
+      "worker": "3736c3c5-a5e7-49e3-8ae6-f4f7050bbd53",
+      "techniques": [],
+      "registryProposal": "Remove the pairing between agent-runtime-assembly and app-shell in registry-map.json, as the match was triggered by keyword overlap on 'callback', 'error', and 'route' in app-shell paths rather than any agent execution or runtime assembly machinery."
     }
   }
 }
