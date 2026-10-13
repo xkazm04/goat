@@ -8357,7 +8357,11 @@
           "revision": 37,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:24 Searches found no eval-harness constructs in the route or its publishing dependencies, and repository matches did not connect an evaluation harness to this endpoint, which returns published-list oEmbed metadata.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:7ccead00b7f92aba",
+          "evaluatedRevision": 37
         },
         {
           "subject": "test-harness",
