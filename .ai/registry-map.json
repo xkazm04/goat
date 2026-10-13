@@ -1904,7 +1904,11 @@
           "revision": 5,
           "changedAt": "2026-09-24",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/v2/ui/shell.tsx:14 The app shell only mounts that visual frame around page children, and a search of src/app and src/v2/ui found no command palette, query door, text index, facet counts, saved views, or authored filter language, so the search precondition does not hold here.",
+          "evaluatedAt": "2026-10-13",
+          "evaluatedAgainst": "sha256-b2:b76b1bab72ccfec5",
+          "evaluatedRevision": 5
         },
         {
           "subject": "voice-io",

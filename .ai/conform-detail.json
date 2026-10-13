@@ -415,6 +415,52 @@
       "evaluatedTs": "2026-10-13T00:40:07.326Z",
       "worker": "17610f79-52f9-4867-b394-852800e14d05",
       "techniques": []
+    },
+    "5183f934-7df8-4fbe-bdef-3d239fea4e26/search": {
+      "context": "app-shell",
+      "subject": "search",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T01:50:08.234Z",
+      "worker": "3ef8d9bb-90ec-4f9b-882f-c30dca50bfac",
+      "techniques": [
+        {
+          "technique": "command-surface",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/ui/shell.tsx:14 No palette, fuzzy scorer, or command registry; the shell render is a font-token div."
+        },
+        {
+          "technique": "faceting-and-filters",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/ui/shell.tsx:16 No facet panel or filter predicate; CSS filter and array.filter hits are not facet selection."
+        },
+        {
+          "technique": "full-text-indexing",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 Layout only mounts the shell; package.json has no fuse.js, cmdk, minisearch, flexsearch, or lunr."
+        },
+        {
+          "technique": "query-parsing",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:18 No user query text is parsed; src/app search hits are Next.js searchParams, not a search box."
+        },
+        {
+          "technique": "ranking-and-excerpts",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/ui/shell.tsx:15 No search-result list, score order, or excerpt highlighter in the shell."
+        },
+        {
+          "technique": "saved-views",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:9 Metadata states a rank-and-publish product; no named predicate or saved view is stored in the shell."
+        },
+        {
+          "technique": "typed-filter-language",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:6 No user-authored filter expression, typing pass, or rule storage in this layout."
+        }
+      ]
     }
   }
 }
