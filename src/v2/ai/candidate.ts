@@ -58,15 +58,24 @@ export interface ProposedItem {
   candidate: Candidate;
 }
 
-/** A readable key for spotting the same candidate twice within one request. Not an item id. */
-export function candidateKey(c: Pick<Candidate, 'title' | 'year'>): string {
-  const slug = c.title
+/**
+ * The one identity of a title for comparing spellings: accents folded, case
+ * folded, every run of non-letters and non-digits (any script) one hyphen.
+ * Gaps, recommendations and in-request dedupe all key on this. It is NOT the
+ * stored item id (`itemUuid`), which is persisted and must not change.
+ */
+export function titleKey(title: string): string {
+  return title
     .toLowerCase()
     .normalize('NFKD')
     .replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/[^\p{L}\p{N}]+/gu, '-')
     .replace(/^-+|-+$/g, '');
-  return `c-${slug || 'item'}${c.year === null ? '' : `-${c.year}`}`;
+}
+
+/** A readable key for spotting the same candidate twice within one request. Not an item id. */
+export function candidateKey(c: Pick<Candidate, 'title' | 'year'>): string {
+  return `c-${titleKey(c.title) || 'item'}${c.year === null ? '' : `-${c.year}`}`;
 }
 
 export function toListItem(id: string, c: Candidate): ListItem {

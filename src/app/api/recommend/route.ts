@@ -1,4 +1,4 @@
-import { toListItem } from '@/v2/ai/candidate';
+import { titleKey, toListItem } from '@/v2/ai/candidate';
 import { itemUuid } from '@/v2/ai/ids';
 import { pickTaste } from '@/v2/ai/providers';
 import { recommendBodySchema } from '@/v2/ai/request';
@@ -8,8 +8,6 @@ import { matchScore } from '@/v2/dna/dna';
 
 export const runtime = 'nodejs';
 export const maxDuration = 120;
-
-const norm = (t: string) => t.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 
 /**
  * Recommendations for a taste fingerprint. The model proposes; the match
@@ -28,9 +26,9 @@ export async function POST(request: Request): Promise<Response> {
 
   try {
     const { items, usage } = await provider.recommend({ dna, topics, exclude, signal: request.signal });
-    const have = new Set(exclude.map(norm));
+    const have = new Set(exclude.map((t) => titleKey(t)));
     const scored = items
-      .filter((r) => !have.has(norm(r.title)))
+      .filter((r) => !have.has(titleKey(r.title)))
       .map((r) => ({ r, id: itemUuid(r.topic, r.title, r.year), match: matchScore(dna.traits, r.traits) }))
       .sort((a, b) => b.match - a.match);
 
