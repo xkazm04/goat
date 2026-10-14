@@ -881,6 +881,57 @@
         "at": "2026-10-13T12:54:26.211534+00:00",
         "reason": "reviewer (sonnet): The anchor, src/app/layout.tsx:22 (`<V2Shell>{children}</V2Shell>`), only shows the layout renders the shell. It does not show that docs-sync is absent. The repo has docs/ and README files, and docs/v2/TECHNICAL_PACKAGE.md:374 and chain.test.ts:199 name scripts/doc-coupling.mjs. DIRECTION.md:139 say"
       }
+    },
+    "574e79a8-5847-4763-a52c-ac884ac33d97/templates-scaffolding": {
+      "context": "landing-home",
+      "subject": "templates-scaffolding",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-14",
+      "evaluatedTs": "2026-10-14T23:19:29.891Z",
+      "techniques": [
+        {
+          "technique": "adoption-lifecycle",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/ui/HomeLists.tsx:98 Starter cards open existing list instances."
+        },
+        {
+          "technique": "catalog-curation",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/ui/HomeLists.tsx:55 The displayed population consists of published lists, not admitted template contracts."
+        },
+        {
+          "technique": "instance-upgrade",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/list/sync.ts:175 The linked copy operation duplicates a current list document without a versioned template origin."
+        },
+        {
+          "technique": "integrity-and-provenance",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/ui/HomeLists.tsx:53 Cards consume live list metadata rather than published template packages."
+        },
+        {
+          "technique": "readiness-prerequisites",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/ui/NewList.tsx:38 Creation generates candidates from topic and size; no template requirements are being resolved."
+        },
+        {
+          "technique": "template-anatomy",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/ui/NewList.tsx:58 The document is assembled from generated candidates, not a catalog entry with declared dimensions and payload."
+        },
+        {
+          "technique": "template-portability",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/list/sync.ts:172 The linked reuse mechanism copies an existing instance rather than distributing an authored template payload."
+        }
+      ],
+      "withdrawn": {
+        "worker": "d0ac322d-023e-44ef-985b-afdee9c8187d",
+        "state": "not-applicable",
+        "at": "2026-10-14T23:19:54.955163+00:00",
+        "reason": "reviewer (sonnet): The landing page shows 'Starter lists' (HomeLists.tsx) that are copied via forkList (sync.ts), which is the template-instantiation mechanism in this product, so not-applicable is contradicted; the page.tsx:33 anchor (a topic input) is also incidental, and the forkList caller was not traced to the la"
+      }
     }
   }
 }
