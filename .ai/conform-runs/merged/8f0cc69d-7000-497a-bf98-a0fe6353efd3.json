@@ -1,0 +1,17 @@
+{
+ "schema": "conform-run/1",
+ "worker": "8f0cc69d-7000-497a-bf98-a0fe6353efd3",
+ "subject": "embedded-preview",
+ "evaluatedAt": "2026-10-15T01:53:28.721624+00:00",
+ "provider": "agy",
+ "model": "gemini-3.8-flash-high",
+ "pairs": [],
+ "declined": [
+  {
+   "subject": "embedded-preview",
+   "context": "platform-infrastructure",
+   "reason": "The context file src/app/api/oembed/route.ts only implements an oEmbed 1.0 JSON provider for published lists and does not host, spawn, or drive a live guest application, dev server, cross-frame message protocol, or injected instrumentation runtime. Because the subject's preconditions do not hold for this context, and not-applicable verdicts are not accepted from this seat, the pair is declined."
+  }
+ ],
+ "consults": []
+}
