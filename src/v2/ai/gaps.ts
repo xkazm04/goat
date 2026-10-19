@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { candidateJsonSchema, candidateKey, candidateSchema, type Candidate } from './candidate';
+import { candidateJsonSchema, candidateKey, candidateSchema, titleKey, type Candidate } from './candidate';
 import { renderSnapshot, type ListSnapshot } from './snapshot';
 
 const MAX_GAPS = 5;
@@ -24,16 +24,14 @@ export function gapsUserMessage(snapshot: ListSnapshot): string {
   return `${renderSnapshot(snapshot)}\n\nWhat is missing?`;
 }
 
-const norm = (t: string) => t.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
-
 /** Drop suggestions already in the list or repeated, and cap at the limit. */
 export function newGaps(found: Candidate[], snapshot: ListSnapshot): Candidate[] {
-  const taken = new Set([...snapshot.ranked, ...snapshot.pool].map((i) => norm(i.title)));
+  const taken = new Set([...snapshot.ranked, ...snapshot.pool].map((i) => titleKey(i.title)).filter(Boolean));
   const seen = new Set<string>();
   const out: Candidate[] = [];
   for (const c of found) {
     const key = candidateKey(c);
-    if (taken.has(norm(c.title)) || seen.has(key)) continue;
+    if (taken.has(titleKey(c.title)) || seen.has(key)) continue;
     seen.add(key);
     out.push(c);
   }
