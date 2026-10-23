@@ -1,0 +1,53 @@
+{
+ "schema": "conform-run/1",
+ "worker": "17610f79-52f9-4867-b394-852800e14d05",
+ "subject": "voice-io",
+ "evaluatedAt": "2026-10-13T00:40:07.326614+00:00",
+ "provider": "codex",
+ "model": "gpt-6.1-sol",
+ "pairs": [
+  {
+   "context": "platform-infrastructure",
+   "subject": "voice-io",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/app/api/oembed/route.ts:24 The route returns published-list oEmbed JSON, and searches of its files, its response builder and the repository found no speech capture or synthesis channel to which voice-io applies.",
+   "techniques": []
+  },
+  {
+   "context": "app-shell",
+   "subject": "voice-io",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/v2/ui/shell.tsx:16 The layout delegates to a shell that applies visual classes and fonts, and searches of both modules and the repository found no microphone, narration, playback or voice-provider integration.",
+   "techniques": []
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-13T00:40:07.326614+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "voice-io"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "platform-infrastructure",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  },
+  {
+   "ts": "2026-10-13T00:40:07.326614+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "voice-io"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "app-shell",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  }
+ ]
+}

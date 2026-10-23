@@ -1,0 +1,179 @@
+{
+ "schema": "conform-run/1",
+ "worker": "24b66cb2-055a-42b7-893b-b4441b93dda5",
+ "subject": "eval-harness",
+ "evaluatedAt": "2026-10-13T03:51:17.330030+00:00",
+ "provider": "codex",
+ "model": "gpt-6.1-sol",
+ "pairs": [
+  {
+   "context": "platform-infrastructure",
+   "subject": "eval-harness",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/app/api/oembed/route.ts:24 Searches found no eval-harness constructs in the route or its publishing dependencies, and repository matches did not connect an evaluation harness to this endpoint, which returns published-list oEmbed metadata.",
+   "techniques": [
+    {
+     "technique": "assertion-vs-judgment",
+     "verdict": "not-applicable",
+     "evidence": "src/v2/publish/publish.test.tsx:53 This checks deterministic metadata, not properties of model or agent outputs."
+    },
+    {
+     "technique": "candidate-write-access",
+     "verdict": "not-applicable",
+     "evidence": "src/v2/publish/server.ts:20 The execution path reads a published list; no evaluated agent receives an execution or write surface."
+    },
+    {
+     "technique": "certification-levels",
+     "verdict": "not-applicable",
+     "evidence": "src/v2/publish/server.ts:21 Eligibility is publication status, not theoretical or live candidate certification."
+    },
+    {
+     "technique": "comparison-modes",
+     "verdict": "not-applicable",
+     "evidence": "src/app/api/oembed/route.ts:17 The route builds one metadata response rather than scoring or comparing candidates."
+    },
+    {
+     "technique": "discriminating-task-selection",
+     "verdict": "not-applicable",
+     "evidence": "src/app/api/oembed/route.ts:13 A request selects a resource by URL; no candidate population or scenario selection search exists here."
+    },
+    {
+     "technique": "eval-economics",
+     "verdict": "not-applicable",
+     "evidence": "src/v2/publish/oembed.ts:61 Metadata construction derives an embed URL without model calls or a paid evaluation matrix."
+    },
+    {
+     "technique": "failure-attribution",
+     "verdict": "not-applicable",
+     "evidence": "src/app/api/oembed/route.ts:15 This is an HTTP resource failure, not a failed evaluation case requiring attribution."
+    },
+    {
+     "technique": "failure-signatures-beside-the-pass-rate",
+     "verdict": "not-applicable",
+     "evidence": "src/app/api/oembed/route.ts:11 The route rejects an unsupported response format; it publishes no benchmark pass rate."
+    },
+    {
+     "technique": "judge-stability",
+     "verdict": "not-applicable",
+     "evidence": "src/v2/publish/oembed.ts:68 The response copies the list title directly rather than obtaining a model judgment."
+    },
+    {
+     "technique": "measurement-revision",
+     "verdict": "not-applicable",
+     "evidence": "src/v2/publish/oembed.ts:64 This identifies the oEmbed protocol version, not a published measurement being revised."
+    },
+    {
+     "technique": "metric-role-contract",
+     "verdict": "not-applicable",
+     "evidence": "src/app/api/oembed/route.ts:21 The parameter controls embed dimensions; it is not an optimized metric or evaluation threshold."
+    },
+    {
+     "technique": "monitor-inside-the-loop",
+     "verdict": "not-applicable",
+     "evidence": "src/v2/publish/oembed.ts:62 HTML is constructed from escaped inputs; no model reviewer gates an optimization loop."
+    },
+    {
+     "technique": "outcome-conditioned-cost",
+     "verdict": "not-applicable",
+     "evidence": "src/app/api/oembed/route.ts:14 The request performs a resource lookup, with no trial arms or resource-cost comparison."
+    },
+    {
+     "technique": "overshoot-and-restore",
+     "verdict": "not-applicable",
+     "evidence": "src/v2/publish/oembed.ts:34 Dimension clamping is ordinary response construction, not an agent reduction search bounded by a suite."
+    },
+    {
+     "technique": "pairing-schedule",
+     "verdict": "not-applicable",
+     "evidence": "src/v2/list/sync.ts:137 The dependency retrieves one identified list; no comparison graph or arena schedule exists."
+    },
+    {
+     "technique": "probe-the-decision-not-the-artifact",
+     "verdict": "not-applicable",
+     "evidence": "src/v2/publish/publish.test.tsx:55 The output property is directly assertable; there is no prose evaluation requiring an upstream decision probe."
+    },
+    {
+     "technique": "rebase-the-varied-input",
+     "verdict": "not-applicable",
+     "evidence": "src/v2/publish/publish.test.tsx:45 This checks rejection against a fixed origin, not normalized equality between shifted scenario replays."
+    },
+    {
+     "technique": "reliability-aggregation",
+     "verdict": "not-applicable",
+     "evidence": "src/v2/publish/publish.test.tsx:56 The test asserts a deterministic URL, with no repeated stochastic trials to aggregate."
+    },
+    {
+     "technique": "resolution-precondition",
+     "verdict": "not-applicable",
+     "evidence": "src/v2/publish/oembed.ts:65 The published result is rich oEmbed metadata, not an ordering over evaluated configurations."
+    },
+    {
+     "technique": "scenario-design",
+     "verdict": "not-applicable",
+     "evidence": "src/v2/list/sync.ts:143 The loader reads product-list data, not versioned evaluation scenarios."
+    },
+    {
+     "technique": "selection-over-noise",
+     "verdict": "not-applicable",
+     "evidence": "src/v2/publish/oembed.ts:59 The result is derived once from request input, not selected as the best of noisy scored attempts."
+    },
+    {
+     "technique": "treatment-election-rate",
+     "verdict": "not-applicable",
+     "evidence": "src/app/api/oembed/route.ts:20 The route supplies stored metadata directly; no evaluated candidate elects an optional treatment."
+    },
+    {
+     "technique": "unaided-baseline-screening",
+     "verdict": "not-applicable",
+     "evidence": "src/v2/publish/publish.test.tsx:52 The fixture exercises deterministic formatting, not generated questions admitted to a model evaluation suite."
+    },
+    {
+     "technique": "uncontrolled-games-beside-the-win-rate",
+     "verdict": "not-applicable",
+     "evidence": "src/v2/publish/oembed.ts:72 The response publishes a thumbnail URL, with no pairwise games, mirrored verdicts, or win-rate denominator."
+    }
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-13T03:51:17.330030+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "eval-harness"
+   ],
+   "techniques": [
+    "assertion-vs-judgment",
+    "candidate-write-access",
+    "certification-levels",
+    "comparison-modes",
+    "discriminating-task-selection",
+    "eval-economics",
+    "failure-attribution",
+    "failure-signatures-beside-the-pass-rate",
+    "judge-stability",
+    "measurement-revision",
+    "metric-role-contract",
+    "monitor-inside-the-loop",
+    "outcome-conditioned-cost",
+    "overshoot-and-restore",
+    "pairing-schedule",
+    "probe-the-decision-not-the-artifact",
+    "rebase-the-varied-input",
+    "reliability-aggregation",
+    "resolution-precondition",
+    "scenario-design",
+    "selection-over-noise",
+    "treatment-election-rate",
+    "unaided-baseline-screening",
+    "uncontrolled-games-beside-the-win-rate"
+   ],
+   "deviations": 0,
+   "context": "platform-infrastructure",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  }
+ ]
+}

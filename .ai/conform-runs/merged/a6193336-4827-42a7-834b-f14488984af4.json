@@ -1,0 +1,17 @@
+{
+ "schema": "conform-run/1",
+ "worker": "a6193336-4827-42a7-834b-f14488984af4",
+ "subject": "agent-instruction-files",
+ "evaluatedAt": "2026-10-13T10:12:10.899770+00:00",
+ "provider": "codex",
+ "model": "gpt-6.1-sol",
+ "pairs": [],
+ "declined": [
+  {
+   "subject": "agent-instruction-files",
+   "context": "platform-infrastructure",
+   "reason": "Opened src/app/api/oembed/route.ts and its publishing dependencies: they implement an oEmbed response, without context-owned instruction assets or instruction-loading behavior against which to judge the 18 techniques; repository-wide instruction findings cannot establish this context's verdict."
+  }
+ ],
+ "consults": []
+}

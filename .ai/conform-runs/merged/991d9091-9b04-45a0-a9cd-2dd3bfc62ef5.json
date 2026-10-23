@@ -1,0 +1,17 @@
+{
+ "schema": "conform-run/1",
+ "worker": "991d9091-9b04-45a0-a9cd-2dd3bfc62ef5",
+ "subject": "agent-browser-control",
+ "evaluatedAt": "2026-10-13T22:01:42.129784+00:00",
+ "provider": "agy",
+ "model": "gemini-3.8-flash-high",
+ "pairs": [],
+ "declined": [
+  {
+   "subject": "agent-browser-control",
+   "context": "app-shell",
+   "reason": "The context file src/app/layout.tsx defines the Next.js root layout and V2Shell wrapper for the web application UI. It does not implement or interact with any agent browser control runtime, browser daemon, element locator service, or agent command surface. Because the subject's preconditions do not hold for this context, and not-applicable verdicts are not accepted from this seat, the pair is declined."
+  }
+ ],
+ "consults": []
+}

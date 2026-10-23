@@ -1,0 +1,64 @@
+{
+  "_notes": [
+    "Declared 2026-09-14 (native-copy adoption). goat has no i18n: English copy is hardcoded TSX, written in English (source, not derived).",
+    "2026-09-14 --init count over the landing, root layout metadata, the OG image route and the home page: 156 strings (141 fragments) in 32 files.",
+    "spelling: US forms 1 (favorites x1), UK forms 0. Declared US (operator fleet-wide ruling, 2026-09-14); UK migration debt 0.",
+    "dashes: em 0, en 0, hyphen-as-dash 0 in extracted copy. dash.emDash \"ban\" (operator fleet-wide ruling, 2026-09-14); em-dash debt 0.",
+    "quotes: straight double 14, curly 0; declared straight (the catalog is uniform).",
+    "ellipsis: three dots 6, character 0; declared dots (the catalog is uniform).",
+    "case: declared sentence (operator fleet standard, 2026-09-14) although section headers use Title Case consistently today; EN-CASE stays at warn and the Title Case strings are recorded as debt, not swept. See docs/i18n/style-en.md.",
+    "case debt 2026-09-14: 41 multi-word Title Case strings in --strings output (section headers Browse by Category, My Collections, Featured Rankings, Saved Lists, My Rankings, Continue Ranking, Start from Template; buttons, toast titles, filter and step labels). The checker judges only 1 of them (h3 Start from Template): SectionHeader title props are not heading-class and two-word headings are not judged.",
+    "exclamation marks 12; EN-EXCLAIM warns 8 (toast titles and messages counted per file)."
+  ],
+  "variant": "US",
+  "sources": [
+    {
+      "path": "src/app/layout.tsx",
+      "kind": "jsx"
+    },
+    {
+      "path": "src/app/page.tsx",
+      "kind": "jsx"
+    },
+    {
+      "path": "src/v2/ui/**/*.tsx",
+      "kind": "jsx"
+    },
+    {
+      "path": "src/v2/dna/**/*.tsx",
+      "kind": "jsx"
+    },
+    {
+      "path": "src/v2/publish/**/*.tsx",
+      "kind": "jsx"
+    },
+    {
+      "path": "src/v2/editor/**/*.tsx",
+      "kind": "jsx"
+    }
+  ],
+  "exclude": [
+    "**/*.test.tsx",
+    "**/*.stories.tsx"
+  ],
+  "dash": {
+    "emDash": "ban"
+  },
+  "quotes": "straight",
+  "ellipsis": "dots",
+  "case": {
+    "style": "sentence"
+  },
+  "terms": {
+    "accept": [
+      "G.O.A.T.",
+      "GOAT",
+      "Greatest of All Time"
+    ],
+    "reject": []
+  },
+  "rules": {
+    "EN-CASE": "warn"
+  },
+  "baseline": ".ai/copy-baseline.json"
+}

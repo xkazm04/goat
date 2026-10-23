@@ -1,0 +1,171 @@
+/* The goat as a brand layer: the summit scene behind the landing page. */
+
+.goat-v2 .gb-root {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.goat-v2 .gb-art {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  display: block;
+  width: min(1320px, 100%);
+  height: auto;
+  aspect-ratio: 3 / 2;
+  max-width: none;
+  /* The scene rises out of the page and fades toward the text on the left. */
+  -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 24%), linear-gradient(90deg, transparent 0, #000 22%);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(180deg, transparent 0, #000 24%), linear-gradient(90deg, transparent 0, #000 22%);
+  mask-composite: intersect;
+}
+
+@media (max-width: 760px) {
+  /* On a phone the scene sits under the content, so the goat is not hidden behind the lists. */
+  .goat-v2 .gb-art {
+    width: 210%;
+    right: -14%;
+    opacity: 0.9;
+  }
+}
+
+/* Sparkles: grow, glint, fade. Most of the cycle they are not there at all. */
+.goat-v2 .gb-sparkle {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+  animation: gb-sparkle 4.5s ease-in-out infinite;
+}
+
+@keyframes gb-sparkle {
+  0%,
+  52%,
+  100% {
+    opacity: 0;
+    transform: scale(0.15) rotate(0deg);
+  }
+  72% {
+    opacity: 1;
+    transform: scale(1) rotate(16deg);
+  }
+  88% {
+    opacity: 0.35;
+    transform: scale(0.5) rotate(30deg);
+  }
+}
+
+/* Dust: rises through the light and fades. */
+.goat-v2 .gb-mote {
+  opacity: 0;
+  animation: gb-mote 12s linear infinite;
+}
+
+@keyframes gb-mote {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0);
+  }
+  18% {
+    opacity: 0.65;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(10px, -96px);
+  }
+}
+
+/* The halo breathes, very slightly. */
+.goat-v2 .gb-halo {
+  animation: gb-breathe 9s ease-in-out infinite;
+}
+
+@keyframes gb-breathe {
+  0%,
+  100% {
+    opacity: 0.75;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.goat-v2 .gb-orbit {
+  transform-origin: 820px 360px;
+  animation: gb-orbit 240s linear infinite;
+}
+
+@keyframes gb-orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* A glint that travels along the top of the number-one step. */
+.goat-v2 .gb-sheen {
+  stroke-dasharray: 0.16 1.2;
+  stroke-dashoffset: 0.16;
+  animation: gb-sheen 7s ease-in-out infinite;
+  animation-delay: 1.5s;
+}
+
+@keyframes gb-sheen {
+  0% {
+    stroke-dashoffset: 0.16;
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  55% {
+    stroke-dashoffset: -1.04;
+    opacity: 1;
+  }
+  62%,
+  100% {
+    stroke-dashoffset: -1.04;
+    opacity: 0;
+  }
+}
+
+/* Mist drifts a little. */
+.goat-v2 .gb-mist {
+  animation: gb-mist 46s ease-in-out infinite alternate;
+}
+
+@keyframes gb-mist {
+  from {
+    transform: translateX(-40px);
+  }
+  to {
+    transform: translateX(50px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .goat-v2 .gb-halo,
+  .goat-v2 .gb-orbit,
+  .goat-v2 .gb-mist,
+  .goat-v2 .gb-sheen {
+    animation: none;
+  }
+
+  .goat-v2 .gb-sheen {
+    opacity: 0;
+  }
+
+  /* Still, but not absent: a quiet static scatter. */
+  .goat-v2 .gb-sparkle {
+    animation: none;
+    opacity: 0.55;
+    transform: scale(0.6);
+  }
+
+  .goat-v2 .gb-mote {
+    animation: none;
+    opacity: 0.25;
+  }
+}

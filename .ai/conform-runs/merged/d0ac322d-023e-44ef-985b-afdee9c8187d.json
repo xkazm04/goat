@@ -1,0 +1,38 @@
+{
+  "schema": "conform-run/1",
+  "worker": "d0ac322d-023e-44ef-985b-afdee9c8187d",
+  "subject": "templates-scaffolding",
+  "evaluatedAt": "2026-10-14T23:19:29.891752+00:00",
+  "provider": "codex",
+  "model": "gpt-6.1-sol",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "templates-scaffolding",
+      "context": "landing-home",
+      "reason": "withdrawn after review: reviewer (sonnet): The landing page shows 'Starter lists' (HomeLists.tsx) that are copied via forkList (sync.ts), which is the template-instantiation mechanism in this product, so not-applicable is contradicted; the page.tsx:33 anchor (a topic input) is also incidental, and the forkList caller was not traced to the la"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-14T23:19:29.891752+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "templates-scaffolding"
+      ],
+      "techniques": [
+        "adoption-lifecycle",
+        "catalog-curation",
+        "instance-upgrade",
+        "integrity-and-provenance",
+        "readiness-prerequisites",
+        "template-anatomy",
+        "template-portability"
+      ],
+      "deviations": 0,
+      "context": "landing-home",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    }
+  ]
+}

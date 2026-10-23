@@ -1,0 +1,68 @@
+[
+ {
+  "name": "mosaic-ridges",
+  "w": 2400,
+  "h": 450,
+  "bytes": 62670
+ },
+ {
+  "name": "goat-front",
+  "w": 844,
+  "h": 1103,
+  "bytes": 110948
+ },
+ {
+  "name": "canvas-peak",
+  "w": 2000,
+  "h": 2800,
+  "bytes": 86688
+ },
+ {
+  "name": "goat-summit",
+  "w": 374,
+  "h": 454,
+  "bytes": 32828
+ },
+ {
+  "name": "spread-plate",
+  "w": 900,
+  "h": 1126,
+  "bytes": 121924
+ },
+ {
+  "name": "stage-drape",
+  "w": 2000,
+  "h": 742,
+  "bytes": 32500
+ },
+ {
+  "name": "stage-goat",
+  "w": 590,
+  "h": 675,
+  "bytes": 66964
+ },
+ {
+  "name": "stage-rushmore",
+  "w": 2400,
+  "h": 891,
+  "bytes": 207372
+ },
+ {
+  "name": "stage-horn",
+  "w": 349,
+  "h": 298,
+  "bytes": 18646
+ },
+ {
+  "name": "mosaic-ledge",
+  "w": 1600,
+  "h": 60,
+  "bytes": 40498
+ },
+ {
+  "name": "grain",
+  "w": 128,
+  "h": 128,
+  "bytes": 16910
+ }
+]

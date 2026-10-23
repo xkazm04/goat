@@ -1,0 +1,33 @@
+{
+ "schema": "conform-run/1",
+ "worker": "e4d7465b-796a-4f80-a863-fe2382f167ef",
+ "subject": "prompt-assembly",
+ "evaluatedAt": "2026-10-12T20:35:54.089665+00:00",
+ "provider": "agy",
+ "model": "gemini-3.8-flash-high",
+ "pairs": [
+  {
+   "context": "landing-home",
+   "subject": "prompt-assembly",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/app/page.tsx:11 The Home component is a purely presentational React landing page that routes user topic input via standard HTML form submission without assembling any prompt or communicating with a language model.",
+   "techniques": []
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-12T20:35:54.089665+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "prompt-assembly"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "landing-home",
+   "via": "curator-multi:agy",
+   "model": "gemini-3.8-flash-high"
+  }
+ ]
+}

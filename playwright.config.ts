@@ -1,61 +1,51 @@
-import { defineConfig, devices } from "@playwright/test";
+import { defineConfig, devices } from '@playwright/test';
 
 /**
- * Playwright configuration for G.O.A.T. E2E tests
- * @see https://playwright.dev/docs/test-configuration
+ * GOAT smoke suite (docs/v2/TECHNICAL_PACKAGE.md §8). It needs no database: it
+ * ranks the bundled demo list at /l/demo, which lives in the browser, and the
+ * AI routes answer from the fixture provider. The Supabase settings below are
+ * placeholders; nothing connects.
+ *
+ *   npx playwright test
  */
+const PORT = Number(process.env.V2_SMOKE_PORT ?? 3210);
+
 export default defineConfig({
-  testDir: "./e2e",
-  /**
-   * Environment preconditions are owned by a launcher, not by each test.
-   * Before this existed, specs called `test.skip()` when their fixture data
-   * was missing, so against an empty database the whole suite ran, executed
-   * nothing, and reported green. See e2e/global-setup.ts.
-   */
-  globalSetup: "./e2e/global-setup.ts",
-  /**
-   * The stub specs `list-search`, `ranking-completion` and `session-persistence`
-   * were deleted on 2026-08-24: 10 tests, zero assertions, hard-skipped since
-   * the day they were written and listed in docs/E2E_BROWSER_TESTING.md with
-   * behavioural descriptions as though they were coverage. A quarantine nobody
-   * reviews is worse than an honest gap. The gaps are now recorded in that
-   * document's "Not covered" table instead.
-   */
-  /* Run tests in files in parallel */
-  fullyParallel: true,
-  /* Fail the build on CI if you accidentally left test.only in the source code. */
+  testDir: './e2e',
+  fullyParallel: false,
   forbidOnly: !!process.env.CI,
-  /* Retry on CI only */
-  retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI. */
-  workers: process.env.CI ? 1 : undefined,
-  /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: "html",
-  /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
+  retries: 0,
+  workers: 1,
+  reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
+  timeout: 90_000,
   use: {
-    /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: process.env.PLAYWRIGHT_BASE_URL || "http://localhost:3000",
-
-    /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
-    trace: "on-first-retry",
-
-    /* Take screenshot on failure */
-    screenshot: "only-on-failure",
+    baseURL: `http://localhost:${PORT}`,
+    viewport: { width: 1440, height: 1700 },
+    trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
   },
-
-  /* Configure projects for major browsers */
   projects: [
     {
-      name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
+      name: 'chromium',
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1440, height: 1700 },
+        // CI installs Playwright's own browser; elsewhere a preinstalled one can be named.
+        launchOptions: process.env.PW_CHROMIUM_PATH ? { executablePath: process.env.PW_CHROMIUM_PATH } : {},
+      },
     },
   ],
-
-  /* Run your local dev server before starting the tests */
   webServer: {
-    command: "npm run dev",
-    url: process.env.PLAYWRIGHT_BASE_URL || "http://localhost:3000",
+    command: `npx next dev -p ${PORT}`,
+    url: `http://localhost:${PORT}/`,
     reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
+    timeout: 180_000,
+    env: {
+      NEXT_PUBLIC_SUPABASE_URL: 'http://127.0.0.1:9',
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: 'placeholder-anon-key-for-the-v2-smoke',
+      // /v2/new streams from the free fixture provider, never a model.
+      V2_AI_PROVIDER: 'fixture',
+      NEXT_TELEMETRY_DISABLED: '1',
+    },
   },
 });

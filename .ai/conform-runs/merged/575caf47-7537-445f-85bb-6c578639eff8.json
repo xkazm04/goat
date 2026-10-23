@@ -1,0 +1,30 @@
+{
+  "schema": "conform-run/1",
+  "worker": "575caf47-7537-445f-85bb-6c578639eff8",
+  "subject": "translation-pipeline-topology",
+  "evaluatedAt": "2026-10-13T09:33:15.849933+00:00",
+  "provider": "agy",
+  "model": "gemini-3.8-flash-high",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "translation-pipeline-topology",
+      "context": "landing-home",
+      "reason": "withdrawn after review: reviewer (sonnet): The anchor at src/app/page.tsx:18 is only the account nav, and a missing language switcher doesn't show that a translation pipeline is absent. The page's text is hard-coded English, and the greps for next-intl, i18next, react-intl, lingui, locale and hreflang found nothing outside the .ai tooling fi"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-13T09:33:15.849933+00:00",
+      "bundle": "localization",
+      "subjects": [
+        "translation-pipeline-topology"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "landing-home",
+      "via": "curator-multi:agy",
+      "model": "gemini-3.8-flash-high"
+    }
+  ]
+}

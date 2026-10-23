@@ -1,0 +1,40 @@
+{
+ "schema": "conform-run/1",
+ "worker": "06081283-da98-4366-91c7-3c7cf571f4a2",
+ "subject": "fleet-orchestration",
+ "evaluatedAt": "2026-10-13T07:33:47.779259+00:00",
+ "provider": "grok",
+ "model": "grok-4.7",
+ "pairs": [
+  {
+   "context": "landing-home",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/app/page.tsx:33 The home page only starts a ranking list by submitting a topic form to /new, and a search of src/app for fleet, orchestrat, hibernat, harvest, and staleness found no matches, so this context has no agent-session fleet to register, dispatch, or harvest.",
+   "techniques": [],
+   "absenceTerms": [
+    "fleet",
+    "orchestrat",
+    "hibernat",
+    "harvest",
+    "staleness"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-13T07:33:47.779259+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "fleet-orchestration"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "landing-home",
+   "via": "curator-multi:grok",
+   "model": "grok-4.7"
+  }
+ ]
+}

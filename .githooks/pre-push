@@ -1,0 +1,21 @@
+#!/bin/sh
+# goat pre-push hook. Git runs this only when hooks are pointed here, which is
+# LOCAL config a fresh clone does not have:
+#   git config core.hooksPath .githooks
+#
+# English copy gate (native-copy, 2026-09-14): lints the declared copy sources
+# against .ai/copy-baseline.json; only NEW error findings block, warnings print.
+# The checker is a gitignored link into ai-registry, so without it the step
+# skips LOUDLY. Contract and escape hatch: docs/i18n/style-en.md.
+CHECKER=.claude/skills/native-copy/scripts/copy-check.mjs
+
+if [ -f "$CHECKER" ]; then
+  if ! node "$CHECKER"; then
+    echo "pre-push: copy gate FAILED - fix the new copy findings above (docs/i18n/style-en.md)" >&2
+    exit 1
+  fi
+else
+  echo "pre-push: native-copy checker not installed - copy gate SKIPPED (run ai-registry/scripts/link-registry.mjs)" >&2
+fi
+
+exit 0

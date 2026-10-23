@@ -1,0 +1,35 @@
+{
+  "schema": "conform-run/1",
+  "worker": "bf3496f0-6683-47e4-97f0-eed5d54d4a99",
+  "subject": "quality-gates",
+  "evaluatedAt": "2026-10-12T22:49:56.050433+00:00",
+  "provider": "grok",
+  "model": "grok-4.7",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "quality-gates",
+      "context": "app-shell",
+      "reason": "pair anchor refused: no path:line anchor in '.githooks/pre-push:18'"
+    },
+    {
+      "subject": "quality-gates",
+      "context": "platform-infrastructure",
+      "reason": "withdrawn after review: reviewer (sonnet): The anchor is an oEmbed GET handler that doesn't show whether quality gates, waivers or hooks exist. The claim that copy-contract sources don't name it and the pipeline is recorded in notes was not confirmed in the code I opened, so the anchor is incidental."
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-12T22:49:56.050433+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "quality-gates"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "platform-infrastructure",
+      "via": "curator-multi:grok",
+      "model": "grok-4.7"
+    }
+  ]
+}

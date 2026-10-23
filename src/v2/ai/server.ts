@@ -1,0 +1,133 @@
+import { createClient } from '@supabase/supabase-js';
+
+import { isOverQuota, quotaWindowStart, type AiTask } from './quota';
+
+/**
+ * Server-only Supabase access for AI quotas. The service-role key never
+ * leaves this module and is never read by client code (TECHNICAL_PACKAGE §9, #5).
+ * Returns null when it is not configured, so the route can fall back to the
+ * fixture provider in a fresh checkout.
+ */
+function adminClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+  return createClient(url, key, { db: { schema: 'goat_v2' }, auth: { persistSession: false, autoRefreshToken: false } });
+}
+
+export type Caller = { userId: string } | null;
+
+/** Resolve the signed-in (guest or member) user from a bearer token. */
+export async function callerFromToken(token: string | null): Promise<Caller> {
+  const admin = adminClient();
+  if (!admin || !token) return null;
+  const { data, error } = await admin.auth.getUser(token);
+  return error || !data.user ? null : { userId: data.user.id };
+}
+
+export function accountingConfigured(): boolean {
+  return adminClient() !== null;
+}
+
+/** True when the user has no allowance left for the task in the last 24 hours. */
+export async function overQuota(userId: string, task: AiTask, now = new Date()): Promise<boolean> {
+  const admin = adminClient();
+  if (!admin) return false;
+  const { count, error } = await admin
+    .from('ai_usage')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('task', task)
+    .gte('created_at', quotaWindowStart(now));
+  if (error) throw new Error(`quota lookup failed: ${error.message}`);
+  return isOverQuota(task, count ?? 0);
+}
+
+export async function recordUsage(input: {
+  userId: string;
+  task: AiTask;
+  inputTokens: number;
+  outputTokens: number;
+  cacheReadTokens: number;
+}): Promise<void> {
+  const admin = adminClient();
+  if (!admin) return;
+  const { error } = await admin.from('ai_usage').insert({
+    user_id: input.userId,
+    task: input.task,
+    input_tokens: input.inputTokens,
+    output_tokens: input.outputTokens,
+    cache_read_tokens: input.cacheReadTokens,
+  });
+  if (error) throw new Error(`usage write failed: ${error.message}`);
+}
+
+export interface ItemInput {
+  id: string;
+  title: string;
+  year: number | null;
+  creator: string | null;
+  art: unknown;
+  traits: string[];
+}
+
+/**
+ * Items are public rows that clients can read but not write (RLS), so the
+ * route writes the ones it proposes. Existing ids are left as they are.
+ */
+export async function upsertItems(userId: string, topic: string, items: ItemInput[]): Promise<void> {
+  const admin = adminClient();
+  if (!admin || items.length === 0) return;
+  const rows = items.map((i) => ({ ...i, topic: topic.trim().slice(0, 120), created_by: userId }));
+  const { error } = await admin.from('items').upsert(rows, { onConflict: 'id', ignoreDuplicates: true });
+  if (error) throw new Error(`item write failed: ${error.message}`);
+}
+
+/** The card number to give the next persona: the stored one plus one. */
+export async function nextCardNo(userId: string): Promise<number | null> {
+  const admin = adminClient();
+  if (!admin) return null;
+  const { data, error } = await admin.from('taste_profiles').select('card_no').eq('user_id', userId).maybeSingle();
+  if (error) throw new Error(`profile lookup failed: ${error.message}`);
+  return ((data as { card_no?: number } | null)?.card_no ?? 0) + 1;
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export async function saveProfile(input: {
+  userId: string;
+  traits: unknown;
+  axes: unknown;
+  persona: unknown;
+  cardNo: number;
+  sourceLists: string[];
+}): Promise<void> {
+  const admin = adminClient();
+  if (!admin) return;
+  const { error } = await admin.from('taste_profiles').upsert({
+    user_id: input.userId,
+    traits: input.traits,
+    axes: input.axes,
+    persona: input.persona,
+    card_no: input.cardNo,
+    source_lists: input.sourceLists.filter((id) => UUID.test(id)),
+    computed_at: new Date().toISOString(),
+  });
+  if (error) throw new Error(`profile write failed: ${error.message}`);
+}
+
+/** Replace the user's stored recommendations with this set. */
+export async function saveRecommendations(
+  userId: string,
+  rows: { itemId: string; score: number; reason: string }[],
+): Promise<void> {
+  const admin = adminClient();
+  if (!admin) return;
+  const del = await admin.from('recommendations').delete().eq('user_id', userId);
+  if (del.error) throw new Error(`recommendation reset failed: ${del.error.message}`);
+  if (rows.length === 0) return;
+  const { error } = await admin
+    .from('recommendations')
+    .insert(rows.map((r) => ({ user_id: userId, item_id: r.itemId, score: r.score, reason: r.reason })));
+  if (error) throw new Error(`recommendation write failed: ${error.message}`);
+}

@@ -1,0 +1,77 @@
+{
+ "schema": "conform-run/1",
+ "worker": "3ef8d9bb-90ec-4f9b-882f-c30dca50bfac",
+ "subject": "search",
+ "evaluatedAt": "2026-10-13T01:50:08.234728+00:00",
+ "provider": "grok",
+ "model": "grok-4.7",
+ "pairs": [
+  {
+   "context": "app-shell",
+   "subject": "search",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/v2/ui/shell.tsx:14 The app shell only mounts that visual frame around page children, and a search of src/app and src/v2/ui found no command palette, query door, text index, facet counts, saved views, or authored filter language, so the search precondition does not hold here.",
+   "techniques": [
+    {
+     "technique": "command-surface",
+     "verdict": "not-applicable",
+     "evidence": "src/v2/ui/shell.tsx:14 No palette, fuzzy scorer, or command registry; the shell render is a font-token div."
+    },
+    {
+     "technique": "faceting-and-filters",
+     "verdict": "not-applicable",
+     "evidence": "src/v2/ui/shell.tsx:16 No facet panel or filter predicate; CSS filter and array.filter hits are not facet selection."
+    },
+    {
+     "technique": "full-text-indexing",
+     "verdict": "not-applicable",
+     "evidence": "src/app/layout.tsx:22 Layout only mounts the shell; package.json has no fuse.js, cmdk, minisearch, flexsearch, or lunr."
+    },
+    {
+     "technique": "query-parsing",
+     "verdict": "not-applicable",
+     "evidence": "src/app/layout.tsx:18 No user query text is parsed; src/app search hits are Next.js searchParams, not a search box."
+    },
+    {
+     "technique": "ranking-and-excerpts",
+     "verdict": "not-applicable",
+     "evidence": "src/v2/ui/shell.tsx:15 No search-result list, score order, or excerpt highlighter in the shell."
+    },
+    {
+     "technique": "saved-views",
+     "verdict": "not-applicable",
+     "evidence": "src/app/layout.tsx:9 Metadata states a rank-and-publish product; no named predicate or saved view is stored in the shell."
+    },
+    {
+     "technique": "typed-filter-language",
+     "verdict": "not-applicable",
+     "evidence": "src/app/layout.tsx:6 No user-authored filter expression, typing pass, or rule storage in this layout."
+    }
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-13T01:50:08.234728+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "search"
+   ],
+   "techniques": [
+    "command-surface",
+    "faceting-and-filters",
+    "full-text-indexing",
+    "query-parsing",
+    "ranking-and-excerpts",
+    "saved-views",
+    "typed-filter-language"
+   ],
+   "deviations": 0,
+   "context": "app-shell",
+   "via": "curator-multi:grok",
+   "model": "grok-4.7"
+  }
+ ]
+}

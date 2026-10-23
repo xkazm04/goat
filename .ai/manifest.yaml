@@ -243,7 +243,7 @@ registry:
   machine: secondary
   contributor: mkdol-dev-box
 knowledge:
-  domains: [software-engineering, media-generation]
+  domains: [software-engineering, media-generation, localization]
 
 # Shared skills this project uses, from the registry's skills/ lane. The LINK is machine
 # state (gitignored, made by ai-registry/scripts/link-skills.mjs); THIS list is the
@@ -260,3 +260,4 @@ skills:
   - npm-updates
   - tiger
   - uat
+  - native-copy

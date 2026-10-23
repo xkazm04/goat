@@ -1,0 +1,55 @@
+{
+ "schema": "conform-run/1",
+ "worker": "3736c3c5-a5e7-49e3-8ae6-f4f7050bbd53",
+ "subject": "agent-runtime-assembly",
+ "evaluatedAt": "2026-10-13T02:51:07.479648+00:00",
+ "provider": "agy",
+ "model": "gemini-3.8-flash-high",
+ "pairs": [
+  {
+   "context": "platform-infrastructure",
+   "subject": "agent-runtime-assembly",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/app/api/oembed/route.ts:24 Context file and repository searches for agent runtime assembly constructs found no model or tool hook chains, extension loading tiers, checkpoint custodians, external work projections, or subagent lifecycles in this endpoint, which exclusively formats and returns an oEmbed 1.0 JSON response for published lists.",
+   "techniques": [],
+   "registryProposal": "Remove the pairing between agent-runtime-assembly and platform-infrastructure in registry-map.json, as the match was triggered by keyword overlap on 'agent', 'route', and 'tasks' from legacy agent-bridge routes that are no longer present in v2."
+  },
+  {
+   "context": "app-shell",
+   "subject": "agent-runtime-assembly",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/app/layout.tsx:22 Context file and repository searches for agent runtime assembly constructs found no agent execution pipeline, hook composition, code loading, checkpoint custody, or subagent management connected to this root layout, which exclusively wraps UI children in the V2Shell component for font and design token styling.",
+   "techniques": [],
+   "registryProposal": "Remove the pairing between agent-runtime-assembly and app-shell in registry-map.json, as the match was triggered by keyword overlap on 'callback', 'error', and 'route' in app-shell paths rather than any agent execution or runtime assembly machinery."
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-13T02:51:07.479648+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-runtime-assembly"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "platform-infrastructure",
+   "via": "curator-multi:agy",
+   "model": "gemini-3.8-flash-high"
+  },
+  {
+   "ts": "2026-10-13T02:51:07.479648+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-runtime-assembly"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "app-shell",
+   "via": "curator-multi:agy",
+   "model": "gemini-3.8-flash-high"
+  }
+ ]
+}

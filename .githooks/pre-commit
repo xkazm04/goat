@@ -1,0 +1,16 @@
+#!/bin/sh
+
+# BEGIN ai-registry consult-check (managed by ai-registry/scripts/install-consult-hook.mjs)
+# Never blocks. Prints the subjects governing the staged paths and records a miss.
+if [ -f .ai/manifest.yaml ]; then
+  _reg="${AI_REGISTRY_DIR:-}"
+  if [ -z "$_reg" ]; then
+    _reg=$(sed -n 's/^[[:space:]]*local:[[:space:]]*//p' .ai/manifest.yaml | head -1 | tr -d '"'"'"'"')
+  fi
+  [ -z "$_reg" ] && _reg="../ai-registry"
+  if [ -f "$_reg/scripts/consult-check.mjs" ]; then
+    node "$_reg/scripts/consult-check.mjs" || true
+  fi
+  unset _reg
+fi
+# END ai-registry consult-check

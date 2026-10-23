@@ -60,6 +60,10 @@ DEV_ARTIFACTS_REPORT.md
 
 # BEGIN ai-registry linked skills (managed by ai-registry/scripts/link-registry.mjs)
 # Links are machine state; the declarations live in .ai/manifest.yaml (`skills:` and `knowledge.domains`).
+/.claude/skills/native-copy
+/.claude/rules/ai-registry-access.md
+/.claude/rules/ai-registry-software-engineering.md
+/.claude/rules/ai-registry-localization.md
 /.claude/skills/architect
 /.claude/skills/conform
 /.claude/skills/consult
@@ -70,7 +74,5 @@ DEV_ARTIFACTS_REPORT.md
 /.claude/skills/npm-updates
 /.claude/skills/tiger
 /.claude/skills/uat
-/.claude/rules/ai-registry-access.md
-/.claude/rules/ai-registry-software-engineering.md
 /.claude/rules/ai-registry-media-generation.md
 # END ai-registry linked skills

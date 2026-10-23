@@ -4,7 +4,7 @@ This file provides guidance to Claude Code when working with code in this reposi
 
 ## Project Overview
 
-Project - Add your project description here.
+G.O.A.T.: rank anything with AI help and publish the result. See the root `CLAUDE.md` for the working guide.
 
 ## Common Commands
 

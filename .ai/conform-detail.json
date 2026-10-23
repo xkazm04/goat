@@ -1,0 +1,937 @@
+{
+  "schema": "conform-detail/1",
+  "pairs": {
+    "574e79a8-5847-4763-a52c-ac884ac33d97/prompt-assembly": {
+      "context": "landing-home",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-12",
+      "evaluatedTs": "2026-10-12T20:35:54.089Z",
+      "worker": "e4d7465b-796a-4f80-a863-fe2382f167ef",
+      "techniques": []
+    },
+    "5183f934-7df8-4fbe-bdef-3d239fea4e26/mcp-tools": {
+      "context": "app-shell",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-12",
+      "evaluatedTs": "2026-10-12T21:42:53.723Z",
+      "worker": "9b137e9a-19e1-47cb-a92d-51a1d9188ce9",
+      "techniques": [
+        {
+          "technique": "ambient-selection-is-not-an-argument",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 No tool server resolves an interactive application's selection."
+        },
+        {
+          "technique": "authentication-and-scoping",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 No tool consumers, capability tokens, listing or invocation."
+        },
+        {
+          "technique": "caller-differentiated-capability",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 No engine exposed through human and agent tool surfaces."
+        },
+        {
+          "technique": "catalog-projection-modes",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 No published tool catalog or host tool budget."
+        },
+        {
+          "technique": "client-integration",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 No tool client installation, connection or consent flow."
+        },
+        {
+          "technique": "command-audit-by-position",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 No configured server command is audited or executed."
+        },
+        {
+          "technique": "egress-argument-gating",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 No outbound tool calls over third-party argument schemas."
+        },
+        {
+          "technique": "enumeration-without-a-scope",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 No enumeration operation over per-caller tool resources."
+        },
+        {
+          "technique": "first-party-agent-is-a-principal",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 No first-party agent or shared protocol handlers."
+        },
+        {
+          "technique": "fluent-syntax-bounded-grammar",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 No tool accepts command or query notation."
+        },
+        {
+          "technique": "one-server-many-registrations",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 No tool server registrations are composed here."
+        },
+        {
+          "technique": "orchestration-to-tool-migration",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 No model pipeline or adaptive stages exposed as tools."
+        },
+        {
+          "technique": "sanctioned-session-state",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 No stateful tool service or replica-affinity routing."
+        },
+        {
+          "technique": "sealed-continuation-state",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 No resumable operation hands intermediate state to callers."
+        },
+        {
+          "technique": "server-composition",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 No protocol shell, tool registry or dispatch door."
+        },
+        {
+          "technique": "suspendable-request-classes",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 No protocol request classes or human elicitation."
+        },
+        {
+          "technique": "tool-identity-vs-tool-name",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 No tool identities or persisted tool references."
+        },
+        {
+          "technique": "tool-schema-design",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 No model-addressable tool definitions or argument schemas."
+        },
+        {
+          "technique": "transport-selection",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 Rendering the application shell introduces no tool transport."
+        },
+        {
+          "technique": "untrusted-result-handling",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 No tool results enter a model's context."
+        },
+        {
+          "technique": "write-freshness-gate",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 No model-facing artifact read or write tools."
+        }
+      ]
+    },
+    "a5fbc2be-5b70-4417-89a3-cffbb72ea426/mcp-tools": {
+      "context": "platform-infrastructure",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-12",
+      "evaluatedTs": "2026-10-12T21:42:53.723Z",
+      "worker": "9b137e9a-19e1-47cb-a92d-51a1d9188ce9",
+      "techniques": [
+        {
+          "technique": "ambient-selection-is-not-an-argument",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:13 The target comes from a URL, not an application's ambient selection."
+        },
+        {
+          "technique": "authentication-and-scoping",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:14 Public published-list retrieval, not authenticated tool invocation."
+        },
+        {
+          "technique": "caller-differentiated-capability",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:17 No shared human CLI and agent tool engine."
+        },
+        {
+          "technique": "catalog-projection-modes",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:17 An oEmbed document is not a tool catalog."
+        },
+        {
+          "technique": "client-integration",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:24 No tool client installation, federation or consent flow."
+        },
+        {
+          "technique": "command-audit-by-position",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:17 No configured server command is spawned."
+        },
+        {
+          "technique": "egress-argument-gating",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:17 No third-party tool call or access-granting argument schema."
+        },
+        {
+          "technique": "enumeration-without-a-scope",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:14 Retrieves one named published list; no resource enumeration."
+        },
+        {
+          "technique": "first-party-agent-is-a-principal",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:17 No first-party agent reuses protocol handlers."
+        },
+        {
+          "technique": "fluent-syntax-bounded-grammar",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:13 Parses an oEmbed URL, not fluent tool command notation."
+        },
+        {
+          "technique": "one-server-many-registrations",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:17 No tool server registration records or aliases."
+        },
+        {
+          "technique": "orchestration-to-tool-migration",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:17 Deterministic oEmbed construction has no model orchestration."
+        },
+        {
+          "technique": "sanctioned-session-state",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:13 No tool-session state or owner-affinity routing."
+        },
+        {
+          "technique": "sealed-continuation-state",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:24 Returns completed oEmbed content, not a resumable continuation."
+        },
+        {
+          "technique": "server-composition",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:17 No tool registry, protocol listing or dispatch door."
+        },
+        {
+          "technique": "suspendable-request-classes",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:24 No protocol metadata surface or human suspension mechanism."
+        },
+        {
+          "technique": "tool-identity-vs-tool-name",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:17 No published tool identity or name-keyed tool history."
+        },
+        {
+          "technique": "tool-schema-design",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:11 An oEmbed format parameter is not a model tool schema."
+        },
+        {
+          "technique": "transport-selection",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:24 Ordinary HTTP oEmbed output, not an MCP transport."
+        },
+        {
+          "technique": "untrusted-result-handling",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:24 No tool result is inserted into model context."
+        },
+        {
+          "technique": "write-freshness-gate",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:14 Published-list retrieval exposes no model artifact write."
+        }
+      ]
+    },
+    "574e79a8-5847-4763-a52c-ac884ac33d97/mcp-tools": {
+      "context": "landing-home",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-12",
+      "evaluatedTs": "2026-10-12T21:42:53.723Z",
+      "worker": "9b137e9a-19e1-47cb-a92d-51a1d9188ce9",
+      "techniques": [
+        {
+          "technique": "ambient-selection-is-not-an-argument",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:33 A topic form does not resolve ambient application selections."
+        },
+        {
+          "technique": "authentication-and-scoping",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/ui/SessionChip.tsx:20 Displays browser session status; no tool-consumer credentials."
+        },
+        {
+          "technique": "caller-differentiated-capability",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:33 No engine shared between CLI and agent tool surfaces."
+        },
+        {
+          "technique": "catalog-projection-modes",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:46 Displays ranking lists, not a published tool catalog."
+        },
+        {
+          "technique": "client-integration",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:33 No tool client installation, connection or consent flow."
+        },
+        {
+          "technique": "command-audit-by-position",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:33 Form submission does not execute a configured server command."
+        },
+        {
+          "technique": "egress-argument-gating",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:33 No third-party outbound tool argument schema."
+        },
+        {
+          "technique": "enumeration-without-a-scope",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/ui/HomeLists.tsx:67 The personal-list query has an explicit owner scope."
+        },
+        {
+          "technique": "first-party-agent-is-a-principal",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:33 No first-party agent calls shared protocol handlers here."
+        },
+        {
+          "technique": "fluent-syntax-bounded-grammar",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:36 Topic text is not command notation accepted by a tool."
+        },
+        {
+          "technique": "one-server-many-registrations",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:33 No tool server registrations or registration-derived names."
+        },
+        {
+          "technique": "orchestration-to-tool-migration",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:33 This page collects a topic; it implements no model pipeline."
+        },
+        {
+          "technique": "sanctioned-session-state",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:33 No tool-state affinity or replica ownership."
+        },
+        {
+          "technique": "sealed-continuation-state",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:36 Carries topic input, not sealed intermediate operation state."
+        },
+        {
+          "technique": "server-composition",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:33 No protocol shell, tool registry or tool dispatcher."
+        },
+        {
+          "technique": "suspendable-request-classes",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:33 An ordinary form is not protocol elicitation or suspension."
+        },
+        {
+          "technique": "tool-identity-vs-tool-name",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:46 Ranking-list identities are not persisted tool identities."
+        },
+        {
+          "technique": "tool-schema-design",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:36 A form field is not a model-addressable tool argument schema."
+        },
+        {
+          "technique": "transport-selection",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:33 Browser navigation establishes no MCP transport."
+        },
+        {
+          "technique": "untrusted-result-handling",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:46 List records are rendered to people, not inserted as model tool results."
+        },
+        {
+          "technique": "write-freshness-gate",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:33 No model-facing artifact editing tools."
+        }
+      ]
+    },
+    "a5fbc2be-5b70-4417-89a3-cffbb72ea426/quality-gates": {
+      "context": "platform-infrastructure",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-12",
+      "evaluatedTs": "2026-10-12T22:49:56.050Z",
+      "techniques": [],
+      "withdrawn": {
+        "worker": "bf3496f0-6683-47e4-97f0-eed5d54d4a99",
+        "state": "not-applicable",
+        "at": "2026-10-12T22:50:29.395075+00:00",
+        "reason": "reviewer (sonnet): The anchor is an oEmbed GET handler that doesn't show whether quality gates, waivers or hooks exist. The claim that copy-contract sources don't name it and the pipeline is recorded in notes was not confirmed in the code I opened, so the anchor is incidental."
+      }
+    },
+    "5183f934-7df8-4fbe-bdef-3d239fea4e26/test-harness": {
+      "context": "app-shell",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-12",
+      "evaluatedTs": "2026-10-12T23:41:29.152Z",
+      "worker": "c16eb870-8cb3-4fb1-b4d7-1cfac14d953b",
+      "techniques": [],
+      "registryProposal": "Remove the pairing between test-harness and app-shell in registry-map.json, as the match was triggered by keyword overlap on UI shell terms rather than any test harness machinery."
+    },
+    "a5fbc2be-5b70-4417-89a3-cffbb72ea426/test-harness": {
+      "context": "platform-infrastructure",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-12",
+      "evaluatedTs": "2026-10-12T23:41:29.152Z",
+      "worker": "c16eb870-8cb3-4fb1-b4d7-1cfac14d953b",
+      "techniques": [],
+      "registryProposal": "Remove the pairing between test-harness and platform-infrastructure in registry-map.json, as the match was triggered by keyword overlap on platform and route terms rather than any test harness machinery."
+    },
+    "a5fbc2be-5b70-4417-89a3-cffbb72ea426/voice-io": {
+      "context": "platform-infrastructure",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T00:40:07.326Z",
+      "worker": "17610f79-52f9-4867-b394-852800e14d05",
+      "techniques": []
+    },
+    "5183f934-7df8-4fbe-bdef-3d239fea4e26/voice-io": {
+      "context": "app-shell",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T00:40:07.326Z",
+      "worker": "17610f79-52f9-4867-b394-852800e14d05",
+      "techniques": []
+    },
+    "5183f934-7df8-4fbe-bdef-3d239fea4e26/search": {
+      "context": "app-shell",
+      "subject": "search",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T01:50:08.234Z",
+      "worker": "3ef8d9bb-90ec-4f9b-882f-c30dca50bfac",
+      "techniques": [
+        {
+          "technique": "command-surface",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/ui/shell.tsx:14 No palette, fuzzy scorer, or command registry; the shell render is a font-token div."
+        },
+        {
+          "technique": "faceting-and-filters",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/ui/shell.tsx:16 No facet panel or filter predicate; CSS filter and array.filter hits are not facet selection."
+        },
+        {
+          "technique": "full-text-indexing",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 Layout only mounts the shell; package.json has no fuse.js, cmdk, minisearch, flexsearch, or lunr."
+        },
+        {
+          "technique": "query-parsing",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:18 No user query text is parsed; src/app search hits are Next.js searchParams, not a search box."
+        },
+        {
+          "technique": "ranking-and-excerpts",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/ui/shell.tsx:15 No search-result list, score order, or excerpt highlighter in the shell."
+        },
+        {
+          "technique": "saved-views",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:9 Metadata states a rank-and-publish product; no named predicate or saved view is stored in the shell."
+        },
+        {
+          "technique": "typed-filter-language",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:6 No user-authored filter expression, typing pass, or rule storage in this layout."
+        }
+      ]
+    },
+    "a5fbc2be-5b70-4417-89a3-cffbb72ea426/agent-runtime-assembly": {
+      "context": "platform-infrastructure",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T02:51:07.479Z",
+      "worker": "3736c3c5-a5e7-49e3-8ae6-f4f7050bbd53",
+      "techniques": [],
+      "registryProposal": "Remove the pairing between agent-runtime-assembly and platform-infrastructure in registry-map.json, as the match was triggered by keyword overlap on 'agent', 'route', and 'tasks' from legacy agent-bridge routes that are no longer present in v2."
+    },
+    "5183f934-7df8-4fbe-bdef-3d239fea4e26/agent-runtime-assembly": {
+      "context": "app-shell",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T02:51:07.479Z",
+      "worker": "3736c3c5-a5e7-49e3-8ae6-f4f7050bbd53",
+      "techniques": [],
+      "registryProposal": "Remove the pairing between agent-runtime-assembly and app-shell in registry-map.json, as the match was triggered by keyword overlap on 'callback', 'error', and 'route' in app-shell paths rather than any agent execution or runtime assembly machinery."
+    },
+    "a5fbc2be-5b70-4417-89a3-cffbb72ea426/eval-harness": {
+      "context": "platform-infrastructure",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T03:51:17.330Z",
+      "worker": "24b66cb2-055a-42b7-893b-b4441b93dda5",
+      "techniques": [
+        {
+          "technique": "assertion-vs-judgment",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/publish/publish.test.tsx:53 This checks deterministic metadata, not properties of model or agent outputs."
+        },
+        {
+          "technique": "candidate-write-access",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/publish/server.ts:20 The execution path reads a published list; no evaluated agent receives an execution or write surface."
+        },
+        {
+          "technique": "certification-levels",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/publish/server.ts:21 Eligibility is publication status, not theoretical or live candidate certification."
+        },
+        {
+          "technique": "comparison-modes",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:17 The route builds one metadata response rather than scoring or comparing candidates."
+        },
+        {
+          "technique": "discriminating-task-selection",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:13 A request selects a resource by URL; no candidate population or scenario selection search exists here."
+        },
+        {
+          "technique": "eval-economics",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/publish/oembed.ts:61 Metadata construction derives an embed URL without model calls or a paid evaluation matrix."
+        },
+        {
+          "technique": "failure-attribution",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:15 This is an HTTP resource failure, not a failed evaluation case requiring attribution."
+        },
+        {
+          "technique": "failure-signatures-beside-the-pass-rate",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:11 The route rejects an unsupported response format; it publishes no benchmark pass rate."
+        },
+        {
+          "technique": "judge-stability",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/publish/oembed.ts:68 The response copies the list title directly rather than obtaining a model judgment."
+        },
+        {
+          "technique": "measurement-revision",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/publish/oembed.ts:64 This identifies the oEmbed protocol version, not a published measurement being revised."
+        },
+        {
+          "technique": "metric-role-contract",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:21 The parameter controls embed dimensions; it is not an optimized metric or evaluation threshold."
+        },
+        {
+          "technique": "monitor-inside-the-loop",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/publish/oembed.ts:62 HTML is constructed from escaped inputs; no model reviewer gates an optimization loop."
+        },
+        {
+          "technique": "outcome-conditioned-cost",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:14 The request performs a resource lookup, with no trial arms or resource-cost comparison."
+        },
+        {
+          "technique": "overshoot-and-restore",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/publish/oembed.ts:34 Dimension clamping is ordinary response construction, not an agent reduction search bounded by a suite."
+        },
+        {
+          "technique": "pairing-schedule",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/list/sync.ts:137 The dependency retrieves one identified list; no comparison graph or arena schedule exists."
+        },
+        {
+          "technique": "probe-the-decision-not-the-artifact",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/publish/publish.test.tsx:55 The output property is directly assertable; there is no prose evaluation requiring an upstream decision probe."
+        },
+        {
+          "technique": "rebase-the-varied-input",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/publish/publish.test.tsx:45 This checks rejection against a fixed origin, not normalized equality between shifted scenario replays."
+        },
+        {
+          "technique": "reliability-aggregation",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/publish/publish.test.tsx:56 The test asserts a deterministic URL, with no repeated stochastic trials to aggregate."
+        },
+        {
+          "technique": "resolution-precondition",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/publish/oembed.ts:65 The published result is rich oEmbed metadata, not an ordering over evaluated configurations."
+        },
+        {
+          "technique": "scenario-design",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/list/sync.ts:143 The loader reads product-list data, not versioned evaluation scenarios."
+        },
+        {
+          "technique": "selection-over-noise",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/publish/oembed.ts:59 The result is derived once from request input, not selected as the best of noisy scored attempts."
+        },
+        {
+          "technique": "treatment-election-rate",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:20 The route supplies stored metadata directly; no evaluated candidate elects an optional treatment."
+        },
+        {
+          "technique": "unaided-baseline-screening",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/publish/publish.test.tsx:52 The fixture exercises deterministic formatting, not generated questions admitted to a model evaluation suite."
+        },
+        {
+          "technique": "uncontrolled-games-beside-the-win-rate",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/publish/oembed.ts:72 The response publishes a thumbnail URL, with no pairwise games, mirrored verdicts, or win-rate denominator."
+        }
+      ]
+    },
+    "574e79a8-5847-4763-a52c-ac884ac33d97/fleet-orchestration": {
+      "context": "landing-home",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T07:33:47.779Z",
+      "worker": "06081283-da98-4366-91c7-3c7cf571f4a2",
+      "techniques": []
+    },
+    "5183f934-7df8-4fbe-bdef-3d239fea4e26/app-shell": {
+      "context": "app-shell",
+      "subject": "app-shell",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T08:26:17.260Z",
+      "worker": "98b23b10-925e-430f-9e75-b8064fda2db1",
+      "techniques": [
+        {
+          "technique": "navigation-model",
+          "verdict": "deviation",
+          "evidence": "src/v2/ui/shell.tsx:16 The imported shell only wraps children; it supplies no owned section registry or navigation derived from a current location."
+        },
+        {
+          "technique": "shell-hosted-services",
+          "verdict": "deviation",
+          "evidence": "src/app/layout.tsx:22 No session host sits above the page swap point; page consumers independently initialize session state."
+        }
+      ]
+    },
+    "574e79a8-5847-4763-a52c-ac884ac33d97/app-shell": {
+      "context": "landing-home",
+      "subject": "app-shell",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T08:26:17.260Z",
+      "worker": "98b23b10-925e-430f-9e75-b8064fda2db1",
+      "techniques": [
+        {
+          "technique": "badge-and-attention",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/ui/SessionChip.tsx:18 The account chip reports session status rather than unread inventory or newness; searches found decorative badges elsewhere but no attention-count badge in this navigation."
+        },
+        {
+          "technique": "entitlement-gating",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:33 This page offers unconditional destinations; searches found no tier, feature-flag, entitlement or locked-entry rendering here."
+        },
+        {
+          "technique": "lazy-section-loading",
+          "verdict": "deviation",
+          "evidence": "src/v2/ui/HomeLists.tsx:42 Fetched home lists live only in component state and restart empty on remount; the mount effect fetches them again without a session-held restore path."
+        },
+        {
+          "technique": "nav-hierarchy",
+          "verdict": "conformant",
+          "evidence": "src/app/page.tsx:18 The account navigation is a flat, labeled surface containing one destination and session status, with no unnecessary sub-navigation or entity-derived entries."
+        },
+        {
+          "technique": "navigation-model",
+          "verdict": "deviation",
+          "evidence": "src/app/page.tsx:19 The destination and label are handwritten in the page rather than derived from an owned navigation registry shared with destination consumers."
+        },
+        {
+          "technique": "shell-hosted-services",
+          "verdict": "deviation",
+          "evidence": "src/app/page.tsx:20 SessionChip calls useSession independently of HomeLists; both initialize page-local session state instead of consuming one persistent session host."
+        }
+      ]
+    },
+    "574e79a8-5847-4763-a52c-ac884ac33d97/client-fetch-cache": {
+      "context": "landing-home",
+      "subject": "client-fetch-cache",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T08:59:38.368Z",
+      "worker": "3634330a-3f36-4b6a-b929-7d623286e00a",
+      "techniques": [
+        {
+          "technique": "admission-hypothesis",
+          "verdict": "deviation",
+          "evidence": "src/v2/ui/HomeLists.tsx:71 Every returned private-list result is retained without a declared admission hypothesis or reuse check."
+        },
+        {
+          "technique": "cache-key-discipline",
+          "verdict": "deviation",
+          "evidence": "src/v2/ui/HomeLists.tsx:42 Fetched rows occupy an unkeyed result slot; no centralized builder identifies the request and its answer-changing arguments."
+        },
+        {
+          "technique": "in-flight-dedup",
+          "verdict": "deviation",
+          "evidence": "src/v2/ui/HomeLists.tsx:77 Session resolution reruns the effect's identical public-list query; cleanup only suppresses writes, and no pending-request registry joins overlapping reads."
+        },
+        {
+          "technique": "parse-and-derive-caches",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/covers/art.ts:29 The landing cover derivation is a small title hash; this path has no expensive parse or content-identity derivation cache."
+        },
+        {
+          "technique": "plural-policy-claims",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/ui/HomeLists.tsx:67 Private-owner and public-starter reads are different questions, with no shared entry receiving competing reader policy claims."
+        },
+        {
+          "technique": "portable-read-definitions",
+          "verdict": "deviation",
+          "evidence": "src/v2/ui/HomeLists.tsx:53 The listing query is declared inside the component effect rather than an exported plain key/fetcher/default-policy definition reusable by loaders or prefetch."
+        },
+        {
+          "technique": "prefetch-and-defer",
+          "verdict": "deviation",
+          "evidence": "src/v2/ui/HomeLists.tsx:25 Cards provide route navigation without warming a shared data read; the linked route's detail fetch runs in its client mount effect."
+        },
+        {
+          "technique": "sibling-entry-warmth",
+          "verdict": "deviation",
+          "evidence": "src/v2/ui/HomeLists.tsx:90 Rows already carry the detail title and topic, but remain local to the listing; the linked detail initializes as loading without borrowing a typed summary."
+        },
+        {
+          "technique": "similarity-keyed-admission",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/ui/HomeLists.tsx:54 The reads use exact database predicates, with no resemblance lookup, similarity metric, or admission threshold."
+        },
+        {
+          "technique": "swr-design",
+          "verdict": "deviation",
+          "evidence": "src/v2/ui/HomeLists.tsx:49 Unrecognizable responses become empty arrays and are written into result state, conflating failed reads with authoritative emptiness; no freshness zones are declared."
+        },
+        {
+          "technique": "warm-remount-caches",
+          "verdict": "deviation",
+          "evidence": "src/v2/ui/HomeLists.tsx:43 Fetched starter rows die with the component; the browser-client singleton retains the transport client, not these results."
+        }
+      ]
+    },
+    "574e79a8-5847-4763-a52c-ac884ac33d97/translation-pipeline-topology": {
+      "context": "landing-home",
+      "subject": "translation-pipeline-topology",
+      "bundle": "localization",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T09:33:15.849Z",
+      "techniques": [],
+      "registryProposal": "Remove the pairing between translation-pipeline-topology and landing-home in registry-map.json, as the match was triggered by keyword overlap on 'landing', 'main', and 'page' in technique documentation while goat is an English-only application with no translation pipeline or localization topology.",
+      "withdrawn": {
+        "worker": "575caf47-7537-445f-85bb-6c578639eff8",
+        "state": "not-applicable",
+        "at": "2026-10-13T09:33:34.816974+00:00",
+        "reason": "reviewer (sonnet): The anchor at src/app/page.tsx:18 is only the account nav, and a missing language switcher doesn't show that a translation pipeline is absent. The page's text is hard-coded English, and the greps for next-intl, i18next, react-intl, lingui, locale and hreflang found nothing outside the .ai tooling fi"
+      }
+    },
+    "5183f934-7df8-4fbe-bdef-3d239fea4e26/native-shell-integration": {
+      "context": "app-shell",
+      "subject": "native-shell-integration",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T10:49:39.480Z",
+      "worker": "8a127234-40be-4bbe-b5d3-5bd2272e2c57",
+      "techniques": [
+        {
+          "technique": "capability-presence-contract",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:20 No per-host capability to classify; the shell is a document root."
+        },
+        {
+          "technique": "layout-resolved-input-synthesis",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:20 No synthesized chord into a foreign application."
+        },
+        {
+          "technique": "native-owned-stream",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:20 No long-lived stream owned by a view or a native process."
+        },
+        {
+          "technique": "non-stealing-overlay",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:20 No always-on-top surface over another application."
+        },
+        {
+          "technique": "observer-perturbation",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:20 No structural query of a foreign application."
+        },
+        {
+          "technique": "permission-gate-vector",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:20 No host grant vector; src/app has no permission identifier."
+        },
+        {
+          "technique": "query-transparent-overlay",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:20 No overlay that a point query could return."
+        },
+        {
+          "technique": "unexported-capability-ladder",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:20 No reach for an unexported host entry point."
+        }
+      ]
+    },
+    "574e79a8-5847-4763-a52c-ac884ac33d97/render-mount-pipeline": {
+      "context": "landing-home",
+      "subject": "render-mount-pipeline",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T12:07:10.826Z",
+      "techniques": [
+        {
+          "technique": "blueprint-then-mount",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:15 Layout uses ordinary document containers; the standard explicitly excludes platform-managed layout and reconciliation."
+        },
+        {
+          "technique": "edge-sorted-incremental-mount",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/ui/HomeLists.tsx:89 The bounded list renders its collection directly, without viewport windowing or a scroll-driven mount pass."
+        },
+        {
+          "technique": "mount-binders-versus-attach-binders",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/covers/Cover.tsx:24 React manages the declarative image and handler; this context has no retained host detach/attach lifecycle or blueprint binders."
+        },
+        {
+          "technique": "mount-references-across-features",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:19 The navigation control is rendered unconditionally, with no visibility window competing with focus, gesture, or transition retention."
+        },
+        {
+          "technique": "preempt-and-continue-shared-computation",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/ui/HomeLists.tsx:60 Asynchronous work delivers fetched data to React state; there is no shared background layout computation or frame-thread handover."
+        },
+        {
+          "technique": "recycle-by-content-type",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/ui/HomeLists.tsx:28 Covers are ordinary keyed React components, without an application-owned host-content pool or precomputed mount blueprint."
+        }
+      ],
+      "withdrawn": {
+        "worker": "50156c5a-48d8-4eab-a9bb-fec9cf1187cc",
+        "state": "not-applicable",
+        "at": "2026-10-13T12:09:42.569611+00:00",
+        "reason": "reviewer (sonnet): The anchor src/app/page.tsx:33 is only the <form className=\"v2-prompt\"> line, so it doesn't show that a render/mount pipeline is absent; the search terms (virtualizer, renderUnit, mountBinder, attachBinder, premount) were also too narrow to prove absence."
+      }
+    },
+    "5183f934-7df8-4fbe-bdef-3d239fea4e26/docs-sync": {
+      "context": "app-shell",
+      "subject": "docs-sync",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-13",
+      "evaluatedTs": "2026-10-13T12:54:04.019Z",
+      "techniques": [],
+      "registryProposal": "Remove the pairing between docs-sync and app-shell in registry-map.json, as the match was triggered by lexical keyword overlap on command, app, and check rather than any documentation synchronization or doc-rot machinery.",
+      "withdrawn": {
+        "worker": "b2ab6e4e-6535-4d67-a6f6-e45bc884c80d",
+        "state": "not-applicable",
+        "at": "2026-10-13T12:54:26.211534+00:00",
+        "reason": "reviewer (sonnet): The anchor, src/app/layout.tsx:22 (`<V2Shell>{children}</V2Shell>`), only shows the layout renders the shell. It does not show that docs-sync is absent. The repo has docs/ and README files, and docs/v2/TECHNICAL_PACKAGE.md:374 and chain.test.ts:199 name scripts/doc-coupling.mjs. DIRECTION.md:139 say"
+      }
+    },
+    "574e79a8-5847-4763-a52c-ac884ac33d97/templates-scaffolding": {
+      "context": "landing-home",
+      "subject": "templates-scaffolding",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-14",
+      "evaluatedTs": "2026-10-14T23:19:29.891Z",
+      "techniques": [
+        {
+          "technique": "adoption-lifecycle",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/ui/HomeLists.tsx:98 Starter cards open existing list instances."
+        },
+        {
+          "technique": "catalog-curation",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/ui/HomeLists.tsx:55 The displayed population consists of published lists, not admitted template contracts."
+        },
+        {
+          "technique": "instance-upgrade",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/list/sync.ts:175 The linked copy operation duplicates a current list document without a versioned template origin."
+        },
+        {
+          "technique": "integrity-and-provenance",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/ui/HomeLists.tsx:53 Cards consume live list metadata rather than published template packages."
+        },
+        {
+          "technique": "readiness-prerequisites",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/ui/NewList.tsx:38 Creation generates candidates from topic and size; no template requirements are being resolved."
+        },
+        {
+          "technique": "template-anatomy",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/ui/NewList.tsx:58 The document is assembled from generated candidates, not a catalog entry with declared dimensions and payload."
+        },
+        {
+          "technique": "template-portability",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/list/sync.ts:172 The linked reuse mechanism copies an existing instance rather than distributing an authored template payload."
+        }
+      ],
+      "withdrawn": {
+        "worker": "d0ac322d-023e-44ef-985b-afdee9c8187d",
+        "state": "not-applicable",
+        "at": "2026-10-14T23:19:54.955163+00:00",
+        "reason": "reviewer (sonnet): The landing page shows 'Starter lists' (HomeLists.tsx) that are copied via forkList (sync.ts), which is the template-instantiation mechanism in this product, so not-applicable is contradicted; the page.tsx:33 anchor (a topic input) is also incidental, and the forkList caller was not traced to the la"
+      }
+    }
+  }
+}

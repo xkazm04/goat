@@ -1,0 +1,37 @@
+{
+ "schema": "conform-run/1",
+ "worker": "f112bd73-9d7f-4098-839f-4bb7670276c0",
+ "subject": "agent-memory",
+ "evaluatedAt": "2026-10-12T18:34:40.243859+00:00",
+ "provider": "grok",
+ "model": "grok-4.7",
+ "pairs": [],
+ "declined": [
+  {
+   "subject": "agent-memory",
+   "context": "agent-and-personalization",
+   "reason": "None of the listed files are in the tree: there is no src/lib/agent-bridge (index.ts, require-secret.ts, task-memory-manager.ts, types.ts) and no src/lib/personalization (ContextAnalyzer.ts, InterestTracker.ts, PersonalizationEngine.ts, ShowcaseSelector.ts, index.ts, types.ts, useABTesting.ts, usePersonalization.ts). A repo search for task-memory-manager, TaskMemory, PersonalizationEngine, InterestTracker, ContextAnalyzer, ShowcaseSelector and agent-bridge returned no matches, so the construct was not found under another path."
+  },
+  {
+   "subject": "agent-memory",
+   "context": "match-session-state",
+   "reason": "src/stores is not in the tree, so none of match-store.ts, grid-store.ts, session-store.ts, comparison-store.ts, placement-store.ts, selection-cursor.ts, derived-session-sync.ts, slices/grid-slice.ts, undo-store.ts, validation-notification-store.ts, dev-sync-assertions.ts or item-store/default-data.ts can be opened. A search for those module names returned no matches."
+  },
+  {
+   "subject": "agent-memory",
+   "context": "platform-infrastructure",
+   "reason": "Eleven of the twelve listed routes are absent (health, health/enrichment, sync, agent-bridge tasks, tasks/[id], stats, cleanup, auth/merge-guest, batch, admin/search-image, og/[listId]). The one listed path that exists, src/app/api/oembed/route.ts, is an oEmbed 1.0 GET handler and cannot stand in for the missing routes, including every agent-bridge route."
+  },
+  {
+   "subject": "agent-memory",
+   "context": "ranking-ui-feature-state",
+   "reason": "src/stores is not in the tree, so none of ranking-store.ts, ranking-graph-store.ts, use-list-store.ts, debate-store.ts, consensus-store.ts, criteria-store.ts, activity-store.ts, studio-store.ts, wiki-image-store.ts, layout-store.ts, audio-store.ts or item-popup-store.ts can be opened. A search for those module names returned no matches."
+  },
+  {
+   "subject": "agent-memory",
+   "context": "list-discovery",
+   "reason": "src/app/features/Landing/sub_LandingLists is not in the tree, so none of BookmarkButton.tsx, CollectionsSection.tsx, ContinueRankingBar.tsx, FeaturedListsSection.tsx, LazyListSections.tsx, ListItemContent.tsx, ListPreviewPopover.tsx, ListPreviewThumbnail.tsx, RankingProgressIndicator.tsx, SavedListsSection.tsx, SearchFilterBar.tsx or SectionHeader.tsx can be opened. A search for those component names returned no matches."
+  }
+ ],
+ "consults": []
+}

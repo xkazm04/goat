@@ -1,0 +1,105 @@
+{
+ "schema": "conform-run/1",
+ "worker": "98b23b10-925e-430f-9e75-b8064fda2db1",
+ "subject": "app-shell",
+ "evaluatedAt": "2026-10-13T08:26:17.260880+00:00",
+ "provider": "codex",
+ "model": "gpt-6.1-sol",
+ "pairs": [
+  {
+   "context": "app-shell",
+   "subject": "app-shell",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/app/layout.tsx:22 The persistent layout supplies a styling wrapper without a session-service host, leaving session initialization and status surfaces inside replaceable pages.",
+   "techniques": [
+    {
+     "technique": "navigation-model",
+     "verdict": "deviation",
+     "evidence": "src/v2/ui/shell.tsx:16 The imported shell only wraps children; it supplies no owned section registry or navigation derived from a current location."
+    },
+    {
+     "technique": "shell-hosted-services",
+     "verdict": "deviation",
+     "evidence": "src/app/layout.tsx:22 No session host sits above the page swap point; page consumers independently initialize session state."
+    }
+   ]
+  },
+  {
+   "context": "landing-home",
+   "subject": "app-shell",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/app/page.tsx:20 The home page mounts a session-status consumer that initializes its own session state alongside another independent consumer, violating the single session-host discipline.",
+   "techniques": [
+    {
+     "technique": "badge-and-attention",
+     "verdict": "not-applicable",
+     "evidence": "src/v2/ui/SessionChip.tsx:18 The account chip reports session status rather than unread inventory or newness; searches found decorative badges elsewhere but no attention-count badge in this navigation."
+    },
+    {
+     "technique": "entitlement-gating",
+     "verdict": "not-applicable",
+     "evidence": "src/app/page.tsx:33 This page offers unconditional destinations; searches found no tier, feature-flag, entitlement or locked-entry rendering here."
+    },
+    {
+     "technique": "lazy-section-loading",
+     "verdict": "deviation",
+     "evidence": "src/v2/ui/HomeLists.tsx:42 Fetched home lists live only in component state and restart empty on remount; the mount effect fetches them again without a session-held restore path."
+    },
+    {
+     "technique": "nav-hierarchy",
+     "verdict": "conformant",
+     "evidence": "src/app/page.tsx:18 The account navigation is a flat, labeled surface containing one destination and session status, with no unnecessary sub-navigation or entity-derived entries."
+    },
+    {
+     "technique": "navigation-model",
+     "verdict": "deviation",
+     "evidence": "src/app/page.tsx:19 The destination and label are handwritten in the page rather than derived from an owned navigation registry shared with destination consumers."
+    },
+    {
+     "technique": "shell-hosted-services",
+     "verdict": "deviation",
+     "evidence": "src/app/page.tsx:20 SessionChip calls useSession independently of HomeLists; both initialize page-local session state instead of consuming one persistent session host."
+    }
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-13T08:26:17.260880+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "app-shell"
+   ],
+   "techniques": [
+    "navigation-model",
+    "shell-hosted-services"
+   ],
+   "deviations": 1,
+   "context": "app-shell",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  },
+  {
+   "ts": "2026-10-13T08:26:17.260880+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "app-shell"
+   ],
+   "techniques": [
+    "badge-and-attention",
+    "entitlement-gating",
+    "lazy-section-loading",
+    "nav-hierarchy",
+    "navigation-model",
+    "shell-hosted-services"
+   ],
+   "deviations": 1,
+   "context": "landing-home",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  }
+ ]
+}
