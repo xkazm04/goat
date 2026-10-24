@@ -5627,7 +5627,11 @@
           "revision": 46,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/app/page.tsx:33 The home page is a static server component: a hero, a topic form that does a plain GET to /new, and a HomeLists component. Nothing here captures, distills, decays or injects agent memory. Grepping src/app for memory, memories, recall, episod, consolidat and remember found nothing, and the same search over the imported HomeLists and SessionChip modules also found nothing, so the subject does not apply to this context.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
+          "evaluatedRevision": 51
         },
         {
           "subject": "render-mount-pipeline",
@@ -8293,7 +8297,11 @@
           "revision": 46,
           "changedAt": "2026-09-29",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:6 This context is a stateless oEmbed 1.0 GET handler. It loads a published list by slug and returns JSON, and there is no agent, no persisted belief store and no recall or injection. Grepping src/app for memory, memories, recall, episod, consolidat and remember found nothing, and a repo-wide grep of src for agent-memory, memories, episodic and consolidat also found nothing, so the subject's precondition (a long-lived agent carrying memory forward) does not hold here.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
+          "evaluatedRevision": 51
         },
         {
           "subject": "agent-runtime-assembly",

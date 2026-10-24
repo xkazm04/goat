@@ -964,6 +964,26 @@
           "evidence": "src/app/layout.tsx:6 This is page metadata, not a projection of a gate policy."
         }
       ]
+    },
+    "a5fbc2be-5b70-4417-89a3-cffbb72ea426/agent-memory": {
+      "context": "platform-infrastructure",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T00:23:53.318Z",
+      "worker": "6f9ad01f-071c-434b-a264-00c3821b32e9",
+      "techniques": []
+    },
+    "574e79a8-5847-4763-a52c-ac884ac33d97/agent-memory": {
+      "context": "landing-home",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T00:23:53.318Z",
+      "worker": "6f9ad01f-071c-434b-a264-00c3821b32e9",
+      "techniques": []
     }
   }
 }
