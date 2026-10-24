@@ -1,0 +1,83 @@
+{
+ "schema": "conform-run/1",
+ "worker": "653f845e-0be6-492d-81d2-baf5ef6d604f",
+ "subject": "docs-sync",
+ "evaluatedAt": "2026-10-24T03:10:18.134037+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "app-shell",
+   "subject": "docs-sync",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/app/layout.tsx:8 The M7 swap (1a4d7c5, 2026-10-12) changed the root metadata title from 'G.O.A.T. - Greatest of All Time' to a middle-dot form and updated copy-contract.json. docs/i18n/style-en.md, which describes this file's copy, was not touched in that change, so it still states the hyphen title and still lists v1 gated sources that no longer exist. No declared coupling or gate caught the drift.",
+   "techniques": [
+    {
+     "technique": "named-duplication-points",
+     "verdict": "deviation",
+     "evidence": "docs/i18n/style-en.md:30 The hand-written style doc restates the literal metadata title. layout.tsx:8 now uses a middle dot, and no mechanical assertion ties the copy to the source."
+    },
+    {
+     "technique": "same-change-enforcement",
+     "verdict": "deviation",
+     "evidence": "docs/i18n/style-en.md:10 Commit 1a4d7c5 rewrote layout.tsx and deleted the Landing tree, but the doc that names them as gated sources was not changed in that commit (git log: last change 2026-09-14)."
+    },
+    {
+     "technique": "coupled-surface-inventory",
+     "verdict": "deviation",
+     "evidence": "docs/i18n/copy-contract.json:16 Two surfaces describe layout.tsx copy. The machine contract was updated at the swap and its prose companion was not, because the surfaces a layout change owes are never enumerated."
+    },
+    {
+     "technique": "source-doc-mapping",
+     "verdict": "deviation",
+     "evidence": "docs/v2/TECHNICAL_PACKAGE.md:22 Doc coupling is cut on purpose. The only coupling rule is CLAUDE.md lore, so nothing declares layout.tsx's coupled docs as data (this is a repo-wide fact, see notes)."
+    },
+    {
+     "technique": "doc-rot-detection",
+     "verdict": "deviation",
+     "evidence": "docs/i18n/style-en.md:12 These v1 routes have not existed since 2026-10-12. No scan reports the doc as stale or unverifiable, so the rot sits there undetected."
+    },
+    {
+     "technique": "dated-corrections",
+     "verdict": "conformant",
+     "evidence": "docs/i18n/style-en.md:15 The copy counts carry their date and population, so a reader can tell they predate the swap rather than taking them as current."
+    },
+    {
+     "technique": "cross-repo-drift-detection",
+     "verdict": "not-applicable",
+     "evidence": "docs/v2/TECHNICAL_PACKAGE.md:37 The prose describing layout.tsx lives in the same tree as the source, so the in-tree diff covers both halves."
+    },
+    {
+     "technique": "translations-drift-against-the-product",
+     "verdict": "not-applicable",
+     "evidence": "src/app/layout.tsx:20 There is a single English locale and no translated pages (style-en.md:9 says 'No i18n')."
+    }
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-24T03:10:18.134037+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "docs-sync"
+   ],
+   "techniques": [
+    "coupled-surface-inventory",
+    "cross-repo-drift-detection",
+    "dated-corrections",
+    "doc-rot-detection",
+    "named-duplication-points",
+    "same-change-enforcement",
+    "source-doc-mapping",
+    "translations-drift-against-the-product"
+   ],
+   "deviations": 1,
+   "context": "app-shell",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

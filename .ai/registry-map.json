@@ -1896,7 +1896,11 @@
           "revision": 14,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/app/layout.tsx:8 The M7 swap (1a4d7c5, 2026-10-12) changed the root metadata title from 'G.O.A.T. - Greatest of All Time' to a middle-dot form and updated copy-contract.json. docs/i18n/style-en.md, which describes this file's copy, was not touched in that change, so it still states the hyphen title and still lists v1 gated sources that no longer exist. No declared coupling or gate caught the drift.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:fd96220db75846a1",
+          "evaluatedRevision": 14
         },
         {
           "subject": "search",

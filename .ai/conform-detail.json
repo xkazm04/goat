@@ -883,17 +883,52 @@
       "context": "app-shell",
       "subject": "docs-sync",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-10-13",
-      "evaluatedTs": "2026-10-13T12:54:04.019Z",
-      "techniques": [],
-      "registryProposal": "Remove the pairing between docs-sync and app-shell in registry-map.json, as the match was triggered by lexical keyword overlap on command, app, and check rather than any documentation synchronization or doc-rot machinery.",
-      "withdrawn": {
-        "worker": "b2ab6e4e-6535-4d67-a6f6-e45bc884c80d",
-        "state": "not-applicable",
-        "at": "2026-10-13T12:54:26.211534+00:00",
-        "reason": "reviewer (sonnet): The anchor, src/app/layout.tsx:22 (`<V2Shell>{children}</V2Shell>`), only shows the layout renders the shell. It does not show that docs-sync is absent. The repo has docs/ and README files, and docs/v2/TECHNICAL_PACKAGE.md:374 and chain.test.ts:199 name scripts/doc-coupling.mjs. DIRECTION.md:139 say"
-      }
+      "state": "deviation",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T03:10:18.134Z",
+      "worker": "653f845e-0be6-492d-81d2-baf5ef6d604f",
+      "techniques": [
+        {
+          "technique": "named-duplication-points",
+          "verdict": "deviation",
+          "evidence": "docs/i18n/style-en.md:30 The hand-written style doc restates the literal metadata title. layout.tsx:8 now uses a middle dot, and no mechanical assertion ties the copy to the source."
+        },
+        {
+          "technique": "same-change-enforcement",
+          "verdict": "deviation",
+          "evidence": "docs/i18n/style-en.md:10 Commit 1a4d7c5 rewrote layout.tsx and deleted the Landing tree, but the doc that names them as gated sources was not changed in that commit (git log: last change 2026-09-14)."
+        },
+        {
+          "technique": "coupled-surface-inventory",
+          "verdict": "deviation",
+          "evidence": "docs/i18n/copy-contract.json:16 Two surfaces describe layout.tsx copy. The machine contract was updated at the swap and its prose companion was not, because the surfaces a layout change owes are never enumerated."
+        },
+        {
+          "technique": "source-doc-mapping",
+          "verdict": "deviation",
+          "evidence": "docs/v2/TECHNICAL_PACKAGE.md:22 Doc coupling is cut on purpose. The only coupling rule is CLAUDE.md lore, so nothing declares layout.tsx's coupled docs as data (this is a repo-wide fact, see notes)."
+        },
+        {
+          "technique": "doc-rot-detection",
+          "verdict": "deviation",
+          "evidence": "docs/i18n/style-en.md:12 These v1 routes have not existed since 2026-10-12. No scan reports the doc as stale or unverifiable, so the rot sits there undetected."
+        },
+        {
+          "technique": "dated-corrections",
+          "verdict": "conformant",
+          "evidence": "docs/i18n/style-en.md:15 The copy counts carry their date and population, so a reader can tell they predate the swap rather than taking them as current."
+        },
+        {
+          "technique": "cross-repo-drift-detection",
+          "verdict": "not-applicable",
+          "evidence": "docs/v2/TECHNICAL_PACKAGE.md:37 The prose describing layout.tsx lives in the same tree as the source, so the in-tree diff covers both halves."
+        },
+        {
+          "technique": "translations-drift-against-the-product",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:20 There is a single English locale and no translated pages (style-en.md:9 says 'No i18n')."
+        }
+      ]
     },
     "574e79a8-5847-4763-a52c-ac884ac33d97/templates-scaffolding": {
       "context": "landing-home",
