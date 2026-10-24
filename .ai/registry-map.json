@@ -8349,7 +8349,11 @@
           "revision": 8,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:6 The only file of this context that still exists in the tree is an oEmbed provider that reads a published list from Supabase and returns JSON. A case-insensitive grep of src/app/api/oembed/ for spawn, child_process, execFile, claude, anthropic and cli found nothing, and its imports (publish/oembed, publish/server) pull in only slug, Supabase and list-sync code, so no agent CLI child process is spawned here and none of the transport techniques can apply.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
+          "evaluatedRevision": 9
         },
         {
           "subject": "mcp-tools",

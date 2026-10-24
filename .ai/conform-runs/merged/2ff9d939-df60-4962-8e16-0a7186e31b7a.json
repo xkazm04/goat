@@ -1,0 +1,40 @@
+{
+ "schema": "conform-run/1",
+ "worker": "2ff9d939-df60-4962-8e16-0a7186e31b7a",
+ "subject": "agent-cli-transport",
+ "evaluatedAt": "2026-10-24T02:36:06.315007+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "platform-infrastructure",
+   "subject": "agent-cli-transport",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/app/api/oembed/route.ts:6 The only file of this context that still exists in the tree is an oEmbed provider that reads a published list from Supabase and returns JSON. A case-insensitive grep of src/app/api/oembed/ for spawn, child_process, execFile, claude, anthropic and cli found nothing, and its imports (publish/oembed, publish/server) pull in only slug, Supabase and list-sync code, so no agent CLI child process is spawned here and none of the transport techniques can apply.",
+   "techniques": [],
+   "absenceTerms": [
+    "spawn",
+    "child_process",
+    "execFile",
+    "claude",
+    "anthropic"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-24T02:36:06.315007+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-cli-transport"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "platform-infrastructure",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

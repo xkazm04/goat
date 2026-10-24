@@ -1055,6 +1055,16 @@
         }
       ],
       "registryProposal": "The map matched this context to the subject on the tokens landing, page and section. In an app repository those tokens describe the product's home route, not its README. The subject should state as a precondition that a governed context contains the repository's front-page document (README.md at the repo root or a package README), so the matcher does not pair it with a web app's landing page."
+    },
+    "a5fbc2be-5b70-4417-89a3-cffbb72ea426/agent-cli-transport": {
+      "context": "platform-infrastructure",
+      "subject": "agent-cli-transport",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T02:36:06.315Z",
+      "worker": "2ff9d939-df60-4962-8e16-0a7186e31b7a",
+      "techniques": []
     }
   }
 }
