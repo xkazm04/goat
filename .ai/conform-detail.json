@@ -1100,6 +1100,47 @@
       "evaluatedTs": "2026-10-24T02:36:06.315Z",
       "worker": "2ff9d939-df60-4962-8e16-0a7186e31b7a",
       "techniques": []
+    },
+    "5183f934-7df8-4fbe-bdef-3d239fea4e26/agent-browser-control": {
+      "context": "app-shell",
+      "subject": "agent-browser-control",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T03:27:15.619Z",
+      "techniques": [
+        {
+          "technique": "persistent-browser-daemon",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:18 This is a Next.js root layout component. It spawns no browser process and has no long-lived daemon, socket or state file."
+        },
+        {
+          "technique": "references-over-selectors",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:20 The file emits the page's markup. It never snapshots an accessibility tree for an agent or resolves element references."
+        },
+        {
+          "technique": "effect-classed-commands",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:2 The only import is the UI shell. There is no registry of browser commands that could be read, write or meta."
+        },
+        {
+          "technique": "socket-scoped-surface",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:7 The only origin handling is the public metadata base URL. No daemon listener, loopback socket or remote tunnel allowlist exists."
+        },
+        {
+          "technique": "agent-actionable-errors",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:9 The file holds static site metadata. No browser-action failure ever reaches a model, so agent-facing error text has nothing to cover."
+        }
+      ],
+      "withdrawn": {
+        "worker": "277d6d94-a2d0-4c30-8e2e-ccbf5b3221c3",
+        "state": "not-applicable",
+        "at": "2026-10-24T03:27:25.408388+00:00",
+        "reason": "reviewer (sonnet): The anchor (layout.tsx:22, a V2Shell render) is incidental because it doesn't show that browser control is absent, and the technique claim that the only import is the UI shell is false (line 1 also imports siteOrigin from '@/v2/publish/server')."
+      }
     }
   }
 }
