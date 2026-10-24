@@ -8473,7 +8473,11 @@
           "revision": 2,
           "changedAt": "2026-09-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:6 This route is an oEmbed provider: it returns JSON holding an iframe snippet of the host's own read-only /embed page for third-party consumers. The host does not run a separately served guest app or keep a message bridge to one, so the subject's precondition is absent. Searching for postMessage, contentWindow, child_process, addEventListener and spawn found nothing in src/app/api/oembed. Across src/, postMessage and contentWindow appear nowhere; the only child_process user is src/v2/ai/cli.ts, the Claude CLI transport, which is not a preview server.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:a6e12ae70d42efcc",
+          "evaluatedRevision": 2
         },
         {
           "subject": "voice-io",

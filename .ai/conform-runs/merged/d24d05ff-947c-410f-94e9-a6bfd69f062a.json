@@ -1,0 +1,79 @@
+{
+ "schema": "conform-run/1",
+ "worker": "d24d05ff-947c-410f-94e9-a6bfd69f062a",
+ "subject": "embedded-preview",
+ "evaluatedAt": "2026-10-24T22:17:06.829501+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "platform-infrastructure",
+   "subject": "embedded-preview",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/app/api/oembed/route.ts:6 This route is an oEmbed provider: it returns JSON holding an iframe snippet of the host's own read-only /embed page for third-party consumers. The host does not run a separately served guest app or keep a message bridge to one, so the subject's precondition is absent. Searching for postMessage, contentWindow, child_process, addEventListener and spawn found nothing in src/app/api/oembed. Across src/, postMessage and contentWindow appear nowhere; the only child_process user is src/v2/ai/cli.ts, the Claude CLI transport, which is not a preview server.",
+   "techniques": [
+    {
+     "technique": "cross-frame-protocol",
+     "verdict": "not-applicable",
+     "evidence": "src/app/api/oembed/route.ts:24 The route answers with one plain HTTP JSON response. There is no frame message channel, so no correlation ids or pending table are needed."
+    },
+    {
+     "technique": "origin-validation",
+     "verdict": "not-applicable",
+     "evidence": "src/app/api/oembed/route.ts:13 The only origin check is that the url parameter is on the same site (slugFromUrl in src/v2/publish/oembed.ts compares url.origin with the site origin). There are no inbound or outbound frame messages to validate."
+    },
+    {
+     "technique": "dev-server-registry",
+     "verdict": "not-applicable",
+     "evidence": "src/app/api/oembed/route.ts:4 The route spawns no guest server and manages no process lifecycle; it runs as an ordinary Next.js route."
+    },
+    {
+     "technique": "convention-discovery",
+     "verdict": "not-applicable",
+     "evidence": "src/app/api/oembed/route.ts:14 It resolves one published list from the database. It does not discover guest routes from a file tree."
+    },
+    {
+     "technique": "injected-instrumentation-with-fallback",
+     "verdict": "not-applicable",
+     "evidence": "src/app/api/oembed/route.ts:17 The body is a static iframe snippet. No agent is injected into a guest."
+    },
+    {
+     "technique": "preview-checkpoints",
+     "verdict": "not-applicable",
+     "evidence": "src/app/api/oembed/route.ts:15 Only published, read-only lists are served. No guest is changed between views, so there is nothing to checkpoint."
+    }
+   ],
+   "absenceTerms": [
+    "postMessage",
+    "contentWindow",
+    "child_process",
+    "addEventListener",
+    "spawn"
+   ],
+   "registryProposal": "The golden path's 'When the subject does not apply' list covers the host embedding a guest. It does not name the reverse case: the product publishing itself as an embeddable iframe or oEmbed provider for third-party pages. Adding that case would stop tooling from matching oEmbed or embed contexts to this subject on the token 'embed'."
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-24T22:17:06.829501+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "embedded-preview"
+   ],
+   "techniques": [
+    "convention-discovery",
+    "cross-frame-protocol",
+    "dev-server-registry",
+    "injected-instrumentation-with-fallback",
+    "origin-validation",
+    "preview-checkpoints"
+   ],
+   "deviations": 0,
+   "context": "platform-infrastructure",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

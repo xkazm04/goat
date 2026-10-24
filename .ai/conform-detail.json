@@ -1141,6 +1141,48 @@
         "at": "2026-10-24T03:27:25.408388+00:00",
         "reason": "reviewer (sonnet): The anchor (layout.tsx:22, a V2Shell render) is incidental because it doesn't show that browser control is absent, and the technique claim that the only import is the UI shell is false (line 1 also imports siteOrigin from '@/v2/publish/server')."
       }
+    },
+    "a5fbc2be-5b70-4417-89a3-cffbb72ea426/embedded-preview": {
+      "context": "platform-infrastructure",
+      "subject": "embedded-preview",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T22:17:06.829Z",
+      "worker": "d24d05ff-947c-410f-94e9-a6bfd69f062a",
+      "techniques": [
+        {
+          "technique": "cross-frame-protocol",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:24 The route answers with one plain HTTP JSON response. There is no frame message channel, so no correlation ids or pending table are needed."
+        },
+        {
+          "technique": "origin-validation",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:13 The only origin check is that the url parameter is on the same site (slugFromUrl in src/v2/publish/oembed.ts compares url.origin with the site origin). There are no inbound or outbound frame messages to validate."
+        },
+        {
+          "technique": "dev-server-registry",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:4 The route spawns no guest server and manages no process lifecycle; it runs as an ordinary Next.js route."
+        },
+        {
+          "technique": "convention-discovery",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:14 It resolves one published list from the database. It does not discover guest routes from a file tree."
+        },
+        {
+          "technique": "injected-instrumentation-with-fallback",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:17 The body is a static iframe snippet. No agent is injected into a guest."
+        },
+        {
+          "technique": "preview-checkpoints",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:15 Only published, read-only lists are served. No guest is changed between views, so there is nothing to checkpoint."
+        }
+      ],
+      "registryProposal": "The golden path's 'When the subject does not apply' list covers the host embedding a guest. It does not name the reverse case: the product publishing itself as an embeddable iframe or oEmbed provider for third-party pages. Adding that case would stop tooling from matching oEmbed or embed contexts to this subject on the token 'embed'."
     }
   }
 }
