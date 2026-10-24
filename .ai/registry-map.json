@@ -8377,7 +8377,11 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:6 The context is a single 25-line oEmbed HTTP route with no agent instruction file, skill, hook or prompt in it; searching src/app/api for CLAUDE.md, AGENTS.md, .cursorrules, copilot-instructions and 'instruction', and src/app/api/oembed for agent, prompt, skill, hook and harness, found nothing, so the subject's precondition (a repo-authored always-loaded agent brief) does not hold here.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:25b61236a62604b0",
+          "evaluatedRevision": 31
         },
         {
           "subject": "eval-harness",

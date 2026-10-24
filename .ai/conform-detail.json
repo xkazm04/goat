@@ -989,6 +989,43 @@
       "evaluatedTs": "2026-10-24T00:23:53.318Z",
       "worker": "6f9ad01f-071c-434b-a264-00c3821b32e9",
       "techniques": []
+    },
+    "a5fbc2be-5b70-4417-89a3-cffbb72ea426/agent-instruction-files": {
+      "context": "platform-infrastructure",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T01:46:35.591Z",
+      "worker": "2a3c90fd-1c6f-45db-831e-826fb9b24113",
+      "techniques": [
+        {
+          "technique": "line-earning",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:6 The context has no instruction file whose lines need to earn their place; the file is an HTTP route."
+        },
+        {
+          "technique": "enforcement-demotion",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:11 This is runtime request validation, not a prose agent rule that could be moved into a hook."
+        },
+        {
+          "technique": "single-source-topology",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:4 The context configures a Next.js runtime and carries no per-harness instruction files."
+        },
+        {
+          "technique": "machine-owned-regions",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:7 Hand-written route handler; no instruction file has a generated block here."
+        },
+        {
+          "technique": "write-back-sink-class",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:24 The route writes an HTTP response, not an agent log destination."
+        }
+      ],
+      "registryProposal": "The map matched agent-instruction-files to an oEmbed route context. That is a false positive in the subject-to-context join: this subject governs repo-level instruction files (CLAUDE.md, .claude/), not code contexts, so the matcher should not pair it with route-only contexts."
     }
   }
 }
