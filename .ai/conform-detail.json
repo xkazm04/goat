@@ -363,16 +363,27 @@
       "context": "platform-infrastructure",
       "subject": "quality-gates",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T22:49:56.050Z",
-      "techniques": [],
-      "withdrawn": {
-        "worker": "bf3496f0-6683-47e4-97f0-eed5d54d4a99",
-        "state": "not-applicable",
-        "at": "2026-10-12T22:50:29.395075+00:00",
-        "reason": "reviewer (sonnet): The anchor is an oEmbed GET handler that doesn't show whether quality gates, waivers or hooks exist. The claim that copy-contract sources don't name it and the pipeline is recorded in notes was not confirmed in the code I opened, so the anchor is incidental."
-      }
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-23",
+      "evaluatedTs": "2026-10-23T23:59:50.601Z",
+      "worker": "7deb438a-76c2-4777-a649-e6f4e4cd15b2",
+      "techniques": [
+        {
+          "technique": "refusal-names-a-reachable-remedy",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:11 This is an HTTP protocol refusal to an API caller, not a blocking check's refusal message to an author."
+        },
+        {
+          "technique": "unmeasurable-criteria",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:15 A missing published list resolves to a spec 404. No policy condition is being evaluated."
+        },
+        {
+          "technique": "severity-by-construction",
+          "verdict": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:24 There is no finding-to-exit-code path in a response handler."
+        }
+      ]
     },
     "5183f934-7df8-4fbe-bdef-3d239fea4e26/test-harness": {
       "context": "app-shell",
@@ -932,6 +943,27 @@
         "at": "2026-10-14T23:19:54.955163+00:00",
         "reason": "reviewer (sonnet): The landing page shows 'Starter lists' (HomeLists.tsx) that are copied via forkList (sync.ts), which is the template-instantiation mechanism in this product, so not-applicable is contradicted; the page.tsx:33 anchor (a topic input) is also incidental, and the forkList caller was not traced to the la"
       }
+    },
+    "5183f934-7df8-4fbe-bdef-3d239fea4e26/quality-gates": {
+      "context": "app-shell",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-23",
+      "evaluatedTs": "2026-10-23T23:59:50.601Z",
+      "worker": "7deb438a-76c2-4777-a649-e6f4e4cd15b2",
+      "techniques": [
+        {
+          "technique": "gate-laddering",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:22 This is render composition only. No rung of the check ladder lives in this file."
+        },
+        {
+          "technique": "policy-projection",
+          "verdict": "not-applicable",
+          "evidence": "src/app/layout.tsx:6 This is page metadata, not a projection of a gate policy."
+        }
+      ]
     }
   }
 }

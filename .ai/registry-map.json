@@ -1988,7 +1988,11 @@
           "revision": 52,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/app/layout.tsx:18 The only file of this context that still exists is the Next.js root layout (metadata, viewport, and a shell wrapper). It holds no check, hook, threshold or waiver, and a search of src/app for process.exit, waiver, pre-commit, ratchet and @ts-ignore found nothing, so there is no gate here to judge.",
+          "evaluatedAt": "2026-10-23",
+          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+          "evaluatedRevision": 54
         }
       ],
       "governance": "governed"
@@ -8417,7 +8421,11 @@
           "revision": 52,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/app/api/oembed/route.ts:7 The only file of this context that still exists is a 25-line oEmbed GET handler. It is code that gets gated, not a check, hook, CI job or refusal mechanism, and a search of src/app for process.exit, waiver, pre-commit, ratchet and @ts-ignore found nothing, so the quality-gates precondition (a gate to judge) does not hold here.",
+          "evaluatedAt": "2026-10-23",
+          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+          "evaluatedRevision": 54
         },
         {
           "subject": "embedded-preview",

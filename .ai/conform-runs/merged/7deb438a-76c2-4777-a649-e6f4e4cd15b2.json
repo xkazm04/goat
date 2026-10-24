@@ -1,0 +1,101 @@
+{
+ "schema": "conform-run/1",
+ "worker": "7deb438a-76c2-4777-a649-e6f4e4cd15b2",
+ "subject": "quality-gates",
+ "evaluatedAt": "2026-10-23T23:59:50.601111+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "platform-infrastructure",
+   "subject": "quality-gates",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/app/api/oembed/route.ts:7 The only file of this context that still exists is a 25-line oEmbed GET handler. It is code that gets gated, not a check, hook, CI job or refusal mechanism, and a search of src/app for process.exit, waiver, pre-commit, ratchet and @ts-ignore found nothing, so the quality-gates precondition (a gate to judge) does not hold here.",
+   "techniques": [
+    {
+     "technique": "refusal-names-a-reachable-remedy",
+     "verdict": "not-applicable",
+     "evidence": "src/app/api/oembed/route.ts:11 This is an HTTP protocol refusal to an API caller, not a blocking check's refusal message to an author."
+    },
+    {
+     "technique": "unmeasurable-criteria",
+     "verdict": "not-applicable",
+     "evidence": "src/app/api/oembed/route.ts:15 A missing published list resolves to a spec 404. No policy condition is being evaluated."
+    },
+    {
+     "technique": "severity-by-construction",
+     "verdict": "not-applicable",
+     "evidence": "src/app/api/oembed/route.ts:24 There is no finding-to-exit-code path in a response handler."
+    }
+   ],
+   "absenceTerms": [
+    "process.exit",
+    "waiver",
+    "pre-commit",
+    "ratchet",
+    "@ts-ignore"
+   ]
+  },
+  {
+   "context": "app-shell",
+   "subject": "quality-gates",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/app/layout.tsx:18 The only file of this context that still exists is the Next.js root layout (metadata, viewport, and a shell wrapper). It holds no check, hook, threshold or waiver, and a search of src/app for process.exit, waiver, pre-commit, ratchet and @ts-ignore found nothing, so there is no gate here to judge.",
+   "techniques": [
+    {
+     "technique": "gate-laddering",
+     "verdict": "not-applicable",
+     "evidence": "src/app/layout.tsx:22 This is render composition only. No rung of the check ladder lives in this file."
+    },
+    {
+     "technique": "policy-projection",
+     "verdict": "not-applicable",
+     "evidence": "src/app/layout.tsx:6 This is page metadata, not a projection of a gate policy."
+    }
+   ],
+   "absenceTerms": [
+    "process.exit",
+    "waiver",
+    "pre-commit",
+    "ratchet",
+    "@ts-ignore"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-23T23:59:50.601111+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "quality-gates"
+   ],
+   "techniques": [
+    "refusal-names-a-reachable-remedy",
+    "severity-by-construction",
+    "unmeasurable-criteria"
+   ],
+   "deviations": 0,
+   "context": "platform-infrastructure",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-10-23T23:59:50.601111+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "quality-gates"
+   ],
+   "techniques": [
+    "gate-laddering",
+    "policy-projection"
+   ],
+   "deviations": 0,
+   "context": "app-shell",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}
