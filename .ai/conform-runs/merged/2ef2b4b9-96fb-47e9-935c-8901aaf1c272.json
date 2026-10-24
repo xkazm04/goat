@@ -1,0 +1,17 @@
+{
+ "schema": "conform-run/1",
+ "worker": "2ef2b4b9-96fb-47e9-935c-8901aaf1c272",
+ "subject": "templates-scaffolding",
+ "evaluatedAt": "2026-10-24T04:35:28.734417+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [],
+ "declined": [
+  {
+   "subject": "templates-scaffolding",
+   "context": "landing-home",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": []
+}
