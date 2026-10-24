@@ -1,0 +1,54 @@
+{
+ "schema": "conform-run/1",
+ "worker": "6b5930ca-d5a4-4c4a-a56c-b0a0eda5f207",
+ "subject": "translation-pipeline-topology",
+ "evaluatedAt": "2026-10-24T01:04:51.221949+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "landing-home",
+   "subject": "translation-pipeline-topology",
+   "bundle": "localization",
+   "state": "not-applicable",
+   "evidence": "docs/i18n/style-en.md:9 The repo's own copy contract declares no i18n, and a search turned up no translation pipeline anywhere: src/app/page.tsx renders hardcoded English JSX, src/app and src have no hits for useTranslations, i18next, next-intl, locales or translation, and package.json lists no intl dependency, so this subject has no translated content to govern for the home page.",
+   "techniques": [
+    {
+     "technique": "language-registry-single-source",
+     "verdict": "not-applicable",
+     "evidence": "src/app/page.tsx:25 Copy is a hardcoded English literal. There is no language registry, switcher or locale list."
+    },
+    {
+     "technique": "canonical-and-derived-split",
+     "verdict": "not-applicable",
+     "evidence": "docs/i18n/style-en.md:9 No machine-translated files exist, committed or derived."
+    }
+   ],
+   "absenceTerms": [
+    "useTranslations",
+    "i18next",
+    "next-intl",
+    "locales",
+    "translation"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-24T01:04:51.221949+00:00",
+   "bundle": "localization",
+   "subjects": [
+    "translation-pipeline-topology"
+   ],
+   "techniques": [
+    "canonical-and-derived-split",
+    "language-registry-single-source"
+   ],
+   "deviations": 0,
+   "context": "landing-home",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

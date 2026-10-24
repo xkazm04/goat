@@ -5683,7 +5683,11 @@
           "revision": 11,
           "changedAt": "2026-09-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "docs/i18n/style-en.md:9 The repo's own copy contract declares no i18n, and a search turned up no translation pipeline anywhere: src/app/page.tsx renders hardcoded English JSX, src/app and src have no hits for useTranslations, i18next, next-intl, locales or translation, and package.json lists no intl dependency, so this subject has no translated content to govern for the home page.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:678c2208c5b0dfc0",
+          "evaluatedRevision": 12
         },
         {
           "subject": "client-fetch-cache",

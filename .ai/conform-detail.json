@@ -768,17 +768,22 @@
       "context": "landing-home",
       "subject": "translation-pipeline-topology",
       "bundle": "localization",
-      "state": "unknown",
-      "evaluatedAt": "2026-10-13",
-      "evaluatedTs": "2026-10-13T09:33:15.849Z",
-      "techniques": [],
-      "registryProposal": "Remove the pairing between translation-pipeline-topology and landing-home in registry-map.json, as the match was triggered by keyword overlap on 'landing', 'main', and 'page' in technique documentation while goat is an English-only application with no translation pipeline or localization topology.",
-      "withdrawn": {
-        "worker": "575caf47-7537-445f-85bb-6c578639eff8",
-        "state": "not-applicable",
-        "at": "2026-10-13T09:33:34.816974+00:00",
-        "reason": "reviewer (sonnet): The anchor at src/app/page.tsx:18 is only the account nav, and a missing language switcher doesn't show that a translation pipeline is absent. The page's text is hard-coded English, and the greps for next-intl, i18next, react-intl, lingui, locale and hreflang found nothing outside the .ai tooling fi"
-      }
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T01:04:51.221Z",
+      "worker": "6b5930ca-d5a4-4c4a-a56c-b0a0eda5f207",
+      "techniques": [
+        {
+          "technique": "language-registry-single-source",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:25 Copy is a hardcoded English literal. There is no language registry, switcher or locale list."
+        },
+        {
+          "technique": "canonical-and-derived-split",
+          "verdict": "not-applicable",
+          "evidence": "docs/i18n/style-en.md:9 No machine-translated files exist, committed or derived."
+        }
+      ]
     },
     "5183f934-7df8-4fbe-bdef-3d239fea4e26/native-shell-integration": {
       "context": "app-shell",
