@@ -5647,7 +5647,11 @@
           "revision": 1,
           "changedAt": "2026-09-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/v2/ui/HomeLists.tsx:89 The landing page renders a short list as plain React JSX. HomeLists maps every fetched row (capped by .limit(12) and .limit(24)) to a ListCard, and the backdrop is a static SVG scene. React reconciliation decides which elements exist, not product code, so the subject's precondition does not hold. A search of src/app and src for virtualiz, overscan, recycl, premount and getContext( found nothing.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:df020f172eb32893",
+          "evaluatedRevision": 1
         },
         {
           "subject": "app-shell",

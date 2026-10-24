@@ -840,47 +840,44 @@
       "context": "landing-home",
       "subject": "render-mount-pipeline",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-10-13",
-      "evaluatedTs": "2026-10-13T12:07:10.826Z",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T02:03:16.359Z",
+      "worker": "f3e62010-c3ff-47cc-ab6a-032762ef1b3b",
       "techniques": [
         {
           "technique": "blueprint-then-mount",
           "verdict": "not-applicable",
-          "evidence": "src/app/page.tsx:15 Layout uses ordinary document containers; the standard explicitly excludes platform-managed layout and reconciliation."
+          "evidence": "src/app/page.tsx:46 There is no layout pass of its own and no blueprint handed to a mount pass. The page composes React components, and the framework mounts them."
         },
         {
           "technique": "edge-sorted-incremental-mount",
           "verdict": "not-applicable",
-          "evidence": "src/v2/ui/HomeLists.tsx:89 The bounded list renders its collection directly, without viewport windowing or a scroll-driven mount pass."
-        },
-        {
-          "technique": "mount-binders-versus-attach-binders",
-          "verdict": "not-applicable",
-          "evidence": "src/v2/covers/Cover.tsx:24 React manages the declarative image and handler; this context has no retained host detach/attach lifecycle or blueprint binders."
-        },
-        {
-          "technique": "mount-references-across-features",
-          "verdict": "not-applicable",
-          "evidence": "src/app/page.tsx:19 The navigation control is rendered unconditionally, with no visibility window competing with focus, gesture, or transition retention."
-        },
-        {
-          "technique": "preempt-and-continue-shared-computation",
-          "verdict": "not-applicable",
-          "evidence": "src/v2/ui/HomeLists.tsx:60 Asynchronous work delivers fetched data to React state; there is no shared background layout computation or frame-thread handover."
+          "evidence": "src/v2/ui/HomeLists.tsx:58 The lists have a fixed cap and are fully mounted. Nothing is windowed and scroll does no mount work."
         },
         {
           "technique": "recycle-by-content-type",
           "verdict": "not-applicable",
-          "evidence": "src/v2/ui/HomeLists.tsx:28 Covers are ordinary keyed React components, without an application-owned host-content pool or precomputed mount blueprint."
+          "evidence": "src/v2/ui/HomeLists.tsx:98 There is one item kind, keyed by id through React. No host-object pool exists."
+        },
+        {
+          "technique": "mount-references-across-features",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/brand/Backdrop.tsx:13 No visibility window can unmount anything, so no feature needs to hold an element mounted. The backdrop is always mounted and decorative."
+        },
+        {
+          "technique": "mount-binders-versus-attach-binders",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/covers/Cover.tsx:24 React manages the declarative image and handler; this context has no retained host detach/attach lifecycle or blueprint binders.",
+          "carriedFrom": "2026-10-13"
+        },
+        {
+          "technique": "preempt-and-continue-shared-computation",
+          "verdict": "not-applicable",
+          "evidence": "src/v2/ui/HomeLists.tsx:60 Asynchronous work delivers fetched data to React state; there is no shared background layout computation or frame-thread handover.",
+          "carriedFrom": "2026-10-13"
         }
-      ],
-      "withdrawn": {
-        "worker": "50156c5a-48d8-4eab-a9bb-fec9cf1187cc",
-        "state": "not-applicable",
-        "at": "2026-10-13T12:09:42.569611+00:00",
-        "reason": "reviewer (sonnet): The anchor src/app/page.tsx:33 is only the <form className=\"v2-prompt\"> line, so it doesn't show that a render/mount pipeline is absent; the search terms (virtualizer, renderUnit, mountBinder, attachBinder, premount) were also too narrow to prove absence."
-      }
+      ]
     },
     "5183f934-7df8-4fbe-bdef-3d239fea4e26/docs-sync": {
       "context": "app-shell",
