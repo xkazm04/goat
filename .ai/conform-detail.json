@@ -1023,6 +1023,38 @@
         }
       ],
       "registryProposal": "The map matched agent-instruction-files to an oEmbed route context. That is a false positive in the subject-to-context join: this subject governs repo-level instruction files (CLAUDE.md, .claude/), not code contexts, so the matcher should not pair it with route-only contexts."
+    },
+    "574e79a8-5847-4763-a52c-ac884ac33d97/repository-landing-document": {
+      "context": "landing-home",
+      "subject": "repository-landing-document",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T02:20:27.600Z",
+      "worker": "39e4cf57-3c6d-4e1a-9876-4858f670f781",
+      "techniques": [
+        {
+          "technique": "landing-document-as-router",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:19 The only routing here is in-app navigation to an app route, not a routing table that sends repository readers to other documents."
+        },
+        {
+          "technique": "input-channel-distinction",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:36 Reader input goes into an HTML form field. There are no shell blocks or agent prompts to tell apart."
+        },
+        {
+          "technique": "visual-text-cadence",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:30 The page carries one two-line pitch paragraph in JSX, not markdown prose that a prose-run counter would measure."
+        },
+        {
+          "technique": "caption-carrying-figures",
+          "verdict": "not-applicable",
+          "evidence": "src/app/page.tsx:14 The only image is a decorative backdrop component, not a screenshot figure on a repository front page. No figure or figcaption exists in src/app."
+        }
+      ],
+      "registryProposal": "The map matched this context to the subject on the tokens landing, page and section. In an app repository those tokens describe the product's home route, not its README. The subject should state as a precondition that a governed context contains the repository's front-page document (README.md at the repo root or a package README), so the matcher does not pair it with a web app's landing page."
     }
   }
 }

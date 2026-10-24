@@ -5555,7 +5555,11 @@
           "revision": 1,
           "changedAt": "2026-09-01",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/app/page.tsx:33 This context is the Next.js app's home route: a rendered React page with a hero and a form that starts a list. The subject covers a repository's front page (the README the code host, package registry or marketplace renders). A case-insensitive grep of src/app for readme, shields, badge, figcaption and markdown found nothing, so none of the subject's composition rules has anything here to apply to.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:6f6a6c4541bc949b",
+          "evaluatedRevision": 4
         },
         {
           "subject": "prompt-assembly",
